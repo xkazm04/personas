@@ -14856,7 +14856,18 @@
       "action_label_backlog_apply_triage": "Appliquer les verdicts de tri du backlog",
       "athena_actions_clear": "Effacer",
       "athena_actions_title": "Athena a agi en votre nom",
-      "decision_run_failed": "Cela n'a pas abouti. Choisissez de nouveau une option pour réessayer."
+      "decision_run_failed": "Cela n'a pas abouti. Choisissez de nouveau une option pour réessayer.",
+      "fleet_plan_cancel": "Annuler",
+      "fleet_plan_confirm": "Démarrer les sessions",
+      "fleet_plan_containment_note": "Les sessions ne démarrent que dans des projets de développement enregistrés.",
+      "fleet_plan_empty": "Il ne reste aucune session dans ce plan. Annulez-le, ou demandez un nouveau plan à Athena.",
+      "fleet_plan_objective_label": "Objectif",
+      "fleet_plan_objective_placeholder": "Ce que cette session doit accomplir",
+      "fleet_plan_remove_row": "Retirer cette session",
+      "fleet_plan_session_count_one": "{count} session",
+      "fleet_plan_session_count_other": "{count} sessions",
+      "fleet_plan_skill_label": "Compétence",
+      "fleet_plan_skill_placeholder": "facultatif, ex. scan-sweep"
     },
     "artist_gallery": {
       "loading_viewer": "Chargement du visualiseur…",

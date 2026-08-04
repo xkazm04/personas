@@ -14856,7 +14856,18 @@
       "action_label_backlog_apply_triage": "백로그 분류 판정 적용",
       "athena_actions_clear": "지우기",
       "athena_actions_title": "Athena가 대신 처리했습니다",
-      "decision_run_failed": "실행되지 않았습니다. 옵션을 다시 선택해 재시도하세요."
+      "decision_run_failed": "실행되지 않았습니다. 옵션을 다시 선택해 재시도하세요.",
+      "fleet_plan_cancel": "취소",
+      "fleet_plan_confirm": "세션 시작",
+      "fleet_plan_containment_note": "세션은 등록된 개발 프로젝트 내에서만 시작됩니다.",
+      "fleet_plan_empty": "이 계획에 남은 세션이 없습니다. 취소하거나 Athena에게 새 계획을 요청하세요.",
+      "fleet_plan_objective_label": "목표",
+      "fleet_plan_objective_placeholder": "이 세션이 달성해야 할 것",
+      "fleet_plan_remove_row": "이 세션 제거",
+      "fleet_plan_session_count_one": "세션 {count}개",
+      "fleet_plan_session_count_other": "세션 {count}개",
+      "fleet_plan_skill_label": "스킬",
+      "fleet_plan_skill_placeholder": "선택 사항, 예: scan-sweep"
     },
     "artist_gallery": {
       "loading_viewer": "뷰어 로딩 중…",

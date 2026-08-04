@@ -2544,7 +2544,18 @@
     "action_label_backlog_apply_triage": "应用待办分诊结论",
     "athena_actions_clear": "清除",
     "athena_actions_title": "Athena 已代你执行",
-    "decision_run_failed": "未能完成。请再次选择一个选项重试。"
+    "decision_run_failed": "未能完成。请再次选择一个选项重试。",
+    "fleet_plan_cancel": "取消",
+    "fleet_plan_confirm": "启动会话",
+    "fleet_plan_containment_note": "会话仅在已注册的开发项目内启动。",
+    "fleet_plan_empty": "此计划中没有剩余会话。取消它，或让 Athena 提供一个新计划。",
+    "fleet_plan_objective_label": "目标",
+    "fleet_plan_objective_placeholder": "此会话应完成的内容",
+    "fleet_plan_remove_row": "移除此会话",
+    "fleet_plan_session_count_one": "{count} 个会话",
+    "fleet_plan_session_count_other": "{count} 个会话",
+    "fleet_plan_skill_label": "技能",
+    "fleet_plan_skill_placeholder": "可选，例如 scan-sweep"
   },
   "artist_gallery": {
     "loading_viewer": "加载查看器中…",

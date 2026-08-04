@@ -1644,6 +1644,80 @@ pub fn dispatch_with_sys(
                 }
                 out.navigations.push(route.to_string());
             }
+            // ─────────────────────────────────────────────────────────────
+            // WP2 — the editable multi-session fleet plan.
+            //
+            // Athena drafts what she would start (typed turn or spoken turn —
+            // voice reaches the same `send()` path, so nothing here may assume
+            // a typed origin), the CHAT card lets the user edit and confirm,
+            // and only then does anything spawn. Auto-fire, no approval card:
+            // the card itself IS the consent surface.
+            //
+            // Everything is validated HERE, at the door, against the same
+            // boundaries `fleet_dispatch` enforces at fire time — so a plan
+            // that renders is a plan that can actually run. Rejection follows
+            // the arm convention: a warning Athena reads next turn, and the op
+            // line stripped from the visible reply.
+            // ─────────────────────────────────────────────────────────────
+            Ok(env) if env.op == "propose_action" && env.action == "show_fleet_plan" => {
+                let intent = env
+                    .params
+                    .get("operation_intent")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let rows = env
+                    .params
+                    .get("rows")
+                    .and_then(|v| v.as_array())
+                    .cloned()
+                    .unwrap_or_default();
+                // The cwd rule needs the system DB (`dev_projects`). Without it
+                // we cannot prove containment, so we fail CLOSED rather than
+                // render an unvalidated plan whose Confirm button spawns
+                // permission-skipping terminals.
+                let Some(db) = sys_db else {
+                    out.warnings.push(
+                        "show_fleet_plan could not be validated: the project registry is not \
+                         reachable from this turn. Tell the user rather than proposing a plan."
+                            .into(),
+                    );
+                    continue;
+                };
+                match crate::commands::companion::approvals::validate_fleet_plan(
+                    db, intent, &rows,
+                ) {
+                    Ok((intent, plan)) => {
+                        let rows_json: Vec<serde_json::Value> = plan
+                            .iter()
+                            .map(|r| {
+                                serde_json::json!({
+                                    "cwd": r.cwd,
+                                    "objective": r.objective,
+                                    "skill": r.skill,
+                                })
+                            })
+                            .collect();
+                        out.chat_cards.push(ChatCard {
+                            kind: "fleet_plan".to_string(),
+                            title: env
+                                .params
+                                .get("title")
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string()),
+                            config: serde_json::json!({
+                                "operation_intent": intent,
+                                "rows": rows_json,
+                            }),
+                        });
+                    }
+                    Err(reason) => {
+                        out.warnings
+                            .push(format!("rejected show_fleet_plan: {reason}"));
+                        cleaned_lines.push(line);
+                        continue;
+                    }
+                }
+            }
             Ok(env)
                 if env.op == "propose_action"
                     && env.action == "show_persona_creation_offer" =>
@@ -2624,6 +2698,25 @@ mod tests {
             ],
             "PROGRESS beats must be captured in order"
         );
+    }
+
+    // ── show_fleet_plan ─────────────────────────────────────────────────
+
+    /// The plan card's Confirm button starts real `--dangerously-skip-permissions`
+    /// terminals, and the ONLY thing standing between a proposed `cwd` and that
+    /// is the registered-dev-project check — which needs the system DB. When the
+    /// registry is unreachable the arm must fail CLOSED: no card, a warning
+    /// Athena reads next turn. `dispatch_op` builds a user pool only, so this is
+    /// exactly that path.
+    #[test]
+    fn show_fleet_plan_fails_closed_without_the_project_registry() {
+        let op = r###"{"op":"propose_action","action":"show_fleet_plan","params":{"operation_intent":"do work","rows":[{"cwd":"C:/anywhere","objective":"go"}]}}"###;
+        let out = dispatch_op(op);
+        assert!(out.chat_cards.is_empty(), "no card without containment proof");
+        assert!(out
+            .warnings
+            .iter()
+            .any(|w| w.contains("show_fleet_plan") || w.contains("project registry")));
     }
 
     // ── show_persona_walkthrough ────────────────────────────────────────

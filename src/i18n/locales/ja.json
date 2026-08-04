@@ -14856,7 +14856,18 @@
       "action_label_backlog_apply_triage": "バックログのトリアージ判定を適用",
       "athena_actions_clear": "クリア",
       "athena_actions_title": "Athena があなたの代わりに実行しました",
-      "decision_run_failed": "実行できませんでした。もう一度オプションを選んで再試行してください。"
+      "decision_run_failed": "実行できませんでした。もう一度オプションを選んで再試行してください。",
+      "fleet_plan_cancel": "キャンセル",
+      "fleet_plan_confirm": "セッションを開始",
+      "fleet_plan_containment_note": "セッションは登録済みの開発プロジェクト内でのみ開始されます。",
+      "fleet_plan_empty": "このプランにはセッションが残っていません。キャンセルするか、Athenaに新しいプランを依頼してください。",
+      "fleet_plan_objective_label": "目的",
+      "fleet_plan_objective_placeholder": "このセッションで達成すべきこと",
+      "fleet_plan_remove_row": "このセッションを削除",
+      "fleet_plan_session_count_one": "{count} セッション",
+      "fleet_plan_session_count_other": "{count} セッション",
+      "fleet_plan_skill_label": "スキル",
+      "fleet_plan_skill_placeholder": "任意、例: scan-sweep"
     },
     "artist_gallery": {
       "loading_viewer": "ビューアを読み込み中…",

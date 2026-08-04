@@ -15157,6 +15157,17 @@ export type Translations = {
       decision_run_failed: string;
       athena_actions_title: string;
       athena_actions_clear: string;
+      fleet_plan_session_count_one: string;
+      fleet_plan_session_count_other: string;
+      fleet_plan_empty: string;
+      fleet_plan_objective_label: string;
+      fleet_plan_objective_placeholder: string;
+      fleet_plan_skill_label: string;
+      fleet_plan_skill_placeholder: string;
+      fleet_plan_remove_row: string;
+      fleet_plan_confirm: string;
+      fleet_plan_cancel: string;
+      fleet_plan_containment_note: string;
     };
     artist_gallery: {
       loading_viewer: string;

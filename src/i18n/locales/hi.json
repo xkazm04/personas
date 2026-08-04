@@ -14856,7 +14856,18 @@
       "action_label_backlog_apply_triage": "बैकलॉग ट्राइएज निर्णय लागू करें",
       "athena_actions_clear": "साफ़ करें",
       "athena_actions_title": "Athena ने आपकी ओर से कार्य किया",
-      "decision_run_failed": "यह पूरा नहीं हुआ। पुनः प्रयास करने के लिए फिर से एक विकल्प चुनें।"
+      "decision_run_failed": "यह पूरा नहीं हुआ। पुनः प्रयास करने के लिए फिर से एक विकल्प चुनें।",
+      "fleet_plan_cancel": "रद्द करें",
+      "fleet_plan_confirm": "सत्र शुरू करें",
+      "fleet_plan_containment_note": "सत्र केवल पंजीकृत डेव प्रोजेक्ट्स के अंदर ही शुरू होते हैं।",
+      "fleet_plan_empty": "इस योजना में कोई सत्र शेष नहीं है। इसे रद्द करें, या Athena से नई योजना माँगें।",
+      "fleet_plan_objective_label": "उद्देश्य",
+      "fleet_plan_objective_placeholder": "इस सत्र को क्या हासिल करना चाहिए",
+      "fleet_plan_remove_row": "यह सत्र हटाएं",
+      "fleet_plan_session_count_one": "{count} सत्र",
+      "fleet_plan_session_count_other": "{count} सत्र",
+      "fleet_plan_skill_label": "स्किल",
+      "fleet_plan_skill_placeholder": "वैकल्पिक, जैसे scan-sweep"
     },
     "artist_gallery": {
       "loading_viewer": "viewer लोड हो रहा है…",

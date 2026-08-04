@@ -14856,7 +14856,18 @@
       "action_label_backlog_apply_triage": "Použít verdikty triage backlogu",
       "athena_actions_clear": "Vymazat",
       "athena_actions_title": "Athena jednala za vás",
-      "decision_run_failed": "Akce neproběhla. Zkuste to znovu výběrem možnosti."
+      "decision_run_failed": "Akce neproběhla. Zkuste to znovu výběrem možnosti.",
+      "fleet_plan_cancel": "Zrušit",
+      "fleet_plan_confirm": "Spustit relace",
+      "fleet_plan_containment_note": "Relace se spouštějí pouze v registrovaných vývojových projektech.",
+      "fleet_plan_empty": "V tomto plánu už nezbývají žádné relace. Zrušte jej, nebo požádejte Athenu o nový.",
+      "fleet_plan_objective_label": "Cíl",
+      "fleet_plan_objective_placeholder": "Čeho by tato relace měla dosáhnout",
+      "fleet_plan_remove_row": "Odebrat tuto relaci",
+      "fleet_plan_session_count_one": "{count} relace",
+      "fleet_plan_session_count_other": "{count} relací",
+      "fleet_plan_skill_label": "Dovednost",
+      "fleet_plan_skill_placeholder": "volitelné, např. scan-sweep"
     },
     "artist_gallery": {
       "loading_viewer": "Načítání prohlížeče…",

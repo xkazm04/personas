@@ -2544,7 +2544,18 @@
     "action_label_backlog_apply_triage": "تطبيق أحكام فرز قائمة الأعمال",
     "athena_actions_clear": "مسح",
     "athena_actions_title": "تصرفت Athena نيابة عنك",
-    "decision_run_failed": "لم يتم تنفيذ ذلك. اختر خيارًا مرة أخرى لإعادة المحاولة."
+    "decision_run_failed": "لم يتم تنفيذ ذلك. اختر خيارًا مرة أخرى لإعادة المحاولة.",
+    "fleet_plan_cancel": "إلغاء",
+    "fleet_plan_confirm": "بدء الجلسات",
+    "fleet_plan_containment_note": "تبدأ الجلسات فقط داخل مشاريع التطوير المسجلة.",
+    "fleet_plan_empty": "لا توجد جلسات متبقية في هذه الخطة. ألغِها أو اطلب من Athena خطة جديدة.",
+    "fleet_plan_objective_label": "الهدف",
+    "fleet_plan_objective_placeholder": "ما الذي يجب أن تحققه هذه الجلسة",
+    "fleet_plan_remove_row": "إزالة هذه الجلسة",
+    "fleet_plan_session_count_one": "{count} جلسة",
+    "fleet_plan_session_count_other": "{count} جلسات",
+    "fleet_plan_skill_label": "المهارة",
+    "fleet_plan_skill_placeholder": "اختياري، مثل scan-sweep"
   },
   "artist_gallery": {
     "loading_viewer": "جارٍ تحميل العارض…",

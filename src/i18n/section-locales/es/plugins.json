@@ -2544,7 +2544,18 @@
     "action_label_backlog_apply_triage": "Aplicar veredictos de triaje del backlog",
     "athena_actions_clear": "Borrar",
     "athena_actions_title": "Athena actuó en tu nombre",
-    "decision_run_failed": "No se pudo completar. Elige una opción de nuevo para reintentar."
+    "decision_run_failed": "No se pudo completar. Elige una opción de nuevo para reintentar.",
+    "fleet_plan_cancel": "Cancelar",
+    "fleet_plan_confirm": "Iniciar sesiones",
+    "fleet_plan_containment_note": "Las sesiones solo se inician dentro de proyectos de desarrollo registrados.",
+    "fleet_plan_empty": "No quedan sesiones en este plan. Cancélalo o pídele a Athena uno nuevo.",
+    "fleet_plan_objective_label": "Objetivo",
+    "fleet_plan_objective_placeholder": "Qué debe lograr esta sesión",
+    "fleet_plan_remove_row": "Quitar esta sesión",
+    "fleet_plan_session_count_one": "{count} sesión",
+    "fleet_plan_session_count_other": "{count} sesiones",
+    "fleet_plan_skill_label": "Habilidad",
+    "fleet_plan_skill_placeholder": "opcional, p. ej. scan-sweep"
   },
   "artist_gallery": {
     "loading_viewer": "Cargando visor…",

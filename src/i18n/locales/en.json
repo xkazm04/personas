@@ -15150,7 +15150,18 @@
       "action_label_backlog_apply_triage": "Apply backlog triage verdicts",
       "decision_run_failed": "That did not go through. Pick an option again to retry.",
       "athena_actions_title": "Athena acted on your behalf",
-      "athena_actions_clear": "Clear"
+      "athena_actions_clear": "Clear",
+      "fleet_plan_session_count_one": "{count} session",
+      "fleet_plan_session_count_other": "{count} sessions",
+      "fleet_plan_empty": "No sessions left in this plan. Cancel it, or ask Athena for a new one.",
+      "fleet_plan_objective_label": "Objective",
+      "fleet_plan_objective_placeholder": "What this session should accomplish",
+      "fleet_plan_skill_label": "Skill",
+      "fleet_plan_skill_placeholder": "optional, e.g. scan-sweep",
+      "fleet_plan_remove_row": "Remove this session",
+      "fleet_plan_confirm": "Start sessions",
+      "fleet_plan_cancel": "Cancel",
+      "fleet_plan_containment_note": "Sessions start only inside registered dev projects."
     },
     "artist_gallery": {
       "loading_viewer": "Loading viewer…",

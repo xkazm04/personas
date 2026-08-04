@@ -14856,7 +14856,18 @@
       "action_label_backlog_apply_triage": "Backlog-Triage-Urteile anwenden",
       "athena_actions_clear": "Löschen",
       "athena_actions_title": "Athena hat für dich gehandelt",
-      "decision_run_failed": "Das hat nicht geklappt. Wähle erneut eine Option, um es zu wiederholen."
+      "decision_run_failed": "Das hat nicht geklappt. Wähle erneut eine Option, um es zu wiederholen.",
+      "fleet_plan_cancel": "Abbrechen",
+      "fleet_plan_confirm": "Sitzungen starten",
+      "fleet_plan_containment_note": "Sitzungen starten nur innerhalb registrierter Dev-Projekte.",
+      "fleet_plan_empty": "Keine Sitzungen mehr in diesem Plan. Brich ihn ab oder bitte Athena um einen neuen.",
+      "fleet_plan_objective_label": "Ziel",
+      "fleet_plan_objective_placeholder": "Was diese Sitzung erreichen soll",
+      "fleet_plan_remove_row": "Diese Sitzung entfernen",
+      "fleet_plan_session_count_one": "{count} Sitzung",
+      "fleet_plan_session_count_other": "{count} Sitzungen",
+      "fleet_plan_skill_label": "Skill",
+      "fleet_plan_skill_placeholder": "optional, z. B. scan-sweep"
     },
     "artist_gallery": {
       "loading_viewer": "Viewer wird geladen…",

@@ -14856,7 +14856,18 @@
       "action_label_backlog_apply_triage": "Áp dụng phán quyết phân loại tồn đọng",
       "athena_actions_clear": "Xóa",
       "athena_actions_title": "Athena đã hành động thay bạn",
-      "decision_run_failed": "Thao tác không thành công. Chọn lại một tùy chọn để thử lại."
+      "decision_run_failed": "Thao tác không thành công. Chọn lại một tùy chọn để thử lại.",
+      "fleet_plan_cancel": "Hủy",
+      "fleet_plan_confirm": "Bắt đầu phiên",
+      "fleet_plan_containment_note": "Phiên chỉ bắt đầu trong các dự án phát triển đã đăng ký.",
+      "fleet_plan_empty": "Không còn phiên nào trong kế hoạch này. Hãy hủy nó, hoặc yêu cầu Athena lập một kế hoạch mới.",
+      "fleet_plan_objective_label": "Mục tiêu",
+      "fleet_plan_objective_placeholder": "Phiên này cần đạt được điều gì",
+      "fleet_plan_remove_row": "Xóa phiên này",
+      "fleet_plan_session_count_one": "{count} phiên",
+      "fleet_plan_session_count_other": "{count} phiên",
+      "fleet_plan_skill_label": "Kỹ năng",
+      "fleet_plan_skill_placeholder": "tùy chọn, ví dụ scan-sweep"
     },
     "artist_gallery": {
       "loading_viewer": "Đang tải trình xem…",

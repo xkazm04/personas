@@ -5,6 +5,7 @@ import { companionPinWidgetToCockpit, type ChatCard } from '@/api/companion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { toastCatch } from '@/lib/silentCatch';
+import { AthenaFleetPlanCard } from './fleet/AthenaFleetPlanCard';
 
 /**
  * Kinds that render long-form content and should NOT be height-clamped
@@ -56,6 +57,14 @@ export function InlineChatCard({ card }: { card: ChatCard }) {
   const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const [pinState, setPinState] = useState<'idle' | 'pinning' | 'pinned'>('idle');
+
+  // `fleet_plan` is deliberately NOT a cockpit widget: it is an actionable
+  // proposal that starts real CLI sessions on confirm, so it must never be
+  // pinnable to a dashboard or re-rendered outside the chat that consented to
+  // it. Chat is its only dimension.
+  if (card.kind === 'fleet_plan') {
+    return <AthenaFleetPlanCard config={card.config} title={card.title} />;
+  }
 
   const Component = cockpitWidgetRegistry[card.kind];
   if (!Component) {

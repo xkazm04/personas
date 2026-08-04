@@ -2544,7 +2544,18 @@
     "action_label_backlog_apply_triage": "ব্যাকলগ ট্রায়াজ সিদ্ধান্ত প্রয়োগ করুন",
     "athena_actions_clear": "মুছুন",
     "athena_actions_title": "Athena আপনার পক্ষে কাজ করেছে",
-    "decision_run_failed": "এটি সম্পন্ন হয়নি। আবার চেষ্টা করতে একটি বিকল্প বেছে নিন।"
+    "decision_run_failed": "এটি সম্পন্ন হয়নি। আবার চেষ্টা করতে একটি বিকল্প বেছে নিন।",
+    "fleet_plan_cancel": "বাতিল",
+    "fleet_plan_confirm": "সেশন শুরু করুন",
+    "fleet_plan_containment_note": "সেশনগুলো শুধু নিবন্ধিত ডেভ প্রজেক্টের মধ্যেই শুরু হয়।",
+    "fleet_plan_empty": "এই পরিকল্পনায় আর কোনো সেশন নেই। এটি বাতিল করুন, অথবা Athena-কে নতুন পরিকল্পনার জন্য বলুন।",
+    "fleet_plan_objective_label": "উদ্দেশ্য",
+    "fleet_plan_objective_placeholder": "এই সেশনে কী অর্জন করা উচিত",
+    "fleet_plan_remove_row": "এই সেশনটি সরান",
+    "fleet_plan_session_count_one": "{count}টি সেশন",
+    "fleet_plan_session_count_other": "{count}টি সেশন",
+    "fleet_plan_skill_label": "স্কিল",
+    "fleet_plan_skill_placeholder": "ঐচ্ছিক, যেমন scan-sweep"
   },
   "artist_gallery": {
     "loading_viewer": "ভিউয়ার লোড হচ্ছে…",

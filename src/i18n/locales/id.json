@@ -14856,7 +14856,18 @@
       "action_label_backlog_apply_triage": "Terapkan keputusan triase backlog",
       "athena_actions_clear": "Hapus",
       "athena_actions_title": "Athena bertindak atas nama Anda",
-      "decision_run_failed": "Tidak berhasil. Pilih opsi lagi untuk mencoba ulang."
+      "decision_run_failed": "Tidak berhasil. Pilih opsi lagi untuk mencoba ulang.",
+      "fleet_plan_cancel": "Batal",
+      "fleet_plan_confirm": "Mulai sesi",
+      "fleet_plan_containment_note": "Sesi hanya dimulai di dalam proyek dev yang terdaftar.",
+      "fleet_plan_empty": "Tidak ada sesi tersisa dalam rencana ini. Batalkan, atau minta Athena membuat rencana baru.",
+      "fleet_plan_objective_label": "Tujuan",
+      "fleet_plan_objective_placeholder": "Apa yang harus dicapai sesi ini",
+      "fleet_plan_remove_row": "Hapus sesi ini",
+      "fleet_plan_session_count_one": "{count} sesi",
+      "fleet_plan_session_count_other": "{count} sesi",
+      "fleet_plan_skill_label": "Skill",
+      "fleet_plan_skill_placeholder": "opsional, mis. scan-sweep"
     },
     "artist_gallery": {
       "loading_viewer": "Memuat penampil…",

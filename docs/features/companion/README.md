@@ -449,6 +449,67 @@ Lighter cousin of `show_decision_log`. Athena emits `show_recent_decisions { per
 
 Constitution bumped to v18. With this, Athena has two complementary surfaces for recalling design decisions: heavy (`show_decision_log` for a deliberate audit-trail render) and light (`show_recent_decisions` for a glanceable "by the way…" reminder).
 
+## `show_fleet_plan` — the editable multi-session plan card (conversational dispatch)
+
+The path from a sentence to running terminals. Athena emits
+`show_fleet_plan { operation_intent, rows: [{ cwd, objective, skill? }], title? }`;
+the dispatcher validates it and pushes a `fleet_plan` chat card;
+`AthenaFleetPlanCard` renders it in the chat with every row editable (objective,
+skill) and removable; **Confirm** calls `companion_dispatch_fleet_plan`, which
+re-validates and hands off to the existing executors. Nothing spawns before that
+click, and **Cancel** dismisses the card with no side effect at all.
+
+- **One row → `fleet_spawn`** (a single session). **Two or more → `fleet_dispatch`**
+  (one Operation with N role sessions, `role = <skill>` or `plan-<n>`).
+- **Validation happens at the door**, in `dispatcher.rs`, so a card that renders
+  is a plan that can actually run: non-empty bounded `operation_intent`; 1-8 rows
+  (the `fleet_dispatch` cap); a non-empty bounded objective per row; a slug-shaped
+  optional skill; and every `cwd` inside a registered dev project via the shared
+  `validate_fleet_cwd_in_db`. A rejected plan produces a dispatcher warning Athena
+  reads on her next turn and the op line is stripped from the reply. If the project
+  registry is not reachable for that turn the arm **fails closed** — no card.
+- **Argv is backend-owned.** A row contributes exactly one positional token: the
+  objective, or `/<skill> <objective>` when a skill is chosen.
+  `fleet::pty::spawn_session` appends the variadic `--mcp-config` *last*, after
+  the caller's args; anything emitted after it would be swallowed as a config
+  path, so no caller assembles flags.
+- **Typed and spoken requests are the same path.** Voice reaches `send()` through
+  `useHoldToTalk` → `setVoiceTurnRequest`, so "get three agents on the flaky
+  tests" spoken out loud produces the same plan card as the typed version.
+- The card is CHAT-only by design (the full-information dimension). It is
+  deliberately not a cockpit widget and not pinnable: it is an actionable
+  proposal that starts real processes, so it must not be re-rendered outside the
+  conversation that consented to it.
+
+### Containment posture (2026-08-04, operator's explicit call)
+
+`fleet_spawn` and `fleet_dispatch` are now on `AUTOAPPROVE_ALLOWLIST`, so they
+follow the boldness dial like the other fleet actions. Stated plainly: **with the
+default `Bold` dial in autonomous mode, a typed or spoken request can start real
+`claude --dangerously-skip-permissions` sessions with no click in between.** The
+risk is accepted; an assistant that cannot start work is not a conductor. Two
+things bound it and neither may be weakened:
+
+1. `validate_fleet_cwd` confines every spawn to a **registered dev project**
+   directory. That is the boundary.
+2. The editable plan card is the **correction path** — for anything beyond a
+   single obvious session, the constitution directs Athena to propose a plan the
+   user can edit rather than a bare auto-firing spawn.
+
+Cautious and Balanced dials keep gating these behind the confidence matrix.
+
+**Every dispatch is audited.** Because a request can start terminals with no
+click, the durable record is the compensating control — a log line is not
+auditable after the fact. Confirming a plan appends a row to the same
+`fleet_decisions` ledger the autopilot writes to, carrying the operation intent,
+the session count, and per row the cwd plus the **resolved prompt** that session
+received (skill included). Origin is distinguishable: `decision_class =
+operator_confirmed_plan` and `outcome = operator_confirmed` /
+`operator_confirmed_failed`, versus the autopilot's `auto_fired` / `deferred`. A
+confirm whose executor errored is recorded too, since a half-failed dispatch
+still started something. The ledger write is best-effort and can never fail a
+dispatch.
+
 ## Slash-command palette
 
 Typing `/` as the first character of an empty draft opens a small popover above the composer with a set of preset prompts (`SlashPalette.tsx`): **get to know me** (re-run the intake interview — F2), show goals, what's queued, recent decisions, live ops, memory recap, capabilities. Subsequent keystrokes filter the list by case-insensitive substring on label or key; ↑/↓ navigate; Enter picks; Esc clears the draft and closes. Click works the same as Enter. Preset messages are i18n'd so non-English users get prompts in their own locale — Athena handles all 14 supported languages in chat.
