@@ -3,7 +3,7 @@
 // relations as edges, Factory KPI rollups as the KPI dimension, and open Fleet
 // CLI sessions as clickable dock nodes per island. The Hex Mosaic is the final
 // view mode (Grid Board and Inverse Grid prototypes retired).
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { GitFork, LifeBuoy } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
@@ -67,6 +67,9 @@ import { MastermindHexMosaic } from './variants/MastermindHexMosaic';
 /** Stable empty fallbacks — a fresh [] per island would defeat the identity cache. */
 const EMPTY_FLEET: FleetNode[] = [];
 const EMPTY_NAMES: string[] = [];
+
+/** Islands allowed to ADOPT changed content per pass (see hydration waves). */
+const HYDRATE_WAVE = 6;
 
 /** Normalize a path for cwd↔root matching (Windows separators, case, slash). */
 const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase().replace(/\/+$/, '');
@@ -465,8 +468,25 @@ function MastermindInner() {
     fleetKey: string; personasKey: string; busy: boolean; shipKey: string;
     out: (typeof scene.islands)[number];
   }>());
+  // HYDRATION WAVES (staggered data adoption): the identity cache above stops
+  // an island from re-rendering when its data DIDN'T change — but the first
+  // seconds after mount are the opposite case. ~9 data families resolve in
+  // quick succession (passport phases 0/1/2, ship, KPI, relations, scans,
+  // monitoring, spend) and several of them touch EVERY island, so each arrival
+  // still reconciled the whole world (~150 SVG nodes × N islands) in one
+  // synchronous commit — the first-open lag. The budget below caps how many
+  // islands may adopt CHANGED content per pass: the rest keep their previous
+  // painted object (identical reference → memo skip, briefly stale by design)
+  // and an rAF re-runs the memo until every island is current. A burst now
+  // rolls across the canvas at HYDRATE_WAVE islands/frame instead of freezing
+  // it. Single-island updates (drag commit, busy flag, one fleet tick) always
+  // fit the first wave, so interactions stay same-frame.
+  const [hydrateTick, forceHydrate] = useReducer((n: number) => n + 1, 0);
+  const hydratePending = useRef(false);
   const positioned = useMemo(() => {
+    void hydrateTick; // re-entry ticket for deferred adoptions below
     const cache = islandCache.current;
+    let adopted = 0;
     const next = new Map<string, NonNullable<ReturnType<typeof cache.get>>>();
     const islands = scene.islands.map((i) => {
       const o = overrides[i.slug];
@@ -487,6 +507,15 @@ function MastermindInner() {
         next.set(i.slug, c);
         return c.out;
       }
+      // Changed, but over budget this pass — keep the stale painted entry for a
+      // frame and reclaim it on the next tick. Brand-new islands (no prior
+      // entry) can't be deferred: the shell's mount waves stagger those.
+      if (c && adopted >= HYDRATE_WAVE) {
+        hydratePending.current = true;
+        next.set(i.slug, c);
+        return c.out;
+      }
+      if (c) adopted += 1;
       const nodes = i.nodes.map((n) => {
         const decorated = {
           ...n,
@@ -512,7 +541,17 @@ function MastermindInner() {
     });
     islandCache.current = next;
     return { ...scene, islands };
-  }, [scene, overrides, fleetByProject, personasByProject, passportBySlug, rawByProject, busySlugs, kpiListByProject, shipByProject]);
+  }, [scene, overrides, fleetByProject, personasByProject, passportBySlug, rawByProject, busySlugs, kpiListByProject, shipByProject, hydrateTick]);
+
+  // Drain deferred adoptions one animation frame at a time. Runs after every
+  // commit (no dep array on purpose): whenever the pass above left islands on
+  // stale content, the next frame re-enters it with a fresh budget.
+  useEffect(() => {
+    if (!hydratePending.current) return;
+    hydratePending.current = false;
+    const id = requestAnimationFrame(forceHydrate);
+    return () => cancelAnimationFrame(id);
+  });
 
   const onIslandCommit = (slug: string, x: number, y: number) =>
     setOverrides((prev) => {
