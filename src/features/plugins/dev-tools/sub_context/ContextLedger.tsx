@@ -12,24 +12,28 @@
 // ideas · KPIs) so a row is a full record, not just a label — and the goal /
 // idea counts click through to their surfaces.
 import { useMemo, useState } from 'react';
-import { Layers, Search, Sparkles, X, Plus, FolderTree } from 'lucide-react';
+import { Layers, Search, X, Plus, FolderTree } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 
 import GroupColorPicker, { colorDot } from './GroupColorPicker';
 import {
-  ContextCoverage,
   LedgerActions,
   ProposalStrip,
   kindMeta,
-  KIND_DOT,
   KIND_TEXT,
   type ContextLedgerProps,
 } from './contextLedgerShared';
+import {
+  LedgerRow,
+  ledgerGroupHeight,
+  skipStyle,
+  useFilteredGroups,
+  useMemberCounts,
+} from './contextMapPerf';
 
 export default function ContextLedger(props: ContextLedgerProps) {
   const { t: tRoot, tx } = useTranslation();
@@ -76,22 +80,14 @@ export default function ContextLedger(props: ContextLedgerProps) {
     [cols],
   );
 
-  // Filter contexts by name / keyword; drop groups that end up empty. A trimmed
-  // empty query is the no-op identity so the common case does no work.
-  const filteredGroups = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return groups;
-    return groups
-      .map((g) => ({
-        ...g,
-        contexts: g.contexts.filter(
-          (c) =>
-            c.name.toLowerCase().includes(q) ||
-            c.keywords.some((k) => k.toLowerCase().includes(q)),
-        ),
-      }))
-      .filter((g) => g.contexts.length > 0);
-  }, [groups, query]);
+  // Filter contexts by name / keyword; drop groups that end up empty. Runs off
+  // a deferred copy of the query so a keystroke paints the input immediately
+  // and the 800-row re-filter lands in an interruptible follow-up render.
+  const { filteredGroups, deferredQuery } = useFilteredGroups(groups, query);
+
+  // contextId → how many active use cases touch it. One pass over the columns
+  // instead of re-scanning every column inside every row.
+  const memberCounts = useMemberCounts(memberSets);
 
   // contextId → name, for the proposal detail modal's spanned-context list.
   const contextNames = useMemo(() => {
@@ -223,11 +219,13 @@ export default function ContextLedger(props: ContextLedgerProps) {
           )}
         </div>
 
-        {/* group bands + context rows */}
+        {/* group bands + context rows. Each band carries content-visibility so
+            an offscreen group costs no layout or paint — the sticky column
+            header above is outside the contained subtree and stays painted. */}
         {filteredGroups.map((g) => {
           const dot = colorDot(g.color);
           return (
-            <div key={g.id}>
+            <div key={g.id} style={skipStyle(ledgerGroupHeight(g.contexts.length))}>
               <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/10 border-b border-primary/5">
                 <span className={`w-2.5 h-2.5 rounded-full ${dot.bg}`} />
                 <span className="typo-title">{g.name}</span>
@@ -235,90 +233,37 @@ export default function ContextLedger(props: ContextLedgerProps) {
               </div>
 
               <div className="divide-y divide-primary/5">
-                {g.contexts.map((c) => {
-                  const selected = c.id === selectedCtxId;
-                  return (
-                    <div
-                      key={c.id}
-                      className={`grid items-center gap-0 px-3 py-1 transition-colors ${
-                        selected ? 'bg-primary/10' : 'hover:bg-secondary/10'
-                      }`}
-                      style={{ gridTemplateColumns: gridTemplate }}
-                    >
-                      {/* the context record */}
-                      <div className="flex items-center gap-2.5 min-w-0 pr-3">
-                        {c.pinned && (
-                          <span className="w-1 h-3.5 rounded-full bg-amber-400/70 shrink-0" title={t.context_pinned} />
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => onSelectCtx(selected ? null : c.id)}
-                          className="typo-body font-medium text-foreground truncate text-left hover:text-primary"
-                        >
-                          {c.name}
-                        </button>
-                        <span className="ml-auto shrink-0">
-                          <ContextCoverage
-                            fileCount={c.filePaths.length}
-                            useCaseCount={memberSets.filter((m) => m.set.has(c.id)).length}
-                            goalCount={goalCoverageByContext.get(c.id)?.count ?? 0}
-                            firstGoalId={goalCoverageByContext.get(c.id)?.firstGoalId}
-                            ideaCount={ideaCoverageByContext.get(c.id) ?? 0}
-                            kpiCount={kpiCoverageByContext.get(c.id) ?? 0}
-                            costUsd={costByContext.get(c.id)}
-                            errorCount={errorsByContext.get(c.id)}
-                            t={t}
-                          />
-                        </span>
-                        <Tooltip content={t.context_scan_ideas_tooltip}>
-                          <button
-                            type="button"
-                            onClick={() => { if (!scanBusy) onScanContext(c.id); }}
-                            disabled={scanBusy}
-                            aria-label={t.context_scan_ideas_tooltip}
-                            className="shrink-0 grid place-items-center w-6 h-6 rounded-full border border-primary/15 bg-primary/5 text-foreground hover:bg-primary/10 hover:border-primary/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                          >
-                            {scanningContextId === c.id ? <LoadingSpinner size="xs" /> : <Sparkles className="w-3 h-3" />}
-                          </button>
-                        </Tooltip>
-                      </div>
-
-                      {/* membership cells */}
-                      {memberSets.map(({ uc, set }) => {
-                        const isMember = set.has(c.id);
-                        const isPrimary = uc.primary_context_id === c.id;
-                        const meta = kindMeta(uc.kind);
-                        const colSelected = uc.id === selectedUseCaseId;
-                        return (
-                          <span
-                            key={uc.id}
-                            className={`flex items-center justify-center h-full ${colSelected ? 'bg-primary/[0.07]' : ''}`}
-                          >
-                            {isMember ? (
-                              <span
-                                className={`rounded-full ${KIND_DOT[meta.stem]} ${
-                                  isPrimary ? 'w-2.5 h-2.5 ring-2 ring-offset-1 ring-offset-transparent ring-primary/40' : 'w-2 h-2 opacity-80'
-                                }`}
-                              />
-                            ) : (
-                              <span className="w-1 h-1 rounded-full bg-foreground/10" />
-                            )}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
+                {g.contexts.map((c) => (
+                  <LedgerRow
+                    key={c.id}
+                    ctx={c}
+                    selected={c.id === selectedCtxId}
+                    gridTemplate={gridTemplate}
+                    memberSets={memberSets}
+                    selectedUseCaseId={selectedUseCaseId}
+                    useCaseCount={memberCounts.get(c.id) ?? 0}
+                    goal={goalCoverageByContext.get(c.id)}
+                    ideaCount={ideaCoverageByContext.get(c.id) ?? 0}
+                    kpiCount={kpiCoverageByContext.get(c.id) ?? 0}
+                    costUsd={costByContext.get(c.id)}
+                    errorCount={errorsByContext.get(c.id)}
+                    scanning={scanningContextId === c.id}
+                    scanBusy={scanBusy}
+                    onSelectCtx={onSelectCtx}
+                    onScanContext={onScanContext}
+                    t={t}
+                  />
+                ))}
               </div>
             </div>
           );
         })}
 
-        {query.trim() && filteredGroups.length === 0 && (
+        {deferredQuery.trim() && filteredGroups.length === 0 && (
           <div className="flex flex-col items-center gap-1.5 py-8 text-center px-6">
             <Search className="w-6 h-6 text-foreground/30" />
             <p className="typo-caption text-foreground/60">
-              {t.context_search_no_results} “{query.trim()}”
+              {t.context_search_no_results} “{deferredQuery.trim()}”
             </p>
           </div>
         )}
