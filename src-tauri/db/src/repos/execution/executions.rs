@@ -303,7 +303,15 @@ pub fn count_all_global(
                 let (status, n) = row.map_err(AppError::Database)?;
                 counts.total += n;
                 match status.as_str() {
-                    "running" | "pending" => counts.running += n,
+                    // `queued` is the canonical pre-start status every other
+                    // query in this repo treats as in-flight (`get_running`,
+                    // `has_running_executions`, `get_running_count_for_persona`
+                    // all use `IN ('queued','running')`). `pending` is only the
+                    // legacy alias kept for old rows (see
+                    // `ExecutionState`'s alias table). Omitting `queued` here
+                    // made the Activity "Running" badge silently under-count
+                    // every execution that had not started yet.
+                    "running" | "queued" | "pending" => counts.running += n,
                     "completed" => counts.completed += n,
                     "failed" => counts.failed += n,
                     _ => {}
@@ -2061,6 +2069,51 @@ mod tests {
         .unwrap();
         assert_eq!(get_running_only(&pool).unwrap().len(), 0);
         assert_eq!(get_queued_only(&pool).unwrap().len(), 1);
+    }
+
+    /// A `queued` execution has not started, but it IS in flight — the
+    /// Activity "Running" badge must count it. Regression guard: the bucket
+    /// used to match only `running`/`pending`, so every queued row was
+    /// invisible in the badge while still counted in `total`.
+    #[test]
+    fn count_all_global_counts_queued_as_running() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Counts Agent");
+
+        // Two queued, one promoted to running, one completed.
+        create(&pool, &persona_id, None, None, None, None).unwrap();
+        create(&pool, &persona_id, None, None, None, None).unwrap();
+        let running = create(&pool, &persona_id, None, None, None, None).unwrap();
+        let done = create(&pool, &persona_id, None, None, None, None).unwrap();
+        update_status(
+            &pool,
+            &running.id,
+            UpdateExecutionStatus {
+                status: ExecutionState::Running,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        update_status(
+            &pool,
+            &done.id,
+            UpdateExecutionStatus {
+                status: ExecutionState::Completed,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+        let counts = count_all_global(&pool, None).unwrap();
+        assert_eq!(counts.total, 4);
+        assert_eq!(counts.running, 3, "2 queued + 1 running are all in flight");
+        assert_eq!(counts.completed, 1);
+        assert_eq!(counts.failed, 0);
+
+        // The per-persona filter path must agree with the unfiltered one.
+        let scoped = count_all_global(&pool, Some(&persona_id)).unwrap();
+        assert_eq!(scoped.running, 3);
+        assert_eq!(scoped.total, 4);
     }
 
     // =====================================================================
