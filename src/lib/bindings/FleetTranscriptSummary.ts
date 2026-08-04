@@ -46,6 +46,13 @@ models: Array<string>,
  */
 tools: Array<FleetToolCount>, 
 /**
+ * Background shells the session launched over its lifetime — `Bash`
+ * tool uses carrying `run_in_background: true`. A foreground Bash blocks
+ * the turn and is gone by the time anyone looks; a backgrounded one keeps
+ * running, which is the number an operator watching a fleet cares about.
+ */
+bgProcsLaunched: number, 
+/**
  * Distinct files modified (Edit/Write/MultiEdit/NotebookEdit), sorted.
  */
 filesTouched: Array<string>, 

@@ -1,32 +1,38 @@
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
+import type { ScreenHealth } from '@/lib/bindings/ScreenHealth';
 
 /**
  * The monitor layer's per-terminal model.
  *
- * Every field maps to a REAL data source, so this doubles as the wiring plan
- * for graduating the monitor from simulated stats to live ones:
- * - `state`, `dozing`, `headless`, `ageMin` → `FleetSession` (wired today)
- * - `subagentsTotal`                → transcript rollup `tools[]` count of the
- *                                     `Task` tool (`fleet_session_metadata`)
- * - `subagentsActive`               → PreToolUse/PostToolUse pairing on `Task`
- *                                     (hooks already received; small Rust delta)
- * - `subprocs`                      → Bash `run_in_background: true` tool_use
- *                                     inputs in the transcript (RollupAcc delta)
- *                                     or a child-process scan of `childPid`
- *                                     (`fleet_detect_processes` precedent)
- * - `outputTokens`, `contextTokens` → `FleetTokenTotals` / `lastContextTokens`
- *                                     from the incremental rollup
- * - `memMb`                         → per-PID memory, same scan as the orphan
- *                                     panel (needs periodic sampling)
+ * Where each field comes from for a session with a bound transcript:
+ * - `state`, `dozing`, `headless`, `ageMin` → `FleetSession`
+ * - `subagentsTotal`                → `fleet_monitor_stats`, from the rollup's
+ *                                     `Task` tool count
+ * - `outputTokens`, `contextTokens` → `fleet_monitor_stats`, from the
+ *                                     incremental transcript rollup
+ * - `memMb`                         → `fleet_monitor_stats`, per-PID RSS
+ * - `subagentsActive`               → `fleet_monitor_stats`, from the
+ *                                     PreToolUse/PostToolUse pairing on `Task`
+ * - `subprocs`                      → `fleet_monitor_stats`, from the rollup's
+ *                                     count of backgrounded `Bash` runs
+ * - `screenHealth`                  → `fleet_monitor_stats`, the last screen
+ *                                     delta a render already measured
+ *
+ * Sessions with NO bound transcript keep the fnv placeholder for every stat
+ * and set `simulated`.
  */
 export interface ProtoTerminal {
   id: string;
+  /** True when the stats below are the fnv placeholder, not measured values —
+   *  a session with no bound `claudeSessionId` has no transcript to read. */
+  simulated: boolean;
   project: string;
   label: string;
   state: FleetSessionState;
   dozing: boolean;
   headless: boolean;
-  /** Live background subprocesses (Bash run_in_background). */
+  /** Background shells launched over the session's lifetime (Bash
+   *  `run_in_background: true`). */
   subprocs: number;
   /** Subagents (Task tool) currently open. */
   subagentsActive: number;
@@ -40,4 +46,7 @@ export interface ProtoTerminal {
   memMb: number;
   /** Minutes since last activity signal. */
   ageMin: number;
+  /** Verdict on the session's last screen delta, or `null` when no render has
+   *  ever been taken for it. Real even on an otherwise `simulated` row. */
+  screenHealth: ScreenHealth | null;
 }

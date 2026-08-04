@@ -93,6 +93,13 @@ async fn receive_hook(
             let tool_input = body.get("tool_input").unwrap_or(&empty);
             let tool_result = body.get("tool_result");
             if !tool_name.is_empty() {
+                // Subagent open/close edges — the monitor's "agents running
+                // right now" count. Ignores every tool but `Task`.
+                super::monitor_stats::note_subagent_edge(
+                    sid,
+                    tool_name,
+                    event_kind == "posttooluse",
+                );
                 crate::companion::orchestration::operative_memory::memory()
                     .record_tool_event(
                         sid,
@@ -233,10 +240,15 @@ fn apply_hook(
         // progress: UserPromptSubmit, a tool firing (revive_to_running_on_activity),
         // or transcript growth (the stale ticker). This is what stops a
         // just-spawned session from reading "Working".
-        "sessionstart" => (
-            FleetSessionState::Idle,
-            "SessionStart — Claude launched, ready".to_string(),
-        ),
+        "sessionstart" => {
+            // A fresh (or resumed) process carries no open subagents; whatever
+            // the previous one left counted died with it.
+            super::monitor_stats::reset_subagents(session_id);
+            (
+                FleetSessionState::Idle,
+                "SessionStart — Claude launched, ready".to_string(),
+            )
+        }
         "notification" => (
             FleetSessionState::AwaitingInput,
             // The notification message says *what* Claude wants — surface it
