@@ -2,6 +2,11 @@
 
 ## Active
 
+### prototype-context-picker — /prototype full-page context selection for skill dispatch — session fable-5
+- Started: 2026-08-03. Status: started. Two directional variants (Roster+ tiles vs Cross-tab grid, both adapted to per-skill coverage) behind a throwaway switcher inside a new full-page picker opened from UseSkillDialog's tracked-skill flow. Work in `.claude/worktrees/prototype-context-picker` (branch worktree-prototype-context-picker).
+- Paths: `src/features/plugins/dev-tools/sub_skills/contextPicker/**` (new), `src/features/plugins/dev-tools/sub_skills/UseSkillDialog.tsx`, later `src/i18n/locales/*.json` at consolidation, `.claude/active-runs.md`.
+- NOTE: a concurrent Opus resolve agent (same operator, this session) is committing to `src-tauri/engine/src/a2a/**` + `.personas/memory-outbox.jsonl` + `.claude/scan-history/` in the MAIN checkout — disjoint from this scope.
+
 ### perfect-triage-r2 — /perfect round 2 on the unified triage deck — session fable-5 (Director) + Opus builders
 - Started: 2026-07-31. Status: proposing. Round 1 shipped 5 directions (`6fb0e5a34`…`c342d22b2`); scout re-checked them adversarially and found 4 residual gaps plus a cross-surface keyboard collision that decides TWO rows per keypress. Vault: `Documents/Obsidian/personas/Perfect/`.
 - Paths (intended): `src/features/agents/quick-answer/**`, `src/features/fleet/monitor/useMonitorData.ts`, `src/stores/slices/overview/overviewSlice.ts` (cloud-review rethrow), `src/lib/keyboard/**` + the 3 colliding keydown surfaces (`overview/sub_manual-review/ReviewFocusFlow.tsx`, `.../backlog/BacklogFocusDeck.tsx`, `plugins/companion/orb/AthenaOrbLayer.tsx`), `src-tauri` idea/practice verdict CAS, `context-map.json` + `DESIGN.md` + doc-map (Director does these inline). Builders work in `.claude/worktrees/perfect-triage-r2*`.
