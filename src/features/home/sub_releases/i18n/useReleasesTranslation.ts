@@ -10,6 +10,8 @@
  * kept for one cycle to avoid touching every consuming component in one go —
  * they delegate fully to `useTranslation()` with no extra caching or casting.
  */
+import { useMemo } from 'react';
+
 import { useTranslation } from '@/i18n/useTranslation';
 import { releasesConfig } from '@/data/releases';
 
@@ -87,6 +89,21 @@ export function useReleasesTranslation(): { t: ReleasesTranslation; language: st
   // needs to enumerate them, and the section is a plain parsed object at runtime.
   const flat = r as unknown as Record<string, string>;
 
+  // Rebuilding the nested release map means a regex sweep over every
+  // `whats_new` key once per release; keep it off the render path — it only
+  // changes when the language does.
+  const releases = useMemo(
+    () =>
+      Object.fromEntries(
+        releasesConfig.releases
+          .map((release) => [release.version, buildRelease(flat, release.version)] as const)
+          .filter((entry): entry is readonly [string, ReleaseI18n] => entry[1] !== undefined),
+      ),
+    // `flat` is a fresh reference every render; language is what changes it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [language],
+  );
+
   const t: ReleasesTranslation = {
     title: r.title,
     subtitle: {
@@ -125,11 +142,7 @@ export function useReleasesTranslation(): { t: ReleasesTranslation; language: st
     },
     empty: r.empty,
     laneEmpty: r.lane_empty,
-    releases: Object.fromEntries(
-      releasesConfig.releases
-        .map((release) => [release.version, buildRelease(flat, release.version)] as const)
-        .filter((entry): entry is readonly [string, ReleaseI18n] => entry[1] !== undefined),
-    ),
+    releases,
   };
 
   return { t, language };
