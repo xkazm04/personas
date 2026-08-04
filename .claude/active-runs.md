@@ -2,10 +2,6 @@
 
 ## Active
 
-### spark-slack-channel-bridge — /spark round 2: Slack connector into Teams Channel conversation — session fable-5 (Director)
-- Started: 2026-08-01. Status: started (design phase; no tree edits until Phase 5 worktree). Vault: Documents/Obsidian/personas/Spark/.
-- Paths (intended, on build): src/features/fleet/monitor/channels/** (MonitorChannelGrid, ConversationComposer, useConversation, conversationModel), possibly src-tauri/src/engine/slack_poller.rs + webhook_notifier.rs, src/api/**, i18n. Build isolates in .claude/worktrees/spark-slack-channel-bridge.
-- OVERLAP NOTE: perfect-triage-r2 declares src/features/fleet/monitor/useMonitorData.ts (monitor SHELL). This spark stays inside monitor/channels/** and will not touch useMonitorData.ts. No collision.
 
 ### perfect-triage-r2 — /perfect round 2 on the unified triage deck — session fable-5 (Director) + Opus builders
 - Started: 2026-07-31. Status: proposing. Round 1 shipped 5 directions (`6fb0e5a34`…`c342d22b2`); scout re-checked them adversarially and found 4 residual gaps plus a cross-surface keyboard collision that decides TWO rows per keypress. Vault: `Documents/Obsidian/personas/Perfect/`.
@@ -76,6 +72,9 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### spark-slack-channel-bridge — /spark round 2 COMPLETE, merged 792152417
+- 2026-08-01. Slack connector bridged into Teams Channel conversation, both directions + inbound drives the team. 4 WPs: b48f64698 (outbound relay) 95cabbd54 (slack item kind) 6ed6a7f10 (team settings panel) 77eec0946 (inbound poller fork); merge 792152417. One migration: team_channel_messages.author_label. New command list_team_slack_bridges. Gates: tsc 0 err, clippy clean, vitest 3043/3044 (1 pre-existing camelCase ratchet red: DevMilestone/DevMilestoneItem/DevProjectWallSummary/HealingAnalysisResult), rust slack 38/38, i18n strict 14 locales. Worktree removed. NOT live-verified (testids team-slack-bridge-*). Vault: Obsidian/personas/Spark/.
 
 ### prototype-context-picker — full-page context picker for skill dispatch — session fable-5 — COMPLETE
 - 2026-08-03. Cross-tab variant won and consolidated (Roster+ deleted, switcher removed, dead keys pruned); picker windowed+memoized via sub_context/contextMapPerf. Multi-select feeds the existing per-context dispatch loop. Related: perf commits 407d61a31/69b0ba372 fixed the Context Map surfaces' big-bang loads (Opus subagent).
