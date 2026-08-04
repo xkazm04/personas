@@ -28,7 +28,16 @@ function SpanRowImpl({ node, totalMs, expanded, onToggle, hasChildren }: SpanRow
       {/* Left: name + type badge */}
       <div className="flex items-center gap-1.5 min-w-0" style={{ paddingLeft: `${depth * 16}px` }}>
         {hasChildren ? (
-          <button type="button" onClick={handleToggle} className="p-0.5 rounded hover:bg-primary/10 flex-shrink-0">
+          <button
+            type="button"
+            onClick={handleToggle}
+            aria-expanded={expanded}
+            /* The span name is system/user data, not UI copy -- combined with
+               aria-expanded a screen reader announces "<name>, button,
+               collapsed/expanded", so no translated string is needed. */
+            aria-label={span.name}
+            className="p-0.5 rounded hover:bg-primary/10 flex-shrink-0"
+          >
             {expanded ? (
               <ChevronDown className="w-3 h-3 text-foreground" />
             ) : (
