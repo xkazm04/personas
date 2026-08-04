@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**124 reusable components** live under `src/features/shared/components/`.
+**127 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -163,6 +163,14 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `useSectionScrollSpy` | auto/scroll/overlay), else null. |
 | `VibeThemeProvider` | Applies persona-derived "vibe" CSS custom properties to a wrapper element. |
 
+## modals — Modal/dialog shells
+
+| Component | What it's for |
+|---|---|
+| `DataDiffSection` | Undo this run" action. |
+| `ExecutionDetailContent` | _(add a `@catalog` tag)_ |
+| `ExecutionDetailModal` | a single execution. |
+
 ## overlays — Popovers, dropdowns, command palette, filter bars
 
 | Component | What it's for |
@@ -203,4 +211,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_124 components, 43 without a `@catalog` description._
+_127 components, 44 without a `@catalog` description._

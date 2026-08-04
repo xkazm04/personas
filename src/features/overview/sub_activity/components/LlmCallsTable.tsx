@@ -12,7 +12,7 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
-import { ExecutionDetailModal } from '@/features/overview/ExecutionDetailModal';
+import { ExecutionDetailModal } from '@/features/shared/components/modals/ExecutionDetailModal';
 import { formatModelShort } from '@/lib/utils/formatters';
 import type { GlobalExecution } from '@/lib/types/types';
 
