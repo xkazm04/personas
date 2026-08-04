@@ -69,8 +69,6 @@ pub async fn start_test_run(
     let run_id = run.id.clone();
 
     let pool = state.db.clone();
-    let log_dir = state.engine.child_pids.lock().await;
-    drop(log_dir); // just used to verify engine is alive
 
     // Register cancellation flag in process registry.
     // The guard ensures unregister_run is called even if the task panics.
