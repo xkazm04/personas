@@ -155,9 +155,11 @@ export default function HomeLearning() {
       />
       <ContentBody centered>
         {/* 2-column layout: guided tours (with synced timeline) + tricks */}
-        <div className="flex gap-6 w-full">
+        {/* Stacks below `lg` — at a narrow window two 50% columns squeezed the
+            tour titles and quest rows into permanent truncation. */}
+        <div className="flex flex-col lg:flex-row gap-6 w-full">
           {/* Left column: Guided Tours + timeline spine */}
-          <div className="w-1/2 flex-shrink-0 space-y-4">
+          <div className="w-full lg:w-1/2 lg:flex-shrink-0 min-w-0 space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-primary/10">
               <Compass className="w-4 h-4 text-indigo-400" />
               <h3 className="typo-heading text-foreground">{ht.guided_tours}</h3>
@@ -212,7 +214,7 @@ export default function HomeLearning() {
           </div>
 
           {/* Right column: Power Moves quest board */}
-          <div className="w-1/2 min-w-0">
+          <div className="w-full lg:w-1/2 min-w-0">
             <PowerMovesPanel />
           </div>
         </div>
