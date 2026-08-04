@@ -74,6 +74,14 @@ Launch one Explore scout per primary context (parallel, "very thorough"): what e
 
 **Grounding rule: no question reaches the operator that the code could have answered.** "Should this be a new tab or extend X?" is only a valid question if the scout confirmed X exists, renders, and could host it.
 
+**Liveness rule (both halves are required):**
+1. A surface only "exists" if it RENDERS — trace every surface to an actual mount point.
+2. A FIELD only "exists" if some query the consumer actually calls POPULATES it. For every field the design depends on, the scout names the query that fills it and confirms the consumer calls that query, not a leaner projection of it.
+
+Also required of every scout that maps shared render helpers or models: enumerate OTHER CONSUMERS of them ("who else imports this?"), since extension-site checklists are otherwise silently incomplete.
+
+> Both halves are paid for in blood: a `/perfect` round shipped against a component with zero mount points, and spark round 2 built a correct parser against a field the consumer's query returns blank by design. Same failure, one level apart.
+
 ### Phase 3 — Design waves (the heart)
 Converge the design through **waves of AskUserQuestion** (each call = up to 4 questions; single-select for architecture forks, multiSelect for scope composition). **There is no wave cap** — a large feature legitimately takes a long dialog. The loop terminates on *clarity*, not on count: after every wave, re-run the completeness checklist below; iterate while any item is genuinely open, stop the moment none are. The discipline is per-question, not per-run: every question must be one whose answer changes the design (see craft rules) — an unnecessary question is a flaw at any wave number, and ten necessary waves are not.
 
