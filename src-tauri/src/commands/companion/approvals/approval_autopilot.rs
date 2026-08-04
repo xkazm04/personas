@@ -72,6 +72,23 @@ pub(crate) const AUTOAPPROVE_ALLOWLIST: &[&str] = &[
     // Cautious/Balanced still gate these behind the confidence matrix.
     "fleet_spawn",
     "fleet_dispatch",
+    // WP2 (2026-08-04) — the canvas actions ride the SAME boldness dial as the
+    // two above, because they ARE the two above: `canvas_dispatch` and
+    // `canvas_group_dispatch` resolve canvas slugs to registered project roots
+    // and then call `execute_fleet_spawn` / `execute_fleet_dispatch`
+    // unchanged, through the same `validate_fleet_plan` containment check.
+    // Listing them here rather than gating them separately is the point: one
+    // dial, one containment boundary, no second policy to drift.
+    // `canvas_group_dispatch` additionally caps at the same 8 and spawns
+    // sequentially (the canvas is explicit that parallel spawning stalls the
+    // machine).
+    "canvas_dispatch",
+    "canvas_group_dispatch",
+    // An idea scan starts no terminal: it queues a background agent run whose
+    // output is a reviewable backlog of PROPOSALS, and the scanner already
+    // refuses to stack past `IDEA_BACKLOG_CAP`. Lower blast radius than the
+    // memory writes at the top of this list.
+    "canvas_run_idea_scan",
     // DELIBERATELY NOT LISTED: `backlog_apply_triage`.
     //
     // A batch triage decides up to 30 backlog items at once, and the reject arm
@@ -253,6 +270,14 @@ pub async fn auto_resolve_if_allowed(
         // starts, so an auto-fire still cannot leave the registered projects.
         "fleet_spawn" => execute_fleet_spawn(app, &params),
         "fleet_dispatch" => execute_fleet_dispatch(app, &params),
+        // WP2 — canvas actions. The two dispatch arms end in the same two
+        // executors above and write their own single ledger row through
+        // `record_fleet_plan_decision`; they are NOT `fleet_`-prefixed, so the
+        // generic ledger stamp below skips them and the audit trail stays one
+        // row per dispatch rather than two.
+        "canvas_dispatch" => execute_canvas_dispatch(&state, app, &params),
+        "canvas_group_dispatch" => execute_canvas_group_dispatch(&state, app, &params),
+        "canvas_run_idea_scan" => execute_canvas_run_idea_scan(&state, app, &params).await,
         _ => unreachable!("allowlist mismatch"),
     };
     // The persisted episode is what renders in the companion chat, so it carries
@@ -735,5 +760,28 @@ mod containment_posture_tests {
     #[test]
     fn backlog_triage_still_requires_a_click() {
         assert!(!AUTOAPPROVE_ALLOWLIST.contains(&"backlog_apply_triage"));
+    }
+
+    /// The canvas actions inherit the SAME dial rather than growing a second
+    /// policy: two of them ARE `fleet_spawn` / `fleet_dispatch` after slug
+    /// resolution, so gating them differently would mean two answers to one
+    /// question. Every canvas action must also have a dispatcher entry, or a
+    /// proposal would never become an approval row at all.
+    #[test]
+    fn canvas_actions_share_the_fleet_dial_and_have_dispatcher_entries() {
+        for action in [
+            "canvas_dispatch",
+            "canvas_group_dispatch",
+            "canvas_run_idea_scan",
+        ] {
+            assert!(
+                AUTOAPPROVE_ALLOWLIST.contains(&action),
+                "{action} must follow the boldness dial like the fleet ops it wraps"
+            );
+            assert!(
+                crate::companion::dispatcher::action_is_allowed(action),
+                "{action} needs an ALLOWED_ACTIONS entry or no approval row is ever created"
+            );
+        }
     }
 }

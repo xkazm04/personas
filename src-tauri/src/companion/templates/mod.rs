@@ -346,4 +346,12 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// but must never emit from chat. It carries the accept/reject verdicts of one
 /// "Send to Athena" batch over the Approvals › Backlog tab; the ask "triage my
 /// backlog" is answered by pointing at that button, not by composing an op.
-pub const CONSTITUTION_VERSION: u32 = 45;
+/// v46 (Mastermind canvas) gives Athena her first read of the canvas: a
+/// worst-first scene digest in the prompt, two read ops for the detail it
+/// truncates (`describe_canvas_project`, `describe_canvas_freshness`), and
+/// three actions over it (`canvas_dispatch`, `canvas_group_dispatch`,
+/// `canvas_run_idea_scan`). The rules that needed teaching, not just listing:
+/// slugs come from the block or a lookup and are never derived; `unknown` is a
+/// data-load failure, not a gap in the product; and the six `demo-*` islands
+/// are placeholders every action refuses.
+pub const CONSTITUTION_VERSION: u32 = 46;

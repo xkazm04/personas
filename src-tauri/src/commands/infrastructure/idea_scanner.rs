@@ -65,7 +65,10 @@ struct ScanAgentRegistry {
 
 static SCAN_AGENTS: OnceLock<Vec<ScanAgentMeta>> = OnceLock::new();
 
-fn get_scan_agents() -> &'static Vec<ScanAgentMeta> {
+/// The registered scan agents. `pub(crate)` so the canvas idea-scan executor
+/// can default to the full set the Ideas cell's own popover presents, rather
+/// than hard-coding a second copy of the agent keys.
+pub(crate) fn get_scan_agents() -> &'static Vec<ScanAgentMeta> {
     SCAN_AGENTS.get_or_init(|| {
         let raw = include_str!("scan_agents.toml");
         let registry: ScanAgentRegistry = toml::from_str(raw).expect("scan_agents.toml is invalid");

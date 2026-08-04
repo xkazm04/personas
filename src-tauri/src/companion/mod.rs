@@ -9,6 +9,7 @@
 
 pub mod athena_reaction;
 pub mod brain;
+pub mod canvas;
 pub mod connectors;
 pub mod conversation;
 pub mod dev_mode;
