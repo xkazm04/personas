@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
@@ -39,16 +39,39 @@ export function MonitorView({
   onOverlayClose: () => void;
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
+  // The row that currently owns the `proto-term-<id>` shared layout id. It is
+  // armed a frame BEFORE `openId` (framer needs a measured box on the row to
+  // animate from) and released only once the fullscreen pane has finished its
+  // exit — otherwise the collapse would have no target to fly back to.
+  const [armedId, setArmedId] = useState<string | null>(null);
   const setBackInterceptor = useSystemStore((s) => s.setBackInterceptor);
   const stats = useMonitorStats();
-  const model = useMemo(() => sessionsToMonitorModel(sessions, stats), [sessions, stats]);
+  const prevModel = useRef<ProtoTerminal[]>([]);
+  const model = useMemo(() => {
+    const next = sessionsToMonitorModel(sessions, stats, prevModel.current);
+    prevModel.current = next;
+    return next;
+  }, [sessions, stats]);
   const openTerm = openId ? model.find((m) => m.id === openId) ?? null : null;
   const openSession = openId ? sessions.find((s) => s.id === openId) ?? null : null;
 
-  const onOpen = (t: ProtoTerminal) => {
+  const armedRef = useRef<string | null>(null);
+  const arm = useCallback((id: string | null) => {
+    armedRef.current = id;
+    setArmedId(id);
+  }, []);
+  const onOpen = useCallback((t: ProtoTerminal) => {
     onSelect(t.id);
-    setOpenId(t.id);
-  };
+    // Pointer-down already armed this row a frame ago — expand immediately.
+    // Any other entry path (keyboard, synthetic click) arms now and defers the
+    // expand by one frame so the row's motion node gets measured first.
+    if (armedRef.current === t.id) {
+      setOpenId(t.id);
+      return;
+    }
+    arm(t.id);
+    requestAnimationFrame(() => setOpenId(t.id));
+  }, [onSelect, arm]);
 
   // While the fullscreen pane is open, BOTH back affordances collapse to the
   // monitor instead of leaving it: Escape (capture, ahead of the overlay's
@@ -80,8 +103,10 @@ export function MonitorView({
   return (
     <LayoutGroup>
       <div className="relative flex-1 min-h-0 flex flex-col">
-        <MonitorLedger fleet={model} onOpen={onOpen} />
-        <AnimatePresence>
+        <MonitorLedger fleet={model} onOpen={onOpen} onArm={arm} armedId={armedId} />
+        {/* The armed row keeps its shared layout id until the pane has fully
+            collapsed back onto it — releasing earlier would strand the exit. */}
+        <AnimatePresence onExitComplete={() => arm(null)}>
           {openTerm && openSession && (
             <motion.div
               key={openTerm.id}
