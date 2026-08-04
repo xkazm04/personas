@@ -61,6 +61,16 @@ pub fn validate_language(lang: &str) -> Result<&str, AppError> {
             "companion_stt: language has unexpected characters".into(),
         ));
     }
+    // Letters-and-hyphens alone still admits flag-shaped values (`--nt`, `-l`,
+    // `--np`), which reach whisper-cli as `-l <value>` and are re-parsed as
+    // OPTIONS rather than a language — defeating this function's own stated
+    // purpose. A real tag never starts or ends with a hyphen, and never doubles
+    // one.
+    if trimmed.starts_with('-') || trimmed.ends_with('-') || trimmed.contains("--") {
+        return Err(AppError::Validation(
+            "companion_stt: language must be a tag like `en`, `en-US` or `auto`".into(),
+        ));
+    }
     Ok(trimmed)
 }
 

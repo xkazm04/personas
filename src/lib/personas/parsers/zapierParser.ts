@@ -4,7 +4,7 @@
  */
 
 import type { AgentIR } from '@/lib/types/designTypes';
-import { ZAPIER_DEFINITION, toServiceMap, classifyNodeRole } from '../platformDefinitions';
+import { ZAPIER_DEFINITION, resolveServiceByInclusion, classifyNodeRole } from '../platformDefinitions';
 import { runExtractionPipeline, type NormalizedNode } from './workflowPipeline';
 
 interface ZapierStep {
@@ -24,15 +24,10 @@ interface ZapierExport {
   actions?: ZapierStep[];
 }
 
-const ZAPIER_SERVICE_MAP = toServiceMap(ZAPIER_DEFINITION);
-
 function extractServiceName(app: string | undefined): string {
   if (!app) return 'unknown';
   const lower = app.toLowerCase().replace(/[^a-z0-9-]/g, '');
-  for (const [key, value] of Object.entries(ZAPIER_SERVICE_MAP)) {
-    if (lower.includes(key)) return value;
-  }
-  return lower;
+  return resolveServiceByInclusion(ZAPIER_DEFINITION, lower) ?? lower;
 }
 
 function isTriggerStep(step: ZapierStep): boolean {

@@ -95,6 +95,33 @@ pub async fn fleet_detect_processes() -> Result<Vec<FleetDetectedProcess>, Strin
     .map_err(|e| format!("process scan task failed: {e}"))?
 }
 
+/// Resident memory (bytes) for a specific set of PIDs.
+///
+/// Same `sysinfo` source as [`fleet_detect_processes`], but narrowed to the
+/// PIDs asked for and to the memory field alone — the monitor polls this for
+/// the fleet's own children, where a full process-table walk would be waste.
+/// PIDs that no longer exist are simply absent from the map. Blocking: call it
+/// from `spawn_blocking`, never while holding the registry lock.
+pub fn memory_bytes_for(pids: &[u32]) -> std::collections::HashMap<u32, u64> {
+    let mut out = std::collections::HashMap::new();
+    if pids.is_empty() {
+        return out;
+    }
+    let targets: Vec<Pid> = pids.iter().map(|p| Pid::from_u32(*p)).collect();
+    let mut sys = System::new();
+    sys.refresh_processes_specifics(
+        ProcessesToUpdate::Some(&targets),
+        true,
+        ProcessRefreshKind::nothing().with_memory(),
+    );
+    for target in targets {
+        if let Some(proc_) = sys.process(target) {
+            out.insert(target.as_u32(), proc_.memory());
+        }
+    }
+    out
+}
+
 /// Kill a single process by PID (targeted — never a blanket kill). Returns
 /// `true` if the process existed and the kill signal was sent.
 #[tauri::command]

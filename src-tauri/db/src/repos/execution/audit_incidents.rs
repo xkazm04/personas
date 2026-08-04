@@ -190,14 +190,14 @@ pub fn promote(pool: &DbPool, input: CreateAuditIncidentInput) -> Result<Option<
                     "SELECT title FROM audit_incidents WHERE status = 'open' AND persona_id = ?1",
                 )?;
                 let rows = stmt.query_map(params![pid], |r| r.get::<_, String>(0))?;
-                rows.filter_map(Result::ok).collect()
+                collect_rows(rows, "audit_incidents::promote/open_titles_by_persona")
             } else {
                 let mut stmt = conn.prepare(
                     "SELECT title FROM audit_incidents
                      WHERE status = 'open' AND persona_id IS NULL AND kind = ?1",
                 )?;
                 let rows = stmt.query_map(params![input.kind], |r| r.get::<_, String>(0))?;
-                rows.filter_map(Result::ok).collect()
+                collect_rows(rows, "audit_incidents::promote/open_titles_by_kind")
             };
             if open_titles
                 .iter()

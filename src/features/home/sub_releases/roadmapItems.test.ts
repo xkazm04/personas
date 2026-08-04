@@ -19,10 +19,20 @@ const BUNDLED_I18N = {
   '2': { title: 'Bundled two', description: 'b2' },
 };
 
-function liveWith(items: Array<{ id: string; status?: string; priority?: string }>, content: Record<string, { title: string; description: string }>): LiveRoadmap {
+type LiveItemInput = { id: string; status?: string; priority?: string; sortOrder?: number };
+type Content = Record<string, { title: string; description: string }>;
+
+function liveWith(
+  items: LiveItemInput[],
+  content: Content,
+  extraLocales: Record<string, Content> = {},
+): LiveRoadmap {
   return {
     release: { items: items.map((i) => ({ ...i })) },
-    i18n: { en: { items: content } },
+    i18n: {
+      en: { items: content },
+      ...Object.fromEntries(Object.entries(extraLocales).map(([k, v]) => [k, { items: v }])),
+    },
   } as unknown as LiveRoadmap;
 }
 
@@ -57,5 +67,52 @@ describe('buildDisplayItems', () => {
     const items = buildDisplayItems(BUNDLED, live, 'en', BUNDLED_I18N);
     expect(items[0]!.status).toBe('planned');
     expect(items[0]!.priority).toBe('later');
+  });
+
+  it('drops duplicate live ids, keeping the first occurrence', () => {
+    const live = liveWith(
+      [
+        { id: '9', status: 'planned', priority: 'now', sortOrder: 1 },
+        { id: '9', status: 'completed', priority: 'later', sortOrder: 2 },
+      ],
+      { '9': { title: 'Live item', description: 'l9' } },
+    );
+    const items = buildDisplayItems(BUNDLED, live, 'en', BUNDLED_I18N);
+    expect(items).toHaveLength(1);
+    expect(items[0]!.status).toBe('planned');
+  });
+
+  it('orders live items by sort_order, not payload order', () => {
+    const live = liveWith(
+      [
+        { id: 'b', status: 'planned', priority: 'now', sortOrder: 9 },
+        { id: 'a', status: 'planned', priority: 'now', sortOrder: 2 },
+      ],
+      { a: { title: 'A', description: '' }, b: { title: 'B', description: '' } },
+    );
+    expect(buildDisplayItems(BUNDLED, live, 'en', BUNDLED_I18N).map((i) => i.title)).toEqual(['A', 'B']);
+  });
+
+  it('uses the requested locale when the live payload carries it', () => {
+    const live = liveWith(
+      [{ id: '9', status: 'planned', priority: 'now' }],
+      { '9': { title: 'Live item', description: 'l9' } },
+      { cs: { '9': { title: 'Ceska polozka', description: 'c9' } } },
+    );
+    expect(buildDisplayItems(BUNDLED, live, 'cs', BUNDLED_I18N).map((i) => i.title)).toEqual(['Ceska polozka']);
+  });
+
+  it('falls back to the live payload\'s English locale for an untranslated language', () => {
+    const live = liveWith(
+      [{ id: '9', status: 'planned', priority: 'now' }],
+      { '9': { title: 'Live item', description: 'l9' } },
+    );
+    // 'ja' is absent from i18n — English content wins over blanking the roadmap.
+    expect(buildDisplayItems(BUNDLED, live, 'ja', BUNDLED_I18N).map((i) => i.title)).toEqual(['Live item']);
+  });
+
+  it('falls back to bundled ordering when the live override is undefined', () => {
+    const items = buildDisplayItems(BUNDLED, undefined, 'en', BUNDLED_I18N);
+    expect(items.map((i) => i.sort_order)).toEqual([1, 2]);
   });
 });

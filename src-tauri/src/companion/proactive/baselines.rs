@@ -74,10 +74,13 @@ impl PersonaBaseline {
     /// `global` when the persona lacks history.
     pub fn expensive_threshold(b: Option<&PersonaBaseline>, global: f64) -> f64 {
         match b {
-            Some(b) if b.has_history() => {
-                let band = b.declared_cost_usd.or(b.p95_cost).unwrap_or(global);
-                (DEVIATION_FACTOR * band).max(EXPENSIVE_FLOOR_USD)
-            }
+            // No learned/declared band → the global constant governs verbatim.
+            // (Previously an absent band fell through to `1.5 × global`, which
+            // is not the same thing as "fall back to global".)
+            Some(b) if b.has_history() => match b.declared_cost_usd.or(b.p95_cost) {
+                Some(band) => (DEVIATION_FACTOR * band).max(EXPENSIVE_FLOOR_USD),
+                None => global,
+            },
             _ => global,
         }
     }
@@ -86,14 +89,10 @@ impl PersonaBaseline {
     /// [`expensive_threshold`].
     pub fn slow_threshold(b: Option<&PersonaBaseline>, global: i64) -> i64 {
         match b {
-            Some(b) if b.has_history() => {
-                let band = b
-                    .declared_duration_ms
-                    .or(b.p95_duration_ms)
-                    .map(|v| v as f64)
-                    .unwrap_or(global as f64);
-                (DEVIATION_FACTOR * band).max(SLOW_FLOOR_MS) as i64
-            }
+            Some(b) if b.has_history() => match b.declared_duration_ms.or(b.p95_duration_ms) {
+                Some(band) => (DEVIATION_FACTOR * band as f64).max(SLOW_FLOOR_MS) as i64,
+                None => global,
+            },
             _ => global,
         }
     }
@@ -178,8 +177,21 @@ fn recompute_one(user_db: &UserDbPool, sys_db: &DbPool, persona_id: &str) -> Res
 
     let p50_cost = percentile(&costs, 50.0);
     let p95_cost = percentile(&costs, 95.0);
-    let p50_dur = percentile(&durations, 50.0) as i64;
-    let p95_dur = percentile(&durations, 95.0) as i64;
+    // `sample_n` counts COST rows; `duration_ms` is nullable, so a persona can
+    // clear MIN_SAMPLES on cost while having few or no durations. Persisting
+    // `percentile(&[]) == 0` as a real p95 made `slow_threshold` collapse from
+    // the 120s global to the 30s floor for such personas — over-flagging every
+    // routine run. Below the sample floor the duration band is unknown, so
+    // store NULL and let the global constant keep governing.
+    let dur_n = durations.len() as i64;
+    let (p50_dur, p95_dur) = if dur_n >= MIN_SAMPLES {
+        (
+            Some(percentile(&durations, 50.0) as i64),
+            Some(percentile(&durations, 95.0) as i64),
+        )
+    } else {
+        (None, None)
+    };
 
     let conn = user_db.get()?;
     // Preserve any user-declared overrides across recompute (they live in the
@@ -285,6 +297,29 @@ mod tests {
         };
         // declared band $2.00 → 1.5× = $3.00, beats the learned p95.
         assert!((PersonaBaseline::expensive_threshold(Some(&b), 0.50) - 3.0).abs() < 1e-9);
+    }
+
+    /// A persona with plenty of cost samples but no usable duration samples
+    /// must keep the GLOBAL slow threshold. Persisting `percentile(&[]) == 0`
+    /// as a real p95 used to collapse it to the 30s floor and flag every run.
+    #[test]
+    fn absent_duration_band_falls_back_to_global_not_the_floor() {
+        let cost_only = PersonaBaseline {
+            sample_n: 40,
+            p95_cost: Some(0.30),
+            p95_duration_ms: None,
+            ..Default::default()
+        };
+        assert_eq!(
+            PersonaBaseline::slow_threshold(Some(&cost_only), 120_000),
+            120_000
+        );
+        assert!(cost_only.duration_band().is_none());
+        // A zero-valued band would have produced the floor — pin that it can't.
+        assert_ne!(
+            PersonaBaseline::slow_threshold(Some(&cost_only), 120_000),
+            SLOW_FLOOR_MS as i64
+        );
     }
 
     #[test]

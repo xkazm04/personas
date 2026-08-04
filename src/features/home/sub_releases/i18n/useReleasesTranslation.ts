@@ -10,7 +10,10 @@
  * kept for one cycle to avoid touching every consuming component in one go —
  * they delegate fully to `useTranslation()` with no extra caching or casting.
  */
+import { useMemo } from 'react';
+
 import { useTranslation } from '@/i18n/useTranslation';
+import { releasesConfig } from '@/data/releases';
 
 // ---------------------------------------------------------------------------
 // Shape helpers
@@ -18,6 +21,12 @@ import { useTranslation } from '@/i18n/useTranslation';
 // Components consume `t` as a nested object (e.g. `t.status.released`,
 // `t.releases['0.0.2'].items['3'].title`). We re-assemble that shape here
 // from the flat keys stored in en.ts so component call-sites need no changes.
+//
+// The re-assembly is DERIVED, not hand-listed: the version list comes from
+// `releases.json` and the item ids from the flat `release_<slug>_item_<id>_*`
+// keys themselves. A hand-written map drifted silently once — release 0.0.2
+// item 21 existed in `releases.json` and in `en.json` but not in the map, so
+// the card rendered the literal placeholder `[0.0.2.21]` to every user.
 // ---------------------------------------------------------------------------
 
 type ReleaseItemI18n = { title: string; description: string };
@@ -29,34 +38,76 @@ type ReleaseI18n = {
 
 export interface ReleasesTranslation {
   title: string;
-  subtitle: { roadmap: string; changelog: string };
-  navBar: { roadmapLabel: string };
+  subtitle: { roadmap: string };
   /** Header label for the in-content `ReleaseNavRail`. */
   navRailLabel: string;
   status: { released: string; active: string; planned: string; roadmap: string };
   type: { feature: string; fix: string; security: string; docs: string; chore: string; breaking: string };
   itemStatus: { in_progress: string; planned: string; completed: string };
   priority: { now: string; next: string; later: string };
-  summary: { inProgress: string; next: string };
   live: { updatedPrefix: string; sourceCache: string; sourceStale: string; sourceFallback: string };
+  /** Reserved for a roadmap with no displayable items — not wired to a surface yet. */
   empty: string;
   /** Caption under the empty-waypoint glyph in a NOW/NEXT/LATER lane with no items. */
   laneEmpty: string;
   releases: Record<string, ReleaseI18n>;
 }
 
+/** `'0.0.2'` → `'0_0_2'`; `'roadmap'` stays `'roadmap'`. Matches the flat key naming. */
+function versionSlug(version: string): string {
+  return version.replace(/\./g, '_');
+}
+
+/**
+ * Rebuild one release's nested i18n object from the flat `whats_new` strings.
+ * Returns `undefined` when the release has no `_label` key at all — a release
+ * present in `releases.json` but not yet written up, which the caller skips
+ * rather than rendering as an empty card.
+ */
+function buildRelease(flat: Record<string, string>, version: string): ReleaseI18n | undefined {
+  const prefix = `release_${versionSlug(version)}`;
+  const label = flat[`${prefix}_label`];
+  if (label === undefined) return undefined;
+
+  const titleKey = new RegExp(`^${prefix}_item_(.+)_title$`);
+  const items: Record<string, ReleaseItemI18n> = {};
+  for (const key of Object.keys(flat)) {
+    const id = titleKey.exec(key)?.[1];
+    if (id === undefined) continue;
+    items[id] = {
+      title: flat[key] ?? '',
+      description: flat[`${prefix}_item_${id}_description`] ?? '',
+    };
+  }
+  return { label, summary: flat[`${prefix}_summary`] ?? '', items };
+}
+
 export function useReleasesTranslation(): { t: ReleasesTranslation; language: string } {
   const { t: raw, language } = useTranslation();
   const r = raw.releases.whats_new;
+  // The generated type models every key individually; the derived rebuild below
+  // needs to enumerate them, and the section is a plain parsed object at runtime.
+  const flat = r as unknown as Record<string, string>;
+
+  // Rebuilding the nested release map means a regex sweep over every
+  // `whats_new` key once per release; keep it off the render path — it only
+  // changes when the language does.
+  const releases = useMemo(
+    () =>
+      Object.fromEntries(
+        releasesConfig.releases
+          .map((release) => [release.version, buildRelease(flat, release.version)] as const)
+          .filter((entry): entry is readonly [string, ReleaseI18n] => entry[1] !== undefined),
+      ),
+    // `flat` is a fresh reference every render; language is what changes it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [language],
+  );
 
   const t: ReleasesTranslation = {
     title: r.title,
     subtitle: {
       roadmap: r.subtitle_roadmap,
-      changelog: r.subtitle_changelog,
-    },
-    navBar: {
-      roadmapLabel: r.nav_bar_roadmap_label,
     },
     navRailLabel: r.nav_rail_label,
     status: {
@@ -83,10 +134,6 @@ export function useReleasesTranslation(): { t: ReleasesTranslation; language: st
       next: r.priority_next,
       later: r.priority_later,
     },
-    summary: {
-      inProgress: r.summary_in_progress,
-      next: r.summary_next,
-    },
     live: {
       updatedPrefix: r.live_updated_prefix,
       sourceCache: r.live_source_cache,
@@ -95,51 +142,7 @@ export function useReleasesTranslation(): { t: ReleasesTranslation; language: st
     },
     empty: r.empty,
     laneEmpty: r.lane_empty,
-    releases: {
-      '0.0.1': {
-        label: r.release_0_0_1_label,
-        summary: r.release_0_0_1_summary,
-        items: {
-          '1': { title: r.release_0_0_1_item_1_title, description: r.release_0_0_1_item_1_description },
-        },
-      },
-      '0.0.2': {
-        label: r.release_0_0_2_label,
-        summary: r.release_0_0_2_summary,
-        items: {
-          '1':  { title: r.release_0_0_2_item_1_title,  description: r.release_0_0_2_item_1_description },
-          '2':  { title: r.release_0_0_2_item_2_title,  description: r.release_0_0_2_item_2_description },
-          '3':  { title: r.release_0_0_2_item_3_title,  description: r.release_0_0_2_item_3_description },
-          '4':  { title: r.release_0_0_2_item_4_title,  description: r.release_0_0_2_item_4_description },
-          '5':  { title: r.release_0_0_2_item_5_title,  description: r.release_0_0_2_item_5_description },
-          '6':  { title: r.release_0_0_2_item_6_title,  description: r.release_0_0_2_item_6_description },
-          '7':  { title: r.release_0_0_2_item_7_title,  description: r.release_0_0_2_item_7_description },
-          '8':  { title: r.release_0_0_2_item_8_title,  description: r.release_0_0_2_item_8_description },
-          '9':  { title: r.release_0_0_2_item_9_title,  description: r.release_0_0_2_item_9_description },
-          '10': { title: r.release_0_0_2_item_10_title, description: r.release_0_0_2_item_10_description },
-          '11': { title: r.release_0_0_2_item_11_title, description: r.release_0_0_2_item_11_description },
-          '12': { title: r.release_0_0_2_item_12_title, description: r.release_0_0_2_item_12_description },
-          '13': { title: r.release_0_0_2_item_13_title, description: r.release_0_0_2_item_13_description },
-          '14': { title: r.release_0_0_2_item_14_title, description: r.release_0_0_2_item_14_description },
-          '15': { title: r.release_0_0_2_item_15_title, description: r.release_0_0_2_item_15_description },
-          '16': { title: r.release_0_0_2_item_16_title, description: r.release_0_0_2_item_16_description },
-          '17': { title: r.release_0_0_2_item_17_title, description: r.release_0_0_2_item_17_description },
-          '18': { title: r.release_0_0_2_item_18_title, description: r.release_0_0_2_item_18_description },
-          '19': { title: r.release_0_0_2_item_19_title, description: r.release_0_0_2_item_19_description },
-          '20': { title: r.release_0_0_2_item_20_title, description: r.release_0_0_2_item_20_description },
-        },
-      },
-      roadmap: {
-        label: r.release_roadmap_label,
-        summary: r.release_roadmap_summary,
-        items: {
-          '2': { title: r.release_roadmap_item_2_title, description: r.release_roadmap_item_2_description },
-          '3': { title: r.release_roadmap_item_3_title, description: r.release_roadmap_item_3_description },
-          '4': { title: r.release_roadmap_item_4_title, description: r.release_roadmap_item_4_description },
-          '6': { title: r.release_roadmap_item_6_title, description: r.release_roadmap_item_6_description },
-        },
-      },
-    },
+    releases,
   };
 
   return { t, language };

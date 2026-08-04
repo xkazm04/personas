@@ -7,8 +7,11 @@
 //!   2. **Quiet check** (`quiet.rs`) — read active rituals, decide if
 //!      now-time is inside any quiet_hours / focus_window. No deliveries
 //!      during those windows.
-//!   3. **Budget** (`budget.rs`) — daily cap (default 3). Stops the
-//!      drip from becoming spam during long sessions.
+//!   3. **Budget** (`budget.rs`) — two layers: a global daily ceiling
+//!      (`budget::GLOBAL_DAILY_CAP`, 12) plus a per-trigger-kind cap
+//!      (`budget::kind_cap`, engagement-modulated) so one noisy leg can't
+//!      crowd out the others. Stops the drip from becoming spam during
+//!      long sessions.
 //!   4. **Persistence** (this module) — write candidates into
 //!      `companion_proactive_message` with `queued`, dedupe against any
 //!      already-unresolved message for the same `(trigger_kind, trigger_ref)`.
@@ -129,6 +132,15 @@ pub fn evaluate_with_extra_candidates(
                 if budget.try_consume(pool, &nudge.trigger_kind)? {
                     new_msgs.push(msg);
                 } else {
+                    // The row we just inserted lost the budget race. Leaving it
+                    // `queued` would strand it forever: nothing re-delivers a
+                    // trigger-driven queued row (`deliver_due_scheduled` only
+                    // takes `scheduled_for IS NOT NULL`), the expiry sweep only
+                    // ages `delivered` rows, and the dedupe guard treats
+                    // `queued` as blocking — so that (trigger_kind, trigger_ref)
+                    // could never nudge again. Roll the insert back instead; the
+                    // trigger re-fires cleanly on a later tick.
+                    discard_unbudgeted(pool, &msg.id);
                     break;
                 }
             }
@@ -139,6 +151,24 @@ pub fn evaluate_with_extra_candidates(
         }
     }
     Ok(new_msgs)
+}
+
+/// Roll back a nudge that was persisted but never got a budget unit. Only
+/// removes the row while it is still `queued` (it has not been delivered — the
+/// caller is the same pass that inserted it), so a concurrent pass that already
+/// delivered it is never disturbed. Best-effort: a failure leaves the row
+/// stranded exactly as it was before this guard existed.
+fn discard_unbudgeted(pool: &UserDbPool, id: &str) {
+    let Ok(conn) = pool.get() else {
+        tracing::warn!(id, "proactive: could not roll back unbudgeted nudge (no connection)");
+        return;
+    };
+    if let Err(e) = conn.execute(
+        "DELETE FROM companion_proactive_message WHERE id = ?1 AND status = 'queued'",
+        params![id],
+    ) {
+        tracing::warn!(id, error = %e, "proactive: could not roll back unbudgeted nudge");
+    }
 }
 
 /// Trigger kind for D6 — fleet operation wrap-up. Reconciler writes
@@ -394,8 +424,9 @@ pub fn list_messages(
 /// Fetch a single proactive message by id, regardless of status.
 ///
 /// The engage path uses this instead of scanning a capped [`list_messages`]
-/// window: on a long-lived install (proactive rows are never pruned) a
-/// still-deliverable nudge can fall outside the newest N rows, which made the
+/// window: on a long-lived install a still-deliverable nudge can fall outside
+/// the newest N rows (the retention prune in [`enqueue_if_new`] only reaps
+/// terminal-status rows, so unresolved ones accumulate), which made the
 /// "Athena reached out" engage button spuriously error with "not found".
 /// A direct lookup is O(1) and has no scale ceiling. Returns `Ok(None)` when
 /// no row with that id exists.

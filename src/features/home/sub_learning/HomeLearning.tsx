@@ -155,9 +155,11 @@ export default function HomeLearning() {
       />
       <ContentBody centered>
         {/* 2-column layout: guided tours (with synced timeline) + tricks */}
-        <div className="flex gap-6 w-full">
+        {/* Stacks below `lg` — at a narrow window two 50% columns squeezed the
+            tour titles and quest rows into permanent truncation. */}
+        <div className="flex flex-col lg:flex-row gap-6 w-full">
           {/* Left column: Guided Tours + timeline spine */}
-          <div className="w-1/2 flex-shrink-0 space-y-4">
+          <div className="w-full lg:w-1/2 lg:flex-shrink-0 min-w-0 space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-primary/10">
               <Compass className="w-4 h-4 text-indigo-400" />
               <h3 className="typo-heading text-foreground">{ht.guided_tours}</h3>
@@ -181,34 +183,38 @@ export default function HomeLearning() {
             </div>
 
             {/* Athena-composed tours (Generative Tours). Rendered beside the
-                built-in registry; skeleton while loading, honest hint when
-                nothing has been composed yet. */}
-            {!composedLoading && (
-              <>
-                <div className="flex items-center gap-2 pb-2 border-b border-primary/10">
-                  <Sparkles className="w-4 h-4 text-violet-400" />
-                  <h3 className="typo-heading text-foreground">{ht.composed_tours}</h3>
-                </div>
-                {composedTours.length === 0 ? (
-                  <p className="typo-caption text-foreground">{ht.composed_empty}</p>
-                ) : (
-                  <div className="flex flex-col gap-1.5" data-testid="learning-composed-tours">
-                    {composedTours.map((entry) => (
-                      <ComposedTourCard
-                        key={entry.record.id}
-                        entry={entry}
-                        isCompleted={tourCompletionMap[entry.record.id as TourDef['id']] ?? false}
-                        onClick={() => entry.def && setActiveTour(entry.def)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </>
+                built-in registry. Loading pattern v2: the section chrome always
+                renders, a calm ghost sits UNDER it only while the first fetch is
+                in flight with nothing to show, and the honest "none composed
+                yet" hint appears only once the fetch has settled — so the
+                section no longer pops the timeline down on arrival. */}
+            <div className="flex items-center gap-2 pb-2 border-b border-primary/10">
+              <Sparkles className="w-4 h-4 text-violet-400" />
+              <h3 className="typo-heading text-foreground">{ht.composed_tours}</h3>
+            </div>
+            {composedLoading && composedTours.length === 0 ? (
+              <div className="flex flex-col gap-1.5" aria-hidden="true">
+                <div className="h-[46px] rounded-modal bg-primary/[0.05]" />
+                <div className="h-[46px] rounded-modal bg-primary/[0.05]" />
+              </div>
+            ) : composedTours.length === 0 ? (
+              <p className="typo-caption text-foreground">{ht.composed_empty}</p>
+            ) : (
+              <div className="flex flex-col gap-1.5" data-testid="learning-composed-tours">
+                {composedTours.map((entry) => (
+                  <ComposedTourCard
+                    key={entry.record.id}
+                    entry={entry}
+                    isCompleted={tourCompletionMap[entry.record.id as TourDef['id']] ?? false}
+                    onClick={() => entry.def && setActiveTour(entry.def)}
+                  />
+                ))}
+              </div>
             )}
           </div>
 
           {/* Right column: Power Moves quest board */}
-          <div className="w-1/2 min-w-0">
+          <div className="w-full lg:w-1/2 min-w-0">
             <PowerMovesPanel />
           </div>
         </div>

@@ -525,7 +525,10 @@ pub fn revert_all_stale_auto_fix_pending(pool: &DbPool, ttl_minutes: i64) -> usi
          WHERE status = 'auto_fix_pending' AND created_at <= ?1",
     ) {
         Ok(mut stmt) => match stmt.query_map(params![cutoff], |row| row.get::<_, String>(0)) {
-            Ok(rows) => rows.filter_map(Result::ok).collect(),
+            Ok(rows) => crate::repos::utils::collect_rows(
+                rows,
+                "healing::revert_all_stale_auto_fix_pending",
+            ),
             Err(e) => {
                 tracing::warn!(error = %e, "Global stale-pending sweep: query failed");
                 return 0;

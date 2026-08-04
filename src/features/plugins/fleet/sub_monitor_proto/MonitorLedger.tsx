@@ -3,12 +3,20 @@ import { motion } from 'framer-motion';
 import { MoonStar } from 'lucide-react';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import {
-  STATE_ICON, stateMeta, costRatio, costToneBg, costToneText,
+  STATE_ICON, stateMeta, costRatio, costToneBg, costToneText, ScreenHealthGlyph,
   attentionLane, LANE_ORDER, LANE_LABEL, LANE_TONE, type AttentionLane,
 } from './monitorProtoMeta';
 import type { ProtoTerminal } from './monitorTypes';
 
-const COLS = ['', 'Session', 'Project', 'Procs', 'Agents', 'Ctx', 'Effort', 'Mem', 'Age'];
+// Column 1 is the screen-movement glyph: no header, it reads as part of the
+// state chrome rather than as another metric.
+const COLS = ['', '', 'Session', 'Project', 'Procs', 'Agents', 'Ctx', 'Effort', 'Mem', 'Age'];
+
+/** First right-aligned column (`Procs` onward — everything before it is text). */
+const FIRST_NUMERIC_COL = 4;
+
+/** Shown on every stat cell of a row whose numbers are placeholders. */
+const SIM_HINT = 'Placeholder stats: this session has no bound transcript yet.';
 
 /**
  * The FUSED monitor variant (winner of /prototype rounds 1-2).
@@ -46,7 +54,7 @@ export function MonitorLedger({
               <th
                 key={i}
                 className={`typo-label uppercase tracking-wide text-foreground opacity-50 font-normal px-2 py-1.5 border-b border-primary/15 ${
-                  i >= 3 ? 'text-right' : 'text-left'
+                  i >= FIRST_NUMERIC_COL ? 'text-right' : 'text-left'
                 }`}
               >
                 {h}
@@ -70,6 +78,10 @@ export function MonitorLedger({
                 const Icon = STATE_ICON[t.state];
                 const ratio = costRatio(t);
                 const needsYou = lane === 'needs_you';
+                // Placeholder numbers read dimmer than measured ones and say so
+                // on hover — the row is real, the stats are not.
+                const simCls = t.simulated ? ' opacity-40' : '';
+                const simHint = t.simulated ? SIM_HINT : undefined;
                 return (
                   <motion.tr
                     key={t.id}
@@ -83,6 +95,9 @@ export function MonitorLedger({
                         {t.dozing && <MoonStar className="w-3 h-3 text-indigo-300" aria-hidden="true" />}
                       </span>
                     </td>
+                    <td className="px-2 py-1 border-b border-primary/5 w-6">
+                      <ScreenHealthGlyph health={t.screenHealth} />
+                    </td>
                     <td className="px-2 py-1 border-b border-primary/5 max-w-0 w-[38%]">
                       <span className="block typo-caption text-foreground truncate">
                         {t.label}
@@ -94,27 +109,27 @@ export function MonitorLedger({
                     <td className="px-2 py-1 border-b border-primary/5">
                       <span className="typo-caption text-foreground opacity-50">{t.project}</span>
                     </td>
-                    <td className="px-2 py-1 border-b border-primary/5 text-right">
-                      <Numeric align="right" className={`typo-caption ${t.subprocs ? 'text-foreground' : 'text-foreground opacity-30'}`}>{t.subprocs}</Numeric>
+                    <td className="px-2 py-1 border-b border-primary/5 text-right" title={simHint}>
+                      <Numeric align="right" className={`typo-caption ${t.subprocs ? 'text-foreground' : 'text-foreground opacity-30'}${simCls}`}>{t.subprocs}</Numeric>
                     </td>
-                    <td className="px-2 py-1 border-b border-primary/5 text-right">
-                      <Numeric align="right" className={`typo-caption ${t.subagentsActive ? 'text-status-info' : 'text-foreground opacity-60'}`}>
+                    <td className="px-2 py-1 border-b border-primary/5 text-right" title={simHint}>
+                      <Numeric align="right" className={`typo-caption ${t.subagentsActive ? 'text-status-info' : 'text-foreground opacity-60'}${simCls}`}>
                         {t.subagentsActive > 0 ? `${t.subagentsActive}/${t.subagentsTotal}` : `${t.subagentsTotal}`}
                       </Numeric>
                     </td>
-                    <td className="px-2 py-1 border-b border-primary/5 text-right">
-                      <Numeric align="right" className="typo-caption text-foreground opacity-70">{`${Math.round(t.contextTokens / 1000)}k`}</Numeric>
+                    <td className="px-2 py-1 border-b border-primary/5 text-right" title={simHint}>
+                      <Numeric align="right" className={`typo-caption text-foreground opacity-70${simCls}`}>{`${Math.round(t.contextTokens / 1000)}k`}</Numeric>
                     </td>
-                    <td className="px-2 py-1 border-b border-primary/5 text-right">
-                      <span className="inline-flex items-center gap-1.5 justify-end">
+                    <td className="px-2 py-1 border-b border-primary/5 text-right" title={simHint}>
+                      <span className={`inline-flex items-center gap-1.5 justify-end${simCls}`}>
                         <span className="w-14 h-1 rounded-full bg-secondary/40 overflow-hidden" aria-hidden="true">
                           <span className={`block h-full ${costToneBg(ratio)} opacity-70`} style={{ width: `${(t.outputTokens / maxTokens) * 100}%` }} />
                         </span>
                         <Numeric align="right" className={`typo-caption ${costToneText(ratio)}`}>{`${Math.round(t.outputTokens / 1000)}k`}</Numeric>
                       </span>
                     </td>
-                    <td className="px-2 py-1 border-b border-primary/5 text-right">
-                      <Numeric align="right" className={`typo-caption ${t.memMb ? 'text-foreground opacity-70' : 'text-foreground opacity-30'}`}>
+                    <td className="px-2 py-1 border-b border-primary/5 text-right" title={simHint}>
+                      <Numeric align="right" className={`typo-caption ${t.memMb ? 'text-foreground opacity-70' : 'text-foreground opacity-30'}${simCls}`}>
                         {t.memMb ? `${t.memMb}` : '—'}
                       </Numeric>
                     </td>

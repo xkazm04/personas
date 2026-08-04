@@ -7,6 +7,7 @@ import { FleetTerminalPane } from '../FleetTerminalPane';
 import { FleetTileStatusBlock } from '../FleetTileStatusBlock';
 import { FleetStatusDots } from '../FleetStatusDots';
 import { sessionsToMonitorModel } from './monitorModel';
+import { useMonitorStats } from './useMonitorStats';
 import { TerminalStats } from './monitorProtoMeta';
 import { MonitorLedger } from './MonitorLedger';
 import type { ProtoTerminal } from './monitorTypes';
@@ -24,8 +25,9 @@ import type { ProtoTerminal } from './monitorTypes';
  * Escape-to-minimize), and the titlebar Back button is re-pointed at the
  * pane while it's open, restoring the overlay's minimize interceptor after.
  *
- * Stats not yet backend-wired (subprocs / subagents / cost) are simulated
- * per-session — see monitorModel.ts.
+ * Stats come from `fleet_monitor_stats` (one IPC for the whole fleet, polled
+ * only while this view is mounted); sessions with no bound transcript keep the
+ * per-session simulation — see monitorModel.ts.
  */
 export function MonitorView({
   sessions, onSelect, onOverlayClose,
@@ -38,7 +40,8 @@ export function MonitorView({
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const setBackInterceptor = useSystemStore((s) => s.setBackInterceptor);
-  const model = useMemo(() => sessionsToMonitorModel(sessions), [sessions]);
+  const stats = useMonitorStats();
+  const model = useMemo(() => sessionsToMonitorModel(sessions, stats), [sessions, stats]);
   const openTerm = openId ? model.find((m) => m.id === openId) ?? null : null;
   const openSession = openId ? sessions.find((s) => s.id === openId) ?? null : null;
 

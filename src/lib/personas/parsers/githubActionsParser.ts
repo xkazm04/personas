@@ -90,7 +90,15 @@ function parseTriggers(onConfig: unknown): Array<{
   }
 
   for (const type of triggerTypes) {
-    const config = (triggerConfigs[type] || {}) as Record<string, unknown>;
+    const rawConfig = triggerConfigs[type];
+    // `on.schedule` is a LIST of `{ cron: "..." }` entries, not a mapping —
+    // reading `.cron` off it always yielded undefined and the schedule was
+    // imported with its cron expressions silently dropped. Normalize the list
+    // form into `{ cron: [...] }` so both the description and the persisted
+    // trigger config carry the expressions.
+    const config: Record<string, unknown> = Array.isArray(rawConfig)
+      ? { cron: rawConfig }
+      : ((rawConfig || {}) as Record<string, unknown>);
     let triggerType: 'manual' | 'schedule' | 'polling' | 'webhook';
     let description: string;
 
@@ -99,12 +107,24 @@ function parseTriggers(onConfig: unknown): Array<{
         triggerType = 'manual';
         description = 'Manual workflow dispatch (GitHub Actions)';
         break;
-      case 'schedule':
+      case 'schedule': {
         triggerType = 'schedule';
-        description = Array.isArray(config.cron)
-          ? `Scheduled: ${(config.cron as Array<Record<string, string>>).map((c) => c.cron || '').join(', ')}`
+        const crons = Array.isArray(config.cron)
+          ? (config.cron as unknown[])
+              .map((c) =>
+                typeof c === 'string'
+                  ? c
+                  : typeof (c as Record<string, unknown>)?.cron === 'string'
+                    ? ((c as Record<string, string>).cron)
+                    : '',
+              )
+              .filter(Boolean)
+          : [];
+        description = crons.length > 0
+          ? `Scheduled: ${crons.join(', ')}`
           : `Scheduled (GitHub Actions cron)`;
         break;
+      }
       case 'push':
         triggerType = 'webhook';
         description = `Push event${config.branches ? ` on ${JSON.stringify(config.branches)}` : ''}`;

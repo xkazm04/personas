@@ -75,9 +75,14 @@ export function runExtractionPipeline(adapter: AdapterResult): AgentIR {
   const actionNodes = nodes.filter((n) => !n.isTrigger && !n.isExcluded);
   const services = new Set<string>();
 
-  // Build triggers
+  // Build triggers. `triggerServices` is index-aligned with `triggers` so a
+  // connector can claim its triggers by identity instead of by scanning the
+  // human-readable description for its own name (which cross-linked any
+  // service whose name is a substring of another — "mail" claimed "gmail").
+  const triggerServices: string[] = [];
   const triggers = triggerNodes.map((node) => {
     services.add(node.service);
+    triggerServices.push(node.service);
     const triggerType = node.triggerType
       ?? (node.service === 'schedule' ? 'schedule'
         : node.service === 'webhook' ? 'webhook'
@@ -91,17 +96,20 @@ export function runExtractionPipeline(adapter: AdapterResult): AgentIR {
     };
   });
 
-  // Add fallback triggers if none detected
+  // Add fallback triggers if none detected. Synthetic triggers belong to no
+  // service, so they stay unclaimed by every connector.
   if (triggers.length === 0 && adapter.fallbackTriggers) {
     triggers.push(...adapter.fallbackTriggers);
+    for (const _ of adapter.fallbackTriggers) triggerServices.push('');
   }
 
-  // Build tool names
-  const toolNames = actionNodes.map((node) => {
+  // Build tool names, keeping each tool's owning service alongside it.
+  const tools = actionNodes.map((node) => {
     services.add(node.service);
     const safeName = node.label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-    return `${node.service}_${safeName}`;
+    return { service: node.service, name: `${node.service}_${safeName}` };
   });
+  const toolNames = tools.map((t) => t.name);
 
   // Build connectors from unique services (excluding platform-internal ones)
   const connectors = Array.from(services)
@@ -116,11 +124,10 @@ export function runExtractionPipeline(adapter: AdapterResult): AgentIR {
         helpText?: string;
         required?: boolean;
       }>,
-      related_tools: toolNames.filter((t) => t.startsWith(service)),
-      related_triggers: triggers
-        .map((t, i) => ({ desc: t.description, index: i }))
-        .filter((t) => t.desc.toLowerCase().includes(service))
-        .map((t) => t.index),
+      related_tools: tools.filter((t) => t.service === service).map((t) => t.name),
+      related_triggers: triggerServices
+        .map((s, i) => (s === service ? i : -1))
+        .filter((i) => i >= 0),
     }));
 
   // Protocol capabilities

@@ -544,10 +544,15 @@ fn recently_nudged_on_this_day(pool: &UserDbPool, trigger_ref: &str) -> Result<b
     // active waking hours) without permanently blocking next-anniversary
     // surfacing tomorrow.
     let cutoff = (Utc::now() - Duration::hours(18)).to_rfc3339();
+    // Stored refs carry a `#<node_id>` suffix (see `build_on_this_day_nudge`),
+    // so an equality match never fired and the per-anniversary guard was dead:
+    // a dismissed resurface re-popped on the very next tick. Match the day key
+    // as a PREFIX. The `= ?1` arm keeps any legacy suffix-less row honored.
+    // `trigger_ref` is `<offset>d:<YYYY-MM-DD>` here — no LIKE metacharacters.
     let count: i64 = conn.query_row(
         "SELECT COUNT(*) FROM companion_proactive_message
          WHERE trigger_kind = 'on_this_day'
-           AND trigger_ref = ?1
+           AND (trigger_ref = ?1 OR trigger_ref LIKE ?1 || '#%')
            AND created_at > ?2",
         params![trigger_ref, cutoff],
         |r| r.get(0),
@@ -705,6 +710,82 @@ mod on_this_day_tests {
     fn build_nudge_handles_missing_body() {
         let n = build_on_this_day_nudge(30, "30d:2026-05-05", "ep_1", "episode", None);
         assert!(n.message.contains("(no preview)"));
+    }
+
+    fn msg_pool() -> UserDbPool {
+        let manager = r2d2_sqlite::SqliteConnectionManager::memory();
+        let pool: UserDbPool = r2d2::Pool::builder().max_size(1).build(manager).expect("pool");
+        pool.get()
+            .unwrap()
+            .execute_batch(
+                "CREATE TABLE companion_proactive_message (
+                    id TEXT, trigger_kind TEXT, trigger_ref TEXT, created_at TEXT);",
+            )
+            .unwrap();
+        pool
+    }
+
+    /// Regression: the persisted `trigger_ref` carries a `#<node_id>` suffix,
+    /// so the day-key guard must match by PREFIX. An equality-only query never
+    /// fired, and a dismissed resurface re-popped on the next 30-minute tick.
+    #[test]
+    fn on_this_day_dedupe_matches_ref_with_node_suffix() {
+        let pool = msg_pool();
+        let day_ref = "30d:2026-05-05";
+        let nudge = build_on_this_day_nudge(30, day_ref, "ep_abc123", "episode", Some("x"));
+        pool.get()
+            .unwrap()
+            .execute(
+                "INSERT INTO companion_proactive_message (id, trigger_kind, trigger_ref, created_at)
+                 VALUES ('n1', ?1, ?2, ?3)",
+                params![
+                    nudge.trigger_kind,
+                    nudge.trigger_ref,
+                    Utc::now().to_rfc3339()
+                ],
+            )
+            .unwrap();
+        assert!(
+            recently_nudged_on_this_day(&pool, day_ref).unwrap(),
+            "the day key must match the stored `<day_ref>#<node_id>` value"
+        );
+        assert!(
+            !recently_nudged_on_this_day(&pool, "90d:2026-05-05").unwrap(),
+            "a different anniversary must not be blocked"
+        );
+    }
+
+    /// A legacy suffix-less row (written before the `#node_id` format) must
+    /// still block — the guard keeps the equality arm for exactly this.
+    #[test]
+    fn on_this_day_dedupe_still_matches_legacy_bare_ref() {
+        let pool = msg_pool();
+        pool.get()
+            .unwrap()
+            .execute(
+                "INSERT INTO companion_proactive_message (id, trigger_kind, trigger_ref, created_at)
+                 VALUES ('n1', 'on_this_day', '365d:2026-05-05', ?1)",
+                params![Utc::now().to_rfc3339()],
+            )
+            .unwrap();
+        assert!(recently_nudged_on_this_day(&pool, "365d:2026-05-05").unwrap());
+    }
+
+    /// Outside the 18-hour window the guard releases so tomorrow's
+    /// anniversary can surface.
+    #[test]
+    fn on_this_day_dedupe_expires_after_window() {
+        let pool = msg_pool();
+        let old = (Utc::now() - Duration::hours(19)).to_rfc3339();
+        pool.get()
+            .unwrap()
+            .execute(
+                "INSERT INTO companion_proactive_message (id, trigger_kind, trigger_ref, created_at)
+                 VALUES ('n1', 'on_this_day', '30d:2026-05-05#ep_1', ?1)",
+                params![old],
+            )
+            .unwrap();
+        assert!(!recently_nudged_on_this_day(&pool, "30d:2026-05-05").unwrap());
     }
 }
 
