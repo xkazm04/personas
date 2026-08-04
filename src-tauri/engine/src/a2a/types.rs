@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 // =============================================================================
 
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AgentCard {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -26,6 +27,7 @@ pub struct AgentCard {
 }
 
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AgentCapabilities {
     /// False — synchronous result only. `message/stream` is out of scope here.
     pub streaming: bool,
@@ -36,6 +38,7 @@ pub struct AgentCapabilities {
 }
 
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AgentSkill {
     pub id: String,
     pub name: String,
@@ -465,7 +468,7 @@ mod tests {
     }
 
     #[test]
-    fn agent_card_serializes_with_camel_case_field_names_kept_as_is() {
+    fn agent_card_serializes_field_names_in_spec_camel_case() {
         let card = AgentCard {
             name: "Test".into(),
             description: Some("desc".into()),
@@ -476,14 +479,37 @@ mod tests {
                 push_notifications: false,
                 state_transition_history: false,
             },
-            skills: vec![],
+            skills: vec![AgentSkill {
+                id: "skill-1".into(),
+                name: "Skill".into(),
+                description: "does a thing".into(),
+                tags: vec![],
+                examples: vec![],
+                input_modes: vec!["text".into()],
+                output_modes: vec!["text".into()],
+            }],
             default_input_modes: vec!["text".into()],
             default_output_modes: vec!["text".into()],
         };
         let json = serde_json::to_value(&card).unwrap();
         assert_eq!(json["name"], "Test");
         assert_eq!(json["url"], "http://localhost:9420/a2a/test");
+        // The A2A spec names every multi-word field in camelCase; snake_case
+        // keys are simply invisible to a conformant client.
+        assert_eq!(json["defaultInputModes"][0], "text");
+        assert_eq!(json["defaultOutputModes"][0], "text");
+        assert!(json.get("default_input_modes").is_none());
+        assert!(json.get("default_output_modes").is_none());
         assert_eq!(json["capabilities"]["streaming"], false);
-        assert_eq!(json["default_input_modes"][0], "text");
+        assert_eq!(json["capabilities"]["pushNotifications"], false);
+        assert_eq!(json["capabilities"]["stateTransitionHistory"], false);
+        assert!(json["capabilities"].get("push_notifications").is_none());
+        assert!(json["capabilities"]
+            .get("state_transition_history")
+            .is_none());
+        assert_eq!(json["skills"][0]["inputModes"][0], "text");
+        assert_eq!(json["skills"][0]["outputModes"][0], "text");
+        assert!(json["skills"][0].get("input_modes").is_none());
+        assert!(json["skills"][0].get("output_modes").is_none());
     }
 }
