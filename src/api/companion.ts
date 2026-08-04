@@ -128,6 +128,32 @@ export async function companionAnalyzeFleet(
   return invoke<string>('companion_analyze_fleet', { teamId, days });
 }
 
+/** One session of an editable fleet plan (`show_fleet_plan` → plan card). */
+export interface FleetPlanRow {
+  /** Absolute path inside a registered dev project. Validated backend-side. */
+  cwd: string;
+  /** What this session should accomplish; becomes its opening prompt. */
+  objective: string;
+  /** Optional installed skill name; leads the prompt as `/skill …`. */
+  skill?: string | null;
+}
+
+/**
+ * Confirm an edited fleet plan and start the sessions. One row spawns a single
+ * session; two or more become one Operation with N roles.
+ *
+ * The backend re-validates every row (registered-project containment, the
+ * 8-session cap, non-empty objectives) because these rows are the USER-EDITED
+ * ones, and it owns argv assembly — callers pass objective + skill and never
+ * command-line flags.
+ */
+export async function companionDispatchFleetPlan(
+  operationIntent: string,
+  rows: FleetPlanRow[],
+): Promise<string> {
+  return invoke<string>('companion_dispatch_fleet_plan', { operationIntent, rows });
+}
+
 // ── Browser testing (Athena × browser tester arc) ──────────────────────────
 
 /** Pairing + connection status for the Companion Setup → Browser panel. */

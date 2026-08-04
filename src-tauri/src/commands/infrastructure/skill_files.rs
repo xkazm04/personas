@@ -625,7 +625,12 @@ fn read_skill_meta(skill_md_path: &Path) -> (Option<String>, Option<String>, boo
 /// `description:` field (Claude Code skills are frontmatter-first); falls back
 /// to the first non-empty, non-heading body line. Without this, a frontmatter
 /// skill would surface its `---` delimiter as the description.
-fn extract_skill_description(content: &str) -> Option<String> {
+///
+/// `pub(crate)` so the companion prompt's skill index
+/// (`companion::prompt::scan_skill_index`) parses skill descriptions the
+/// exact same way the Skills UI does, instead of growing a second parser
+/// that drifts.
+pub(crate) fn extract_skill_description(content: &str) -> Option<String> {
     let lines: Vec<&str> = content.lines().collect();
     let has_frontmatter = lines.first().map(|l| l.trim()) == Some("---");
 

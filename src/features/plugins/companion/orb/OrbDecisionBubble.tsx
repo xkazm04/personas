@@ -58,6 +58,10 @@ export function OrbDecisionBubble() {
   const explained = useCompanionStore((s) => s.decisionExplained);
   const composing = useCompanionStore((s) => s.explainComposing);
   const composeError = useCompanionStore((s) => s.explainComposeError);
+  // A picked option whose action failed. The decision stays pending on purpose;
+  // this is the ONLY failure feedback the operator gets, and it must appear
+  // right where they clicked (it used to be a detached toast).
+  const runError = useCompanionStore((s) => s.decisionError);
   const orbTarget = useCompanionStore((s) => s.orbGuideTarget);
   const orbPos = useSystemStore((s) => s.companionOrbPos);
   // Float above the Fleet grid overlay (z-200) while it's open — a key
@@ -83,6 +87,14 @@ export function OrbDecisionBubble() {
     setCollapsed(false);
     setHidden(false);
   }, [decisionId]);
+
+  // A failed action must be readable even if the user had minimized/hidden the
+  // bubble before picking — reopen it so the error is never silent.
+  useEffect(() => {
+    if (!runError) return;
+    setCollapsed(false);
+    setHidden(false);
+  }, [runError]);
 
   // `pos` below reads window.innerWidth/innerHeight at render time, but this
   // component only re-renders on store changes — a viewport resize (or the
@@ -252,6 +264,18 @@ export function OrbDecisionBubble() {
               className="mt-2.5 typo-caption text-status-warning"
             >
               {t.plugins.companion.decision_compose_failed}
+            </p>
+          )}
+
+          {/* The picked option's action failed — say so in place. The decision
+              stays pending so the same numbered chips are a retry. */}
+          {runError && (
+            <p
+              data-testid="athena-decision-run-failed"
+              role="alert"
+              className="mt-2.5 rounded-input border border-rose-500/25 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400"
+            >
+              {t.plugins.companion.decision_run_failed}
             </p>
           )}
 

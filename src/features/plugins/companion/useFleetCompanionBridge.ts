@@ -6,11 +6,7 @@ import { EventName } from '@/lib/eventRegistry';
 import { silentCatch } from '@/lib/silentCatch';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
-import { useToastStore } from '@/stores/toastStore';
-import { getActiveTranslations, interpolate } from '@/i18n/useTranslation';
-
-/** How long the notify-only "Athena auto-decided" toast stays up. */
-const AUTO_NOTICE_MS = 10_000;
+import { useCompanionStore } from './companionStore';
 
 /**
  * Tier-1 Companion ↔ Fleet bridge.
@@ -143,22 +139,28 @@ export function useFleetCompanionBridge(): void {
       },
     );
 
-    // Notify-only: Athena auto-fired a fleet_send_input into a session. Route
-    // it through the standard toast surface — the old bespoke pill rendered at
-    // a hardcoded fixed position, which read as "a bubble floating outside any
-    // Athena element" (the orb is draggable, so the pill was rarely anywhere
-    // near it). A toast lands where every other transient app message lands.
+    // Athena auto-fired a fleet_send_input/intervene into a session. Athena
+    // communicates on exactly two dimensions, so this lands on both and on
+    // NEITHER a toast nor a floating pill (both were third-dimension surfaces
+    // that vanished before the operator could read them, leaving no trace):
+    //   ORB  — a one-shot reaction pulse; "she just did something".
+    //   CHAT — a durable entry in the in-session autonomous-action ledger
+    //          (`athenaActions`, rendered by `AthenaActionsStrip`) that stays
+    //          until the user clears it. The authoritative audit trail is the
+    //          backend `fleet_decisions` table; this is its chat-side view.
     // FYI only — no undo (user policy).
     const unAutoP = listen<{ sessionId: string; projectLabel: string; text: string }>(
       'athena://fleet/auto-decided',
       (event) => {
-        const t = getActiveTranslations();
-        const heading = event.payload.projectLabel
-          ? interpolate(t.plugins.companion.fleet_auto_decided_to, { project: event.payload.projectLabel })
-          : t.plugins.companion.fleet_auto_decided;
-        useToastStore
-          .getState()
-          .addToast(`${heading}: ${event.payload.text}`, 'success', AUTO_NOTICE_MS);
+        const c = useCompanionStore.getState();
+        c.recordAthenaAction({
+          id: `${event.payload.sessionId}:${Date.now()}`,
+          sessionId: event.payload.sessionId,
+          projectLabel: event.payload.projectLabel,
+          text: event.payload.text,
+          createdAt: Date.now(),
+        });
+        c.pulseMessageReaction();
       },
     );
 

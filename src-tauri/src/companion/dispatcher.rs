@@ -297,6 +297,37 @@ const ALLOWED_ACTIONS: &[&str] = &[
     "backlog_apply_triage",
 ];
 
+/// Auto-fire, read-only detail lookups. Each one answers "what is this
+/// thing, exactly" for an entity kind whose always-on prompt index is
+/// deliberately truncated (personas, dev contexts, skills) or absent
+/// entirely (teams — `assign_team` needs a `team_id` the index never
+/// carries). Handled by their own dispatch arm; NOT in `ALLOWED_ACTIONS`,
+/// because they need no executor and no approval card.
+const READ_OPS: &[&str] = &[
+    "describe_persona",
+    "describe_context",
+    "describe_skill",
+    "list_teams",
+];
+
+/// Longest accepted lookup string. A name or a UUID; anything longer is a
+/// model pasting prose into the param.
+const READ_OP_QUERY_MAX: usize = 200;
+
+/// Hard cap on the System episode a read op writes back. Detail-on-demand
+/// is only cheaper than a fat prompt if the answer is itself bounded.
+const READ_OP_DETAIL_CHARS: usize = 1600;
+
+/// Rows a single `list_teams` answer may carry.
+const LIST_TEAMS_MAX_ROWS: usize = 25;
+
+/// Characters held back from [`READ_OP_DETAIL_CHARS`] for the `list_teams`
+/// "N of M" footer, so truncation can never eat the honesty line.
+const LIST_TEAMS_FOOTER_RESERVE: usize = 180;
+
+/// Fuzzy-match candidates offered when a lookup misses.
+const READ_OP_SUGGESTIONS: usize = 5;
+
 /// Lab modes valid for `open_lab`. Mirrors the `lab-mode-*` testids in
 /// `src/features/agents/sub_lab/components/shared/LabTab.tsx`.
 const ALLOWED_LAB_MODES: &[&str] = &[
@@ -365,6 +396,21 @@ const COMPOSE_MAX_STEPS: usize = 6;
 /// containing JSON are not parsed (those are display-only).
 pub fn dispatch(
     pool: &UserDbPool,
+    session_id: &str,
+    assistant_text: &str,
+) -> Result<Dispatched, AppError> {
+    dispatch_with_sys(pool, None, session_id, assistant_text)
+}
+
+/// Same as [`dispatch`], plus a handle on the *system* DB so the read-only
+/// `describe_*` / `list_teams` ops can answer from the tables that actually
+/// hold personas, dev contexts and teams. `sys_db: None` keeps every other
+/// arm working exactly as before and makes the four read ops report that
+/// the lookup surface is unavailable (the bench harness path, which builds
+/// only a user DB).
+pub fn dispatch_with_sys(
+    pool: &UserDbPool,
+    sys_db: Option<&crate::db::DbPool>,
     session_id: &str,
     assistant_text: &str,
 ) -> Result<Dispatched, AppError> {
@@ -1598,6 +1644,80 @@ pub fn dispatch(
                 }
                 out.navigations.push(route.to_string());
             }
+            // ─────────────────────────────────────────────────────────────
+            // WP2 — the editable multi-session fleet plan.
+            //
+            // Athena drafts what she would start (typed turn or spoken turn —
+            // voice reaches the same `send()` path, so nothing here may assume
+            // a typed origin), the CHAT card lets the user edit and confirm,
+            // and only then does anything spawn. Auto-fire, no approval card:
+            // the card itself IS the consent surface.
+            //
+            // Everything is validated HERE, at the door, against the same
+            // boundaries `fleet_dispatch` enforces at fire time — so a plan
+            // that renders is a plan that can actually run. Rejection follows
+            // the arm convention: a warning Athena reads next turn, and the op
+            // line stripped from the visible reply.
+            // ─────────────────────────────────────────────────────────────
+            Ok(env) if env.op == "propose_action" && env.action == "show_fleet_plan" => {
+                let intent = env
+                    .params
+                    .get("operation_intent")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let rows = env
+                    .params
+                    .get("rows")
+                    .and_then(|v| v.as_array())
+                    .cloned()
+                    .unwrap_or_default();
+                // The cwd rule needs the system DB (`dev_projects`). Without it
+                // we cannot prove containment, so we fail CLOSED rather than
+                // render an unvalidated plan whose Confirm button spawns
+                // permission-skipping terminals.
+                let Some(db) = sys_db else {
+                    out.warnings.push(
+                        "show_fleet_plan could not be validated: the project registry is not \
+                         reachable from this turn. Tell the user rather than proposing a plan."
+                            .into(),
+                    );
+                    continue;
+                };
+                match crate::commands::companion::approvals::validate_fleet_plan(
+                    db, intent, &rows,
+                ) {
+                    Ok((intent, plan)) => {
+                        let rows_json: Vec<serde_json::Value> = plan
+                            .iter()
+                            .map(|r| {
+                                serde_json::json!({
+                                    "cwd": r.cwd,
+                                    "objective": r.objective,
+                                    "skill": r.skill,
+                                })
+                            })
+                            .collect();
+                        out.chat_cards.push(ChatCard {
+                            kind: "fleet_plan".to_string(),
+                            title: env
+                                .params
+                                .get("title")
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string()),
+                            config: serde_json::json!({
+                                "operation_intent": intent,
+                                "rows": rows_json,
+                            }),
+                        });
+                    }
+                    Err(reason) => {
+                        out.warnings
+                            .push(format!("rejected show_fleet_plan: {reason}"));
+                        cleaned_lines.push(line);
+                        continue;
+                    }
+                }
+            }
             Ok(env)
                 if env.op == "propose_action"
                     && env.action == "show_persona_creation_offer" =>
@@ -1822,6 +1942,71 @@ pub fn dispatch(
                     }
                 }
             }
+            // ─────────────────────────────────────────────────────────────
+            // Detail-on-demand read ops (auto-fire, read-only, no approval).
+            //
+            // The prompt carries a BOUNDED index of personas / dev contexts
+            // / skills (see `prompt::format_persona_index` and friends).
+            // These four ops are the other half of that contract: the index
+            // is deliberately truncated, so Athena needs a cheap way to pull
+            // one full record — and `assign_team` needs a `team_id` that the
+            // always-on index does not carry at all.
+            //
+            // They are special-case arms rather than ALLOWED_ACTIONS entries
+            // on purpose: an entry there requires a matching executor, and
+            // the two lists have diverged before. An arm that does the whole
+            // job here cannot diverge from anything. Nothing mutates; the
+            // result is appended as a System episode so it lands in the next
+            // turn's recall, the same channel `note_dispatcher_rejection`
+            // uses.
+            // ─────────────────────────────────────────────────────────────
+            Ok(env) if env.op == "propose_action" && READ_OPS.contains(&env.action.as_str()) => {
+                let query = env
+                    .params
+                    .get("query")
+                    .and_then(|v| v.as_str())
+                    .or_else(|| env.params.get("persona_id").and_then(|v| v.as_str()))
+                    .or_else(|| env.params.get("context_id").and_then(|v| v.as_str()))
+                    .or_else(|| env.params.get("name").and_then(|v| v.as_str()))
+                    .map(str::trim)
+                    .unwrap_or("");
+                let action = env.action.as_str();
+                // `list_teams` is the one read op with no required argument
+                // (an empty query lists the whole roster).
+                if query.is_empty() && action != "list_teams" {
+                    let reason = format!(
+                        "`{action}` needs a `query` param (the name or id to look up)"
+                    );
+                    note_read_op_result(pool, session_id, action, query, &reason);
+                    out.warnings.push(format!("{action}: missing `query`"));
+                    continue;
+                }
+                if query.len() > READ_OP_QUERY_MAX {
+                    let reason = format!(
+                        "`{action}` query was {} chars; keep it to a name or id (max {READ_OP_QUERY_MAX})",
+                        query.len()
+                    );
+                    note_read_op_result(pool, session_id, action, "", &reason);
+                    out.warnings.push(format!("{action}: query too long"));
+                    continue;
+                }
+                let body = match action {
+                    "describe_skill" => describe_skill(sys_db, query),
+                    _ => match sys_db {
+                        Some(db) => match action {
+                            "describe_persona" => describe_persona(db, query),
+                            "describe_context" => describe_context(db, query),
+                            _ => list_teams(db, query),
+                        },
+                        None => format!(
+                            "`{action}` could not run: the app database is not \
+                             reachable from this turn. Tell the user rather \
+                             than guessing an id."
+                        ),
+                    },
+                };
+                note_read_op_result(pool, session_id, action, query, &body);
+            }
             Ok(env) if env.op == "propose_action" => {
                 if !ALLOWED_ACTIONS.contains(&env.action.as_str()) {
                     out.warnings
@@ -2003,6 +2188,341 @@ fn note_dispatcher_rejection(
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// Read ops: bounded, read-only detail lookups (see `READ_OPS`)
+// ─────────────────────────────────────────────────────────────────────────
+
+/// Truncate on a char boundary with an ellipsis. Every read-op renderer
+/// runs its final body through the cap so no single lookup can blow up the
+/// next turn's context.
+fn clip(s: &str, max: usize) -> String {
+    if s.chars().count() <= max {
+        return s.to_string();
+    }
+    format!(
+        "{}\u{2026}",
+        crate::utils::text::truncate_on_char_boundary(s, max)
+    )
+}
+
+/// Collapse to one short line (first non-empty line, truncated).
+fn one_line(s: &str, max: usize) -> String {
+    let first = s
+        .split(['\n', '\r'])
+        .map(str::trim)
+        .find(|t| !t.is_empty())
+        .unwrap_or("");
+    clip(first, max)
+}
+
+/// Append the result of a read op as a System episode, so Athena reads it
+/// at the top of her next turn. Same channel and same best-effort posture
+/// as `note_dispatcher_rejection`: a failed insert degrades to "the op did
+/// nothing", never to a broken turn.
+fn note_read_op_result(
+    pool: &UserDbPool,
+    session_id: &str,
+    action: &str,
+    query: &str,
+    body: &str,
+) {
+    let target = if query.is_empty() {
+        String::new()
+    } else {
+        format!(" for `{query}`")
+    };
+    let content = format!(
+        "[lookup] Result of your `{action}`{target}:\n\n{body}\n\nUse these \
+         exact values. If the answer says nothing was found, say so to the \
+         user instead of guessing an id.",
+        action = action,
+        target = target,
+        body = clip(body, READ_OP_DETAIL_CHARS),
+    );
+    if let Err(e) = crate::companion::brain::episodic::append_episode(
+        pool,
+        session_id,
+        crate::companion::brain::episodic::EpisodeRole::System,
+        &content,
+    ) {
+        tracing::warn!(
+            action = action,
+            error = %e,
+            "note_read_op_result: failed to append system episode"
+        );
+    }
+}
+
+/// Full detail for one persona, resolved by exact id, then exact
+/// (case-insensitive) name, then a substring match on name.
+fn describe_persona(sys_db: &crate::db::DbPool, query: &str) -> String {
+    let Ok(conn) = sys_db.get() else {
+        return "database unavailable".to_string();
+    };
+    let like = format!("%{query}%");
+    let row = conn.query_row(
+        "SELECT p.id, p.name, COALESCE(p.description, ''), COALESCE(p.system_prompt, ''),
+                COALESCE(p.model_profile, ''), p.enabled, COALESCE(t.name, '')
+         FROM personas p
+         LEFT JOIN persona_teams t ON t.id = p.home_team_id
+         WHERE p.id = ?1 COLLATE NOCASE
+            OR p.name = ?1 COLLATE NOCASE
+            OR p.name LIKE ?2 COLLATE NOCASE
+         ORDER BY CASE WHEN p.id = ?1 THEN 0 WHEN p.name = ?1 COLLATE NOCASE THEN 1 ELSE 2 END,
+                  p.enabled DESC, p.updated_at DESC
+         LIMIT 1",
+        params![query, like],
+        |r| {
+            Ok((
+                r.get::<_, String>(0)?,
+                r.get::<_, String>(1)?,
+                r.get::<_, String>(2)?,
+                r.get::<_, String>(3)?,
+                r.get::<_, String>(4)?,
+                r.get::<_, i64>(5)? != 0,
+                r.get::<_, String>(6)?,
+            ))
+        },
+    );
+    let Ok((id, name, description, system_prompt, model_profile, enabled, team)) = row else {
+        return not_found(
+            &conn,
+            "agent",
+            query,
+            "SELECT name FROM personas ORDER BY enabled DESC, updated_at DESC LIMIT ?1",
+        );
+    };
+    let model = serde_json::from_str::<serde_json::Value>(&model_profile)
+        .ok()
+        .and_then(|v| {
+            v.get("model")
+                .and_then(|m| m.as_str())
+                .map(str::to_string)
+        })
+        .unwrap_or_else(|| "default".to_string());
+    format!(
+        "**{name}**\n- persona_id: `{id}`  (use this verbatim)\n- enabled: {enabled}\n\
+         - model: {model}\n- home team: {team}\n- description: {description}\n\
+         - system prompt (excerpt): {prompt}",
+        name = name,
+        id = id,
+        enabled = enabled,
+        model = model,
+        team = if team.is_empty() { "none" } else { &team },
+        description = one_line(&description, 200),
+        prompt = clip(system_prompt.trim(), 500),
+    )
+}
+
+/// Full detail for one dev context, resolved the same way as a persona.
+fn describe_context(sys_db: &crate::db::DbPool, query: &str) -> String {
+    let Ok(conn) = sys_db.get() else {
+        return "database unavailable".to_string();
+    };
+    let like = format!("%{query}%");
+    let row = conn.query_row(
+        "SELECT c.id, c.name, COALESCE(c.description, ''), COALESCE(c.file_paths, '[]'),
+                COALESCE(c.keywords, ''), COALESCE(g.name, ''), COALESCE(p.name, '')
+         FROM dev_contexts c
+         LEFT JOIN dev_context_groups g ON g.id = c.group_id
+         LEFT JOIN dev_projects p ON p.id = c.project_id
+         WHERE c.id = ?1 COLLATE NOCASE
+            OR c.name = ?1 COLLATE NOCASE
+            OR c.name LIKE ?2 COLLATE NOCASE
+         ORDER BY CASE WHEN c.id = ?1 THEN 0 WHEN c.name = ?1 COLLATE NOCASE THEN 1 ELSE 2 END,
+                  c.pinned DESC, c.updated_at DESC
+         LIMIT 1",
+        params![query, like],
+        |r| {
+            Ok((
+                r.get::<_, String>(0)?,
+                r.get::<_, String>(1)?,
+                r.get::<_, String>(2)?,
+                r.get::<_, String>(3)?,
+                r.get::<_, String>(4)?,
+                r.get::<_, String>(5)?,
+                r.get::<_, String>(6)?,
+            ))
+        },
+    );
+    let Ok((id, name, description, file_paths, keywords, group, project)) = row else {
+        return not_found(
+            &conn,
+            "dev context",
+            query,
+            "SELECT name FROM dev_contexts ORDER BY pinned DESC, updated_at DESC LIMIT ?1",
+        );
+    };
+    let files: Vec<String> = serde_json::from_str::<Vec<String>>(&file_paths).unwrap_or_default();
+    let file_count = files.len();
+    let sample = files
+        .iter()
+        .take(8)
+        .map(String::as_str)
+        .collect::<Vec<_>>()
+        .join(", ");
+    format!(
+        "**{name}**\n- context_id: `{id}`\n- project: {project}\n- group: {group}\n\
+         - description: {description}\n- files: {file_count} ({sample})\n- keywords: {keywords}",
+        name = name,
+        id = id,
+        project = if project.is_empty() { "unknown" } else { &project },
+        group = if group.is_empty() { "ungrouped" } else { &group },
+        description = one_line(&description, 260),
+        file_count = file_count,
+        sample = clip(&sample, 400),
+        keywords = one_line(&keywords, 160),
+    )
+}
+
+/// Full when-to-use for one installed skill. Disk-only, so this is the one
+/// read op that still answers without the system DB (it just loses the
+/// per-project skill directories).
+fn describe_skill(sys_db: Option<&crate::db::DbPool>, query: &str) -> String {
+    let entries = match sys_db {
+        Some(db) => crate::companion::prompt::scan_skill_index(db),
+        None => Vec::new(),
+    };
+    let needle = query.to_lowercase();
+    let hit = entries
+        .iter()
+        .find(|e| e.name.to_lowercase() == needle)
+        .or_else(|| entries.iter().find(|e| e.name.to_lowercase().contains(&needle)));
+    let Some(hit) = hit else {
+        let names: Vec<&str> = entries
+            .iter()
+            .take(READ_OP_SUGGESTIONS)
+            .map(|e| e.name.as_str())
+            .collect();
+        return format!(
+            "No installed skill matches `{query}`. Installed skills include: {}. \
+             Do not invent a skill name.",
+            if names.is_empty() {
+                "none found on disk".to_string()
+            } else {
+                names.join(", ")
+            }
+        );
+    };
+    let content = std::fs::read_to_string(&hit.path).unwrap_or_default();
+    format!(
+        "**{name}** ({scope})\n- invoke as: `/{name}`\n- description: {desc}\n\n{body}",
+        name = hit.name,
+        scope = hit.scope,
+        desc = one_line(&hit.description, 240),
+        body = clip(content.trim(), 900),
+    )
+}
+
+/// The team roster: `assign_team` needs a `team_id`, and teams were
+/// deliberately left out of the always-on prompt index, so this op is the
+/// only path to one. An empty query lists everything (bounded); a
+/// non-empty one filters by name substring.
+fn list_teams(sys_db: &crate::db::DbPool, query: &str) -> String {
+    let Ok(conn) = sys_db.get() else {
+        return "database unavailable".to_string();
+    };
+    let like = if query.is_empty() {
+        "%".to_string()
+    } else {
+        format!("%{query}%")
+    };
+    let Ok(mut stmt) = conn.prepare(
+        "SELECT t.id, t.name, COALESCE(t.description, ''), t.enabled,
+                (SELECT COUNT(*) FROM persona_team_members m WHERE m.team_id = t.id)
+         FROM persona_teams t
+         WHERE t.name LIKE ?1 COLLATE NOCASE
+         ORDER BY t.enabled DESC, t.updated_at DESC",
+    ) else {
+        return "team lookup failed".to_string();
+    };
+    let Ok(rows) = stmt.query_map(params![like], |r| {
+        Ok((
+            r.get::<_, String>(0)?,
+            r.get::<_, String>(1)?,
+            r.get::<_, String>(2)?,
+            r.get::<_, i64>(3)? != 0,
+            r.get::<_, i64>(4)?,
+        ))
+    }) else {
+        return "team lookup failed".to_string();
+    };
+    let all: Vec<_> = rows.flatten().collect();
+    if all.is_empty() {
+        return if query.is_empty() {
+            "No teams exist yet. `assign_team` has no valid target; suggest \
+             creating a team first."
+                .to_string()
+        } else {
+            format!("No team matches `{query}`. Re-run `list_teams` with no query to see them all.")
+        };
+    }
+    let total = all.len();
+    // Bounded twice over: a row cap AND a character cap. The row cap alone
+    // is not enough — 25 teams with long names and descriptions still blow
+    // the detail budget, and a body clipped after the fact would lose the
+    // "N of M" line that keeps the answer honest.
+    let mut body = String::new();
+    let mut shown = 0usize;
+    for (id, name, description, enabled, members) in all.iter().take(LIST_TEAMS_MAX_ROWS) {
+        let row = format!(
+            "- **{name}** `{id}` · {members} members{off} · {desc}\n",
+            name = name.trim(),
+            id = id,
+            members = members,
+            off = if *enabled { "" } else { " · DISABLED" },
+            desc = one_line(description, 70),
+        );
+        if body.len() + row.len() + LIST_TEAMS_FOOTER_RESERVE > READ_OP_DETAIL_CHARS {
+            break;
+        }
+        body.push_str(&row);
+        shown += 1;
+    }
+    format!(
+        "{body}\n_{shown} of {total} teams. The `id` is the `team_id` \
+         `assign_team` expects; re-run `list_teams` with a name filter to \
+         narrow it._",
+        body = body,
+        shown = shown,
+        total = total,
+    )
+}
+
+/// Shared miss path: say plainly that nothing matched, then offer a few
+/// real names so the next attempt is grounded instead of invented.
+///
+/// Takes the caller's live `Connection` rather than the pool on purpose:
+/// the miss path runs while the caller still holds its connection, and
+/// asking a size-1 pool for a second one just stalls until the checkout
+/// timeout and then silently produces no suggestions at all.
+fn not_found(
+    conn: &rusqlite::Connection,
+    kind: &str,
+    query: &str,
+    suggest_sql: &str,
+) -> String {
+    let names: Vec<String> = (|| {
+        let mut stmt = conn.prepare(suggest_sql).ok()?;
+        let rows = stmt
+            .query_map(params![READ_OP_SUGGESTIONS as i64], |r| {
+                r.get::<_, String>(0)
+            })
+            .ok()?;
+        Some(rows.flatten().collect::<Vec<String>>())
+    })()
+    .unwrap_or_default();
+    if names.is_empty() {
+        format!("No {kind} matches `{query}`, and none exist yet.")
+    } else {
+        format!(
+            "No {kind} matches `{query}`. Existing ones include: {}. Ask the \
+             user which they meant; do not invent an id.",
+            names.join(", ")
+        )
+    }
+}
+
 /// Bounded repair for op-shaped lines that fail JSON parsing: append the
 /// missing closing braces when (a) the line doesn't end inside a string
 /// literal and (b) the brace deficit is 1..=3. Returns `None` for anything
@@ -2178,6 +2698,25 @@ mod tests {
             ],
             "PROGRESS beats must be captured in order"
         );
+    }
+
+    // ── show_fleet_plan ─────────────────────────────────────────────────
+
+    /// The plan card's Confirm button starts real `--dangerously-skip-permissions`
+    /// terminals, and the ONLY thing standing between a proposed `cwd` and that
+    /// is the registered-dev-project check — which needs the system DB. When the
+    /// registry is unreachable the arm must fail CLOSED: no card, a warning
+    /// Athena reads next turn. `dispatch_op` builds a user pool only, so this is
+    /// exactly that path.
+    #[test]
+    fn show_fleet_plan_fails_closed_without_the_project_registry() {
+        let op = r###"{"op":"propose_action","action":"show_fleet_plan","params":{"operation_intent":"do work","rows":[{"cwd":"C:/anywhere","objective":"go"}]}}"###;
+        let out = dispatch_op(op);
+        assert!(out.chat_cards.is_empty(), "no card without containment proof");
+        assert!(out
+            .warnings
+            .iter()
+            .any(|w| w.contains("show_fleet_plan") || w.contains("project registry")));
     }
 
     // ── show_persona_walkthrough ────────────────────────────────────────
@@ -2654,6 +3193,208 @@ mod tests {
             spec["steps"][0]["completeOn"], "tour:composed-step-explored",
             "composed steps must advance on the acknowledge event"
         );
+    }
+
+    // ── Detail-on-demand read ops ───────────────────────────────────────
+
+    /// In-memory system pool with just the tables the read ops query.
+    fn read_op_sys_pool() -> crate::db::DbPool {
+        let manager = SqliteConnectionManager::memory();
+        let pool = Pool::builder().max_size(1).build(manager).expect("sys pool");
+        pool.get()
+            .unwrap()
+            .execute_batch(
+                "CREATE TABLE personas (id TEXT PRIMARY KEY, name TEXT NOT NULL,
+                    description TEXT, system_prompt TEXT NOT NULL DEFAULT '',
+                    model_profile TEXT, enabled INTEGER NOT NULL DEFAULT 1,
+                    home_team_id TEXT, updated_at TEXT NOT NULL);
+                 CREATE TABLE persona_teams (id TEXT PRIMARY KEY, name TEXT NOT NULL,
+                    description TEXT, enabled INTEGER NOT NULL DEFAULT 1,
+                    updated_at TEXT NOT NULL);
+                 CREATE TABLE persona_team_members (id TEXT PRIMARY KEY,
+                    team_id TEXT NOT NULL, persona_id TEXT NOT NULL);
+                 CREATE TABLE dev_projects (id TEXT PRIMARY KEY, name TEXT NOT NULL,
+                    root_path TEXT NOT NULL);
+                 CREATE TABLE dev_context_groups (id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL, name TEXT NOT NULL);
+                 CREATE TABLE dev_contexts (id TEXT PRIMARY KEY, project_id TEXT,
+                    group_id TEXT, name TEXT NOT NULL, description TEXT,
+                    file_paths TEXT NOT NULL DEFAULT '[]', keywords TEXT,
+                    pinned INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL);",
+            )
+            .unwrap();
+        pool
+    }
+
+    fn seed_read_op_rows(pool: &crate::db::DbPool) {
+        let conn = pool.get().unwrap();
+        conn.execute_batch(
+            "INSERT INTO persona_teams (id, name, description, enabled, updated_at)
+                VALUES ('team_abc', 'SDLC', 'Ships the product', 1, '2026-01-01');
+             INSERT INTO persona_team_members (id, team_id, persona_id)
+                VALUES ('m1', 'team_abc', 'p_scout');
+             INSERT INTO personas (id, name, description, system_prompt, model_profile,
+                    enabled, home_team_id, updated_at)
+                VALUES ('p_scout', 'Scout', 'Finds things', 'You are Scout. ',
+                    '{\"model\":\"claude-opus-4-5\"}', 1, 'team_abc', '2026-01-02');
+             INSERT INTO dev_projects (id, name, root_path)
+                VALUES ('proj_1', 'Personas', 'C:/repo');
+             INSERT INTO dev_context_groups (id, project_id, name)
+                VALUES ('grp_1', 'proj_1', 'AI Companion');
+             INSERT INTO dev_contexts (id, project_id, group_id, name, description,
+                    file_paths, keywords, pinned, updated_at)
+                VALUES ('ctx_1', 'proj_1', 'grp_1', 'Companion Prompt',
+                    'System prompt assembly', '[\"src/companion/prompt.rs\"]',
+                    'prompt, athena', 1, '2026-01-03');",
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn every_read_op_has_a_dispatch_arm() {
+        // Cheap guard against the divergence class these ops were shaped to
+        // avoid: a read op that is neither handled here nor in
+        // ALLOWED_ACTIONS falls through to "rejected unknown action" and
+        // silently does nothing.
+        let pool = test_pool();
+        for action in READ_OPS {
+            let text = format!(
+                r#"Prose.
+OP: {{"op": "propose_action", "action": "{action}", "params": {{"query": "anything"}}}}"#
+            );
+            let out = dispatch(&pool, "default", &text).expect("dispatch ok");
+            assert!(
+                !out.warnings
+                    .iter()
+                    .any(|w| w.contains("rejected unknown action")),
+                "`{action}` has no dispatch arm: {:?}",
+                out.warnings
+            );
+            assert!(
+                out.approvals.is_empty(),
+                "`{action}` must not create an approval card"
+            );
+            assert!(
+                !out.cleaned_text.contains("OP:"),
+                "`{action}` must be stripped from the reply"
+            );
+        }
+    }
+
+    #[test]
+    fn read_op_without_a_query_is_rejected_except_list_teams() {
+        let pool = test_pool();
+        for action in ["describe_persona", "describe_context", "describe_skill"] {
+            let text =
+                format!(r#"OP: {{"op":"propose_action","action":"{action}","params":{{}}}}"#);
+            let out = dispatch(&pool, "default", &text).expect("dispatch ok");
+            assert!(
+                out.warnings.iter().any(|w| w.contains("missing `query`")),
+                "{action}: {:?}",
+                out.warnings
+            );
+        }
+        let out = dispatch(
+            &pool,
+            "default",
+            r#"OP: {"op":"propose_action","action":"list_teams","params":{}}"#,
+        )
+        .expect("dispatch ok");
+        assert!(out.warnings.is_empty(), "{:?}", out.warnings);
+    }
+
+    #[test]
+    fn describe_persona_returns_bounded_detail_and_the_real_id() {
+        let sys = read_op_sys_pool();
+        seed_read_op_rows(&sys);
+        let out = describe_persona(&sys, "Scout");
+        assert!(out.contains("`p_scout`"), "{out}");
+        assert!(out.contains("opus") || out.contains("claude-opus-4-5"), "{out}");
+        assert!(out.contains("SDLC"), "{out}");
+        assert!(out.len() <= READ_OP_DETAIL_CHARS, "unbounded: {}", out.len());
+
+        // A pathological system prompt must not blow the bound.
+        sys.get()
+            .unwrap()
+            .execute(
+                "UPDATE personas SET system_prompt = ?1 WHERE id = 'p_scout'",
+                params!["x".repeat(200_000)],
+            )
+            .unwrap();
+        let big = describe_persona(&sys, "p_scout");
+        assert!(big.len() <= READ_OP_DETAIL_CHARS, "unbounded: {}", big.len());
+    }
+
+    #[test]
+    fn describe_persona_handles_an_unknown_id_gracefully() {
+        let sys = read_op_sys_pool();
+        seed_read_op_rows(&sys);
+        let out = describe_persona(&sys, "00000000-0000-0000-0000-000000000000");
+        assert!(out.contains("No agent matches"), "{out}");
+        assert!(out.contains("Scout"), "should name a real alternative: {out}");
+        assert!(out.contains("do not invent an id"), "{out}");
+    }
+
+    #[test]
+    fn describe_context_resolves_by_name_and_by_id() {
+        let sys = read_op_sys_pool();
+        seed_read_op_rows(&sys);
+        for q in ["Companion Prompt", "ctx_1", "companion"] {
+            let out = describe_context(&sys, q);
+            assert!(out.contains("`ctx_1`"), "query {q}: {out}");
+            assert!(out.contains("AI Companion"), "query {q}: {out}");
+            assert!(out.len() <= READ_OP_DETAIL_CHARS);
+        }
+        let miss = describe_context(&sys, "no-such-context");
+        assert!(miss.contains("No dev context matches"), "{miss}");
+    }
+
+    #[test]
+    fn list_teams_returns_the_team_id_assign_team_needs() {
+        let sys = read_op_sys_pool();
+        seed_read_op_rows(&sys);
+        let out = list_teams(&sys, "");
+        assert!(out.contains("`team_abc`"), "{out}");
+        assert!(out.contains("1 members"), "{out}");
+        assert!(out.contains("1 of 1 teams"), "{out}");
+        assert!(out.len() <= READ_OP_DETAIL_CHARS);
+
+        assert!(list_teams(&sys, "SDL").contains("`team_abc`"));
+        assert!(list_teams(&sys, "nope").contains("No team matches"));
+    }
+
+    #[test]
+    fn list_teams_is_bounded_and_honest_at_scale() {
+        let sys = read_op_sys_pool();
+        {
+            let conn = sys.get().unwrap();
+            for n in 0..200 {
+                conn.execute(
+                    "INSERT INTO persona_teams (id, name, description, enabled, updated_at)
+                     VALUES (?1, ?2, ?3, 1, '2026-01-01')",
+                    params![
+                        format!("team_{n:04}"),
+                        format!("Team {n}"),
+                        "A team with a fairly long description to pad the row out."
+                    ],
+                )
+                .unwrap();
+            }
+        }
+        let out = list_teams(&sys, "");
+        assert!(out.len() <= READ_OP_DETAIL_CHARS, "unbounded: {}", out.len());
+        // Truncated by the char budget before the row cap, and it says so.
+        assert!(out.contains(" of 200 teams"), "{out}");
+        assert!(!out.contains("200 of 200 teams"), "{out}");
+    }
+
+    #[test]
+    fn describe_skill_without_a_match_names_real_alternatives() {
+        // No sys pool → project skill dirs are unavailable; the op must
+        // still answer honestly instead of inventing a skill.
+        let out = describe_skill(None, "totally-made-up-skill");
+        assert!(out.contains("No installed skill matches"), "{out}");
+        assert!(out.contains("Do not invent a skill name"), "{out}");
     }
 
     #[test]

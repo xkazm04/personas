@@ -42,15 +42,16 @@ import type { DecisionOption, PendingDecision } from './types';
  * into a single FIFO of {@link PendingDecision}s and feeds them one-at-a-time
  * into `companionStore.pendingDecision`, only when none is currently pending.
  *
- * The whole auto-surfacing path is gated behind the persisted
- * `companionHandsFreeDecisions` setting (default false). When off, the queue
- * does nothing — the bubble can still be driven manually (or by tests) via
- * `setPendingDecision`.
+ * The auto-surfacing path is UNCONDITIONAL — Athena's orb is one of only two
+ * communication dimensions (orb for quick info/decision, chat for the full
+ * story), so a pending decision must always reach one of them. The hands-free /
+ * autonomous settings govern how far she may act WITHOUT asking, not whether
+ * she may ask.
  *
  * Mount once via {@link DecisionDriver} (inside `AthenaGuideLayer`). It
  * subscribes to the `companion://approvals` + `companion://proactive` Tauri
- * events and re-pumps the queue whenever the gate flips on or a decision
- * resolves (clearing `pendingDecision`).
+ * events and re-pumps the queue whenever a decision resolves (clearing
+ * `pendingDecision`).
  */
 
 /** Apply an approval's UI-only follow-up (currently just `navigate`). */
@@ -397,27 +398,22 @@ async function buildQueue(): Promise<PendingDecision[]> {
  * transitions back to null).
  */
 /**
- * The orb decision queue is active when the user explicitly enabled hands-free
- * decisions OR when autonomous mode is on. In autonomous mode Athena is already
- * acting on the user's behalf, so the steps she is NOT confident enough to
- * auto-apply (e.g. a medium/low-confidence fleet next-instruction) must surface
- * as a consult on the orb rather than sitting invisibly in the approval list.
+ * The decision queue is ALWAYS active.
+ *
+ * It used to be gated behind `companionHandsFreeDecisions || companionAutonomousMode`.
+ * That gate was survivable only while a third notification dimension (footer
+ * popover / toasts) carried Athena's messages; with that dimension deleted, the
+ * orb IS the quick-decision surface and the chat IS the full one — a gated queue
+ * would make pending approvals, incidents, and human reviews invisible outside
+ * their own pages. So the orb now always carries decisions; the settings only
+ * govern how far Athena may act WITHOUT asking, not whether she may ask.
  */
-function decisionsActive(): boolean {
-  const s = useSystemStore.getState();
-  return s.companionHandsFreeDecisions || s.companionAutonomousMode;
-}
-
 export function useDecisionQueue() {
-  const enabled = useSystemStore(
-    (s) => s.companionHandsFreeDecisions || s.companionAutonomousMode,
-  );
   const pending = useCompanionStore((s) => s.pendingDecision);
   // Guard against overlapping pumps (each pump does 3 IPC round-trips).
   const pumping = useRef(false);
 
   const pump = useCallback(async () => {
-    if (!decisionsActive()) return;
     // Only surface when the bubble is free.
     if (useCompanionStore.getState().pendingDecision) return;
     if (pumping.current) return;
@@ -425,13 +421,8 @@ export function useDecisionQueue() {
     try {
       const queue = await buildQueue();
       const next = queue[0];
-      // Re-check both gates after the awaits — the user may have flipped the
-      // setting off or another path may have surfaced a decision meanwhile.
-      if (
-        next &&
-        decisionsActive() &&
-        !useCompanionStore.getState().pendingDecision
-      ) {
+      // Re-check after the awaits — another path may have surfaced a decision.
+      if (next && !useCompanionStore.getState().pendingDecision) {
         useCompanionStore.getState().setPendingDecision(next);
       }
     } finally {
@@ -439,14 +430,13 @@ export function useDecisionQueue() {
     }
   }, []);
 
-  // Pump on enable + whenever the bubble frees up (pending → null).
+  // Pump on mount + whenever the bubble frees up (pending → null).
   useEffect(() => {
-    if (enabled && !pending) void pump();
-  }, [enabled, pending, pump]);
+    if (!pending) void pump();
+  }, [pending, pump]);
 
   // Re-pump when the backend mints approvals / delivers proactive nudges.
   useEffect(() => {
-    if (!enabled) return;
     const unlistenApprovals = listen(COMPANION_APPROVALS_EVENT, () => {
       void pump();
     });
@@ -461,7 +451,7 @@ export function useDecisionQueue() {
         .then((f) => f())
         .catch(silentCatch('companion/decision:unlisten'));
     };
-  }, [enabled, pump]);
+  }, [pump]);
 
   return { pump };
 }
