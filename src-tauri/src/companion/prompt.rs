@@ -225,9 +225,10 @@ pub async fn build_system_prompt(
     // the same opaque slot (non-English UI → explicit instruction; see
     // `language_addendum`).
     let autonomous_md = format!(
-        "{}{}{}",
+        "{}{}{}{}",
         autonomous_addendum_if_enabled(autonomous_mode),
         crate::companion::dev_mode::addendum_if_enabled(sys_db),
+        daily_goals_addendum(user_db),
         language_addendum(sys_db),
     );
     let connector_names = connectors::list_enabled_for_prompt(user_db).unwrap_or_default();
@@ -1117,6 +1118,17 @@ fn render_scene_digest(scene: &crate::companion::canvas::CanvasScene) -> String 
          findings about one project, `compose_canvas_panel` docks a \
          SurfaceSpec v1 panel beside its island.\n"
     ))
+}
+
+/// Daily-goals ritual awareness (dev builds only — the feature's UI is
+/// gated on `dev_mode_available`). A few lines: active set + streak, and
+/// the hard rule that evaluation is the operator's alone. Empty outside
+/// debug builds and when there is nothing to say.
+fn daily_goals_addendum(user_db: &crate::db::UserDbPool) -> String {
+    if !cfg!(debug_assertions) {
+        return String::new();
+    }
+    crate::companion::brain::daily_goals::prompt_addendum(user_db)
 }
 
 /// Reply-language directive for non-English UIs.

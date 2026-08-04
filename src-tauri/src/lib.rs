@@ -2865,6 +2865,10 @@ pub fn run() {
             commands::companion::feedback::companion_record_ux_signal,
             #[cfg(debug_assertions)]
             commands::companion::debug_export::companion_export_conversation_log,
+            commands::companion::daily_goals::companion_daily_goals_state,
+            commands::companion::daily_goals::companion_daily_goals_create,
+            commands::companion::daily_goals::companion_daily_goals_toggle,
+            commands::companion::daily_goals::companion_daily_goals_discard,
             commands::companion::voice::companion_tts,
             commands::companion::voice::companion_tts_list_kokoro_voices,
             commands::companion::voice::companion_tts_kokoro_status,

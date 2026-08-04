@@ -1228,6 +1228,26 @@ CREATE TABLE IF NOT EXISTS companion_night_event (
 );
 CREATE INDEX IF NOT EXISTS idx_companion_night_event_plan
     ON companion_night_event(plan_id, kind, created_at);
+
+-- Dev-only gamification: daily goal sets for the Athena companion panel.
+-- One "set" = 1-3 goals entered together (shared set_id); at most one set
+-- is status='active' at a time. Evaluation is manual (the operator toggles
+-- each goal); when the last open goal is marked done the whole set flips
+-- to 'completed' and completed_date (LOCAL 'YYYY-MM-DD') becomes the
+-- streak key. Completed rows are kept as history so the streak is always
+-- recomputable; discarded sets never count.
+CREATE TABLE IF NOT EXISTS companion_daily_goal (
+    id             TEXT PRIMARY KEY,
+    set_id         TEXT NOT NULL,
+    slot           INTEGER NOT NULL,
+    title          TEXT NOT NULL,
+    done_at        TEXT,
+    status         TEXT NOT NULL DEFAULT 'active',
+    completed_date TEXT,
+    created_at     TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_companion_daily_goal_status
+    ON companion_daily_goal(status, completed_date);
 "#;
 
 /// Seed all built-in local credentials if they don't already exist.
