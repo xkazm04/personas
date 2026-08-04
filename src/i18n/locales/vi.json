@@ -13746,7 +13746,17 @@
       "skills_sweep_roster_show": "Hiện tất cả {n} lens",
       "skills_sweep_roster_hide": "Ẩn các lens riêng lẻ",
       "skills_use_sweep_hint": "Lens này nằm trong gói sweep. Cân nhắc dùng /scan-sweep để xử lý cùng các lens khác trong một lượt.",
-      "sweep_auto_deep_toast": "Đã điều phối quét chuyên sâu: {lens} trên {context}"
+      "sweep_auto_deep_toast": "Đã điều phối quét chuyên sâu: {lens} trên {context}",
+      "ctx_picker_clear": "Bỏ chọn",
+      "ctx_picker_confirm": "Thực thi {n}",
+      "ctx_picker_covered": "Đã được kỹ năng này xử lý trong 30 ngày qua",
+      "ctx_picker_fresh_nodes": "nút bộ nhớ mới",
+      "ctx_picker_lenses": "lăng kính khớp",
+      "ctx_picker_never": "chưa từng",
+      "ctx_picker_selected": "Đã chọn {n}/{total}",
+      "ctx_picker_summary": "{first} và {n} mục khác",
+      "ctx_picker_title": "Chọn ngữ cảnh cho {name}",
+      "ctx_picker_uncovered": "Kỹ năng này chưa xử lý ngữ cảnh nào gần đây"
     },
     "doc_signing": {
       "sign_heading": "Ký tài liệu",

@@ -1436,7 +1436,17 @@
     "skills_sweep_roster_show": "全 {n} レンズを表示",
     "skills_sweep_roster_hide": "個別レンズを非表示",
     "skills_use_sweep_hint": "このレンズはスイープバンドルの一部です。他と一括で処理するには /scan-sweep の使用をご検討ください。",
-    "sweep_auto_deep_toast": "ディープスキャンを起動しました: {context} の {lens}"
+    "sweep_auto_deep_toast": "ディープスキャンを起動しました: {context} の {lens}",
+    "ctx_picker_clear": "選択を解除",
+    "ctx_picker_confirm": "{n}件を実行",
+    "ctx_picker_covered": "過去30日間にこのスキルで対応済み",
+    "ctx_picker_fresh_nodes": "新しいメモリノード",
+    "ctx_picker_lenses": "一致したレンズ",
+    "ctx_picker_never": "未実施",
+    "ctx_picker_selected": "{total}件中{n}件を選択",
+    "ctx_picker_summary": "{first}ほか{n}件",
+    "ctx_picker_title": "{name}のコンテキストを選択",
+    "ctx_picker_uncovered": "このスキルによる最新の対応はまだありません"
   },
   "doc_signing": {
     "sign_heading": "ドキュメントに署名",

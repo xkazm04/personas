@@ -13746,7 +13746,17 @@
       "skills_sweep_roster_show": "显示全部 {n} 个视角",
       "skills_sweep_roster_hide": "隐藏各个视角",
       "skills_use_sweep_hint": "此视角是 sweep 组合的一部分。可考虑使用 /scan-sweep 在一次运行中与其他视角一并覆盖。",
-      "sweep_auto_deep_toast": "已分派深度扫描:{context} 上的 {lens}"
+      "sweep_auto_deep_toast": "已分派深度扫描:{context} 上的 {lens}",
+      "ctx_picker_clear": "清除选择",
+      "ctx_picker_confirm": "执行{n}项",
+      "ctx_picker_covered": "过去30天内该技能已覆盖",
+      "ctx_picker_fresh_nodes": "最新记忆节点",
+      "ctx_picker_lenses": "匹配的视角",
+      "ctx_picker_never": "从未",
+      "ctx_picker_selected": "已选择{n}/{total}项",
+      "ctx_picker_summary": "{first}等{n}项",
+      "ctx_picker_title": "为{name}选择上下文",
+      "ctx_picker_uncovered": "该技能尚未产生最新覆盖"
     },
     "doc_signing": {
       "sign_heading": "签署文档",

@@ -13746,7 +13746,17 @@
       "skills_sweep_roster_show": "Zobrazit všech {n} objektivů",
       "skills_sweep_roster_hide": "Skrýt jednotlivé objektivy",
       "skills_use_sweep_hint": "Tento objektiv je součástí sweep balíčku. Zvažte /scan-sweep, aby se pokryl spolu s ostatními v jednom průchodu.",
-      "sweep_auto_deep_toast": "Hloubkový sken odeslán: {lens} na {context}"
+      "sweep_auto_deep_toast": "Hloubkový sken odeslán: {lens} na {context}",
+      "ctx_picker_clear": "Zrušit výběr",
+      "ctx_picker_confirm": "Odeslat {n}",
+      "ctx_picker_covered": "Pokryto touto dovedností za posledních 30 dní",
+      "ctx_picker_fresh_nodes": "nové paměťové uzly",
+      "ctx_picker_lenses": "odpovídající perspektivy",
+      "ctx_picker_never": "nikdy",
+      "ctx_picker_selected": "Vybráno {n} z {total}",
+      "ctx_picker_summary": "{first} a dalších {n}",
+      "ctx_picker_title": "Vyberte kontexty pro {name}",
+      "ctx_picker_uncovered": "Zatím žádné nové pokrytí od této dovednosti"
     },
     "doc_signing": {
       "sign_heading": "Podepsat dokument",

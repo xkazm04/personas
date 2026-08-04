@@ -2,8 +2,13 @@
 
 ## Active
 
+### spark-slack-channel-bridge — /spark round 2: Slack connector into Teams Channel conversation — session fable-5 (Director)
+- Started: 2026-08-01. Status: started (design phase; no tree edits until Phase 5 worktree). Vault: Documents/Obsidian/personas/Spark/.
+- Paths (intended, on build): src/features/fleet/monitor/channels/** (MonitorChannelGrid, ConversationComposer, useConversation, conversationModel), possibly src-tauri/src/engine/slack_poller.rs + webhook_notifier.rs, src/api/**, i18n. Build isolates in .claude/worktrees/spark-slack-channel-bridge.
+- OVERLAP NOTE: perfect-triage-r2 declares src/features/fleet/monitor/useMonitorData.ts (monitor SHELL). This spark stays inside monitor/channels/** and will not touch useMonitorData.ts. No collision.
+
 ### prototype-context-picker — /prototype full-page context selection for skill dispatch — session fable-5
-- Started: 2026-08-03. Status: started. Two directional variants (Roster+ tiles vs Cross-tab grid, both adapted to per-skill coverage) behind a throwaway switcher inside a new full-page picker opened from UseSkillDialog's tracked-skill flow. Work in `.claude/worktrees/prototype-context-picker` (branch worktree-prototype-context-picker).
+- Started: 2026-08-03. Status: started. Two directional variants (Roster+ tiles vs Cross-tab grid, both adapted to per-skill coverage) behind a throwaway switcher inside a new full-page picker opened from UseSkillDialog's tracked-skill flow. Round 1 merged to master (operator reviews live in-app); worktree removed; consolidation happens on master.
 - Paths: `src/features/plugins/dev-tools/sub_skills/contextPicker/**` (new), `src/features/plugins/dev-tools/sub_skills/UseSkillDialog.tsx`, later `src/i18n/locales/*.json` at consolidation, `.claude/active-runs.md`.
 - NOTE: a concurrent Opus resolve agent (same operator, this session) is committing to `src-tauri/engine/src/a2a/**` + `.personas/memory-outbox.jsonl` + `.claude/scan-history/` in the MAIN checkout — disjoint from this scope.
 

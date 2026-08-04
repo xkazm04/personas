@@ -13746,7 +13746,17 @@
       "skills_sweep_roster_show": "सभी {n} लेंस दिखाएं",
       "skills_sweep_roster_hide": "अलग-अलग लेंस छिपाएं",
       "skills_use_sweep_hint": "यह लेंस sweep बंडल का हिस्सा है। इसे बाकी के साथ एक ही पास में कवर करने के लिए /scan-sweep पर विचार करें।",
-      "sweep_auto_deep_toast": "डीप स्कैन भेजा गया: {lens}, {context} पर"
+      "sweep_auto_deep_toast": "डीप स्कैन भेजा गया: {lens}, {context} पर",
+      "ctx_picker_clear": "चयन साफ़ करें",
+      "ctx_picker_confirm": "{n} भेजें",
+      "ctx_picker_covered": "पिछले 30 दिनों में इस स्किल द्वारा कवर किया गया",
+      "ctx_picker_fresh_nodes": "नए मेमोरी नोड्स",
+      "ctx_picker_lenses": "मिलते-जुलते लेंस",
+      "ctx_picker_never": "कभी नहीं",
+      "ctx_picker_selected": "{total} में से {n} चयनित",
+      "ctx_picker_summary": "{first} और {n} अन्य",
+      "ctx_picker_title": "{name} के लिए संदर्भ चुनें",
+      "ctx_picker_uncovered": "इस स्किल से अभी तक कोई हाल की कवरेज नहीं"
     },
     "doc_signing": {
       "sign_heading": "दस्तावेज़ पर हस्ताक्षर करें",

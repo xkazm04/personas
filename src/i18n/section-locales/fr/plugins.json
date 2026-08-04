@@ -1436,7 +1436,17 @@
     "skills_sweep_roster_show": "Afficher les {n} lentilles",
     "skills_sweep_roster_hide": "Masquer les lentilles individuelles",
     "skills_use_sweep_hint": "Cette lentille fait partie du pack de sweep. Envisagez /scan-sweep pour la couvrir avec les autres en une seule passe.",
-    "sweep_auto_deep_toast": "Analyse approfondie lancée : {lens} sur {context}"
+    "sweep_auto_deep_toast": "Analyse approfondie lancée : {lens} sur {context}",
+    "ctx_picker_clear": "Effacer la sélection",
+    "ctx_picker_confirm": "Envoyer {n}",
+    "ctx_picker_covered": "Couvert par cette skill au cours des 30 derniers jours",
+    "ctx_picker_fresh_nodes": "nœuds de mémoire récents",
+    "ctx_picker_lenses": "angles correspondants",
+    "ctx_picker_never": "jamais",
+    "ctx_picker_selected": "{n} sur {total} sélectionnés",
+    "ctx_picker_summary": "{first} et {n} de plus",
+    "ctx_picker_title": "Choisir les contextes pour {name}",
+    "ctx_picker_uncovered": "Aucune couverture récente par cette skill pour le moment"
   },
   "doc_signing": {
     "sign_heading": "Signer un document",

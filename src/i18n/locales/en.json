@@ -14040,7 +14040,17 @@
       "skills_sweep_roster_show": "Show all {n} lenses",
       "skills_sweep_roster_hide": "Hide individual lenses",
       "skills_use_sweep_hint": "This lens is part of the sweep bundle. Consider /scan-sweep to cover it with the rest in one pass.",
-      "sweep_auto_deep_toast": "Deep scan dispatched: {lens} on {context}"
+      "sweep_auto_deep_toast": "Deep scan dispatched: {lens} on {context}",
+      "ctx_picker_title": "Choose contexts for {name}",
+      "ctx_picker_selected": "{n} of {total} selected",
+      "ctx_picker_clear": "Clear selection",
+      "ctx_picker_confirm": "Dispatch {n}",
+      "ctx_picker_summary": "{first} and {n} more",
+      "ctx_picker_covered": "Covered by this skill in the last 30 days",
+      "ctx_picker_uncovered": "No fresh coverage from this skill yet",
+      "ctx_picker_lenses": "matched lenses",
+      "ctx_picker_fresh_nodes": "fresh memory nodes",
+      "ctx_picker_never": "never"
     },
     "doc_signing": {
       "sign_heading": "Sign a Document",
