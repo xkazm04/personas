@@ -128,7 +128,10 @@ pub async fn download_model(model_id: &str, app: &AppHandle) -> Result<(), AppEr
         .map_err(|e| AppError::Internal(format!("download client: {e}")))?;
 
     if let Err(e) = stream_to_file(&client, &url, &final_path, app, model_id).await {
-        cleanup_partials(&dir);
+        // Only THIS model's partial. `DOWNLOAD_INFLIGHT` is keyed per model, so
+        // two models can stream concurrently — sweeping every `*.partial` in the
+        // shared dir destroyed the other download's in-flight file.
+        cleanup_partial(&final_path);
         emit(app, model_id, DownloadState::Failed, 0, None, Some(e.to_string()));
         return Err(e);
     }
@@ -195,25 +198,34 @@ async fn stream_to_file(
         .map_err(|e| AppError::Internal(format!("flush: {e}")))?;
     drop(file);
 
+    // A stream that ends early is not an error at the HTTP layer, so without
+    // this the truncated file is promoted to the final name and
+    // `is_model_downloaded` reports true forever — every transcription then
+    // fails with an opaque "whisper exited with …". Compare against the
+    // advertised length and fail loudly instead.
+    if let Some(expected) = total {
+        if downloaded != expected {
+            return Err(AppError::Internal(format!(
+                "download {url}: truncated — got {downloaded} of {expected} bytes"
+            )));
+        }
+    }
+
     tokio::fs::rename(&partial_path, final_path)
         .await
         .map_err(|e| AppError::Internal(format!("rename to {}: {e}", final_path.display())))?;
     Ok(())
 }
 
-fn cleanup_partials(dir: &std::path::Path) {
-    let Ok(entries) = std::fs::read_dir(dir) else {
-        return;
-    };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path
-            .extension()
-            .and_then(|s| s.to_str())
-            .map(|s| s.ends_with("partial"))
-            .unwrap_or(false)
-        {
-            let _ = std::fs::remove_file(&path);
+/// Remove the `.partial` belonging to ONE model. A locked or undeletable
+/// partial otherwise poisons the next attempt silently, so log the failure.
+fn cleanup_partial(final_path: &std::path::Path) {
+    let partial = final_path.with_extension("bin.partial");
+    match std::fs::remove_file(&partial) {
+        Ok(()) => {}
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        Err(e) => {
+            tracing::warn!(path = %partial.display(), error = %e, "stt: could not remove partial download")
         }
     }
 }
