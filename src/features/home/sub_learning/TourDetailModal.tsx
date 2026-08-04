@@ -51,7 +51,9 @@ export function TourDetailModal({ tour, isCompleted, onStart, onClose }: TourDet
               <Icon className={`w-5 h-5 ${colors.text}`} />
             </div>
             <div className="space-y-0.5">
-              <h3 className="typo-heading text-foreground">{tour.title}</h3>
+              {/* Carries the id BaseModal points `aria-labelledby` at — without
+                  it the dialog announces as unlabeled. */}
+              <h3 id={`tour-modal-${tour.id}`} className="typo-heading text-foreground">{tour.title}</h3>
               <span className={`text-[11px] font-medium ${colors.text}`}>{tx(ht.steps_count, { count: tour.steps.length })}</span>
             </div>
           </div>
