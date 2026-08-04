@@ -37,8 +37,21 @@ export interface OverlayIdMismatch {
  */
 const _currentMergeMismatches: OverlayIdMismatch[] = [];
 
+/**
+ * Cap for the buffer above. In production nothing ever drains it (the only
+ * consumer, `drainOverlayMismatches`, is a test/parity-script affordance), so
+ * an unbounded push meant a template set with mismatched overlay ids grew this
+ * array on every merge — every language switch, every catalog invalidation —
+ * for the lifetime of the session. The oldest entries are dropped; diagnostics
+ * do not need more than a sample.
+ */
+const MAX_TRACKED_MISMATCHES = 200;
+
 function recordIdMismatch(mismatch: OverlayIdMismatch, locale?: LocaleCode, templateId?: string) {
   _currentMergeMismatches.push(mismatch);
+  if (_currentMergeMismatches.length > MAX_TRACKED_MISMATCHES) {
+    _currentMergeMismatches.splice(0, _currentMergeMismatches.length - MAX_TRACKED_MISMATCHES);
+  }
   logger.warn('Overlay references unknown canonical id', { ...mismatch, locale, templateId });
   try {
     Sentry.addBreadcrumb({
