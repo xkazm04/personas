@@ -143,13 +143,38 @@ fn partition(ctxs: &[Ctx], members: Vec<usize>, depth: usize, out: &mut BTreeMap
     }
     for (sig, m) in groups {
         let size: usize = m.iter().map(|i| ctxs[*i].files.len()).sum();
-        if size > MERGE_CEILING && depth < MAX_DEPTH && m.len() > 1 {
-            // Only recurse when a deeper level actually separates them.
-            let deeper: HashSet<String> = m.iter().map(|i| majority_sig(&ctxs[*i], depth + 1)).collect();
-            if deeper.len() > 1 {
-                partition(ctxs, m, depth + 1, out);
-                continue;
+        if size > MERGE_CEILING && m.len() > 1 {
+            // Recurse when a deeper directory level actually separates them.
+            if depth < MAX_DEPTH {
+                let deeper: HashSet<String> =
+                    m.iter().map(|i| majority_sig(&ctxs[*i], depth + 1)).collect();
+                if deeper.len() > 1 {
+                    partition(ctxs, m, depth + 1, out);
+                    continue;
+                }
             }
+            // FLAT directory (no deeper seam): bin-pack the EXISTING contexts
+            // into band-sized clusters instead of dissolving them into one
+            // blob — current context boundaries are semantic and worth
+            // keeping. First-fit-decreasing; each bin keeps its survivor's
+            // name (`#n` marks a packed bin for the naming step).
+            let mut sorted = m.clone();
+            sorted.sort_by_key(|i| std::cmp::Reverse(ctxs[*i].files.len()));
+            let mut bins: Vec<(usize, Vec<usize>)> = Vec::new();
+            for i in sorted {
+                let n = ctxs[i].files.len();
+                match bins.iter_mut().find(|(sz, _)| sz + n <= MERGE_CEILING) {
+                    Some((sz, members)) => {
+                        *sz += n;
+                        members.push(i);
+                    }
+                    None => bins.push((n, vec![i])),
+                }
+            }
+            for (b, (_, members)) in bins.into_iter().enumerate() {
+                out.entry(format!("{sig}#{b}")).or_default().extend(members);
+            }
+            continue;
         }
         out.entry(sig).or_default().extend(m);
     }
@@ -254,7 +279,13 @@ pub fn consolidate_contexts(
         if absorbed.is_empty() {
             continue;
         }
-        let mut name = unit_name(unit);
+        // Packed bins (flat dirs, `#n` marker) keep their survivor's original
+        // name — those clusters preserve semantic grouping, not a directory.
+        let mut name = if unit.contains('#') {
+            ctxs[survivor].name.clone()
+        } else {
+            unit_name(unit)
+        };
         // Keep the survivor's own name when the derived one is taken by an
         // unrelated context.
         let final_name = if taken_names.contains(&name.to_lowercase())
