@@ -15,6 +15,7 @@ import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { DEFAULT_CONVERSATION_ID, useCompanionStore } from './companionStore';
+import { DailyGoalsBar } from './DailyGoalsBar';
 import { DevConversationLogButton } from './DevConversationLogButton';
 import { Bubble } from './Bubble';
 import { Composer } from './Composer';
@@ -454,6 +455,7 @@ export default function CompanionPanel() {
           {autonomousMode && <WakeCadence />}
           {autonomousMode && <FleetBoldnessDial />}
           {devModeAvailable && devMode && <DevOpLedger />}
+          {devModeAvailable && <DailyGoalsBar />}
           <Body
             initialized={initialized}
             initError={initError}
