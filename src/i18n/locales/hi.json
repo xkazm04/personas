@@ -19592,6 +19592,25 @@
     "crit_scope": "स्कोप फ़्रोज़न",
     "crit_scope_clean": "प्रमाणन के बाद कुछ भी नहीं जुड़ा",
     "crit_scope_crept": "कट के बाद {count} जोड़े गए: {names}",
-    "crit_scope_uncut": "अभी कट नहीं हुआ। स्कोप बढ़ने की ट्रैकिंग कट से शुरू होती है"
+    "crit_scope_uncut": "अभी कट नहीं हुआ। स्कोप बढ़ने की ट्रैकिंग कट से शुरू होती है",
+    "duality_advisory": "आपकी रेटिंग यहाँ केवल तुलना के लिए दिखाई जाती है। ये कभी भी शिप वर्डिक्ट या प्रगति बार को नहीं बदलतीं, जो निकास मानदंडों से तय होते हैं।",
+    "duality_agree": "{count} सहमत",
+    "duality_conflict": "यहाँ आपकी रेटिंग और स्वचालित रीडिंग अलग-अलग दिशाओं में इशारा करती हैं।",
+    "duality_conflict_names": "असहमति यहाँ: {names}",
+    "duality_disagree": "{count} असहमत",
+    "duality_disagree_short": "असहमत",
+    "duality_no_disagreement": "कोई असहमति नहीं",
+    "duality_title": "स्वचालन बनाम आपकी राय",
+    "duality_unrated": "{count} अनरेटेड",
+    "duality_yours": "आपकी",
+    "goal_edit_aria": "{name} का लक्ष्य संपादित करें",
+    "goal_empty": "एक लक्ष्य सेट करें",
+    "goal_placeholder": "इस माइलस्टोन को शिप करने से क्या हासिल होता है?",
+    "note_add": "नोट जोड़ें",
+    "note_aria": "{name} पर नोट",
+    "note_placeholder": "यह इस दायरे में क्यों है?",
+    "rating_aria": "{name} को 5 में से {value} रेट करें",
+    "rating_unrated": "अनरेटेड",
+    "rating_value": "5 में से {value}"
   }
 }

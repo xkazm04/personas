@@ -29,12 +29,31 @@ export function feature(id: string, name: string, slice: ShipContext[], ready = 
   };
 }
 
-export function member(f: ShipFeature, bucket: ScopeBucket = 'core', afterCut = false): ShipMember {
-  return { feature: f, bucket, afterCut };
+export function member(
+  f: ShipFeature,
+  bucket: ScopeBucket = 'core',
+  afterCut = false,
+  annotations: { description?: string | null; rating?: number | null } = {},
+): ShipMember {
+  return {
+    feature: f,
+    bucket,
+    afterCut,
+    description: annotations.description ?? null,
+    // Default is UNRATED, not 0 — the same distinction the schema makes.
+    rating: annotations.rating ?? null,
+  };
 }
 
-export function goal(id: string, name: string): ShipGoal {
-  return { id, name, description: null, status: 'active', contexts: [] };
+export function goal(id: string, name: string, slice: ShipContext[] = []): ShipGoal {
+  return {
+    id,
+    name,
+    description: null,
+    status: 'active',
+    contexts: slice.map((c) => c.name),
+    contextIds: slice.map((c) => c.id),
+  };
 }
 
 export function milestone(over: Partial<DevMilestone> = {}): DevMilestone {

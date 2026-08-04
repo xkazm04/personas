@@ -19592,6 +19592,25 @@
     "crit_scope": "スコープ確定",
     "crit_scope_clean": "確定後に追加されたものはありません",
     "crit_scope_crept": "確定後に {count} 件追加: {names}",
-    "crit_scope_uncut": "未確定です。スコープ増加の追跡は確定時から始まります"
+    "crit_scope_uncut": "未確定です。スコープ増加の追跡は確定時から始まります",
+    "duality_advisory": "あなたの評価はここでは比較のためだけに表示されます。出荷判定や進捗バーには影響しません。それらは終了条件から算出されます。",
+    "duality_agree": "{count}件一致",
+    "duality_conflict": "あなたの評価と自動判定の結果がここで食い違っています。",
+    "duality_conflict_names": "相違点: {names}",
+    "duality_disagree": "{count}件不一致",
+    "duality_disagree_short": "不一致",
+    "duality_no_disagreement": "相違なし",
+    "duality_title": "自動判定 vs あなたの評価",
+    "duality_unrated": "{count}件未評価",
+    "duality_yours": "自分",
+    "goal_edit_aria": "{name}の目的を編集",
+    "goal_empty": "目的を設定",
+    "goal_placeholder": "このマイルストーンを出荷すると何が実現しますか?",
+    "note_add": "メモを追加",
+    "note_aria": "{name}に関するメモ",
+    "note_placeholder": "なぜこれが対象に含まれているのですか?",
+    "rating_aria": "{name}を5段階中{value}で評価",
+    "rating_unrated": "未評価",
+    "rating_value": "5段階中{value}"
   }
 }

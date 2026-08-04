@@ -19592,6 +19592,25 @@
     "crit_scope": "Périmètre gelé",
     "crit_scope_clean": "Rien n’a rejoint le périmètre après la certification",
     "crit_scope_crept": "{count} ajoutés après le gel : {names}",
-    "crit_scope_uncut": "Pas encore figé. Le suivi des ajouts démarre au gel"
+    "crit_scope_uncut": "Pas encore figé. Le suivi des ajouts démarre au gel",
+    "duality_advisory": "Vos évaluations sont affichées ici uniquement à titre de comparaison. Elles ne modifient jamais le verdict de livraison ni la barre de progression, qui découlent des critères de sortie.",
+    "duality_agree": "{count} en accord",
+    "duality_conflict": "Votre évaluation et la lecture automatique vont ici dans des directions différentes.",
+    "duality_conflict_names": "Désaccord sur : {names}",
+    "duality_disagree": "{count} en désaccord",
+    "duality_disagree_short": "Désaccord",
+    "duality_no_disagreement": "Aucun désaccord",
+    "duality_title": "Automatisation contre votre évaluation",
+    "duality_unrated": "{count} non évalués",
+    "duality_yours": "Vôtre",
+    "goal_edit_aria": "Modifier l'objectif de {name}",
+    "goal_empty": "Définir un objectif",
+    "goal_placeholder": "Que permet la livraison de ce jalon ?",
+    "note_add": "Ajouter une note",
+    "note_aria": "Note sur {name}",
+    "note_placeholder": "Pourquoi est-ce inclus ?",
+    "rating_aria": "Noter {name} {value} sur 5",
+    "rating_unrated": "Non évalué",
+    "rating_value": "{value} sur 5"
   }
 }

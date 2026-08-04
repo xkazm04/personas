@@ -16,6 +16,7 @@ import type { Translations } from '@/i18n/generated/types';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 
 import { INK } from '../../passport/passportInk';
+import { inContext } from './shipDerive';
 import { TONE_HUE_MAP, type ShipContext, type ShipGoal, type ShipMilestoneVM } from './shipModel';
 import type { ShipData } from './useShipData';
 
@@ -113,8 +114,9 @@ export function ShipLibraryTree({ ship, vm, onOpenContext, onNewGoal, onAssistGo
     const match = (c: ShipContext) => {
       if (!q) return true;
       if (c.name.toLowerCase().includes(q)) return true;
-      if (ship.features.some((f) => f.contexts.includes(c.name) && f.name.toLowerCase().includes(q))) return true;
-      return ship.goals.some((g) => g.contexts.includes(c.name) && g.name.toLowerCase().includes(q));
+      // Membership resolves BY ID (see shipDerive.inContext).
+      if (inContext(ship.features, c.id).some((f) => f.name.toLowerCase().includes(q))) return true;
+      return inContext(ship.goals, c.id).some((g) => g.name.toLowerCase().includes(q));
     };
     const named = ship.groups.map((g) => ({
       id: g.id, name: g.name, hue: groupHue(g.color),
@@ -185,8 +187,9 @@ export function ShipLibraryTree({ ship, vm, onOpenContext, onNewGoal, onAssistGo
                   and carries a hairline rail, so depth is legible without
                   reading the row. */}
               {bandOpen && <div className="ml-2 pl-2 border-l border-foreground/[0.09]">{band.contexts.map((ctx) => {
-                const feats = ship.features.filter((f) => f.contexts.includes(ctx.name));
-                const goals = ship.goals.filter((g) => g.contexts.includes(ctx.name));
+                // BY ID, never by display name (see shipDerive.inContext).
+                const feats = inContext(ship.features, ctx.id);
+                const goals = inContext(ship.goals, ctx.id);
                 const isOpen = Boolean(q) || openCtx.has(ctx.id);
                 const hue = TONE_HUE_MAP[ctx.tone];
                 const inFp = vm.footprint.some((c) => c.id === ctx.id);

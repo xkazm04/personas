@@ -19592,6 +19592,25 @@
     "seed_milestone_name": "Onboard to Personas",
     "seed_milestone_goal": "The project is fully onboarded: passport assessed, first sensors bound, scaffolding ready for milestone-driven shipping.",
     "seed_goal_title": "Passport created: Personas onboarding complete",
-    "seed_goal_description": "Seeded when \"Onboard with Fleet\" was dispatched. Done when the guided onboarding session has assessed the passport dimensions and bound the first sensors."
+    "seed_goal_description": "Seeded when \"Onboard with Fleet\" was dispatched. Done when the guided onboarding session has assessed the passport dimensions and bound the first sensors.",
+    "goal_empty": "Set an objective",
+    "goal_placeholder": "What does shipping this milestone deliver?",
+    "goal_edit_aria": "Edit the objective of {name}",
+    "note_add": "Add a note",
+    "note_placeholder": "Why is this in the cut?",
+    "note_aria": "Note on {name}",
+    "rating_unrated": "Unrated",
+    "rating_value": "{value} of 5",
+    "rating_aria": "Rate {name} {value} out of 5",
+    "duality_title": "Automation vs your read",
+    "duality_yours": "Yours",
+    "duality_agree": "{count} agree",
+    "duality_disagree": "{count} disagree",
+    "duality_disagree_short": "Disagrees",
+    "duality_no_disagreement": "No disagreement",
+    "duality_unrated": "{count} unrated",
+    "duality_conflict": "Your rating and the automated reading point different ways here.",
+    "duality_conflict_names": "Disagreement on: {names}",
+    "duality_advisory": "Your ratings are reported here for comparison only. They never change the ship verdict or the progress bar, which derive from the exit criteria."
   }
 }

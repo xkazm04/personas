@@ -19592,6 +19592,25 @@
     "crit_scope": "Rozsah zmrazen",
     "crit_scope_clean": "Po certifikaci nic nepřibylo",
     "crit_scope_crept": "{count} přidáno po uzavření: {names}",
-    "crit_scope_uncut": "Zatím neuzavřeno. Sledování rozšiřování začíná uzavřením"
+    "crit_scope_uncut": "Zatím neuzavřeno. Sledování rozšiřování začíná uzavřením",
+    "duality_advisory": "Vaše hodnocení se zde zobrazují pouze pro porovnání. Nikdy nemění verdikt o vydání ani ukazatel průběhu, které vycházejí z kritérií dokončení.",
+    "duality_agree": "{count} shoda",
+    "duality_conflict": "Vaše hodnocení a automatický výsledek zde ukazují různým směrem.",
+    "duality_conflict_names": "Neshoda u: {names}",
+    "duality_disagree": "{count} neshoda",
+    "duality_disagree_short": "Nesouhlasí",
+    "duality_no_disagreement": "Žádná neshoda",
+    "duality_title": "Automatizace vs. váš pohled",
+    "duality_unrated": "{count} nehodnoceno",
+    "duality_yours": "Vaše",
+    "goal_edit_aria": "Upravit cíl položky {name}",
+    "goal_empty": "Nastavit cíl",
+    "goal_placeholder": "Co přinese vydání tohoto milníku?",
+    "note_add": "Přidat poznámku",
+    "note_aria": "Poznámka k {name}",
+    "note_placeholder": "Proč je toto součástí výběru?",
+    "rating_aria": "Ohodnoťte {name} známkou {value} z 5",
+    "rating_unrated": "Nehodnoceno",
+    "rating_value": "{value} z 5"
   }
 }

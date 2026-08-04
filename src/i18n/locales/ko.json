@@ -19592,6 +19592,25 @@
     "crit_scope": "범위 고정",
     "crit_scope_clean": "확정 이후 추가된 항목이 없습니다",
     "crit_scope_crept": "확정 후 {count}건 추가: {names}",
-    "crit_scope_uncut": "아직 확정되지 않았습니다. 범위 증가 추적은 확정 시점부터 시작됩니다"
+    "crit_scope_uncut": "아직 확정되지 않았습니다. 범위 증가 추적은 확정 시점부터 시작됩니다",
+    "duality_advisory": "여기 표시된 평가는 비교 목적으로만 제공됩니다. 출시 판정이나 진행률 표시줄에는 영향을 주지 않으며, 이는 종료 기준에서 산출됩니다.",
+    "duality_agree": "{count}개 일치",
+    "duality_conflict": "여기서 당신의 평가와 자동 판정이 서로 다른 방향을 가리킵니다.",
+    "duality_conflict_names": "불일치 항목: {names}",
+    "duality_disagree": "{count}개 불일치",
+    "duality_disagree_short": "불일치",
+    "duality_no_disagreement": "불일치 없음",
+    "duality_title": "자동화 vs 당신의 평가",
+    "duality_unrated": "{count}개 미평가",
+    "duality_yours": "내평가",
+    "goal_edit_aria": "{name}의 목표 편집",
+    "goal_empty": "목표 설정",
+    "goal_placeholder": "이 마일스톤을 출시하면 무엇을 제공합니까?",
+    "note_add": "메모 추가",
+    "note_aria": "{name}에 대한 메모",
+    "note_placeholder": "이것이 왜 이번 범위에 포함되나요?",
+    "rating_aria": "{name}을(를) 5점 만점에 {value}점으로 평가",
+    "rating_unrated": "미평가",
+    "rating_value": "5점 중 {value}점"
   }
 }

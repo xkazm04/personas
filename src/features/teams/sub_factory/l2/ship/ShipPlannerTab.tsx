@@ -17,7 +17,9 @@ import {
 import { INK } from '../../passport/passportInk';
 import type { FactoryL2Data } from '../factoryL2Data';
 import { buildCriterionPrompt, ShipDispatchModal, shipDispatchKey } from './ShipDispatch';
+import { ShipItemAnnotations } from './ShipItemAnnotations';
 import { ShipMilestoneComposer } from './ShipMilestoneComposer';
+import { ShipDualitySummary, ShipGoalField } from './ShipMilestoneMeta';
 import {
   BUCKET_HUE, CRIT_HUE, bucketLabel, shipVerdict,
   type ExitCriterion, type ScopeBucket, type ShipMilestoneVM,
@@ -150,10 +152,20 @@ function Workspace({ vm, ship, editable, t, tx }: {
               index={i}
               name={mm.feature.name}
               contexts={mm.feature.contexts}
+              // the AUTOMATION's reading, on the row's right edge …
               stateLabel={mm.feature.stateLabel}
               stateHue={mm.feature.stateHue}
               blocker={mm.feature.blocker}
               meta={mm.afterCut ? <span className="typo-caption shrink-0" style={{ color: INK.violet }}>{t.ship.added_after_cut}</span> : undefined}
+              // … and the OPERATOR's, in its own strip underneath. Two readings,
+              // two places, never merged into one score.
+              footer={(
+                <ShipItemAnnotations
+                  member={mm}
+                  editable={editable}
+                  onPatch={(patch) => ship.setItem(vm.id, 'use_case', mm.feature.id, mm.bucket, patch)}
+                />
+              )}
               actions={editable && (
                 <>
                   {(['later', 'never'] as const).map((b) => (
@@ -262,7 +274,12 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
         data-testid="ship-content-header"
       >
         <div className="min-w-0">
-          <p className="typo-title-lg">{vm.goal ?? vm.name}</p>
+          <ShipGoalField
+            name={vm.name}
+            goal={vm.goal}
+            editable={editable}
+            onSave={(goal) => ship.setGoal(vm.id, goal)}
+          />
           <div className="flex items-center gap-2 flex-wrap mt-2">
             {vm.criteria.map((c) => {
               const key = data.project ? shipDispatchKey(c.id, data.project.id) : null;
@@ -298,6 +315,9 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
             })}
           </div>
           <ShipVelocityNote rows={ship.roadmap.map((ms) => ms.row)} vm={vm} />
+          {/* Reporting only: the ship button above is gated by `verdict`
+              (the criteria registry), never by these counts. */}
+          <ShipDualitySummary duality={vm.duality} />
         </div>
         {editable && !composing && (
           <span className="ml-auto shrink-0 inline-flex items-center gap-2">
