@@ -36,16 +36,15 @@ type ReleaseI18n = {
 
 export interface ReleasesTranslation {
   title: string;
-  subtitle: { roadmap: string; changelog: string };
-  navBar: { roadmapLabel: string };
+  subtitle: { roadmap: string };
   /** Header label for the in-content `ReleaseNavRail`. */
   navRailLabel: string;
   status: { released: string; active: string; planned: string; roadmap: string };
   type: { feature: string; fix: string; security: string; docs: string; chore: string; breaking: string };
   itemStatus: { in_progress: string; planned: string; completed: string };
   priority: { now: string; next: string; later: string };
-  summary: { inProgress: string; next: string };
   live: { updatedPrefix: string; sourceCache: string; sourceStale: string; sourceFallback: string };
+  /** Reserved for a roadmap with no displayable items — not wired to a surface yet. */
   empty: string;
   /** Caption under the empty-waypoint glyph in a NOW/NEXT/LATER lane with no items. */
   laneEmpty: string;
@@ -92,10 +91,6 @@ export function useReleasesTranslation(): { t: ReleasesTranslation; language: st
     title: r.title,
     subtitle: {
       roadmap: r.subtitle_roadmap,
-      changelog: r.subtitle_changelog,
-    },
-    navBar: {
-      roadmapLabel: r.nav_bar_roadmap_label,
     },
     navRailLabel: r.nav_rail_label,
     status: {
@@ -121,10 +116,6 @@ export function useReleasesTranslation(): { t: ReleasesTranslation; language: st
       now: r.priority_now,
       next: r.priority_next,
       later: r.priority_later,
-    },
-    summary: {
-      inProgress: r.summary_in_progress,
-      next: r.summary_next,
     },
     live: {
       updatedPrefix: r.live_updated_prefix,
