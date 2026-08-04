@@ -181,13 +181,22 @@ pub async fn build_system_prompt(
     // the older flat fleet-state digest with an operation-grouped
     // narrative tied to user intent.
     let observability_md = format!(
-        "{}{}{}",
+        "{}{}{}{}{}{}",
         observability_md,
         crate::companion::orchestration::operative_memory::memory().digest_for_prompt(),
         // Multi-conversation: the roster of the user's OTHER open threads, so one
         // Athena stays aware of all her conversations (design §2). Empty when
         // there's only this thread.
         crate::companion::conversation::roster_digest_for_prompt(user_db, session_id),
+        // Fleet index blocks — bounded name→id listings for the three entity
+        // kinds Athena's ops address by id. They ride the observability slot
+        // ON PURPOSE: `compose()` blanks the six *memory* blocks when a recall
+        // briefing exists, and these are structural facts about what exists
+        // right now, not recalled memory. Blanking them would put her straight
+        // back to inventing UUIDs on exactly the turns where recall is richest.
+        format_persona_index(sys_db),
+        format_context_index(sys_db),
+        format_skill_index(sys_db),
     );
 
     // The only genuinely ml-vs-non-ml seams: whether retrieval is
@@ -571,6 +580,419 @@ fn format_project_kpis(sys_db: &DbPool) -> String {
     format!(
         "\n\n# Project KPIs (the outcome layer above goals)\n\nMeasurable success metrics per project. To steer an existing one, propose `calibrate_kpi` (adjust its target / due date / tier / cadence / status, or draw the warn + critical lines) or `evaluate_kpi` (measure it now). To add KPIs: `scan_kpis` proposes a batch from the context map; `propose_kpi` configures ONE specific KPI the user describes.\n\nWhen the user asks to set up / configure / add a KPI, GUIDE them: ask what they want to measure, whether higher or lower is better, a rough target, how often, and whether it's measured by hand or automatically (a repo command / a vault connector / an orchestrator metric). Then emit `propose_kpi` with what you gathered and tell them to verify it in Teams › KPIs — it lands as a proposal (the codebase measurement sets itself up in the background). A KPI going OFF TRACK is what derives goals for the team — managing KPIs is how you steer development by outcomes, not activity.{body}"
     )
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Fleet index blocks — the bounded "what exists, by id" layer
+//
+// Athena's ops take UUIDs (`run_persona`, `run_arena`,
+// `companion_breed_personas`, `companion_evolve_persona`, `assign_team`)
+// but until these blocks existed the only persona signal in the prompt was
+// a names-only list in the observability digest, so she invented ids. The
+// three blocks below give her a *bounded index* (name + id + one line) and
+// the four `describe_*` / `list_teams` read ops give her detail on demand.
+//
+// Budget: the three blocks TOGETHER are capped at ~1200 tokens. The cap is
+// enforced in characters (4 chars ≈ 1 token, the same rough ratio
+// `recall_synthesis::estimate_recall_tokens` uses) and every block reports
+// its true total, so a truncated list never reads as a complete one.
+// ─────────────────────────────────────────────────────────────────────────
+
+/// Combined token budget for the persona + context + skill index blocks.
+const INDEX_TOKEN_BUDGET: usize = 1200;
+/// Rough chars-per-token ratio used to turn the token budget into the byte
+/// budget the formatters actually enforce.
+const CHARS_PER_TOKEN: usize = 4;
+/// Total characters the three blocks may occupy together.
+const INDEX_CHAR_BUDGET: usize = INDEX_TOKEN_BUDGET * CHARS_PER_TOKEN;
+/// Per-block split of [`INDEX_CHAR_BUDGET`]. Personas get the largest share
+/// (they carry a UUID, a tier and a capability line, and they are what most
+/// ops target); contexts next; skills are the leanest rows.
+const PERSONA_INDEX_CHARS: usize = INDEX_CHAR_BUDGET * 5 / 12; // 2000
+const CONTEXT_INDEX_CHARS: usize = INDEX_CHAR_BUDGET * 4 / 12; // 1600
+const SKILL_INDEX_CHARS: usize = INDEX_CHAR_BUDGET * 3 / 12; // 1200
+
+const _: () =
+    assert!(PERSONA_INDEX_CHARS + CONTEXT_INDEX_CHARS + SKILL_INDEX_CHARS <= INDEX_CHAR_BUDGET);
+
+/// A block being assembled under a hard character cap.
+///
+/// Rows are appended until the next one would push the block past
+/// `cap - footer_reserve`; everything after that is dropped and the caller
+/// renders a footer stating how many of the true total made it in. The
+/// reserve exists so the "showing N of M" footer can never itself be the
+/// thing that blows the cap — a truncated list that doesn't SAY it is
+/// truncated is worse than no list at all.
+struct BoundedBlock {
+    out: String,
+    cap: usize,
+    footer_reserve: usize,
+    shown: usize,
+}
+
+impl BoundedBlock {
+    fn new(header: &str, cap: usize, footer_reserve: usize) -> Self {
+        Self {
+            out: header.to_string(),
+            cap,
+            footer_reserve,
+            shown: 0,
+        }
+    }
+
+    /// Append one row. Returns false when it did not fit (the caller stops
+    /// iterating; nothing partial is ever written).
+    fn push_row(&mut self, row: &str) -> bool {
+        if self.out.len() + row.len() + self.footer_reserve > self.cap {
+            return false;
+        }
+        self.out.push_str(row);
+        self.shown += 1;
+        true
+    }
+
+    fn finish(mut self, footer: &str) -> String {
+        self.out.push_str(footer);
+        self.out
+    }
+}
+
+/// Collapse a description to a single short line: first paragraph, no
+/// newlines, hard-truncated on a char boundary.
+fn index_summary(raw: &str, max: usize) -> String {
+    let line = raw
+        .split(['\n', '\r'])
+        .map(str::trim)
+        .find(|s| !s.is_empty())
+        .unwrap_or("");
+    if line.chars().count() <= max {
+        return line.to_string();
+    }
+    format!(
+        "{}\u{2026}",
+        crate::utils::text::truncate_on_char_boundary(line, max)
+    )
+}
+
+/// Model tier label from a persona's `model_profile` JSON blob. We only
+/// want the family word (`opus` / `sonnet` / `haiku`) — the full model id
+/// costs tokens and tells Athena nothing extra at index level.
+fn model_tier_label(model_profile: &str) -> String {
+    let model = serde_json::from_str::<serde_json::Value>(model_profile)
+        .ok()
+        .and_then(|v| {
+            v.get("model")
+                .and_then(|m| m.as_str())
+                .map(|s| s.to_lowercase())
+        })
+        .unwrap_or_default();
+    for family in ["opus", "sonnet", "haiku"] {
+        if model.contains(family) {
+            return family.to_string();
+        }
+    }
+    if model.is_empty() {
+        "default tier".to_string()
+    } else {
+        index_summary(&model, 24)
+    }
+}
+
+/// **Authoritative persona listing for the prompt.** The observability
+/// digest deliberately does NOT list persona names any more (it kept a
+/// names-only "Recently active" line that had no ids, so Athena could name
+/// an agent but not act on it, and two lists disagreeing about which
+/// personas matter is worse than one); it now carries counts only and
+/// points here.
+///
+/// Order: enabled first, then `updated_at DESC` — the agents the user has
+/// most recently touched are the ones a turn is most likely to be about,
+/// and a disabled agent is never a valid `run_persona` target.
+fn format_persona_index(sys_db: &DbPool) -> String {
+    let Ok(conn) = sys_db.get() else {
+        return String::new();
+    };
+    let (total, enabled_total) = conn
+        .query_row(
+            "SELECT COUNT(*), COALESCE(SUM(CASE WHEN enabled = 1 THEN 1 ELSE 0 END), 0) FROM personas",
+            [],
+            |r| Ok((r.get::<_, i64>(0)?, r.get::<_, i64>(1)?)),
+        )
+        .unwrap_or((0, 0));
+    if total == 0 {
+        return String::new();
+    }
+    let Ok(mut stmt) = conn.prepare(
+        "SELECT id, name, COALESCE(description, ''), COALESCE(model_profile, ''), enabled
+         FROM personas
+         ORDER BY enabled DESC, updated_at DESC",
+    ) else {
+        return String::new();
+    };
+    let Ok(rows) = stmt.query_map([], |r| {
+        Ok((
+            r.get::<_, String>(0)?,
+            r.get::<_, String>(1)?,
+            r.get::<_, String>(2)?,
+            r.get::<_, String>(3)?,
+            r.get::<_, i64>(4)? != 0,
+        ))
+    }) else {
+        return String::new();
+    };
+
+    let mut block = BoundedBlock::new(
+        "\n\n# Agent roster (name → id)\n\n\
+         The exact `persona_id` values `run_persona`, `run_arena`, \
+         `companion_breed_personas` and `companion_evolve_persona` expect. \
+         Copy an id verbatim; never invent or reshape one. Enabled agents \
+         first, then most recently updated.\n\n",
+        PERSONA_INDEX_CHARS,
+        // Reserve for the footer below. Kept generous on purpose — the
+        // footer is what makes a truncated list honest, so it must never be
+        // the thing that gets squeezed out. `index_blocks_stay_under_budget`
+        // fails if this drifts below the real footer length.
+        240,
+    );
+    for row in rows.flatten() {
+        let (id, name, description, model_profile, enabled) = row;
+        let summary = index_summary(&description, 70);
+        let summary = if summary.is_empty() {
+            "no description".to_string()
+        } else {
+            summary
+        };
+        let line = format!(
+            "- **{name}** `{id}` · {tier}{off} · {summary}\n",
+            name = name.trim(),
+            id = id,
+            tier = model_tier_label(&model_profile),
+            off = if enabled { "" } else { " · DISABLED" },
+            summary = summary,
+        );
+        if !block.push_row(&line) {
+            break;
+        }
+    }
+    let shown = block.shown;
+    block.finish(&format!(
+        "\n_Listing {shown} of {total} agents ({enabled_total} enabled). The \
+         list is truncated for prompt budget, so absent here does NOT mean \
+         absent from the app._ Look one up with the `describe_persona` read op, and \
+         get team ids (never listed above) with `list_teams`.\n"
+    ))
+}
+
+/// Dev contexts + their groups. These are what a context-scoped scan, a
+/// KPI sweep or a dev job targets, and the id is the handle.
+///
+/// Order: pinned first, then `updated_at DESC` — pinning is the user's own
+/// "this area matters" signal, recency is the fallback.
+fn format_context_index(sys_db: &DbPool) -> String {
+    let Ok(conn) = sys_db.get() else {
+        return String::new();
+    };
+    let total = conn
+        .query_row("SELECT COUNT(*) FROM dev_contexts", [], |r| {
+            r.get::<_, i64>(0)
+        })
+        .unwrap_or(0);
+    if total == 0 {
+        return String::new();
+    }
+    let group_total = conn
+        .query_row("SELECT COUNT(*) FROM dev_context_groups", [], |r| {
+            r.get::<_, i64>(0)
+        })
+        .unwrap_or(0);
+    let Ok(mut stmt) = conn.prepare(
+        "SELECT c.id, c.name, COALESCE(c.description, ''),
+                COALESCE(g.name, ''), COALESCE(p.name, '')
+         FROM dev_contexts c
+         LEFT JOIN dev_context_groups g ON g.id = c.group_id
+         LEFT JOIN dev_projects p ON p.id = c.project_id
+         ORDER BY c.pinned DESC, c.updated_at DESC",
+    ) else {
+        return String::new();
+    };
+    let Ok(rows) = stmt.query_map([], |r| {
+        Ok((
+            r.get::<_, String>(0)?,
+            r.get::<_, String>(1)?,
+            r.get::<_, String>(2)?,
+            r.get::<_, String>(3)?,
+            r.get::<_, String>(4)?,
+        ))
+    }) else {
+        return String::new();
+    };
+
+    let mut block = BoundedBlock::new(
+        "\n\n# Dev contexts (name → id)\n\n\
+         Feature areas the context scan mapped, pinned first then most \
+         recently scanned. Each belongs to a project and usually a group. \
+         Reference one by id when you scope work to it.\n\n",
+        CONTEXT_INDEX_CHARS,
+        200,
+    );
+    for row in rows.flatten() {
+        let (id, name, description, group, project) = row;
+        let where_ = match (project.trim(), group.trim()) {
+            ("", "") => String::new(),
+            (p, "") => format!(" · {p}"),
+            ("", g) => format!(" · {g}"),
+            (p, g) => format!(" · {p}/{g}"),
+        };
+        let line = format!(
+            "- **{name}** `{id}`{where_} · {summary}\n",
+            name = name.trim(),
+            id = id,
+            where_ = where_,
+            summary = index_summary(&description, 60),
+        );
+        if !block.push_row(&line) {
+            break;
+        }
+    }
+    let shown = block.shown;
+    block.finish(&format!(
+        "\n_Listing {shown} of {total} contexts across {group_total} groups, \
+         truncated for prompt budget._ Use the `describe_context` read op for \
+         one context's files, keywords and group.\n"
+    ))
+}
+
+/// One skill discovered on disk, in the shape both the prompt index and
+/// the `describe_skill` read op need.
+#[derive(Debug, Clone)]
+pub(crate) struct SkillIndexEntry {
+    pub name: String,
+    /// `global` for `~/.claude/skills`, otherwise the dev project's name.
+    pub scope: String,
+    pub description: String,
+    pub path: String,
+}
+
+/// Discover skills on disk: every registered dev project's
+/// `<root>/.claude/skills` (bounded to the first few projects, mirroring
+/// `skill_files::skills_dir`'s own candidate scan) plus the user-global
+/// `~/.claude/skills`. Project skills win a name collision because they are
+/// the ones a repo-scoped dispatch actually runs.
+///
+/// The provenance sidecar (`.skill-provenance.json`) and any other dotfile
+/// are skipped, and we deliberately do NOT compute sync state here: that
+/// hashes every skill directory twice, which is far too expensive for
+/// something rebuilt on every chat turn.
+pub(crate) fn scan_skill_index(sys_db: &DbPool) -> Vec<SkillIndexEntry> {
+    use std::path::PathBuf;
+
+    let mut dirs: Vec<(String, PathBuf)> = Vec::new();
+    if let Ok(conn) = sys_db.get() {
+        if let Ok(mut stmt) = conn.prepare("SELECT name, root_path FROM dev_projects LIMIT 5") {
+            if let Ok(rows) =
+                stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+            {
+                for (name, root) in rows.flatten() {
+                    dirs.push((name, PathBuf::from(root).join(".claude").join("skills")));
+                }
+            }
+        }
+    }
+    if let Some(global) = crate::commands::infrastructure::skill_files::global_skills_dir() {
+        dirs.push(("global".to_string(), global));
+    }
+
+    let mut out: Vec<SkillIndexEntry> = Vec::new();
+    for (scope, dir) in dirs {
+        let Ok(read_dir) = std::fs::read_dir(&dir) else {
+            continue;
+        };
+        for entry in read_dir.flatten() {
+            let path = entry.path();
+            let raw_name = entry.file_name().to_string_lossy().to_string();
+            if raw_name.starts_with('.') {
+                continue;
+            }
+            let (name, md_path) = if path.is_dir() {
+                let upper = path.join("SKILL.md");
+                let lower = path.join("skill.md");
+                let md = if upper.exists() {
+                    upper
+                } else if lower.exists() {
+                    lower
+                } else {
+                    continue;
+                };
+                (raw_name, md)
+            } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
+                let stem = path
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("unknown")
+                    .to_string();
+                (stem, path.clone())
+            } else {
+                continue;
+            };
+            if out.iter().any(|e| e.name == name) {
+                continue;
+            }
+            let description = std::fs::read_to_string(&md_path)
+                .ok()
+                .as_deref()
+                .and_then(crate::commands::infrastructure::skill_files::extract_skill_description)
+                .unwrap_or_default();
+            out.push(SkillIndexEntry {
+                name,
+                scope: scope.clone(),
+                description,
+                path: md_path.to_string_lossy().to_string(),
+            });
+        }
+    }
+    out.sort_by(|a, b| a.name.cmp(&b.name));
+    out
+}
+
+/// Skills on disk. Ordered alphabetically by name: a skill index is a
+/// lookup table (Athena knows the shape of the job and needs the name), so
+/// stable alphabetical beats any recency heuristic here.
+fn format_skill_index(sys_db: &DbPool) -> String {
+    render_skill_index(&scan_skill_index(sys_db))
+}
+
+/// Rendering half of [`format_skill_index`], split out so the budget can be
+/// tested against a synthetic corpus without touching the filesystem.
+fn render_skill_index(skills: &[SkillIndexEntry]) -> String {
+    let total = skills.len();
+    if total == 0 {
+        return String::new();
+    }
+    let mut block = BoundedBlock::new(
+        "\n\n# Skills installed on disk (name → when to use)\n\n\
+         Packaged procedures a dispatched CLI session can invoke as \
+         `/<name>`. Name them exactly as written; a skill not listed here \
+         may still exist (see the count below) but never invent one.\n\n",
+        SKILL_INDEX_CHARS,
+        180,
+    );
+    for s in skills {
+        let line = format!(
+            "- **{name}** ({scope}) · {desc}\n",
+            name = s.name,
+            scope = s.scope,
+            desc = index_summary(&s.description, 80),
+        );
+        if !block.push_row(&line) {
+            break;
+        }
+    }
+    let shown = block.shown;
+    block.finish(&format!(
+        "\n_Listing {shown} of {total} installed skills, truncated for \
+         prompt budget._ Use the `describe_skill` read op for one skill's \
+         full when-to-use.\n"
+    ))
 }
 
 /// Reply-language directive for non-English UIs.
@@ -1531,5 +1953,220 @@ mod tests {
     #[test]
     fn format_facts_empty_input_is_empty_string() {
         assert_eq!(format_facts(&[]), "");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Fleet index blocks
+    // ─────────────────────────────────────────────────────────────────────
+
+    /// In-memory system pool carrying only the columns the three index
+    /// blocks read. Deliberately not the full schema: the blocks are lean
+    /// projections and the test should fail loudly if that ever changes.
+    fn index_test_pool() -> DbPool {
+        let manager = r2d2_sqlite::SqliteConnectionManager::memory();
+        let pool = r2d2::Pool::builder()
+            .max_size(1)
+            .build(manager)
+            .expect("pool");
+        pool.get()
+            .unwrap()
+            .execute_batch(
+                "CREATE TABLE personas (
+                    id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT,
+                    system_prompt TEXT NOT NULL DEFAULT '', model_profile TEXT,
+                    enabled INTEGER NOT NULL DEFAULT 1, updated_at TEXT NOT NULL);
+                 CREATE TABLE dev_projects (id TEXT PRIMARY KEY, name TEXT NOT NULL,
+                    root_path TEXT NOT NULL);
+                 CREATE TABLE dev_context_groups (id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL, name TEXT NOT NULL);
+                 CREATE TABLE dev_contexts (id TEXT PRIMARY KEY, project_id TEXT,
+                    group_id TEXT, name TEXT NOT NULL, description TEXT,
+                    pinned INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL);",
+            )
+            .unwrap();
+        pool
+    }
+
+    /// A realistic UUID for fixture row N — the point of the persona block
+    /// is that Athena can copy one of these verbatim.
+    fn fixture_uuid(n: usize) -> String {
+        format!("6f1c9a2b-4d3e-4f5a-9b8c-{n:012}")
+    }
+
+    fn seed_index_fixtures(pool: &DbPool, personas: usize, contexts: usize) {
+        let conn = pool.get().unwrap();
+        conn.execute(
+            "INSERT INTO dev_projects (id, name, root_path) VALUES ('proj_1', 'Personas', 'C:/repo')",
+            [],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO dev_context_groups (id, project_id, name)
+             VALUES ('grp_1', 'proj_1', 'Agent Platform')",
+            [],
+        )
+        .unwrap();
+        for n in 0..personas {
+            conn.execute(
+                "INSERT INTO personas (id, name, description, system_prompt, model_profile, enabled, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                rusqlite::params![
+                    fixture_uuid(n),
+                    format!("Agent {n}"),
+                    format!("Handles workload number {n} across the whole fleet, end to end."),
+                    "You are a helpful agent. ".repeat(40),
+                    r#"{"model":"claude-sonnet-4-6"}"#,
+                    // Every 7th persona disabled, so ordering has something to sort.
+                    i64::from(n % 7 != 0),
+                    format!("2026-01-01T00:{:02}:00Z", n % 60),
+                ],
+            )
+            .unwrap();
+        }
+        for n in 0..contexts {
+            conn.execute(
+                "INSERT INTO dev_contexts (id, project_id, group_id, name, description, pinned, updated_at)
+                 VALUES (?1, 'proj_1', 'grp_1', ?2, ?3, ?4, ?5)",
+                rusqlite::params![
+                    format!("ctx_{n:04}"),
+                    format!("Context {n}"),
+                    format!("The {n}th feature area of the application, with a long description."),
+                    i64::from(n % 11 == 0),
+                    format!("2026-02-01T00:{:02}:00Z", n % 60),
+                ],
+            )
+            .unwrap();
+        }
+    }
+
+    fn fixture_skills(count: usize) -> Vec<SkillIndexEntry> {
+        (0..count)
+            .map(|n| SkillIndexEntry {
+                name: format!("skill-number-{n:03}"),
+                scope: "global".to_string(),
+                description: format!(
+                    "Use this skill when you need to do job {n}, which is a long \
+                     multi-clause description that would blow any budget if unbounded."
+                ),
+                path: format!("/skills/skill-number-{n:03}/SKILL.md"),
+            })
+            .collect()
+    }
+
+    #[test]
+    fn index_blocks_stay_under_budget_with_200_fixtures() {
+        let pool = index_test_pool();
+        seed_index_fixtures(&pool, 200, 200);
+        let personas = format_persona_index(&pool);
+        let contexts = format_context_index(&pool);
+        let skills = render_skill_index(&fixture_skills(200));
+
+        assert!(
+            personas.len() <= PERSONA_INDEX_CHARS,
+            "persona block {} > cap {PERSONA_INDEX_CHARS}",
+            personas.len()
+        );
+        assert!(
+            contexts.len() <= CONTEXT_INDEX_CHARS,
+            "context block {} > cap {CONTEXT_INDEX_CHARS}",
+            contexts.len()
+        );
+        assert!(
+            skills.len() <= SKILL_INDEX_CHARS,
+            "skill block {} > cap {SKILL_INDEX_CHARS}",
+            skills.len()
+        );
+        assert!(
+            personas.len() + contexts.len() + skills.len() <= INDEX_CHAR_BUDGET,
+            "combined {} > budget {INDEX_CHAR_BUDGET}",
+            personas.len() + contexts.len() + skills.len()
+        );
+    }
+
+    #[test]
+    fn truncated_blocks_still_report_the_true_total() {
+        // The whole point of the cap: a partial list that reads as complete
+        // is worse than no list, because she'd conclude an agent doesn't
+        // exist. Each block must name the real total and the escape hatch.
+        let pool = index_test_pool();
+        seed_index_fixtures(&pool, 200, 200);
+        let personas = format_persona_index(&pool);
+        let contexts = format_context_index(&pool);
+        let skills = render_skill_index(&fixture_skills(200));
+
+        assert!(personas.contains("of 200 agents"), "{personas}");
+        assert!(personas.contains("describe_persona"));
+        assert!(personas.contains("list_teams"));
+        assert!(contexts.contains("of 200 contexts"), "{contexts}");
+        assert!(contexts.contains("describe_context"));
+        assert!(skills.contains("of 200 installed skills"), "{skills}");
+        assert!(skills.contains("describe_skill"));
+
+        // And they really are truncated at this corpus size, so the
+        // "showing N of M" wording is load-bearing rather than decorative.
+        assert!(!personas.contains("Listing 200 of 200"));
+        assert!(!contexts.contains("Listing 200 of 200"));
+        assert!(!skills.contains("Listing 200 of 200"));
+    }
+
+    #[test]
+    fn persona_index_carries_a_real_uuid_and_enabled_agents_first() {
+        let pool = index_test_pool();
+        seed_index_fixtures(&pool, 200, 0);
+        let out = format_persona_index(&pool);
+        // Agent 59 is enabled (only every 7th is disabled) and carries the
+        // newest updated_at, so it heads the list; its id must be
+        // verbatim-copyable out of the block.
+        assert!(out.contains(&fixture_uuid(59)), "{out}");
+        // Agent 0 is the disabled one; enabled rows sort ahead of it, and at
+        // this corpus size the disabled tail never fits.
+        assert!(!out.contains(" · DISABLED"), "{out}");
+    }
+
+    #[test]
+    fn small_corpus_renders_completely() {
+        let pool = index_test_pool();
+        seed_index_fixtures(&pool, 3, 2);
+        let personas = format_persona_index(&pool);
+        assert!(personas.contains("Listing 3 of 3 agents"), "{personas}");
+        assert!(personas.contains(&fixture_uuid(0)));
+        assert!(personas.contains(&fixture_uuid(2)));
+        let contexts = format_context_index(&pool);
+        assert!(contexts.contains("Listing 2 of 2 contexts"), "{contexts}");
+    }
+
+    #[test]
+    fn empty_corpus_emits_nothing() {
+        let pool = index_test_pool();
+        assert_eq!(format_persona_index(&pool), "");
+        assert_eq!(format_context_index(&pool), "");
+        assert_eq!(render_skill_index(&[]), "");
+    }
+
+    #[test]
+    fn model_tier_label_reduces_to_the_family_word() {
+        assert_eq!(model_tier_label(r#"{"model":"claude-opus-4-5"}"#), "opus");
+        assert_eq!(model_tier_label(r#"{"model":"claude-haiku-4-5"}"#), "haiku");
+        assert_eq!(model_tier_label(""), "default tier");
+        assert_eq!(model_tier_label("not json"), "default tier");
+        assert_eq!(model_tier_label(r#"{"model":"qwen-max"}"#), "qwen-max");
+    }
+
+    #[test]
+    fn observability_digest_no_longer_duplicates_the_persona_listing() {
+        // Reconciliation guard: two persona lists in one prompt (one with
+        // ids, one without) is what taught Athena to name agents she could
+        // not act on. `format_persona_index` is authoritative now.
+        let digest = observability::ObservabilityDigest {
+            personas_total: 3,
+            personas_enabled: 2,
+            top_personas: vec!["Scout".to_string(), "Archivist".to_string()],
+            ..Default::default()
+        };
+        let out = observability::format_for_prompt(&digest);
+        assert!(!out.contains("Recently active"), "{out}");
+        assert!(!out.contains("Scout"), "{out}");
+        // Counts still belong to the digest.
+        assert!(out.contains("3 total, 2 enabled"));
     }
 }
