@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
-import { Terminal, LayoutDashboard, Settings as SettingsIcon, Activity, Grid3x3 } from 'lucide-react';
+import { Terminal, LayoutDashboard, Settings as SettingsIcon, Activity } from 'lucide-react';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { debtText } from '@/i18n/DebtText';
@@ -10,18 +10,14 @@ import { useFleetOrphanScan } from './useFleetOrphanScan';
 const FleetGridPage = lazy(() => import('./sub_grid/FleetGridPage'));
 const FleetActivityPage = lazy(() => import('./sub_activity/FleetActivityPage'));
 const FleetSettingsPage = lazy(() => import('./sub_settings/FleetSettingsPage'));
-// PROTOTYPE (mocked data) — minimized 50-terminal monitor layer; /prototype
-// round 1. Delete the tab + sub_monitor_proto/ at consolidation.
-const MonitorPrototypePage = lazy(() => import('./sub_monitor_proto/MonitorPrototypePage'));
 
-type InternalTab = 'grid' | 'monitor' | 'activity' | 'settings';
+type InternalTab = 'grid' | 'activity' | 'settings';
 
 // Sessions is the home for every operation (spawn, kill, broadcast, terminal
 // view). Activity is the cross-session transcript feed (F2/P2.2). Settings
 // stays for hook uninstall + diagnostics; install lives in the Sessions pill.
 const TABS: { id: InternalTab; label: string; icon: typeof Terminal }[] = [
   { id: 'grid', label: 'Sessions', icon: LayoutDashboard },
-  { id: 'monitor', label: 'Monitor · proto', icon: Grid3x3 },
   { id: 'activity', label: 'Activity', icon: Activity },
   { id: 'settings', label: 'Settings', icon: SettingsIcon },
 ];
@@ -92,7 +88,6 @@ export default function FleetPage() {
         <Suspense fallback={<SuspenseFallback />}>
           <>
             {tab === 'grid' && <FleetGridPage />}
-            {tab === 'monitor' && <MonitorPrototypePage />}
             {tab === 'activity' && <FleetActivityPage />}
             {tab === 'settings' && <FleetSettingsPage />}
           </>

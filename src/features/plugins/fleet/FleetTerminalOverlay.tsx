@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, LayoutGrid, BookOpen, Play, Grid3x3, Rows3, Table2 } from 'lucide-react';
+import { ChevronLeft, LayoutGrid, BookOpen, Play, Table2 } from 'lucide-react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { PendingApproval } from '@/api/companion';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -13,11 +13,12 @@ import { setFleetFontOverride } from './fleetTerminalManager';
 import { approvalsForSession, needsLiveAttention } from './fleetAttention';
 import { gridDim, densityFont } from './fleetGridLayout';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
-import { MonitorView, type MonitorVariantId } from './sub_monitor_proto/MonitorView';
+import { MonitorView } from './sub_monitor_proto/MonitorView';
 
-// PROTOTYPE (r2) — minimized monitor variants selectable next to the classic
-// tile grid. Module-scoped so the chosen view survives close/reopen.
-type GridViewId = 'tiles' | MonitorVariantId;
+// Two grid views: the classic terminal tiles and the minimized monitor
+// ledger (fused /prototype winner). Module-scoped so the chosen view
+// survives close/reopen.
+type GridViewId = 'tiles' | 'monitor';
 let lastGridView: GridViewId = 'tiles';
 
 interface Props {
@@ -186,14 +187,12 @@ export function FleetTerminalOverlay({
         <LayoutGrid className="w-4 h-4 text-primary ml-1" aria-hidden="true" />
         <span className="typo-caption text-foreground">{countLabel}</span>
         <FleetAttentionLegend />
-        {/* PROTOTYPE r2 — monitor-variant switcher (strings i18n'd at
-            consolidation once a winner is picked). */}
+        {/* Tiles ↔ Monitor view switcher (strings i18n'd once the monitor
+            graduates from prototype). */}
         <SegmentedTabs
           tabs={[
             { id: 'tiles' as const, label: <LayoutGrid className="w-3.5 h-3.5" />, ariaLabel: 'Terminal tiles' },
-            { id: 'heatboard' as const, label: <Grid3x3 className="w-3.5 h-3.5" />, ariaLabel: 'Heatboard' },
-            { id: 'lanes' as const, label: <Rows3 className="w-3.5 h-3.5" />, ariaLabel: 'Triage lanes' },
-            { id: 'ledger' as const, label: <Table2 className="w-3.5 h-3.5" />, ariaLabel: 'Ledger' },
+            { id: 'monitor' as const, label: <Table2 className="w-3.5 h-3.5" />, ariaLabel: 'Monitor' },
           ]}
           activeTab={view}
           onTabChange={changeView}
@@ -228,8 +227,8 @@ export function FleetTerminalOverlay({
         </button>
       </div>
 
-      {view !== 'tiles' ? (
-        <MonitorView sessions={sessions} variant={view} onSelect={onSelect} />
+      {view === 'monitor' ? (
+        <MonitorView sessions={sessions} onSelect={onSelect} onOverlayClose={onClose} />
       ) : (
       /* Grid — square columns capped at 4; rows auto-fill, scroll past 4×4. */
       <div
