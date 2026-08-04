@@ -19355,7 +19355,14 @@
     "legend_title": "Trạng thái ô",
     "legend_toggle": "Hiện hoặc ẩn chú giải trạng thái ô",
     "legend_unknown": "Không rõ",
-    "legend_unknown_note": "Không rõ nghĩa là quá trình kiểm tra không đọc được giá trị này — không phải giá trị bằng 0."
+    "legend_unknown_note": "Không rõ nghĩa là quá trình kiểm tra không đọc được giá trị này — không phải giá trị bằng 0.",
+    "athena_authored": "Do Athena soạn",
+    "athena_revert_body_one": "1 nhóm, liên kết hoặc ghi chú do Athena soạn sẽ bị xóa khỏi bảng này. Mọi thứ bạn đã tạo vẫn được giữ nguyên, và các bảng dự án đã tổng hợp không bị ảnh hưởng.",
+    "athena_revert_body_other": "{count} nhóm, liên kết và ghi chú do Athena soạn sẽ bị xóa khỏi bảng này. Mọi thứ bạn đã tạo vẫn được giữ nguyên, và các bảng dự án đã tổng hợp không bị ảnh hưởng.",
+    "athena_revert_cta": "Xóa của cô ấy",
+    "athena_revert_one": "Xóa 1 dấu trên bảng vẽ do Athena thêm vào",
+    "athena_revert_other": "Xóa {count} dấu trên bảng vẽ do Athena thêm vào",
+    "athena_revert_title": "Xóa các dấu do Athena thêm vào?"
   },
   "ship": {
     "add": "Thêm",

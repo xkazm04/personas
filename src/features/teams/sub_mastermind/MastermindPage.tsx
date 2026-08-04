@@ -54,6 +54,7 @@ import { GoalListPopover } from './lib/GoalListPopover';
 import { KpiListPopover, type KpiListItem } from './lib/KpiListPopover';
 import { IdeaScanPopover, type ScanParams } from './lib/IdeaScanPopover';
 import { hydrateLayout, isLayoutHydrated, loadHidden, saveHidden } from './lib/layoutStore';
+import { useLayoutHidden, useLayoutPositions } from './lib/useLayout';
 import { openFactory, openSkillsManager } from './lib/navigate';
 import { computeAttention } from './lib/liveState';
 import { useSceneStore } from './lib/sceneStore';
@@ -130,7 +131,10 @@ function MastermindInner() {
   // initializers read the hydrated doc, not an empty one. `isLayoutHydrated()`
   // is already true on remounts, so this only gates the first-ever mount.
   const [layoutReady, setLayoutReady] = useState(isLayoutHydrated);
-  const [overrides, setOverrides] = useState(loadPositions);
+  // Positions come straight from the layout store (subscribed, not snapshotted)
+  // so an out-of-band write paints without a remount and the next drag commit
+  // builds on it instead of over it.
+  const overrides = useLayoutPositions();
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   // Slug whose "Dispatch Fleet…" instruction modal is open (null = closed).
@@ -161,7 +165,7 @@ function MastermindInner() {
   }, []);
   const [demoDismissed, setDemoDismissed] = useState(false);
   const [projectsOpen, setProjectsOpen] = useState(false);
-  const [hiddenSlugs, setHiddenSlugs] = useState<Set<string>>(loadHidden);
+  const hiddenSlugs = useLayoutHidden();
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [personaMenu, setPersonaMenu] = useState<{ slug: string; x: number; y: number } | null>(null);
   const [goalPopup, setGoalPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
@@ -255,8 +259,8 @@ function MastermindInner() {
     let live = true;
     void hydrateLayout().then(() => {
       if (!live) return;
-      setOverrides(loadPositions());
-      setHiddenSlugs(loadHidden());
+      // Hydration notifies every store subscriber, so positions/hidden re-read
+      // themselves; this only drops the canvas gate.
       setLayoutReady(true);
     });
     return () => { live = false; };
@@ -553,12 +557,10 @@ function MastermindInner() {
     return () => cancelAnimationFrame(id);
   });
 
+  // Read-modify-write against the store (not a stale render closure) so a drag
+  // that lands between someone else's write still merges rather than reverts.
   const onIslandCommit = (slug: string, x: number, y: number) =>
-    setOverrides((prev) => {
-      const next = { ...prev, [slug]: { x, y } };
-      savePositions(next);
-      return next;
-    });
+    savePositions({ ...loadPositions(), [slug]: { x, y } });
 
   // Sidebar hide/show filter — the canvas renders only visible islands; the
   // project list sees all of them.
@@ -567,14 +569,12 @@ function MastermindInner() {
     islands: positioned.islands.filter((i) => !hiddenSlugs.has(i.slug)),
   }), [positioned, hiddenSlugs]);
 
-  const toggleVisible = (slug: string) =>
-    setHiddenSlugs((prev) => {
-      const next = new Set(prev);
-      if (next.has(slug)) next.delete(slug);
-      else next.add(slug);
-      saveHidden(next);
-      return next;
-    });
+  const toggleVisible = (slug: string) => {
+    const next = loadHidden();
+    if (next.has(slug)) next.delete(slug);
+    else next.add(slug);
+    saveHidden(next);
+  };
 
   const previewSession = previewId ? sessions.find((s) => s.id === previewId) ?? null : null;
   const openIsland = openSlug ? positioned.islands.find((i) => i.slug === openSlug) ?? null : null;

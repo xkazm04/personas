@@ -15,10 +15,14 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode }
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { mix, STATE_INK } from './ink';
-import { loadGroups, saveGroups } from './groups';
-import { loadLinks, saveLinks, LINK_PALETTE } from './links';
-import { loadNotes, saveNotes } from './notes';
+import { saveGroups } from './groups';
+import { saveLinks, LINK_PALETTE } from './links';
+import { saveNotes } from './notes';
 import { loadPositions } from './positions';
+import { canvasId } from './canvasIds';
+import { revertAthenaObjects } from './layoutStore';
+import { useAthenaObjectCount, useLayoutGroups, useLayoutLinks, useLayoutNotes } from './useLayout';
+import { AthenaRevertControl } from './AthenaRevertControl';
 import { nearestTo, pickInDirection } from './kbNav';
 import { tidyLayout, type TidyResult } from './tidyLayout';
 import { DimLegend } from './DimLegend';
@@ -85,14 +89,18 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
   const worldRef = useRef<SVGGElement>(null);
   const { cam, camRef, panning, fit, zoomBy, handlers } = useCanvasCamera(svgRef, worldRef);
   const [hover, setHover] = useState<string | null>(null);
-  const [groups, setGroups] = useState<GroupRect[]>(loadGroups);
+  // Canvas objects live in the layout store, not in local state: Athena writes
+  // to the same board out of band, and a `useState` snapshot would neither show
+  // her work nor survive the next user commit (see useLayout.ts).
+  const groups = useLayoutGroups();
+  const links = useLayoutLinks();
+  const notes = useLayoutNotes();
+  const athenaCount = useAthenaObjectCount();
   const [draft, setDraft] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
-  const [links, setLinks] = useState<UserLink[]>(loadLinks);
   const [linkSource, setLinkSource] = useState<string | null>(null);
   const [editingLink, setEditingLink] = useState<string | null>(null);
   const [rubber, setRubber] = useState<{ x: number; y: number } | null>(null);
-  const [notes, setNotes] = useState<CanvasNote[]>(loadNotes);
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [menu, setMenu] = useState<{ slug: string; x: number; y: number } | null>(null);
   const [highlight, setHighlight] = useState<{ slug: string; key: string } | null>(null);
@@ -249,18 +257,12 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
     return { x: (e.clientX - rect.left - c.x) / c.z, y: (e.clientY - rect.top - c.y) / c.z };
   };
 
-  const commitGroups = (next: GroupRect[], persist = true) => {
-    setGroups(next);
-    if (persist) saveGroups(next);
-  };
-  const commitLinks = (next: UserLink[]) => {
-    setLinks(next);
-    saveLinks(next);
-  };
-  const commitNotes = (next: CanvasNote[], persist = true) => {
-    setNotes(next);
-    if (persist) saveNotes(next);
-  };
+  // Commits go straight to the store, which notifies every reader (this canvas
+  // included). `persist: false` is a live drag frame: it still updates memory,
+  // it just does not schedule a DB write until release.
+  const commitGroups = (next: GroupRect[], persist = true) => saveGroups(next, persist);
+  const commitLinks = (next: UserLink[]) => saveLinks(next);
+  const commitNotes = (next: CanvasNote[], persist = true) => saveNotes(next, persist);
 
   /** Screen coords of a mouse event relative to the canvas container. */
   const toScreen = (e: { clientX: number; clientY: number }) => {
@@ -269,7 +271,7 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
   };
 
   const createLink = (from: string, to: string) => {
-    const l: UserLink = { id: `l${Date.now().toString(36)}`, from, to, label: '', dashed: false, color: LINK_PALETTE[0] };
+    const l: UserLink = { id: canvasId('l'), from, to, label: '', dashed: false, color: LINK_PALETTE[0], author: 'user' };
     commitLinks([...links, l]);
     setLinkSource(null);
     setEditingLink(l.id);
@@ -430,7 +432,7 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
         const r = normalize(draft);
         setDraft(null);
         if (r.w >= MIN_GROUP_SIZE && r.h >= MIN_GROUP_SIZE) {
-          const g: GroupRect = { id: `g${Date.now().toString(36)}`, label: t.mastermind.group_default_label, ...r };
+          const g: GroupRect = { id: canvasId('g'), label: t.mastermind.group_default_label, ...r, author: 'user' };
           commitGroups([...groups, g]);
           setEditing(g.id);
         }
@@ -454,7 +456,7 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
       noteTap.current = null;
       if (Math.hypot(e.clientX - nt.sx, e.clientY - nt.sy) <= 4) {
         const p = toWorld(e);
-        const n: CanvasNote = { id: `n${Date.now().toString(36)}`, x: p.x, y: p.y, text: '', size: 'md', font: 'inter' };
+        const n: CanvasNote = { id: canvasId('n'), x: p.x, y: p.y, text: '', size: 'md', font: 'inter', author: 'user' };
         commitNotes([...notes, n]);
         setEditingNote(n.id);
       }
@@ -678,6 +680,9 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
 
       <DimLegend />
       <ZoomBadge z={cam.z} />
+      {/* Athena's contribution, and the one way out of it. Sits with the other
+          global canvas controls, above the zoom cluster. */}
+      <AthenaRevertControl count={athenaCount} onRevert={revertAthenaObjects} />
       <ZoomControls
         onZoomBy={zoomBy}
         onFit={() => fit(sceneBounds(scene.islands), true)}

@@ -19355,7 +19355,14 @@
     "legend_title": "Zellzustände",
     "legend_toggle": "Legende der Zellzustände ein- oder ausblenden",
     "legend_unknown": "Unbekannt",
-    "legend_unknown_note": "Unbekannt heißt, die Prüfung konnte den Wert nicht lesen — nicht, dass er null ist."
+    "legend_unknown_note": "Unbekannt heißt, die Prüfung konnte den Wert nicht lesen — nicht, dass er null ist.",
+    "athena_authored": "Von Athena erstellt",
+    "athena_revert_body_one": "1 von Athena erstellte Gruppe, Verknüpfung oder Notiz wird von diesem Board entfernt. Alles, was Sie selbst erstellt haben, bleibt erhalten, und zusammengesetzte Projektpaneele sind nicht betroffen.",
+    "athena_revert_body_other": "{count} von Athena erstellte Gruppen, Verknüpfungen und Notizen werden von diesem Board entfernt. Alles, was Sie selbst erstellt haben, bleibt erhalten, und zusammengesetzte Projektpaneele sind nicht betroffen.",
+    "athena_revert_cta": "Ihre entfernen",
+    "athena_revert_one": "1 von Athena hinzugefügte Canvas-Markierung entfernen",
+    "athena_revert_other": "{count} von Athena hinzugefügte Canvas-Markierungen entfernen",
+    "athena_revert_title": "Die von Athena hinzugefügten Markierungen entfernen?"
   },
   "ship": {
     "add": "Hinzufügen",

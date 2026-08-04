@@ -19355,7 +19355,14 @@
     "legend_title": "Estados de celda",
     "legend_toggle": "Mostrar u ocultar la leyenda de estados de celda",
     "legend_unknown": "Desconocido",
-    "legend_unknown_note": "Desconocido significa que la comprobación no pudo leer esto, no que el valor sea cero."
+    "legend_unknown_note": "Desconocido significa que la comprobación no pudo leer esto, no que el valor sea cero.",
+    "athena_authored": "Compuesto por Athena",
+    "athena_revert_body_one": "Se eliminará 1 grupo, enlace o nota compuesto por Athena de este tablero. Todo lo que usted creó permanece, y los paneles de proyecto compuestos no se ven afectados.",
+    "athena_revert_body_other": "Se eliminarán {count} grupos, enlaces y notas compuestos por Athena de este tablero. Todo lo que usted creó permanece, y los paneles de proyecto compuestos no se ven afectados.",
+    "athena_revert_cta": "Quitar suyos",
+    "athena_revert_one": "Quitar 1 marca del lienzo añadida por Athena",
+    "athena_revert_other": "Quitar {count} marcas del lienzo añadidas por Athena",
+    "athena_revert_title": "¿Quitar las marcas que añadió Athena?"
   },
   "ship": {
     "add": "Añadir",

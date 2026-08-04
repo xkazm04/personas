@@ -19362,6 +19362,13 @@ export type Translations = {
     legend_toggle: string;
     legend_unknown: string;
     legend_unknown_note: string;
+    athena_authored: string;
+    athena_revert_one: string;
+    athena_revert_other: string;
+    athena_revert_title: string;
+    athena_revert_body_one: string;
+    athena_revert_body_other: string;
+    athena_revert_cta: string;
   };
   ship: {
     tab_ship: string;

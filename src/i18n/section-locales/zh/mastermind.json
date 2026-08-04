@@ -119,5 +119,12 @@
   "legend_title": "单元格状态",
   "legend_toggle": "显示或隐藏单元格状态图例",
   "legend_unknown": "未知",
-  "legend_unknown_note": "“未知”表示检查无法读取该值，而不是该值为零。"
+  "legend_unknown_note": "“未知”表示检查无法读取该值，而不是该值为零。",
+  "athena_authored": "由 Athena 生成",
+  "athena_revert_body_one": "此看板上由 Athena 生成的 1 个分组、链接或便签将被移除。你自己创建的内容都会保留，组合项目面板不受影响。",
+  "athena_revert_body_other": "此看板上由 Athena 生成的 {count} 个分组、链接和便签将被移除。你自己创建的内容都会保留，组合项目面板不受影响。",
+  "athena_revert_cta": "移除她的",
+  "athena_revert_one": "移除 Athena 添加的 1 个画布标记",
+  "athena_revert_other": "移除 Athena 添加的 {count} 个画布标记",
+  "athena_revert_title": "要移除 Athena 添加的标记吗？"
 }

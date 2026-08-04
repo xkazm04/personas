@@ -19355,7 +19355,14 @@
     "legend_title": "Cell states",
     "legend_toggle": "Show or hide the cell-state key",
     "legend_unknown": "Unknown",
-    "legend_unknown_note": "Unknown means the check could not read this — not that the value is zero."
+    "legend_unknown_note": "Unknown means the check could not read this — not that the value is zero.",
+    "athena_authored": "Composed by Athena",
+    "athena_revert_one": "Remove 1 canvas mark Athena added",
+    "athena_revert_other": "Remove {count} canvas marks Athena added",
+    "athena_revert_title": "Remove the marks Athena added?",
+    "athena_revert_body_one": "1 group, link or note composed by Athena will be removed from this board. Everything you made stays, and composed project panels are not affected.",
+    "athena_revert_body_other": "{count} groups, links and notes composed by Athena will be removed from this board. Everything you made stays, and composed project panels are not affected.",
+    "athena_revert_cta": "Remove hers"
   },
   "ship": {
     "tab_ship": "Ship",
