@@ -224,16 +224,23 @@ pub struct A2AArtifact {
 /// Personas writes statuses like "queued", "running", "completed", "success",
 /// "failed", "error", "cancelled", "timeout". The A2A spec's terminal vocabulary
 /// is more compact: submitted / working / completed / canceled / failed.
+///
+/// Unrecognised statuses map to the NON-terminal "working". Every known failure
+/// mode is listed explicitly below, so anything left over is by definition a
+/// status this function has not been taught yet — most likely a new in-flight
+/// state added on the Personas side. Reporting such a task as "failed" is the
+/// expensive mistake: "failed" is terminal, so clients stop polling and a live
+/// execution is presented as dead. "working" is merely premature — the next
+/// poll corrects it once the task reaches a state we do recognise.
 pub fn map_status_to_a2a_state(personas_status: &str) -> &'static str {
     match personas_status {
         "queued" | "submitted" | "pending" => "submitted",
         "running" | "starting" | "in_progress" => "working",
         "completed" | "success" => "completed",
         "cancelled" | "canceled" => "canceled",
-        // "timeout" maps to failed (terminal, not user-cancelled). Anything
-        // unrecognised falls through to failed so clients always see a
-        // terminal state instead of an unknown one.
-        _ => "failed",
+        // Terminal failures (incl. "timeout" — terminal, not user-cancelled).
+        "failed" | "error" | "timeout" => "failed",
+        _ => "working",
     }
 }
 
@@ -355,9 +362,10 @@ mod tests {
         assert_eq!(map_status_to_a2a_state("failed"), "failed");
         assert_eq!(map_status_to_a2a_state("error"), "failed");
         assert_eq!(map_status_to_a2a_state("timeout"), "failed");
-        // Unknown / future statuses fall through to a terminal state instead
-        // of leaking an A2A-invalid value to the client.
-        assert_eq!(map_status_to_a2a_state("nonsense-future-state"), "failed");
+        // Unknown / future statuses fall through to a NON-terminal state: a
+        // client that is told "failed" stops polling, which would strand a
+        // still-running execution. "working" self-corrects on the next poll.
+        assert_eq!(map_status_to_a2a_state("nonsense-future-state"), "working");
     }
 
     #[test]
