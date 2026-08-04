@@ -25,9 +25,6 @@ import { adoptTaskPrompt, adoptTaskTitle, shareTaskPrompt, shareTaskTitle, type 
 const SKILL_TASK_MODEL = 'claude-sonnet-5';
 
 export type WorkbenchMode = 'manage' | 'dispatch';
-export type ManageDirection = 'adopt' | 'share';
-/** Which single operation a lane offers — also the detail pane's action kind. */
-export type LaneKind = 'adopt' | 'share' | 'dispatch';
 
 /** A usage rollup as the panes render it (30-day invokes + last-invoked). */
 export interface SkillUsage { invokes30d: number; lastInvokedAt: string | null; dormant?: boolean }
@@ -68,44 +65,6 @@ export interface SkillsWorkbench {
    *  see `consolePrompt`. Rejects when no console can be opened (non-Windows,
    *  CLI missing); the caller falls back to copying the commands. */
   runConsole: (name: string, argSets: string[]) => Promise<void>;
-}
-
-/** One resolved lane: the list to show + the single operation to run. Keeps the
- *  variants from re-deriving the mode/direction → items/op mapping. */
-export interface Lane {
-  kind: LaneKind;
-  items: WorkbenchSkill[];
-  loading: boolean;
-  busy: boolean;
-  run: (name: string, args: string) => Promise<void> | void;
-  /** Copy for the empty list + empty detail states. */
-  emptyList: string;
-  emptyDetail: string;
-}
-
-export function resolveLane(wb: SkillsWorkbench, mode: WorkbenchMode, direction: ManageDirection): Lane {
-  if (mode === 'dispatch') {
-    return {
-      kind: 'dispatch', items: wb.dispatch.items, loading: wb.dispatch.loading, busy: wb.dispatching,
-      run: wb.runDispatch,
-      emptyList: 'No skills installed in this project yet.',
-      emptyDetail: 'Pick a skill to run it as a background Fleet session.',
-    };
-  }
-  if (direction === 'adopt') {
-    return {
-      kind: 'adopt', items: wb.adopt.items, loading: false, busy: wb.managing,
-      run: wb.runAdopt,
-      emptyList: 'Nothing to adopt: this project already has every skill in your library.',
-      emptyDetail: 'Pick a skill to install and customize it for this repo.',
-    };
-  }
-  return {
-    kind: 'share', items: wb.share.items, loading: false, busy: wb.managing,
-    run: wb.runShare,
-    emptyList: 'Nothing to share: every skill here is already in your library.',
-    emptyDetail: 'Pick a skill to generalize and publish to your library.',
-  };
 }
 
 /** The Fleet prompt for a skill run: `/name` plus any trimmed args. A leading

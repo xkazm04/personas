@@ -5,19 +5,19 @@
 //
 // Project selection = the app-wide ACTIVE PROJECT via the shared
 // LifecycleProjectPicker (the same picker every dev-tools/teams page header
-// uses), so switching here switches everywhere. Layout: SkillsManagerBoard
-// (prototype fusion — Exchange panels × Registry rows).
-import { useMemo, useState } from 'react';
+// uses), so switching here switches everywhere.
+//
+// This file is now page CHROME + tab routing only. Each tab is a self-contained
+// surface — `SkillsOverviewPanel`, `SkillsAnalyticsTab`, `RegistryTab` — and the
+// row/handler assembly lives in `useSkillsManagerRows`, so the Mastermind
+// canvas's Skills modal mounts the very same components instead of maintaining
+// a parallel skills UI.
+import { useState } from 'react';
 
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ImproveProvider } from '@/features/teams/sub_factory/passport/improve/ImproveContext';
 import { useImproveEngine } from '@/features/teams/sub_factory/passport/improve/useImproveEngine';
 import { usePassportData } from '@/features/teams/sub_factory/passport/usePassportData';
-import type { SkillCoverageRow, SkillEntry, SkillUsageRow } from '@/api/devTools/devTools';
-import { skillCommand } from '@/features/teams/sub_factory/passport/improve/skillsWorkbenchData';
-import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
-import { useToastStore } from '@/stores/toastStore';
-import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -27,58 +27,21 @@ import { Wand2 } from 'lucide-react';
 import { DevToolsPageHeader } from '../DevToolsPageHeader';
 
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
-import { isPresetSkill, presetSkillEntry, PRESET_SKILLS } from '../constants/presetSkills';
 import { SkillsAnalyticsTab } from './analytics/SkillsAnalyticsTab';
 import { RegistryTab } from './registry/RegistryTab';
 import { SkillInfoModal } from './SkillInfoModal';
-import { useSkillsManagerData, type MemoryBinding } from './skillsManagerData';
-import { SkillsManagerBoard } from './SkillsManagerBoard';
-import { SkillContextsModal } from './SkillContextsModal';
-import type { UseSkillChoice } from './UseSkillDialog';
+import { SkillsOverviewPanel } from './SkillsOverviewPanel';
+import { useSkillsManagerRows } from './skillsManagerRows';
 
-/** Workspace-side row model. */
-export interface WsRow {
-  entry: SkillEntry;
-  usage: SkillUsageRow | undefined;
-  /** Already installed in the active project (row dims, no adopt action). */
-  installed: boolean;
-}
-
-/** Project-side row model. */
-export interface ProjRow {
-  entry: SkillEntry;
-  usage: SkillUsageRow | undefined;
-  /** The library doesn't have it — the share affordance shows. */
-  shareable: boolean;
-  coverage: SkillCoverageRow | undefined;
-  /** Context-related: declared (`contexts: tracked`) OR evidenced (coverage). */
-  tracked: boolean;
-}
-
-export interface SkillsManagerVariantProps {
-  ws: WsRow[];
-  proj: ProjRow[];
-  totalContexts: number;
-  busy: boolean;
-  projectName: string;
-  /** Active project id — the Use dialog needs it to fetch contexts. */
-  projectId: string | null;
-  onAdopt: (name: string) => void;
-  onShare: (name: string) => void;
-  /** Project side — run the installed skill with the operator's dispatch-target
-   *  + context choice (see UseSkillChoice). */
-  onUse: (name: string, choice: UseSkillChoice) => void;
-  /** Project-side rows only — the host binds the active project id. */
-  onSwitchMemory: (skillName: string, next: MemoryBinding) => void;
-  onOpenContexts: (skill: string) => void;
-  /** Skill-name click → the shared metadata modal. */
-  onOpenInfo: (skill: string) => void;
-}
+// Row models moved to `skillsManagerRows` (the hook that builds them) and are
+// re-exported here so existing `from '../SkillsManagerPage'` type imports keep
+// resolving.
+export type { ProjRow, SkillsManagerVariantProps, WsRow } from './skillsManagerRows';
 
 export default function SkillsManagerPage() {
   const { t } = useTranslation();
   // Same provider composition as Mastermind: passports feed the improve
-  // engine, which owns the adopt/share Dev-runner ops the workbench reuses.
+  // engine, which owns the adopt/share Dev-runner ops the surfaces reuse.
   const { rawByProject, loading, reload } = usePassportData();
   const improve = useImproveEngine(rawByProject, reload);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
@@ -95,109 +58,11 @@ export default function SkillsManagerPage() {
 }
 
 function SkillsManagerInner({ activeId }: { activeId: string | null }) {
-  const { t, tx } = useTranslation();
-  const projects = useSystemStore((s) => s.projects);
-  const data = useSkillsManagerData(activeId);
-  const [contextsSkill, setContextsSkill] = useState<string | null>(null);
-  const [infoSkill, setInfoSkill] = useState<string | null>(null);
+  const { t } = useTranslation();
   const [pageTab, setPageTab] = useState<'overview' | 'analytics' | 'registry'>('overview');
-
-  const projectName = projects.find((p) => p.id === activeId)?.name ?? '';
-
-  const ws: WsRow[] = useMemo(() => {
-    const rows: WsRow[] = data.workspaceSkills.map((entry) => ({
-      entry,
-      usage: data.usageGlobal.get(entry.name),
-      installed: data.installedNames.has(entry.name),
-    }));
-    // The Preset tab always shows the full app-owned catalog — synthesize rows
-    // for presets not materialized in the user's global library.
-    const have = new Set(rows.map((r) => r.entry.name));
-    for (const p of PRESET_SKILLS.values()) {
-      if (have.has(p.name)) continue;
-      rows.push({
-        entry: presetSkillEntry(p),
-        usage: data.usageGlobal.get(p.name),
-        installed: data.installedNames.has(p.name),
-      });
-    }
-    return rows;
-  }, [data.workspaceSkills, data.usageGlobal, data.installedNames]);
-
-  const shareableNames = useMemo(
-    () => new Set((data.wb?.share.items ?? []).map((s) => s.name)),
-    [data.wb],
-  );
-  const proj: ProjRow[] = useMemo(
-    () => data.projectSkills.map((entry) => ({
-      entry,
-      usage: data.usageProject.get(entry.name),
-      shareable: shareableNames.has(entry.name),
-      coverage: data.coverageBySkill.get(entry.name),
-      tracked: entry.contextTracked || data.coverageBySkill.has(entry.name),
-    })),
-    [data.projectSkills, data.usageProject, shareableNames, data.coverageBySkill],
-  );
-
-  const busy = Boolean(data.wb?.managing);
-  const addToast = useToastStore((s) => s.addToast);
-  const { copy } = useCopyToClipboard();
-
-  // Presets install from the app bundle (system-skill lane) — not via the
-  // Dev-runner adopt task, which sources from the user's global library.
-  const runAdopt = (name: string) => {
-    if (!isPresetSkill(name)) { void data.wb?.runAdopt(name); return; }
-    if (!activeId) return;
-    void (async () => {
-      try {
-        const { installSystemSkill } = await import('@/api/devTools/devTools');
-        await installSystemSkill(name, activeId, false);
-        addToast(tx(t.plugins.dev_tools.skills_preset_installed, { name }), 'success');
-        data.refresh();
-      } catch (err) {
-        toastCatch('SkillsManagerPage:installPreset')(err);
-      }
-    })();
-  };
-
-  // Route the operator's Use choice. Context term is folded into the args as a
-  // trailing positional (a "preset terminal input"); "all" runs one dispatch
-  // per context. Fleet → wb.runDispatch (in-app session). Terminal →
-  // wb.runConsole, which opens a real console window already cd'd to the repo
-  // root with the Claude CLI running and the `/skill …` command seeded — so the
-  // operator no longer copies, opens a terminal, navigates and pastes by hand.
-  //
-  // Clipboard stays as the FALLBACK, not the happy path: console spawning is
-  // Windows-only today and needs the Claude CLI on PATH (see
-  // src-tauri/src/commands/fleet/external.rs). When it can't spawn, the
-  // operator still gets the exact command, which is what they had before.
-  const runUse = (name: string, choice: UseSkillChoice) => {
-    const argSets = choice.contexts.length
-      ? choice.contexts.map((c) => [choice.args, c].filter(Boolean).join(' '))
-      : [choice.args];
-    if (choice.target === 'cmd') {
-      void (async () => {
-        try {
-          // ONE window for the whole batch — a console is a window the operator
-          // closes by hand, so Fleet's one-session-per-context does not carry
-          // over here. The session runs them sequentially; see consolePrompt.
-          await data.wb?.runConsole(name, argSets);
-          addToast(
-            argSets.length > 1
-              ? tx(t.plugins.dev_tools.skills_use_cmd_launched_batch, { n: argSets.length, name: projectName })
-              : tx(t.plugins.dev_tools.skills_use_cmd_launched, { name: projectName }),
-            'success',
-          );
-        } catch (e) {
-          silentCatch('SkillsManagerPage:runConsole')(e);
-          copy(argSets.map((a) => `claude "${skillCommand(name, a)}"`).join(' && '));
-          addToast(t.plugins.dev_tools.skills_use_cmd_fallback, 'warning');
-        }
-      })();
-      return;
-    }
-    for (const a of argSets) void data.wb?.runDispatch(name, a);
-  };
+  // Registry + Analytics share the page's info-modal slot; Overview owns its own
+  // (it lives inside SkillsOverviewPanel, which the canvas modal mounts too).
+  const [infoSkill, setInfoSkill] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col h-full min-h-0" data-testid="skills-manager-page">
@@ -226,44 +91,31 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
         {pageTab === 'registry' ? (
           <RegistryTab activeProjectId={activeId} onOpenInfo={setInfoSkill} />
         ) : pageTab === 'analytics' && activeId ? (
-          <SkillsAnalyticsTab
-            projectId={activeId}
-            proj={proj}
-            totalContexts={data.totalContexts}
-            busy={busy}
-            onDispatch={(skill, args) => { void data.wb?.runDispatch(skill, args); }}
-            onOpenInfo={setInfoSkill}
-          />
+          <AnalyticsHost projectId={activeId} onOpenInfo={setInfoSkill} />
         ) : (
-          <SkillsManagerBoard
-            ws={ws}
-            proj={proj}
-            totalContexts={data.totalContexts}
-            busy={busy}
-            projectName={projectName}
-            projectId={activeId}
-            onAdopt={runAdopt}
-            onShare={(name) => { void data.wb?.runShare(name); }}
-            onUse={runUse}
-            onSwitchMemory={(skillName, next) => { if (activeId) void data.switchMemory(skillName, activeId, next); }}
-            onOpenContexts={setContextsSkill}
-            onOpenInfo={setInfoSkill}
-          />
+          <SkillsOverviewPanel projectId={activeId} />
         )}
       </div>
 
-      {contextsSkill && activeId && (
-        <SkillContextsModal
-          projectId={activeId}
-          projectName={projectName}
-          skill={contextsSkill}
-          totalContexts={data.totalContexts}
-          onClose={() => setContextsSkill(null)}
-        />
-      )}
       {infoSkill && (
         <SkillInfoModal skillName={infoSkill} projectId={activeId} onClose={() => setInfoSkill(null)} />
       )}
     </div>
+  );
+}
+
+/** Analytics consumes the same project rows the Overview surface does — through
+ *  the shared hook, not a second derivation. */
+function AnalyticsHost({ projectId, onOpenInfo }: { projectId: string; onOpenInfo: (skill: string) => void }) {
+  const rows = useSkillsManagerRows(projectId);
+  return (
+    <SkillsAnalyticsTab
+      projectId={projectId}
+      proj={rows.proj}
+      totalContexts={rows.totalContexts}
+      busy={rows.busy}
+      onDispatch={rows.onDispatch}
+      onOpenInfo={onOpenInfo}
+    />
   );
 }
