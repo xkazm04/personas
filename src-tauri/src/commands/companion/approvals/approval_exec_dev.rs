@@ -836,9 +836,11 @@ pub(crate) fn execute_dev_improve(
     crate::companion::orchestration::emit_digest_changed(app);
 
     let mut msg = format!(
+        // Full op_id, never truncated: dev_merge looks the op up by exact match,
+        // so the id shown here must round-trip into the merge handshake.
         "Dev session `{}` dispatched (op `{}`).\nWorkspace: {}",
         &session_id[..session_id.len().min(8)],
-        &op_id[..op_id.len().min(8)],
+        op_id,
         if backend {
             format!(
                 "isolated worktree `{}` — nothing applies to the running app until the \
