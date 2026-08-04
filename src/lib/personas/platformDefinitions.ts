@@ -47,15 +47,6 @@ export interface PlatformDefinition {
 
 // -- Service map helper -----------------------------------------
 
-/** Convert a PlatformDefinition's nodeTypeMap into a flat Record for backward-compat usage. */
-export function toServiceMap(def: PlatformDefinition): Record<string, string> {
-  const map: Record<string, string> = {};
-  for (const m of def.nodeTypeMap) {
-    map[m.sourcePattern] = m.targetService;
-  }
-  return map;
-}
-
 /**
  * Node-type mappings ordered longest-pattern-first.
  *
@@ -397,14 +388,3 @@ export const MAKE_DEFINITION: PlatformDefinition = {
   isBuiltin: true,
 };
 
-/** All built-in platform definitions. */
-export const BUILTIN_DEFINITIONS: PlatformDefinition[] = [
-  N8N_DEFINITION,
-  ZAPIER_DEFINITION,
-  MAKE_DEFINITION,
-];
-
-/** Look up a built-in definition by platform ID. */
-export function getBuiltinDefinition(platformId: string): PlatformDefinition | undefined {
-  return BUILTIN_DEFINITIONS.find((d) => d.id === platformId);
-}
