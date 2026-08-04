@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, LayoutGrid, BookOpen, Play, Table2 } from 'lucide-react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
@@ -13,13 +13,26 @@ import { setFleetFontOverride } from './fleetTerminalManager';
 import { approvalsForSession, needsLiveAttention } from './fleetAttention';
 import { gridDim, densityFont } from './fleetGridLayout';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
-import { MonitorView } from './sub_monitor_proto/MonitorView';
+import { MonitorView } from './sub_monitor/MonitorView';
 
 // Two grid views: the classic terminal tiles and the minimized monitor
-// ledger (fused /prototype winner). Module-scoped so the chosen view
-// survives close/reopen.
+// ledger. Module-scoped so the chosen view survives close/reopen.
 type GridViewId = 'tiles' | 'monitor';
 let lastGridView: GridViewId = 'tiles';
+/** Set once the operator picks a view from the switcher — their pick wins from
+ *  then on, and the fleet-size default stops being consulted. */
+let lastGridViewExplicit = false;
+
+/**
+ * Above this many live sessions the tile grid stops being readable (tiles get
+ * smaller than a useful terminal) and the ledger is the better first read.
+ */
+const MONITOR_DEFAULT_ABOVE = 12;
+
+function defaultGridView(sessionCount: number): GridViewId {
+  if (lastGridViewExplicit) return lastGridView;
+  return sessionCount > MONITOR_DEFAULT_ABOVE ? 'monitor' : 'tiles';
+}
 
 interface Props {
   open: boolean;
@@ -88,11 +101,21 @@ export function FleetTerminalOverlay({
   // no longer closeable from the footer. The orb reads the same store flag, so
   // nothing was lost by deleting the write.
 
-  const [view, setView] = useState<GridViewId>(lastGridView);
+  const [view, setView] = useState<GridViewId>(() => defaultGridView(sessions.length));
   const changeView = useCallback((v: GridViewId) => {
     lastGridView = v;
+    lastGridViewExplicit = true;
     setView(v);
   }, []);
+
+  // Re-decide the landing view on every OPEN, not on every session change — the
+  // view must not swap out from under the operator while they are reading it.
+  const sessionCount = useRef(sessions.length);
+  sessionCount.current = sessions.length;
+  useEffect(() => {
+    if (!open) return;
+    setView(defaultGridView(sessionCount.current));
+  }, [open]);
 
   // Two-phase open (perf): paint the overlay frame + tile chrome/status blocks
   // on the FIRST frame, and only mount the expensive tile bodies (xterm attach,
@@ -187,18 +210,17 @@ export function FleetTerminalOverlay({
         <LayoutGrid className="w-4 h-4 text-primary ml-1" aria-hidden="true" />
         <span className="typo-caption text-foreground">{countLabel}</span>
         <FleetAttentionLegend />
-        {/* Tiles ↔ Monitor view switcher (strings i18n'd once the monitor
-            graduates from prototype). */}
+        {/* Tiles / Monitor view switcher. */}
         <SegmentedTabs
           tabs={[
-            { id: 'tiles' as const, label: <LayoutGrid className="w-3.5 h-3.5" />, ariaLabel: 'Terminal tiles' },
-            { id: 'monitor' as const, label: <Table2 className="w-3.5 h-3.5" />, ariaLabel: 'Monitor' },
+            { id: 'tiles' as const, label: <LayoutGrid className="w-3.5 h-3.5" />, ariaLabel: t.plugins.fleet.monitor_tiles_aria },
+            { id: 'monitor' as const, label: <Table2 className="w-3.5 h-3.5" />, ariaLabel: t.plugins.fleet.monitor_aria },
           ]}
           activeTab={view}
           onTabChange={changeView}
           fullWidth={false}
           size="sm"
-          ariaLabel="Grid view"
+          ariaLabel={t.plugins.fleet.monitor_view_switcher_aria}
           className="ml-2"
         />
         <button

@@ -1,6 +1,6 @@
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetMonitorStats } from '@/lib/bindings/FleetMonitorStats';
-import type { ProtoTerminal } from './monitorTypes';
+import type { MonitorTerminal } from './monitorTypes';
 
 /**
  * Adapter: REAL fleet sessions → the monitor model the ledger renders.
@@ -40,7 +40,7 @@ function baseTerminal(s: FleetSession, nowMs: number) {
 }
 
 /** Placeholder stats for a session with no bound transcript. */
-function simulatedTerminal(s: FleetSession, nowMs: number): Omit<ProtoTerminal, 'screenHealth'> {
+function simulatedTerminal(s: FleetSession, nowMs: number): Omit<MonitorTerminal, 'screenHealth'> {
   const h = fnv(s.id);
   const base = baseTerminal(s, nowMs);
   const working = s.state === 'running' || s.state === 'spawning';
@@ -63,7 +63,7 @@ export function sessionToMonitorTerminal(
   s: FleetSession,
   nowMs: number,
   stats?: FleetMonitorStats,
-): ProtoTerminal {
+): MonitorTerminal {
   // Screen movement is measured off the PTY, not the transcript, so it is
   // real even on a row whose numbers are placeholders.
   const screenHealth = stats?.screenHealth ?? null;
@@ -83,10 +83,47 @@ export function sessionToMonitorTerminal(
   };
 }
 
+/** Field-by-field equality — every `MonitorTerminal` field is a primitive. */
+function sameTerminal(a: MonitorTerminal, b: MonitorTerminal): boolean {
+  return (
+    a.id === b.id
+    && a.simulated === b.simulated
+    && a.project === b.project
+    && a.label === b.label
+    && a.state === b.state
+    && a.dozing === b.dozing
+    && a.headless === b.headless
+    && a.subprocs === b.subprocs
+    && a.subagentsActive === b.subagentsActive
+    && a.subagentsTotal === b.subagentsTotal
+    && a.outputTokens === b.outputTokens
+    && a.contextTokens === b.contextTokens
+    && a.memMb === b.memMb
+    && a.ageMin === b.ageMin
+    && a.screenHealth === b.screenHealth
+  );
+}
+
+/**
+ * Build the ledger model, REUSING the previous terminal object for any session
+ * whose fields did not move.
+ *
+ * Identity is the whole point: the ledger's rows are memoized on their own
+ * terminal, and this adapter runs on every stats poll and every session-state
+ * event. Rebuilding fresh objects each call would make all ~50 rows look
+ * changed and defeat the memo — the caller passes the last result back in and
+ * only genuinely-moved rows get a new reference.
+ */
 export function sessionsToMonitorModel(
   sessions: FleetSession[],
   stats?: Map<string, FleetMonitorStats>,
-): ProtoTerminal[] {
+  prev?: MonitorTerminal[],
+): MonitorTerminal[] {
   const now = Date.now();
-  return sessions.map((s) => sessionToMonitorTerminal(s, now, stats?.get(s.id)));
+  const prevById = prev && prev.length > 0 ? new Map(prev.map((t) => [t.id, t])) : null;
+  return sessions.map((s) => {
+    const next = sessionToMonitorTerminal(s, now, stats?.get(s.id));
+    const before = prevById?.get(s.id);
+    return before && sameTerminal(before, next) ? before : next;
+  });
 }

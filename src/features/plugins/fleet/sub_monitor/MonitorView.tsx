@@ -1,21 +1,23 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { FleetTerminalPane } from '../FleetTerminalPane';
 import { FleetTileStatusBlock } from '../FleetTileStatusBlock';
 import { FleetStatusDots } from '../FleetStatusDots';
 import { sessionsToMonitorModel } from './monitorModel';
 import { useMonitorStats } from './useMonitorStats';
-import { TerminalStats } from './monitorProtoMeta';
+import { TerminalStats } from './monitorMeta';
 import { MonitorLedger } from './MonitorLedger';
-import type { ProtoTerminal } from './monitorTypes';
+import { MonitorTotals } from './MonitorTotals';
+import type { MonitorTerminal } from './monitorTypes';
 
 /**
- * The minimized monitor layer inside the fullscreen grid overlay — the FUSED
- * variant (Ledger baseline + attention-lane grouping), living next to the
- * classic tile grid behind the header switcher.
+ * The minimized monitor layer inside the fullscreen grid overlay — a dense
+ * ledger with attention-lane grouping, living next to the classic tile grid
+ * behind the header switcher.
  *
  * Zero xterms mounted while monitoring — near-free at any fleet size.
  * Clicking a row focuses the session (parent `onSelect`, so the terminal
@@ -24,6 +26,9 @@ import type { ProtoTerminal } from './monitorTypes';
  * of Fleet: Escape is intercepted in the capture phase (before the overlay's
  * Escape-to-minimize), and the titlebar Back button is re-pointed at the
  * pane while it's open, restoring the overlay's minimize interceptor after.
+ *
+ * A one-line fleet totals strip sits above the ledger; it is scoped to this
+ * view because its measured sums come from the same poll.
  *
  * Stats come from `fleet_monitor_stats` (one IPC for the whole fleet, polled
  * only while this view is mounted); sessions with no bound transcript keep the
@@ -38,17 +43,41 @@ export function MonitorView({
    *  fullscreen pane closes (the overlay registered it while opening). */
   onOverlayClose: () => void;
 }) {
+  const { t } = useTranslation();
   const [openId, setOpenId] = useState<string | null>(null);
+  // The row that currently owns the `monitor-term-<id>` shared layout id. It is
+  // armed a frame BEFORE `openId` (framer needs a measured box on the row to
+  // animate from) and released only once the fullscreen pane has finished its
+  // exit — otherwise the collapse would have no target to fly back to.
+  const [armedId, setArmedId] = useState<string | null>(null);
   const setBackInterceptor = useSystemStore((s) => s.setBackInterceptor);
   const stats = useMonitorStats();
-  const model = useMemo(() => sessionsToMonitorModel(sessions, stats), [sessions, stats]);
+  const prevModel = useRef<MonitorTerminal[]>([]);
+  const model = useMemo(() => {
+    const next = sessionsToMonitorModel(sessions, stats, prevModel.current);
+    prevModel.current = next;
+    return next;
+  }, [sessions, stats]);
   const openTerm = openId ? model.find((m) => m.id === openId) ?? null : null;
   const openSession = openId ? sessions.find((s) => s.id === openId) ?? null : null;
 
-  const onOpen = (t: ProtoTerminal) => {
-    onSelect(t.id);
-    setOpenId(t.id);
-  };
+  const armedRef = useRef<string | null>(null);
+  const arm = useCallback((id: string | null) => {
+    armedRef.current = id;
+    setArmedId(id);
+  }, []);
+  const onOpen = useCallback((term: MonitorTerminal) => {
+    onSelect(term.id);
+    // Pointer-down already armed this row a frame ago — expand immediately.
+    // Any other entry path (keyboard, synthetic click) arms now and defers the
+    // expand by one frame so the row's motion node gets measured first.
+    if (armedRef.current === term.id) {
+      setOpenId(term.id);
+      return;
+    }
+    arm(term.id);
+    requestAnimationFrame(() => setOpenId(term.id));
+  }, [onSelect, arm]);
 
   // While the fullscreen pane is open, BOTH back affordances collapse to the
   // monitor instead of leaving it: Escape (capture, ahead of the overlay's
@@ -80,12 +109,15 @@ export function MonitorView({
   return (
     <LayoutGroup>
       <div className="relative flex-1 min-h-0 flex flex-col">
-        <MonitorLedger fleet={model} onOpen={onOpen} />
-        <AnimatePresence>
+        <MonitorTotals fleet={model} />
+        <MonitorLedger fleet={model} onOpen={onOpen} onArm={arm} armedId={armedId} />
+        {/* The armed row keeps its shared layout id until the pane has fully
+            collapsed back onto it — releasing earlier would strand the exit. */}
+        <AnimatePresence onExitComplete={() => arm(null)}>
           {openTerm && openSession && (
             <motion.div
               key={openTerm.id}
-              layoutId={`proto-term-${openTerm.id}`}
+              layoutId={`monitor-term-${openTerm.id}`}
               className="absolute inset-0 z-30 flex flex-col rounded-modal border border-primary/25 bg-[#0a0a0c] overflow-hidden shadow-elevation-4"
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
             >
@@ -94,7 +126,7 @@ export function MonitorView({
                   type="button"
                   data-testid="fleet-monitor-fullscreen-back"
                   onClick={() => setOpenId(null)}
-                  aria-label="Back to monitor"
+                  aria-label={t.plugins.fleet.monitor_back}
                   className="p-1 rounded-interactive text-foreground hover:bg-secondary/50 transition-colors"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -105,7 +137,7 @@ export function MonitorView({
                 </span>
                 <span className="typo-caption text-foreground opacity-50">{openSession.projectLabel}</span>
                 <div className="flex-1" />
-                <TerminalStats t={openTerm} />
+                <TerminalStats terminal={openTerm} />
               </div>
               <motion.div
                 initial={{ opacity: 0 }}
