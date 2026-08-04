@@ -181,7 +181,7 @@ pub async fn build_system_prompt(
     // the older flat fleet-state digest with an operation-grouped
     // narrative tied to user intent.
     let observability_md = format!(
-        "{}{}{}{}{}{}",
+        "{}{}{}{}{}{}{}",
         observability_md,
         crate::companion::orchestration::operative_memory::memory().digest_for_prompt(),
         // Multi-conversation: the roster of the user's OTHER open threads, so one
@@ -197,6 +197,11 @@ pub async fn build_system_prompt(
         format_persona_index(sys_db),
         format_context_index(sys_db),
         format_skill_index(sys_db),
+        // Mastermind canvas scene digest (WP2). Same slot and the same
+        // reasoning as the three index blocks: it is a structural fact about
+        // what the portfolio looks like RIGHT NOW, not recalled memory, so it
+        // must survive `compose()`'s recall-briefing blanking.
+        format_scene_digest(sys_db),
     );
 
     // The only genuinely ml-vs-non-ml seams: whether retrieval is
@@ -992,6 +997,125 @@ fn render_skill_index(skills: &[SkillIndexEntry]) -> String {
         "\n_Listing {shown} of {total} installed skills, truncated for \
          prompt budget._ Use the `describe_skill` read op for one skill's \
          full when-to-use.\n"
+    ))
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Mastermind canvas scene digest — the bounded "what does the portfolio
+// look like right now" layer (WP2, 2026-08-04)
+//
+// The three index blocks above answer "what exists, by id". This one answers
+// "what needs me". It is a TRIAGE surface, so the order is worst-first, never
+// alphabetical: attention, then island state, then alerting cells, then
+// blockers, then total unhealthy cells, with the slug as a stable tiebreak.
+// The ordering rule itself lives on `canvas::CanvasProject::triage_key`.
+//
+// Budget: its OWN ~1200 tokens, deliberately not carved out of
+// `INDEX_CHAR_BUDGET` — the digest and the indexes answer different questions
+// and starving one to feed the other would silently truncate a list Athena is
+// told is authoritative. Combined always-on structural ceiling is therefore
+// ~2400 tokens.
+//
+// SOURCE: the canvas publishes a snapshot (see `companion::canvas` for why a
+// Rust re-derive is the wrong shape). No snapshot published yet means NO
+// BLOCK: a user who never opens Mastermind pays nothing for it.
+// ─────────────────────────────────────────────────────────────────────────
+
+/// Token budget for the scene digest, independent of [`INDEX_TOKEN_BUDGET`].
+const SCENE_TOKEN_BUDGET: usize = 1200;
+/// Characters the digest may occupy.
+const SCENE_CHAR_BUDGET: usize = SCENE_TOKEN_BUDGET * CHARS_PER_TOKEN;
+/// Held back for the footer, which carries the true project count and the
+/// data-family caveats. Generous on purpose: same rule as the index blocks,
+/// a truncated triage list that does not SAY it is truncated is worse than none.
+const SCENE_FOOTER_RESERVE: usize = 420;
+/// Unhealthy cells named per project row. Beyond this the row says how many
+/// more there are rather than spending the whole budget on one bad project.
+const SCENE_CELLS_PER_ROW: usize = 6;
+
+const _: () = assert!(SCENE_FOOTER_RESERVE < SCENE_CHAR_BUDGET);
+
+/// The Mastermind canvas, worst-first. See the block comment above.
+fn format_scene_digest(sys_db: &DbPool) -> String {
+    let Some(scene) = crate::companion::canvas::load_scene(sys_db) else {
+        return String::new();
+    };
+    render_scene_digest(&scene)
+}
+
+/// Rendering half of [`format_scene_digest`], split out so the budget can be
+/// tested against a synthetic 50-project scene without touching the DB.
+fn render_scene_digest(scene: &crate::companion::canvas::CanvasScene) -> String {
+    let triaged = scene.triaged();
+    let total = triaged.len();
+    let caveats = crate::companion::canvas::scene_caveats(scene);
+    if total == 0 {
+        return format!(
+            "\n\n# Mastermind canvas\n\nThe canvas has no projects on it. _{caveats}._\n"
+        );
+    }
+    let mut block = BoundedBlock::new(
+        "\n\n# Mastermind canvas (worst first)\n\n\
+         The user's project portfolio as the canvas derived it, ordered by what \
+         needs attention: live blocked sessions first, then island state, then \
+         alerting cells, then blockers. Only cells that are NOT fine are listed. \
+         Reference a project by the exact slug shown; never invent one.\n\n",
+        SCENE_CHAR_BUDGET,
+        SCENE_FOOTER_RESERVE,
+    );
+    for p in &triaged {
+        let unhealthy = p.unhealthy_cells();
+        let named: Vec<String> = unhealthy
+            .iter()
+            .take(SCENE_CELLS_PER_ROW)
+            .map(|c| index_summary(c, 46))
+            .collect();
+        let more = unhealthy.len().saturating_sub(named.len());
+        let cells = if named.is_empty() {
+            "all cells fine".to_string()
+        } else {
+            format!(
+                "{}{}",
+                named.join(", "),
+                if more > 0 {
+                    format!(", +{more} more")
+                } else {
+                    String::new()
+                }
+            )
+        };
+        let line = format!(
+            "- **{name}** `{slug}` · {state}{attention}{blockers}{fleet} · {cells}\n",
+            name = index_summary(&p.name, 40),
+            slug = p.slug,
+            state = p.state,
+            attention = if p.attention { " · NEEDS YOU" } else { "" },
+            blockers = if p.blockers > 0 {
+                format!(" · {} blockers", p.blockers)
+            } else {
+                String::new()
+            },
+            fleet = if p.fleet > 0 {
+                format!(" · {} live sessions", p.fleet)
+            } else {
+                String::new()
+            },
+            cells = cells,
+        );
+        if !block.push_row(&line) {
+            break;
+        }
+    }
+    let shown = block.shown;
+    block.finish(&format!(
+        "\n_Listing {shown} of {total} projects, worst first, truncated for \
+         prompt budget. {caveats}._ Use the `describe_canvas_project` read op \
+         for one island's full fifteen cells, and `describe_canvas_freshness` \
+         for scan ages, ongoing goals and KPI standing. To act: \
+         `canvas_dispatch` (one project), `canvas_group_dispatch` (several, run \
+         one after another), `canvas_run_idea_scan`. To show structured \
+         findings about one project, `compose_canvas_panel` docks a \
+         SurfaceSpec v1 panel beside its island.\n"
     ))
 }
 
@@ -2081,6 +2205,101 @@ mod tests {
             "combined {} > budget {INDEX_CHAR_BUDGET}",
             personas.len() + contexts.len() + skills.len()
         );
+    }
+
+    /// A synthetic canvas scene: `count` projects, each with a full fifteen
+    /// cells of which many are unhealthy and carry long detail strings, so the
+    /// fixture pushes on the budget the way a real 50-project portfolio would.
+    fn fixture_scene(count: usize) -> crate::companion::canvas::CanvasScene {
+        let states = ["critical", "warning", "building", "healthy"];
+        let statuses = ["alert", "risk", "unknown", "absent", "solid", "partial"];
+        let projects: Vec<String> = (0..count)
+            .map(|n| {
+                let dims: Vec<String> = (0..15)
+                    .map(|d| {
+                        format!(
+                            r#"{{"key":"dim{d}","label":"Dimension {d}","status":"{}",
+                                "detail":"a long concrete detail string naming a tool and a number {n}"}}"#,
+                            statuses[(n + d) % statuses.len()]
+                        )
+                    })
+                    .collect();
+                format!(
+                    r#"{{"slug":"project-slug-{n:03}","name":"Project Number {n} With A Long Name",
+                         "state":"{}","attention":{},"blockers":{},"fleet":{},
+                         "dims":[{}]}}"#,
+                    states[n % states.len()],
+                    n % 7 == 0,
+                    n % 5,
+                    n % 3,
+                    dims.join(",")
+                )
+            })
+            .collect();
+        serde_json::from_str(&format!(
+            r#"{{"version":1,"publishedAt":"2026-08-04T09:00:00Z",
+                 "families":{{"scans":"failed","goals":"loaded"}},
+                 "projects":[{}]}}"#,
+            projects.join(",")
+        ))
+        .expect("fixture scene parses")
+    }
+
+    #[test]
+    fn scene_digest_stays_under_its_own_budget_with_50_projects() {
+        let digest = render_scene_digest(&fixture_scene(50));
+        assert!(
+            digest.len() <= SCENE_CHAR_BUDGET,
+            "scene digest {} > cap {SCENE_CHAR_BUDGET}",
+            digest.len()
+        );
+        // Its budget is its OWN: adding it must not have shrunk the three
+        // index blocks, which is the failure mode a shared budget invites.
+        assert_eq!(
+            PERSONA_INDEX_CHARS + CONTEXT_INDEX_CHARS + SKILL_INDEX_CHARS,
+            INDEX_CHAR_BUDGET
+        );
+    }
+
+    #[test]
+    fn a_truncated_scene_digest_still_reports_the_true_project_count() {
+        let digest = render_scene_digest(&fixture_scene(50));
+        assert!(digest.contains("of 50 projects"), "{digest}");
+        assert!(
+            !digest.contains("Listing 50 of 50"),
+            "50 projects must actually truncate, or the honesty line is decorative"
+        );
+        // The escape hatches must survive truncation.
+        assert!(digest.contains("describe_canvas_project"), "{digest}");
+        assert!(digest.contains("describe_canvas_freshness"), "{digest}");
+        // And the degraded family must be named, since cells fed by it lie.
+        assert!(digest.contains("scans (failed)"), "{digest}");
+    }
+
+    #[test]
+    fn the_scene_digest_leads_with_what_needs_attention() {
+        // Ordering is the product here: the block is a triage surface, so a
+        // blocked session must outrank an alphabetically earlier healthy row.
+        let scene: crate::companion::canvas::CanvasScene = serde_json::from_str(
+            r#"{"version":1,"projects":[
+                {"slug":"aaa-fine","name":"Fine","state":"healthy"},
+                {"slug":"zzz-blocked","name":"Blocked","state":"healthy","attention":true},
+                {"slug":"mmm-critical","name":"Critical","state":"critical"}
+            ]}"#,
+        )
+        .unwrap();
+        let digest = render_scene_digest(&scene);
+        let pos = |s: &str| digest.find(s).unwrap_or(usize::MAX);
+        assert!(pos("zzz-blocked") < pos("mmm-critical"), "{digest}");
+        assert!(pos("mmm-critical") < pos("aaa-fine"), "{digest}");
+        assert!(digest.contains("NEEDS YOU"), "{digest}");
+    }
+
+    #[test]
+    fn no_published_scene_means_no_block_at_all() {
+        // A user who never opens Mastermind must not pay prompt budget for it.
+        let pool = index_test_pool();
+        assert_eq!(format_scene_digest(&pool), "");
     }
 
     #[test]

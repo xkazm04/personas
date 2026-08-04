@@ -202,7 +202,19 @@ Mastermind hands projects off to the deeper layers with context instead of dupli
 
 Both sidebars, the context menu, and the list popovers share the app sidebar-menu language: `bg-secondary/95 backdrop-blur` + `border-primary/15` + `shadow-elevation-4` surfaces, `bg-primary/5` header bands with `typo-label text-foreground/90`, `typo-body text-foreground/70 hover:bg-secondary/40` rows.
 
-## 12. Known gaps / deferred
+## 12. Athena on the canvas
+
+She had no link to Mastermind at all until now: she could not read the scene, could not route to the tab, and no tool touched the scene or layout stores.
+
+**Reading it.** The canvas is derived entirely in the client, folding a readiness passport through the fifteen dimension closures plus five independently loaded data families whose per-family load status is itself part of the picture (`unknown` is a failed load, not a missing capability). None of that lives in SQLite, so re-deriving it in Rust would drift and could never report a client-side load failure. Instead the canvas publishes a snapshot to the `mastermind.scene.v1` app setting after each derive (debounced, deduped on the serialized body, never the demo scene), and the companion reads it. Until it publishes, the prompt block is absent and every op says plainly that the canvas is not reachable. Her block is worst-first triage, hard-capped at its own token budget, with a footer carrying the true project count and any degraded families. `describe_canvas_project` and `describe_canvas_freshness` return bounded detail on demand.
+
+**Acting on it.** `canvas_dispatch`, `canvas_group_dispatch` and `canvas_run_idea_scan` are thin slug-resolving wrappers: they turn canvas slugs into the same plan rows the chat plan card produces, run the same validation, and reach the same executors. Group dispatch stays sequential and capped, containment is unchanged, demo islands are refused by name, and every dispatch writes one row to the decision ledger. They follow the boldness dial like the other fleet actions.
+
+**Annotating it.** Groups, links and notes carry an author. Athena's render with a distinct accent and a provenance marker, and one control removes only hers. The layout document is version 2 for this; the DB key is unchanged, and existing objects migrate as the user's.
+
+**Composing a panel.** `compose_canvas_panel` sends a surface spec for one project. It renders through `SurfaceRenderer` (schema-validated, salvage-parsed, consent-gated actions) in the right dock, taking precedence over the passport sidebar while it is open. Panels persist per project in the layout document and restore when that project is focused. Each panel has its own reset, and a spec whose version this build does not understand is dropped rather than retained, so a bad compose can never become a permanent error box. Composing routes to the tab and asks the canvas to travel to the island; because off-screen islands are not mounted, focus is a request the shell answers, never a node lookup.
+
+## 13. Known gaps / deferred
 
 - `auth` stays inert on purpose. Making it actionable is a **Passport-wall** change, not a canvas one: there is no `auth` row in `deployActions`/`connectors`, the wall renders it as a plain presence cell, and `passportModel` marks `stack.auth` view-only. A canvas action would break `dimActions`' invariant that a cell is clickable exactly when its wall row shows a gear. The registry marks it `viewOnly: true` so its cells say so in the tooltip.
 - **KPI popover rows are inert** — the per-KPI jump into the Factory KPI dashboard is the next step.

@@ -19455,7 +19455,22 @@
     "legend_title": "حالات الخلايا",
     "legend_toggle": "إظهار أو إخفاء مفتاح حالات الخلايا",
     "legend_unknown": "غير معروف",
-    "legend_unknown_note": "«غير معروف» يعني أن الفحص لم يتمكن من قراءة هذا — وليس أن القيمة صفر."
+    "legend_unknown_note": "«غير معروف» يعني أن الفحص لم يتمكن من قراءة هذا — وليس أن القيمة صفر.",
+    "athena_authored": "من إعداد Athena",
+    "athena_revert_body_one": "ستتم إزالة مجموعة أو رابط أو ملاحظة واحدة أنشأتها Athena من هذه اللوحة. كل ما أنشأته أنت يبقى كما هو، ولوحات المشروع المُجمّعة لا تتأثر.",
+    "athena_revert_body_other": "ستتم إزالة {count} من المجموعات والروابط والملاحظات التي أنشأتها Athena من هذه اللوحة. كل ما أنشأته أنت يبقى كما هو، ولوحات المشروع المُجمّعة لا تتأثر.",
+    "athena_revert_cta": "أزل عناصرها",
+    "athena_revert_one": "إزالة علامة كانفس واحدة أضافتها Athena",
+    "athena_revert_other": "إزالة {count} علامات كانفس أضافتها Athena",
+    "athena_revert_title": "هل تريد إزالة العلامات التي أضافتها Athena؟",
+    "athena_panel_close": "إغلاق اللوحة",
+    "athena_panel_composed": "تمت الصياغة",
+    "athena_panel_reset": "إعادة تعيين هذه اللوحة",
+    "athena_panel_reset_action": "إعادة تعيين اللوحة",
+    "athena_panel_reset_body": "إزالة اللوحة التي أعدتها Athena لـ {name}. لوحات المشاريع الأخرى تبقى كما هي، ويمكنها إعداد لوحة جديدة في أي وقت.",
+    "athena_panel_reset_title": "إعادة تعيين هذه اللوحة؟",
+    "athena_panel_unreadable": "تعذر عرض هذه اللوحة.",
+    "athena_panel_unreadable_hint": "أعدت Athena هذه اللوحة بصيغة لا يفهمها هذا الإصدار. أعد تعيينها واطلب منها لوحة جديدة."
   },
   "ship": {
     "add": "إضافة",

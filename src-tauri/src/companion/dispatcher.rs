@@ -54,6 +54,16 @@ pub struct Dispatched {
     /// cockpit and it dies with dismissal. Auto-fire — the user pressed the
     /// decision bubble's `0` (explain) to ask for exactly this surface.
     pub explain_cockpits: Vec<String>,
+    /// `compose_canvas_panel` compositions — WP3's counterpart to `cockpits`,
+    /// aimed at the Mastermind canvas instead of Home. Each entry carries the
+    /// slug (already validated against the PUBLISHED scene, so a demo island or
+    /// an invented name never reaches the frontend) and the serialized
+    /// SurfaceSpec. session.rs emits one event per entry; persistence happens
+    /// frontend-side, inside the canvas layout document, because that is where
+    /// a per-project panel lives (`athenaPanels[slug]`) and where its reset
+    /// control can reach it. Auto-fire: a panel proposes, it never runs
+    /// anything — every action inside it is still consent-gated on render.
+    pub canvas_panels: Vec<CanvasPanelCompose>,
     /// Inline chat cards from `show_persona_overview` / `show_connected_services`
     /// / `show_decisions`. Auto-fire (no approval) — companion uses these to
     /// surface contextual info inside the chat transcript when she judges it
@@ -120,6 +130,31 @@ pub struct ChatCard {
     /// Free-form config block — serialized verbatim for the frontend.
     pub config: serde_json::Value,
 }
+
+/// One `compose_canvas_panel` composition (WP3). The slug is already resolved
+/// against the published canvas snapshot; `spec` is the serialized SurfaceSpec
+/// the frontend parses (salvage-repaired there — a hallucinated block is
+/// dropped rather than taking the panel down).
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CanvasPanelCompose {
+    /// Canvas slug, exactly as the published scene spells it.
+    pub slug: String,
+    /// Envelope version. Must stay in step with the frontend's
+    /// `SUPPORTED_PANEL_SPEC_VERSIONS` in `sub_mastermind/lib/layoutStore.ts`;
+    /// an entry carrying anything else is dropped on the way into the doc.
+    pub spec_version: u32,
+    /// Serialized SurfaceSpec JSON (`{"surface":"v1","blocks":[…]}`).
+    pub spec: String,
+}
+
+/// Panel-envelope version this build emits.
+pub const CANVAS_PANEL_SPEC_VERSION: u32 = 1;
+
+/// Blocks one composed panel may carry — mirrors `surfaceSpecSchema`'s `.max(12)`
+/// so an over-long composition is refused here rather than silently truncated
+/// by the renderer.
+const CANVAS_PANEL_MAX_BLOCKS: usize = 12;
 
 /// An ad-hoc `point_at` request: Athena rings one allow-listed UI anchor and
 /// narrates it, with no pre-authored walkthrough topic. `anchor` is validated
@@ -295,7 +330,27 @@ const ALLOWED_ACTIONS: &[&str] = &[
     // Backlog's button is the only producer today — an Athena-proposable
     // `triage_backlog` op is a deliberate later step).
     "backlog_apply_triage",
+    // WP2 — acting ON the Mastermind canvas. These three are thin
+    // slug-resolving wrappers, NOT new privileged surface: each one turns the
+    // canvas slugs Athena can actually see into the SAME `FleetPlanRow` shape
+    // the chat plan card produces, then hands off to the existing
+    // `execute_fleet_spawn` / `execute_fleet_dispatch` executors, whose
+    // `validate_fleet_cwd` containment is unchanged and un-widened. What they
+    // add over a bare `fleet_spawn` is the canvas-specific refusals: a
+    // `demo-*` island resolves to nothing real, and a group dispatch is
+    // sequential and capped.
+    "canvas_dispatch",
+    "canvas_group_dispatch",
+    "canvas_run_idea_scan",
 ];
+
+/// True when `action` has an [`ALLOWED_ACTIONS`] entry, i.e. a proposal
+/// carrying it becomes an approval row instead of being dropped as unknown.
+/// Exposed so the approval side can assert the two lists agree without
+/// publishing the list itself.
+pub fn action_is_allowed(action: &str) -> bool {
+    ALLOWED_ACTIONS.contains(&action)
+}
 
 /// Auto-fire, read-only detail lookups. Each one answers "what is this
 /// thing, exactly" for an entity kind whose always-on prompt index is
@@ -308,7 +363,20 @@ const READ_OPS: &[&str] = &[
     "describe_context",
     "describe_skill",
     "list_teams",
+    // WP2 — the Mastermind canvas. The always-on scene digest lists only the
+    // cells that are NOT fine and truncates for budget, so these two are its
+    // other half: the full fifteen-cell detail for one island, and the
+    // freshness / rollup layer (idea-scan age, ongoing goals, KPI standing)
+    // the digest compresses into a single clause. Both read the published
+    // scene snapshot; neither mutates anything.
+    "describe_canvas_project",
+    "describe_canvas_freshness",
 ];
+
+/// Read ops whose `query` param is optional (they answer for everything when
+/// it is empty). Everything else is rejected without one, because a lookup
+/// with no target is a model that forgot what it was asking about.
+const READ_OPS_QUERY_OPTIONAL: &[&str] = &["list_teams", "describe_canvas_freshness"];
 
 /// Longest accepted lookup string. A name or a UUID; anything longer is a
 /// model pasting prose into the param.
@@ -1391,6 +1459,80 @@ pub fn dispatch_with_sys(
                 });
                 out.explain_cockpits.push(spec.to_string());
             }
+            // ─────────────────────────────────────────────────────────────
+            // WP3 — composing a panel beside the Mastermind canvas.
+            //
+            // The canvas is the artifact she acts IN, so a composed surface
+            // docks there rather than becoming another chat card. Auto-fire,
+            // no approval: a SurfaceSpec renders information and PROPOSES
+            // actions, and every one of those is consent-gated at click time
+            // by SurfaceRenderer. What gets validated here is the two things
+            // the frontend cannot re-check: that the slug is an island she
+            // actually read out of the published scene (not a demo island,
+            // not an invention), and that the spec is a v1 envelope with
+            // blocks in it.
+            // ─────────────────────────────────────────────────────────────
+            Ok(env) if env.op == "propose_action" && env.action == "compose_canvas_panel" => {
+                let slug = env
+                    .params
+                    .get("slug")
+                    .or_else(|| env.params.get("project"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                // Without the system DB there is no published scene to check
+                // the slug against, and an unvalidated slug is exactly what
+                // this op exists to prevent. Fail closed.
+                let Some(db) = sys_db else {
+                    out.warnings.push(
+                        "compose_canvas_panel could not be validated: the canvas snapshot is \
+                         not reachable from this turn. Tell the user rather than composing."
+                            .into(),
+                    );
+                    cleaned_lines.push(line);
+                    continue;
+                };
+                let slug = match crate::companion::canvas::resolve_scene_slug(db, slug) {
+                    Ok(s) => s,
+                    Err(reason) => {
+                        out.warnings.push(format!("compose_canvas_panel: {reason}"));
+                        cleaned_lines.push(line);
+                        continue;
+                    }
+                };
+                let spec = env.params.get("spec");
+                let blocks = spec
+                    .and_then(|s| s.get("blocks"))
+                    .and_then(|v| v.as_array());
+                let envelope_ok = spec
+                    .and_then(|s| s.get("surface"))
+                    .and_then(|v| v.as_str())
+                    == Some("v1");
+                match (envelope_ok, blocks) {
+                    (true, Some(b)) if !b.is_empty() && b.len() <= CANVAS_PANEL_MAX_BLOCKS => {
+                        out.canvas_panels.push(CanvasPanelCompose {
+                            slug,
+                            spec_version: CANVAS_PANEL_SPEC_VERSION,
+                            spec: spec.map(|s| s.to_string()).unwrap_or_default(),
+                        });
+                    }
+                    (_, Some(b)) if b.len() > CANVAS_PANEL_MAX_BLOCKS => {
+                        out.warnings.push(format!(
+                            "compose_canvas_panel: {} blocks exceeds the cap of \
+                             {CANVAS_PANEL_MAX_BLOCKS}. Compose the ones that matter.",
+                            b.len()
+                        ));
+                        cleaned_lines.push(line);
+                    }
+                    _ => {
+                        out.warnings.push(
+                            "compose_canvas_panel: `spec` must be a SurfaceSpec v1 envelope — \
+                             {\"surface\":\"v1\",\"title\":…,\"blocks\":[…]} with at least one block."
+                                .into(),
+                        );
+                        cleaned_lines.push(line);
+                    }
+                }
+            }
             Ok(env) if env.op == "propose_action" && env.action == "open_lab" => {
                 let persona_id = env
                     .params
@@ -1968,12 +2110,11 @@ pub fn dispatch_with_sys(
                     .or_else(|| env.params.get("persona_id").and_then(|v| v.as_str()))
                     .or_else(|| env.params.get("context_id").and_then(|v| v.as_str()))
                     .or_else(|| env.params.get("name").and_then(|v| v.as_str()))
+                    .or_else(|| env.params.get("slug").and_then(|v| v.as_str()))
                     .map(str::trim)
                     .unwrap_or("");
                 let action = env.action.as_str();
-                // `list_teams` is the one read op with no required argument
-                // (an empty query lists the whole roster).
-                if query.is_empty() && action != "list_teams" {
+                if query.is_empty() && !READ_OPS_QUERY_OPTIONAL.contains(&action) {
                     let reason = format!(
                         "`{action}` needs a `query` param (the name or id to look up)"
                     );
@@ -1996,6 +2137,12 @@ pub fn dispatch_with_sys(
                         Some(db) => match action {
                             "describe_persona" => describe_persona(db, query),
                             "describe_context" => describe_context(db, query),
+                            "describe_canvas_project" => {
+                                crate::companion::canvas::describe_canvas_project(db, query)
+                            }
+                            "describe_canvas_freshness" => {
+                                crate::companion::canvas::describe_canvas_freshness(db, query)
+                            }
                             _ => list_teams(db, query),
                         },
                         None => format!(
@@ -3281,10 +3428,265 @@ OP: {{"op": "propose_action", "action": "{action}", "params": {{"query": "anythi
         }
     }
 
+    /// A system pool carrying `app_settings`, where the canvas publishes its
+    /// scene snapshot.
+    fn canvas_sys_pool(scene_json: Option<&str>) -> crate::db::DbPool {
+        let manager = SqliteConnectionManager::memory();
+        let pool = Pool::builder().max_size(1).build(manager).expect("sys pool");
+        {
+            let conn = pool.get().unwrap();
+            conn.execute_batch(
+                "CREATE TABLE app_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL,
+                    updated_at TEXT NOT NULL DEFAULT '2026-08-04');",
+            )
+            .unwrap();
+            if let Some(json) = scene_json {
+                conn.execute(
+                    "INSERT INTO app_settings (key, value) VALUES (?1, ?2)",
+                    params![crate::db::settings_keys::MASTERMIND_SCENE, json],
+                )
+                .unwrap();
+            }
+        }
+        pool
+    }
+
+    const CANVAS_FIXTURE: &str = r#"{"version":1,"publishedAt":"2026-08-04T09:00:00Z",
+        "families":{"scans":"failed"},
+        "projects":[
+          {"slug":"proj_1","name":"Personas","state":"warning","attention":true,
+           "blockers":3,"fleet":2,"ideasDays":42,"goalsOngoing":3,
+           "kpiTotal":6,"kpiOff":2,
+           "dims":[{"key":"tests","label":"Tests","status":"risk","detail":"41% cov"},
+                   {"key":"ci","label":"CI","status":"solid"}]},
+          {"slug":"proj_2","name":"Vibeman","state":"healthy","dims":[]}
+        ]}"#;
+
+    #[test]
+    fn canvas_read_ops_are_bounded_and_name_the_real_numbers() {
+        let sys = canvas_sys_pool(Some(CANVAS_FIXTURE));
+        let detail = crate::companion::canvas::describe_canvas_project(&sys, "proj_1");
+        assert!(detail.contains("`proj_1`"), "{detail}");
+        assert!(detail.contains("Tests risk (41% cov)"), "{detail}");
+        assert!(detail.contains("NEEDS THE USER"), "{detail}");
+        assert!(detail.contains("scans (failed)"), "must flag bad data: {detail}");
+        assert!(detail.len() <= READ_OP_DETAIL_CHARS, "unbounded: {}", detail.len());
+
+        let fresh = crate::companion::canvas::describe_canvas_freshness(&sys, "proj_1");
+        assert!(fresh.contains("42d old"), "{fresh}");
+        assert!(fresh.contains("3 ongoing"), "{fresh}");
+        assert!(fresh.contains("2 of 6 OFF TRACK"), "{fresh}");
+        assert!(fresh.len() <= READ_OP_DETAIL_CHARS, "unbounded: {}", fresh.len());
+
+        // Empty query answers for the whole canvas, worst-first and bounded.
+        let all = crate::companion::canvas::describe_canvas_freshness(&sys, "");
+        assert!(all.contains("2 of 2 projects"), "{all}");
+        assert!(all.find("proj_1").unwrap() < all.find("proj_2").unwrap(), "{all}");
+        assert!(all.len() <= READ_OP_DETAIL_CHARS, "unbounded: {}", all.len());
+    }
+
+    #[test]
+    fn canvas_project_detail_stays_bounded_with_all_fifteen_cells() {
+        // Fifteen cells with pathological detail strings must not sail past
+        // the dispatcher's own clip, which would take the caveats footer with
+        // it and turn a hedged answer into a confident one.
+        let dims: Vec<String> = (0..15)
+            .map(|d| {
+                format!(
+                    r#"{{"key":"dim{d}","label":"Dimension {d}","status":"risk","detail":"{}"}}"#,
+                    "x".repeat(4000)
+                )
+            })
+            .collect();
+        let sys = canvas_sys_pool(Some(&format!(
+            r#"{{"version":1,"projects":[{{"slug":"p","name":"P","state":"critical","dims":[{}]}}]}}"#,
+            dims.join(",")
+        )));
+        let out = crate::companion::canvas::describe_canvas_project(&sys, "p");
+        assert!(out.len() <= READ_OP_DETAIL_CHARS, "unbounded: {}", out.len());
+        assert!(
+            out.contains("of 15"),
+            "must say how many of the fifteen it printed: {out}"
+        );
+        assert!(out.contains("publish"), "footer must survive: {out}");
+    }
+
+    #[test]
+    fn canvas_read_ops_are_graceful_on_an_unknown_slug() {
+        let sys = canvas_sys_pool(Some(CANVAS_FIXTURE));
+        for out in [
+            crate::companion::canvas::describe_canvas_project(&sys, "not-a-project"),
+            crate::companion::canvas::describe_canvas_freshness(&sys, "not-a-project"),
+        ] {
+            assert!(out.contains("No project matches"), "{out}");
+            assert!(out.contains("`proj_1`"), "must name a real slug: {out}");
+            assert!(out.contains("do not invent a slug"), "{out}");
+        }
+    }
+
+    #[test]
+    fn canvas_read_ops_refuse_demo_islands_rather_than_answering_about_them() {
+        let sys = canvas_sys_pool(Some(CANVAS_FIXTURE));
+        for out in [
+            crate::companion::canvas::describe_canvas_project(&sys, "demo-codex"),
+            crate::companion::canvas::describe_canvas_freshness(&sys, "demo-web"),
+        ] {
+            assert!(out.contains("demo islands"), "{out}");
+        }
+    }
+
+    #[test]
+    fn canvas_read_ops_say_so_when_no_scene_has_been_published() {
+        let sys = canvas_sys_pool(None);
+        let out = crate::companion::canvas::describe_canvas_project(&sys, "proj_1");
+        assert!(out.contains("has not published a scene"), "{out}");
+        assert!(out.contains("rather than describing one"), "{out}");
+    }
+
+    /// One `compose_canvas_panel` op line with the given slug + spec JSON.
+    fn panel_line(slug: &str, spec: &str) -> String {
+        format!(
+            r#"Composing.
+OP: {{"op":"propose_action","action":"compose_canvas_panel","params":{{"slug":"{slug}","spec":{spec}}},"rationale":"why"}}"#
+        )
+    }
+
+    const GOOD_SPEC: &str =
+        r#"{"surface":"v1","title":"Tests","blocks":[{"type":"markdown","content":"hi"}]}"#;
+
+    #[test]
+    fn compose_canvas_panel_emits_a_panel_for_a_slug_in_the_published_scene() {
+        let pool = test_pool();
+        let sys = canvas_sys_pool(Some(CANVAS_FIXTURE));
+        let out = dispatch_with_sys(&pool, Some(&sys), "default", &panel_line("proj_1", GOOD_SPEC))
+            .expect("dispatch ok");
+        assert_eq!(out.canvas_panels.len(), 1, "warnings: {:?}", out.warnings);
+        let panel = &out.canvas_panels[0];
+        assert_eq!(panel.slug, "proj_1");
+        assert_eq!(panel.spec_version, CANVAS_PANEL_SPEC_VERSION);
+        assert!(panel.spec.contains("\"surface\":\"v1\""), "{}", panel.spec);
+        // Auto-fire: no approval card, and the op line never reaches the user.
+        assert!(out.approvals.is_empty());
+        assert!(!out.cleaned_text.contains("OP:"), "{}", out.cleaned_text);
+        // Auto-fire arm, like compose_cockpit: neither an approval action nor
+        // a read op, so listing it in either would create a dead card.
+        assert!(!ALLOWED_ACTIONS.contains(&"compose_canvas_panel"));
+        assert!(!READ_OPS.contains(&"compose_canvas_panel"));
+        // Resolved by NAME lands on the canonical slug, so the frontend keys
+        // the panel the same way the canvas does.
+        let by_name =
+            dispatch_with_sys(&pool, Some(&sys), "default", &panel_line("Personas", GOOD_SPEC))
+                .expect("dispatch ok");
+        assert_eq!(by_name.canvas_panels[0].slug, "proj_1");
+    }
+
+    #[test]
+    fn compose_canvas_panel_refuses_a_demo_island_and_an_invented_slug() {
+        let pool = test_pool();
+        let sys = canvas_sys_pool(Some(CANVAS_FIXTURE));
+
+        let demo = dispatch_with_sys(&pool, Some(&sys), "default", &panel_line("demo-web", GOOD_SPEC))
+            .expect("dispatch ok");
+        assert!(demo.canvas_panels.is_empty());
+        assert!(
+            demo.warnings.iter().any(|w| w.contains("demo islands")),
+            "{:?}",
+            demo.warnings
+        );
+
+        let unknown =
+            dispatch_with_sys(&pool, Some(&sys), "default", &panel_line("not-a-project", GOOD_SPEC))
+                .expect("dispatch ok");
+        assert!(unknown.canvas_panels.is_empty());
+        // A refusal must name real slugs, or the next attempt is another guess.
+        assert!(
+            unknown.warnings.iter().any(|w| w.contains("`proj_1`")),
+            "{:?}",
+            unknown.warnings
+        );
+    }
+
+    #[test]
+    fn compose_canvas_panel_refuses_a_spec_that_is_not_a_surface_envelope() {
+        let pool = test_pool();
+        let sys = canvas_sys_pool(Some(CANVAS_FIXTURE));
+        let too_many: String = format!(
+            r#"{{"surface":"v1","blocks":[{}]}}"#,
+            std::iter::repeat(r#"{"type":"markdown","content":"x"}"#)
+                .take(CANVAS_PANEL_MAX_BLOCKS + 1)
+                .collect::<Vec<_>>()
+                .join(",")
+        );
+        for spec in [
+            r#"{"blocks":[{"type":"markdown","content":"x"}]}"#, // no envelope tag
+            r#"{"surface":"v2","blocks":[{"type":"markdown","content":"x"}]}"#, // wrong version
+            r#"{"surface":"v1","blocks":[]}"#,                   // nothing to render
+            r#"{"surface":"v1"}"#,                               // no blocks at all
+            &too_many,
+        ] {
+            let out = dispatch_with_sys(&pool, Some(&sys), "default", &panel_line("proj_1", spec))
+                .expect("dispatch ok");
+            assert!(out.canvas_panels.is_empty(), "accepted a bad spec: {spec}");
+            assert!(
+                out.warnings.iter().any(|w| w.contains("compose_canvas_panel")),
+                "{spec}: {:?}",
+                out.warnings
+            );
+        }
+    }
+
+    #[test]
+    fn compose_canvas_panel_fails_closed_when_no_scene_is_reachable() {
+        let pool = test_pool();
+        // No system DB at all — the slug cannot be checked against anything.
+        let blind = dispatch(&pool, "default", &panel_line("proj_1", GOOD_SPEC)).expect("ok");
+        assert!(blind.canvas_panels.is_empty());
+        assert!(
+            blind.warnings.iter().any(|w| w.contains("not reachable")),
+            "{:?}",
+            blind.warnings
+        );
+
+        // System DB present, but the canvas has never published.
+        let sys = canvas_sys_pool(None);
+        let unpublished =
+            dispatch_with_sys(&pool, Some(&sys), "default", &panel_line("proj_1", GOOD_SPEC))
+                .expect("ok");
+        assert!(unpublished.canvas_panels.is_empty());
+        assert!(
+            unpublished
+                .warnings
+                .iter()
+                .any(|w| w.contains("has not published a scene")),
+            "{:?}",
+            unpublished.warnings
+        );
+    }
+
+    #[test]
+    fn canvas_actions_are_allowed_actions_not_read_ops() {
+        // The two lists must not overlap: an action in READ_OPS would auto-fire
+        // with no approval card and no executor, silently doing nothing.
+        for action in ["canvas_dispatch", "canvas_group_dispatch", "canvas_run_idea_scan"] {
+            assert!(ALLOWED_ACTIONS.contains(&action), "{action} needs an executor arm");
+            assert!(!READ_OPS.contains(&action), "{action} must not auto-fire");
+        }
+        for action in ["describe_canvas_project", "describe_canvas_freshness"] {
+            assert!(READ_OPS.contains(&action));
+            assert!(
+                !ALLOWED_ACTIONS.contains(&action),
+                "{action} has no executor; listing it would create a dead approval card"
+            );
+        }
+    }
+
     #[test]
     fn read_op_without_a_query_is_rejected_except_list_teams() {
         let pool = test_pool();
-        for action in ["describe_persona", "describe_context", "describe_skill"] {
+        for action in READ_OPS {
+            if READ_OPS_QUERY_OPTIONAL.contains(action) {
+                continue;
+            }
             let text =
                 format!(r#"OP: {{"op":"propose_action","action":"{action}","params":{{}}}}"#);
             let out = dispatch(&pool, "default", &text).expect("dispatch ok");
@@ -3294,13 +3696,12 @@ OP: {{"op": "propose_action", "action": "{action}", "params": {{"query": "anythi
                 out.warnings
             );
         }
-        let out = dispatch(
-            &pool,
-            "default",
-            r#"OP: {"op":"propose_action","action":"list_teams","params":{}}"#,
-        )
-        .expect("dispatch ok");
-        assert!(out.warnings.is_empty(), "{:?}", out.warnings);
+        for action in READ_OPS_QUERY_OPTIONAL {
+            let text =
+                format!(r#"OP: {{"op":"propose_action","action":"{action}","params":{{}}}}"#);
+            let out = dispatch(&pool, "default", &text).expect("dispatch ok");
+            assert!(out.warnings.is_empty(), "{action}: {:?}", out.warnings);
+        }
     }
 
     #[test]

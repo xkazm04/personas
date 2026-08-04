@@ -54,9 +54,13 @@ import { GoalListPopover } from './lib/GoalListPopover';
 import { KpiListPopover, type KpiListItem } from './lib/KpiListPopover';
 import { IdeaScanPopover, type ScanParams } from './lib/IdeaScanPopover';
 import { hydrateLayout, isLayoutHydrated, loadHidden, saveHidden } from './lib/layoutStore';
+import { useAthenaPanels, useLayoutHidden, useLayoutPositions } from './lib/useLayout';
+import { AthenaPanel } from './lib/AthenaPanel';
+import { clearCanvasFocus, focusCanvasProject, useFocusedProjectSlug } from './lib/focusStore';
+import { publishCanvasScene } from './lib/scenePublish';
 import { openFactory, openSkillsManager } from './lib/navigate';
 import { computeAttention } from './lib/liveState';
-import { useSceneStore } from './lib/sceneStore';
+import { useSceneStore, type FamilyStatus } from './lib/sceneStore';
 import { loadPositions, savePositions } from './lib/positions';
 import { PersonaListPopover, type PersonaRow } from './lib/PersonaListPopover';
 import { ProjectListSidebar } from './lib/ProjectListSidebar';
@@ -116,6 +120,7 @@ function MastermindInner() {
   const scansStatus = useSceneStore((s) => s.scansStatus);
   const sentryStatus = useSceneStore((s) => s.sentryStatus);
   const goalsStatus = useSceneStore((s) => s.goalsStatus);
+  const llmSpendStatus = useSceneStore((s) => s.llmSpendStatus);
   const loadMeta = useSceneStore((s) => s.loadMeta);
   const loadScans = useSceneStore((s) => s.loadScans);
   const loadSentry = useSceneStore((s) => s.loadSentry);
@@ -130,7 +135,10 @@ function MastermindInner() {
   // initializers read the hydrated doc, not an empty one. `isLayoutHydrated()`
   // is already true on remounts, so this only gates the first-ever mount.
   const [layoutReady, setLayoutReady] = useState(isLayoutHydrated);
-  const [overrides, setOverrides] = useState(loadPositions);
+  // Positions come straight from the layout store (subscribed, not snapshotted)
+  // so an out-of-band write paints without a remount and the next drag commit
+  // builds on it instead of over it.
+  const overrides = useLayoutPositions();
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   // Slug whose "Dispatch Fleet…" instruction modal is open (null = closed).
@@ -161,7 +169,7 @@ function MastermindInner() {
   }, []);
   const [demoDismissed, setDemoDismissed] = useState(false);
   const [projectsOpen, setProjectsOpen] = useState(false);
-  const [hiddenSlugs, setHiddenSlugs] = useState<Set<string>>(loadHidden);
+  const hiddenSlugs = useLayoutHidden();
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [personaMenu, setPersonaMenu] = useState<{ slug: string; x: number; y: number } | null>(null);
   const [goalPopup, setGoalPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
@@ -255,8 +263,8 @@ function MastermindInner() {
     let live = true;
     void hydrateLayout().then(() => {
       if (!live) return;
-      setOverrides(loadPositions());
-      setHiddenSlugs(loadHidden());
+      // Hydration notifies every store subscriber, so positions/hidden re-read
+      // themselves; this only drops the canvas gate.
       setLayoutReady(true);
     });
     return () => { live = false; };
@@ -553,12 +561,10 @@ function MastermindInner() {
     return () => cancelAnimationFrame(id);
   });
 
+  // Read-modify-write against the store (not a stale render closure) so a drag
+  // that lands between someone else's write still merges rather than reverts.
   const onIslandCommit = (slug: string, x: number, y: number) =>
-    setOverrides((prev) => {
-      const next = { ...prev, [slug]: { x, y } };
-      savePositions(next);
-      return next;
-    });
+    savePositions({ ...loadPositions(), [slug]: { x, y } });
 
   // Sidebar hide/show filter — the canvas renders only visible islands; the
   // project list sees all of them.
@@ -567,14 +573,53 @@ function MastermindInner() {
     islands: positioned.islands.filter((i) => !hiddenSlugs.has(i.slug)),
   }), [positioned, hiddenSlugs]);
 
-  const toggleVisible = (slug: string) =>
-    setHiddenSlugs((prev) => {
-      const next = new Set(prev);
-      if (next.has(slug)) next.delete(slug);
-      else next.add(slug);
-      saveHidden(next);
-      return next;
-    });
+  // ── Publishing the scene for Athena ──────────────────────────────────────
+  // WP2 reads `mastermind.scene.v1`; this is the only writer. Per-family load
+  // STATUS travels with it because that is the one thing a Rust re-derive could
+  // never know — a cell reading `unknown` because a fetch failed is a different
+  // fact from a cell that is genuinely absent.
+  const publishFamilies = useMemo<Record<string, FamilyStatus>>(() => ({
+    passports: error ? 'failed' : loading ? 'loading' : 'loaded',
+    relations: metaStatus,
+    scans: scansStatus,
+    sentry: sentryStatus,
+    goals: goalsStatus,
+    llmSpend: llmSpendStatus,
+    kpi: factoryError ? 'failed' : 'loaded',
+  }), [error, loading, metaStatus, scansStatus, sentryStatus, goalsStatus, llmSpendStatus, factoryError]);
+
+  // `positioned`, not `canvasScene`: hiding an island is a view filter, and a
+  // digest that silently drops projects the user tucked away would let her
+  // report a portfolio that isn't the portfolio. The publisher debounces,
+  // dedupes and refuses the demo scene itself.
+  useEffect(() => {
+    publishCanvasScene({ scene: positioned, families: publishFamilies, kpiByProject });
+  }, [positioned, publishFamilies, kpiByProject]);
+
+  // ── Athena's composed panel ──────────────────────────────────────────────
+  // Persisted per project by the layout store; restored whenever that project
+  // is the canvas focus target (her compose op sets it, and so does opening a
+  // project from the canvas or the list).
+  const athenaPanels = useAthenaPanels();
+  const focusedSlug = useFocusedProjectSlug();
+  const athenaPanel = focusedSlug ? athenaPanels[focusedSlug] ?? null : null;
+  const openProject = useCallback((slug: string) => {
+    setOpenSlug(slug);
+    // No camera travel — the user just clicked the island, it is already there.
+    focusCanvasProject(slug, false);
+  }, []);
+  const panelDispatchTarget = useMemo(() => {
+    if (!focusedSlug) return undefined;
+    const p = projects.find((x) => x.id === focusedSlug);
+    return p?.root_path ? { projectId: p.id, projectName: p.name, rootPath: p.root_path } : undefined;
+  }, [focusedSlug, projects]);
+
+  const toggleVisible = (slug: string) => {
+    const next = loadHidden();
+    if (next.has(slug)) next.delete(slug);
+    else next.add(slug);
+    saveHidden(next);
+  };
 
   const previewSession = previewId ? sessions.find((s) => s.id === previewId) ?? null : null;
   const openIsland = openSlug ? positioned.islands.find((i) => i.slug === openSlug) ?? null : null;
@@ -735,7 +780,7 @@ function MastermindInner() {
           mode={mode}
           onIslandCommit={onIslandCommit}
           onFleetOpen={setPreviewId}
-          onProjectOpen={setOpenSlug}
+          onProjectOpen={openProject}
           onShipOpen={(slug) => openFactory(slug, 'ship')}
           onFactoryOpen={(slug) => openFactory(slug, 'overview')}
           onSkillsOpen={openSkillsManager}
@@ -758,7 +803,7 @@ function MastermindInner() {
         onOpenToggle={() => setProjectsOpen((v) => !v)}
         onToggleVisible={toggleVisible}
         onNewProject={() => setNewProjectOpen(true)}
-        onProjectOpen={setOpenSlug}
+        onProjectOpen={openProject}
       />
 
       <CanvasToolbar mode={mode} onModeChange={setMode} />
@@ -767,8 +812,24 @@ function MastermindInner() {
         <FleetPreviewPanel sessionId={previewId} session={previewSession} onClose={() => setPreviewId(null)} />
       )}
 
+      {/* One right dock, two contents: a composed panel takes precedence over
+          the passport sidebar (both are project-scoped, and stacking them would
+          bury hers under his). Closing the panel reveals the sidebar again. */}
       <AnimatePresence>
-        {openIsland && (
+        {athenaPanel && focusedSlug && (
+          <AthenaPanel
+            key="athena-panel"
+            target={{ kind: 'project', slug: focusedSlug }}
+            panel={athenaPanel}
+            projectName={positioned.islands.find((i) => i.slug === focusedSlug)?.name ?? focusedSlug}
+            dispatchTarget={panelDispatchTarget}
+            onClose={clearCanvasFocus}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {openIsland && !athenaPanel && (
           <ProjectSidebar
             key="project-sidebar"
             passport={openPassport}

@@ -4,17 +4,20 @@
 // editor. Rendering is pure; interaction is self-contained.
 import { useRef } from 'react';
 
+import { useTranslation } from '@/i18n/useTranslation';
+
 import { mix, NOTE_FONT } from './ink';
 import { NOTE_SIZE_PX } from './notes';
 import type { CanvasMode, CanvasNote } from './types';
 
 export function NoteLayer({ notes, z, mode, onNotesChange, onEdit }: {
-  notes: CanvasNote[];
+  notes: readonly CanvasNote[];
   z: number;
   mode: CanvasMode;
   onNotesChange: (next: CanvasNote[], persist: boolean) => void;
   onEdit: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   const drag = useRef<{ id: number; noteId: string; sx: number; sy: number; ox: number; oy: number; z: number; moved: boolean } | null>(null);
   const interactive = mode === 'edit' || mode === 'note';
 
@@ -48,6 +51,7 @@ export function NoteLayer({ notes, z, mode, onNotesChange, onEdit }: {
       {notes.map((n) => {
         const fs = NOTE_SIZE_PX[n.size];
         const lines = n.text.split('\n');
+        const athena = n.author === 'athena';
         return (
           <g
             key={n.id}
@@ -64,7 +68,19 @@ export function NoteLayer({ notes, z, mode, onNotesChange, onEdit }: {
               x={-8} y={-fs} width={Math.max(60, ...lines.map((l) => l.length * fs * 0.6)) + 16} height={lines.length * fs * 1.25 + 12}
               fill="transparent"
             />
-            <text fontFamily={NOTE_FONT[n.font]} fontSize={fs} fill={mix('var(--foreground)', 92)}>
+            {/* provenance: an accent spine down the left edge marks a note
+                Athena composed, so authorship reads at a glance without a
+                second colour system for the text itself */}
+            {athena && (
+              <rect
+                x={-12} y={-fs} width={3} height={lines.length * fs * 1.25 + 4} rx={1.5}
+                fill="var(--accent)" opacity={0.85}
+                data-testid={`mm-note-athena-${n.id}`}
+              >
+                <title>{t.mastermind.athena_authored}</title>
+              </rect>
+            )}
+            <text fontFamily={NOTE_FONT[n.font]} fontSize={fs} fill={athena ? mix('var(--accent)', 88, 'var(--foreground)') : mix('var(--foreground)', 92)}>
               {lines.map((line, i) => (
                 <tspan key={i} x={0} dy={i === 0 ? 0 : fs * 1.25}>{line || ' '}</tspan>
               ))}

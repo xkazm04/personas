@@ -119,5 +119,20 @@
   "legend_title": "États des cellules",
   "legend_toggle": "Afficher ou masquer la légende des états de cellule",
   "legend_unknown": "Inconnu",
-  "legend_unknown_note": "Inconnu signifie que la vérification n’a pas pu lire cette valeur, pas qu’elle est nulle."
+  "legend_unknown_note": "Inconnu signifie que la vérification n’a pas pu lire cette valeur, pas qu’elle est nulle.",
+  "athena_authored": "Composé par Athena",
+  "athena_revert_body_one": "1 groupe, lien ou note composé par Athena sera retiré de ce tableau. Tout ce que vous avez créé reste en place, et les panneaux de projet composés ne sont pas affectés.",
+  "athena_revert_body_other": "{count} groupes, liens et notes composés par Athena seront retirés de ce tableau. Tout ce que vous avez créé reste en place, et les panneaux de projet composés ne sont pas affectés.",
+  "athena_revert_cta": "Retirer les siens",
+  "athena_revert_one": "Retirer 1 repère de canevas ajouté par Athena",
+  "athena_revert_other": "Retirer {count} repères de canevas ajoutés par Athena",
+  "athena_revert_title": "Retirer les repères ajoutés par Athena ?",
+  "athena_panel_close": "Fermer le panneau",
+  "athena_panel_composed": "Composé",
+  "athena_panel_reset": "Réinitialiser ce panneau",
+  "athena_panel_reset_action": "Réinitialiser le panneau",
+  "athena_panel_reset_body": "Supprime le panneau qu'Athena a composé pour {name}. Les panneaux des autres projets restent intacts, et elle peut en composer un nouveau à tout moment.",
+  "athena_panel_reset_title": "Réinitialiser ce panneau ?",
+  "athena_panel_unreadable": "Ce panneau n'a pas pu être affiché.",
+  "athena_panel_unreadable_hint": "Athena l'a composé dans un format que cette version ne comprend pas. Réinitialisez-le et demandez-lui-en un nouveau."
 }

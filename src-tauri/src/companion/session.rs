@@ -270,6 +270,14 @@ pub const COMPOSE_COCKPIT_EVENT: &str = "companion://compose-cockpit";
 /// persistent cockpit untouched.
 pub const EXPLAIN_COCKPIT_EVENT: &str = "companion://explain-cockpit";
 
+/// Tauri event for `compose_canvas_panel` auto-fire (WP3). Payload is
+/// `{ slug, specVersion, spec }` where `spec` is the serialized SurfaceSpec.
+/// Nothing is persisted server-side: a canvas panel belongs to the canvas
+/// LAYOUT document (`mastermind.layout.v1` → `athenaPanels[slug]`), which the
+/// frontend owns, and which is the only place its per-project reset control
+/// can reach it.
+pub const COMPOSE_CANVAS_PANEL_EVENT: &str = "companion://compose-canvas-panel";
+
 /// Tauri event for inline chat-cards emitted via `show_persona_overview`,
 /// `show_connected_services`, `show_decisions`. Payload is the list of cards
 /// for this turn; the frontend appends them to the latest assistant bubble.
@@ -780,6 +788,7 @@ pub async fn send_turn(
                     dashboards: Vec::new(),
                     cockpits: Vec::new(),
                     explain_cockpits: Vec::new(),
+                    canvas_panels: Vec::new(),
                     chat_cards: Vec::new(),
                     guide_walkthroughs: Vec::new(),
                     point_ats: Vec::new(),
@@ -1119,6 +1128,22 @@ pub async fn send_turn(
         let payload = serde_json::json!({ "spec": spec_json });
         if let Err(e) = app.emit(EXPLAIN_COCKPIT_EVENT, payload) {
             tracing::warn!(error = %e, "companion explain_in_cockpit event emit failed");
+        }
+    }
+
+    // compose_canvas_panel auto-fire (WP3). No server-side persistence by
+    // design: the panel lands in the canvas LAYOUT document, which the frontend
+    // owns — that is where a panel is keyed per project and where its reset
+    // control can remove it. The slug in each entry was already resolved
+    // against the published scene, so the listener can trust it.
+    for panel in &dispatched.canvas_panels {
+        let payload = serde_json::json!({
+            "slug": panel.slug,
+            "specVersion": panel.spec_version,
+            "spec": panel.spec,
+        });
+        if let Err(e) = app.emit(COMPOSE_CANVAS_PANEL_EVENT, payload) {
+            tracing::warn!(error = %e, "companion compose_canvas_panel event emit failed");
         }
     }
 

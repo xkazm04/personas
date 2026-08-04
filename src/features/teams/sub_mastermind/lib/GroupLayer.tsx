@@ -7,6 +7,8 @@
 import { useRef } from 'react';
 import { Rocket, X } from 'lucide-react';
 
+import { useTranslation } from '@/i18n/useTranslation';
+
 import { mix, STATE_INK } from './ink';
 import type { CanvasMode, GroupRect, IslandState } from './types';
 
@@ -46,7 +48,7 @@ type BodyDrag = {
 };
 
 export function GroupLayer({ groups, draft, z, mode, islands, onGroupsChange, onIslandCommit, onRename, onDelete, onDispatchGroup }: {
-  groups: GroupRect[];
+  groups: readonly GroupRect[];
   /** Live drag rectangle while drawing, world coords (normalized). */
   draft: { x: number; y: number; w: number; h: number } | null;
   z: number;
@@ -62,6 +64,7 @@ export function GroupLayer({ groups, draft, z, mode, islands, onGroupsChange, on
    *  project inside the group. */
   onDispatchGroup: (groupId: string, slugs: string[]) => void;
 }) {
+  const { t } = useTranslation();
   const k = 1 / z;
   const drag = useRef<BodyDrag | null>(null);
   const editable = mode === 'edit';
@@ -119,12 +122,16 @@ export function GroupLayer({ groups, draft, z, mode, islands, onGroupsChange, on
         const dispatchW = editable && dispatchable.length > 0 ? 24 : 0;
         const plateW = labelW + summaryW + blockerW + dispatchW + (labelable ? 44 : 18);
         let cursorX = labelW + 10;
+        // Provenance: Athena's zones are tinted with the accent token instead
+        // of primary, so "she grouped these" is legible before you read a label.
+        const athena = g.author === 'athena';
+        const ink = athena ? 'var(--accent)' : 'var(--primary)';
         return (
         <g key={g.id} data-testid={`mm-group-${g.id}`}>
           <rect
             x={g.x} y={g.y} width={g.w} height={g.h} rx={12}
-            fill={mix('var(--primary)', 5)}
-            stroke={mix('var(--primary)', 45)}
+            fill={mix(ink, 5)}
+            stroke={mix(ink, 45)}
             strokeWidth={2} strokeDasharray="10 8"
             style={editable ? { cursor: 'move' } : undefined}
             onPointerDown={(e) => begin(e, g, false)}
@@ -154,11 +161,16 @@ export function GroupLayer({ groups, draft, z, mode, islands, onGroupsChange, on
               <rect
                 x={-6} y={-20} width={plateW} height={26} rx={13}
                 fill={mix('var(--background)', 85)}
-                stroke={mix('var(--primary)', 40)} strokeWidth={1}
+                stroke={mix(ink, 40)} strokeWidth={1}
                 style={labelable ? { cursor: 'text' } : undefined}
                 onPointerDown={(e) => { if (labelable) { e.stopPropagation(); onRename(g.id); } }}
               />
-              <text x={4} y={-2} fontSize={12.5} fontWeight={600} fill={mix('var(--primary)', 80, 'var(--foreground)')} letterSpacing="0.03em" pointerEvents="none">
+              {athena && (
+                <circle cx={-13} cy={-7} r={4} fill="var(--accent)" data-testid={`mm-group-athena-${g.id}`}>
+                  <title>{t.mastermind.athena_authored}</title>
+                </circle>
+              )}
+              <text x={4} y={-2} fontSize={12.5} fontWeight={600} fill={mix(ink, 80, 'var(--foreground)')} letterSpacing="0.03em" pointerEvents="none">
                 {g.label}
               </text>
               {/* rollup: how the members are spread across states, worst first */}

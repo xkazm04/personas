@@ -235,6 +235,20 @@ pub const ONBOARDING_QUEST_STATE: &str = "onboarding_quest_state";
 /// Written debounced on layout edits; read once at Mastermind page mount.
 pub const MASTERMIND_LAYOUT: &str = "mastermind.layout.v1";
 
+/// Mastermind canvas SCENE snapshot (JSON-encoded, versioned document).
+/// Distinct from [`MASTERMIND_LAYOUT`], which is where the user put things:
+/// this is what the canvas DERIVED — per project the island state, the fifteen
+/// dimension cells, blockers, live fleet count and the per-data-family fetch
+/// status. The whole derivation lives on the frontend (passport model + the
+/// dimension registry + five independently-fetched families), so this key is
+/// the one door through which Athena's Rust-side prompt assembler can read the
+/// canvas without a second, drifting implementation of those rules.
+/// Written by the canvas after each scene derive; read by
+/// `companion::canvas` (prompt digest + the canvas read ops). Absent until the
+/// canvas has been opened at least once, which every reader states plainly
+/// rather than inventing a scene.
+pub const MASTERMIND_SCENE: &str = "mastermind.scene.v1";
+
 /// Phase 5 v1: persisted global gate for the Claude CLI session-resume
 /// awareness feature. Set by the SetupPanel desktop-awareness toggle;
 /// read by both the windowed runner (in-memory `AmbientContextFusion`
@@ -741,6 +755,7 @@ const ALLOWED_KEYS: &[&str] = &[
     COMPANION_CONSTITUTION_VERSION,
     ONBOARDING_QUEST_STATE,
     MASTERMIND_LAYOUT,
+    MASTERMIND_SCENE,
     CLI_SESSION_AWARENESS_ENABLED,
     COMPANION_AUTONOMOUS_MODE,
     COMPANION_DEV_MODE,
@@ -1009,7 +1024,8 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | GITLAB_PIPELINE_NOTIFICATION_PREFS
         | DEV_TOOLS_CROSS_PROJECT_METADATA
         | ONBOARDING_QUEST_STATE
-        | MASTERMIND_LAYOUT => validate_json_wellformed(key, value),
+        | MASTERMIND_LAYOUT
+        | MASTERMIND_SCENE => validate_json_wellformed(key, value),
         _ => Ok(()),
     }
 }
@@ -1115,6 +1131,9 @@ const AUDIT_EXCLUDED_KEYS: &[&str] = &[
     // draw / note edit. It is UI-view state, not an auditable config change, so
     // auditing it would flood the History tab with layout noise.
     MASTERMIND_LAYOUT,
+    // Mastermind scene snapshot: republished on every canvas derive. Derived
+    // view state, not a config change the History tab should carry.
+    MASTERMIND_SCENE,
 ];
 
 /// Prefix families that are internal bookkeeping (per-table cloud-sync cursors,
@@ -1271,6 +1290,18 @@ mod tests {
         assert!(validate_value(MASTERMIND_LAYOUT, "{not json").is_err());
         // Layout writes are frequent UI-view state → excluded from the audit log.
         assert_eq!(audit_category(MASTERMIND_LAYOUT), None);
+    }
+
+    #[test]
+    fn mastermind_scene_key_registered_validated_and_unaudited() {
+        // Same contract as the layout doc, for the DERIVED scene snapshot the
+        // companion prompt reads. An unregistered key would be rejected on
+        // write, which would silently leave Athena blind to the canvas.
+        assert_eq!(MASTERMIND_SCENE, "mastermind.scene.v1");
+        assert!(validate_key(MASTERMIND_SCENE).is_ok());
+        assert!(validate_value(MASTERMIND_SCENE, r#"{"version":1,"projects":[]}"#).is_ok());
+        assert!(validate_value(MASTERMIND_SCENE, "{not json").is_err());
+        assert_eq!(audit_category(MASTERMIND_SCENE), None);
     }
 
     #[test]

@@ -136,6 +136,11 @@ export type NoteSize = 'sm' | 'md' | 'lg' | 'xl';
 
 export type NoteFont = 'inter' | 'roboto' | 'caveat';
 
+/** Who put an object on the canvas. Absent on layout documents written before
+ *  the second (programmatic) writer existed — those are all the user's, and the
+ *  store's v1 → v2 migration says so explicitly. */
+export type LayoutAuthor = 'user' | 'athena';
+
 /** Free text note placed on the canvas (note tool). World coordinates. */
 export interface CanvasNote {
   id: string;
@@ -144,6 +149,7 @@ export interface CanvasNote {
   text: string;
   size: NoteSize;
   font: NoteFont;
+  author?: LayoutAuthor;
 }
 
 /** Contract between the page and the canvas (single Hex Mosaic view). */
@@ -213,6 +219,7 @@ export interface GroupRect {
   y: number;
   w: number;
   h: number;
+  author?: LayoutAuthor;
 }
 
 /** User-drawn connection between two projects (connect tool). */
@@ -224,6 +231,7 @@ export interface UserLink {
   dashed: boolean;
   /** CSS colour (theme token or literal) from the short palette. */
   color: string;
+  author?: LayoutAuthor;
 }
 
 /** World-space bounding box of the scene, padded so fit() leaves shoreline room. */

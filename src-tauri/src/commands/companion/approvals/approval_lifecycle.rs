@@ -143,6 +143,13 @@ pub async fn companion_approve_action(
         "fleet_kill" => execute_fleet_kill(&params),
         "fleet_spawn" => execute_fleet_spawn(&app, &params),
         "fleet_dispatch" => execute_fleet_dispatch(&app, &params),
+        // WP2 — Mastermind canvas actions. Thin slug-resolving wrappers over
+        // the two executors above (plus the idea scanner); see
+        // approval_exec_canvas.rs for why they are wrappers and not new
+        // capability.
+        "canvas_dispatch" => execute_canvas_dispatch(&state, &app, &params),
+        "canvas_group_dispatch" => execute_canvas_group_dispatch(&state, &app, &params),
+        "canvas_run_idea_scan" => execute_canvas_run_idea_scan(&state, &app, &params).await,
         "fleet_intervene" => execute_fleet_intervene(&app, &params),
         "fleet_redirect_op" => execute_fleet_redirect_op(&app, &params),
         "fleet_wake" => execute_fleet_wake(&app, &params).await,

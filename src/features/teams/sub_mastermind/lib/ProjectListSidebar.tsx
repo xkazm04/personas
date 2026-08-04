@@ -16,7 +16,7 @@ const LINEAR = { duration: 0.2, ease: 'linear' as const };
 export function ProjectListSidebar({ islands, hidden, open, onOpenToggle, onToggleVisible, onNewProject, onProjectOpen }: {
   /** ALL islands (including canvas-hidden ones), any order. */
   islands: Island[];
-  hidden: Set<string>;
+  hidden: ReadonlySet<string>;
   open: boolean;
   onOpenToggle: () => void;
   onToggleVisible: (slug: string) => void;

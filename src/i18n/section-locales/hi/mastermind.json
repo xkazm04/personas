@@ -119,5 +119,20 @@
   "legend_title": "सेल स्थितियाँ",
   "legend_toggle": "सेल-स्थिति कुंजी दिखाएँ या छिपाएँ",
   "legend_unknown": "अज्ञात",
-  "legend_unknown_note": "अज्ञात का अर्थ है कि जाँच इसे पढ़ नहीं सकी — यह नहीं कि मान शून्य है।"
+  "legend_unknown_note": "अज्ञात का अर्थ है कि जाँच इसे पढ़ नहीं सकी — यह नहीं कि मान शून्य है।",
+  "athena_authored": "Athena द्वारा रचित",
+  "athena_revert_body_one": "इस बोर्ड से Athena द्वारा रचित 1 समूह, लिंक या नोट हटा दिया जाएगा। आपका बनाया हुआ सब कुछ बना रहेगा, और कंपोज्ड प्रोजेक्ट पैनल प्रभावित नहीं होंगे।",
+  "athena_revert_body_other": "इस बोर्ड से Athena द्वारा रचित {count} समूह, लिंक और नोट हटा दिए जाएंगे। आपका बनाया हुआ सब कुछ बना रहेगा, और कंपोज्ड प्रोजेक्ट पैनल प्रभावित नहीं होंगे।",
+  "athena_revert_cta": "उसकी हटाएं",
+  "athena_revert_one": "Athena द्वारा जोड़ा गया 1 कैनवास निशान हटाएं",
+  "athena_revert_other": "Athena द्वारा जोड़े गए {count} कैनवास निशान हटाएं",
+  "athena_revert_title": "Athena द्वारा जोड़े गए निशान हटाएं?",
+  "athena_panel_close": "पैनल बंद करें",
+  "athena_panel_composed": "रचित",
+  "athena_panel_reset": "यह पैनल रीसेट करें",
+  "athena_panel_reset_action": "पैनल रीसेट करें",
+  "athena_panel_reset_body": "Athena ने {name} के लिए जो पैनल बनाया था उसे हटा देता है। अन्य प्रोजेक्ट के पैनल अप्रभावित रहते हैं, और वह किसी भी समय एक नया पैनल बना सकती है।",
+  "athena_panel_reset_title": "यह पैनल रीसेट करें?",
+  "athena_panel_unreadable": "यह पैनल प्रदर्शित नहीं किया जा सका।",
+  "athena_panel_unreadable_hint": "Athena ने इसे ऐसे रूप में बनाया जिसे यह संस्करण नहीं समझता। इसे रीसेट करें और उससे एक नया पैनल मांगें।"
 }

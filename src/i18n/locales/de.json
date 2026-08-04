@@ -19455,7 +19455,22 @@
     "legend_title": "Zellzustände",
     "legend_toggle": "Legende der Zellzustände ein- oder ausblenden",
     "legend_unknown": "Unbekannt",
-    "legend_unknown_note": "Unbekannt heißt, die Prüfung konnte den Wert nicht lesen — nicht, dass er null ist."
+    "legend_unknown_note": "Unbekannt heißt, die Prüfung konnte den Wert nicht lesen — nicht, dass er null ist.",
+    "athena_authored": "Von Athena erstellt",
+    "athena_revert_body_one": "1 von Athena erstellte Gruppe, Verknüpfung oder Notiz wird von diesem Board entfernt. Alles, was Sie selbst erstellt haben, bleibt erhalten, und zusammengesetzte Projektpaneele sind nicht betroffen.",
+    "athena_revert_body_other": "{count} von Athena erstellte Gruppen, Verknüpfungen und Notizen werden von diesem Board entfernt. Alles, was Sie selbst erstellt haben, bleibt erhalten, und zusammengesetzte Projektpaneele sind nicht betroffen.",
+    "athena_revert_cta": "Ihre entfernen",
+    "athena_revert_one": "1 von Athena hinzugefügte Canvas-Markierung entfernen",
+    "athena_revert_other": "{count} von Athena hinzugefügte Canvas-Markierungen entfernen",
+    "athena_revert_title": "Die von Athena hinzugefügten Markierungen entfernen?",
+    "athena_panel_close": "Panel schließen",
+    "athena_panel_composed": "Erstellt",
+    "athena_panel_reset": "Dieses Panel zurücksetzen",
+    "athena_panel_reset_action": "Panel zurücksetzen",
+    "athena_panel_reset_body": "Entfernt das Panel, das Athena für {name} erstellt hat. Panels anderer Projekte bleiben unberührt, und sie kann jederzeit ein neues erstellen.",
+    "athena_panel_reset_title": "Dieses Panel zurücksetzen?",
+    "athena_panel_unreadable": "Dieses Panel konnte nicht angezeigt werden.",
+    "athena_panel_unreadable_hint": "Athena hat es in einer Form erstellt, die diese Version nicht versteht. Setzen Sie es zurück und bitten Sie sie um ein neues."
   },
   "ship": {
     "add": "Hinzufügen",

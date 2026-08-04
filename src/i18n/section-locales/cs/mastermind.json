@@ -119,5 +119,20 @@
   "legend_title": "Stavy buněk",
   "legend_toggle": "Zobrazit nebo skrýt legendu stavů buněk",
   "legend_unknown": "Neznámé",
-  "legend_unknown_note": "Neznámé znamená, že kontrola tuto hodnotu nedokázala načíst — ne že je nulová."
+  "legend_unknown_note": "Neznámé znamená, že kontrola tuto hodnotu nedokázala načíst — ne že je nulová.",
+  "athena_authored": "Vytvořila Athena",
+  "athena_revert_body_one": "Z této nástěnky bude odebrána 1 skupina, odkaz nebo poznámka vytvořená Athenou. Vše, co jste vytvořili vy, zůstane zachováno a složené panely projektu nejsou ovlivněny.",
+  "athena_revert_body_other": "Z této nástěnky bude odebráno {count} skupin, odkazů a poznámek vytvořených Athenou. Vše, co jste vytvořili vy, zůstane zachováno a složené panely projektu nejsou ovlivněny.",
+  "athena_revert_cta": "Odebrat její",
+  "athena_revert_one": "Odebrat 1 značku na plátně přidanou Athenou",
+  "athena_revert_other": "Odebrat {count} značek na plátně přidaných Athenou",
+  "athena_revert_title": "Odebrat značky, které přidala Athena?",
+  "athena_panel_close": "Zavřít panel",
+  "athena_panel_composed": "Sestaveno",
+  "athena_panel_reset": "Resetovat tento panel",
+  "athena_panel_reset_action": "Resetovat panel",
+  "athena_panel_reset_body": "Odstraní panel, který Athena sestavila pro {name}. Panely ostatních projektů zůstanou nedotčeny a ona může kdykoli sestavit nový.",
+  "athena_panel_reset_title": "Resetovat tento panel?",
+  "athena_panel_unreadable": "Tento panel se nepodařilo zobrazit.",
+  "athena_panel_unreadable_hint": "Athena jej sestavila ve tvaru, kterému tato verze nerozumí. Resetujte jej a požádejte ji o nový."
 }
