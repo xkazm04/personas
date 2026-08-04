@@ -68,11 +68,8 @@ export function sessionToMonitorTerminal(
   return {
     ...baseTerminal(s, nowMs),
     simulated: false,
-    // Live subprocess / open-subagent counters arrive with the subwork lanes;
-    // until then a REAL row reports only what the backend can actually see
-    // rather than mixing a placeholder into a row marked as measured.
-    subprocs: 0,
-    subagentsActive: 0,
+    subprocs: stats.bgProcsLaunched,
+    subagentsActive: stats.subagentsActive,
     subagentsTotal: stats.subagentsTotal,
     outputTokens: Number(stats.outputTokens),
     contextTokens: Number(stats.contextTokens),

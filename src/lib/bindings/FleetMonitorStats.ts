@@ -28,6 +28,16 @@ contextTokens: bigint,
  */
 subagentsTotal: number, 
 /**
+ * Subagents open RIGHT NOW — PreToolUse/PostToolUse pairs on `Task`.
+ * Never negative; 0 for a session with no live process.
+ */
+subagentsActive: number, 
+/**
+ * Background shells launched over the session's lifetime (`Bash` with
+ * `run_in_background: true`).
+ */
+bgProcsLaunched: number, 
+/**
  * Resident memory of the session's process in MB, or `None` when the
  * session has no live process (dozing / hibernated / exited).
  */

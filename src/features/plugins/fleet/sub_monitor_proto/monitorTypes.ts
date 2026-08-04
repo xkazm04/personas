@@ -10,10 +10,10 @@ import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
  * - `outputTokens`, `contextTokens` → `fleet_monitor_stats`, from the
  *                                     incremental transcript rollup
  * - `memMb`                         → `fleet_monitor_stats`, per-PID RSS
- * - `subagentsActive`               → PreToolUse/PostToolUse pairing on `Task`
- *                                     (hooks already received; pending)
- * - `subprocs`                      → Bash `run_in_background: true` tool_use
- *                                     inputs in the transcript (pending)
+ * - `subagentsActive`               → `fleet_monitor_stats`, from the
+ *                                     PreToolUse/PostToolUse pairing on `Task`
+ * - `subprocs`                      → `fleet_monitor_stats`, from the rollup's
+ *                                     count of backgrounded `Bash` runs
  *
  * Sessions with NO bound transcript keep the fnv placeholder for every stat
  * and set `simulated`.
@@ -28,7 +28,8 @@ export interface ProtoTerminal {
   state: FleetSessionState;
   dozing: boolean;
   headless: boolean;
-  /** Live background subprocesses (Bash run_in_background). */
+  /** Background shells launched over the session's lifetime (Bash
+   *  `run_in_background: true`). */
   subprocs: number;
   /** Subagents (Task tool) currently open. */
   subagentsActive: number;

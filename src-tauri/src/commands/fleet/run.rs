@@ -309,6 +309,7 @@ mod tests {
                 last_context_tokens: 0,
                 models: vec![],
                 tools: vec![],
+                bg_procs_launched: 0,
                 files_touched: files.into_iter().map(String::from).collect(),
                 first_timestamp: None,
                 last_timestamp: None,

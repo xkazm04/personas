@@ -69,6 +69,11 @@ pub struct FleetTranscriptSummary {
     pub models: Vec<String>,
     /// Per-tool invocation counts, sorted by count desc then name.
     pub tools: Vec<FleetToolCount>,
+    /// Background shells the session launched over its lifetime — `Bash`
+    /// tool uses carrying `run_in_background: true`. A foreground Bash blocks
+    /// the turn and is gone by the time anyone looks; a backgrounded one keeps
+    /// running, which is the number an operator watching a fleet cares about.
+    pub bg_procs_launched: i32,
     /// Distinct files modified (Edit/Write/MultiEdit/NotebookEdit), sorted.
     pub files_touched: Vec<String>,
     /// Earliest / latest entry timestamp (ISO-8601, sorts chronologically).
@@ -83,6 +88,10 @@ pub struct FleetTranscriptSummary {
 /// File-mutating tools — their `input.file_path` / `input.notebook_path`
 /// feed `files_touched`.
 const EDIT_TOOLS: &[&str] = &["Edit", "Write", "MultiEdit", "NotebookEdit"];
+
+/// The shell tool, and the input flag that makes one of its runs detach.
+const BASH_TOOL: &str = "Bash";
+const RUN_IN_BACKGROUND: &str = "run_in_background";
 
 /// Pure summarizer over already-read JSONL lines. Separated from the IO so it
 /// can be unit-tested with synthetic transcripts.
@@ -111,6 +120,7 @@ struct RollupAcc {
     models: Vec<String>,
     tool_counts: HashMap<String, i32>,
     files: BTreeSet<String>,
+    bg_procs_launched: i32,
     cwd: Option<String>,
     first_ts: Option<String>,
     last_ts: Option<String>,
@@ -187,6 +197,15 @@ impl RollupAcc {
                             continue;
                         };
                         *self.tool_counts.entry(name.to_string()).or_insert(0) += 1;
+                        if name == BASH_TOOL
+                            && block
+                                .get("input")
+                                .and_then(|i| i.get(RUN_IN_BACKGROUND))
+                                .and_then(|x| x.as_bool())
+                                == Some(true)
+                        {
+                            self.bg_procs_launched += 1;
+                        }
                         if EDIT_TOOLS.contains(&name) {
                             if let Some(input) = block.get("input") {
                                 for key in ["file_path", "notebook_path"] {
@@ -228,6 +247,7 @@ impl RollupAcc {
             last_context_tokens: self.last_context_tokens,
             models: self.models.clone(),
             tools,
+            bg_procs_launched: self.bg_procs_launched,
             files_touched: self.files.iter().cloned().collect(),
             first_timestamp: self.first_ts.clone(),
             last_timestamp: self.last_ts.clone(),
@@ -645,6 +665,23 @@ mod tests {
         // Edit invoked twice → leads the sorted tool list.
         assert_eq!(s.tools[0].name, "Edit");
         assert_eq!(s.tools[0].count, 2);
+    }
+
+    #[test]
+    fn counts_only_backgrounded_bash_runs() {
+        let raw = lines(&[
+            // Backgrounded — the only shape that counts.
+            r#"{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Bash","input":{"command":"npm run dev","run_in_background":true}}]}}"#,
+            // Explicitly foreground.
+            r#"{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Bash","input":{"command":"ls","run_in_background":false}}]}}"#,
+            // Flag absent (the common case) — foreground.
+            r#"{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Bash","input":{"command":"ls"}}]}}"#,
+            // Another tool carrying the flag must not be counted as a shell.
+            r#"{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Task","input":{"run_in_background":true}}]}}"#,
+            r#"{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Bash","input":{"command":"tail -f log","run_in_background":true}}]}}"#,
+        ]);
+        let s = summarize_lines("bg", "/x.jsonl", &raw);
+        assert_eq!(s.bg_procs_launched, 2);
     }
 
     #[test]
