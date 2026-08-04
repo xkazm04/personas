@@ -6,6 +6,16 @@ const FLASH_MS = 2600;
 
 let activeFlash: HTMLDivElement | null = null;
 
+/**
+ * Bumped by every call. `waitForTestId` polls for up to 4s and the scroll
+ * settle adds another 350ms, so a second "Try it" can easily start while the
+ * first is still waiting. Without this token the older call would wake up
+ * afterwards and paint its ring on the previous move's anchor — over a surface
+ * the user has already navigated away from. Each call captures its number and
+ * abandons at every resume point if a newer one has started.
+ */
+let generation = 0;
+
 function removeActiveFlash() {
   activeFlash?.remove();
   activeFlash = null;
@@ -58,12 +68,14 @@ function waitForTestId(testId: string): Promise<Element | null> {
  * the dimming `TourSpotlight`; this is the lightweight non-dimming cousin.
  */
 export async function flashSpotlight(testId: string): Promise<void> {
+  const mine = ++generation;
   removeActiveFlash();
   const el = await waitForTestId(testId);
-  if (!el) return;
+  if (!el || mine !== generation) return;
 
   el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   await new Promise((r) => setTimeout(r, SCROLL_SETTLE_MS));
+  if (mine !== generation) return;
 
   // Re-query post-scroll: the node may have re-rendered into a new element.
   const live = document.querySelector(`[data-testid="${testId}"]`) ?? el;
