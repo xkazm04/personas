@@ -41,8 +41,8 @@ use crate::db::repos::resources::tools as tool_repo;
 use crate::db::DbPool;
 use crate::engine::a2a::types::{
     map_status_to_a2a_state, A2AArtifact, A2ARequest, A2AResponse, A2AResponsePart,
-    A2AStatusMessage, A2ATask, A2ATaskResponse, A2ATaskStatus, AgentCapabilities, AgentCard,
-    AgentSkill, MessageSendParams, TaskIdParams,
+    A2AResultMessage, A2AStatusMessage, A2ATask, A2ATaskResponse, A2ATaskStatus, AgentCapabilities,
+    AgentCard, AgentSkill, MessageSendParams, TaskIdParams,
 };
 use crate::engine::test_runner::{self, TestModelConfig};
 use crate::engine::types::EphemeralPersona;
@@ -1774,7 +1774,7 @@ async fn handle_message_send(
     let input_value = serde_json::json!({ "input": prompt_text });
     match run_persona_synchronous(state, persona, input_value).await {
         Ok(text) => {
-            let body = A2AResponse::success(req_id, text);
+            let body = A2AResponse::success(req_id, A2AResultMessage::text(text));
             (
                 StatusCode::OK,
                 Json(serde_json::to_value(body).unwrap_or_default()),

@@ -131,15 +131,49 @@ impl A2AMessage {
 // JSON-RPC response
 // =============================================================================
 
+/// JSON-RPC response envelope, generic over the per-method result payload.
+///
+/// Every A2A method answers with the same `{ jsonrpc, id, result?, error? }`
+/// shape and only the `result` type varies, so the envelope is written once
+/// here and specialised by the aliases below.
 #[derive(Debug, Clone, Serialize)]
-pub struct A2AResponse {
+pub struct A2AEnvelope<T> {
     pub jsonrpc: &'static str,
     pub id: serde_json::Value,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub result: Option<A2AResultMessage>,
+    pub result: Option<T>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<A2AError>,
 }
+
+impl<T> A2AEnvelope<T> {
+    pub fn success(id: serde_json::Value, result: T) -> Self {
+        Self {
+            jsonrpc: "2.0",
+            id,
+            result: Some(result),
+            error: None,
+        }
+    }
+
+    pub fn error(id: serde_json::Value, code: i32, message: impl Into<String>) -> Self {
+        Self {
+            jsonrpc: "2.0",
+            id,
+            result: None,
+            error: Some(A2AError {
+                code,
+                message: message.into(),
+            }),
+        }
+    }
+}
+
+/// Response envelope for `message/send`.
+pub type A2AResponse = A2AEnvelope<A2AResultMessage>;
+
+/// Response envelope for `tasks/get` / `tasks/cancel`.
+pub type A2ATaskResponse = A2AEnvelope<A2ATask>;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct A2AResultMessage {
@@ -148,6 +182,18 @@ pub struct A2AResultMessage {
     pub parts: Vec<A2AResponsePart>,
     #[serde(rename = "messageId")]
     pub message_id: String,
+}
+
+impl A2AResultMessage {
+    /// Build a single-text-part agent message with a fresh message id.
+    pub fn text(text: String) -> Self {
+        Self {
+            kind: "message",
+            role: "agent",
+            parts: vec![A2AResponsePart { kind: "text", text }],
+            message_id: uuid::Uuid::new_v4().to_string(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -241,68 +287,6 @@ pub fn map_status_to_a2a_state(personas_status: &str) -> &'static str {
         // Terminal failures (incl. "timeout" — terminal, not user-cancelled).
         "failed" | "error" | "timeout" => "failed",
         _ => "working",
-    }
-}
-
-/// Result envelope for `tasks/get` / `tasks/cancel` responses.
-#[derive(Debug, Clone, Serialize)]
-pub struct A2ATaskResponse {
-    pub jsonrpc: &'static str,
-    pub id: serde_json::Value,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub result: Option<A2ATask>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<A2AError>,
-}
-
-impl A2ATaskResponse {
-    pub fn success(id: serde_json::Value, task: A2ATask) -> Self {
-        Self {
-            jsonrpc: "2.0",
-            id,
-            result: Some(task),
-            error: None,
-        }
-    }
-
-    pub fn error(id: serde_json::Value, code: i32, message: impl Into<String>) -> Self {
-        Self {
-            jsonrpc: "2.0",
-            id,
-            result: None,
-            error: Some(A2AError {
-                code,
-                message: message.into(),
-            }),
-        }
-    }
-}
-
-impl A2AResponse {
-    pub fn success(id: serde_json::Value, text: String) -> Self {
-        Self {
-            jsonrpc: "2.0",
-            id,
-            result: Some(A2AResultMessage {
-                kind: "message",
-                role: "agent",
-                parts: vec![A2AResponsePart { kind: "text", text }],
-                message_id: uuid::Uuid::new_v4().to_string(),
-            }),
-            error: None,
-        }
-    }
-
-    pub fn error(id: serde_json::Value, code: i32, message: impl Into<String>) -> Self {
-        Self {
-            jsonrpc: "2.0",
-            id,
-            result: None,
-            error: Some(A2AError {
-                code,
-                message: message.into(),
-            }),
-        }
     }
 }
 
@@ -453,7 +437,10 @@ mod tests {
 
     #[test]
     fn success_response_serializes_with_correct_shape() {
-        let resp = A2AResponse::success(serde_json::json!("req-1"), "hi back".into());
+        let resp = A2AResponse::success(
+            serde_json::json!("req-1"),
+            A2AResultMessage::text("hi back".into()),
+        );
         let json = serde_json::to_value(&resp).unwrap();
         assert_eq!(json["jsonrpc"], "2.0");
         assert_eq!(json["id"], "req-1");
