@@ -89,7 +89,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
                   node={node}
                   totalMs={totalMs}
                   expanded={!collapsedSpans.has(node.span.span_id)}
-                  onToggle={() => toggleSpan(node.span.span_id)}
+                  onToggle={toggleSpan}
                   hasChildren={childrenMap.has(node.span.span_id)}
                 />
               </div>
