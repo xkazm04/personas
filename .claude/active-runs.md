@@ -2,8 +2,14 @@
 
 ## Active
 
-### perfect-round-3 — /perfect round 3: the full-map opportunity pass both prior rounds skipped — session opus-5[1m]
-- Started: 2026-08-04. Status: started. Pool 0/10, 10 shipped across rounds 1–2 (both user-scoped to `quick-answer-triage`, now on 3+ round cooldown). Round 3's owed work per `Perfect.md`: score the whole map, set a real queue, then propose.
+### perfect-round-3 — /perfect round 3 cursor 1 — session opus-5[1m] — **COMPLETE**, commits `4b96433ef`(ledger) `2a1857a7c` `0f6d449d8` `9a75a2d52` `e301f74a2` `a5e8455c8`
+- Started 2026-08-04, closed same day. 5 proposed / 5 accepted / 5 built on `execution-detail-inspector`; 3 builders, 2 waves, all worktrees removed, 0 branches left. Master green at close: tsc 0, vitest 39/39 (sub_executions), i18n strict 0/0 × 14, `cargo check --features desktop` 0. Net −564 lines.
+- **FOR OTHER SESSIONS — 🔴 `src/lib/bindings/` is STALE on master.** Regenerating `export_bindings` for personas-core/db/engine rewrites **21 committed bindings** and produces **3 new untracked** (`BrokerConsumerEdge`, `BrokerConsumerView`, `LabAbExperiment`); `HealingAnalysisResult.ts` still declares a `status` field its Rust struct no longer has. CI's binding-drift job will fail for whoever regenerates next. This round restored all 24 so its commits stayed exactly their delta — the drift is pre-existing and unowned.
+- Other measured findings left for whoever owns them: `tool_steps` has `ended_at_ms = null` on 13.1% of steps / **57.5% of executions**, which permanently masks later steps in `useReplayTimeline`; the Pipeline tab builds a *synthetic* trace client-side though a real stored trace exists for 100% of completed runs.
+- Map-provenance finding stands (below): root `context-map.json` is app-export *shape* but a foreign machine's map; the local DB holds 49 contexts from 2026-06-15. Shape is not provenance — check `project.root`/`project.id`.
+
+### perfect-round-3-ARCHIVED-HEADER — original entry retained for its declared paths
+- Started: 2026-08-04. Status: complete. Pool 0/10, 10 shipped across rounds 1–2 (both user-scoped to `quick-answer-triage`, now on 3+ round cooldown). Round 3's owed work per `Perfect.md`: score the whole map, set a real queue, then propose.
 - **Map divergence found at Phase 0 and worth knowing repo-wide**: root `context-map.json` is 769 contexts / 16 groups in the app-export shape (`version: 2` int, `generator: personas-context-scan`, generated 2026-07-30) — but its `project.root` is `C:\Users\kazda\kiro\personas` and `project.id` `b0c1541f-…`, i.e. a FOREIGN machine/project. This DB's personas project (`07fe9de7-…`) still holds the **49 contexts / 8 groups scanned 2026-06-15**. All 4,137 file refs in the 769-map resolve in this checkout, so it is a valid, finer map of the same source — I am using it for the queue. But the app's own features (coverage %, KPI scans, improve plan) all read the 49. Anything anchored to the app — including this skill's `.personas/memory-outbox.jsonl` `context` field — must use the DB's 49 names or it lands `unanchored`.
 - Cursor 1 `execution-detail-inspector`: proposed 5, **accepted 5**. Phase B authorized by the operator; 3 builders in isolated worktrees.
 - **DECLARED BUILD PATHS** (wave 1 parallel, wave 2 sequential):
