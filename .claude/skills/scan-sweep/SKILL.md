@@ -78,6 +78,19 @@ context — the parallel rules in step 6 are what make that safe.
    counts) and never re-emit a finding already reported in a prior run or
    present in the backlog digest. When the remaining budget is smaller than
    what you found, keep the highest-impact items and say what was cut.
+5. **Value/destruction rubric — score both sides.** Value = user-visible or
+   developer-measurable gain (impact). Destruction = risk of breaking working
+   code PLUS churn (lines rewritten per unit of gain). Order all work
+   value-first, destruction-last. Two hard rules learned from calibration:
+   - **"Unused/dead" claims require proof**: a tech-debt finding that says
+     dead/unused MUST cite its zero-consumer grep in the evidence. Verified
+     dead-code removal is the best value/destruction class there is; guessed
+     dead-code removal is the worst.
+   - **Repo-declared incremental migrations** (i18n string extraction, design
+     token adoption — whatever the repo's conventions call fix-as-you-touch)
+     ARE in scope for the nearest lens in the files you already read, but only
+     where no deterministic gate already tracks them, and never as a bulk
+     migration.
 
 ## 5. Size classes — the routing decision
 
@@ -91,10 +104,14 @@ Classify every candidate finding:
 
 Routing:
 
-- **Resolve mode:** S and M items are yours to BUILD (step 6). **L items are a
-  decision, not a drive-by** — with an operator present (interactive run),
-  pitch each L candidate in one line and ask which to emit as backlog
-  findings; unattended (Fleet/app dispatch), emit them with `"size":"L"` and
+- **Resolve mode:** S and M items are yours to BUILD (step 6) — but the
+  destruction guard gates the queue: never auto-fix an item with risk ≥ 5,
+  and a refactor of WORKING code with no user-visible or measurable gain
+  (pure churn — envelope reshuffles, style rewrites, "cleaner" restructures)
+  goes to triage regardless of size. **L items are a decision, not a
+  drive-by** — with an operator present (interactive run), pitch each L
+  candidate in one line and ask which to emit as backlog findings;
+  unattended (Fleet/app dispatch), emit them with `"size":"L"` and
   effort ≥ 8 so the app's backlog triage gates them. Never build an L item in
   a sweep session.
 - **Ideas-only mode:** everything routes to the outbox; same L triage rule.
