@@ -76,12 +76,18 @@ export function useTraceData(executionId: string, personaId: string) {
       setTrace((prev) => {
         if (!prev) return prev;
         const { span, event_type } = event.payload;
+        if (event_type !== 'start' && event_type !== 'end') return prev;
         const existingIdx = prev.spans.findIndex(s => s.span_id === span.span_id);
         const newSpans = [...prev.spans];
-        if (event_type === 'start' && existingIdx === -1) {
+        if (existingIdx >= 0) {
+          // An `end` supersedes the `start` we already have; a duplicate
+          // `start` is a no-op replace.
+          if (event_type === 'end') newSpans[existingIdx] = span;
+        } else {
+          // A missed `start` (dropped event, or the tab subscribed mid-span)
+          // must not make the span vanish -- an `end` with no existing row is
+          // still the complete span, so append it.
           newSpans.push(span);
-        } else if (event_type === 'end' && existingIdx >= 0) {
-          newSpans[existingIdx] = span;
         }
         return { ...prev, spans: newSpans };
       });
