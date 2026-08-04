@@ -80,22 +80,31 @@ struct Lenses {
     /// team_memories, category != 'directive'
     memories: bool,
     /// team_memories, category = 'directive' (legacy) + team_channel_messages
+    /// authored by an INTERNAL voice (author_kind != 'slack')
     messages: bool,
     /// team_channel_messages with a deliberation_id
     deliberations: bool,
+    /// team_channel_messages authored by an external Slack participant
+    /// (`author_kind = 'slack'`, written by the inbound bridge). Its own lens
+    /// because a bridged human is not one of the team's internal voices — but
+    /// it blends into the unfiltered conversation, because they ARE talking in
+    /// the channel.
+    slack: bool,
 }
 
 impl Lenses {
     fn parse(kinds: Option<&[String]>) -> Self {
         match kinds {
-            // No filter → today's blend, minus the deliberation leak.
-            None => Lenses { steps: true, events: true, memories: true, messages: true, deliberations: false },
+            // No filter → today's blend, minus the deliberation leak. Slack
+            // rows are part of the conversation, so they ride the default.
+            None => Lenses { steps: true, events: true, memories: true, messages: true, deliberations: false, slack: true },
             Some(k) => Lenses {
                 steps: k.iter().any(|s| s == "step"),
                 events: k.iter().any(|s| s == "event"),
                 memories: k.iter().any(|s| s == "memory"),
                 messages: k.iter().any(|s| s == "message"),
                 deliberations: k.iter().any(|s| s == "deliberation"),
+                slack: k.iter().any(|s| s == "slack"),
             },
         }
     }
@@ -323,23 +332,35 @@ pub(crate) fn read_channel(
     // `consumer='display'`). They are NOT part of the plain conversation: the
     // query used to have no predicate on the column at all, so every turn leaked
     // into Collab as an ordinary persona/athena post.
-    if lenses.messages || lenses.deliberations {
-        let delib_clause = match (lenses.messages, lenses.deliberations) {
+    // `plain` = the non-deliberation half of this table, which BOTH the
+    // `message` lens (internal voices) and the `slack` lens (external Slack
+    // participants) read — they differ only by the author_kind predicate below.
+    let plain = lenses.messages || lenses.slack;
+    if plain || lenses.deliberations {
+        let delib_clause = match (plain, lenses.deliberations) {
             (true, true) => "",
             (true, false) => " AND deliberation_id IS NULL",
             (false, true) => " AND deliberation_id IS NOT NULL",
             (false, false) => unreachable!("guarded by the enclosing if"),
         };
+        // Deliberation-only reads carry no author predicate: a deliberation
+        // turn is always an internal voice, so splitting them would only cost a
+        // scan predicate.
+        let author_clause = match (lenses.messages, lenses.slack) {
+            (true, false) => " AND author_kind != 'slack'",
+            (false, true) => " AND author_kind = 'slack'",
+            _ => "",
+        };
         let sql = format!(
             "SELECT id,
                     strftime('%Y-%m-%dT%H:%M:%SZ', datetime(created_at)) AS at,
                     author_kind, author_id, body, deliveries, assignment_id, reply_to,
-                    deliberation_id
+                    deliberation_id, author_label
              FROM team_channel_messages
              WHERE team_id = ?1
                AND (strftime('%Y-%m-%dT%H:%M:%SZ', datetime(created_at)) < ?2
                     OR (strftime('%Y-%m-%dT%H:%M:%SZ', datetime(created_at)) = ?2
-                        AND id < ?4)){delib_clause}
+                        AND id < ?4)){delib_clause}{author_clause}
              ORDER BY at DESC, id DESC LIMIT ?3"
         );
         let mut stmt = conn.prepare(&sql)?;
@@ -351,13 +372,22 @@ pub(crate) fn read_channel(
             // column array so directives render their seen-by chips unchanged.
             let extra = deliveries.map(|d| format!("{{\"deliveries\":{d}}}"));
             // author_kind → the UI's item kind. 'user' is a directive; the
-            // other kinds render via the multi-author path (C1c).
+            // other kinds ('persona' | 'athena' | 'director' | 'slack') render
+            // via the multi-author path (C1c).
             let kind = if author_kind == "user" { "directive".to_string() } else { author_kind.clone() };
+            // `label` for a channel row is otherwise a redundant copy of
+            // author_kind, so an EXTERNAL author's resolved display name rides
+            // it (the bridge's hard contract with the renderer). NULL for every
+            // internal author → byte-identical to the previous behaviour.
+            let author_label: Option<String> = r.get(9)?;
+            let label = author_label
+                .filter(|l| !l.trim().is_empty())
+                .unwrap_or_else(|| author_kind.clone());
             Ok(TeamChannelItem {
                 id: r.get::<_, String>(0)?,
                 kind,
                 at: r.get(1)?,
-                label: author_kind,
+                label,
                 body: r.get(4)?,
                 persona_id: r.get(3)?,
                 extra,
@@ -403,6 +433,11 @@ pub struct ChannelKindCounts {
     pub message: i64,
     #[ts(type = "number")]
     pub deliberation: i64,
+    /// Channel rows authored by an external Slack participant. Counted
+    /// separately from `message` for the same reason the lens splits them: they
+    /// are people outside the team talking in it.
+    #[ts(type = "number")]
+    pub slack: i64,
 }
 
 #[tauri::command]
@@ -412,7 +447,17 @@ pub fn count_team_channel_kinds(
 ) -> Result<ChannelKindCounts, AppError> {
     require_auth_sync(&state)?;
     let conn = state.db.get()?;
+    count_kinds(&conn, &team_id)
+}
 
+/// The counts themselves, over a bare connection — split out for the same
+/// reason `read_channel` is: the rail's promise is that a facet's count equals
+/// what selecting that lens returns, and that invariant is only testable when
+/// both halves can run against one SQLite schema.
+pub(crate) fn count_kinds(
+    conn: &rusqlite::Connection,
+    team_id: &str,
+) -> Result<ChannelKindCounts, AppError> {
     let step: i64 = conn.query_row(
         "SELECT count(*) FROM team_assignment_events e
          JOIN team_assignments a ON a.id = e.assignment_id
@@ -441,8 +486,11 @@ pub fn count_team_channel_kinds(
     // 'message' = the channel table's non-deliberation rows PLUS the legacy
     // directives still living in team_memories — the same union the read-model's
     // `message` lens serves.
+    // Slack rows are excluded here and counted on their own below — the rail's
+    // invariant is that a facet's count equals what selecting it returns.
     let msg_rows: i64 = conn.query_row(
-        "SELECT count(*) FROM team_channel_messages WHERE team_id = ?1 AND deliberation_id IS NULL",
+        "SELECT count(*) FROM team_channel_messages
+         WHERE team_id = ?1 AND deliberation_id IS NULL AND author_kind != 'slack'",
         params![team_id],
         |r| r.get(0),
     )?;
@@ -458,13 +506,68 @@ pub fn count_team_channel_kinds(
         |r| r.get(0),
     )?;
 
+    let slack: i64 = conn.query_row(
+        "SELECT count(*) FROM team_channel_messages
+         WHERE team_id = ?1 AND deliberation_id IS NULL AND author_kind = 'slack'",
+        params![team_id],
+        |r| r.get(0),
+    )?;
+
     Ok(ChannelKindCounts {
         step,
         event,
         memory,
         message: msg_rows + legacy_directives,
         deliberation,
+        slack,
     })
+}
+
+/// One team <-> Slack bridge, as the UI sees it.
+///
+/// REQUIRED as its own command because `list_personas` is a lean projection
+/// that returns `notification_channels` blank — the frontend physically cannot
+/// derive bridges from the personas it holds. The backing config still lives on
+/// the persona's channel spec (see `engine/slack_bridge.rs`); this is a
+/// read-only projection of it.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TeamSlackBridgeInfo {
+    pub team_id: String,
+    /// Persona whose notification channel carries the bridge (and whose
+    /// credential the poller reads with).
+    pub persona_id: String,
+    pub slack_channel_id: String,
+    pub credential_id: String,
+    pub poll_inbound: bool,
+    pub outbound_messages: bool,
+    pub outbound_directives: bool,
+    pub outbound_steps: bool,
+}
+
+/// Every configured team <-> Slack bridge across all enabled personas.
+///
+/// Cheap: one `personas::get_enabled` read plus a JSON parse per persona, the
+/// same scan both bridge loops already do every tick.
+#[tauri::command]
+pub fn list_team_slack_bridges(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<TeamSlackBridgeInfo>, AppError> {
+    require_auth_sync(&state)?;
+    Ok(crate::engine::slack_bridge::list_bridges(&state.db)?
+        .into_iter()
+        .map(|b| TeamSlackBridgeInfo {
+            team_id: b.team_id,
+            persona_id: b.persona_id,
+            slack_channel_id: b.slack_channel_id,
+            credential_id: b.credential_id,
+            poll_inbound: b.poll_inbound,
+            outbound_messages: b.outbound_messages,
+            outbound_directives: b.outbound_directives,
+            outbound_steps: b.outbound_steps,
+        })
+        .collect())
 }
 
 /// Post a user directive into the team channel. C1: stored in the
@@ -547,6 +650,19 @@ mod tests {
             "INSERT INTO team_channel_messages (id, team_id, author_kind, body, consumer, created_at, deliberation_id)
              VALUES (?1, ?2, ?3, 'b', 'inject', ?4, ?5)",
             params![id, TEAM, author_kind, at, deliberation_id],
+        )
+        .unwrap();
+    }
+
+    /// A message that arrived over the team's Slack bridge: `author_kind`
+    /// 'slack', the Slack user id in `author_id`, the resolved display name in
+    /// `author_label`.
+    fn slack_msg(conn: &Connection, id: &str, at: &str, user: &str, name: Option<&str>) {
+        conn.execute(
+            "INSERT INTO team_channel_messages
+                (id, team_id, author_kind, author_id, body, consumer, created_at, author_label)
+             VALUES (?1, ?2, 'slack', ?3, 'from slack', 'inject', ?4, ?5)",
+            params![id, TEAM, user, at, name],
         )
         .unwrap();
     }
@@ -692,6 +808,85 @@ mod tests {
         assert_eq!(msgs.len(), 3);
         assert_eq!(turns.len(), 5, "the count the old rail rendered as 0");
         assert_eq!(mems.len(), 2);
+    }
+
+    /// The bridge's HARD CONTRACT with the renderer: a Slack row surfaces as
+    /// `kind = 'slack'` with the resolved display name in `label` (which for a
+    /// channel row is otherwise a redundant copy of author_kind). Without the
+    /// name the renderer has only a `U…` id to show.
+    #[test]
+    fn slack_rows_carry_the_resolved_display_name_in_label() {
+        let pool = init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        seed_team(&conn);
+        slack_msg(&conn, "s1", "2026-08-04 10:00:00", "U123", Some("Ada Lovelace"));
+        // Unresolvable name → the column stays NULL and label degrades to the
+        // author kind, which is exactly what the renderer's fallback expects.
+        slack_msg(&conn, "s0", "2026-08-04 09:00:00", "U456", None);
+
+        let items = read_channel(&conn, TEAM, Some(10), None, None, Some(&["slack".into()])).unwrap();
+        assert_eq!(ids(&items), vec!["s1", "s0"]);
+        assert!(items.iter().all(|i| i.kind == "slack"));
+        assert_eq!(items[0].label, "Ada Lovelace");
+        assert_eq!(items[0].persona_id.as_deref(), Some("U123"));
+        assert_eq!(items[1].label, "slack", "no name → the raw kind, never NULL");
+    }
+
+    /// The `slack` lens exists, blends into the unfiltered conversation (a
+    /// bridged human IS talking in the channel), and splits cleanly from
+    /// `message` when either is asked for on its own.
+    #[test]
+    fn slack_is_its_own_lens_but_blends_by_default() {
+        let pool = init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        seed_team(&conn);
+        msg(&conn, "p1", "2026-08-04 10:00:02", "persona", None);
+        slack_msg(&conn, "s1", "2026-08-04 10:00:01", "U123", Some("Ada"));
+        msg(&conn, "u1", "2026-08-04 10:00:00", "user", None);
+
+        // Default blend: everything, Slack included.
+        let all = read_channel(&conn, TEAM, Some(10), None, None, None).unwrap();
+        assert_eq!(ids(&all), vec!["p1", "s1", "u1"]);
+
+        // Internal voices only.
+        let internal = read_channel(&conn, TEAM, Some(10), None, None, Some(&["message".into()])).unwrap();
+        assert_eq!(ids(&internal), vec!["p1", "u1"]);
+
+        // External voices only.
+        let external = read_channel(&conn, TEAM, Some(10), None, None, Some(&["slack".into()])).unwrap();
+        assert_eq!(ids(&external), vec!["s1"]);
+
+        // Both, explicitly.
+        let both = read_channel(
+            &conn, TEAM, Some(10), None, None,
+            Some(&["message".into(), "slack".into()]),
+        ).unwrap();
+        assert_eq!(ids(&both), vec!["p1", "s1", "u1"]);
+    }
+
+    /// Same invariant the deliberation count had to satisfy: the rail's Slack
+    /// number must equal what selecting the Slack lens returns, and the message
+    /// count must no longer double-count the Slack rows it excludes.
+    #[test]
+    fn slack_counts_agree_with_the_slack_lens() {
+        let pool = init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        seed_team(&conn);
+        for i in 0..2 {
+            msg(&conn, &format!("p{i}"), "2026-08-04 10:00:00", "persona", None);
+        }
+        for i in 0..3 {
+            slack_msg(&conn, &format!("s{i}"), "2026-08-04 10:00:00", "U1", Some("Ada"));
+        }
+
+        let counts = count_kinds(&conn, TEAM).unwrap();
+        let slack_rows = read_channel(&conn, TEAM, Some(200), None, None, Some(&["slack".into()])).unwrap();
+        let internal = read_channel(&conn, TEAM, Some(200), None, None, Some(&["message".into()])).unwrap();
+
+        assert_eq!(counts.slack, 3);
+        assert_eq!(counts.slack as usize, slack_rows.len());
+        assert_eq!(counts.message, 2);
+        assert_eq!(counts.message as usize, internal.len());
     }
 
     /// THE LEAK. Deliberation turns are rows in team_channel_messages; the

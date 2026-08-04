@@ -29,6 +29,32 @@ pub fn create(
     pool: &DbPool,
     input: CreateChannelMessageInput,
 ) -> Result<TeamChannelMessage, AppError> {
+    insert(pool, input, None)
+}
+
+/// Post a message authored by an EXTERNAL participant — today only the team
+/// <-> Slack bridge (`engine/slack_poller.rs`).
+///
+/// The only difference from [`create`] is `author_label`: an external author has
+/// no persona row to resolve a name from, so the bridge resolves it once (Slack
+/// `users.info`) and stores it on the message. The read-model surfaces it as
+/// `TeamChannelItem.label`. Kept as its own entry point rather than a new field
+/// on `CreateChannelMessageInput` so the ~10 internal call sites stay untouched
+/// and no internal writer can accidentally set a display name it doesn't own.
+pub fn create_external(
+    pool: &DbPool,
+    input: CreateChannelMessageInput,
+    author_label: &str,
+) -> Result<TeamChannelMessage, AppError> {
+    let label = author_label.trim();
+    insert(pool, input, if label.is_empty() { None } else { Some(label) })
+}
+
+fn insert(
+    pool: &DbPool,
+    input: CreateChannelMessageInput,
+    author_label: Option<&str>,
+) -> Result<TeamChannelMessage, AppError> {
     timed_query!("team_channel", "team_channel::create", {
         let body = input.body.trim();
         if body.is_empty() {
@@ -45,8 +71,8 @@ pub fn create(
         conn.execute(
             "INSERT INTO team_channel_messages
                 (id, team_id, author_kind, author_id, body, addressed_to, reply_to,
-                 assignment_id, consumer, deliveries, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, NULL, datetime('now'))",
+                 assignment_id, consumer, deliveries, created_at, author_label)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, NULL, datetime('now'), ?10)",
             params![
                 id,
                 input.team_id,
@@ -57,6 +83,7 @@ pub fn create(
                 input.reply_to,
                 input.assignment_id,
                 consumer,
+                author_label,
             ],
         )
         .map_err(AppError::Database)?;

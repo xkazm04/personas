@@ -2525,6 +2525,7 @@ pub fn run() {
             commands::teams::team_channel::count_team_channel_kinds,
             commands::teams::team_channel::post_team_directive,
             commands::teams::team_channel::companion_post_team_message,
+            commands::teams::team_channel::list_team_slack_bridges,
             commands::teams::team_memories::list_team_memories,
             commands::teams::team_memories::create_team_memory,
             commands::teams::team_memories::delete_team_memory,
