@@ -11,6 +11,7 @@ import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { INK } from '../../passport/passportInk';
+import { inContext } from './shipDerive';
 import { TONE_HUE_MAP, type ShipContext, type ShipMilestoneVM } from './shipModel';
 import type { ShipData } from './useShipData';
 
@@ -29,8 +30,9 @@ export function ShipContextDrawer({ ctx, groupName, vm, ship, onClose }: {
   const { t, tx } = useTranslation();
   const reduced = useReducedMotion();
   const hue = TONE_HUE_MAP[ctx.tone];
-  const feats = ship.features.filter((f) => f.contexts.includes(ctx.name));
-  const goals = ship.goals.filter((g) => g.contexts.includes(ctx.name));
+  // Resolve BY ID, never by display name (see shipDerive.inContext).
+  const feats = inContext(ship.features, ctx.id);
+  const goals = inContext(ship.goals, ctx.id);
   const coreIds = new Set(vm.members.filter((m) => m.bucket === 'core').map((m) => m.feature.id));
   const boundGoalIds = new Set(vm.boundGoals.map((g) => g.id));
 

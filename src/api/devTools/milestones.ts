@@ -51,19 +51,58 @@ export async function listMilestoneItems(milestoneId: string): Promise<DevMilest
 }
 
 /** Upsert a scope member (add or re-bucket). `added_after_cut` derives on the
- *  backend: a new membership on an already-cut milestone is scope creep. */
+ *  backend: a new membership on an already-cut milestone is scope creep.
+ *
+ *  `annotations` is a PATCH, matching the backend's nullable-patch shape: omit
+ *  a key to leave that column alone, pass `null` to clear it. A `rating` is
+ *  1..5; `null` means UNRATED, which is not the same judgement as a 1. */
 export async function setMilestoneItem(
   milestoneId: string,
   itemKind: MilestoneItemKind,
   itemId: string,
   bucket: MilestoneBucket,
+  annotations?: { description?: string | null; rating?: number | null },
 ): Promise<DevMilestoneItem> {
   return invoke<DevMilestoneItem>("dev_tools_set_milestone_item", {
     milestoneId,
     itemKind,
     itemId,
     bucket,
+    // Spread only the keys actually supplied — an absent key must reach the
+    // backend as absent, not as an explicit null (which clears the column).
+    ...(annotations && "description" in annotations
+      ? { description: annotations.description ?? null }
+      : {}),
+    ...(annotations && "rating" in annotations ? { rating: annotations.rating ?? null } : {}),
   });
+}
+
+export type { ShipMilestoneIngestSummary } from "@/lib/bindings/ShipMilestoneIngestSummary";
+export type { ShipMilestoneProposedAddition } from "@/lib/bindings/ShipMilestoneProposedAddition";
+import type { ShipMilestoneIngestSummary } from "@/lib/bindings/ShipMilestoneIngestSummary";
+
+/**
+ * The ONE gated door a `/ship-milestone` skill run comes back through.
+ *
+ * Reads `<repo>/.personas/ship-milestone/runs/<id>/result.json` (newest
+ * un-ingested run when `runDir` is omitted) and applies its per-member
+ * suggestions through the ordinary `set_milestone_item` upsert, replaying each
+ * member's existing bucket. Path-confined, size-capped, version-checked and
+ * idempotent; it validates the whole file before writing anything, so a
+ * malformed run is refused rather than partly applied.
+ *
+ * Proposed additions come back in the summary and are NEVER applied — widening
+ * a cut is an operator decision made here in the Ship tab.
+ */
+export async function shipMilestoneIngest(
+  milestoneId: string,
+  runDir?: string,
+): Promise<ShipMilestoneIngestSummary> {
+  return invoke<ShipMilestoneIngestSummary>(
+    "dev_tools_ship_milestone_ingest",
+    { milestoneId, runDir: runDir ?? null },
+    { timeoutMs: 60_000 },
+  );
 }
 
 export async function removeMilestoneItem(

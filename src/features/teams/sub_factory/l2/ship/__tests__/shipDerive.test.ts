@@ -139,7 +139,7 @@ describe('scope-frozen', () => {
   const alsoLate = member(feature('f3', 'audit log', [auth]), 'core', true);
 
   it('reads go when nothing joined after the cut', () => {
-    expect(scope({ ...base, row: milestone({ cut_at: '2026-01-01T00:00:00Z' }), core: [clean] }))
+    expect(scope({ ...base, row: milestone({ cutAt: '2026-01-01T00:00:00Z' }), core: [clean] }))
       .toEqual({
         id: 'scope-frozen',
         label: 'Scope frozen',
@@ -151,7 +151,7 @@ describe('scope-frozen', () => {
   });
 
   it('reads warn and NAMES the offenders when the cut kept growing', () => {
-    const c = scope({ ...base, row: milestone({ cut_at: '2026-01-01T00:00:00Z' }), core: [clean, late, alsoLate] });
+    const c = scope({ ...base, row: milestone({ cutAt: '2026-01-01T00:00:00Z' }), core: [clean, late, alsoLate] });
     expect(c).toEqual({
       id: 'scope-frozen',
       label: 'Scope frozen',
@@ -163,7 +163,7 @@ describe('scope-frozen', () => {
   });
 
   it('reads setup before the cut, where the signal is not meaningful yet', () => {
-    expect(scope({ ...base, row: milestone({ cut_at: null }), core: [clean] }))
+    expect(scope({ ...base, row: milestone({ cutAt: null }), core: [clean] }))
       .toMatchObject({ evidence: 'Not cut yet. Creep tracking starts at the cut', state: 'setup' });
   });
 
@@ -171,14 +171,14 @@ describe('scope-frozen', () => {
     const deferred = member(feature('f9', 'later thing', [auth]), 'later', true);
     // the caller passes CORE only; a deferred member never reaches the criterion
     const core = [clean, deferred].filter((m) => m.bucket === 'core');
-    expect(scope({ ...base, row: milestone({ cut_at: '2026-01-01T00:00:00Z' }), core })).toMatchObject({ state: 'go' });
+    expect(scope({ ...base, row: milestone({ cutAt: '2026-01-01T00:00:00Z' }), core })).toMatchObject({ state: 'go' });
   });
 
   it('participates in the verdict: creep drags an otherwise-clean milestone to warn', () => {
     const core = [clean, late];
     const footprint = deriveFootprint(core, [auth]);
     const all = deriveCriteria({
-      ...base, row: milestone({ cut_at: '2026-01-01T00:00:00Z' }), core, footprint,
+      ...base, row: milestone({ cutAt: '2026-01-01T00:00:00Z' }), core, footprint,
       boundGoals: [goal('g1', 'Ship v1')],
     });
     expect(shipVerdict(legacyOnly(all))).toBe('go');

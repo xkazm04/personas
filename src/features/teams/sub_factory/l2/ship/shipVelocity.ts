@@ -69,8 +69,8 @@ export function observedCycles(rows: DevMilestone[]): number[] {
   const out: number[] = [];
   for (const m of rows) {
     if (m.status !== 'shipped') continue;
-    const cut = parseMs(m.cut_at);
-    const shipped = parseMs(m.shipped_at);
+    const cut = parseMs(m.cutAt);
+    const shipped = parseMs(m.shippedAt);
     if (cut === null || shipped === null) continue;
     const days = (shipped - cut) / MS_PER_DAY;
     if (days < 0) continue;
@@ -81,7 +81,7 @@ export function observedCycles(rows: DevMilestone[]): number[] {
 
 /** The milestone a forecast is about: the active cut, else the first planned. */
 export function nextUnshipped(rows: DevMilestone[]): DevMilestone | null {
-  const ordered = [...rows].sort((a, b) => a.order_index - b.order_index);
+  const ordered = [...rows].sort((a, b) => a.orderIndex - b.orderIndex);
   return ordered.find((m) => m.status === 'active')
     ?? ordered.find((m) => m.status !== 'shipped')
     ?? null;
@@ -103,7 +103,7 @@ export function deriveShipVelocity(rows: DevMilestone[], now: Date = new Date())
   let forecast: ShipForecast | null = null;
 
   if (target) {
-    const cut = parseMs(target.cut_at);
+    const cut = parseMs(target.cutAt);
     const basis: ShipForecast['basis'] = cut === null ? 'today' : 'cut';
     const from = cut ?? now.getTime();
     const date = isoDay(from + medianDays * MS_PER_DAY);
@@ -112,9 +112,9 @@ export function deriveShipVelocity(rows: DevMilestone[], now: Date = new Date())
       milestoneName: target.name,
       basis,
       date,
-      targetDate: target.target_date,
+      targetDate: target.targetDate,
       // Both sides are yyyy-mm-dd, so a lexicographic compare is a date compare.
-      late: Boolean(target.target_date) && date > (target.target_date as string),
+      late: Boolean(target.targetDate) && date > (target.targetDate as string),
     };
   }
 

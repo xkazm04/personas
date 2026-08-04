@@ -2851,6 +2851,7 @@ pub fn run() {
             commands::companion::approvals::companion_reject_action,
             commands::companion::approvals::companion_analyze_fleet,
             commands::companion::approvals::companion_dispatch_fleet_plan,
+            commands::companion::approvals::companion_create_ship_milestone,
             commands::companion::approvals::companion_daily_brief,
             commands::companion::browser_test::browser_bridge_status,
             commands::companion::browser_test::browser_bridge_regenerate_token,
@@ -3162,6 +3163,8 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_list_milestone_items,
             commands::infrastructure::dev_tools::dev_tools_set_milestone_item,
             commands::infrastructure::dev_tools::dev_tools_remove_milestone_item,
+            // The /ship-milestone skill's one gated door back into the app.
+            commands::infrastructure::dev_tools::dev_tools_ship_milestone_ingest,
             // Dev Tools -- L1 passport wall (one batched read for N covers)
             commands::infrastructure::dev_tools::dev_tools_project_wall_summary,
             // Dev Tools -- use cases (behavioral slice layer under contexts)

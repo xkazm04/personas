@@ -225,7 +225,7 @@ function MastermindInner() {
         for (const r of rows) {
           const vm = buildCoverRoadmap(r.milestones);
           if (vm.steps.length === 0) continue;
-          m.set(r.project_id, {
+          m.set(r.projectId, {
             next: vm.next?.name ?? null,
             shipped: vm.shipped,
             total: vm.steps.length,

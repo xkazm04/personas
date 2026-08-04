@@ -141,6 +141,7 @@ pub fn verify_healing_owner(
 /// into an orphan the CI binding-drift check cannot see).
 #[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct HealingAnalysisResult {
     pub failures_analyzed: usize,
     pub issues_created: u32,

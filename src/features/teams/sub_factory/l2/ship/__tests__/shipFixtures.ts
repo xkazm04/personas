@@ -29,27 +29,46 @@ export function feature(id: string, name: string, slice: ShipContext[], ready = 
   };
 }
 
-export function member(f: ShipFeature, bucket: ScopeBucket = 'core', afterCut = false): ShipMember {
-  return { feature: f, bucket, afterCut };
+export function member(
+  f: ShipFeature,
+  bucket: ScopeBucket = 'core',
+  afterCut = false,
+  annotations: { description?: string | null; rating?: number | null } = {},
+): ShipMember {
+  return {
+    feature: f,
+    bucket,
+    afterCut,
+    description: annotations.description ?? null,
+    // Default is UNRATED, not 0 — the same distinction the schema makes.
+    rating: annotations.rating ?? null,
+  };
 }
 
-export function goal(id: string, name: string): ShipGoal {
-  return { id, name, description: null, status: 'active', contexts: [] };
+export function goal(id: string, name: string, slice: ShipContext[] = []): ShipGoal {
+  return {
+    id,
+    name,
+    description: null,
+    status: 'active',
+    contexts: slice.map((c) => c.name),
+    contextIds: slice.map((c) => c.id),
+  };
 }
 
 export function milestone(over: Partial<DevMilestone> = {}): DevMilestone {
   return {
     id: 'm1',
-    project_id: 'p1',
+    projectId: 'p1',
     name: 'v1',
     goal: null,
     status: 'active',
-    order_index: 0,
-    target_date: null,
-    cut_at: '2026-01-01T00:00:00Z',
-    shipped_at: null,
-    created_at: '2026-01-01T00:00:00Z',
-    updated_at: '2026-01-01T00:00:00Z',
+    orderIndex: 0,
+    targetDate: null,
+    cutAt: '2026-01-01T00:00:00Z',
+    shippedAt: null,
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
     ...over,
   };
 }

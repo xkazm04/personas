@@ -6,9 +6,9 @@ import { milestone } from './shipFixtures';
 
 /** A shipped milestone that took `days` from cut to ship. */
 const shipped = (id: string, order: number, cut: string, days: number) => milestone({
-  id, name: id, order_index: order, status: 'shipped',
-  cut_at: `${cut}T00:00:00Z`,
-  shipped_at: new Date(Date.parse(`${cut}T00:00:00Z`) + days * 86_400_000).toISOString(),
+  id, name: id, orderIndex: order, status: 'shipped',
+  cutAt: `${cut}T00:00:00Z`,
+  shippedAt: new Date(Date.parse(`${cut}T00:00:00Z`) + days * 86_400_000).toISOString(),
 });
 
 const NOW = new Date('2026-03-01T12:00:00Z');
@@ -26,15 +26,15 @@ describe('observedCycles', () => {
   it('counts only shipped milestones carrying BOTH stamps', () => {
     const rows = [
       shipped('a', 0, '2026-01-01', 10),
-      milestone({ id: 'b', order_index: 1, status: 'shipped', cut_at: null, shipped_at: '2026-02-01T00:00:00Z' }),
-      milestone({ id: 'c', order_index: 2, status: 'shipped', cut_at: '2026-02-01T00:00:00Z', shipped_at: null }),
-      milestone({ id: 'd', order_index: 3, status: 'active' }),
+      milestone({ id: 'b', orderIndex: 1, status: 'shipped', cutAt: null, shippedAt: '2026-02-01T00:00:00Z' }),
+      milestone({ id: 'c', orderIndex: 2, status: 'shipped', cutAt: '2026-02-01T00:00:00Z', shippedAt: null }),
+      milestone({ id: 'd', orderIndex: 3, status: 'active' }),
     ];
     expect(observedCycles(rows)).toEqual([10]);
   });
 
   it('drops a row shipped before it was cut', () => {
-    const bad = milestone({ id: 'x', status: 'shipped', cut_at: '2026-02-01T00:00:00Z', shipped_at: '2026-01-01T00:00:00Z' });
+    const bad = milestone({ id: 'x', status: 'shipped', cutAt: '2026-02-01T00:00:00Z', shippedAt: '2026-01-01T00:00:00Z' });
     expect(observedCycles([bad])).toEqual([]);
   });
 });
@@ -42,9 +42,9 @@ describe('observedCycles', () => {
 describe('nextUnshipped', () => {
   it('prefers the active cut, then the lowest-ordered planned', () => {
     const rows = [
-      milestone({ id: 'p2', order_index: 3, status: 'planned' }),
-      milestone({ id: 'act', order_index: 2, status: 'active' }),
-      milestone({ id: 'p1', order_index: 1, status: 'planned' }),
+      milestone({ id: 'p2', orderIndex: 3, status: 'planned' }),
+      milestone({ id: 'act', orderIndex: 2, status: 'active' }),
+      milestone({ id: 'p1', orderIndex: 1, status: 'planned' }),
     ];
     expect(nextUnshipped(rows)?.id).toBe('act');
     expect(nextUnshipped(rows.filter((m) => m.status !== 'active'))?.id).toBe('p1');
@@ -66,7 +66,7 @@ describe('deriveShipVelocity', () => {
       shipped('a', 0, '2026-01-01', 10),
       shipped('b', 1, '2026-01-15', 12),
       shipped('c', 2, '2026-02-01', 90),
-      milestone({ id: 'next', name: 'v4', order_index: 3, status: 'active', cut_at: '2026-02-20T00:00:00Z' }),
+      milestone({ id: 'next', name: 'v4', orderIndex: 3, status: 'active', cutAt: '2026-02-20T00:00:00Z' }),
     ];
     const v = deriveShipVelocity(rows, NOW);
     // mean would be 37 days; median is 12
@@ -79,7 +79,7 @@ describe('deriveShipVelocity', () => {
     const rows = [
       shipped('a', 0, '2026-01-01', 10),
       shipped('b', 1, '2026-01-15', 20),
-      milestone({ id: 'next', order_index: 2, status: 'active', cut_at: '2026-02-10T00:00:00Z' }),
+      milestone({ id: 'next', orderIndex: 2, status: 'active', cutAt: '2026-02-10T00:00:00Z' }),
     ];
     // median of [10, 20] = 15 days out from the 2026-02-10 cut
     expect(deriveShipVelocity(rows, NOW)?.forecast).toMatchObject({ basis: 'cut', date: '2026-02-25' });
@@ -89,7 +89,7 @@ describe('deriveShipVelocity', () => {
     const rows = [
       shipped('a', 0, '2026-01-01', 10),
       shipped('b', 1, '2026-01-15', 20),
-      milestone({ id: 'next', order_index: 2, status: 'planned', cut_at: null }),
+      milestone({ id: 'next', orderIndex: 2, status: 'planned', cutAt: null }),
     ];
     expect(deriveShipVelocity(rows, NOW)?.forecast).toMatchObject({ basis: 'today', date: '2026-03-16' });
   });
@@ -98,7 +98,7 @@ describe('deriveShipVelocity', () => {
     const rows = [
       shipped('a', 0, '2026-01-01', 30),
       shipped('b', 1, '2026-01-15', 30),
-      milestone({ id: 'next', order_index: 2, status: 'active', cut_at: '2026-02-10T00:00:00Z', target_date: '2026-03-01' }),
+      milestone({ id: 'next', orderIndex: 2, status: 'active', cutAt: '2026-02-10T00:00:00Z', targetDate: '2026-03-01' }),
     ];
     const f = deriveShipVelocity(rows, NOW)?.forecast;
     expect(f).toMatchObject({ date: '2026-03-12', targetDate: '2026-03-01', late: true });
@@ -108,7 +108,7 @@ describe('deriveShipVelocity', () => {
     const rows = [
       shipped('a', 0, '2026-01-01', 10),
       shipped('b', 1, '2026-01-15', 10),
-      milestone({ id: 'next', order_index: 2, status: 'active', cut_at: '2026-02-10T00:00:00Z', target_date: '2026-02-20' }),
+      milestone({ id: 'next', orderIndex: 2, status: 'active', cutAt: '2026-02-10T00:00:00Z', targetDate: '2026-02-20' }),
     ];
     expect(deriveShipVelocity(rows, NOW)?.forecast).toMatchObject({ date: '2026-02-20', late: false });
   });

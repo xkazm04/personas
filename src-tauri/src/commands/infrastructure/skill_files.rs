@@ -226,6 +226,10 @@ const SYSTEM_SKILLS: &[&str] = &[
     // The 22 single-lens scan-* skills were retired 2026-08-04 — the sweep is
     // the only scan entry point; deep passes run `/scan-sweep --lenses <key>`.
     "scan-sweep",
+    // Executes ONE Ship milestone and reports back through
+    // `dev_tools_ship_milestone_ingest` — the app dispatches it from the Ship
+    // tab, so it cannot depend on the operator's global library.
+    "ship-milestone",
 ];
 
 /// Is `name` an app-owned system skill (sourced from the bundle/repo, never the
