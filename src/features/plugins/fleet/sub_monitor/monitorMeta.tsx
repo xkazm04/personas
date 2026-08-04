@@ -4,8 +4,9 @@ import {
 } from 'lucide-react';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import type { ScreenHealth } from '@/lib/bindings/ScreenHealth';
-import { FLEET_STATE_META, type FleetStateMeta } from '../fleetStateMeta';
-import type { ProtoTerminal } from './monitorTypes';
+import { useTranslation } from '@/i18n/useTranslation';
+import { FLEET_STATE_META, type FleetStateMeta, type FleetTranslations } from '../fleetStateMeta';
+import type { MonitorTerminal } from './monitorTypes';
 
 /** State → icon, complementing `FLEET_STATE_META`'s colour/label palette. */
 export const STATE_ICON: Record<FleetSessionState, LucideIcon> = {
@@ -33,34 +34,36 @@ export function stateMeta(state: FleetSessionState): FleetStateMeta {
  * It is a READ of the last delta a render already took: no verdict simply means
  * nobody has rendered that session yet.
  */
-const SCREEN_HEALTH_META: Record<ScreenHealth, { Icon: LucideIcon; tone: string; hint: string }> = {
+const SCREEN_HEALTH_META: Record<ScreenHealth, { Icon: LucideIcon; tone: string; hintKey: keyof FleetTranslations }> = {
   working: {
     Icon: Activity,
     tone: 'text-status-success',
-    hint: 'Screen is producing output.',
+    hintKey: 'monitor_screen_working',
   },
   cosmetic: {
     Icon: Waves,
     tone: 'text-status-warning',
-    hint: 'Only chrome is moving (spinner, timer). Alive, but not producing.',
+    hintKey: 'monitor_screen_cosmetic',
   },
   silent: {
     Icon: CircleOff,
     tone: 'text-status-error',
-    hint: 'Screen has not changed at all since the last render.',
+    hintKey: 'monitor_screen_silent',
   },
 };
 
 /** The ledger's screen-health glyph. Renders a muted dash when unmeasured. */
 export function ScreenHealthGlyph({ health }: { health: ScreenHealth | null }) {
+  const { t } = useTranslation();
   if (!health) {
     return (
-      <span className="typo-caption text-foreground opacity-30" title="No screen render taken yet.">
+      <span className="typo-caption text-foreground opacity-30" title={t.plugins.fleet.monitor_screen_unmeasured}>
         -
       </span>
     );
   }
-  const { Icon, tone, hint } = SCREEN_HEALTH_META[health];
+  const { Icon, tone, hintKey } = SCREEN_HEALTH_META[health];
+  const hint = t.plugins.fleet[hintKey];
   return (
     <span className="inline-flex" title={hint} aria-label={hint} role="img">
       <Icon className={`w-3.5 h-3.5 ${tone}`} aria-hidden="true" />
@@ -69,7 +72,7 @@ export function ScreenHealthGlyph({ health }: { health: ScreenHealth | null }) {
 }
 
 /** 0..1 "resource cost" blend of effort tokens and live memory. */
-export function costRatio(t: ProtoTerminal): number {
+export function costRatio(t: MonitorTerminal): number {
   const tokenPart = Math.min(t.outputTokens / 240_000, 1);
   const memPart = Math.min(t.memMb / 520, 1);
   return tokenPart * 0.7 + memPart * 0.3;
@@ -90,7 +93,7 @@ export function costToneBg(ratio: number): string {
 /** Attention lanes shared by the triage variant + ledger sort. */
 export type AttentionLane = 'needs_you' | 'working' | 'parked' | 'done';
 
-export function attentionLane(t: ProtoTerminal): AttentionLane {
+export function attentionLane(t: MonitorTerminal): AttentionLane {
   if (t.state === 'awaiting_input' || t.state === 'stale') return 'needs_you';
   if (t.state === 'running' || t.state === 'spawning') return 'working';
   if (t.state === 'idle' || t.state === 'hibernated') return 'parked';
@@ -99,11 +102,12 @@ export function attentionLane(t: ProtoTerminal): AttentionLane {
 
 export const LANE_ORDER: AttentionLane[] = ['needs_you', 'working', 'parked', 'done'];
 
-export const LANE_LABEL: Record<AttentionLane, string> = {
-  needs_you: 'Needs you',
-  working: 'Working',
-  parked: 'Parked',
-  done: 'Done',
+/** `plugins.fleet` key per lane — resolved by the component that renders it. */
+export const LANE_LABEL_KEY: Record<AttentionLane, keyof FleetTranslations> = {
+  needs_you: 'monitor_lane_needs_you',
+  working: 'monitor_lane_working',
+  parked: 'monitor_lane_parked',
+  done: 'monitor_lane_done',
 };
 
 export const LANE_TONE: Record<AttentionLane, string> = {
@@ -113,7 +117,7 @@ export const LANE_TONE: Record<AttentionLane, string> = {
   done: 'text-foreground opacity-50',
 };
 
-/** Compact icon+value stat used across all three variants. */
+/** Compact icon+value stat used across the monitor's surfaces. */
 export function MicroStat({
   icon: Icon, value, title, tone, dimZero = true,
 }: {
@@ -135,23 +139,36 @@ export function MicroStat({
   );
 }
 
-/** The three per-terminal stats the prototype exists to surface. */
-export function TerminalStats({ t, className }: { t: ProtoTerminal; className?: string }) {
-  const ratio = costRatio(t);
+/** The three per-terminal stats the monitor exists to surface. */
+export function TerminalStats({ terminal, className }: { terminal: MonitorTerminal; className?: string }) {
+  const { t, tx } = useTranslation();
+  const ratio = costRatio(terminal);
+  const tokensK = Math.round(terminal.outputTokens / 1000);
   return (
     <span className={`inline-flex items-center gap-2 ${className ?? ''}`}>
-      <MicroStat icon={Cpu} value={t.subprocs} title={`${t.subprocs} background subprocesses`} />
+      <MicroStat
+        icon={Cpu}
+        value={terminal.subprocs}
+        title={tx(t.plugins.fleet.monitor_stat_subprocs, { count: terminal.subprocs })}
+      />
       <MicroStat
         icon={Bot}
-        value={t.subagentsActive > 0 ? `${t.subagentsActive}/${t.subagentsTotal}` : t.subagentsTotal}
-        title={`Subagents — ${t.subagentsActive} active, ${t.subagentsTotal} triggered total`}
-        tone={t.subagentsActive > 0 ? 'text-status-info' : undefined}
-        dimZero={t.subagentsTotal === 0}
+        value={terminal.subagentsActive > 0 ? `${terminal.subagentsActive}/${terminal.subagentsTotal}` : terminal.subagentsTotal}
+        title={tx(t.plugins.fleet.monitor_stat_subagents, {
+          active: terminal.subagentsActive,
+          total: terminal.subagentsTotal,
+        })}
+        tone={terminal.subagentsActive > 0 ? 'text-status-info' : undefined}
+        dimZero={terminal.subagentsTotal === 0}
       />
       <MicroStat
         icon={Gauge}
-        value={`${Math.round(t.outputTokens / 1000)}k`}
-        title={`~${Math.round(t.outputTokens / 1000)}k output tokens · ${t.memMb ? `${t.memMb} MB RAM` : 'no process'}`}
+        value={`${tokensK}k`}
+        title={
+          terminal.memMb
+            ? tx(t.plugins.fleet.monitor_stat_effort, { tokens: tokensK, mem: terminal.memMb })
+            : tx(t.plugins.fleet.monitor_stat_effort_no_process, { tokens: tokensK })
+        }
         tone={costToneText(ratio)}
         dimZero={false}
       />
@@ -160,7 +177,7 @@ export function TerminalStats({ t, className }: { t: ProtoTerminal; className?: 
 }
 
 /** Thin resource-cost meter (tokens+RAM blend) used as a card underline. */
-export function CostMeter({ t, className }: { t: ProtoTerminal; className?: string }) {
+export function CostMeter({ t, className }: { t: MonitorTerminal; className?: string }) {
   const ratio = costRatio(t);
   return (
     <div className={`h-0.5 w-full bg-secondary/40 overflow-hidden ${className ?? ''}`} aria-hidden="true">

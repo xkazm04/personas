@@ -1,22 +1,26 @@
 import { useMemo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
+import type { FleetTranslations } from '../fleetStateMeta';
 import {
-  attentionLane, LANE_ORDER, LANE_LABEL, LANE_TONE, type AttentionLane,
-} from './monitorProtoMeta';
+  attentionLane, LANE_ORDER, LANE_LABEL_KEY, LANE_TONE, type AttentionLane,
+} from './monitorMeta';
 import { MonitorRow } from './MonitorRow';
-import type { ProtoTerminal } from './monitorTypes';
+import type { MonitorTerminal } from './monitorTypes';
 
-// Column 1 is the screen-movement glyph: no header, it reads as part of the
-// state chrome rather than as another metric.
-const COLS = ['', '', 'Session', 'Project', 'Procs', 'Agents', 'Ctx', 'Effort', 'Mem', 'Age'];
+// The first two columns are the state icon and the screen-movement glyph: no
+// header, they read as part of the state chrome rather than as more metrics.
+const COL_KEYS: ReadonlyArray<keyof FleetTranslations | null> = [
+  null, null,
+  'monitor_col_session', 'monitor_col_project', 'monitor_col_procs', 'monitor_col_agents',
+  'monitor_col_ctx', 'monitor_col_effort', 'monitor_col_mem', 'monitor_col_age',
+];
 
 /** First right-aligned column (`Procs` onward — everything before it is text). */
 const FIRST_NUMERIC_COL = 4;
 
 /**
- * The FUSED monitor variant (winner of /prototype rounds 1-2).
- *
- * Baseline: the Ledger — one dense row per session, tabular numerals, every
- * stat a sortable column. Fused in from Triage lanes: sessions are grouped
+ * The monitor ledger — one dense row per session, tabular numerals, every
+ * stat a sortable column. Sessions are grouped
  * under attention-lane section headers (Needs you / Working / Parked / Done,
  * always in that order), so the operator's scan path starts at the lane that
  * wants a human while keeping the ledger's compare-and-rank power.
@@ -29,15 +33,15 @@ const FIRST_NUMERIC_COL = 4;
 export function MonitorLedger({
   fleet, onOpen, onArm, armedId,
 }: {
-  fleet: ProtoTerminal[];
-  onOpen: (t: ProtoTerminal) => void;
+  fleet: MonitorTerminal[];
+  onOpen: (t: MonitorTerminal) => void;
   /** Mount the shared-layout node a frame before the expand commits. */
   onArm?: (id: string) => void;
-  /** Row currently owning the `proto-term-<id>` shared layout id, if any. */
+  /** Row currently owning the `monitor-term-<id>` shared layout id, if any. */
   armedId?: string | null;
 }) {
   const lanes = useMemo(() => {
-    const m: Record<AttentionLane, ProtoTerminal[]> = { needs_you: [], working: [], parked: [], done: [] };
+    const m: Record<AttentionLane, MonitorTerminal[]> = { needs_you: [], working: [], parked: [], done: [] };
     for (const t of fleet) m[attentionLane(t)].push(t);
     m.needs_you.sort((a, b) => b.ageMin - a.ageMin);
     m.working.sort((a, b) => b.outputTokens - a.outputTokens);
@@ -47,20 +51,21 @@ export function MonitorLedger({
   }, [fleet]);
   const maxTokens = useMemo(() => Math.max(...fleet.map((t) => t.outputTokens), 1), [fleet]);
   const noop = useMemo(() => () => {}, []);
+  const { t } = useTranslation();
 
   return (
-    <div className="h-full overflow-auto px-4 py-2">
+    <div className="flex-1 min-h-0 overflow-auto px-4 py-2">
       <table className="w-full border-separate border-spacing-0">
         <thead className="sticky top-0 z-10">
           <tr className="bg-[#0d0d10]">
-            {COLS.map((h, i) => (
+            {COL_KEYS.map((key, i) => (
               <th
                 key={i}
                 className={`typo-label uppercase tracking-wide text-foreground opacity-50 font-normal px-2 py-1.5 border-b border-primary/15 ${
                   i >= FIRST_NUMERIC_COL ? 'text-right' : 'text-left'
                 }`}
               >
-                {h}
+                {key ? t.plugins.fleet[key] : null}
               </th>
             ))}
           </tr>
@@ -71,18 +76,20 @@ export function MonitorLedger({
             if (terms.length === 0) return null;
             return [
               <tr key={`lane-${lane}`}>
-                <td colSpan={COLS.length} className="px-2 pt-3 pb-1">
-                  <span className={`typo-label uppercase tracking-wide ${LANE_TONE[lane]}`}>{LANE_LABEL[lane]}</span>
+                <td colSpan={COL_KEYS.length} className="px-2 pt-3 pb-1">
+                  <span className={`typo-label uppercase tracking-wide ${LANE_TONE[lane]}`}>
+                    {t.plugins.fleet[LANE_LABEL_KEY[lane]]}
+                  </span>
                   <span className="ml-2 typo-caption text-foreground opacity-40 font-data">{terms.length}</span>
                 </td>
               </tr>,
-              ...terms.map((t) => (
+              ...terms.map((term) => (
                 <MonitorRow
-                  key={t.id}
-                  t={t}
+                  key={term.id}
+                  terminal={term}
                   maxTokens={maxTokens}
                   needsYou={lane === 'needs_you'}
-                  armed={armedId === t.id}
+                  armed={armedId === term.id}
                   onArm={onArm ?? noop}
                   onOpen={onOpen}
                 />

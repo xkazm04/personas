@@ -21,7 +21,7 @@ import type { ScreenHealth } from '@/lib/bindings/ScreenHealth';
  * Sessions with NO bound transcript keep the fnv placeholder for every stat
  * and set `simulated`.
  */
-export interface ProtoTerminal {
+export interface MonitorTerminal {
   id: string;
   /** True when the stats below are the fnv placeholder, not measured values —
    *  a session with no bound `claudeSessionId` has no transcript to read. */

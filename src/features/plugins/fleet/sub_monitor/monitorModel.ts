@@ -1,6 +1,6 @@
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetMonitorStats } from '@/lib/bindings/FleetMonitorStats';
-import type { ProtoTerminal } from './monitorTypes';
+import type { MonitorTerminal } from './monitorTypes';
 
 /**
  * Adapter: REAL fleet sessions → the monitor model the ledger renders.
@@ -40,7 +40,7 @@ function baseTerminal(s: FleetSession, nowMs: number) {
 }
 
 /** Placeholder stats for a session with no bound transcript. */
-function simulatedTerminal(s: FleetSession, nowMs: number): Omit<ProtoTerminal, 'screenHealth'> {
+function simulatedTerminal(s: FleetSession, nowMs: number): Omit<MonitorTerminal, 'screenHealth'> {
   const h = fnv(s.id);
   const base = baseTerminal(s, nowMs);
   const working = s.state === 'running' || s.state === 'spawning';
@@ -63,7 +63,7 @@ export function sessionToMonitorTerminal(
   s: FleetSession,
   nowMs: number,
   stats?: FleetMonitorStats,
-): ProtoTerminal {
+): MonitorTerminal {
   // Screen movement is measured off the PTY, not the transcript, so it is
   // real even on a row whose numbers are placeholders.
   const screenHealth = stats?.screenHealth ?? null;
@@ -83,8 +83,8 @@ export function sessionToMonitorTerminal(
   };
 }
 
-/** Field-by-field equality — every `ProtoTerminal` field is a primitive. */
-function sameTerminal(a: ProtoTerminal, b: ProtoTerminal): boolean {
+/** Field-by-field equality — every `MonitorTerminal` field is a primitive. */
+function sameTerminal(a: MonitorTerminal, b: MonitorTerminal): boolean {
   return (
     a.id === b.id
     && a.simulated === b.simulated
@@ -117,8 +117,8 @@ function sameTerminal(a: ProtoTerminal, b: ProtoTerminal): boolean {
 export function sessionsToMonitorModel(
   sessions: FleetSession[],
   stats?: Map<string, FleetMonitorStats>,
-  prev?: ProtoTerminal[],
-): ProtoTerminal[] {
+  prev?: MonitorTerminal[],
+): MonitorTerminal[] {
   const now = Date.now();
   const prevById = prev && prev.length > 0 ? new Map(prev.map((t) => [t.id, t])) : null;
   return sessions.map((s) => {

@@ -320,6 +320,24 @@ Consequences:
 - **Density-scaled font.** While the grid is open the terminal font is scaled to the grid density via a transient override (`setFleetFontOverride`): 1×1→15px, 2×2→14px, 3×3→13px, 4×4→12px (floored at 12px for legibility). The override never touches the persisted single-view `fleetTerminalFontSize`; it's cleared on minimize.
 - **Renderer + addons.** WebGL rendering (`@xterm/addon-webgl`) is loaded **per attach** and disposed on detach, so N background terminals don't each pin a GL context (it falls back to the DOM renderer if WebGL is unavailable). `@xterm/addon-unicode11` fixes emoji/CJK/box-drawing widths; `@xterm/addon-web-links` makes URLs clickable, opened via `openExternalUrl` after `sanitizeExternalUrl`. The panes are otherwise chrome-free — paste is right-click / Ctrl+Shift+V / Cmd+V; font size, copy-on-select and theme live in Fleet Settings (no per-pane buttons).
 
+### Monitor view — the grid's second reading (`sub_monitor/`)
+
+The grid overlay header carries a **Tiles / Monitor** switcher. Tiles is the terminal wall; **Monitor** (`sub_monitor/MonitorView.tsx`) is a dense, zero-xterm ledger of the whole fleet — one row per session, tabular numerals, every stat a column. Nothing is subscribed while it is up, so it is near-free at any fleet size and safe to leave open.
+
+**Two-layer UX.** The ledger is the overview; a row click is the detail. Clicking focuses the session (so the terminal manager and Athena targeting follow) and expands the **real** terminal pane fullscreen over the ledger via a shared framer layout id (`monitor-term-<id>`), so the row visibly becomes the pane. Both close paths return to the *monitor*, not out of Fleet: Escape is intercepted in the capture phase ahead of the overlay's own Escape-to-minimize, and the titlebar Back button is re-pointed at the pane while it is open. Sessions that are exited/hibernated or headless expand to a status block instead of a terminal.
+
+**Rows are grouped into attention lanes** — *Needs you* / *Working* / *Parked* / *Done*, always in that order — so the scan path starts where a human is wanted. "Needs you" sorts oldest-wait first; the other lanes sort by effort spent.
+
+**Where the numbers come from.** One IPC for the whole fleet (`fleet_monitor_stats`), polled every 10 s while the view is mounted and paused while the window is hidden. `Procs` / `Agents` / `Ctx` / `Effort` / `Mem` come from the incremental transcript rollup plus per-PID RSS. A session that never bound a `claudeSessionId` has **no transcript to read**, so its row keeps a deterministic per-session **simulated** placeholder (seeded by session id, stable across renders); those cells render dimmed and say so on hover. Placeholder rows are excluded from every measured total.
+
+**Screen-health glyph.** The second column is the screen-movement verdict for that session (see [Screen-movement work signal](#the-autonomy-machine--code-reference-as-of-2026-07-24)): a green activity mark for `working`, an amber wave for `cosmetic` (only a spinner/timer is moving — alive but not producing), a red circle for `silent`. It is a read of the last delta a render already took, so a muted dash simply means nobody has rendered that session yet. It is measured off the PTY rather than the transcript, so it stays real even on a placeholder row.
+
+**Totals strip.** A one-line fleet summary sits above the ledger: sessions, working, need-you, background procs, live subagents, output tokens (compact) and GB of memory. Lane counts come from session state so every session counts; the measured sums skip placeholder rows, and the strip's tooltip says so.
+
+**Which view you land on.** Until you pick a view from the switcher, the overlay decides by fleet size: **more than 12 live sessions opens on Monitor, otherwise Tiles** (past a dozen, tiles are smaller than a useful terminal). The moment you click the switcher your pick becomes explicit and wins on every later open for the rest of the app run. The decision is re-made on each *open*, never while you are reading a view.
+
+**Render cost.** Rows are memoized against stable terminal objects — the model adapter (`monitorModel.ts`) hands back the *previous* object for any session whose fields did not move, so a fleet-wide poll or a single `FLEET_SESSION_STATE` event re-renders only the rows that changed (measured 50 → 1 at 50 sessions). Framer's layout bookkeeping is likewise per-row and on-demand: rows are plain `<tr>`s, and only the row expanding into (or collapsing back from) the pane carries the shared layout id. Pinned by `sub_monitor/__tests__/monitorRenderCost.test.tsx` and `__tests__/FleetGridDefaultView.test.tsx`.
+
 ### Terminal settings
 
 Fleet Settings → **Terminal** (`FleetTerminalSettings`) exposes, all persisted in `fleetSlice` and applied live to every open terminal (no remount):

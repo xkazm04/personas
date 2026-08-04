@@ -18,8 +18,8 @@ import type { FleetMonitorStats } from '@/lib/bindings/FleetMonitorStats';
 
 const counter = vi.hoisted(() => ({ rows: 0 }));
 
-vi.mock('../monitorProtoMeta', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../monitorProtoMeta')>();
+vi.mock('../monitorMeta', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../monitorMeta')>();
   return {
     ...actual,
     costRatio: (t: Parameters<typeof actual.costRatio>[0]) => {
@@ -31,7 +31,7 @@ vi.mock('../monitorProtoMeta', async (importOriginal) => {
 
 import { MonitorLedger } from '../MonitorLedger';
 import { sessionsToMonitorModel } from '../monitorModel';
-import type { ProtoTerminal } from '../monitorTypes';
+import type { MonitorTerminal } from '../monitorTypes';
 
 const NOOP = () => {};
 const N = 50;
@@ -70,7 +70,7 @@ function statsFor(bumpedId: string | null, bump: number): Map<string, FleetMonit
 }
 
 function Harness({ stats }: { stats: Map<string, FleetMonitorStats> }) {
-  const prev = useRef<ProtoTerminal[]>([]);
+  const prev = useRef<MonitorTerminal[]>([]);
   const model = useMemo(() => {
     const next = sessionsToMonitorModel(SESSIONS, stats, prev.current);
     prev.current = next;
