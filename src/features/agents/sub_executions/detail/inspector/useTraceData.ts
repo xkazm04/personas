@@ -9,6 +9,7 @@ import { getExecutionTrace } from '@/api/agents/executions';
 import { useAgentStore } from '@/stores/agentStore';
 import { buildSpanTree, flattenTree } from './traceInspectorTypes';
 import type { SpanNode } from './traceInspectorTypes';
+import { buildParentMap, isAncestorCollapsed } from './traceVisibility';
 import { silentCatch } from '@/lib/silentCatch';
 
 /** Convert backend ExecutionTrace spans into UnifiedSpan format. */
@@ -135,17 +136,12 @@ export function useTraceData(executionId: string, personaId: string) {
     const tree = buildSpanTree(unifiedTrace.spans);
     const allFlat = flattenTree(tree);
 
-    const isAncestorCollapsed = (node: SpanNode): boolean => {
-      let currentParentId = node.span.parent_span_id;
-      while (currentParentId) {
-        if (collapsedSpans.has(currentParentId)) return true;
-        const parent = unifiedTrace.spans.find(s => s.span_id === currentParentId);
-        currentParentId = parent?.parent_span_id ?? null;
-      }
-      return false;
-    };
-
-    const visible = allFlat.filter(n => !isAncestorCollapsed(n));
+    // One parent lookup for the whole trace -- the previous per-hop
+    // `spans.find` made this O(n^2 * depth) on traces of up to 10k spans.
+    const parentMap = buildParentMap(unifiedTrace.spans);
+    const visible = allFlat.filter(
+      n => !isAncestorCollapsed(n.span.parent_span_id, parentMap, collapsedSpans),
+    );
 
     // Prefer backend total_duration_ms when available (richest signal),
     // fall back to unified trace timing, then to max(end_ms).
