@@ -50,7 +50,7 @@ import { CategoryPopover } from './lib/CategoryPopover';
 import type { CategoryNode } from './lib/dimCategories';
 import { DimListPopover } from './lib/DimListPopover';
 import { DIM_INK } from './lib/ink';
-import { GoalListPopover } from './lib/GoalListPopover';
+import { MastermindGoalsModal } from './lib/goals/MastermindGoalsModal';
 import { KpiListPopover, type KpiListItem } from './lib/KpiListPopover';
 import { IdeaScanPopover, type ScanParams } from './lib/IdeaScanPopover';
 import { hydrateLayout, isLayoutHydrated, loadHidden, saveHidden } from './lib/layoutStore';
@@ -67,6 +67,8 @@ import { MastermindHexMosaic } from './variants/MastermindHexMosaic';
 /** Stable empty fallbacks — a fresh [] per island would defeat the identity cache. */
 const EMPTY_FLEET: FleetNode[] = [];
 const EMPTY_NAMES: string[] = [];
+/** Stable empty KPI list — a fresh `[]` per render would remount the goals modal. */
+const EMPTY_KPIS: KpiListItem[] = [];
 
 /** Islands allowed to ADOPT changed content per pass (see hydration waves). */
 const HYDRATE_WAVE = 6;
@@ -164,7 +166,9 @@ function MastermindInner() {
   const [hiddenSlugs, setHiddenSlugs] = useState<Set<string>>(loadHidden);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [personaMenu, setPersonaMenu] = useState<{ slug: string; x: number; y: number } | null>(null);
-  const [goalPopup, setGoalPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
+  // Goals is a MODAL now (not an anchored popover) — the click point no longer
+  // matters, only which project was clicked.
+  const [goalSlug, setGoalSlug] = useState<string | null>(null);
   const [kpiPopup, setKpiPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
   const [stackPopup, setStackPopup] = useState<{ slug: string; key: 'datalinks' | 'support'; x: number; y: number } | null>(null);
   const [dispatchGroup, setDispatchGroup] = useState<{ slugs: string[]; label: string } | null>(null);
@@ -589,7 +593,7 @@ function MastermindInner() {
       return;
     }
     if (node.action === 'goals') {
-      setGoalPopup({ slug, x: Math.min(e.clientX, window.innerWidth - 260), y: Math.min(e.clientY + 10, window.innerHeight - 300) });
+      setGoalSlug(slug);
       return;
     }
     if (node.action === 'stack-list' && (node.key === 'datalinks' || node.key === 'support')) {
@@ -791,12 +795,12 @@ function MastermindInner() {
         />
       )}
 
-      {goalPopup && (
-        <GoalListPopover
-          titles={(storeGoals.get(goalPopup.slug) ?? []).filter((g) => isOngoing(g.status)).map((g) => g.title)}
-          x={goalPopup.x}
-          y={goalPopup.y}
-          onClose={() => setGoalPopup(null)}
+      {goalSlug && (
+        <MastermindGoalsModal
+          slug={goalSlug}
+          projectName={positioned.islands.find((i) => i.slug === goalSlug)?.name ?? goalSlug}
+          kpis={kpiListByProject.get(goalSlug) ?? EMPTY_KPIS}
+          onClose={() => setGoalSlug(null)}
         />
       )}
 
