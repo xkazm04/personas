@@ -9,12 +9,11 @@
 // Layout is the "Segmented" form (prototype winner): each choice is a labelled
 // row with a segmented control; the context picker reveals only for "This one".
 import { useEffect, useMemo, useState } from 'react';
-import { Wand2 } from 'lucide-react';
+import { SlidersHorizontal, Wand2 } from 'lucide-react';
 
 import { listContexts, memorySkillContexts, type DevContext } from '@/api/devTools/devTools';
 import { BaseModal } from '@/features/shared/components/modals';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
-import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { skillCommand } from '@/features/teams/sub_factory/passport/improve/skillsWorkbenchData';
 import { isPresetSkill, SWEEP_SKILL_NAME } from '../constants/presetSkills';
@@ -22,6 +21,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { ArgsField, DialogFooter, PreviewLine, SkillDescription } from './UseSkillShared';
+import { ContextPickerModal } from './contextPicker/ContextPickerModal';
 
 export type DispatchTarget = 'fleet' | 'cmd';
 export type ContextMode = 'specific' | 'recommended' | 'all';
@@ -59,7 +59,10 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
   const [args, setArgs] = useState('');
   const [target, setTarget] = useState<DispatchTarget>('fleet');
   const [mode, setMode] = useState<ContextMode>(tracked ? 'recommended' : 'specific');
-  const [contextId, setContextId] = useState<string | null>(null);
+  // "This one" now multi-selects via the full-page picker (a flat dropdown
+  // does not survive 600-800 contexts).
+  const [picked, setPicked] = useState<string[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [contexts, setContexts] = useState<DevContext[]>([]);
   const [recommendedName, setRecommendedName] = useState<string | null>(null);
   const [loadingContexts, setLoadingContexts] = useState(tracked);
@@ -78,7 +81,6 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
       setContexts(sorted);
       const rec = [...cov].sort((a, b) => a.freshNodes - b.freshNodes || a.name.localeCompare(b.name))[0];
       setRecommendedName(rec?.name ?? sorted[0]?.name ?? null);
-      setContextId(sorted[0]?.id ?? null);
       setLoadingContexts(false);
     });
     return () => { alive = false; };
@@ -89,16 +91,15 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
     if (!tracked) return [];
     if (mode === 'all') return contexts.map((c) => c.name);
     if (mode === 'recommended') return recommendedName ? [recommendedName] : [];
-    const c = contexts.find((x) => x.id === contextId);
-    return c ? [c.name] : [];
-  }, [tracked, mode, contexts, recommendedName, contextId]);
+    return picked;
+  }, [tracked, mode, contexts, recommendedName, picked]);
 
   const previewArgs = useMemo(
     () => [args.trim(), chosenContexts[0]].filter(Boolean).join(' '),
     [args, chosenContexts],
   );
   const preview = skillCommand(skill.name, previewArgs);
-  const batchCount = tracked && mode === 'all' ? contexts.length : 0;
+  const batchCount = tracked ? chosenContexts.length : 0;
 
   const confirm = () => onConfirm({ args: args.trim(), target, contexts: chosenContexts });
 
@@ -178,15 +179,21 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
               </Row>
               {mode === 'specific' && (
                 <div className="pl-24">
-                  <ThemedSelect
-                    filterable
-                    hideSearch
-                    options={contexts.map((c) => ({ value: c.id, label: c.name }))}
-                    value={contextId ?? ''}
-                    onValueChange={setContextId}
-                    placeholder={d.skills_use_pick_context}
-                    wrapperClassName="w-full"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setPickerOpen(true)}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-input border border-primary/20 bg-secondary/[0.12] hover:border-primary/40 transition-colors text-left"
+                    data-testid="use-skill-open-picker"
+                  >
+                    <span className="typo-caption text-foreground truncate flex-1 min-w-0">
+                      {picked.length === 0
+                        ? d.skills_use_pick_context
+                        : picked.length <= 3
+                          ? picked.join(', ')
+                          : tx(d.ctx_picker_summary, { first: picked[0]!, n: picked.length - 1 })}
+                    </span>
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-primary flex-shrink-0" aria-hidden />
+                  </button>
                 </div>
               )}
             </>
@@ -206,6 +213,16 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
 
         <DialogFooter target={target} busy={busy} onConfirm={confirm} onClose={onClose} />
       </div>
+
+      {pickerOpen && (
+        <ContextPickerModal
+          skillName={skill.name}
+          projectId={projectId}
+          initial={picked}
+          onConfirm={(names) => { setPicked(names); setPickerOpen(false); }}
+          onClose={() => setPickerOpen(false)}
+        />
+      )}
     </BaseModal>
   );
 }
