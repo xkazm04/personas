@@ -17,17 +17,7 @@
   - Builder C `perfect-dream-replay` (dir: dream-replay-verdict) — `src/features/agents/sub_executions/replay/**`, `src/features/agents/sub_executions/libs/useReplayState.ts`, `src/api/agents/executions.ts`, and ON A DELETE VERDICT ONLY: `src-tauri/src/commands/execution/executions.rs`, `src-tauri/src/lib.rs` (one registration line), `src-tauri/src/engine/dream_replay.rs`, `src/lib/bindings/Dream*.ts`.
   - Builder B `perfect-trace-cost` (dirs: cost-attribution, incomplete-i18n) — forks AFTER A merges — `src/features/agents/sub_executions/detail/inspector/{SpanRow.tsx,TraceSummary.tsx,TraceInspector.tsx,CostBreakdownBar.tsx}`, `src/i18n/locales/*.json` + regenerated `generated/` + `section-locales/`.
 - **i18n note for parallel sessions**: builder B will add keys under `agents.executions` and close the gap across all 14 locales. Stage `en.json` and the locale files together; the shared-tree recipe in CLAUDE.md applies if another session holds them dirty.
-- Read-only on repo source during the proposal pass; source edits begin now, confined to the paths above.### spark-cockpit-into-mastermind — /spark round 4: transfer Cockpit dynamic-UI ability into the Mastermind canvas — session fable-5 (Director)
-- Started: 2026-08-04. Status: started (design phase; no tree edits until Phase 5 worktree). Vault: Documents/Obsidian/personas/Spark/.
-- Paths (intended, on build): src/features/teams/sub_mastermind/** , src/features/home/sub_cockpit/** , src-tauri/src/companion/dispatcher.rs (+ constitution.md op grammar), possibly src/features/plugins/companion/** and i18n. Build isolates in .claude/worktrees/spark-cockpit-into-mastermind.
-- No overlap: no active session declares sub_mastermind/** or sub_cockpit/**.
-
-### prototype-fleet-monitor — /prototype: minimized Fleet monitor layer (50-terminal grid, 3 variants, mocked data) — session fable-5
-- Started: 2026-08-04. Status: rounds 1-2 MERGED to master (99becf061 + a1a8f4d7b via merge 28c13bd14); awaiting operator variant pick before consolidation.
-- Paths: src/features/plugins/fleet/sub_monitor_proto/** (renaming to sub_monitor in wave B), FleetPage.tsx, FleetTerminalOverlay.tsx, src-tauri/src/commands/fleet/** (monitor stats command, rollup counters, hook pairing), src/api/fleet/**, src/lib/bindings/** (regen), i18n locales (wave B), docs fleet.md. NOW A /perfect ARC: 5 accepted directions, Builder A (Rust stats) in .claude/worktrees/perfect-fleet-monitor, Builder B (frontend perf+graduation) follows after A merges.
-- NOTE: spark-athena-fleet-conductor declares fleet/** but is design-phase + isolates its build in its own worktree; disjoint files except FleetPage.tsx (not in its list). No collision expected.
-
-
+- Read-only on repo source during the proposal pass; source edits begin now, confined to the paths above.
 ### perfect-triage-r2 — /perfect round 2 on the unified triage deck — session fable-5 (Director) + Opus builders
 - Started: 2026-07-31. Status: proposing. Round 1 shipped 5 directions (`6fb0e5a34`…`c342d22b2`); scout re-checked them adversarially and found 4 residual gaps plus a cross-surface keyboard collision that decides TWO rows per keypress. Vault: `Documents/Obsidian/personas/Perfect/`.
 - Paths (intended): `src/features/agents/quick-answer/**`, `src/features/fleet/monitor/useMonitorData.ts`, `src/stores/slices/overview/overviewSlice.ts` (cloud-review rethrow), `src/lib/keyboard/**` + the 3 colliding keydown surfaces (`overview/sub_manual-review/ReviewFocusFlow.tsx`, `.../backlog/BacklogFocusDeck.tsx`, `plugins/companion/orb/AthenaOrbLayer.tsx`), `src-tauri` idea/practice verdict CAS, `context-map.json` + `DESIGN.md` + doc-map (Director does these inline). Builders work in `.claude/worktrees/perfect-triage-r2*`.
@@ -96,6 +86,17 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### spark-cockpit-into-mastermind — /spark round 4 COMPLETE, merged f09bda71d
+- 2026-08-04. Athena reads the Mastermind canvas (worst-first triage digest + 2 read ops), acts on it (canvas_dispatch / group_dispatch / run_idea_scan as thin wrappers over the existing fleet plan validation + executors, boldness-gated, one ledger row each, demo islands refused), annotates it (author field on groups/links/notes + revert-only-hers), and composes a per-project panel rendered by SurfaceRenderer in the right dock. Home Cockpit deliberately untouched.
+- Commits: bc0bb057e (WP1 reactive layout store + provenance + doc v2) 1dc9d0514 (WP2 digest + read/action ops) 0eebf4219 (WP3 scene publish + panel + docs + i18n); merge f09bda71d.
+- TWO architectural decisions worth knowing: (1) the canvas PUBLISHES to a new sibling settings key mastermind.scene.v1 and Rust reads it, because the scene is derived entirely client-side and only the client knows which data family failed to load; (2) layoutStore became a real external store (useSyncExternalStore) because CanvasShell read it via one-shot useState initializers, so any second writer was invisible then clobbered.
+- Gates: tsc 0 err, clippy 0 err, vitest 3099/3100, rust canvas 24/24, companion 388/389, i18n strict + untranslated clean x14. Two pre-existing reds: camelCase ratchet (DevMilestone et al) and companion::tours::manifest_hash_is_stable; a third pre-existing failure was found in engine::fitness_driver (not touched).
+- NOT live-verified (optional follow-up per operator directive). Testids: mm-athena-panel, mm-athena-panel-reset, mm-athena-panel-empty, mm-athena-revert, mm-group/link/note-athena-*.
+
+### prototype-fleet-monitor + perfect fleet-monitor arc — /prototype r1-r3 + /perfect 5/5 — session fable-5
+- 2026-08-04. Status: completed. Prototype commits 99becf061/a1a8f4d7b/6cb49a7ab; /perfect wave A e49e48f4b/9deb06f2b/0198508d6 (merge 9a52af45e), wave B aaea8105b/88f450a31 (merge 5c17637e5). Fleet grid: Tiles|Monitor switcher, graduated sub_monitor (real stats, subwork counters, screen health, memoized rows, i18n x14, default >12 sessions), two-phase open. Smoke debt: morph live look.
+
 
 ### perfect-triage-r2 — /perfect round 2 on the unified triage deck — session fable-5 (Director) + 3 Opus builders — COMPLETE, commits `dd937bd18` `816caf83a` `c1e2cf31d` `3d2493edf` `7f642e60c` `afb553f47` `3527d1d83` `0d0b31cd8` `ec996a799` (+4 docs/test commits)
 - 2026-07-31. All 5 accepted directions shipped. Master closed green: tsc clean, **1146 tests / 109 files**, i18n strict 0/0 ×14, 0 untranslated, cargo check clean. Worktrees removed. Vault: `Documents/Obsidian/personas/Perfect/` (see `sessions/2026-07-31`).
@@ -2997,3 +2998,7 @@ timestamp — the next session can recognize it as abandoned.
 - KNOWN OVERLAP RISK: athena-fleet-conductor declares approvals/approval_exec_fleet.rs (different file) but may touch the same action catalog in approval_lifecycle.rs — merge coordination needed at integration time, both add entries append-style.
 
 #### spark-agent-candidate-bridge — UPDATE 2026-08-04 (2): kp side MERGED to kp main (765cfee6, gates green). Personas branch worktree-spark-agent-candidate-bridge is COMPLETE (WP3 449861d61 + WP4 25bde5428, all gates green) and READY TO MERGE — held because master's working tree has uncommitted changes to src-tauri/db/src/repos/execution/executions.rs (another session) which the branch also modifies (adds get_monthly_rollup). Whoever owns that dirty state: commit it, then `git merge worktree-spark-agent-candidate-bridge` resolves the rest. Worktree kept alive until merged.
+
+### mvp-skill-authoring — new /mvp launch-readiness skill + first calibration run on ascent — session fable-5
+- Started: 2026-08-04. Status: started. Authors .claude/skills/mvp/** (SKILL.md + references/checklist.md), then runs the skill read-only against C:\Users\kazda\kiro\ascent (foreign repo — no personas source edits).
+- Paths: .claude/skills/mvp/**, .claude/active-runs.md only. No overlap with any active entry.
