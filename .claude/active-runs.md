@@ -2,10 +2,11 @@
 
 ## Active
 
-### spark-ship-athena-orchestration — /spark round 5: wire Factory.Ship with Mastermind + Athena (compose, state duality, descriptions, LLM execution) — session fable-5 (Director)
-- Started: 2026-08-04. Status: started (design phase; no tree edits until Phase 5 worktree). Vault: Documents/Obsidian/personas/Spark/.
-- Paths (intended, on build): src/features/teams/sub_factory/l2/ship/**, src-tauri/src/commands/infrastructure/dev_tools/milestones.rs, src-tauri/db/src/repos/dev_tools.rs + a milestone migration, src-tauri/src/companion/{dispatcher.rs,prompt.rs,templates/constitution.md}, possibly src/features/teams/sub_mastermind/** (ship chip) and i18n. Build isolates in .claude/worktrees/spark-ship-athena.
-- NOTE: perfect-factory-ship is COMPLETE (5 directions merged); its ## Active header above is STALE. No live conflict on sub_factory/**.
+### athena-dev-day — conversation-log button + dev-mode v2 repairs (op_id, index rollup, dead pipeline, verdict gate) + daily-goals gamification — session fable-5
+- Started: 2026-08-04. Status: started. Work isolates in `.claude/worktrees/athena-dev-day` (branch `worktree-athena-dev-day`), atomic commits per fix/feature.
+- Paths: `src/features/plugins/companion/{CompanionPanel.tsx,devConversationLog.ts,DevConversationLogButton.tsx,useDailyGoals.ts,DailyGoalsBar.tsx,DailyGoalsModal.tsx,__tests__/**}`, `src-tauri/src/companion/{dev_mode.rs,session.rs,prompt.rs,brain/daily_goals.rs,brain/mod.rs}`, `src-tauri/src/commands/companion/{debug_export.rs,daily_goals.rs,feedback.rs,chat.rs,mod.rs,approvals/approval_exec_dev.rs}`, `src-tauri/db/src/lib.rs` (COMPANION_SCHEMA append), `src-tauri/src/lib.rs` (invoke_handler), `src/api/companion.ts`, `src/lib/bindings/DailyGoal*.ts`, `src/lib/commandNames.generated.ts`, `src/i18n/locales/*.json` + regenerated section-locales/generated, `docs/features/companion/**`.
+- NOTE overlap: `spark-ship-athena-orchestration` (design phase, no tree edits yet) declares intended paths on `companion/prompt.rs` + `dispatcher.rs`; my prompt.rs touch is one addendum wire-in next to dev_mode's. Will keep it minimal and atomic.
+
 
 ### perfect-round-3 — /perfect round 3 cursor 1 — session opus-5[1m] — **COMPLETE**, commits `4b96433ef`(ledger) `2a1857a7c` `0f6d449d8` `9a75a2d52` `e301f74a2` `a5e8455c8`
 - Started 2026-08-04, closed same day. 5 proposed / 5 accepted / 5 built on `execution-detail-inspector`; 3 builders, 2 waves, all worktrees removed, 0 branches left. Master green at close: tsc 0, vitest 39/39 (sub_executions), i18n strict 0/0 × 14, `cargo check --features desktop` 0. Net −564 lines.
@@ -91,6 +92,15 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### spark-ship-athena-orchestration — /spark round 5 COMPLETE, merged 666346859
+- 2026-08-04/05. Ship milestones gain item descriptions + a 1-5 operator rating shown BESIDE the automation verdict (state duality; disagreement counted and surfaced, never gating), an editable Athena compose card, and a /ship-milestone skill whose result returns through one gated ingest door. Four camelCase ratchet offenders adopted.
+- Commits: a3b86a749 (schema+ratchet+create_milestone fix) 844c9a401 (duality UI + ID-join fix) 0051a8474 (show_ship_milestone card) 8c998d545 (skill + ingest door); merge 666346859.
+- **THE RATCHET IS GREEN** after four rounds of red. Adopting it exposed that run_healing_analysis never returned its declared type (hand-built snake_case envelope + phantom status field; the committed binding was fiction) — the rename would have produced silent undefined reads that tsc could not catch.
+- Gates: tsc 0 err · vitest 3311/3312 (1 = documented pre-existing tauri-command-error-envelope/fleet_monitor_stats) · ratchet 3/3 · i18n strict + untranslated clean x14 · targeted Rust filters green (ship_ingest 15/15, ship_milestone 11/11, milestone 10/10, incremental 6/6, dispatcher 68/68).
+- **UNRESOLVED, stated honestly**: `cargo test -p personas-db --lib` did NOT complete within 25 minutes (killed, exit 143). It was still emitting passing tests at kill time, so it is SLOW, not deadlocked. Round 5 did not introduce it (its own filters finish in seconds) but I did NOT verify master behaves identically. This suite is not in the documented Rust gate (`npm run test:rust` is).
+- **Standing worktree hazard re-confirmed**: TS_RS_EXPORT_DIR does not resolve under a git worktree; export_bindings wrote 891 files to a stray gitignored `<worktree>/bindings/`. A future session regenerating bindings in a worktree gets a silent no-op diff.
+- NOT live-verified (optional per operator directive). Testids: ship-item-description-*, ship-item-rating-*, ship-milestone-goal, ship-duality-summary, athena-ship-*, plus the Run milestone / Ingest run controls.
 
 ### mvp-skill-authoring — new /mvp launch-readiness skill + calibration run 1 (ascent) — session fable-5 — COMPLETE, personas commit `ade16736c` (skill); calibration + ledger commit follows
 - 2026-08-04. Authored .claude/skills/mvp/** (21 items / 7 phases, delegating orchestrator) and ran it end-to-end on C:\Users\kazda\kiro\ascent: 4 parallel assessors, 4 decision rounds, 6 builders, 16 ascent commits pushed (`661ccb3c..01b0ced4`), branch protection enabled on ascent master, mvp-passport.json verdict go-with-risks, prod smoke 3/3. Calibration learnings in .claude/skills/mvp/state/calibration.md (headline: pathspec commits mandatory in shared checkouts — 3 index-race incidents). Runs 2-3 on other projects pending in-session.
