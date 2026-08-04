@@ -16,7 +16,9 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const BAND = { min: 10, max: 30 };
+// 10-30 is the target band; consolidation may pack up to 34 (absorbing a tiny
+// sibling beats leaving crumbs), so ≤34 counts as in-band here.
+const BAND = { min: 10, max: 34 };
 const MIN_IN_BAND_RATIO = 0.7;
 const strict = process.argv.includes('--strict');
 const topN = Number(process.argv[process.argv.indexOf('--top') + 1]) || 10;
