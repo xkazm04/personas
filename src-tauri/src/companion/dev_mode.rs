@@ -116,29 +116,45 @@ pub fn resolve_context(slug: &str) -> Option<ResolvedContext> {
     })
 }
 
-/// Compact one-line-per-context index for the prompt addendum. ~49 lines;
-/// descriptions clipped so the whole block stays cheap. Returns `None`
-/// when context-map.json is missing/unparseable (the addendum degrades
-/// gracefully — Athena can still dispatch with `files_hint` only).
+/// Compact group-level rollup for the prompt addendum: one line per
+/// group listing every context slug it owns, descriptions dropped. The
+/// per-context format scaled linearly with map size and hit ~30KB at
+/// 208 contexts — injected into EVERY dev-mode turn; the rollup keeps
+/// the full slug vocabulary (dispatch needs exact slugs) at a fraction
+/// of the cost, and the session reads context-map.json for details.
+/// Returns `None` when context-map.json is missing/unparseable (the
+/// addendum degrades gracefully — Athena can still dispatch with
+/// `files_hint` only).
 pub fn context_map_index() -> Option<String> {
     let map = load_context_map()?;
-    let mut out = String::new();
+    // Aggregate slugs per group, preserving the map's group order.
+    let mut group_order: Vec<String> = Vec::new();
+    let mut slugs_by_group: std::collections::HashMap<String, Vec<String>> =
+        std::collections::HashMap::new();
     for (c, group) in iter_contexts(&map) {
         let Some(name) = c.get("name").and_then(|v| v.as_str()) else {
             continue;
         };
-        let desc = c
-            .get("description")
-            .and_then(|v| v.as_str())
-            .unwrap_or_default();
-        let clipped = clip_sentence(desc, 110);
-        out.push_str(&format!("- `{name}` ({group}): {clipped}\n"));
+        let entry = slugs_by_group.entry(group.clone()).or_default();
+        if entry.is_empty() {
+            group_order.push(group);
+        }
+        entry.push(name.to_string());
     }
-    if out.is_empty() {
-        None
-    } else {
-        Some(out)
+    if group_order.is_empty() {
+        return None;
     }
+    let mut out = String::new();
+    for group in &group_order {
+        let slugs = &slugs_by_group[group];
+        out.push_str(&format!(
+            "- **{}** ({}): {}\n",
+            group,
+            slugs.len(),
+            slugs.join(", ")
+        ));
+    }
+    Some(out)
 }
 
 // ── dev-op ledger (durable, Phase 4) ────────────────────────────────────
@@ -797,46 +813,39 @@ pub fn build_task_prompt(
     p
 }
 
-/// First sentence, or a char-boundary-safe prefix with an ellipsis.
-fn clip_sentence(s: &str, max: usize) -> String {
-    let first = s.split_once(". ").map(|(a, _)| a).unwrap_or(s);
-    if first.chars().count() <= max {
-        first.to_string()
-    } else {
-        let mut out: String = first.chars().take(max).collect();
-        out.push('…');
-        out
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn clip_sentence_takes_first_sentence_and_respects_char_boundaries() {
-        assert_eq!(clip_sentence("Short. Rest is dropped.", 100), "Short");
-        // Multi-byte safety: clipping must land on a char boundary.
-        let long = "č".repeat(200);
-        let clipped = clip_sentence(&long, 10);
-        assert_eq!(clipped.chars().count(), 11); // 10 + ellipsis
-    }
 
     #[test]
     fn context_index_and_resolution_read_the_real_map() {
         // The repo's own context-map.json is the fixture — the module is
         // dev-build-only, so the checkout is guaranteed present.
         let idx = context_map_index().expect("context-map.json should parse");
-        assert!(idx.lines().count() >= 20, "expected a rich context index");
-        // Every line is the compact `- \`slug\` (Group): desc` shape.
-        assert!(idx.lines().all(|l| l.starts_with("- `")));
+        // Group-level rollup: one line per group, not per context.
+        let line_count = idx.lines().count();
+        assert!(
+            (1..=64).contains(&line_count),
+            "expected a per-group rollup, got {line_count} lines"
+        );
+        assert!(idx.lines().all(|l| l.starts_with("- **")));
+        // The regression guard: the index must stay cheap even as the map
+        // grows (the per-context format hit ~30KB at 208 contexts).
+        assert!(
+            idx.len() < 16_000,
+            "context index ballooned to {} bytes",
+            idx.len()
+        );
 
-        // Resolve the first slug listed in the index round-trip.
+        // Resolve a slug from the first group line round-trip:
+        // `- **Group** (n): slug1, slug2, …`
         let first_slug = idx
             .lines()
             .next()
-            .and_then(|l| l.split('`').nth(1))
-            .expect("index line carries a slug");
+            .and_then(|l| l.split("): ").nth(1))
+            .and_then(|slugs| slugs.split(", ").next())
+            .map(str::trim)
+            .expect("index line carries slugs");
         let ctx = resolve_context(first_slug).expect("index slug must resolve");
         assert!(!ctx.file_paths.is_empty(), "resolved context lists files");
         // Case-insensitive matching.
@@ -1146,7 +1155,15 @@ pub fn addendum_if_enabled(sys_db: &DbPool) -> String {
     let root = repo_root();
     let root_str = root.to_string_lossy().replace('\\', "/");
     let index_block = context_map_index()
-        .map(|idx| format!("\n## Feature → code map (context index)\n\n{idx}"))
+        .map(|idx| {
+            format!(
+                "\n## Feature → code map (context slugs by group)\n\n{idx}\n\
+                 Quote an exact slug in `dev_improve.context`. Full descriptions and \
+                 per-context file lists live in `context-map.json` at the repo root — \
+                 read it there when you need details; this index is only the table of \
+                 contents.\n"
+            )
+        })
         .unwrap_or_else(|| {
             "\n## Feature → code map\n\n(context-map.json unavailable — dispatch with \
              `files_hint` and let the coding session locate the code.)\n"
