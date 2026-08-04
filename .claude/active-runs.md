@@ -2,6 +2,7 @@
 
 ## Active
 
+
 ### prototype-mm-goals — /prototype: consolidated Goals modal for the Mastermind Goals dimension — session opus-5[1m]
 - Started: 2026-08-04. Status: started. Worktree `.claude/worktrees/prototype-mm-goals` (branch `worktree-prototype-mm-goals`).
 - Fuses `sub_mastermind/lib/GoalListPopover.tsx` (inert title-list popover) with the goal-acceptance surface (`sub_goals/{acceptancePrimitives,AcceptanceTriagePolished,GoalAcceptanceView}.tsx`) into ONE project-scoped modal. 3 directional variants → operator picks one → both predecessors deleted, and the app-header Goal-management tray entry (`shared/chrome/useTitleBarTray.tsx`) is optionally dropped.
@@ -105,6 +106,12 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### research-mcp-implementation — /research: MCP 2026-07-28 spec (youtube V1qjiZcG0p0) vs our MCP surfaces — session fable-5
+- 2026-08-04. Status: completed (commits: `7a97373e4` ttlMs cache, `c0cb42abd` server/discover ×3 surfaces, `0768a2aac` HTTP client era negotiation + traceparent, `67e0e8ddc` docs). 12 extracted → 4 findings, all accepted + executed in-session; 5 already-existed catches. Touched: `src-tauri/src/engine/mcp_tools.rs`, `src-tauri/src/mcp_server/mod.rs`, `src-tauri/src/companion/orchestration/mcp/mod.rs`, `src-tauri/src/browser_bridge/mcp.rs`, `docs/architecture/mcp-desktop-integration.md`, `.claude/codebase-stack.md`. Gates: `cargo check --features desktop` clean ×2; full rust suite launched (background) at close. Vault note: `Research/2026-08-04-mcp-2026-07-28-spec-update.md`.
+
+### research-indydevdan-software-factory — /research: IndyDevDan "Super Simple Software Factory" → Factory/Mastermind — session fable-5
+- 2026-08-04. Status: completed (commits: `08d4c2fc6` code, `ff012c7d1` docs). 12 extracted → 4 findings + 10 already-existed catches; 1 accepted + shipped in-session: **R22 auto-verify loop** — `sub_factory/passport/useAutoRescanOnFleetExit.ts` watches `passport:*` Fleet session exits and runs a scoped passport rescan (mounted by ProjectsLayer + MastermindPage; module-scoped exit dedup, sequential drain). Declined (recorded in vault): pipeline per-node cost/drill-in UI, typed handoff gates (fail-open `evaluate_condition` noted), resume-from-failed-node. Gates: tsc 0, sub_factory vitest 70/70, eslint 0 err on touched files. Vault note: `Research/2026-08-04-indydevdan-software-factory.md`. NOTE for other sessions: MastermindPage.tsx got a 6-line addition (imports + `useAutoRescanOnFleetExit` mount) — clean vs the goals-branch scope of `prototype-mm-goals`.
 
 ### perfect-triage-r2 — /perfect round 2 on the unified triage deck — session fable-5 (Director) + 3 Opus builders — COMPLETE, commits `dd937bd18` `816caf83a` `c1e2cf31d` `3d2493edf` `7f642e60c` `afb553f47` `3527d1d83` `0d0b31cd8` `ec996a799` (+4 docs/test commits)
 - 2026-07-31. All 5 accepted directions shipped. Master closed green: tsc clean, **1146 tests / 109 files**, i18n strict 0/0 ×14, 0 untranslated, cargo check clean. Worktrees removed. Vault: `Documents/Obsidian/personas/Perfect/` (see `sessions/2026-07-31`).
