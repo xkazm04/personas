@@ -2,6 +2,11 @@
 
 ## Active
 
+### spark-ship-athena-orchestration — /spark round 5: wire Factory.Ship with Mastermind + Athena (compose, state duality, descriptions, LLM execution) — session fable-5 (Director)
+- Started: 2026-08-04. Status: started (design phase; no tree edits until Phase 5 worktree). Vault: Documents/Obsidian/personas/Spark/.
+- Paths (intended, on build): src/features/teams/sub_factory/l2/ship/**, src-tauri/src/commands/infrastructure/dev_tools/milestones.rs, src-tauri/db/src/repos/dev_tools.rs + a milestone migration, src-tauri/src/companion/{dispatcher.rs,prompt.rs,templates/constitution.md}, possibly src/features/teams/sub_mastermind/** (ship chip) and i18n. Build isolates in .claude/worktrees/spark-ship-athena.
+- NOTE: perfect-factory-ship is COMPLETE (5 directions merged); its ## Active header above is STALE. No live conflict on sub_factory/**.
+
 ### perfect-round-3 — /perfect round 3 cursor 1 — session opus-5[1m] — **COMPLETE**, commits `4b96433ef`(ledger) `2a1857a7c` `0f6d449d8` `9a75a2d52` `e301f74a2` `a5e8455c8`
 - Started 2026-08-04, closed same day. 5 proposed / 5 accepted / 5 built on `execution-detail-inspector`; 3 builders, 2 waves, all worktrees removed, 0 branches left. Master green at close: tsc 0, vitest 39/39 (sub_executions), i18n strict 0/0 × 14, `cargo check --features desktop` 0. Net −564 lines.
 - **FOR OTHER SESSIONS — 🔴 `src/lib/bindings/` is STALE on master.** Regenerating `export_bindings` for personas-core/db/engine rewrites **21 committed bindings** and produces **3 new untracked** (`BrokerConsumerEdge`, `BrokerConsumerView`, `LabAbExperiment`); `HealingAnalysisResult.ts` still declares a `status` field its Rust struct no longer has. CI's binding-drift job will fail for whoever regenerates next. This round restored all 24 so its commits stayed exactly their delta — the drift is pre-existing and unowned.
@@ -89,6 +94,7 @@
 
 ### mvp-skill-authoring — new /mvp launch-readiness skill + calibration run 1 (ascent) — session fable-5 — COMPLETE, personas commit `ade16736c` (skill); calibration + ledger commit follows
 - 2026-08-04. Authored .claude/skills/mvp/** (21 items / 7 phases, delegating orchestrator) and ran it end-to-end on C:\Users\kazda\kiro\ascent: 4 parallel assessors, 4 decision rounds, 6 builders, 16 ascent commits pushed (`661ccb3c..01b0ced4`), branch protection enabled on ascent master, mvp-passport.json verdict go-with-risks, prod smoke 3/3. Calibration learnings in .claude/skills/mvp/state/calibration.md (headline: pathspec commits mandatory in shared checkouts — 3 index-race incidents). Runs 2-3 on other projects pending in-session.
+- RUN 2 same day, C:\Users\kazda\kiro\systedo-case (Adamant): 4 assessors, 4 rounds (15 decisions incl. the P0 "case study vs product" intent call → launch as product, ship bar sellable), operator's in-flight i18n work committed first (`dfa724e`), 5 builders + orchestrator = 24 commits pushed (`f482c0f..91c1a8f`). Pipeline unbrick cleared FIVE stacked causes (build preflight → Node/ICU → TZ goldens → LOCAL_DB Firestore leak → cold-start spec race) → first fully-green CI in repo history, both jobs now required by protection. Verdict: NO-GO — single blocker: Vercel Git integration disconnected since mid-June (prod stale, /app 404); unblock path in docs/deploy.md + journal. Calibration run-2 section added.
 
 ### spark-cockpit-into-mastermind — /spark round 4 COMPLETE, merged f09bda71d
 - 2026-08-04. Athena reads the Mastermind canvas (worst-first triage digest + 2 read ops), acts on it (canvas_dispatch / group_dispatch / run_idea_scan as thin wrappers over the existing fleet plan validation + executors, boldness-gated, one ledger row each, demo islands refused), annotates it (author field on groups/links/notes + revert-only-hers), and composes a per-project panel rendered by SurfaceRenderer in the right dock. Home Cockpit deliberately untouched.
