@@ -2,6 +2,7 @@
 import type { ConnectorPipelineStep } from "./ConnectorPipelineStep";
 import type { DesignFilesSection } from "./DesignFilesSection";
 import type { DesignUseCase } from "./DesignUseCase";
+import type { KpLink } from "./KpLink";
 
 /**
  * Structured envelope for the `design_context` JSON column.
@@ -47,4 +48,11 @@ archetypeId: string | null,
  * the intent and drives setup guidance chips; the subsystems it
  * names are wired through their own existing surfaces.
  */
-memoryStrategyId: string | null, };
+memoryStrategyId: string | null, 
+/**
+ * Agent-candidate bridge — the KP hiring-app job this persona was hired
+ * for. `None` for every persona not created through a KP hire request.
+ * Mirrors the `dev_project_id` precedent: typed + defaulted so existing
+ * rows deserialize unchanged.
+ */
+kpLink: KpLink | null, };

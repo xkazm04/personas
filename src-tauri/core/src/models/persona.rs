@@ -461,6 +461,27 @@ pub struct ConnectorPipelineStep {
     pub order: i32,
 }
 
+/// Typed link back to the external KP hiring app job this persona was hired
+/// for (agent-candidate bridge). Written once by the `kp_hire_request`
+/// approval executor; read by the outbound KP reporter. Typed (not a loose
+/// JSON key) because `DesignContextData` has no serde catch-all — unknown
+/// keys are DROPPED on round-trip, exactly the bug class a typed field
+/// prevents. A stale link (KP app gone, token rotated) never breaks
+/// anything: consumers treat push failures as best-effort.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct KpLink {
+    /// KP job id the hire request originated from.
+    pub job_id: String,
+    /// Human-readable job title (display only).
+    pub job_title: String,
+    /// Base URL of the KP app instance (e.g. `http://localhost:3001`).
+    pub base_url: String,
+    /// Bearer-ish token for `POST {base_url}/api/agents/report/{token}`.
+    pub report_token: String,
+}
+
 /// Structured envelope for the `design_context` JSON column.
 ///
 /// Independent sections:
@@ -513,6 +534,12 @@ pub struct DesignContextData {
     /// names are wired through their own existing surfaces.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub memory_strategy_id: Option<String>,
+    /// Agent-candidate bridge — the KP hiring-app job this persona was hired
+    /// for. `None` for every persona not created through a KP hire request.
+    /// Mirrors the `dev_project_id` precedent: typed + defaulted so existing
+    /// rows deserialize unchanged.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kp_link: Option<KpLink>,
 }
 
 impl DesignContextData {
@@ -952,4 +979,45 @@ pub fn parse_channels_v2(json: Option<&str>) -> Option<Vec<ChannelSpecV2>> {
     // falls through to `parse_channels`.
     raw[0].get("use_case_ids")?;
     serde_json::from_str::<Vec<ChannelSpecV2>>(json_str).ok()
+}
+
+#[cfg(test)]
+mod kp_link_tests {
+    use super::*;
+
+    /// The exact bug class the typed field prevents: `DesignContextData` has
+    /// no serde catch-all, so an untyped `kpLink` key would be silently
+    /// dropped on round-trip. The typed field must survive it.
+    #[test]
+    fn design_context_kp_link_round_trips() {
+        let dc = DesignContextData {
+            kp_link: Some(KpLink {
+                job_id: "job-42".into(),
+                job_title: "Senior Rust Engineer".into(),
+                base_url: "http://localhost:3001".into(),
+                report_token: "tok_abc123".into(),
+            }),
+            ..Default::default()
+        };
+        let json = dc.to_json_string();
+        // Wire format is camelCase (ts-rs contract).
+        assert!(json.contains("\"kpLink\""), "expected camelCase kpLink in {json}");
+        assert!(json.contains("\"jobId\""));
+        let back: DesignContextData = serde_json::from_str(&json).expect("round-trip parse");
+        let link = back.kp_link.expect("kp_link must survive the round-trip");
+        assert_eq!(link.job_id, "job-42");
+        assert_eq!(link.job_title, "Senior Rust Engineer");
+        assert_eq!(link.base_url, "http://localhost:3001");
+        assert_eq!(link.report_token, "tok_abc123");
+    }
+
+    /// Existing rows (no kpLink key) must keep deserializing, and absent
+    /// links must not be serialized (skip_serializing_if).
+    #[test]
+    fn design_context_without_kp_link_is_unchanged() {
+        let legacy: DesignContextData =
+            serde_json::from_str(r#"{"summary":"old row"}"#).expect("legacy parse");
+        assert!(legacy.kp_link.is_none());
+        assert!(!legacy.to_json_string().contains("kpLink"));
+    }
 }

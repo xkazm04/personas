@@ -453,6 +453,7 @@ export type { KbSearchResponse } from "./KbSearchResponse";
 export type { KnowledgeBase } from "./KnowledgeBase";
 export type { KnowledgeGap } from "./KnowledgeGap";
 export type { KnowledgeGraphSummary } from "./KnowledgeGraphSummary";
+export type { KpLink } from "./KpLink";
 export type { KpiSimIngestSummary } from "./KpiSimIngestSummary";
 export type { KpiSimPrepared } from "./KpiSimPrepared";
 export type { LabAbResult } from "./LabAbResult";
