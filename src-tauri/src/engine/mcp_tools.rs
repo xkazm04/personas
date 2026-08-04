@@ -40,6 +40,16 @@ const MCP_SESSION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(
 /// TTL for cached `tools/list` responses (60 seconds).
 const TOOLS_LIST_CACHE_TTL: std::time::Duration = std::time::Duration::from_secs(60);
 
+/// Clamp bounds for a server-provided `ttlMs` freshness hint on `tools/list`
+/// (MCP 2026-07-28 `CacheableResult`, SEP-2549). Servers drive their own cache
+/// TTL within these bounds; anything outside is clamped so a hostile/buggy
+/// server can neither pin a stale tool list for hours nor force a re-fetch
+/// stampede. `cacheScope` is deliberately ignored: this cache is in-process
+/// and private to the desktop app, so the public/private distinction for
+/// shared intermediaries does not apply.
+const SERVER_TTL_MIN: std::time::Duration = std::time::Duration::from_secs(5);
+const SERVER_TTL_MAX: std::time::Duration = std::time::Duration::from_secs(3600);
+
 /// Short TTL for a DEGRADED gateway merge — one where at least one ENABLED
 /// member's `tools/list` errored but other members still returned tools. Caching
 /// that partial set for the full 60s would mask the failed member's tools (and
@@ -433,7 +443,7 @@ pub async fn ping(fields: &HashMap<String, String>) -> Result<PingResult, AppErr
     };
 
     match result {
-        Ok(tools) => Ok(PingResult {
+        Ok((tools, _ttl)) => Ok(PingResult {
             success: true,
             message: format!(
                 "Connected -- {} tool{} available",
@@ -693,7 +703,7 @@ async fn list_tools_guarded(
         .map(|s| s.as_str())
         .unwrap_or("stdio");
 
-    let tools = match connection_type {
+    let (tools, server_ttl_ms) = match connection_type {
         "stdio" => list_tools_stdio(&fields, Some(credential_id)).await,
         "sse" => list_tools_sse(&fields).await,
         other => Err(AppError::Validation(format!(
@@ -701,7 +711,21 @@ async fn list_tools_guarded(
         ))),
     }?;
 
-    set_cached_tools(credential_id, tools.clone());
+    // Honor the server's `ttlMs` freshness hint (MCP 2026-07-28 CacheableResult)
+    // when present, clamped to sane bounds; otherwise keep the 60s default.
+    match server_ttl_ms {
+        Some(ms) => {
+            let ttl = std::time::Duration::from_millis(ms).clamp(SERVER_TTL_MIN, SERVER_TTL_MAX);
+            tracing::debug!(
+                credential_id,
+                server_ttl_ms = ms,
+                applied_ttl_secs = ttl.as_secs(),
+                "Caching tools/list with server-provided ttlMs"
+            );
+            set_cached_tools_with_ttl(credential_id, tools.clone(), ttl);
+        }
+        None => set_cached_tools(credential_id, tools.clone()),
+    }
     Ok(tools)
 }
 
@@ -930,7 +954,7 @@ async fn execute_tool_guarded(
 async fn list_tools_stdio(
     fields: &HashMap<String, String>,
     credential_id: Option<&str>,
-) -> Result<Vec<McpTool>, AppError> {
+) -> Result<(Vec<McpTool>, Option<u64>), AppError> {
     tokio::time::timeout(
         MCP_SESSION_TIMEOUT,
         list_tools_stdio_inner(fields, credential_id),
@@ -942,7 +966,7 @@ async fn list_tools_stdio(
 async fn list_tools_stdio_inner(
     fields: &HashMap<String, String>,
     credential_id: Option<&str>,
-) -> Result<Vec<McpTool>, AppError> {
+) -> Result<(Vec<McpTool>, Option<u64>), AppError> {
     // Try to acquire a pooled session
     let (mut session, from_pool) = match credential_id {
         Some(cid) => match take_pooled_session(cid).await {
@@ -1052,18 +1076,39 @@ async fn execute_tool_stdio_inner(
     }
 }
 
+/// Extract the `ttlMs` freshness hint from a `tools/list` result object
+/// (MCP 2026-07-28 `CacheableResult`). Returns `None` when absent or not a
+/// positive integer — older servers simply don't send it.
+fn extract_ttl_ms(result: &serde_json::Value) -> Option<u64> {
+    result
+        .get("ttlMs")
+        .and_then(|v| v.as_u64())
+        .filter(|&ms| ms > 0)
+}
+
+/// Fold a page's `ttlMs` into the running minimum across pages: the merged
+/// list is only as fresh as its stalest-permitted page.
+fn fold_min_ttl(acc: Option<u64>, page: Option<u64>) -> Option<u64> {
+    match (acc, page) {
+        (Some(a), Some(p)) => Some(a.min(p)),
+        (a, p) => a.or(p),
+    }
+}
+
 /// Drain a paginated `tools/list` over a pooled stdio session, following
 /// `result.nextCursor` until the server stops returning one. Returns the raw
-/// tool JSON objects accumulated across every page.
+/// tool JSON objects accumulated across every page, plus the minimum
+/// server-provided `ttlMs` hint seen on any page (if any).
 ///
 /// MCP servers may split `tools/list` across pages (`{ tools, nextCursor }`);
 /// a client that reads only the first page silently loses every tool past it.
 /// Capped at `MCP_TOOLS_LIST_MAX_PAGES`.
 async fn fetch_tools_paginated_stdio(
     session: &mut PooledStdioSession,
-) -> Result<Vec<serde_json::Value>, AppError> {
+) -> Result<(Vec<serde_json::Value>, Option<u64>), AppError> {
     let mut all_tools: Vec<serde_json::Value> = Vec::new();
     let mut cursor: Option<String> = None;
+    let mut min_ttl_ms: Option<u64> = None;
 
     for page in 0..MCP_TOOLS_LIST_MAX_PAGES {
         let params = match &cursor {
@@ -1085,10 +1130,11 @@ async fn fetch_tools_paginated_stdio(
             .and_then(|t| t.as_array())
             .ok_or_else(|| AppError::Internal("Invalid tools/list response".into()))?;
         all_tools.extend(page_tools.iter().cloned());
+        min_ttl_ms = fold_min_ttl(min_ttl_ms, extract_ttl_ms(result));
 
         match result.get("nextCursor").and_then(|c| c.as_str()) {
             Some(next) if !next.is_empty() => cursor = Some(next.to_string()),
-            _ => return Ok(all_tools),
+            _ => return Ok((all_tools, min_ttl_ms)),
         }
 
         if page + 1 == MCP_TOOLS_LIST_MAX_PAGES {
@@ -1098,7 +1144,7 @@ async fn fetch_tools_paginated_stdio(
             );
         }
     }
-    Ok(all_tools)
+    Ok((all_tools, min_ttl_ms))
 }
 
 /// Execute `tools/list` on an already-initialized session.
@@ -1128,9 +1174,11 @@ fn parse_tool_defs(raw: &[serde_json::Value], transport: &str) -> Vec<McpTool> {
     tools
 }
 
-async fn list_tools_on_session(session: &mut PooledStdioSession) -> Result<Vec<McpTool>, AppError> {
-    let tools_val = fetch_tools_paginated_stdio(session).await?;
-    Ok(parse_tool_defs(&tools_val, "stdio"))
+async fn list_tools_on_session(
+    session: &mut PooledStdioSession,
+) -> Result<(Vec<McpTool>, Option<u64>), AppError> {
+    let (tools_val, ttl_ms) = fetch_tools_paginated_stdio(session).await?;
+    Ok((parse_tool_defs(&tools_val, "stdio"), ttl_ms))
 }
 
 /// Execute `tools/call` on an already-initialized session, with schema validation.
@@ -1144,7 +1192,7 @@ async fn execute_tool_on_session(
     if let Some(schema_opt) = cached_schema {
         validate_arguments_against_schema(arguments, schema_opt.as_ref())?;
     } else {
-        let tools_val = fetch_tools_paginated_stdio(session).await?;
+        let (tools_val, _ttl) = fetch_tools_paginated_stdio(session).await?;
         let schema = extract_tool_schema(&tools_val, tool_name)?;
         validate_arguments_against_schema(arguments, schema.as_ref())?;
     }
@@ -1197,9 +1245,10 @@ async fn fetch_tools_paginated_sse(
     url: &str,
     auth_token: Option<&String>,
     start_id: u64,
-) -> Result<Vec<serde_json::Value>, AppError> {
+) -> Result<(Vec<serde_json::Value>, Option<u64>), AppError> {
     let mut all_tools: Vec<serde_json::Value> = Vec::new();
     let mut cursor: Option<String> = None;
+    let mut min_ttl_ms: Option<u64> = None;
 
     for page in 0..MCP_TOOLS_LIST_MAX_PAGES {
         let params = match &cursor {
@@ -1216,10 +1265,11 @@ async fn fetch_tools_paginated_sse(
             AppError::Internal("Invalid tools/list response from SSE server".into())
         })?;
         all_tools.extend(page_tools.iter().cloned());
+        min_ttl_ms = fold_min_ttl(min_ttl_ms, extract_ttl_ms(result));
 
         match result.get("nextCursor").and_then(|c| c.as_str()) {
             Some(next) if !next.is_empty() => cursor = Some(next.to_string()),
-            _ => return Ok(all_tools),
+            _ => return Ok((all_tools, min_ttl_ms)),
         }
 
         if page + 1 == MCP_TOOLS_LIST_MAX_PAGES {
@@ -1229,10 +1279,12 @@ async fn fetch_tools_paginated_sse(
             );
         }
     }
-    Ok(all_tools)
+    Ok((all_tools, min_ttl_ms))
 }
 
-async fn list_tools_sse(fields: &HashMap<String, String>) -> Result<Vec<McpTool>, AppError> {
+async fn list_tools_sse(
+    fields: &HashMap<String, String>,
+) -> Result<(Vec<McpTool>, Option<u64>), AppError> {
     let url = fields
         .get("url")
         .ok_or_else(|| AppError::Validation("MCP server has no 'url' field".into()))?;
@@ -1264,8 +1316,8 @@ async fn list_tools_sse(fields: &HashMap<String, String>) -> Result<Vec<McpTool>
     let _init_resp = send_sse_request(&client, url, auth_token, &init_payload).await?;
 
     // List tools — follow `nextCursor` so tools past page 1 are not dropped.
-    let tools_val = fetch_tools_paginated_sse(&client, url, auth_token, 2).await?;
-    Ok(parse_tool_defs(&tools_val, "sse"))
+    let (tools_val, ttl_ms) = fetch_tools_paginated_sse(&client, url, auth_token, 2).await?;
+    Ok((parse_tool_defs(&tools_val, "sse"), ttl_ms))
 }
 
 async fn execute_tool_sse(
@@ -1307,7 +1359,7 @@ async fn execute_tool_sse(
     if let Some(schema_opt) = cached_schema {
         validate_arguments_against_schema(arguments, schema_opt.as_ref())?;
     } else {
-        let tools_val = fetch_tools_paginated_sse(&client, url, auth_token, 2).await?;
+        let (tools_val, _ttl) = fetch_tools_paginated_sse(&client, url, auth_token, 2).await?;
         let schema = extract_tool_schema(&tools_val, tool_name)?;
         validate_arguments_against_schema(arguments, schema.as_ref())?;
     }
