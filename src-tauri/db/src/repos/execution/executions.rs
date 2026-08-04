@@ -1516,40 +1516,25 @@ pub fn get_retry_chains_batch(
             let root_list: Vec<&str> = root_ids.iter().map(|s| s.as_str()).collect();
             let root_placeholders: String = crate::repos::utils::in_placeholders(root_list.len());
 
-            let _chain_sql = format!(
-                "SELECT * FROM persona_executions
-         WHERE (id IN ({root_placeholders}) OR retry_of_execution_id IN ({root_placeholders}))
-         ORDER BY retry_count ASC, created_at ASC",
-                root_placeholders = root_placeholders
-            );
-            let root_params_boxed: Vec<Box<dyn rusqlite::types::ToSql>> = root_list
-                .iter()
-                .map(|id| Box::new(id.to_string()) as Box<dyn rusqlite::types::ToSql>)
-                .collect();
-            // Duplicate for both IN clauses
-            let mut all_params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-            for p in &root_params_boxed {
-                all_params.push(Box::new(p.as_ref().to_sql().unwrap().to_owned()));
-            }
-            for p in &root_params_boxed {
-                all_params.push(Box::new(p.as_ref().to_sql().unwrap().to_owned()));
-            }
-
-            // Use simpler approach: single IN clause with OR
+            // One statement, a single placeholder list bound twice — once for
+            // `id IN (...)` (the roots themselves) and once for
+            // `retry_of_execution_id IN (...)` (their retries).
             let chain_sql = format!(
                 "SELECT * FROM persona_executions
          WHERE id IN ({placeholders}) OR retry_of_execution_id IN ({placeholders})
          ORDER BY retry_count ASC, created_at ASC",
                 placeholders = root_placeholders
             );
-            // Params need to be repeated for both IN clauses
-            let mut chain_params_boxed: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-            for id in &root_list {
-                chain_params_boxed.push(Box::new(id.to_string()));
-            }
-            for id in &root_list {
-                chain_params_boxed.push(Box::new(id.to_string()));
-            }
+            // The placeholders are NUMBERED (`?1, ?2, …`), so repeating the
+            // same list in the second `IN` clause reuses the SAME parameters —
+            // the statement's parameter_count is `root_list.len()`, not twice
+            // that. Binding the list twice made rusqlite reject every call with
+            // InvalidParameterCount, so the batch path (healing_timeline.rs)
+            // always failed instead of returning chains.
+            let chain_params_boxed: Vec<Box<dyn rusqlite::types::ToSql>> = root_list
+                .iter()
+                .map(|id| Box::new(id.to_string()) as Box<dyn rusqlite::types::ToSql>)
+                .collect();
             let chain_params_ref: Vec<&dyn rusqlite::types::ToSql> =
                 chain_params_boxed.iter().map(|p| p.as_ref()).collect();
 
@@ -2073,6 +2058,34 @@ mod tests {
         .unwrap();
         assert_eq!(get_running_only(&pool).unwrap().len(), 0);
         assert_eq!(get_queued_only(&pool).unwrap().len(), 1);
+    }
+
+    /// `get_retry_chains_batch` bound its numbered placeholder list twice
+    /// (once per `IN` clause) while the statement only has `n` parameters, so
+    /// every non-empty call failed with InvalidParameterCount and the healing
+    /// timeline silently lost its retry chains. Guard: a real root + retry
+    /// must come back grouped.
+    #[test]
+    fn get_retry_chains_batch_returns_the_chain() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Retry Chain Agent");
+
+        let root = create(&pool, &persona_id, None, None, None, None).unwrap();
+        let retry = create_retry(&pool, &persona_id, &root.id, 1).unwrap();
+
+        let ids = [root.id.as_str()];
+        let chains = get_retry_chains_batch(&pool, &ids).unwrap();
+
+        let chain = chains.get(&root.id).expect("root must map to its chain");
+        let found: Vec<&str> = chain.iter().map(|e| e.id.as_str()).collect();
+        assert!(found.contains(&root.id.as_str()), "root is part of its chain");
+        assert!(found.contains(&retry.id.as_str()), "retry is part of the chain");
+        assert_eq!(chain.len(), 2);
+
+        // Empty input short-circuits without touching the DB.
+        assert!(get_retry_chains_batch(&pool, &[]).unwrap().is_empty());
+        // An unknown id yields no entry rather than an error.
+        assert!(get_retry_chains_batch(&pool, &["nope"]).unwrap().is_empty());
     }
 
     /// A `queued` execution has not started, but it IS in flight — the
