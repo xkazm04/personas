@@ -20,6 +20,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 
 import type { DevIdea } from '@/lib/bindings/DevIdea';
 import type { EvolutionPromotionProposal } from '@/lib/bindings/EvolutionPromotionProposal';
+import type { PendingAcceptanceGoal } from '@/lib/bindings/PendingAcceptanceGoal';
 import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 
 // --- mocks (must precede the import under test) ----------------------------
@@ -35,6 +36,9 @@ const mockDecidePolicy = vi.fn();
 const mockDecideEvolution = vi.fn();
 const mockPolicyList = vi.fn();
 const mockPromotionList = vi.fn();
+const mockPendingAcceptance = vi.fn();
+const mockAcceptGoal = vi.fn();
+const mockRejectGoal = vi.fn();
 const mockRefreshKnowledge = vi.fn();
 const mockAddToast = vi.fn();
 const mockToastCatch = vi.fn();
@@ -59,6 +63,7 @@ vi.mock('../../usePendingInteractions', () => ({
 vi.mock('@/api/devTools/devTools', () => ({
   triageIdeas: (...args: unknown[]) => mockTriageIdeas(...args),
   createTask: (...args: unknown[]) => mockCreateTask(...args),
+  listPendingAcceptance: (...args: unknown[]) => mockPendingAcceptance(...args),
 }));
 
 vi.mock('@/api/system/policyTuning', () => ({
@@ -101,6 +106,10 @@ const systemState = {
   projects: [{ id: 'proj-1', name: 'Personas' }],
   acceptIdea: (...args: unknown[]) => mockAcceptIdea(...args),
   rejectIdea: (...args: unknown[]) => mockRejectIdea(...args),
+  // Goal verdicts go through the slice too — it owns the row write AND the
+  // pending-acceptance count, and both rethrow so the deck can restore.
+  acceptGoal: (...args: unknown[]) => mockAcceptGoal(...args),
+  rejectGoal: (...args: unknown[]) => mockRejectGoal(...args),
 };
 
 vi.mock('@/stores/systemStore', () => ({
@@ -218,6 +227,27 @@ function promotion(
   };
 }
 
+function pendingGoal(overrides: Partial<PendingAcceptanceGoal> = {}): PendingAcceptanceGoal {
+  return {
+    goal_id: 'goal-1',
+    title: 'Merge the two onboarding flows',
+    summary: 'One flow now covers both entry points.',
+    project_id: 'proj-1',
+    project_name: 'Personas',
+    team_id: 'team-1',
+    team_name: 'Growth',
+    kpi_id: 'kpi-1',
+    kpi_name: 'Activation rate',
+    kpi_unit: '%',
+    kpi_current: 34,
+    kpi_target: 50,
+    kpi_baseline: 20,
+    kpi_direction: 'up',
+    completed_at: '2026-02-02T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
 function page(ideas: DevIdea[]) {
   return {
     ideas,
@@ -227,9 +257,9 @@ function page(ideas: DevIdea[]) {
   };
 }
 
-/** Mount and wait for the idea fetch to land. */
-async function mount() {
-  const hook = renderHook(() => useUnifiedTriage());
+/** Mount and wait for every source fetch to land. */
+async function mount(hosts?: Parameters<typeof useUnifiedTriage>[1]) {
+  const hook = renderHook(() => useUnifiedTriage(undefined, hosts));
   await waitFor(() => expect(hook.result.current.loading).toBe(false));
   return hook;
 }
@@ -267,6 +297,11 @@ beforeEach(() => {
   // never run a tuning pass or an evolution cycle.
   mockPolicyList.mockResolvedValue([]);
   mockPromotionList.mockResolvedValue([]);
+  // Same for goals: an install with nothing awaiting sign-off must deal the
+  // rest of the queue exactly as it did before goals joined it.
+  mockPendingAcceptance.mockResolvedValue([]);
+  mockAcceptGoal.mockResolvedValue(undefined);
+  mockRejectGoal.mockResolvedValue(undefined);
 });
 
 // --- tests -----------------------------------------------------------------
@@ -714,6 +749,20 @@ describe('useUnifiedTriage — undo', () => {
     expect(result.current.undo).toBeNull();
   });
 
+  it('offers nothing back for a goal either — an accepted goal has no reopen', async () => {
+    // `reversibleStatus` ends in `default: return null`, and goals are meant to
+    // land there: no command reopens an accepted goal, and an undo button that
+    // refuses when pressed is worse than no undo button.
+    mockTriageIdeas.mockResolvedValue(page([]));
+    mockPendingAcceptance.mockResolvedValue([pendingGoal()]);
+    const { result } = await mount();
+
+    await act(async () => {
+      await result.current.decide({ item: itemOfKind(result, 'goal'), verdict: 'accept' });
+    });
+    expect(result.current.undo).toBeNull();
+  });
+
   it('clears a stale offer when the next decision is not reversible', async () => {
     mockTriageIdeas.mockResolvedValue(page([idea()]));
     mockPromotionList.mockResolvedValue([promotion()]);
@@ -729,5 +778,139 @@ describe('useUnifiedTriage — undo', () => {
     });
     // Otherwise `U` would take back the card BEFORE the one just decided.
     expect(result.current.undo).toBeNull();
+  });
+});
+
+describe('useUnifiedTriage — goals reach the same spine', () => {
+  it('deals a goal card, writes through the store, and re-reads the ledger', async () => {
+    mockTriageIdeas.mockResolvedValue(page([]));
+    mockPendingAcceptance.mockResolvedValue([pendingGoal()]);
+
+    const { result } = await mount();
+    const card = itemOfKind(result, 'goal');
+    expect(card.id).toBe('goal:goal-1');
+    expect(card.title).toBe('Merge the two onboarding flows');
+    expect(mockPendingAcceptance).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await result.current.decide({ item: card, verdict: 'accept' });
+    });
+
+    // Through the SLICE, not `devApi` — it owns the row write and the pending
+    // count, and no seen-status because goals have no compare-and-swap.
+    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-1');
+    expect(result.current.items).toHaveLength(0);
+    expect(result.current.decidedCount).toBe(1);
+    // A goal verdict invalidates the goal ledger, so it is re-read the way a
+    // proposal verdict re-reads the proposal ones.
+    await waitFor(() => expect(mockPendingAcceptance).toHaveBeenCalledTimes(2));
+  });
+
+  it('sends a goal back with the reviewer’s reason attached', async () => {
+    mockTriageIdeas.mockResolvedValue(page([]));
+    mockPendingAcceptance.mockResolvedValue([pendingGoal()]);
+
+    const { result } = await mount();
+    await act(async () => {
+      await result.current.decide({
+        item: itemOfKind(result, 'goal'),
+        verdict: 'reject',
+        reason: 'The KPI never moved',
+      });
+    });
+
+    // The comment is the only account the team gets of why finished work came
+    // back, so a dropped reason is a silent regression.
+    expect(mockRejectGoal).toHaveBeenCalledWith('goal-1', 'The KPI never moved');
+    expect(result.current.items).toHaveLength(0);
+  });
+
+  it('restores the goal card when the sign-off write fails', async () => {
+    mockTriageIdeas.mockResolvedValue(page([]));
+    mockPendingAcceptance.mockResolvedValue([pendingGoal()]);
+    mockAcceptGoal.mockRejectedValueOnce(new Error('database is locked'));
+
+    const { result } = await mount();
+    const card = itemOfKind(result, 'goal');
+
+    await act(async () => {
+      await result.current.decide({ item: card, verdict: 'accept' });
+    });
+
+    // The whole point of A0's rethrow: a swallowed failure would leave the goal
+    // `awaiting_acceptance` while the card left the queue for good.
+    expect(result.current.items.map((i) => i.id)).toEqual([card.id]);
+    expect(result.current.decidedCount).toBe(0);
+    expect(mockToastCatch).toHaveBeenCalledTimes(1);
+  });
+
+  it('hands each card its KPI-mates so the batch branch can offer them', async () => {
+    mockTriageIdeas.mockResolvedValue(page([]));
+    mockPendingAcceptance.mockResolvedValue([
+      pendingGoal(),
+      pendingGoal({ goal_id: 'goal-2', title: 'Ship the second half' }),
+      // A different KPI, and a goal on none at all — neither belongs in the
+      // batch, and grouping the whole ledger as one would sign both off.
+      pendingGoal({ goal_id: 'goal-3', kpi_id: 'kpi-2' }),
+      pendingGoal({ goal_id: 'goal-4', kpi_id: null, kpi_name: null }),
+    ]);
+
+    const { result } = await mount();
+    const first = result.current.items.find((i) => i.id === 'goal:goal-1')!;
+    expect(first.payload?.batchGoalIds).toBe('goal-1,goal-2');
+
+    await act(async () => {
+      await result.current.decide({
+        item: first,
+        verdict: 'accept',
+        branchId: 'accept-kpi-batch',
+      });
+    });
+
+    expect(mockAcceptGoal).toHaveBeenCalledTimes(2);
+    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-1');
+    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-2');
+    // The siblings were signed off but their cards are still in the deck, so
+    // the re-read is what stops the next verdict writing into a decided goal.
+    await waitFor(() => expect(mockPendingAcceptance).toHaveBeenCalledTimes(2));
+  });
+
+  it('offers no batch branch to the only goal on its KPI', async () => {
+    mockTriageIdeas.mockResolvedValue(page([]));
+    mockPendingAcceptance.mockResolvedValue([pendingGoal(), pendingGoal({ goal_id: 'goal-3', kpi_id: 'kpi-2' })]);
+
+    const { result } = await mount();
+    const lone = result.current.items.find((i) => i.id === 'goal:goal-3')!;
+    // "Accept all 1 from this KPI" is the plain Accept under a second name.
+    expect(lone.branches.map((b) => b.id)).toEqual(['open-board']);
+    expect(lone.payload?.batchGoalIds).toBeUndefined();
+  });
+
+  it('reaches the host’s goals-board route without writing anything', async () => {
+    mockTriageIdeas.mockResolvedValue(page([]));
+    mockPendingAcceptance.mockResolvedValue([pendingGoal()]);
+    const onOpenGoalBoard = vi.fn();
+
+    const { result } = await mount({ onOpenGoalBoard });
+    await act(async () => {
+      await result.current.decide({
+        item: itemOfKind(result, 'goal'),
+        verdict: 'accept',
+        branchId: 'open-board',
+      });
+    });
+
+    expect(onOpenGoalBoard).toHaveBeenCalledWith('proj-1');
+    expect(mockAcceptGoal).not.toHaveBeenCalled();
+    expect(mockRejectGoal).not.toHaveBeenCalled();
+  });
+
+  it('keeps the deck usable when the goal ledger is unavailable', async () => {
+    // Fetched in its own effect for exactly this: one source being down must
+    // not take the rest of the queue with it.
+    mockPendingAcceptance.mockRejectedValue(new Error('command not found'));
+    const { result } = await mount();
+    expect(result.current.items.map((i) => i.kind)).toEqual(['idea']);
+    expect(mockToastCatch).toHaveBeenCalledWith('Could not load goals awaiting acceptance', expect.any(Error));
   });
 });

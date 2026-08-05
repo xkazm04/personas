@@ -12,6 +12,8 @@
  *  • policy proposals — the Self-Tuning Fabric's pending routing/budget diffs.
  *  • evolution promotions — Darwin Mode's pending "this challenger beat the
  *    incumbent, install it?" proposals.
+ *  • goal acceptance — goals a team has finished and parked in
+ *    `awaiting_acceptance`, waiting for a human to sign them off.
  *
  * Two deliberate behaviours worth knowing before you read the code:
  *
@@ -54,6 +56,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { getActiveTranslations } from '@/i18n/useTranslation';
 import type { DevIdea } from '@/lib/bindings/DevIdea';
 import type { EvolutionPromotionProposal } from '@/lib/bindings/EvolutionPromotionProposal';
+import type { PendingAcceptanceGoal } from '@/lib/bindings/PendingAcceptanceGoal';
 import type { PolicyProposal } from '@/lib/bindings/PolicyProposal';
 import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 
@@ -61,6 +64,7 @@ import { usePendingInteractions } from '../usePendingInteractions';
 import {
   DEFAULT_TRIAGE_COPY,
   evolutionProposalToTriage,
+  goalToTriage,
   ideaToTriage,
   policyProposalToTriage,
   practiceToTriage,
@@ -253,13 +257,19 @@ export interface UnifiedTriageHosts {
   onOpenBuilder?: (personaId: string) => void;
   /** Deep-link to the execution behind a review. Absent when the host has no route. */
   onOpenRun?: (executionId: string) => void;
+  /**
+   * Deep-link to a project's goals board — the goal card's "open the board"
+   * branch. Absent when the host has no route, in which case the branch reports
+   * that rather than resolving the card for free (see `triageDispatch`).
+   */
+  onOpenGoalBoard?: (projectId: string) => void;
 }
 
 export function useUnifiedTriage(
   copy: TriageCopy = DEFAULT_TRIAGE_COPY,
   hosts: UnifiedTriageHosts = {},
 ): UnifiedTriageQueue {
-  const { onOpenBuilder, onOpenRun } = hosts;
+  const { onOpenBuilder, onOpenRun, onOpenGoalBoard } = hosts;
   const interactions = usePendingInteractions();
   const center = useWorkspaceCenter(PRACTICE_CENTER_OPTIONS);
   const projects = useSystemStore((s) => s.projects);
@@ -347,6 +357,19 @@ export function useUnifiedTriage(
   const [promotionsLoading, setPromotionsLoading] = useState(true);
   const [proposalGen, setProposalGen] = useState(0);
 
+  /**
+   * Goals parked in `awaiting_acceptance`, and their own generation counter.
+   *
+   * A third counter rather than a third user of `proposalGen`: a goal verdict
+   * invalidates the goal ledger and nothing else, and re-querying two unrelated
+   * proposal subsystems because somebody signed off a finished goal is work
+   * nobody asked for — the same reason `proposalGen` is separate from
+   * `ideaFetch.gen`.
+   */
+  const [goals, setGoals] = useState<PendingAcceptanceGoal[]>([]);
+  const [goalsLoading, setGoalsLoading] = useState(true);
+  const [goalGen, setGoalGen] = useState(0);
+
   const projectName = useCallback(
     (projectId: string | null) =>
       projectId ? projects.find((p) => p.id === projectId)?.name ?? '' : '',
@@ -416,6 +439,27 @@ export function useUnifiedTriage(
       cancelled = true;
     };
   }, [proposalGen]);
+
+  // Goals get their own effect for the same reason the two proposal ledgers do:
+  // an install whose goals command errors must still be dealt its reviews, its
+  // ideas and its practices. One `Promise.all` over unrelated subsystems is how
+  // one unavailable source takes the whole queue down with it.
+  useEffect(() => {
+    let cancelled = false;
+    setGoalsLoading(true);
+    void devApi
+      .listPendingAcceptance()
+      .then((rows) => {
+        if (!cancelled) setGoals(rows);
+      })
+      .catch(toastCatch('Could not load goals awaiting acceptance'))
+      .finally(() => {
+        if (!cancelled) setGoalsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [goalGen]);
 
   const personaById = useMemo(
     () => new Map(personas.map((p) => [p.id, p])),
@@ -492,6 +536,22 @@ export function useUnifiedTriage(
       );
     }
 
+    // "Accept all N from this KPI" is the bulk affordance the goals board was
+    // built around, and the adapter is store-free — it cannot go and ask which
+    // other goals sit on the same KPI. So the grouping happens once here and
+    // each card is handed its KPI-mates' ids. Goals with no KPI have no batch:
+    // there is nothing for them to be batched WITH.
+    const goalIdsByKpi = new Map<string, string[]>();
+    for (const goal of goals) {
+      if (!goal.kpi_id) continue;
+      const bucket = goalIdsByKpi.get(goal.kpi_id);
+      if (bucket) bucket.push(goal.goal_id);
+      else goalIdsByKpi.set(goal.kpi_id, [goal.goal_id]);
+    }
+    for (const goal of goals) {
+      out.push(goalToTriage(goal, goal.kpi_id ? goalIdsByKpi.get(goal.kpi_id) ?? [] : [], copy));
+    }
+
     return out;
   }, [
     interactions.reviews,
@@ -502,6 +562,7 @@ export function useUnifiedTriage(
     center.projectById,
     policyProposals,
     promotions,
+    goals,
     personaById,
     copy,
     projectName,
@@ -606,6 +667,7 @@ export function useUnifiedTriage(
     setUndo(null);
     setIdeaFetch((f) => ({ gen: f.gen + 1 }));
     setProposalGen((g) => g + 1);
+    setGoalGen((g) => g + 1);
     center.refreshKnowledge();
   }, [center]);
 
@@ -635,11 +697,15 @@ export function useUnifiedTriage(
   const refreshSources = useCallback(() => {
     setIdeaFetch((f) => ({ gen: f.gen + 1 }));
     setProposalGen((g) => g + 1);
+    setGoalGen((g) => g + 1);
     center.refreshKnowledge();
   }, [center]);
 
   /** Re-read only the two proposal ledgers — what a proposal verdict invalidates. */
   const refreshProposals = useCallback(() => setProposalGen((g) => g + 1), []);
+
+  /** Re-read only the goal ledger — what a goal verdict invalidates. */
+  const refreshGoals = useCallback(() => setGoalGen((g) => g + 1), []);
 
   /** Every write a verdict can reach, in one injected bundle — see
    *  `triageDispatch`, which owns the routing itself. */
@@ -674,21 +740,37 @@ export function useUnifiedTriage(
           seenStatus,
         }),
       refreshProposals,
-      acceptGoal: (id) => acceptGoalViaStore(id),
-      rejectGoal: (id, comment) => rejectGoalViaStore(id, comment),
+      // Each goal write re-reads the goal ledger, the way a proposal verdict
+      // re-reads the proposal ones. The store refreshes the pending COUNT, not
+      // the rows this hook holds — and `accept-kpi-batch` signs off SIBLINGS the
+      // deck is still holding cards for, so without the re-read those cards stay
+      // in the queue and the next verdict on one of them writes into a goal that
+      // is already signed off. A rejected write throws before it gets here,
+      // which is what leaves the restore path free to put the card back.
+      acceptGoal: async (id) => {
+        await acceptGoalViaStore(id);
+        refreshGoals();
+      },
+      rejectGoal: async (id, comment) => {
+        await rejectGoalViaStore(id, comment);
+        refreshGoals();
+      },
       reopenIdea: (id, seenStatus) => reopenIdeaRow(id, { seenStatus }),
       reopenPractice: (id, seenStatus) => reopenPracticeRow(id, { seenStatus }),
       openBuilder: onOpenBuilder,
+      openGoalBoard: onOpenGoalBoard,
     }),
     [
       interactions,
       center,
       onOpenBuilder,
+      onOpenGoalBoard,
       acceptIdeaViaStore,
       rejectIdeaViaStore,
       acceptGoalViaStore,
       rejectGoalViaStore,
       refreshProposals,
+      refreshGoals,
     ],
   );
 
@@ -856,7 +938,12 @@ export function useUnifiedTriage(
     () => ({
       items: projection.items,
       allCounts: projection.allCounts,
-      loading: interactions.loading || ideasLoading || proposalsLoading || promotionsLoading,
+      loading:
+        interactions.loading ||
+        ideasLoading ||
+        proposalsLoading ||
+        promotionsLoading ||
+        goalsLoading,
       activeKinds,
       toggleKind,
       decidedCount: resolved.size,
@@ -879,6 +966,7 @@ export function useUnifiedTriage(
       ideasLoading,
       proposalsLoading,
       promotionsLoading,
+      goalsLoading,
       activeKinds,
       toggleKind,
       resolved.size,
