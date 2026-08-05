@@ -1482,7 +1482,18 @@
     "ctx_picker_title": "اختر السياقات لـ {name}",
     "skills_registry_group_hint": "{name} — {present}/{total} مهارة عملت هنا · {contexts} سياقات",
     "skills_registry_no_contexts": "لا توجد سياقات ممسوحة في هذا المشروع بعد — شغّل مسح السياقات لمعرفة أين عملت المهارات.",
-    "skills_registry_project_summary": "{name} · {groups} مجموعات سياق · {skills} مهارة مثبّتة"
+    "skills_registry_project_summary": "{name} · {groups} مجموعات سياق · {skills} مهارة مثبّتة",
+    "database_modal_footer": "القيم المكتشفة تأتي من فحص الشيفرة. أما الموصّلات المرتبطة فأنت من يحدّدها — واحد لكل بيئة.",
+    "database_modal_title": "قاعدة البيانات",
+    "envslot_assign": "تعيين موصّل",
+    "envslot_connector": "الموصّل المرتبط",
+    "envslot_connector_none": "لا يوجد موصّل مرتبط",
+    "envslot_detected": "في الشيفرة",
+    "envslot_detected_none": "لم يُكتشف شيء لهذه البيئة",
+    "envslot_no_candidates": "لا يوجد موصّل مطابق في خزنتك بعد.",
+    "envslot_reassign": "إعادة التعيين",
+    "envslot_unassign": "إلغاء ربط هذا الموصّل",
+    "envslot_unhealthy": "غير سليم"
   },
   "doc_signing": {
     "sign_heading": "توقيع مستند",

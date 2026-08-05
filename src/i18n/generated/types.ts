@@ -14168,6 +14168,17 @@ export type Translations = {
       skills_registry_no_contexts: string;
       skills_registry_project_summary: string;
       skills_registry_group_hint: string;
+      envslot_detected: string;
+      envslot_detected_none: string;
+      envslot_connector: string;
+      envslot_connector_none: string;
+      envslot_assign: string;
+      envslot_reassign: string;
+      envslot_unassign: string;
+      envslot_no_candidates: string;
+      envslot_unhealthy: string;
+      database_modal_title: string;
+      database_modal_footer: string;
     };
     doc_signing: {
       sign_heading: string;

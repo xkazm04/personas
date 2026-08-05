@@ -14161,7 +14161,18 @@
       "ctx_picker_never": "never",
       "skills_registry_no_contexts": "This project has no scanned contexts yet — run a context scan to see where skills have run.",
       "skills_registry_project_summary": "{name} · {groups} context groups · {skills} installed skills",
-      "skills_registry_group_hint": "{name} — {present}/{total} skills have run here · {contexts} contexts"
+      "skills_registry_group_hint": "{name} — {present}/{total} skills have run here · {contexts} contexts",
+      "envslot_detected": "In the codebase",
+      "envslot_detected_none": "Nothing detected for this environment",
+      "envslot_connector": "Bound connector",
+      "envslot_connector_none": "No connector bound",
+      "envslot_assign": "Assign connector",
+      "envslot_reassign": "Reassign",
+      "envslot_unassign": "Unbind this connector",
+      "envslot_no_candidates": "No matching connector in your vault yet.",
+      "envslot_unhealthy": "unhealthy",
+      "database_modal_title": "Database",
+      "database_modal_footer": "Detected values come from the codebase scan. Bound connectors are yours to set — one per environment."
     },
     "doc_signing": {
       "sign_heading": "Sign a Document",

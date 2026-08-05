@@ -1482,7 +1482,18 @@
     "ctx_picker_title": "{name}-এর জন্য কনটেক্সট বেছে নিন",
     "skills_registry_group_hint": "{name} — {present}/{total} স্কিল এখানে চলেছে · {contexts}টি কনটেক্সট",
     "skills_registry_no_contexts": "এই প্রকল্পে এখনও কোনো স্ক্যান করা কনটেক্সট নেই — স্কিল কোথায় চলেছে দেখতে একটি কনটেক্সট স্ক্যান চালান।",
-    "skills_registry_project_summary": "{name} · {groups}টি কনটেক্সট গ্রুপ · {skills}টি ইনস্টল করা স্কিল"
+    "skills_registry_project_summary": "{name} · {groups}টি কনটেক্সট গ্রুপ · {skills}টি ইনস্টল করা স্কিল",
+    "database_modal_footer": "শনাক্ত করা মানগুলি কোডবেস স্ক্যান থেকে আসে। যুক্ত কানেক্টর আপনি নিজেই ঠিক করবেন — প্রতি পরিবেশে একটি।",
+    "database_modal_title": "ডেটাবেস",
+    "envslot_assign": "কানেক্টর যুক্ত করুন",
+    "envslot_connector": "যুক্ত কানেক্টর",
+    "envslot_connector_none": "কোনো কানেক্টর যুক্ত নেই",
+    "envslot_detected": "কোডবেসে",
+    "envslot_detected_none": "এই পরিবেশের জন্য কিছু শনাক্ত হয়নি",
+    "envslot_no_candidates": "আপনার ভল্টে এখনও মিলে যাওয়া কোনো কানেক্টর নেই।",
+    "envslot_reassign": "পুনরায় যুক্ত করুন",
+    "envslot_unassign": "এই কানেক্টরটি বিচ্ছিন্ন করুন",
+    "envslot_unhealthy": "অসুস্থ"
   },
   "doc_signing": {
     "sign_heading": "ডকুমেন্ট স্বাক্ষর করুন",

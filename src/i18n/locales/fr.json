@@ -13867,7 +13867,18 @@
       "ctx_picker_title": "Choisir les contextes pour {name}",
       "skills_registry_group_hint": "{name} — {present}/{total} skills ont tourné ici · {contexts} contextes",
       "skills_registry_no_contexts": "Ce projet n’a pas encore de contextes analysés — lancez une analyse de contextes pour voir où les skills ont tourné.",
-      "skills_registry_project_summary": "{name} · {groups} groupes de contexte · {skills} skills installées"
+      "skills_registry_project_summary": "{name} · {groups} groupes de contexte · {skills} skills installées",
+      "database_modal_footer": "Les valeurs détectées viennent de l’analyse du code. Les connecteurs liés, c’est vous qui les définissez — un par environnement.",
+      "database_modal_title": "Base de données",
+      "envslot_assign": "Assigner un connecteur",
+      "envslot_connector": "Connecteur lié",
+      "envslot_connector_none": "Aucun connecteur lié",
+      "envslot_detected": "Dans le code",
+      "envslot_detected_none": "Rien de détecté pour cet environnement",
+      "envslot_no_candidates": "Aucun connecteur correspondant dans votre coffre pour l’instant.",
+      "envslot_reassign": "Réassigner",
+      "envslot_unassign": "Délier ce connecteur",
+      "envslot_unhealthy": "défaillant"
     },
     "doc_signing": {
       "sign_heading": "Signer un document",

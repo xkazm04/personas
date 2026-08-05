@@ -1482,7 +1482,18 @@
     "ctx_picker_title": "{name}のコンテキストを選択",
     "skills_registry_group_hint": "{name} — {present}/{total} 個のスキルがここで実行済み · {contexts} 個のコンテキスト",
     "skills_registry_no_contexts": "このプロジェクトにはまだスキャン済みのコンテキストがありません。コンテキストスキャンを実行すると、スキルがどこで実行されたか分かります。",
-    "skills_registry_project_summary": "{name} · コンテキストグループ {groups} 件 · インストール済みスキル {skills} 件"
+    "skills_registry_project_summary": "{name} · コンテキストグループ {groups} 件 · インストール済みスキル {skills} 件",
+    "database_modal_footer": "検出値はコードスキャンによるものです。バインドするコネクタは環境ごとにあなたが設定します。",
+    "database_modal_title": "データベース",
+    "envslot_assign": "コネクタを割り当て",
+    "envslot_connector": "バインド済みコネクタ",
+    "envslot_connector_none": "コネクタは未バインドです",
+    "envslot_detected": "コード内",
+    "envslot_detected_none": "この環境では何も検出されていません",
+    "envslot_no_candidates": "Vault にまだ該当するコネクタがありません。",
+    "envslot_reassign": "割り当て直す",
+    "envslot_unassign": "このコネクタのバインドを解除",
+    "envslot_unhealthy": "異常"
   },
   "doc_signing": {
     "sign_heading": "ドキュメントに署名",

@@ -13867,7 +13867,18 @@
       "ctx_picker_title": "为{name}选择上下文",
       "skills_registry_group_hint": "{name} — {present}/{total} 个技能在此运行过 · {contexts} 个上下文",
       "skills_registry_no_contexts": "该项目尚未扫描出上下文 — 运行一次上下文扫描即可查看技能在哪些位置运行过。",
-      "skills_registry_project_summary": "{name} · {groups} 个上下文组 · {skills} 个已安装技能"
+      "skills_registry_project_summary": "{name} · {groups} 个上下文组 · {skills} 个已安装技能",
+      "database_modal_footer": "检测到的值来自代码扫描。绑定的连接器由你设置——每个环境一个。",
+      "database_modal_title": "数据库",
+      "envslot_assign": "分配连接器",
+      "envslot_connector": "已绑定的连接器",
+      "envslot_connector_none": "未绑定连接器",
+      "envslot_detected": "代码中",
+      "envslot_detected_none": "该环境未检测到任何内容",
+      "envslot_no_candidates": "你的保险库中还没有匹配的连接器。",
+      "envslot_reassign": "重新分配",
+      "envslot_unassign": "解绑该连接器",
+      "envslot_unhealthy": "异常"
     },
     "doc_signing": {
       "sign_heading": "签署文档",
