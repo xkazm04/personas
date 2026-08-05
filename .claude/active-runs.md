@@ -2,6 +2,11 @@
 
 ## Active
 
+### perfect-athena-arc — /perfect targeted propose on the Athena companion — session fable-5 (Director)
+- Started: 2026-08-05. Status: proposing (read-only on repo source; no tree edits until a build wave is approved). Vault: Documents/Obsidian/personas/Perfect/.
+- Self-sourced brief: this same CLI session just shipped the athena-dev-day arc (merge 1d200dede) and holds fresh file:line knowledge of `src/features/plugins/companion/**` + `src-tauri/src/companion/**`; no scout dispatched (factory-ship/fleet-monitor precedent).
+- Paths (intended, on build): `src-tauri/src/companion/**`, `src-tauri/src/commands/companion/**`, `src-tauri/db/src/lib.rs` (COMPANION_SCHEMA), `src/features/plugins/companion/**`, `src/api/companion.ts`, i18n locales. Builders isolate in `.claude/worktrees/perfect-athena-*`.
+
 
 
 ### perfect-round-3 — /perfect round 3 cursor 1 — session opus-5[1m] — **COMPLETE**, commits `4b96433ef`(ledger) `2a1857a7c` `0f6d449d8` `9a75a2d52` `e301f74a2` `a5e8455c8`
