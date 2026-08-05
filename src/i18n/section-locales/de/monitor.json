@@ -25,6 +25,7 @@
   "no_capabilities": "This Persona has no capabilities yet.",
   "run": "Ausführen",
   "executing": "Wird ausgeführt…",
+  "triage_announce_card_alert": "{card}. Markiert: {alert}.",
   "triage_queue_deferred": "Zuvor zurückgestellt",
   "triage_tone_accent": "Bemerkenswert",
   "triage_tone_danger": "Schlecht",

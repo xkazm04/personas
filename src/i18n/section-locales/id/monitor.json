@@ -25,6 +25,7 @@
   "no_capabilities": "Persona ini belum memiliki kemampuan.",
   "run": "Jalankan",
   "executing": "Menjalankan…",
+  "triage_announce_card_alert": "{card}. Ditandai: {alert}.",
   "triage_queue_deferred": "Dilewati sebelumnya",
   "triage_tone_accent": "Perlu dicatat",
   "triage_tone_danger": "Buruk",

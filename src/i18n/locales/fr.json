@@ -26,6 +26,7 @@
     "no_capabilities": "Ce persona n'a pas encore de capacités.",
     "run": "Exécuter",
     "executing": "Exécution…",
+    "triage_announce_card_alert": "{card}. Signalé : {alert}.",
     "triage_queue_deferred": "Déjà repoussée",
     "triage_tone_accent": "À noter",
     "triage_tone_danger": "Mauvais",

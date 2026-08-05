@@ -224,6 +224,46 @@ describe('one live region, and the deck does not own it', () => {
     await waitFor(() => expect(politeRegion(container).textContent).toContain(item.title));
   });
 
+  it('announces the alert that changes what the decision MEANS', async () => {
+    // `TriageAlert` is "the ONE fact that changes what the decision means" — a
+    // review holding a team step, a promotion pinned to a stale persona. Its
+    // banner carried `role="status"` per mounted card and that had to go; what
+    // must NOT follow is the fact going unannounced, on a surface where `←`/`→`
+    // decides without the card ever being read.
+    const item = makeItem('review', {
+      title: 'Rotate the leaked key',
+      alert: {
+        id: 'held',
+        label: 'Blocking a team step',
+        detail: 'A held step is waiting on this — approving it resumes the work.',
+        tone: 'warning',
+      },
+    });
+    const { container } = renderDeck([item]);
+
+    await waitFor(() =>
+      expect(politeRegion(container).textContent).toContain('Blocking a team step'),
+    );
+    // The label, not the detail: the label is the interrupt, the detail is a
+    // sentence of consequence and this is a keyboard-speed surface.
+    expect(politeRegion(container).textContent).not.toContain('A held step is waiting');
+    expect(politeRegion(container).textContent).toContain('Rotate the leaked key');
+  });
+
+  it('makes a card WITHOUT an alert pay nothing for the rare one', async () => {
+    const item = makeItem('idea', { title: 'Cache the practice fan-out' });
+    const { container } = renderDeck([item]);
+
+    // Byte-identical to the utterance before the alert existed. The alert
+    // composes through its own key precisely so an ordinary card carries no
+    // dangling separator.
+    await waitFor(() =>
+      expect(politeRegion(container).textContent).toBe(
+        'Now deciding: Idea — Cache the practice fan-out',
+      ),
+    );
+  });
+
   it('speaks the verdict it actually recorded, then the next card', async () => {
     const first = makeItem('idea', { title: 'First idea' });
     const second = makeItem('review', { title: 'Second review' });

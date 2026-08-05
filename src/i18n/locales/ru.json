@@ -26,6 +26,7 @@
     "no_capabilities": "This персона has no capabilities yet.",
     "run": "Запустить",
     "executing": "Выполняется…",
+    "triage_announce_card_alert": "{card}. Отмечено: {alert}.",
     "triage_queue_deferred": "Отложено ранее",
     "triage_tone_accent": "Примечательно",
     "triage_tone_danger": "Плохо",

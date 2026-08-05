@@ -114,11 +114,29 @@ export function TriageDeckVariant({
     if (!topId) return;
     const c = copy.current;
     if (!c.top) return;
+    const dealt = c.tx(c.t.monitor.triage_announce_card, {
+      kind: kindCopy(c.t, c.top.kind).one,
+      title: c.top.title,
+    });
+    // An alert is "the ONE fact that changes what the decision MEANS"
+    // (`triageTypes.ts`) — a review that is holding a team step, a promotion
+    // pinned to a stale persona. The banner used to carry `role="status"` per
+    // mounted card, which is why it was removed; but removing it without this
+    // left the fact announced by NOTHING, and this deck decides on `←`/`→`
+    // without the card ever being read. So it rides the deal utterance that is
+    // already correct, rather than earning a live region back.
+    //
+    // The LABEL only. `alert.detail` is a sentence of consequence, and this is a
+    // keyboard-speed surface — the label is the interrupt, the detail is on the
+    // card for whoever stops to read it. And a card with no alert must pay
+    // nothing: the utterance below is then byte-identical to the one before this
+    // existed, which is why the alert composes through its own key instead of an
+    // optional placeholder that renders as a dangling "—" in fourteen locales.
+    const alert = c.top.alert;
     c.announce(
-      c.tx(c.t.monitor.triage_announce_card, {
-        kind: kindCopy(c.t, c.top.kind).one,
-        title: c.top.title,
-      }),
+      alert
+        ? c.tx(c.t.monitor.triage_announce_card_alert, { card: dealt, alert: alert.label })
+        : dealt,
     );
   }, [topId]);
 

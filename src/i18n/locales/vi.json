@@ -26,6 +26,7 @@
     "no_capabilities": "Persona này chưa có năng lực nào.",
     "run": "Chạy",
     "executing": "Đang thực thi…",
+    "triage_announce_card_alert": "{card}. Được gắn cờ: {alert}.",
     "triage_queue_deferred": "Đã bỏ qua trước đó",
     "triage_tone_accent": "Đáng chú ý",
     "triage_tone_danger": "Kém",

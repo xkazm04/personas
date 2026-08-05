@@ -26,6 +26,7 @@
     "no_capabilities": "This पर्सोना has no capabilities yet.",
     "run": "चलाएँ",
     "executing": "निष्पादित हो रहा है…",
+    "triage_announce_card_alert": "{card}। चिह्नित: {alert}।",
     "triage_queue_deferred": "पहले टाला गया",
     "triage_tone_accent": "उल्लेखनीय",
     "triage_tone_danger": "खराब",

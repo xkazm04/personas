@@ -46,6 +46,7 @@ export type Translations = {
     no_capabilities: string;
     run: string;
     executing: string;
+    triage_announce_card_alert: string;
     triage_evolution_lock: string;
     triage_evolution_lock_detail: string;
     triage_evolution_measured: string;

@@ -175,7 +175,12 @@ splitting them turned an untestable hook into unit-testable units.
   `key`, so every call is heard once. Nothing under `deck/**` may carry
   `role="status"`, `role="alert"` or `aria-live` — `role="status"` is an implicit
   polite region, which is how three of them (one per stacked card's alert banner)
-  hid behind a test that queried `[aria-live]` alone.
+  hid behind a test that queried `[aria-live]` alone. **Taking the role off the
+  banner is only half the fix:** an alert is the one fact that changes what the
+  decision MEANS, so it rides the card-dealt utterance
+  (`triage_announce_card_alert`, label only, composed onto the deal string by its
+  own key so a card without one is unchanged). Removing a region from something
+  load-bearing obliges you to say where it is announced instead.
 - **Only the card being decided is in the tab ring.** Three cards are mounted for
   depth and `pointer-events-none` removes the mouse but NOT the tab order, so the
   prose scroller is `tabIndex={0}` on the top card and `-1` behind it.

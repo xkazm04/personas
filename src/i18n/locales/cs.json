@@ -26,6 +26,7 @@
     "no_capabilities": "Tato persona zatím nemá žádné schopnosti.",
     "run": "Spustit",
     "executing": "Spouštění…",
+    "triage_announce_card_alert": "{card}. Označeno: {alert}.",
     "triage_queue_deferred": "Dříve odloženo",
     "triage_tone_accent": "Pozoruhodné",
     "triage_tone_danger": "Špatné",

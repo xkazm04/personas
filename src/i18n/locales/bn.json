@@ -26,6 +26,7 @@
     "no_capabilities": "This পারসোনা has no capabilities yet.",
     "run": "চালান",
     "executing": "এক্সিকিউট হচ্ছে…",
+    "triage_announce_card_alert": "{card}। চিহ্নিত: {alert}।",
     "triage_queue_deferred": "আগে এড়িয়ে যাওয়া",
     "triage_tone_accent": "উল্লেখযোগ্য",
     "triage_tone_danger": "খারাপ",

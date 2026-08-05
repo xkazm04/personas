@@ -25,6 +25,7 @@
   "no_capabilities": "This ペルソナ has no capabilities yet.",
   "run": "実行",
   "executing": "実行中…",
+  "triage_announce_card_alert": "{card}。注意: {alert}。",
   "triage_queue_deferred": "以前に見送り",
   "triage_tone_accent": "注目",
   "triage_tone_danger": "低い",

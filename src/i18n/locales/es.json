@@ -26,6 +26,7 @@
     "no_capabilities": "Esta persona todavía no tiene capacidades.",
     "run": "Ejecutar",
     "executing": "Ejecutando…",
+    "triage_announce_card_alert": "{card}. Marcado: {alert}.",
     "triage_queue_deferred": "Aplazada antes",
     "triage_tone_accent": "Destacable",
     "triage_tone_danger": "Malo",

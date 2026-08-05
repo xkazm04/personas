@@ -26,6 +26,7 @@
     "no_capabilities": "This 人格 has no capabilities yet.",
     "run": "运行",
     "executing": "执行中…",
+    "triage_announce_card_alert": "{card}。标记：{alert}。",
     "triage_queue_deferred": "先前已跳过",
     "triage_tone_accent": "值得注意",
     "triage_tone_danger": "差",

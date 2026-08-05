@@ -25,6 +25,7 @@
   "no_capabilities": "This 페르소나 has no capabilities yet.",
   "run": "실행",
   "executing": "실행 중…",
+  "triage_announce_card_alert": "{card}. 표시됨: {alert}.",
   "triage_queue_deferred": "이전에 보류됨",
   "triage_tone_accent": "주목할 만함",
   "triage_tone_danger": "나쁨",

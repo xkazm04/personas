@@ -40,6 +40,7 @@
     "no_capabilities": "This persona has no capabilities yet.",
     "run": "Run",
     "executing": "Executing…",
+    "triage_announce_card_alert": "{card}. Flagged: {alert}.",
     "triage_evolution_lock": "Pinned to an earlier persona",
     "triage_evolution_lock_detail": "Promoting installs the challenger's prompt on the live persona. If the persona has been edited since this cycle ran, the write fails closed and nothing changes.",
     "triage_evolution_measured": "Measured",
