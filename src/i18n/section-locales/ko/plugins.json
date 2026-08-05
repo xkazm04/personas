@@ -1479,7 +1479,10 @@
     "ctx_picker_never": "없음",
     "ctx_picker_selected": "{total}개 중 {n}개 선택됨",
     "ctx_picker_summary": "{first} 외 {n}개",
-    "ctx_picker_title": "{name}의 컨텍스트 선택"
+    "ctx_picker_title": "{name}의 컨텍스트 선택",
+    "skills_registry_group_hint": "{name} — {present}/{total}개 스킬이 여기서 실행됨 · 컨텍스트 {contexts}개",
+    "skills_registry_no_contexts": "이 프로젝트에는 아직 스캔된 컨텍스트가 없습니다. 컨텍스트 스캔을 실행하면 스킬이 어디에서 실행됐는지 확인할 수 있습니다.",
+    "skills_registry_project_summary": "{name} · 컨텍스트 그룹 {groups}개 · 설치된 스킬 {skills}개"
   },
   "doc_signing": {
     "sign_heading": "문서 서명하기",
@@ -2995,7 +2998,20 @@
     "mission_link_goal": "목표에 연결…",
     "mission_unlinked": "목표 없음",
     "goal_field_kpi": "연결된 KPI",
-    "goal_kpi_none": "연결된 KPI 없음"
+    "goal_kpi_none": "연결된 KPI 없음",
+    "triage_ago": "{time} 전",
+    "triage_all_clear_sub": "진행 중 {inflight}건, 완료 {done}건. 아래 스트립을 펼쳐 확인하세요.",
+    "triage_headline_one": "{count}개의 목표가 완료되어 결정을 기다리고 있습니다.",
+    "triage_headline_other": "{count}개의 목표가 완료되어 결정을 기다리고 있습니다.",
+    "triage_lane_done": "완료",
+    "triage_lane_in_flight": "진행 중",
+    "triage_needs_you_one": "{count}건이 대기 중",
+    "triage_needs_you_other": "{count}건이 대기 중",
+    "triage_no_goals_body": "팀이나 Athena가 목표를 작성하면 여기에 표시됩니다.",
+    "triage_no_goals_title": "아직 목표가 없습니다",
+    "triage_resolving": "처리 중…",
+    "triage_strip_waiting": "시작 대기",
+    "triage_title": "목표"
   },
   "dev_projects": {
     "active_goals": "활성 목표",

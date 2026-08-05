@@ -13864,7 +13864,10 @@
       "ctx_picker_never": "nie",
       "ctx_picker_selected": "{n} von {total} ausgewählt",
       "ctx_picker_summary": "{first} und {n} weitere",
-      "ctx_picker_title": "Kontexte für {name} auswählen"
+      "ctx_picker_title": "Kontexte für {name} auswählen",
+      "skills_registry_group_hint": "{name} — {present}/{total} Skills liefen hier · {contexts} Kontexte",
+      "skills_registry_no_contexts": "Dieses Projekt hat noch keine gescannten Kontexte — starte einen Kontext-Scan, um zu sehen, wo Skills gelaufen sind.",
+      "skills_registry_project_summary": "{name} · {groups} Kontextgruppen · {skills} installierte Skills"
     },
     "doc_signing": {
       "sign_heading": "Dokument signieren",
@@ -15380,7 +15383,20 @@
       "mission_link_goal": "Mit Ziel verknüpfen…",
       "mission_unlinked": "Kein Ziel",
       "goal_field_kpi": "Verknüpftes KPI",
-      "goal_kpi_none": "Kein verknüpftes KPI"
+      "goal_kpi_none": "Kein verknüpftes KPI",
+      "triage_ago": "vor {time}",
+      "triage_all_clear_sub": "{inflight} laufen, {done} erledigt. Öffne unten einen Streifen, um sie zu sehen.",
+      "triage_headline_one": "{count} Ziel ist fertig und wartet auf deine Entscheidung.",
+      "triage_headline_other": "{count} Ziele sind fertig und warten auf deine Entscheidung.",
+      "triage_lane_done": "Erledigt",
+      "triage_lane_in_flight": "In Arbeit",
+      "triage_needs_you_one": "{count} braucht dich",
+      "triage_needs_you_other": "{count} brauchen dich",
+      "triage_no_goals_body": "Ziele erscheinen, sobald ein Team oder Athena sie schreibt.",
+      "triage_no_goals_title": "Noch keine Ziele",
+      "triage_resolving": "Wird abgeschlossen…",
+      "triage_strip_waiting": "Wartet auf Start",
+      "triage_title": "Ziele"
     },
     "dev_projects": {
       "active_goals": "aktive Ziele",

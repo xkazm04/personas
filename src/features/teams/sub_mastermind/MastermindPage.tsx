@@ -930,8 +930,11 @@ function MastermindInner() {
         />
       )}
 
+      {/* No `initialMode`: the canvas opens on the landing chooser so the
+          operator picks Manage vs Registry, rather than being dropped into one
+          lane with no sign the other exists. */}
       {skillRunSlug && (
-        <SkillsWorkbench slug={skillRunSlug} initialMode="dispatch" onClose={() => setSkillRunSlug(null)} />
+        <SkillsWorkbench slug={skillRunSlug} onClose={() => setSkillRunSlug(null)} />
       )}
 
       {improvePopup && (improvePopup.standards ? (

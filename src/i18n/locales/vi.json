@@ -13864,7 +13864,10 @@
       "ctx_picker_never": "chưa từng",
       "ctx_picker_selected": "Đã chọn {n}/{total}",
       "ctx_picker_summary": "{first} và {n} mục khác",
-      "ctx_picker_title": "Chọn ngữ cảnh cho {name}"
+      "ctx_picker_title": "Chọn ngữ cảnh cho {name}",
+      "skills_registry_group_hint": "{name} — {present}/{total} kỹ năng đã chạy ở đây · {contexts} ngữ cảnh",
+      "skills_registry_no_contexts": "Dự án này chưa có ngữ cảnh nào được quét — hãy chạy quét ngữ cảnh để xem kỹ năng đã chạy ở đâu.",
+      "skills_registry_project_summary": "{name} · {groups} nhóm ngữ cảnh · {skills} kỹ năng đã cài"
     },
     "doc_signing": {
       "sign_heading": "Ký tài liệu",
@@ -15380,7 +15383,20 @@
       "mission_link_goal": "Liên kết với mục tiêu…",
       "mission_unlinked": "Chưa có mục tiêu",
       "goal_field_kpi": "KPI được liên kết",
-      "goal_kpi_none": "Không có KPI liên kết"
+      "goal_kpi_none": "Không có KPI liên kết",
+      "triage_ago": "{time} trước",
+      "triage_all_clear_sub": "{inflight} đang chạy, {done} đã xong. Mở một dải bên dưới để xem.",
+      "triage_headline_one": "{count} mục tiêu đã hoàn tất và đang chờ bạn quyết định.",
+      "triage_headline_other": "{count} mục tiêu đã hoàn tất và đang chờ bạn quyết định.",
+      "triage_lane_done": "Đã xong",
+      "triage_lane_in_flight": "Đang chạy",
+      "triage_needs_you_one": "{count} đang chờ bạn",
+      "triage_needs_you_other": "{count} đang chờ bạn",
+      "triage_no_goals_body": "Mục tiêu sẽ xuất hiện ngay khi một nhóm hoặc Athena viết chúng.",
+      "triage_no_goals_title": "Chưa có mục tiêu nào ở đây",
+      "triage_resolving": "Đang xử lý…",
+      "triage_strip_waiting": "Chờ bắt đầu",
+      "triage_title": "Mục tiêu"
     },
     "dev_projects": {
       "active_goals": "mục tiêu đang hoạt động",

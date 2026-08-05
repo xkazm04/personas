@@ -1479,7 +1479,10 @@
     "ctx_picker_never": "nikdy",
     "ctx_picker_selected": "Vybráno {n} z {total}",
     "ctx_picker_summary": "{first} a dalších {n}",
-    "ctx_picker_title": "Vyberte kontexty pro {name}"
+    "ctx_picker_title": "Vyberte kontexty pro {name}",
+    "skills_registry_group_hint": "{name} — {present}/{total} dovedností zde běželo · {contexts} kontextů",
+    "skills_registry_no_contexts": "Tento projekt zatím nemá naskenované kontexty — spusťte sken kontextů a uvidíte, kde dovednosti běžely.",
+    "skills_registry_project_summary": "{name} · {groups} skupin kontextů · {skills} nainstalovaných dovedností"
   },
   "doc_signing": {
     "sign_heading": "Podepsat dokument",
@@ -2995,7 +2998,20 @@
     "mission_link_goal": "Připojit k cíli…",
     "mission_unlinked": "Bez cíle",
     "goal_field_kpi": "Propojené KPI",
-    "goal_kpi_none": "Žádné propojené KPI"
+    "goal_kpi_none": "Žádné propojené KPI",
+    "triage_ago": "před {time}",
+    "triage_all_clear_sub": "{inflight} probíhá, {done} hotovo. Rozbalte pruh níže a zobrazte je.",
+    "triage_headline_one": "{count} cíl je dokončen a čeká na vaše rozhodnutí.",
+    "triage_headline_other": "{count} cílů je dokončeno a čeká na vaše rozhodnutí.",
+    "triage_lane_done": "Hotovo",
+    "triage_lane_in_flight": "Probíhá",
+    "triage_needs_you_one": "{count} čeká na vás",
+    "triage_needs_you_other": "{count} čeká na vás",
+    "triage_no_goals_body": "Cíle se objeví, jakmile je tým nebo Athena zapíše.",
+    "triage_no_goals_title": "Zatím žádné cíle",
+    "triage_resolving": "Vyřizuje se…",
+    "triage_strip_waiting": "Čeká na zahájení",
+    "triage_title": "Cíle"
   },
   "dev_projects": {
     "active_goals": "aktivních cílů",

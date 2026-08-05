@@ -1,11 +1,16 @@
-// Registry tab host — owns the workspace matrix data + adopt/use handlers.
-// The matrix (RegistryHeatmap) renders library skills × the workspace's
-// projects. Handlers:
-//   • adopt runs in parallel (each cell tracks its own in-flight state) and is
-//     blocked while a Fleet dispatch of that skill is still running there;
-//   • use fleet-dispatches the skill in that project's repo;
-//   • a skill-name click opens the shared SkillInfoModal (metadata + how to
-//     invoke), reachable identically from Overview / Analytics / Registry.
+// Registry host — owns the matrix data + the adopt/use handlers for BOTH axes.
+//
+//   · axis="workspace" (default) — library skills × the workspace's projects.
+//     An empty cell adopts. Dev Tools → Skills → Registry.
+//   · axis="project" — one project's installed skills × its context groups.
+//     Every cell dispatches, scoped to that group. The Mastermind Skills modal.
+//
+// Adopt and dispatch both go through `SkillActionConfirm`, the SAME modal the
+// Overview board uses for its row actions: the registry used to fire an install
+// the instant a cell was clicked, which made a mis-click a real Dev-runner task
+// with no way back. The confirm also carries the args field for a dispatch, so
+// running a skill from the matrix is as configurable as running it from the
+// board. An in-flight adoption locks its cell (cellStatus → 'adopting').
 import { useCallback, useMemo, useState } from 'react';
 
 import { installSkill, installSystemSkill } from '@/api/devTools/devTools';
@@ -16,7 +21,9 @@ import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { isPresetSkill } from '../../constants/presetSkills';
-import { cellKey } from './registryTypes';
+import { SkillActionConfirm } from '../SkillActionConfirm';
+import { cellKey, type RegistryMode } from './registryTypes';
+import { useProjectRegistry } from './useProjectRegistry';
 import { useSkillsRegistry } from './useSkillsRegistry';
 import { RegistryHeatmap } from './RegistryHeatmap';
 
@@ -28,20 +35,37 @@ function Hint({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function RegistryTab({ activeProjectId, onOpenInfo }: {
+/** What the operator is confirming. `columnId` is a project in workspace mode
+ *  and a context group in project mode. */
+interface Pending {
+  kind: 'adopt' | 'use';
+  skill: string;
+  columnId: string;
+  columnName: string;
+}
+
+export function RegistryTab({ activeProjectId, axis = 'workspace', onOpenInfo }: {
   activeProjectId: string | null;
+  /** Column axis — see the module comment. */
+  axis?: RegistryMode;
   onOpenInfo: (skill: string) => void;
 }) {
   const { t, tx } = useTranslation();
   const d = t.plugins.dev_tools;
   const [tick, setTick] = useState(0);
-  const model = useSkillsRegistry(activeProjectId, tick);
+  // Both hooks are called unconditionally (rules-of-hooks); the inactive one is
+  // passed a null project so it never fetches.
+  const workspaceModel = useSkillsRegistry(axis === 'workspace' ? activeProjectId : null, tick);
+  const projectModel = useProjectRegistry(axis === 'project' ? activeProjectId : null, tick);
+  const model = axis === 'project' ? projectModel : workspaceModel;
   const [adopting, setAdopting] = useState<Set<string>>(new Set());
+  const [pending, setPending] = useState<Pending | null>(null);
   const addToast = useToastStore((s) => s.addToast);
 
-  const rootById = useMemo(() => new Map(model.projects.map((p) => [p.id, p.rootPath])), [model.projects]);
+  const columnById = useMemo(() => new Map(model.columns.map((c) => [c.id, c])), [model.columns]);
+  const skillByName = useMemo(() => new Map(model.skills.map((s) => [s.name, s])), [model.skills]);
 
-  const onAdopt = useCallback((skill: string, projectId: string) => {
+  const runAdopt = useCallback((skill: string, projectId: string) => {
     const key = cellKey(skill, projectId);
     let started = false;
     setAdopting((prev) => {
@@ -62,34 +86,68 @@ export function RegistryTab({ activeProjectId, onOpenInfo }: {
         setAdopting((prev) => { const next = new Set(prev); next.delete(key); return next; });
       }
     })();
-  }, [addToast]);
+  }, [addToast, tx, d]);
 
-  const onUse = useCallback((skill: string, projectId: string) => {
-    const root = rootById.get(projectId);
-    if (!root) return;
-    void spawnSession(root, [skillCommand(skill, '')])
+  /**
+   * Dispatch the skill in the column's repo. In project mode the column IS a
+   * context group, so its name rides along as a trailing positional — the same
+   * "preset terminal input" convention the Overview board's Use dialog uses to
+   * carry a context choice.
+   */
+  const runUse = useCallback((skill: string, columnId: string, args: string) => {
+    const column = columnById.get(columnId);
+    if (!column?.rootPath) return;
+    const full = axis === 'project' ? [args, column.name].filter(Boolean).join(' ') : args;
+    void spawnSession(column.rootPath, [skillCommand(skill, full)])
       .then(() => { addToast(tx(d.skills_registry_dispatched, { skill }), 'success'); setTick((n) => n + 1); })
       .catch(toastCatch('registry use'));
-  }, [rootById, addToast, tx, d]);
+  }, [columnById, axis, addToast, tx, d]);
 
-  if (!model.workspace) {
-    return <Hint>{d.skills_registry_no_workspace}</Hint>;
+  const confirm = (args: string) => {
+    if (!pending) return;
+    if (pending.kind === 'adopt') runAdopt(pending.skill, pending.columnId);
+    else runUse(pending.skill, pending.columnId, args);
+    setPending(null);
+  };
+
+  if (axis === 'workspace' && !model.header) return <Hint>{d.skills_registry_no_workspace}</Hint>;
+  if (model.columns.length === 0) {
+    return <Hint>{axis === 'project' ? d.skills_registry_no_contexts : d.skills_registry_no_projects}</Hint>;
   }
-  if (model.projects.length === 0) {
-    return <Hint>{d.skills_registry_no_projects}</Hint>;
-  }
+
+  const pendingSkill = pending ? skillByName.get(pending.skill) : undefined;
 
   return (
-    <div className="flex flex-col h-full min-h-0 gap-2.5" data-testid="skills-registry-tab">
+    <div className="flex flex-col h-full min-h-0 gap-2.5" data-testid={`skills-registry-${axis}`}>
       <div className="flex items-center gap-3 flex-shrink-0">
         <span className="typo-label text-foreground/45 truncate">
-          <span className="inline-block w-2 h-2 rounded-full mr-1.5 align-middle" style={{ backgroundColor: model.workspace.color }} />
-          {tx(d.skills_registry_summary, { name: model.workspace.name, projects: model.projects.length, skills: model.skills.length })}
+          <span className="inline-block w-2 h-2 rounded-full mr-1.5 align-middle" style={{ backgroundColor: model.header?.color ?? 'var(--primary)' }} />
+          {axis === 'project'
+            ? tx(d.skills_registry_project_summary, { name: model.header?.name ?? '', groups: model.columns.length, skills: model.skills.length })
+            : tx(d.skills_registry_summary, { name: model.header?.name ?? '', projects: model.columns.length, skills: model.skills.length })}
         </span>
       </div>
       <div className="flex-1 min-h-0">
-        <RegistryHeatmap model={model} adopting={adopting} onAdopt={onAdopt} onUse={onUse} onOpenInfo={onOpenInfo} />
+        <RegistryHeatmap
+          model={model}
+          adopting={adopting}
+          onAdopt={(skill, columnId) => setPending({ kind: 'adopt', skill, columnId, columnName: columnById.get(columnId)?.name ?? '' })}
+          onUse={(skill, columnId) => setPending({ kind: 'use', skill, columnId, columnName: columnById.get(columnId)?.name ?? '' })}
+          onOpenInfo={onOpenInfo}
+        />
       </div>
+
+      {pending && (
+        <SkillActionConfirm
+          kind={pending.kind}
+          skill={{ name: pending.skill, description: pendingSkill?.description ?? null }}
+          projectName={pending.columnName}
+          busy={adopting.has(cellKey(pending.skill, pending.columnId))}
+          preset={isPresetSkill(pending.skill)}
+          onConfirm={confirm}
+          onClose={() => setPending(null)}
+        />
+      )}
     </div>
   );
 }
