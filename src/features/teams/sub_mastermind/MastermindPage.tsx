@@ -25,6 +25,7 @@ import { DeployPopover } from '@/features/teams/sub_factory/passport/improve/Dep
 import { ImprovePopover } from '@/features/teams/sub_factory/passport/improve/ImprovePopover';
 import { useImproveEngine } from '@/features/teams/sub_factory/passport/improve/useImproveEngine';
 import { usePassportData } from '@/features/teams/sub_factory/passport/usePassportData';
+import { useAutoRescanOnFleetExit } from '@/features/teams/sub_factory/passport/useAutoRescanOnFleetExit';
 import type { AppPassport } from '@/features/teams/sub_factory/passport/passportModel';
 import { SkillsWorkbench } from '@/features/teams/sub_factory/passport/improve/SkillsWorkbench';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
@@ -50,7 +51,7 @@ import { CategoryPopover } from './lib/CategoryPopover';
 import type { CategoryNode } from './lib/dimCategories';
 import { DimListPopover } from './lib/DimListPopover';
 import { DIM_INK } from './lib/ink';
-import { GoalListPopover } from './lib/GoalListPopover';
+import { MastermindGoalsModal } from './lib/goals/MastermindGoalsModal';
 import { KpiListPopover, type KpiListItem } from './lib/KpiListPopover';
 import { IdeaScanPopover, type ScanParams } from './lib/IdeaScanPopover';
 import { hydrateLayout, isLayoutHydrated, loadHidden, saveHidden } from './lib/layoutStore';
@@ -71,6 +72,8 @@ import { MastermindHexMosaic } from './variants/MastermindHexMosaic';
 /** Stable empty fallbacks — a fresh [] per island would defeat the identity cache. */
 const EMPTY_FLEET: FleetNode[] = [];
 const EMPTY_NAMES: string[] = [];
+/** Stable empty KPI list — a fresh `[]` per render would remount the goals modal. */
+const EMPTY_KPIS: KpiListItem[] = [];
 
 /** Islands allowed to ADOPT changed content per pass (see hydration waves). */
 const HYDRATE_WAVE = 6;
@@ -105,7 +108,10 @@ export default function MastermindPage() {
 
 function MastermindInner() {
   const { t, tx } = useTranslation();
-  const { passports, rawByProject, loading, error, reload, rescan, rescanning } = usePassportData();
+  const { passports, rawByProject, loading, error, reload, rescan, rescanning, rescanProject } = usePassportData();
+  // R22 — a finished `passport:*` dispatch (island dim action, fleet dock)
+  // auto-verifies via scoped rescan, same loop closure as the Factory wall.
+  useAutoRescanOnFleetExit(rescanProject);
   const { projects: factoryProjects, error: factoryError, reload: factoryReload } = useFactoryData();
   const improve = useImproveEngine(rawByProject, reload);
   // Scene store — the single batched spine: cross-project relations (meta) +
@@ -172,7 +178,9 @@ function MastermindInner() {
   const hiddenSlugs = useLayoutHidden();
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [personaMenu, setPersonaMenu] = useState<{ slug: string; x: number; y: number } | null>(null);
-  const [goalPopup, setGoalPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
+  // Goals is a MODAL now (not an anchored popover) — the click point no longer
+  // matters, only which project was clicked.
+  const [goalSlug, setGoalSlug] = useState<string | null>(null);
   const [kpiPopup, setKpiPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
   const [stackPopup, setStackPopup] = useState<{ slug: string; key: 'datalinks' | 'support'; x: number; y: number } | null>(null);
   const [dispatchGroup, setDispatchGroup] = useState<{ slugs: string[]; label: string } | null>(null);
@@ -634,7 +642,7 @@ function MastermindInner() {
       return;
     }
     if (node.action === 'goals') {
-      setGoalPopup({ slug, x: Math.min(e.clientX, window.innerWidth - 260), y: Math.min(e.clientY + 10, window.innerHeight - 300) });
+      setGoalSlug(slug);
       return;
     }
     if (node.action === 'stack-list' && (node.key === 'datalinks' || node.key === 'support')) {
@@ -852,12 +860,12 @@ function MastermindInner() {
         />
       )}
 
-      {goalPopup && (
-        <GoalListPopover
-          titles={(storeGoals.get(goalPopup.slug) ?? []).filter((g) => isOngoing(g.status)).map((g) => g.title)}
-          x={goalPopup.x}
-          y={goalPopup.y}
-          onClose={() => setGoalPopup(null)}
+      {goalSlug && (
+        <MastermindGoalsModal
+          slug={goalSlug}
+          projectName={positioned.islands.find((i) => i.slug === goalSlug)?.name ?? goalSlug}
+          kpis={kpiListByProject.get(goalSlug) ?? EMPTY_KPIS}
+          onClose={() => setGoalSlug(null)}
         />
       )}
 

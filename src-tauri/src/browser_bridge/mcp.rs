@@ -82,7 +82,31 @@ pub async fn rpc_handler(headers: HeaderMap, Json(body): Json<Value>) -> Json<Va
                 "serverInfo": { "name": SERVER_NAME, "version": SERVER_VERSION }
             }),
         )),
-        "tools/list" => Json(rpc_ok(id, json!({ "tools": tool_descriptors() }))),
+        // MCP 2026-07-28: mandatory stateless discovery / dual-era probe.
+        // Not session-gated — identity + capabilities only, like `initialize`.
+        "server/discover" => Json(rpc_ok(
+            id,
+            json!({
+                "resultType": "complete",
+                "supportedVersions": ["2026-07-28", PROTOCOL_VERSION],
+                "capabilities": { "tools": {} },
+                "instructions": "Personas browser-bridge MCP endpoint. Tool calls require the per-turn X-Browser-Session header.",
+                "_meta": {
+                    "io.modelcontextprotocol/serverInfo": {
+                        "name": SERVER_NAME,
+                        "version": SERVER_VERSION
+                    }
+                },
+                "ttlMs": 3_600_000,
+                "cacheScope": "private"
+            }),
+        )),
+        "tools/list" => Json(rpc_ok(
+            id,
+            // ttlMs/cacheScope: 2026-07-28 CacheableResult — descriptors are
+            // static per build.
+            json!({ "tools": tool_descriptors(), "ttlMs": 3_600_000, "cacheScope": "private" }),
+        )),
         "tools/call" => {
             let (origin, target_url) = match require_session(&headers) {
                 Ok(s) => s,

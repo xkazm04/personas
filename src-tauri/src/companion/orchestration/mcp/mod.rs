@@ -241,7 +241,18 @@ async fn dispatch(
         // skips the response.
         "notifications/initialized" => Ok(Value::Null),
 
-        "tools/list" => Ok(json!({ "tools": handlers::tool_descriptors() })),
+        // MCP 2026-07-28: mandatory stateless discovery / dual-era probe.
+        // Deliberately NOT session-gated — like `initialize`, it only reveals
+        // identity + capabilities so a modern client can negotiate before
+        // authenticating individual tool calls.
+        "server/discover" => Ok(discover_result()),
+
+        "tools/list" => Ok(json!({
+            "tools": handlers::tool_descriptors(),
+            // 2026-07-28 CacheableResult: descriptors are static per build.
+            "ttlMs": 3_600_000,
+            "cacheScope": "private"
+        })),
 
         "tools/call" => {
             let session_id = require_session(headers)?;
@@ -267,6 +278,28 @@ fn initialize_result() -> Value {
             "name": SERVER_NAME,
             "version": SERVER_VERSION
         }
+    })
+}
+
+/// MCP 2026-07-28 `server/discover` result. This endpoint is dual-era:
+/// legacy clients keep using `initialize`; modern (stateless, per-request
+/// `_meta`) clients probe here and never handshake.
+fn discover_result() -> Value {
+    json!({
+        "resultType": "complete",
+        "supportedVersions": ["2026-07-28", PROTOCOL_VERSION],
+        "capabilities": {
+            "tools": {}
+        },
+        "instructions": "Athena in-app MCP endpoint for Fleet CLI sessions. Tool calls require the per-session x-athena-session header from the generated mcp.json.",
+        "_meta": {
+            "io.modelcontextprotocol/serverInfo": {
+                "name": SERVER_NAME,
+                "version": SERVER_VERSION
+            }
+        },
+        "ttlMs": 3_600_000,
+        "cacheScope": "private"
     })
 }
 
@@ -353,5 +386,20 @@ mod tests {
         assert_eq!(r["protocolVersion"], PROTOCOL_VERSION);
         assert!(r["capabilities"]["tools"].is_object());
         assert_eq!(r["serverInfo"]["name"], SERVER_NAME);
+    }
+
+    #[test]
+    fn discover_is_dual_era_and_carries_server_info_in_meta() {
+        let r = discover_result();
+        assert_eq!(r["resultType"], "complete");
+        let versions = r["supportedVersions"].as_array().unwrap();
+        assert!(versions.iter().any(|v| v == "2026-07-28"));
+        assert!(versions.iter().any(|v| v == PROTOCOL_VERSION));
+        assert!(r["capabilities"]["tools"].is_object());
+        assert_eq!(
+            r["_meta"]["io.modelcontextprotocol/serverInfo"]["name"],
+            SERVER_NAME
+        );
+        assert!(r["ttlMs"].as_u64().unwrap() > 0);
     }
 }

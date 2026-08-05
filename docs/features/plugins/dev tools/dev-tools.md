@@ -673,13 +673,30 @@ src/features/plugins/dev-tools/
 │   ├── GoalConstellation.tsx · GoalKanban.tsx
 │   └── i18n/                     # 14 language stubs (deprecated — use root i18n)
 └── sub_skills/                   # Skills Manager (2nd-level "Skills" item)
-    ├── SkillsManagerPage.tsx     # host: project switcher toolbar
+    ├── SkillsManagerPage.tsx     # page chrome + tab routing ONLY (re-exports the row types)
+    ├── skillsManagerRows.ts      # WsRow/ProjRow types + useSkillsManagerRows (row derivation + adopt/share/use ops)
+    ├── SkillsOverviewPanel.tsx   # the Overview surface as ONE mountable component (board + its 2 detail modals)
     ├── skillsManagerData.ts      # data spine (workbench reuse + coverage + usage + memory switch)
     ├── skillsManagerBits.tsx     # MemoryBindingButton · UsageLine · CoverageBar
     ├── SkillsManagerBoard.tsx    # columnar board (Name·Usage·Last used·Action), icon actions
     ├── SkillActionConfirm.tsx    # Adopt/Share/Use confirmation modal (description + args for Use)
     └── SkillContextsModal.tsx    # per-context progress modal (Bars)
 ```
+
+**One Skills UI, two entry points (2026-08-04).** The Skills surfaces are no
+longer page-only. `SkillsOverviewPanel` (Overview board) and `RegistryTab`
+(coverage heatmap) are mountable components, and the **Skills Workbench modal**
+— opened from the Passport wall's skills cell and from the Mastermind canvas's
+green Skills cell — mounts exactly those: its **Manage** lane renders
+`SkillsOverviewPanel`, its **Dispatch** lane renders `RegistryTab`. The modal's
+former private two-pane list+detail (`SkillListPane` / `SkillDetailPane` /
+`resolveLane`) is **deleted** — it was a second, thinner skills UI that showed
+no coverage, memory binding, usage or context picker, and meant every skills
+improvement had to be built twice. Row derivation and the adopt / share / use
+operations live once in `useSkillsManagerRows`, which the page's Overview tab,
+the page's Analytics tab and the modal all consume. The modal is `size="6xl"`
+with a viewport-relative height because a two-panel board and a skills ×
+projects matrix need more room than the old 540px `lg` shell.
 
 ### Skills Manager (`skills` tab)
 

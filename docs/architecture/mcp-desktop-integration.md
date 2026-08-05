@@ -241,3 +241,21 @@ Dependencies: `@modelcontextprotocol/sdk`, `sql.js`, `zod` (installed via `npm i
 | Full MCP suite (24 tests) | `node scripts/mcp-server/test-tools.mjs` | All read + write tools |
 | Schedule features (5 tests) | `node scripts/mcp-server/test-schedule-features.mjs` | auto-optimize, health-watch |
 | Live integration (11 steps) | `node scripts/mcp-server/test-live.mjs` | Arena test + improve + version lifecycle |
+
+---
+
+## Protocol Compatibility (MCP 2026-07-28)
+
+The 2026-07-28 MCP spec revision removed the `initialize` handshake (stateless
+core) and made `server/discover` mandatory. Personas' **Rust** MCP surfaces are
+**dual-era** as of 2026-08-04:
+
+| Surface | Role | Dual-era behavior |
+|---|---|---|
+| `src-tauri/src/mcp_server/` (`personas-mcp` binary) | Server — spawned by each persona execution's Claude CLI via `--mcp-config` | Answers `server/discover` (2026-07-28 + 2024-11-05); legacy `initialize` kept; `tools/list` stamps `ttlMs`/`cacheScope` |
+| `src-tauri/src/companion/orchestration/mcp/` (`/mcp/rpc`) | Server — Athena endpoint for Fleet CLI sessions | Same (discover un-session-gated, like `initialize`) |
+| `src-tauri/src/browser_bridge/mcp.rs` | Server — browser-tool endpoint | Same |
+| `src-tauri/src/engine/mcp_tools.rs` | Client — external MCP servers as persona tools | HTTP transport probes each origin's era on `tools/list` (modern `_meta` + `Mcp-Method` headers, no handshake) and caches it per origin; honors server `ttlMs` cache hints; injects W3C `traceparent` into `tools/call` `_meta` |
+
+The Node server documented above (`scripts/mcp-server/index.mjs`) still speaks
+the legacy handshake via the official SDK and follows the SDK's own migration.

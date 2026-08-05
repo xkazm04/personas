@@ -1,9 +1,15 @@
 //! MCP Server implementation for Personas.
 //!
 //! Implements JSON-RPC 2.0 with MCP protocol methods:
-//! - initialize / notifications/initialized
+//! - initialize / notifications/initialized (legacy handshake, ≤2025-11-25 clients)
+//! - server/discover (MCP 2026-07-28 stateless discovery)
 //! - tools/list
 //! - tools/call
+//!
+//! This server is dual-era per the 2026-07-28 versioning rules: legacy clients
+//! open with `initialize`; modern clients skip the handshake entirely and MAY
+//! probe `server/discover`. Requests were never gated on a completed handshake
+//! here, so modern per-request `_meta` clients work unchanged.
 
 pub mod auth;
 pub mod db;
@@ -55,9 +61,36 @@ pub fn handle_jsonrpc(line: &str, pool: &db::McpDbPool, auth_token: Option<&str>
             Some(json!({ "jsonrpc": "2.0", "result": result, "id": id }))
         }
         "notifications/initialized" => None, // notification, no response
+        // MCP 2026-07-28: mandatory stateless discovery. Also serves as the
+        // dual-era probe for modern clients (Claude Code CLI as it migrates).
+        "server/discover" => {
+            let result = json!({
+                "resultType": "complete",
+                "supportedVersions": ["2026-07-28", "2024-11-05"],
+                "capabilities": {
+                    "tools": { "listChanged": false }
+                },
+                "instructions": "Personas desktop control surface: list, inspect, and execute AI personas. Call personas_execute to trigger a run and poll with the returned execution id.",
+                "_meta": {
+                    "io.modelcontextprotocol/serverInfo": {
+                        "name": "personas-mcp",
+                        "version": env!("CARGO_PKG_VERSION")
+                    }
+                },
+                "ttlMs": 3_600_000,
+                "cacheScope": "private"
+            });
+            Some(json!({ "jsonrpc": "2.0", "result": result, "id": id }))
+        }
         "tools/list" => {
             let tool_list = tools::list_tools(pool);
-            Some(json!({ "jsonrpc": "2.0", "result": { "tools": tool_list }, "id": id }))
+            // ttlMs/cacheScope: 2026-07-28 CacheableResult freshness hint. The
+            // tool set depends on DB state, so advertise a modest 60s window.
+            Some(json!({
+                "jsonrpc": "2.0",
+                "result": { "tools": tool_list, "ttlMs": 60_000, "cacheScope": "private" },
+                "id": id
+            }))
         }
         "tools/call" => {
             let tool_name = params.get("name").and_then(|n| n.as_str()).unwrap_or("");

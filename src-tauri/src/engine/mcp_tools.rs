@@ -40,6 +40,16 @@ const MCP_SESSION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(
 /// TTL for cached `tools/list` responses (60 seconds).
 const TOOLS_LIST_CACHE_TTL: std::time::Duration = std::time::Duration::from_secs(60);
 
+/// Clamp bounds for a server-provided `ttlMs` freshness hint on `tools/list`
+/// (MCP 2026-07-28 `CacheableResult`, SEP-2549). Servers drive their own cache
+/// TTL within these bounds; anything outside is clamped so a hostile/buggy
+/// server can neither pin a stale tool list for hours nor force a re-fetch
+/// stampede. `cacheScope` is deliberately ignored: this cache is in-process
+/// and private to the desktop app, so the public/private distinction for
+/// shared intermediaries does not apply.
+const SERVER_TTL_MIN: std::time::Duration = std::time::Duration::from_secs(5);
+const SERVER_TTL_MAX: std::time::Duration = std::time::Duration::from_secs(3600);
+
 /// Short TTL for a DEGRADED gateway merge — one where at least one ENABLED
 /// member's `tools/list` errored but other members still returned tools. Caching
 /// that partial set for the full 60s would mask the failed member's tools (and
@@ -433,7 +443,7 @@ pub async fn ping(fields: &HashMap<String, String>) -> Result<PingResult, AppErr
     };
 
     match result {
-        Ok(tools) => Ok(PingResult {
+        Ok((tools, _ttl)) => Ok(PingResult {
             success: true,
             message: format!(
                 "Connected -- {} tool{} available",
@@ -693,7 +703,7 @@ async fn list_tools_guarded(
         .map(|s| s.as_str())
         .unwrap_or("stdio");
 
-    let tools = match connection_type {
+    let (tools, server_ttl_ms) = match connection_type {
         "stdio" => list_tools_stdio(&fields, Some(credential_id)).await,
         "sse" => list_tools_sse(&fields).await,
         other => Err(AppError::Validation(format!(
@@ -701,7 +711,21 @@ async fn list_tools_guarded(
         ))),
     }?;
 
-    set_cached_tools(credential_id, tools.clone());
+    // Honor the server's `ttlMs` freshness hint (MCP 2026-07-28 CacheableResult)
+    // when present, clamped to sane bounds; otherwise keep the 60s default.
+    match server_ttl_ms {
+        Some(ms) => {
+            let ttl = std::time::Duration::from_millis(ms).clamp(SERVER_TTL_MIN, SERVER_TTL_MAX);
+            tracing::debug!(
+                credential_id,
+                server_ttl_ms = ms,
+                applied_ttl_secs = ttl.as_secs(),
+                "Caching tools/list with server-provided ttlMs"
+            );
+            set_cached_tools_with_ttl(credential_id, tools.clone(), ttl);
+        }
+        None => set_cached_tools(credential_id, tools.clone()),
+    }
     Ok(tools)
 }
 
@@ -930,7 +954,7 @@ async fn execute_tool_guarded(
 async fn list_tools_stdio(
     fields: &HashMap<String, String>,
     credential_id: Option<&str>,
-) -> Result<Vec<McpTool>, AppError> {
+) -> Result<(Vec<McpTool>, Option<u64>), AppError> {
     tokio::time::timeout(
         MCP_SESSION_TIMEOUT,
         list_tools_stdio_inner(fields, credential_id),
@@ -942,7 +966,7 @@ async fn list_tools_stdio(
 async fn list_tools_stdio_inner(
     fields: &HashMap<String, String>,
     credential_id: Option<&str>,
-) -> Result<Vec<McpTool>, AppError> {
+) -> Result<(Vec<McpTool>, Option<u64>), AppError> {
     // Try to acquire a pooled session
     let (mut session, from_pool) = match credential_id {
         Some(cid) => match take_pooled_session(cid).await {
@@ -1052,18 +1076,39 @@ async fn execute_tool_stdio_inner(
     }
 }
 
+/// Extract the `ttlMs` freshness hint from a `tools/list` result object
+/// (MCP 2026-07-28 `CacheableResult`). Returns `None` when absent or not a
+/// positive integer — older servers simply don't send it.
+fn extract_ttl_ms(result: &serde_json::Value) -> Option<u64> {
+    result
+        .get("ttlMs")
+        .and_then(|v| v.as_u64())
+        .filter(|&ms| ms > 0)
+}
+
+/// Fold a page's `ttlMs` into the running minimum across pages: the merged
+/// list is only as fresh as its stalest-permitted page.
+fn fold_min_ttl(acc: Option<u64>, page: Option<u64>) -> Option<u64> {
+    match (acc, page) {
+        (Some(a), Some(p)) => Some(a.min(p)),
+        (a, p) => a.or(p),
+    }
+}
+
 /// Drain a paginated `tools/list` over a pooled stdio session, following
 /// `result.nextCursor` until the server stops returning one. Returns the raw
-/// tool JSON objects accumulated across every page.
+/// tool JSON objects accumulated across every page, plus the minimum
+/// server-provided `ttlMs` hint seen on any page (if any).
 ///
 /// MCP servers may split `tools/list` across pages (`{ tools, nextCursor }`);
 /// a client that reads only the first page silently loses every tool past it.
 /// Capped at `MCP_TOOLS_LIST_MAX_PAGES`.
 async fn fetch_tools_paginated_stdio(
     session: &mut PooledStdioSession,
-) -> Result<Vec<serde_json::Value>, AppError> {
+) -> Result<(Vec<serde_json::Value>, Option<u64>), AppError> {
     let mut all_tools: Vec<serde_json::Value> = Vec::new();
     let mut cursor: Option<String> = None;
+    let mut min_ttl_ms: Option<u64> = None;
 
     for page in 0..MCP_TOOLS_LIST_MAX_PAGES {
         let params = match &cursor {
@@ -1085,10 +1130,11 @@ async fn fetch_tools_paginated_stdio(
             .and_then(|t| t.as_array())
             .ok_or_else(|| AppError::Internal("Invalid tools/list response".into()))?;
         all_tools.extend(page_tools.iter().cloned());
+        min_ttl_ms = fold_min_ttl(min_ttl_ms, extract_ttl_ms(result));
 
         match result.get("nextCursor").and_then(|c| c.as_str()) {
             Some(next) if !next.is_empty() => cursor = Some(next.to_string()),
-            _ => return Ok(all_tools),
+            _ => return Ok((all_tools, min_ttl_ms)),
         }
 
         if page + 1 == MCP_TOOLS_LIST_MAX_PAGES {
@@ -1098,7 +1144,7 @@ async fn fetch_tools_paginated_stdio(
             );
         }
     }
-    Ok(all_tools)
+    Ok((all_tools, min_ttl_ms))
 }
 
 /// Execute `tools/list` on an already-initialized session.
@@ -1128,9 +1174,11 @@ fn parse_tool_defs(raw: &[serde_json::Value], transport: &str) -> Vec<McpTool> {
     tools
 }
 
-async fn list_tools_on_session(session: &mut PooledStdioSession) -> Result<Vec<McpTool>, AppError> {
-    let tools_val = fetch_tools_paginated_stdio(session).await?;
-    Ok(parse_tool_defs(&tools_val, "stdio"))
+async fn list_tools_on_session(
+    session: &mut PooledStdioSession,
+) -> Result<(Vec<McpTool>, Option<u64>), AppError> {
+    let (tools_val, ttl_ms) = fetch_tools_paginated_stdio(session).await?;
+    Ok((parse_tool_defs(&tools_val, "stdio"), ttl_ms))
 }
 
 /// Execute `tools/call` on an already-initialized session, with schema validation.
@@ -1144,27 +1192,44 @@ async fn execute_tool_on_session(
     if let Some(schema_opt) = cached_schema {
         validate_arguments_against_schema(arguments, schema_opt.as_ref())?;
     } else {
-        let tools_val = fetch_tools_paginated_stdio(session).await?;
+        let (tools_val, _ttl) = fetch_tools_paginated_stdio(session).await?;
         let schema = extract_tool_schema(&tools_val, tool_name)?;
         validate_arguments_against_schema(arguments, schema.as_ref())?;
     }
 
     // Call tool
     let req_id = session.next_id;
-    let call_req = jsonrpc_request(
-        req_id,
-        "tools/call",
-        serde_json::json!({
-            "name": tool_name,
-            "arguments": arguments,
-        }),
-    );
+    let call_req = jsonrpc_request(req_id, "tools/call", tool_call_params(tool_name, arguments));
     session.next_id += 1;
 
     write_session_jsonrpc(&mut session.stdin, &call_req).await?;
     let call_resp = read_session_response(&mut session.reader, req_id).await?;
 
     parse_tool_result(&call_resp)
+}
+
+/// Build `tools/call` params carrying a W3C trace context in `_meta`, per the
+/// MCP 2026-07-28 OpenTelemetry propagation convention (`_meta.traceparent`).
+///
+/// No current caller holds a live execution trace (app-initiated calls come
+/// from the playground, healthchecks, and companion jobs), so a fresh sampled
+/// root context is minted per call and logged — the shared trace id lets a
+/// server-side OTEL trace be joined against personas' own logs. `_meta` is a
+/// reserved protocol field in every MCP revision, so legacy servers ignore it
+/// safely.
+fn tool_call_params(tool_name: &str, arguments: &serde_json::Value) -> serde_json::Value {
+    let trace = personas_core::trace::W3cTraceContext::new_root();
+    let traceparent = trace.traceparent_header();
+    tracing::debug!(
+        tool = %tool_name,
+        traceparent = %traceparent,
+        "MCP tools/call carrying W3C trace context in _meta"
+    );
+    serde_json::json!({
+        "name": tool_name,
+        "arguments": arguments,
+        "_meta": { "traceparent": traceparent }
+    })
 }
 
 /// Return a session to the pool on success, or kill it on failure.
@@ -1188,6 +1253,93 @@ fn is_io_error(e: &AppError) -> bool {
 // SSE transport
 // ============================================================================
 
+// ---------------------------------------------------------------------------
+// HTTP server era (MCP 2026-07-28 dual-era client)
+//
+// The 2026-07-28 revision removed the `initialize` handshake: modern servers
+// take version/identity/capabilities as per-request `_meta` (plus mandatory
+// `Mcp-Method`/`Mcp-Name` HTTP headers) and every request stands alone. Legacy
+// servers still expect `initialize` first. Per the spec's versioning rules the
+// era is a property of the ORIGIN, so we probe once on `tools/list` (idempotent
+// — never on `tools/call`, which could double-execute a non-idempotent tool on
+// retry) and cache the outcome for the process lifetime. A wrong `Modern`
+// classification self-heals on the next list (falls back and re-records); a
+// wrong `Legacy` classification only costs the old extra round trip.
+// ---------------------------------------------------------------------------
+
+/// Protocol revision personas requests from modern (handshake-less) servers.
+const MODERN_PROTOCOL_VERSION: &str = "2026-07-28";
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum HttpServerEra {
+    /// 2026-07-28+: stateless, per-request `_meta`, no handshake.
+    Modern,
+    /// ≤2025-11-25: requires the `initialize` handshake before real work.
+    Legacy,
+}
+
+/// Per-origin era cache (keyed by server URL). In-process only.
+fn http_era_cache() -> &'static Mutex<HashMap<String, HttpServerEra>> {
+    static CACHE: std::sync::OnceLock<Mutex<HashMap<String, HttpServerEra>>> =
+        std::sync::OnceLock::new();
+    CACHE.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn get_http_era(url: &str) -> Option<HttpServerEra> {
+    http_era_cache().lock().ok()?.get(url).copied()
+}
+
+fn set_http_era(url: &str, era: HttpServerEra) {
+    if let Ok(mut cache) = http_era_cache().lock() {
+        cache.insert(url.to_string(), era);
+    }
+}
+
+/// The modern per-request `_meta` object (2026-07-28: version + identity +
+/// capabilities travel on every request instead of a handshake).
+fn modern_request_meta() -> serde_json::Value {
+    serde_json::json!({
+        "io.modelcontextprotocol/protocolVersion": MODERN_PROTOCOL_VERSION,
+        "io.modelcontextprotocol/clientInfo": {
+            "name": "personas-playground",
+            "version": "1.0.0"
+        },
+        "io.modelcontextprotocol/clientCapabilities": {}
+    })
+}
+
+/// Merge the modern `_meta` into a params object (params are always objects
+/// in our request builders).
+fn with_modern_meta(mut params: serde_json::Value) -> serde_json::Value {
+    if let Some(obj) = params.as_object_mut() {
+        // tools/call params already carry a `_meta.traceparent`; merge rather
+        // than clobber.
+        let meta = obj
+            .entry("_meta")
+            .or_insert_with(|| serde_json::json!({}));
+        if let (Some(dst), Some(src)) = (meta.as_object_mut(), modern_request_meta().as_object()) {
+            for (k, v) in src {
+                dst.insert(k.clone(), v.clone());
+            }
+        }
+    }
+    params
+}
+
+/// Recognized modern error codes (2026-07-28 reserved range): HeaderMismatch,
+/// MissingRequiredClientCapability, UnsupportedProtocolVersion. Receiving one
+/// of these identifies a MODERN server — the correct reaction is to surface
+/// the version problem, never to fall back to the legacy handshake.
+const MODERN_ERROR_CODES: [i64; 3] = [-32020, -32021, -32022];
+
+/// Marker prefix used to recognize a modern-server protocol rejection when it
+/// travels through `AppError::Validation` (see `is_modern_protocol_rejection`).
+const MODERN_REJECTION_PREFIX: &str = "MCP server rejected modern protocol";
+
+fn is_modern_protocol_rejection(e: &AppError) -> bool {
+    matches!(e, AppError::Validation(msg) if msg.starts_with(MODERN_REJECTION_PREFIX))
+}
+
 /// Drain a paginated `tools/list` over an SSE/HTTP MCP server, following
 /// `result.nextCursor` across pages. `start_id` is the first JSON-RPC id to
 /// use (the caller has already consumed lower ids for `initialize`). Capped at
@@ -1197,17 +1349,24 @@ async fn fetch_tools_paginated_sse(
     url: &str,
     auth_token: Option<&String>,
     start_id: u64,
-) -> Result<Vec<serde_json::Value>, AppError> {
+    modern: bool,
+) -> Result<(Vec<serde_json::Value>, Option<u64>), AppError> {
     let mut all_tools: Vec<serde_json::Value> = Vec::new();
     let mut cursor: Option<String> = None;
+    let mut min_ttl_ms: Option<u64> = None;
 
     for page in 0..MCP_TOOLS_LIST_MAX_PAGES {
-        let params = match &cursor {
+        let mut params = match &cursor {
             Some(c) => serde_json::json!({ "cursor": c }),
             None => serde_json::json!({}),
         };
+        if modern {
+            params = with_modern_meta(params);
+        }
         let list_payload = jsonrpc_request(start_id + page as u64, "tools/list", params);
-        let list_resp = send_sse_request(client, url, auth_token, &list_payload).await?;
+        let modern_headers = modern.then_some(("tools/list", None));
+        let list_resp =
+            send_http_request(client, url, auth_token, &list_payload, modern_headers).await?;
 
         let result = list_resp.get("result").ok_or_else(|| {
             AppError::Internal("Invalid tools/list response from SSE server".into())
@@ -1216,10 +1375,11 @@ async fn fetch_tools_paginated_sse(
             AppError::Internal("Invalid tools/list response from SSE server".into())
         })?;
         all_tools.extend(page_tools.iter().cloned());
+        min_ttl_ms = fold_min_ttl(min_ttl_ms, extract_ttl_ms(result));
 
         match result.get("nextCursor").and_then(|c| c.as_str()) {
             Some(next) if !next.is_empty() => cursor = Some(next.to_string()),
-            _ => return Ok(all_tools),
+            _ => return Ok((all_tools, min_ttl_ms)),
         }
 
         if page + 1 == MCP_TOOLS_LIST_MAX_PAGES {
@@ -1229,10 +1389,12 @@ async fn fetch_tools_paginated_sse(
             );
         }
     }
-    Ok(all_tools)
+    Ok((all_tools, min_ttl_ms))
 }
 
-async fn list_tools_sse(fields: &HashMap<String, String>) -> Result<Vec<McpTool>, AppError> {
+async fn list_tools_sse(
+    fields: &HashMap<String, String>,
+) -> Result<(Vec<McpTool>, Option<u64>), AppError> {
     let url = fields
         .get("url")
         .ok_or_else(|| AppError::Validation("MCP server has no 'url' field".into()))?;
@@ -1250,7 +1412,64 @@ async fn list_tools_sse(fields: &HashMap<String, String>) -> Result<Vec<McpTool>
     // connection (including redirect hops).
     let client = personas_core::http_clients::SSRF_SAFE_HTTP.clone();
 
-    // Initialize
+    // Era dispatch (2026-07-28 dual-era client): tools/list is the idempotent
+    // probe that discovers and records the origin's era.
+    match get_http_era(url) {
+        Some(HttpServerEra::Modern) => {
+            match list_tools_sse_modern(&client, url, auth_token).await {
+                Ok(r) => Ok(r),
+                // Modern server rejecting our version is a real error, not a
+                // fallback trigger.
+                Err(e) if is_modern_protocol_rejection(&e) => Err(e),
+                Err(e) => {
+                    // Cached Modern turned out wrong (server replaced/downgraded).
+                    tracing::warn!(url, error = %e, "Cached modern MCP era failed — re-probing legacy handshake");
+                    let r = list_tools_sse_legacy(&client, url, auth_token).await?;
+                    set_http_era(url, HttpServerEra::Legacy);
+                    Ok(r)
+                }
+            }
+        }
+        Some(HttpServerEra::Legacy) => list_tools_sse_legacy(&client, url, auth_token).await,
+        None => match list_tools_sse_modern(&client, url, auth_token).await {
+            Ok(r) => {
+                tracing::debug!(url, "MCP origin probed as MODERN (2026-07-28, handshake-less)");
+                set_http_era(url, HttpServerEra::Modern);
+                Ok(r)
+            }
+            Err(e) if is_modern_protocol_rejection(&e) => {
+                // A recognized modern error identifies a modern server; do NOT
+                // fall back to the legacy handshake per the spec's rules.
+                set_http_era(url, HttpServerEra::Modern);
+                Err(e)
+            }
+            Err(_) => {
+                let r = list_tools_sse_legacy(&client, url, auth_token).await?;
+                tracing::debug!(url, "MCP origin probed as LEGACY (initialize handshake)");
+                set_http_era(url, HttpServerEra::Legacy);
+                Ok(r)
+            }
+        },
+    }
+}
+
+/// Modern (2026-07-28) list: no handshake — the request itself is the first
+/// real work, carrying version/identity/capabilities in `_meta` + headers.
+async fn list_tools_sse_modern(
+    client: &reqwest::Client,
+    url: &str,
+    auth_token: Option<&String>,
+) -> Result<(Vec<McpTool>, Option<u64>), AppError> {
+    let (tools_val, ttl_ms) = fetch_tools_paginated_sse(client, url, auth_token, 1, true).await?;
+    Ok((parse_tool_defs(&tools_val, "sse"), ttl_ms))
+}
+
+/// Legacy (≤2025-11-25) list: `initialize` handshake, then paginated list.
+async fn list_tools_sse_legacy(
+    client: &reqwest::Client,
+    url: &str,
+    auth_token: Option<&String>,
+) -> Result<(Vec<McpTool>, Option<u64>), AppError> {
     let init_payload = jsonrpc_request(
         1,
         "initialize",
@@ -1260,12 +1479,11 @@ async fn list_tools_sse(fields: &HashMap<String, String>) -> Result<Vec<McpTool>
             "clientInfo": { "name": "personas-playground", "version": "1.0.0" }
         }),
     );
-
-    let _init_resp = send_sse_request(&client, url, auth_token, &init_payload).await?;
+    let _init_resp = send_sse_request(client, url, auth_token, &init_payload).await?;
 
     // List tools — follow `nextCursor` so tools past page 1 are not dropped.
-    let tools_val = fetch_tools_paginated_sse(&client, url, auth_token, 2).await?;
-    Ok(parse_tool_defs(&tools_val, "sse"))
+    let (tools_val, ttl_ms) = fetch_tools_paginated_sse(client, url, auth_token, 2, false).await?;
+    Ok((parse_tool_defs(&tools_val, "sse"), ttl_ms))
 }
 
 async fn execute_tool_sse(
@@ -1291,50 +1509,84 @@ async fn execute_tool_sse(
     // connection (including redirect hops).
     let client = personas_core::http_clients::SSRF_SAFE_HTTP.clone();
 
-    // Initialize
-    let init_payload = jsonrpc_request(
-        1,
-        "initialize",
-        serde_json::json!({
-            "protocolVersion": "2024-11-05",
-            "capabilities": {},
-            "clientInfo": { "name": "personas-playground", "version": "1.0.0" }
-        }),
-    );
-    let _init_resp = send_sse_request(&client, url, auth_token, &init_payload).await?;
+    // Era dispatch (2026-07-28 dual-era client). Only a list-established
+    // MODERN era skips the handshake; unknown origins keep the legacy path —
+    // era probing never happens on `tools/call`, because a fallback retry
+    // could double-execute a non-idempotent tool.
+    let modern = get_http_era(url) == Some(HttpServerEra::Modern);
+
+    if !modern {
+        // Legacy handshake before real work.
+        let init_payload = jsonrpc_request(
+            1,
+            "initialize",
+            serde_json::json!({
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": { "name": "personas-playground", "version": "1.0.0" }
+            }),
+        );
+        let _init_resp = send_sse_request(&client, url, auth_token, &init_payload).await?;
+    }
 
     // Validate arguments: use cached schema if available, otherwise fetch via tools/list
     if let Some(schema_opt) = cached_schema {
         validate_arguments_against_schema(arguments, schema_opt.as_ref())?;
     } else {
-        let tools_val = fetch_tools_paginated_sse(&client, url, auth_token, 2).await?;
+        let (tools_val, _ttl) =
+            fetch_tools_paginated_sse(&client, url, auth_token, 2, modern).await?;
         let schema = extract_tool_schema(&tools_val, tool_name)?;
         validate_arguments_against_schema(arguments, schema.as_ref())?;
     }
 
     // Call tool
-    let call_payload = jsonrpc_request(
-        3,
-        "tools/call",
-        serde_json::json!({
-            "name": tool_name,
-            "arguments": arguments,
-        }),
-    );
-    let call_resp = send_sse_request(&client, url, auth_token, &call_payload).await?;
+    let mut call_params = tool_call_params(tool_name, arguments);
+    if modern {
+        call_params = with_modern_meta(call_params);
+    }
+    let call_payload = jsonrpc_request(3, "tools/call", call_params);
+    let modern_headers = modern.then_some(("tools/call", Some(tool_name)));
+    let call_resp =
+        send_http_request(&client, url, auth_token, &call_payload, modern_headers).await?;
 
     parse_tool_result(&call_resp)
 }
 
+/// Legacy-form HTTP JSON-RPC POST (no modern headers). Kept as the shim over
+/// [`send_http_request`] so existing legacy call sites read unchanged.
 async fn send_sse_request(
     client: &reqwest::Client,
     url: &str,
     auth_token: Option<&String>,
     payload: &serde_json::Value,
 ) -> Result<serde_json::Value, AppError> {
+    send_http_request(client, url, auth_token, payload, None).await
+}
+
+/// HTTP JSON-RPC POST. When `modern` is `Some((method, name))`, the request is
+/// sent in 2026-07-28 form: `MCP-Protocol-Version` + mandatory `Mcp-Method`
+/// (and `Mcp-Name` for named calls) headers mirroring the body, and JSON-RPC
+/// error bodies carrying a recognized modern error code are converted into a
+/// typed rejection (`MODERN_REJECTION_PREFIX`) so the era prober can tell
+/// "modern server, version problem" apart from "legacy server, fall back".
+async fn send_http_request(
+    client: &reqwest::Client,
+    url: &str,
+    auth_token: Option<&String>,
+    payload: &serde_json::Value,
+    modern: Option<(&str, Option<&str>)>,
+) -> Result<serde_json::Value, AppError> {
     let mut req = client.post(url).json(payload);
     if let Some(token) = auth_token {
         req = req.bearer_auth(token);
+    }
+    if let Some((method, name)) = modern {
+        req = req
+            .header("MCP-Protocol-Version", MODERN_PROTOCOL_VERSION)
+            .header("Mcp-Method", method);
+        if let Some(name) = name {
+            req = req.header("Mcp-Name", name);
+        }
     }
 
     let resp = req
@@ -1347,6 +1599,29 @@ async fn send_sse_request(
         .text()
         .await
         .map_err(|e| AppError::Internal(format!("Failed to read SSE response: {e}")))?;
+
+    // In modern mode, a recognized modern error code identifies a MODERN
+    // server rejecting our version/headers — inspect the body even on non-2xx
+    // (the spec allows 400 Bad Request with a modern error body).
+    if modern.is_some() {
+        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&body) {
+            if let Some(code) = parsed
+                .get("error")
+                .and_then(|e| e.get("code"))
+                .and_then(|c| c.as_i64())
+            {
+                if MODERN_ERROR_CODES.contains(&code) {
+                    let supported = parsed
+                        .pointer("/error/data/supported")
+                        .map(|s| s.to_string())
+                        .unwrap_or_else(|| "unknown".into());
+                    return Err(AppError::Validation(format!(
+                        "{MODERN_REJECTION_PREFIX} (code {code}; server supports: {supported})"
+                    )));
+                }
+            }
+        }
+    }
 
     if !status.is_success() {
         return Err(AppError::Internal(format!(

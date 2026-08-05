@@ -154,6 +154,7 @@ When an idea touches **any** Claude Code CLI feature, it's almost certainly rele
 - Hooks (PreToolUse/PostToolUse/Stop/etc.) → personas could surface them as persona-level event subscriptions
 - Slash commands → potentially compilable into persona use cases
 - MCP → personas integrates **both directions**: INBOUND (consumes external MCP servers as tools — `commands/credentials/mcp_gateways.rs`, `commands/credentials/mcp_tools.rs`, `engine/mcp_tools.rs`, `db/repos/resources/mcp_gateways.rs`) and OUTBOUND (acts as an MCP server exposing personas tools to Claude Code/other clients — `mcp_server/` module + `mcp_bin.rs` binary). Ideas about MCP are direct hits — verify which direction the idea targets before scoring.
+  - **Four MCP surfaces, all dual-era since 2026-08-04** (`/research` run, MCP 2026-07-28 spec): servers `mcp_server/mod.rs` (the `personas-mcp` binary that EVERY persona execution's Claude CLI spawns via `--mcp-config` — see `engine/cli_mcp_config.rs`), `companion/orchestration/mcp/mod.rs` (Athena `/mcp/rpc` for Fleet sessions), `browser_bridge/mcp.rs`; client `engine/mcp_tools.rs`. All three servers answer `server/discover` (2026-07-28 + legacy 2024-11-05 `initialize`) and stamp `ttlMs`/`cacheScope` on `tools/list`. The client's HTTP transport does per-origin era negotiation (probe on idempotent `tools/list` only, never `tools/call`; modern requests = `_meta` `io.modelcontextprotocol/*` keys + `Mcp-Method`/`Mcp-Name`/`MCP-Protocol-Version` headers), honors server `ttlMs` cache hints (clamped 5s-1h), and injects a fresh W3C `traceparent` into `tools/call` `_meta`. The "SSE" connection_type is actually plain HTTP POST JSON, not event-stream. Findings that touch MCP wire behavior must consider all four surfaces; the era cache lives in `mcp_tools.rs::http_era_cache`.
 - Settings.json → persona settings could project into per-persona settings overrides
 - Subagents → personas already implements something analogous via pipelines and chains
 - Session resume → already used; ideas about better session management apply
@@ -185,9 +186,31 @@ Personas orchestrates multi-step / multi-agent work by spawning a **separate
 - **No shared session → every hop re-sends the full prompt** (system prompt +
   directives + team block + connector creds + tool docs ≈ 5–11 KB fixed overhead
   before capabilities), re-paying input tokens (mitigated only by the API prompt cache).
-- **Budget/turns are PER-PROCESS** (`prompt/cli_args.rs:132-145`) — no aggregate
-  ceiling across a pipeline/chain/team run. This is the prerequisite gap behind the
-  `Patterns/descoped-reopenable.md` budget-ceiling entries.
+- **Budget/turns are PER-PROCESS** (`prompt/cli_args.rs:132-145`) at the CLI level,
+  BUT team pipeline runs now have an **aggregate run-budget ledger**: per-node cost
+  is recorded via `run_budget::ledger().record(run_id, cost)` (`pipeline_executor.rs:493-502`)
+  with a halt check (`:819-826`) and persistence (`:1090-1094`). Corrected in `/research`
+  run 2026-08-04 (IndyDevDan factory) — earlier copies said "no aggregate ceiling",
+  which predates run_budget. No frontend consumer of `RunBudget*` yet.
+- **Team pipeline executor facts** (verified 2026-08-04, `/research` IndyDevDan factory):
+  `NodeConfig.node_type` supports `"persona"` | `"command"` (deterministic shell node,
+  `pipeline_executor.rs:559-705`, predecessor output via `PIPELINE_INPUT` env, 300s cap);
+  `NodeConfig.model_profile_override` gives per-node model (`core/src/models/team.rs:110-112`);
+  handoff between nodes is RAW TEXT (no schema validation, no retry — `:1111-1136`);
+  `evaluate_condition` (`:153-207`) **fails OPEN** on malformed JSON/unknown operators;
+  there is NO resume-from-failed-node (rerun = new run_id, full re-execution; precedents
+  `resume_team_assignment` + `dev_run_checkpoints` are un-wired to pipelines); the run UI
+  (`sub_canvas/components/PipelineControls.tsx`) shows status dots only even though the
+  backend attaches an `execution_id` per node (`:426-430`). Findings [2]-[4] of
+  [[Research/2026-08-04-indydevdan-software-factory]] cover the gaps — declined
+  ("pipelines not used enough"), revisit when the surface earns usage.
+- **Factory dispatch loop is CLOSED as of 2026-08-04 (R22):** every `passport:*` Fleet
+  dispatch (wall rows, onboard, ship criteria — key grammar `passport:<row|onboard|ship-X>:<projectId>`,
+  and `identity.slug` IS `meta.project_id`) is watched by
+  `src/features/teams/sub_factory/passport/useAutoRescanOnFleetExit.ts` — on session
+  exit a scoped passport rescan auto-runs (the scan IS the deterministic verifier).
+  Mounted by ProjectsLayer + MastermindPage. New dispatch surfaces get loop closure
+  for free by using the `passport:` key prefix.
 - **Cost tracking now captures cache tokens** (`engine/parser.rs:~257-279`,
   the `"result"` arm): `total_cost/input/output` PLUS `cache_read_input_tokens`
   and `cache_creation_input_tokens` (read from the `usage` object, with a
