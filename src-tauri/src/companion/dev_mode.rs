@@ -20,8 +20,7 @@ use crate::db::DbPool;
 
 /// The repo root of the source checkout this binary was built from.
 /// Compile-time derived (CARGO_MANIFEST_DIR/..) — correct exactly in the
-/// dev-build-from-checkout scenario dev mode is gated to, and mirrors
-/// `dev_session::resolve_repo_root` (the retired wrench-send pipeline).
+/// dev-build-from-checkout scenario dev mode is gated to.
 pub fn repo_root() -> PathBuf {
     let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     manifest

@@ -140,7 +140,7 @@ pub fn summarize_recall(recall: &Recall, synthesized: bool) -> RecallPreview {
 }
 
 /// cfg-gated seam for the optional ml-feature embedder handle, mirroring
-/// `athena_reaction::embedding_manager_of` / `dev_session::EmbedderArg`.
+/// `athena_reaction::embedding_manager_of`.
 /// Non-ml builds never construct a `Some(_)` value of this type — it
 /// exists purely so `build_system_prompt` has ONE signature across both
 /// feature builds instead of a whole-function cfg split.

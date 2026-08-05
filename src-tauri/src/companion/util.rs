@@ -2,8 +2,7 @@
 //!
 //! Consolidates the id-generator that used to be re-defined (as
 //! `short_random` / `short_uuid`, with inconsistent truncation lengths)
-//! in `dispatcher.rs`, `dev_session.rs`, `session.rs`, `turn_ledger.rs`,
-//! and `projects.rs`.
+//! in `dispatcher.rs`, `session.rs`, `turn_ledger.rs`, and `projects.rs`.
 
 /// A short, non-cryptographic random id suffix: the hex digits of a v4
 /// UUID, truncated to `len` characters. Used for turn ids, approval ids,

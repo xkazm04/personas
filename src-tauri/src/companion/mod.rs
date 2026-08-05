@@ -13,7 +13,6 @@ pub mod canvas;
 pub mod connectors;
 pub mod conversation;
 pub mod dev_mode;
-pub mod dev_session;
 pub mod disk;
 pub mod dispatcher;
 pub mod generated_anchors;
