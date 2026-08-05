@@ -8,6 +8,7 @@ const api = vi.hoisted(() => ({
   create: vi.fn(),
   toggle: vi.fn(),
   discard: vi.fn(),
+  update: vi.fn(),
 }));
 
 vi.mock('@/api/companion', () => ({
@@ -15,6 +16,7 @@ vi.mock('@/api/companion', () => ({
   companionDailyGoalsCreate: api.create,
   companionDailyGoalsToggle: api.toggle,
   companionDailyGoalsDiscard: api.discard,
+  companionDailyGoalsUpdate: api.update,
 }));
 
 function snap(over: Partial<DailyGoalsState> = {}): DailyGoalsState {
@@ -29,10 +31,14 @@ function snap(over: Partial<DailyGoalsState> = {}): DailyGoalsState {
 
 beforeEach(() => {
   vi.restoreAllMocks();
+  // restoreAllMocks does not clear call history on hoisted vi.fn()s, so a
+  // "was never called" assertion would see the previous test's calls.
+  vi.clearAllMocks();
   api.state.mockResolvedValue(snap());
   api.create.mockResolvedValue(snap());
   api.toggle.mockResolvedValue(snap());
   api.discard.mockResolvedValue(snap());
+  api.update.mockResolvedValue(snap());
 });
 
 describe('DailyGoalsBar', () => {
@@ -124,5 +130,55 @@ describe('DailyGoalsBar', () => {
     await waitFor(() => {
       expect(api.create).toHaveBeenCalledWith(['Finish the report']);
     });
+  });
+
+  it('the edit modal shows each goal in full and saves rewrites', async () => {
+    const long =
+      'Ship the attention bar redesign and verify every chip against the live panel before calling it done';
+    api.state.mockResolvedValue(
+      snap({
+        goals: [
+          { id: 'g1', slot: 0, title: long, done: false },
+          { id: 'g2', slot: 1, title: 'Second goal', done: true },
+        ],
+      }),
+    );
+    render(<DailyGoalsBar />);
+    fireEvent.click(await screen.findByTestId('daily-goals-edit'));
+
+    // The whole text is in the field — this is the "read it in full" path.
+    const first = (await screen.findByTestId('daily-goals-input-0')) as HTMLTextAreaElement;
+    expect(first.value).toBe(long);
+    expect((screen.getByTestId('daily-goals-input-1') as HTMLTextAreaElement).value).toBe(
+      'Second goal',
+    );
+    // The third slot is free, and a done goal is still editable text.
+    expect((screen.getByTestId('daily-goals-input-2') as HTMLTextAreaElement).value).toBe('');
+
+    fireEvent.change(first, { target: { value: 'Rewritten first goal' } });
+    fireEvent.change(screen.getByTestId('daily-goals-input-2'), {
+      target: { value: 'A third goal' },
+    });
+    fireEvent.click(screen.getByTestId('daily-goals-save'));
+    await waitFor(() => {
+      expect(api.update).toHaveBeenCalledWith([
+        { id: 'g1', title: 'Rewritten first goal' },
+        { id: 'g2', title: 'Second goal' },
+        { id: null, title: 'A third goal' },
+      ]);
+    });
+  });
+
+  it('blocks saving an edit that empties an existing goal', async () => {
+    api.state.mockResolvedValue(
+      snap({ goals: [{ id: 'g1', slot: 0, title: 'Only goal', done: false }] }),
+    );
+    render(<DailyGoalsBar />);
+    fireEvent.click(await screen.findByTestId('daily-goals-edit'));
+    const save = await screen.findByTestId('daily-goals-save');
+    expect(save).not.toBeDisabled();
+    fireEvent.change(screen.getByTestId('daily-goals-input-0'), { target: { value: '   ' } });
+    expect(save).toBeDisabled();
+    expect(api.update).not.toHaveBeenCalled();
   });
 });

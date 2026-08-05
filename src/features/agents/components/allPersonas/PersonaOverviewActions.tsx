@@ -4,6 +4,7 @@ import { BlastRadiusPanelLazy } from '@/features/overview/components/BlastRadius
 import { getPersonaBlastRadius, bulkDeletePersonas, archivePersona, restorePersona } from '@/api/agents/personas';
 import { useAgentStore } from '@/stores/agentStore';
 import { useToastStore } from '@/stores/toastStore';
+import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 import type { Persona } from '@/lib/bindings/Persona';
@@ -46,7 +47,7 @@ export function usePersonaActions({
       confirm({
         title: t.agents.overview_actions.delete_agent,
         message: t.agents.overview_actions.delete_agent_message,
-        details: [{ label: 'Name', value: persona.name }],
+        details: [{ label: t.common.name, value: persona.name }],
         blastRadius: <BlastRadiusPanelLazy fetcher={() => getPersonaBlastRadius(id)} />,
         requireTypedConfirmation: persona.name,
         onConfirm: async () => {
@@ -59,11 +60,14 @@ export function usePersonaActions({
             });
           } catch (err) {
             logger.error('Failed to delete persona', { error: err });
+            // Surface the failure — the confirm modal has already closed, so
+            // without a toast the row silently stays and the user learns nothing.
+            toastCatch('PersonaOverviewActions:delete')(err);
           }
         },
       });
     },
-    [personas, confirm, t.agents.overview_actions.delete_agent, t.agents.overview_actions.delete_agent_message, t.agents.overview_actions.system_persona_undeletable, deletePersona, setSelectedIds],
+    [personas, confirm, t.agents.overview_actions.delete_agent, t.agents.overview_actions.delete_agent_message, t.agents.overview_actions.system_persona_undeletable, t.common.name, deletePersona, setSelectedIds],
   );
 
   // Bulk delete via the single `bulk_delete_personas` IPC (one round-trip
@@ -141,34 +145,46 @@ export function usePersonaActions({
     );
     if (ids.length === 0) return;
     let ok = 0;
+    let firstErr: unknown = null;
     for (const id of ids) {
       try {
         await archivePersona(id);
         ok += 1;
       } catch (err) {
         logger.error('Failed to archive persona', { id, error: err });
+        firstErr ??= err;
       }
     }
     setSelectedIds(new Set());
     await useAgentStore.getState().fetchPersonas();
-    useToastStore.getState().addToast(tx(t.agents.overview_actions.archived_done, { count: ok }), 'success');
+    if (ok > 0) {
+      useToastStore.getState().addToast(tx(t.agents.overview_actions.archived_done, { count: ok }), 'success');
+    }
+    // Partial/total failure previously reported unconditional success with the
+    // ok count ("Archived 0 persona(s)"); surface the first error instead.
+    if (firstErr !== null) toastCatch('PersonaOverviewActions:batchArchive')(firstErr);
   }, [selectedIds, personas, setSelectedIds, tx, t.agents.overview_actions.archived_done]);
 
   const handleBatchRestore = useCallback(async () => {
     const ids = [...selectedIds];
     if (ids.length === 0) return;
     let ok = 0;
+    let firstErr: unknown = null;
     for (const id of ids) {
       try {
         await restorePersona(id);
         ok += 1;
       } catch (err) {
         logger.error('Failed to restore persona', { id, error: err });
+        firstErr ??= err;
       }
     }
     setSelectedIds(new Set());
     await useAgentStore.getState().fetchPersonas();
-    useToastStore.getState().addToast(tx(t.agents.overview_actions.restored_done, { count: ok }), 'success');
+    if (ok > 0) {
+      useToastStore.getState().addToast(tx(t.agents.overview_actions.restored_done, { count: ok }), 'success');
+    }
+    if (firstErr !== null) toastCatch('PersonaOverviewActions:batchRestore')(firstErr);
   }, [selectedIds, setSelectedIds, tx, t.agents.overview_actions.restored_done]);
 
   const handleEdit = useCallback((id: string) => selectPersona(id), [selectPersona]);

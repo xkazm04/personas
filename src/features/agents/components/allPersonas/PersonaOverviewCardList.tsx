@@ -10,6 +10,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useAgentStore } from '@/stores/agentStore';
 import type { Persona } from '@/lib/bindings/Persona';
 import { BuildingBadge, StatusBadge, TrustScoreBar } from './PersonaOverviewBadges';
+import { isPersonaBuilding } from './personaBuildStatus';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DENSITY_TOKENS, type DensityTokens } from '@/lib/density';
 
@@ -126,7 +127,7 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
 
   if (!p) return null;
 
-  const building = id === buildPersonaId && buildPhase !== 'initializing' && buildPhase !== 'promoted';
+  const building = isPersonaBuilding(id, buildPersonaId, buildPhase);
   const draft = isDraft(p);
   const favorite = isFavorite(id);
   const accent = building ? 'border-l-violet-400'
@@ -137,13 +138,6 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
 
   return (
     <div
-      // Drag source for the persona → group rail (cycle 16).
-      // Mobile / card-list layout. Mirror of the Grid layout drag setup.
-      draggable
-      onDragStart={(e) => {
-        e.dataTransfer.setData('application/x-personas-persona-id', id);
-        e.dataTransfer.effectAllowed = 'move';
-      }}
       className={`rounded-modal border border-primary/15 bg-secondary/20 backdrop-blur-sm border-l-2 ${accent} ${
         selected ? 'ring-1 ring-primary/40 bg-primary/[0.04]' : ''
       }`}
@@ -195,7 +189,7 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); toggleFavorite(id); }}
-          aria-label={favorite ? 'Remove from favorites' : 'Add to favorites'}
+          aria-label={favorite ? t.agents.filters.remove_from_favorites : t.agents.filters.add_to_favorites}
           className="p-1 rounded hover:bg-amber-500/10 flex-shrink-0"
         >
           <Star className={`w-3.5 h-3.5 ${favorite ? 'text-amber-400 fill-amber-400' : 'text-foreground'}`} />

@@ -11,7 +11,12 @@ import {
   undoDecision,
   type TriagePorts,
 } from '../triageDispatch';
-import { TRIAGE_KINDS, type TriageDecision } from '../triageTypes';
+import {
+  TRIAGE_KINDS,
+  type TriageDecision,
+  type TriageItem,
+  type TriageKind,
+} from '../triageTypes';
 import { makeItem, makeQuestion } from './triageFixtures';
 
 function makePorts(overrides: Partial<TriagePorts> = {}): TriagePorts {
@@ -28,9 +33,12 @@ function makePorts(overrides: Partial<TriagePorts> = {}): TriagePorts {
     declinePolicy: vi.fn().mockResolvedValue(undefined),
     decideEvolution: vi.fn().mockResolvedValue(undefined),
     refreshProposals: vi.fn(),
+    acceptGoal: vi.fn().mockResolvedValue(undefined),
+    rejectGoal: vi.fn().mockResolvedValue(undefined),
     reopenIdea: vi.fn().mockResolvedValue(undefined),
     reopenPractice: vi.fn().mockResolvedValue(undefined),
     openBuilder: vi.fn(),
+    openGoalBoard: vi.fn(),
     ...overrides,
   };
 }
@@ -77,6 +85,67 @@ describe('isDeferral — what must stay in the queue', () => {
     expect(isDeferral({ item: makeQuestion(), verdict: 'accept', branchId: 'builder' })).toBe(false);
     expect(isDeferral({ item: makeItem('review'), verdict: 'reject' })).toBe(false);
     expect(isDeferral({ item: makeItem('idea'), verdict: 'reject' })).toBe(false);
+  });
+});
+
+/**
+ * A genuinely DECIDABLE decision for a kind — one `isDeferral` will not send
+ * back to the queue.
+ *
+ * `question` is the only kind that needs more than a bare item: a session card
+ * is a deferral unless it has both a session and something filled in, so it gets
+ * both. Every other kind is decidable as it stands.
+ */
+function decidable(kind: TriageKind): { item: TriageItem; answers?: Record<string, string> } {
+  if (kind === 'question') return { item: makeQuestion(), answers: { tools: 'gmail' } };
+  return { item: makeItem(kind) };
+}
+
+describe('routeDecision — no kind may fall through the switch', () => {
+  it('WRITES or THROWS for every kind in TRIAGE_KINDS, never resolves having done nothing', async () => {
+    // `routeDecision` returns Promise<void> and its `switch (item.kind)` has no
+    // `default`, so widening `TriageKind` produces NO compile error — a new kind
+    // falls straight through and returns, and the queue reads that silence as a
+    // successful write and drops the card. This file's header records being
+    // bitten by exactly that twice, on paths that DID exist.
+    //
+    // Derived from `TRIAGE_KINDS`, so a seventh kind is covered the moment it is
+    // added rather than when someone remembers to extend a list here.
+    const decided = new Map<TriageKind, number>();
+
+    for (const kind of TRIAGE_KINDS) {
+      for (const verdict of ['accept', 'reject'] as const) {
+        const { item, answers } = decidable(kind);
+        const decision: TriageDecision = { item, verdict, answers };
+        // Deferrals are excluded exactly as `routeDecision`'s own contract
+        // excludes them — a bare reject on a question is "not me, not now", not
+        // a write that went missing.
+        if (isDeferral(decision)) continue;
+
+        const ports = makePorts();
+        let threw = false;
+        try {
+          await routeDecision(decision, ports);
+        } catch {
+          threw = true;
+        }
+
+        // Reported as an object so a failure NAMES the kind that fell through
+        // instead of just saying `false !== true`.
+        expect({ kind, verdict, honoured: threw || writeCount(ports) > 0 }).toEqual({
+          kind,
+          verdict,
+          honoured: true,
+        });
+        decided.set(kind, (decided.get(kind) ?? 0) + 1);
+      }
+    }
+
+    // Guards the guard: a kind whose every decision happened to be a deferral
+    // would sail through the loop above having asserted nothing at all.
+    for (const kind of TRIAGE_KINDS) {
+      expect({ kind, decidable: (decided.get(kind) ?? 0) > 0 }).toEqual({ kind, decidable: true });
+    }
   });
 });
 
@@ -230,6 +299,95 @@ describe('routeDecision — evolution promotions', () => {
   });
 });
 
+describe('routeDecision — goal acceptance', () => {
+  const goal = () =>
+    makeItem('goal', {
+      sourceId: 'goal-1',
+      payload: { goalId: 'goal-1', projectId: 'proj-1', kpiId: 'kpi-1' },
+    });
+
+  it('signs a goal off, and sends one back carrying the reason', async () => {
+    const ports = makePorts();
+
+    await routeDecision({ item: goal(), verdict: 'accept' }, ports);
+    expect(ports.acceptGoal).toHaveBeenCalledWith('goal-1');
+
+    // The comment becomes the goal's `goal_rejected` signal — the only thing the
+    // team is ever told about why their finished work came back.
+    await routeDecision({ item: goal(), verdict: 'reject', reason: 'Needs rework' }, ports);
+    expect(ports.rejectGoal).toHaveBeenCalledWith('goal-1', 'Needs rework');
+  });
+
+  it('still sends back when the reviewer skipped the reason', async () => {
+    const ports = makePorts();
+    await routeDecision({ item: goal(), verdict: 'reject' }, ports);
+    // `resolveGoalAcceptance` types the comment as required, so the empty case is
+    // an empty string rather than a dropped argument.
+    expect(ports.rejectGoal).toHaveBeenCalledWith('goal-1', '');
+  });
+
+  it('accepts every sibling on the KPI CONCURRENTLY on the batch branch', async () => {
+    const item = makeItem('goal', {
+      sourceId: 'goal-1',
+      payload: { goalId: 'goal-1', batchGoalIds: 'goal-1,goal-2,goal-3' },
+    });
+    const ports = makePorts();
+    await routeDecision({ item, verdict: 'accept', branchId: 'accept-kpi-batch' }, ports);
+
+    expect(ports.acceptGoal).toHaveBeenCalledTimes(3);
+    expect(ports.acceptGoal).toHaveBeenCalledWith('goal-1');
+    expect(ports.acceptGoal).toHaveBeenCalledWith('goal-2');
+    expect(ports.acceptGoal).toHaveBeenCalledWith('goal-3');
+  });
+
+  it('propagates a partial batch failure rather than reporting N accepts', async () => {
+    const item = makeItem('goal', {
+      sourceId: 'goal-1',
+      payload: { batchGoalIds: 'goal-1,goal-2' },
+    });
+    const ports = makePorts({
+      acceptGoal: vi
+        .fn()
+        .mockResolvedValueOnce(undefined)
+        .mockRejectedValueOnce(new Error('db is locked')),
+    });
+    await expect(
+      routeDecision({ item, verdict: 'accept', branchId: 'accept-kpi-batch' }, ports),
+    ).rejects.toThrow('db is locked');
+  });
+
+  it('throws rather than resolving a card for free when the batch carries no ids', async () => {
+    const ports = makePorts();
+    await expect(
+      routeDecision({ item: goal(), verdict: 'accept', branchId: 'accept-kpi-batch' }, ports),
+    ).rejects.toThrow(/batch/i);
+    expect(ports.acceptGoal).not.toHaveBeenCalled();
+  });
+
+  it('deep-links the goals board WITHOUT writing anything', async () => {
+    const ports = makePorts();
+    await routeDecision({ item: goal(), verdict: 'accept', branchId: 'open-board' }, ports);
+    expect(ports.openGoalBoard).toHaveBeenCalledWith('proj-1');
+    expect(ports.acceptGoal).not.toHaveBeenCalled();
+    expect(ports.rejectGoal).not.toHaveBeenCalled();
+  });
+
+  it('throws rather than quietly dropping the card when there is no board route', async () => {
+    // A deep-link that silently does nothing is a card resolved for free.
+    const ports = makePorts({ openGoalBoard: undefined });
+    await expect(
+      routeDecision({ item: goal(), verdict: 'accept', branchId: 'open-board' }, ports),
+    ).rejects.toThrow(/board route/i);
+  });
+
+  it('propagates a failed acceptance instead of swallowing it', async () => {
+    const ports = makePorts({ acceptGoal: vi.fn().mockRejectedValue(new Error('db is locked')) });
+    await expect(routeDecision({ item: goal(), verdict: 'accept' }, ports)).rejects.toThrow(
+      'db is locked',
+    );
+  });
+});
+
 describe('routeDecision — the status the CARD showed rides to the write', () => {
   // The compare-and-swap expectation. Without it, a verdict decided on a card
   // someone else already ruled on overwrites their verdict AND fires a second
@@ -349,12 +507,14 @@ describe('reversibleStatus — which verdicts may be offered back, and as what',
     expect(reversibleStatus({ item, verdict: 'accept', branchId: 'deprecate' })).toBe('deprecated');
   });
 
-  it('refuses the four kinds whose act is already out in the world', () => {
+  it('refuses the five kinds whose act is already out in the world', () => {
     // A review has no backend path from decided back to pending; a question has
     // already resumed the CLI; a policy apply is the ONLY policy writer and has
-    // no un-apply; a promotion has installed a genome on a live persona.
-    for (const kind of ['review', 'question', 'policy', 'evolution'] as const) {
+    // no un-apply; a promotion has installed a genome on a live persona; an
+    // accepted goal is `done` and there is no reopen command for it.
+    for (const kind of ['review', 'question', 'policy', 'evolution', 'goal'] as const) {
       expect(reversibleStatus({ item: makeItem(kind), verdict: 'accept' })).toBeNull();
+      expect(reversibleStatus({ item: makeItem(kind), verdict: 'reject' })).toBeNull();
     }
   });
 });

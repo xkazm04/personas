@@ -2,10 +2,12 @@ import type { StateCreator } from "zustand";
 import type { SystemStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
 import type { DevIdea } from "@/lib/bindings/DevIdea";
+import type { PendingCounts } from "@/lib/bindings/PendingCounts";
 import type { TriageCounts } from "@/lib/bindings/TriageCounts";
 import type { TriageRule } from "@/lib/bindings/TriageRule";
 import * as devApi from "@/api/devTools/devTools";
 import { decideIdeaRow } from "@/lib/decisions/rowWrites";
+import { silentCatch } from "@/lib/silentCatch";
 
 /**
  * Server-side narrowing for a triage page. `projectId` is a separate argument
@@ -72,6 +74,23 @@ export interface DevToolsTriageSlice {
   deleteTriageIdea: (id: string) => Promise<void>;
   setTriageFilterCategory: (category: string | null) => void;
   setTriageFilterScanType: (scanType: string | null) => void;
+
+  // -- Pending-decision counts (the title-bar badge) --------------------
+  /**
+   * How many rows each human-decision queue is holding — the whole triage
+   * deck, not just this slice's ideas.
+   *
+   * Not to be confused with `triageCounts` above, which is the idea backlog's
+   * status facets (pending/accepted/rejected) for ONE table. This is the
+   * cross-queue tally the title-bar badge renders, and it lives here because
+   * the deck is what deals every one of those queues.
+   *
+   * `null` until the first read lands, so a badge can tell "nothing pending"
+   * apart from "not asked yet" rather than flashing a confident 0.
+   */
+  pendingCounts: PendingCounts | null;
+  /** Re-read every queue's pending count. Best-effort: never toasts. */
+  refreshPendingCounts: () => Promise<void>;
 
   // -- Triage Rules ----------------------------------------------------
   triageRules: TriageRule[];
@@ -205,6 +224,21 @@ export const createDevToolsTriageSlice: StateCreator<SystemStore, [], [], DevToo
 
   setTriageFilterScanType: (scanType) => {
     set({ triageFilterScanType: scanType });
+  },
+
+  // -- Pending-decision counts state -----------------------------------
+  pendingCounts: null,
+
+  refreshPendingCounts: async () => {
+    try {
+      const pendingCounts = await devApi.pendingCounts();
+      set({ pendingCounts });
+    } catch (err) {
+      // Best-effort badge count — a background poll must never toast, and a
+      // failed read must never zero the badge: keeping the last known tally is
+      // less wrong than claiming nothing is waiting.
+      silentCatch("devTools.refreshPendingCounts")(err);
+    }
   },
 
   // -- Triage Rules state ----------------------------------------------

@@ -10,6 +10,7 @@ import { DataGrid } from '@/features/shared/components/display/DataGrid';
 import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { useFavoriteAgents } from '@/hooks/agents/useFavoriteAgents';
 import { DEFAULT_VIEW_CONFIG, type AgentListViewConfig } from './viewConfig';
+import { isPersonaBuilding } from './personaBuildStatus';
 import { PersonaOverviewBatchBar } from './PersonaOverviewBatchBar';
 import { PersonaOverviewToolbar } from './PersonaOverviewToolbar';
 import { PersonaOverviewCardList } from './PersonaOverviewCardList';
@@ -94,7 +95,7 @@ export default function PersonaOverviewPage() {
   const isDraft = useCallback((p: Persona) => p.lifecycle === 'draft', []);
   const isArchived = useCallback((p: Persona) => p.lifecycle === 'archived', []);
   const isBuilding = useCallback(
-    (id: string) => id === buildPersonaId && buildPhase !== 'initializing' && buildPhase !== 'promoted',
+    (id: string) => isPersonaBuilding(id, buildPersonaId, buildPhase),
     [buildPersonaId, buildPhase],
   );
 
@@ -267,9 +268,8 @@ export default function PersonaOverviewPage() {
           <PersonaConfigPanel />
         ) : (
           <>
-        {/* Drop rail renders for both the table and the mobile card list.
-            Chips serve two roles: click → filter, and HTML5 drop target
-            (the `data-persona-drop-target` attr on each chip). */}
+        {/* Team filter dropdown, shared by the table and the mobile card
+            list. Home-team assignment lives on the batch bar. */}
         <PersonaGroupDropRail filterId={groupFilter} onSelectFilter={setGroupFilter} />
 
         <DirectorPanel />
@@ -301,16 +301,6 @@ export default function PersonaOverviewPage() {
                 : healthMap[p.id]?.status === 'degraded' ? 'border-l-amber-400/60'
                 : 'border-l-emerald-400/40'
             }
-            getRowProps={(p) => ({
-              // Drag source for persona → group rail. Identical contract to
-              // the card-list layout: same MIME, same 'move' effect, same
-              // drop targets.
-              draggable: true,
-              onDragStart: (e) => {
-                e.dataTransfer.setData('application/x-personas-persona-id', p.id);
-                e.dataTransfer.effectAllowed = 'move';
-              },
-            })}
             sortKey={view.sortKey}
             sortDirection={view.sortDirection}
             onSort={handleSort}

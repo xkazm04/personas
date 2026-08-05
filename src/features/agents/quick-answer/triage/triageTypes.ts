@@ -31,7 +31,8 @@ export type TriageKind =
   | 'practice'
   | 'question'
   | 'policy'
-  | 'evolution';
+  | 'evolution'
+  | 'goal';
 
 /**
  * The universal verdict spine. Every item supports all three, whatever it is:
@@ -305,7 +306,11 @@ export type TriageCounts = Record<TriageKind, number> & { total: number };
  *
  * Roughly descending by how loudly the kind interrupts: the four original
  * queues first (they carry the volume), then the two proposal queues the
- * Self-Tuning Fabric and Darwin Mode file — rarer, heavier, and read last.
+ * Self-Tuning Fabric and Darwin Mode file — rarer, heavier, and read last — and
+ * `goal` last of all. A goal reaches this queue because a team FINISHED
+ * something and the outcome needs signing off: real work waiting on a human,
+ * but the only kind here where nothing is broken, blocked or expiring while it
+ * waits. It interrupts least, so it is read last.
  */
 export const TRIAGE_KINDS: readonly TriageKind[] = [
   'review',
@@ -314,11 +319,21 @@ export const TRIAGE_KINDS: readonly TriageKind[] = [
   'question',
   'policy',
   'evolution',
+  'goal',
 ];
 
 /** Empty tally — the shape every counter starts from. */
 export function emptyCounts(): TriageCounts {
-  return { review: 0, idea: 0, practice: 0, question: 0, policy: 0, evolution: 0, total: 0 };
+  return {
+    review: 0,
+    idea: 0,
+    practice: 0,
+    question: 0,
+    policy: 0,
+    evolution: 0,
+    goal: 0,
+    total: 0,
+  };
 }
 
 /** Tally a queue by kind. */
@@ -332,6 +347,32 @@ export function countByKind(items: readonly TriageItem[]): TriageCounts {
 }
 
 /**
+ * The default order, over the two fields it actually reads.
+ *
+ * Split out from {@link compareTriage} so the queue can hoist those two fields
+ * out of the comparator instead of dereferencing an item inside every one of
+ * the O(n log n) comparisons. There is still exactly ONE ordering law; this is
+ * the law, and `compareTriage` is the convenience wrapper over it.
+ *
+ * `createdAt` is compared with `<`/`>` rather than `localeCompare`. These are
+ * RFC3339 strings — fixed-width ASCII digits and separators, in which codepoint
+ * order and collation order are the same sequence — and `localeCompare` is an
+ * ICU call that was being made twice per comparison on a list the deck re-sorts
+ * on every 30-second poll.
+ */
+export function compareOrder(
+  aWeight: number,
+  aCreatedAt: string,
+  bWeight: number,
+  bCreatedAt: string,
+): number {
+  if (bWeight !== aWeight) return bWeight - aWeight;
+  if (aCreatedAt < bCreatedAt) return -1;
+  if (aCreatedAt > bCreatedAt) return 1;
+  return 0;
+}
+
+/**
  * Default queue order: weight first, then oldest-first inside a weight band.
  *
  * Oldest-first is deliberate — a triage queue sorted newest-first quietly
@@ -339,5 +380,5 @@ export function countByKind(items: readonly TriageItem[]): TriageCounts {
  * ones someone already declined to judge once.
  */
 export function compareTriage(a: TriageItem, b: TriageItem): number {
-  return b.weight - a.weight || a.createdAt.localeCompare(b.createdAt);
+  return compareOrder(a.weight, a.createdAt, b.weight, b.createdAt);
 }

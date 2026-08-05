@@ -23,7 +23,7 @@
  * React-free and store-free on purpose.
  */
 import {
-  compareTriage,
+  compareOrder,
   countByKind,
   type TriageCounts,
   type TriageItem,
@@ -116,17 +116,34 @@ export function projectQueue({
   // been asked.
   const live = pending.filter((i) => skipCount(skips, i.id) < MAX_SKIP_PASSES);
 
-  const items = live
-    .filter((i) => activeKinds.has(i.kind))
-    .sort((a, b) => {
-      // The pinned card sorts ahead of everything, whatever its weight or skip
-      // count. One id at most, so the comparator stays a consistent order.
-      if (focused) {
-        if (a.id === focused) return -1;
-        if (b.id === focused) return 1;
-      }
-      return skipCount(skips, a.id) - skipCount(skips, b.id) || compareTriage(a, b);
-    });
+  // One pass that does three things the old code paid for inside the
+  // comparator: applies the kind filter, LIFTS the pinned card out (a partition,
+  // not a per-pair test — it was being re-checked against both operands of every
+  // one of the O(n log n) comparisons for a property true of at most one row),
+  // and reads each item's skip count ONCE instead of twice per comparison.
+  //
+  // The order is unchanged and still a consistent total order: the pin is a
+  // single element prepended, and what follows is the same strict weak ordering
+  // it always was.
+  const rows: { item: TriageItem; skips: number }[] = [];
+  let pinned: TriageItem | null = null;
+  for (const item of live) {
+    if (!activeKinds.has(item.kind)) continue;
+    if (focused && item.id === focused) {
+      pinned = item;
+      continue;
+    }
+    rows.push({ item, skips: skipCount(skips, item.id) });
+  }
+
+  rows.sort(
+    (a, b) =>
+      a.skips - b.skips ||
+      compareOrder(a.item.weight, a.item.createdAt, b.item.weight, b.item.createdAt),
+  );
+
+  const items = rows.map((r) => r.item);
+  if (pinned) items.unshift(pinned);
 
   return {
     items,

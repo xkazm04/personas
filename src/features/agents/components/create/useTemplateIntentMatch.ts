@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { companionMatchTemplates, type CompanionTemplateMatch } from "@/api/companion";
+import { silentCatch } from "@/lib/silentCatch";
 
 const MIN_CHARS = 8;
 const DEBOUNCE_MS = 300;
@@ -41,7 +42,10 @@ export function useTemplateIntentMatch(intent: string, limit = 5): {
         const result = await companionMatchTemplates(text.trim(), limit);
         if (requestId !== reqIdRef.current) return; // a newer keystroke won
         setMatches(result ?? []);
-      } catch {
+      } catch (err) {
+        // Best-effort by contract (no surfaced error mid-type), but the swallow
+        // still gets a Sentry breadcrumb so matcher outages are measurable.
+        silentCatch('useTemplateIntentMatch:match')(err);
         if (requestId !== reqIdRef.current) return;
         setMatches([]);
       } finally {

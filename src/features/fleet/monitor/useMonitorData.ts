@@ -9,11 +9,12 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { listManualReviews } from '@/api/overview/reviews';
+import { listManualReviews, listManualReviewsPage } from '@/api/overview/reviews';
 import { resolveReviewRow, dispatchReviewRowAction, isDecisionConflict } from '@/lib/decisions/rowWrites';
 import { listMessages, markMessageRead } from '@/api/overview/messages';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { usePersonaMap, useEnrichedRecords } from '@/hooks/utility/data/usePersonaMap';
+import { extractMessage } from '@/lib/silentCatch';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
@@ -85,6 +86,48 @@ function shapeReview(r: PersonaManualReview): MonitorReviewItem {
 }
 
 /**
+ * Whether two shaped review lists say the same thing.
+ *
+ * The poll re-shapes every row every 30 seconds, and `raw.map(shapeReview)` is a
+ * new array of new objects whether or not SQLite returned anything different.
+ * That fresh identity was the head of a chain — `useEnrichedRecords` →
+ * `usePendingInteractions` → `useUnifiedTriage.all` → `projectQueue` — so an
+ * untouched deck rebuilt, re-sorted and re-adapted its entire queue twice a
+ * minute for data that had not changed.
+ *
+ * Field-by-field over exactly what {@link shapeReview} writes (the two constants
+ * it fills in cannot differ). Cheaper than the rebuild it prevents by orders of
+ * magnitude, and unlike a `JSON.stringify` compare it allocates nothing.
+ */
+function sameReviews(a: readonly MonitorReviewItem[], b: readonly MonitorReviewItem[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    const x = a[i]!;
+    const y = b[i]!;
+    if (
+      x.id !== y.id ||
+      x.persona_id !== y.persona_id ||
+      x.execution_id !== y.execution_id ||
+      x.content !== y.content ||
+      x.severity !== y.severity ||
+      x.status !== y.status ||
+      x.reviewer_notes !== y.reviewer_notes ||
+      x.context_data !== y.context_data ||
+      x.suggested_actions !== y.suggested_actions ||
+      x.title !== y.title ||
+      x.created_at !== y.created_at ||
+      x.resolved_at !== y.resolved_at ||
+      x.assignment_id !== y.assignment_id ||
+      x.step_id !== y.step_id ||
+      x.use_case_id !== y.use_case_id
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
  * Which feeds the mounting surface actually RENDERS.
  *
  * This hook fuses four independent feeds and used to start four pollers
@@ -102,14 +145,53 @@ export interface MonitorFeeds {
   messages?: boolean;
   /** Persona roster + health summaries, on the dashboard cadence. */
   personaHealth?: boolean;
+  /**
+   * Cap the pending-review read at this many rows (newest first), via the
+   * keyset command rather than the unbounded list.
+   *
+   * OPT-IN, and deliberately not a default. `list_manual_reviews` has no limit
+   * at all, so a poll on a busy install re-reads and re-shapes every pending row
+   * every 30 seconds — but the Persona Monitor legitimately renders the whole
+   * queue, and silently truncating it there would be a different bug from the
+   * one this fixes. A caller that opts in gets {@link MonitorData.reviewsHasMore}
+   * with it, so a capped read can be reported as capped rather than passed off
+   * as the whole queue.
+   */
+  reviewLimit?: number;
 }
 
-const ALL_FEEDS: Required<MonitorFeeds> = { messages: true, personaHealth: true };
+const ALL_FEEDS: Required<Omit<MonitorFeeds, 'reviewLimit'>> = {
+  messages: true,
+  personaHealth: true,
+};
 
 export interface MonitorData {
   personas: ReturnType<typeof useAgentStore.getState>['personas'];
   healthMap: Record<string, PersonaHealth>;
   reviews: MonitorReviewItem[];
+  /**
+   * Why {@link MonitorData.reviews} is short, when it is short because the read
+   * FAILED rather than because nothing is pending.
+   *
+   * The load used to end at `logger.error` and nothing else, so every surface
+   * downstream rendered an unreadable queue and an empty one identically — the
+   * triage deck said "nothing is waiting on you" and the channel rail said
+   * "nothing is waiting", both on a `list_manual_reviews` that never answered.
+   * A held team step is exactly the thing that must not disappear quietly.
+   *
+   * Null while the last read succeeded. Cleared by the next successful poll, so
+   * a transient failure heals itself without the caller doing anything.
+   */
+  reviewsError: string | null;
+  /**
+   * Whether the pending-review read was CAPPED and more rows exist behind it.
+   *
+   * Always false without {@link MonitorFeeds.reviewLimit} — an unbounded read
+   * has nothing behind it. A caller that bounds the query owes its user this
+   * fact; a shorter list that does not say it is short is the same lie as an
+   * empty one that does not say it failed.
+   */
+  reviewsHasMore: boolean;
   unreadMessages: PersonaMessage[];
   activeProcesses: Record<string, ActiveProcess>;
   loading: boolean;
@@ -180,6 +262,7 @@ function verdictKey(id: string, intent: string): string {
 export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   const wantsMessages = feeds.messages ?? ALL_FEEDS.messages;
   const wantsPersonaHealth = feeds.personaHealth ?? ALL_FEEDS.personaHealth;
+  const reviewLimit = feeds.reviewLimit;
   const personas = useAgentStore((s) => s.personas);
   const healthMap = useAgentStore((s) => s.personaHealthMap);
   const fetchPersonaSummaries = useAgentStore((s) => s.fetchPersonaSummaries);
@@ -191,6 +274,8 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   const isCloudConnected = useSystemStore((s) => s.cloudConfig?.is_connected ?? false);
 
   const [localReviews, setLocalReviews] = useState<MonitorReviewItem[]>([]);
+  const [reviewsError, setReviewsError] = useState<string | null>(null);
+  const [reviewsHasMore, setReviewsHasMore] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState<PersonaMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const { track, busy: isProcessing } = useInFlight();
@@ -219,14 +304,29 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
 
   const reloadReviews = useCallback(async () => {
     try {
-      const raw = await listManualReviews(undefined, 'pending');
-      if (mounted.current) setLocalReviews(raw.map(shapeReview));
+      const page = reviewLimit
+        ? await listManualReviewsPage({ status: 'pending', limit: reviewLimit })
+        : { rows: await listManualReviews(undefined, 'pending'), hasMore: false };
+      if (mounted.current) {
+        const shaped = page.rows.map(shapeReview);
+        // Keep the array we already have when nothing moved. The rows are equal
+        // by value on almost every poll, and the identity is what the whole
+        // downstream memo chain keys on — see `sameReviews`.
+        setLocalReviews((prev) => (sameReviews(prev, shaped) ? prev : shaped));
+        setReviewsHasMore(page.hasMore);
+        // Clearing on success is what makes the flag self-healing: React bails
+        // out of a set to the identical value, so a healthy poll costs nothing.
+        setReviewsError(null);
+      }
     } catch (err) {
       logger.error('Failed to load manual reviews', { error: err });
+      // The log was the ONLY record. A surface cannot render a breadcrumb, so
+      // an unreadable queue looked exactly like an empty one.
+      if (mounted.current) setReviewsError(extractMessage(err));
     } finally {
       if (mounted.current) setLoading(false);
     }
-  }, []);
+  }, [reviewLimit]);
 
   const reloadMessages = useCallback(async () => {
     try {
@@ -397,12 +497,14 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   // that whole chain on every keystroke in the answer box.
   return useMemo(
     () => ({
-      personas, healthMap, reviews, unreadMessages, activeProcesses,
-      loading, isProcessing, handleReviewAction, handleDispatchAction, handleMarkRead,
+      personas, healthMap, reviews, reviewsError, reviewsHasMore, unreadMessages,
+      activeProcesses, loading, isProcessing,
+      handleReviewAction, handleDispatchAction, handleMarkRead,
     }),
     [
-      personas, healthMap, reviews, unreadMessages, activeProcesses,
-      loading, isProcessing, handleReviewAction, handleDispatchAction, handleMarkRead,
+      personas, healthMap, reviews, reviewsError, reviewsHasMore, unreadMessages,
+      activeProcesses, loading, isProcessing,
+      handleReviewAction, handleDispatchAction, handleMarkRead,
     ],
   );
 }

@@ -9,7 +9,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { resolveTechIcon } from '@/features/teams/sub_factory/passport/techIcons';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -36,6 +36,18 @@ export interface WorkspaceCenter {
   /** Knowledge rows per workspace id, newest first. Every status unless the
    *  caller narrowed it — see {@link WorkspaceCenterOptions.statuses}. */
   knowledge: Record<string, WorkspaceKnowledge[]>;
+  /**
+   * Why {@link knowledge} is empty, when it is empty because the read FAILED.
+   *
+   * The fetch ends in `silentCatch`, which is right for a shell that can show
+   * an empty library — and wrong for a caller that turns these rows into a
+   * DECISION QUEUE. The triage deck reads pending practices from here, and a
+   * failed read reached it as "no practices are waiting", which is the one
+   * thing this surface must never say when it does not know.
+   *
+   * Null while the last read succeeded; cleared by the next successful refresh.
+   */
+  knowledgeError: string | null;
   /** Per-status tallies over whatever `knowledge` holds. A caller that narrowed
    *  the fetch gets zeroes for the statuses it did not ask for — by
    *  construction, since the rows were never read. */
@@ -72,6 +84,7 @@ export function useWorkspaceCenter(options: WorkspaceCenterOptions = {}): Worksp
   const projects = useSystemStore((s) => s.projects);
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
   const [knowledge, setKnowledge] = useState<Record<string, WorkspaceKnowledge[]>>({});
+  const [knowledgeError, setKnowledgeError] = useState<string | null>(null);
   const [fetchGen, setFetchGen] = useState(0);
 
   useEffect(() => {
@@ -97,9 +110,17 @@ export function useWorkspaceCenter(options: WorkspaceCenterOptions = {}): Worksp
       }),
     )
       .then((pairs) => {
-        if (!cancelled) setKnowledge(Object.fromEntries(pairs));
+        if (cancelled) return;
+        setKnowledge(Object.fromEntries(pairs));
+        setKnowledgeError(null);
       })
-      .catch(silentCatch('workspaces:knowledgeFetch'));
+      .catch((err) => {
+        // Still silent for the shell (an empty library is a legible state), but
+        // no longer INVISIBLE: a caller that presents these rows as a queue can
+        // now tell "nothing pending" from "we could not read it".
+        if (!cancelled) setKnowledgeError(extractMessage(err));
+        silentCatch('workspaces:knowledgeFetch')(err);
+      });
     return () => { cancelled = true; };
   }, [wsKey, fetchGen, statusKey]);
 
@@ -130,11 +151,21 @@ export function useWorkspaceCenter(options: WorkspaceCenterOptions = {}): Worksp
       activeId,
       projects: sortedProjects,
       knowledge,
+      knowledgeError,
       stats,
       projectById,
       refreshKnowledge,
     }),
-    [workspaces, activeId, sortedProjects, knowledge, stats, projectById, refreshKnowledge],
+    [
+      workspaces,
+      activeId,
+      sortedProjects,
+      knowledge,
+      knowledgeError,
+      stats,
+      projectById,
+      refreshKnowledge,
+    ],
   );
 }
 

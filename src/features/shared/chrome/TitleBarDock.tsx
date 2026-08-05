@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, CalendarClock, ClipboardCheck, Search, BadgeCheck } from 'lucide-react';
+import { Bell, CalendarClock, ClipboardCheck, Search } from 'lucide-react';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { isTypingTarget } from '@/lib/keyboard/KeyboardNavMode';
@@ -59,10 +59,6 @@ export default function TitleBarDock() {
           e.preventDefault();
           tray.toggleNotifications();
           return true;
-        case 'g':
-          e.preventDefault();
-          tray.openAcceptance();
-          return true;
         default:
           return false;
       }
@@ -113,20 +109,6 @@ export default function TitleBarDock() {
           quickAnswerTrigger
         >
           <ClipboardCheck width={17} height={17} strokeWidth={1.6} />
-        </DockAction>
-
-        <DockAction
-          onClick={tray.openAcceptance}
-          active={tray.acceptanceOpen}
-          count={tray.pendingAcceptance}
-          countClass="text-status-warning"
-          label={tray.pendingAcceptance > 0 ? tx(t.chrome.tray_acceptance_pending, { count: tray.pendingAcceptance }) : t.chrome.tray_acceptance}
-          title={tray.pendingAcceptance > 0 ? tx(t.chrome.tray_acceptance_pending, { count: tray.pendingAcceptance }) : t.chrome.tray_acceptance}
-          testId="titlebar-goal-acceptance"
-          hintKey="G"
-          showHint={keyboardNavActive}
-        >
-          <BadgeCheck size={17} strokeWidth={1.6} />
         </DockAction>
 
         <DockAction

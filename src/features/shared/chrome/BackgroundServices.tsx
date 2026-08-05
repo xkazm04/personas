@@ -9,7 +9,7 @@
  */
 
 import { useLabEvents } from "@/hooks/lab/useLabEvents";
-import { useHealthDigestScheduler, useHealthDigestPrefetch } from "@/features/agents/sub_health";
+import { useHealthDigestScheduler } from "@/features/agents/sub_health";
 import { useRemediationEvaluator } from "@/features/vault/shared/hooks/health/useRemediationEvaluator";
 import { useAssignmentNotificationDispatcher, useGlobalAssignmentProgressListener } from "@/features/teams/sub_assignments";
 import { useChannelService } from "@/features/teams/sub_collab/useChannelService";
@@ -21,7 +21,6 @@ import { useGlobalAlertEvaluator } from "@/features/overview/sub_observability/l
 export default function BackgroundServices() {
   useLabEvents();
   useHealthDigestScheduler();
-  useHealthDigestPrefetch();
   // Activates the credential remediation loop — periodically scans all
   // credentials for anomaly signals and dispatches remediation actions
   // (auto-rotate, auto-disable, notify). The evaluator's return value

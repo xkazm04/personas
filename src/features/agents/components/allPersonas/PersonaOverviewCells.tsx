@@ -21,7 +21,14 @@ export function SelectCell({
   onToggle: (id: string) => void;
 }) {
   return (
-    <div
+    // A real button with checkbox semantics — the previous bare div was
+    // invisible to keyboard and screen-reader users on the roster's primary
+    // selection affordance. The persona name is the accessible name.
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={selected}
+      aria-label={persona.name}
       onClick={(e) => {
         e.stopPropagation();
         onToggle(persona.id);
@@ -50,7 +57,7 @@ export function SelectCell({
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </button>
   );
 }
 

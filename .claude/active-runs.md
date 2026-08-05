@@ -2,10 +2,11 @@
 
 ## Active
 
-### perfect-athena-arc — /perfect targeted propose on the Athena companion — session fable-5 (Director)
-- Started: 2026-08-05. Status: proposing (read-only on repo source; no tree edits until a build wave is approved). Vault: Documents/Obsidian/personas/Perfect/.
-- Self-sourced brief: this same CLI session just shipped the athena-dev-day arc (merge 1d200dede) and holds fresh file:line knowledge of `src/features/plugins/companion/**` + `src-tauri/src/companion/**`; no scout dispatched (factory-ship/fleet-monitor precedent).
-- Paths (intended, on build): `src-tauri/src/companion/**`, `src-tauri/src/commands/companion/**`, `src-tauri/db/src/lib.rs` (COMPANION_SCHEMA), `src/features/plugins/companion/**`, `src/api/companion.ts`, i18n locales. Builders isolate in `.claude/worktrees/perfect-athena-*`.
+
+
+
+
+
 
 
 ### prototype-mm-goals — /prototype: consolidated Goals modal for the Mastermind Goals dimension — session opus-5[1m]
@@ -105,6 +106,41 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### athena-goal-edit — read + edit daily goals in full — COMPLETE, commit 60be0852a (worktree 390bc42ed) — session opus-5 (xhigh)
+- 2026-08-05. Goal chips ellipsize at one line, so created goals could never be read back. Added: hover tooltip carrying the full title, a pencil button opening the authoring modal prefilled with the active set (fields switched input→textarea so the whole goal is visible), and `companion_daily_goals_update` (brain `update_set`) rewriting the active set's texts. A free slot filled in edit mode appends (3 max); emptying an existing goal is REFUSED (dropping the last open goal would leave a set logically complete but never stamped, so done/discard stay the only exits); an edit never touches done state.
+- Gates: Rust daily_goals 15/15 (4 new edit cases) · companion vitest 376/376 (2 new) · tsc 0 · eslint 0 warnings in touched files (2 low-contrast catches fixed) · i18n strict + untranslated 0/0 x14. NOT live-verified.
+- **INCIDENT (self-inflicted, no loss): my Bash cwd never entered the worktree** — Edit-tool calls used absolute worktree paths but `sed -i`, `gen-types`, and the first Rust test run all executed in the MAIN checkout. Leaked one import edit + a types.ts regen onto master's tree; both reverted (`git restore`), types.ts is codegen and another session had it staged, so nothing of theirs was lost beyond a regen they get back on next predev. RULE: after `git worktree add`, `cd` into it in the SAME Bash invocation as the first command, and re-assert cwd with `pwd` before any in-tree script.
+
+### scan-sweep-allpersonas — /scan-sweep --optimize over agents-components-allpersonas — session fable-5
+- Completed: 2026-08-05. Commits: 5a65990a9 7d616df08 916dc771b 6033e7d4a 30b792152 48416794a 07e4cb65b 8aead76dc. 3 findings to outbox. Note: persona-overview-table-pass ledger entry is stale (landed as 39819a963).
+
+
+### scan-sweep-agent-health — /scan-sweep --optimize over agent-health — session fable-5
+- Completed: 2026-08-05. Commits: fbf3e6a6a (dead UI + prefetch deletion), 3da28365b (scheduler catch), d4ea6c74f (helper tests). 4 findings emitted to memory outbox.
+
+
+### athena-attention-bar — two-level alert structure in the chat panel — COMPLETE, commit ffb81a7bb — session opus-5 (xhigh)
+- 2026-08-05. Six surfaces that pinned themselves above the transcript unconditionally (MCP requests, decision card, assignment cards, actions ledger, one card per proactive nudge) collapse into ONE counts-chip row (`attention/AttentionBar.tsx`); cards render only when their chip is toggled. Nudges split by severity via `nudgeSeverity()` mirroring ProactiveCard's existing accent map; `message_attention` uncounted (aggregated on the digest card). Expansion set persists as `companionAlertsExpanded` (systemStore partialize) so the shape survives reopen/restart; only `blocked` defaults open (a spawned CLI session is parked until answered). LiveOpsStrip keeps its own independent collapse; approvals still render inline on their turn.
+- Files: `attention/{attentionKinds.ts,useAttentionCounts.ts,AttentionBar.tsx}` (new), CompanionPanel wiring, companionPluginSlice + systemStore, 14 locales (13 machine-translated), docs/features/companion/README.md (new "Attention bar" section), 2 new test files.
+- Gates: tsc 0 · companion vitest 374/374 (12 new) · eslint clean (one `text-foreground/60` low-contrast warning caught by the house rule and fixed) · i18n strict + untranslated 0/0 x14. NOT live-verified — needs one look at the real panel with alerts present.
+- GOTCHA (cost an amend): backticks inside a double-quoted bash `-m` message are command-substituted — `Only \`blocked\` starts open` committed as `Only  starts open`. Use `git commit -F <file>` for any message containing backticks (this is the documented Bash-tool-is-not-PowerShell rule, hit from the other direction).
+
+### athena-spanish-capture — reply-language anchor hardening — COMPLETE, commit 21039bdca — session fable-5
+- 2026-08-05. Root-caused Athena replying in Spanish on an English UI: app_language was `en` the whole time (settings_audit_log verified); the default thread's only human turns were a Jul-16 Spanish UAT prompt, and since the en directive emitted nothing, replayed history captured every system-triggered turn for 3 weeks. Fix: language_addendum always anchors (en included), names system-triggered turns + replayed history, mirror clause confined to the user's CURRENT message; pure language_directive() + regression test. Operator still owes a conversation reset (or one English exchange) to flush the Spanish episodes from the replay window.
+
+### athena-chrome-contrast — companion panel contrast + header consolidation — COMPLETE, commits 7b393764b + 816f17993 — session fable-5
+- 2026-08-05. (1) ProactiveCard engage button white-on-primary → tinted primary pattern (readable in every theme). (2) Panel shell bg-secondary/95 → bg-background/95 (matches Fleet overlay; kills the glow vs the rest of the app in dark themes). (3) WakeCadence / FleetBoldnessDial / DailyGoalsBar no longer stack as always-on subheaders — collapsed to header icons (Timer/Gauge/Flame, testids companion-strip-*) with a one-at-a-time accordion row; same gating as before, DevOpLedger untouched, zero new i18n keys. Gates: tsc 0, eslint clean, companion vitest 362/362. NOT live-verified (jsdom cannot judge contrast) — needs one look in the running app. Note for a future sweep: 8 more `bg-primary text-primary-foreground` buttons remain in companion (Composer send, McpRequestPanel ×3, BrainViewer, ConsolidationReview ×2, MemoryPanel) with the same theme risk.
+
+### perfect-athena-arc — /perfect targeted arc on athena-companion — COMPLETE 5/5 shipped — session fable-5 (Director) + 2 Opus builders
+- 2026-08-05. Propose (self-sourced brief, no scout) 5/5 accepted, build wave 2 builders in parallel worktrees, 5/5 shipped + 2 Director commits: `3c1756e93` delete-dev-session (-662 LOC) · `ee82a3c6f` prompt-block-ledger (per-block char accounting in companion_turn + budget WARN + companion_prompt_block_stats) · `5d9a9ffd9` dev-op-self-review (+`28be56de4` Director catch: evidence rows lacked op ids) · `57e461dfb` persist-turn-sidecars (companion_turn_sidecar table, COALESCE upsert, store hydration) · `6c43da752` transcript-pagination (keyset past the 500 cap + full-day export; bonus total-order fix: list_recent id DESC tiebreak) · `c9b8e5970` commandNames regen.
+- Concurrency: B3 pick commit-around 16 dirty i18n files of the triage-deck session (their keys landed first `c8c3bcafd`, mine layered programmatically); one HEAD-lock race mid-recipe survived (index intact, nothing swept either way, recommitted). Zero builder deaths/nudges/DECISIONs.
+- Gates: tsc 0 · companion vitest 362/362 · companion:: Rust 425 pass / 1 PRE-EXISTING (`companion::tours::manifest_hash_is_stable`, fails on master, 71 vs 64 anchors — NEEDS AN OWNER) · i18n strict + untranslated 0/0 x14. NOT live-verified (smoke debt in vault): sidecar restart-replay, scroll-up paging, full-day export, self-review turn end-to-end, block-ledger rows.
+- Worktrees removed (engine needed rm-rf+prune fallback), branches deleted, build.rs touched (shared-target rule). Vault: Documents/Obsidian/personas/Perfect/ ([[2026-08-05]]).
+
+### footer-monitor-sync — footer fleet cluster truth-sync + click-opens-ledger — session fable-5
+- 2026-08-05. Status: completed (commit 5178bfd24, FF-merged to master). All non-zero live states get chips (no +N), popover lane-grouped to match the Monitor ledger (shared taxonomy in fleetStateMeta), footer click one-shot-opens the grid on the Monitor ledger via new fleetGridView.ts. footer_hint_open_monitor x14 locales. Gates: tsc, eslint 0/0, fleet vitest 102/102, i18n strict + untranslated clean.
+
 
 ### athena-dev-day — conversation-log export + dev-mode v2 repairs + daily-goals ritual — COMPLETE, master ff to 1d200dede — session fable-5
 - 2026-08-04/05. Three arcs for a full day of live Athena testing: (1) dev-only conversation-log export button (header FileDown → gitignored `logs/athena-conversations/`, joins messages with narration/steps/summaries/recall/actions); (2) dev-mode v2 repairs — full op_id in the dispatch card (truncated id made every dev_merge fail), context-map index rolled up to group level (~30KB → ~5KB per prompt at 208 contexts), dead wrench-send pipeline cut from the per-turn hot path (`companion_request_improvement` deregistered), verdict write gated like the read; (3) daily-goals gamification subheader (streak + up to 3 manually-evaluated goal chips + BaseModal entry; `companion_daily_goal` in the user DB, local-day streak walk with grace; Athena sees set+streak via prompt addendum with a never-mark-done rule).

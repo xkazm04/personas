@@ -12,6 +12,8 @@
  *  • policy proposals — the Self-Tuning Fabric's pending routing/budget diffs.
  *  • evolution promotions — Darwin Mode's pending "this challenger beat the
  *    incumbent, install it?" proposals.
+ *  • goal acceptance — goals a team has finished and parked in
+ *    `awaiting_acceptance`, waiting for a human to sign them off.
  *
  * Two deliberate behaviours worth knowing before you read the code:
  *
@@ -49,11 +51,12 @@ import { useWorkspaceCenter } from '@/features/plugins/dev-tools/sub_workspaces/
 import { viewFromRow } from '@/features/overview/sub_patterns/libraryModel';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { toastCatch } from '@/lib/silentCatch';
+import { extractMessage, toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { getActiveTranslations } from '@/i18n/useTranslation';
 import type { DevIdea } from '@/lib/bindings/DevIdea';
 import type { EvolutionPromotionProposal } from '@/lib/bindings/EvolutionPromotionProposal';
+import type { PendingAcceptanceGoal } from '@/lib/bindings/PendingAcceptanceGoal';
 import type { PolicyProposal } from '@/lib/bindings/PolicyProposal';
 import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 
@@ -61,6 +64,7 @@ import { usePendingInteractions } from '../usePendingInteractions';
 import {
   DEFAULT_TRIAGE_COPY,
   evolutionProposalToTriage,
+  goalToTriage,
   ideaToTriage,
   policyProposalToTriage,
   practiceToTriage,
@@ -164,13 +168,49 @@ function successorsFor(
     .map((s) => ({ id: s.id, title: s.title }));
 }
 
-export interface IdeaBacklog {
+/**
+ * The seven queues this deck fuses, named so a failure can say WHICH one.
+ *
+ * `question` is absent deliberately: build questions are read out of the agent
+ * store, which the event bridge keeps live — there is no fetch here that can
+ * fail, so there is no failure to report.
+ */
+export type TriageSource = 'reviews' | 'ideas' | 'practices' | 'policy' | 'evolution' | 'goals';
+
+/** One source that did not answer, and what it said. */
+export interface TriageSourceFailure {
+  source: TriageSource;
+  /** The raw message. Shown in the failed ending's detail line, not the headline. */
+  message: string;
+}
+
+export interface TriageBacklog {
   /** Ideas this session has pulled into the deck. */
   loaded: number;
   /** Ideas pending in SQLite, whatever the deck happens to hold. */
   pending: number;
-  /** Whether another page exists. Drives "you cleared the batch, not the queue". */
+  /** Whether another IDEA page exists. Drives the top bar's `n / N` chip. */
   hasMore: boolean;
+  /**
+   * Ideas still pending behind the working set. EXACT — the keyset page is the
+   * one source that reports its own total, so this is the only number the deck
+   * is allowed to print.
+   */
+  remaining: number;
+  /**
+   * Sources whose fixed-limit query came back FULL.
+   *
+   * A query that asks for 50 and gets 50 has told you nothing about what is
+   * behind it. There is no count to print, but "we may have shown you a slice"
+   * is still the truth, and a deck that answers it with "nothing is waiting on
+   * you" is the exact lie this field exists to stop.
+   */
+  capped: readonly TriageSource[];
+  /**
+   * Anything at all sits behind the working set — a further idea page, or a
+   * capped source. `remaining` may be 0 while this is true.
+   */
+  more: boolean;
 }
 
 /**
@@ -191,8 +231,27 @@ export interface UnifiedTriageQueue {
    *  drives the filter chips. */
   allCounts: TriageCounts;
   loading: boolean;
+  /**
+   * Sources that did not answer this load — empty when everything read cleanly.
+   *
+   * The deck used to have no such field at all: every source ended in a
+   * `.catch(toastCatch(…))`, so a total outage settled `loading:false` with an
+   * empty array and rendered "Deck cleared — nothing is waiting on you", and a
+   * partial outage was silently a smaller queue. A triage surface that
+   * under-reports work is worse than one that is merely broken, because the
+   * reviewer stops looking.
+   */
+  failures: readonly TriageSourceFailure[];
   activeKinds: Set<TriageKind>;
   toggleKind: (kind: TriageKind) => void;
+  /**
+   * Put every kind back in play — the filtered ending's own action.
+   *
+   * The filtered ending used to render no button at all, so a reviewer who had
+   * switched a kind off and reached the end of the rest was shown a dead end
+   * describing a queue they could not get back to.
+   */
+  showAllKinds: () => void;
   /** How many this session has resolved — the progress readout's numerator. */
   decidedCount: number;
   /** Decided + still-pending. Never less than `decidedCount`. */
@@ -220,8 +279,12 @@ export interface UnifiedTriageQueue {
    * ideas pending, the deck dealt 60 and its cleared state was word-for-word the
    * one it shows when there is genuinely nothing left — the single most
    * misleading thing this surface could say.
+   *
+   * `capped` extends the same honesty to the sources that have no `hasMore` to
+   * report: they are read at a fixed limit, and a full page means the deck is
+   * holding a slice it cannot size.
    */
-  backlog: IdeaBacklog;
+  backlog: TriageBacklog;
   /** Pull the next page of ideas into the working set. No-op when there is none. */
   loadMore: () => void;
   /**
@@ -253,13 +316,19 @@ export interface UnifiedTriageHosts {
   onOpenBuilder?: (personaId: string) => void;
   /** Deep-link to the execution behind a review. Absent when the host has no route. */
   onOpenRun?: (executionId: string) => void;
+  /**
+   * Deep-link to a project's goals board — the goal card's "open the board"
+   * branch. Absent when the host has no route, in which case the branch reports
+   * that rather than resolving the card for free (see `triageDispatch`).
+   */
+  onOpenGoalBoard?: (projectId: string) => void;
 }
 
 export function useUnifiedTriage(
   copy: TriageCopy = DEFAULT_TRIAGE_COPY,
   hosts: UnifiedTriageHosts = {},
 ): UnifiedTriageQueue {
-  const { onOpenBuilder, onOpenRun } = hosts;
+  const { onOpenBuilder, onOpenRun, onOpenGoalBoard } = hosts;
   const interactions = usePendingInteractions();
   const center = useWorkspaceCenter(PRACTICE_CENTER_OPTIONS);
   const projects = useSystemStore((s) => s.projects);
@@ -269,6 +338,16 @@ export function useUnifiedTriage(
   // Idea verdicts go through the slice, not the API: see the port bundle below.
   const acceptIdeaViaStore = useSystemStore((s) => s.acceptIdea);
   const rejectIdeaViaStore = useSystemStore((s) => s.rejectIdea);
+  // Goal verdicts, for the same reason: the slice owns the row write AND the
+  // pending-acceptance count refresh, and bypassing it is how a verdict here
+  // fails to show up somewhere else. Both rethrow on a failed write, so the
+  // deck's restore path can fire.
+  const acceptGoalViaStore = useSystemStore((s) => s.acceptGoal);
+  const rejectGoalViaStore = useSystemStore((s) => s.rejectGoal);
+  // The title-bar badge counts exactly what this deck deals, and it is polled
+  // on a 30s bucket — so without a nudge here, clearing a card leaves the
+  // number it is meant to be clearing standing for up to half a minute.
+  const refreshPendingCounts = useSystemStore((s) => s.refreshPendingCounts);
 
   const [ideas, setIdeas] = useState<DevIdea[]>([]);
   const [ideasLoading, setIdeasLoading] = useState(true);
@@ -278,8 +357,37 @@ export function useUnifiedTriage(
    * state, so "load more" twice in a row is two fetches rather than one.
    */
   const [ideaFetch, setIdeaFetch] = useState<{ cursor?: string; gen: number }>({ gen: 0 });
-  const [backlog, setBacklog] = useState<IdeaBacklog>({ loaded: 0, pending: 0, hasMore: false });
+  const [ideaPage, setIdeaPage] = useState({ loaded: 0, pending: 0, hasMore: false });
   const cursorRef = useRef<string | null>(null);
+
+  /**
+   * Which sources failed, and which came back full.
+   *
+   * Both are keyed records rather than a boolean per source so a seventh queue
+   * costs one entry, not two more `useState`s and two more memo deps — and both
+   * are written through the helpers below, which BAIL OUT when nothing changed.
+   * That matters more than it looks: these are set from inside a 30s poll, and a
+   * fresh object per poll would re-run the whole projection for no news.
+   */
+  const [sourceErrors, setSourceErrors] = useState<Partial<Record<TriageSource, string>>>({});
+  const [cappedSources, setCappedSources] = useState<readonly TriageSource[]>([]);
+
+  const noteFailure = useCallback((source: TriageSource, message: string | null) => {
+    setSourceErrors((prev) => {
+      if ((prev[source] ?? null) === message) return prev;
+      const next = { ...prev };
+      if (message) next[source] = message;
+      else delete next[source];
+      return next;
+    });
+  }, []);
+
+  const noteCapped = useCallback((source: TriageSource, capped: boolean) => {
+    setCappedSources((prev) => {
+      if (prev.includes(source) === capped) return prev;
+      return capped ? [...prev, source] : prev.filter((s) => s !== source);
+    });
+  }, []);
 
   /**
    * The session as it stood when the deck last closed.
@@ -314,19 +422,31 @@ export function useUnifiedTriage(
   const [undo, setUndo] = useState<TriageUndo | null>(null);
   const undoTimerRef = useRef<number | null>(null);
 
-  // Three independent writes rather than one: the hooks that own these pieces
-  // change them at completely different rates (a filter chip is rare, a skip is
-  // per-card), and `saveTriageSession` merges, so none of them can clobber the
-  // drafts `useDeckControls` persists into the same record.
+  /**
+   * One write, and never on mount.
+   *
+   * This used to be THREE effects — skips, kinds, resolved — each a
+   * read-modify-write that re-serialises the whole record (drafts included: up
+   * to `MAX_DRAFTS × MAX_DRAFT_CHARS`). All three fire on mount, where the
+   * values are precisely what was just READ out of storage, so opening the deck
+   * cost three full `JSON.stringify` passes to write back byte-identical state.
+   * And `reload()` changes all three in one commit, which cost three more.
+   *
+   * Coalescing loses nothing: `saveTriageSession` still MERGES, so this half of
+   * the record still cannot clobber the drafts `useDeckControls` owns, and the
+   * effect still only runs when one of the three actually changed.
+   *
+   * `startedAt` rides along because skipping the mount write removed the thing
+   * that used to stamp it — see `TriageSessionPatch.startedAt`.
+   */
+  const sessionWritten = useRef(false);
   useEffect(() => {
-    saveTriageSession({ skips });
-  }, [skips]);
-  useEffect(() => {
-    saveTriageSession({ kinds: activeKinds });
-  }, [activeKinds]);
-  useEffect(() => {
-    saveTriageSession({ resolved });
-  }, [resolved]);
+    if (!sessionWritten.current) {
+      sessionWritten.current = true;
+      return;
+    }
+    saveTriageSession({ skips, kinds: activeKinds, resolved, startedAt: sessionStart });
+  }, [skips, activeKinds, resolved, sessionStart]);
 
   /**
    * The two proposal ledgers, and the generation counter that re-reads them.
@@ -340,6 +460,19 @@ export function useUnifiedTriage(
   const [proposalsLoading, setProposalsLoading] = useState(true);
   const [promotionsLoading, setPromotionsLoading] = useState(true);
   const [proposalGen, setProposalGen] = useState(0);
+
+  /**
+   * Goals parked in `awaiting_acceptance`, and their own generation counter.
+   *
+   * A third counter rather than a third user of `proposalGen`: a goal verdict
+   * invalidates the goal ledger and nothing else, and re-querying two unrelated
+   * proposal subsystems because somebody signed off a finished goal is work
+   * nobody asked for — the same reason `proposalGen` is separate from
+   * `ideaFetch.gen`.
+   */
+  const [goals, setGoals] = useState<PendingAcceptanceGoal[]>([]);
+  const [goalsLoading, setGoalsLoading] = useState(true);
+  const [goalGen, setGoalGen] = useState(0);
 
   const projectName = useCallback(
     (projectId: string | null) =>
@@ -359,22 +492,26 @@ export function useUnifiedTriage(
       .then((page) => {
         if (cancelled) return;
         cursorRef.current = page.cursor;
+        noteFailure('ideas', null);
         setIdeas((prev) => {
           const next = appending ? [...prev, ...page.ideas] : page.ideas;
           // `counts` is scoped to the non-status filters, so `pending` is the
           // whole pending backlog rather than this page's slice.
-          setBacklog({ loaded: next.length, pending: page.counts.pending, hasMore: page.hasMore });
+          setIdeaPage({ loaded: next.length, pending: page.counts.pending, hasMore: page.hasMore });
           return next;
         });
       })
-      .catch(toastCatch('Could not load backlog ideas'))
+      .catch((error) => {
+        if (!cancelled) noteFailure('ideas', extractMessage(error));
+        toastCatch('Could not load backlog ideas')(error);
+      })
       .finally(() => {
         if (!cancelled) setIdeasLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [ideaFetch]);
+  }, [ideaFetch, noteFailure]);
 
   // The two proposal ledgers, fetched independently rather than in one
   // `Promise.all`: they are unrelated subsystems, and one being unavailable must
@@ -384,32 +521,108 @@ export function useUnifiedTriage(
     setProposalsLoading(true);
     void policyTuningList(true, PROPOSAL_PAGE_SIZE)
       .then((rows) => {
-        if (!cancelled) setPolicyProposals(rows);
+        if (cancelled) return;
+        setPolicyProposals(rows);
+        noteFailure('policy', null);
+        // A fixed-limit query that returns exactly its limit is a slice, and
+        // this ledger is small BY CONSTRUCTION rather than by guarantee.
+        noteCapped('policy', rows.length >= PROPOSAL_PAGE_SIZE);
       })
-      .catch(toastCatch('Could not load tuning proposals'))
+      .catch((error) => {
+        if (!cancelled) noteFailure('policy', extractMessage(error));
+        toastCatch('Could not load tuning proposals')(error);
+      })
       .finally(() => {
         if (!cancelled) setProposalsLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [proposalGen]);
+  }, [proposalGen, noteFailure, noteCapped]);
 
   useEffect(() => {
     let cancelled = false;
     setPromotionsLoading(true);
     void listPromotionProposals({ status: 'pending', limit: PROPOSAL_PAGE_SIZE })
       .then((rows) => {
-        if (!cancelled) setPromotions(rows);
+        if (cancelled) return;
+        setPromotions(rows);
+        noteFailure('evolution', null);
+        noteCapped('evolution', rows.length >= PROPOSAL_PAGE_SIZE);
       })
-      .catch(toastCatch('Could not load promotion proposals'))
+      .catch((error) => {
+        if (!cancelled) noteFailure('evolution', extractMessage(error));
+        toastCatch('Could not load promotion proposals')(error);
+      })
       .finally(() => {
         if (!cancelled) setPromotionsLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [proposalGen]);
+  }, [proposalGen, noteFailure, noteCapped]);
+
+  // Goals get their own effect for the same reason the two proposal ledgers do:
+  // an install whose goals command errors must still be dealt its reviews, its
+  // ideas and its practices. One `Promise.all` over unrelated subsystems is how
+  // one unavailable source takes the whole queue down with it.
+  useEffect(() => {
+    let cancelled = false;
+    setGoalsLoading(true);
+    void devApi
+      .listPendingAcceptance()
+      .then((rows) => {
+        if (cancelled) return;
+        setGoals(rows);
+        noteFailure('goals', null);
+      })
+      .catch((error) => {
+        if (!cancelled) noteFailure('goals', extractMessage(error));
+        toastCatch('Could not load goals awaiting acceptance')(error);
+      })
+      .finally(() => {
+        if (!cancelled) setGoalsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [goalGen, noteFailure]);
+
+  // The two sources this hook does NOT own the fetch for report their failure
+  // as a value rather than a rejection, so they are mirrored into the same
+  // ledger instead of being a second thing the deck has to ask about.
+  useEffect(() => {
+    noteFailure('reviews', interactions.reviewsError);
+  }, [interactions.reviewsError, noteFailure]);
+  useEffect(() => {
+    noteFailure('practices', center.knowledgeError);
+  }, [center.knowledgeError, noteFailure]);
+  // The review read is bounded (see `usePendingInteractions`), so it joins the
+  // capped set the same way the two fixed-limit ledgers do.
+  useEffect(() => {
+    noteCapped('reviews', interactions.reviewsHasMore);
+  }, [interactions.reviewsHasMore, noteCapped]);
+
+  const failures = useMemo<readonly TriageSourceFailure[]>(
+    () =>
+      (Object.entries(sourceErrors) as [TriageSource, string][]).map(([source, message]) => ({
+        source,
+        message,
+      })),
+    [sourceErrors],
+  );
+
+  const backlog = useMemo<TriageBacklog>(() => {
+    // Only ideas can name a number. Everything else contributes "there may be
+    // more", which is why `more` is not derived from `remaining`.
+    const remaining = ideaPage.hasMore ? Math.max(0, ideaPage.pending - ideaPage.loaded) : 0;
+    return {
+      ...ideaPage,
+      remaining,
+      capped: cappedSources,
+      more: ideaPage.hasMore || cappedSources.length > 0,
+    };
+  }, [ideaPage, cappedSources]);
 
   const personaById = useMemo(
     () => new Map(personas.map((p) => [p.id, p])),
@@ -486,6 +699,22 @@ export function useUnifiedTriage(
       );
     }
 
+    // "Accept all N from this KPI" is the bulk affordance the goals board was
+    // built around, and the adapter is store-free — it cannot go and ask which
+    // other goals sit on the same KPI. So the grouping happens once here and
+    // each card is handed its KPI-mates' ids. Goals with no KPI have no batch:
+    // there is nothing for them to be batched WITH.
+    const goalIdsByKpi = new Map<string, string[]>();
+    for (const goal of goals) {
+      if (!goal.kpi_id) continue;
+      const bucket = goalIdsByKpi.get(goal.kpi_id);
+      if (bucket) bucket.push(goal.goal_id);
+      else goalIdsByKpi.set(goal.kpi_id, [goal.goal_id]);
+    }
+    for (const goal of goals) {
+      out.push(goalToTriage(goal, goal.kpi_id ? goalIdsByKpi.get(goal.kpi_id) ?? [] : [], copy));
+    }
+
     return out;
   }, [
     interactions.reviews,
@@ -496,6 +725,7 @@ export function useUnifiedTriage(
     center.projectById,
     policyProposals,
     promotions,
+    goals,
     personaById,
     copy,
     projectName,
@@ -585,6 +815,11 @@ export function useUnifiedTriage(
     });
   }, []);
 
+  // Not `TRIAGE_KINDS.forEach(toggleKind)`: toggling refuses to switch the LAST
+  // kind off, so replaying it over an already-full set would leave six on and
+  // one off. One assignment, no ordering to reason about.
+  const showAllKinds = useCallback(() => setActiveKinds(new Set(TRIAGE_KINDS)), []);
+
   const focusItem = useCallback((id: string) => setFocusedId(id), []);
 
   const reload = useCallback(() => {
@@ -600,6 +835,7 @@ export function useUnifiedTriage(
     setUndo(null);
     setIdeaFetch((f) => ({ gen: f.gen + 1 }));
     setProposalGen((g) => g + 1);
+    setGoalGen((g) => g + 1);
     center.refreshKnowledge();
   }, [center]);
 
@@ -629,11 +865,18 @@ export function useUnifiedTriage(
   const refreshSources = useCallback(() => {
     setIdeaFetch((f) => ({ gen: f.gen + 1 }));
     setProposalGen((g) => g + 1);
+    setGoalGen((g) => g + 1);
     center.refreshKnowledge();
-  }, [center]);
+    // Whatever moved these sources moved the title-bar badge with them — a
+    // verdict lost to someone else, or an undo that put a row back.
+    void refreshPendingCounts();
+  }, [center, refreshPendingCounts]);
 
   /** Re-read only the two proposal ledgers — what a proposal verdict invalidates. */
   const refreshProposals = useCallback(() => setProposalGen((g) => g + 1), []);
+
+  /** Re-read only the goal ledger — what a goal verdict invalidates. */
+  const refreshGoals = useCallback(() => setGoalGen((g) => g + 1), []);
 
   /** Every write a verdict can reach, in one injected bundle — see
    *  `triageDispatch`, which owns the routing itself. */
@@ -668,17 +911,37 @@ export function useUnifiedTriage(
           seenStatus,
         }),
       refreshProposals,
+      // Each goal write re-reads the goal ledger, the way a proposal verdict
+      // re-reads the proposal ones. The store refreshes the pending COUNT, not
+      // the rows this hook holds — and `accept-kpi-batch` signs off SIBLINGS the
+      // deck is still holding cards for, so without the re-read those cards stay
+      // in the queue and the next verdict on one of them writes into a goal that
+      // is already signed off. A rejected write throws before it gets here,
+      // which is what leaves the restore path free to put the card back.
+      acceptGoal: async (id) => {
+        await acceptGoalViaStore(id);
+        refreshGoals();
+      },
+      rejectGoal: async (id, comment) => {
+        await rejectGoalViaStore(id, comment);
+        refreshGoals();
+      },
       reopenIdea: (id, seenStatus) => reopenIdeaRow(id, { seenStatus }),
       reopenPractice: (id, seenStatus) => reopenPracticeRow(id, { seenStatus }),
       openBuilder: onOpenBuilder,
+      openGoalBoard: onOpenGoalBoard,
     }),
     [
       interactions,
       center,
       onOpenBuilder,
+      onOpenGoalBoard,
       acceptIdeaViaStore,
       rejectIdeaViaStore,
+      acceptGoalViaStore,
+      rejectGoalViaStore,
       refreshProposals,
+      refreshGoals,
     ],
   );
 
@@ -722,6 +985,12 @@ export function useUnifiedTriage(
       try {
         await routeDecision(decision, ports);
         journal(decision);
+        // The row is gone from a queue the title-bar badge counts, so the badge
+        // owes an update NOW rather than on its next 30s tick — a reviewer who
+        // clears the deck and watches the number sit there reads it as broken.
+        // Deliberately not awaited: a badge is never worth blocking the next
+        // card on, and the refresh swallows its own failures.
+        void refreshPendingCounts();
         // Only rows with a reverse door are offered back. Anything else clears
         // the slot rather than leaving the previous card's offer standing over
         // a decision that has since been made — see `reversibleStatus`.
@@ -763,7 +1032,7 @@ export function useUnifiedTriage(
         toastCatch('Could not record that decision')(error);
       }
     },
-    [ports, refreshSources, journal, arm, actLabel, sayConflict],
+    [ports, refreshSources, refreshPendingCounts, journal, arm, actLabel, sayConflict],
   );
 
   /**
@@ -846,9 +1115,16 @@ export function useUnifiedTriage(
     () => ({
       items: projection.items,
       allCounts: projection.allCounts,
-      loading: interactions.loading || ideasLoading || proposalsLoading || promotionsLoading,
+      loading:
+        interactions.loading ||
+        ideasLoading ||
+        proposalsLoading ||
+        promotionsLoading ||
+        goalsLoading,
+      failures,
       activeKinds,
       toggleKind,
+      showAllKinds,
       decidedCount: resolved.size,
       sessionTotal: projection.sessionTotal,
       deferredCount: projection.deferredCount,
@@ -869,8 +1145,11 @@ export function useUnifiedTriage(
       ideasLoading,
       proposalsLoading,
       promotionsLoading,
+      goalsLoading,
+      failures,
       activeKinds,
       toggleKind,
+      showAllKinds,
       resolved.size,
       skips,
       focusItem,

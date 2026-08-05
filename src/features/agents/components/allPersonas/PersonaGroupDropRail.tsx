@@ -6,14 +6,6 @@ import { usePipelineStore } from '@/stores/pipelineStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 
-/**
- * MIME type used by the persona-card drag sources (Grid / Constellation
- * variants). Retained for those gestures; this rail no longer renders drop
- * targets (see below), so a drag here is an inert no-op — home-team
- * assignment now lives on the batch bar ("Set home team").
- */
-export const PERSONA_DRAG_MIME = 'application/x-personas-persona-id';
-
 /** Sentinel filter id for "personas with no home team". */
 const NO_TEAM = '__ungrouped__';
 

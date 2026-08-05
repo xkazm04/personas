@@ -6,7 +6,7 @@
 
 use std::sync::Arc;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::State;
 use ts_rs::TS;
 
@@ -84,6 +84,36 @@ pub fn companion_daily_goals_create(
     require_dev_build()?;
     Ok(to_state(
         daily_goals::create_set(&state.user_db, &titles)?,
+        false,
+    ))
+}
+
+/// One row of the edit modal: `id` set = rewrite that goal's text,
+/// `id` absent = a newly-filled empty slot to append.
+#[derive(Debug, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DailyGoalEdit {
+    pub id: Option<String>,
+    pub title: String,
+}
+
+#[tauri::command]
+pub fn companion_daily_goals_update(
+    state: State<'_, Arc<AppState>>,
+    edits: Vec<DailyGoalEdit>,
+) -> Result<DailyGoalsState, AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    require_dev_build()?;
+    let edits: Vec<daily_goals::GoalEdit> = edits
+        .into_iter()
+        .map(|e| daily_goals::GoalEdit {
+            id: e.id,
+            title: e.title,
+        })
+        .collect();
+    Ok(to_state(
+        daily_goals::update_set(&state.user_db, &edits)?,
         false,
     ))
 }

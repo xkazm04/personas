@@ -5,16 +5,15 @@ import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
 import { useCommandPaletteStore } from '@/stores/commandPaletteStore';
+import { POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
+import { getPollingCoordinator } from '@/lib/polling/pollingCoordinator';
 import { PersonaMonitor } from '@/features/fleet/monitor';
 import { QuickAnswerPopover } from '@/features/agents/quick-answer/QuickAnswerPopover';
 import { FullScreenOverlay } from '@/features/shared/components/layout/FullScreenOverlay';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
-// Lazy so the always-mounted tray doesn't pull these full-size surfaces into the
-// main bundle — they load only when summoned.
-const GoalAcceptanceOverlay = lazy(() =>
-  import('@/features/teams/sub_goals/GoalAcceptanceOverlay').then((m) => ({ default: m.GoalAcceptanceOverlay })),
-);
+// Lazy so the always-mounted tray doesn't pull this full-size surface into the
+// main bundle — it loads only when summoned.
 const ScheduleTimeline = lazy(() => import('@/features/schedules/components/ScheduleTimeline'));
 
 function OverlayFallback() {
@@ -36,7 +35,6 @@ export function useTitleBarTray() {
   const unreadCount = useNotificationCenterStore((s) => s.unreadCount);
   const markAllNotificationsRead = useNotificationCenterStore((s) => s.markAllRead);
   const cronAgents = useOverviewStore((s) => s.cronAgents);
-  const pendingReviewCount = useOverviewStore((s) => s.pendingReviewCount);
   const unreadMessageCount = useOverviewStore((s) => s.unreadMessageCount);
   const draftReadyCount = useOverviewStore((s) =>
     Object.values(s.activeProcesses).filter((p) => p.status === 'draft_ready').length,
@@ -53,18 +51,28 @@ export function useTitleBarTray() {
   });
   const headerOverlay = useSystemStore((s) => s.headerOverlay);
   const setHeaderOverlay = useSystemStore((s) => s.setHeaderOverlay);
-  const pendingAcceptance = useSystemStore((s) => s.pendingAcceptanceCount);
-  const refreshPendingAcceptance = useSystemStore((s) => s.refreshPendingAcceptance);
   const openPalette = useCommandPaletteStore((s) => s.openPalette);
+  const pendingTotal = useSystemStore((s) => s.pendingCounts?.total ?? 0);
+  const refreshPendingCounts = useSystemStore((s) => s.refreshPendingCounts);
 
-  // Keep the pending-acceptance badge live — cheap COUNT on mount + a 30s poll
-  // (goals complete in the background, so the badge can't be derived from the
-  // page-scoped goals array).
+  /**
+   * The badge's own poll, on the shared coordinator's 30s bucket.
+   *
+   * Two things this fixes. The tray never fetched anything: the review badge
+   * was only ever fresh because the SIDEBAR happened to poll
+   * `pendingReviewCount` on its own ticker, so a window with the sidebar
+   * collapsed showed a number that stopped moving. And the count it did read
+   * came from a raw `setInterval` living beside it, which ticked on its own
+   * offset and made SQLite warm its cache a second time for a badge.
+   */
   useEffect(() => {
-    void refreshPendingAcceptance();
-    const id = setInterval(() => void refreshPendingAcceptance(), 30_000);
-    return () => clearInterval(id);
-  }, [refreshPendingAcceptance]);
+    const { dispose } = getPollingCoordinator().register(
+      'titleBarPendingCounts',
+      refreshPendingCounts,
+      { interval: POLLING_CONFIG.dashboardRefresh.interval },
+    );
+    return dispose;
+  }, [refreshPendingCounts]);
 
   const todayScheduleCount = useMemo(() => {
     const now = new Date();
@@ -77,14 +85,26 @@ export function useTitleBarTray() {
     }).length;
   }, [cronAgents]);
 
-  const quickCount = questionCount + pendingReviewCount;
+  /**
+   * Everything the deck behind this capsule will actually deal.
+   *
+   * `pendingTotal` is the backend's sum over the SIX DB-backed queues — and it
+   * already includes manual reviews, so `pendingReviewCount` must NOT be added
+   * on top of it. This used to read `questionCount + pendingReviewCount`: two
+   * of seven queues, so a reviewer with 26 pending ideas and nothing else saw
+   * `0`. A confidently wrong number is worse than an absent one.
+   *
+   * Build questions are the one term added client-side, and that is not an
+   * oversight to be tidied away into the Rust query: a halted CLI awaiting
+   * input lives in `buildSessions` state and has no row anywhere to count.
+   */
+  const quickCount = pendingTotal + questionCount;
   const monitorAttention = unreadMessageCount + draftReadyCount;
 
   const notificationsOpen = headerOverlay === 'notifications';
   const reviewOpen = headerOverlay === 'quick-answer';
   const monitorOpen = headerOverlay === 'monitor';
   const isScheduleActive = headerOverlay === 'schedules';
-  const acceptanceOpen = headerOverlay === 'goal-acceptance';
 
   const toggleNotifications = () => {
     if (!notificationsOpen) {
@@ -100,27 +120,22 @@ export function useTitleBarTray() {
   const toggleReview = () => setHeaderOverlay(reviewOpen ? 'none' : 'quick-answer');
   const toggleMonitor = () => setHeaderOverlay(monitorOpen ? 'none' : 'monitor');
   const openSearch = () => openPalette('settings');
-  // Pending-acceptance badge → full-screen acceptance overlay (same pattern).
-  const openAcceptance = () => setHeaderOverlay(acceptanceOpen ? 'none' : 'goal-acceptance');
 
   return {
     todayScheduleCount,
     quickCount,
     monitorAttention,
     unreadCount,
-    pendingAcceptance,
     running,
     notificationsOpen,
     reviewOpen,
     monitorOpen,
     isScheduleActive,
-    acceptanceOpen,
     toggleNotifications,
     toggleSchedules,
     toggleReview,
     toggleMonitor,
     openSearch,
-    openAcceptance,
   };
 }
 
@@ -142,11 +157,6 @@ export function TrayOverlays() {
           onClose={() => setHeaderOverlay('none')}
           onOpenMonitor={() => setHeaderOverlay('monitor')}
         />
-      )}
-      {headerOverlay === 'goal-acceptance' && (
-        <Suspense key="goal-acceptance" fallback={null}>
-          <GoalAcceptanceOverlay onClose={() => setHeaderOverlay('none')} />
-        </Suspense>
       )}
       {headerOverlay === 'schedules' && (
         <FullScreenOverlay key="schedules" onClose={() => setHeaderOverlay('none')} testId="schedules-overlay">

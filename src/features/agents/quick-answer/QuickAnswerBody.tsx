@@ -1,5 +1,7 @@
 import { CheckCircle2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
 import { usePendingInteractions } from './usePendingInteractions';
@@ -44,9 +46,39 @@ export function QuickAnswerBodyView({ interactions, onAfterBuilderNav }: {
 }) {
   const { t } = useTranslation();
   const {
-    questionGroups, reviews, total, isProcessing,
+    questionGroups, reviews, total, loading, reviewsError, isProcessing,
     submitQuestionAnswers, handleReviewAction, handleDispatchAction,
   } = interactions;
+
+  // Three states, not one. The hook has always returned `loading` and this view
+  // never destructured it, so the "all caught up" checkmark was shown on first
+  // paint — before a single fetch had landed — and again on a fetch that FAILED,
+  // because a failed review load reached here as an empty array and nothing
+  // else. Both read as "nothing is waiting on you".
+  if (total === 0 && loading) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2.5 py-12 text-center">
+        {/* The spinner IS the announcement (it renders an `sr-only`
+            `role="status"` and nothing else), so the visible copy is hidden
+            from assistive tech rather than read out twice. */}
+        <LoadingSpinner label={t.monitor.quick_loading} />
+        <span className="typo-body text-foreground" aria-hidden>
+          {t.monitor.quick_loading}
+        </span>
+      </div>
+    );
+  }
+
+  if (total === 0 && reviewsError) {
+    return (
+      <InlineErrorBanner
+        severity="error"
+        title={t.monitor.quick_error_title}
+        message={t.monitor.quick_error_body}
+        compact
+      />
+    );
+  }
 
   if (total === 0) {
     return (
@@ -60,6 +92,15 @@ export function QuickAnswerBodyView({ interactions, onAfterBuilderNav }: {
 
   return (
     <>
+      {/* A PARTIAL failure still has to say so: the questions rendered below are
+          real, and the reviews half of this surface is missing. */}
+      {reviewsError ? (
+        <InlineErrorBanner
+          severity="warning"
+          message={t.monitor.quick_error_body}
+          compact
+        />
+      ) : null}
       {questionGroups.length > 0 && (
         <section className="flex flex-col gap-2.5">
           <span className="typo-label font-bold uppercase tracking-[0.16em] text-foreground">

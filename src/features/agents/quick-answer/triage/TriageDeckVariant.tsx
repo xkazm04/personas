@@ -21,17 +21,18 @@
  * its children survive because two other surfaces still render them (the
  * channel-timeline rail and the reviews rail) — only the popover shell is gone.
  */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ThumbsDown, ThumbsUp } from 'lucide-react';
 
+import { useAnnounce } from '@/features/shared/components/feedback/AriaLiveProvider';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { DeckActionBar, DeckFlank } from './deck/DeckActionBar';
 import { kindCopy } from './deck/DeckChips';
-import { DeckQueueRail } from './deck/DeckQueueRail';
-import { DeckCleared, DeckLoading } from './deck/DeckStates';
+import { DeckQueueRail, RAIL_WIDTH } from './deck/DeckQueueRail';
+import { DeckCleared, DeckFailed, DeckLoading } from './deck/DeckStates';
 import { DeckTopBar } from './deck/DeckTopBar';
 import { QuestionPanel } from './deck/QuestionPanel';
 import { ReasonStrip } from './deck/ReasonStrip';
@@ -79,26 +80,84 @@ export function TriageDeckVariant({
   } = useDeckControls(queue, onClose);
 
   /**
-   * The deck's ONE live region.
+   * The deck owns NO live region of its own — it speaks through the app's.
    *
-   * Composed rather than rendered inline so it starts EMPTY: a live region that
-   * already has its text on first paint is not a change, and most screen
-   * readers will not speak it. Filling it one commit later makes the first card
-   * announce like every card after it.
+   * It used to hand-roll a `role="status"` div and swap its text. A live region
+   * only speaks when its content MUTATES, so rejecting two cards with the same
+   * words in a row produced one utterance and the second verdict was recorded
+   * in silence. `AriaLiveProvider` exists for exactly this: it queues each
+   * message and bumps a `key`, so every call remounts the region and every call
+   * is heard once.
+   *
+   * The copy is read through a ref rather than depended on. `t` re-identifies
+   * whenever a lazily-loaded locale SECTION lands, and this whole surface is
+   * lazy — an utterance must be caused by a verdict or a deal, never by a chunk
+   * arriving.
    */
-  const spoken = [
-    lastVerdict ? tx(t.monitor.triage_announce_verdict, { verdict: lastVerdict }) : null,
-    top ? tx(t.monitor.triage_announce_card, { kind: kindCopy(t, top.kind).one, title: top.title }) : null,
-  ]
-    .filter(Boolean)
-    .join(' ');
-  const [announcement, setAnnouncement] = useState('');
-  useEffect(() => setAnnouncement(spoken), [spoken]);
+  const announce = useAnnounce();
+  const copy = useRef({ t, tx, announce, top });
+  copy.current = { t, tx, announce, top };
+
+  // Hoisted out of the JSX. `DeckFlank` is memoised, and an inline
+  // `() => decideTop('reject')` is a new function on every render — which is
+  // every keystroke in a question card's answer box. A memo behind an unstable
+  // prop is a memo that never holds.
+  const rejectTop = useCallback(() => decideTop('reject'), [decideTop]);
+  const acceptTop = useCallback(() => decideTop('accept'), [decideTop]);
+
+  // One utterance per WRITE. `lastVerdict` is a fresh stamp every time (see
+  // `DeckVerdictStamp`), so two identical verdicts in a row are two events.
+  useEffect(() => {
+    if (!lastVerdict) return;
+    const c = copy.current;
+    c.announce(c.tx(c.t.monitor.triage_announce_verdict, { verdict: lastVerdict.text }));
+  }, [lastVerdict]);
+
+  // One utterance per CARD DEALT. Keyed by id and not by the item object: the
+  // polls that replace `queue.items` hand back new objects for the same card,
+  // and re-announcing the card the reviewer is already looking at is noise.
+  const topId = top?.id ?? null;
+  useEffect(() => {
+    if (!topId) return;
+    const c = copy.current;
+    if (!c.top) return;
+    const dealt = c.tx(c.t.monitor.triage_announce_card, {
+      kind: kindCopy(c.t, c.top.kind).one,
+      title: c.top.title,
+    });
+    // An alert is "the ONE fact that changes what the decision MEANS"
+    // (`triageTypes.ts`) — a review that is holding a team step, a promotion
+    // pinned to a stale persona. The banner used to carry `role="status"` per
+    // mounted card, which is why it was removed; but removing it without this
+    // left the fact announced by NOTHING, and this deck decides on `←`/`→`
+    // without the card ever being read. So it rides the deal utterance that is
+    // already correct, rather than earning a live region back.
+    //
+    // The LABEL only. `alert.detail` is a sentence of consequence, and this is a
+    // keyboard-speed surface — the label is the interrupt, the detail is on the
+    // card for whoever stops to read it. And a card with no alert must pay
+    // nothing: the utterance below is then byte-identical to the one before this
+    // existed, which is why the alert composes through its own key instead of an
+    // optional placeholder that renders as a dangling "—" in fourteen locales.
+    const alert = c.top.alert;
+    c.announce(
+      alert
+        ? c.tx(c.t.monitor.triage_announce_card_alert, { card: dealt, alert: alert.label })
+        : dealt,
+    );
+  }, [topId]);
 
   const stack = queue.items.slice(0, STACK_DEPTH);
   const showLoading = queue.loading && stack.length === 0;
   // "You filtered it away" and "you finished" are different endings.
   const filteredOut = TRIAGE_KINDS.some((k) => !queue.activeKinds.has(k) && queue.allCounts[k] > 0);
+  // "We could not read the queue" is a THIRD ending, and it outranks cleared
+  // absolutely: a deck with nothing to deal and a source that never answered
+  // does not know whether anything is waiting, so it must not say nothing is.
+  // (A partial failure with cards still to deal is reported by the top bar's
+  // chip instead — the reviewer keeps working, and the deck still admits the
+  // queue is short.)
+  const failed = queue.failures.length > 0;
 
   return (
     // A real dialog, not a bare section. It covers the whole app below the
@@ -119,13 +178,16 @@ export function TriageDeckVariant({
       aria-label={t.monitor.triage_deck_aria}
       data-testid="triage-deck-variant"
     >
-      {/* ONE polite region for the whole surface: what was just recorded, then
-          what is now being asked. Replaces the two permanent `role="status"`
-          stamps that used to announce "Reject… Approve" on every deal. */}
-      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
-        {announcement}
-      </div>
+      {/* No live region here. Everything this surface announces — the verdict
+          just recorded, then the card now being asked about — goes through the
+          app's `AriaLiveProvider` (see the effects above), which is the only
+          polite region the deck contributes to.
 
+          The one live region that can still appear BELOW this point is
+          `LoadingSpinner`'s `role="status"` inside `DeckLoading`, and it is up
+          only while there is no card to announce at all. The card stack itself
+          contributes none: `TriageCard`'s drag stamps and `TriageCardHeader`'s
+          alert banner are paint and content respectively, not status. */}
       <DeckTopBar queue={queue} title={title} onOpenMonitor={onOpenMonitor} onClose={onClose} />
 
       <div className="relative flex min-h-0 flex-1">
@@ -143,6 +205,14 @@ export function TriageDeckVariant({
 
         {showLoading ? (
           <DeckLoading reduced={reduced} />
+        ) : !top && failed ? (
+          <DeckFailed
+            failures={queue.failures}
+            summary={queue.summary}
+            deferred={queue.deferredCount}
+            reduced={reduced}
+            onRetry={queue.reload}
+          />
         ) : !top ? (
           <DeckCleared
             decided={queue.decidedCount}
@@ -150,10 +220,13 @@ export function TriageDeckVariant({
             filtered={filteredOut}
             // "You cleared the batch" and "you cleared the queue" are different
             // endings, and until now the deck told the same story for both.
-            remaining={queue.backlog.hasMore ? queue.backlog.pending - queue.backlog.loaded : 0}
+            remaining={queue.backlog.remaining}
+            more={queue.backlog.more}
+            deferred={queue.deferredCount}
             reduced={reduced}
             onReload={queue.reload}
             onLoadMore={queue.loadMore}
+            onShowAllKinds={queue.showAllKinds}
           />
         ) : (
           <>
@@ -164,7 +237,7 @@ export function TriageDeckVariant({
               icon={ThumbsDown}
               label={top.verdictLabels.reject}
               disabled={!!capture}
-              onClick={() => decideTop('reject')}
+              onClick={rejectTop}
             />
 
             {/* Widened from 42rem: the card carries markdown prose, and the
@@ -203,11 +276,23 @@ export function TriageDeckVariant({
               icon={ThumbsUp}
               label={top.verdictLabels.accept}
               disabled={!canAccept || !!capture}
-              onClick={() => decideTop('accept')}
+              onClick={acceptTop}
             />
           </>
         )}
         </div>
+
+        {/* Mirrors the rail so the card centres on the WINDOW rather than on
+            whatever space the rail happens to leave. Without it the card is a
+            flex sibling of the rail and slides right by half the rail's width,
+            which is why the rail could never be widened.
+
+            Only from `2xl` up, and that is the whole trade: the card wants 960px
+            (736 + flanks + gaps + padding), so mirroring a 288px rail at 1280px
+            would cost the card 256px to correct a 144px offset — a worse deal
+            than the offset. Above `2xl` the arithmetic affords it and the card
+            keeps its full width. See RAIL_WIDTH. */}
+        <div aria-hidden className={`hidden shrink-0 2xl:block ${RAIL_WIDTH}`} />
       </div>
 
       {/* The reason strip TAKES OVER the action bar rather than layering over

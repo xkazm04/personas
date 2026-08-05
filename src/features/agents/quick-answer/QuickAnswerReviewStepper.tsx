@@ -89,11 +89,18 @@ export function QuickAnswerReviewStepper({
   // Falls back to a plain approve-with-note when dispatch isn't wired.
   const chooseAction = async (action: string) => {
     if (onDispatchAction) {
-      useToastStore.getState().addToast(tx(t.monitor.quick_carrying_out, { action }), 'success', 4000);
       const combined = note.trim() ? `${action} — ${note.trim()}` : action;
-      await onDispatchAction(review.id, combined).catch(
-        toastCatch('QuickAnswerReviewStepper:chooseAction'),
-      );
+      try {
+        await onDispatchAction(review.id, combined);
+      } catch (e) {
+        // The success toast used to fire BEFORE this await, so a dispatch that
+        // rejected announced "Carrying out: <action>" and then, a beat later,
+        // an error — the user was told the run had started and that it had
+        // failed, in that order. The claim now waits for the write.
+        toastCatch('QuickAnswerReviewStepper:chooseAction')(e);
+        return;
+      }
+      useToastStore.getState().addToast(tx(t.monitor.quick_carrying_out, { action }), 'success', 4000);
     } else {
       await act('approved', action);
     }

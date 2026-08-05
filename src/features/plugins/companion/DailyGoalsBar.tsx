@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Flame, Plus, Sparkles, X } from 'lucide-react';
+import { Check, Flame, Pencil, Plus, Sparkles, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useDailyGoals } from './useDailyGoals';
@@ -15,7 +15,7 @@ import { DailyGoalsModal } from './DailyGoalsModal';
 export function DailyGoalsBar() {
   const { t } = useTranslation();
   const c = t.plugins.companion;
-  const { state, celebrating, createSet, toggle, discard } = useDailyGoals();
+  const { state, celebrating, createSet, saveEdits, toggle, discard } = useDailyGoals();
   const [modalOpen, setModalOpen] = useState(false);
 
   if (!state) return null;
@@ -27,7 +27,7 @@ export function DailyGoalsBar() {
       data-testid="companion-daily-goals"
     >
       <Tooltip content={c.daily_goals_streak_hint}>
-        <span className="flex items-center gap-1 typo-caption text-foreground/80 flex-shrink-0">
+        <span className="flex items-center gap-1 typo-caption text-foreground flex-shrink-0">
           <Flame
             className={`w-3 h-3 ${state.streak > 0 ? 'text-amber-400' : ''}`}
             aria-hidden
@@ -49,27 +49,31 @@ export function DailyGoalsBar() {
       ) : hasSet ? (
         <div className="flex items-center gap-1 min-w-0 overflow-x-auto">
           {state.goals.map((g) => (
-            <button
-              key={g.id}
-              type="button"
-              onClick={() => void toggle(g.id, !g.done)}
-              aria-pressed={g.done}
-              aria-label={g.done ? c.daily_goals_mark_open : c.daily_goals_mark_done}
-              title={g.done ? c.daily_goals_mark_open : c.daily_goals_mark_done}
-              data-testid={`daily-goal-chip-${g.slot}`}
-              className={`flex items-center gap-1 px-1.5 py-0.5 rounded-interactive typo-caption transition-colors focus-ring max-w-48 ${
-                g.done
-                  ? 'bg-primary/15 text-primary line-through'
-                  : 'text-foreground/80 hover:bg-secondary/40'
-              }`}
-            >
-              {g.done && <Check className="w-3 h-3 flex-shrink-0" aria-hidden />}
-              <span className="truncate">{g.title}</span>
-            </button>
+            // The chip stays one line, so the tooltip carries the full
+            // text for a glance and the edit modal for a proper read.
+            <Tooltip key={g.id} content={g.title}>
+              <button
+                type="button"
+                onClick={() => void toggle(g.id, !g.done)}
+                aria-pressed={g.done}
+                aria-label={`${g.title} - ${
+                  g.done ? c.daily_goals_mark_open : c.daily_goals_mark_done
+                }`}
+                data-testid={`daily-goal-chip-${g.slot}`}
+                className={`flex items-center gap-1 px-1.5 py-0.5 rounded-interactive typo-caption transition-colors focus-ring max-w-48 ${
+                  g.done
+                    ? 'bg-primary/15 text-primary line-through'
+                    : 'text-foreground hover:bg-secondary/40'
+                }`}
+              >
+                {g.done && <Check className="w-3 h-3 flex-shrink-0" aria-hidden />}
+                <span className="truncate">{g.title}</span>
+              </button>
+            </Tooltip>
           ))}
         </div>
       ) : (
-        <span className="typo-caption text-foreground/60">
+        <span className="typo-caption text-foreground">
           {state.completedToday ? c.daily_goals_done_today : c.daily_goals_label}
         </span>
       )}
@@ -77,11 +81,24 @@ export function DailyGoalsBar() {
       <div className="flex-1" />
 
       {hasSet && !celebrating && (
+        <Tooltip content={c.daily_goals_edit}>
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            data-testid="daily-goals-edit"
+            className="p-1 rounded-interactive text-foreground hover:bg-secondary/40 transition-colors focus-ring"
+            aria-label={c.daily_goals_edit}
+          >
+            <Pencil className="w-3 h-3" />
+          </button>
+        </Tooltip>
+      )}
+      {hasSet && !celebrating && (
         <button
           type="button"
           onClick={() => void discard()}
           data-testid="daily-goals-discard"
-          className="p-1 rounded-interactive text-foreground/60 hover:text-red-400 hover:bg-red-500/10 transition-colors focus-ring"
+          className="p-1 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors focus-ring"
           aria-label={c.daily_goals_discard}
           title={c.daily_goals_discard}
         >
@@ -93,7 +110,7 @@ export function DailyGoalsBar() {
           type="button"
           onClick={() => setModalOpen(true)}
           data-testid="daily-goals-open-modal"
-          className="flex items-center gap-1 px-1.5 py-0.5 rounded-interactive typo-caption text-foreground/80 hover:bg-secondary/40 transition-colors focus-ring"
+          className="flex items-center gap-1 px-1.5 py-0.5 rounded-interactive typo-caption text-foreground hover:bg-secondary/40 transition-colors focus-ring"
         >
           <Plus className="w-3 h-3" aria-hidden />
           {c.daily_goals_set_button}
@@ -103,7 +120,9 @@ export function DailyGoalsBar() {
       <DailyGoalsModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
+        goals={state.goals}
         onCreate={createSet}
+        onSave={saveEdits}
       />
     </div>
   );

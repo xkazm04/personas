@@ -20,6 +20,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 
 import type { DevIdea } from '@/lib/bindings/DevIdea';
 import type { EvolutionPromotionProposal } from '@/lib/bindings/EvolutionPromotionProposal';
+import type { PendingAcceptanceGoal } from '@/lib/bindings/PendingAcceptanceGoal';
 import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 
 // --- mocks (must precede the import under test) ----------------------------
@@ -35,6 +36,10 @@ const mockDecidePolicy = vi.fn();
 const mockDecideEvolution = vi.fn();
 const mockPolicyList = vi.fn();
 const mockPromotionList = vi.fn();
+const mockPendingAcceptance = vi.fn();
+const mockAcceptGoal = vi.fn();
+const mockRejectGoal = vi.fn();
+const mockRefreshPendingCounts = vi.fn();
 const mockRefreshKnowledge = vi.fn();
 const mockAddToast = vi.fn();
 const mockToastCatch = vi.fn();
@@ -42,6 +47,7 @@ const mockToastCatch = vi.fn();
 const interactions = {
   questionGroups: [] as unknown[],
   reviews: [] as unknown[],
+  reviewsError: null as string | null,
   questionCount: 0,
   reviewCount: 0,
   total: 0,
@@ -59,6 +65,7 @@ vi.mock('../../usePendingInteractions', () => ({
 vi.mock('@/api/devTools/devTools', () => ({
   triageIdeas: (...args: unknown[]) => mockTriageIdeas(...args),
   createTask: (...args: unknown[]) => mockCreateTask(...args),
+  listPendingAcceptance: (...args: unknown[]) => mockPendingAcceptance(...args),
 }));
 
 vi.mock('@/api/system/policyTuning', () => ({
@@ -88,6 +95,7 @@ const workspaceCenter = {
   activeId: null,
   projects: [],
   knowledge: {} as Record<string, WorkspaceKnowledge[]>,
+  knowledgeError: null as string | null,
   stats: {},
   projectById: new Map(),
   refreshKnowledge: mockRefreshKnowledge,
@@ -101,6 +109,14 @@ const systemState = {
   projects: [{ id: 'proj-1', name: 'Personas' }],
   acceptIdea: (...args: unknown[]) => mockAcceptIdea(...args),
   rejectIdea: (...args: unknown[]) => mockRejectIdea(...args),
+  // Goal verdicts go through the slice too — it owns the row write AND the
+  // pending-acceptance count, and both rethrow so the deck can restore.
+  acceptGoal: (...args: unknown[]) => mockAcceptGoal(...args),
+  rejectGoal: (...args: unknown[]) => mockRejectGoal(...args),
+  // The title-bar badge counts what this deck deals, so a settled verdict has
+  // to move it — otherwise the number the reviewer is clearing sits unchanged
+  // until the next 30s poll.
+  refreshPendingCounts: (...args: unknown[]) => mockRefreshPendingCounts(...args),
 };
 
 vi.mock('@/stores/systemStore', () => ({
@@ -136,6 +152,7 @@ vi.mock('@/i18n/useTranslation', () => ({
 
 import { clearJournal, resetJournalCache } from '../triageJournal';
 import { clearTriageSession, resetTriageSessionCache } from '../triageSession';
+import { TRIAGE_KINDS } from '../triageTypes';
 import { useUnifiedTriage } from '../useUnifiedTriage';
 
 // --- fixtures --------------------------------------------------------------
@@ -218,6 +235,27 @@ function promotion(
   };
 }
 
+function pendingGoal(overrides: Partial<PendingAcceptanceGoal> = {}): PendingAcceptanceGoal {
+  return {
+    goal_id: 'goal-1',
+    title: 'Merge the two onboarding flows',
+    summary: 'One flow now covers both entry points.',
+    project_id: 'proj-1',
+    project_name: 'Personas',
+    team_id: 'team-1',
+    team_name: 'Growth',
+    kpi_id: 'kpi-1',
+    kpi_name: 'Activation rate',
+    kpi_unit: '%',
+    kpi_current: 34,
+    kpi_target: 50,
+    kpi_baseline: 20,
+    kpi_direction: 'up',
+    completed_at: '2026-02-02T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
 function page(ideas: DevIdea[]) {
   return {
     ideas,
@@ -227,9 +265,9 @@ function page(ideas: DevIdea[]) {
   };
 }
 
-/** Mount and wait for the idea fetch to land. */
-async function mount() {
-  const hook = renderHook(() => useUnifiedTriage());
+/** Mount and wait for every source fetch to land. */
+async function mount(hosts?: Parameters<typeof useUnifiedTriage>[1]) {
+  const hook = renderHook(() => useUnifiedTriage(undefined, hosts));
   await waitFor(() => expect(hook.result.current.loading).toBe(false));
   return hook;
 }
@@ -252,7 +290,9 @@ beforeEach(() => {
   clearJournal();
   resetTriageSessionCache();
   resetJournalCache();
+  interactions.reviewsError = null;
   workspaceCenter.workspaces = [];
+  workspaceCenter.knowledgeError = null;
   workspaceCenter.knowledge = {};
   mockTriageIdeas.mockResolvedValue(page([idea()]));
   mockAcceptIdea.mockResolvedValue(undefined);
@@ -267,6 +307,12 @@ beforeEach(() => {
   // never run a tuning pass or an evolution cycle.
   mockPolicyList.mockResolvedValue([]);
   mockPromotionList.mockResolvedValue([]);
+  // Same for goals: an install with nothing awaiting sign-off must deal the
+  // rest of the queue exactly as it did before goals joined it.
+  mockPendingAcceptance.mockResolvedValue([]);
+  mockAcceptGoal.mockResolvedValue(undefined);
+  mockRejectGoal.mockResolvedValue(undefined);
+  mockRefreshPendingCounts.mockResolvedValue(undefined);
 });
 
 // --- tests -----------------------------------------------------------------
@@ -296,6 +342,50 @@ describe('useUnifiedTriage — decide() resolves optimistically', () => {
 
     expect(mockRejectIdea).toHaveBeenCalledWith('idea-1', 'Out of scope', 'pending');
     expect(result.current.items).toHaveLength(0);
+  });
+});
+
+describe('useUnifiedTriage — a settled verdict moves the title-bar badge', () => {
+  it('refreshes the pending counts once the write lands', async () => {
+    const { result } = await mount();
+    const card = itemOfKind(result, 'idea');
+
+    await act(async () => {
+      await result.current.decide({ item: card, verdict: 'accept' });
+    });
+
+    // The badge is polled on a 30s bucket. Without this nudge, clearing the
+    // deck leaves the number it is meant to be clearing standing for up to
+    // half a minute, which reads as a broken badge rather than a slow one.
+    expect(mockRefreshPendingCounts).toHaveBeenCalled();
+  });
+
+  it('leaves the badge alone when the write is REJECTED', async () => {
+    mockAcceptIdea.mockRejectedValueOnce(new Error('database is locked'));
+    const { result } = await mount();
+    const card = itemOfKind(result, 'idea');
+
+    await act(async () => {
+      await result.current.decide({ item: card, verdict: 'accept' });
+    });
+
+    // Nothing left any queue, so re-counting would only spend a round-trip to
+    // print the same number — and a badge that ticks down on a failed write
+    // would be telling the reviewer the decision landed.
+    expect(mockRefreshPendingCounts).not.toHaveBeenCalled();
+  });
+
+  it('leaves the badge alone for a deferral', async () => {
+    const { result } = await mount();
+    const card = itemOfKind(result, 'idea');
+
+    await act(async () => {
+      await result.current.decide({ item: card, verdict: 'skip' });
+    });
+
+    // A skip writes nothing and the row is still pending — the badge is still
+    // right, and re-reading it would be a round-trip to confirm no change.
+    expect(mockRefreshPendingCounts).not.toHaveBeenCalled();
   });
 });
 
@@ -714,6 +804,20 @@ describe('useUnifiedTriage — undo', () => {
     expect(result.current.undo).toBeNull();
   });
 
+  it('offers nothing back for a goal either — an accepted goal has no reopen', async () => {
+    // `reversibleStatus` ends in `default: return null`, and goals are meant to
+    // land there: no command reopens an accepted goal, and an undo button that
+    // refuses when pressed is worse than no undo button.
+    mockTriageIdeas.mockResolvedValue(page([]));
+    mockPendingAcceptance.mockResolvedValue([pendingGoal()]);
+    const { result } = await mount();
+
+    await act(async () => {
+      await result.current.decide({ item: itemOfKind(result, 'goal'), verdict: 'accept' });
+    });
+    expect(result.current.undo).toBeNull();
+  });
+
   it('clears a stale offer when the next decision is not reversible', async () => {
     mockTriageIdeas.mockResolvedValue(page([idea()]));
     mockPromotionList.mockResolvedValue([promotion()]);
@@ -729,5 +833,232 @@ describe('useUnifiedTriage — undo', () => {
     });
     // Otherwise `U` would take back the card BEFORE the one just decided.
     expect(result.current.undo).toBeNull();
+  });
+});
+
+describe('useUnifiedTriage — goals reach the same spine', () => {
+  it('deals a goal card, writes through the store, and re-reads the ledger', async () => {
+    mockTriageIdeas.mockResolvedValue(page([]));
+    mockPendingAcceptance.mockResolvedValue([pendingGoal()]);
+
+    const { result } = await mount();
+    const card = itemOfKind(result, 'goal');
+    expect(card.id).toBe('goal:goal-1');
+    expect(card.title).toBe('Merge the two onboarding flows');
+    expect(mockPendingAcceptance).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await result.current.decide({ item: card, verdict: 'accept' });
+    });
+
+    // Through the SLICE, not `devApi` — it owns the row write and the pending
+    // count, and no seen-status because goals have no compare-and-swap.
+    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-1');
+    expect(result.current.items).toHaveLength(0);
+    expect(result.current.decidedCount).toBe(1);
+    // A goal verdict invalidates the goal ledger, so it is re-read the way a
+    // proposal verdict re-reads the proposal ones.
+    await waitFor(() => expect(mockPendingAcceptance).toHaveBeenCalledTimes(2));
+  });
+
+  it('sends a goal back with the reviewer’s reason attached', async () => {
+    mockTriageIdeas.mockResolvedValue(page([]));
+    mockPendingAcceptance.mockResolvedValue([pendingGoal()]);
+
+    const { result } = await mount();
+    await act(async () => {
+      await result.current.decide({
+        item: itemOfKind(result, 'goal'),
+        verdict: 'reject',
+        reason: 'The KPI never moved',
+      });
+    });
+
+    // The comment is the only account the team gets of why finished work came
+    // back, so a dropped reason is a silent regression.
+    expect(mockRejectGoal).toHaveBeenCalledWith('goal-1', 'The KPI never moved');
+    expect(result.current.items).toHaveLength(0);
+  });
+
+  it('restores the goal card when the sign-off write fails', async () => {
+    mockTriageIdeas.mockResolvedValue(page([]));
+    mockPendingAcceptance.mockResolvedValue([pendingGoal()]);
+    mockAcceptGoal.mockRejectedValueOnce(new Error('database is locked'));
+
+    const { result } = await mount();
+    const card = itemOfKind(result, 'goal');
+
+    await act(async () => {
+      await result.current.decide({ item: card, verdict: 'accept' });
+    });
+
+    // The whole point of A0's rethrow: a swallowed failure would leave the goal
+    // `awaiting_acceptance` while the card left the queue for good.
+    expect(result.current.items.map((i) => i.id)).toEqual([card.id]);
+    expect(result.current.decidedCount).toBe(0);
+    expect(mockToastCatch).toHaveBeenCalledTimes(1);
+  });
+
+  it('hands each card its KPI-mates so the batch branch can offer them', async () => {
+    mockTriageIdeas.mockResolvedValue(page([]));
+    mockPendingAcceptance.mockResolvedValue([
+      pendingGoal(),
+      pendingGoal({ goal_id: 'goal-2', title: 'Ship the second half' }),
+      // A different KPI, and a goal on none at all — neither belongs in the
+      // batch, and grouping the whole ledger as one would sign both off.
+      pendingGoal({ goal_id: 'goal-3', kpi_id: 'kpi-2' }),
+      pendingGoal({ goal_id: 'goal-4', kpi_id: null, kpi_name: null }),
+    ]);
+
+    const { result } = await mount();
+    const first = result.current.items.find((i) => i.id === 'goal:goal-1')!;
+    expect(first.payload?.batchGoalIds).toBe('goal-1,goal-2');
+
+    await act(async () => {
+      await result.current.decide({
+        item: first,
+        verdict: 'accept',
+        branchId: 'accept-kpi-batch',
+      });
+    });
+
+    expect(mockAcceptGoal).toHaveBeenCalledTimes(2);
+    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-1');
+    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-2');
+    // The siblings were signed off but their cards are still in the deck, so
+    // the re-read is what stops the next verdict writing into a decided goal.
+    await waitFor(() => expect(mockPendingAcceptance).toHaveBeenCalledTimes(2));
+  });
+
+  it('offers no batch branch to the only goal on its KPI', async () => {
+    mockTriageIdeas.mockResolvedValue(page([]));
+    mockPendingAcceptance.mockResolvedValue([pendingGoal(), pendingGoal({ goal_id: 'goal-3', kpi_id: 'kpi-2' })]);
+
+    const { result } = await mount();
+    const lone = result.current.items.find((i) => i.id === 'goal:goal-3')!;
+    // "Accept all 1 from this KPI" is the plain Accept under a second name.
+    expect(lone.branches.map((b) => b.id)).toEqual(['open-board']);
+    expect(lone.payload?.batchGoalIds).toBeUndefined();
+  });
+
+  it('reaches the host’s goals-board route without writing anything', async () => {
+    mockTriageIdeas.mockResolvedValue(page([]));
+    mockPendingAcceptance.mockResolvedValue([pendingGoal()]);
+    const onOpenGoalBoard = vi.fn();
+
+    const { result } = await mount({ onOpenGoalBoard });
+    await act(async () => {
+      await result.current.decide({
+        item: itemOfKind(result, 'goal'),
+        verdict: 'accept',
+        branchId: 'open-board',
+      });
+    });
+
+    expect(onOpenGoalBoard).toHaveBeenCalledWith('proj-1');
+    expect(mockAcceptGoal).not.toHaveBeenCalled();
+    expect(mockRejectGoal).not.toHaveBeenCalled();
+  });
+
+  it('keeps the deck usable when the goal ledger is unavailable', async () => {
+    // Fetched in its own effect for exactly this: one source being down must
+    // not take the rest of the queue with it.
+    mockPendingAcceptance.mockRejectedValue(new Error('command not found'));
+    const { result } = await mount();
+    expect(result.current.items.map((i) => i.kind)).toEqual(['idea']);
+    expect(mockToastCatch).toHaveBeenCalledWith('Could not load goals awaiting acceptance', expect.any(Error));
+  });
+});
+
+describe('useUnifiedTriage — a source that did not answer is REPORTED, not swallowed', () => {
+  it('names the failed source instead of settling on an empty queue', async () => {
+    // Every source used to end in `.catch(toastCatch(…))`, so a total outage
+    // settled `loading:false` with `items: []` — indistinguishable from a
+    // cleared deck, which is what the deck then rendered.
+    mockTriageIdeas.mockRejectedValue(new Error('command not found'));
+    const { result } = await mount();
+
+    expect(result.current.items).toHaveLength(0);
+    expect(result.current.failures.map((f) => f.source)).toEqual(['ideas']);
+    expect(result.current.failures[0]!.message).toContain('command not found');
+  });
+
+  it('reports a PARTIAL failure while still dealing everything that loaded', async () => {
+    mockPolicyList.mockRejectedValue(new Error('policy ledger unavailable'));
+    const { result } = await mount();
+
+    expect(result.current.items.map((i) => i.kind)).toEqual(['idea']);
+    expect(result.current.failures.map((f) => f.source)).toEqual(['policy']);
+  });
+
+  it('mirrors the two sources it does not own the fetch for', async () => {
+    // Reviews arrive through `usePendingInteractions` and practices through
+    // `useWorkspaceCenter`; both report failure as a VALUE, and both used to
+    // reach the deck as "nothing of this kind is waiting".
+    interactions.reviewsError = 'reviews are unreadable';
+    workspaceCenter.knowledgeError = 'knowledge is unreadable';
+    const { result } = await mount();
+
+    expect(result.current.failures.map((f) => f.source).sort()).toEqual([
+      'practices',
+      'reviews',
+    ]);
+  });
+
+  it('clears a failure once the source answers again', async () => {
+    mockTriageIdeas.mockRejectedValueOnce(new Error('locked'));
+    const { result } = await mount();
+    expect(result.current.failures).toHaveLength(1);
+
+    mockTriageIdeas.mockResolvedValue(page([idea()]));
+    act(() => result.current.reload());
+    await waitFor(() => expect(result.current.failures).toHaveLength(0));
+  });
+});
+
+describe('useUnifiedTriage — a capped source is not a finished queue', () => {
+  it('flags a fixed-limit ledger that came back FULL', async () => {
+    // 50 rows out of a `limit: 50` query says nothing about row 51, and the
+    // deck must not answer that with "nothing is waiting on you".
+    mockPromotionList.mockResolvedValue(
+      Array.from({ length: 50 }, (_, i) => promotion({ id: `prop-${i}` })),
+    );
+    const { result } = await mount();
+
+    expect(result.current.backlog.capped).toEqual(['evolution']);
+    expect(result.current.backlog.more).toBe(true);
+    // Nothing can SIZE it, so no number is invented.
+    expect(result.current.backlog.remaining).toBe(0);
+  });
+
+  it('leaves a short page uncapped', async () => {
+    mockPromotionList.mockResolvedValue([promotion()]);
+    const { result } = await mount();
+    expect(result.current.backlog.capped).toEqual([]);
+    expect(result.current.backlog.more).toBe(false);
+  });
+
+  it('still reports the exact idea remainder the keyset page knows', async () => {
+    mockTriageIdeas.mockResolvedValue({
+      ideas: [idea()],
+      cursor: 'c1',
+      hasMore: true,
+      counts: { pending: 400, accepted: 0, rejected: 0, archived: 0, total: 400 },
+    });
+    const { result } = await mount();
+
+    expect(result.current.backlog.remaining).toBe(399);
+    expect(result.current.backlog.more).toBe(true);
+  });
+});
+
+describe('useUnifiedTriage — the filtered ending has a way back', () => {
+  it('puts every kind back in play, including the one toggle refuses to restore', async () => {
+    const { result } = await mount();
+    act(() => result.current.toggleKind('idea'));
+    expect(result.current.activeKinds.has('idea')).toBe(false);
+
+    act(() => result.current.showAllKinds());
+    expect([...result.current.activeKinds].sort()).toEqual([...TRIAGE_KINDS].sort());
   });
 });

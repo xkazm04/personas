@@ -9,6 +9,7 @@ import type { DevGoalDependency } from "@/lib/bindings/DevGoalDependency";
 import type { DevGoalItem } from "@/lib/bindings/DevGoalItem";
 import type { GoalProgressSuggestion } from "@/lib/bindings/GoalProgressSuggestion";
 import type { PendingAcceptanceGoal } from "@/lib/bindings/PendingAcceptanceGoal";
+import type { PendingCounts } from "@/lib/bindings/PendingCounts";
 import type { DevContextGroup } from "@/lib/bindings/DevContextGroup";
 import type { DevContext } from "@/lib/bindings/DevContext";
 import type { DevContextGroupRelationship } from "@/lib/bindings/DevContextGroupRelationship";
@@ -274,9 +275,21 @@ export const listAllGoals = () =>
 export const listPendingAcceptance = () =>
   invoke<PendingAcceptanceGoal[]>("dev_tools_list_pending_acceptance", {});
 
-/** Count of goals awaiting acceptance — backs the TitleBar pending badge. */
+/** Count of goals awaiting acceptance — backs the goals board's own badge. */
 export const countPendingAcceptance = () =>
   invoke<number>("dev_tools_count_pending_acceptance", {});
+
+/**
+ * Every "a human must decide this" queue's pending count, in one round-trip —
+ * backs the title-bar review badge.
+ *
+ * Six DB-backed sources (goals, manual reviews, ideas, practices, policy
+ * proposals, promotion proposals) and their sum. Build questions are NOT here
+ * and cannot be: they live in the frontend's `buildSessions` state, so the
+ * caller adds them on top of `total`.
+ */
+export const pendingCounts = () =>
+  invoke<PendingCounts>("dev_tools_pending_counts", {});
 
 /** Accept (→ done, off-board) or reject (→ in-progress, with a comment) a goal. */
 export const resolveGoalAcceptance = (goalId: string, decision: "accept" | "reject", comment?: string) =>

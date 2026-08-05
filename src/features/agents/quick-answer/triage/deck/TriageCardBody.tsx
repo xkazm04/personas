@@ -19,7 +19,7 @@
 //
 // Score facts (effort/impact/risk/confidence) are deliberately NOT repeated
 // here — they already straddle the card's top edge as meters in MetricBadgeRow.
-import type { ReactNode, Ref } from 'react';
+import { memo, type ReactNode, type Ref } from 'react';
 
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -41,12 +41,62 @@ function Block({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+/**
+ * The case being judged. Memoised on the item alone.
+ *
+ * `TriageCard`'s own `memo` cannot protect this on a QUESTION card: `answerSlot`
+ * is a fresh element on every render of the deck, so the top card re-renders on
+ * every keystroke in the answer box by construction. What must NOT follow is a
+ * re-parse of prose nobody touched — `MarkdownRenderer` is react-markdown +
+ * remark-gfm + rehype-highlight, and a question card can carry a `reasoning`
+ * block and an `evidence` dump alongside its input.
+ */
+const CardProse = memo(function CardProse({ item }: { item: TriageItem }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      {item.reasoning ? (
+        <Block label={t.monitor.triage_why_raised}>
+          <MarkdownRenderer content={item.reasoning} className="typo-body text-foreground" />
+        </Block>
+      ) : null}
+
+      {item.evidence ? (
+        <Block label={t.monitor.triage_evidence}>
+          <pre className="typo-code whitespace-pre-wrap break-words text-foreground">
+            {item.evidence}
+          </pre>
+        </Block>
+      ) : null}
+    </>
+  );
+});
+
+/** The body markdown. Same reason, separate component: on a question card this
+ *  is replaced by `answerSlot` and must not be built at all. */
+const CardBody = memo(function CardBody({ item }: { item: TriageItem }) {
+  if (!item.body) return null;
+  return <MarkdownRenderer content={item.body} className="typo-body text-foreground" />;
+});
+
 export function TriageCardBody({
   item,
+  isTop,
   answerSlot,
   scrollerRef,
 }: {
   item: TriageItem;
+  /**
+   * Whether this is the card being decided.
+   *
+   * Load-bearing for the keyboard, not for paint: the deck keeps THREE cards
+   * mounted for depth, and an unconditional `tabIndex={0}` made all three prose
+   * scrollers tab stops. Two of them sit under `pointer-events-none`, which
+   * removes the mouse but NOT the tab order — so tabbing through the deck
+   * landed twice on scrollers the reviewer cannot see, cannot scroll to any
+   * visible effect, and is not deciding.
+   */
+  isTop: boolean;
   answerSlot?: ReactNode;
   /** Set on the TOP card only — see `TriageCard`. */
   scrollerRef?: Ref<HTMLDivElement>;
@@ -62,33 +112,21 @@ export function TriageCardBody({
           40-line description could only ever be read down to the fold — while
           `←`/`→` recorded a verdict on it. `useDeckDialog` also drives it from
           ↑/↓/PgUp/PgDn without needing the focus, and focuses it FIRST on open
-          so the reviewer lands on the prose rather than on a filter chip. */}
+          so the reviewer lands on the prose rather than on a filter chip.
+
+          `-1` and not "no tabIndex" for the cards behind: they stay
+          programmatically focusable (and keep `role="region"`), they just leave
+          the tab ring, which only the card being decided belongs in. */}
       <div
         ref={scrollerRef}
-        tabIndex={0}
+        tabIndex={isTop ? 0 : -1}
         role="region"
         aria-label={t.monitor.triage_body_region}
         className="focus-ring mt-4 min-h-0 flex-1 overflow-y-auto"
       >
         <div className={`${MEASURE} space-y-4 pr-1`}>
-          {answerSlot ??
-            (item.body ? (
-              <MarkdownRenderer content={item.body} className="typo-body text-foreground" />
-            ) : null)}
-
-          {item.reasoning ? (
-            <Block label={t.monitor.triage_why_raised}>
-              <MarkdownRenderer content={item.reasoning} className="typo-body text-foreground" />
-            </Block>
-          ) : null}
-
-          {item.evidence ? (
-            <Block label={t.monitor.triage_evidence}>
-              <pre className="typo-code whitespace-pre-wrap break-words text-foreground">
-                {item.evidence}
-              </pre>
-            </Block>
-          ) : null}
+          {answerSlot ?? <CardBody item={item} />}
+          <CardProse item={item} />
         </div>
       </div>
 

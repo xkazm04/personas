@@ -37,6 +37,53 @@ function parseAgents(toml) {
   return agents;
 }
 
+/** Self-contained coverage-table script emitted into the skill dir (no repo
+ *  deps — it must travel with the skill when propagated to other projects).
+ *  Emitted source avoids backticks so this template stays readable. */
+function coverageScript() {
+  return [
+    '#!/usr/bin/env node',
+    '// scan-sweep coverage table — per-context lens coverage from scan-history.',
+    '// Reads context-map.json (repo root) + .claude/scan-history/scan-sweep.jsonl.',
+    '// Usage: node .claude/skills/scan-sweep/scripts/coverage.mjs [--all]',
+    "import { readFileSync, existsSync } from 'node:fs';",
+    '',
+    "const all = process.argv.includes('--all');",
+    "const map = JSON.parse(readFileSync('context-map.json', 'utf8'));",
+    "const histPath = '.claude/scan-history/scan-sweep.jsonl';",
+    'const hist = existsSync(histPath)',
+    "  ? readFileSync(histPath, 'utf8').split('\\n').filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean)",
+    '  : [];',
+    'const byScope = new Map();',
+    'for (const h of hist) {',
+    '  const e = byScope.get(h.scope) ?? { lenses: new Set(), findings: 0, fixed: 0, sweeps: 0, last: null, strategy: null };',
+    '  for (const k of h.lens_keys ?? []) e.lenses.add(k);',
+    '  e.findings += h.findings ?? 0; e.fixed += h.fixed ?? 0; e.sweeps += 1;',
+    '  if (!e.last || h.at > e.last) { e.last = h.at; e.strategy = h.strategy ?? null; }',
+    '  byScope.set(h.scope, e);',
+    '}',
+    'const rows = (map.contexts ?? []).map((c) => {',
+    '  const e = byScope.get(c.name);',
+    '  return {',
+    '    name: c.name, files: (c.file_paths ?? []).length,',
+    '    lenses: e ? e.lenses.size : 0, sweeps: e ? e.sweeps : 0,',
+    '    findings: e ? e.findings : 0, fixed: e ? e.fixed : 0,',
+    "    strategy: e && e.strategy ? e.strategy : '-',",
+    "    age: e && e.last ? Math.round((Date.now() - Date.parse(e.last)) / 86400000) + 'd' : 'never',",
+    '  };',
+    '}).sort((a, b) => a.lenses - b.lenses || b.files - a.files);',
+    'const shown = all ? rows : rows.slice(0, 30);',
+    "const pad = (s, n, r) => (r ? String(s).padStart(n) : String(s).padEnd(n));",
+    "console.log(pad('CONTEXT', 36) + pad('FILES', 6, 1) + pad('LENSES', 8, 1) + pad('SWEEPS', 7, 1) + pad('FOUND', 6, 1) + pad('FIXED', 6, 1) + pad('STRATEGY', 10, 1) + pad('LAST', 7, 1));",
+    'for (const r of shown) {',
+    "  console.log(pad(r.name.slice(0, 35), 36) + pad(r.files, 6, 1) + pad(r.lenses + '/22', 8, 1) + pad(r.sweeps, 7, 1) + pad(r.findings, 6, 1) + pad(r.fixed, 6, 1) + pad(r.strategy, 10, 1) + pad(r.age, 7, 1));",
+    '}',
+    'const covered = rows.filter((r) => r.lenses > 0).length;',
+    "console.log('\\n' + covered + '/' + rows.length + ' contexts swept; sorted least lens-covered first' + (all ? '' : ' (top 30 — pass --all for every context)'));",
+    '',
+  ].join('\n');
+}
+
 /** Per-lens brief bundle for the sweep skill's references/lenses.md. */
 function lensesMarkdown(agents) {
   const sections = agents.map((a) => {
@@ -75,7 +122,7 @@ function sweepMarkdown() {
   return `---
 name: scan-sweep
 description: "End-to-end context sweep: reads one feature-area's code once, evaluates it through every scan lens (references/lenses.md), and by default FIXES the accepted S/M findings in-session with atomic commits — one session owns one context end to end. Pass --ideas-only to emit findings to the Personas memory outbox for backlog triage instead of fixing. L moonshot items are always triaged, never auto-built."
-argument-hint: "[--ideas-only] [--lenses key1,key2] [context]"
+argument-hint: "[--develop|--optimize] [--ideas-only] [--lenses key1,key2] [--coverage] [context]"
 category: Development
 contexts: tracked
 memory: project
@@ -94,6 +141,32 @@ nothing real to say returns nothing.
   you could not or should not fix leaves the session as a backlog finding.
 - **Ideas-only (\`--ideas-only\`)** — scan and emit every finding to the memory
   outbox for app-side triage; change no code.
+
+**Strategies — compose the package weights (optional, pick at most one):**
+
+- \`--develop\` — direction: NEW capability. Deep tier = feature-scout,
+  innovation-catalyst, ux-reviewer, onboarding-designer, integration-planner,
+  business-strategist, growth-hacker, monetization-advisor (plus any matched
+  lens). Aim ~70% of the finding budget at forward-building items: missing
+  features, UX affordances, integrations, product gaps. Quality lenses still
+  run as a light pass — a real defect is never ignored, but marginal cleanups
+  are dropped, and feature-class S/M items become eligible for resolve.
+- \`--optimize\` — direction: QUALITY of what exists. Deep tier =
+  code-optimizer, tech-debt-tracker, security-auditor, bounty-hunter,
+  error-handler, test-strategist, risk-assessor, accessibility-checker,
+  mobile-specialist, dependency-auditor, devops-optimizer,
+  documentation-auditor. ~70% of the budget at hardening, performance, debt
+  and coverage; feature ideas are recorded as findings only — never built
+  under this strategy.
+- No flag = balanced (matched-first ordering below). Name the strategy in the
+  report header and record it in the snapshot's \`strategy\` field so the
+  coverage table can show how each context has been swept.
+
+**Coverage table (\`--coverage\`):** do NOT scan. Run
+\`node .claude/skills/scan-sweep/scripts/coverage.mjs\` (append \`--all\` for
+every context) and present its per-context table — lens coverage, findings vs
+fixed, last strategy and age, least-covered first — the operator's pick list
+for the next targeted sweep. Then stop.
 
 Several sweep sessions may run in this repo at once, each owning a different
 context — the parallel rules in step 6 are what make that safe.
@@ -303,7 +376,7 @@ package-ordering rule read. \`findings\` counts BOTH fixed and proposed (both
 spend the 30-item budget):
 
 \`\`\`json
-{"at":"<ISO-8601>","scope":"<context>","mode":"resolve|ideas","lens_keys":["<key>","<key>"],"lenses":<n>,"findings":<n>,"fixed":<n>,"escalations":<n>,"degraded":<true|false>,"note":"<≤80 chars>"}
+{"at":"<ISO-8601>","scope":"<context>","mode":"resolve|ideas","strategy":"develop|optimize|balanced","lens_keys":["<key>","<key>"],"lenses":<n>,"findings":<n>,"fixed":<n>,"escalations":<n>,"degraded":<true|false>,"note":"<≤80 chars>"}
 \`\`\`
 
 If prior lines exist for the SAME scope, add a trend line to the report
@@ -335,9 +408,11 @@ let written = 0, skipped = 0;
     written++;
   } else {
     mkdirSync(join(dir, 'references'), { recursive: true });
+    mkdirSync(join(dir, 'scripts'), { recursive: true });
     writeFileSync(file, sweepMarkdown(), 'utf8');
     writeFileSync(join(dir, 'references', 'lenses.md'), lensesMarkdown(agents.filter((a) => a.key)), 'utf8');
-    console.log('write  scan-sweep (+ references/lenses.md)');
+    writeFileSync(join(dir, 'scripts', 'coverage.mjs'), coverageScript(), 'utf8');
+    console.log('write  scan-sweep (+ references/lenses.md, scripts/coverage.mjs)');
     written++;
   }
 }

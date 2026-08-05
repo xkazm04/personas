@@ -3,8 +3,9 @@
 // headerOverlay === 'quick-answer'.
 //
 // It used to be a 576px anchored panel over two queues (build questions +
-// persona reviews). It is now a full-app deck over FOUR: persona manual
-// reviews, backlog ideas, workspace practices and build questions, unified by
+// persona reviews). It is now a full-app deck over SEVEN: persona manual
+// reviews, build questions, backlog ideas, workspace practices, policy
+// proposals, evolution promotions and goal acceptance — unified by
 // `triage/triageTypes` and fed by `triage/useUnifiedTriage`.
 //
 // The exported name and props are unchanged, so `TrayOverlays` never learned
@@ -38,6 +39,9 @@ export function QuickAnswerPopover({ onClose, onOpenMonitor }: QuickAnswerPopove
   const selectPersona = useAgentStore((s) => s.selectPersona);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
+  const setTeamsTab = useSystemStore((s) => s.setTeamsTab);
+  const setGoalsTab = useSystemStore((s) => s.setGoalsTab);
+  const setActiveProject = useSystemStore((s) => s.setActiveProject);
   const setPendingExecutionFocus = useOverviewStore((s) => s.setPendingExecutionFocus);
   const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
 
@@ -72,9 +76,25 @@ export function QuickAnswerPopover({ onClose, onOpenMonitor }: QuickAnswerPopove
     [setPendingExecutionFocus, setOverviewTab, setSidebarSection, onClose],
   );
 
+  // "Open the goals board" — the goal card's read-more branch. The board is
+  // scoped to the ACTIVE project (`GoalsPage` reads `activeProjectId`), so
+  // landing on the goal's own board means switching to its project first;
+  // sending the reviewer to whichever project happened to be active would show
+  // them a board the card is not on.
+  const openGoalBoard = useCallback(
+    (projectId: string) => {
+      void setActiveProject(projectId);
+      setSidebarSection('teams');
+      setTeamsTab('goals');
+      setGoalsTab('board');
+      onClose();
+    },
+    [setActiveProject, setSidebarSection, setTeamsTab, setGoalsTab, onClose],
+  );
+
   const hosts = useMemo(
-    () => ({ onOpenBuilder: openBuilder, onOpenRun: openRun }),
-    [openBuilder, openRun],
+    () => ({ onOpenBuilder: openBuilder, onOpenRun: openRun, onOpenGoalBoard: openGoalBoard }),
+    [openBuilder, openRun, openGoalBoard],
   );
 
   const queue = useUnifiedTriage(copy, hosts);

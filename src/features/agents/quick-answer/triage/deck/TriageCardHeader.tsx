@@ -13,6 +13,8 @@
 // Hierarchy here is TYPE + TOKEN, never opacity (Design.md §"Hierarchy by type
 // + color tokens"): headline `typo-heading-lg` / `text-foreground`, chips and
 // stamp `typo-caption` / `typo-label` with muted labels.
+import { memo } from 'react';
+
 import type { TriageAlert, TriageItem } from '../triageTypes';
 import { Chip, KIND_META, kindCopy, TONE_BORDER, TONE_FILL, TONE_TEXT } from './DeckChips';
 import type { Translations } from '@/i18n/en';
@@ -26,15 +28,18 @@ import type { Translations } from '@/i18n/en';
  * down the leading edge, the tone's own tint, and the consequence spelled out
  * in prose rather than implied by a colour.
  *
- * `role="status"` rather than `alert`: the card is already the focus of the
- * surface, and an assertive live region would interrupt a screen reader
- * mid-title on every deal.
+ * NOT a live region. It used to carry `role="status"`, which is an implicit
+ * `aria-live="polite"` — and the deck keeps THREE cards mounted for depth, so
+ * the surface that documents itself as having "ONE live region" was mounting up
+ * to three more, each announcing a banner belonging to a card nobody is
+ * deciding. The banner is card CONTENT: it is read in place, as part of the
+ * card, when the card is read. What actually changes gets announced through the
+ * app's `AriaLiveProvider` (see `TriageDeckVariant`).
  */
 function AlertBanner({ alert }: { alert: TriageAlert }) {
   const Icon = alert.icon;
   return (
     <div
-      role="status"
       className={`mt-3 flex items-start gap-2.5 overflow-hidden rounded-card border ${TONE_BORDER[alert.tone]} bg-secondary/25`}
     >
       <span className={`w-1 shrink-0 self-stretch ${TONE_FILL[alert.tone]}`} aria-hidden />
@@ -76,7 +81,20 @@ function SourceStamp({ source }: { source: TriageItem['source'] }) {
   );
 }
 
-export function TriageCardHeader({ item, t }: { item: TriageItem; t: Translations }) {
+/**
+ * Memoised on `{ item, t }`, both stable for the life of a card.
+ *
+ * The header is chips + a source stamp + a headline + an alert banner, and none
+ * of it depends on what is being typed into a question card's answer box — which
+ * is the one thing that re-renders `TriageCard` past its own `memo`.
+ */
+export const TriageCardHeader = memo(function TriageCardHeader({
+  item,
+  t,
+}: {
+  item: TriageItem;
+  t: Translations;
+}) {
   const kind = KIND_META[item.kind];
   const kindText = kindCopy(t, item.kind);
 
@@ -99,4 +117,4 @@ export function TriageCardHeader({ item, t }: { item: TriageItem; t: Translation
       {item.alert ? <AlertBanner alert={item.alert} /> : null}
     </header>
   );
-}
+});

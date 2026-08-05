@@ -2869,6 +2869,7 @@ pub fn run() {
             commands::companion::debug_export::companion_export_conversation_log,
             commands::companion::daily_goals::companion_daily_goals_state,
             commands::companion::daily_goals::companion_daily_goals_create,
+            commands::companion::daily_goals::companion_daily_goals_update,
             commands::companion::daily_goals::companion_daily_goals_toggle,
             commands::companion::daily_goals::companion_daily_goals_discard,
             commands::companion::chat::companion_list_messages_before,
@@ -3252,6 +3253,7 @@ pub fn run() {
             // Goal acceptance queue (human-acceptance gate)
             commands::infrastructure::dev_tools::dev_tools_list_pending_acceptance,
             commands::infrastructure::dev_tools::dev_tools_count_pending_acceptance,
+            commands::infrastructure::dev_tools::dev_tools_pending_counts,
             commands::infrastructure::dev_tools::dev_tools_resolve_goal_acceptance,
             commands::infrastructure::dev_tools::dev_tools_list_goal_dependencies_for_project,
             commands::infrastructure::dev_tools::dev_tools_list_goal_items_for_project,

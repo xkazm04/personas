@@ -67,6 +67,25 @@ The panel body (`CompanionPanel.tsx` → `Bubble.tsx`) is the primary reading su
 - **Bottom-aware autoscroll.** `useChatScroll` keeps the transcript pinned to the bottom only while the user is already there; once they scroll up to read history, new content stays put and a floating **Jump to latest** pill appears. Soft top/bottom scroll-fade masks (`companion-scroll`) dissolve messages into the panel chrome at the edges.
 - **Markdown rendering.** Athena's replies render through the shared `MarkdownRenderer` scoped to the chat via `className="athena-chat-md"` + the opt-in `codeBlockActions` prop (other call sites are unaffected). This gives: code blocks with a language-label header + copy + line-wrap toggle + collapse for blocks over 16 lines; a palette-tuned syntax-highlight theme (with a light-theme variant); styled GFM task-lists and zebra-striped tables; external-link affordances; and the inline `chart` bar block. The same treatment is reused inside `ConnectorCallCard` results and `ApprovalCard` params.
 - **Day separators.** A centered date chip (Today / Yesterday / locale date) marks the first message of each new calendar day.
+
+### Attention bar — two levels instead of six stacks
+
+Six independent surfaces used to pin themselves above the transcript unconditionally: MCP pending requests, the chat decision card, assignment cards, the autonomous-actions ledger, and one full `ProactiveCard` per nudge. On a busy day that pushed the actual conversation off screen, which is the opposite of what a chat window is for.
+
+**Level 1** is `attention/AttentionBar.tsx` — a single row of count chips, one per kind that currently has anything in it, and nothing at all when Athena is quiet. **Level 2** is the cards themselves, rendered only when their chip is toggled on.
+
+| Chip | Covers | Default |
+|---|---|---|
+| **Waiting on you** (`blocked`) | pending MCP requests + the pending decision | **expanded** — a spawned CLI session is parked until it is answered |
+| **Failures** (`errors`) | nudges with `fleet_failed` / `fleet_stuck_dispatched` / `incident_blocker` / `backlog_aging` | collapsed |
+| **Warnings** (`warnings`) | `fleet_awaiting` / `fleet_stale` / `goal_target_approaching` / `execution_review` | collapsed |
+| **Athena reached out** (`nudges`) | every other proactive kind (digests, scheduled check-ins, completed ops) | collapsed |
+| **Assignments** (`assignments`) | `CompanionAssignmentCards` | collapsed |
+| **Acted for you** (`activity`) | `AthenaActionsStrip` | collapsed |
+
+The severity split lives in `attention/attentionKinds.ts` (`nudgeSeverity`), mirroring the accent colors `ProactiveCard` already paints per trigger kind, so a chip and the card it reveals always agree; an unmapped kind falls through to informational rather than inventing urgency. `message_attention` rows stay uncounted and unrendered — they are already aggregated onto the `message_digest` card. Counts come from `useAttentionCounts()`, which reads the same stores the level-2 surfaces read.
+
+**The expansion set is persisted** (`companionAlertsExpanded` in the system store's partialize list), so whatever shape the user settles on survives a panel reopen and an app restart. `LiveOpsStrip` sits above the bar and keeps its own independent collapse; approval cards still render inline on the turn that produced them.
 - **Header actions & search.** The header carries a **search** toggle (opens an in-transcript find bar — `ChatSearch` overlays matching messages with a live count, backed by `chatSearchOpen`/`chatSearchQuery` in the store) and a **copy-conversation** action (serializes the transcript to role-labeled markdown via the shared `CopyButton`).
 - **Failed-turn retry.** When a send errors, the error chip offers a Retry that re-sends the last user message.
 - **Autonomous mode** gives the panel a breathing primary border (`companion-autonomous`) and rings the header avatar so a self-driving Athena is unmistakable.
@@ -719,6 +738,7 @@ Two debug-build-only surfaces (gated on `companion_beta_flags → devModeAvailab
 
 - **Conversation log export** — a `FileDown` header button (`DevConversationLogButton.tsx`, next to the wrench) that dumps the active conversation to the gitignored `logs/athena-conversations/<stamp>-<conversation>.md` at the repo root for reflective development. The markdown joins messages with the side channels keyed by assistant episode id (store-live plus anything hydrated from the turn-sidecar rows, so pre-restart turns keep theirs): the narration/tool trail, the TodoWrite plan, turn-summary rollups, recall previews, and the autonomous-actions ledger (pure serializer `devConversationLog.ts`; writer `commands/companion/debug_export.rs`, `#[cfg(debug_assertions)]`). The success toast carries the absolute path for 30 s. The export dumps the **full** conversation: it takes the newest 500 and then walks `companion_list_messages_before` back to the first turn (`fetchAllOlderMessages`), and batch-reads sidecars for every assistant message in the dump so pre-restart turns keep their side channels.
 - **Daily goals (gamification ritual)** — a subheader bar (`DailyGoalsBar.tsx`, under the dev-op ledger slot) with a flame **streak counter** (consecutive days with all goals accomplished) and the active set of up to 3 goal chips. Evaluation is strictly **manual**: the operator toggles each chip; when the last one lands, the set clears after a short celebratory beat and the streak grows. A set can be discarded (never counts). Data lives in `companion_daily_goal` (user db; completed rows kept as history, streak recomputed per read with local-day keys and a today-incomplete grace, `brain/daily_goals.rs`). Athena sees the active set + streak via a prompt addendum with a hard rule: she may reference and encourage, but never marks or proposes marking a goal done.
+  - **Reading and editing a goal.** Chips stay one line, so a long goal ellipsizes. The full text lives in two places: a hover tooltip on the chip, and the **pencil** button, which opens the same modal used to author the set, prefilled — `companion_daily_goals_update` rewrites the texts of the active set. Filling a free slot there appends a goal (3 max); clearing an existing one is refused, because dropping the last open goal would leave a set that is logically complete but never stamped. Marking done or discarding the set remain the only ways out, and an edit never changes done state. Fields are textareas rather than inputs precisely so the whole goal is readable at once.
 
 ## Live browser testing (`run_browser_test`)
 

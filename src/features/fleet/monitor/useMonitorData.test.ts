@@ -18,8 +18,11 @@ const mockUpdateStatus = vi.fn();
 const mockDispatchAction = vi.fn();
 const mockCloudRespond = vi.fn();
 
+const mockListReviewsPage = vi.fn();
+
 vi.mock('@/api/overview/reviews', () => ({
   listManualReviews: (...args: unknown[]) => mockListReviews(...args),
+  listManualReviewsPage: (...args: unknown[]) => mockListReviewsPage(...args),
   updateManualReviewStatus: (...args: unknown[]) => mockUpdateStatus(...args),
   dispatchReviewAction: (...args: unknown[]) => mockDispatchAction(...args),
 }));
@@ -121,6 +124,11 @@ beforeEach(() => {
   vi.clearAllMocks();
   registeredPollers.length = 0;
   mockListReviews.mockResolvedValue([row('r1'), row('r2')]);
+  mockListReviewsPage.mockResolvedValue({
+    rows: [row('r1'), row('r2')],
+    nextCursor: null,
+    hasMore: false,
+  });
   mockUpdateStatus.mockResolvedValue(undefined);
   mockDispatchAction.mockResolvedValue(undefined);
   mockCloudRespond.mockResolvedValue(undefined);
@@ -368,5 +376,89 @@ describe('useMonitorData — the in-flight key names the INTENT, not just the ro
 
     await act(async () => { release(); await Promise.all([a, b]); });
     expect(mockDispatchAction).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('useMonitorData — a poll that changed nothing costs nothing downstream', () => {
+  it('keeps the SAME reviews array when the re-read returns the same rows', async () => {
+    const { result } = await mount();
+    const first = result.current.reviews;
+
+    // A verdict triggers `refreshAfterWrite` → `reloadReviews`. The command
+    // returns fresh objects (it always does — `raw.map(shapeReview)`), and the
+    // identity of THIS array is what `useEnrichedRecords`,
+    // `usePendingInteractions`, `useUnifiedTriage.all` and `projectQueue` all
+    // key their memos on. A new array here rebuilt the entire triage queue.
+    mockListReviews.mockResolvedValue([row('r1'), row('r2')]);
+    await act(async () => {
+      await result.current.handleReviewAction('r1', 'approved').catch(() => {});
+    });
+    await waitFor(() => expect(mockListReviews).toHaveBeenCalledTimes(2));
+
+    expect(result.current.reviews).toBe(first);
+  });
+
+  it('still hands back a NEW array when a row actually changed', async () => {
+    // The bail-out must be a cache, not a freeze.
+    const { result } = await mount();
+    const first = result.current.reviews;
+
+    mockListReviews.mockResolvedValue([
+      { ...row('r1'), severity: 'critical' },
+      row('r2'),
+    ]);
+    await act(async () => {
+      await result.current.handleReviewAction('r1', 'approved').catch(() => {});
+    });
+
+    await waitFor(() => expect(result.current.reviews).not.toBe(first));
+    expect(result.current.reviews[0]!.severity).toBe('critical');
+  });
+
+  it('notices a row leaving even when the survivors are identical', async () => {
+    const { result } = await mount();
+    const first = result.current.reviews;
+
+    mockListReviews.mockResolvedValue([row('r1')]);
+    await act(async () => {
+      await result.current.handleReviewAction('r2', 'approved').catch(() => {});
+    });
+
+    await waitFor(() => expect(result.current.reviews).toHaveLength(1));
+    expect(result.current.reviews).not.toBe(first);
+  });
+});
+
+describe('useMonitorData — the pending-review read can be bounded', () => {
+  it('is UNBOUNDED by default, exactly as the Monitor has always read it', async () => {
+    await mount();
+    expect(mockListReviews).toHaveBeenCalledWith(undefined, 'pending');
+    expect(mockListReviewsPage).not.toHaveBeenCalled();
+  });
+
+  it('uses the keyset command when a caller opts into a limit', async () => {
+    const { result } = await mount({ reviewLimit: 100 });
+
+    expect(mockListReviewsPage).toHaveBeenCalledWith({ status: 'pending', limit: 100 });
+    expect(mockListReviews).not.toHaveBeenCalled();
+    expect(result.current.reviews).toHaveLength(2);
+    expect(result.current.reviewsHasMore).toBe(false);
+  });
+
+  it('reports a capped read as capped rather than as the whole queue', async () => {
+    mockListReviewsPage.mockResolvedValue({
+      rows: [row('r1'), row('r2')],
+      nextCursor: 'c1',
+      hasMore: true,
+    });
+    const { result } = await mount({ reviewLimit: 2 });
+
+    // The bound is only honest if the caller can tell it was hit.
+    expect(result.current.reviewsHasMore).toBe(true);
+  });
+
+  it('never claims more behind an unbounded read', async () => {
+    const { result } = await mount();
+    expect(result.current.reviewsHasMore).toBe(false);
   });
 });

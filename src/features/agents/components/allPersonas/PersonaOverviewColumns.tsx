@@ -7,7 +7,7 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useFormattedDate } from '@/hooks/utility/data/useFormattedDate';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
-import { BuildingBadge, HEALTH_STYLES, StatusBadge, TrustScoreBar } from './PersonaOverviewBadges';
+import { BuildingBadge, StatusBadge, TrustScoreBar } from './PersonaOverviewBadges';
 import { PersonaOverviewFilterHeader, type FilterOption } from './PersonaOverviewFilterHeader';
 import { ConnectorsCell, FavoriteCell, NameCell, SelectCell } from './PersonaOverviewCells';
 import { VerdictTrendCell } from './VerdictTrendCell';
@@ -42,7 +42,7 @@ function FormattedDateTooltip({ ts, children }: { ts: string | null | undefined;
 }
 
 export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<Persona>[] {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const {
     view, setView, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick,
     isBuilding, isDraft, healthMap, triggerCounts, lastRunMap, scoreTrendsMap,
@@ -58,10 +58,10 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
 
   const HEALTH_FILTER_OPTIONS = useMemo<FilterOption[]>(() => [
     { value: 'all', label: t.agents.overview_columns.all_health },
-    { value: 'healthy', label: HEALTH_STYLES.healthy!.label },
-    { value: 'degraded', label: HEALTH_STYLES.degraded!.label },
-    { value: 'failing', label: HEALTH_STYLES.failing!.label },
-  ], [t.agents.overview_columns.all_health]);
+    { value: 'healthy', label: t.agents.status.healthy },
+    { value: 'degraded', label: t.agents.status.degraded },
+    { value: 'failing', label: t.agents.status.failing },
+  ], [t.agents.overview_columns.all_health, t.agents.status.healthy, t.agents.status.degraded, t.agents.status.failing]);
 
   const connectorOptions = useMemo<FilterOption[]>(
     () => [
@@ -143,7 +143,7 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
       {
         key: 'triggers', label: t.common.triggers, width: '90px', sortable: true, align: 'right',
         render: (p) => (
-          <Tooltip content={`${triggerCounts[p.id] ?? 0} active trigger(s)`}>
+          <Tooltip content={tx(t.agents.overview_columns.active_triggers, { count: triggerCounts[p.id] ?? 0 })}>
             <span className="flex items-center justify-end gap-1 text-md text-foreground">
               <Zap className="w-3.5 h-3.5" />
               {triggerCounts[p.id] ?? 0}
@@ -166,6 +166,6 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
         },
       },
     ],
-    [t.agents.persona_list.col_persona, t.agents.persona_list.never, t.agents.overview_columns.status, t.agents.overview_columns.trust, t.agents.overview_columns.last_run, t.agents.overview_columns.quality, t.common.connectors, t.common.triggers, view, connectorOptions, STATUS_FILTER_OPTIONS, HEALTH_FILTER_OPTIONS, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick, setView, connectorNamesMap, isBuilding, healthMap, isDraft, triggerCounts, lastRunMap, scoreTrendsMap],
+    [t.agents.persona_list.col_persona, t.agents.persona_list.never, t.agents.overview_columns.status, t.agents.overview_columns.trust, t.agents.overview_columns.last_run, t.agents.overview_columns.quality, t.agents.overview_columns.active_triggers, t.common.connectors, t.common.triggers, tx, view, connectorOptions, STATUS_FILTER_OPTIONS, HEALTH_FILTER_OPTIONS, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick, setView, connectorNamesMap, isBuilding, healthMap, isDraft, triggerCounts, lastRunMap, scoreTrendsMap],
   );
 }

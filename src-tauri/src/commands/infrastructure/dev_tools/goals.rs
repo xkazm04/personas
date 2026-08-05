@@ -446,13 +446,24 @@ pub fn dev_tools_list_pending_acceptance(
     repo::list_pending_acceptance(&state.db)
 }
 
-/// Count of goals awaiting acceptance — backs the TitleBar pending badge.
+/// Count of goals awaiting acceptance — backs the goals board's own readout.
 #[tauri::command]
 pub fn dev_tools_count_pending_acceptance(
     state: State<'_, Arc<AppState>>,
 ) -> Result<i64, AppError> {
     require_auth_sync(&state)?;
     repo::count_pending_acceptance(&state.db)
+}
+
+/// Every human-decision queue's pending count in ONE round-trip — backs the
+/// title-bar review badge. See `repo::PendingCounts` for why it is one query and
+/// why build questions are not in it.
+#[tauri::command]
+pub fn dev_tools_pending_counts(
+    state: State<'_, Arc<AppState>>,
+) -> Result<repo::PendingCounts, AppError> {
+    require_auth_sync(&state)?;
+    repo::pending_counts(&state.db)
 }
 
 /// Accept (→ `done`, off-board) or reject (→ `in-progress`, with a comment) a

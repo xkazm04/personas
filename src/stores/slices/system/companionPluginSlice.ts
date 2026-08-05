@@ -1,6 +1,10 @@
 import type { StateCreator } from 'zustand';
 import type { SystemStore } from '../../storeTypes';
 import type { FleetBoldnessLevel } from '@/api/companion';
+import {
+  DEFAULT_EXPANDED_KINDS,
+  type AttentionKind,
+} from '@/features/plugins/companion/attention/attentionKinds';
 
 export type CompanionPluginTab =
   | 'setup'
@@ -199,6 +203,15 @@ export interface CompanionPluginSlice {
    */
   companionHandsFreeDecisions: boolean;
   /**
+   * Which attention kinds are expanded below the chat panel's counts bar.
+   * Persisted on purpose: the six alert surfaces used to stack
+   * unconditionally and bury the conversation, so the shape the user
+   * settles on has to survive a panel reopen and an app restart. Only
+   * `blocked` starts open (something is genuinely waiting on the user);
+   * every other kind stays a count until they ask for it.
+   */
+  companionAlertsExpanded: AttentionKind[];
+  /**
    * Currently-typed intent in `UnifiedBuildEntry`, mirrored into the
    * slice so the Decisions panel can auto-scope its filter to the
    * persona the user is actively designing. Not persisted (session-
@@ -229,6 +242,8 @@ export interface CompanionPluginSlice {
   setCompanionFleetBoldness: (v: FleetBoldnessLevel) => void;
   setCompanionDevMode: (v: boolean) => void;
   setCompanionHandsFreeDecisions: (v: boolean) => void;
+  /** Flip one attention kind between "just a count" and "cards shown". */
+  toggleCompanionAlertKind: (kind: AttentionKind) => void;
   setActiveBuildIntent: (intent: string | null) => void;
 }
 
@@ -259,6 +274,7 @@ export const createCompanionPluginSlice: StateCreator<
   companionFleetBoldness: 'bold',
   companionDevMode: false,
   companionHandsFreeDecisions: false,
+  companionAlertsExpanded: DEFAULT_EXPANDED_KINDS,
   activeBuildIntent: null,
 
   setCompanionPluginTab: (companionPluginTab) => set({ companionPluginTab }),
@@ -292,5 +308,11 @@ export const createCompanionPluginSlice: StateCreator<
   setCompanionDevMode: (companionDevMode) => set({ companionDevMode }),
   setCompanionHandsFreeDecisions: (companionHandsFreeDecisions) =>
     set({ companionHandsFreeDecisions }),
+  toggleCompanionAlertKind: (kind) =>
+    set((s) => ({
+      companionAlertsExpanded: s.companionAlertsExpanded.includes(kind)
+        ? s.companionAlertsExpanded.filter((k) => k !== kind)
+        : [...s.companionAlertsExpanded, kind],
+    })),
   setActiveBuildIntent: (activeBuildIntent) => set({ activeBuildIntent }),
 });

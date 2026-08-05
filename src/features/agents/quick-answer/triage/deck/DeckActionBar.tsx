@@ -8,6 +8,7 @@
 //
 // Branch buttons render their digit. That is the whole hotkey documentation:
 // arrows decide, numbers branch, and a reviewer learns it by looking once.
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, SkipForward, ThumbsDown, ThumbsUp } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -17,7 +18,12 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { TriageItem, TriageTone, TriageVerdict } from '../triageTypes';
 import { Kbd, TONE_CHIP, TONE_HOVER } from './DeckChips';
 
-export function DeckFlank({
+/**
+ * Memoised. `TriageDeckVariant` passes it hoisted callbacks for exactly this
+ * reason — an inline `() => decideTop('reject')` would defeat the memo on every
+ * render and the flank would keep re-rendering per keystroke.
+ */
+export const DeckFlank = memo(function DeckFlank({
   tone,
   icon: Icon,
   label,
@@ -44,7 +50,7 @@ export function DeckFlank({
       <Icon className="h-7 w-7" aria-hidden />
     </motion.button>
   );
-}
+});
 
 function ActionButton({
   tone,
@@ -74,7 +80,14 @@ function ActionButton({
   );
 }
 
-export function DeckActionBar({
+/**
+ * Memoised. Its props are the top card and `useDeckControls`'s stable
+ * callbacks; `canAccept` is the only one that moves, and only when a question
+ * card crosses from "no field filled" to "one field filled". Everything else
+ * about this footer — three verdict buttons, a button per branch, a button per
+ * link, and the hint line — was being rebuilt on every keystroke.
+ */
+export const DeckActionBar = memo(function DeckActionBar({
   item,
   canAccept,
   onVerdict,
@@ -184,4 +197,4 @@ export function DeckActionBar({
       </p>
     </footer>
   );
-}
+});

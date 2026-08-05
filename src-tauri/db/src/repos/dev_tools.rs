@@ -1256,6 +1256,78 @@ pub fn count_pending_acceptance(pool: &DbPool) -> Result<i64, AppError> {
     })
 }
 
+/// Every "a human must decide this" queue's pending count, in one round-trip.
+///
+/// The title-bar badge used to be `pending reviews + build questions` while the
+/// deck it opens deals SEVEN kinds, so a reviewer with 26 pending ideas and
+/// nothing else saw `0`. A number that is confidently wrong is worse than an
+/// absent one, and six per-source round-trips on a poll is not a trade a badge
+/// should make — hence one connection, six counts.
+///
+/// Build questions are deliberately absent: they live in the frontend's
+/// `buildSessions` state (a halted CLI awaiting input), not in a table, so the
+/// caller adds them. There is nothing here to query for them.
+///
+/// `u32`, not `i64`, and that is load-bearing: ts-rs maps `i64` to TypeScript
+/// `bigint`, which the badge cannot add to the frontend-derived question count
+/// without a conversion nothing else in the tray does. `TriageCounts` above made
+/// the same choice for the same reason. A count is non-negative and will not
+/// reach four billion.
+#[derive(Debug, Clone, Default, serde::Serialize, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct PendingCounts {
+    pub goal_acceptance: u32,
+    pub manual_reviews: u32,
+    pub ideas: u32,
+    pub practices: u32,
+    pub policy_proposals: u32,
+    pub promotion_proposals: u32,
+    /// The six above. The caller adds build questions on top.
+    pub total: u32,
+}
+
+/// See {@link PendingCounts}. One pooled connection, six index-backed COUNTs.
+pub fn pending_counts(pool: &DbPool) -> Result<PendingCounts, AppError> {
+    timed_query!("pending_counts", "pending_counts::all", {
+        let conn = pool.get()?;
+        let one = |sql: &str| -> Result<u32, AppError> {
+            Ok(conn.query_row(sql, [], |r| r.get(0))?)
+        };
+
+        let goal_acceptance =
+            one("SELECT COUNT(*) FROM dev_goals WHERE status = 'awaiting_acceptance'")?;
+        let manual_reviews =
+            one("SELECT COUNT(*) FROM persona_manual_reviews WHERE status = 'pending'")?;
+        let ideas = one("SELECT COUNT(*) FROM dev_ideas WHERE status = 'pending'")?;
+        // Two statuses, not one: a practice is awaiting a human whether it was
+        // observed in the wild or proposed by a harvest. See
+        // `KNOWLEDGE_STATUSES` — 'adopted'/'deprecated'/'rejected' are settled.
+        let practices = one(
+            "SELECT COUNT(*) FROM workspace_knowledge WHERE status IN ('observed','proposed')",
+        )?;
+        let policy_proposals =
+            one("SELECT COUNT(*) FROM policy_proposals WHERE status = 'pending'")?;
+        let promotion_proposals =
+            one("SELECT COUNT(*) FROM evolution_promotion_proposals WHERE status = 'pending'")?;
+
+        Ok(PendingCounts {
+            total: goal_acceptance
+                + manual_reviews
+                + ideas
+                + practices
+                + policy_proposals
+                + promotion_proposals,
+            goal_acceptance,
+            manual_reviews,
+            ideas,
+            practices,
+            policy_proposals,
+            promotion_proposals,
+        })
+    })
+}
+
 /// Resolve a pending-acceptance goal. `accept` → `done` (off-board, completion
 /// stamp kept) + a `goal_accepted` signal. Reject → `in-progress` (back to the
 /// team's lane) with the completion stamp cleared + a `goal_rejected` signal
@@ -7751,3 +7823,49 @@ mod backlog_memory_tests;
 #[cfg(test)]
 #[path = "dev_tools_page_tests.rs"]
 mod page_tests;
+
+#[cfg(test)]
+mod pending_counts_tests {
+    use super::*;
+
+    /// The badge's whole purpose is that the number equals what the deck will
+    /// deal. These assert the two ways that can silently stop being true: a
+    /// source counting a settled row, and `total` drifting from its parts.
+    #[test]
+    fn counts_only_rows_that_still_owe_a_human_a_decision() {
+        let pool = crate::init_test_db().unwrap();
+        let project =
+            create_project(&pool, "P", "/tmp/pc", None, None, None, None, None).unwrap();
+
+        // Two awaiting acceptance, one already settled.
+        create_goal(&pool, &project.id, "A", None, None, Some("awaiting_acceptance"), None, None)
+            .unwrap();
+        create_goal(&pool, &project.id, "B", None, None, Some("awaiting_acceptance"), None, None)
+            .unwrap();
+        create_goal(&pool, &project.id, "C", None, None, Some("done"), None, None).unwrap();
+
+        let counts = pending_counts(&pool).unwrap();
+        assert_eq!(counts.goal_acceptance, 2, "a done goal is not awaiting anyone");
+        assert_eq!(
+            counts.total,
+            counts.goal_acceptance
+                + counts.manual_reviews
+                + counts.ideas
+                + counts.practices
+                + counts.policy_proposals
+                + counts.promotion_proposals,
+            "total must be the sum of its parts, or the badge lies about which queue is full",
+        );
+    }
+
+    #[test]
+    fn an_empty_database_counts_zero_rather_than_erroring() {
+        // Every source is queried unconditionally, so a fresh install must not
+        // fail the badge on a table that happens to be empty.
+        let pool = crate::init_test_db().unwrap();
+        let counts = pending_counts(&pool).unwrap();
+        assert_eq!(counts.total, 0);
+        assert_eq!(counts.practices, 0);
+        assert_eq!(counts.promotion_proposals, 0);
+    }
+}
