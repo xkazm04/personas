@@ -242,9 +242,10 @@ describe('the deck CHROME does not rebuild on every keystroke', () => {
     // the deck shell, the top card and its panel. The bar, the rail's rows, the
     // action bar and the two cards behind the top one are memoised out.
     const perKeystroke = renderTick.mock.calls.length / 3;
-    // eslint-disable-next-line no-console
-    console.warn('MEASURED mounted=', mounted, 'perKeystroke=', perKeystroke);
+    // Measured: 26 components on mount, ~4.3 per keystroke. Before the memo
+    // pass a keystroke cost essentially the whole mount again.
     expect(perKeystroke).toBeLessThanOrEqual(8);
+    expect(perKeystroke).toBeLessThan(mounted / 3);
     // Sanity: it is not zero — the answer field genuinely re-rendered.
     expect(perKeystroke).toBeGreaterThan(0);
   });
