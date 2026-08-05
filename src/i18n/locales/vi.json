@@ -13867,7 +13867,18 @@
       "ctx_picker_title": "Chọn ngữ cảnh cho {name}",
       "skills_registry_group_hint": "{name} — {present}/{total} kỹ năng đã chạy ở đây · {contexts} ngữ cảnh",
       "skills_registry_no_contexts": "Dự án này chưa có ngữ cảnh nào được quét — hãy chạy quét ngữ cảnh để xem kỹ năng đã chạy ở đâu.",
-      "skills_registry_project_summary": "{name} · {groups} nhóm ngữ cảnh · {skills} kỹ năng đã cài"
+      "skills_registry_project_summary": "{name} · {groups} nhóm ngữ cảnh · {skills} kỹ năng đã cài",
+      "database_modal_footer": "Giá trị phát hiện đến từ lần quét mã. Trình kết nối được gán là do bạn đặt — mỗi môi trường một cái.",
+      "database_modal_title": "Cơ sở dữ liệu",
+      "envslot_assign": "Gán trình kết nối",
+      "envslot_connector": "Trình kết nối đã gán",
+      "envslot_connector_none": "Chưa gán trình kết nối",
+      "envslot_detected": "Trong mã nguồn",
+      "envslot_detected_none": "Không phát hiện gì cho môi trường này",
+      "envslot_no_candidates": "Kho của bạn chưa có trình kết nối phù hợp.",
+      "envslot_reassign": "Gán lại",
+      "envslot_unassign": "Bỏ gán trình kết nối này",
+      "envslot_unhealthy": "lỗi"
     },
     "doc_signing": {
       "sign_heading": "Ký tài liệu",

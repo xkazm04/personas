@@ -13867,7 +13867,18 @@
       "ctx_picker_title": "Kontexte für {name} auswählen",
       "skills_registry_group_hint": "{name} — {present}/{total} Skills liefen hier · {contexts} Kontexte",
       "skills_registry_no_contexts": "Dieses Projekt hat noch keine gescannten Kontexte — starte einen Kontext-Scan, um zu sehen, wo Skills gelaufen sind.",
-      "skills_registry_project_summary": "{name} · {groups} Kontextgruppen · {skills} installierte Skills"
+      "skills_registry_project_summary": "{name} · {groups} Kontextgruppen · {skills} installierte Skills",
+      "database_modal_footer": "Erkannte Werte stammen aus dem Code-Scan. Gebundene Connectors legst du fest — einen pro Umgebung.",
+      "database_modal_title": "Datenbank",
+      "envslot_assign": "Connector zuweisen",
+      "envslot_connector": "Gebundener Connector",
+      "envslot_connector_none": "Kein Connector gebunden",
+      "envslot_detected": "Im Code",
+      "envslot_detected_none": "Für diese Umgebung nichts erkannt",
+      "envslot_no_candidates": "Noch kein passender Connector in deinem Vault.",
+      "envslot_reassign": "Neu zuweisen",
+      "envslot_unassign": "Diesen Connector lösen",
+      "envslot_unhealthy": "fehlerhaft"
     },
     "doc_signing": {
       "sign_heading": "Dokument signieren",

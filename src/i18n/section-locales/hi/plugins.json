@@ -1482,7 +1482,18 @@
     "ctx_picker_title": "{name} के लिए संदर्भ चुनें",
     "skills_registry_group_hint": "{name} — {present}/{total} स्किल यहाँ चली हैं · {contexts} संदर्भ",
     "skills_registry_no_contexts": "इस प्रोजेक्ट में अभी कोई स्कैन किया गया संदर्भ नहीं है — स्किल कहाँ चलीं यह देखने के लिए संदर्भ स्कैन चलाएँ।",
-    "skills_registry_project_summary": "{name} · {groups} संदर्भ समूह · {skills} इंस्टॉल की गई स्किल"
+    "skills_registry_project_summary": "{name} · {groups} संदर्भ समूह · {skills} इंस्टॉल की गई स्किल",
+    "database_modal_footer": "पहचाने गए मान कोडबेस स्कैन से आते हैं। जुड़े कनेक्टर आप तय करते हैं — हर परिवेश के लिए एक।",
+    "database_modal_title": "डेटाबेस",
+    "envslot_assign": "कनेक्टर असाइन करें",
+    "envslot_connector": "जुड़ा कनेक्टर",
+    "envslot_connector_none": "कोई कनेक्टर नहीं जुड़ा",
+    "envslot_detected": "कोडबेस में",
+    "envslot_detected_none": "इस परिवेश के लिए कुछ नहीं मिला",
+    "envslot_no_candidates": "आपके वॉल्ट में अभी कोई मेल खाता कनेक्टर नहीं है।",
+    "envslot_reassign": "दोबारा असाइन करें",
+    "envslot_unassign": "यह कनेक्टर हटाएँ",
+    "envslot_unhealthy": "खराब"
   },
   "doc_signing": {
     "sign_heading": "दस्तावेज़ पर हस्ताक्षर करें",

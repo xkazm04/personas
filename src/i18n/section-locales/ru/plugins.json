@@ -1482,7 +1482,18 @@
     "ctx_picker_title": "Выберите контексты для {name}",
     "skills_registry_group_hint": "{name} — {present}/{total} навыков отработали здесь · контекстов: {contexts}",
     "skills_registry_no_contexts": "В этом проекте пока нет просканированных контекстов — запустите сканирование контекстов, чтобы увидеть, где отработали навыки.",
-    "skills_registry_project_summary": "{name} · групп контекстов: {groups} · установленных навыков: {skills}"
+    "skills_registry_project_summary": "{name} · групп контекстов: {groups} · установленных навыков: {skills}",
+    "database_modal_footer": "Обнаруженные значения берутся из сканирования кода. Привязанные коннекторы задаёте вы — по одному на среду.",
+    "database_modal_title": "База данных",
+    "envslot_assign": "Назначить коннектор",
+    "envslot_connector": "Привязанный коннектор",
+    "envslot_connector_none": "Коннектор не привязан",
+    "envslot_detected": "В коде",
+    "envslot_detected_none": "Для этой среды ничего не обнаружено",
+    "envslot_no_candidates": "В вашем хранилище пока нет подходящего коннектора.",
+    "envslot_reassign": "Переназначить",
+    "envslot_unassign": "Отвязать этот коннектор",
+    "envslot_unhealthy": "неисправен"
   },
   "doc_signing": {
     "sign_heading": "Подписать документ",

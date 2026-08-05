@@ -13867,7 +13867,18 @@
       "ctx_picker_title": "Vyberte kontexty pro {name}",
       "skills_registry_group_hint": "{name} — {present}/{total} dovedností zde běželo · {contexts} kontextů",
       "skills_registry_no_contexts": "Tento projekt zatím nemá naskenované kontexty — spusťte sken kontextů a uvidíte, kde dovednosti běžely.",
-      "skills_registry_project_summary": "{name} · {groups} skupin kontextů · {skills} nainstalovaných dovedností"
+      "skills_registry_project_summary": "{name} · {groups} skupin kontextů · {skills} nainstalovaných dovedností",
+      "database_modal_footer": "Zjištěné hodnoty pocházejí ze skenu kódu. Připojené konektory nastavujete vy — jeden na prostředí.",
+      "database_modal_title": "Databáze",
+      "envslot_assign": "Přiřadit konektor",
+      "envslot_connector": "Připojený konektor",
+      "envslot_connector_none": "Žádný konektor není připojen",
+      "envslot_detected": "V kódu",
+      "envslot_detected_none": "Pro toto prostředí nic nenalezeno",
+      "envslot_no_candidates": "Ve vašem trezoru zatím není odpovídající konektor.",
+      "envslot_reassign": "Změnit",
+      "envslot_unassign": "Odpojit tento konektor",
+      "envslot_unhealthy": "nefunkční"
     },
     "doc_signing": {
       "sign_heading": "Podepsat dokument",

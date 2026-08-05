@@ -3258,6 +3258,8 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_goal_advancing_teams,
             // Dev Tools -- Context Groups
             commands::infrastructure::dev_tools::dev_tools_list_context_groups,
+            commands::infrastructure::dev_tools::dev_tools_list_env_connectors,
+            commands::infrastructure::dev_tools::dev_tools_set_env_connector,
             commands::infrastructure::dev_tools::dev_tools_create_context_group,
             commands::infrastructure::dev_tools::dev_tools_update_context_group,
             commands::infrastructure::dev_tools::dev_tools_delete_context_group,

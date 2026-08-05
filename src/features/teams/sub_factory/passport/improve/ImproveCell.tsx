@@ -17,6 +17,7 @@ import { ImprovePopover } from './ImprovePopover';
 import { DeployPopover } from './DeployPopover';
 import { SkillsWorkbench } from './SkillsWorkbench';
 import { DataLinksPopover } from './DataLinksPopover';
+import { DatabaseModal, DATABASE_DIMENSION } from './DatabaseModal';
 
 // Rows whose improve action is a pure Tier-0 config toggle (ImprovePopover).
 // Security moved to the deploy/scan path (DeployPopover) so it can offer a real
@@ -38,6 +39,9 @@ export function ImproveCell({ slug, rowKey, passport, children }: { slug: string
   // Data-analysis links are a plain declaration popover — always openable so
   // links can be added AND removed.
   const isDataLinks = rowKey === 'datalinks';
+  // Database opens its own modal: the row is per-environment, and the generic
+  // deploy popover has nowhere to put "production is THIS connector".
+  const isDatabase = rowKey === DATABASE_DIMENSION;
   const hasStandards = isStandards && raw ? applicableStandardsActions(raw.project.standards_config).length > 0 : false;
   const hasDeploy = !isStandards && applicableDeployActions(rowKey, passport).length > 0; // LLM-upgradeable
   const hasConnector = !isStandards && Boolean(connectorSpecFor(rowKey)?.applicable(passport));
@@ -45,8 +49,11 @@ export function ImproveCell({ slug, rowKey, passport, children }: { slug: string
   // Share direction (project skill → library) may still apply.
   const hasSkills = isSkills && Boolean(raw);
   const hasDataLinks = isDataLinks && Boolean(raw);
+  // Always openable — binding a connector per environment is available even
+  // when the codebase already shows a database, so there is no gap to gate on.
+  const hasDatabase = isDatabase && Boolean(raw);
 
-  if (!engine || (!hasStandards && !hasDeploy && !hasConnector && !hasSkills && !hasDataLinks)) return <>{children}</>;
+  if (!engine || (!hasStandards && !hasDeploy && !hasConnector && !hasSkills && !hasDataLinks && !hasDatabase)) return <>{children}</>;
 
   const trigger = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
@@ -94,6 +101,8 @@ export function ImproveCell({ slug, rowKey, passport, children }: { slug: string
       )}
       {open && (isSkills
         ? <SkillsWorkbench slug={slug} initialMode="manage" onClose={() => setOpen(false)} />
+        : isDatabase
+        ? <DatabaseModal slug={slug} projectName={raw?.project.name ?? slug} passport={passport} onClose={() => setOpen(false)} />
         : isDataLinks
           ? <DataLinksPopover slug={slug} anchor={anchor} onClose={() => setOpen(false)} />
           : isStandards

@@ -1482,7 +1482,18 @@
     "ctx_picker_title": "Elige contextos para {name}",
     "skills_registry_group_hint": "{name} — {present}/{total} skills se han ejecutado aquí · {contexts} contextos",
     "skills_registry_no_contexts": "Este proyecto aún no tiene contextos escaneados: ejecuta un escaneo de contextos para ver dónde se han ejecutado las skills.",
-    "skills_registry_project_summary": "{name} · {groups} grupos de contexto · {skills} skills instaladas"
+    "skills_registry_project_summary": "{name} · {groups} grupos de contexto · {skills} skills instaladas",
+    "database_modal_footer": "Los valores detectados vienen del escaneo del código. Los conectores vinculados los defines tú: uno por entorno.",
+    "database_modal_title": "Base de datos",
+    "envslot_assign": "Asignar conector",
+    "envslot_connector": "Conector vinculado",
+    "envslot_connector_none": "Ningún conector vinculado",
+    "envslot_detected": "En el código",
+    "envslot_detected_none": "No se detectó nada para este entorno",
+    "envslot_no_candidates": "Aún no hay un conector compatible en tu bóveda.",
+    "envslot_reassign": "Reasignar",
+    "envslot_unassign": "Desvincular este conector",
+    "envslot_unhealthy": "con fallos"
   },
   "doc_signing": {
     "sign_heading": "Firmar un Documento",

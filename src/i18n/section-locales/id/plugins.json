@@ -1482,7 +1482,18 @@
     "ctx_picker_title": "Pilih konteks untuk {name}",
     "skills_registry_group_hint": "{name} — {present}/{total} skill pernah berjalan di sini · {contexts} konteks",
     "skills_registry_no_contexts": "Proyek ini belum punya konteks hasil pemindaian — jalankan pemindaian konteks untuk melihat di mana skill pernah berjalan.",
-    "skills_registry_project_summary": "{name} · {groups} grup konteks · {skills} skill terpasang"
+    "skills_registry_project_summary": "{name} · {groups} grup konteks · {skills} skill terpasang",
+    "database_modal_footer": "Nilai terdeteksi berasal dari pemindaian kode. Konektor terikat Anda yang tentukan — satu per lingkungan.",
+    "database_modal_title": "Basis data",
+    "envslot_assign": "Tetapkan konektor",
+    "envslot_connector": "Konektor terikat",
+    "envslot_connector_none": "Belum ada konektor terikat",
+    "envslot_detected": "Di dalam kode",
+    "envslot_detected_none": "Tidak ada yang terdeteksi untuk lingkungan ini",
+    "envslot_no_candidates": "Belum ada konektor yang cocok di vault Anda.",
+    "envslot_reassign": "Ganti",
+    "envslot_unassign": "Lepaskan konektor ini",
+    "envslot_unhealthy": "bermasalah"
   },
   "doc_signing": {
     "sign_heading": "Tandatangani Dokumen",

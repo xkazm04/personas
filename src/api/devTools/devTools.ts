@@ -12,6 +12,7 @@ import type { PendingAcceptanceGoal } from "@/lib/bindings/PendingAcceptanceGoal
 import type { DevContextGroup } from "@/lib/bindings/DevContextGroup";
 import type { DevContext } from "@/lib/bindings/DevContext";
 import type { DevContextGroupRelationship } from "@/lib/bindings/DevContextGroupRelationship";
+import type { DevProjectEnvConnector } from "@/lib/bindings/DevProjectEnvConnector";
 import type { DevIdea } from "@/lib/bindings/DevIdea";
 import type { DevScan } from "@/lib/bindings/DevScan";
 import type { DevTask } from "@/lib/bindings/DevTask";
@@ -48,6 +49,7 @@ export type { DirectoryScanResult } from "@/lib/bindings/DirectoryScanResult";
 export type { DevGoal } from "@/lib/bindings/DevGoal";
 export type { DevGoalSignal } from "@/lib/bindings/DevGoalSignal";
 export type { DevContextGroup } from "@/lib/bindings/DevContextGroup";
+export type { DevProjectEnvConnector } from "@/lib/bindings/DevProjectEnvConnector";
 export type { DevContext } from "@/lib/bindings/DevContext";
 export type { DevContextGroupRelationship } from "@/lib/bindings/DevContextGroupRelationship";
 export type { DevIdea } from "@/lib/bindings/DevIdea";
@@ -511,6 +513,26 @@ export const getProjectFavicon = (rootPath: string) =>
 
 export const listContextGroups = (projectId: string) =>
   safeInvoke<DevContextGroup[]>([], "dev_tools_list_context_groups", { projectId });
+
+// -- per-environment connector bindings --------------------------------------
+// `dev_projects` has four SINGULAR credential slots, which cannot express "a
+// different database per environment" or "a different monitoring backend per
+// capability". These read/write the `(project, dimension, env)` table instead.
+// `dimension` is a passport row key, optionally capability-suffixed
+// ('persistence', 'monitoring', 'monitoring.logs'); `env` is an EnvKey.
+
+export const listEnvConnectors = (projectId: string) =>
+  safeInvoke<DevProjectEnvConnector[]>([], "dev_tools_list_env_connectors", { projectId });
+
+/** Bind a credential to one (dimension, env) pair. `credentialId: null` clears
+ *  it — assigning and unassigning are the same gesture, so the same call. */
+export const setEnvConnector = (
+  projectId: string,
+  dimension: string,
+  env: string,
+  credentialId: string | null,
+) =>
+  invoke<void>("dev_tools_set_env_connector", { projectId, dimension, env, credentialId });
 
 export const createContextGroup = (projectId: string, name: string, color: string, icon?: string, groupType?: string, domain?: string) =>
   invoke<DevContextGroup>("dev_tools_create_context_group", {
