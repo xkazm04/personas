@@ -5,6 +5,7 @@
 
 
 
+
 ### prototype-mm-goals — /prototype: consolidated Goals modal for the Mastermind Goals dimension — session opus-5[1m]
 - Started: 2026-08-04. Status: started. Worktree `.claude/worktrees/prototype-mm-goals` (branch `worktree-prototype-mm-goals`).
 - Fuses `sub_mastermind/lib/GoalListPopover.tsx` (inert title-list popover) with the goal-acceptance surface (`sub_goals/{acceptancePrimitives,AcceptanceTriagePolished,GoalAcceptanceView}.tsx`) into ONE project-scoped modal. 3 directional variants → operator picks one → both predecessors deleted, and the app-header Goal-management tray entry (`shared/chrome/useTitleBarTray.tsx`) is optionally dropped.
@@ -98,6 +99,9 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### athena-chrome-contrast — companion panel contrast + header consolidation — COMPLETE, commits 7b393764b + 816f17993 — session fable-5
+- 2026-08-05. (1) ProactiveCard engage button white-on-primary → tinted primary pattern (readable in every theme). (2) Panel shell bg-secondary/95 → bg-background/95 (matches Fleet overlay; kills the glow vs the rest of the app in dark themes). (3) WakeCadence / FleetBoldnessDial / DailyGoalsBar no longer stack as always-on subheaders — collapsed to header icons (Timer/Gauge/Flame, testids companion-strip-*) with a one-at-a-time accordion row; same gating as before, DevOpLedger untouched, zero new i18n keys. Gates: tsc 0, eslint clean, companion vitest 362/362. NOT live-verified (jsdom cannot judge contrast) — needs one look in the running app. Note for a future sweep: 8 more `bg-primary text-primary-foreground` buttons remain in companion (Composer send, McpRequestPanel ×3, BrainViewer, ConsolidationReview ×2, MemoryPanel) with the same theme risk.
 
 ### perfect-athena-arc — /perfect targeted arc on athena-companion — COMPLETE 5/5 shipped — session fable-5 (Director) + 2 Opus builders
 - 2026-08-05. Propose (self-sourced brief, no scout) 5/5 accepted, build wave 2 builders in parallel worktrees, 5/5 shipped + 2 Director commits: `3c1756e93` delete-dev-session (-662 LOC) · `ee82a3c6f` prompt-block-ledger (per-block char accounting in companion_turn + budget WARN + companion_prompt_block_stats) · `5d9a9ffd9` dev-op-self-review (+`28be56de4` Director catch: evidence rows lacked op ids) · `57e461dfb` persist-turn-sidecars (companion_turn_sidecar table, COALESCE upsert, store hydration) · `6c43da752` transcript-pagination (keyset past the 500 cap + full-day export; bonus total-order fix: list_recent id DESC tiebreak) · `c9b8e5970` commandNames regen.
