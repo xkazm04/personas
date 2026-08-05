@@ -114,6 +114,11 @@ export function useHealthDigestScheduler() {
         }
 
         await sendAppNotification(title, body).catch(silentCatch("useHealthDigestScheduler:sendAppNotification"));
+      } catch (err) {
+        // The IIFE's rejection is otherwise unobserved — without this catch a
+        // throw from setAppSetting (or a future unguarded await) becomes an
+        // unhandled promise rejection with no Sentry breadcrumb.
+        silentCatch("useHealthDigestScheduler:run")(err);
       } finally {
         // Always unlock unless digest completed or was permanently skipped
         if (!ran.current) {
