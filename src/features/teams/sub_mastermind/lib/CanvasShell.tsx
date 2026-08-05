@@ -47,8 +47,16 @@ const MIN_GROUP_SIZE = 60; // world px — smaller drags are treated as clicks
 // Half an island footprint (~900×800 world units) plus slack, so an island is
 // only culled once its whole body is well clear of the viewport — no popping.
 const CULL_MARGIN = 700;
-// Islands committed per animation frame on first mount (see mountBudget).
-const MOUNT_WAVE = 5;
+// Islands committed per animation frame on first mount (see mountBudget). The
+// wave ADAPTS instead of being a constant: one island is ~150 SVG nodes, and
+// how many of those fit in a frame is a property of the machine, not of the
+// canvas — a fixed 5 either stalls a busy laptop or wastes frames on a
+// workstation. Each wave is timed and the next one is sized from the result.
+const MOUNT_WAVE_START = 4;
+const MOUNT_WAVE_MIN = 1;
+const MOUNT_WAVE_MAX = 14;
+/** Commit time above which the previous wave is judged too big (~1.5 frames). */
+const MOUNT_FRAME_BUDGET_MS = 24;
 
 export interface IslandCtx {
   z: number;
@@ -231,24 +239,64 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
   // ...and they mount in WAVES. Culling alone still commits every on-screen
   // island in ONE synchronous pass; at 30+ projects (13 dimension cells +
   // stat columns + banner each) that pass is seconds of blocked main thread.
-  // MOUNT_WAVE islands per animation frame lets the first ones paint while the
-  // rest stream in. The budget only ever grows, so a later pan (already past
-  // the island count) mounts immediately with no re-stagger.
-  const [mountBudget, setMountBudget] = useState(MOUNT_WAVE);
+  // A wave per animation frame lets the first ones paint while the rest stream
+  // in. The budget only ever grows, so a later pan (already past the island
+  // count) mounts immediately with no re-stagger.
+  const [mountBudget, setMountBudget] = useState(MOUNT_WAVE_START);
+  const waveSize = useRef(MOUNT_WAVE_START);
+  const waveAt = useRef(0);
+  const waveMeasuredFor = useRef(-1);
   useEffect(() => {
     if (mountBudget >= visibleIslands.length) return;
-    const id = requestAnimationFrame(() => setMountBudget((n) => n + MOUNT_WAVE));
+    // Size the NEXT wave from how long the one we just committed took. This is a
+    // passive effect, so it runs after paint and the measurement covers the real
+    // cost — render, commit and raster. Guarded on the budget it measured, so a
+    // data-family arrival re-running this effect can't be mistaken for a slow
+    // frame and shrink the wave to a crawl.
+    if (waveMeasuredFor.current !== mountBudget) {
+      waveMeasuredFor.current = mountBudget;
+      const elapsed = waveAt.current === 0 ? 0 : performance.now() - waveAt.current;
+      if (elapsed > MOUNT_FRAME_BUDGET_MS) waveSize.current = Math.max(MOUNT_WAVE_MIN, Math.floor(waveSize.current / 2));
+      else if (elapsed > 0 && elapsed < MOUNT_FRAME_BUDGET_MS / 2) waveSize.current = Math.min(MOUNT_WAVE_MAX, waveSize.current + 2);
+    }
+    const id = requestAnimationFrame(() => {
+      waveAt.current = performance.now();
+      setMountBudget((n) => n + waveSize.current);
+    });
     return () => cancelAnimationFrame(id);
   }, [mountBudget, visibleIslands.length]);
+
+  // Fill ORDER: nearest the viewport centre first. The camera opens framed on
+  // the whole portfolio, so on a cold load every island passes the cull and the
+  // waves filled the map in scene order (alphabetical) — the middle of the
+  // screen, which is exactly where the user is looking, arrived last. Ranking by
+  // distance to the viewport centre makes the load resolve outward from there.
+  //
+  // Only the SET is chosen by rank; `mountedIslands` below stays in scene order,
+  // so SVG paint order and React's child keys never shuffle underneath. `null`
+  // once the budget covers everything — the rank is then pure waste, and this
+  // memo would otherwise re-sort on every committed camera change.
+  const mountRank = useMemo(() => {
+    if (mountBudget >= visibleIslands.length || !visibleRect) return null;
+    const cx = (visibleRect.minX + visibleRect.maxX) / 2;
+    const cy = (visibleRect.minY + visibleRect.maxY) / 2;
+    const d2 = (i: Island) => (i.x - cx) * (i.x - cx) + (i.y - cy) * (i.y - cy);
+    const rank = new Map<string, number>();
+    [...visibleIslands].sort((a, b) => d2(a) - d2(b)).forEach((i, k) => rank.set(i.slug, k));
+    return rank;
+  }, [mountBudget, visibleIslands, visibleRect]);
+
   // The keyboard cursor is always mounted, even mid-flight to an off-screen
   // island: focus travel is an animated pan, so without this the focused island
   // would be culled for the duration and the ring would draw over nothing.
   const mountedIslands = useMemo(() => {
-    const base = mountBudget >= visibleIslands.length ? visibleIslands : visibleIslands.slice(0, mountBudget);
+    const base = mountRank === null
+      ? visibleIslands
+      : visibleIslands.filter((i) => (mountRank.get(i.slug) ?? 0) < mountBudget);
     if (!kbFocus || base.some((i) => i.slug === kbFocus)) return base;
     const f = bySlug.get(kbFocus);
     return f ? [...base, f] : base;
-  }, [mountBudget, visibleIslands, kbFocus, bySlug]);
+  }, [mountRank, mountBudget, visibleIslands, kbFocus, bySlug]);
 
   // Gesture-time world math reads the LIVE camera (camRef) so it stays correct
   // even mid-pan, when `cam` state is intentionally stale for render-freedom.

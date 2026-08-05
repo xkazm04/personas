@@ -20,19 +20,19 @@ export function ZoomControls({ onZoomBy, onFit, onTidy, onUndo, canUndo }: {
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="p-1.5 rounded-interactive text-foreground/70 hover:text-foreground hover:bg-primary/10 transition-colors focus-ring"
+      className="p-1.5 rounded-interactive text-foreground/65 hover:text-foreground hover:bg-primary/12 transition-colors focus-ring"
       data-testid={testId}
     >
       {icon}
     </button>
   );
   return (
-    <div className="absolute bottom-3 right-3 z-10 inline-flex items-center gap-0.5 p-1 rounded-interactive bg-secondary/70 border border-primary/12 shadow-elevation-2 backdrop-blur-sm">
+    <div className="absolute bottom-3 right-3 z-10 inline-flex items-center gap-0.5 p-1 rounded-interactive mm-chrome surface-blur-tooltip">
       {btn(t.mastermind.zoom_out, () => onZoomBy(1 / 1.3), <Minus className="w-4 h-4" aria-hidden />, 'mm-zoom-out')}
       {btn(t.mastermind.zoom_in, () => onZoomBy(1.3), <Plus className="w-4 h-4" aria-hidden />, 'mm-zoom-in')}
-      <span className="w-px h-4 bg-primary/15 mx-0.5" aria-hidden />
+      <span className="w-px h-4 mx-0.5 mm-chrome-rule" aria-hidden />
       {btn(t.mastermind.fit_all, onFit, <Maximize2 className="w-4 h-4" aria-hidden />, 'mm-zoom-fit')}
-      <span className="w-px h-4 bg-primary/15 mx-0.5" aria-hidden />
+      <span className="w-px h-4 mx-0.5 mm-chrome-rule" aria-hidden />
       {btn(t.mastermind.tidy_tooltip, onTidy, <Wand2 className="w-4 h-4" aria-hidden />, 'mm-tidy')}
       {canUndo && btn(t.mastermind.undo_tidy, onUndo, <Undo2 className="w-4 h-4" aria-hidden />, 'mm-tidy-undo')}
     </div>

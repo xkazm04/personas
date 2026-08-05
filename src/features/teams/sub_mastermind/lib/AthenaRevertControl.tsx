@@ -30,7 +30,7 @@ export function AthenaRevertControl({ count, onRevert }: {
         onClick={() => setConfirming(true)}
         aria-label={label}
         title={label}
-        className="absolute bottom-14 right-3 z-10 inline-flex items-center gap-1.5 px-2 py-1 rounded-interactive bg-secondary/70 border border-accent/40 text-accent shadow-elevation-2 backdrop-blur-sm hover:bg-accent/10 transition-colors focus-ring"
+        className="absolute bottom-14 right-3 z-10 inline-flex items-center gap-1.5 px-2 py-1 rounded-interactive mm-chrome surface-blur-tooltip border-accent/45 text-accent hover:bg-accent/12 transition-colors focus-ring"
         data-testid="mm-athena-revert"
       >
         <Sparkles className="w-3.5 h-3.5" aria-hidden />

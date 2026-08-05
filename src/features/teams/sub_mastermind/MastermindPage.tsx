@@ -54,6 +54,7 @@ import { DIM_INK } from './lib/ink';
 import { MastermindGoalsModal } from './lib/goals/MastermindGoalsModal';
 import { KpiListPopover, type KpiListItem } from './lib/KpiListPopover';
 import { IdeaScanPopover, type ScanParams } from './lib/IdeaScanPopover';
+import { sameIslandContent } from './lib/islandEquality';
 import { hydrateLayout, isLayoutHydrated, loadHidden, saveHidden } from './lib/layoutStore';
 import { useAthenaPanels, useLayoutHidden, useLayoutPositions } from './lib/useLayout';
 import { AthenaPanel } from './lib/AthenaPanel';
@@ -77,6 +78,11 @@ const EMPTY_KPIS: KpiListItem[] = [];
 
 /** Islands allowed to ADOPT changed content per pass (see hydration waves). */
 const HYDRATE_WAVE = 6;
+
+/** How long the scene must stop changing before it is worth serializing for
+ *  Athena. Shorter than the publisher's own write debounce, so a settled scene
+ *  still reaches the DB in roughly the same wall-clock time it always did. */
+const SCENE_PUBLISH_SETTLE_MS = 300;
 
 /** Normalize a path for cwd↔root matching (Windows separators, case, slash). */
 const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase().replace(/\/+$/, '');
@@ -475,11 +481,17 @@ function MastermindInner() {
   // monitoring, LLM spend) produced a brand-new object for EVERY island and
   // blew the cache on `base === i` — the whole world reconciled ~10× in the
   // first seconds. Most of those arrivals change one family's cells on a few
-  // islands; a stringify per island (µs) is nothing against re-rendering
-  // ~150 SVG nodes each (ms), so the comparison buys back the freeze.
+  // islands, so the comparison buys back the freeze.
+  //
+  // That comparison used to be `JSON.stringify(island)`. It is now an early-exit
+  // structural walk (`sameIslandContent`) that allocates nothing: the pass below
+  // re-runs once per animation frame while the hydration waves drain, and paying
+  // N multi-kilobyte serializations per frame was itself a visible slice of the
+  // cold-load cost it was there to fix. The cache holds the previous BASE island
+  // rather than a key string.
   const passportBySlug = useMemo(() => new Map(passports.map((p) => [p.identity.slug, p])), [passports]);
   const islandCache = useRef(new Map<string, {
-    baseKey: string; passport: unknown; raw: unknown;
+    base: (typeof scene.islands)[number]; passport: unknown; raw: unknown;
     oX: number | undefined; oY: number | undefined;
     fleetKey: string; personasKey: string; busy: boolean; shipKey: string;
     out: (typeof scene.islands)[number];
@@ -515,11 +527,13 @@ function MastermindInner() {
       const fleetKey = fleet.map((f) => `${f.id}:${f.state}`).join('|');
       const personasKey = personasRunning.join('|');
       const shipKey = ship ? `${ship.next}|${ship.shipped}/${ship.total}|${ship.late}` : '';
-      const baseKey = JSON.stringify(i);
       const c = cache.get(i.slug);
-      if (c && c.baseKey === baseKey && c.passport === passport && c.raw === raw
+      // Cheap scalar checks first, the island walk last — a fleet tick or a drag
+      // commit is decided before `sameIslandContent` is ever entered.
+      if (c && c.passport === passport && c.raw === raw
         && c.oX === o?.x && c.oY === o?.y && c.fleetKey === fleetKey
-        && c.personasKey === personasKey && c.busy === busy && c.shipKey === shipKey) {
+        && c.personasKey === personasKey && c.busy === busy && c.shipKey === shipKey
+        && sameIslandContent(c.base, i)) {
         next.set(i.slug, c);
         return c.out;
       }
@@ -551,7 +565,7 @@ function MastermindInner() {
       // every zoom band.
       const attention = computeAttention(fleet);
       const out = { ...i, ...(o ? { x: o.x, y: o.y } : {}), fleet, personasRunning, nodes, attention, ship };
-      const entry = { baseKey, passport, raw, oX: o?.x, oY: o?.y, fleetKey, personasKey, busy, shipKey, out };
+      const entry = { base: i, passport, raw, oX: o?.x, oY: o?.y, fleetKey, personasKey, busy, shipKey, out };
       next.set(i.slug, entry);
       return out;
     });
@@ -600,8 +614,19 @@ function MastermindInner() {
   // digest that silently drops projects the user tucked away would let her
   // report a portfolio that isn't the portfolio. The publisher debounces,
   // dedupes and refuses the demo scene itself.
+  //
+  // The call is debounced HERE as well, because the publisher's own debounce
+  // only protects the IPC write — `publishCanvasScene` still builds and
+  // serializes the whole portfolio on every invocation to compute its dedupe
+  // key. During a cold load `positioned` re-derives once per hydration frame,
+  // so that was a second full-scene stringify per frame competing with the
+  // fetches the canvas is waiting on. A settled scene publishes exactly once.
   useEffect(() => {
-    publishCanvasScene({ scene: positioned, families: publishFamilies, kpiByProject });
+    const id = setTimeout(
+      () => publishCanvasScene({ scene: positioned, families: publishFamilies, kpiByProject }),
+      SCENE_PUBLISH_SETTLE_MS,
+    );
+    return () => clearTimeout(id);
   }, [positioned, publishFamilies, kpiByProject]);
 
   // ── Athena's composed panel ──────────────────────────────────────────────
@@ -981,7 +1006,7 @@ function MastermindInner() {
           type="button"
           onClick={() => setDemoDismissed(false)}
           title={t.mastermind.demo_badge_reopen}
-          className="absolute bottom-3 left-3 z-10 typo-caption text-foreground/50 px-2 py-1 rounded-interactive bg-secondary/60 border border-primary/10 hover:text-foreground hover:border-primary/25 transition-colors focus-ring"
+          className="absolute bottom-3 left-3 z-10 typo-caption text-foreground/50 px-2 py-1 rounded-interactive mm-chrome surface-blur-tooltip hover:text-foreground transition-colors focus-ring"
           data-testid="mm-demo-badge"
         >
           {t.mastermind.demo_badge}
