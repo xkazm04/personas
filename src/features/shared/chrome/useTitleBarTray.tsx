@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo } from 'react';
+import { lazy, Suspense, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
 import { useOverviewStore } from '@/stores/overviewStore';
@@ -10,11 +10,8 @@ import { QuickAnswerPopover } from '@/features/agents/quick-answer/QuickAnswerPo
 import { FullScreenOverlay } from '@/features/shared/components/layout/FullScreenOverlay';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
-// Lazy so the always-mounted tray doesn't pull these full-size surfaces into the
-// main bundle — they load only when summoned.
-const GoalAcceptanceOverlay = lazy(() =>
-  import('@/features/teams/sub_goals/GoalAcceptanceOverlay').then((m) => ({ default: m.GoalAcceptanceOverlay })),
-);
+// Lazy so the always-mounted tray doesn't pull this full-size surface into the
+// main bundle — it loads only when summoned.
 const ScheduleTimeline = lazy(() => import('@/features/schedules/components/ScheduleTimeline'));
 
 function OverlayFallback() {
@@ -53,18 +50,7 @@ export function useTitleBarTray() {
   });
   const headerOverlay = useSystemStore((s) => s.headerOverlay);
   const setHeaderOverlay = useSystemStore((s) => s.setHeaderOverlay);
-  const pendingAcceptance = useSystemStore((s) => s.pendingAcceptanceCount);
-  const refreshPendingAcceptance = useSystemStore((s) => s.refreshPendingAcceptance);
   const openPalette = useCommandPaletteStore((s) => s.openPalette);
-
-  // Keep the pending-acceptance badge live — cheap COUNT on mount + a 30s poll
-  // (goals complete in the background, so the badge can't be derived from the
-  // page-scoped goals array).
-  useEffect(() => {
-    void refreshPendingAcceptance();
-    const id = setInterval(() => void refreshPendingAcceptance(), 30_000);
-    return () => clearInterval(id);
-  }, [refreshPendingAcceptance]);
 
   const todayScheduleCount = useMemo(() => {
     const now = new Date();
@@ -84,7 +70,6 @@ export function useTitleBarTray() {
   const reviewOpen = headerOverlay === 'quick-answer';
   const monitorOpen = headerOverlay === 'monitor';
   const isScheduleActive = headerOverlay === 'schedules';
-  const acceptanceOpen = headerOverlay === 'goal-acceptance';
 
   const toggleNotifications = () => {
     if (!notificationsOpen) {
@@ -100,27 +85,22 @@ export function useTitleBarTray() {
   const toggleReview = () => setHeaderOverlay(reviewOpen ? 'none' : 'quick-answer');
   const toggleMonitor = () => setHeaderOverlay(monitorOpen ? 'none' : 'monitor');
   const openSearch = () => openPalette('settings');
-  // Pending-acceptance badge → full-screen acceptance overlay (same pattern).
-  const openAcceptance = () => setHeaderOverlay(acceptanceOpen ? 'none' : 'goal-acceptance');
 
   return {
     todayScheduleCount,
     quickCount,
     monitorAttention,
     unreadCount,
-    pendingAcceptance,
     running,
     notificationsOpen,
     reviewOpen,
     monitorOpen,
     isScheduleActive,
-    acceptanceOpen,
     toggleNotifications,
     toggleSchedules,
     toggleReview,
     toggleMonitor,
     openSearch,
-    openAcceptance,
   };
 }
 
@@ -142,11 +122,6 @@ export function TrayOverlays() {
           onClose={() => setHeaderOverlay('none')}
           onOpenMonitor={() => setHeaderOverlay('monitor')}
         />
-      )}
-      {headerOverlay === 'goal-acceptance' && (
-        <Suspense key="goal-acceptance" fallback={null}>
-          <GoalAcceptanceOverlay onClose={() => setHeaderOverlay('none')} />
-        </Suspense>
       )}
       {headerOverlay === 'schedules' && (
         <FullScreenOverlay key="schedules" onClose={() => setHeaderOverlay('none')} testId="schedules-overlay">

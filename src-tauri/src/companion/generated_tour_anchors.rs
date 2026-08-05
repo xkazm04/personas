@@ -5,7 +5,7 @@
 // twin (src/features/onboarding/anchors/tourAnchorManifest.json) is used by
 // the frontend; both are generated from the same scan so they never drift.
 
-/// Every statically-declared `data-testid` in src/ (947).
+/// Every statically-declared `data-testid` in src/ (945).
 pub const TOUR_TESTIDS: &[&str] = &[
     "active-chain-row",
     "active-chains-badge",
@@ -476,7 +476,6 @@ pub const TOUR_TESTIDS: &[&str] = &[
     "glyph-metadata-panel",
     "glyph-options",
     "glyph-submit-button",
-    "goal-acceptance-overlay",
     "goal-card",
     "goal-kpi-select",
     "goals-missions",
@@ -825,7 +824,6 @@ pub const TOUR_TESTIDS: &[&str] = &[
     "templates-page",
     "titlebar-back",
     "titlebar-close",
-    "titlebar-goal-acceptance",
     "titlebar-human-review",
     "titlebar-maximize",
     "titlebar-minimize",

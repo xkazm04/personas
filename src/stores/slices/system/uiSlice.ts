@@ -76,7 +76,7 @@ export interface AdoptionDraft {
  * titlebar buttons, the Monitor mount, and the Notification center all read,
  * so opening one structurally closes the other.
  */
-export type HeaderOverlay = 'none' | 'monitor' | 'notifications' | 'quick-answer' | 'goal-acceptance' | 'schedules';
+export type HeaderOverlay = 'none' | 'monitor' | 'notifications' | 'quick-answer' | 'schedules';
 
 export interface UiSlice {
   // State
