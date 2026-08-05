@@ -450,7 +450,10 @@
     "triage_undo": "{verdict} বাতিল করুন",
     "triage_undo_hint": "কার্ডটি আবার সারিতে ফিরিয়ে দেয়। সিদ্ধান্তের ফলে ইতিমধ্যে শুরু হওয়া কোনো কাজ প্রত্যাহার করা হয় না।",
     "conv_bridge_title": "সংযুক্ত Slack চ্যানেল। সেখানে পাঠানো বার্তা এই কথোপকথনে আসে।",
-    "stream_kind_slack": "Slack"
+    "stream_kind_slack": "Slack",
+    "triage_queue_jump": "পরবর্তীতে দেখান: {title}",
+    "triage_queue_rail_aria": "ট্রায়াজ সারি",
+    "triage_queue_rail_title": "পরবর্তী"
   },
   "common": {
     "loading": "লোড হচ্ছে...",
@@ -12604,6 +12607,7 @@
       "footer_empty": "কোনও সেশন ট্র্যাক করা হয়নি",
       "footer_hint_close_grid": "টার্মিনাল গ্রিড বন্ধ করতে ক্লিক করুন",
       "footer_hint_open_grid": "টার্মিনাল গ্রিড খুলতে ক্লিক করুন",
+      "footer_hint_open_monitor": "ফ্লিট মনিটর খুলতে ক্লিক করুন",
       "footer_hint_open_page": "Fleet খুলতে ক্লিক করুন",
       "footer_needs_you_one": "{count}টি সেশনের আপনাকে প্রয়োজন",
       "footer_needs_you_other": "{count}টি সেশনের আপনাকে প্রয়োজন",
@@ -15007,7 +15011,11 @@
       "ship_milestone_name_label": "মাইলস্টোনের নাম",
       "ship_milestone_name_placeholder": "সংক্ষিপ্ত নাম, যেমন M1",
       "ship_milestone_planned_note": "মাইলস্টোনটি পরিকল্পিত অবস্থায় তৈরি হয়। কাট করা ও শিপ করার সিদ্ধান্ত আপনারই থাকবে।",
-      "ship_milestone_remove_row": "এই আইটেমটি সরান"
+      "ship_milestone_remove_row": "এই আইটেমটি সরান",
+      "dev_self_review": "আমার ডেভ ট্র্যাক রেকর্ড পর্যালোচনা করুন",
+      "dev_self_review_failed": "ডেভ সেলফ-রিভিউ শুরু করা যায়নি",
+      "dev_self_review_hint": "Athena নিজের ডিসপ্যাচ রেকর্ড পড়ে, কোন বিষয়গুলো ডেভ রান সফল করে তা লিখে রাখে, এবং একটি উন্নতির প্রস্তাব দিতে পারে।",
+      "dev_self_review_started": "{count}টি ডেভ রান পর্যালোচনা করা হচ্ছে। Athena চ্যাটে উত্তর দেবে।"
     },
     "artist_gallery": {
       "loading_viewer": "ভিউয়ার লোড হচ্ছে…",

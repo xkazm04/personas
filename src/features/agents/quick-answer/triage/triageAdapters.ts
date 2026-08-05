@@ -23,7 +23,12 @@ import {
   Lock,
   Terminal,
   Users,
+  Wrench,
+  Briefcase,
+  Brain,
+  Tag as TagIcon,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 import { parseSuggestedActions } from '@/lib/reviews/suggestedActions';
 import type { ManualReviewItem } from '@/lib/types/types';
@@ -31,6 +36,7 @@ import type { BuildQuestion } from '@/lib/types/buildTypes';
 import type { EvolutionPromotionProposal } from '@/lib/bindings/EvolutionPromotionProposal';
 import type { PolicyProposal } from '@/lib/bindings/PolicyProposal';
 import type { KnowledgeItemView } from '@/features/overview/sub_patterns/libraryModel';
+import { toCanonicalIdeaCategory } from '@/features/plugins/dev-tools/constants/ideaCategories';
 import {
   prettyEvidence,
   triageValueScore,
@@ -617,6 +623,23 @@ export function reviewToTriage(review: TriageReviewRow, copy: TriageCopy): Triag
 /* Backlog ideas                                                               */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * The canonical idea categories, as icons.
+ *
+ * The category earned a whole row in the card's fact ledger to repeat a word
+ * that was already sitting in a chip two inches above it. As an icon on that
+ * chip it costs nothing and reads faster, which is the row the description gets
+ * back. Keyed on the CANONICAL vocabulary (`toCanonicalIdeaCategory` maps the
+ * retired functionality/performance/ui/… tokens onto it), so a legacy row still
+ * gets its icon instead of falling through to the generic tag.
+ */
+const CATEGORY_ICON: Record<string, LucideIcon> = {
+  technical: Wrench,
+  user: Users,
+  business: Briefcase,
+  mastermind: Brain,
+};
+
 export function ideaToTriage(idea: BacklogIdea, copy: TriageCopy): TriageItem {
   const value = triageValueScore(idea);
 
@@ -636,7 +659,12 @@ export function ideaToTriage(idea: BacklogIdea, copy: TriageCopy): TriageItem {
       icon: ArrowUpNarrowWide,
     });
   }
-  tags.push({ id: 'category', label: idea.category, tone: 'accent' });
+  tags.push({
+    id: 'category',
+    label: idea.category,
+    tone: 'accent',
+    icon: CATEGORY_ICON[toCanonicalIdeaCategory(idea.category) ?? ''] ?? TagIcon,
+  });
   if (idea.origin) tags.push({ id: 'origin', label: idea.origin.replace(/_/g, ' '), tone: 'warning' });
   if (idea.verifyState) tags.push({ id: 'verify', label: idea.verifyState, tone: 'neutral' });
 

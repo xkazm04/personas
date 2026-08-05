@@ -29,6 +29,7 @@ vi.mock('../sub_monitor/MonitorView', () => ({
 vi.mock('../fleetTerminalManager', () => ({ setFleetFontOverride: vi.fn() }));
 
 import { FleetTerminalOverlay } from '../FleetTerminalOverlay';
+import { requestGridView } from '../fleetGridView';
 
 function sessions(n: number): FleetSession[] {
   return Array.from({ length: n }, (_, i) => ({
@@ -81,6 +82,21 @@ describe('grid overlay landing view', () => {
     // Close and reopen with a fleet that would otherwise default to monitor.
     rerender(overlay(false, 13));
     rerender(overlay(true, 13));
+    expect(screen.getByTestId('fleet-overlay-grid')).toBeInTheDocument();
+    expect(screen.queryByTestId('monitor-view')).toBeNull();
+    unmount();
+  });
+
+  it('honours a one-shot view request, then falls back to the explicit pick', () => {
+    // Explicit pick from the previous case is tiles; the footer's "open the
+    // monitor ledger" request overrides exactly one open.
+    requestGridView('monitor');
+    const { rerender, unmount } = render(overlay(true, 5));
+    expect(screen.getByTestId('monitor-view')).toBeInTheDocument();
+
+    // Consumed — the next open is back on the operator's standing pick.
+    rerender(overlay(false, 5));
+    rerender(overlay(true, 5));
     expect(screen.getByTestId('fleet-overlay-grid')).toBeInTheDocument();
     expect(screen.queryByTestId('monitor-view')).toBeNull();
     unmount();

@@ -222,6 +222,7 @@
     "footer_empty": "未跟踪任何会话",
     "footer_hint_close_grid": "点击关闭终端网格",
     "footer_hint_open_grid": "点击打开终端网格",
+    "footer_hint_open_monitor": "点击打开舰队监控视图",
     "footer_hint_open_page": "点击打开 Fleet",
     "footer_needs_you_one": "{count} 个会话需要你处理",
     "footer_needs_you_other": "{count} 个会话需要你处理",
@@ -2625,7 +2626,11 @@
     "ship_milestone_name_label": "里程碑名称",
     "ship_milestone_name_placeholder": "简短名称，例如 M1",
     "ship_milestone_planned_note": "该里程碑以已规划状态创建。启动与交付仍由你决定。",
-    "ship_milestone_remove_row": "移除此项"
+    "ship_milestone_remove_row": "移除此项",
+    "dev_self_review": "回顾我的开发记录",
+    "dev_self_review_failed": "无法启动开发自评",
+    "dev_self_review_hint": "Athena 会阅读自己的派发记录，写下让开发运行成功的原因，并可能提出一项改进建议。",
+    "dev_self_review_started": "正在回顾 {count} 次开发运行。Athena 将在聊天中回复。"
   },
   "artist_gallery": {
     "loading_viewer": "加载查看器中…",

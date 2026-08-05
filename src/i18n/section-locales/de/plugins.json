@@ -222,6 +222,7 @@
     "footer_empty": "Keine Sitzungen erfasst",
     "footer_hint_close_grid": "Klicken, um das Terminal-Raster zu schließen",
     "footer_hint_open_grid": "Klicken, um das Terminal-Raster zu öffnen",
+    "footer_hint_open_monitor": "Klicken, um den Flottenmonitor zu öffnen",
     "footer_hint_open_page": "Klicken, um Fleet zu öffnen",
     "footer_needs_you_one": "{count} Sitzung braucht dich",
     "footer_needs_you_other": "{count} Sitzungen brauchen dich",
@@ -2625,7 +2626,11 @@
     "ship_milestone_name_label": "Name des Meilensteins",
     "ship_milestone_name_placeholder": "Kurzer Name, zum Beispiel M1",
     "ship_milestone_planned_note": "Der Meilenstein wird im Status geplant erstellt. Der Start und die Auslieferung bleiben deine Entscheidung.",
-    "ship_milestone_remove_row": "Dieses Element entfernen"
+    "ship_milestone_remove_row": "Dieses Element entfernen",
+    "dev_self_review": "Meine Dev-Bilanz prüfen",
+    "dev_self_review_failed": "Die Dev-Selbstprüfung konnte nicht gestartet werden",
+    "dev_self_review_hint": "Athena liest ihre eigene Auftragshistorie, hält fest, was ihre Dev-Läufe gelingen lässt, und schlägt eventuell eine Verbesserung vor.",
+    "dev_self_review_started": "{count} Dev-Läufe werden geprüft. Athena antwortet im Chat."
   },
   "artist_gallery": {
     "loading_viewer": "Viewer wird geladen…",

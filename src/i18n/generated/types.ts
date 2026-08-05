@@ -432,6 +432,9 @@ export type Translations = {
     triage_pick_one: string;
     triage_priority_rank: string;
     triage_progress_aria: string;
+    triage_queue_jump: string;
+    triage_queue_rail_aria: string;
+    triage_queue_rail_title: string;
     triage_questions_pending: string;
     triage_reason_already_done: string;
     triage_reason_already_handled: string;
@@ -12940,6 +12943,7 @@ export type Translations = {
       footer_empty: string;
       footer_open_page: string;
       footer_hint_open_grid: string;
+      footer_hint_open_monitor: string;
       footer_hint_close_grid: string;
       footer_hint_open_page: string;
       footer_needs_you_one: string;
@@ -15308,6 +15312,10 @@ export type Translations = {
       ship_milestone_cancel: string;
       ship_milestone_planned_note: string;
       ship_milestone_created: string;
+      dev_self_review: string;
+      dev_self_review_failed: string;
+      dev_self_review_hint: string;
+      dev_self_review_started: string;
     };
     artist_gallery: {
       loading_viewer: string;

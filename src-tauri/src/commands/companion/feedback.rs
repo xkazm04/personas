@@ -1,7 +1,7 @@
 //! Companion beta flags + lightweight UX signals. The Phase 4 wrench-send
-//! self-improve pipeline that lived here is retired (superseded by dev
-//! mode — docs/tests/athena/dev-mode-direction.md); `companion_init`
-//! keeps a one-shot recovery sweep for historical run dirs.
+//! self-improve pipeline that lived here is retired and fully removed
+//! (superseded by dev mode — docs/tests/athena/dev-mode-direction.md);
+//! the boot-time recovery sweep it needed is gone with it.
 
 use std::sync::Arc;
 

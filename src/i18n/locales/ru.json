@@ -450,7 +450,10 @@
     "triage_undo": "Отменить {verdict}",
     "triage_undo_hint": "Возвращает карточку в очередь. Действия, уже запущенные вердиктом, не отменяются.",
     "conv_bridge_title": "Связанный канал Slack. Отправленные там сообщения попадают в этот разговор.",
-    "stream_kind_slack": "Slack"
+    "stream_kind_slack": "Slack",
+    "triage_queue_jump": "Следующая: {title}",
+    "triage_queue_rail_aria": "Очередь разбора",
+    "triage_queue_rail_title": "Далее"
   },
   "common": {
     "loading": "Загрузка...",
@@ -12604,6 +12607,7 @@
       "footer_empty": "Отслеживаемых сессий нет",
       "footer_hint_close_grid": "Нажмите, чтобы закрыть сетку терминалов",
       "footer_hint_open_grid": "Нажмите, чтобы открыть сетку терминалов",
+      "footer_hint_open_monitor": "Нажмите, чтобы открыть монитор флота",
       "footer_hint_open_page": "Нажмите, чтобы открыть Fleet",
       "footer_needs_you_one": "{count} сессия ждёт вас",
       "footer_needs_you_other": "{count} сессий ждут вас",
@@ -15007,7 +15011,11 @@
       "ship_milestone_name_label": "Название вехи",
       "ship_milestone_name_placeholder": "Короткое имя, например M1",
       "ship_milestone_planned_note": "Веха создаётся в статусе запланировано. Начало работы и выпуск остаются вашим решением.",
-      "ship_milestone_remove_row": "Удалить этот элемент"
+      "ship_milestone_remove_row": "Удалить этот элемент",
+      "dev_self_review": "Проверить мой послужной список разработки",
+      "dev_self_review_failed": "Не удалось запустить самопроверку разработки",
+      "dev_self_review_hint": "Athena читает собственную историю задач, фиксирует, благодаря чему её прогоны разработки удаются, и может предложить одно улучшение.",
+      "dev_self_review_started": "Проверяется прогонов разработки: {count}. Athena ответит в чате."
     },
     "artist_gallery": {
       "loading_viewer": "Загрузка просмотрщика…",

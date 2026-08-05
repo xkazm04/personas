@@ -17,6 +17,7 @@ pub mod daily_goals;
 #[cfg(debug_assertions)]
 pub mod debug_export;
 pub mod decisions;
+pub mod dev_review;
 pub mod feedback;
 pub mod fleet_bridge;
 pub mod jobs;
@@ -27,6 +28,7 @@ pub mod proactive;
 pub mod project_tracking;
 #[cfg(feature = "desktop")]
 pub mod sensory;
+pub mod sidecars;
 pub mod stt;
 pub mod templates;
 pub mod tours;
@@ -41,8 +43,6 @@ use futures_util::FutureExt;
 use tauri::{AppHandle, Emitter, Manager, State};
 
 use crate::companion::brain::doctrine;
-#[cfg(feature = "ml")]
-use crate::companion::dev_session;
 use crate::companion::disk;
 use crate::companion::proactive as proactive_engine;
 use crate::db::UserDbPool;
@@ -204,8 +204,7 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
     #[cfg(feature = "ml")]
     {
         let pool = state.user_db.clone();
-        let embedder = state.embedding_manager.clone();
-        if let Some(emb) = embedder.clone() {
+        if let Some(emb) = state.embedding_manager.clone() {
             tauri::async_runtime::spawn(async move {
                 if let Err(e) = run_doctrine_ingest(pool, emb).await {
                     tracing::warn!(error = %e, "companion doctrine ingest failed");
@@ -214,18 +213,6 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
         } else {
             tracing::debug!("companion doctrine: no embedder configured, skipping ingest");
         }
-        // Recover any self-improve runs orphaned by a previous Tauri-dev
-        // restart. The detached coding CLI keeps running across the
-        // parent-process restart triggered by source edits; this scan
-        // surfaces their outcome as a system episode so the conversation
-        // doesn't get stuck. Cheap when the dir is empty.
-        let pool2 = state.user_db.clone();
-        let emb2 = embedder;
-        tauri::async_runtime::spawn(async move {
-            if let Err(e) = dev_session::recover_orphan_improvements(&pool2, emb2.as_ref()).await {
-                tracing::warn!(error = %e, "self-improve: orphan recovery failed");
-            }
-        });
     }
 
     // DEV MODE boot recovery (Phase 4): dev_improve rows still `dispatched`

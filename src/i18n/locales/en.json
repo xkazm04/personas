@@ -426,6 +426,9 @@
     "triage_pick_one": "Pick one",
     "triage_priority_rank": "#{rank}",
     "triage_progress_aria": "Session progress",
+    "triage_queue_jump": "Deal this next: {title}",
+    "triage_queue_rail_aria": "Triage queue",
+    "triage_queue_rail_title": "Up next",
     "triage_questions_pending": "{count} questions before this build can continue",
     "triage_reason_already_done": "Already done",
     "triage_reason_already_handled": "Already handled",
@@ -12934,6 +12937,7 @@
       "footer_empty": "No sessions tracked",
       "footer_open_page": "Open Fleet page",
       "footer_hint_open_grid": "Click to open the terminal grid",
+      "footer_hint_open_monitor": "Click to open the fleet monitor",
       "footer_hint_close_grid": "Click to close the terminal grid",
       "footer_hint_open_page": "Click to open Fleet",
       "footer_needs_you_one": "{count} session needs you",
@@ -15301,7 +15305,11 @@
       "ship_milestone_confirm": "Create milestone",
       "ship_milestone_cancel": "Cancel",
       "ship_milestone_planned_note": "The milestone is created as planned. Cutting and shipping stay yours.",
-      "ship_milestone_created": "Created {name} with {count} items in scope."
+      "ship_milestone_created": "Created {name} with {count} items in scope.",
+      "dev_self_review": "Review my dev track record",
+      "dev_self_review_failed": "Could not start the dev self-review",
+      "dev_self_review_hint": "Athena reads her own dispatch record, writes down what makes her dev runs land, and may propose one improvement.",
+      "dev_self_review_started": "Reviewing {count} dev runs. Athena will reply in the chat."
     },
     "artist_gallery": {
       "loading_viewer": "Loading viewer…",

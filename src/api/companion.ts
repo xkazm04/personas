@@ -6,6 +6,9 @@ import type { AthenaAdaptation } from '@/lib/bindings/AthenaAdaptation';
 import type { AthenaUsageDashboard } from '@/lib/bindings/AthenaUsageDashboard';
 import type { AthenaHealth } from '@/lib/bindings/AthenaHealth';
 import type { ConversationRow } from '@/lib/bindings/ConversationRow';
+import type { CompanionTurnSidecar } from '@/lib/bindings/CompanionTurnSidecar';
+
+export type { CompanionTurnSidecar };
 
 /**
  * Initialize the companion-brain disk layout (idempotent).
@@ -350,6 +353,20 @@ export async function companionDevOpSetVerdict(
   verdict: DevOpVerdict,
 ): Promise<void> {
   return invoke<void>('companion_dev_op_set_verdict', { opId, verdict });
+}
+
+/**
+ * Spawn ONE self-review turn over the dev-op ledger: Athena reads her own
+ * dispatch track record (recent runs + your 👍/👎 + the scoreboard), writes
+ * procedural memories about what makes her dispatches land, and may propose
+ * at most one `dev_improve` — which stays an approval card like any other.
+ *
+ * Manual trigger only; there is no scheduler behind it. Resolves with the
+ * number of ops the evidence carried. Rejects when dev mode is off or the
+ * ledger is empty.
+ */
+export async function companionDevOpSelfReview(): Promise<number> {
+  return invoke<number>('companion_dev_op_self_review');
 }
 
 /**
@@ -845,6 +862,64 @@ export async function companionListRecentMessages(
   conversationId?: string,
 ): Promise<CompanionMessage[]> {
   return invoke<CompanionMessage[]>('companion_list_recent_messages', { limit, conversationId });
+}
+
+/** One keyset page of older transcript, oldest-first. */
+export interface CompanionMessagePage {
+  messages: CompanionMessage[];
+  /**
+   * Cursor for the NEXT (older) page, derived backend-side from the raw
+   * scanned rows — not from `messages`, which has system rows filtered
+   * out. Null only when nothing was scanned.
+   */
+  nextBeforeCreatedAt: string | null;
+  nextBeforeId: string | null;
+  /**
+   * True when the scan returned fewer raw rows than the limit: there is
+   * no older page, regardless of how many rows survived the filter.
+   */
+  exhausted: boolean;
+}
+
+/**
+ * Read one page of transcript older than the `(beforeCreatedAt, beforeId)`
+ * cursor. Keyset, not offset — the transcript grows at the newest end
+ * while the user pages backwards.
+ */
+export async function companionListMessagesBefore(args: {
+  beforeCreatedAt: string;
+  beforeId: string;
+  limit?: number;
+  conversationId?: string;
+}): Promise<CompanionMessagePage> {
+  return invoke<CompanionMessagePage>('companion_list_messages_before', args);
+}
+
+/**
+ * Persist one assistant turn's side channels (narration trail, TodoWrite
+ * plan, dispatcher summary, recall preview) so they survive an app
+ * restart. Upsert with COALESCE semantics: omitting a field leaves the
+ * stored value alone, so the `finished` write and the later
+ * `turn-summary` write layer onto the same row.
+ *
+ * Each blob is opaque JSON owned by the frontend types — the backend
+ * only stores and returns it.
+ */
+export async function companionSaveTurnSidecar(args: {
+  episodeId: string;
+  narrationJson?: string;
+  stepsJson?: string;
+  summaryJson?: string;
+  recallJson?: string;
+}): Promise<void> {
+  return invoke<void>('companion_save_turn_sidecar', args);
+}
+
+/** Batch-read persisted sidecars. Ids without a row are simply absent. */
+export async function companionGetTurnSidecars(
+  episodeIds: string[],
+): Promise<CompanionTurnSidecar[]> {
+  return invoke<CompanionTurnSidecar[]>('companion_get_turn_sidecars', { episodeIds });
 }
 
 /**

@@ -8,6 +8,9 @@ import {
   completeNarrationTool as completeNarrationToolPure,
   isTrailWorthKeeping,
 } from './narrationTimeline';
+// Type-only (erased at build): `turnSidecars` imports `StoredTurnSummary`
+// back from here, so a value import would be a real cycle.
+import type { HydratedSidecars } from './turnSidecars';
 import type { GuidanceWalkthrough } from './guidance/types';
 import type { PendingDecision } from './decision/types';
 import { ADHOC_TOPIC } from './guidance/walkthroughs';
@@ -162,6 +165,13 @@ interface CompanionStore {
 
   setMessages: (msgs: CompanionMessage[]) => void;
   appendMessage: (msg: CompanionMessage) => void;
+  /**
+   * Prepend an older page of transcript (scroll-to-top pagination).
+   * De-duplicates by id, so a page that overlaps what's already on screen
+   * — a re-scan across a filtered row, a double-fire — can never double
+   * a bubble.
+   */
+  prependMessages: (msgs: CompanionMessage[]) => void;
   /**
    * Legacy flat setters, kept as delegates onto the ACTIVE conversation's
    * `liveTurns` slice (mirror invariant below) — so pre-partition call
@@ -468,6 +478,16 @@ interface CompanionStore {
   resetStreamingNarration: () => void;
   clearAllNarration: () => void;
 
+  /**
+   * Fill the four per-turn maps above from the persisted
+   * `companion_turn_sidecar` rows, so bubbles that predate this app
+   * session still show their trail / plan / summary / recall. Entries
+   * already in the store ALWAYS win — a live turn's in-memory channels
+   * are fresher than anything on disk, and a late-arriving hydration
+   * must never overwrite them. Called by `useTurnSidecarHydration`.
+   */
+  hydrateTurnSidecars: (hydrated: HydratedSidecars) => void;
+
   // Phase C2 — Athena-dispatched team assignments. Cards display inline
   // above the chat messages; each card is updated by the assignment
   // progress listener. Bounded to the 6 most-recent so the chat doesn't
@@ -666,6 +686,14 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
   setMessages: (messages) => set({ messages }),
   appendMessage: (msg) =>
     set((s) => ({ messages: [...s.messages, msg] })),
+  prependMessages: (msgs) =>
+    set((s) => {
+      if (msgs.length === 0) return {};
+      const known = new Set(s.messages.map((m) => m.id));
+      const fresh = msgs.filter((m) => !known.has(m.id));
+      if (fresh.length === 0) return {};
+      return { messages: [...fresh, ...s.messages] };
+    }),
   // Legacy flat setters — delegate to the active conversation's slice so
   // any caller we haven't migrated still routes to the focused thread.
   setStreaming: (value) =>
@@ -1065,6 +1093,18 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
       streamingNarrationStartedAt: null,
       narrationByEpisodeId: {},
     }),
+
+  hydrateTurnSidecars: (hydrated) =>
+    set((s) => ({
+      // Spread hydrated FIRST so the existing (live) entries overwrite it.
+      narrationByEpisodeId: { ...hydrated.narrationByEpisodeId, ...s.narrationByEpisodeId },
+      stepsByEpisodeId: { ...hydrated.stepsByEpisodeId, ...s.stepsByEpisodeId },
+      turnSummaryByEpisodeId: {
+        ...hydrated.turnSummaryByEpisodeId,
+        ...s.turnSummaryByEpisodeId,
+      },
+      recallByEpisodeId: { ...hydrated.recallByEpisodeId, ...s.recallByEpisodeId },
+    })),
 
   activeWalkthrough: null,
   guidanceStepIndex: 0,

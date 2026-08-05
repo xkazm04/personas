@@ -450,7 +450,10 @@
     "triage_undo": "تراجع عن {verdict}",
     "triage_undo_hint": "يعيد البطاقة إلى قائمة الانتظار. أي إجراء بدأه القرار بالفعل لن يُلغى.",
     "conv_bridge_title": "قناة Slack مرتبطة. الرسائل المرسلة هناك تصل إلى هذه المحادثة.",
-    "stream_kind_slack": "Slack"
+    "stream_kind_slack": "Slack",
+    "triage_queue_jump": "التالي: {title}",
+    "triage_queue_rail_aria": "قائمة الفرز",
+    "triage_queue_rail_title": "التالي"
   },
   "common": {
     "loading": "جارٍ التحميل...",
@@ -12604,6 +12607,7 @@
       "footer_empty": "لا توجد جلسات متتبَّعة",
       "footer_hint_close_grid": "انقر لإغلاق شبكة الطرفية",
       "footer_hint_open_grid": "انقر لفتح شبكة الطرفية",
+      "footer_hint_open_monitor": "انقر لفتح شاشة مراقبة الأسطول",
       "footer_hint_open_page": "انقر لفتح Fleet",
       "footer_needs_you_one": "{count} جلسة تحتاج إليك",
       "footer_needs_you_other": "{count} جلسة تحتاج إليك",
@@ -15007,7 +15011,11 @@
       "ship_milestone_name_label": "اسم المعلم",
       "ship_milestone_name_placeholder": "اسم قصير، مثل M1",
       "ship_milestone_planned_note": "يُنشأ المعلم بحالة مخطط له. قرارا البدء والشحن يبقيان لك.",
-      "ship_milestone_remove_row": "إزالة هذا العنصر"
+      "ship_milestone_remove_row": "إزالة هذا العنصر",
+      "dev_self_review": "راجع سجل أدائي في التطوير",
+      "dev_self_review_failed": "تعذر بدء المراجعة الذاتية للتطوير",
+      "dev_self_review_hint": "تقرأ Athena سجل مهامها، وتدوّن ما يجعل عمليات التطوير تنجح، وقد تقترح تحسينًا واحدًا.",
+      "dev_self_review_started": "جارٍ مراجعة {count} من عمليات التطوير. سترد Athena في المحادثة."
     },
     "artist_gallery": {
       "loading_viewer": "جارٍ تحميل العارض…",

@@ -34,6 +34,7 @@ vi.mock('@/stores/systemStore', () => ({
 }));
 
 import FleetFooterIcon from '../FleetFooterIcon';
+import { peekGridViewOnOpen } from '../fleetGridView';
 
 let nextId = 0;
 const session = (s: FleetSessionState): FleetSession =>
@@ -59,11 +60,14 @@ describe('FleetFooterIcon — click contract', () => {
     expect(actions.fleetSetGridOpen).not.toHaveBeenCalled();
   });
 
-  it('raises the grid overlay instead of navigating when sessions are dispatched', async () => {
+  it('raises the grid overlay ON THE MONITOR LEDGER when sessions are dispatched', async () => {
     mount([session('running')]);
     await userEvent.click(screen.getByTestId('footer-fleet-toggle'));
     expect(actions.fleetSetGridOpen).toHaveBeenCalledWith(true);
     expect(actions.setSidebarSection).not.toHaveBeenCalled();
+    // The click one-shot-requests the ledger view for the open it triggered —
+    // the footer's counts land on the surface that itemizes them.
+    expect(peekGridViewOnOpen(1)).toBe('monitor');
   });
 
   it('closes the grid when it is already open', async () => {
@@ -99,13 +103,15 @@ describe('FleetFooterIcon — state counts', () => {
     expect(screen.queryByTestId('footer-fleet-chip-exited')).not.toBeInTheDocument();
   });
 
-  it('folds states past the chip cap into a +N overflow', () => {
+  it('gives EVERY non-zero live state its own chip — no lossy +N folding', () => {
     mount([
       session('awaiting_input'), session('running'), session('spawning'),
       session('idle'), session('stale'), session('hibernated'),
     ]);
-    expect(screen.queryByTestId('footer-fleet-chip-idle')).not.toBeInTheDocument();
-    expect(screen.getByTestId('footer-fleet-chip-overflow')).toHaveTextContent('+3');
+    for (const state of ['awaiting_input', 'running', 'spawning', 'idle', 'stale', 'hibernated'] as const) {
+      expect(screen.getByTestId(`footer-fleet-chip-${state}`)).toHaveTextContent('1');
+    }
+    expect(screen.queryByTestId('footer-fleet-chip-overflow')).not.toBeInTheDocument();
   });
 
   it('shows no chip cluster at all when the fleet is empty', () => {
@@ -136,6 +142,9 @@ describe('FleetFooterIcon — hover breakdown', () => {
     const popover = screen.getByTestId('footer-fleet-popover');
     expect(popover).toHaveTextContent('2 sessions');
     expect(screen.getByTestId('footer-fleet-row-exited')).toHaveTextContent('1');
+    // Grouped under the ledger's lanes: running → Working, exited → Done.
+    expect(screen.getByTestId('footer-fleet-lane-working')).toHaveTextContent('1');
+    expect(screen.getByTestId('footer-fleet-lane-done')).toHaveTextContent('1');
 
     await userEvent.click(screen.getByTestId('footer-fleet-open-page'));
     expect(actions.setDevToolsTab).toHaveBeenCalledWith('fleet');

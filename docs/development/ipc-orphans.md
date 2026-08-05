@@ -188,7 +188,7 @@ capability a future panel would otherwise just call.
 - `github_create_patch_release` — `commands/tools/github_platform.rs`
 - `obsidian_brain_semantic_lint_vault` — `commands/obsidian_brain/mod.rs` (21 siblings used)
 - `companion_review_recent_executions_now` — `commands/companion/chat.rs` (manual "run now")
-- `companion_request_improvement` — `commands/companion/feedback.rs`
+- ~~`companion_request_improvement` — `commands/companion/feedback.rs`~~ **RESOLVED 2026-08-05 (retired):** the wrench-send self-improve pipeline it fronted was superseded by dev mode. The command was deregistered in `5e9835476`; `companion/dev_session.rs` and the `companion_init` orphan-recovery sweep were deleted outright in the follow-up.
 - `companion_purge_sensory_source` — `commands/companion/sensory.rs` (`desktop`-gated, 5 siblings used)
 - `refresh_session` — `commands/infrastructure/auth.rs`
 - `cloud_webhook_relay_status` — `commands/infrastructure/cloud.rs` (36 siblings used; allowlisted at `ipc_auth.rs:696`)

@@ -338,3 +338,56 @@ pub fn companion_get_adaptations(
             .collect(),
     )
 }
+
+// ── Prompt-block size ledger ────────────────────────────────────────────
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct AthenaPromptBlockStat {
+    pub turn_id: String,
+    pub origin: String,
+    pub trigger_kind: Option<String>,
+    pub created_at: String,
+    /// Real `system_prompt.len()` for that turn.
+    pub total_prompt_chars: f64,
+    /// `{"constitution": 5123, "identity": 812, …}` — raw JSON, so a new
+    /// block shows up here without a binding change.
+    pub blocks_json: String,
+}
+
+/// The most recent per-block prompt size breakdowns, newest first.
+///
+/// The query surface for the size ledger `companion::prompt` writes on every
+/// full turn (headless legs compose their own prompts and are skipped). No
+/// panel consumes this yet — it exists so "which block grew?" is one IPC call
+/// instead of an accidental discovery months later, which is exactly how the
+/// ~30.6KB dev-mode context index was found.
+#[tauri::command]
+pub fn companion_prompt_block_stats(
+    state: State<'_, Arc<AppState>>,
+    limit: u32,
+) -> Result<Vec<AthenaPromptBlockStat>, AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    let limit = limit.clamp(1, 200);
+    let conn = state.user_db.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT id, origin, trigger_kind, created_at,
+                COALESCE(total_prompt_chars, 0), prompt_blocks_json
+         FROM companion_turn
+         WHERE prompt_blocks_json IS NOT NULL
+         ORDER BY created_at DESC, rowid DESC
+         LIMIT ?1",
+    )?;
+    let rows = stmt.query_map([limit], |r| {
+        Ok(AthenaPromptBlockStat {
+            turn_id: r.get(0)?,
+            origin: r.get(1)?,
+            trigger_kind: r.get(2)?,
+            created_at: r.get(3)?,
+            total_prompt_chars: r.get(4)?,
+            blocks_json: r.get(5)?,
+        })
+    })?;
+    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+}

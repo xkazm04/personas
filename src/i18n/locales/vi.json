@@ -450,7 +450,10 @@
     "triage_undo": "Hoàn tác {verdict}",
     "triage_undo_hint": "Đưa thẻ trở lại hàng đợi. Những gì quyết định đã kích hoạt sẽ không được thu hồi.",
     "conv_bridge_title": "Kênh Slack đã liên kết. Tin nhắn gửi ở đó sẽ xuất hiện trong cuộc trò chuyện này.",
-    "stream_kind_slack": "Slack"
+    "stream_kind_slack": "Slack",
+    "triage_queue_jump": "Xử lý tiếp: {title}",
+    "triage_queue_rail_aria": "Hàng đợi phân loại",
+    "triage_queue_rail_title": "Tiếp theo"
   },
   "common": {
     "loading": "Đang tải...",
@@ -12604,6 +12607,7 @@
       "footer_empty": "Không có phiên nào được theo dõi",
       "footer_hint_close_grid": "Nhấp để đóng lưới terminal",
       "footer_hint_open_grid": "Nhấp để mở lưới terminal",
+      "footer_hint_open_monitor": "Nhấp để mở màn hình giám sát đội",
       "footer_hint_open_page": "Nhấp để mở Fleet",
       "footer_needs_you_one": "{count} phiên đang cần bạn",
       "footer_needs_you_other": "{count} phiên đang cần bạn",
@@ -15007,7 +15011,11 @@
       "ship_milestone_name_label": "Tên mốc",
       "ship_milestone_name_placeholder": "Tên ngắn gọn, ví dụ M1",
       "ship_milestone_planned_note": "Mốc được tạo ở trạng thái đã lên kế hoạch. Việc bắt đầu và phát hành vẫn là quyết định của bạn.",
-      "ship_milestone_remove_row": "Xóa mục này"
+      "ship_milestone_remove_row": "Xóa mục này",
+      "dev_self_review": "Xem lại thành tích phát triển của tôi",
+      "dev_self_review_failed": "Không thể bắt đầu tự đánh giá phát triển",
+      "dev_self_review_hint": "Athena đọc lại lịch sử nhiệm vụ của chính mình, ghi lại điều giúp các lượt chạy phát triển thành công và có thể đề xuất một cải tiến.",
+      "dev_self_review_started": "Đang xem lại {count} lượt chạy phát triển. Athena sẽ trả lời trong cuộc trò chuyện."
     },
     "artist_gallery": {
       "loading_viewer": "Đang tải trình xem…",

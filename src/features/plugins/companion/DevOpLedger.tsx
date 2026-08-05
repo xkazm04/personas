@@ -8,28 +8,33 @@ import {
   ChevronDown,
   ChevronRight,
   GitCommit,
+  ScrollText,
   ThumbsDown,
   ThumbsUp,
   Wrench,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useToastStore } from '@/stores/toastStore';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useCompanionStore } from './companionStore';
 import {
   companionDevOpLedger,
+  companionDevOpSelfReview,
   companionDevOpSetVerdict,
   type DevOpLedger as DevOpLedgerData,
   type DevOpLedgerEntry,
   type DevOpVerdict,
 } from '@/api/companion';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 export function DevOpLedger() {
   const { t, tx } = useTranslation();
   const c = t.plugins.companion;
+  const addToast = useToastStore((s) => s.addToast);
   const [data, setData] = useState<DevOpLedgerData | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
   // A new proactive card (dev reflection / interrupt) means a dev op just
   // changed state — refetch so the ledger stays live without polling.
   const proactiveCount = useCompanionStore((s) => s.proactive.length);
@@ -61,6 +66,23 @@ export function DevOpLedger() {
       .catch(silentCatch('companion_dev_op_set_verdict'));
   };
 
+  // Manual trigger for the meta-loop: Athena reads her own dispatch record
+  // and writes back what she learned. Fire-and-forget past the IPC call —
+  // the review lands as a normal turn in the conversation, so there is
+  // nothing here to poll. No scheduler backs this by design.
+  const selfReview = useCallback(async () => {
+    if (reviewing) return;
+    setReviewing(true);
+    try {
+      const reviewed = await companionDevOpSelfReview();
+      addToast(tx(c.dev_self_review_started, { count: reviewed }), 'success');
+    } catch (e) {
+      toastCatch('companion_dev_op_self_review', c.dev_self_review_failed)(e);
+    } finally {
+      setReviewing(false);
+    }
+  }, [reviewing, addToast, tx, c]);
+
   const m = data?.metrics;
   const total = m?.total ?? 0;
 
@@ -91,11 +113,12 @@ export function DevOpLedger() {
       className="border-b border-amber-500/15 bg-amber-500/[0.03]"
       data-testid="companion-dev-ledger"
     >
+      <div className="flex w-full items-center">
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
-        className="flex w-full items-center gap-2 px-3 py-1.5 focus-ring"
+        className="flex min-w-0 flex-1 items-center gap-2 px-3 py-1.5 focus-ring"
         data-testid="companion-dev-ledger-toggle"
       >
         <Tooltip content={c.dev_ledger_hint}>
@@ -127,6 +150,19 @@ export function DevOpLedger() {
           <ChevronRight className="w-3.5 h-3.5 text-foreground flex-shrink-0" aria-hidden />
         )}
       </button>
+        <Tooltip content={c.dev_self_review_hint}>
+          <button
+            type="button"
+            onClick={() => void selfReview()}
+            disabled={reviewing || total === 0}
+            aria-label={c.dev_self_review}
+            data-testid="companion-dev-ledger-self-review"
+            className="mr-2 p-1 rounded-interactive text-amber-400/60 transition-colors focus-ring hover:bg-amber-500/10 hover:text-amber-400 disabled:opacity-40"
+          >
+            <ScrollText className="w-3.5 h-3.5" aria-hidden />
+          </button>
+        </Tooltip>
+      </div>
 
       {expanded && (
         <div className="max-h-56 overflow-y-auto px-2 pb-2 flex flex-col gap-1">

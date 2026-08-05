@@ -45,6 +45,7 @@ function makeQueue(items: TriageItem[], decide = vi.fn().mockResolvedValue(undef
     decide,
     openLink: vi.fn(),
     reload: vi.fn(),
+    focusItem: vi.fn(),
   };
   return { queue, decide };
 }

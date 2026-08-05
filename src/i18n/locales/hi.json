@@ -450,7 +450,10 @@
     "triage_undo": "{verdict} पूर्ववत करें",
     "triage_undo_hint": "कार्ड को फिर से कतार में डाल देता है। फैसले से पहले से शुरू हो चुकी कोई भी कार्रवाई वापस नहीं ली जाती।",
     "conv_bridge_title": "लिंक किया गया Slack चैनल। वहां भेजे गए संदेश इस बातचीत में आते हैं।",
-    "stream_kind_slack": "Slack"
+    "stream_kind_slack": "Slack",
+    "triage_queue_jump": "अगला दिखाएं: {title}",
+    "triage_queue_rail_aria": "ट्रायाज कतार",
+    "triage_queue_rail_title": "अगला"
   },
   "common": {
     "loading": "लोड हो रहा है...",
@@ -12604,6 +12607,7 @@
       "footer_empty": "कोई सत्र ट्रैक नहीं किया गया",
       "footer_hint_close_grid": "टर्मिनल ग्रिड बंद करने के लिए क्लिक करें",
       "footer_hint_open_grid": "टर्मिनल ग्रिड खोलने के लिए क्लिक करें",
+      "footer_hint_open_monitor": "फ़्लीट मॉनिटर खोलने के लिए क्लिक करें",
       "footer_hint_open_page": "Fleet खोलने के लिए क्लिक करें",
       "footer_needs_you_one": "{count} सत्र को आपकी ज़रूरत है",
       "footer_needs_you_other": "{count} सत्रों को आपकी ज़रूरत है",
@@ -15007,7 +15011,11 @@
       "ship_milestone_name_label": "माइलस्टोन का नाम",
       "ship_milestone_name_placeholder": "छोटा नाम, उदाहरण के लिए M1",
       "ship_milestone_planned_note": "माइलस्टोन योजनाबद्ध स्थिति में बनाया जाता है। इसे शुरू करना और शिप करना अभी भी आपका ही निर्णय है।",
-      "ship_milestone_remove_row": "इस आइटम को हटाएं"
+      "ship_milestone_remove_row": "इस आइटम को हटाएं",
+      "dev_self_review": "मेरा डेव रिकॉर्ड देखें",
+      "dev_self_review_failed": "डेव स्व-समीक्षा शुरू नहीं हो सकी",
+      "dev_self_review_hint": "Athena अपना डिस्पैच रिकॉर्ड पढ़ती है, नोट करती है कि उसके डेव रन किस वजह से सफल होते हैं, और एक सुधार सुझा सकती है।",
+      "dev_self_review_started": "{count} डेव रन की समीक्षा हो रही है। Athena चैट में जवाब देगी।"
     },
     "artist_gallery": {
       "loading_viewer": "viewer लोड हो रहा है…",

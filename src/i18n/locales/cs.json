@@ -450,7 +450,10 @@
     "triage_undo": "Zpět: {verdict}",
     "triage_undo_hint": "Vrátí kartu zpět do fronty. Co už rozhodnutí spustilo, se tím nezruší.",
     "conv_bridge_title": "Propojený kanál Slack. Zprávy odeslané tam se objeví v této konverzaci.",
-    "stream_kind_slack": "Slack"
+    "stream_kind_slack": "Slack",
+    "triage_queue_jump": "Další na řadě: {title}",
+    "triage_queue_rail_aria": "Fronta k třídění",
+    "triage_queue_rail_title": "Další na řadě"
   },
   "common": {
     "loading": "Načítání...",
@@ -12604,6 +12607,7 @@
       "footer_empty": "Žádné sledované relace",
       "footer_hint_close_grid": "Kliknutím zavřete mřížku terminálů",
       "footer_hint_open_grid": "Kliknutím otevřete mřížku terminálů",
+      "footer_hint_open_monitor": "Kliknutím otevřete monitor flotily",
       "footer_hint_open_page": "Kliknutím otevřete Fleet",
       "footer_needs_you_one": "{count} relace vás potřebuje",
       "footer_needs_you_other": "{count} relací vás potřebuje",
@@ -15007,7 +15011,11 @@
       "ship_milestone_name_label": "Název milníku",
       "ship_milestone_name_placeholder": "Krátký název, například M1",
       "ship_milestone_planned_note": "Milník se vytváří ve stavu plánováno. Rozhodnutí o zahájení a dodání zůstává na vás.",
-      "ship_milestone_remove_row": "Odebrat tuto položku"
+      "ship_milestone_remove_row": "Odebrat tuto položku",
+      "dev_self_review": "Zkontrolovat můj vývojářský záznam",
+      "dev_self_review_failed": "Vlastní kontrolu vývoje se nepodařilo spustit",
+      "dev_self_review_hint": "Athena si přečte vlastní záznam zadání, zapíše, díky čemu její vývojářské běhy uspějí, a může navrhnout jedno vylepšení.",
+      "dev_self_review_started": "Kontroluji {count} vývojářských běhů. Athena odpoví v chatu."
     },
     "artist_gallery": {
       "loading_viewer": "Načítání prohlížeče…",

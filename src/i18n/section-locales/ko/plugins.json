@@ -222,6 +222,7 @@
     "footer_empty": "추적 중인 세션 없음",
     "footer_hint_close_grid": "클릭하여 터미널 그리드 닫기",
     "footer_hint_open_grid": "클릭하여 터미널 그리드 열기",
+    "footer_hint_open_monitor": "클릭하여 플릿 모니터 열기",
     "footer_hint_open_page": "클릭하여 Fleet 열기",
     "footer_needs_you_one": "{count}개 세션이 응답을 기다립니다",
     "footer_needs_you_other": "{count}개 세션이 응답을 기다립니다",
@@ -2625,7 +2626,11 @@
     "ship_milestone_name_label": "마일스톤 이름",
     "ship_milestone_name_placeholder": "짧은 이름, 예: M1",
     "ship_milestone_planned_note": "마일스톤은 계획됨 상태로 생성됩니다. 시작과 출시 여부는 계속 사용자의 결정입니다.",
-    "ship_milestone_remove_row": "이 항목 제거"
+    "ship_milestone_remove_row": "이 항목 제거",
+    "dev_self_review": "내 개발 기록 검토",
+    "dev_self_review_failed": "개발 자체 검토를 시작하지 못했습니다",
+    "dev_self_review_hint": "Athena가 자신의 작업 기록을 읽고 개발 실행이 성공하는 조건을 정리하며, 개선안을 하나 제안할 수 있습니다.",
+    "dev_self_review_started": "개발 실행 {count}건을 검토하는 중입니다. Athena가 채팅으로 답변합니다."
   },
   "artist_gallery": {
     "loading_viewer": "뷰어 로딩 중…",

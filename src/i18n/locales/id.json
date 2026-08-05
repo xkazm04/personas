@@ -450,7 +450,10 @@
     "triage_undo": "Batalkan {verdict}",
     "triage_undo_hint": "Mengembalikan kartu ke antrean. Apa pun yang sudah dipicu oleh keputusan ini tidak akan dibatalkan.",
     "conv_bridge_title": "Kanal Slack tertaut. Pesan yang dikirim di sana masuk ke percakapan ini.",
-    "stream_kind_slack": "Slack"
+    "stream_kind_slack": "Slack",
+    "triage_queue_jump": "Berikutnya: {title}",
+    "triage_queue_rail_aria": "Antrean triase",
+    "triage_queue_rail_title": "Berikutnya"
   },
   "common": {
     "loading": "Memuat...",
@@ -12604,6 +12607,7 @@
       "footer_empty": "Tidak ada sesi yang dilacak",
       "footer_hint_close_grid": "Klik untuk menutup kisi terminal",
       "footer_hint_open_grid": "Klik untuk membuka kisi terminal",
+      "footer_hint_open_monitor": "Klik untuk membuka monitor armada",
       "footer_hint_open_page": "Klik untuk membuka Fleet",
       "footer_needs_you_one": "{count} sesi membutuhkan Anda",
       "footer_needs_you_other": "{count} sesi membutuhkan Anda",
@@ -15007,7 +15011,11 @@
       "ship_milestone_name_label": "Nama milestone",
       "ship_milestone_name_placeholder": "Nama singkat, misalnya M1",
       "ship_milestone_planned_note": "Milestone dibuat dengan status direncanakan. Memulai dan mengirimkannya tetap keputusan Anda.",
-      "ship_milestone_remove_row": "Hapus item ini"
+      "ship_milestone_remove_row": "Hapus item ini",
+      "dev_self_review": "Tinjau rekam jejak dev saya",
+      "dev_self_review_failed": "Tidak dapat memulai tinjauan mandiri dev",
+      "dev_self_review_hint": "Athena membaca rekam jejak tugasnya sendiri, mencatat apa yang membuat proses dev-nya berhasil, dan mungkin mengusulkan satu perbaikan.",
+      "dev_self_review_started": "Meninjau {count} proses dev. Athena akan menjawab di obrolan."
     },
     "artist_gallery": {
       "loading_viewer": "Memuat penampil…",

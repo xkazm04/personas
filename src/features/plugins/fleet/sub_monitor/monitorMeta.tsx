@@ -5,7 +5,10 @@ import {
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import type { ScreenHealth } from '@/lib/bindings/ScreenHealth';
 import { useTranslation } from '@/i18n/useTranslation';
-import { FLEET_STATE_META, type FleetStateMeta, type FleetTranslations } from '../fleetStateMeta';
+import {
+  FLEET_STATE_META, laneOfState, FLEET_LANE_ORDER, FLEET_LANE_LABEL_KEY, FLEET_LANE_TONE,
+  type FleetStateMeta, type FleetAttentionLane, type FleetTranslations,
+} from '../fleetStateMeta';
 import type { MonitorTerminal } from './monitorTypes';
 
 /** State → icon, complementing `FLEET_STATE_META`'s colour/label palette. */
@@ -91,31 +94,18 @@ export function costToneBg(ratio: number): string {
 }
 
 /** Attention lanes shared by the triage variant + ledger sort. */
-export type AttentionLane = 'needs_you' | 'working' | 'parked' | 'done';
+// Lane taxonomy lives in ../fleetStateMeta so the footer cluster tallies with
+// the SAME grouping this ledger renders — re-exported here for the monitor's
+// own consumers.
+export type AttentionLane = FleetAttentionLane;
 
 export function attentionLane(t: MonitorTerminal): AttentionLane {
-  if (t.state === 'awaiting_input' || t.state === 'stale') return 'needs_you';
-  if (t.state === 'running' || t.state === 'spawning') return 'working';
-  if (t.state === 'idle' || t.state === 'hibernated') return 'parked';
-  return 'done';
+  return laneOfState(t.state);
 }
 
-export const LANE_ORDER: AttentionLane[] = ['needs_you', 'working', 'parked', 'done'];
-
-/** `plugins.fleet` key per lane — resolved by the component that renders it. */
-export const LANE_LABEL_KEY: Record<AttentionLane, keyof FleetTranslations> = {
-  needs_you: 'monitor_lane_needs_you',
-  working: 'monitor_lane_working',
-  parked: 'monitor_lane_parked',
-  done: 'monitor_lane_done',
-};
-
-export const LANE_TONE: Record<AttentionLane, string> = {
-  needs_you: 'text-violet-300',
-  working: 'text-blue-300',
-  parked: 'text-emerald-300',
-  done: 'text-foreground opacity-50',
-};
+export const LANE_ORDER = FLEET_LANE_ORDER;
+export const LANE_LABEL_KEY = FLEET_LANE_LABEL_KEY;
+export const LANE_TONE = FLEET_LANE_TONE;
 
 /** Compact icon+value stat used across the monitor's surfaces. */
 export function MicroStat({

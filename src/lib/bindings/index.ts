@@ -38,6 +38,7 @@ export type { AthenaHealth } from "./AthenaHealth";
 export type { AthenaJobStats } from "./AthenaJobStats";
 export type { AthenaOriginRollup } from "./AthenaOriginRollup";
 export type { AthenaProactiveStats } from "./AthenaProactiveStats";
+export type { AthenaPromptBlockStat } from "./AthenaPromptBlockStat";
 export type { AthenaTriageStats } from "./AthenaTriageStats";
 export type { AthenaUsageDashboard } from "./AthenaUsageDashboard";
 export type { AthenaUsageDay } from "./AthenaUsageDay";
