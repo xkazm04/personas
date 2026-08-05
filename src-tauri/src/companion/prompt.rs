@@ -1136,27 +1136,41 @@ fn daily_goals_addendum(user_db: &crate::db::UserDbPool) -> String {
     crate::companion::brain::daily_goals::prompt_addendum(user_db)
 }
 
-/// Reply-language directive for non-English UIs.
+/// Reply-language directive, emitted for EVERY UI language — English
+/// included.
 ///
 /// Reads the `app_language` mirror (written through from the frontend i18n
 /// store — see `src/stores/i18nStore.ts`). Before this directive existed the
 /// reply language depended entirely on the model inferring it from the user's
 /// message, which holds for direct chat but degrades once English tool
-/// results / system context get woven into a turn (2026-07-16 UAT
-/// F-MAJOR-9). English or unset → empty (default behavior needs no rule).
+/// results / system context arrive in English (2026-07-16 UAT F-MAJOR-9).
+///
+/// English originally emitted NOTHING ("default behavior needs no rule").
+/// That was wrong: with no explicit anchor, replayed history decides the
+/// language, and a single foreign-language turn captures every later
+/// SYSTEM-TRIGGERED turn (digests, nudges), which has no fresh user message
+/// to mirror. Live incident 2026-08-05: one Spanish UAT prompt from July
+/// kept an English-UI Athena answering proactive turns in Spanish for three
+/// weeks. The anchor must always be present; the mirror-the-user clause
+/// still lets a genuinely bilingual conversation switch.
 fn language_addendum(sys_db: &DbPool) -> String {
     let lang = crate::db::repos::core::settings::get(sys_db, crate::db::settings_keys::APP_LANGUAGE)
         .ok()
         .flatten()
         .unwrap_or_default();
-    let lang = lang.trim().to_string();
-    if lang.is_empty() || lang == "en" {
-        return String::new();
-    }
+    language_directive(&lang)
+}
+
+/// Pure half of [`language_addendum`]: unset/blank falls back to `en`.
+fn language_directive(lang: &str) -> String {
+    let lang = lang.trim();
+    let lang = if lang.is_empty() { "en" } else { lang };
     format!(
         "\n\n# Reply language\n\nThe app UI language is `{lang}`. Reply in that language by default — \
-         including after tool results or system context arrive in English — unless the user \
-         writes to you in a different language (then mirror the user's language).\n"
+         including on system-triggered turns (digests, nudges, reflections) and after tool \
+         results or replayed conversation history arrive in another language. The ONLY \
+         exception: when the user's CURRENT message is written in a different language, \
+         mirror the user. Older turns in another language are history, not a preference.\n"
     )
 }
 
@@ -2184,6 +2198,20 @@ mod tests {
             last_seen_at: "2026-01-01T00:00:00Z".to_string(),
             file_path: "identity.md".to_string(),
         }
+    }
+
+    #[test]
+    fn language_directive_always_anchors_even_for_english() {
+        // Regression (2026-08-05): English emitted no directive, so replayed
+        // Spanish history captured every system-triggered turn for weeks.
+        // The anchor must exist for every language, unset included.
+        let en = language_directive("en");
+        assert!(en.contains("The app UI language is `en`"));
+        assert!(en.contains("mirror the user"));
+        assert_eq!(language_directive(""), en, "unset falls back to en");
+        assert_eq!(language_directive("  "), en, "blank falls back to en");
+        let es = language_directive("es");
+        assert!(es.contains("The app UI language is `es`"));
     }
 
     #[test]
