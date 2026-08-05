@@ -3252,6 +3252,7 @@ pub fn run() {
             // Goal acceptance queue (human-acceptance gate)
             commands::infrastructure::dev_tools::dev_tools_list_pending_acceptance,
             commands::infrastructure::dev_tools::dev_tools_count_pending_acceptance,
+            commands::infrastructure::dev_tools::dev_tools_pending_counts,
             commands::infrastructure::dev_tools::dev_tools_resolve_goal_acceptance,
             commands::infrastructure::dev_tools::dev_tools_list_goal_dependencies_for_project,
             commands::infrastructure::dev_tools::dev_tools_list_goal_items_for_project,
