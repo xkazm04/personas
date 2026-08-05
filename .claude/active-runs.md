@@ -2,9 +2,7 @@
 
 ## Active
 
-### scan-sweep-agent-health — /scan-sweep --optimize over agent-health — session fable-5
-- Started: 2026-08-05. Status: started. Main checkout (atomic per-finding commits).
-- Paths: `src/features/agents/sub_health/**`, `src/i18n/locales/*.json` (only if a fix adds keys), `.claude/scan-history/scan-sweep.jsonl`, `.personas/memory-outbox.jsonl`.
+
 
 
 
@@ -106,6 +104,19 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### athena-goal-edit — read + edit daily goals in full — COMPLETE, commit 60be0852a (worktree 390bc42ed) — session opus-5 (xhigh)
+- 2026-08-05. Goal chips ellipsize at one line, so created goals could never be read back. Added: hover tooltip carrying the full title, a pencil button opening the authoring modal prefilled with the active set (fields switched input→textarea so the whole goal is visible), and `companion_daily_goals_update` (brain `update_set`) rewriting the active set's texts. A free slot filled in edit mode appends (3 max); emptying an existing goal is REFUSED (dropping the last open goal would leave a set logically complete but never stamped, so done/discard stay the only exits); an edit never touches done state.
+- Gates: Rust daily_goals 15/15 (4 new edit cases) · companion vitest 376/376 (2 new) · tsc 0 · eslint 0 warnings in touched files (2 low-contrast catches fixed) · i18n strict + untranslated 0/0 x14. NOT live-verified.
+- **INCIDENT (self-inflicted, no loss): my Bash cwd never entered the worktree** — Edit-tool calls used absolute worktree paths but `sed -i`, `gen-types`, and the first Rust test run all executed in the MAIN checkout. Leaked one import edit + a types.ts regen onto master's tree; both reverted (`git restore`), types.ts is codegen and another session had it staged, so nothing of theirs was lost beyond a regen they get back on next predev. RULE: after `git worktree add`, `cd` into it in the SAME Bash invocation as the first command, and re-assert cwd with `pwd` before any in-tree script.
+
+### scan-sweep-allpersonas — /scan-sweep --optimize over agents-components-allpersonas — session fable-5
+- Completed: 2026-08-05. Commits: 5a65990a9 7d616df08 916dc771b 6033e7d4a 30b792152 48416794a 07e4cb65b 8aead76dc. 3 findings to outbox. Note: persona-overview-table-pass ledger entry is stale (landed as 39819a963).
+
+
+### scan-sweep-agent-health — /scan-sweep --optimize over agent-health — session fable-5
+- Completed: 2026-08-05. Commits: fbf3e6a6a (dead UI + prefetch deletion), 3da28365b (scheduler catch), d4ea6c74f (helper tests). 4 findings emitted to memory outbox.
+
 
 ### athena-attention-bar — two-level alert structure in the chat panel — COMPLETE, commit ffb81a7bb — session opus-5 (xhigh)
 - 2026-08-05. Six surfaces that pinned themselves above the transcript unconditionally (MCP requests, decision card, assignment cards, actions ledger, one card per proactive nudge) collapse into ONE counts-chip row (`attention/AttentionBar.tsx`); cards render only when their chip is toggled. Nudges split by severity via `nudgeSeverity()` mirroring ProactiveCard's existing accent map; `message_attention` uncounted (aggregated on the digest card). Expansion set persists as `companionAlertsExpanded` (systemStore partialize) so the shape survives reopen/restart; only `blocked` defaults open (a spawned CLI session is parked until answered). LiveOpsStrip keeps its own independent collapse; approvals still render inline on their turn.
