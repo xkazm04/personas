@@ -58,8 +58,26 @@ export function PersonaOverviewFilterHeader({
       if (btnRef.current?.contains(t)) return;
       setOpen(false);
     };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    // The dropdown is position:fixed, anchored once on open — any scroll or
+    // resize would leave it floating detached from its trigger, so close it.
+    // Scrolling the option list itself (overflow-y-auto) must not close.
+    const onReanchor = (e?: Event) => {
+      if (e && popRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
+    };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('keydown', onKey);
+    window.addEventListener('scroll', onReanchor, true);
+    window.addEventListener('resize', onReanchor);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('keydown', onKey);
+      window.removeEventListener('scroll', onReanchor, true);
+      window.removeEventListener('resize', onReanchor);
+    };
   }, [open]);
 
   useEffect(() => {
