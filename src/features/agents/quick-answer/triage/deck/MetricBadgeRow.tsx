@@ -17,6 +17,8 @@
 // word (`toneReading`, for a screen reader). The meter stays `aria-hidden` —
 // it is a second drawing of the number beside it, and reading it out twice is
 // noise, not access.
+import { memo } from 'react';
+
 import type { TriageFact } from '../triageTypes';
 import { useTranslation } from '@/i18n/useTranslation';
 import { bandTone, TONE_BORDER, TONE_FILL, TONE_TEXT, toneReading } from './DeckChips';
@@ -56,7 +58,15 @@ function MetricBadge({ fact }: { fact: TriageFact }) {
   );
 }
 
-export function MetricBadgeRow({ facts }: { facts: TriageFact[] }) {
+/**
+ * Memoised on `facts`, which is `item.facts` — the same array object for the
+ * life of a card.
+ *
+ * `TriageCard` re-renders on every keystroke whenever its card carries an
+ * `answerSlot`, and the meters straddling the card's top edge have nothing to do
+ * with what is being typed.
+ */
+export const MetricBadgeRow = memo(function MetricBadgeRow({ facts }: { facts: TriageFact[] }) {
   const scored = facts.filter((f) => f.score);
   if (scored.length === 0) return null;
 
@@ -67,4 +77,4 @@ export function MetricBadgeRow({ facts }: { facts: TriageFact[] }) {
       ))}
     </div>
   );
-}
+});

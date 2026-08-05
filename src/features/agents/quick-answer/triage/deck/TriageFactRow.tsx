@@ -11,6 +11,8 @@
 // sideways rather than wrapping: a ledger that silently grows a second row is
 // how the description loses its space again on the next card that carries eight
 // facts.
+import { memo } from 'react';
+
 import type { TriageFact } from '../triageTypes';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -41,7 +43,12 @@ export function ledgerFacts(facts: readonly TriageFact[]): TriageFact[] {
   return facts.filter((f) => !f.score && !SUPPRESSED.has(f.id));
 }
 
-export function TriageFactRow({ facts }: { facts: readonly TriageFact[] }) {
+/** Memoised on `facts` — `item.facts`, the same array object per card. */
+export const TriageFactRow = memo(function TriageFactRow({
+  facts,
+}: {
+  facts: readonly TriageFact[];
+}) {
   const { t } = useTranslation();
   const rendered = ledgerFacts(facts);
   if (rendered.length === 0) return null;
@@ -80,4 +87,4 @@ export function TriageFactRow({ facts }: { facts: readonly TriageFact[] }) {
       </dl>
     </footer>
   );
-}
+});

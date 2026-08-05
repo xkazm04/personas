@@ -56,6 +56,26 @@ export function parseApplicability(raw: string | null | undefined): ParsedApplic
 }
 
 /**
+ * The gating terms, lowercased and trimmed — the ONLY part of a parse that the
+ * match actually reads.
+ *
+ * Split out so a caller with N projects can pay for the `JSON.parse` once
+ * rather than once per project (see {@link adoptReach}).
+ */
+function filtersOf(parsed: ParsedApplicability): string[] {
+  return [...parsed.languages, ...parsed.frameworks]
+    .map((f) => f.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+/** No filters means it applies everywhere — mirrors `applicability_matches`. */
+function matchesFilters(filters: readonly string[], techStack: string | null | undefined): boolean {
+  if (filters.length === 0) return true;
+  const stack = (techStack ?? '').toLowerCase();
+  return filters.some((f) => stack.includes(f));
+}
+
+/**
  * Whether a practice can apply to a project with this tech stack.
  *
  * Substring matching on a lowercased stack string, because `dev_projects.tech_stack`
@@ -66,11 +86,7 @@ export function applicabilityMatches(
   raw: string | null | undefined,
   techStack: string | null | undefined,
 ): boolean {
-  const { languages, frameworks } = parseApplicability(raw);
-  const filters = [...languages, ...frameworks].map((f) => f.trim().toLowerCase()).filter(Boolean);
-  if (filters.length === 0) return true;
-  const stack = (techStack ?? '').toLowerCase();
-  return filters.some((f) => stack.includes(f));
+  return matchesFilters(filtersOf(parseApplicability(raw)), techStack);
 }
 
 /** What an adopt would touch: how many member repos, and how many of them qualify. */
@@ -81,12 +97,23 @@ export interface AdoptReach {
   applicable: number;
 }
 
+/**
+ * ONE parse per practice, not one per member project.
+ *
+ * This used to call `applicabilityMatches` — and therefore `JSON.parse` — inside
+ * a `.filter` over the workspace's member stacks, so a rebuild cost
+ * P practices × M members parses of the same handful of blobs. The deck rebuilds
+ * its whole queue on a 30-second poll, so that was a recurring cost paid for
+ * data that had not changed.
+ */
 export function adoptReach(
   raw: string | null | undefined,
   memberTechStacks: readonly (string | null | undefined)[],
 ): AdoptReach {
-  return {
-    members: memberTechStacks.length,
-    applicable: memberTechStacks.filter((stack) => applicabilityMatches(raw, stack)).length,
-  };
+  const filters = filtersOf(parseApplicability(raw));
+  let applicable = 0;
+  for (const stack of memberTechStacks) {
+    if (matchesFilters(filters, stack)) applicable += 1;
+  }
+  return { members: memberTechStacks.length, applicable };
 }

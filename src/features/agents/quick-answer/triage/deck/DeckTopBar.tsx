@@ -9,6 +9,7 @@
 // have switched off still shows how much of it is waiting. A kind with nothing
 // in it is rendered inert rather than hidden, because a chip that disappears
 // makes the reviewer wonder what else vanished.
+import { memo } from 'react';
 import { Activity, Layers, Undo2, Unplug, X } from 'lucide-react';
 
 import Button from '@/features/shared/components/buttons/Button';
@@ -161,7 +162,17 @@ function UndoChip({ undo, onUndo }: { undo: TriageUndo; onUndo: () => void }) {
   );
 }
 
-export function DeckTopBar({
+/**
+ * Memoised — `TriageCard` was the ONLY memoised component under the deck.
+ *
+ * The answer draft lives in `useDeckControls`, one level above every one of
+ * these, so a keystroke in a question card re-rendered the whole surface: this
+ * bar plus its SEVEN filter chips, the queue rail plus a row per queued item,
+ * the action bar plus a button per branch, and both flanks. None of it can
+ * change from typing — `queue` is memoised by `useUnifiedTriage` and the two
+ * handlers come from the host.
+ */
+export const DeckTopBar = memo(function DeckTopBar({
   queue,
   title,
   onOpenMonitor,
@@ -257,4 +268,4 @@ export function DeckTopBar({
       </div>
     </header>
   );
-}
+});

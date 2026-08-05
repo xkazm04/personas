@@ -36,6 +36,9 @@ export interface QuickAnswerData {
   /** Why {@link reviews} is short, when it is short because the read failed —
    *  see `useMonitorData#reviewsError`. Null while the last read succeeded. */
   reviewsError: string | null;
+  /** True when the capped read left rows behind it — the deck reports it as a
+   *  capped source rather than calling the queue finished. */
+  reviewsHasMore: boolean;
   questionCount: number;
   reviewCount: number;
   total: number;
@@ -66,15 +69,42 @@ export function isComplexQuestion(q: BuildQuestion): boolean {
  * A module constant, not an inline literal: it is a hook argument, and a fresh
  * object per render is exactly the kind of churn the rest of this pass removes.
  */
-const DECK_FEEDS = { messages: false, personaHealth: false } as const;
+/**
+ * The pending-review working set this surface deals from.
+ *
+ * `list_manual_reviews` takes no limit, so the deck's 30-second poll re-read and
+ * re-shaped EVERY pending row on every tick. This is a working set, not an
+ * archive — the same posture the ideas keyset page has always had — and the cap
+ * is reported (`reviewsHasMore` → the queue's `backlog.capped`) so a truncated
+ * read can never be presented as a finished queue.
+ *
+ * 100 rather than the command's default 40: a reviewer who opens the deck to
+ * clear a backlog should get the whole backlog in one deal on any realistic
+ * install, and the cap exists to bound a pathological queue rather than to page
+ * a normal one.
+ */
+const DECK_REVIEW_LIMIT = 100;
+
+const DECK_FEEDS = {
+  messages: false,
+  personaHealth: false,
+  reviewLimit: DECK_REVIEW_LIMIT,
+} as const;
 
 export function usePendingInteractions(): QuickAnswerData {
   const buildSessions = useAgentStore((s) => s.buildSessions);
   const personas = useAgentStore((s) => s.personas);
   const applyPendingAnswers = useAgentStore((s) => s.applyPendingAnswers);
 
-  const { reviews, reviewsError, loading, isProcessing, handleReviewAction, handleDispatchAction } =
-    useMonitorData(DECK_FEEDS);
+  const {
+    reviews,
+    reviewsError,
+    reviewsHasMore,
+    loading,
+    isProcessing,
+    handleReviewAction,
+    handleDispatchAction,
+  } = useMonitorData(DECK_FEEDS);
 
   const questionGroups = useMemo<QuestionGroup[]>(() => {
     const personaById = new Map(personas.map((p) => [p.id, p]));
@@ -136,6 +166,7 @@ export function usePendingInteractions(): QuickAnswerData {
       questionGroups,
       reviews,
       reviewsError,
+      reviewsHasMore,
       questionCount,
       reviewCount: reviews.length,
       total: questionCount + reviews.length,
@@ -149,6 +180,7 @@ export function usePendingInteractions(): QuickAnswerData {
       questionGroups,
       reviews,
       reviewsError,
+      reviewsHasMore,
       questionCount,
       loading,
       isProcessing,

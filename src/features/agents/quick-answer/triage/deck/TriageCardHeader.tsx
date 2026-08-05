@@ -13,6 +13,8 @@
 // Hierarchy here is TYPE + TOKEN, never opacity (Design.md §"Hierarchy by type
 // + color tokens"): headline `typo-heading-lg` / `text-foreground`, chips and
 // stamp `typo-caption` / `typo-label` with muted labels.
+import { memo } from 'react';
+
 import type { TriageAlert, TriageItem } from '../triageTypes';
 import { Chip, KIND_META, kindCopy, TONE_BORDER, TONE_FILL, TONE_TEXT } from './DeckChips';
 import type { Translations } from '@/i18n/en';
@@ -79,7 +81,20 @@ function SourceStamp({ source }: { source: TriageItem['source'] }) {
   );
 }
 
-export function TriageCardHeader({ item, t }: { item: TriageItem; t: Translations }) {
+/**
+ * Memoised on `{ item, t }`, both stable for the life of a card.
+ *
+ * The header is chips + a source stamp + a headline + an alert banner, and none
+ * of it depends on what is being typed into a question card's answer box — which
+ * is the one thing that re-renders `TriageCard` past its own `memo`.
+ */
+export const TriageCardHeader = memo(function TriageCardHeader({
+  item,
+  t,
+}: {
+  item: TriageItem;
+  t: Translations;
+}) {
   const kind = KIND_META[item.kind];
   const kindText = kindCopy(t, item.kind);
 
@@ -102,4 +117,4 @@ export function TriageCardHeader({ item, t }: { item: TriageItem; t: Translation
       {item.alert ? <AlertBanner alert={item.alert} /> : null}
     </header>
   );
-}
+});

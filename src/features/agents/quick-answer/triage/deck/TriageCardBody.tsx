@@ -19,7 +19,7 @@
 //
 // Score facts (effort/impact/risk/confidence) are deliberately NOT repeated
 // here — they already straddle the card's top edge as meters in MetricBadgeRow.
-import type { ReactNode, Ref } from 'react';
+import { memo, type ReactNode, type Ref } from 'react';
 
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -40,6 +40,44 @@ function Block({ label, children }: { label: string; children: ReactNode }) {
     </section>
   );
 }
+
+/**
+ * The case being judged. Memoised on the item alone.
+ *
+ * `TriageCard`'s own `memo` cannot protect this on a QUESTION card: `answerSlot`
+ * is a fresh element on every render of the deck, so the top card re-renders on
+ * every keystroke in the answer box by construction. What must NOT follow is a
+ * re-parse of prose nobody touched — `MarkdownRenderer` is react-markdown +
+ * remark-gfm + rehype-highlight, and a question card can carry a `reasoning`
+ * block and an `evidence` dump alongside its input.
+ */
+const CardProse = memo(function CardProse({ item }: { item: TriageItem }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      {item.reasoning ? (
+        <Block label={t.monitor.triage_why_raised}>
+          <MarkdownRenderer content={item.reasoning} className="typo-body text-foreground" />
+        </Block>
+      ) : null}
+
+      {item.evidence ? (
+        <Block label={t.monitor.triage_evidence}>
+          <pre className="typo-code whitespace-pre-wrap break-words text-foreground">
+            {item.evidence}
+          </pre>
+        </Block>
+      ) : null}
+    </>
+  );
+});
+
+/** The body markdown. Same reason, separate component: on a question card this
+ *  is replaced by `answerSlot` and must not be built at all. */
+const CardBody = memo(function CardBody({ item }: { item: TriageItem }) {
+  if (!item.body) return null;
+  return <MarkdownRenderer content={item.body} className="typo-body text-foreground" />;
+});
 
 export function TriageCardBody({
   item,
@@ -87,24 +125,8 @@ export function TriageCardBody({
         className="focus-ring mt-4 min-h-0 flex-1 overflow-y-auto"
       >
         <div className={`${MEASURE} space-y-4 pr-1`}>
-          {answerSlot ??
-            (item.body ? (
-              <MarkdownRenderer content={item.body} className="typo-body text-foreground" />
-            ) : null)}
-
-          {item.reasoning ? (
-            <Block label={t.monitor.triage_why_raised}>
-              <MarkdownRenderer content={item.reasoning} className="typo-body text-foreground" />
-            </Block>
-          ) : null}
-
-          {item.evidence ? (
-            <Block label={t.monitor.triage_evidence}>
-              <pre className="typo-code whitespace-pre-wrap break-words text-foreground">
-                {item.evidence}
-              </pre>
-            </Block>
-          ) : null}
+          {answerSlot ?? <CardBody item={item} />}
+          <CardProse item={item} />
         </div>
       </div>
 

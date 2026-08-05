@@ -179,6 +179,19 @@ export interface TriageSessionPatch {
   kinds?: ReadonlySet<TriageKind>;
   drafts?: Readonly<Record<string, string>>;
   resolved?: ReadonlySet<string>;
+  /**
+   * When this sitting began — the window the journal summary reports over.
+   *
+   * Explicit, because the alternative is implicit in WRITE TIMING. `startedAt`
+   * used to be stamped `Date.now()` by whichever write happened to land first,
+   * which was only ever correct because three effects fired on mount and one of
+   * them got there before anything was decided. Coalescing those writes moved
+   * the first write to the first DECISION, and the session then began after the
+   * entry it was meant to contain — a summary that reported zero for a sitting
+   * that had just recorded a verdict. The owner of the session knows when it
+   * started; it says so rather than relying on being early.
+   */
+  startedAt?: number;
 }
 
 export function saveTriageSession(patch: TriageSessionPatch): void {
@@ -187,7 +200,7 @@ export function saveTriageSession(patch: TriageSessionPatch): void {
   const current = readStored();
   const next: StoredSession = {
     v: 1,
-    startedAt: current?.startedAt ?? Date.now(),
+    startedAt: patch.startedAt ?? current?.startedAt ?? Date.now(),
     at: Date.now(),
     skips: patch.skips ? tail([...patch.skips], MAX_SKIPS) : (current?.skips ?? []),
     kinds: patch.kinds ? [...patch.kinds] : (current?.kinds ?? null),

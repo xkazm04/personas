@@ -347,6 +347,32 @@ export function countByKind(items: readonly TriageItem[]): TriageCounts {
 }
 
 /**
+ * The default order, over the two fields it actually reads.
+ *
+ * Split out from {@link compareTriage} so the queue can hoist those two fields
+ * out of the comparator instead of dereferencing an item inside every one of
+ * the O(n log n) comparisons. There is still exactly ONE ordering law; this is
+ * the law, and `compareTriage` is the convenience wrapper over it.
+ *
+ * `createdAt` is compared with `<`/`>` rather than `localeCompare`. These are
+ * RFC3339 strings — fixed-width ASCII digits and separators, in which codepoint
+ * order and collation order are the same sequence — and `localeCompare` is an
+ * ICU call that was being made twice per comparison on a list the deck re-sorts
+ * on every 30-second poll.
+ */
+export function compareOrder(
+  aWeight: number,
+  aCreatedAt: string,
+  bWeight: number,
+  bCreatedAt: string,
+): number {
+  if (bWeight !== aWeight) return bWeight - aWeight;
+  if (aCreatedAt < bCreatedAt) return -1;
+  if (aCreatedAt > bCreatedAt) return 1;
+  return 0;
+}
+
+/**
  * Default queue order: weight first, then oldest-first inside a weight band.
  *
  * Oldest-first is deliberate — a triage queue sorted newest-first quietly
@@ -354,5 +380,5 @@ export function countByKind(items: readonly TriageItem[]): TriageCounts {
  * ones someone already declined to judge once.
  */
 export function compareTriage(a: TriageItem, b: TriageItem): number {
-  return b.weight - a.weight || a.createdAt.localeCompare(b.createdAt);
+  return compareOrder(a.weight, a.createdAt, b.weight, b.createdAt);
 }

@@ -21,7 +21,7 @@
  * its children survive because two other surfaces still render them (the
  * channel-timeline rail and the reviews rail) — only the popover shell is gone.
  */
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ThumbsDown, ThumbsUp } from 'lucide-react';
 
@@ -97,6 +97,13 @@ export function TriageDeckVariant({
   const announce = useAnnounce();
   const copy = useRef({ t, tx, announce, top });
   copy.current = { t, tx, announce, top };
+
+  // Hoisted out of the JSX. `DeckFlank` is memoised, and an inline
+  // `() => decideTop('reject')` is a new function on every render — which is
+  // every keystroke in a question card's answer box. A memo behind an unstable
+  // prop is a memo that never holds.
+  const rejectTop = useCallback(() => decideTop('reject'), [decideTop]);
+  const acceptTop = useCallback(() => decideTop('accept'), [decideTop]);
 
   // One utterance per WRITE. `lastVerdict` is a fresh stamp every time (see
   // `DeckVerdictStamp`), so two identical verdicts in a row are two events.
@@ -230,7 +237,7 @@ export function TriageDeckVariant({
               icon={ThumbsDown}
               label={top.verdictLabels.reject}
               disabled={!!capture}
-              onClick={() => decideTop('reject')}
+              onClick={rejectTop}
             />
 
             {/* Widened from 42rem: the card carries markdown prose, and the
@@ -269,7 +276,7 @@ export function TriageDeckVariant({
               icon={ThumbsUp}
               label={top.verdictLabels.accept}
               disabled={!canAccept || !!capture}
-              onClick={() => decideTop('accept')}
+              onClick={acceptTop}
             />
           </>
         )}

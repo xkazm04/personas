@@ -422,19 +422,31 @@ export function useUnifiedTriage(
   const [undo, setUndo] = useState<TriageUndo | null>(null);
   const undoTimerRef = useRef<number | null>(null);
 
-  // Three independent writes rather than one: the hooks that own these pieces
-  // change them at completely different rates (a filter chip is rare, a skip is
-  // per-card), and `saveTriageSession` merges, so none of them can clobber the
-  // drafts `useDeckControls` persists into the same record.
+  /**
+   * One write, and never on mount.
+   *
+   * This used to be THREE effects — skips, kinds, resolved — each a
+   * read-modify-write that re-serialises the whole record (drafts included: up
+   * to `MAX_DRAFTS × MAX_DRAFT_CHARS`). All three fire on mount, where the
+   * values are precisely what was just READ out of storage, so opening the deck
+   * cost three full `JSON.stringify` passes to write back byte-identical state.
+   * And `reload()` changes all three in one commit, which cost three more.
+   *
+   * Coalescing loses nothing: `saveTriageSession` still MERGES, so this half of
+   * the record still cannot clobber the drafts `useDeckControls` owns, and the
+   * effect still only runs when one of the three actually changed.
+   *
+   * `startedAt` rides along because skipping the mount write removed the thing
+   * that used to stamp it — see `TriageSessionPatch.startedAt`.
+   */
+  const sessionWritten = useRef(false);
   useEffect(() => {
-    saveTriageSession({ skips });
-  }, [skips]);
-  useEffect(() => {
-    saveTriageSession({ kinds: activeKinds });
-  }, [activeKinds]);
-  useEffect(() => {
-    saveTriageSession({ resolved });
-  }, [resolved]);
+    if (!sessionWritten.current) {
+      sessionWritten.current = true;
+      return;
+    }
+    saveTriageSession({ skips, kinds: activeKinds, resolved, startedAt: sessionStart });
+  }, [skips, activeKinds, resolved, sessionStart]);
 
   /**
    * The two proposal ledgers, and the generation counter that re-reads them.
@@ -585,6 +597,11 @@ export function useUnifiedTriage(
   useEffect(() => {
     noteFailure('practices', center.knowledgeError);
   }, [center.knowledgeError, noteFailure]);
+  // The review read is bounded (see `usePendingInteractions`), so it joins the
+  // capped set the same way the two fixed-limit ledgers do.
+  useEffect(() => {
+    noteCapped('reviews', interactions.reviewsHasMore);
+  }, [interactions.reviewsHasMore, noteCapped]);
 
   const failures = useMemo<readonly TriageSourceFailure[]>(
     () =>

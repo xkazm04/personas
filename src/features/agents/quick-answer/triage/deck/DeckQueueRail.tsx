@@ -15,7 +15,7 @@
 //    still decides exactly the top card, and the order behind the pin is
 //    untouched — see `triageQueue#focused`.
 //  • It hides below `lg`. On a narrow window the card is the whole point.
-import { useEffect, useRef } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { RotateCcw } from 'lucide-react';
 
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
@@ -129,7 +129,16 @@ function QueueRow({
   );
 }
 
-export function DeckQueueRail({
+/**
+ * Memoised, and the row list is why.
+ *
+ * Every prop here is stable across a keystroke — `items` and `skips` come from
+ * the queue's memoised projection, `onJump` is `queue.focusItem` — but the
+ * component sits under `useDeckControls`'s draft state, so it re-rendered on
+ * every character typed into an answer box, and with it one `QueueRow` per
+ * queued item. On a 60-card deck that is 60 subtrees rebuilt per keystroke.
+ */
+export const DeckQueueRail = memo(function DeckQueueRail({
   items,
   skips,
   onJump,
@@ -201,4 +210,4 @@ export function DeckQueueRail({
       </div>
     </aside>
   );
-}
+});
