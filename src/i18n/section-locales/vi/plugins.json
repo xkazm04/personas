@@ -2643,7 +2643,10 @@
     "attention_nudges": "Athena đã nhắn",
     "attention_nudges_hint": "Nhắc nhở mang tính thông tin: bản tổng hợp, lịch kiểm tra định kỳ, tác vụ đã hoàn tất, những điều cô ấy nhận thấy.",
     "attention_warnings": "Cảnh báo",
-    "attention_warnings_hint": "Những điều đang chệch hướng: phiên đang chờ nhập liệu hoặc trì trệ, mục tiêu sắp đạt, các lượt chạy đáng xem lại."
+    "attention_warnings_hint": "Những điều đang chệch hướng: phiên đang chờ nhập liệu hoặc trì trệ, mục tiêu sắp đạt, các lượt chạy đáng xem lại.",
+    "daily_goals_edit": "Chỉnh sửa mục tiêu",
+    "daily_goals_edit_hint": "Toàn bộ nội dung của từng mục tiêu, có thể chỉnh sửa. Điền vào một ô trống để thêm mục tiêu mới (tối đa 3). Để bỏ một mục tiêu, hãy đánh dấu hoàn thành hoặc xóa toàn bộ danh sách.",
+    "daily_goals_edit_title": "Chỉnh sửa mục tiêu hôm nay"
   },
   "artist_gallery": {
     "loading_viewer": "Đang tải trình xem…",

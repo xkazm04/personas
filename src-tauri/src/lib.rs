@@ -2869,6 +2869,7 @@ pub fn run() {
             commands::companion::debug_export::companion_export_conversation_log,
             commands::companion::daily_goals::companion_daily_goals_state,
             commands::companion::daily_goals::companion_daily_goals_create,
+            commands::companion::daily_goals::companion_daily_goals_update,
             commands::companion::daily_goals::companion_daily_goals_toggle,
             commands::companion::daily_goals::companion_daily_goals_discard,
             commands::companion::chat::companion_list_messages_before,

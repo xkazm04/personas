@@ -4,6 +4,7 @@ import {
   companionDailyGoalsDiscard,
   companionDailyGoalsState,
   companionDailyGoalsToggle,
+  companionDailyGoalsUpdate,
   type DailyGoalsState,
 } from '@/api/companion';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
@@ -56,6 +57,19 @@ export function useDailyGoals() {
     }
   }, []);
 
+  const saveEdits = useCallback(async (edits: { id: string | null; title: string }[]) => {
+    try {
+      setState(await companionDailyGoalsUpdate(edits));
+      return true;
+    } catch (e) {
+      toastCatch(
+        'useDailyGoals:update',
+        getActiveTranslations().plugins.companion.daily_goals_edit,
+      )(e);
+      return false;
+    }
+  }, []);
+
   const toggle = useCallback(async (id: string, done: boolean) => {
     try {
       const next = await companionDailyGoalsToggle(id, done);
@@ -78,5 +92,5 @@ export function useDailyGoals() {
     }
   }, []);
 
-  return { state, celebrating, refresh, createSet, toggle, discard };
+  return { state, celebrating, refresh, createSet, saveEdits, toggle, discard };
 }

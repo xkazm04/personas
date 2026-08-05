@@ -2643,7 +2643,10 @@
     "attention_nudges": "Athena hat sich gemeldet",
     "attention_nudges_hint": "Informative Hinweise: Zusammenfassungen, geplante Check-ins, abgeschlossene Vorgänge, Dinge, die ihr aufgefallen sind.",
     "attention_warnings": "Warnungen",
-    "attention_warnings_hint": "Dinge, die aus dem Ruder laufen: Sitzungen, die auf Eingaben warten oder veralten, Ziele, die sich ihrem Zielwert nähern, und Läufe, die eine Überprüfung wert sind."
+    "attention_warnings_hint": "Dinge, die aus dem Ruder laufen: Sitzungen, die auf Eingaben warten oder veralten, Ziele, die sich ihrem Zielwert nähern, und Läufe, die eine Überprüfung wert sind.",
+    "daily_goals_edit": "Ziele bearbeiten",
+    "daily_goals_edit_hint": "Der vollständige Text jedes Ziels, bearbeitbar. Einen leeren Platz ausfüllen, um ein Ziel hinzuzufügen (maximal 3). Um eines zu entfernen, als erledigt markieren oder die gesamte Liste verwerfen.",
+    "daily_goals_edit_title": "Heutige Ziele bearbeiten"
   },
   "artist_gallery": {
     "loading_viewer": "Viewer wird geladen…",

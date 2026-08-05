@@ -1914,6 +1914,17 @@ export async function companionDailyGoalsCreate(titles: string[]): Promise<Daily
   return invoke<DailyGoalsState>('companion_daily_goals_create', { titles });
 }
 
+/**
+ * Rewrite the active set's goal texts. An entry with `id: null` and a
+ * non-empty title appends a goal to the set; an existing goal may not be
+ * emptied (mark it done or discard the set instead).
+ */
+export async function companionDailyGoalsUpdate(
+  edits: { id: string | null; title: string }[],
+): Promise<DailyGoalsState> {
+  return invoke<DailyGoalsState>('companion_daily_goals_update', { edits });
+}
+
 export async function companionDailyGoalsToggle(
   id: string,
   done: boolean,

@@ -147,6 +147,95 @@ pub fn create_set(pool: &UserDbPool, titles: &[String]) -> Result<DailyGoalsSnap
     get_state(pool)
 }
 
+/// One edit from the goals modal: an existing goal's id with its new
+/// text, or `None` for a slot the user just filled in (a new goal
+/// appended to the active set).
+#[derive(Debug, Clone)]
+pub struct GoalEdit {
+    pub id: Option<String>,
+    pub title: String,
+}
+
+/// Rewrite the active set's goal texts, and append any newly-filled
+/// slot as an additional goal (still capped at [`MAX_GOALS_PER_SET`]).
+///
+/// Deliberately cannot REMOVE a goal: dropping the last open one would
+/// leave a set that is logically complete but never stamped, so the
+/// only ways out of a set stay "mark it done" and "discard the set".
+/// Done/undone state is untouched — this is a text edit, not a verdict.
+pub fn update_set(pool: &UserDbPool, edits: &[GoalEdit]) -> Result<DailyGoalsSnapshot, AppError> {
+    let rows = active_rows(pool)?;
+    if rows.is_empty() {
+        return Err(AppError::Validation(
+            "daily goals: no active set to edit".into(),
+        ));
+    }
+    // Normalize first so a whitespace-only edit is caught before any write.
+    let mut updates: Vec<(String, String)> = Vec::new();
+    let mut additions: Vec<String> = Vec::new();
+    for e in edits {
+        let title: String = e.title.trim().chars().take(MAX_TITLE_CHARS).collect();
+        match &e.id {
+            Some(id) => {
+                if title.is_empty() {
+                    return Err(AppError::Validation(
+                        "daily goals: a goal cannot be emptied - mark it done or discard the set"
+                            .into(),
+                    ));
+                }
+                if !rows.iter().any(|r| &r.id == id) {
+                    return Err(AppError::Validation(format!(
+                        "daily goals: `{id}` is not in the active set"
+                    )));
+                }
+                updates.push((id.clone(), title));
+            }
+            // A blank new slot is simply not an addition, never an error.
+            None if !title.is_empty() => additions.push(title),
+            None => {}
+        }
+    }
+    if rows.len() + additions.len() > MAX_GOALS_PER_SET {
+        return Err(AppError::Validation(format!(
+            "daily goals: a set holds at most {MAX_GOALS_PER_SET} goals"
+        )));
+    }
+
+    let next_slot = rows.iter().map(|r| r.slot).max().unwrap_or(-1) + 1;
+    let now = chrono::Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+    // The active rows all share one set_id by construction; read it here
+    // rather than widening DailyGoalRow, which the whole UI would carry.
+    let set_id: String = conn.query_row(
+        "SELECT set_id FROM companion_daily_goal WHERE status = 'active' LIMIT 1",
+        [],
+        |r| r.get(0),
+    )?;
+    let tx = conn.unchecked_transaction()?;
+    for (id, title) in &updates {
+        tx.execute(
+            "UPDATE companion_daily_goal SET title = ?1 WHERE id = ?2 AND status = 'active'",
+            params![title, id],
+        )?;
+    }
+    for (i, title) in additions.iter().enumerate() {
+        tx.execute(
+            "INSERT INTO companion_daily_goal (id, set_id, slot, title, status, created_at)
+             VALUES (?1, ?2, ?3, ?4, 'active', ?5)",
+            params![
+                format!("dgoal_{}", util::short_id(8)),
+                set_id,
+                next_slot + i as i64,
+                title,
+                now
+            ],
+        )?;
+    }
+    tx.commit()?;
+    drop(conn);
+    get_state(pool)
+}
+
 /// Toggle one active goal. Marking the last open goal done completes the
 /// whole set atomically (status='completed', completed_date=local today).
 /// Returns the fresh snapshot plus whether this call closed the set.
@@ -338,6 +427,71 @@ mod tests {
 
         // Completed goals are frozen: no active row left to toggle.
         assert!(toggle_goal(&pool, &ids[0], false).is_err());
+    }
+
+    fn edit(id: Option<&str>, title: &str) -> GoalEdit {
+        GoalEdit {
+            id: id.map(str::to_string),
+            title: title.to_string(),
+        }
+    }
+
+    #[test]
+    fn update_rewrites_titles_without_touching_done_state() {
+        let pool = test_pool();
+        let snap = create_set(&pool, &["one".into(), "two".into()]).unwrap();
+        let ids: Vec<String> = snap.goals.iter().map(|g| g.id.clone()).collect();
+        let _ = toggle_goal(&pool, &ids[0], true).unwrap();
+
+        let after = update_set(
+            &pool,
+            &[
+                edit(Some(&ids[0]), "  one, rewritten at length  "),
+                edit(Some(&ids[1]), "two, also rewritten"),
+            ],
+        )
+        .unwrap();
+        assert_eq!(after.goals[0].title, "one, rewritten at length");
+        assert!(after.goals[0].done, "a text edit is not a verdict");
+        assert_eq!(after.goals[1].title, "two, also rewritten");
+        assert!(!after.goals[1].done);
+    }
+
+    #[test]
+    fn update_appends_a_newly_filled_slot_and_ignores_blank_ones() {
+        let pool = test_pool();
+        let snap = create_set(&pool, &["one".into()]).unwrap();
+        let id = snap.goals[0].id.clone();
+        let after = update_set(
+            &pool,
+            &[edit(Some(&id), "one"), edit(None, "added"), edit(None, "   ")],
+        )
+        .unwrap();
+        assert_eq!(after.goals.len(), 2);
+        assert_eq!(after.goals[1].title, "added");
+        assert!(!after.goals[1].done, "an appended goal starts open");
+    }
+
+    #[test]
+    fn update_refuses_to_empty_a_goal_exceed_the_cap_or_touch_a_foreign_id() {
+        let pool = test_pool();
+        let snap = create_set(&pool, &["one".into(), "two".into()]).unwrap();
+        let id = snap.goals[0].id.clone();
+        // Emptying is not deletion — the ways out stay done/discard.
+        assert!(update_set(&pool, &[edit(Some(&id), "  ")]).is_err());
+        // Cap still holds when appending.
+        assert!(update_set(&pool, &[edit(None, "a"), edit(None, "b")]).is_err());
+        assert!(update_set(&pool, &[edit(Some("dgoal_nope"), "x")]).is_err());
+        // Nothing above wrote anything.
+        let state = get_state(&pool).unwrap();
+        assert_eq!(state.goals.len(), 2);
+        assert_eq!(state.goals[0].title, "one");
+    }
+
+    #[test]
+    fn update_refuses_when_no_set_is_active() {
+        let pool = test_pool();
+        assert!(update_set(&pool, &[edit(None, "orphan")]).is_err());
     }
 
     #[test]

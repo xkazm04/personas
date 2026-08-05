@@ -2643,7 +2643,10 @@
     "attention_nudges": "Signal d'Athena",
     "attention_nudges_hint": "Signaux informatifs : synthèses, points réguliers programmés, opérations terminées, choses qu'elle a remarquées.",
     "attention_warnings": "Avertissements",
-    "attention_warnings_hint": "Éléments qui dérivent : sessions en attente d'une saisie ou qui deviennent obsolètes, objectifs proches de leur cible, exécutions à examiner."
+    "attention_warnings_hint": "Éléments qui dérivent : sessions en attente d'une saisie ou qui deviennent obsolètes, objectifs proches de leur cible, exécutions à examiner.",
+    "daily_goals_edit": "Modifier les objectifs",
+    "daily_goals_edit_hint": "Le texte complet de chaque objectif, modifiable. Remplissez un emplacement vide pour ajouter un objectif (3 maximum). Pour en retirer un, marquez-le comme terminé ou effacez l'ensemble.",
+    "daily_goals_edit_title": "Modifier les objectifs du jour"
   },
   "artist_gallery": {
     "loading_viewer": "Chargement du visualiseur…",

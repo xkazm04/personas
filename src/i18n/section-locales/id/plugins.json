@@ -2643,7 +2643,10 @@
     "attention_nudges": "Athena menghubungi",
     "attention_nudges_hint": "Dorongan informasional: ringkasan, pemeriksaan terjadwal, operasi yang selesai, hal yang diperhatikannya.",
     "attention_warnings": "Peringatan",
-    "attention_warnings_hint": "Hal yang mulai melenceng: sesi yang menunggu masukan atau mandek, target yang mendekati capaian, proses yang layak ditinjau."
+    "attention_warnings_hint": "Hal yang mulai melenceng: sesi yang menunggu masukan atau mandek, target yang mendekati capaian, proses yang layak ditinjau.",
+    "daily_goals_edit": "Edit target",
+    "daily_goals_edit_hint": "Teks lengkap setiap target, dapat diedit. Isi slot kosong untuk menambah target (maksimal 3). Untuk menghapus satu, tandai selesai atau buang seluruh set.",
+    "daily_goals_edit_title": "Edit target hari ini"
   },
   "artist_gallery": {
     "loading_viewer": "Memuat penampil…",

@@ -15273,6 +15273,9 @@ export type Translations = {
       daily_goals_create: string;
       daily_goals_completed_celebrate: string;
       daily_goals_done_today: string;
+      daily_goals_edit: string;
+      daily_goals_edit_title: string;
+      daily_goals_edit_hint: string;
       daily_goals_mark_done: string;
       daily_goals_mark_open: string;
       setup_dev_mode_label: string;
