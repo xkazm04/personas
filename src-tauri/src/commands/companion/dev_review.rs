@@ -79,8 +79,11 @@ pub fn format_self_review_evidence(
         let finished = e.finished_at.as_deref().unwrap_or("unfinished");
         let commit = e.commit_sha.as_deref().unwrap_or("no commit");
         s.push_str(&format!(
-            "{n}. [{status}] {verdict} · {kind} · {commit} · {finished}\n   \"{request}\"\n",
+            // op_id leads the row: the instructions require citing op ids
+            // in `sources`, so the evidence must carry them.
+            "{n}. {op} [{status}] {verdict} · {kind} · {commit} · {finished}\n   \"{request}\"\n",
             n = i + 1,
+            op = e.op_id,
             status = e.status,
             kind = if e.backend { "backend" } else { "frontend" },
             request = digest(&e.request, REQUEST_DIGEST_CHARS),
@@ -216,9 +219,9 @@ mod tests {
         let expected = "Scoreboard (all time): 2 dispatched · 1 landed a commit · \
              1 merged · 0 closed · 1 interrupted · 1👍 / 1👎\n\n\
              Recent dispatches (newest first):\n\
-             1. [merged] 👍 · backend · abc1234 · 2026-08-01 09:20:00\n   \
+             1. op_a [merged] 👍 · backend · abc1234 · 2026-08-01 09:20:00\n   \
              \"Add a copy button to the approval card\"\n\
-             2. [interrupted] 👎 · frontend · no commit · 2026-08-01 09:20:00\n   \
+             2. op_b [interrupted] 👎 · frontend · no commit · 2026-08-01 09:20:00\n   \
              \"Rewrite the whole panel\"\n";
         assert_eq!(out, expected);
     }
@@ -228,7 +231,7 @@ mod tests {
         let mut e = entry("op_c", "Something in flight", "dispatched", None, None, false);
         e.finished_at = None;
         let out = format_self_review_evidence(&[e], &DevOpMetrics::default());
-        assert!(out.contains("[dispatched] unrated · frontend · no commit · unfinished"), "{out}");
+        assert!(out.contains("op_c [dispatched] unrated · frontend · no commit · unfinished"), "{out}");
         // A zeroed scoreboard must still read as zeros, never as blanks.
         assert!(out.contains("0 dispatched · 0 landed a commit"), "{out}");
     }
