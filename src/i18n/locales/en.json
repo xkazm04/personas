@@ -12934,6 +12934,7 @@
       "footer_empty": "No sessions tracked",
       "footer_open_page": "Open Fleet page",
       "footer_hint_open_grid": "Click to open the terminal grid",
+      "footer_hint_open_monitor": "Click to open the fleet monitor",
       "footer_hint_close_grid": "Click to close the terminal grid",
       "footer_hint_open_page": "Click to open Fleet",
       "footer_needs_you_one": "{count} session needs you",

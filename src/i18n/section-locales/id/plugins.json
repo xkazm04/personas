@@ -222,6 +222,7 @@
     "footer_empty": "Tidak ada sesi yang dilacak",
     "footer_hint_close_grid": "Klik untuk menutup kisi terminal",
     "footer_hint_open_grid": "Klik untuk membuka kisi terminal",
+    "footer_hint_open_monitor": "Klik untuk membuka monitor armada",
     "footer_hint_open_page": "Klik untuk membuka Fleet",
     "footer_needs_you_one": "{count} sesi membutuhkan Anda",
     "footer_needs_you_other": "{count} sesi membutuhkan Anda",

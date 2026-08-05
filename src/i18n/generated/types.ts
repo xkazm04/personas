@@ -12940,6 +12940,7 @@ export type Translations = {
       footer_empty: string;
       footer_open_page: string;
       footer_hint_open_grid: string;
+      footer_hint_open_monitor: string;
       footer_hint_close_grid: string;
       footer_hint_open_page: string;
       footer_needs_you_one: string;

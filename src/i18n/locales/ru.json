@@ -12604,6 +12604,7 @@
       "footer_empty": "Отслеживаемых сессий нет",
       "footer_hint_close_grid": "Нажмите, чтобы закрыть сетку терминалов",
       "footer_hint_open_grid": "Нажмите, чтобы открыть сетку терминалов",
+      "footer_hint_open_monitor": "Нажмите, чтобы открыть монитор флота",
       "footer_hint_open_page": "Нажмите, чтобы открыть Fleet",
       "footer_needs_you_one": "{count} сессия ждёт вас",
       "footer_needs_you_other": "{count} сессий ждут вас",

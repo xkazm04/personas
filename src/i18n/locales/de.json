@@ -12604,6 +12604,7 @@
       "footer_empty": "Keine Sitzungen erfasst",
       "footer_hint_close_grid": "Klicken, um das Terminal-Raster zu schließen",
       "footer_hint_open_grid": "Klicken, um das Terminal-Raster zu öffnen",
+      "footer_hint_open_monitor": "Klicken, um den Flottenmonitor zu öffnen",
       "footer_hint_open_page": "Klicken, um Fleet zu öffnen",
       "footer_needs_you_one": "{count} Sitzung braucht dich",
       "footer_needs_you_other": "{count} Sitzungen brauchen dich",

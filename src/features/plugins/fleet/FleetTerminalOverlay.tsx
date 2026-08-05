@@ -16,23 +16,12 @@ import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs
 import { MonitorView } from './sub_monitor/MonitorView';
 
 // Two grid views: the classic terminal tiles and the minimized monitor
-// ledger. Module-scoped so the chosen view survives close/reopen.
-type GridViewId = 'tiles' | 'monitor';
-let lastGridView: GridViewId = 'tiles';
-/** Set once the operator picks a view from the switcher — their pick wins from
- *  then on, and the fleet-size default stops being consulted. */
-let lastGridViewExplicit = false;
-
-/**
- * Above this many live sessions the tile grid stops being readable (tiles get
- * smaller than a useful terminal) and the ledger is the better first read.
- */
-const MONITOR_DEFAULT_ABOVE = 12;
-
-function defaultGridView(sessionCount: number): GridViewId {
-  if (lastGridViewExplicit) return lastGridView;
-  return sessionCount > MONITOR_DEFAULT_ABOVE ? 'monitor' : 'tiles';
-}
+// ledger. Which one an open lands on is decided in ./fleetGridView (one-shot
+// requests > the operator's explicit pick > the fleet-size default) so other
+// surfaces — the footer cluster's "open the ledger" click — stay in sync.
+import {
+  peekGridViewOnOpen, resolveGridViewOnOpen, recordGridViewPick, type GridViewId,
+} from './fleetGridView';
 
 interface Props {
   open: boolean;
@@ -101,10 +90,12 @@ export function FleetTerminalOverlay({
   // no longer closeable from the footer. The orb reads the same store flag, so
   // nothing was lost by deleting the write.
 
-  const [view, setView] = useState<GridViewId>(() => defaultGridView(sessions.length));
+  // Initializer PEEKS (render must stay side-effect-free); the open effect
+  // below RESOLVES, consuming any one-shot view request. Same value both
+  // times, so the second set is a no-op re-render at most.
+  const [view, setView] = useState<GridViewId>(() => peekGridViewOnOpen(sessions.length));
   const changeView = useCallback((v: GridViewId) => {
-    lastGridView = v;
-    lastGridViewExplicit = true;
+    recordGridViewPick(v);
     setView(v);
   }, []);
 
@@ -114,7 +105,7 @@ export function FleetTerminalOverlay({
   sessionCount.current = sessions.length;
   useEffect(() => {
     if (!open) return;
-    setView(defaultGridView(sessionCount.current));
+    setView(resolveGridViewOnOpen(sessionCount.current));
   }, [open]);
 
   // Two-phase open (perf): paint the overlay frame + tile chrome/status blocks

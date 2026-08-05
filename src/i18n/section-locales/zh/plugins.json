@@ -222,6 +222,7 @@
     "footer_empty": "未跟踪任何会话",
     "footer_hint_close_grid": "点击关闭终端网格",
     "footer_hint_open_grid": "点击打开终端网格",
+    "footer_hint_open_monitor": "点击打开舰队监控视图",
     "footer_hint_open_page": "点击打开 Fleet",
     "footer_needs_you_one": "{count} 个会话需要你处理",
     "footer_needs_you_other": "{count} 个会话需要你处理",

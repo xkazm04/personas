@@ -41,6 +41,38 @@ export const FLEET_STATE_META: ReadonlyArray<FleetStateMeta> = [
   { id: 'exited',         dot: 'bg-zinc-500',    text: 'text-foreground',  chip: 'bg-secondary/60',   labelKey: 'state_exited' },
 ];
 
+/**
+ * Attention lanes — the Monitor ledger's grouping, shared here so the footer
+ * cluster and any other fleet glance surface tally sessions with the SAME
+ * taxonomy the ledger renders. One definition; a state can never sit in one
+ * lane on the ledger and another in the footer.
+ */
+export type FleetAttentionLane = 'needs_you' | 'working' | 'parked' | 'done';
+
+export function laneOfState(state: FleetSessionState): FleetAttentionLane {
+  if (state === 'awaiting_input' || state === 'stale') return 'needs_you';
+  if (state === 'running' || state === 'spawning') return 'working';
+  if (state === 'idle' || state === 'hibernated') return 'parked';
+  return 'done';
+}
+
+export const FLEET_LANE_ORDER: FleetAttentionLane[] = ['needs_you', 'working', 'parked', 'done'];
+
+/** `plugins.fleet` key per lane — resolved by the component that renders it. */
+export const FLEET_LANE_LABEL_KEY: Record<FleetAttentionLane, keyof FleetTranslations> = {
+  needs_you: 'monitor_lane_needs_you',
+  working: 'monitor_lane_working',
+  parked: 'monitor_lane_parked',
+  done: 'monitor_lane_done',
+};
+
+export const FLEET_LANE_TONE: Record<FleetAttentionLane, string> = {
+  needs_you: 'text-violet-300',
+  working: 'text-blue-300',
+  parked: 'text-emerald-300',
+  done: 'text-foreground opacity-50',
+};
+
 /** Zero-filled tally — every state present, so consumers never guard on undefined. */
 export function emptyFleetStateCounts(): Record<FleetSessionState, number> {
   return { spawning: 0, running: 0, awaiting_input: 0, idle: 0, stale: 0, finished: 0, hibernated: 0, exited: 0 };

@@ -222,6 +222,7 @@
     "footer_empty": "追跡中のセッションはありません",
     "footer_hint_close_grid": "クリックでターミナルグリッドを閉じます",
     "footer_hint_open_grid": "クリックでターミナルグリッドを開きます",
+    "footer_hint_open_monitor": "クリックでフリートモニターを開く",
     "footer_hint_open_page": "クリックで Fleet を開きます",
     "footer_needs_you_one": "{count} 件のセッションが対応待ちです",
     "footer_needs_you_other": "{count} 件のセッションが対応待ちです",

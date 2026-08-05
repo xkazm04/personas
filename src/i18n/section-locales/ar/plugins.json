@@ -222,6 +222,7 @@
     "footer_empty": "لا توجد جلسات متتبَّعة",
     "footer_hint_close_grid": "انقر لإغلاق شبكة الطرفية",
     "footer_hint_open_grid": "انقر لفتح شبكة الطرفية",
+    "footer_hint_open_monitor": "انقر لفتح شاشة مراقبة الأسطول",
     "footer_hint_open_page": "انقر لفتح Fleet",
     "footer_needs_you_one": "{count} جلسة تحتاج إليك",
     "footer_needs_you_other": "{count} جلسة تحتاج إليك",

@@ -222,6 +222,7 @@
     "footer_empty": "Žádné sledované relace",
     "footer_hint_close_grid": "Kliknutím zavřete mřížku terminálů",
     "footer_hint_open_grid": "Kliknutím otevřete mřížku terminálů",
+    "footer_hint_open_monitor": "Kliknutím otevřete monitor flotily",
     "footer_hint_open_page": "Kliknutím otevřete Fleet",
     "footer_needs_you_one": "{count} relace vás potřebuje",
     "footer_needs_you_other": "{count} relací vás potřebuje",

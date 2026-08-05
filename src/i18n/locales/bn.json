@@ -12604,6 +12604,7 @@
       "footer_empty": "কোনও সেশন ট্র্যাক করা হয়নি",
       "footer_hint_close_grid": "টার্মিনাল গ্রিড বন্ধ করতে ক্লিক করুন",
       "footer_hint_open_grid": "টার্মিনাল গ্রিড খুলতে ক্লিক করুন",
+      "footer_hint_open_monitor": "ফ্লিট মনিটর খুলতে ক্লিক করুন",
       "footer_hint_open_page": "Fleet খুলতে ক্লিক করুন",
       "footer_needs_you_one": "{count}টি সেশনের আপনাকে প্রয়োজন",
       "footer_needs_you_other": "{count}টি সেশনের আপনাকে প্রয়োজন",

@@ -5,9 +5,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { FleetShipIcon } from './FleetShipIcon';
 import { FleetFooterPopover } from './FleetFooterPopover';
 import { FLEET_STATE_META, fleetStateCounts } from './fleetStateMeta';
-
-/** How many state chips fit beside the glyph before folding into "+N". */
-const MAX_CHIPS = 3;
+import { requestGridView } from './fleetGridView';
 
 /**
  * Fleet status cluster in the desktop footer (DEV-only surface).
@@ -47,14 +45,14 @@ export default function FleetFooterIcon() {
     return stamps.length > 0 ? Math.min(...stamps) : null;
   }, [sessions]);
 
-  // Chips skip `exited`: a finished session is history, not a live state worth
-  // a footer slot. The popover still tallies it.
-  const active = useMemo(
+  // EVERY non-zero live state gets its own chip — no "+N" folding, so the
+  // cluster's numbers are exactly the ledger's numbers. Only `exited` stays
+  // popover-only: a finished session is history, not a live state worth a
+  // footer slot (the ledger's Done lane and the popover still tally it).
+  const chips = useMemo(
     () => FLEET_STATE_META.filter((m) => m.id !== 'exited' && counts[m.id] > 0),
     [counts],
   );
-  const chips = active.slice(0, MAX_CHIPS);
-  const overflow = active.slice(MAX_CHIPS).reduce((sum, m) => sum + counts[m.id], 0);
 
   const openPage = useCallback(() => {
     setSidebarSection('plugins');
@@ -62,19 +60,26 @@ export default function FleetFooterIcon() {
     setDevToolsTab('fleet');
   }, [setSidebarSection, setPluginTab, setDevToolsTab]);
 
-  // Grid open → close it. Sessions running → raise the overlay over whatever
-  // page you're on. Nothing running → there is no grid to show, so send the
-  // user to the page where sessions are spawned.
+  // Grid open → close it. Anything tracked → raise the overlay ON THE MONITOR
+  // LEDGER (a one-shot view request — the counts you just read in the footer
+  // land on the surface that itemizes them, without overwriting the operator's
+  // standing view preference). Nothing tracked → there is no grid to show, so
+  // send the user to the page where sessions are spawned.
   const handleClick = useCallback(() => {
-    if (gridOpen) setGridOpen(false);
-    else if (gridCount > 0) setGridOpen(true);
-    else openPage();
+    if (gridOpen) {
+      setGridOpen(false);
+    } else if (gridCount > 0) {
+      requestGridView('monitor');
+      setGridOpen(true);
+    } else {
+      openPage();
+    }
   }, [gridOpen, gridCount, setGridOpen, openPage]);
 
   const hint = gridOpen
     ? t.plugins.fleet.footer_hint_close_grid
     : gridCount > 0
-      ? t.plugins.fleet.footer_hint_open_grid
+      ? t.plugins.fleet.footer_hint_open_monitor
       : t.plugins.fleet.footer_hint_open_page;
 
   const label = needsYou > 0
@@ -125,14 +130,6 @@ export default function FleetFooterIcon() {
                 {counts[m.id]}
               </span>
             ))}
-            {overflow > 0 && (
-              <span
-                data-testid="footer-fleet-chip-overflow"
-                className="min-w-[15px] px-1 py-0.5 rounded-full bg-secondary/60 text-[10px] font-semibold leading-none tabular-nums text-center text-foreground"
-              >
-                {`+${overflow}`}
-              </span>
-            )}
           </span>
         )}
       </button>

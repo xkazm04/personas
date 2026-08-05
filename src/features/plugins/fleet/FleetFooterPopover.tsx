@@ -1,7 +1,9 @@
 import { ExternalLink } from 'lucide-react';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { useTranslation } from '@/i18n/useTranslation';
-import { FLEET_STATE_META } from './fleetStateMeta';
+import {
+  FLEET_STATE_META, laneOfState, FLEET_LANE_ORDER, FLEET_LANE_LABEL_KEY, FLEET_LANE_TONE,
+} from './fleetStateMeta';
 import { FleetLimitEtaChip } from './FleetLimitEtaChip';
 
 interface FleetFooterPopoverProps {
@@ -38,7 +40,12 @@ export function FleetFooterPopover({
   limitResetAtMs = null,
 }: FleetFooterPopoverProps) {
   const { t, tx } = useTranslation();
-  const rows = FLEET_STATE_META.filter((m) => counts[m.id] > 0);
+  // Same grouping the Monitor ledger renders — lane header with subtotal,
+  // then the per-state breakdown (exited included, under Done).
+  const lanes = FLEET_LANE_ORDER.map((lane) => {
+    const states = FLEET_STATE_META.filter((m) => laneOfState(m.id) === lane && counts[m.id] > 0);
+    return { lane, states, total: states.reduce((sum, m) => sum + counts[m.id], 0) };
+  }).filter((g) => g.states.length > 0);
 
   return (
     <div
@@ -55,24 +62,39 @@ export function FleetFooterPopover({
         </p>
       </div>
 
-      {rows.length === 0 ? (
+      {lanes.length === 0 ? (
         <p className="px-1 py-2 text-[11px] text-foreground">{t.plugins.fleet.footer_empty}</p>
       ) : (
-        <ul className="space-y-0.5">
-          {rows.map((m) => (
-            <li
-              key={m.id}
-              data-testid={`footer-fleet-row-${m.id}`}
-              className="flex items-center gap-2 px-1 py-0.5 rounded-input"
-            >
-              <span className={`h-2 w-2 rounded-full flex-shrink-0 ${m.dot}`} aria-hidden="true" />
-              <span className="flex-1 min-w-0 truncate text-[11px] text-foreground">
-                {t.plugins.fleet[m.labelKey]}
-              </span>
-              <span className={`text-[11px] font-semibold tabular-nums ${m.text}`}>{counts[m.id]}</span>
-            </li>
+        <div className="space-y-1">
+          {lanes.map(({ lane, states, total }) => (
+            <div key={lane}>
+              <div
+                data-testid={`footer-fleet-lane-${lane}`}
+                className="flex items-baseline justify-between gap-2 px-1"
+              >
+                <span className={`typo-label uppercase tracking-wide text-[10px] ${FLEET_LANE_TONE[lane]}`}>
+                  {t.plugins.fleet[FLEET_LANE_LABEL_KEY[lane]]}
+                </span>
+                <span className={`text-[11px] font-semibold tabular-nums ${FLEET_LANE_TONE[lane]}`}>{total}</span>
+              </div>
+              <ul className="space-y-0.5">
+                {states.map((m) => (
+                  <li
+                    key={m.id}
+                    data-testid={`footer-fleet-row-${m.id}`}
+                    className="flex items-center gap-2 pl-3 pr-1 py-0.5 rounded-input"
+                  >
+                    <span className={`h-2 w-2 rounded-full flex-shrink-0 ${m.dot}`} aria-hidden="true" />
+                    <span className="flex-1 min-w-0 truncate text-[11px] text-foreground">
+                      {t.plugins.fleet[m.labelKey]}
+                    </span>
+                    <span className={`text-[11px] font-semibold tabular-nums ${m.text}`}>{counts[m.id]}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
 
       {limitResetAtMs != null && (

@@ -222,6 +222,7 @@
     "footer_empty": "कोई सत्र ट्रैक नहीं किया गया",
     "footer_hint_close_grid": "टर्मिनल ग्रिड बंद करने के लिए क्लिक करें",
     "footer_hint_open_grid": "टर्मिनल ग्रिड खोलने के लिए क्लिक करें",
+    "footer_hint_open_monitor": "फ़्लीट मॉनिटर खोलने के लिए क्लिक करें",
     "footer_hint_open_page": "Fleet खोलने के लिए क्लिक करें",
     "footer_needs_you_one": "{count} सत्र को आपकी ज़रूरत है",
     "footer_needs_you_other": "{count} सत्रों को आपकी ज़रूरत है",

@@ -12604,6 +12604,7 @@
       "footer_empty": "Không có phiên nào được theo dõi",
       "footer_hint_close_grid": "Nhấp để đóng lưới terminal",
       "footer_hint_open_grid": "Nhấp để mở lưới terminal",
+      "footer_hint_open_monitor": "Nhấp để mở màn hình giám sát đội",
       "footer_hint_open_page": "Nhấp để mở Fleet",
       "footer_needs_you_one": "{count} phiên đang cần bạn",
       "footer_needs_you_other": "{count} phiên đang cần bạn",

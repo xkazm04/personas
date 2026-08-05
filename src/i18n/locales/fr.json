@@ -12604,6 +12604,7 @@
       "footer_empty": "Aucune session suivie",
       "footer_hint_close_grid": "Cliquez pour fermer la grille de terminaux",
       "footer_hint_open_grid": "Cliquez pour ouvrir la grille de terminaux",
+      "footer_hint_open_monitor": "Cliquez pour ouvrir le moniteur de la flotte",
       "footer_hint_open_page": "Cliquez pour ouvrir Fleet",
       "footer_needs_you_one": "{count} session a besoin de vous",
       "footer_needs_you_other": "{count} sessions ont besoin de vous",
