@@ -72,7 +72,17 @@ interface TriageCardProps {
    * for the TOP card only — the cards behind it are not being read.
    */
   scrollerRef?: Ref<HTMLDivElement>;
-  onCommit: (dir: FlingDirection) => void;
+  /**
+   * Reports the flight, and says WHICH CARD flew.
+   *
+   * The id is not a convenience — it is the whole contract. A drag used to
+   * report only a direction, and the deck resolved that against whatever was
+   * top at the moment the report arrived. Reviews poll every 30s and cloud
+   * reviews every 15s, both replacing the queue wholesale, so a poll landing
+   * between grab and release wrote the reviewer's verdict onto a card they
+   * never saw. The card knows what it is; it now says so.
+   */
+  onCommit: (dir: FlingDirection, itemId: string) => void;
   /** Replaces the prose body for items with an `input`. */
   answerSlot?: ReactNode;
 }
@@ -117,20 +127,24 @@ function TriageCardImpl({
   const launchedRef = useRef(false);
   const timerRef = useRef<number | null>(null);
 
+  // Read at LAUNCH, not at report: the card that was thrown is the card the
+  // verdict is about, even if the queue has been replaced by the time the
+  // flight lands 200ms later.
+  const itemId = item.id;
   const launch = useCallback(
     (dir: FlingDirection) => {
       if (launchedRef.current) return;
       launchedRef.current = true;
       if (reduced) {
-        onCommit(dir);
+        onCommit(dir, itemId);
         return;
       }
       if (dir === 'down') animate(dropY, DROP_DISTANCE, FLING_SPRING);
       else animate(x, dir === 'right' ? FLING_DISTANCE : -FLING_DISTANCE, FLING_SPRING);
       animate(cardOpacity, 0, { duration: 0.2 });
-      timerRef.current = window.setTimeout(() => onCommit(dir), VERDICT_DELAY_MS);
+      timerRef.current = window.setTimeout(() => onCommit(dir, itemId), VERDICT_DELAY_MS);
     },
-    [reduced, onCommit, x, dropY, cardOpacity],
+    [reduced, onCommit, itemId, x, dropY, cardOpacity],
   );
 
   useImperativeHandle(cardRef, () => ({ launch }), [launch]);

@@ -213,19 +213,39 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
     [queue],
   );
 
-  /** Fired by the card once its flight has been seen. */
+  /**
+   * Fired by the card once its flight has been seen, naming the card that flew.
+   *
+   * `itemId` is checked before ANY write, and a report that does not match is
+   * DROPPED rather than redirected. A drag is the one path here that used to
+   * write without carrying what it was writing about: it reported a direction,
+   * and this function resolved it against `topRef.current` — reassigned on
+   * every render, and the queue is replaced wholesale by two polls (reviews
+   * 30s, cloud reviews 15s). A poll landing between grab and release therefore
+   * recorded the reviewer's verdict on a card they had never seen. Redirecting
+   * to the new top is exactly the bug; refusing to write is the fix. The
+   * reviewer still has the card in front of them and can decide it again.
+   */
   const commit = useCallback(
-    (dir: FlingDirection) => {
-      disarm();
+    (dir: FlingDirection, itemId: string) => {
       const queued = pendingRef.current;
-      pendingRef.current = null;
       if (queued) {
+        // A report from a card this decision was not made about — a re-deal
+        // under the throw, or a sibling's flight. Do NOT land the queued
+        // decision early on someone else's report, and do NOT disarm: the
+        // watchdog still owns it and will land it on its own item.
+        if (queued.item.id !== itemId) return;
+        disarm();
+        pendingRef.current = null;
         send(queued);
         return;
       }
-      // No queued decision means the drag itself was the verdict.
+      disarm();
+      // No queued decision means the drag itself was the verdict — so the
+      // identity check is the only thing standing between the gesture and the
+      // wrong card.
       const item = topRef.current;
-      if (!item) return;
+      if (!item || item.id !== itemId) return;
       const verdict: TriageVerdict = dir === 'right' ? 'accept' : dir === 'left' ? 'reject' : 'skip';
       // A left flick is a rejection, and it has already flown — so the reason is
       // asked AFTER the throw here rather than before it. Catching the card
@@ -234,6 +254,9 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
       if (verdict === 'reject') {
         const prompt = reasonPromptFor(item, 'reject');
         if (prompt) {
+          // The capture binds the VERIFIED item, not whatever is top when the
+          // reason is finally answered — resolving it writes to the card that
+          // was actually thrown.
           setCapture({ item, prompt, thrown: true });
           setReasonDraft('');
           return;
@@ -354,7 +377,11 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
    */
   const submitAnswers = useCallback(
     (extra?: Record<string, string>) => {
-      if (pendingRef.current) return;
+      // `captureRef` as well as `pendingRef`, like every other write here. The
+      // reason strip replaces the ACTION BAR, not the card, so `QuestionPanel`'s
+      // choice buttons stay clickable underneath a prompt that is already
+      // holding a decision — and a second one had nowhere to go.
+      if (pendingRef.current || captureRef.current) return;
       const item = topRef.current;
       if (!item) return;
       const filled = collect(item, extra);

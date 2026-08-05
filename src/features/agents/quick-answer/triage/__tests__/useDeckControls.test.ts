@@ -100,7 +100,7 @@ describe('useDeckControls — a thrown card that never lands', () => {
     result.current.cardRef.current = { launch: vi.fn() };
 
     act(() => result.current.decideTop('reject'));
-    act(() => result.current.commit('left'));
+    act(() => result.current.commit('left', item.id));
     expect(decide).toHaveBeenCalledTimes(1);
 
     act(() => void vi.advanceTimersByTime(5000));
@@ -202,7 +202,7 @@ describe('useDeckControls — rejections that teach', () => {
     const launch = vi.fn();
     result.current.cardRef.current = { launch };
 
-    act(() => result.current.commit('left'));
+    act(() => result.current.commit('left', item.id));
     expect(result.current.capture?.thrown).toBe(true);
     expect(decide).not.toHaveBeenCalled();
 
@@ -214,10 +214,11 @@ describe('useDeckControls — rejections that teach', () => {
   });
 
   it('lets a right flick through untouched — only rejections are asked about', () => {
-    const { queue, decide } = makeQueue([withPrompt()]);
+    const item = withPrompt();
+    const { queue, decide } = makeQueue([item]);
     const { result } = renderHook(() => useDeckControls(queue, vi.fn()));
 
-    act(() => result.current.commit('right'));
+    act(() => result.current.commit('right', item.id));
     expect(result.current.capture).toBeNull();
     expect(decide).toHaveBeenCalledWith(expect.objectContaining({ verdict: 'accept' }));
   });
@@ -292,6 +293,133 @@ describe('useDeckControls — rejections that teach', () => {
     rerender({ items: [] });
     expect(result.current.capture).toBeNull();
     expect(decide).not.toHaveBeenCalled();
+  });
+});
+
+describe('useDeckControls — a drag decides the card you dragged', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  /** Reviews poll every 30s and cloud reviews every 15s; both replace `items`. */
+  const poll = (
+    rerender: (props: { items: TriageItem[] }) => void,
+    items: TriageItem[],
+  ) => act(() => rerender({ items }));
+
+  function mounted(initial: TriageItem[]) {
+    const decide = vi.fn().mockResolvedValue(undefined);
+    const view = renderHook(
+      ({ items }) => useDeckControls(makeQueue(items, decide).queue, vi.fn()),
+      { initialProps: { items: initial } },
+    );
+    return { ...view, decide };
+  }
+
+  it('DROPS the verdict when a poll replaces the top card between grab and release', () => {
+    const grabbed = makeItem('idea');
+    const arrived = makeItem('review');
+    const { rerender, decide, result } = mounted([grabbed]);
+
+    // Grabbed `grabbed`… a poll lands… released.
+    poll(rerender, [arrived, grabbed]);
+    act(() => result.current.commit('right', grabbed.id));
+
+    // Nothing at all: not on `arrived` (the redirect this fixes), and not on
+    // `grabbed` either — it is no longer the card being decided.
+    expect(decide).not.toHaveBeenCalled();
+  });
+
+  it('drops it even when the incoming card would have taken the same verdict', () => {
+    // The redirect was invisible precisely because the write always succeeded.
+    const grabbed = makeItem('practice');
+    const arrived = makeItem('practice');
+    const { rerender, decide, result } = mounted([grabbed]);
+
+    poll(rerender, [arrived]);
+    act(() => result.current.commit('left', grabbed.id));
+
+    expect(decide).not.toHaveBeenCalled();
+    expect(result.current.capture).toBeNull();
+  });
+
+  it('still writes when the card that flew IS the card being decided', () => {
+    const item = makeItem('idea');
+    const { decide, result } = mounted([item]);
+
+    act(() => result.current.commit('right', item.id));
+    expect(decide).toHaveBeenCalledWith({ item, verdict: 'accept' });
+  });
+
+  it('binds the post-throw reason capture to the card that actually flew', () => {
+    const grabbed = makeItem('idea', {
+      reasonPrompts: [
+        {
+          on: 'reject',
+          title: 'Why?',
+          options: [{ id: 'out_of_scope', label: 'Out of scope', value: 'Out of scope' }],
+          skipLabel: 'No reason',
+          freeText: true,
+        },
+      ],
+    });
+    const arrived = makeItem('review');
+    const { rerender, decide, result } = mounted([grabbed]);
+
+    act(() => result.current.commit('left', grabbed.id));
+    expect(result.current.capture?.item).toBe(grabbed);
+
+    // The queue churns while the reviewer is picking a reason. The capture
+    // holds its own item, so answering writes to the card that was thrown —
+    // never to whatever is on top by the time the answer arrives.
+    poll(rerender, [arrived, grabbed]);
+    act(() => result.current.resolveReason('Out of scope'));
+
+    expect(decide).toHaveBeenCalledWith(
+      expect.objectContaining({ item: grabbed, verdict: 'reject', reason: 'Out of scope' }),
+    );
+  });
+
+  it('does not land a queued decision on another card’s flight report', () => {
+    // The keyboard path already carries its own item; what it must not do is
+    // land EARLY because some other card reported a flight. The watchdog still
+    // owns it and lands it on its own item.
+    const item = makeItem('review');
+    const other = makeItem('idea');
+    const { decide, result } = mounted([item]);
+    result.current.cardRef.current = { launch: vi.fn() };
+
+    act(() => result.current.decideTop('skip'));
+    act(() => result.current.commit('down', other.id));
+    expect(decide).not.toHaveBeenCalled();
+
+    act(() => void vi.advanceTimersByTime(1200));
+    expect(decide).toHaveBeenCalledWith({ item, verdict: 'skip' });
+  });
+
+  it('refuses an inline answer submit while a reason is being asked for', () => {
+    // The strip replaces the ACTION BAR, not the card — `QuestionPanel`'s choice
+    // buttons stay clickable underneath a decision that is already waiting.
+    const item = makeQuestion({
+      reasonPrompts: [
+        {
+          on: 'reject',
+          title: 'Why?',
+          options: [{ id: 'not_needed', label: 'Not needed', value: 'Not needed' }],
+          skipLabel: 'No reason',
+          freeText: true,
+        },
+      ],
+    });
+    const { decide, result } = mounted([item]);
+    result.current.cardRef.current = { launch: vi.fn() };
+
+    act(() => result.current.decideTop('reject'));
+    expect(result.current.capture).not.toBeNull();
+
+    act(() => result.current.submitAnswers({ tools: 'gmail' }));
+    act(() => void vi.advanceTimersByTime(1200));
+    expect(decide).not.toHaveBeenCalled();
+    expect(result.current.capture).not.toBeNull();
   });
 });
 
