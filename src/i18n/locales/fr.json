@@ -15372,7 +15372,20 @@
       "mission_link_goal": "Lier à un objectif…",
       "mission_unlinked": "Sans objectif",
       "goal_field_kpi": "KPI lié",
-      "goal_kpi_none": "Aucun KPI lié"
+      "goal_kpi_none": "Aucun KPI lié",
+      "triage_ago": "il y a {time}",
+      "triage_all_clear_sub": "{inflight} en cours, {done} terminés. Ouvrez une bande ci-dessous pour les voir.",
+      "triage_headline_one": "{count} objectif est terminé et attend votre décision.",
+      "triage_headline_other": "{count} objectifs sont terminés et attendent votre décision.",
+      "triage_lane_done": "Terminés",
+      "triage_lane_in_flight": "En cours",
+      "triage_needs_you_one": "{count} vous attend",
+      "triage_needs_you_other": "{count} vous attendent",
+      "triage_no_goals_body": "Les objectifs apparaissent dès qu’une équipe ou Athena les écrit.",
+      "triage_no_goals_title": "Aucun objectif pour l’instant",
+      "triage_resolving": "Traitement…",
+      "triage_strip_waiting": "En attente de démarrage",
+      "triage_title": "Objectifs"
     },
     "dev_projects": {
       "active_goals": "objectifs actifs",

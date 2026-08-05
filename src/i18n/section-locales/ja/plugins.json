@@ -2990,7 +2990,20 @@
     "mission_link_goal": "ゴールに紐づける…",
     "mission_unlinked": "ゴールなし",
     "goal_field_kpi": "リンクされた KPI",
-    "goal_kpi_none": "リンクされた KPI なし"
+    "goal_kpi_none": "リンクされた KPI なし",
+    "triage_ago": "{time}前",
+    "triage_all_clear_sub": "進行中 {inflight} 件、完了 {done} 件。下のストリップを開くと表示されます。",
+    "triage_headline_one": "{count} 件のゴールが完了し、判断を待っています。",
+    "triage_headline_other": "{count} 件のゴールが完了し、判断を待っています。",
+    "triage_lane_done": "完了",
+    "triage_lane_in_flight": "進行中",
+    "triage_needs_you_one": "{count} 件が対応待ち",
+    "triage_needs_you_other": "{count} 件が対応待ち",
+    "triage_no_goals_body": "チームまたは Athena がゴールを書くと、ここに表示されます。",
+    "triage_no_goals_title": "ゴールはまだありません",
+    "triage_resolving": "処理中…",
+    "triage_strip_waiting": "開始待ち",
+    "triage_title": "ゴール"
   },
   "dev_projects": {
     "active_goals": "アクティブなゴール",

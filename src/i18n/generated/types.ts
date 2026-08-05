@@ -15673,6 +15673,19 @@ export type Translations = {
       mission_link_goal: string;
       goal_field_kpi: string;
       goal_kpi_none: string;
+      triage_title: string;
+      triage_lane_in_flight: string;
+      triage_lane_done: string;
+      triage_strip_waiting: string;
+      triage_needs_you_one: string;
+      triage_needs_you_other: string;
+      triage_headline_one: string;
+      triage_headline_other: string;
+      triage_all_clear_sub: string;
+      triage_no_goals_title: string;
+      triage_no_goals_body: string;
+      triage_resolving: string;
+      triage_ago: string;
     };
     dev_projects: {
       bulk_selected_one: string;

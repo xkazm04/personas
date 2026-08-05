@@ -2990,7 +2990,20 @@
     "mission_link_goal": "اربط بهدف…",
     "mission_unlinked": "بلا هدف",
     "goal_field_kpi": "مؤشر KPI المرتبط",
-    "goal_kpi_none": "لا يوجد مؤشر KPI مرتبط"
+    "goal_kpi_none": "لا يوجد مؤشر KPI مرتبط",
+    "triage_ago": "منذ {time}",
+    "triage_all_clear_sub": "{inflight} قيد التنفيذ، {done} منجزة. وسّع شريطًا أدناه لعرضها.",
+    "triage_headline_one": "اكتمل {count} هدف وينتظر قرارك.",
+    "triage_headline_other": "اكتملت {count} أهداف وتنتظر قرارك.",
+    "triage_lane_done": "منجزة",
+    "triage_lane_in_flight": "قيد التنفيذ",
+    "triage_needs_you_one": "{count} يحتاج إليك",
+    "triage_needs_you_other": "{count} تحتاج إليك",
+    "triage_no_goals_body": "تظهر الأهداف بمجرد أن يكتبها فريق أو Athena.",
+    "triage_no_goals_title": "لا توجد أهداف هنا بعد",
+    "triage_resolving": "جارٍ الحسم…",
+    "triage_strip_waiting": "في انتظار البدء",
+    "triage_title": "الأهداف"
   },
   "dev_projects": {
     "active_goals": "الأهداف النشطة",

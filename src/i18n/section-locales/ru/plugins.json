@@ -2990,7 +2990,20 @@
     "mission_link_goal": "Связать с целью…",
     "mission_unlinked": "Без цели",
     "goal_field_kpi": "Связанный KPI",
-    "goal_kpi_none": "Нет связанного KPI"
+    "goal_kpi_none": "Нет связанного KPI",
+    "triage_ago": "{time} назад",
+    "triage_all_clear_sub": "{inflight} в работе, {done} завершено. Разверните полосу ниже, чтобы увидеть их.",
+    "triage_headline_one": "{count} цель завершена и ждёт вашего решения.",
+    "triage_headline_other": "{count} целей завершено и ждут вашего решения.",
+    "triage_lane_done": "Завершены",
+    "triage_lane_in_flight": "В работе",
+    "triage_needs_you_one": "{count} ждёт вас",
+    "triage_needs_you_other": "{count} ждут вас",
+    "triage_no_goals_body": "Цели появятся, как только команда или Athena их запишет.",
+    "triage_no_goals_title": "Целей пока нет",
+    "triage_resolving": "Обработка…",
+    "triage_strip_waiting": "Ожидают старта",
+    "triage_title": "Цели"
   },
   "dev_projects": {
     "active_goals": "активных целей",

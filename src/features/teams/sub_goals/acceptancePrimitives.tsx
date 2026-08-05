@@ -1,77 +1,21 @@
-// Shared primitives for the Goal Acceptance prototype variants. Token-based
-// (typo-*, status colors, semantic radii) so every variant reads as a sibling
-// of the existing Goals surfaces. Hoisted here from variant 1 the moment a
-// second variant needed the same piece (per the prototype skill's "hoist shared
-// pieces mid-prototype" rule). i18n extraction is deferred to consolidation.
+// Accept / reject controls — the one gesture shared by every surface that lets
+// a human resolve a completed goal (the Triage queue and the goal detail
+// drawer).
+//
+// This file used to also carry a team monogram, a KPI mini-gauge, a KPI divider
+// and an empty state built for `AcceptanceTriagePolished`. That component was
+// replaced by the shared `triage/GoalsTriage`, which renders its own KPI gauge
+// from the triage model, so those pieces (and the `goalAcceptanceModel` view
+// model behind them) were deleted rather than left as a second vocabulary for
+// the same ideas.
 import { useState } from 'react';
 import { Check, RotateCcw, Send } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
-import type { PendingKpi, PendingTeam } from './goalAcceptanceModel';
-import { kpiPct } from './goalAcceptanceModel';
-
-/** Color-mix helper — a translucent wash of a team/KPI accent. */
-export function wash(color: string, pct: number): string {
-  return `color-mix(in srgb, ${color} ${pct}%, transparent)`;
-}
-
-/** Team avatar — monogram on the team's accent. The one symbol that ties a
- *  goal to its column at a glance. */
-export function TeamMonogram({ team, size = 22 }: { team: PendingTeam; size?: number }) {
-  return (
-    <span
-      className="inline-flex items-center justify-center rounded-full font-semibold leading-none shrink-0"
-      style={{
-        width: size,
-        height: size,
-        fontSize: size * 0.4,
-        background: wash(team.color, 22),
-        color: team.color,
-        border: `1px solid ${wash(team.color, 45)}`,
-      }}
-      title={team.name}
-    >
-      {team.monogram}
-    </span>
-  );
-}
-
-/** A compact baseline→target gauge with the current value as a marker, tinted
- *  by track state. The signature KPI visual reused across the variants. */
-export function KpiMiniGauge({ kpi, width = 150 }: { kpi: PendingKpi; width?: number }) {
-  const pct = kpiPct(kpi);
-  const tint = kpi.offTrack ? 'var(--destructive)' : 'var(--success)';
-  return (
-    <div style={{ width }}>
-      <div className="flex items-baseline justify-between mb-1">
-        <span className="typo-caption tabular-nums" style={{ color: tint }}>
-          {kpi.current}
-          {kpi.unit}
-        </span>
-        <span className="typo-caption text-muted-foreground tabular-nums">
-          → {kpi.target}
-          {kpi.unit}
-        </span>
-      </div>
-      <div className="relative h-1.5 rounded-full overflow-hidden bg-primary/10">
-        {/* No baseline recorded: progress is genuinely unknown — leave the
-            track empty rather than fabricate a 0%-filled (or invalid-width)
-            bar. */}
-        {pct != null && (
-          <div
-            className="h-full rounded-full transition-all"
-            style={{ width: `${pct}%`, background: tint }}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
 
 /**
- * Accept / reject controls with an inline reject-comment box. Accept is the
- * primary affordance; reject opens a comment field (rejection always carries a
- * reason — it becomes the feedback the team reworks against).
+ * Accept is the primary affordance; reject opens a comment field (rejection
+ * always carries a reason — it becomes the feedback the team reworks against).
  */
 export function AcceptRejectControls({
   onAccept,
@@ -138,45 +82,6 @@ export function AcceptRejectControls({
       >
         <RotateCcw className="w-3.5 h-3.5" /> {dl.accept_send_back}
       </button>
-    </div>
-  );
-}
-
-/**
- * Thin KPI sub-group divider — a hairline rule carrying a small label, the
- * off-track state, a count, and an inline current→target. The compact,
- * border-free replacement for the boxed KPI section header, used when goals are
- * grouped by PROJECT first and KPIs become sub-headers within each project.
- */
-export function KpiDivider({ kpi, count }: { kpi: PendingKpi | null; count: number }) {
-  const { t } = useTranslation();
-  const dl = t.plugins.dev_lifecycle;
-  const tint = kpi ? (kpi.offTrack ? 'var(--destructive)' : 'var(--success)') : 'var(--muted-foreground)';
-  return (
-    <div className="flex items-center gap-2.5 pt-3 pb-1.5">
-      {/* typo-label = 12px uppercase tracked — reads cleanly as a sub-divider
-          marker, one tier below the project section-title above it. */}
-      <span className="typo-label" style={{ color: tint }}>{kpi ? kpi.name : dl.accept_standalone}</span>
-      {kpi?.offTrack && <span className="typo-label text-[var(--destructive)]">{dl.accept_off_track}</span>}
-      {kpi && (
-        <span className="typo-caption text-muted-foreground tabular-nums">
-          {kpi.current}{kpi.unit} → {kpi.target}{kpi.unit}
-        </span>
-      )}
-      <span className="h-px flex-1 bg-primary/10" />
-      <span className="typo-caption text-muted-foreground tabular-nums">{count}</span>
-    </div>
-  );
-}
-
-/** Shown when the acceptance queue is empty. */
-export function EmptyQueue() {
-  const { t } = useTranslation();
-  const dl = t.plugins.dev_lifecycle;
-  return (
-    <div className="py-12 text-center">
-      <p className="typo-title text-foreground">{dl.accept_empty_title}</p>
-      <p className="typo-body text-muted-foreground mt-1">{dl.accept_empty_sub}</p>
     </div>
   );
 }

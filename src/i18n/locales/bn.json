@@ -15372,7 +15372,20 @@
       "mission_link_goal": "একটি লক্ষ্যের সাথে যুক্ত করুন…",
       "mission_unlinked": "কোনো লক্ষ্য নেই",
       "goal_field_kpi": "সংযুক্ত KPI",
-      "goal_kpi_none": "কোনো সংযুক্ত KPI নেই"
+      "goal_kpi_none": "কোনো সংযুক্ত KPI নেই",
+      "triage_ago": "{time} আগে",
+      "triage_all_clear_sub": "{inflight}টি চলমান, {done}টি সম্পন্ন। দেখতে নিচের একটি স্ট্রিপ খুলুন।",
+      "triage_headline_one": "{count}টি লক্ষ্য শেষ হয়েছে এবং আপনার সিদ্ধান্তের অপেক্ষায়।",
+      "triage_headline_other": "{count}টি লক্ষ্য শেষ হয়েছে এবং আপনার সিদ্ধান্তের অপেক্ষায়।",
+      "triage_lane_done": "সম্পন্ন",
+      "triage_lane_in_flight": "চলমান",
+      "triage_needs_you_one": "{count}টির জন্য আপনি প্রয়োজন",
+      "triage_needs_you_other": "{count}টির জন্য আপনি প্রয়োজন",
+      "triage_no_goals_body": "কোনো দল বা Athena লক্ষ্য লিখলেই সেগুলি এখানে দেখা যাবে।",
+      "triage_no_goals_title": "এখানে এখনও কোনো লক্ষ্য নেই",
+      "triage_resolving": "নিষ্পত্তি হচ্ছে…",
+      "triage_strip_waiting": "শুরুর অপেক্ষায়",
+      "triage_title": "লক্ষ্য"
     },
     "dev_projects": {
       "active_goals": "সক্রিয় লক্ষ্য",

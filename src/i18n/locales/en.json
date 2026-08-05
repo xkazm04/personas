@@ -15666,7 +15666,20 @@
       "mission_unlinked": "No goal",
       "mission_link_goal": "Link to a goal…",
       "goal_field_kpi": "Linked KPI",
-      "goal_kpi_none": "No linked KPI"
+      "goal_kpi_none": "No linked KPI",
+      "triage_title": "Goals",
+      "triage_lane_in_flight": "In flight",
+      "triage_lane_done": "Done",
+      "triage_strip_waiting": "Waiting to start",
+      "triage_needs_you_one": "{count} needs you",
+      "triage_needs_you_other": "{count} need you",
+      "triage_headline_one": "{count} goal is finished and waiting on your call.",
+      "triage_headline_other": "{count} goals are finished and waiting on your call.",
+      "triage_all_clear_sub": "{inflight} in flight, {done} done. Expand a strip below to see them.",
+      "triage_no_goals_title": "No goals here yet",
+      "triage_no_goals_body": "Goals appear once a team or Athena writes them.",
+      "triage_resolving": "Resolving…",
+      "triage_ago": "{time} ago"
     },
     "dev_projects": {
       "bulk_selected_one": "project selected",

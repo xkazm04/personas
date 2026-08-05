@@ -15372,7 +15372,20 @@
       "mission_link_goal": "Tautkan ke sasaran…",
       "mission_unlinked": "Tanpa sasaran",
       "goal_field_kpi": "KPI tertaut",
-      "goal_kpi_none": "Tidak ada KPI tertaut"
+      "goal_kpi_none": "Tidak ada KPI tertaut",
+      "triage_ago": "{time} lalu",
+      "triage_all_clear_sub": "{inflight} berjalan, {done} selesai. Buka salah satu strip di bawah untuk melihatnya.",
+      "triage_headline_one": "{count} sasaran telah selesai dan menunggu keputusan Anda.",
+      "triage_headline_other": "{count} sasaran telah selesai dan menunggu keputusan Anda.",
+      "triage_lane_done": "Selesai",
+      "triage_lane_in_flight": "Berjalan",
+      "triage_needs_you_one": "{count} menunggu Anda",
+      "triage_needs_you_other": "{count} menunggu Anda",
+      "triage_no_goals_body": "Sasaran muncul begitu tim atau Athena menuliskannya.",
+      "triage_no_goals_title": "Belum ada sasaran di sini",
+      "triage_resolving": "Menyelesaikan…",
+      "triage_strip_waiting": "Menunggu dimulai",
+      "triage_title": "Sasaran"
     },
     "dev_projects": {
       "active_goals": "tujuan aktif",

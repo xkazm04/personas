@@ -15372,7 +15372,20 @@
       "mission_link_goal": "목표에 연결…",
       "mission_unlinked": "목표 없음",
       "goal_field_kpi": "연결된 KPI",
-      "goal_kpi_none": "연결된 KPI 없음"
+      "goal_kpi_none": "연결된 KPI 없음",
+      "triage_ago": "{time} 전",
+      "triage_all_clear_sub": "진행 중 {inflight}건, 완료 {done}건. 아래 스트립을 펼쳐 확인하세요.",
+      "triage_headline_one": "{count}개의 목표가 완료되어 결정을 기다리고 있습니다.",
+      "triage_headline_other": "{count}개의 목표가 완료되어 결정을 기다리고 있습니다.",
+      "triage_lane_done": "완료",
+      "triage_lane_in_flight": "진행 중",
+      "triage_needs_you_one": "{count}건이 대기 중",
+      "triage_needs_you_other": "{count}건이 대기 중",
+      "triage_no_goals_body": "팀이나 Athena가 목표를 작성하면 여기에 표시됩니다.",
+      "triage_no_goals_title": "아직 목표가 없습니다",
+      "triage_resolving": "처리 중…",
+      "triage_strip_waiting": "시작 대기",
+      "triage_title": "목표"
     },
     "dev_projects": {
       "active_goals": "활성 목표",

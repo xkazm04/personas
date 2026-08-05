@@ -15372,7 +15372,20 @@
       "mission_link_goal": "关联到目标…",
       "mission_unlinked": "无目标",
       "goal_field_kpi": "关联的 KPI",
-      "goal_kpi_none": "无关联的 KPI"
+      "goal_kpi_none": "无关联的 KPI",
+      "triage_ago": "{time}前",
+      "triage_all_clear_sub": "{inflight} 项进行中，{done} 项已完成。展开下方的条目即可查看。",
+      "triage_headline_one": "{count} 个目标已完成，等待你的决定。",
+      "triage_headline_other": "{count} 个目标已完成，等待你的决定。",
+      "triage_lane_done": "已完成",
+      "triage_lane_in_flight": "进行中",
+      "triage_needs_you_one": "{count} 项需要你处理",
+      "triage_needs_you_other": "{count} 项需要你处理",
+      "triage_no_goals_body": "团队或 Athena 写入目标后，将显示在这里。",
+      "triage_no_goals_title": "这里还没有目标",
+      "triage_resolving": "处理中…",
+      "triage_strip_waiting": "等待开始",
+      "triage_title": "目标"
     },
     "dev_projects": {
       "active_goals": "活跃目标",
