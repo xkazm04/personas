@@ -19,7 +19,7 @@ export interface ConnectorSpec {
   applicable: (p: AppPassport) => boolean;
 }
 
-const MONITORING_SERVICE_TYPES = [
+export const MONITORING_SERVICE_TYPES = [
   'sentry', 'betterstack', 'better_stack', 'datadog', 'rollbar', 'bugsnag',
   'newrelic', 'new_relic', 'honeybadger', 'grafana', 'grafana_cloud', 'pingdom',
   'logtail', 'axiom', 'highlight', 'uptimerobot', 'uptime_robot',
@@ -27,7 +27,7 @@ const MONITORING_SERVICE_TYPES = [
 
 // LLM-observability / tracing platforms — distinct vault category from app
 // monitoring (bound to its own DevProject slot).
-const LLM_TRACKING_SERVICE_TYPES = [
+export const LLM_TRACKING_SERVICE_TYPES = [
   'langfuse', 'helicone', 'langsmith', 'tracklight', 'arize', 'phoenix', 'braintrust',
   'portkey', 'wandb', 'weights_and_biases', 'lunary', 'langwatch', 'openllmetry',
   'posthog_llm', 'traceloop', 'baseten',
