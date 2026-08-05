@@ -6,7 +6,15 @@
 // stops the card, the filter chips and the metric badges from drifting into
 // three slightly different reds.
 import type { LucideIcon } from 'lucide-react';
-import { BookOpen, ClipboardCheck, Dna, HelpCircle, Lightbulb, SlidersHorizontal } from 'lucide-react';
+import {
+  BadgeCheck,
+  BookOpen,
+  ClipboardCheck,
+  Dna,
+  HelpCircle,
+  Lightbulb,
+  SlidersHorizontal,
+} from 'lucide-react';
 
 import type { Translations } from '@/i18n/en';
 
@@ -65,6 +73,12 @@ export const KIND_META: Record<TriageKind, { icon: LucideIcon; tone: TriageTone 
   question: { icon: HelpCircle, tone: 'warning' },
   policy: { icon: SlidersHorizontal, tone: 'accent' },
   evolution: { icon: Dna, tone: 'warning' },
+  // `BadgeCheck` is the glyph the retiring tray item and the acceptance overlay
+  // header both used, so the kind keeps the identity it already had. `success`
+  // because a goal reaching this queue means work COMPLETED — good news awaiting
+  // confirmation, not an alarm. It is the only tone in this map that is not
+  // reporting a problem.
+  goal: { icon: BadgeCheck, tone: 'success' },
 };
 
 /**
@@ -97,6 +111,8 @@ export function kindCopy(
         one: m.triage_kind_promotion,
         empty: m.triage_none_promotions,
       };
+    case 'goal':
+      return { label: m.triage_kind_goals, one: m.triage_kind_goal, empty: m.triage_none_goals };
   }
 }
 

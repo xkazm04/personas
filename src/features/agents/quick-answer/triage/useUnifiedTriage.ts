@@ -269,6 +269,12 @@ export function useUnifiedTriage(
   // Idea verdicts go through the slice, not the API: see the port bundle below.
   const acceptIdeaViaStore = useSystemStore((s) => s.acceptIdea);
   const rejectIdeaViaStore = useSystemStore((s) => s.rejectIdea);
+  // Goal verdicts, for the same reason: the slice owns the row write AND the
+  // pending-acceptance count refresh, and bypassing it is how a verdict here
+  // fails to show up somewhere else. Both rethrow on a failed write, so the
+  // deck's restore path can fire.
+  const acceptGoalViaStore = useSystemStore((s) => s.acceptGoal);
+  const rejectGoalViaStore = useSystemStore((s) => s.rejectGoal);
 
   const [ideas, setIdeas] = useState<DevIdea[]>([]);
   const [ideasLoading, setIdeasLoading] = useState(true);
@@ -668,6 +674,8 @@ export function useUnifiedTriage(
           seenStatus,
         }),
       refreshProposals,
+      acceptGoal: (id) => acceptGoalViaStore(id),
+      rejectGoal: (id, comment) => rejectGoalViaStore(id, comment),
       reopenIdea: (id, seenStatus) => reopenIdeaRow(id, { seenStatus }),
       reopenPractice: (id, seenStatus) => reopenPracticeRow(id, { seenStatus }),
       openBuilder: onOpenBuilder,
@@ -678,6 +686,8 @@ export function useUnifiedTriage(
       onOpenBuilder,
       acceptIdeaViaStore,
       rejectIdeaViaStore,
+      acceptGoalViaStore,
+      rejectGoalViaStore,
       refreshProposals,
     ],
   );

@@ -18,6 +18,7 @@ import {
   Hammer,
   ExternalLink,
   Archive,
+  CheckCheck,
   Play,
   ArrowUpNarrowWide,
   Lock,
@@ -34,6 +35,7 @@ import { parseSuggestedActions } from '@/lib/reviews/suggestedActions';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { BuildQuestion } from '@/lib/types/buildTypes';
 import type { EvolutionPromotionProposal } from '@/lib/bindings/EvolutionPromotionProposal';
+import type { PendingAcceptanceGoal } from '@/lib/bindings/PendingAcceptanceGoal';
 import type { PolicyProposal } from '@/lib/bindings/PolicyProposal';
 import type { KnowledgeItemView } from '@/features/overview/sub_patterns/libraryModel';
 import { toCanonicalIdeaCategory } from '@/features/plugins/dev-tools/constants/ideaCategories';
@@ -46,6 +48,7 @@ import {
 import type { AdoptReach } from './triageReach';
 import type {
   TriageItem,
+  TriageBranch,
   TriageTag,
   TriageFact,
   TriageLink,
@@ -205,6 +208,30 @@ export interface TriageCopy {
   reasonGainTooSmall: string;
   reasonPromptWorse: string;
   reasonFreshCycle: string;
+  /* -- goal acceptance ------------------------------------------------------- */
+  /**
+   * The reject verb. The goal queue's own word: finished work does not get
+   * "rejected", it goes BACK to the team that did it. The accept verb, the skip
+   * verb and the whole reason-strip vocabulary are the generic ones — only
+   * wording that is genuinely domain-specific earns a key of its own.
+   */
+  goalSendBack: string;
+  /** Which KPI the goal serves. */
+  goalKpi: string;
+  /** Label over the `current → target` meter. */
+  goalProgress: string;
+  /** Which team did the work. */
+  goalTeam: string;
+  /** Batch branch. Carries a `{count}` placeholder. */
+  goalBatch: string;
+  goalBatchHint: string;
+  /** Read-only deep link out to the project's goals board. */
+  goalOpenBoard: string;
+  goalOpenBoardHint: string;
+  reasonNotFinished: string;
+  reasonNoEvidence: string;
+  reasonMissedTarget: string;
+  reasonNeedsRework: string;
 }
 
 /** Provisional English. Replaced wholesale by translated copy at consolidation. */
@@ -322,6 +349,18 @@ export const DEFAULT_TRIAGE_COPY: TriageCopy = {
   reasonGainTooSmall: 'Gain too small',
   reasonPromptWorse: 'Prompt reads worse',
   reasonFreshCycle: 'Run a fresh cycle',
+  goalSendBack: 'Send back',
+  goalKpi: 'KPI',
+  goalProgress: 'Progress',
+  goalTeam: 'Team',
+  goalBatch: 'Accept all {count} from this KPI',
+  goalBatchHint: 'Signs off every completed goal on this KPI at once',
+  goalOpenBoard: 'Open the goals board',
+  goalOpenBoardHint: 'See this goal in its project — decides nothing',
+  reasonNotFinished: 'Not finished yet',
+  reasonNoEvidence: 'No evidence it landed',
+  reasonMissedTarget: 'Missed the KPI target',
+  reasonNeedsRework: 'Needs rework',
 };
 
 /**
@@ -420,6 +459,31 @@ const POLICY_BUDGET_WEIGHT = 52;
 const EVOLUTION_BASE = 78;
 const EVOLUTION_MARGIN_MAX = 25;
 
+/**
+ * Goal acceptance — real work waiting on a human, with nothing stopped behind it.
+ *
+ * Against the existing bands: reviews `35–120` by severity (`+40` when a team
+ * step is held), a halted build question `90`, promotions `78 + margin`, policy
+ * proposals `40` (routing) / `52` (budget), ideas `~30–70`, practices `~25–60`.
+ *
+ * `45` puts a completed goal ahead of a routing proposal and through the middle
+ * of the idea and practice bands, and below a halted build, a promotion, and
+ * every review above `low`. That is the editorial claim, and both halves of it
+ * matter: a goal awaiting sign-off is more than a suggestion nobody has acted on
+ * — the work is DONE and a person is the last thing between it and closed — but
+ * nothing is blocked while it waits, so it must never outrank something that has
+ * stopped or something that can expire.
+ *
+ * The boost says which goal to read first. A goal whose KPI never reached its
+ * target is the one worth a conversation: either the work did not move the
+ * number, or the number was the wrong one to have picked. A goal that hit its
+ * target is a formality. `60` lifts it past a budget-ceiling proposal (52) and
+ * level with a `medium` review — deliberately no further, because finished work
+ * that under-delivered is still not an incident.
+ */
+const GOAL_BASE = 45;
+const GOAL_OFFTRACK_BOOST = 15;
+
 /* -------------------------------------------------------------------------- */
 /* Rejection reasons — the presets                                             */
 /* -------------------------------------------------------------------------- */
@@ -478,11 +542,33 @@ const EVOLUTION_REJECT_PRESETS = [
   { id: 'fresh_cycle', value: 'Run a fresh cycle', copy: (c: TriageCopy) => c.reasonFreshCycle },
 ] as const;
 
+/**
+ * Sending a goal back writes the comment into the goal's own timeline —
+ * `resolve_goal_acceptance` records it as the `goal_rejected` signal's message
+ * ("Sent back: …"), which is the only thing the team is ever told about why
+ * their finished work came back.
+ *
+ * The existing goals surface demands free prose for it, which is the right
+ * default on a page you visit deliberately and the wrong one in a queue you are
+ * working through: a triage surface that makes you write a paragraph is a triage
+ * surface where everything gets accepted instead. These four are what sign-off
+ * can actually find — the work is not finished, it cannot be verified, it is
+ * finished but the metric did not move, or it is finished wrong — and free text
+ * is still there for anything else.
+ */
+const GOAL_REJECT_PRESETS = [
+  { id: 'not_finished', value: 'Not finished yet', copy: (c: TriageCopy) => c.reasonNotFinished },
+  { id: 'no_evidence', value: 'No evidence it landed', copy: (c: TriageCopy) => c.reasonNoEvidence },
+  { id: 'missed_target', value: 'Missed the KPI target', copy: (c: TriageCopy) => c.reasonMissedTarget },
+  { id: 'needs_rework', value: 'Needs rework', copy: (c: TriageCopy) => c.reasonNeedsRework },
+] as const;
+
 type PresetSet =
   | typeof REVIEW_REJECT_PRESETS
   | typeof IDEA_REJECT_PRESETS
   | typeof POLICY_DECLINE_PRESETS
-  | typeof EVOLUTION_REJECT_PRESETS;
+  | typeof EVOLUTION_REJECT_PRESETS
+  | typeof GOAL_REJECT_PRESETS;
 
 /** A reject prompt over one preset set. Free text is always also accepted. */
 function rejectPrompt(presets: PresetSet, copy: TriageCopy): TriageReasonPrompt {
@@ -1236,6 +1322,158 @@ export function evolutionProposalToTriage(
       personaId: proposal.personaId,
       cycleId: proposal.cycleId,
       baseUpdatedAt: proposal.baseUpdatedAt,
+    },
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Goal acceptance (a completed goal awaiting sign-off)                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * `34 → 50 %` — assembled here rather than from a copy template.
+ *
+ * Two numbers and an arrow carry nothing to translate, and a template made only
+ * of placeholders is a string the untranslated-value gate cannot tell apart from
+ * an English one nobody got to. The unit (`%`, `ms`, `users`) is the KPI's own
+ * and is user data, never copy. Same call the policy adapter's `usd()` makes.
+ */
+function kpiRange(current: number, target: number, unit: string | null): string {
+  const span = `${current} → ${target}`;
+  return unit ? `${span} ${unit}` : span;
+}
+
+/**
+ * "The metric has not got there yet", read by the KPI's own direction.
+ *
+ * Deliberately the simple met/not-met test, not the pace model: the enriched row
+ * carries `current`/`target`/`direction` precisely so a surface can tint met-vs-
+ * not without loading a whole `DevKpi` and re-deriving `kpiTrack`. It claims the
+ * number has not arrived — never that the goal is late.
+ */
+function goalOffTrack(row: PendingAcceptanceGoal): boolean {
+  const current = row.kpi_current;
+  const target = row.kpi_target;
+  if (current == null || target == null) return false;
+  return row.kpi_direction === 'down' ? current > target : current < target;
+}
+
+/**
+ * A completed goal awaiting sign-off as a triage card.
+ *
+ * The one kind in this deck that is good news. Everything else here is a defect,
+ * a halt, a proposal or an expiring lock; a goal arrives because a team FINISHED
+ * something, and the only thing left is a person saying so. That shapes three
+ * decisions the shared surface could otherwise have quietly got wrong:
+ *
+ *  • **A never-baselined KPI has no percentage.** `score` is what turns a fact
+ *    into a meter, and a meter is a claim about progress. Without a baseline
+ *    there is no progress to claim — the starting point is genuinely unknown,
+ *    which is not the same as a starting point of zero. The card then shows the
+ *    raw `current → target` in the ledger and no gauge at all. This is the exact
+ *    bug the retired `goalAcceptanceModel` documented having already fixed once,
+ *    where a defaulted baseline rendered a precise, fabricated 0%.
+ *  • **No `seenStatus`.** Every other decidable row in the app carries the status
+ *    the card rendered so the write can be a single-winner compare-and-swap.
+ *    `resolveGoalAcceptance(goalId, decision, comment)` takes no such token, so
+ *    goals are last-writer-wins and two reviewers can silently overwrite each
+ *    other. Closing that is a backend change; carrying a token nothing reads
+ *    would advertise a protection that does not exist, so this adapter omits it
+ *    rather than implying it.
+ *  • **The bulk affordance is a branch.** `GoalsTriage` was built around
+ *    "accept everything on this KPI", and branches are the deck's existing
+ *    digit-hotkeyed escape hatch for anything beyond the spine — so the
+ *    affordance survives the move without the rail becoming a multi-select.
+ *
+ * `kpiGoalIds` is every pending goal on this goal's KPI, INCLUDING this one. It
+ * is a parameter because adapters are store-free, and it is the ids rather than
+ * a bare count because the router has to write each one and cannot go looking
+ * them up either.
+ */
+export function goalToTriage(
+  row: PendingAcceptanceGoal,
+  kpiGoalIds: readonly string[],
+  copy: TriageCopy,
+): TriageItem {
+  // A team is the natural owner of finished work, but `team_id` is nullable —
+  // a goal on a project with no team still has to say whose card it is.
+  const owner = row.team_name?.trim() || row.project_name;
+  const offTrack = goalOffTrack(row);
+
+  const tags: TriageTag[] = [];
+  if (row.team_name) tags.push({ id: 'team', label: row.team_name, tone: 'neutral' });
+  tags.push({ id: 'project', label: row.project_name, tone: 'neutral' });
+
+  const facts: TriageFact[] = [];
+  if (row.kpi_name) facts.push({ id: 'kpi', label: copy.goalKpi, value: row.kpi_name });
+  if (row.kpi_current != null && row.kpi_target != null) {
+    facts.push({
+      id: 'progress',
+      label: copy.goalProgress,
+      value: kpiRange(row.kpi_current, row.kpi_target, row.kpi_unit),
+      tone: offTrack ? 'warning' : 'success',
+      // The gate, stated once: no baseline, no meter. `bandTone` would happily
+      // paint a bar from current/target alone, and it would read as measured
+      // progress from a starting point nobody ever recorded.
+      score:
+        row.kpi_baseline == null
+          ? undefined
+          : { value: row.kpi_current, max: row.kpi_target, invert: row.kpi_direction === 'down' },
+    });
+  }
+  if (row.team_name) facts.push({ id: 'team', label: copy.goalTeam, value: row.team_name });
+  facts.push({ id: 'project', label: copy.project, value: row.project_name });
+  // `raised` is load-bearing, not a naming preference: `TriageFactRow` renders a
+  // relative time only for the ids in its `TIME_FACTS` set, and any other id
+  // prints the raw ISO string. "Finished 2h ago" is the only legible form.
+  if (row.completed_at) facts.push({ id: 'raised', label: copy.raised, value: row.completed_at });
+
+  // Only when there is genuinely a batch: "Accept all 1 from this KPI" is the
+  // plain Accept the spine already offers, under a second name.
+  const batched = row.kpi_id && kpiGoalIds.length > 1 ? kpiGoalIds : null;
+  const branches: TriageBranch[] = [];
+  if (batched) {
+    branches.push({
+      id: 'accept-kpi-batch',
+      label: fill(copy.goalBatch, { count: batched.length }),
+      tone: 'success',
+      hint: copy.goalBatchHint,
+      icon: CheckCheck,
+    });
+  }
+  branches.push({
+    id: 'open-board',
+    label: copy.goalOpenBoard,
+    tone: 'neutral',
+    hint: copy.goalOpenBoardHint,
+    icon: ExternalLink,
+  });
+
+  return {
+    id: `goal:${row.goal_id}`,
+    sourceId: row.goal_id,
+    kind: 'goal',
+    title: row.title,
+    // Already provenance-stripped by the backend — it is the first paragraph of
+    // the goal's description, which is the outcome being signed off.
+    body: row.summary?.trim() || copy.noDescription,
+    tags,
+    facts,
+    source: { label: owner, sublabel: row.project_name },
+    // A goal's "age" in this queue is how long it has been waiting for a human,
+    // which starts when the team finished it.
+    createdAt: row.completed_at ?? '',
+    weight: GOAL_BASE + (offTrack ? GOAL_OFFTRACK_BOOST : 0),
+    branches,
+    reasonPrompts: [rejectPrompt(GOAL_REJECT_PRESETS, copy)],
+    verdictLabels: { accept: copy.accept, reject: copy.goalSendBack, skip: copy.skip },
+    payload: {
+      goalId: row.goal_id,
+      projectId: row.project_id,
+      kpiId: row.kpi_id,
+      // Joined because `payload` is a flat string map by contract — a machine id
+      // bag, not a place to smuggle structure. Goal ids never contain a comma.
+      batchGoalIds: batched ? batched.join(',') : undefined,
     },
   };
 }

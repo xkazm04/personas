@@ -87,6 +87,20 @@ export interface TriagePorts {
   /** Fired after a proposal verdict so the two proposal queues re-read. */
   refreshProposals: () => void;
   /**
+   * Sign a completed goal off, or send it back to the team with a comment.
+   *
+   * No `seenStatus` on either, and that asymmetry is deliberate rather than an
+   * omission: `resolveGoalAcceptance(goalId, decision, comment)` takes no
+   * seen-status, so goals are the one decidable row in the app with no
+   * compare-and-swap. A token threaded here would be a token nothing reads.
+   *
+   * `comment` is required rather than optional because the command's parameter
+   * is — the router passes an empty string when the reviewer skipped the reason
+   * rather than pretending the argument is absent.
+   */
+  acceptGoal: (id: string) => Promise<void>;
+  rejectGoal: (id: string, comment: string) => Promise<void>;
+  /**
    * Put a decided row BACK — the undo half of the two kinds that have a reverse
    * door. `seenStatus` is the status the verdict produced, so the reopen is a
    * compare-and-swap exactly like the verdict was. See
@@ -97,6 +111,8 @@ export interface TriagePorts {
   reopenPractice: (id: string, seenStatus: string) => Promise<unknown>;
   /** Deep-link to the persona builder. Absent when the host has no route. */
   openBuilder?: (personaId: string) => void;
+  /** Deep-link to a project's goals board. Absent when the host has no route. */
+  openGoalBoard?: (projectId: string) => void;
 }
 
 /**
@@ -237,6 +253,40 @@ export async function routeDecision(
       ports.refreshProposals();
       return;
     }
+
+    case 'goal': {
+      if (branchId === 'accept-kpi-batch') {
+        // The ids ride in payload because the adapter is store-free and this
+        // router is store-free too — neither can go and ask which other goals
+        // sit on the KPI. See `goalToTriage`.
+        const ids = (item.payload?.batchGoalIds ?? '').split(',').filter(Boolean);
+        if (ids.length === 0) {
+          throw new Error('This card has no KPI batch to accept');
+        }
+        // Concurrent, and `Promise.all` on purpose: one failed sign-off must
+        // reach the caller rather than being averaged away by the others
+        // succeeding. The queue restores what it optimistically removed.
+        await Promise.all(ids.map((id) => ports.acceptGoal(id)));
+        return;
+      }
+      if (branchId === 'open-board') {
+        // A deep-link writes nothing, but it IS the only way this branch can be
+        // honoured — so a missing route is an error, exactly as it is for a
+        // question's builder link. Resolving the card for free would tell the
+        // reviewer they had dealt with a goal that is still awaiting them.
+        const projectId = item.payload?.projectId;
+        if (!ports.openGoalBoard || !projectId) {
+          throw new Error('No goals board route available for this goal');
+        }
+        ports.openGoalBoard(projectId);
+        return;
+      }
+      if (verdict === 'accept') await ports.acceptGoal(item.sourceId);
+      // The comment becomes the goal's `goal_rejected` signal ("Sent back: …"),
+      // which is the only account the team gets of why finished work came back.
+      else await ports.rejectGoal(item.sourceId, reason ?? '');
+      return;
+    }
   }
 }
 
@@ -281,8 +331,12 @@ export function reversibleStatus(decision: TriageDecision): string | null {
       return branchId === 'deprecate' ? 'deprecated' : verdict === 'accept' ? 'adopted' : 'rejected';
     // Reviews (the backend state machine has no path back to `pending`), build
     // questions (the CLI already resumed), policy proposals (the rule is
-    // written, and there is deliberately no second policy writer) and promotions
-    // (the genome is on a live persona). See `rowWrites#ReopenOptions`.
+    // written, and there is deliberately no second policy writer), promotions
+    // (the genome is on a live persona) and goals (an accepted goal is `done`
+    // and no command reopens one; a sent-back goal is already back with its
+    // team, which is not a state to undo from a queue). See
+    // `rowWrites#ReopenOptions`. An undo button that cannot deliver is worse
+    // than no undo button.
     default:
       return null;
   }

@@ -31,7 +31,8 @@ export type TriageKind =
   | 'practice'
   | 'question'
   | 'policy'
-  | 'evolution';
+  | 'evolution'
+  | 'goal';
 
 /**
  * The universal verdict spine. Every item supports all three, whatever it is:
@@ -305,7 +306,11 @@ export type TriageCounts = Record<TriageKind, number> & { total: number };
  *
  * Roughly descending by how loudly the kind interrupts: the four original
  * queues first (they carry the volume), then the two proposal queues the
- * Self-Tuning Fabric and Darwin Mode file — rarer, heavier, and read last.
+ * Self-Tuning Fabric and Darwin Mode file — rarer, heavier, and read last — and
+ * `goal` last of all. A goal reaches this queue because a team FINISHED
+ * something and the outcome needs signing off: real work waiting on a human,
+ * but the only kind here where nothing is broken, blocked or expiring while it
+ * waits. It interrupts least, so it is read last.
  */
 export const TRIAGE_KINDS: readonly TriageKind[] = [
   'review',
@@ -314,11 +319,21 @@ export const TRIAGE_KINDS: readonly TriageKind[] = [
   'question',
   'policy',
   'evolution',
+  'goal',
 ];
 
 /** Empty tally — the shape every counter starts from. */
 export function emptyCounts(): TriageCounts {
-  return { review: 0, idea: 0, practice: 0, question: 0, policy: 0, evolution: 0, total: 0 };
+  return {
+    review: 0,
+    idea: 0,
+    practice: 0,
+    question: 0,
+    policy: 0,
+    evolution: 0,
+    goal: 0,
+    total: 0,
+  };
 }
 
 /** Tally a queue by kind. */
