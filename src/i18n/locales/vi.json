@@ -19619,7 +19619,19 @@
     "athena_panel_reset_body": "Xóa bảng mà Athena đã soạn cho {name}. Bảng của các dự án khác không bị ảnh hưởng, và cô ấy có thể soạn bảng mới bất cứ lúc nào.",
     "athena_panel_reset_title": "Đặt lại bảng này?",
     "athena_panel_unreadable": "Không thể hiển thị bảng này.",
-    "athena_panel_unreadable_hint": "Athena đã soạn nó ở định dạng mà phiên bản này không hiểu. Hãy đặt lại và yêu cầu cô ấy soạn bảng mới."
+    "athena_panel_unreadable_hint": "Athena đã soạn nó ở định dạng mà phiên bản này không hiểu. Hãy đặt lại và yêu cầu cô ấy soạn bảng mới.",
+    "far_active_one": "{count} tiến trình đang chạy",
+    "far_active_other": "{count} tiến trình đang chạy",
+    "far_idle": "Không có gì đang chạy ở đây",
+    "far_idle_hint": "Không có phiên Fleet hoặc persona nào đang hoạt động trên dự án này",
+    "far_personas_one": "{count} persona",
+    "far_personas_other": "{count} persona",
+    "_comment_far_active_one": "Far-zoom island tooltip, headline when exactly 1 live process (Fleet session or persona) is running behind the project.",
+    "_comment_far_active_other": "Far-zoom island tooltip, headline for 2+ live processes.",
+    "_comment_far_idle": "Far-zoom island tooltip, headline: nothing is running on this project right now. Keep short — it is the label on a sleeping-moon mark.",
+    "_comment_far_idle_hint": "Far-zoom island tooltip, second clause explaining what 'nothing running' counted. 'Fleet' is the product's CLI-session feature — keep it capitalised and untranslated.",
+    "_comment_far_personas_one": "Far-zoom island tooltip, breakdown item for the persona lane (singular).",
+    "_comment_far_personas_other": "Far-zoom island tooltip, breakdown item for the persona lane (plural)."
   },
   "ship": {
     "add": "Thêm",

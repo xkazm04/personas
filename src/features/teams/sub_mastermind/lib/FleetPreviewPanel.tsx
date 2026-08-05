@@ -6,23 +6,10 @@ import { X } from 'lucide-react';
 
 import { FleetTerminalPane } from '@/features/plugins/fleet/FleetTerminalPane';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
-import type { Translations } from '@/i18n/generated/types';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { fleetStateLabel as stateLabel } from './fleetMeta';
 import { FLEET_INK, mix, MONO } from './ink';
-
-/** Session state → the Fleet grid's own translated labels (never render the
- *  raw machine token — CLAUDE.md status-token rule). */
-const stateLabel = (t: Translations, s: string) =>
-  ({
-    spawning: t.plugins.fleet.state_spawning,
-    running: t.plugins.fleet.state_working,
-    awaiting_input: t.plugins.fleet.state_awaiting_input,
-    idle: t.plugins.fleet.state_idle,
-    stale: t.plugins.fleet.state_stale,
-    hibernated: t.plugins.fleet.state_hibernated,
-    exited: t.plugins.fleet.state_exited,
-  })[s] ?? s;
 
 export function FleetPreviewPanel({ sessionId, session, onClose }: {
   sessionId: string;

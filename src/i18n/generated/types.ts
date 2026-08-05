@@ -19559,6 +19559,18 @@ export type Translations = {
     note_placeholder: string;
     note_remove: string;
     personas_title: string;
+    _comment_far_idle: string;
+    far_idle: string;
+    _comment_far_idle_hint: string;
+    far_idle_hint: string;
+    _comment_far_active_one: string;
+    far_active_one: string;
+    _comment_far_active_other: string;
+    far_active_other: string;
+    _comment_far_personas_one: string;
+    far_personas_one: string;
+    _comment_far_personas_other: string;
+    far_personas_other: string;
     passport_title: string;
     passport_demo: string;
     sidebar_close: string;
