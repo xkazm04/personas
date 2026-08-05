@@ -2630,7 +2630,20 @@
     "dev_self_review": "Revisar mi historial de desarrollo",
     "dev_self_review_failed": "No se pudo iniciar la autorrevisión de desarrollo",
     "dev_self_review_hint": "Athena lee su propio historial de encargos, anota qué hace que sus ejecuciones de desarrollo funcionen y puede proponer una mejora.",
-    "dev_self_review_started": "Revisando {count} ejecuciones de desarrollo. Athena responderá en el chat."
+    "dev_self_review_started": "Revisando {count} ejecuciones de desarrollo. Athena responderá en el chat.",
+    "attention_activity": "Hecho por ti",
+    "attention_activity_hint": "Lo que Athena hizo por su cuenta sin preguntar, guardado como registro de sesión.",
+    "attention_assignments": "Asignaciones",
+    "attention_assignments_hint": "Asignaciones de equipo que Athena envió. Haz clic en una tarjeta para abrir la vista completa del pipeline.",
+    "attention_blocked": "Esperando tu respuesta",
+    "attention_blocked_hint": "Algo está detenido hasta que respondas: una solicitud de una sesión generada, o una decisión que Athena está reteniendo.",
+    "attention_errors": "Fallos",
+    "attention_errors_hint": "Ejecuciones que fallaron, sesiones atascadas a mitad de envío, incidentes bloqueantes y elementos pendientes acumulados.",
+    "attention_label": "Necesita atención",
+    "attention_nudges": "Athena se puso en contacto",
+    "attention_nudges_hint": "Avisos informativos: resúmenes, seguimientos programados, operaciones completadas, cosas que notó.",
+    "attention_warnings": "Advertencias",
+    "attention_warnings_hint": "Cosas que se están desviando: sesiones esperando entrada o estancadas, objetivos cerca de su meta, ejecuciones que vale la pena revisar."
   },
   "artist_gallery": {
     "loading_viewer": "Cargando visor…",

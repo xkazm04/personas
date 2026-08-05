@@ -2630,7 +2630,20 @@
     "dev_self_review": "Tinjau rekam jejak dev saya",
     "dev_self_review_failed": "Tidak dapat memulai tinjauan mandiri dev",
     "dev_self_review_hint": "Athena membaca rekam jejak tugasnya sendiri, mencatat apa yang membuat proses dev-nya berhasil, dan mungkin mengusulkan satu perbaikan.",
-    "dev_self_review_started": "Meninjau {count} proses dev. Athena akan menjawab di obrolan."
+    "dev_self_review_started": "Meninjau {count} proses dev. Athena akan menjawab di obrolan.",
+    "attention_activity": "Dilakukan untukmu",
+    "attention_activity_hint": "Apa yang dilakukan Athena sendiri tanpa bertanya, disimpan sebagai catatan sesi.",
+    "attention_assignments": "Penugasan",
+    "attention_assignments_hint": "Penugasan tim yang dikirim Athena. Klik kartu untuk membuka tampilan pipeline lengkap.",
+    "attention_blocked": "Menunggu kamu",
+    "attention_blocked_hint": "Ada yang tertahan sampai kamu menjawab: permintaan dari sesi yang dijalankan, atau keputusan yang ditahan Athena.",
+    "attention_errors": "Kegagalan",
+    "attention_errors_hint": "Proses yang gagal, sesi yang macet di tengah pengiriman, insiden penghambat, dan item backlog yang menua.",
+    "attention_label": "Perlu perhatian",
+    "attention_nudges": "Athena menghubungi",
+    "attention_nudges_hint": "Dorongan informasional: ringkasan, pemeriksaan terjadwal, operasi yang selesai, hal yang diperhatikannya.",
+    "attention_warnings": "Peringatan",
+    "attention_warnings_hint": "Hal yang mulai melenceng: sesi yang menunggu masukan atau mandek, target yang mendekati capaian, proses yang layak ditinjau."
   },
   "artist_gallery": {
     "loading_viewer": "Memuat penampil…",

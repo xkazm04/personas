@@ -2630,7 +2630,20 @@
     "dev_self_review": "Xem lại thành tích phát triển của tôi",
     "dev_self_review_failed": "Không thể bắt đầu tự đánh giá phát triển",
     "dev_self_review_hint": "Athena đọc lại lịch sử nhiệm vụ của chính mình, ghi lại điều giúp các lượt chạy phát triển thành công và có thể đề xuất một cải tiến.",
-    "dev_self_review_started": "Đang xem lại {count} lượt chạy phát triển. Athena sẽ trả lời trong cuộc trò chuyện."
+    "dev_self_review_started": "Đang xem lại {count} lượt chạy phát triển. Athena sẽ trả lời trong cuộc trò chuyện.",
+    "attention_activity": "Đã hành động",
+    "attention_activity_hint": "Những gì Athena tự làm mà không hỏi, được lưu làm bản ghi phiên.",
+    "attention_assignments": "Phân công",
+    "attention_assignments_hint": "Phân công nhóm mà Athena đã điều phối. Nhấp vào thẻ để mở toàn bộ luồng xử lý.",
+    "attention_blocked": "Đang chờ bạn",
+    "attention_blocked_hint": "Có việc đang tạm dừng chờ bạn trả lời: yêu cầu từ một phiên đã khởi chạy, hoặc một quyết định Athena đang giữ lại.",
+    "attention_errors": "Lỗi",
+    "attention_errors_hint": "Các lượt chạy thất bại, phiên bị kẹt giữa chừng, sự cố chặn tiến trình, và các mục tồn đọng đã lâu.",
+    "attention_label": "Cần chú ý",
+    "attention_nudges": "Athena đã nhắn",
+    "attention_nudges_hint": "Nhắc nhở mang tính thông tin: bản tổng hợp, lịch kiểm tra định kỳ, tác vụ đã hoàn tất, những điều cô ấy nhận thấy.",
+    "attention_warnings": "Cảnh báo",
+    "attention_warnings_hint": "Những điều đang chệch hướng: phiên đang chờ nhập liệu hoặc trì trệ, mục tiêu sắp đạt, các lượt chạy đáng xem lại."
   },
   "artist_gallery": {
     "loading_viewer": "Đang tải trình xem…",

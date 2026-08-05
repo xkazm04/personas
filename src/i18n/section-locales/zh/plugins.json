@@ -2630,7 +2630,20 @@
     "dev_self_review": "回顾我的开发记录",
     "dev_self_review_failed": "无法启动开发自评",
     "dev_self_review_hint": "Athena 会阅读自己的派发记录，写下让开发运行成功的原因，并可能提出一项改进建议。",
-    "dev_self_review_started": "正在回顾 {count} 次开发运行。Athena 将在聊天中回复。"
+    "dev_self_review_started": "正在回顾 {count} 次开发运行。Athena 将在聊天中回复。",
+    "attention_activity": "已代你行动",
+    "attention_activity_hint": "Athena 未经询问自行完成的事项，作为会话记录保留。",
+    "attention_assignments": "分配任务",
+    "attention_assignments_hint": "Athena 派发的团队任务。点击卡片可打开完整的流程视图。",
+    "attention_blocked": "等待您处理",
+    "attention_blocked_hint": "有事项在等待您的回复：可能是某个已启动会话的请求，或是 Athena 暂缓的决定。",
+    "attention_errors": "失败项",
+    "attention_errors_hint": "失败的运行、卡在派发中途的会话、阻塞性事件，以及积压已久的待办项。",
+    "attention_label": "需要关注",
+    "attention_nudges": "Athena 的提醒",
+    "attention_nudges_hint": "信息性提醒：摘要、定期签到、已完成的操作，以及她注意到的事项。",
+    "attention_warnings": "警告",
+    "attention_warnings_hint": "偏离正轨的事项：等待输入或已停滞的会话、接近目标的进度，以及值得审查的运行。"
   },
   "artist_gallery": {
     "loading_viewer": "加载查看器中…",

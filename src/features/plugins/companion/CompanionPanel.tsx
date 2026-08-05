@@ -19,6 +19,8 @@ import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { DEFAULT_CONVERSATION_ID, useCompanionStore } from './companionStore';
 import { DailyGoalsBar } from './DailyGoalsBar';
+import { AttentionBar } from './attention/AttentionBar';
+import { isCountableNudge, nudgeSeverity } from './attention/attentionKinds';
 import { DevConversationLogButton } from './DevConversationLogButton';
 import { Bubble } from './Bubble';
 import { Composer } from './Composer';
@@ -744,6 +746,9 @@ function Body(props: BodyProps) {
   // no setter callbacks that the parent needs to coordinate.
   const streamingRecall = useCompanionStore((s) => s.streamingRecall);
   const recallByEpisodeId = useCompanionStore((s) => s.recallByEpisodeId);
+  // Which attention kinds the user has opened below the counts bar.
+  // Persisted, so the panel keeps its shape across reopens/restarts.
+  const alertsExpanded = useSystemStore((s) => s.companionAlertsExpanded);
   // Live progress phase for the streaming bubble — what Athena is
   // currently doing (thinking / using a tool / reviewing a result).
   // Replaces the dead "thinking…" placeholder so the user sees activity
@@ -1909,59 +1914,71 @@ function Body(props: BodyProps) {
             flight.
           */}
           <LiveOpsStrip />
+          {/*
+            LEVEL 1 — the counts bar. Every surface below it is level 2:
+            revealed only when its chip is toggled on, and that choice
+            persists (`companionAlertsExpanded`). Six unconditional
+            stacks used to live here and bury the conversation on a busy
+            day; now the default is a single row of numbers.
+          */}
+          <AttentionBar />
           {/* Phase C2 — Athena-dispatched team-assignment cards. Renders only
               when at least one assignment is in flight; click routes to the
               pipeline page so the user can drill into the full panel. */}
-          <CompanionAssignmentCards />
+          {alertsExpanded.includes('assignments') && <CompanionAssignmentCards />}
           {/*
-            MCP pending-request strip — pinned above proactive because
-            the spawned claude session is *blocked* until it gets an
-            answer here. Empty when no request is in flight; renders one
-            inline card per pending guidance/approval request.
+            MCP pending-request strip + the pending orb decision — both
+            mean something is WAITING on the user (a spawned claude
+            session is parked until its request is answered; a decision
+            has no other surface while the panel is open), so they share
+            the `blocked` chip, which is the one kind expanded by default.
           */}
-          <McpRequestPanel />
-          {/*
-            The pending orb decision, rendered here whenever the orb bubble
-            cannot be (chat open + fleet grid closed). Athena's two dimensions
-            are the orb and this window; without this card a decision surfaced
-            while the panel is open would have NO surface at all — see
-            `ChatDecisionCard`.
-          */}
-          <ChatDecisionCard />
+          {alertsExpanded.includes('blocked') && (
+            <>
+              <McpRequestPanel />
+              <ChatDecisionCard />
+            </>
+          )}
           {/*
             Durable record of what Athena did WITHOUT asking (fleet
             auto-decisions). Replaces the 10s toast that used to carry it.
           */}
-          <AthenaActionsStrip />
+          {alertsExpanded.includes('activity') && <AthenaActionsStrip />}
           {/*
-            Proactive nudges land at the top of the transcript so they
-            stay glanceable even when scroll-pinned at the bottom.
-            "Engage" routes the message text through the normal send
-            pipeline (creating an assistant turn that responds to it),
-            "Dismiss" silently resolves and removes the card.
+            Proactive nudges, split by severity so a failure and a
+            "on this day" note are never the same amount of noise. Each
+            severity is its own chip; a nudge renders only when its
+            severity is expanded. "Engage" routes the message text through
+            the normal send pipeline, "Dismiss" silently resolves it.
           */}
           <AnimatePresence initial={false}>
             {/* message_attention rows are per-message decision-queue items (C1);
                 they're already aggregated on the message_digest card, so they
                 don't render as standalone panel cards here. */}
-            {proactive.filter((m) => m.triggerKind !== 'message_attention').map((m) => (
-              <motion.div
-                key={m.id}
-                initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98 }}
-                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <ProactiveCard
-                  message={m}
-                  onEngaged={(text) => {
-                    removeProactive(m.id);
-                    void send(text);
-                  }}
-                  onDismissed={() => removeProactive(m.id)}
-                />
-              </motion.div>
-            ))}
+            {proactive
+              .filter(
+                (m) =>
+                  isCountableNudge(m.triggerKind) &&
+                  alertsExpanded.includes(nudgeSeverity(m.triggerKind)),
+              )
+              .map((m) => (
+                <motion.div
+                  key={m.id}
+                  initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <ProactiveCard
+                    message={m}
+                    onEngaged={(text) => {
+                      removeProactive(m.id);
+                      void send(text);
+                    }}
+                    onDismissed={() => removeProactive(m.id)}
+                  />
+                </motion.div>
+              ))}
           </AnimatePresence>
           {initialized && messages.length === 0 && !streaming && proactive.length === 0 && (
             <WelcomeHero

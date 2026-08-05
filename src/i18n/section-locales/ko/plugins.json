@@ -2630,7 +2630,20 @@
     "dev_self_review": "내 개발 기록 검토",
     "dev_self_review_failed": "개발 자체 검토를 시작하지 못했습니다",
     "dev_self_review_hint": "Athena가 자신의 작업 기록을 읽고 개발 실행이 성공하는 조건을 정리하며, 개선안을 하나 제안할 수 있습니다.",
-    "dev_self_review_started": "개발 실행 {count}건을 검토하는 중입니다. Athena가 채팅으로 답변합니다."
+    "dev_self_review_started": "개발 실행 {count}건을 검토하는 중입니다. Athena가 채팅으로 답변합니다.",
+    "attention_activity": "대신 처리함",
+    "attention_activity_hint": "Athena가 묻지 않고 스스로 수행한 작업으로, 세션 기록으로 보관됩니다.",
+    "attention_assignments": "배정 작업",
+    "attention_assignments_hint": "Athena가 배정한 팀 작업입니다. 카드를 클릭하면 전체 파이프라인 보기가 열립니다.",
+    "attention_blocked": "응답 대기",
+    "attention_blocked_hint": "답변을 기다리는 항목이 있습니다: 생성된 세션의 요청이거나 Athena가 보류 중인 결정입니다.",
+    "attention_errors": "실패",
+    "attention_errors_hint": "실패한 실행, 배정 중 멈춘 세션, 차단 중인 사건, 오래된 백로그 항목입니다.",
+    "attention_label": "주의 필요",
+    "attention_nudges": "Athena 알림",
+    "attention_nudges_hint": "정보성 알림입니다: 요약, 예정된 점검, 완료된 작업, Athena가 발견한 사항 등입니다.",
+    "attention_warnings": "경고",
+    "attention_warnings_hint": "궤도를 벗어나는 항목입니다: 입력을 기다리거나 정체된 세션, 목표에 근접한 항목, 검토가 필요한 실행입니다."
   },
   "artist_gallery": {
     "loading_viewer": "뷰어 로딩 중…",

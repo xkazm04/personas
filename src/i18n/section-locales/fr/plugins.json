@@ -2630,7 +2630,20 @@
     "dev_self_review": "Examiner mon bilan de développement",
     "dev_self_review_failed": "Impossible de lancer l'auto-évaluation de développement",
     "dev_self_review_hint": "Athena relit son propre historique de tâches, note ce qui fait réussir ses exécutions de développement et peut proposer une amélioration.",
-    "dev_self_review_started": "Examen de {count} exécutions de développement. Athena répondra dans le chat."
+    "dev_self_review_started": "Examen de {count} exécutions de développement. Athena répondra dans le chat.",
+    "attention_activity": "Actions autonomes",
+    "attention_activity_hint": "Ce qu'Athena a fait de sa propre initiative sans demander, conservé comme enregistrement de session.",
+    "attention_assignments": "Affectations",
+    "attention_assignments_hint": "Affectations d'équipe envoyées par Athena. Cliquez sur une carte pour ouvrir la vue complète du pipeline.",
+    "attention_blocked": "En attente de vous",
+    "attention_blocked_hint": "Quelque chose est en attente de votre réponse : une demande d'une session lancée, ou une décision qu'Athena retient.",
+    "attention_errors": "Échecs",
+    "attention_errors_hint": "Exécutions échouées, sessions bloquées en cours d'envoi, incidents bloquants et éléments du backlog qui s'accumulent.",
+    "attention_label": "Attention requise",
+    "attention_nudges": "Signal d'Athena",
+    "attention_nudges_hint": "Signaux informatifs : synthèses, points réguliers programmés, opérations terminées, choses qu'elle a remarquées.",
+    "attention_warnings": "Avertissements",
+    "attention_warnings_hint": "Éléments qui dérivent : sessions en attente d'une saisie ou qui deviennent obsolètes, objectifs proches de leur cible, exécutions à examiner."
   },
   "artist_gallery": {
     "loading_viewer": "Chargement du visualiseur…",

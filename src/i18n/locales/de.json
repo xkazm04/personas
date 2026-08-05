@@ -15015,7 +15015,20 @@
       "dev_self_review": "Meine Dev-Bilanz prüfen",
       "dev_self_review_failed": "Die Dev-Selbstprüfung konnte nicht gestartet werden",
       "dev_self_review_hint": "Athena liest ihre eigene Auftragshistorie, hält fest, was ihre Dev-Läufe gelingen lässt, und schlägt eventuell eine Verbesserung vor.",
-      "dev_self_review_started": "{count} Dev-Läufe werden geprüft. Athena antwortet im Chat."
+      "dev_self_review_started": "{count} Dev-Läufe werden geprüft. Athena antwortet im Chat.",
+      "attention_activity": "Für dich erledigt",
+      "attention_activity_hint": "Was Athena eigenständig ohne Rückfrage erledigt hat, als Sitzungsprotokoll festgehalten.",
+      "attention_assignments": "Zuweisungen",
+      "attention_assignments_hint": "Team-Zuweisungen, die Athena verteilt hat. Klicke auf eine Karte, um die vollständige Pipeline-Ansicht zu öffnen.",
+      "attention_blocked": "Wartet auf dich",
+      "attention_blocked_hint": "Etwas ist pausiert, bis du antwortest: die Anfrage einer gestarteten Sitzung oder eine Entscheidung, die Athena zurückhält.",
+      "attention_errors": "Fehlschläge",
+      "attention_errors_hint": "Fehlgeschlagene Läufe, mitten in der Verteilung feststeckende Sitzungen, blockierende Vorfälle und veraltete Backlog-Einträge.",
+      "attention_label": "Braucht Aufmerksamkeit",
+      "attention_nudges": "Athena hat sich gemeldet",
+      "attention_nudges_hint": "Informative Hinweise: Zusammenfassungen, geplante Check-ins, abgeschlossene Vorgänge, Dinge, die ihr aufgefallen sind.",
+      "attention_warnings": "Warnungen",
+      "attention_warnings_hint": "Dinge, die aus dem Ruder laufen: Sitzungen, die auf Eingaben warten oder veralten, Ziele, die sich ihrem Zielwert nähern, und Läufe, die eine Überprüfung wert sind."
     },
     "artist_gallery": {
       "loading_viewer": "Viewer wird geladen…",

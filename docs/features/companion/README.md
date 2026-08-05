@@ -67,6 +67,25 @@ The panel body (`CompanionPanel.tsx` → `Bubble.tsx`) is the primary reading su
 - **Bottom-aware autoscroll.** `useChatScroll` keeps the transcript pinned to the bottom only while the user is already there; once they scroll up to read history, new content stays put and a floating **Jump to latest** pill appears. Soft top/bottom scroll-fade masks (`companion-scroll`) dissolve messages into the panel chrome at the edges.
 - **Markdown rendering.** Athena's replies render through the shared `MarkdownRenderer` scoped to the chat via `className="athena-chat-md"` + the opt-in `codeBlockActions` prop (other call sites are unaffected). This gives: code blocks with a language-label header + copy + line-wrap toggle + collapse for blocks over 16 lines; a palette-tuned syntax-highlight theme (with a light-theme variant); styled GFM task-lists and zebra-striped tables; external-link affordances; and the inline `chart` bar block. The same treatment is reused inside `ConnectorCallCard` results and `ApprovalCard` params.
 - **Day separators.** A centered date chip (Today / Yesterday / locale date) marks the first message of each new calendar day.
+
+### Attention bar — two levels instead of six stacks
+
+Six independent surfaces used to pin themselves above the transcript unconditionally: MCP pending requests, the chat decision card, assignment cards, the autonomous-actions ledger, and one full `ProactiveCard` per nudge. On a busy day that pushed the actual conversation off screen, which is the opposite of what a chat window is for.
+
+**Level 1** is `attention/AttentionBar.tsx` — a single row of count chips, one per kind that currently has anything in it, and nothing at all when Athena is quiet. **Level 2** is the cards themselves, rendered only when their chip is toggled on.
+
+| Chip | Covers | Default |
+|---|---|---|
+| **Waiting on you** (`blocked`) | pending MCP requests + the pending decision | **expanded** — a spawned CLI session is parked until it is answered |
+| **Failures** (`errors`) | nudges with `fleet_failed` / `fleet_stuck_dispatched` / `incident_blocker` / `backlog_aging` | collapsed |
+| **Warnings** (`warnings`) | `fleet_awaiting` / `fleet_stale` / `goal_target_approaching` / `execution_review` | collapsed |
+| **Athena reached out** (`nudges`) | every other proactive kind (digests, scheduled check-ins, completed ops) | collapsed |
+| **Assignments** (`assignments`) | `CompanionAssignmentCards` | collapsed |
+| **Acted for you** (`activity`) | `AthenaActionsStrip` | collapsed |
+
+The severity split lives in `attention/attentionKinds.ts` (`nudgeSeverity`), mirroring the accent colors `ProactiveCard` already paints per trigger kind, so a chip and the card it reveals always agree; an unmapped kind falls through to informational rather than inventing urgency. `message_attention` rows stay uncounted and unrendered — they are already aggregated onto the `message_digest` card. Counts come from `useAttentionCounts()`, which reads the same stores the level-2 surfaces read.
+
+**The expansion set is persisted** (`companionAlertsExpanded` in the system store's partialize list), so whatever shape the user settles on survives a panel reopen and an app restart. `LiveOpsStrip` sits above the bar and keeps its own independent collapse; approval cards still render inline on the turn that produced them.
 - **Header actions & search.** The header carries a **search** toggle (opens an in-transcript find bar — `ChatSearch` overlays matching messages with a live count, backed by `chatSearchOpen`/`chatSearchQuery` in the store) and a **copy-conversation** action (serializes the transcript to role-labeled markdown via the shared `CopyButton`).
 - **Failed-turn retry.** When a send errors, the error chip offers a Retry that re-sends the last user message.
 - **Autonomous mode** gives the panel a breathing primary border (`companion-autonomous`) and rings the header avatar so a self-driving Athena is unmistakable.

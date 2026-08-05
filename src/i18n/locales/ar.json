@@ -15015,7 +15015,20 @@
       "dev_self_review": "راجع سجل أدائي في التطوير",
       "dev_self_review_failed": "تعذر بدء المراجعة الذاتية للتطوير",
       "dev_self_review_hint": "تقرأ Athena سجل مهامها، وتدوّن ما يجعل عمليات التطوير تنجح، وقد تقترح تحسينًا واحدًا.",
-      "dev_self_review_started": "جارٍ مراجعة {count} من عمليات التطوير. سترد Athena في المحادثة."
+      "dev_self_review_started": "جارٍ مراجعة {count} من عمليات التطوير. سترد Athena في المحادثة.",
+      "attention_activity": "تصرفت نيابة عنك",
+      "attention_activity_hint": "ما فعلته Athena من تلقاء نفسها دون سؤال، محفوظ كسجل للجلسة.",
+      "attention_assignments": "التكليفات",
+      "attention_assignments_hint": "تكليفات الفريق التي أرسلتها Athena. انقر على البطاقة لفتح عرض خط الأنابيب الكامل.",
+      "attention_blocked": "بانتظارك",
+      "attention_blocked_hint": "هناك أمر معلّق بانتظار ردك: طلب من جلسة تم إنشاؤها، أو قرار تحتفظ به Athena.",
+      "attention_errors": "الإخفاقات",
+      "attention_errors_hint": "تشغيلات فشلت، وجلسات عالقة أثناء الإرسال، وحوادث معيقة، وعناصر قائمة انتظار متقادمة.",
+      "attention_label": "يتطلب انتباهاً",
+      "attention_nudges": "تواصلت Athena",
+      "attention_nudges_hint": "تنبيهات إعلامية: ملخصات، ومتابعات مجدولة، وعمليات مكتملة، وأمور لاحظتها.",
+      "attention_warnings": "تحذيرات",
+      "attention_warnings_hint": "أمور تخرج عن المسار: جلسات تنتظر إدخالاً أو أصبحت راكدة، وأهداف تقترب من غايتها، وتشغيلات تستحق المراجعة."
     },
     "artist_gallery": {
       "loading_viewer": "جارٍ تحميل العارض…",
