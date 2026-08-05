@@ -2,6 +2,12 @@
 
 ## Active
 
+### build-ops-runner — rebuild + restart the live app on HEAD, then stand by as the build/ops runner — session opus-5[1m]
+- Started: 2026-08-05. Status: started (long-lived, idle between instructions).
+- Scope: **no source edits.** Process/ops only — stop the stale `tauri:dev:test` chain (running binary dated from `a1eb3b7ba`, 19:12, with a Vite dev server orphaned since 08-04) and relaunch it on HEAD `dff98193d` so the committed companion work (Orb quick input + shared `ChatInputBar` `fd509e3e7`, mastermind canvas `30c36427c`, checkpoint `dff98193d`) is actually loaded by the running app. Then verify :1420 / :17320 `{status:ok}` / Tauri shell and report the live companion command surface.
+- Paths: `.claude/active-runs.md` (this entry) only. Runs `npm run tauri:dev:test`, which regenerates `src/i18n/{generated,section-locales}/**` via `predev` codegen — **derived output regenerated from `locales/*.json`, never hand-edited here.**
+- **NOTE FOR OTHER SESSIONS:** a translation session is concurrently editing `src/i18n/locales/*.json` + `section-locales/*/mastermind.json`, and a mastermind session holds `sub_mastermind/lib/{FarProcessHex,SleepingMark,farProcesses}` + `FleetPreviewPanel`/`fleetMeta`/`MosaicIsland` dirty. Both are EXPECTED and were declared non-blocking by the operator. This session stages nothing but its own ledger line and will not `git stash`, `git add -A`, or otherwise touch those files.
+
 ### mastermind-canvas-chrome — Mastermind canvas cold-load perf + floating-panel colour redesign + L2-covering project list — session opus-5
 - Started/completed: 2026-08-05. Status: COMPLETE — committed on operator instruction ("stage and commit all so we can set the milestone on top of the mix"). Staged file-by-file; the parallel sessions' companion/i18n work went into a separate, separately-labelled commit rather than being swept into this one.
 - Gates: `tsc --noEmit` clean · `eslint` 0 errors on touched paths (57 warnings, all in the repo's existing design-token/i18n migration categories) · `vitest src/features/teams/sub_mastermind` 163/163 · `check:themes` OK · full `vitest run` 3525/3527 — the 2 failures are pre-existing `src/__tests__/structural/{ts-bindings-camelcase,tauri-command-error-envelope}` failures against committed Rust (`src-tauri` clean at HEAD, `DevProjectEnvConnector` from e220962c8), unrelated to this change.
