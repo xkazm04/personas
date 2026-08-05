@@ -2,10 +2,7 @@
 
 ## Active
 
-### perfect-athena-arc — /perfect targeted propose on the Athena companion — session fable-5 (Director)
-- Started: 2026-08-05. Status: proposing (read-only on repo source; no tree edits until a build wave is approved). Vault: Documents/Obsidian/personas/Perfect/.
-- Self-sourced brief: this same CLI session just shipped the athena-dev-day arc (merge 1d200dede) and holds fresh file:line knowledge of `src/features/plugins/companion/**` + `src-tauri/src/companion/**`; no scout dispatched (factory-ship/fleet-monitor precedent).
-- Paths (intended, on build): `src-tauri/src/companion/**`, `src-tauri/src/commands/companion/**`, `src-tauri/db/src/lib.rs` (COMPANION_SCHEMA), `src/features/plugins/companion/**`, `src/api/companion.ts`, i18n locales. Builders isolate in `.claude/worktrees/perfect-athena-*`.
+
 
 
 ### prototype-mm-goals — /prototype: consolidated Goals modal for the Mastermind Goals dimension — session opus-5[1m]
@@ -101,6 +98,16 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### perfect-athena-arc — /perfect targeted arc on athena-companion — COMPLETE 5/5 shipped — session fable-5 (Director) + 2 Opus builders
+- 2026-08-05. Propose (self-sourced brief, no scout) 5/5 accepted, build wave 2 builders in parallel worktrees, 5/5 shipped + 2 Director commits: `3c1756e93` delete-dev-session (-662 LOC) · `ee82a3c6f` prompt-block-ledger (per-block char accounting in companion_turn + budget WARN + companion_prompt_block_stats) · `5d9a9ffd9` dev-op-self-review (+`28be56de4` Director catch: evidence rows lacked op ids) · `57e461dfb` persist-turn-sidecars (companion_turn_sidecar table, COALESCE upsert, store hydration) · `6c43da752` transcript-pagination (keyset past the 500 cap + full-day export; bonus total-order fix: list_recent id DESC tiebreak) · `c9b8e5970` commandNames regen.
+- Concurrency: B3 pick commit-around 16 dirty i18n files of the triage-deck session (their keys landed first `c8c3bcafd`, mine layered programmatically); one HEAD-lock race mid-recipe survived (index intact, nothing swept either way, recommitted). Zero builder deaths/nudges/DECISIONs.
+- Gates: tsc 0 · companion vitest 362/362 · companion:: Rust 425 pass / 1 PRE-EXISTING (`companion::tours::manifest_hash_is_stable`, fails on master, 71 vs 64 anchors — NEEDS AN OWNER) · i18n strict + untranslated 0/0 x14. NOT live-verified (smoke debt in vault): sidecar restart-replay, scroll-up paging, full-day export, self-review turn end-to-end, block-ledger rows.
+- Worktrees removed (engine needed rm-rf+prune fallback), branches deleted, build.rs touched (shared-target rule). Vault: Documents/Obsidian/personas/Perfect/ ([[2026-08-05]]).
+
+### footer-monitor-sync — footer fleet cluster truth-sync + click-opens-ledger — session fable-5
+- 2026-08-05. Status: completed (commit 5178bfd24, FF-merged to master). All non-zero live states get chips (no +N), popover lane-grouped to match the Monitor ledger (shared taxonomy in fleetStateMeta), footer click one-shot-opens the grid on the Monitor ledger via new fleetGridView.ts. footer_hint_open_monitor x14 locales. Gates: tsc, eslint 0/0, fleet vitest 102/102, i18n strict + untranslated clean.
+
 
 ### athena-dev-day — conversation-log export + dev-mode v2 repairs + daily-goals ritual — COMPLETE, master ff to 1d200dede — session fable-5
 - 2026-08-04/05. Three arcs for a full day of live Athena testing: (1) dev-only conversation-log export button (header FileDown → gitignored `logs/athena-conversations/`, joins messages with narration/steps/summaries/recall/actions); (2) dev-mode v2 repairs — full op_id in the dispatch card (truncated id made every dev_merge fail), context-map index rolled up to group level (~30KB → ~5KB per prompt at 208 contexts), dead wrench-send pipeline cut from the per-turn hot path (`companion_request_improvement` deregistered), verdict write gated like the read; (3) daily-goals gamification subheader (streak + up to 3 manually-evaluated goal chips + BaseModal entry; `companion_daily_goal` in the user DB, local-day streak walk with grace; Athena sees set+streak via prompt addendum with a never-mark-done rule).
