@@ -8,6 +8,7 @@ import type { EffectiveModelConfig } from '@/lib/bindings/EffectiveModelConfig';
 import type { ConfigSource } from '@/lib/bindings/ConfigSource';
 import type { ConfigField } from '@/lib/bindings/ConfigField';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
 
 /**
  * Effective model-config resolution table for every persona (global → workspace
@@ -361,7 +362,8 @@ export function PersonaConfigPanel() {
           error: cached?.error ?? null,
         };
       }));
-    } catch {
+    } catch (err) {
+      silentCatch('PersonaConfigPanel:load')(err);
       if (loadRequestIdRef.current === requestId) setRows([]);
     } finally {
       if (loadRequestIdRef.current === requestId) setGlobalLoading(false);
