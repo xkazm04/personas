@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { FleetPlanRow } from '@/api/companion';
@@ -20,6 +21,14 @@ interface Props {
 export function AthenaFleetPlanRow({ row, index, disabled, onChange, onRemove }: Props) {
   const { t } = useTranslation();
   const c = t.plugins.companion;
+  const objectiveRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const el = objectiveRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [row.objective]);
 
   return (
     <li
@@ -47,13 +56,14 @@ export function AthenaFleetPlanRow({ row, index, disabled, onChange, onRemove }:
       </div>
 
       <textarea
+        ref={objectiveRef}
         value={row.objective}
         onChange={(e) => onChange({ objective: e.target.value })}
         disabled={disabled}
         rows={2}
         aria-label={c.fleet_plan_objective_label}
         placeholder={c.fleet_plan_objective_placeholder}
-        className="w-full rounded-input bg-background/60 border border-border px-2 py-1.5 typo-body text-foreground resize-y disabled:opacity-60"
+        className="w-full rounded-input bg-background/60 border border-border px-2 py-1.5 typo-body text-foreground resize-none overflow-hidden disabled:opacity-60"
         data-testid={`athena-plan-objective-${index}`}
       />
 

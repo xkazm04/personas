@@ -147,6 +147,16 @@ export interface CompanionPluginSlice {
    */
   companionPanelCompact: boolean;
   /**
+   * Inner side-panel slot (sits left of `CompanionToolbar`, right of the
+   * chat column) — a reusable dock for glanceable feature surfaces inside
+   * the chat window. `'fleet'` renders live Fleet stats; `null` collapses
+   * the slot to a slim rail. Only fleet is registered today, but the shell
+   * (`CompanionSidePanel`) is generic so a future feature can add its own
+   * slot id without touching the layout plumbing. Persisted so the user's
+   * open/collapsed choice survives a panel reopen.
+   */
+  companionSidePanelSlot: 'fleet' | null;
+  /**
    * Master switch for Athena's floating dockable orb (the minimized
    * presence that lives as an overlay above app content). When off, the
    * footer button behaves as the classic open/collapse chat toggle.
@@ -233,6 +243,7 @@ export interface CompanionPluginSlice {
   setCompanionPrefill: (p: CompanionPrefill | null) => void;
   setCompanionLabJump: (j: CompanionLabJump | null) => void;
   setCompanionPanelCompact: (v: boolean) => void;
+  setCompanionSidePanelSlot: (v: 'fleet' | null) => void;
   setCompanionOrbEnabled: (v: boolean) => void;
   setCompanionOrbPos: (p: OrbPosition) => void;
   setCompanionSttEngine: (e: CompanionSttEngine) => void;
@@ -265,6 +276,7 @@ export const createCompanionPluginSlice: StateCreator<
   companionPrefill: null,
   companionLabJump: null,
   companionPanelCompact: false,
+  companionSidePanelSlot: 'fleet',
   companionOrbEnabled: true,
   companionOrbPos: { x: 1, y: 0.82 },
   companionSttEngine: 'browser',
@@ -295,6 +307,7 @@ export const createCompanionPluginSlice: StateCreator<
   setCompanionPrefill: (companionPrefill) => set({ companionPrefill }),
   setCompanionLabJump: (companionLabJump) => set({ companionLabJump }),
   setCompanionPanelCompact: (companionPanelCompact) => set({ companionPanelCompact }),
+  setCompanionSidePanelSlot: (companionSidePanelSlot) => set({ companionSidePanelSlot }),
   setCompanionOrbEnabled: (companionOrbEnabled) => set({ companionOrbEnabled }),
   setCompanionOrbPos: (companionOrbPos) => set({ companionOrbPos }),
   setCompanionSttEngine: (companionSttEngine) => set({ companionSttEngine }),

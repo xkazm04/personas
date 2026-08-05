@@ -1,3 +1,4 @@
+import { useSystemStore } from '@/stores/systemStore';
 import type { SidebarSection } from '@/lib/types/types';
 
 /**
@@ -23,3 +24,17 @@ export const COMPANION_NAV_ROUTES: SidebarSection[] = [
   'schedules',
   'settings',
 ];
+
+/**
+ * Deep-link into the Companion plugin's Setup tab (Plugins > Companion >
+ * Setup) — the target for the toolbar's gear icon. Sets the sidebar
+ * section, the active plugin, and the companion sub-tab in one call so
+ * `CompanionPluginPage` renders `SetupPanel` on the very first frame.
+ * Mirrors the `open_companion_tab` deep-link ApprovalCard already uses.
+ */
+export function navigateToCompanionSetup(): void {
+  const sys = useSystemStore.getState();
+  sys.setSidebarSection('plugins');
+  sys.setPluginTab('companion');
+  sys.setCompanionPluginTab('setup');
+}

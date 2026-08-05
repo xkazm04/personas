@@ -8,6 +8,8 @@ vi.mock('@/api/companion', () => ({
 }));
 
 import { AthenaFleetPlanCard } from '../fleet/AthenaFleetPlanCard';
+import { useCompanionStore } from '../companionStore';
+import { useSystemStore } from '@/stores/systemStore';
 
 function config(rowCount = 2) {
   return {
@@ -24,6 +26,7 @@ describe('AthenaFleetPlanCard', () => {
   beforeEach(() => {
     dispatchFleetPlan.mockReset();
     dispatchFleetPlan.mockResolvedValue('Started 2 sessions.');
+    useSystemStore.setState({ fleetSessions: [] });
   });
 
   it('renders one editable row per planned session', () => {
@@ -89,5 +92,68 @@ describe('AthenaFleetPlanCard', () => {
     // stays in its editable state with an error, rather than claiming success.
     expect(await screen.findByTestId('athena-plan-error')).toBeInTheDocument();
     expect(screen.getByTestId('athena-plan-confirm')).toBeInTheDocument();
+  });
+
+  it('renders the dispatch result as markdown instead of raw ** markers', async () => {
+    dispatchFleetPlan.mockResolvedValue('**Started 2 sessions.**');
+    render(<AthenaFleetPlanCard config={config(2)} />);
+    fireEvent.click(screen.getByTestId('athena-plan-confirm'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('athena-plan-card').querySelector('strong')).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('athena-plan-card').textContent).not.toContain('**');
+  });
+
+  it('persists the dispatched outcome into the shared chatCards store on confirm', async () => {
+    useCompanionStore.setState({
+      chatCards: [{ kind: 'fleet_plan', config: config(2) }],
+    });
+    render(<AthenaFleetPlanCard config={config(2)} cardIndex={0} />);
+    fireEvent.click(screen.getByTestId('athena-plan-confirm'));
+
+    await waitFor(() => expect(dispatchFleetPlan).toHaveBeenCalledTimes(1));
+    await waitFor(() => {
+      const persisted = useCompanionStore.getState().chatCards[0]?.config;
+      expect(persisted?.dispatched).toBe(true);
+      expect(persisted?.resultMessage).toBe('Started 2 sessions.');
+      expect(persisted?.dispatchedRows).toHaveLength(2);
+    });
+  });
+
+  it('restores the dispatched view (not the editable plan) when remounted from a persisted config', () => {
+    // Simulates a panel close/reopen: a fresh AthenaFleetPlanCard instance is
+    // mounted with the SAME config a prior instance wrote back on confirm.
+    const dispatchedConfig = {
+      ...config(2),
+      dispatched: true,
+      resultMessage: 'Started 2 sessions.',
+      dispatchedRows: config(2).rows,
+    };
+    render(<AthenaFleetPlanCard config={dispatchedConfig} cardIndex={0} />);
+
+    expect(screen.getByTestId('athena-plan-card')).toHaveTextContent('Started 2 sessions.');
+    expect(screen.queryByTestId('athena-plan-row-0')).toBeNull();
+    expect(screen.queryByTestId('athena-plan-confirm')).toBeNull();
+    expect(dispatchFleetPlan).not.toHaveBeenCalled();
+  });
+
+  it('shows a live still-running count sourced from the Fleet store after restore', () => {
+    const rows = config(2).rows;
+    useSystemStore.setState({
+      fleetSessions: [
+        { id: 's1', cwd: rows[0].cwd, state: 'running' } as never,
+        { id: 's2', cwd: rows[1].cwd, state: 'exited' } as never,
+      ],
+    });
+    const dispatchedConfig = {
+      ...config(2),
+      dispatched: true,
+      resultMessage: 'Started 2 sessions.',
+      dispatchedRows: rows,
+    };
+    render(<AthenaFleetPlanCard config={dispatchedConfig} cardIndex={0} />);
+
+    expect(screen.getByTestId('athena-plan-live-status')).toHaveTextContent('1');
   });
 });

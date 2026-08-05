@@ -38,6 +38,7 @@ export function Bubble({
   createdAt,
   groupStart = true,
   groupEnd = true,
+  compact = false,
 }: {
   role: string;
   streaming?: boolean;
@@ -50,6 +51,8 @@ export function Bubble({
   groupStart?: boolean;
   /** Last of the run — actions row sits below it; spacing relaxes after. */
   groupEnd?: boolean;
+  /** Slim/mobile-like layout for the panel's minimized width — tighter padding, smaller avatar, wider bubble column. */
+  compact?: boolean;
 }) {
   const isUser = role === 'user';
   const isSystem = role === 'system';
@@ -108,15 +111,19 @@ export function Bubble({
     const beat = (children as string).trimStart().replace(/^PROGRESS:\s*/, '').trim();
     return (
       <div
-        className={`group flex gap-2.5 justify-start ${groupStart ? '' : '-mt-1'}`}
+        className={`group flex justify-start ${compact ? 'gap-1.5' : 'gap-2.5'} ${groupStart ? '' : '-mt-1'}`}
         data-testid="companion-bubble-aside"
         data-companion-bubble-role="assistant-aside"
         data-companion-bubble-index={index}
       >
-        <div className="w-7 flex justify-center shrink-0" aria-hidden>
+        <div className={`flex justify-center shrink-0 ${compact ? 'w-5' : 'w-7'}`} aria-hidden>
           <span className="w-1.5 h-1.5 mt-2 rounded-full bg-primary/40" />
         </div>
-        <div className="min-w-0 max-w-[85%] py-0.5 typo-caption italic text-foreground/55 leading-relaxed">
+        <div
+          className={`min-w-0 py-0.5 typo-caption italic text-foreground/55 leading-relaxed ${
+            compact ? 'max-w-[92%]' : 'max-w-[85%]'
+          }`}
+        >
           {beat}
         </div>
       </div>
@@ -149,9 +156,12 @@ export function Bubble({
   // assistant bubble, to the left of a user bubble. Skipped while streaming.
   const showMeta = !streaming && displayIsString;
 
+  const avatarSize = compact ? 'w-5 h-5' : 'w-7 h-7';
+  const avatarGutter = compact ? 'w-5' : 'w-7';
+
   return (
     <div
-      className={`group flex gap-2.5 ${isUser ? 'justify-end' : 'justify-start'} ${
+      className={`group flex ${compact ? 'gap-1.5' : 'gap-2.5'} ${isUser ? 'justify-end' : 'justify-start'} ${
         groupStart ? '' : '-mt-1.5'
       } ${groupEnd ? '' : 'mb-0'}`}
       data-testid={
@@ -168,13 +178,17 @@ export function Bubble({
             alt=""
             aria-hidden
             draggable={false}
-            className="w-7 h-7 mt-0.5 rounded-full object-cover ring-1 ring-primary/25 shrink-0 select-none"
+            className={`${avatarSize} mt-0.5 rounded-full object-cover ring-1 ring-primary/25 shrink-0 select-none`}
           />
         ) : (
           // Spacer keeps grouped bubbles aligned under the first one's body.
-          <div className="w-7 shrink-0" aria-hidden />
+          <div className={`${avatarGutter} shrink-0`} aria-hidden />
         ))}
-      <div className={`min-w-0 max-w-[85%] flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
+      <div
+        className={`min-w-0 flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'} ${
+          compact ? 'max-w-[92%]' : 'max-w-[85%]'
+        }`}
+      >
         {/*
           Bubble + side controls. This wrapper shrink-wraps the bubble (it's a
           flex child of an items-start/end column), so the absolutely-positioned
@@ -183,7 +197,9 @@ export function Bubble({
         */}
         <div className="relative min-w-0">
           <div
-            className={`rounded-card px-3.5 py-2.5 typo-body leading-relaxed break-words ${
+            className={`rounded-card typo-body leading-relaxed break-words ${
+              compact ? 'px-2.5 py-1.5' : 'px-3.5 py-2.5'
+            } ${
               isUser
                 ? 'bg-primary/20 border border-primary/30 text-foreground whitespace-pre-wrap'
                 : 'bg-background/80 border border-foreground/12 text-foreground shadow-elevation-1'

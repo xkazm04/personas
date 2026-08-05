@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { createDedupedJSONStorage } from '@/stores/util/dedupedStorage';
 import type { CompanionState } from './types';
 import type { StreamPhase } from './extractStreamPhase';
 import type { TodoStep } from './operationalSteps';
@@ -101,7 +103,15 @@ export type LiveTurn = {
 };
 
 /** One message the user sent while that conversation's turn was streaming. */
-export type QueuedMessage = { id: string; text: string; mode: 'queue' | 'interrupt' };
+export type QueuedMessage = {
+  id: string;
+  text: string;
+  mode: 'queue' | 'interrupt';
+  /** The send-time idempotency nonce (see sendNonceLedger.ts) — carried
+   *  through the queue so the eventual drained dispatch dedupes on the same
+   *  key the user's original send intent was minted with. */
+  nonce: string;
+};
 
 /**
  * One thing Athena did on the user's behalf without asking (autonomous /
@@ -222,6 +232,18 @@ interface CompanionStore {
   /** Insert or replace one row after a create / rename / status change. */
   upsertConversation: (row: ConversationRow) => void;
 
+  /**
+   * Typed-but-unsent composer draft, keyed by conversation id. Persisted
+   * (see the `persist` wrapper below) so closing and reopening the
+   * companion panel — or restarting the app — never silently drops what
+   * the user was mid-sentence writing. `Composer` reads its conversation's
+   * entry on mount and writes back on every keystroke; `setDraft(id, '')`
+   * (or omitting the key) clears it once the message is actually sent.
+   */
+  draftsByConversation: Record<string, string>;
+  setDraft: (conversationId: string, text: string) => void;
+  clearDraft: (conversationId: string) => void;
+
   // Phase 3: approvals
   approvals: PendingApproval[];
   setApprovals: (a: PendingApproval[]) => void;
@@ -237,6 +259,12 @@ interface CompanionStore {
   // alongside ApprovalCards on the latest assistant turn.
   chatCards: ChatCard[];
   setChatCards: (cards: ChatCard[]) => void;
+  /** Merge `patch` into one chat-card's `config` in place, by index. Lets a
+   *  card (e.g. the fleet-plan dispatch card) write its post-confirm outcome
+   *  back into the shared store so it survives the card component unmounting
+   *  when the panel is closed and reopened — chatCards itself is untouched by
+   *  panel open/close, only the component tree is. */
+  patchChatCardConfig: (index: number, patch: Record<string, unknown>) => void;
 
   // Brain Viewer state
   brainView: BrainViewState;
@@ -436,7 +464,12 @@ interface CompanionStore {
    */
   queuedByConversation: Record<string, QueuedMessage[]>;
   queuedMessages: QueuedMessage[];
-  enqueueMessage: (conversationId: string, text: string, mode: 'queue' | 'interrupt') => void;
+  enqueueMessage: (
+    conversationId: string,
+    text: string,
+    mode: 'queue' | 'interrupt',
+    nonce: string,
+  ) => void;
   shiftQueuedMessage: (conversationId: string) => QueuedMessage | null;
   removeQueuedMessage: (conversationId: string, id: string) => void;
   clearQueuedMessages: (conversationId: string) => void;
@@ -666,7 +699,9 @@ function withQueue(
   return patch;
 }
 
-export const useCompanionStore = create<CompanionStore>((set, get) => ({
+export const useCompanionStore = create<CompanionStore>()(
+  persist(
+    (set, get) => ({
   state: 'collapsed',
   brainPath: null,
   initError: null,
@@ -753,6 +788,12 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
 
   chatCards: [],
   setChatCards: (chatCards) => set({ chatCards }),
+  patchChatCardConfig: (index, patch) =>
+    set((s) => ({
+      chatCards: s.chatCards.map((card, i) =>
+        i === index ? { ...card, config: { ...(card.config ?? {}), ...patch } } : card,
+      ),
+    })),
 
   conversations: [],
   activeConversationId: DEFAULT_CONVERSATION_ID,
@@ -779,6 +820,27 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
       const next = s.conversations.slice();
       next[idx] = row;
       return { conversations: next };
+    }),
+
+  draftsByConversation: {},
+  setDraft: (conversationId, text) =>
+    set((s) => {
+      // Skip the write (and the persisted round-trip it triggers) when the
+      // draft is already blank and there's nothing to clear.
+      if (!text && !s.draftsByConversation[conversationId]) return s;
+      if (!text) {
+        const { [conversationId]: _removed, ...rest } = s.draftsByConversation;
+        return { draftsByConversation: rest };
+      }
+      return {
+        draftsByConversation: { ...s.draftsByConversation, [conversationId]: text },
+      };
+    }),
+  clearDraft: (conversationId) =>
+    set((s) => {
+      if (!(conversationId in s.draftsByConversation)) return s;
+      const { [conversationId]: _removed, ...rest } = s.draftsByConversation;
+      return { draftsByConversation: rest };
     }),
 
   athenaAssignments: [],
@@ -997,11 +1059,11 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
 
   queuedByConversation: {},
   queuedMessages: [],
-  enqueueMessage: (conversationId, text, mode) =>
+  enqueueMessage: (conversationId, text, mode, nonce) =>
     set((s) =>
       withQueue(s, conversationId, [
         ...(s.queuedByConversation[conversationId] ?? []),
-        { id: `q_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, text, mode },
+        { id: `q_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, text, mode, nonce },
       ]),
     ),
   shiftQueuedMessage: (conversationId) => {
@@ -1201,7 +1263,16 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
   setExplainComposing: (explainComposing) => set({ explainComposing }),
   setExplainComposeError: (explainComposeError) => set({ explainComposeError }),
 
-}));
+    }),
+    {
+      name: 'companion-drafts',
+      storage: createDedupedJSONStorage(),
+      // Only the composer draft map is durable — everything else here is
+      // live session/UI state that resets fine on a fresh app launch.
+      partialize: (state) => ({ draftsByConversation: state.draftsByConversation }),
+    },
+  ),
+);
 
 /**
  * The currently-focused conversation row (or `undefined` before the registry

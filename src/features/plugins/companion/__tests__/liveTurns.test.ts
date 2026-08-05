@@ -86,9 +86,9 @@ describe('companionStore liveTurns partition', () => {
 
   it('keeps queues partitioned per conversation and shifts only the named one', () => {
     const s = useCompanionStore.getState();
-    s.enqueueMessage(A, 'a1', 'queue');
-    s.enqueueMessage(B, 'b1', 'queue');
-    s.enqueueMessage(B, 'b2', 'interrupt');
+    s.enqueueMessage(A, 'a1', 'queue', 'nonce-a1');
+    s.enqueueMessage(B, 'b1', 'queue', 'nonce-b1');
+    s.enqueueMessage(B, 'b2', 'interrupt', 'nonce-b2');
 
     // Flat mirror shows only the ACTIVE (A) queue.
     expect(useCompanionStore.getState().queuedMessages.map((m) => m.text)).toEqual(['a1']);

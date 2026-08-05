@@ -14728,6 +14728,10 @@ export type Translations = {
       reset: string;
       compact_toggle_collapse: string;
       compact_toggle_expand: string;
+      side_panel_fleet_label: string;
+      side_panel_collapse: string;
+      side_panel_expand: string;
+      side_panel_activity_label: string;
       refresh_doctrine: string;
       doctrine_up_to_date: string;
       doctrine_refreshed: string;
@@ -14738,6 +14742,7 @@ export type Translations = {
       approved_failed: string;
       reject: string;
       toolbar_label: string;
+      settings_open: string;
       help_capabilities: string;
       analyze_fleet: string;
       analyze_fleet_started: string;
@@ -15382,6 +15387,7 @@ export type Translations = {
       fleet_plan_confirm: string;
       fleet_plan_cancel: string;
       fleet_plan_containment_note: string;
+      fleet_plan_still_running: string;
       ship_milestone_heading: string;
       ship_milestone_item_count_one: string;
       ship_milestone_item_count_other: string;

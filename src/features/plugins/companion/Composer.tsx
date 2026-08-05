@@ -33,6 +33,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { useCompanionStore } from './companionStore';
 import { useDictation } from './useDictation';
+import { createSendNonce } from './sendNonceLedger';
 import {
   SlashPalette,
   filterSlashPresets,
@@ -44,17 +45,55 @@ export function Composer({
   onSend,
   onDailyBrief,
   onAnalyzeFleet,
+  compact = false,
 }: {
   disabled: boolean;
-  onSend: (text: string) => void;
+  /**
+   * `nonce` is a fresh, client-generated idempotency key minted right here
+   * at send time — one per user send intent, never reused across retries.
+   * It rides all the way to the dispatch call so a replay carrying the same
+   * nonce (e.g. after a restart mid-turn) is dropped there instead of firing
+   * a duplicate turn. See sendNonceLedger.ts.
+   */
+  onSend: (text: string, nonce: string) => void;
   onDailyBrief: () => void;
   onAnalyzeFleet: () => void;
+  /** Slim/mobile-like layout for the panel's minimized width — tighter padding + gaps. */
+  compact?: boolean;
 }) {
   const { t } = useTranslation();
-  const [draft, setDraft] = useState('');
+  const conversationId = useCompanionStore((s) => s.activeConversationId);
+  const setPersistedDraft = useCompanionStore((s) => s.setDraft);
+  // Seeded once from the store on mount, then owned locally so every
+  // keystroke doesn't force a re-render off the store's `draftsByConversation`
+  // map — `setDraft` below writes back through so it stays durable.
+  const [draft, setDraftState] = useState(
+    () => useCompanionStore.getState().draftsByConversation[conversationId] ?? '',
+  );
   const [slashIndex, setSlashIndex] = useState(0);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const dictation = useDictation();
+
+  // Rehydrate the draft when the focused conversation changes (the panel
+  // stays mounted across thread switches, so this can't rely on a fresh
+  // `useState` initializer).
+  const prevConversationIdRef = useRef(conversationId);
+  useEffect(() => {
+    if (prevConversationIdRef.current === conversationId) return;
+    prevConversationIdRef.current = conversationId;
+    setDraftState(useCompanionStore.getState().draftsByConversation[conversationId] ?? '');
+  }, [conversationId]);
+
+  const setDraft = useCallback(
+    (value: string | ((prev: string) => string)) => {
+      setDraftState((prev) => {
+        const next = typeof value === 'function' ? value(prev) : value;
+        setPersistedDraft(conversationId, next);
+        return next;
+      });
+    },
+    [conversationId, setPersistedDraft],
+  );
 
   const slashPresets: SlashPreset[] = useMemo(
     () => [
@@ -140,11 +179,11 @@ export function Composer({
     const forceDraft = (globalThis as { __TEST_FORCE_DRAFT__?: boolean })
       .__TEST_FORCE_DRAFT__;
     if (claimed.autoSend && !disabled && !forceDraft) {
-      onSend(claimed.text);
+      onSend(claimed.text, createSendNonce());
     } else {
       setDraft(claimed.text);
     }
-  }, [pendingPrompt, disabled, onSend]);
+  }, [pendingPrompt, disabled, onSend, setDraft]);
 
   useEffect(() => {
     if (!dictation.finalText) return;
@@ -152,13 +191,16 @@ export function Composer({
       prev ? `${prev.replace(/\s+$/, '')} ${dictation.finalText}` : dictation.finalText,
     );
     dictation.reset();
-  }, [dictation.finalText, dictation]);
+  }, [dictation.finalText, dictation, setDraft]);
 
   const submit = useCallback(() => {
     if (disabled || !draft.trim()) return;
-    onSend(draft);
+    // Minted fresh on every submit — retyping and resending the same text
+    // intentionally gets a new nonce and always goes through; dedup is on
+    // the nonce, never on the text.
+    onSend(draft, createSendNonce());
     setDraft('');
-  }, [disabled, draft, onSend]);
+  }, [disabled, draft, onSend, setDraft]);
 
   const pickSlashPreset = useCallback((preset: SlashPreset) => {
     // Deterministic command entries (Daily Brief / Analyze Fleet) run their
@@ -181,7 +223,7 @@ export function Composer({
         el.setSelectionRange(message.length, message.length);
       }
     });
-  }, []);
+  }, [setDraft]);
 
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -217,7 +259,7 @@ export function Composer({
         submit();
       }
     },
-    [paletteOpen, filteredPresets, slashIndex, pickSlashPreset, submit],
+    [paletteOpen, filteredPresets, slashIndex, pickSlashPreset, submit, setDraft],
   );
 
   // Auto-grow up to ~6 lines.
@@ -242,9 +284,15 @@ export function Composer({
       : draft;
 
   return (
-    <div className="border-t border-foreground/10 px-3 py-3 shrink-0 relative">
+    <div
+      className={`border-t border-foreground/10 shrink-0 relative ${
+        compact ? 'px-2 py-2' : 'px-3 py-3'
+      }`}
+    >
       {paletteOpen && (
-        <div className="absolute left-3 right-3 bottom-full mb-1.5 z-10">
+        <div
+          className={`absolute bottom-full z-10 ${compact ? 'left-2 right-2 mb-1' : 'left-3 right-3 mb-1.5'}`}
+        >
           <SlashPalette
             query={slashQuery}
             selectedIndex={slashIndex}
@@ -254,7 +302,11 @@ export function Composer({
           />
         </div>
       )}
-      <div className="flex items-end gap-2 rounded-card bg-foreground/5 border border-foreground/10 px-3 py-2 transition-colors focus-within:border-primary/40 focus-within:bg-foreground/[0.07]">
+      <div
+        className={`flex items-end rounded-card bg-foreground/5 border border-foreground/10 transition-colors focus-within:border-primary/40 focus-within:bg-foreground/[0.07] ${
+          compact ? 'gap-1 px-2 py-1.5' : 'gap-2 px-3 py-2'
+        }`}
+      >
         <textarea
           ref={taRef}
           value={displayValue}
@@ -272,7 +324,9 @@ export function Composer({
             type="button"
             onClick={() => (dictation.listening ? dictation.stop() : dictation.start())}
             disabled={disabled}
-            className={`p-2 rounded-interactive transition-colors focus-ring disabled:opacity-40 disabled:cursor-not-allowed ${
+            className={`rounded-interactive transition-colors focus-ring disabled:opacity-40 disabled:cursor-not-allowed ${
+              compact ? 'p-1.5' : 'p-2'
+            } ${
               dictation.listening
                 ? 'bg-red-500/15 text-red-400 hover:bg-red-500/25'
                 : dictation.error
@@ -311,7 +365,9 @@ export function Composer({
           onClick={submit}
           disabled={disabled || !draft.trim() || paletteOpen}
           data-testid="companion-send"
-          className="p-2 rounded-interactive bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity focus-ring"
+          className={`rounded-interactive bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity focus-ring ${
+            compact ? 'p-1.5' : 'p-2'
+          }`}
           aria-label={t.plugins.companion.send}
         >
           <Send className="w-4 h-4" />

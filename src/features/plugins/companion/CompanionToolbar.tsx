@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
+  Settings,
   Wrench,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -21,6 +22,7 @@ import { ComposerConnectorsPickerModal } from '@/features/agents/sub_glyph/comma
 import { ComposerBrandIcon } from '@/features/agents/sub_glyph/commandPanel/composer/ComposerBrandIcon';
 import { getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { useCompanionStore } from './companionStore';
+import { navigateToCompanionSetup } from './companionRoutes';
 import { VoiceControlPopover } from './VoiceControlPopover';
 import { useTtsVoiceSelection } from './useTtsVoiceSelection';
 
@@ -221,6 +223,16 @@ export function CompanionToolbar({
         label={t.plugins.companion.connectors_add}
         onClick={() => setPickerOpen(true)}
         testId="companion-connectors-add"
+      />
+
+      <Divider />
+
+      {/* Settings — deep-links to Plugins > Companion > Setup. */}
+      <ToolbarButton
+        icon={<Settings className="w-4 h-4" />}
+        label={t.plugins.companion.settings_open}
+        onClick={navigateToCompanionSetup}
+        testId="companion-open-settings"
       />
 
       <ComposerConnectorsPickerModal
