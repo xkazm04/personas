@@ -133,7 +133,7 @@ export function TriageDeckVariant({
             It reads the DEALT order, so what it lists is exactly what the deck
             will hand over next, and a click pins a row to the front without
             touching the keyboard's contract with the top card. */}
-        <DeckQueueRail items={queue.items} onJump={queue.focusItem} />
+        <DeckQueueRail items={queue.items} skips={queue.skips} onJump={queue.focusItem} />
 
         <div className="relative flex min-h-0 flex-1 items-center justify-center gap-6 px-6 py-8 xl:gap-12">
         <div

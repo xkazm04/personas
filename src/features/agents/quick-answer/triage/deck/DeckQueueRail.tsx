@@ -16,10 +16,12 @@
 //    untouched — see `triageQueue#focused`.
 //  • It hides below `lg`. On a narrow window the card is the whole point.
 import { useEffect, useRef } from 'react';
+import { RotateCcw } from 'lucide-react';
 
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import type { SkipLedger } from '../triageQueue';
 import type { TriageItem } from '../triageTypes';
 import { KIND_META, kindCopy, TONE_TEXT } from './DeckChips';
 
@@ -33,11 +35,14 @@ function QueueRow({
   item,
   position,
   current,
+  deferred,
   onJump,
 }: {
   item: TriageItem;
   position: number;
   current: boolean;
+  /** Skipped at least once this session — it is being re-offered, not new. */
+  deferred: boolean;
   onJump: () => void;
 }) {
   const { t, tx } = useTranslation();
@@ -74,7 +79,11 @@ function QueueRow({
         >
           {item.title}
         </span>
-        <span className="typo-label block truncate text-muted-foreground">
+        <span className="typo-label flex items-center gap-1 truncate text-muted-foreground">
+          {/* A skipped card sorts to the BACK of the queue rather than leaving
+              it, so without this the rail's tail reads as "not looked at yet"
+              when it is really "you already passed on these". */}
+          {deferred ? <RotateCcw className="h-3 w-3 shrink-0" aria-hidden /> : null}
           {kindCopy(t, item.kind).one}
         </span>
       </span>
@@ -84,10 +93,13 @@ function QueueRow({
 
 export function DeckQueueRail({
   items,
+  skips,
   onJump,
 }: {
   /** The dealt order. `items[0]` is the card being decided. */
   items: TriageItem[];
+  /** Times each item has been skipped this session — marks the re-offered tail. */
+  skips: SkipLedger;
   onJump: (id: string) => void;
 }) {
   const { t } = useTranslation();
@@ -113,11 +125,11 @@ export function DeckQueueRail({
           driving still measures and scrolls it. */}
       <div ref={virtualize ? parentRef : undefined} className="min-h-0 flex-1 overflow-y-auto">
         {virtualize ? (
-          <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
+          <ul className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
             {virtualizer.getVirtualItems().map((row) => {
               const item = items[row.index]!;
               return (
-                <div
+                <li
                   key={item.id}
                   className="absolute inset-x-0 top-0"
                   style={{ height: row.size, transform: `translateY(${row.start}px)` }}
@@ -126,22 +138,27 @@ export function DeckQueueRail({
                     item={item}
                     position={row.index + 1}
                     current={row.index === 0}
+                    deferred={(skips.get(item.id) ?? 0) > 0}
                     onJump={() => onJump(item.id)}
                   />
-                </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
         ) : (
-          items.map((item, i) => (
-            <QueueRow
-              key={item.id}
-              item={item}
-              position={i + 1}
-              current={i === 0}
-              onJump={() => onJump(item.id)}
-            />
-          ))
+          <ul>
+            {items.map((item, i) => (
+              <li key={item.id}>
+                <QueueRow
+                  item={item}
+                  position={i + 1}
+                  current={i === 0}
+                  deferred={(skips.get(item.id) ?? 0) > 0}
+                  onJump={() => onJump(item.id)}
+                />
+              </li>
+            ))}
+          </ul>
         )}
       </div>
     </aside>
