@@ -5,12 +5,15 @@ import { getTrustTier } from '@/lib/personas/personaThresholds';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import { useTranslation } from '@/i18n/useTranslation';
 
-/* -- Health style map (also exported so filter dropdowns can stay in sync) -- */
+/* -- Health style map (also exported so filter dropdowns can stay in sync) --
+   Labels resolve through i18n via `labelKey` into `t.agents.status`. */
 
-export const HEALTH_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  healthy: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: 'Healthy' },
-  degraded: { bg: 'bg-amber-500/10', text: 'text-amber-400', label: 'Degraded' },
-  failing: { bg: 'bg-red-500/10', text: 'text-red-400', label: 'Failing' },
+export type HealthLabelKey = 'healthy' | 'degraded' | 'failing';
+
+export const HEALTH_STYLES: Record<string, { bg: string; text: string; labelKey: HealthLabelKey }> = {
+  healthy: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', labelKey: 'healthy' },
+  degraded: { bg: 'bg-amber-500/10', text: 'text-amber-400', labelKey: 'degraded' },
+  failing: { bg: 'bg-red-500/10', text: 'text-red-400', labelKey: 'failing' },
 };
 
 /* -- Trust score bar -------------------------------------------------- */
@@ -69,7 +72,7 @@ export function StatusBadge({
       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-md font-medium ${style.bg} ${style.text} border border-current/15`}
     >
       <StatusShape status={mapToShapeStatus(healthStatus)} size="xs" colorClass="" />
-      {style.label}
+      {t.agents.status[style.labelKey]}
     </span>
   );
 }

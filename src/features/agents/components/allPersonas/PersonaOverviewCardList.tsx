@@ -189,7 +189,7 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); toggleFavorite(id); }}
-          aria-label={favorite ? 'Remove from favorites' : 'Add to favorites'}
+          aria-label={favorite ? t.agents.filters.remove_from_favorites : t.agents.filters.add_to_favorites}
           className="p-1 rounded hover:bg-amber-500/10 flex-shrink-0"
         >
           <Star className={`w-3.5 h-3.5 ${favorite ? 'text-amber-400 fill-amber-400' : 'text-foreground'}`} />

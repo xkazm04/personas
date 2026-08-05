@@ -4,13 +4,6 @@ import { HEALTH_STYLES } from './PersonaOverviewBadges';
 import type { AgentListViewConfig } from './viewConfig';
 import { useTranslation } from '@/i18n/useTranslation';
 
-const STATUS_LABELS: Record<string, string> = {
-  enabled: 'Active',
-  disabled: 'Disabled',
-  building: 'Building / Drafts',
-  archived: 'Archived',
-};
-
 interface PersonaOverviewToolbarProps {
   search: string;
   onSearchChange: (value: string) => void;
@@ -54,19 +47,27 @@ export function PersonaOverviewToolbar({
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
+  const statusLabels: Record<string, string> = {
+    enabled: t.agents.filters.status_active,
+    disabled: t.agents.filters.status_disabled,
+    building: t.agents.overview_columns.building_drafts,
+    archived: t.agents.persona_list.badge_archived,
+  };
+
   const chips: Chip[] = [];
 
   if (view.statusFilter !== 'all') {
     chips.push({
       key: 'status',
-      label: STATUS_LABELS[view.statusFilter] ?? view.statusFilter,
+      label: statusLabels[view.statusFilter] ?? view.statusFilter,
       onClear: () => onViewChange({ ...view, statusFilter: 'all' }),
     });
   }
   if (view.healthFilter !== 'all') {
+    const healthKey = HEALTH_STYLES[view.healthFilter]?.labelKey;
     chips.push({
       key: 'health',
-      label: HEALTH_STYLES[view.healthFilter]?.label ?? view.healthFilter,
+      label: healthKey ? t.agents.status[healthKey] : view.healthFilter,
       onClear: () => onViewChange({ ...view, healthFilter: 'all' }),
     });
   }
@@ -80,7 +81,7 @@ export function PersonaOverviewToolbar({
   if (view.favoriteOnly) {
     chips.push({
       key: 'favorites',
-      label: 'Favorites',
+      label: t.agents.filters.favorites,
       tone: 'amber',
       onClear: () => onViewChange({ ...view, favoriteOnly: false }),
     });
@@ -173,7 +174,7 @@ export function PersonaOverviewToolbar({
               <button
                 type="button"
                 onClick={chip.onClear}
-                title={`Clear ${chip.key} filter`}
+                title={t.agents.tools.clear_filter}
                 className="p-0.5 rounded-full hover:bg-current/10 transition-colors"
               >
                 <X className="w-2.5 h-2.5" />

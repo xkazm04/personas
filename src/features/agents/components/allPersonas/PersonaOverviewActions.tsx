@@ -46,7 +46,7 @@ export function usePersonaActions({
       confirm({
         title: t.agents.overview_actions.delete_agent,
         message: t.agents.overview_actions.delete_agent_message,
-        details: [{ label: 'Name', value: persona.name }],
+        details: [{ label: t.common.name, value: persona.name }],
         blastRadius: <BlastRadiusPanelLazy fetcher={() => getPersonaBlastRadius(id)} />,
         requireTypedConfirmation: persona.name,
         onConfirm: async () => {
@@ -63,7 +63,7 @@ export function usePersonaActions({
         },
       });
     },
-    [personas, confirm, t.agents.overview_actions.delete_agent, t.agents.overview_actions.delete_agent_message, t.agents.overview_actions.system_persona_undeletable, deletePersona, setSelectedIds],
+    [personas, confirm, t.agents.overview_actions.delete_agent, t.agents.overview_actions.delete_agent_message, t.agents.overview_actions.system_persona_undeletable, t.common.name, deletePersona, setSelectedIds],
   );
 
   // Bulk delete via the single `bulk_delete_personas` IPC (one round-trip
