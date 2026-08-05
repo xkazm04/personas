@@ -2,6 +2,16 @@
 
 export type DevTask = { id: string, project_id: string | null, title: string, description: string | null, source_idea_id: string | null, goal_id: string | null, status: string, session_id: string | null, progress_pct: number, output_lines: number, error: string | null, started_at: string | null, completed_at: string | null, created_at: string, 
 /**
+ * Last mutation stamp — RFC3339, written by every repo path that changes a
+ * task. `None` only for a row that predates the `dev_tasks_updated_at`
+ * migration on a database that has not run it yet; the migration backfills
+ * `COALESCE(completed_at, started_at, created_at)`. Because the task
+ * executor writes a progress update on every milestone, this doubles as a
+ * heartbeat: a `running` task whose `updated_at` has gone quiet is stuck,
+ * not merely long-running.
+ */
+updated_at: string | null, 
+/**
  * Task depth: "quick" (immediate execution), "campaign" (subtask breakdown),
  * or "deep_build" (full planning + implementation phases).
  */

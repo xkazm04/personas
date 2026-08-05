@@ -83,10 +83,20 @@ question.
 
 ---
 
-## (a) Truly dead — 29
+## (a) Truly dead — 28
 
 No caller anywhere: no frontend, no HTTP/MCP/A2A, no Rust test, no other Rust
 code path.
+
+> **2026-08-05 — one entry retired from this class.** `dev_tools_attention_queue`
+> was widened from a goal-only staleness engine into the staleness engine for
+> goals, ideas *and* tasks, given a sibling (`dev_tools_undispatched_ideas`), and
+> wrapped in `src/api/devTools/devTools.ts`. Its delete recommendation is gone.
+> Auditing it also turned up an error in this census: the command was listed as a
+> *registered* IPC command, but it was never in the `generate_handler!` block at
+> all — declared `#[tauri::command]` and never wired. It is registered now. The
+> counts in [§ Totals](#totals) are left as measured on 2026-07-26; treat them as
+> a dated snapshot, and re-run the method rather than patching them by hand.
 
 | command(s) | file | disposition |
 |---|---|---|
@@ -102,7 +112,6 @@ code path.
 | `adopt_recipe_for_persona`, `unadopt_recipe_from_persona` | `commands/recipes/recipe_adoption.rs` | Same shape: the shipped adoption path (`RecipeAdoptionModal` → `useAdoption`) never invokes these. **Two implementations of adoption exist; one should go.** |
 | `dev_tools_create_pipeline`, `dev_tools_list_pipelines`, `dev_tools_get_pipeline`, `dev_tools_advance_pipeline`, `dev_tools_delete_pipeline` | `commands/infrastructure/dev_tools.rs` | The dev-tools "pipeline" sub-feature is 0/5 used. (The *used* `*_pipeline_*` commands are the unrelated execution-pipeline namespace — don't confuse them.) **Delete the sub-feature.** |
 | `dev_tools_list_health_snapshots`, `dev_tools_save_health_snapshot` | `commands/infrastructure/dev_tools.rs` | 0/2 sub-feature; `dev_tools_get_portfolio_health` covers the shipped need. **Delete.** |
-| `dev_tools_attention_queue` | `commands/infrastructure/dev_tools.rs` | No sibling, no consumer. **Delete.** |
 
 Four of these are **whole modules with zero frontend usage** and are the
 highest-signal cleanup candidates: `credentials/openapi_autopilot.rs`,

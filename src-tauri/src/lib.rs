@@ -3258,6 +3258,10 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_list_goal_dependencies_for_project,
             commands::infrastructure::dev_tools::dev_tools_list_goal_items_for_project,
             commands::infrastructure::dev_tools::dev_tools_goal_advancing_teams,
+            // Staleness engine — goals + ideas + tasks in one ranked queue,
+            // plus the accepted-but-never-dispatched list on its own.
+            commands::infrastructure::dev_tools::dev_tools_attention_queue,
+            commands::infrastructure::dev_tools::dev_tools_undispatched_ideas,
             // Dev Tools -- Context Groups
             commands::infrastructure::dev_tools::dev_tools_list_context_groups,
             commands::infrastructure::dev_tools::dev_tools_create_context_group,

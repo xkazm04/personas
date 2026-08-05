@@ -10,6 +10,9 @@ import type { DevGoalItem } from "@/lib/bindings/DevGoalItem";
 import type { GoalProgressSuggestion } from "@/lib/bindings/GoalProgressSuggestion";
 import type { PendingAcceptanceGoal } from "@/lib/bindings/PendingAcceptanceGoal";
 import type { PendingCounts } from "@/lib/bindings/PendingCounts";
+import type { AttentionQueue } from "@/lib/bindings/AttentionQueue";
+import type { AttentionThresholds } from "@/lib/bindings/AttentionThresholds";
+import type { UndispatchedIdea } from "@/lib/bindings/UndispatchedIdea";
 import type { DevContextGroup } from "@/lib/bindings/DevContextGroup";
 import type { DevContext } from "@/lib/bindings/DevContext";
 import type { DevContextGroupRelationship } from "@/lib/bindings/DevContextGroupRelationship";
@@ -288,6 +291,38 @@ export const countPendingAcceptance = () =>
  */
 export const pendingCounts = () =>
   invoke<PendingCounts>("dev_tools_pending_counts", {});
+
+/**
+ * The cross-project "needs you" queue over goals, ideas AND tasks.
+ *
+ * One flat `items` list ordered by `rank` — awaiting-review team steps (0),
+ * overdue goals (1), stalled goals (2), unstaffed goals (3), accepted ideas
+ * that never became a task (4), running tasks whose heartbeat went quiet (5),
+ * queued tasks nothing picked up (6) — plus a count per signal.
+ *
+ * Every threshold is optional; omitted ones use the backend defaults (goal
+ * stalled after 7d, idea undispatched after 3d, running task stuck after 4h of
+ * silence, queued task stale after 24h). The response echoes back the set that
+ * was actually used in `thresholds`, so don't hardcode these numbers in copy.
+ */
+export const attentionQueue = (thresholds?: Partial<AttentionThresholds>) =>
+  invoke<AttentionQueue>("dev_tools_attention_queue", {
+    staleGoalDays: thresholds?.staleGoalDays,
+    ideaDispatchDays: thresholds?.ideaDispatchDays,
+    taskRunningHours: thresholds?.taskRunningHours,
+    taskQueuedHours: thresholds?.taskQueuedHours,
+  });
+
+/**
+ * Every `accepted` idea with no `dev_tasks` row — a decision a human made that
+ * never became work. Oldest first; `limit` defaults to 200.
+ *
+ * Unfiltered by age on purpose: each row carries its own `ageHours`, so the
+ * caller decides what counts as forgotten. `attentionQueue` applies a threshold
+ * to the same data if you want only the stale ones.
+ */
+export const undispatchedIdeas = (projectId?: string, limit?: number) =>
+  invoke<UndispatchedIdea[]>("dev_tools_undispatched_ideas", { projectId, limit });
 
 /** Accept (→ done, off-board) or reject (→ in-progress, with a comment) a goal. */
 export const resolveGoalAcceptance = (goalId: string, decision: "accept" | "reject", comment?: string) =>
