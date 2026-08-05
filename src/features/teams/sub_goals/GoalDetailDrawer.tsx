@@ -417,9 +417,19 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
             <BadgeCheck className="w-4 h-4 text-teal-300 shrink-0" />
             <span className="typo-title text-foreground">{dl.goal_status_awaiting_acceptance}</span>
           </div>
+          {/* accept/rejectGoal REJECT on a failed write (the store already
+              toasted); catch here so the verdict doesn't escape a click handler
+              as an unhandled rejection, and so `refresh()` is skipped — there is
+              nothing new to read back. */}
           <AcceptRejectControls
-            onAccept={async () => { await acceptGoal(goal.id); await refresh(); }}
-            onReject={async (c) => { await rejectGoal(goal.id, c); await refresh(); }}
+            onAccept={() => {
+              void (async () => { await acceptGoal(goal.id); await refresh(); })()
+                .catch(silentCatch('GoalDetailDrawer.acceptGoal'));
+            }}
+            onReject={(c) => {
+              void (async () => { await rejectGoal(goal.id, c); await refresh(); })()
+                .catch(silentCatch('GoalDetailDrawer.rejectGoal'));
+            }}
           />
         </div>
       )}

@@ -291,6 +291,11 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
       await get().refreshPendingAcceptance();
     } catch (err) {
       reportError(err, "Failed to accept goal", set);
+      // Rethrow: this used to swallow, so a surface that resolves the card the
+      // moment it decides had nothing to restore from — the goal stayed
+      // `awaiting_acceptance` in the DB while the card left the queue, and the
+      // failure was indistinguishable from a completed acceptance.
+      throw err;
     }
   },
 
@@ -301,6 +306,10 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
       await get().refreshPendingAcceptance();
     } catch (err) {
       reportError(err, "Failed to send goal back", set);
+      // Rethrow for the same reason as acceptGoal: a swallowed rejection leaves
+      // the goal parked in `awaiting_acceptance` with the team never told to
+      // rework it, while the caller reads the silence as a delivered comment.
+      throw err;
     }
   },
 
