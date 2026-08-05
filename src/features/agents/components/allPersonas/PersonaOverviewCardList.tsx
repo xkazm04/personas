@@ -10,6 +10,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useAgentStore } from '@/stores/agentStore';
 import type { Persona } from '@/lib/bindings/Persona';
 import { BuildingBadge, StatusBadge, TrustScoreBar } from './PersonaOverviewBadges';
+import { isPersonaBuilding } from './personaBuildStatus';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DENSITY_TOKENS, type DensityTokens } from '@/lib/density';
 
@@ -126,7 +127,7 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
 
   if (!p) return null;
 
-  const building = id === buildPersonaId && buildPhase !== 'initializing' && buildPhase !== 'promoted';
+  const building = isPersonaBuilding(id, buildPersonaId, buildPhase);
   const draft = isDraft(p);
   const favorite = isFavorite(id);
   const accent = building ? 'border-l-violet-400'

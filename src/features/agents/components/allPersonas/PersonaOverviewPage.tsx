@@ -10,6 +10,7 @@ import { DataGrid } from '@/features/shared/components/display/DataGrid';
 import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { useFavoriteAgents } from '@/hooks/agents/useFavoriteAgents';
 import { DEFAULT_VIEW_CONFIG, type AgentListViewConfig } from './viewConfig';
+import { isPersonaBuilding } from './personaBuildStatus';
 import { PersonaOverviewBatchBar } from './PersonaOverviewBatchBar';
 import { PersonaOverviewToolbar } from './PersonaOverviewToolbar';
 import { PersonaOverviewCardList } from './PersonaOverviewCardList';
@@ -94,7 +95,7 @@ export default function PersonaOverviewPage() {
   const isDraft = useCallback((p: Persona) => p.lifecycle === 'draft', []);
   const isArchived = useCallback((p: Persona) => p.lifecycle === 'archived', []);
   const isBuilding = useCallback(
-    (id: string) => id === buildPersonaId && buildPhase !== 'initializing' && buildPhase !== 'promoted',
+    (id: string) => isPersonaBuilding(id, buildPersonaId, buildPhase),
     [buildPersonaId, buildPhase],
   );
 
