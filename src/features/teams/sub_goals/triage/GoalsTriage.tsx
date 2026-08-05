@@ -7,10 +7,15 @@
 //
 // It replaced three surfaces: the canvas's inert GoalListPopover (titles, no
 // actions), the modal prototype's Workbench and Board variants, and
-// AcceptanceTriagePolished (the tray's own cross-project implementation). Two
-// hosts feed it and nothing else renders goals for acceptance:
+// AcceptanceTriagePolished (the tray's own cross-project implementation). One
+// host feeds it:
 //   · MastermindGoalsModal — one project, from the canvas Goals cell
-//   · GoalAcceptanceView   — every project, from the title-bar tray
+//
+// The cross-project host (GoalAcceptanceView, opened from the title-bar tray)
+// is gone: goals are the seventh kind in the unified triage deck, so
+// "everything waiting on you" is one queue rather than two. This surface stays
+// because reading a project's finished work in KPI buckets is a different act
+// from clearing one card at a time.
 //
 // A pending goal's description is NEVER truncated: it is the thing you are
 // being asked to judge. Only the collapsed context strips clamp.
