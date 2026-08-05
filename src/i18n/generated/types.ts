@@ -14179,6 +14179,25 @@ export type Translations = {
       envslot_unhealthy: string;
       database_modal_title: string;
       database_modal_footer: string;
+      monitoring_modal_title: string;
+      monitoring_modal_footer: string;
+      monitoring_item_technical: string;
+      monitoring_item_llm: string;
+      monitoring_item_logs: string;
+      monitoring_item_metrics: string;
+      monitoring_state_empty: string;
+      monitoring_state_unconfirmed: string;
+      monitoring_state_not_implemented: string;
+      monitoring_state_ok: string;
+      monitoring_deploy: string;
+      monitoring_deploying: string;
+      monitoring_deploy_started: string;
+      monitoring_deploy_blurb: string;
+      monitoring_candidates: string;
+      monitoring_chain_no_code: string;
+      monitoring_chain_no_connector: string;
+      monitoring_pick_title: string;
+      monitoring_pick_body: string;
     };
     doc_signing: {
       sign_heading: string;
