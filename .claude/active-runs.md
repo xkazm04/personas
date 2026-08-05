@@ -2,6 +2,11 @@
 
 ## Active
 
+### scan-sweep-agent-health — /scan-sweep --optimize over agent-health — session fable-5
+- Started: 2026-08-05. Status: started. Main checkout (atomic per-finding commits).
+- Paths: `src/features/agents/sub_health/**`, `src/i18n/locales/*.json` (only if a fix adds keys), `.claude/scan-history/scan-sweep.jsonl`, `.personas/memory-outbox.jsonl`.
+
+
 
 
 
@@ -101,6 +106,12 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### athena-attention-bar — two-level alert structure in the chat panel — COMPLETE, commit ffb81a7bb — session opus-5 (xhigh)
+- 2026-08-05. Six surfaces that pinned themselves above the transcript unconditionally (MCP requests, decision card, assignment cards, actions ledger, one card per proactive nudge) collapse into ONE counts-chip row (`attention/AttentionBar.tsx`); cards render only when their chip is toggled. Nudges split by severity via `nudgeSeverity()` mirroring ProactiveCard's existing accent map; `message_attention` uncounted (aggregated on the digest card). Expansion set persists as `companionAlertsExpanded` (systemStore partialize) so the shape survives reopen/restart; only `blocked` defaults open (a spawned CLI session is parked until answered). LiveOpsStrip keeps its own independent collapse; approvals still render inline on their turn.
+- Files: `attention/{attentionKinds.ts,useAttentionCounts.ts,AttentionBar.tsx}` (new), CompanionPanel wiring, companionPluginSlice + systemStore, 14 locales (13 machine-translated), docs/features/companion/README.md (new "Attention bar" section), 2 new test files.
+- Gates: tsc 0 · companion vitest 374/374 (12 new) · eslint clean (one `text-foreground/60` low-contrast warning caught by the house rule and fixed) · i18n strict + untranslated 0/0 x14. NOT live-verified — needs one look at the real panel with alerts present.
+- GOTCHA (cost an amend): backticks inside a double-quoted bash `-m` message are command-substituted — `Only \`blocked\` starts open` committed as `Only  starts open`. Use `git commit -F <file>` for any message containing backticks (this is the documented Bash-tool-is-not-PowerShell rule, hit from the other direction).
 
 ### athena-spanish-capture — reply-language anchor hardening — COMPLETE, commit 21039bdca — session fable-5
 - 2026-08-05. Root-caused Athena replying in Spanish on an English UI: app_language was `en` the whole time (settings_audit_log verified); the default thread's only human turns were a Jul-16 Spanish UAT prompt, and since the en directive emitted nothing, replayed history captured every system-triggered turn for 3 weeks. Fix: language_addendum always anchors (en included), names system-triggered turns + replayed history, mirror clause confined to the user's CURRENT message; pure language_directive() + regression test. Operator still owes a conversation reset (or one English exchange) to flush the Spanish episodes from the replay window.
