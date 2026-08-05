@@ -30,7 +30,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { DeckActionBar, DeckFlank } from './deck/DeckActionBar';
 import { kindCopy } from './deck/DeckChips';
-import { DeckQueueRail } from './deck/DeckQueueRail';
+import { DeckQueueRail, RAIL_WIDTH } from './deck/DeckQueueRail';
 import { DeckCleared, DeckLoading } from './deck/DeckStates';
 import { DeckTopBar } from './deck/DeckTopBar';
 import { QuestionPanel } from './deck/QuestionPanel';
@@ -208,6 +208,18 @@ export function TriageDeckVariant({
           </>
         )}
         </div>
+
+        {/* Mirrors the rail so the card centres on the WINDOW rather than on
+            whatever space the rail happens to leave. Without it the card is a
+            flex sibling of the rail and slides right by half the rail's width,
+            which is why the rail could never be widened.
+
+            Only from `2xl` up, and that is the whole trade: the card wants 960px
+            (736 + flanks + gaps + padding), so mirroring a 288px rail at 1280px
+            would cost the card 256px to correct a 144px offset — a worse deal
+            than the offset. Above `2xl` the arithmetic affords it and the card
+            keeps its full width. See RAIL_WIDTH. */}
+        <div aria-hidden className={`hidden shrink-0 2xl:block ${RAIL_WIDTH}`} />
       </div>
 
       {/* The reason strip TAKES OVER the action bar rather than layering over

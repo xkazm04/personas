@@ -28,8 +28,33 @@ import { KIND_META, kindCopy, TONE_TEXT } from './DeckChips';
 /** Above this many rows the list virtualizes; below it, plain DOM reads better
  *  (a virtualizer with a handful of rows costs a measure pass and buys nothing). */
 const VIRTUALIZE_ABOVE = 40;
-/** Row height fed to the virtualizer. Matches the padding + line-height below. */
-const ROW_HEIGHT = 48;
+/**
+ * Row height fed to the virtualizer. Matches the padding + line-height below:
+ * `py-2` (8 + 8) plus one `typo-body` line.
+ *
+ * Exported so a test can assert the constant and the rendered row agree. They
+ * are two independent numbers handed to `estimateSize`, virtualization engages
+ * above `VIRTUALIZE_ABOVE` rows, and drift between them misplaces every row past
+ * that point — silently.
+ */
+export const ROW_HEIGHT = 40;
+
+/**
+ * The rail's width, and the width its mirror must match.
+ *
+ * Doubles (240 → 480) only where the screen can pay for it. The card is
+ * `max-w-[46rem]` (736px) and its flanks + gaps + padding cost 224px, so the
+ * centre column needs 960px to hold the card at full width. `TriageDeckVariant`
+ * mirrors this rail with an empty column only at breakpoints where
+ * `viewport − 2 × rail` still clears 960 — which is why the ladder pauses at
+ * `w-72` through `2xl` instead of growing on every step. The result: the card's
+ * width is unchanged at every breakpoint, and from `2xl` up its centre stops
+ * moving when the rail resizes.
+ *
+ * Exported because the mirror MUST read this same string. Two hand-copied class
+ * lists that drift is precisely how the card slides off-centre again.
+ */
+export const RAIL_WIDTH = 'w-60 xl:w-72 2xl:w-72 min-[1728px]:w-96 min-[1920px]:w-[30rem]';
 
 function QueueRow({
   item,
@@ -48,6 +73,7 @@ function QueueRow({
   const { t, tx } = useTranslation();
   const meta = KIND_META[item.kind];
   const Icon = meta.icon;
+  const kindLabel = kindCopy(t, item.kind).one;
   const ref = useRef<HTMLButtonElement>(null);
 
   // Keep the card being decided in view as the deck walks the queue, so the
@@ -64,7 +90,9 @@ function QueueRow({
       type="button"
       onClick={onJump}
       aria-current={current ? 'true' : undefined}
-      title={tx(t.monitor.triage_queue_jump, { title: item.title })}
+      // The kind rides in the tooltip too: with the second line gone, the icon
+      // is the only thing carrying it on screen, and an icon is not a label.
+      title={`${kindLabel} — ${tx(t.monitor.triage_queue_jump, { title: item.title })}`}
       className={`focus-ring flex w-full items-center gap-2.5 border-l-2 px-3 py-2 text-left transition-colors ${
         current
           ? 'border-primary bg-primary/10'
@@ -73,20 +101,22 @@ function QueueRow({
     >
       <span className="typo-data w-5 shrink-0 tabular-nums text-muted-foreground">{position}</span>
       <Icon className={`h-4 w-4 shrink-0 ${TONE_TEXT[meta.tone]}`} aria-hidden />
-      <span className="min-w-0 flex-1">
-        <span
-          className={`block truncate ${current ? 'typo-title text-foreground' : 'typo-caption text-foreground'}`}
-        >
-          {item.title}
-        </span>
-        <span className="typo-label flex items-center gap-1 truncate text-muted-foreground">
-          {/* A skipped card sorts to the BACK of the queue rather than leaving
-              it, so without this the rail's tail reads as "not looked at yet"
-              when it is really "you already passed on these". */}
-          {deferred ? <RotateCcw className="h-3 w-3 shrink-0" aria-hidden /> : null}
-          {kindCopy(t, item.kind).one}
-        </span>
+      {/* The icon is `aria-hidden`, so this is the ONLY thing standing between
+          the single-line row and a queue whose item types are invisible to a
+          screen reader. */}
+      <span className="sr-only">{kindLabel}</span>
+      {/* Normal weight, every row. The card being decided is marked by the left
+          border and the background tint it already has — carrying that in the
+          font weight as well made the rail read as a list of headlines. */}
+      <span data-rail-name className="typo-body min-w-0 flex-1 truncate text-foreground">
+        {item.title}
       </span>
+      {/* A skipped card sorts to the BACK of the queue rather than leaving it,
+          so without this the rail's tail reads as "not looked at yet" when it is
+          really "you already passed on these". */}
+      {deferred ? (
+        <RotateCcw className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden />
+      ) : null}
     </button>
   );
 }
@@ -111,7 +141,7 @@ export function DeckQueueRail({
   return (
     <aside
       aria-label={t.monitor.triage_queue_rail_aria}
-      className="hidden h-full w-60 shrink-0 flex-col border-r border-primary/10 bg-secondary/15 lg:flex xl:w-64"
+      className={`hidden h-full ${RAIL_WIDTH} shrink-0 flex-col border-r border-primary/10 bg-secondary/15 lg:flex`}
     >
       <div className="flex shrink-0 items-baseline justify-between border-b border-primary/10 px-3 py-3">
         <h2 className="typo-label uppercase tracking-wide text-muted-foreground">
