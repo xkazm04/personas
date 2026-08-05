@@ -6,6 +6,9 @@ import type { AthenaAdaptation } from '@/lib/bindings/AthenaAdaptation';
 import type { AthenaUsageDashboard } from '@/lib/bindings/AthenaUsageDashboard';
 import type { AthenaHealth } from '@/lib/bindings/AthenaHealth';
 import type { ConversationRow } from '@/lib/bindings/ConversationRow';
+import type { CompanionTurnSidecar } from '@/lib/bindings/CompanionTurnSidecar';
+
+export type { CompanionTurnSidecar };
 
 /**
  * Initialize the companion-brain disk layout (idempotent).
@@ -859,6 +862,33 @@ export async function companionListRecentMessages(
   conversationId?: string,
 ): Promise<CompanionMessage[]> {
   return invoke<CompanionMessage[]>('companion_list_recent_messages', { limit, conversationId });
+}
+
+/**
+ * Persist one assistant turn's side channels (narration trail, TodoWrite
+ * plan, dispatcher summary, recall preview) so they survive an app
+ * restart. Upsert with COALESCE semantics: omitting a field leaves the
+ * stored value alone, so the `finished` write and the later
+ * `turn-summary` write layer onto the same row.
+ *
+ * Each blob is opaque JSON owned by the frontend types — the backend
+ * only stores and returns it.
+ */
+export async function companionSaveTurnSidecar(args: {
+  episodeId: string;
+  narrationJson?: string;
+  stepsJson?: string;
+  summaryJson?: string;
+  recallJson?: string;
+}): Promise<void> {
+  return invoke<void>('companion_save_turn_sidecar', args);
+}
+
+/** Batch-read persisted sidecars. Ids without a row are simply absent. */
+export async function companionGetTurnSidecars(
+  episodeIds: string[],
+): Promise<CompanionTurnSidecar[]> {
+  return invoke<CompanionTurnSidecar[]>('companion_get_turn_sidecars', { episodeIds });
 }
 
 /**

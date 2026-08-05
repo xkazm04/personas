@@ -8,6 +8,9 @@ import {
   completeNarrationTool as completeNarrationToolPure,
   isTrailWorthKeeping,
 } from './narrationTimeline';
+// Type-only (erased at build): `turnSidecars` imports `StoredTurnSummary`
+// back from here, so a value import would be a real cycle.
+import type { HydratedSidecars } from './turnSidecars';
 import type { GuidanceWalkthrough } from './guidance/types';
 import type { PendingDecision } from './decision/types';
 import { ADHOC_TOPIC } from './guidance/walkthroughs';
@@ -467,6 +470,16 @@ interface CompanionStore {
   /** Drop the in-flight timeline without promoting (error/interrupt). */
   resetStreamingNarration: () => void;
   clearAllNarration: () => void;
+
+  /**
+   * Fill the four per-turn maps above from the persisted
+   * `companion_turn_sidecar` rows, so bubbles that predate this app
+   * session still show their trail / plan / summary / recall. Entries
+   * already in the store ALWAYS win — a live turn's in-memory channels
+   * are fresher than anything on disk, and a late-arriving hydration
+   * must never overwrite them. Called by `useTurnSidecarHydration`.
+   */
+  hydrateTurnSidecars: (hydrated: HydratedSidecars) => void;
 
   // Phase C2 — Athena-dispatched team assignments. Cards display inline
   // above the chat messages; each card is updated by the assignment
@@ -1065,6 +1078,18 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
       streamingNarrationStartedAt: null,
       narrationByEpisodeId: {},
     }),
+
+  hydrateTurnSidecars: (hydrated) =>
+    set((s) => ({
+      // Spread hydrated FIRST so the existing (live) entries overwrite it.
+      narrationByEpisodeId: { ...hydrated.narrationByEpisodeId, ...s.narrationByEpisodeId },
+      stepsByEpisodeId: { ...hydrated.stepsByEpisodeId, ...s.stepsByEpisodeId },
+      turnSummaryByEpisodeId: {
+        ...hydrated.turnSummaryByEpisodeId,
+        ...s.turnSummaryByEpisodeId,
+      },
+      recallByEpisodeId: { ...hydrated.recallByEpisodeId, ...s.recallByEpisodeId },
+    })),
 
   activeWalkthrough: null,
   guidanceStepIndex: 0,

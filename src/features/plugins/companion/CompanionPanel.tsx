@@ -95,6 +95,7 @@ import { WelcomeHero } from './WelcomeHero';
 import { ConversationSwitcher } from './ConversationSwitcher';
 import { TypingDots } from './TypingDots';
 import { useChatScroll } from './useChatScroll';
+import { persistTurnSidecar, useTurnSidecarHydration } from './useTurnSidecars';
 import { classifyMidTurnIntent } from './midTurnIntent';
 import { RefineChips } from './RefineChips';
 import { BubbleReadAloud } from './BubbleReadAloud';
@@ -726,6 +727,11 @@ function Body(props: BodyProps) {
       .catch(silentCatch('companion_list_recent_messages'));
   }, [initialized, activeConversationId, setMessages]);
 
+  // Replay the persisted per-turn side channels (trail / plan / summary /
+  // recall) for whatever assistant bubbles are on screen, so a restart
+  // doesn't strip older turns back to bare text.
+  useTurnSidecarHydration(messages);
+
   // Initial pending-approvals + proactive fetch — once init is done. (The
   // transcript itself is loaded by the active-conversation effect above.)
   const fetchedRef = useRef(false);
@@ -1074,6 +1080,9 @@ function Body(props: BodyProps) {
               // Pin the narration trail under the completed bubble (D2).
               // Trivial trails are dropped inside the attach.
               store.attachNarrationToEpisode(ev.payload);
+              // Persist whatever just attached so these layers survive an
+              // app restart. Fire-and-forget — never blocks the turn.
+              persistTurnSidecar(ev.payload);
             } else {
               store.setStreamingRecall(null);
               store.resetStreamingNarration();
@@ -1175,6 +1184,10 @@ function Body(props: BodyProps) {
       void _sid;
       void _tid;
       useCompanionStore.getState().setTurnSummary(assistantEpisodeId, summary);
+      // Second write moment for the same sidecar row: the summary event
+      // can land after `finished`. The upsert COALESCEs, so this layers
+      // the summary on without clobbering the trail/plan/recall.
+      persistTurnSidecar(assistantEpisodeId);
     }, []),
     'companion_turn_summary_listen',
   );

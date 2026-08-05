@@ -1254,6 +1254,24 @@ CREATE TABLE IF NOT EXISTS companion_daily_goal (
 );
 CREATE INDEX IF NOT EXISTS idx_companion_daily_goal_status
     ON companion_daily_goal(status, completed_date);
+
+-- Per-turn sidecars: the rich side channels the frontend parses out of the
+-- CLI stream for one assistant episode (narration/tool trail, TodoWrite
+-- plan, dispatcher turn summary, recall preview). They used to live only in
+-- the Zustand store, so an app restart stripped every older bubble back to
+-- bare text and the dev conversation-log export lost them for pre-restart
+-- turns. One row per assistant episode; each column is an opaque JSON blob
+-- owned by the frontend types (StoredNarration / TodoStep[] /
+-- StoredTurnSummary / CompanionRecallPreview) — the backend never parses
+-- them, it only stores and returns them.
+CREATE TABLE IF NOT EXISTS companion_turn_sidecar (
+    episode_id     TEXT PRIMARY KEY,
+    narration_json TEXT,
+    steps_json     TEXT,
+    summary_json   TEXT,
+    recall_json    TEXT,
+    created_at     TEXT NOT NULL DEFAULT (datetime('now'))
+);
 "#;
 
 /// Seed all built-in local credentials if they don't already exist.

@@ -2871,6 +2871,8 @@ pub fn run() {
             commands::companion::daily_goals::companion_daily_goals_create,
             commands::companion::daily_goals::companion_daily_goals_toggle,
             commands::companion::daily_goals::companion_daily_goals_discard,
+            commands::companion::sidecars::companion_save_turn_sidecar,
+            commands::companion::sidecars::companion_get_turn_sidecars,
             commands::companion::voice::companion_tts,
             commands::companion::voice::companion_tts_list_kokoro_voices,
             commands::companion::voice::companion_tts_kokoro_status,
