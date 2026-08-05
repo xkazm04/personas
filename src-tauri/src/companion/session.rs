@@ -621,7 +621,7 @@ pub async fn send_turn(
         }
     };
 
-    let (system_prompt, recall_preview) = {
+    let (system_prompt, recall_preview, prompt_blocks) = {
         #[cfg(feature = "ml")]
         {
             prompt::build_system_prompt(
@@ -956,6 +956,8 @@ pub async fn send_turn(
                 voice: voice_enabled,
                 assistant_episode_id: Some(assistant_ep_id.clone()),
                 outcome_json,
+                prompt_blocks_json: prompt_blocks.to_json(),
+                total_prompt_chars: Some(prompt_blocks.total() as u32),
             },
         );
     }

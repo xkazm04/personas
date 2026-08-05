@@ -2902,6 +2902,7 @@ pub fn run() {
             commands::companion::observability::companion_get_usage_dashboard,
             commands::companion::observability::companion_get_health,
             commands::companion::observability::companion_get_adaptations,
+            commands::companion::observability::companion_prompt_block_stats,
             commands::companion::proactive::companion_evaluate_proactive_now,
             commands::companion::proactive::companion_list_proactive_messages,
             commands::companion::proactive::companion_engage_proactive,

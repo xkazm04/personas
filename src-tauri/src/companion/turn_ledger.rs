@@ -95,6 +95,14 @@ pub struct TurnRecord {
     /// Per-origin JSON blob — dispatcher side-effect counts for full turns,
     /// verdict counts for triage legs. Versionless; consumers tolerate gaps.
     pub outcome_json: Option<String>,
+    /// `{"constitution": 5123, "identity": 812, …}` — per-block char counts
+    /// of the system prompt this turn was given (see
+    /// `prompt::PromptBlockSizes`). `None` for the headless legs, which
+    /// compose their own one-shot prompts rather than the full assembly.
+    pub prompt_blocks_json: Option<String>,
+    /// Real `system_prompt.len()`. Pairs with `prompt_blocks_json` so a
+    /// growth trend is one query, not a JSON parse per row.
+    pub total_prompt_chars: Option<u32>,
 }
 
 /// Record a turn and return its generated id. Best-effort: an insert failure
@@ -119,8 +127,9 @@ fn try_record_turn(pool: &UserDbPool, rec: &TurnRecord) -> Result<String, AppErr
         "INSERT INTO companion_turn
            (id, origin, trigger_kind, model, input_tokens, output_tokens,
             cache_read_tokens, cache_creation_tokens, cost_usd, duration_ms,
-            num_turns, is_error, voice, assistant_episode_id, outcome_json)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
+            num_turns, is_error, voice, assistant_episode_id, outcome_json,
+            prompt_blocks_json, total_prompt_chars)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
         params![
             id,
             rec.origin,
@@ -137,6 +146,8 @@ fn try_record_turn(pool: &UserDbPool, rec: &TurnRecord) -> Result<String, AppErr
             rec.voice as i64,
             rec.assistant_episode_id,
             rec.outcome_json,
+            rec.prompt_blocks_json,
+            rec.total_prompt_chars,
         ],
     )?;
     Ok(id)
@@ -226,6 +237,8 @@ mod tests {
                     voice INTEGER NOT NULL DEFAULT 0,
                     assistant_episode_id TEXT,
                     outcome_json TEXT,
+                    prompt_blocks_json TEXT,
+                    total_prompt_chars INTEGER,
                     created_at TEXT NOT NULL DEFAULT (datetime('now'))
                 );",
             )
@@ -300,6 +313,8 @@ mod tests {
                 voice: true,
                 assistant_episode_id: Some("ep_xyz".into()),
                 outcome_json: Some(r#"{"approvals":1}"#.into()),
+                prompt_blocks_json: Some(r#"{"constitution":120,"identity":40}"#.into()),
+                total_prompt_chars: Some(1234),
             },
         )
         .expect("insert should return an id");
@@ -314,6 +329,17 @@ mod tests {
         assert_eq!(origin, "chat");
         assert!((cost - 0.42).abs() < 1e-9);
         assert_eq!(voice, 1);
+
+        // The prompt-size ledger round-trips through the same row.
+        let (blocks, chars): (String, i64) = conn
+            .query_row(
+                "SELECT prompt_blocks_json, total_prompt_chars FROM companion_turn LIMIT 1",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(blocks, r#"{"constitution":120,"identity":40}"#);
+        assert_eq!(chars, 1234);
 
         // update_outcome attaches verdict counts to the existing row.
         update_outcome(&pool, &id, r#"{"groups":3,"drop":2}"#);

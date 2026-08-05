@@ -153,6 +153,9 @@ pub type EmbedderArg<'a> = Option<&'a ()>;
 ///
 /// `query` is the user's current message — used to seed retrieval. Pass
 /// an empty string for non-retrieval prompts (e.g., reflection cycles).
+///
+/// Returns the composed prompt, the recall preview the panel renders, and
+/// the per-block size breakdown the caller hands to the turn ledger.
 pub async fn build_system_prompt(
     user_db: &UserDbPool,
     sys_db: &DbPool,
@@ -162,7 +165,7 @@ pub async fn build_system_prompt(
     voice_enabled: bool,
     recall_synthesis_enabled: bool,
     autonomous_mode: bool,
-) -> Result<(String, RecallPreview), AppError> {
+) -> Result<(String, RecallPreview, PromptBlockSizes), AppError> {
     let root = disk::brain_root()?;
     let constitution =
         fs::read_to_string(root.join("constitution.md")).unwrap_or_else(|_| String::new());
@@ -244,7 +247,7 @@ pub async fn build_system_prompt(
     );
 
     let preview = summarize_recall(&recall, briefing.is_some());
-    let composed = compose(
+    let (composed, block_sizes) = compose(
         &constitution,
         &identity,
         &observability_md,
@@ -257,7 +260,9 @@ pub async fn build_system_prompt(
         &display_md,
         &autonomous_md,
     );
-    Ok((composed, preview))
+    // Exactly one budget audit per composed prompt.
+    block_sizes.warn_over_budget();
+    Ok((composed, preview, block_sizes))
 }
 
 /// Raw (unsynthesized) recall — shared by both the embedding-backed and
@@ -1461,6 +1466,90 @@ fn format_connectors(names: &[String]) -> String {
     s
 }
 
+// ── Per-block size ledger ───────────────────────────────────────────────
+//
+// Prompt assembly had zero size accounting until 2026-08. The dev-mode
+// context index silently grew to ~30.6KB injected on EVERY turn and was
+// caught by accident (rolled up to group level in 12651a18c). A block that
+// grows without anyone noticing is a permanent, invisible tax on every
+// Athena turn, so compose() now reports what each named block cost and
+// warns when one breaches its budget.
+
+/// Char budget per named block. Deliberately generous — this is a tripwire
+/// for silent growth, not a cap: a breach emits one `tracing::warn!` and
+/// changes nothing about the prompt. `mode_addenda` carries the dev-mode
+/// self-model (the block that hosted the 30KB incident), which is why its
+/// budget is the tightest of the large slots.
+const BLOCK_BUDGETS: &[(&str, usize)] = &[
+    ("constitution", 24_000),
+    ("identity", 16_000),
+    ("observability", 48_000),
+    ("recall", 40_000),
+    ("briefing", 16_000),
+    ("plugins", 16_000),
+    ("connectors", 12_000),
+    ("onboarding", 8_000),
+    ("voice", 8_000),
+    ("display", 4_000),
+    ("mode_addenda", 12_000),
+    ("static_addenda", 8_000),
+];
+
+fn budget_for(block: &str) -> Option<usize> {
+    BLOCK_BUDGETS
+        .iter()
+        .find(|(name, _)| *name == block)
+        .map(|(_, max)| *max)
+}
+
+/// Per-block char counts for one composed system prompt.
+///
+/// `total` is the real `composed.len()`, so it is slightly larger than the
+/// sum of the blocks — the difference is compose()'s own fixed scaffolding
+/// (the `# Identity (live, evolves)` heading and friends), a couple of
+/// dozen chars that would only add noise as its own bucket.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct PromptBlockSizes {
+    blocks: Vec<(&'static str, usize)>,
+    total: usize,
+}
+
+impl PromptBlockSizes {
+    /// Total chars of the composed prompt.
+    pub fn total(&self) -> usize {
+        self.total
+    }
+
+    /// `{"constitution": 5123, "identity": 812, …}` for the turn-ledger row.
+    /// `None` only if serialization somehow fails — the caller stores NULL.
+    pub fn to_json(&self) -> Option<String> {
+        let map: serde_json::Map<String, serde_json::Value> = self
+            .blocks
+            .iter()
+            .map(|(name, len)| ((*name).to_string(), serde_json::json!(*len)))
+            .collect();
+        serde_json::to_string(&map).ok()
+    }
+
+    /// One `warn!` per over-budget block, at most once per turn (the caller
+    /// invokes this exactly once, right after composing).
+    pub fn warn_over_budget(&self) {
+        for (name, len) in &self.blocks {
+            if let Some(max) = budget_for(name) {
+                if *len > max {
+                    tracing::warn!(
+                        block = *name,
+                        chars = *len,
+                        budget = max,
+                        total_prompt_chars = self.total,
+                        "companion prompt: block over budget"
+                    );
+                }
+            }
+        }
+    }
+}
+
 fn compose(
     constitution: &str,
     identity: &str,
@@ -1473,7 +1562,7 @@ fn compose(
     voice_md: &str,
     display_md: &str,
     autonomous_md: &str,
-) -> String {
+) -> (String, PromptBlockSizes) {
     // When a synthesized briefing is present, it replaces the raw memory
     // sections (facts/goals/procedurals/episodes/backlog/doctrine) — the
     // synthesis prompt fed Claude all of those, so the briefing is the
@@ -1589,7 +1678,38 @@ fn compose(
     // the autonomous loop is the most important behavioral
     // modification of the turn.
     out.push_str(autonomous_md);
-    out
+
+    // Instrumentation only — every count is read off the exact strings that
+    // were just pushed, so this cannot change a single byte of `out`.
+    let sizes = PromptBlockSizes {
+        blocks: vec![
+            ("constitution", constitution.len()),
+            ("identity", identity.len()),
+            ("observability", observability_md.len()),
+            (
+                "recall",
+                episodes_md.len()
+                    + doctrine_md.len()
+                    + facts_md.len()
+                    + goals_md.len()
+                    + procedurals_md.len()
+                    + backlog_md.len(),
+            ),
+            ("briefing", synth_md.len()),
+            ("plugins", plugins_md.len()),
+            ("connectors", connectors_md.len()),
+            ("onboarding", onboarding_md.len()),
+            ("voice", voice_md.len()),
+            ("display", display_md.len()),
+            ("mode_addenda", autonomous_md.len()),
+            (
+                "static_addenda",
+                tools_addendum().len() + delegation_addendum().len(),
+            ),
+        ],
+        total: out.len(),
+    };
+    (out, sizes)
 }
 
 fn recall_synthesis_format(b: &Briefing) -> String {
@@ -2399,5 +2519,122 @@ mod tests {
         assert!(!out.contains("Scout"), "{out}");
         // Counts still belong to the digest.
         assert!(out.contains("3 total, 2 enabled"));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Per-block size ledger
+    // ─────────────────────────────────────────────────────────────────────
+
+    fn empty_recall() -> Recall {
+        Recall {
+            episodes: Vec::new(),
+            doctrine: Vec::new(),
+            facts: Vec::new(),
+            procedurals: Vec::new(),
+            goals: Vec::new(),
+            backlog: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn compose_output_is_byte_identical_under_instrumentation() {
+        // The size ledger must be pure observation. This pins the composed
+        // string against a hand-written expectation assembled in compose()'s
+        // documented order, so any future edit that "just" reorders or
+        // re-pads a block while touching the instrumentation fails here
+        // rather than silently changing what the model reads.
+        let recall = empty_recall();
+        let (out, _) = compose(
+            "CONSTITUTION",
+            "IDENTITY",
+            "OBSERVABILITY",
+            &recall,
+            None,
+            "PLUGINS",
+            "CONNECTORS",
+            "ONBOARDING",
+            "VOICE",
+            "DISPLAY",
+            "MODE",
+        );
+        // Empty recall + no briefing ⇒ all six memory blocks and the
+        // synthesis block render as "" (asserted separately for facts in
+        // `format_facts_empty_input_is_empty_string`).
+        let expected = format!(
+            "CONSTITUTION\n\n# Identity (live, evolves)\n\nIDENTITY\
+             OBSERVABILITYPLUGINSCONNECTORSONBOARDINGVOICEDISPLAY{tools}{delegation}MODE",
+            tools = tools_addendum(),
+            delegation = delegation_addendum(),
+        );
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn block_sizes_report_every_block_and_the_real_total() {
+        let mut recall = empty_recall();
+        recall.facts = vec![fact("alpha", vec!["identity.md".to_string()])];
+        let facts_len = format_facts(&recall.facts).len();
+        assert!(facts_len > 0, "fixture should render a non-empty facts block");
+
+        let (out, sizes) = compose(
+            "CONSTITUTION",
+            "IDENTITY",
+            "OBSERVABILITY",
+            &recall,
+            None,
+            "PLUGINS",
+            "CONNECTORS",
+            "ONBOARDING",
+            "VOICE",
+            "DISPLAY",
+            "MODE",
+        );
+
+        // `total` is the real composed length, never a sum of estimates.
+        assert_eq!(sizes.total(), out.len());
+
+        let json = sizes.to_json().expect("breakdown serializes");
+        let map: serde_json::Map<String, serde_json::Value> =
+            serde_json::from_str(&json).expect("breakdown is a JSON object");
+        for name in [
+            "constitution",
+            "identity",
+            "observability",
+            "recall",
+            "briefing",
+            "plugins",
+            "connectors",
+            "onboarding",
+            "voice",
+            "display",
+            "mode_addenda",
+            "static_addenda",
+        ] {
+            assert!(map.contains_key(name), "missing block {name} in {json}");
+        }
+        assert_eq!(map["constitution"].as_u64(), Some("CONSTITUTION".len() as u64));
+        assert_eq!(map["mode_addenda"].as_u64(), Some("MODE".len() as u64));
+        // The six raw memory blocks collapse into one `recall` bucket.
+        assert_eq!(map["recall"].as_u64(), Some(facts_len as u64));
+        // No briefing was passed, so that bucket is genuinely zero.
+        assert_eq!(map["briefing"].as_u64(), Some(0));
+        // The blocks account for everything but compose()'s own headings.
+        let block_sum: u64 = map.values().filter_map(serde_json::Value::as_u64).sum();
+        assert!(block_sum <= sizes.total() as u64);
+        assert!(sizes.total() as u64 - block_sum < 128, "scaffolding drifted");
+    }
+
+    #[test]
+    fn every_measured_block_has_a_budget() {
+        // A block added to compose() without a budget entry would be
+        // measured but never audited — the exact silence this feature exists
+        // to end.
+        let recall = empty_recall();
+        let (_, sizes) = compose(
+            "", "", "", &recall, None, "", "", "", "", "", "",
+        );
+        for (name, _) in &sizes.blocks {
+            assert!(budget_for(name).is_some(), "block {name} has no budget");
+        }
     }
 }

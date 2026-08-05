@@ -546,6 +546,12 @@ pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
             // other brain tiers (fact/goal/procedural/doctrine/…) leave it NULL and
             // stay GLOBAL — that is the singular-Athena property, keep it.
             "ALTER TABLE companion_node ADD COLUMN session_id TEXT;",
+            // Per-block prompt size ledger — what each named system-prompt
+            // block cost this turn, so silent growth (the dev-mode context
+            // index reached ~30.6KB per turn unnoticed) is queryable rather
+            // than accidental. See companion::prompt::PromptBlockSizes.
+            "ALTER TABLE companion_turn ADD COLUMN prompt_blocks_json TEXT;",
+            "ALTER TABLE companion_turn ADD COLUMN total_prompt_chars INTEGER;",
         ] {
             let _ = conn.execute_batch(stmt);
         }
