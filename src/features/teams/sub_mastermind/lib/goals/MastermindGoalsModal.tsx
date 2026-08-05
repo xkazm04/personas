@@ -1,33 +1,24 @@
-// Host for the Mastermind Goals modal — owns the data wiring (project goals
-// from the scene store, accept/reject through the system store) and, for the
-// duration of the prototype, a tab switcher across three directional variants.
+// Project-scoped goal triage, opened from the canvas's Goals cell.
 //
-// PROTOTYPE SCAFFOLD: the `variant` state + tab strip below are throwaway. On
-// consolidation the winner becomes the sole body and this file keeps only the
-// BaseModal shell + wiring.
-import { useCallback, useState } from 'react';
+// Owns the wiring only: the project's goals from the scene store, its KPIs from
+// the page (already reduced to KpiListPopover's row shape), and accept/reject
+// through the system store. The surface itself is the shared `GoalsTriage` —
+// the same component the title-bar tray renders across every project.
+import { useCallback, useMemo, useState } from 'react';
 import { Target } from 'lucide-react';
 
 import { BaseModal } from '@/features/shared/components/modals';
-import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
-import { useSceneStore } from '../sceneStore';
-import { useSystemStore } from '@/stores/systemStore';
+import { GoalsTriage } from '@/features/teams/sub_goals/triage/GoalsTriage';
+import { TriageHeaderBand } from '@/features/teams/sub_goals/triage/triageBits';
+import { toRows, type GoalKpi, type TriageGoal } from '@/features/teams/sub_goals/triage/triageModel';
 import { toastCatch } from '@/lib/silentCatch';
+import { useSystemStore } from '@/stores/systemStore';
+import { useTranslation } from '@/i18n/useTranslation';
 
 import type { KpiListItem } from '../KpiListPopover';
-import { GoalsHeaderBand } from './goalsModalBits';
-import { toRows, type GoalsModalProps } from './goalsModalModel';
-import { GoalsWorkbenchVariant } from './GoalsWorkbenchVariant';
-import { GoalsTriageVariant } from './GoalsTriageVariant';
-import { GoalsBoardVariant } from './GoalsBoardVariant';
+import { useSceneStore } from '../sceneStore';
 
-type Variant = 'workbench' | 'triage' | 'board';
-
-const VARIANTS: readonly { id: Variant; label: string }[] = [
-  { id: 'workbench', label: 'A · Workbench' },
-  { id: 'triage', label: 'B · Triage' },
-  { id: 'board', label: 'C · Board' },
-];
+const EMPTY: never[] = [];
 
 export function MastermindGoalsModal({ slug, projectName, kpis, onClose }: {
   /** Project id — the scene store keys goals by it. */
@@ -37,12 +28,34 @@ export function MastermindGoalsModal({ slug, projectName, kpis, onClose }: {
   kpis: KpiListItem[];
   onClose: () => void;
 }) {
-  const goals = useSceneStore((s) => s.goals.get(slug)) ?? EMPTY;
+  const { t } = useTranslation();
+  const devGoals = useSceneStore((s) => s.goals.get(slug)) ?? EMPTY;
   const loadGoals = useSceneStore((s) => s.loadGoals);
   const acceptGoal = useSystemStore((s) => s.acceptGoal);
   const rejectGoal = useSystemStore((s) => s.rejectGoal);
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
-  const [variant, setVariant] = useState<Variant>('workbench');
+
+  const goals = useMemo<TriageGoal[]>(() => devGoals.map((g) => ({
+    id: g.id,
+    title: g.title,
+    description: g.description,
+    status: g.status,
+    progress: g.progress,
+    startedAt: g.started_at,
+    completedAt: g.completed_at,
+    kpiId: g.kpi_id,
+    projectId: g.project_id,
+  })), [devGoals]);
+
+  // `unmeasured` KPIs have no reading; `met`/`ok` are on track.
+  const triageKpis = useMemo<GoalKpi[]>(() => kpis.map((k) => ({
+    id: k.id,
+    name: k.name,
+    unit: k.unit,
+    current: k.current,
+    target: k.target,
+    offTrack: k.status === 'crit' || k.status === 'warn',
+  })), [kpis]);
 
   const mark = useCallback((ids: string[], on: boolean) => {
     setBusyIds((prev) => {
@@ -66,41 +79,24 @@ export function MastermindGoalsModal({ slug, projectName, kpis, onClose }: {
     }
   }, [mark, loadGoals]);
 
-  const props: GoalsModalProps = {
-    projectName,
-    goals,
-    kpis,
-    busyIds,
-    onAccept: (id) => void resolve([id], acceptGoal, 'accept'),
-    onReject: (id, comment) => void resolve([id], (g) => rejectGoal(g, comment), 'reject'),
-    onAcceptAll: (ids) => void resolve(ids, acceptGoal, 'accept all'),
-  };
-
-  const awaiting = toRows(goals, kpis).filter((r) => r.awaiting).length;
+  const awaiting = toRows(goals, triageKpis).filter((r) => r.awaiting).length;
 
   return (
     <BaseModal isOpen onClose={onClose} titleId="mm-goals-title" size="lg" portal staggerChildren={false}>
       <div className="flex flex-col h-[540px]" data-testid="mm-goals-modal">
-        <GoalsHeaderBand icon={Target} title="Goals" projectName={projectName} awaiting={awaiting}>
-          <span id="mm-goals-title" className="sr-only">Goals — {projectName}</span>
-          {/* PROTOTYPE ONLY — removed on consolidation. */}
-          <SegmentedTabs
-            tabs={VARIANTS.map((v) => ({ id: v.id, label: v.label }))}
-            activeTab={variant}
-            onTabChange={(v) => setVariant(v as Variant)}
-            variant="pill"
-            size="sm"
-            fullWidth={false}
-            ariaLabel="Prototype variant"
-          />
-        </GoalsHeaderBand>
+        <TriageHeaderBand icon={Target} title={t.plugins.dev_lifecycle.triage_title} subject={projectName} awaiting={awaiting}>
+          <span id="mm-goals-title" className="sr-only">{t.plugins.dev_lifecycle.triage_title} — {projectName}</span>
+        </TriageHeaderBand>
 
-        {variant === 'workbench' && <GoalsWorkbenchVariant {...props} />}
-        {variant === 'triage' && <GoalsTriageVariant {...props} />}
-        {variant === 'board' && <GoalsBoardVariant {...props} />}
+        <GoalsTriage
+          goals={goals}
+          kpis={triageKpis}
+          busyIds={busyIds}
+          onAccept={(id) => void resolve([id], acceptGoal, 'accept')}
+          onReject={(id, comment) => void resolve([id], (g) => rejectGoal(g, comment), 'reject')}
+          onAcceptAll={(ids) => void resolve(ids, acceptGoal, 'accept all')}
+        />
       </div>
     </BaseModal>
   );
 }
-
-const EMPTY: never[] = [];

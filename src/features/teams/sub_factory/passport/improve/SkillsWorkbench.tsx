@@ -66,7 +66,7 @@ export function SkillsWorkbench({ slug, initialMode, onClose }: {
               <ChoiceCard
                 icon={Rocket}
                 title="Dispatch a skill"
-                body="The workspace registry: every library skill × every project, shaded by context coverage. A filled cell runs it; an empty one adopts it."
+                body="This repo's registry: every installed skill × every context group, shaded by how much of the group it has touched. Click any cell to run it there."
                 meta={wb.dispatch.loading ? 'loading…' : `${wb.dispatch.items.length} installed here`}
                 onClick={() => setMode('dispatch')}
                 testid="skills-workbench-choose-dispatch"
@@ -92,8 +92,11 @@ export function SkillsWorkbench({ slug, initialMode, onClose }: {
             </div>
 
             <div className="flex-1 min-h-0 p-3">
+              {/* The canvas's registry looks INWARD: columns are this
+                  project's context groups, not the workspace's projects, and
+                  every cell dispatches (nothing is adopted per context). */}
               {mode === 'dispatch'
-                ? <RegistryTab activeProjectId={slug} onOpenInfo={setInfoSkill} />
+                ? <RegistryTab activeProjectId={slug} axis="project" onOpenInfo={setInfoSkill} />
                 : <SkillsOverviewPanel projectId={slug} />}
             </div>
           </>

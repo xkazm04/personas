@@ -14161,6 +14161,9 @@ export type Translations = {
       ctx_picker_summary: string;
       ctx_picker_fresh_nodes: string;
       ctx_picker_never: string;
+      skills_registry_no_contexts: string;
+      skills_registry_project_summary: string;
+      skills_registry_group_hint: string;
     };
     doc_signing: {
       sign_heading: string;
@@ -15673,6 +15676,19 @@ export type Translations = {
       mission_link_goal: string;
       goal_field_kpi: string;
       goal_kpi_none: string;
+      triage_title: string;
+      triage_lane_in_flight: string;
+      triage_lane_done: string;
+      triage_strip_waiting: string;
+      triage_needs_you_one: string;
+      triage_needs_you_other: string;
+      triage_headline_one: string;
+      triage_headline_other: string;
+      triage_all_clear_sub: string;
+      triage_no_goals_title: string;
+      triage_no_goals_body: string;
+      triage_resolving: string;
+      triage_ago: string;
     };
     dev_projects: {
       bulk_selected_one: string;
