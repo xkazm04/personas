@@ -106,12 +106,14 @@ export function ProactiveCard({
         </div>
       )}
       <div className="flex items-center gap-2">
+        {/* Tinted primary, not solid: solid bg-primary + its white foreground
+            is unreadable under light-primary themes. */}
         <button
           type="button"
           onClick={() => handle('engage')}
           disabled={busy !== null}
           data-testid="companion-proactive-engage"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 focus-ring"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/25 bg-primary/15 text-primary hover:bg-primary/25 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-ring"
         >
           {busy === 'engage' ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
