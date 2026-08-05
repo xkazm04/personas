@@ -5,6 +5,8 @@ import type { DevIdea } from "@/lib/bindings/DevIdea";
 import type { PendingCounts } from "@/lib/bindings/PendingCounts";
 import type { TriageCounts } from "@/lib/bindings/TriageCounts";
 import type { TriageRule } from "@/lib/bindings/TriageRule";
+import type { AttentionThresholds } from "@/lib/bindings/AttentionThresholds";
+import type { UndispatchedIdea } from "@/lib/bindings/UndispatchedIdea";
 import * as devApi from "@/api/devTools/devTools";
 import { decideIdeaRow } from "@/lib/decisions/rowWrites";
 import { silentCatch } from "@/lib/silentCatch";
@@ -52,6 +54,17 @@ export interface DevToolsTriageSlice {
   triageLoadingMore: boolean;
   triageFilterCategory: string | null;
   triageFilterScanType: string | null;
+  /**
+   * The (projectId, query) the last {@link fetchTriageIdeas} actually ran with.
+   *
+   * `triageItems` is ONE shared list — that is the whole point of the Backlog
+   * consolidation — so a second surface that narrows it to a different status
+   * (the dispatch panel wants `accepted`) leaves the first one filtering an
+   * answer to a question it did not ask. Recording the query lets a transient
+   * surface put the shared list back exactly as it found it instead of
+   * guessing, or leaving the Backlog rendering an empty table.
+   */
+  lastTriageQuery: { projectId?: string; query?: TriageQuery } | null;
 
   /** `projectId` undefined = cross-project (the unified Backlog default). */
   fetchTriageIdeas: (projectId?: string, query?: TriageQuery) => Promise<void>;
@@ -92,6 +105,28 @@ export interface DevToolsTriageSlice {
   /** Re-read every queue's pending count. Best-effort: never toasts. */
   refreshPendingCounts: () => Promise<void>;
 
+  // -- The dispatch signal (accepted ideas that never became work) -------
+  /**
+   * Every `accepted` idea with no `dev_tasks` row — a decision a human made
+   * that never became work. The dispatch panel's queue AND the title-bar
+   * badge read this ONE list, so the number on the glyph and the rows behind
+   * it can never disagree.
+   *
+   * `null` until the first read lands: a badge that renders a confident `0`
+   * before it has asked anything is the exact lie this wave exists to remove.
+   */
+  undispatchedIdeas: UndispatchedIdea[] | null;
+  /**
+   * The staleness thresholds the backend ACTUALLY applied, echoed back by
+   * `dev_tools_attention_queue`. Copy renders these; nothing in the frontend
+   * may invent its own cutoff and present it as the product's rule.
+   */
+  dispatchThresholds: AttentionThresholds | null;
+  /** Re-read the undispatched list. Best-effort: never toasts, never zeroes. */
+  refreshUndispatchedIdeas: () => Promise<void>;
+  /** Read the applied thresholds once, for the panel's staleness wording. */
+  refreshDispatchThresholds: () => Promise<void>;
+
   // -- Triage Rules ----------------------------------------------------
   triageRules: TriageRule[];
 
@@ -112,9 +147,10 @@ export const createDevToolsTriageSlice: StateCreator<SystemStore, [], [], DevToo
   triageLoadingMore: false,
   triageFilterCategory: null,
   triageFilterScanType: null,
+  lastTriageQuery: null,
 
   fetchTriageIdeas: async (projectId, query) => {
-    set({ triageLoading: true });
+    set({ triageLoading: true, lastTriageQuery: { projectId, query } });
     try {
       const result = await devApi.triageIdeas(projectId, query?.limit, undefined, {
         status: query?.status,
@@ -238,6 +274,33 @@ export const createDevToolsTriageSlice: StateCreator<SystemStore, [], [], DevToo
       // failed read must never zero the badge: keeping the last known tally is
       // less wrong than claiming nothing is waiting.
       silentCatch("devTools.refreshPendingCounts")(err);
+    }
+  },
+
+  // -- Dispatch signal state --------------------------------------------
+  undispatchedIdeas: null,
+  dispatchThresholds: null,
+
+  refreshUndispatchedIdeas: async () => {
+    try {
+      const undispatchedIdeas = await devApi.undispatchedIdeas();
+      set({ undispatchedIdeas });
+    } catch (err) {
+      // Same contract as the pending-counts poll: a failed background read
+      // keeps the last known list rather than claiming nothing is waiting.
+      silentCatch("devTools.refreshUndispatchedIdeas")(err);
+    }
+  },
+
+  refreshDispatchThresholds: async () => {
+    try {
+      const queue = await devApi.attentionQueue();
+      set({ dispatchThresholds: queue.thresholds });
+    } catch (err) {
+      // Thresholds drive COPY only. Without them the panel says nothing about
+      // staleness — which is correct: it must not fall back to a number the
+      // backend may not have used.
+      silentCatch("devTools.refreshDispatchThresholds")(err);
     }
   },
 

@@ -88,6 +88,41 @@ The title-bar attention button (`ProcessActivityIndicator`) is **split** so the 
 - **Human reviews** reuse the Monitor's `useMonitorData` (local + cloud) for inline approve/reject.
 - The badge counts pending questions + pending reviews + unread messages + drafts-ready. Live work (`running`) shows as a pulsing ring, not a count.
 
+## Dispatch panel — "Approved work" (title-bar)
+
+The tray's rocket capsule (`titlebar-dispatch`, `D` in keyboard-nav mode) opens a right-docked
+**dispatch panel** (`src/features/overview/sub_manual-review/components/dispatch/`) answering the
+one question no surface answered before: *what have I approved, did it actually get sent, and is it
+going stale?* It is the **only** frontend caller of the `fleet` dispatch arm — that arm existed for
+the headless Overnight Portfolio Engine and had never been reachable from the UI.
+
+- **Overlay, not a column.** Same shape as the Notification center — scrim + `fixed` panel below the
+  title bar. Docking it in flow would fight `ContentBox`'s responsive `min-width` floor (1180px at
+  2xl) and push the page into a horizontal scroll. It is wider than that 380px tray because it hosts
+  the shared `FacetedDecisionTable`, whose group rail alone is 240px.
+- **One truth, not a fifth list.** Rows come from `useBacklogQueue('accepted')` — the same
+  `dev_ideas` path the Backlog uses — merged with `dev_tools_undispatched_ideas` (accepted ideas
+  with no `dev_tasks` row). No new idea query. Because `triageItems` is one shared list, the panel
+  captures the query the list was serving and re-issues it on close, so the Backlog behind it is not
+  left filtering the wrong bucket.
+- **The undispatched signal is the headline.** Those rows carry a glyph + word tag (never colour
+  alone) and their age is the backend's `accepted_at`, rendered through `RelativeTime`. An
+  undispatched idea the approved page never loaded still gets a row from the signal itself.
+- **Staleness is echoed, never invented.** `dev_tools_attention_queue` returns the thresholds it
+  actually applied; the panel renders those (`ideaDispatchDays`). With no thresholds read it says
+  nothing about staleness rather than printing a cutoff of its own.
+- **Fleet's precondition is stated before the click.** `fleet_spawn_headless_session` runs inside a
+  project's `root_path`, so an idea with no project — or a project with a blank path — cannot go.
+  The panel names how many and disables the action, instead of letting it come back as a skip reason.
+- **The result is reported in full.** `DispatchIdeasResult` carries `dispatched[]` **and**
+  `skipped[]` with per-item reasons; the report renders every skip with the backend's own wording and
+  never shows a success tone while one is present.
+- **Badge**: the capsule count is the length of the same undispatched list the panel shows, polled on
+  the shared 30s coordinator bucket (`titleBarUndispatchedIdeas`). It collapses at zero and renders
+  nothing before the first read — "not asked yet" is not "nothing waiting". It is deliberately NOT
+  folded into the human-review count: that one counts decisions still owed, this one counts decisions
+  already made that nothing acted on.
+
 ## Footer system-load gauge
 
 The footer's bottom-right cluster shows a small **system-load gauge** (`SystemLoadFooterIcon`) — a CPU icon plus two thin bars (CPU on top, used-RAM below) tinted green / amber / red. It is a *soft, advisory* signal answering **"does this machine have headroom for more local work?"** — a cue to orchestrate more agents or ease off. It is intentionally **not** coupled to the concurrency/rate limits, because host load is influenced by every other process on the PC; treat it as a hint, never a hard gate.

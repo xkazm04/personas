@@ -42,7 +42,13 @@ export interface BacklogQueue {
   projectOptions: { value: string; label: string }[];
 }
 
-export function useBacklogQueue(): BacklogQueue {
+/**
+ * @param initialStatus which bucket this instance opens on. The Backlog wants
+ *   `pending` (things to decide); the dispatch panel wants `accepted` (things
+ *   already decided). Both go through THIS hook — the point of the
+ *   consolidation is one data path, not one question.
+ */
+export function useBacklogQueue(initialStatus: BacklogStatus = 'pending'): BacklogQueue {
   const {
     triageItems, triageCounts, triageHasMore, triageLoading, triageLoadingMore,
     fetchTriageIdeas, fetchMoreTriageIdeas, acceptIdea, rejectIdea, deleteTriageIdea,
@@ -60,7 +66,7 @@ export function useBacklogQueue(): BacklogQueue {
   })));
   const projects = useSystemStore((s) => s.projects);
 
-  const [status, setStatus] = useState<BacklogStatus>('pending');
+  const [status, setStatus] = useState<BacklogStatus>(initialStatus);
   const [actingId, setActingId] = useState<string | null>(null);
 
   const nameOf = useCallback(

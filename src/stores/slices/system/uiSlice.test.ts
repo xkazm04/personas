@@ -46,6 +46,33 @@ describe('uiSlice — headerOverlay controller', () => {
     expect(h.overlay()).toBe('none');
   });
 
+  it('the dispatch panel joins the same single slot', () => {
+    // Adding a variant means the panel closes the monitor and vice versa —
+    // that is the contract, not a regression. Pinned so a future surface
+    // cannot quietly grow a second, stacking overlay.
+    const h = makeHarness();
+    h.get().setHeaderOverlay('dispatch');
+    expect(h.overlay()).toBe('dispatch');
+    h.get().setHeaderOverlay('monitor');
+    expect(h.overlay()).toBe('monitor');
+    h.get().setHeaderOverlay('dispatch');
+    expect(h.overlay()).toBe('dispatch');
+    h.get().setHeaderOverlay('none');
+    expect(h.overlay()).toBe('none');
+  });
+
+  it('setMonitorOpen(false) does not clobber the dispatch panel', () => {
+    const h = makeHarness({ headerOverlay: 'dispatch' });
+    h.get().setMonitorOpen(false);
+    expect(h.overlay()).toBe('dispatch');
+  });
+
+  it('navigating a route dismisses the dispatch panel too', () => {
+    const h = makeHarness({ sidebarSection: 'home', headerOverlay: 'dispatch', navigationHistory: [] });
+    h.get().setSidebarSection('overview');
+    expect(h.overlay()).toBe('none');
+  });
+
   it('setMonitorOpen shim maps to the controller', () => {
     const h = makeHarness();
     h.get().setMonitorOpen(true);
