@@ -119,9 +119,23 @@ export function BacklogDetailLedger({
               scanners emit lists and backticks) at full body contrast, and
               evidence wraps in place instead of scrolling sideways. */}
           <div className="md:flex-1 min-w-0 px-6 py-5 flex flex-col gap-5">
-            <p className="typo-body-lg text-foreground leading-relaxed whitespace-pre-wrap max-w-[68ch] border-l-2 border-primary/30 pl-4">
-              {idea.description || r.backlog_no_description}
-            </p>
+            {/* MARKDOWN, not pre-wrapped text. The scanners that raise these
+                write the description in the same dialect as the reasoning
+                below it — lists, backticks, bold — and this was the one place
+                that printed those symbols verbatim and asked the reviewer to
+                parse them in their head. */}
+            <div className="max-w-[68ch] border-l-2 border-primary/30 pl-4">
+              {idea.description ? (
+                <MarkdownRenderer
+                  content={idea.description}
+                  className="typo-body-lg text-foreground leading-relaxed"
+                />
+              ) : (
+                <p className="typo-body-lg text-foreground leading-relaxed">
+                  {r.backlog_no_description}
+                </p>
+              )}
+            </div>
             {idea.reasoning.trim() && (
               <div className="flex flex-col gap-1.5 max-w-[68ch]">
                 <span className="typo-label text-muted-foreground uppercase tracking-wide">
