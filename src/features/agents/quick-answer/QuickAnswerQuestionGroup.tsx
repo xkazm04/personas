@@ -3,6 +3,7 @@ import { Send, ExternalLink, HelpCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
+import { toastCatch } from '@/lib/silentCatch';
 import type { BuildQuestion } from '@/lib/types/buildTypes';
 import { isComplexQuestion, type QuestionGroup } from './usePendingInteractions';
 
@@ -40,7 +41,18 @@ export function QuickAnswerQuestionGroup({
     setSubmitting(true);
     try {
       await onSubmit(group.sessionId, filled);
+      // Cleared only on a LANDED write. `submitQuestionAnswers` awaits
+      // `answerBuildQuestion` before touching the store, so a rejection here
+      // means the CLI is still halted and the typed answers are the only copy
+      // that exists — wiping the fields would destroy them.
       setAnswers({});
+    } catch (error) {
+      // This was a bare `try/finally`. A rejected submit became an unhandled
+      // rejection: no toast, no banner, the spinner stopped and the answers
+      // stayed in the boxes looking exactly like a successful send that had not
+      // cleared yet. The user learned nothing had happened when the persona
+      // never resumed.
+      toastCatch('QuickAnswerQuestionGroup:submit')(error);
     } finally {
       setSubmitting(false);
     }

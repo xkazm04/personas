@@ -33,6 +33,9 @@ export interface QuickAnswerData {
   /** Carries the resume-loop link (`assignment_id`/`step_id`) the deck needs to
    *  tell a held team step from an advisory review. */
   reviews: MonitorReviewItem[];
+  /** Why {@link reviews} is short, when it is short because the read failed —
+   *  see `useMonitorData#reviewsError`. Null while the last read succeeded. */
+  reviewsError: string | null;
   questionCount: number;
   reviewCount: number;
   total: number;
@@ -70,7 +73,7 @@ export function usePendingInteractions(): QuickAnswerData {
   const personas = useAgentStore((s) => s.personas);
   const applyPendingAnswers = useAgentStore((s) => s.applyPendingAnswers);
 
-  const { reviews, loading, isProcessing, handleReviewAction, handleDispatchAction } =
+  const { reviews, reviewsError, loading, isProcessing, handleReviewAction, handleDispatchAction } =
     useMonitorData(DECK_FEEDS);
 
   const questionGroups = useMemo<QuestionGroup[]>(() => {
@@ -132,6 +135,7 @@ export function usePendingInteractions(): QuickAnswerData {
     () => ({
       questionGroups,
       reviews,
+      reviewsError,
       questionCount,
       reviewCount: reviews.length,
       total: questionCount + reviews.length,
@@ -144,6 +148,7 @@ export function usePendingInteractions(): QuickAnswerData {
     [
       questionGroups,
       reviews,
+      reviewsError,
       questionCount,
       loading,
       isProcessing,

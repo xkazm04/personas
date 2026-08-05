@@ -9,14 +9,14 @@
 // have switched off still shows how much of it is waiting. A kind with nothing
 // in it is rendered inert rather than hidden, because a chip that disappears
 // makes the reviewer wonder what else vanished.
-import { Activity, Layers, Undo2, X } from 'lucide-react';
+import { Activity, Layers, Undo2, Unplug, X } from 'lucide-react';
 
 import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { TRIAGE_KINDS, type TriageKind } from '../triageTypes';
-import type { TriageUndo, UnifiedTriageQueue } from '../useUnifiedTriage';
-import { Kbd, KIND_META, kindCopy, TONE_CHIP, TONE_HOVER } from './DeckChips';
+import type { TriageSourceFailure, TriageUndo, UnifiedTriageQueue } from '../useUnifiedTriage';
+import { Kbd, KIND_META, kindCopy, sourceLabel, TONE_CHIP, TONE_HOVER } from './DeckChips';
 
 function KindFilterChip({
   kind,
@@ -93,6 +93,44 @@ function BacklogChip({
 }
 
 /**
+ * "This queue is short, and here is why."
+ *
+ * The failed ENDING only shows when there is nothing left to deal. A partial
+ * failure is the more common and the more dangerous case: the deck keeps
+ * dealing, the reviewer keeps working, and the queue is quietly missing
+ * whatever the unread source held. This chip is the always-on admission —
+ * pressing it re-reads every source.
+ */
+function FailureChip({
+  failures,
+  onRetry,
+}: {
+  failures: readonly TriageSourceFailure[];
+  onRetry: () => void;
+}) {
+  const { t, tx } = useTranslation();
+  const label = tx(
+    failures.length === 1 ? t.monitor.triage_failed_chip_one : t.monitor.triage_failed_chip_other,
+    { count: failures.length },
+  );
+  const names = failures.map((f) => sourceLabel(t, f.source)).join(', ');
+
+  return (
+    <button
+      type="button"
+      onClick={onRetry}
+      aria-label={label}
+      title={`${tx(t.monitor.triage_failed_sources, { sources: names })} — ${t.monitor.triage_failed_retry}`}
+      data-testid="deck-failure-chip"
+      className={`focus-ring inline-flex shrink-0 items-center gap-1.5 rounded-pill border px-2.5 py-1 typo-caption transition-colors ${TONE_CHIP.danger} ${TONE_HOVER.danger}`}
+    >
+      <Unplug className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      <span>{label}</span>
+    </button>
+  );
+}
+
+/**
  * "You just did that. Take it back?"
  *
  * Rendered ONLY while the last act is genuinely reversible, and it disappears
@@ -162,6 +200,10 @@ export function DeckTopBar({
       </div>
 
       <div className="ml-auto flex shrink-0 items-center gap-3">
+        {queue.failures.length > 0 ? (
+          <FailureChip failures={queue.failures} onRetry={queue.reload} />
+        ) : null}
+
         {queue.undo ? (
           <UndoChip undo={queue.undo} onUndo={() => void queue.undoLast()} />
         ) : null}

@@ -51,7 +51,7 @@ import { useWorkspaceCenter } from '@/features/plugins/dev-tools/sub_workspaces/
 import { viewFromRow } from '@/features/overview/sub_patterns/libraryModel';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { toastCatch } from '@/lib/silentCatch';
+import { extractMessage, toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { getActiveTranslations } from '@/i18n/useTranslation';
 import type { DevIdea } from '@/lib/bindings/DevIdea';
@@ -168,13 +168,49 @@ function successorsFor(
     .map((s) => ({ id: s.id, title: s.title }));
 }
 
-export interface IdeaBacklog {
+/**
+ * The seven queues this deck fuses, named so a failure can say WHICH one.
+ *
+ * `question` is absent deliberately: build questions are read out of the agent
+ * store, which the event bridge keeps live — there is no fetch here that can
+ * fail, so there is no failure to report.
+ */
+export type TriageSource = 'reviews' | 'ideas' | 'practices' | 'policy' | 'evolution' | 'goals';
+
+/** One source that did not answer, and what it said. */
+export interface TriageSourceFailure {
+  source: TriageSource;
+  /** The raw message. Shown in the failed ending's detail line, not the headline. */
+  message: string;
+}
+
+export interface TriageBacklog {
   /** Ideas this session has pulled into the deck. */
   loaded: number;
   /** Ideas pending in SQLite, whatever the deck happens to hold. */
   pending: number;
-  /** Whether another page exists. Drives "you cleared the batch, not the queue". */
+  /** Whether another IDEA page exists. Drives the top bar's `n / N` chip. */
   hasMore: boolean;
+  /**
+   * Ideas still pending behind the working set. EXACT — the keyset page is the
+   * one source that reports its own total, so this is the only number the deck
+   * is allowed to print.
+   */
+  remaining: number;
+  /**
+   * Sources whose fixed-limit query came back FULL.
+   *
+   * A query that asks for 50 and gets 50 has told you nothing about what is
+   * behind it. There is no count to print, but "we may have shown you a slice"
+   * is still the truth, and a deck that answers it with "nothing is waiting on
+   * you" is the exact lie this field exists to stop.
+   */
+  capped: readonly TriageSource[];
+  /**
+   * Anything at all sits behind the working set — a further idea page, or a
+   * capped source. `remaining` may be 0 while this is true.
+   */
+  more: boolean;
 }
 
 /**
@@ -195,8 +231,27 @@ export interface UnifiedTriageQueue {
    *  drives the filter chips. */
   allCounts: TriageCounts;
   loading: boolean;
+  /**
+   * Sources that did not answer this load — empty when everything read cleanly.
+   *
+   * The deck used to have no such field at all: every source ended in a
+   * `.catch(toastCatch(…))`, so a total outage settled `loading:false` with an
+   * empty array and rendered "Deck cleared — nothing is waiting on you", and a
+   * partial outage was silently a smaller queue. A triage surface that
+   * under-reports work is worse than one that is merely broken, because the
+   * reviewer stops looking.
+   */
+  failures: readonly TriageSourceFailure[];
   activeKinds: Set<TriageKind>;
   toggleKind: (kind: TriageKind) => void;
+  /**
+   * Put every kind back in play — the filtered ending's own action.
+   *
+   * The filtered ending used to render no button at all, so a reviewer who had
+   * switched a kind off and reached the end of the rest was shown a dead end
+   * describing a queue they could not get back to.
+   */
+  showAllKinds: () => void;
   /** How many this session has resolved — the progress readout's numerator. */
   decidedCount: number;
   /** Decided + still-pending. Never less than `decidedCount`. */
@@ -224,8 +279,12 @@ export interface UnifiedTriageQueue {
    * ideas pending, the deck dealt 60 and its cleared state was word-for-word the
    * one it shows when there is genuinely nothing left — the single most
    * misleading thing this surface could say.
+   *
+   * `capped` extends the same honesty to the sources that have no `hasMore` to
+   * report: they are read at a fixed limit, and a full page means the deck is
+   * holding a slice it cannot size.
    */
-  backlog: IdeaBacklog;
+  backlog: TriageBacklog;
   /** Pull the next page of ideas into the working set. No-op when there is none. */
   loadMore: () => void;
   /**
@@ -298,8 +357,37 @@ export function useUnifiedTriage(
    * state, so "load more" twice in a row is two fetches rather than one.
    */
   const [ideaFetch, setIdeaFetch] = useState<{ cursor?: string; gen: number }>({ gen: 0 });
-  const [backlog, setBacklog] = useState<IdeaBacklog>({ loaded: 0, pending: 0, hasMore: false });
+  const [ideaPage, setIdeaPage] = useState({ loaded: 0, pending: 0, hasMore: false });
   const cursorRef = useRef<string | null>(null);
+
+  /**
+   * Which sources failed, and which came back full.
+   *
+   * Both are keyed records rather than a boolean per source so a seventh queue
+   * costs one entry, not two more `useState`s and two more memo deps — and both
+   * are written through the helpers below, which BAIL OUT when nothing changed.
+   * That matters more than it looks: these are set from inside a 30s poll, and a
+   * fresh object per poll would re-run the whole projection for no news.
+   */
+  const [sourceErrors, setSourceErrors] = useState<Partial<Record<TriageSource, string>>>({});
+  const [cappedSources, setCappedSources] = useState<readonly TriageSource[]>([]);
+
+  const noteFailure = useCallback((source: TriageSource, message: string | null) => {
+    setSourceErrors((prev) => {
+      if ((prev[source] ?? null) === message) return prev;
+      const next = { ...prev };
+      if (message) next[source] = message;
+      else delete next[source];
+      return next;
+    });
+  }, []);
+
+  const noteCapped = useCallback((source: TriageSource, capped: boolean) => {
+    setCappedSources((prev) => {
+      if (prev.includes(source) === capped) return prev;
+      return capped ? [...prev, source] : prev.filter((s) => s !== source);
+    });
+  }, []);
 
   /**
    * The session as it stood when the deck last closed.
@@ -392,22 +480,26 @@ export function useUnifiedTriage(
       .then((page) => {
         if (cancelled) return;
         cursorRef.current = page.cursor;
+        noteFailure('ideas', null);
         setIdeas((prev) => {
           const next = appending ? [...prev, ...page.ideas] : page.ideas;
           // `counts` is scoped to the non-status filters, so `pending` is the
           // whole pending backlog rather than this page's slice.
-          setBacklog({ loaded: next.length, pending: page.counts.pending, hasMore: page.hasMore });
+          setIdeaPage({ loaded: next.length, pending: page.counts.pending, hasMore: page.hasMore });
           return next;
         });
       })
-      .catch(toastCatch('Could not load backlog ideas'))
+      .catch((error) => {
+        if (!cancelled) noteFailure('ideas', extractMessage(error));
+        toastCatch('Could not load backlog ideas')(error);
+      })
       .finally(() => {
         if (!cancelled) setIdeasLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [ideaFetch]);
+  }, [ideaFetch, noteFailure]);
 
   // The two proposal ledgers, fetched independently rather than in one
   // `Promise.all`: they are unrelated subsystems, and one being unavailable must
@@ -417,32 +509,46 @@ export function useUnifiedTriage(
     setProposalsLoading(true);
     void policyTuningList(true, PROPOSAL_PAGE_SIZE)
       .then((rows) => {
-        if (!cancelled) setPolicyProposals(rows);
+        if (cancelled) return;
+        setPolicyProposals(rows);
+        noteFailure('policy', null);
+        // A fixed-limit query that returns exactly its limit is a slice, and
+        // this ledger is small BY CONSTRUCTION rather than by guarantee.
+        noteCapped('policy', rows.length >= PROPOSAL_PAGE_SIZE);
       })
-      .catch(toastCatch('Could not load tuning proposals'))
+      .catch((error) => {
+        if (!cancelled) noteFailure('policy', extractMessage(error));
+        toastCatch('Could not load tuning proposals')(error);
+      })
       .finally(() => {
         if (!cancelled) setProposalsLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [proposalGen]);
+  }, [proposalGen, noteFailure, noteCapped]);
 
   useEffect(() => {
     let cancelled = false;
     setPromotionsLoading(true);
     void listPromotionProposals({ status: 'pending', limit: PROPOSAL_PAGE_SIZE })
       .then((rows) => {
-        if (!cancelled) setPromotions(rows);
+        if (cancelled) return;
+        setPromotions(rows);
+        noteFailure('evolution', null);
+        noteCapped('evolution', rows.length >= PROPOSAL_PAGE_SIZE);
       })
-      .catch(toastCatch('Could not load promotion proposals'))
+      .catch((error) => {
+        if (!cancelled) noteFailure('evolution', extractMessage(error));
+        toastCatch('Could not load promotion proposals')(error);
+      })
       .finally(() => {
         if (!cancelled) setPromotionsLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [proposalGen]);
+  }, [proposalGen, noteFailure, noteCapped]);
 
   // Goals get their own effect for the same reason the two proposal ledgers do:
   // an install whose goals command errors must still be dealt its reviews, its
@@ -454,16 +560,52 @@ export function useUnifiedTriage(
     void devApi
       .listPendingAcceptance()
       .then((rows) => {
-        if (!cancelled) setGoals(rows);
+        if (cancelled) return;
+        setGoals(rows);
+        noteFailure('goals', null);
       })
-      .catch(toastCatch('Could not load goals awaiting acceptance'))
+      .catch((error) => {
+        if (!cancelled) noteFailure('goals', extractMessage(error));
+        toastCatch('Could not load goals awaiting acceptance')(error);
+      })
       .finally(() => {
         if (!cancelled) setGoalsLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [goalGen]);
+  }, [goalGen, noteFailure]);
+
+  // The two sources this hook does NOT own the fetch for report their failure
+  // as a value rather than a rejection, so they are mirrored into the same
+  // ledger instead of being a second thing the deck has to ask about.
+  useEffect(() => {
+    noteFailure('reviews', interactions.reviewsError);
+  }, [interactions.reviewsError, noteFailure]);
+  useEffect(() => {
+    noteFailure('practices', center.knowledgeError);
+  }, [center.knowledgeError, noteFailure]);
+
+  const failures = useMemo<readonly TriageSourceFailure[]>(
+    () =>
+      (Object.entries(sourceErrors) as [TriageSource, string][]).map(([source, message]) => ({
+        source,
+        message,
+      })),
+    [sourceErrors],
+  );
+
+  const backlog = useMemo<TriageBacklog>(() => {
+    // Only ideas can name a number. Everything else contributes "there may be
+    // more", which is why `more` is not derived from `remaining`.
+    const remaining = ideaPage.hasMore ? Math.max(0, ideaPage.pending - ideaPage.loaded) : 0;
+    return {
+      ...ideaPage,
+      remaining,
+      capped: cappedSources,
+      more: ideaPage.hasMore || cappedSources.length > 0,
+    };
+  }, [ideaPage, cappedSources]);
 
   const personaById = useMemo(
     () => new Map(personas.map((p) => [p.id, p])),
@@ -655,6 +797,11 @@ export function useUnifiedTriage(
       return next;
     });
   }, []);
+
+  // Not `TRIAGE_KINDS.forEach(toggleKind)`: toggling refuses to switch the LAST
+  // kind off, so replaying it over an already-full set would leave six on and
+  // one off. One assignment, no ordering to reason about.
+  const showAllKinds = useCallback(() => setActiveKinds(new Set(TRIAGE_KINDS)), []);
 
   const focusItem = useCallback((id: string) => setFocusedId(id), []);
 
@@ -957,8 +1104,10 @@ export function useUnifiedTriage(
         proposalsLoading ||
         promotionsLoading ||
         goalsLoading,
+      failures,
       activeKinds,
       toggleKind,
+      showAllKinds,
       decidedCount: resolved.size,
       sessionTotal: projection.sessionTotal,
       deferredCount: projection.deferredCount,
@@ -980,8 +1129,10 @@ export function useUnifiedTriage(
       proposalsLoading,
       promotionsLoading,
       goalsLoading,
+      failures,
       activeKinds,
       toggleKind,
+      showAllKinds,
       resolved.size,
       skips,
       focusItem,

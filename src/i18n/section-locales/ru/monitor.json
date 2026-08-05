@@ -473,5 +473,21 @@
   "stream_kind_slack": "Slack",
   "triage_queue_jump": "Следующая: {title}",
   "triage_queue_rail_aria": "Очередь разбора",
-  "triage_queue_rail_title": "Далее"
+  "triage_queue_rail_title": "Далее",
+  "quick_error_body": "Очередь проверок не ответила, поэтому картина неполная.",
+  "quick_error_title": "Не удалось прочитать, что вас ждёт",
+  "quick_loading": "Читаем, что вас ждёт…",
+  "reviews_error": "Очередь проверок не ответила. Какой-то шаг всё ещё может быть остановлен.",
+  "reviews_loading": "Читаем ожидающие проверки…",
+  "triage_batch_body_unknown": "Некоторые очереди читаются постранично, поэтому за этой партией может ждать ещё.",
+  "triage_deferred_one": "1 карточка, которую вы дважды пропустили, всё ещё ожидает. Нажмите «Проверить ещё», чтобы увидеть её снова.",
+  "triage_deferred_other": "{count} карточек, которые вы дважды пропустили, всё ещё ожидают. Нажмите «Проверить ещё», чтобы увидеть их снова.",
+  "triage_failed_body_one": "1 очередь не удалось прочитать, поэтому эта колода — неполная картина.",
+  "triage_failed_body_other": "{count} очередей не удалось прочитать, поэтому эта колода — неполная картина.",
+  "triage_failed_chip_one": "1 непрочитанная очередь",
+  "triage_failed_chip_other": "Непрочитанных очередей: {count}",
+  "triage_failed_retry": "Попробовать загрузить снова",
+  "triage_failed_sources": "Не прочитано: {sources}",
+  "triage_failed_title": "Некоторые очереди не загрузились",
+  "triage_filtered_show_all": "Показать все виды"
 }

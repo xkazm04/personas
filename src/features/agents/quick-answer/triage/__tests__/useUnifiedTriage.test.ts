@@ -47,6 +47,7 @@ const mockToastCatch = vi.fn();
 const interactions = {
   questionGroups: [] as unknown[],
   reviews: [] as unknown[],
+  reviewsError: null as string | null,
   questionCount: 0,
   reviewCount: 0,
   total: 0,
@@ -94,6 +95,7 @@ const workspaceCenter = {
   activeId: null,
   projects: [],
   knowledge: {} as Record<string, WorkspaceKnowledge[]>,
+  knowledgeError: null as string | null,
   stats: {},
   projectById: new Map(),
   refreshKnowledge: mockRefreshKnowledge,
@@ -150,6 +152,7 @@ vi.mock('@/i18n/useTranslation', () => ({
 
 import { clearJournal, resetJournalCache } from '../triageJournal';
 import { clearTriageSession, resetTriageSessionCache } from '../triageSession';
+import { TRIAGE_KINDS } from '../triageTypes';
 import { useUnifiedTriage } from '../useUnifiedTriage';
 
 // --- fixtures --------------------------------------------------------------
@@ -287,7 +290,9 @@ beforeEach(() => {
   clearJournal();
   resetTriageSessionCache();
   resetJournalCache();
+  interactions.reviewsError = null;
   workspaceCenter.workspaces = [];
+  workspaceCenter.knowledgeError = null;
   workspaceCenter.knowledge = {};
   mockTriageIdeas.mockResolvedValue(page([idea()]));
   mockAcceptIdea.mockResolvedValue(undefined);
@@ -962,5 +967,98 @@ describe('useUnifiedTriage — goals reach the same spine', () => {
     const { result } = await mount();
     expect(result.current.items.map((i) => i.kind)).toEqual(['idea']);
     expect(mockToastCatch).toHaveBeenCalledWith('Could not load goals awaiting acceptance', expect.any(Error));
+  });
+});
+
+describe('useUnifiedTriage — a source that did not answer is REPORTED, not swallowed', () => {
+  it('names the failed source instead of settling on an empty queue', async () => {
+    // Every source used to end in `.catch(toastCatch(…))`, so a total outage
+    // settled `loading:false` with `items: []` — indistinguishable from a
+    // cleared deck, which is what the deck then rendered.
+    mockTriageIdeas.mockRejectedValue(new Error('command not found'));
+    const { result } = await mount();
+
+    expect(result.current.items).toHaveLength(0);
+    expect(result.current.failures.map((f) => f.source)).toEqual(['ideas']);
+    expect(result.current.failures[0]!.message).toContain('command not found');
+  });
+
+  it('reports a PARTIAL failure while still dealing everything that loaded', async () => {
+    mockPolicyList.mockRejectedValue(new Error('policy ledger unavailable'));
+    const { result } = await mount();
+
+    expect(result.current.items.map((i) => i.kind)).toEqual(['idea']);
+    expect(result.current.failures.map((f) => f.source)).toEqual(['policy']);
+  });
+
+  it('mirrors the two sources it does not own the fetch for', async () => {
+    // Reviews arrive through `usePendingInteractions` and practices through
+    // `useWorkspaceCenter`; both report failure as a VALUE, and both used to
+    // reach the deck as "nothing of this kind is waiting".
+    interactions.reviewsError = 'reviews are unreadable';
+    workspaceCenter.knowledgeError = 'knowledge is unreadable';
+    const { result } = await mount();
+
+    expect(result.current.failures.map((f) => f.source).sort()).toEqual([
+      'practices',
+      'reviews',
+    ]);
+  });
+
+  it('clears a failure once the source answers again', async () => {
+    mockTriageIdeas.mockRejectedValueOnce(new Error('locked'));
+    const { result } = await mount();
+    expect(result.current.failures).toHaveLength(1);
+
+    mockTriageIdeas.mockResolvedValue(page([idea()]));
+    act(() => result.current.reload());
+    await waitFor(() => expect(result.current.failures).toHaveLength(0));
+  });
+});
+
+describe('useUnifiedTriage — a capped source is not a finished queue', () => {
+  it('flags a fixed-limit ledger that came back FULL', async () => {
+    // 50 rows out of a `limit: 50` query says nothing about row 51, and the
+    // deck must not answer that with "nothing is waiting on you".
+    mockPromotionList.mockResolvedValue(
+      Array.from({ length: 50 }, (_, i) => promotion({ id: `prop-${i}` })),
+    );
+    const { result } = await mount();
+
+    expect(result.current.backlog.capped).toEqual(['evolution']);
+    expect(result.current.backlog.more).toBe(true);
+    // Nothing can SIZE it, so no number is invented.
+    expect(result.current.backlog.remaining).toBe(0);
+  });
+
+  it('leaves a short page uncapped', async () => {
+    mockPromotionList.mockResolvedValue([promotion()]);
+    const { result } = await mount();
+    expect(result.current.backlog.capped).toEqual([]);
+    expect(result.current.backlog.more).toBe(false);
+  });
+
+  it('still reports the exact idea remainder the keyset page knows', async () => {
+    mockTriageIdeas.mockResolvedValue({
+      ideas: [idea()],
+      cursor: 'c1',
+      hasMore: true,
+      counts: { pending: 400, accepted: 0, rejected: 0, archived: 0, total: 400 },
+    });
+    const { result } = await mount();
+
+    expect(result.current.backlog.remaining).toBe(399);
+    expect(result.current.backlog.more).toBe(true);
+  });
+});
+
+describe('useUnifiedTriage — the filtered ending has a way back', () => {
+  it('puts every kind back in play, including the one toggle refuses to restore', async () => {
+    const { result } = await mount();
+    act(() => result.current.toggleKind('idea'));
+    expect(result.current.activeKinds.has('idea')).toBe(false);
+
+    act(() => result.current.showAllKinds());
+    expect([...result.current.activeKinds].sort()).toEqual([...TRIAGE_KINDS].sort());
   });
 });

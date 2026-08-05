@@ -473,5 +473,21 @@
   "stream_kind_slack": "Slack",
   "triage_queue_jump": "পরবর্তীতে দেখান: {title}",
   "triage_queue_rail_aria": "ট্রায়াজ সারি",
-  "triage_queue_rail_title": "পরবর্তী"
+  "triage_queue_rail_title": "পরবর্তী",
+  "quick_error_body": "রিভিউ সারি সাড়া দেয়নি, তাই এটি পুরো চিত্র নয়।",
+  "quick_error_title": "যা অপেক্ষা করছে তা পড়া যায়নি",
+  "quick_loading": "আপনার জন্য যা অপেক্ষা করছে তা পড়া হচ্ছে…",
+  "reviews_error": "রিভিউ সারি সাড়া দেয়নি। কোনো ধাপ এখনও আটকে থাকতে পারে।",
+  "reviews_loading": "অমীমাংসিত রিভিউ পড়া হচ্ছে…",
+  "triage_batch_body_unknown": "কিছু সারি একবারে এক পৃষ্ঠা করে পড়া হয়, তাই এই ব্যাচের পেছনে আরও অপেক্ষা করতে পারে।",
+  "triage_deferred_one": "আপনি দুইবার এড়িয়ে যাওয়া ১টি কার্ড এখনও অমীমাংসিত। আবার দেখতে «আরও দেখুন» ব্যবহার করুন।",
+  "triage_deferred_other": "আপনি দুইবার এড়িয়ে যাওয়া {count}টি কার্ড এখনও অমীমাংসিত। আবার দেখতে «আরও দেখুন» ব্যবহার করুন।",
+  "triage_failed_body_one": "১টি সারি পড়া যায়নি, তাই এই ডেক পুরো চিত্র নয়।",
+  "triage_failed_body_other": "{count}টি সারি পড়া যায়নি, তাই এই ডেক পুরো চিত্র নয়।",
+  "triage_failed_chip_one": "১টি সারি অপঠিত",
+  "triage_failed_chip_other": "{count}টি সারি অপঠিত",
+  "triage_failed_retry": "আবার লোড করার চেষ্টা করুন",
+  "triage_failed_sources": "অপঠিত: {sources}",
+  "triage_failed_title": "কিছু সারি লোড হয়নি",
+  "triage_filtered_show_all": "সব ধরন দেখান"
 }

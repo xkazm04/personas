@@ -473,5 +473,21 @@
   "stream_kind_slack": "Slack",
   "triage_queue_jump": "Siguiente: {title}",
   "triage_queue_rail_aria": "Cola de triaje",
-  "triage_queue_rail_title": "A continuación"
+  "triage_queue_rail_title": "A continuación",
+  "quick_error_body": "La cola de revisiones no respondió, así que esto no es el panorama completo.",
+  "quick_error_title": "No se pudo leer lo pendiente",
+  "quick_loading": "Leyendo lo que te espera…",
+  "reviews_error": "La cola de revisiones no respondió. Puede que un paso siga detenido.",
+  "reviews_loading": "Leyendo revisiones pendientes…",
+  "triage_batch_body_unknown": "Algunas colas se leen por páginas, así que puede quedar más detrás de este lote.",
+  "triage_deferred_one": "1 tarjeta que pasaste dos veces sigue pendiente. Usa «Buscar más» para volver a verla.",
+  "triage_deferred_other": "{count} tarjetas que pasaste dos veces siguen pendientes. Usa «Buscar más» para volver a verlas.",
+  "triage_failed_body_one": "No se pudo leer 1 cola, así que este mazo no es el panorama completo.",
+  "triage_failed_body_other": "No se pudieron leer {count} colas, así que este mazo no es el panorama completo.",
+  "triage_failed_chip_one": "1 cola sin leer",
+  "triage_failed_chip_other": "{count} colas sin leer",
+  "triage_failed_retry": "Intentar cargar de nuevo",
+  "triage_failed_sources": "Sin leer: {sources}",
+  "triage_failed_title": "Algunas colas no se cargaron",
+  "triage_filtered_show_all": "Mostrar todos los tipos"
 }

@@ -14,6 +14,7 @@ import { resolveReviewRow, dispatchReviewRowAction, isDecisionConflict } from '@
 import { listMessages, markMessageRead } from '@/api/overview/messages';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { usePersonaMap, useEnrichedRecords } from '@/hooks/utility/data/usePersonaMap';
+import { extractMessage } from '@/lib/silentCatch';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
@@ -110,6 +111,20 @@ export interface MonitorData {
   personas: ReturnType<typeof useAgentStore.getState>['personas'];
   healthMap: Record<string, PersonaHealth>;
   reviews: MonitorReviewItem[];
+  /**
+   * Why {@link MonitorData.reviews} is short, when it is short because the read
+   * FAILED rather than because nothing is pending.
+   *
+   * The load used to end at `logger.error` and nothing else, so every surface
+   * downstream rendered an unreadable queue and an empty one identically — the
+   * triage deck said "nothing is waiting on you" and the channel rail said
+   * "nothing is waiting", both on a `list_manual_reviews` that never answered.
+   * A held team step is exactly the thing that must not disappear quietly.
+   *
+   * Null while the last read succeeded. Cleared by the next successful poll, so
+   * a transient failure heals itself without the caller doing anything.
+   */
+  reviewsError: string | null;
   unreadMessages: PersonaMessage[];
   activeProcesses: Record<string, ActiveProcess>;
   loading: boolean;
@@ -191,6 +206,7 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   const isCloudConnected = useSystemStore((s) => s.cloudConfig?.is_connected ?? false);
 
   const [localReviews, setLocalReviews] = useState<MonitorReviewItem[]>([]);
+  const [reviewsError, setReviewsError] = useState<string | null>(null);
   const [unreadMessages, setUnreadMessages] = useState<PersonaMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const { track, busy: isProcessing } = useInFlight();
@@ -220,9 +236,17 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   const reloadReviews = useCallback(async () => {
     try {
       const raw = await listManualReviews(undefined, 'pending');
-      if (mounted.current) setLocalReviews(raw.map(shapeReview));
+      if (mounted.current) {
+        setLocalReviews(raw.map(shapeReview));
+        // Clearing on success is what makes the flag self-healing: React bails
+        // out of a set to the identical value, so a healthy poll costs nothing.
+        setReviewsError(null);
+      }
     } catch (err) {
       logger.error('Failed to load manual reviews', { error: err });
+      // The log was the ONLY record. A surface cannot render a breadcrumb, so
+      // an unreadable queue looked exactly like an empty one.
+      if (mounted.current) setReviewsError(extractMessage(err));
     } finally {
       if (mounted.current) setLoading(false);
     }
@@ -397,11 +421,11 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   // that whole chain on every keystroke in the answer box.
   return useMemo(
     () => ({
-      personas, healthMap, reviews, unreadMessages, activeProcesses,
+      personas, healthMap, reviews, reviewsError, unreadMessages, activeProcesses,
       loading, isProcessing, handleReviewAction, handleDispatchAction, handleMarkRead,
     }),
     [
-      personas, healthMap, reviews, unreadMessages, activeProcesses,
+      personas, healthMap, reviews, reviewsError, unreadMessages, activeProcesses,
       loading, isProcessing, handleReviewAction, handleDispatchAction, handleMarkRead,
     ],
   );

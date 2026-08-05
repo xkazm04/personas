@@ -473,5 +473,21 @@
   "stream_kind_slack": "Slack",
   "triage_queue_jump": "次に表示: {title}",
   "triage_queue_rail_aria": "トリアージキュー",
-  "triage_queue_rail_title": "次の項目"
+  "triage_queue_rail_title": "次の項目",
+  "quick_error_body": "レビューのキューが応答しなかったため、これがすべてではありません。",
+  "quick_error_title": "待機中の項目を読み取れませんでした",
+  "quick_loading": "待機中の項目を読み込んでいます…",
+  "reviews_error": "レビューのキューが応答しませんでした。ステップが保留のままの可能性があります。",
+  "reviews_loading": "保留中のレビューを読み込んでいます…",
+  "triage_batch_body_unknown": "一部のキューはページ単位で読み込まれるため、このバッチの後ろにまだ残っている可能性があります。",
+  "triage_deferred_one": "2 回見送ったカードが 1 枚まだ保留中です。「さらに確認」で再び提示されます。",
+  "triage_deferred_other": "2 回見送ったカードが {count} 枚まだ保留中です。「さらに確認」で再び提示されます。",
+  "triage_failed_body_one": "1 件のキューを読み取れなかったため、このデッキがすべてではありません。",
+  "triage_failed_body_other": "{count} 件のキューを読み取れなかったため、このデッキがすべてではありません。",
+  "triage_failed_chip_one": "未読のキュー 1 件",
+  "triage_failed_chip_other": "未読のキュー {count} 件",
+  "triage_failed_retry": "もう一度読み込む",
+  "triage_failed_sources": "未読: {sources}",
+  "triage_failed_title": "一部のキューを読み込めませんでした",
+  "triage_filtered_show_all": "すべての種類を表示"
 }

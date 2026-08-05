@@ -3,8 +3,10 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { listManualReviews } from '@/api/overview/reviews';
 import { resolveReviewRow } from '@/lib/decisions/rowWrites';
 import { QuickAnswerReviewCard } from '@/features/agents/quick-answer/QuickAnswerReviewCard';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
-import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { ChannelMember } from '@/features/teams/sub_collab/collabRender';
@@ -31,12 +33,23 @@ export function ReviewsRail({ members }: { members: ChannelMember[] }) {
   const personaIndex = usePersonaIndex();
   const [reviews, setReviews] = useState<ManualReviewItem[]>([]);
   const [busy, setBusy] = useState(false);
+  /**
+   * Loading and failing are not "nothing waiting".
+   *
+   * This rail's own header calls a held step "the single most time-critical
+   * thing a team channel can be telling you" — and its fetch ended in
+   * `silentCatch`, so an unreadable queue rendered the same reassuring
+   * "Nothing is waiting on you." as an empty one. Two flags, three states.
+   */
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const memberIds = useMemo(() => new Set(members.map((m) => m.personaId)), [members]);
 
   const refresh = useCallback(() => {
     listManualReviews(undefined, 'pending')
       .then((rows) => {
+        setError(null);
         setReviews(
           rows
             .filter((r) => memberIds.has(r.persona_id))
@@ -63,7 +76,11 @@ export function ReviewsRail({ members }: { members: ChannelMember[] }) {
             }),
         );
       })
-      .catch(silentCatch('conversation:pendingReviews'));
+      .catch((e) => {
+        setError(extractMessage(e));
+        silentCatch('conversation:pendingReviews')(e);
+      })
+      .finally(() => setLoading(false));
   }, [memberIds, personaIndex]);
 
   useEffect(() => {
@@ -90,14 +107,35 @@ export function ReviewsRail({ members }: { members: ChannelMember[] }) {
     }
   };
 
-  if (reviews.length === 0) {
+  // Nothing yet AND still reading: say so rather than settling on the empty
+  // copy, which on a slow first paint asserted a fact the rail did not have.
+  if (reviews.length === 0 && loading && !error) {
     return (
-      <p className="typo-caption text-foreground opacity-45 p-2">{t.monitor.reviews_empty}</p>
+      <p className="typo-caption text-foreground opacity-45 p-2">
+        {/* The spinner renders an `sr-only` `role="status"` and nothing else,
+            so the visible copy is hidden rather than announced twice. */}
+        <LoadingSpinner label={t.monitor.reviews_loading} />
+        <span aria-hidden>{t.monitor.reviews_loading}</span>
+      </p>
     );
   }
 
   return (
     <div className="space-y-2">
+      {/* Rendered ABOVE whatever did load rather than instead of it: a partial
+          read is still worth showing, and hiding the rows to display the
+          failure would trade one silence for another. */}
+      {error ? (
+        <InlineErrorBanner
+          severity="error"
+          message={t.monitor.reviews_error}
+          onRetry={refresh}
+          compact
+        />
+      ) : null}
+      {reviews.length === 0 && !error ? (
+        <p className="typo-caption text-foreground opacity-45 p-2">{t.monitor.reviews_empty}</p>
+      ) : null}
       {reviews.map((r) => (
         <QuickAnswerReviewCard key={r.id} review={r} busy={busy} onAction={act} />
       ))}

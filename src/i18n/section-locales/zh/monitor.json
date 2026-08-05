@@ -473,5 +473,21 @@
   "stream_kind_slack": "Slack",
   "triage_queue_jump": "接下来处理：{title}",
   "triage_queue_rail_aria": "分流队列",
-  "triage_queue_rail_title": "接下来"
+  "triage_queue_rail_title": "接下来",
+  "quick_error_body": "审阅队列没有响应，因此这里显示的并不完整。",
+  "quick_error_title": "无法读取待处理内容",
+  "quick_loading": "正在读取等待你处理的内容…",
+  "reviews_error": "审阅队列没有响应。某个步骤可能仍处于挂起状态。",
+  "reviews_loading": "正在读取待处理的审阅…",
+  "triage_batch_body_unknown": "部分队列是分页读取的，这批之后可能还有内容在等待。",
+  "triage_deferred_one": "有 1 张你已跳过两次的卡片仍在待办中。点击“查看更多”可再次看到它。",
+  "triage_deferred_other": "有 {count} 张你已跳过两次的卡片仍在待办中。点击“查看更多”可再次看到它们。",
+  "triage_failed_body_one": "有 1 个队列无法读取，因此这副牌并不完整。",
+  "triage_failed_body_other": "有 {count} 个队列无法读取，因此这副牌并不完整。",
+  "triage_failed_chip_one": "1 个队列未读取",
+  "triage_failed_chip_other": "{count} 个队列未读取",
+  "triage_failed_retry": "重新加载",
+  "triage_failed_sources": "未读取：{sources}",
+  "triage_failed_title": "部分队列未能加载",
+  "triage_filtered_show_all": "显示所有类型"
 }

@@ -481,6 +481,22 @@ export type Translations = {
     triage_view_run: string;
     triage_view_run_hint: string;
     triage_why_raised: string;
+    triage_failed_title: string;
+    triage_failed_body_one: string;
+    triage_failed_body_other: string;
+    triage_failed_sources: string;
+    triage_failed_retry: string;
+    triage_failed_chip_one: string;
+    triage_failed_chip_other: string;
+    triage_batch_body_unknown: string;
+    triage_deferred_one: string;
+    triage_deferred_other: string;
+    triage_filtered_show_all: string;
+    quick_loading: string;
+    quick_error_title: string;
+    quick_error_body: string;
+    reviews_loading: string;
+    reviews_error: string;
   };
   common: {
     unknown_error: string;

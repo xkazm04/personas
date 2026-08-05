@@ -473,5 +473,21 @@
   "stream_kind_slack": "Slack",
   "triage_queue_jump": "अगला दिखाएं: {title}",
   "triage_queue_rail_aria": "ट्रायाज कतार",
-  "triage_queue_rail_title": "अगला"
+  "triage_queue_rail_title": "अगला",
+  "quick_error_body": "समीक्षा कतार ने जवाब नहीं दिया, इसलिए यह पूरी तस्वीर नहीं है।",
+  "quick_error_title": "जो प्रतीक्षा में है वह पढ़ा नहीं जा सका",
+  "quick_loading": "आपकी प्रतीक्षा में क्या है, पढ़ा जा रहा है…",
+  "reviews_error": "समीक्षा कतार ने जवाब नहीं दिया। कोई चरण अब भी रुका हो सकता है।",
+  "reviews_loading": "लंबित समीक्षाएँ पढ़ी जा रही हैं…",
+  "triage_batch_body_unknown": "कुछ कतारें एक बार में एक पृष्ठ पढ़ी जाती हैं, इसलिए इस बैच के पीछे और भी प्रतीक्षा कर सकता है।",
+  "triage_deferred_one": "1 कार्ड जिसे आपने दो बार छोड़ा था, अब भी लंबित है। इसे फिर देखने के लिए «और देखें» चुनें।",
+  "triage_deferred_other": "{count} कार्ड जिन्हें आपने दो बार छोड़ा था, अब भी लंबित हैं। इन्हें फिर देखने के लिए «और देखें» चुनें।",
+  "triage_failed_body_one": "1 कतार पढ़ी नहीं जा सकी, इसलिए यह डेक पूरी तस्वीर नहीं है।",
+  "triage_failed_body_other": "{count} कतारें पढ़ी नहीं जा सकीं, इसलिए यह डेक पूरी तस्वीर नहीं है।",
+  "triage_failed_chip_one": "1 कतार अपठित",
+  "triage_failed_chip_other": "{count} कतारें अपठित",
+  "triage_failed_retry": "फिर से लोड करने का प्रयास करें",
+  "triage_failed_sources": "अपठित: {sources}",
+  "triage_failed_title": "कुछ कतारें लोड नहीं हुईं",
+  "triage_filtered_show_all": "हर प्रकार दिखाएँ"
 }

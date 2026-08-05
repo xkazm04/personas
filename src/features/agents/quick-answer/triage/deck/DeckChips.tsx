@@ -23,6 +23,7 @@ import {
 import type { Translations } from '@/i18n/en';
 
 import type { TriageKind, TriageTone } from '../triageTypes';
+import type { TriageSource } from '../useUnifiedTriage';
 
 /** Full chip surface: border + tint + text, in one string. */
 export const TONE_CHIP: Record<TriageTone, string> = {
@@ -158,6 +159,35 @@ export function kindCopy(
       };
     case 'goal':
       return { label: m.triage_kind_goals, one: m.triage_kind_goal, empty: m.triage_none_goals };
+  }
+}
+
+/**
+ * What a SOURCE is called, which is not always what its cards are called.
+ *
+ * A source is a QUEUE (`policy` reads the tuning ledger, `evolution` the
+ * promotion one), so the plural is the right register — this names the thing
+ * that failed to load, not the card it would have produced. Reuses the kind
+ * copy rather than adding a parallel vocabulary a translator would have to keep
+ * in step with it.
+ *
+ * A `switch`, for the same compile-time-exhaustiveness reason as `kindCopy`.
+ */
+export function sourceLabel(t: Translations, source: TriageSource): string {
+  const m = t.monitor;
+  switch (source) {
+    case 'reviews':
+      return m.triage_kind_reviews;
+    case 'ideas':
+      return m.triage_kind_ideas;
+    case 'practices':
+      return m.triage_kind_practices;
+    case 'policy':
+      return m.triage_kind_policies;
+    case 'evolution':
+      return m.triage_kind_promotions;
+    case 'goals':
+      return m.triage_kind_goals;
   }
 }
 

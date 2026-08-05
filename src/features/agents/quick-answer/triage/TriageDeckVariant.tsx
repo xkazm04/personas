@@ -32,7 +32,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { DeckActionBar, DeckFlank } from './deck/DeckActionBar';
 import { kindCopy } from './deck/DeckChips';
 import { DeckQueueRail, RAIL_WIDTH } from './deck/DeckQueueRail';
-import { DeckCleared, DeckLoading } from './deck/DeckStates';
+import { DeckCleared, DeckFailed, DeckLoading } from './deck/DeckStates';
 import { DeckTopBar } from './deck/DeckTopBar';
 import { QuestionPanel } from './deck/QuestionPanel';
 import { ReasonStrip } from './deck/ReasonStrip';
@@ -144,6 +144,13 @@ export function TriageDeckVariant({
   const showLoading = queue.loading && stack.length === 0;
   // "You filtered it away" and "you finished" are different endings.
   const filteredOut = TRIAGE_KINDS.some((k) => !queue.activeKinds.has(k) && queue.allCounts[k] > 0);
+  // "We could not read the queue" is a THIRD ending, and it outranks cleared
+  // absolutely: a deck with nothing to deal and a source that never answered
+  // does not know whether anything is waiting, so it must not say nothing is.
+  // (A partial failure with cards still to deal is reported by the top bar's
+  // chip instead — the reviewer keeps working, and the deck still admits the
+  // queue is short.)
+  const failed = queue.failures.length > 0;
 
   return (
     // A real dialog, not a bare section. It covers the whole app below the
@@ -191,6 +198,14 @@ export function TriageDeckVariant({
 
         {showLoading ? (
           <DeckLoading reduced={reduced} />
+        ) : !top && failed ? (
+          <DeckFailed
+            failures={queue.failures}
+            summary={queue.summary}
+            deferred={queue.deferredCount}
+            reduced={reduced}
+            onRetry={queue.reload}
+          />
         ) : !top ? (
           <DeckCleared
             decided={queue.decidedCount}
@@ -198,10 +213,13 @@ export function TriageDeckVariant({
             filtered={filteredOut}
             // "You cleared the batch" and "you cleared the queue" are different
             // endings, and until now the deck told the same story for both.
-            remaining={queue.backlog.hasMore ? queue.backlog.pending - queue.backlog.loaded : 0}
+            remaining={queue.backlog.remaining}
+            more={queue.backlog.more}
+            deferred={queue.deferredCount}
             reduced={reduced}
             onReload={queue.reload}
             onLoadMore={queue.loadMore}
+            onShowAllKinds={queue.showAllKinds}
           />
         ) : (
           <>
