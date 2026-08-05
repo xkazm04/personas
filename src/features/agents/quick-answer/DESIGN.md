@@ -103,7 +103,10 @@ right edge. The second line used to restate a kind the icon already carried; the
 title now gets the whole row width. The icon is `aria-hidden`, so the kind lives
 in an `sr-only` span and in the tooltip — deleting the visible text without that
 would have silently dropped the type for screen readers, the one way this could
-have regressed. `ROW_HEIGHT` is exported because it is `estimateSize` for the
+have regressed. The deferred marker is the same shape and now has the same
+companion: a bare `aria-hidden` glyph would leave the rail's tail reading as
+"not looked at yet" when it means "you already passed on these".
+`ROW_HEIGHT` is exported because it is `estimateSize` for the
 virtualizer above 40 rows: if the constant and the rendered row drift, every row
 past the fortieth is misplaced and nothing says so.
 
@@ -154,6 +157,21 @@ splitting them turned an untestable hook into unit-testable units.
   one unforgivable bug on this surface.
 - **One card per build *session*, not per question.** Each `answer_build_question`
   call resumes the halted CLI, so N cards would mean N resumes.
+- **Nothing a verdict turns on is colour-only.** A fact's tone and a metric's
+  band both arrive as a glyph *and* a word (`toneReading` in `deck/DeckChips.tsx`)
+  on top of the palette — `invert` is the whole reason "Effort 2" is good news
+  and "Risk 9" is not, and it used to be expressible only as a hue. The palette
+  itself is untouched; this is added signal, never a substitute.
+- **The deck owns no live region — it speaks through `AriaLiveProvider`.** A
+  region only speaks when its content MUTATES, so a hand-rolled one swallows two
+  identical consecutive verdicts; the provider queues each message and bumps a
+  `key`, so every call is heard once. Nothing under `deck/**` may carry
+  `role="status"`, `role="alert"` or `aria-live` — `role="status"` is an implicit
+  polite region, which is how three of them (one per stacked card's alert banner)
+  hid behind a test that queried `[aria-live]` alone.
+- **Only the card being decided is in the tab ring.** Three cards are mounted for
+  depth and `pointer-events-none` removes the mouse but NOT the tab order, so the
+  prose scroller is `tabIndex={0}` on the top card and `-1` behind it.
 
 ## Still-true history
 

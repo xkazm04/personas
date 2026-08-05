@@ -13,7 +13,8 @@
 // facts.
 import type { TriageFact } from '../triageTypes';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import { TONE_TEXT } from './DeckChips';
+import { useTranslation } from '@/i18n/useTranslation';
+import { TONE_TEXT, toneReading } from './DeckChips';
 
 /**
  * Fact ids whose value is a raw ISO timestamp rather than display text.
@@ -41,27 +42,41 @@ export function ledgerFacts(facts: readonly TriageFact[]): TriageFact[] {
 }
 
 export function TriageFactRow({ facts }: { facts: readonly TriageFact[] }) {
+  const { t } = useTranslation();
   const rendered = ledgerFacts(facts);
   if (rendered.length === 0) return null;
 
   return (
     <footer className="mt-4 shrink-0 border-t border-primary/10 pt-3">
       <dl className="flex items-baseline gap-x-6 overflow-x-auto whitespace-nowrap">
-        {rendered.map((fact) => (
-          <div key={fact.id} className="flex min-w-0 items-baseline gap-1.5">
-            <dt className="typo-label shrink-0 uppercase tracking-wide text-muted-foreground">
-              {fact.label}
-            </dt>
-            <dd
-              className={`typo-caption truncate ${fact.tone ? TONE_TEXT[fact.tone] : 'text-foreground'}`}
-              title={fact.value}
-            >
-              {/* Timestamps arrive as raw ISO strings; the ledger is the one
-                  place they're read as "how long has this been waiting". */}
-              {TIME_FACTS.has(fact.id) ? <RelativeTime timestamp={fact.value} /> : fact.value}
-            </dd>
-          </div>
-        ))}
+        {rendered.map((fact) => {
+          // A fact's tone used to be `TONE_TEXT[fact.tone]` and NOTHING else, so
+          // "Severity: critical" and "Team: platform" were the same string in
+          // two colours. On the surface where a verdict is written, that is not
+          // a cosmetic gap.
+          const reading = toneReading(t, fact.tone);
+          return (
+            <div key={fact.id} className="flex min-w-0 items-baseline gap-1.5">
+              <dt className="typo-label shrink-0 uppercase tracking-wide text-muted-foreground">
+                {fact.label}
+              </dt>
+              <dd
+                className={`typo-caption flex min-w-0 items-baseline gap-1 truncate ${fact.tone ? TONE_TEXT[fact.tone] : 'text-foreground'}`}
+                title={fact.value}
+              >
+                {reading ? (
+                  <reading.Icon className="h-3 w-3 shrink-0 self-center" aria-hidden />
+                ) : null}
+                {/* Timestamps arrive as raw ISO strings; the ledger is the one
+                    place they're read as "how long has this been waiting". */}
+                {TIME_FACTS.has(fact.id) ? <RelativeTime timestamp={fact.value} /> : fact.value}
+                {/* The glyph is the sighted signal; this is the same fact for a
+                    screen reader, which cannot see either the glyph or the hue. */}
+                {reading ? <span className="sr-only">{reading.label}</span> : null}
+              </dd>
+            </div>
+          );
+        })}
       </dl>
     </footer>
   );

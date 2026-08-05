@@ -92,6 +92,7 @@ export type Translations = {
     triage_policy_saving_value: string;
     triage_policy_source: string;
     triage_promote: string;
+    triage_queue_deferred: string;
     triage_reason_fresh_cycle: string;
     triage_reason_gain_too_small: string;
     triage_reason_keep_current: string;
@@ -109,6 +110,10 @@ export type Translations = {
     triage_summary_rate: string;
     triage_summary_title: string;
     triage_summary_undone: string;
+    triage_tone_accent: string;
+    triage_tone_danger: string;
+    triage_tone_success: string;
+    triage_tone_warning: string;
     triage_undo: string;
     triage_undo_hint: string;
     view_capabilities: string;

@@ -50,6 +50,17 @@ import { useDeckDialog } from './useDeckDialog';
  * therefore appears after the throw in that case, and resolving must not throw
  * a card that has already gone.
  */
+/**
+ * One recorded verdict, in the item's own words, stamped with its ordinal.
+ *
+ * The ordinal exists so that two identical verdicts in a row are two events.
+ * See `lastVerdict` below.
+ */
+export interface DeckVerdictStamp {
+  text: string;
+  seq: number;
+}
+
 interface ReasonCapture {
   item: TriageItem;
   prompt: TriageReasonPrompt;
@@ -192,12 +203,14 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
   /**
    * What the last write actually recorded, in the item's own words.
    *
-   * Half of the deck's ONE live region (see `TriageDeckVariant`). The card used
-   * to carry two permanent `role="status"` stamps, so every deal announced
-   * "Reject… Approve" and buried the only thing that mattered — the title of
-   * the card now being presented.
+   * A STAMP rather than a bare string, and `seq` is the whole reason. The deck
+   * announces this (`TriageDeckVariant` → `AriaLiveProvider`), and rejecting two
+   * cards in a row produces the same words twice. A string dep would compare
+   * equal, the effect would not re-run, and the second verdict would be recorded
+   * in silence — which is exactly the failure mode a reviewer clearing forty
+   * cards by keyboard would never notice. Every write is its own event.
    */
-  const [lastVerdict, setLastVerdict] = useState<string | null>(null);
+  const [lastVerdict, setLastVerdict] = useState<DeckVerdictStamp | null>(null);
 
   /**
    * The single door out to the queue. Every path that writes goes through it,
@@ -207,7 +220,8 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
     (decision: TriageDecision) => {
       const { item, branchId } = decision;
       const branch = branchId ? item.branches.find((b) => b.id === branchId) : undefined;
-      setLastVerdict(branch?.label ?? item.verdictLabels[decision.verdict]);
+      const text = branch?.label ?? item.verdictLabels[decision.verdict];
+      setLastVerdict((prev) => ({ text, seq: (prev?.seq ?? 0) + 1 }));
       void queue.decide(decision);
     },
     [queue],
@@ -597,7 +611,8 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
     containerRef: dialog.containerRef,
     /** Attach to the TOP card's prose scroller, and nothing deeper. */
     scrollerRef: dialog.scrollerRef,
-    /** The verdict last written, in the item's own words, or null. */
+    /** The verdict last written, in the item's own words, stamped. See
+     *  `DeckVerdictStamp` — a new object per write, deliberately. */
     lastVerdict,
     /** The top card's drafts, by field key. */
     answers,

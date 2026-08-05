@@ -212,7 +212,12 @@ function TriageCardImpl({
           />
 
           <div className="relative flex h-full min-h-0 flex-col px-6 pb-5 pt-9">
-            <TriageCardBody item={item} answerSlot={answerSlot} scrollerRef={scrollerRef} />
+            <TriageCardBody
+              item={item}
+              isTop={isTop}
+              answerSlot={answerSlot}
+              scrollerRef={scrollerRef}
+            />
           </div>
 
           {/* Both stamps are PURE PAINT and are hidden from assistive tech.
@@ -220,9 +225,10 @@ function TriageCardImpl({
               each and sat in the DOM for every top card, so a screen reader
               announced "Reject… Approve" on every single deal — 80 spurious
               utterances over a 40-card session, burying the one thing that
-              matters: the title of the card now being presented. The deck has
-              ONE live region for that (see `TriageDeckVariant`); what these do
-              is show a drag its own verdict, which is a visual affordance. */}
+              matters: the title of the card now being presented. Announcing is
+              the app's `AriaLiveProvider`'s job now (see `TriageDeckVariant`);
+              what these do is show a drag its own verdict, which is a visual
+              affordance. Nothing under this component is a live region. */}
           {isTop && draggable ? (
             <>
               <motion.div

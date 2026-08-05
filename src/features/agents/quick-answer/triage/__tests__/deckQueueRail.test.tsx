@@ -56,6 +56,24 @@ describe('DeckQueueRail rows', () => {
     expect(container.querySelector('.lucide-rotate-ccw')).toBeTruthy();
   });
 
+  it('gives the deferred state an sr-only companion, like the kind above it', () => {
+    // The glyph is `aria-hidden`, exactly like the kind icon — so without this
+    // the rail's tail reads as "not looked at yet" for a screen reader, which is
+    // the very confusion the marker exists to remove.
+    const item = makeItem('idea', { title: 'Passed on once' });
+    const { container } = renderRail([item], new Map([[item.id, 1]]));
+
+    const spoken = Array.from(container.querySelectorAll('.sr-only')).map((el) => el.textContent);
+    expect(spoken).toContain('Idea');
+    expect(spoken).toContain('Passed over earlier');
+  });
+
+  it('does not claim an unskipped row was passed over', () => {
+    const { container } = renderRail([makeItem('idea', { title: 'Fresh' })]);
+    const spoken = Array.from(container.querySelectorAll('.sr-only')).map((el) => el.textContent);
+    expect(spoken).not.toContain('Passed over earlier');
+  });
+
   it('does not mark an unskipped row as deferred', () => {
     const { container } = renderRail([makeItem('idea', { title: 'Fresh' })]);
     expect(container.querySelector('.lucide-rotate-ccw')).toBeNull();

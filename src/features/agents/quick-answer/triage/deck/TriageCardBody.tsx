@@ -43,10 +43,22 @@ function Block({ label, children }: { label: string; children: ReactNode }) {
 
 export function TriageCardBody({
   item,
+  isTop,
   answerSlot,
   scrollerRef,
 }: {
   item: TriageItem;
+  /**
+   * Whether this is the card being decided.
+   *
+   * Load-bearing for the keyboard, not for paint: the deck keeps THREE cards
+   * mounted for depth, and an unconditional `tabIndex={0}` made all three prose
+   * scrollers tab stops. Two of them sit under `pointer-events-none`, which
+   * removes the mouse but NOT the tab order — so tabbing through the deck
+   * landed twice on scrollers the reviewer cannot see, cannot scroll to any
+   * visible effect, and is not deciding.
+   */
+  isTop: boolean;
   answerSlot?: ReactNode;
   /** Set on the TOP card only — see `TriageCard`. */
   scrollerRef?: Ref<HTMLDivElement>;
@@ -62,10 +74,14 @@ export function TriageCardBody({
           40-line description could only ever be read down to the fold — while
           `←`/`→` recorded a verdict on it. `useDeckDialog` also drives it from
           ↑/↓/PgUp/PgDn without needing the focus, and focuses it FIRST on open
-          so the reviewer lands on the prose rather than on a filter chip. */}
+          so the reviewer lands on the prose rather than on a filter chip.
+
+          `-1` and not "no tabIndex" for the cards behind: they stay
+          programmatically focusable (and keep `role="region"`), they just leave
+          the tab ring, which only the card being decided belongs in. */}
       <div
         ref={scrollerRef}
-        tabIndex={0}
+        tabIndex={isTop ? 0 : -1}
         role="region"
         aria-label={t.monitor.triage_body_region}
         className="focus-ring mt-4 min-h-0 flex-1 overflow-y-auto"

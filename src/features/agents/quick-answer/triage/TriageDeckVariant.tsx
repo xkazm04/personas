@@ -21,10 +21,11 @@
  * its children survive because two other surfaces still render them (the
  * channel-timeline rail and the reviews rail) — only the popover shell is gone.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ThumbsDown, ThumbsUp } from 'lucide-react';
 
+import { useAnnounce } from '@/features/shared/components/feedback/AriaLiveProvider';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -79,21 +80,47 @@ export function TriageDeckVariant({
   } = useDeckControls(queue, onClose);
 
   /**
-   * The deck's ONE live region.
+   * The deck owns NO live region of its own — it speaks through the app's.
    *
-   * Composed rather than rendered inline so it starts EMPTY: a live region that
-   * already has its text on first paint is not a change, and most screen
-   * readers will not speak it. Filling it one commit later makes the first card
-   * announce like every card after it.
+   * It used to hand-roll a `role="status"` div and swap its text. A live region
+   * only speaks when its content MUTATES, so rejecting two cards with the same
+   * words in a row produced one utterance and the second verdict was recorded
+   * in silence. `AriaLiveProvider` exists for exactly this: it queues each
+   * message and bumps a `key`, so every call remounts the region and every call
+   * is heard once.
+   *
+   * The copy is read through a ref rather than depended on. `t` re-identifies
+   * whenever a lazily-loaded locale SECTION lands, and this whole surface is
+   * lazy — an utterance must be caused by a verdict or a deal, never by a chunk
+   * arriving.
    */
-  const spoken = [
-    lastVerdict ? tx(t.monitor.triage_announce_verdict, { verdict: lastVerdict }) : null,
-    top ? tx(t.monitor.triage_announce_card, { kind: kindCopy(t, top.kind).one, title: top.title }) : null,
-  ]
-    .filter(Boolean)
-    .join(' ');
-  const [announcement, setAnnouncement] = useState('');
-  useEffect(() => setAnnouncement(spoken), [spoken]);
+  const announce = useAnnounce();
+  const copy = useRef({ t, tx, announce, top });
+  copy.current = { t, tx, announce, top };
+
+  // One utterance per WRITE. `lastVerdict` is a fresh stamp every time (see
+  // `DeckVerdictStamp`), so two identical verdicts in a row are two events.
+  useEffect(() => {
+    if (!lastVerdict) return;
+    const c = copy.current;
+    c.announce(c.tx(c.t.monitor.triage_announce_verdict, { verdict: lastVerdict.text }));
+  }, [lastVerdict]);
+
+  // One utterance per CARD DEALT. Keyed by id and not by the item object: the
+  // polls that replace `queue.items` hand back new objects for the same card,
+  // and re-announcing the card the reviewer is already looking at is noise.
+  const topId = top?.id ?? null;
+  useEffect(() => {
+    if (!topId) return;
+    const c = copy.current;
+    if (!c.top) return;
+    c.announce(
+      c.tx(c.t.monitor.triage_announce_card, {
+        kind: kindCopy(c.t, c.top.kind).one,
+        title: c.top.title,
+      }),
+    );
+  }, [topId]);
 
   const stack = queue.items.slice(0, STACK_DEPTH);
   const showLoading = queue.loading && stack.length === 0;
@@ -119,13 +146,16 @@ export function TriageDeckVariant({
       aria-label={t.monitor.triage_deck_aria}
       data-testid="triage-deck-variant"
     >
-      {/* ONE polite region for the whole surface: what was just recorded, then
-          what is now being asked. Replaces the two permanent `role="status"`
-          stamps that used to announce "Reject… Approve" on every deal. */}
-      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
-        {announcement}
-      </div>
+      {/* No live region here. Everything this surface announces — the verdict
+          just recorded, then the card now being asked about — goes through the
+          app's `AriaLiveProvider` (see the effects above), which is the only
+          polite region the deck contributes to.
 
+          The one live region that can still appear BELOW this point is
+          `LoadingSpinner`'s `role="status"` inside `DeckLoading`, and it is up
+          only while there is no card to announce at all. The card stack itself
+          contributes none: `TriageCard`'s drag stamps and `TriageCardHeader`'s
+          alert banner are paint and content respectively, not status. */}
       <DeckTopBar queue={queue} title={title} onOpenMonitor={onOpenMonitor} onClose={onClose} />
 
       <div className="relative flex min-h-0 flex-1">

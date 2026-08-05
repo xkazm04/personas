@@ -113,9 +113,17 @@ function QueueRow({
       </span>
       {/* A skipped card sorts to the BACK of the queue rather than leaving it,
           so without this the rail's tail reads as "not looked at yet" when it is
-          really "you already passed on these". */}
+          really "you already passed on these".
+
+          The glyph is `aria-hidden`, exactly like the kind icon above it — and
+          exactly like the kind icon, that means the state needs its own
+          `sr-only` companion or it does not exist for a screen reader at all.
+          The kind got one when the second line was deleted; this did not. */}
       {deferred ? (
-        <RotateCcw className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden />
+        <>
+          <RotateCcw className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden />
+          <span className="sr-only">{t.monitor.triage_queue_deferred}</span>
+        </>
       ) : null}
     </button>
   );
