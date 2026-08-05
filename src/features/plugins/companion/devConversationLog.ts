@@ -88,7 +88,7 @@ export function buildConversationLogMarkdown(input: ConversationLogInput): strin
     '',
     `- Conversation: \`${input.conversationId}\``,
     `- Exported: ${input.exportedAt.toISOString()}`,
-    `- Messages: ${input.messages.length} (backend serves at most 500; a longer day truncates the oldest)`,
+    `- Messages: ${input.messages.length} (full conversation — the export walks keyset pages back to the first turn)`,
     '',
     '---',
   ];

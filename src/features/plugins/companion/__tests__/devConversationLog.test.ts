@@ -38,6 +38,10 @@ describe('buildConversationLogMarkdown', () => {
     expect(md).toContain('# Athena conversation log');
     expect(md).toContain('- Conversation: `default`');
     expect(md).toContain('- Messages: 0');
+    // The old note advertised a 500-message ceiling; the export now walks
+    // keyset pages back to the first turn.
+    expect(md).toContain('full conversation');
+    expect(md).not.toContain('at most 500');
     expect(md).not.toContain('## Autonomous actions');
   });
 

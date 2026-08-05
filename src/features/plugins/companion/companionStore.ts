@@ -166,6 +166,13 @@ interface CompanionStore {
   setMessages: (msgs: CompanionMessage[]) => void;
   appendMessage: (msg: CompanionMessage) => void;
   /**
+   * Prepend an older page of transcript (scroll-to-top pagination).
+   * De-duplicates by id, so a page that overlaps what's already on screen
+   * — a re-scan across a filtered row, a double-fire — can never double
+   * a bubble.
+   */
+  prependMessages: (msgs: CompanionMessage[]) => void;
+  /**
    * Legacy flat setters, kept as delegates onto the ACTIVE conversation's
    * `liveTurns` slice (mirror invariant below) — so pre-partition call
    * sites (test bridge, older effects) still route to the right thread.
@@ -679,6 +686,14 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
   setMessages: (messages) => set({ messages }),
   appendMessage: (msg) =>
     set((s) => ({ messages: [...s.messages, msg] })),
+  prependMessages: (msgs) =>
+    set((s) => {
+      if (msgs.length === 0) return {};
+      const known = new Set(s.messages.map((m) => m.id));
+      const fresh = msgs.filter((m) => !known.has(m.id));
+      if (fresh.length === 0) return {};
+      return { messages: [...fresh, ...s.messages] };
+    }),
   // Legacy flat setters — delegate to the active conversation's slice so
   // any caller we haven't migrated still routes to the focused thread.
   setStreaming: (value) =>

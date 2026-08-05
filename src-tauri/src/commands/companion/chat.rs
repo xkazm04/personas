@@ -36,6 +36,27 @@ pub struct CompanionMessage {
     pub created_at: String,
 }
 
+/// One keyset page of older transcript, plus the cursor for the next one.
+///
+/// The cursor is computed from the RAW scanned rows, not from `messages`,
+/// because fleet-event system rows are filtered from display AFTER the
+/// limit is applied. Paging off the last visible message would re-scan
+/// those filtered rows on every page (correct, but wasteful), and a page
+/// whose rows were ALL filtered would look like the end of the transcript
+/// when it isn't.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CompanionMessagePage {
+    /// Oldest-first, ready to prepend to the transcript.
+    pub messages: Vec<CompanionMessage>,
+    /// Cursor for the next (older) page. `None` only when nothing was scanned.
+    pub next_before_created_at: Option<String>,
+    pub next_before_id: Option<String>,
+    /// True when the scan returned fewer raw rows than `limit` — there is
+    /// no older page, regardless of how many rows survived the filter.
+    pub exhausted: bool,
+}
+
 /// Send a user message; returns once Claude finishes. Streaming progress
 /// arrives on the `companion://stream` Tauri event channel.
 ///
@@ -340,20 +361,70 @@ pub fn companion_list_recent_messages(
     let limit = limit.unwrap_or(50).min(500);
     let session_id = conversation_id.unwrap_or_else(|| DEFAULT_SESSION_ID.to_string());
     let episodes = episodic::list_recent(&state.user_db, &session_id, limit)?;
-    Ok(episodes
-        .into_iter()
-        // Fleet lifecycle events are written as System episodes here purely so
-        // recall/FTS can find them (`fleet-event session:… cc:… state:…`); they
-        // are machine logs, not chat content, so they must not render in the
-        // transcript. Filtered from display only — still searchable in memory.
-        .filter(|e| !e.content.starts_with("fleet-event "))
-        .map(|e| CompanionMessage {
-            id: e.id,
-            role: e.role,
-            content: e.content,
-            created_at: e.created_at,
-        })
-        .collect())
+    Ok(episodes.into_iter().filter_map(to_message).collect())
+}
+
+/// Fleet lifecycle events are written as System episodes purely so
+/// recall/FTS can find them (`fleet-event session:… cc:… state:…`); they
+/// are machine logs, not chat content, so they must not render in the
+/// transcript. Filtered from display only — still searchable in memory.
+fn to_message(e: episodic::Episode) -> Option<CompanionMessage> {
+    if e.content.starts_with("fleet-event ") {
+        return None;
+    }
+    Some(CompanionMessage {
+        id: e.id,
+        role: e.role,
+        content: e.content,
+        created_at: e.created_at,
+    })
+}
+
+/// Read one page of transcript OLDER than the `(beforeCreatedAt, beforeId)`
+/// cursor, oldest-first — the "load earlier messages" read behind the
+/// panel's scroll-to-top pagination and behind the dev conversation-log
+/// export's full-transcript walk.
+///
+/// Before this existed the transcript hard-capped at the newest 500
+/// episodes with no way to reach past them, so a heavy day silently lost
+/// its morning from both scrollback and the export.
+#[tauri::command]
+pub fn companion_list_messages_before(
+    state: State<'_, Arc<AppState>>,
+    before_created_at: String,
+    before_id: String,
+    limit: Option<u32>,
+    conversation_id: Option<String>,
+) -> Result<CompanionMessagePage, AppError> {
+    crate::ipc_auth::require_auth_sync(&state)?;
+    if before_created_at.trim().is_empty() || before_id.trim().is_empty() {
+        return Err(AppError::Validation(
+            "transcript page: a (beforeCreatedAt, beforeId) cursor is required".into(),
+        ));
+    }
+    // Same clamp as `companion_list_recent_messages`, same default.
+    let limit = limit.unwrap_or(50).clamp(1, 500);
+    let session_id = conversation_id.unwrap_or_else(|| DEFAULT_SESSION_ID.to_string());
+    let episodes = episodic::list_before(
+        &state.user_db,
+        &session_id,
+        &before_created_at,
+        &before_id,
+        limit,
+    )?;
+
+    let exhausted = (episodes.len() as u32) < limit;
+    // `list_before` returns oldest-first, so the OLDEST scanned row (the
+    // next cursor) is the first element.
+    let cursor = episodes
+        .first()
+        .map(|e| (e.created_at.clone(), e.id.clone()));
+    Ok(CompanionMessagePage {
+        messages: episodes.into_iter().filter_map(to_message).collect(),
+        next_before_created_at: cursor.as_ref().map(|c| c.0.clone()),
+        next_before_id: cursor.map(|c| c.1),
+        exhausted,
+    })
 }
 
 /// Request that an in-flight turn be interrupted. Idempotent and

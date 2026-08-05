@@ -45,6 +45,25 @@ export function persistTurnSidecar(episodeId: string): void {
 }
 
 /**
+ * Backend clamp on ids per `companion_get_turn_sidecars` call. Kept in
+ * sync with `MAX_BATCH_IDS` in `commands/companion/sidecars.rs` — a
+ * full-transcript export can ask for more than one batch holds.
+ */
+const SIDECAR_BATCH_SIZE = 500;
+
+/** Batch-read sidecars for arbitrarily many episode ids, chunked. */
+export async function fetchSidecarsFor(
+  episodeIds: string[],
+): Promise<Awaited<ReturnType<typeof companionGetTurnSidecars>>> {
+  const chunks: string[][] = [];
+  for (let i = 0; i < episodeIds.length; i += SIDECAR_BATCH_SIZE) {
+    chunks.push(episodeIds.slice(i, i + SIDECAR_BATCH_SIZE));
+  }
+  const pages = await Promise.all(chunks.map((c) => companionGetTurnSidecars(c)));
+  return pages.flat();
+}
+
+/**
  * Hydrate persisted sidecars for the visible transcript.
  *
  * Dedupe is by episode id in a ref, not by store contents: an id whose

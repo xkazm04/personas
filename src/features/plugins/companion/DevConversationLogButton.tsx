@@ -6,9 +6,40 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import {
   companionExportConversationLog,
   companionListRecentMessages,
+  type CompanionMessage,
 } from '@/api/companion';
 import { useCompanionStore } from './companionStore';
 import { buildConversationLogMarkdown, buildLogFileStem } from './devConversationLog';
+import { cursorFromMessages, fetchAllOlderMessages } from './useTranscriptPages';
+import { parseSidecars } from './turnSidecars';
+import { fetchSidecarsFor } from './useTurnSidecars';
+
+/**
+ * The freshest FULL conversation: the newest window plus every older
+ * keyset page. Falls back to whatever we already have on any failure —
+ * a partial dump beats no dump for a dev affordance.
+ */
+async function fetchFullTranscript(
+  conversationId: string,
+  fallback: CompanionMessage[],
+): Promise<CompanionMessage[]> {
+  let newest: CompanionMessage[];
+  try {
+    newest = await companionListRecentMessages(500, conversationId);
+  } catch (e) {
+    silentCatch('DevConversationLogButton:listRecent')(e);
+    return fallback;
+  }
+  const cursor = cursorFromMessages(newest);
+  if (!cursor) return newest;
+  try {
+    const older = await fetchAllOlderMessages(conversationId, cursor);
+    return [...older, ...newest];
+  } catch (e) {
+    silentCatch('DevConversationLogButton:pageWalk')(e);
+    return newest;
+  }
+}
 
 /**
  * Dev-only header button: dump the active Athena conversation (messages
@@ -29,23 +60,34 @@ export function DevConversationLogButton() {
     setBusy(true);
     try {
       const s = useCompanionStore.getState();
-      // Prefer the freshest full transcript from the backend (the store
-      // may hold a shorter window); fall back to the store on error.
-      let messages = s.messages;
-      try {
-        messages = await companionListRecentMessages(500, s.activeConversationId);
-      } catch (e) {
-        // Store snapshot is an acceptable fallback for a dev dump.
-        silentCatch('DevConversationLogButton:listRecent')(e);
+      // Prefer the freshest FULL transcript from the backend (the store
+      // only holds the loaded window); fall back to the store on error.
+      const messages = await fetchFullTranscript(s.activeConversationId, s.messages);
+
+      // Side channels: the store's live maps only cover this session's
+      // turns, so pull persisted sidecars for every assistant message in
+      // the dump. Live entries win on merge; a failure just thins the dump.
+      let hydrated = parseSidecars([]);
+      const episodeIds = messages.filter((m) => m.role === 'assistant').map((m) => m.id);
+      if (episodeIds.length > 0) {
+        try {
+          hydrated = parseSidecars(await fetchSidecarsFor(episodeIds));
+        } catch (e) {
+          silentCatch('DevConversationLogButton:sidecars')(e);
+        }
       }
+
       const markdown = buildConversationLogMarkdown({
         conversationId: s.activeConversationId,
         exportedAt: new Date(),
         messages,
-        narrationByEpisodeId: s.narrationByEpisodeId,
-        stepsByEpisodeId: s.stepsByEpisodeId,
-        turnSummaryByEpisodeId: s.turnSummaryByEpisodeId,
-        recallByEpisodeId: s.recallByEpisodeId,
+        narrationByEpisodeId: { ...hydrated.narrationByEpisodeId, ...s.narrationByEpisodeId },
+        stepsByEpisodeId: { ...hydrated.stepsByEpisodeId, ...s.stepsByEpisodeId },
+        turnSummaryByEpisodeId: {
+          ...hydrated.turnSummaryByEpisodeId,
+          ...s.turnSummaryByEpisodeId,
+        },
+        recallByEpisodeId: { ...hydrated.recallByEpisodeId, ...s.recallByEpisodeId },
         athenaActions: s.athenaActions,
       });
       const stem = buildLogFileStem(s.activeConversationId, new Date());

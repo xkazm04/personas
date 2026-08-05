@@ -864,6 +864,37 @@ export async function companionListRecentMessages(
   return invoke<CompanionMessage[]>('companion_list_recent_messages', { limit, conversationId });
 }
 
+/** One keyset page of older transcript, oldest-first. */
+export interface CompanionMessagePage {
+  messages: CompanionMessage[];
+  /**
+   * Cursor for the NEXT (older) page, derived backend-side from the raw
+   * scanned rows — not from `messages`, which has system rows filtered
+   * out. Null only when nothing was scanned.
+   */
+  nextBeforeCreatedAt: string | null;
+  nextBeforeId: string | null;
+  /**
+   * True when the scan returned fewer raw rows than the limit: there is
+   * no older page, regardless of how many rows survived the filter.
+   */
+  exhausted: boolean;
+}
+
+/**
+ * Read one page of transcript older than the `(beforeCreatedAt, beforeId)`
+ * cursor. Keyset, not offset — the transcript grows at the newest end
+ * while the user pages backwards.
+ */
+export async function companionListMessagesBefore(args: {
+  beforeCreatedAt: string;
+  beforeId: string;
+  limit?: number;
+  conversationId?: string;
+}): Promise<CompanionMessagePage> {
+  return invoke<CompanionMessagePage>('companion_list_messages_before', args);
+}
+
 /**
  * Persist one assistant turn's side channels (narration trail, TodoWrite
  * plan, dispatcher summary, recall preview) so they survive an app

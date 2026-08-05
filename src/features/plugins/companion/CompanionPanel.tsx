@@ -96,6 +96,7 @@ import { ConversationSwitcher } from './ConversationSwitcher';
 import { TypingDots } from './TypingDots';
 import { useChatScroll } from './useChatScroll';
 import { persistTurnSidecar, useTurnSidecarHydration } from './useTurnSidecars';
+import { useTranscriptPages } from './useTranscriptPages';
 import { classifyMidTurnIntent } from './midTurnIntent';
 import { RefineChips } from './RefineChips';
 import { BubbleReadAloud } from './BubbleReadAloud';
@@ -1414,6 +1415,16 @@ function Body(props: BodyProps) {
   const { scrollRef, atBottom, scrollToBottom, maybeAutoScroll } = useChatScroll();
   useEffect(maybeAutoScroll, [messages, streamingText, streaming, maybeAutoScroll]);
 
+  // Scroll-to-top pagination: the initial load is still the newest 50, but
+  // reaching the top now walks keyset pages backwards instead of dead-ending
+  // at the backend's window.
+  const { loadingOlder } = useTranscriptPages({
+    scrollRef,
+    conversationId: activeConversationId,
+    messages,
+    enabled: initialized,
+  });
+
   // Voice is "active" only when the chosen engine has everything it
   // needs: ElevenLabs requires a credential + voice id; Piper requires
   // only a voice id (the engine binary lookup happens at synthesis time
@@ -1819,6 +1830,14 @@ function Body(props: BodyProps) {
       <div className="relative flex flex-col flex-1 min-w-0">
         <div className="relative flex-1 min-h-0 flex flex-col">
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5 space-y-3 scrollbar-thin companion-scroll">
+          {/* Earlier-messages page in flight. Sits above the transcript so
+              it reads as "there is more up here", and carries no label —
+              the position is the whole message. */}
+          {loadingOlder && (
+            <div className="flex justify-center py-1" aria-hidden="true">
+              <LoadingSpinner size="sm" />
+            </div>
+          )}
           {!initialized && !initError && (
             <div className="flex items-center gap-3 text-foreground typo-body">
               <LoadingSpinner size="sm" />
