@@ -450,7 +450,10 @@
     "triage_undo": "{verdict} 취소",
     "triage_undo_hint": "카드가 다시 대기열로 돌아갑니다. 판정으로 이미 진행된 작업은 취소되지 않습니다.",
     "conv_bridge_title": "연결된 Slack 채널입니다. 거기서 보낸 메시지가 이 대화에 도착합니다.",
-    "stream_kind_slack": "Slack"
+    "stream_kind_slack": "Slack",
+    "triage_queue_jump": "다음으로 보기: {title}",
+    "triage_queue_rail_aria": "분류 대기열",
+    "triage_queue_rail_title": "다음 항목"
   },
   "common": {
     "loading": "로딩 중...",

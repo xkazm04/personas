@@ -449,5 +449,8 @@
   "triage_undo": "{verdict} বাতিল করুন",
   "triage_undo_hint": "কার্ডটি আবার সারিতে ফিরিয়ে দেয়। সিদ্ধান্তের ফলে ইতিমধ্যে শুরু হওয়া কোনো কাজ প্রত্যাহার করা হয় না।",
   "conv_bridge_title": "সংযুক্ত Slack চ্যানেল। সেখানে পাঠানো বার্তা এই কথোপকথনে আসে।",
-  "stream_kind_slack": "Slack"
+  "stream_kind_slack": "Slack",
+  "triage_queue_jump": "পরবর্তীতে দেখান: {title}",
+  "triage_queue_rail_aria": "ট্রায়াজ সারি",
+  "triage_queue_rail_title": "পরবর্তী"
 }

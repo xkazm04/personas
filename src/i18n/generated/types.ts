@@ -432,6 +432,9 @@ export type Translations = {
     triage_pick_one: string;
     triage_priority_rank: string;
     triage_progress_aria: string;
+    triage_queue_jump: string;
+    triage_queue_rail_aria: string;
+    triage_queue_rail_title: string;
     triage_questions_pending: string;
     triage_reason_already_done: string;
     triage_reason_already_handled: string;

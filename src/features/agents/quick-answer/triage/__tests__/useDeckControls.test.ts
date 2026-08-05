@@ -52,6 +52,7 @@ function makeQueue(
     decide,
     openLink,
     reload: vi.fn(),
+    focusItem: vi.fn(),
   };
   return { queue, decide, openLink, undoLast };
 }

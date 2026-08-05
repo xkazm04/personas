@@ -450,7 +450,10 @@
     "triage_undo": "{verdict}を取り消す",
     "triage_undo_hint": "カードをキューに戻します。判定によってすでに開始された処理は取り消されません。",
     "conv_bridge_title": "連携中の Slack チャンネル。そこに送信されたメッセージはこの会話に届きます。",
-    "stream_kind_slack": "Slack"
+    "stream_kind_slack": "Slack",
+    "triage_queue_jump": "次に表示: {title}",
+    "triage_queue_rail_aria": "トリアージキュー",
+    "triage_queue_rail_title": "次の項目"
   },
   "common": {
     "loading": "読み込み中...",

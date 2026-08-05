@@ -450,7 +450,10 @@
     "triage_undo": "Annuler {verdict}",
     "triage_undo_hint": "Remet la carte dans la file d'attente. Ce que le verdict avait déjà déclenché n'est pas annulé.",
     "conv_bridge_title": "Canal Slack lié. Les messages envoyés là-bas arrivent dans cette conversation.",
-    "stream_kind_slack": "Slack"
+    "stream_kind_slack": "Slack",
+    "triage_queue_jump": "Suivant : {title}",
+    "triage_queue_rail_aria": "File de triage",
+    "triage_queue_rail_title": "À suivre"
   },
   "common": {
     "loading": "Chargement...",

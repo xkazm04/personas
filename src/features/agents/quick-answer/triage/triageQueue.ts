@@ -51,6 +51,15 @@ export interface QueueProjectionInput {
   resolved: ReadonlySet<string>;
   skips: SkipLedger;
   activeKinds: ReadonlySet<TriageKind>;
+  /**
+   * The one item the reviewer JUMPED to from the queue rail, dealt next.
+   *
+   * A pin, not a re-sort: everything behind it keeps the order it already had,
+   * so jumping ahead to the card you came here for does not reshuffle the queue
+   * you were working through. It is session-local and writes nothing — the
+   * projection drops it the moment that item is decided or filtered away.
+   */
+  focused?: string | null;
 }
 
 export interface QueueProjection {
@@ -98,6 +107,7 @@ export function projectQueue({
   resolved,
   skips,
   activeKinds,
+  focused,
 }: QueueProjectionInput): QueueProjection {
   const pending = all.filter((i) => !resolved.has(i.id));
 
@@ -108,7 +118,15 @@ export function projectQueue({
 
   const items = live
     .filter((i) => activeKinds.has(i.kind))
-    .sort((a, b) => skipCount(skips, a.id) - skipCount(skips, b.id) || compareTriage(a, b));
+    .sort((a, b) => {
+      // The pinned card sorts ahead of everything, whatever its weight or skip
+      // count. One id at most, so the comparator stays a consistent order.
+      if (focused) {
+        if (a.id === focused) return -1;
+        if (b.id === focused) return 1;
+      }
+      return skipCount(skips, a.id) - skipCount(skips, b.id) || compareTriage(a, b);
+    });
 
   return {
     items,

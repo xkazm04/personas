@@ -450,7 +450,10 @@
     "triage_undo": "{verdict} rückgängig machen",
     "triage_undo_hint": "Legt die Karte zurück in die Warteschlange. Was durch die Entscheidung bereits in Gang gesetzt wurde, wird dadurch nicht zurückgenommen.",
     "conv_bridge_title": "Verknüpfter Slack-Kanal. Dort gesendete Nachrichten erscheinen in dieser Unterhaltung.",
-    "stream_kind_slack": "Slack"
+    "stream_kind_slack": "Slack",
+    "triage_queue_jump": "Als Nächstes: {title}",
+    "triage_queue_rail_aria": "Triage-Warteschlange",
+    "triage_queue_rail_title": "Als Nächstes"
   },
   "common": {
     "loading": "Laden...",

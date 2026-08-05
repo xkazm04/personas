@@ -450,7 +450,10 @@
     "triage_undo": "Deshacer {verdict}",
     "triage_undo_hint": "Devuelve la tarjeta a la cola. Lo que el veredicto ya puso en marcha no se revierte.",
     "conv_bridge_title": "Canal de Slack vinculado. Los mensajes enviados allí llegan a esta conversación.",
-    "stream_kind_slack": "Slack"
+    "stream_kind_slack": "Slack",
+    "triage_queue_jump": "Siguiente: {title}",
+    "triage_queue_rail_aria": "Cola de triaje",
+    "triage_queue_rail_title": "A continuación"
   },
   "common": {
     "loading": "Cargando...",

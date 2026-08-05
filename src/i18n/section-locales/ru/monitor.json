@@ -449,5 +449,8 @@
   "triage_undo": "Отменить {verdict}",
   "triage_undo_hint": "Возвращает карточку в очередь. Действия, уже запущенные вердиктом, не отменяются.",
   "conv_bridge_title": "Связанный канал Slack. Отправленные там сообщения попадают в этот разговор.",
-  "stream_kind_slack": "Slack"
+  "stream_kind_slack": "Slack",
+  "triage_queue_jump": "Следующая: {title}",
+  "triage_queue_rail_aria": "Очередь разбора",
+  "triage_queue_rail_title": "Далее"
 }

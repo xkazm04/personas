@@ -450,7 +450,10 @@
     "triage_undo": "Hoàn tác {verdict}",
     "triage_undo_hint": "Đưa thẻ trở lại hàng đợi. Những gì quyết định đã kích hoạt sẽ không được thu hồi.",
     "conv_bridge_title": "Kênh Slack đã liên kết. Tin nhắn gửi ở đó sẽ xuất hiện trong cuộc trò chuyện này.",
-    "stream_kind_slack": "Slack"
+    "stream_kind_slack": "Slack",
+    "triage_queue_jump": "Xử lý tiếp: {title}",
+    "triage_queue_rail_aria": "Hàng đợi phân loại",
+    "triage_queue_rail_title": "Tiếp theo"
   },
   "common": {
     "loading": "Đang tải...",

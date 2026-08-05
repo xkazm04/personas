@@ -449,5 +449,8 @@
   "triage_undo": "Zpět: {verdict}",
   "triage_undo_hint": "Vrátí kartu zpět do fronty. Co už rozhodnutí spustilo, se tím nezruší.",
   "conv_bridge_title": "Propojený kanál Slack. Zprávy odeslané tam se objeví v této konverzaci.",
-  "stream_kind_slack": "Slack"
+  "stream_kind_slack": "Slack",
+  "triage_queue_jump": "Další na řadě: {title}",
+  "triage_queue_rail_aria": "Fronta k třídění",
+  "triage_queue_rail_title": "Další na řadě"
 }

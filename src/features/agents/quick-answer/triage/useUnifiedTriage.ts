@@ -206,6 +206,13 @@ export interface UnifiedTriageQueue {
    */
   skips: SkipLedger;
   /**
+   * Deal a specific item next — what the queue rail's rows do.
+   *
+   * A pin on the projection, never a write and never a verdict: the item keeps
+   * its place in the ledger and every other card keeps the order it had.
+   */
+  focusItem: (id: string) => void;
+  /**
    * The TRUE size of the backlog behind the capped working set.
    *
    * `triageIdeas` returns a keyset page plus `counts`, and this hook used to keep
@@ -289,6 +296,13 @@ export function useUnifiedTriage(
   const [activeKinds, setActiveKinds] = useState<Set<TriageKind>>(
     () => restored.kinds ?? new Set(TRIAGE_KINDS),
   );
+  /**
+   * The card the reviewer jumped to from the queue rail, if any.
+   *
+   * Deliberately NOT persisted with the session: a jump is "deal me this one
+   * next", which stops meaning anything the moment the deck is closed.
+   */
+  const [focusedId, setFocusedId] = useState<string | null>(null);
   /**
    * The journal, held as state so the summary recomputes when it is written.
    *
@@ -488,8 +502,8 @@ export function useUnifiedTriage(
   ]);
 
   const projection = useMemo(
-    () => projectQueue({ all, resolved, skips, activeKinds }),
-    [all, resolved, skips, activeKinds],
+    () => projectQueue({ all, resolved, skips, activeKinds, focused: focusedId }),
+    [all, resolved, skips, activeKinds, focusedId],
   );
 
   /**
@@ -571,9 +585,12 @@ export function useUnifiedTriage(
     });
   }, []);
 
+  const focusItem = useCallback((id: string) => setFocusedId(id), []);
+
   const reload = useCallback(() => {
     setResolved(new Set());
     setSkips(new Map());
+    setFocusedId(null);
     // "Show me the world again" ENDS the session: a reviewer who asks for a
     // clean slate must not get last hour's deferrals back with it. The journal
     // survives (it is the record of what happened, not working state) but the
@@ -836,6 +853,7 @@ export function useUnifiedTriage(
       sessionTotal: projection.sessionTotal,
       deferredCount: projection.deferredCount,
       skips,
+      focusItem,
       backlog,
       loadMore,
       summary,
@@ -855,6 +873,7 @@ export function useUnifiedTriage(
       toggleKind,
       resolved.size,
       skips,
+      focusItem,
       backlog,
       summary,
       undo,

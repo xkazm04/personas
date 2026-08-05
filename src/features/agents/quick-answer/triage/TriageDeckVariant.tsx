@@ -30,6 +30,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { DeckActionBar, DeckFlank } from './deck/DeckActionBar';
 import { kindCopy } from './deck/DeckChips';
+import { DeckQueueRail } from './deck/DeckQueueRail';
 import { DeckCleared, DeckLoading } from './deck/DeckStates';
 import { DeckTopBar } from './deck/DeckTopBar';
 import { QuestionPanel } from './deck/QuestionPanel';
@@ -127,7 +128,14 @@ export function TriageDeckVariant({
 
       <DeckTopBar queue={queue} title={title} onOpenMonitor={onOpenMonitor} onClose={onClose} />
 
-      <div className="relative flex min-h-0 flex-1 items-center justify-center gap-6 px-6 py-8 xl:gap-12">
+      <div className="relative flex min-h-0 flex-1">
+        {/* The queue, previewable but never decidable — see `DeckQueueRail`.
+            It reads the DEALT order, so what it lists is exactly what the deck
+            will hand over next, and a click pins a row to the front without
+            touching the keyboard's contract with the top card. */}
+        <DeckQueueRail items={queue.items} onJump={queue.focusItem} />
+
+        <div className="relative flex min-h-0 flex-1 items-center justify-center gap-6 px-6 py-8 xl:gap-12">
         <div
           className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-primary/5 to-transparent"
           aria-hidden
@@ -159,7 +167,10 @@ export function TriageDeckVariant({
               onClick={() => decideTop('reject')}
             />
 
-            <div className="relative h-full max-h-[34rem] min-h-[19rem] w-full max-w-[42rem]">
+            {/* Widened from 42rem: the card carries markdown prose, and the
+                extra measure is what the docked ledger's single row bought
+                back from the three-row grid it replaced. */}
+            <div className="relative h-full max-h-[34rem] min-h-[19rem] w-full max-w-[46rem]">
               {stack.map((item, i) => (
                 <TriageCard
                   key={item.id}
@@ -196,6 +207,7 @@ export function TriageDeckVariant({
             />
           </>
         )}
+        </div>
       </div>
 
       {/* The reason strip TAKES OVER the action bar rather than layering over
