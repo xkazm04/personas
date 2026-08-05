@@ -3,10 +3,13 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowDown,
   Bot,
+  Flame,
+  Gauge,
   Infinity as InfinityIcon,
   Loader2,
   RotateCcw,
   Square,
+  Timer,
   Wrench,
   X,
 } from 'lucide-react';
@@ -291,6 +294,13 @@ export default function CompanionPanel() {
   const setDevMode = useSystemStore((s) => s.setCompanionDevMode);
   const panelCompact = useSystemStore((s) => s.companionPanelCompact);
   const setPanelCompact = useSystemStore((s) => s.setCompanionPanelCompact);
+  // Which tool strip (autonomy cadence / boldness / daily goals) is expanded
+  // under the header. Accordion on purpose: the stacked always-on rows read
+  // as three competing headers, so they collapse to icons and at most ONE
+  // row shows at a time. Session-scoped; every panel open starts clean.
+  const [expandedStrip, setExpandedStrip] = useState<'cadence' | 'boldness' | 'goals' | null>(
+    null,
+  );
   // While the Fleet grid overlay (z-200 portal) is open, the chat must float
   // ABOVE it — otherwise tapping the orb opens the panel behind the overlay
   // (reads as "orb disappears, no chat") and its decision/approval UI is
@@ -362,7 +372,7 @@ export default function CompanionPanel() {
           style={morph.style}
           className={`fixed bottom-12 left-4 ${fleetGridOpen ? 'z-[220]' : 'z-[60]'} ${
             panelCompact ? 'w-[350px]' : 'w-[760px]'
-          } h-[900px] max-h-[calc(100vh-5rem)] flex flex-col rounded-card bg-secondary/95 backdrop-blur-md border border-foreground/10 shadow-elevation-4 overflow-hidden transition-[width] duration-200 ease-out ${
+          } h-[900px] max-h-[calc(100vh-5rem)] flex flex-col rounded-card bg-background/95 backdrop-blur-md border border-foreground/10 shadow-elevation-4 overflow-hidden transition-[width] duration-200 ease-out ${
             autonomousMode ? 'companion-autonomous' : ''
           }`}
           role="region"
@@ -375,7 +385,7 @@ export default function CompanionPanel() {
             watermark — semi-transparent so it doesn't fight the
             messages. pointer-events-none so it never steals clicks.
             -z-10 keeps it below the static flex children but above the
-            panel's bg-secondary/95 fill, so the image is visible
+            panel's bg-background/95 fill, so the image is visible
             through the tinted background.
           */}
           {/*
@@ -453,11 +463,15 @@ export default function CompanionPanel() {
                 silentCatch('companion_set_dev_mode'),
               );
             }}
+            expandedStrip={expandedStrip}
+            onToggleStrip={(strip) =>
+              setExpandedStrip((cur) => (cur === strip ? null : strip))
+            }
           />
-          {autonomousMode && <WakeCadence />}
-          {autonomousMode && <FleetBoldnessDial />}
+          {autonomousMode && expandedStrip === 'cadence' && <WakeCadence />}
+          {autonomousMode && expandedStrip === 'boldness' && <FleetBoldnessDial />}
           {devModeAvailable && devMode && <DevOpLedger />}
-          {devModeAvailable && <DailyGoalsBar />}
+          {devModeAvailable && expandedStrip === 'goals' && <DailyGoalsBar />}
           <Body
             initialized={initialized}
             initError={initError}
@@ -498,6 +512,8 @@ export default function CompanionPanel() {
   );
 }
 
+type ToolStrip = 'cadence' | 'boldness' | 'goals';
+
 function Header({
   onClose,
   onReset,
@@ -506,6 +522,8 @@ function Header({
   devModeAvailable,
   devMode,
   onToggleDevMode,
+  expandedStrip,
+  onToggleStrip,
 }: {
   onClose: () => void;
   onReset: () => void;
@@ -515,8 +533,19 @@ function Header({
   devModeAvailable: boolean;
   devMode: boolean;
   onToggleDevMode: () => void;
+  /** Which tool strip is expanded below the header (accordion, one max). */
+  expandedStrip: ToolStrip | null;
+  onToggleStrip: (strip: ToolStrip) => void;
 }) {
   const { t } = useTranslation();
+
+  // Cadence / boldness ride autonomous mode (their strips are meaningless
+  // without it); goals ride dev builds — same gates the always-on rows had.
+  const strips: Array<{ id: ToolStrip; icon: typeof Timer; label: string; show: boolean }> = [
+    { id: 'cadence', icon: Timer, label: t.plugins.companion.wake_cadence_label, show: autonomousMode },
+    { id: 'boldness', icon: Gauge, label: t.plugins.companion.boldness_label, show: autonomousMode },
+    { id: 'goals', icon: Flame, label: t.plugins.companion.daily_goals_label, show: devModeAvailable },
+  ];
   return (
     <header className="flex items-center justify-between gap-2 px-4 py-3 border-b border-foreground/10 bg-foreground/[0.02] shrink-0">
       <div className="flex items-center gap-2 min-w-0">
@@ -559,6 +588,29 @@ function Header({
         >
           <InfinityIcon className="w-4 h-4" />
         </button>
+        {strips.map(({ id, icon: Icon, label, show }) =>
+          show ? (
+            <button
+              key={id}
+              type="button"
+              onClick={() => onToggleStrip(id)}
+              data-testid={`companion-strip-${id}`}
+              aria-expanded={expandedStrip === id}
+              className={`p-1.5 rounded-interactive transition-colors focus-ring ${
+                expandedStrip === id
+                  ? 'bg-primary/15 text-primary hover:bg-primary/20'
+                  : 'text-foreground/70 hover:text-foreground hover:bg-foreground/5'
+              }`}
+              aria-label={label}
+              title={label}
+            >
+              <Icon className="w-4 h-4" />
+            </button>
+          ) : null,
+        )}
+        {strips.some((s) => s.show) && (
+          <div className="w-px h-5 bg-foreground/15 mx-0.5" aria-hidden />
+        )}
         {devModeAvailable && (
           <button
             type="button"
