@@ -285,6 +285,10 @@ export function useUnifiedTriage(
   // deck's restore path can fire.
   const acceptGoalViaStore = useSystemStore((s) => s.acceptGoal);
   const rejectGoalViaStore = useSystemStore((s) => s.rejectGoal);
+  // The title-bar badge counts exactly what this deck deals, and it is polled
+  // on a 30s bucket — so without a nudge here, clearing a card leaves the
+  // number it is meant to be clearing standing for up to half a minute.
+  const refreshPendingCounts = useSystemStore((s) => s.refreshPendingCounts);
 
   const [ideas, setIdeas] = useState<DevIdea[]>([]);
   const [ideasLoading, setIdeasLoading] = useState(true);
@@ -699,7 +703,10 @@ export function useUnifiedTriage(
     setProposalGen((g) => g + 1);
     setGoalGen((g) => g + 1);
     center.refreshKnowledge();
-  }, [center]);
+    // Whatever moved these sources moved the title-bar badge with them — a
+    // verdict lost to someone else, or an undo that put a row back.
+    void refreshPendingCounts();
+  }, [center, refreshPendingCounts]);
 
   /** Re-read only the two proposal ledgers — what a proposal verdict invalidates. */
   const refreshProposals = useCallback(() => setProposalGen((g) => g + 1), []);
@@ -814,6 +821,12 @@ export function useUnifiedTriage(
       try {
         await routeDecision(decision, ports);
         journal(decision);
+        // The row is gone from a queue the title-bar badge counts, so the badge
+        // owes an update NOW rather than on its next 30s tick — a reviewer who
+        // clears the deck and watches the number sit there reads it as broken.
+        // Deliberately not awaited: a badge is never worth blocking the next
+        // card on, and the refresh swallows its own failures.
+        void refreshPendingCounts();
         // Only rows with a reverse door are offered back. Anything else clears
         // the slot rather than leaving the previous card's offer standing over
         // a decision that has since been made — see `reversibleStatus`.
@@ -855,7 +868,7 @@ export function useUnifiedTriage(
         toastCatch('Could not record that decision')(error);
       }
     },
-    [ports, refreshSources, journal, arm, actLabel, sayConflict],
+    [ports, refreshSources, refreshPendingCounts, journal, arm, actLabel, sayConflict],
   );
 
   /**

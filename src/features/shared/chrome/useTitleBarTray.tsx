@@ -1,10 +1,12 @@
-import { lazy, Suspense, useMemo } from 'react';
+import { lazy, Suspense, useEffect, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
 import { useCommandPaletteStore } from '@/stores/commandPaletteStore';
+import { POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
+import { getPollingCoordinator } from '@/lib/polling/pollingCoordinator';
 import { PersonaMonitor } from '@/features/fleet/monitor';
 import { QuickAnswerPopover } from '@/features/agents/quick-answer/QuickAnswerPopover';
 import { FullScreenOverlay } from '@/features/shared/components/layout/FullScreenOverlay';
@@ -33,7 +35,6 @@ export function useTitleBarTray() {
   const unreadCount = useNotificationCenterStore((s) => s.unreadCount);
   const markAllNotificationsRead = useNotificationCenterStore((s) => s.markAllRead);
   const cronAgents = useOverviewStore((s) => s.cronAgents);
-  const pendingReviewCount = useOverviewStore((s) => s.pendingReviewCount);
   const unreadMessageCount = useOverviewStore((s) => s.unreadMessageCount);
   const draftReadyCount = useOverviewStore((s) =>
     Object.values(s.activeProcesses).filter((p) => p.status === 'draft_ready').length,
@@ -51,6 +52,27 @@ export function useTitleBarTray() {
   const headerOverlay = useSystemStore((s) => s.headerOverlay);
   const setHeaderOverlay = useSystemStore((s) => s.setHeaderOverlay);
   const openPalette = useCommandPaletteStore((s) => s.openPalette);
+  const pendingTotal = useSystemStore((s) => s.pendingCounts?.total ?? 0);
+  const refreshPendingCounts = useSystemStore((s) => s.refreshPendingCounts);
+
+  /**
+   * The badge's own poll, on the shared coordinator's 30s bucket.
+   *
+   * Two things this fixes. The tray never fetched anything: the review badge
+   * was only ever fresh because the SIDEBAR happened to poll
+   * `pendingReviewCount` on its own ticker, so a window with the sidebar
+   * collapsed showed a number that stopped moving. And the count it did read
+   * came from a raw `setInterval` living beside it, which ticked on its own
+   * offset and made SQLite warm its cache a second time for a badge.
+   */
+  useEffect(() => {
+    const { dispose } = getPollingCoordinator().register(
+      'titleBarPendingCounts',
+      refreshPendingCounts,
+      { interval: POLLING_CONFIG.dashboardRefresh.interval },
+    );
+    return dispose;
+  }, [refreshPendingCounts]);
 
   const todayScheduleCount = useMemo(() => {
     const now = new Date();
@@ -63,7 +85,20 @@ export function useTitleBarTray() {
     }).length;
   }, [cronAgents]);
 
-  const quickCount = questionCount + pendingReviewCount;
+  /**
+   * Everything the deck behind this capsule will actually deal.
+   *
+   * `pendingTotal` is the backend's sum over the SIX DB-backed queues — and it
+   * already includes manual reviews, so `pendingReviewCount` must NOT be added
+   * on top of it. This used to read `questionCount + pendingReviewCount`: two
+   * of seven queues, so a reviewer with 26 pending ideas and nothing else saw
+   * `0`. A confidently wrong number is worse than an absent one.
+   *
+   * Build questions are the one term added client-side, and that is not an
+   * oversight to be tidied away into the Rust query: a halted CLI awaiting
+   * input lives in `buildSessions` state and has no row anywhere to count.
+   */
+  const quickCount = pendingTotal + questionCount;
   const monitorAttention = unreadMessageCount + draftReadyCount;
 
   const notificationsOpen = headerOverlay === 'notifications';

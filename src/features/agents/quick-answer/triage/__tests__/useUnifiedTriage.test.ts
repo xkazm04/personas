@@ -39,6 +39,7 @@ const mockPromotionList = vi.fn();
 const mockPendingAcceptance = vi.fn();
 const mockAcceptGoal = vi.fn();
 const mockRejectGoal = vi.fn();
+const mockRefreshPendingCounts = vi.fn();
 const mockRefreshKnowledge = vi.fn();
 const mockAddToast = vi.fn();
 const mockToastCatch = vi.fn();
@@ -110,6 +111,10 @@ const systemState = {
   // pending-acceptance count, and both rethrow so the deck can restore.
   acceptGoal: (...args: unknown[]) => mockAcceptGoal(...args),
   rejectGoal: (...args: unknown[]) => mockRejectGoal(...args),
+  // The title-bar badge counts what this deck deals, so a settled verdict has
+  // to move it — otherwise the number the reviewer is clearing sits unchanged
+  // until the next 30s poll.
+  refreshPendingCounts: (...args: unknown[]) => mockRefreshPendingCounts(...args),
 };
 
 vi.mock('@/stores/systemStore', () => ({
@@ -302,6 +307,7 @@ beforeEach(() => {
   mockPendingAcceptance.mockResolvedValue([]);
   mockAcceptGoal.mockResolvedValue(undefined);
   mockRejectGoal.mockResolvedValue(undefined);
+  mockRefreshPendingCounts.mockResolvedValue(undefined);
 });
 
 // --- tests -----------------------------------------------------------------
@@ -331,6 +337,50 @@ describe('useUnifiedTriage — decide() resolves optimistically', () => {
 
     expect(mockRejectIdea).toHaveBeenCalledWith('idea-1', 'Out of scope', 'pending');
     expect(result.current.items).toHaveLength(0);
+  });
+});
+
+describe('useUnifiedTriage — a settled verdict moves the title-bar badge', () => {
+  it('refreshes the pending counts once the write lands', async () => {
+    const { result } = await mount();
+    const card = itemOfKind(result, 'idea');
+
+    await act(async () => {
+      await result.current.decide({ item: card, verdict: 'accept' });
+    });
+
+    // The badge is polled on a 30s bucket. Without this nudge, clearing the
+    // deck leaves the number it is meant to be clearing standing for up to
+    // half a minute, which reads as a broken badge rather than a slow one.
+    expect(mockRefreshPendingCounts).toHaveBeenCalled();
+  });
+
+  it('leaves the badge alone when the write is REJECTED', async () => {
+    mockAcceptIdea.mockRejectedValueOnce(new Error('database is locked'));
+    const { result } = await mount();
+    const card = itemOfKind(result, 'idea');
+
+    await act(async () => {
+      await result.current.decide({ item: card, verdict: 'accept' });
+    });
+
+    // Nothing left any queue, so re-counting would only spend a round-trip to
+    // print the same number — and a badge that ticks down on a failed write
+    // would be telling the reviewer the decision landed.
+    expect(mockRefreshPendingCounts).not.toHaveBeenCalled();
+  });
+
+  it('leaves the badge alone for a deferral', async () => {
+    const { result } = await mount();
+    const card = itemOfKind(result, 'idea');
+
+    await act(async () => {
+      await result.current.decide({ item: card, verdict: 'skip' });
+    });
+
+    // A skip writes nothing and the row is still pending — the badge is still
+    // right, and re-reading it would be a round-trip to confirm no change.
+    expect(mockRefreshPendingCounts).not.toHaveBeenCalled();
   });
 });
 
