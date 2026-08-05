@@ -100,6 +100,9 @@
 
 ## Recently completed
 
+### athena-spanish-capture — reply-language anchor hardening — COMPLETE, commit 21039bdca — session fable-5
+- 2026-08-05. Root-caused Athena replying in Spanish on an English UI: app_language was `en` the whole time (settings_audit_log verified); the default thread's only human turns were a Jul-16 Spanish UAT prompt, and since the en directive emitted nothing, replayed history captured every system-triggered turn for 3 weeks. Fix: language_addendum always anchors (en included), names system-triggered turns + replayed history, mirror clause confined to the user's CURRENT message; pure language_directive() + regression test. Operator still owes a conversation reset (or one English exchange) to flush the Spanish episodes from the replay window.
+
 ### athena-chrome-contrast — companion panel contrast + header consolidation — COMPLETE, commits 7b393764b + 816f17993 — session fable-5
 - 2026-08-05. (1) ProactiveCard engage button white-on-primary → tinted primary pattern (readable in every theme). (2) Panel shell bg-secondary/95 → bg-background/95 (matches Fleet overlay; kills the glow vs the rest of the app in dark themes). (3) WakeCadence / FleetBoldnessDial / DailyGoalsBar no longer stack as always-on subheaders — collapsed to header icons (Timer/Gauge/Flame, testids companion-strip-*) with a one-at-a-time accordion row; same gating as before, DevOpLedger untouched, zero new i18n keys. Gates: tsc 0, eslint clean, companion vitest 362/362. NOT live-verified (jsdom cannot judge contrast) — needs one look in the running app. Note for a future sweep: 8 more `bg-primary text-primary-foreground` buttons remain in companion (Composer send, McpRequestPanel ×3, BrainViewer, ConsolidationReview ×2, MemoryPanel) with the same theme risk.
 
