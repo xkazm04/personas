@@ -15008,7 +15008,11 @@
       "ship_milestone_name_label": "মাইলস্টোনের নাম",
       "ship_milestone_name_placeholder": "সংক্ষিপ্ত নাম, যেমন M1",
       "ship_milestone_planned_note": "মাইলস্টোনটি পরিকল্পিত অবস্থায় তৈরি হয়। কাট করা ও শিপ করার সিদ্ধান্ত আপনারই থাকবে।",
-      "ship_milestone_remove_row": "এই আইটেমটি সরান"
+      "ship_milestone_remove_row": "এই আইটেমটি সরান",
+      "dev_self_review": "আমার ডেভ ট্র্যাক রেকর্ড পর্যালোচনা করুন",
+      "dev_self_review_failed": "ডেভ সেলফ-রিভিউ শুরু করা যায়নি",
+      "dev_self_review_hint": "Athena নিজের ডিসপ্যাচ রেকর্ড পড়ে, কোন বিষয়গুলো ডেভ রান সফল করে তা লিখে রাখে, এবং একটি উন্নতির প্রস্তাব দিতে পারে।",
+      "dev_self_review_started": "{count}টি ডেভ রান পর্যালোচনা করা হচ্ছে। Athena চ্যাটে উত্তর দেবে।"
     },
     "artist_gallery": {
       "loading_viewer": "ভিউয়ার লোড হচ্ছে…",

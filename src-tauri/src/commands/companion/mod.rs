@@ -17,6 +17,7 @@ pub mod daily_goals;
 #[cfg(debug_assertions)]
 pub mod debug_export;
 pub mod decisions;
+pub mod dev_review;
 pub mod feedback;
 pub mod fleet_bridge;
 pub mod jobs;

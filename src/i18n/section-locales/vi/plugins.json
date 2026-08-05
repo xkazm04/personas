@@ -2623,7 +2623,11 @@
     "ship_milestone_name_label": "Tên mốc",
     "ship_milestone_name_placeholder": "Tên ngắn gọn, ví dụ M1",
     "ship_milestone_planned_note": "Mốc được tạo ở trạng thái đã lên kế hoạch. Việc bắt đầu và phát hành vẫn là quyết định của bạn.",
-    "ship_milestone_remove_row": "Xóa mục này"
+    "ship_milestone_remove_row": "Xóa mục này",
+    "dev_self_review": "Xem lại thành tích phát triển của tôi",
+    "dev_self_review_failed": "Không thể bắt đầu tự đánh giá phát triển",
+    "dev_self_review_hint": "Athena đọc lại lịch sử nhiệm vụ của chính mình, ghi lại điều giúp các lượt chạy phát triển thành công và có thể đề xuất một cải tiến.",
+    "dev_self_review_started": "Đang xem lại {count} lượt chạy phát triển. Athena sẽ trả lời trong cuộc trò chuyện."
   },
   "artist_gallery": {
     "loading_viewer": "Đang tải trình xem…",

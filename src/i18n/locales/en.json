@@ -15302,7 +15302,11 @@
       "ship_milestone_confirm": "Create milestone",
       "ship_milestone_cancel": "Cancel",
       "ship_milestone_planned_note": "The milestone is created as planned. Cutting and shipping stay yours.",
-      "ship_milestone_created": "Created {name} with {count} items in scope."
+      "ship_milestone_created": "Created {name} with {count} items in scope.",
+      "dev_self_review": "Review my dev track record",
+      "dev_self_review_failed": "Could not start the dev self-review",
+      "dev_self_review_hint": "Athena reads her own dispatch record, writes down what makes her dev runs land, and may propose one improvement.",
+      "dev_self_review_started": "Reviewing {count} dev runs. Athena will reply in the chat."
     },
     "artist_gallery": {
       "loading_viewer": "Loading viewer…",

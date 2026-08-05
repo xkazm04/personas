@@ -15008,7 +15008,11 @@
       "ship_milestone_name_label": "اسم المعلم",
       "ship_milestone_name_placeholder": "اسم قصير، مثل M1",
       "ship_milestone_planned_note": "يُنشأ المعلم بحالة مخطط له. قرارا البدء والشحن يبقيان لك.",
-      "ship_milestone_remove_row": "إزالة هذا العنصر"
+      "ship_milestone_remove_row": "إزالة هذا العنصر",
+      "dev_self_review": "راجع سجل أدائي في التطوير",
+      "dev_self_review_failed": "تعذر بدء المراجعة الذاتية للتطوير",
+      "dev_self_review_hint": "تقرأ Athena سجل مهامها، وتدوّن ما يجعل عمليات التطوير تنجح، وقد تقترح تحسينًا واحدًا.",
+      "dev_self_review_started": "جارٍ مراجعة {count} من عمليات التطوير. سترد Athena في المحادثة."
     },
     "artist_gallery": {
       "loading_viewer": "جارٍ تحميل العارض…",

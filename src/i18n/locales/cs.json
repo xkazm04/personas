@@ -15008,7 +15008,11 @@
       "ship_milestone_name_label": "Název milníku",
       "ship_milestone_name_placeholder": "Krátký název, například M1",
       "ship_milestone_planned_note": "Milník se vytváří ve stavu plánováno. Rozhodnutí o zahájení a dodání zůstává na vás.",
-      "ship_milestone_remove_row": "Odebrat tuto položku"
+      "ship_milestone_remove_row": "Odebrat tuto položku",
+      "dev_self_review": "Zkontrolovat můj vývojářský záznam",
+      "dev_self_review_failed": "Vlastní kontrolu vývoje se nepodařilo spustit",
+      "dev_self_review_hint": "Athena si přečte vlastní záznam zadání, zapíše, díky čemu její vývojářské běhy uspějí, a může navrhnout jedno vylepšení.",
+      "dev_self_review_started": "Kontroluji {count} vývojářských běhů. Athena odpoví v chatu."
     },
     "artist_gallery": {
       "loading_viewer": "Načítání prohlížeče…",

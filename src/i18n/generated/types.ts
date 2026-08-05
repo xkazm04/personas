@@ -15309,6 +15309,10 @@ export type Translations = {
       ship_milestone_cancel: string;
       ship_milestone_planned_note: string;
       ship_milestone_created: string;
+      dev_self_review: string;
+      dev_self_review_failed: string;
+      dev_self_review_hint: string;
+      dev_self_review_started: string;
     };
     artist_gallery: {
       loading_viewer: string;

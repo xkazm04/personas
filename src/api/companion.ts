@@ -353,6 +353,20 @@ export async function companionDevOpSetVerdict(
 }
 
 /**
+ * Spawn ONE self-review turn over the dev-op ledger: Athena reads her own
+ * dispatch track record (recent runs + your 👍/👎 + the scoreboard), writes
+ * procedural memories about what makes her dispatches land, and may propose
+ * at most one `dev_improve` — which stays an approval card like any other.
+ *
+ * Manual trigger only; there is no scheduler behind it. Resolves with the
+ * number of ops the evidence carried. Rejects when dev mode is off or the
+ * ledger is empty.
+ */
+export async function companionDevOpSelfReview(): Promise<number> {
+  return invoke<number>('companion_dev_op_self_review');
+}
+
+/**
  * ElevenLabs TTS proxy. Backend reads the decrypted API key from the
  * vault, calls ElevenLabs, and returns the audio bytes as base64 (which
  * crosses the Tauri IPC boundary cleanly). Frontend wraps the bytes in a

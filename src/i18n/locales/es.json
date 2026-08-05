@@ -15008,7 +15008,11 @@
       "ship_milestone_name_label": "Nombre del hito",
       "ship_milestone_name_placeholder": "Nombre corto, por ejemplo M1",
       "ship_milestone_planned_note": "El hito se crea en estado planificado. Iniciarlo y entregarlo siguen siendo decisiones tuyas.",
-      "ship_milestone_remove_row": "Quitar este elemento"
+      "ship_milestone_remove_row": "Quitar este elemento",
+      "dev_self_review": "Revisar mi historial de desarrollo",
+      "dev_self_review_failed": "No se pudo iniciar la autorrevisión de desarrollo",
+      "dev_self_review_hint": "Athena lee su propio historial de encargos, anota qué hace que sus ejecuciones de desarrollo funcionen y puede proponer una mejora.",
+      "dev_self_review_started": "Revisando {count} ejecuciones de desarrollo. Athena responderá en el chat."
     },
     "artist_gallery": {
       "loading_viewer": "Cargando visor…",

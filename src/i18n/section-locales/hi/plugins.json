@@ -2623,7 +2623,11 @@
     "ship_milestone_name_label": "माइलस्टोन का नाम",
     "ship_milestone_name_placeholder": "छोटा नाम, उदाहरण के लिए M1",
     "ship_milestone_planned_note": "माइलस्टोन योजनाबद्ध स्थिति में बनाया जाता है। इसे शुरू करना और शिप करना अभी भी आपका ही निर्णय है।",
-    "ship_milestone_remove_row": "इस आइटम को हटाएं"
+    "ship_milestone_remove_row": "इस आइटम को हटाएं",
+    "dev_self_review": "मेरा डेव रिकॉर्ड देखें",
+    "dev_self_review_failed": "डेव स्व-समीक्षा शुरू नहीं हो सकी",
+    "dev_self_review_hint": "Athena अपना डिस्पैच रिकॉर्ड पढ़ती है, नोट करती है कि उसके डेव रन किस वजह से सफल होते हैं, और एक सुधार सुझा सकती है।",
+    "dev_self_review_started": "{count} डेव रन की समीक्षा हो रही है। Athena चैट में जवाब देगी।"
   },
   "artist_gallery": {
     "loading_viewer": "viewer लोड हो रहा है…",

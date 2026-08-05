@@ -15008,7 +15008,11 @@
       "ship_milestone_name_label": "Nama milestone",
       "ship_milestone_name_placeholder": "Nama singkat, misalnya M1",
       "ship_milestone_planned_note": "Milestone dibuat dengan status direncanakan. Memulai dan mengirimkannya tetap keputusan Anda.",
-      "ship_milestone_remove_row": "Hapus item ini"
+      "ship_milestone_remove_row": "Hapus item ini",
+      "dev_self_review": "Tinjau rekam jejak dev saya",
+      "dev_self_review_failed": "Tidak dapat memulai tinjauan mandiri dev",
+      "dev_self_review_hint": "Athena membaca rekam jejak tugasnya sendiri, mencatat apa yang membuat proses dev-nya berhasil, dan mungkin mengusulkan satu perbaikan.",
+      "dev_self_review_started": "Meninjau {count} proses dev. Athena akan menjawab di obrolan."
     },
     "artist_gallery": {
       "loading_viewer": "Memuat penampil…",
