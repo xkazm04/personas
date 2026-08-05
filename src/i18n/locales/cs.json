@@ -15098,7 +15098,11 @@
       "attention_warnings_hint": "Věci, které se odchylují od plánu: relace čekající na vstup nebo zastarávající, cíle blížící se svému limitu a běhy, které stojí za kontrolu.",
       "daily_goals_edit": "Upravit cíle",
       "daily_goals_edit_hint": "Celý text každého cíle, upravitelný. Vyplněním prázdné pozice přidáte cíl (max 3). Cíl odstraníte označením jako splněný nebo zrušením celé sady.",
-      "daily_goals_edit_title": "Upravit dnešní cíle"
+      "daily_goals_edit_title": "Upravit dnešní cíle",
+      "orb_quick_input_close": "Zavřít rychlou zprávu",
+      "orb_quick_input_last_reply_label": "Poslední odpověď Athény",
+      "orb_quick_input_open": "Odeslat rychlou zprávu",
+      "orb_quick_input_placeholder": "Napište Athéně…"
     },
     "artist_gallery": {
       "loading_viewer": "Načítání prohlížeče…",

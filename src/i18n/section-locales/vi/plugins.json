@@ -2676,7 +2676,11 @@
     "attention_warnings_hint": "Những điều đang chệch hướng: phiên đang chờ nhập liệu hoặc trì trệ, mục tiêu sắp đạt, các lượt chạy đáng xem lại.",
     "daily_goals_edit": "Chỉnh sửa mục tiêu",
     "daily_goals_edit_hint": "Toàn bộ nội dung của từng mục tiêu, có thể chỉnh sửa. Điền vào một ô trống để thêm mục tiêu mới (tối đa 3). Để bỏ một mục tiêu, hãy đánh dấu hoàn thành hoặc xóa toàn bộ danh sách.",
-    "daily_goals_edit_title": "Chỉnh sửa mục tiêu hôm nay"
+    "daily_goals_edit_title": "Chỉnh sửa mục tiêu hôm nay",
+    "orb_quick_input_close": "Đóng tin nhắn nhanh",
+    "orb_quick_input_last_reply_label": "Phản hồi gần nhất của Athena",
+    "orb_quick_input_open": "Gửi tin nhắn nhanh",
+    "orb_quick_input_placeholder": "Nhắn tin cho Athena…"
   },
   "artist_gallery": {
     "loading_viewer": "Đang tải trình xem…",

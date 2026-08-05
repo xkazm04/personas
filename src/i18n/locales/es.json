@@ -15098,7 +15098,11 @@
       "attention_warnings_hint": "Cosas que se están desviando: sesiones esperando entrada o estancadas, objetivos cerca de su meta, ejecuciones que vale la pena revisar.",
       "daily_goals_edit": "Editar metas",
       "daily_goals_edit_hint": "El texto completo de cada meta, editable. Completa un espacio vacío para agregar una meta (máximo 3). Para quitar una, márcala como cumplida o descarta todo el conjunto.",
-      "daily_goals_edit_title": "Editar metas de hoy"
+      "daily_goals_edit_title": "Editar metas de hoy",
+      "orb_quick_input_close": "Cerrar mensaje rápido",
+      "orb_quick_input_last_reply_label": "Última respuesta de Athena",
+      "orb_quick_input_open": "Enviar un mensaje rápido",
+      "orb_quick_input_placeholder": "Escribe a Athena…"
     },
     "artist_gallery": {
       "loading_viewer": "Cargando visor…",

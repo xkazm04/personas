@@ -15098,7 +15098,11 @@
       "attention_warnings_hint": "Hal yang mulai melenceng: sesi yang menunggu masukan atau mandek, target yang mendekati capaian, proses yang layak ditinjau.",
       "daily_goals_edit": "Edit target",
       "daily_goals_edit_hint": "Teks lengkap setiap target, dapat diedit. Isi slot kosong untuk menambah target (maksimal 3). Untuk menghapus satu, tandai selesai atau buang seluruh set.",
-      "daily_goals_edit_title": "Edit target hari ini"
+      "daily_goals_edit_title": "Edit target hari ini",
+      "orb_quick_input_close": "Tutup pesan cepat",
+      "orb_quick_input_last_reply_label": "Balasan terakhir Athena",
+      "orb_quick_input_open": "Kirim pesan cepat",
+      "orb_quick_input_placeholder": "Pesan untuk Athena…"
     },
     "artist_gallery": {
       "loading_viewer": "Memuat penampil…",

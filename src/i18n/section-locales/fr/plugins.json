@@ -2676,7 +2676,11 @@
     "attention_warnings_hint": "Éléments qui dérivent : sessions en attente d'une saisie ou qui deviennent obsolètes, objectifs proches de leur cible, exécutions à examiner.",
     "daily_goals_edit": "Modifier les objectifs",
     "daily_goals_edit_hint": "Le texte complet de chaque objectif, modifiable. Remplissez un emplacement vide pour ajouter un objectif (3 maximum). Pour en retirer un, marquez-le comme terminé ou effacez l'ensemble.",
-    "daily_goals_edit_title": "Modifier les objectifs du jour"
+    "daily_goals_edit_title": "Modifier les objectifs du jour",
+    "orb_quick_input_close": "Fermer le message rapide",
+    "orb_quick_input_last_reply_label": "Dernière réponse d'Athena",
+    "orb_quick_input_open": "Envoyer un message rapide",
+    "orb_quick_input_placeholder": "Écrire à Athena…"
   },
   "artist_gallery": {
     "loading_viewer": "Chargement du visualiseur…",

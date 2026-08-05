@@ -2676,7 +2676,11 @@
     "attention_warnings_hint": "入力待ちや停滞しているセッション、達成が近いゴール、確認する価値のある実行など、軌道から外れかけている項目です。",
     "daily_goals_edit": "目標を編集",
     "daily_goals_edit_hint": "各目標の全文が表示され、編集できます。空いている欄に入力すると目標を追加できます(最大3件)。目標を削除するには、完了にするかセット全体を破棄してください。",
-    "daily_goals_edit_title": "今日の目標を編集"
+    "daily_goals_edit_title": "今日の目標を編集",
+    "orb_quick_input_close": "クイックメッセージを閉じる",
+    "orb_quick_input_last_reply_label": "アテナの最新の返信",
+    "orb_quick_input_open": "クイックメッセージを送信",
+    "orb_quick_input_placeholder": "アテナにメッセージ…"
   },
   "artist_gallery": {
     "loading_viewer": "ビューアを読み込み中…",

@@ -2676,7 +2676,11 @@
     "attention_warnings_hint": "偏离正轨的事项：等待输入或已停滞的会话、接近目标的进度，以及值得审查的运行。",
     "daily_goals_edit": "编辑目标",
     "daily_goals_edit_hint": "可编辑每个目标的完整内容。填写空白项即可添加目标（最多3个）。要移除目标，请将其标记为完成，或清空整组目标。",
-    "daily_goals_edit_title": "编辑今日目标"
+    "daily_goals_edit_title": "编辑今日目标",
+    "orb_quick_input_close": "关闭快速消息",
+    "orb_quick_input_last_reply_label": "Athena 的最新回复",
+    "orb_quick_input_open": "发送快速消息",
+    "orb_quick_input_placeholder": "给 Athena 发消息…"
   },
   "artist_gallery": {
     "loading_viewer": "加载查看器中…",

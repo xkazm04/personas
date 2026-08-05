@@ -8,12 +8,12 @@ import {
   Image as ImageIcon,
   ListChecks,
   MessageSquare,
-  Send,
   Square,
   Wand2,
 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
-import Button from '@/features/shared/components/buttons/Button';
+import { ChatInputBar } from '@/features/shared/components/forms/ChatInputBar';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useStudioStore } from './studioStore';
 import StudioBuildSettings from './StudioBuildSettings';
@@ -30,6 +30,7 @@ import { phaseProgress } from './studioBuildModel';
 // dock re-centres itself into the space the drawer leaves.
 
 export default function StudioChatInput() {
+  const { t } = useTranslation();
   const [input, setInput] = useState('');
   const [chatOpen, setChatOpen] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
@@ -154,113 +155,100 @@ export default function StudioChatInput() {
           {!working && !question && !chatOpen && <StudioQuickActions id={activeId} />}
 
           {/* Input row */}
-          <div
-            className="pointer-events-auto flex items-center gap-2 rounded-full border border-border bg-background/90 py-1.5 pl-2 pr-1.5 shadow-elevation-3 backdrop-blur transition-shadow duration-300"
-            style={stateShadow ? { boxShadow: stateShadow } : undefined}
-          >
-            <button
-              type="button"
-              onClick={() => setChatOpen((v) => !v)}
-              aria-label={chatOpen ? 'Collapse conversation' : 'Expand conversation'}
-              aria-expanded={chatOpen}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/55 transition-colors hover:bg-secondary/60 hover:text-primary"
-            >
-              {chatOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-            </button>
-            <input
-              data-testid="studio-chat-input"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  send();
-                }
-              }}
-              placeholder={
-                question
-                  ? `Answer Athena · ${name}`
-                  : autonomous
-                    ? `Athena is building ${name} autonomously…`
-                    : `Tell Athena what to build in ${name}…`
-              }
-              disabled={working}
-              className="min-w-0 flex-1 bg-transparent text-md text-foreground outline-none placeholder:text-foreground/45 disabled:opacity-60"
-            />
-            <button
-              type="button"
-              onClick={() => void pickReference()}
-              disabled={working}
-              aria-label="Add a design reference image"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/55 transition-colors hover:bg-secondary/60 hover:text-primary disabled:opacity-40"
-            >
-              <ImageIcon className="h-4 w-4" />
-            </button>
-            {/* Build plan — the drawer's one entry point, sitting with the other
-                input-row tools instead of floating above the dock. */}
-            <button
-              type="button"
-              onClick={() => setPlanOpen((v) => !v)}
-              data-testid="studio-plan-button"
-              aria-label={hasPlan ? `Build plan · ${done} of ${total} done` : 'Build plan'}
-              aria-expanded={planOpen}
-              className={`relative flex h-8 shrink-0 items-center gap-1.5 rounded-full px-2 transition-colors ${
-                planOpen
-                  ? 'bg-secondary/70 text-primary'
-                  : 'text-foreground/55 hover:bg-secondary/60 hover:text-primary'
-              }`}
-            >
-              <ListChecks className="h-4 w-4" />
-              {hasPlan && (
-                <span className="font-mono text-[11px] leading-none tabular-nums">
-                  {done}/{total}
-                </span>
-              )}
-              {busy && (
-                <span className="absolute -right-0 -top-0 flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
-                </span>
-              )}
-            </button>
-            <StudioBuildSettings id={activeId} />
-            {busy ? (
+          <ChatInputBar
+            value={input}
+            onChange={setInput}
+            onSubmit={send}
+            placeholder={
+              question
+                ? `Answer Athena · ${name}`
+                : autonomous
+                  ? `Athena is building ${name} autonomously…`
+                  : `Tell Athena what to build in ${name}…`
+            }
+            disabled={working}
+            busy={busy && !autonomous}
+            boxShadow={stateShadow}
+            inputTestId="studio-chat-input"
+            sendLabel={t.common.send}
+            leading={
               <button
                 type="button"
-                onClick={() => stopTurn(activeId)}
-                data-testid="studio-stop"
-                aria-label="Stop Athena"
-                className="flex h-8 shrink-0 items-center gap-1 rounded-full border border-status-error/40 bg-status-error/10 px-2.5 text-xs font-medium text-status-error transition-colors hover:bg-status-error/20"
+                onClick={() => setChatOpen((v) => !v)}
+                aria-label={chatOpen ? 'Collapse conversation' : 'Expand conversation'}
+                aria-expanded={chatOpen}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/55 transition-colors hover:bg-secondary/60 hover:text-primary"
               >
-                <CircleStop className="h-4 w-4" />
-                Stop
+                {chatOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
               </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => (autonomous ? stopAutonomous(activeId) : startAutonomous(activeId))}
-                aria-label={autonomous ? 'Stop autonomous build' : 'Build autonomously'}
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
-                  autonomous
-                    ? 'bg-primary/20 text-primary'
-                    : 'text-foreground/55 hover:bg-secondary/60 hover:text-primary'
-                }`}
-              >
-                {autonomous ? <Square className="h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
-              </button>
-            )}
-            <Button
-              variant="primary"
-              size="sm"
-              className="shrink-0 rounded-full"
-              icon={<Send className="h-4 w-4" />}
-              loading={busy && !autonomous}
-              disabled={!input.trim() || working}
-              onClick={send}
-            >
-              Send
-            </Button>
-          </div>
+            }
+            trailing={
+              <>
+                <button
+                  type="button"
+                  onClick={() => void pickReference()}
+                  disabled={working}
+                  aria-label="Add a design reference image"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/55 transition-colors hover:bg-secondary/60 hover:text-primary disabled:opacity-40"
+                >
+                  <ImageIcon className="h-4 w-4" />
+                </button>
+                {/* Build plan — the drawer's one entry point, sitting with the other
+                    input-row tools instead of floating above the dock. */}
+                <button
+                  type="button"
+                  onClick={() => setPlanOpen((v) => !v)}
+                  data-testid="studio-plan-button"
+                  aria-label={hasPlan ? `Build plan · ${done} of ${total} done` : 'Build plan'}
+                  aria-expanded={planOpen}
+                  className={`relative flex h-8 shrink-0 items-center gap-1.5 rounded-full px-2 transition-colors ${
+                    planOpen
+                      ? 'bg-secondary/70 text-primary'
+                      : 'text-foreground/55 hover:bg-secondary/60 hover:text-primary'
+                  }`}
+                >
+                  <ListChecks className="h-4 w-4" />
+                  {hasPlan && (
+                    <span className="font-mono text-[11px] leading-none tabular-nums">
+                      {done}/{total}
+                    </span>
+                  )}
+                  {busy && (
+                    <span className="absolute -right-0 -top-0 flex h-1.5 w-1.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
+                    </span>
+                  )}
+                </button>
+                <StudioBuildSettings id={activeId} />
+                {busy ? (
+                  <button
+                    type="button"
+                    onClick={() => stopTurn(activeId)}
+                    data-testid="studio-stop"
+                    aria-label="Stop Athena"
+                    className="flex h-8 shrink-0 items-center gap-1 rounded-full border border-status-error/40 bg-status-error/10 px-2.5 text-xs font-medium text-status-error transition-colors hover:bg-status-error/20"
+                  >
+                    <CircleStop className="h-4 w-4" />
+                    Stop
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => (autonomous ? stopAutonomous(activeId) : startAutonomous(activeId))}
+                    aria-label={autonomous ? 'Stop autonomous build' : 'Build autonomously'}
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
+                      autonomous
+                        ? 'bg-primary/20 text-primary'
+                        : 'text-foreground/55 hover:bg-secondary/60 hover:text-primary'
+                    }`}
+                  >
+                    {autonomous ? <Square className="h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
+                  </button>
+                )}
+              </>
+            }
+          />
         </div>
       </div>
     </>

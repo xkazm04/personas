@@ -15098,7 +15098,11 @@
       "attention_warnings_hint": "궤도를 벗어나는 항목입니다: 입력을 기다리거나 정체된 세션, 목표에 근접한 항목, 검토가 필요한 실행입니다.",
       "daily_goals_edit": "목표 편집",
       "daily_goals_edit_hint": "각 목표의 전체 텍스트를 편집할 수 있습니다. 빈 칸을 채우면 목표가 추가됩니다(최대 3개). 목표를 삭제하려면 완료로 표시하거나 전체 목록을 삭제하세요.",
-      "daily_goals_edit_title": "오늘의 목표 편집"
+      "daily_goals_edit_title": "오늘의 목표 편집",
+      "orb_quick_input_close": "빠른 메시지 닫기",
+      "orb_quick_input_last_reply_label": "아테나의 마지막 답변",
+      "orb_quick_input_open": "빠른 메시지 보내기",
+      "orb_quick_input_placeholder": "아테나에게 메시지…"
     },
     "artist_gallery": {
       "loading_viewer": "뷰어 로딩 중…",

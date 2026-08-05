@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { Keyboard, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
@@ -52,7 +52,16 @@ function fractionToPx(x: number, y: number, vp: Viewport): { left: number; top: 
   };
 }
 
-export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
+export function AthenaOrb({
+  talk,
+  quickInputOpen,
+  onToggleQuickInput,
+}: {
+  talk: HoldToTalk;
+  /** Whether the compact quick-message bar (rendered by the layer, not here) is open. */
+  quickInputOpen: boolean;
+  onToggleQuickInput: () => void;
+}) {
   const { t, tx } = useTranslation();
   const setState = useCompanionStore((s) => s.setState);
   const streaming = useCompanionStore((s) => s.streaming);
@@ -464,6 +473,37 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
             ))}
           </span>
         )}
+      </button>
+
+      {/* Quick-message toggle → a compact bottom input bar the layer renders
+          (outside this transformed wrapper, so its `fixed` positioning
+          resolves against the viewport). Hover-revealed like dismiss, but
+          stays visible while the bar is open so it doubles as the close
+          affordance's discoverable twin. */}
+      <button
+        type="button"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleQuickInput();
+        }}
+        data-testid="companion-orb-quick-input-toggle"
+        aria-pressed={quickInputOpen}
+        className={`pointer-events-auto absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-primary/20 bg-background text-foreground shadow-elevation-2 transition-opacity hover:bg-secondary focus:opacity-100 ${
+          quickInputOpen ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-100'
+        }`}
+        title={
+          quickInputOpen
+            ? t.plugins.companion.orb_quick_input_close
+            : t.plugins.companion.orb_quick_input_open
+        }
+        aria-label={
+          quickInputOpen
+            ? t.plugins.companion.orb_quick_input_close
+            : t.plugins.companion.orb_quick_input_open
+        }
+      >
+        <Keyboard className="w-3 h-3" />
       </button>
 
       {/* Dismiss → hide the orb (collapsed). Hover-revealed. */}

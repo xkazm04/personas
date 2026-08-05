@@ -14505,6 +14505,10 @@ export type Translations = {
       footer_listening: string;
       orb_talk_hint: string;
       orb_dismiss: string;
+      orb_quick_input_open: string;
+      orb_quick_input_close: string;
+      orb_quick_input_placeholder: string;
+      orb_quick_input_last_reply_label: string;
       orb_managing_fleet: string;
       forward_ack_speech: string;
       guide_stop: string;
