@@ -713,6 +713,32 @@ pub struct AttentionQueue {
 }
 
 // ============================================================================
+// Per-environment connector bindings
+// ============================================================================
+
+/// One connector bound to a (dimension, environment) pair on a project.
+///
+/// `dev_projects` carries four SINGULAR credential pointers, which cannot
+/// express what the passport's env-split dimensions need: a different database
+/// behind local vs test vs production, or a different monitoring backend per
+/// capability. This row type is that axis.
+///
+/// `dimension` is the passport row key, optionally suffixed with a capability
+/// (`"persistence"`, `"monitoring"`, `"monitoring.logs"`); `env` is one of
+/// `local` | `test` | `production`. A `credential_id` of `None` means the pair
+/// was explicitly cleared — the row is deleted rather than kept as a tombstone.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DevProjectEnvConnector {
+    pub project_id: String,
+    pub dimension: String,
+    pub env: String,
+    pub credential_id: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+// ============================================================================
 // Dev Context Groups
 // ============================================================================
 

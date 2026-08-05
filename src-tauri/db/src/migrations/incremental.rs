@@ -7452,6 +7452,41 @@ fn research_lab_align_columns(conn: &Connection) {
         conn,
         "CREATE INDEX IF NOT EXISTS idx_memory_edges_to ON memory_edges(to_id);",
     );
+
+    // -- Per-environment connector bindings ----------------------------------
+    // `dev_projects` carries four SINGULAR credential pointers
+    // (monitoring_/pr_/llm_tracking_/support_credential_id). That shape can't
+    // express what the passport's env-split dimensions actually need: a
+    // different database behind local vs test vs production, a different
+    // monitoring backend per environment, and (Monitoring dimension) a
+    // different connector per capability — errors vs LLM vs logs+tracing vs
+    // metrics.
+    //
+    // A table instead of more columns, deliberately: the axis is
+    // (dimension × environment) and both sides grow. Widening dev_projects
+    // would have meant a new column per pair — and every widening rewrites the
+    // DevProject ts-rs binding, which is exactly the churn this avoids.
+    //
+    // `dimension` is the passport row key ('persistence' | 'monitoring' | …)
+    // optionally suffixed with a capability ('monitoring.logs'); `env` is the
+    // EnvKey ('local' | 'test' | 'production'). One connector per pair.
+    let _ = ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS dev_project_env_connectors (
+            project_id     TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+            dimension      TEXT NOT NULL,
+            env            TEXT NOT NULL,
+            credential_id  TEXT,
+            created_at     TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at     TEXT NOT NULL DEFAULT (datetime('now')),
+            PRIMARY KEY (project_id, dimension, env)
+        );",
+    );
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_dev_project_env_connectors_project
+            ON dev_project_env_connectors(project_id);",
+    );
 }
 
 #[cfg(test)]
