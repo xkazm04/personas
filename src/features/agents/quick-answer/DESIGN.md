@@ -155,6 +155,13 @@ splitting them turned an untestable hook into unit-testable units.
   never be cleared.
 - **A question card is not draggable.** Flinging away a half-typed answer is the
   one unforgivable bug on this surface.
+- **A verdict carries the identity of what it is deciding.** `TriageCard`
+  reports `onCommit(dir, itemId)` with the id read at LAUNCH, and
+  `useDeckControls.commit` verifies it before any write — a report that does not
+  match the card being decided is DROPPED, never redirected to the new top.
+  Reviews poll every 30s and cloud reviews every 15s, both replacing
+  `queue.items` wholesale, so without this a poll landing between grab and
+  release wrote the reviewer's verdict onto a card they never saw.
 - **One card per build *session*, not per question.** Each `answer_build_question`
   call resumes the halted CLI, so N cards would mean N resumes.
 - **Nothing a verdict turns on is colour-only.** A fact's tone and a metric's
