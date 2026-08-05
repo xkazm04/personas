@@ -4488,10 +4488,15 @@ fn insert_project_children(
         let parent = remap_soft(map, &t.parent_task_id, strict, warnings, &format!("Project '{pname}' task '{}'", t.title));
         exec_row(
             tx,
+            // `updated_at` is derived, not carried: the export format predates the
+            // column, so an imported task gets the same COALESCE the migration
+            // backfills with rather than a NULL (invisible to the staleness
+            // engine) or a fake `now` (every imported task looks freshly touched).
             "INSERT INTO dev_tasks (id, project_id, title, description, source_idea_id, goal_id, \
                  status, session_id, progress_pct, output_lines, error, depth, parent_task_id, \
-                 attempt, started_at, completed_at, created_at) \
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17)",
+                 attempt, started_at, completed_at, created_at, updated_at) \
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,\
+                 COALESCE(?16,?15,?17))",
             rusqlite::params![
                 remap_req(map, &t.id), project_id, t.title, t.description, src_idea, goal,
                 t.status, t.session_id, t.progress_pct, t.output_lines, t.error, t.depth,

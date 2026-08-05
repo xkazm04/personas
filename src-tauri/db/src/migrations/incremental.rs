@@ -4405,6 +4405,43 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // -- dev_tasks: updated_at (the staleness signal tasks never had) ----------
+    // `dev_tasks` carried created_at / started_at / completed_at and nothing
+    // else, so a task stuck `running` for six hours was indistinguishable from
+    // one running six minutes except by re-deriving from started_at, and a
+    // `queued` row that had been silently re-touched had no signal at all.
+    // The attention queue (repos/dev_tools.rs::attention_queue) reads this as a
+    // heartbeat: the task executor calls update_task on every progress
+    // milestone, so a running task whose updated_at has gone quiet is genuinely
+    // stuck rather than merely long.
+    //
+    // Added nullable + backfilled rather than NOT NULL DEFAULT: SQLite refuses
+    // a non-constant default (`datetime('now')`) in ALTER TABLE ADD COLUMN.
+    // The backfill uses the same COALESCE the readers do, so an existing row
+    // gets its most recent real stamp instead of NULL or a fake "now" that
+    // would make every historical task look freshly touched.
+    //
+    // MUST stay INSIDE `run_incremental` — the file's tail belongs to
+    // `ensure_composite_fires_table`, which runs BEFORE this function.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_tasks_updated_at",
+            description: "dev_tasks.updated_at (+ backfill from completed_at/started_at/created_at)",
+            already_applied: |conn| has_column(conn, "dev_tasks", "updated_at"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE dev_tasks ADD COLUMN updated_at TEXT;
+                     UPDATE dev_tasks
+                        SET updated_at = COALESCE(completed_at, started_at, created_at)
+                      WHERE updated_at IS NULL;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 
