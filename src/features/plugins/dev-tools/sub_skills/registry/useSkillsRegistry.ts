@@ -17,10 +17,9 @@ import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 
 import { PRESET_SKILLS, presetVisual } from '../../constants/presetSkills';
-import { parseJsonArray } from '../../sub_context/contextMapTypes';
 import { useWorkspaces, workspaceOf } from '../../sub_workspaces/workspaceStore';
 import { parseSkillArg } from '../analytics/useSkillsAnalytics';
-import { cellKey, type RegistryCell, type RegistryModel, type RegistryProject, type RegistrySkill } from './registryTypes';
+import { cellKey, type RegistryCell, type RegistryColumn, type RegistryModel, type RegistrySkill } from './registryTypes';
 
 const LIVE_STATES = new Set(['spawning', 'running', 'awaiting_input']);
 const GROUP_LABEL: Record<string, string> = {
@@ -35,6 +34,8 @@ interface Fetched {
   loading: boolean;
   libraryNames: string[];
   customCategory: Map<string, string>;
+  /** Skill description, for the adopt confirmation modal. */
+  descByName: Map<string, string>;
   installedByProject: Map<string, Set<string>>;
   covByKey: Map<string, SkillCoverageRow>;
   ctxByProject: Map<string, number>;
@@ -43,7 +44,7 @@ interface Fetched {
 }
 
 const EMPTY: Fetched = {
-  loading: true, libraryNames: [], customCategory: new Map(), installedByProject: new Map(),
+  loading: true, libraryNames: [], customCategory: new Map(), descByName: new Map(), installedByProject: new Map(),
   covByKey: new Map(), ctxByProject: new Map(), usageByKey: new Map(), runningSet: new Set(),
 };
 
@@ -94,13 +95,20 @@ export function useSkillsRegistry(activeProjectId: string | null, refreshTick = 
       const covByKey = new Map<string, SkillCoverageRow>();
       const ctxByProject = new Map<string, number>();
       const customCategory = new Map<string, string>();
+      const descByName = new Map<string, string>();
       for (const r of per) {
         installedByProject.set(r.pid, new Set(r.installed.map((s) => s.name)));
-        for (const s of r.installed) if (s.category) customCategory.set(s.name, s.category);
+        for (const s of r.installed) {
+          if (s.category) customCategory.set(s.name, s.category);
+          if (s.description) descByName.set(s.name, s.description);
+        }
         for (const c of r.cov) covByKey.set(cellKey(r.pid, c.skill), c);
         ctxByProject.set(r.pid, r.contexts);
       }
-      for (const s of globalSkills) if (s.category) customCategory.set(s.name, s.category);
+      for (const s of globalSkills) {
+        if (s.category) customCategory.set(s.name, s.category);
+        if (s.description) descByName.set(s.name, s.description);
+      }
 
       const usageByKey = new Map<string, number>();
       for (const u of usageRows) {
@@ -120,20 +128,19 @@ export function useSkillsRegistry(activeProjectId: string | null, refreshTick = 
         ...PRESET_SKILLS.keys(),
       ])];
 
-      setF({ loading: false, libraryNames, customCategory, installedByProject, covByKey, ctxByProject, usageByKey, runningSet });
+      setF({ loading: false, libraryNames, customCategory, descByName, installedByProject, covByKey, ctxByProject, usageByKey, runningSet });
     })();
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspace?.id, wsProjects.length, refreshTick]);
 
-  const projects: RegistryProject[] = useMemo(
+  const columns: RegistryColumn[] = useMemo(
     () => wsProjects.map((p) => ({
       id: p.id,
       name: p.name,
       rootPath: p.root_path,
-      techStack: parseJsonArray(p.tech_stack).slice(0, 4),
-      totalContexts: f.ctxByProject.get(p.id) ?? 0,
-      adoptedCount: f.installedByProject.get(p.id)?.size ?? 0,
+      units: f.ctxByProject.get(p.id) ?? 0,
+      presentCount: f.installedByProject.get(p.id)?.size ?? 0,
     })),
     [wsProjects, f],
   );
@@ -156,25 +163,28 @@ export function useSkillsRegistry(activeProjectId: string | null, refreshTick = 
         categoryGroup,
         adoptedCount,
         totalInvokes,
+        description: f.descByName.get(name) ?? PRESET_SKILLS.get(name)?.description ?? null,
       };
     });
-    // Group by category, then adopted-first, then name.
+    // Group by category, then strictly name-asc within the group. (Adopted-first
+    // used to win inside a group, which meant a row moved the moment you adopted
+    // it — the list re-ordered under the cursor that had just clicked it.)
     return rows.sort((a, b) =>
       a.category.localeCompare(b.category)
-      || b.adoptedCount - a.adoptedCount
       || a.name.localeCompare(b.name));
   }, [f, wsProjects]);
 
   const cell = useMemo(() => (skillName: string, projectId: string): RegistryCell => ({
     adopted: f.installedByProject.get(projectId)?.has(skillName) ?? false,
-    coverage: f.covByKey.get(cellKey(projectId, skillName)),
+    coveredUnits: f.covByKey.get(cellKey(projectId, skillName))?.coveredContexts ?? 0,
     invokes30d: f.usageByKey.get(cellKey(projectId, skillName)) ?? 0,
     running: f.runningSet.has(cellKey(skillName, projectId)),
   }), [f]);
 
   return {
-    workspace: workspace ? { id: workspace.id, name: workspace.name, color: workspace.color } : null,
-    projects,
+    mode: 'workspace',
+    header: workspace ? { id: workspace.id, name: workspace.name, color: workspace.color } : null,
+    columns,
     skills,
     cell,
     loading: f.loading,

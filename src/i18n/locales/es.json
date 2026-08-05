@@ -13860,7 +13860,10 @@
       "ctx_picker_never": "nunca",
       "ctx_picker_selected": "{n} de {total} seleccionados",
       "ctx_picker_summary": "{first} y {n} más",
-      "ctx_picker_title": "Elige contextos para {name}"
+      "ctx_picker_title": "Elige contextos para {name}",
+      "skills_registry_group_hint": "{name} — {present}/{total} skills se han ejecutado aquí · {contexts} contextos",
+      "skills_registry_no_contexts": "Este proyecto aún no tiene contextos escaneados: ejecuta un escaneo de contextos para ver dónde se han ejecutado las skills.",
+      "skills_registry_project_summary": "{name} · {groups} grupos de contexto · {skills} skills instaladas"
     },
     "doc_signing": {
       "sign_heading": "Firmar un Documento",

@@ -1478,7 +1478,10 @@
     "ctx_picker_never": "nikdy",
     "ctx_picker_selected": "Vybráno {n} z {total}",
     "ctx_picker_summary": "{first} a dalších {n}",
-    "ctx_picker_title": "Vyberte kontexty pro {name}"
+    "ctx_picker_title": "Vyberte kontexty pro {name}",
+    "skills_registry_group_hint": "{name} — {present}/{total} dovedností zde běželo · {contexts} kontextů",
+    "skills_registry_no_contexts": "Tento projekt zatím nemá naskenované kontexty — spusťte sken kontextů a uvidíte, kde dovednosti běžely.",
+    "skills_registry_project_summary": "{name} · {groups} skupin kontextů · {skills} nainstalovaných dovedností"
   },
   "doc_signing": {
     "sign_heading": "Podepsat dokument",

@@ -14154,7 +14154,10 @@
       "ctx_picker_confirm": "Dispatch {n}",
       "ctx_picker_summary": "{first} and {n} more",
       "ctx_picker_fresh_nodes": "fresh memory nodes",
-      "ctx_picker_never": "never"
+      "ctx_picker_never": "never",
+      "skills_registry_no_contexts": "This project has no scanned contexts yet — run a context scan to see where skills have run.",
+      "skills_registry_project_summary": "{name} · {groups} context groups · {skills} installed skills",
+      "skills_registry_group_hint": "{name} — {present}/{total} skills have run here · {contexts} contexts"
     },
     "doc_signing": {
       "sign_heading": "Sign a Document",

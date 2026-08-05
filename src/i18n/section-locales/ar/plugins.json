@@ -1478,7 +1478,10 @@
     "ctx_picker_never": "أبدًا",
     "ctx_picker_selected": "{n} من {total} محدد",
     "ctx_picker_summary": "{first} و{n} أخرى",
-    "ctx_picker_title": "اختر السياقات لـ {name}"
+    "ctx_picker_title": "اختر السياقات لـ {name}",
+    "skills_registry_group_hint": "{name} — {present}/{total} مهارة عملت هنا · {contexts} سياقات",
+    "skills_registry_no_contexts": "لا توجد سياقات ممسوحة في هذا المشروع بعد — شغّل مسح السياقات لمعرفة أين عملت المهارات.",
+    "skills_registry_project_summary": "{name} · {groups} مجموعات سياق · {skills} مهارة مثبّتة"
   },
   "doc_signing": {
     "sign_heading": "توقيع مستند",

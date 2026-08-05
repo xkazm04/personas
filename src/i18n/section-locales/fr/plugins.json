@@ -1478,7 +1478,10 @@
     "ctx_picker_never": "jamais",
     "ctx_picker_selected": "{n} sur {total} sélectionnés",
     "ctx_picker_summary": "{first} et {n} de plus",
-    "ctx_picker_title": "Choisir les contextes pour {name}"
+    "ctx_picker_title": "Choisir les contextes pour {name}",
+    "skills_registry_group_hint": "{name} — {present}/{total} skills ont tourné ici · {contexts} contextes",
+    "skills_registry_no_contexts": "Ce projet n’a pas encore de contextes analysés — lancez une analyse de contextes pour voir où les skills ont tourné.",
+    "skills_registry_project_summary": "{name} · {groups} groupes de contexte · {skills} skills installées"
   },
   "doc_signing": {
     "sign_heading": "Signer un document",

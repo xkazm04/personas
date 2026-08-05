@@ -14161,6 +14161,9 @@ export type Translations = {
       ctx_picker_summary: string;
       ctx_picker_fresh_nodes: string;
       ctx_picker_never: string;
+      skills_registry_no_contexts: string;
+      skills_registry_project_summary: string;
+      skills_registry_group_hint: string;
     };
     doc_signing: {
       sign_heading: string;

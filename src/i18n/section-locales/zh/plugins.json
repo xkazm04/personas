@@ -1478,7 +1478,10 @@
     "ctx_picker_never": "从未",
     "ctx_picker_selected": "已选择{n}/{total}项",
     "ctx_picker_summary": "{first}等{n}项",
-    "ctx_picker_title": "为{name}选择上下文"
+    "ctx_picker_title": "为{name}选择上下文",
+    "skills_registry_group_hint": "{name} — {present}/{total} 个技能在此运行过 · {contexts} 个上下文",
+    "skills_registry_no_contexts": "该项目尚未扫描出上下文 — 运行一次上下文扫描即可查看技能在哪些位置运行过。",
+    "skills_registry_project_summary": "{name} · {groups} 个上下文组 · {skills} 个已安装技能"
   },
   "doc_signing": {
     "sign_heading": "签署文档",

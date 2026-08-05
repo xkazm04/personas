@@ -1478,7 +1478,10 @@
     "ctx_picker_never": "없음",
     "ctx_picker_selected": "{total}개 중 {n}개 선택됨",
     "ctx_picker_summary": "{first} 외 {n}개",
-    "ctx_picker_title": "{name}의 컨텍스트 선택"
+    "ctx_picker_title": "{name}의 컨텍스트 선택",
+    "skills_registry_group_hint": "{name} — {present}/{total}개 스킬이 여기서 실행됨 · 컨텍스트 {contexts}개",
+    "skills_registry_no_contexts": "이 프로젝트에는 아직 스캔된 컨텍스트가 없습니다. 컨텍스트 스캔을 실행하면 스킬이 어디에서 실행됐는지 확인할 수 있습니다.",
+    "skills_registry_project_summary": "{name} · 컨텍스트 그룹 {groups}개 · 설치된 스킬 {skills}개"
   },
   "doc_signing": {
     "sign_heading": "문서 서명하기",

@@ -1478,7 +1478,10 @@
     "ctx_picker_never": "chưa từng",
     "ctx_picker_selected": "Đã chọn {n}/{total}",
     "ctx_picker_summary": "{first} và {n} mục khác",
-    "ctx_picker_title": "Chọn ngữ cảnh cho {name}"
+    "ctx_picker_title": "Chọn ngữ cảnh cho {name}",
+    "skills_registry_group_hint": "{name} — {present}/{total} kỹ năng đã chạy ở đây · {contexts} ngữ cảnh",
+    "skills_registry_no_contexts": "Dự án này chưa có ngữ cảnh nào được quét — hãy chạy quét ngữ cảnh để xem kỹ năng đã chạy ở đâu.",
+    "skills_registry_project_summary": "{name} · {groups} nhóm ngữ cảnh · {skills} kỹ năng đã cài"
   },
   "doc_signing": {
     "sign_heading": "Ký tài liệu",

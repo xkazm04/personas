@@ -1478,7 +1478,10 @@
     "ctx_picker_never": "未実施",
     "ctx_picker_selected": "{total}件中{n}件を選択",
     "ctx_picker_summary": "{first}ほか{n}件",
-    "ctx_picker_title": "{name}のコンテキストを選択"
+    "ctx_picker_title": "{name}のコンテキストを選択",
+    "skills_registry_group_hint": "{name} — {present}/{total} 個のスキルがここで実行済み · {contexts} 個のコンテキスト",
+    "skills_registry_no_contexts": "このプロジェクトにはまだスキャン済みのコンテキストがありません。コンテキストスキャンを実行すると、スキルがどこで実行されたか分かります。",
+    "skills_registry_project_summary": "{name} · コンテキストグループ {groups} 件 · インストール済みスキル {skills} 件"
   },
   "doc_signing": {
     "sign_heading": "ドキュメントに署名",

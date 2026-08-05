@@ -1478,7 +1478,10 @@
     "ctx_picker_never": "nie",
     "ctx_picker_selected": "{n} von {total} ausgewählt",
     "ctx_picker_summary": "{first} und {n} weitere",
-    "ctx_picker_title": "Kontexte für {name} auswählen"
+    "ctx_picker_title": "Kontexte für {name} auswählen",
+    "skills_registry_group_hint": "{name} — {present}/{total} Skills liefen hier · {contexts} Kontexte",
+    "skills_registry_no_contexts": "Dieses Projekt hat noch keine gescannten Kontexte — starte einen Kontext-Scan, um zu sehen, wo Skills gelaufen sind.",
+    "skills_registry_project_summary": "{name} · {groups} Kontextgruppen · {skills} installierte Skills"
   },
   "doc_signing": {
     "sign_heading": "Dokument signieren",
