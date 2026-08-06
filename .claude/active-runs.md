@@ -2,11 +2,6 @@
 
 ## Active
 
-### prototype-skills-workbench — /prototype: SkillsWorkbench landing redesign (quick-dispatch skill viz ×3 variants + standardized section titles + AS-IS vs quick UX) — session fable-5
-- Started: 2026-08-06. Status: started.
-- Scope: the landing chooser of `SkillsWorkbench` (Passport/Mastermind skills modal). (1) Three directional variants of a quick-dispatch skill visualization (context coverage % per installed skill, click = no-args Fleet dispatch via `wb.runDispatch(name,'')`) behind a throwaway tab switcher. (2) Standardized title/subtitle headings for the Manage/Dispatch sections. (3) Landing keeps the AS-IS lane entry beside the quick options. Data via `useProjectRegistry` (dev-tools registry spine), aggregated to total coverage.
-- Paths: `src/features/teams/sub_factory/passport/improve/{SkillsWorkbench.tsx,quickDispatch.ts(new),QuickDispatch*.tsx(new variants)}`, `.claude/active-runs.md`.
-- **NOTE FOR OTHER SESSIONS:** working in the MAIN CHECKOUT (same rationale + mitigation as `prototype-mm-mid`: variants must render in the single live app instance). All edits are new sibling files plus `SkillsWorkbench.tsx`, which is clean at session start; nothing else is staged. No i18n edits during prototyping (extraction happens at consolidation).
 
 ### prototype-mm-mid — /prototype: two directional variants for the Mastermind canvas MID zoom band + orb unread indicator — session opus-5[1m]
 - Started: 2026-08-06. Status: started.
@@ -161,6 +156,11 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### prototype-skills-workbench — /prototype: SkillsWorkbench landing quick-dispatch — session fable-5
+- Started/completed: 2026-08-06. Status: completed (round 1 `e0d2ebd84`, consolidation commit follows this ledger edit — Ledger variant won; Sigils/Frontier + switcher deleted).
+- Result: landing stays a half/half chooser; the Dispatch card now embeds `QuickDispatchLedger` (per-skill total context coverage from `useQuickDispatch`/`useProjectRegistry`, row click = no-args Fleet dispatch), "Open the registry" keeps the aimed path; both card titles promoted to the modal-header style (typo-title + primary icon).
+- Deferred: landing strings remain hardcoded English (pre-existing state of this file; `src/i18n/locales/*` held dirty by concurrent sessions) — extract skills-workbench landing strings in a follow-up i18n pass.
 
 ### athena-goal-edit — read + edit daily goals in full — COMPLETE, commit 60be0852a (worktree 390bc42ed) — session opus-5 (xhigh)
 - 2026-08-05. Goal chips ellipsize at one line, so created goals could never be read back. Added: hover tooltip carrying the full title, a pencil button opening the authoring modal prefilled with the active set (fields switched input→textarea so the whole goal is visible), and `companion_daily_goals_update` (brain `update_set`) rewriting the active set's texts. A free slot filled in edit mode appends (3 max); emptying an existing goal is REFUSED (dropping the last open goal would leave a set logically complete but never stamped, so done/discard stay the only exits); an edit never touches done state.
