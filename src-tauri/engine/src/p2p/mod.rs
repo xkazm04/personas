@@ -4,6 +4,7 @@
 //! manifest sync, and agent-to-agent messaging.
 
 pub mod connection;
+pub mod device_pairing;
 pub mod manifest_sync;
 pub mod mdns;
 pub mod messaging;
@@ -22,6 +23,7 @@ use crate::event_registry::{emit_event, event_name};
 use personas_core::error::AppError;
 
 use self::connection::ConnectionManager;
+use self::device_pairing::DevicePairing;
 use self::manifest_sync::ManifestSync;
 use self::mdns::MdnsService;
 use self::messaging::MessageRouter;
@@ -36,6 +38,7 @@ pub struct NetworkService {
     pub connections: Arc<ConnectionManager>,
     pub manifest_sync: Arc<ManifestSync>,
     pub messages: Arc<MessageRouter>,
+    pub pairing: Arc<DevicePairing>,
     config: Arc<RwLock<NetworkConfig>>,
     running: Arc<RwLock<bool>>,
     cancel: Arc<RwLock<CancellationToken>>,
@@ -59,6 +62,15 @@ impl NetworkService {
         ));
         let manifest_sync = Arc::new(ManifestSync::new(pool.clone(), connections.clone()));
         let messages = Arc::new(MessageRouter::new(connections.clone()));
+        // Created here (rather than inline in the struct literal) so the same
+        // handle cell is shared with `DevicePairing`, which needs it to emit
+        // pairing events without a second copy that `start()` would forget.
+        let app_handle: Arc<RwLock<Option<tauri::AppHandle>>> = Arc::new(RwLock::new(None));
+        let pairing = Arc::new(DevicePairing::new(
+            pool.clone(),
+            connections.clone(),
+            app_handle.clone(),
+        ));
 
         // Reset stale is_connected flags from previous app session
         {
@@ -78,11 +90,12 @@ impl NetworkService {
             connections,
             manifest_sync,
             messages,
+            pairing,
             config,
             running: Arc::new(RwLock::new(false)),
             cancel: Arc::new(RwLock::new(CancellationToken::new())),
             pool,
-            app_handle: Arc::new(RwLock::new(None)),
+            app_handle,
         })
     }
 
@@ -120,9 +133,11 @@ impl NetworkService {
         let connections = self.connections.clone();
         let manifest_sync = self.manifest_sync.clone();
         let messages = self.messages.clone();
+        let pairing = self.pairing.clone();
         let cancel = token.clone();
         tokio::spawn(async move {
-            Self::accept_loop(transport, connections, manifest_sync, messages, cancel).await;
+            Self::accept_loop(transport, connections, manifest_sync, messages, pairing, cancel)
+                .await;
         });
 
         // Start mDNS registration and browsing
@@ -319,6 +334,7 @@ impl NetworkService {
         connections: Arc<ConnectionManager>,
         manifest_sync: Arc<ManifestSync>,
         messages: Arc<MessageRouter>,
+        pairing: Arc<DevicePairing>,
         cancel: CancellationToken,
     ) {
         loop {
@@ -333,8 +349,12 @@ impl NetworkService {
                             let connections = connections.clone();
                             let manifest_sync = manifest_sync.clone();
                             let messages = messages.clone();
+                            let pairing = pairing.clone();
                             tokio::spawn(async move {
-                                if let Err(e) = connections.handle_incoming(conn, manifest_sync, messages).await {
+                                if let Err(e) = connections
+                                    .handle_incoming(conn, manifest_sync, messages, pairing)
+                                    .await
+                                {
                                     tracing::warn!("Incoming connection failed: {}", e);
                                 }
                             });

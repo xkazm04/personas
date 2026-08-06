@@ -53,6 +53,18 @@ pub fn register_owned_device(
     )
 }
 
+/// Nominate (or un-nominate) a paired device as the user's home machine.
+/// At most one device is home at a time — promoting one demotes the rest.
+#[tauri::command]
+pub fn set_device_home(
+    state: State<'_, Arc<AppState>>,
+    peer_id: String,
+    is_home: bool,
+) -> Result<OwnedDevice, AppError> {
+    require_auth_sync(&state)?;
+    owned_devices_repo::set_device_home(&state.db, peer_id.trim(), is_home)
+}
+
 /// Remove a device from the user's registry.
 #[tauri::command]
 pub fn forget_owned_device(

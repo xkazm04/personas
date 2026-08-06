@@ -10,3 +10,5 @@ pub mod exposure;
 pub mod identity;
 #[cfg(feature = "p2p")]
 pub mod owned_devices;
+#[cfg(feature = "p2p")]
+pub mod pairing;

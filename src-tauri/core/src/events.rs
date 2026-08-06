@@ -242,6 +242,10 @@ event_names! {
     // P2P
     P2P_MANIFEST_SYNC_PROGRESS => "p2p:manifest-sync-progress",
     NETWORK_SNAPSHOT_UPDATED   => "network:snapshot-updated",
+    // Payload: the full Vec<DevicePairingRequest> of pairings awaiting a
+    // decision. Sent as the whole list (not a delta) so a listener that missed
+    // an earlier event still converges on the right state.
+    DEVICE_PAIRING_REQUESTED   => "network:device-pairing-requested",
 
     // Notification delivery
     NOTIFICATION_DELIVERY      => "notification-delivery",
