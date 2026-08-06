@@ -2,6 +2,12 @@
 
 ## Active
 
+### athena-fleet-op-grammar — document the real fleet dispatcher surface in Athena's constitution — session opus-5[1m]
+- Started: 2026-08-06. Status: started.
+- Scope: prompt/docs only, **no behavioral Rust change**. The constitution taught Athena only `fleet_wake` / `fleet_resume` / `show_fleet_plan`, while `dispatcher.rs::ALLOWED_ACTIONS` registers seven more fleet ops (`fleet_send_input`, `fleet_kill`, `fleet_broadcast`, `fleet_spawn`, `fleet_dispatch`, `fleet_intervene`, `fleet_redirect_op`). Adds exact OP grammar + approval/confidence gating per op, and the **fleet-session-id vs Claude-Code `cc:` id** contract Athena has been conflating (both are v4 uuids; executors do exact-match `map.get(id)`, digests print only 8 chars).
+- Paths: `src-tauri/src/companion/templates/constitution.md`, `src-tauri/src/companion/templates/mod.rs` (CONSTITUTION_VERSION bump only), `docs/features/companion/README.md`, `docs/architecture/companion-fleet-orchestration.md`, `CHANGELOG.md`, `.claude/active-runs.md`.
+- **NOTE FOR OTHER SESSIONS:** does not touch `src/features/plugins/companion/**`, `src/i18n/**`, or any `src-tauri` executor — the companion-frontend sessions' dirty files below are untouched and unstaged here. Committing on master per the operator's explicit develop-on-master instruction (no worktree).
+
 ### build-ops-runner — rebuild + restart the live app on HEAD, then stand by as the build/ops runner — session opus-5[1m]
 - Started: 2026-08-05. Status: started (long-lived, idle between instructions).
 - Scope: **no source edits.** Process/ops only — stop the stale `tauri:dev:test` chain (running binary dated from `a1eb3b7ba`, 19:12, with a Vite dev server orphaned since 08-04) and relaunch it on HEAD `dff98193d` so the committed companion work (Orb quick input + shared `ChatInputBar` `fd509e3e7`, mastermind canvas `30c36427c`, checkpoint `dff98193d`) is actually loaded by the running app. Then verify :1420 / :17320 `{status:ok}` / Tauri shell and report the live companion command surface.
