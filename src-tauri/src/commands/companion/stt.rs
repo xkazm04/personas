@@ -108,6 +108,20 @@ pub async fn companion_stt_delete_model(
     downloader::delete_model(&model_id)
 }
 
+/// One-click download + extract of the whisper.cpp sidecar into
+/// `~/.personas/companion-stt/bin/`. Progress streams on the
+/// `companion://stt-install` channel; resolves once the binary is in place
+/// AND resolvable, or errors. Windows-only (the pinned asset is win-x64) —
+/// other platforms keep the manual instructions on the setup card.
+#[tauri::command]
+pub async fn companion_stt_install_engine(
+    state: State<'_, Arc<AppState>>,
+    app: AppHandle,
+) -> Result<(), AppError> {
+    require_auth(&state).await?;
+    stt::installer::install(&app).await
+}
+
 /// Report whether the whisper engine binary is installed and where it would
 /// be found / should be installed.
 #[tauri::command]

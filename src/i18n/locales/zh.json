@@ -15114,7 +15114,10 @@
       "stt_compare_stop": "停止",
       "stt_compare_title": "比较语音输入引擎",
       "stt_compare_whisper_unsupported": "无法使用麦克风录音，本地引擎无法在此运行。",
-      "stt_compare_working": "转录中"
+      "stt_compare_working": "转录中",
+      "stt_install_button": "安装引擎",
+      "stt_install_desc": "下载 whisper.cpp CPU 版本并放到 Athena 查找的位置。约 20 MB,目前仅支持 Windows。",
+      "stt_install_title": "帮我安装引擎"
     },
     "artist_gallery": {
       "loading_viewer": "加载查看器中…",

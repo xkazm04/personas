@@ -15114,7 +15114,10 @@
       "stt_compare_stop": "থামুন",
       "stt_compare_title": "ভয়েস ইনপুট ইঞ্জিন তুলনা",
       "stt_compare_whisper_unsupported": "মাইক্রোফোন ক্যাপচার উপলব্ধ নেই, তাই লোকাল ইঞ্জিন এখানে চলতে পারবে না।",
-      "stt_compare_working": "ট্রান্সক্রাইব হচ্ছে"
+      "stt_compare_working": "ট্রান্সক্রাইব হচ্ছে",
+      "stt_install_button": "ইঞ্জিন ইনস্টল করুন",
+      "stt_install_desc": "whisper.cpp-এর CPU বিল্ড ডাউনলোড করে Athena যেখানে খোঁজে সেখানে রাখে। প্রায় 20 MB, আপাতত শুধু Windows-এর জন্য।",
+      "stt_install_title": "আমার জন্য ইঞ্জিন ইনস্টল করুন"
     },
     "artist_gallery": {
       "loading_viewer": "ভিউয়ার লোড হচ্ছে…",

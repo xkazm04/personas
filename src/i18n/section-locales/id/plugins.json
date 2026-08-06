@@ -2662,7 +2662,10 @@
     "stt_compare_stop": "Berhenti",
     "stt_compare_title": "Bandingkan mesin input suara",
     "stt_compare_whisper_unsupported": "Penangkapan mikrofon tidak tersedia, jadi mesin lokal tidak dapat berjalan di sini.",
-    "stt_compare_working": "Mentranskripsi"
+    "stt_compare_working": "Mentranskripsi",
+    "stt_install_button": "Instal Mesin",
+    "stt_install_desc": "Mengunduh build CPU whisper.cpp dan menempatkannya di lokasi yang dicari Athena. Sekitar 20 MB, untuk saat ini hanya Windows.",
+    "stt_install_title": "Instalkan Mesinnya untuk Saya"
   },
   "artist_gallery": {
     "loading_viewer": "Memuat penampil…",

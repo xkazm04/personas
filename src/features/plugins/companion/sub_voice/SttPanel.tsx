@@ -21,8 +21,11 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useCompanionStore } from '../companionStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { VoiceEngineInstallBlock } from './voiceEngineShared';
 import {
   STT_DOWNLOAD_EVENT,
+  STT_INSTALL_EVENT,
+  companionSttInstallEngine,
   companionSttDeleteModel,
   companionSttDownloadModel,
   companionSttEngineStatus,
@@ -266,6 +269,8 @@ function WhisperConfig() {
                 </div>
                 {!status?.installed && (
                   <p className="typo-caption mt-1">
+                    {/* The manual route stays documented for macOS/Linux,
+                        where the pinned win-x64 asset does not apply. */}
                     {t.plugins.companion.stt_install_hint}
                   </p>
                 )}
@@ -284,6 +289,27 @@ function WhisperConfig() {
               >
                 <RefreshCw className="w-3.5 h-3.5" />
               </button>
+            </div>
+          )}
+          {/*
+            One-click install of the sidecar — the last manual step in the
+            voice stack (models already self-download). Same block the
+            Kokoro/Pocket panels use, so the button locks itself, streams
+            phase + percent, and calls refreshStatus on completion: the
+            Installed badge flips without the user hitting Refresh.
+          */}
+          {!statusLoading && !status?.installed && (
+            <div className="px-1 pb-2">
+              <VoiceEngineInstallBlock
+                progressEvent={STT_INSTALL_EVENT}
+                onDownload={companionSttInstallEngine}
+                onDone={() => void refreshStatus()}
+                icon={<Download className="w-4 h-4" />}
+                title={t.plugins.companion.stt_install_title}
+                desc={t.plugins.companion.stt_install_desc}
+                installButtonLabel={t.plugins.companion.stt_install_button}
+                logPrefix="stt.install"
+              />
             </div>
           )}
         </div>

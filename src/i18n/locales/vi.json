@@ -15114,7 +15114,10 @@
       "stt_compare_stop": "Dừng",
       "stt_compare_title": "So sánh công cụ nhập giọng nói",
       "stt_compare_whisper_unsupported": "Không thể truy cập micro, nên công cụ cục bộ không thể chạy ở đây.",
-      "stt_compare_working": "Đang phiên âm"
+      "stt_compare_working": "Đang phiên âm",
+      "stt_install_button": "Cài đặt",
+      "stt_install_desc": "Tải xuống bản dựng CPU của whisper.cpp và đặt vào đúng vị trí Athena tìm kiếm. Khoảng 20 MB, hiện tại chỉ hỗ trợ Windows.",
+      "stt_install_title": "Cài đặt engine cho tôi"
     },
     "artist_gallery": {
       "loading_viewer": "Đang tải trình xem…",

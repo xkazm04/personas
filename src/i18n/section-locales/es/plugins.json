@@ -2662,7 +2662,10 @@
     "stt_compare_stop": "Detener",
     "stt_compare_title": "Comparar motores de voz",
     "stt_compare_whisper_unsupported": "La captura de micrófono no está disponible, así que el motor local no puede ejecutarse aquí.",
-    "stt_compare_working": "Transcribiendo"
+    "stt_compare_working": "Transcribiendo",
+    "stt_install_button": "Instalar motor",
+    "stt_install_desc": "Descarga la compilación de CPU de whisper.cpp y la coloca donde Athena la busca. Unos 20 MB, por ahora solo Windows.",
+    "stt_install_title": "Instalar el motor por mí"
   },
   "artist_gallery": {
     "loading_viewer": "Cargando visor…",

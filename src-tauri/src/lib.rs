@@ -2889,6 +2889,7 @@ pub fn run() {
             commands::companion::stt::companion_stt_download_model,
             commands::companion::stt::companion_stt_delete_model,
             commands::companion::stt::companion_stt_engine_status,
+            commands::companion::stt::companion_stt_install_engine,
             commands::companion::consolidate::companion_run_consolidation,
             commands::companion::consolidate::companion_list_consolidation_runs,
             commands::companion::consolidate::companion_get_consolidation_items,

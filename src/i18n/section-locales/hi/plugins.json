@@ -2662,7 +2662,10 @@
     "stt_compare_stop": "रोकें",
     "stt_compare_title": "वॉइस इनपुट इंजन की तुलना करें",
     "stt_compare_whisper_unsupported": "माइक्रोफ़ोन कैप्चर उपलब्ध नहीं है, इसलिए लोकल इंजन यहाँ नहीं चल सकता।",
-    "stt_compare_working": "ट्रांसक्राइब हो रहा है"
+    "stt_compare_working": "ट्रांसक्राइब हो रहा है",
+    "stt_install_button": "इंजन इंस्टॉल करें",
+    "stt_install_desc": "यह whisper.cpp का CPU बिल्ड डाउनलोड करता है और इसे वहाँ रखता है जहाँ Athena इसे खोजती है। लगभग 20 MB, फ़िलहाल केवल Windows के लिए उपलब्ध है।",
+    "stt_install_title": "मेरे लिए इंजन इंस्टॉल करें"
   },
   "artist_gallery": {
     "loading_viewer": "viewer लोड हो रहा है…",

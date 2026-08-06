@@ -15114,7 +15114,10 @@
       "stt_compare_stop": "Стоп",
       "stt_compare_title": "Сравнение движков голосового ввода",
       "stt_compare_whisper_unsupported": "Захват микрофона недоступен, поэтому локальный движок здесь не работает.",
-      "stt_compare_working": "Расшифровка"
+      "stt_compare_working": "Расшифровка",
+      "stt_install_button": "Установить движок",
+      "stt_install_desc": "Загружает CPU-сборку whisper.cpp и помещает её туда, где её ищет Athena. Около 20 MB, пока только для Windows.",
+      "stt_install_title": "Установи движок за меня"
     },
     "artist_gallery": {
       "loading_viewer": "Загрузка просмотрщика…",

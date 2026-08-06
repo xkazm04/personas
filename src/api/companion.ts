@@ -658,6 +658,19 @@ export async function companionSttDeleteModel(modelId: string): Promise<void> {
   return invoke<void>('companion_stt_delete_model', { modelId });
 }
 
+/** Tauri event channel for whisper sidecar install progress. */
+export const STT_INSTALL_EVENT = 'companion://stt-install';
+
+/**
+ * One-click download + extract of the whisper.cpp sidecar. Progress
+ * streams on {@link STT_INSTALL_EVENT} (same `SidecarInstallProgress`
+ * shape the TTS installers use); resolves once the binary is in place and
+ * resolvable. Windows-only for now.
+ */
+export async function companionSttInstallEngine(): Promise<void> {
+  return invoke<void>('companion_stt_install_engine');
+}
+
 export async function companionSttEngineStatus(): Promise<SttEngineStatus> {
   return invoke<SttEngineStatus>('companion_stt_engine_status');
 }

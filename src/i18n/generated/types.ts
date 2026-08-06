@@ -14615,6 +14615,9 @@ export type Translations = {
       stt_engine_status_desc: string;
       stt_installed: string;
       stt_not_installed: string;
+      stt_install_title: string;
+      stt_install_desc: string;
+      stt_install_button: string;
       stt_install_hint: string;
       stt_models_title: string;
       stt_models_desc: string;

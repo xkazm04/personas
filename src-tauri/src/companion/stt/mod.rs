@@ -14,6 +14,7 @@
 
 pub mod catalog;
 pub mod downloader;
+pub mod installer;
 pub mod whisper;
 
 use crate::error::AppError;

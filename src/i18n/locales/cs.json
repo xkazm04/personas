@@ -15114,7 +15114,10 @@
       "stt_compare_stop": "Zastavit",
       "stt_compare_title": "Porovnání enginů hlasového vstupu",
       "stt_compare_whisper_unsupported": "Záznam z mikrofonu není k dispozici, takže lokální engine tu nemůže fungovat.",
-      "stt_compare_working": "Přepisuje"
+      "stt_compare_working": "Přepisuje",
+      "stt_install_button": "Nainstalovat",
+      "stt_install_desc": "Stáhne CPU sestavení whisper.cpp a umístí ho tam, kde ho Athena hledá. Přibližně 20 MB, zatím jen pro Windows.",
+      "stt_install_title": "Nainstalovat engine za mě"
     },
     "artist_gallery": {
       "loading_viewer": "Načítání prohlížeče…",

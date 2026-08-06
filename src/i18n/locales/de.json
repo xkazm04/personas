@@ -15114,7 +15114,10 @@
       "stt_compare_stop": "Stopp",
       "stt_compare_title": "Spracheingabe-Engines vergleichen",
       "stt_compare_whisper_unsupported": "Mikrofonaufnahme ist nicht verfügbar, daher kann die lokale Engine hier nicht laufen.",
-      "stt_compare_working": "Transkribieren"
+      "stt_compare_working": "Transkribieren",
+      "stt_install_button": "Engine installieren",
+      "stt_install_desc": "Lädt den whisper.cpp-CPU-Build herunter und legt ihn dort ab, wo Athena danach sucht. Etwa 20 MB, vorerst nur für Windows.",
+      "stt_install_title": "Installiere die Engine für mich"
     },
     "artist_gallery": {
       "loading_viewer": "Viewer wird geladen…",

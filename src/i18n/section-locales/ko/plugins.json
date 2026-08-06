@@ -2662,7 +2662,10 @@
     "stt_compare_stop": "정지",
     "stt_compare_title": "음성 입력 엔진 비교",
     "stt_compare_whisper_unsupported": "마이크를 사용할 수 없어 로컬 엔진을 실행할 수 없습니다.",
-    "stt_compare_working": "변환 중"
+    "stt_compare_working": "변환 중",
+    "stt_install_button": "엔진 설치",
+    "stt_install_desc": "whisper.cpp CPU 빌드를 다운로드하여 Athena가 찾는 위치에 저장합니다. 약 20MB이며, 현재는 Windows에서만 지원됩니다.",
+    "stt_install_title": "엔진 설치해 주세요"
   },
   "artist_gallery": {
     "loading_viewer": "뷰어 로딩 중…",

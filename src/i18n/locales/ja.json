@@ -15114,7 +15114,10 @@
       "stt_compare_stop": "停止",
       "stt_compare_title": "音声入力エンジンを比較",
       "stt_compare_whisper_unsupported": "マイクの取得ができないため、ローカルエンジンをここで実行できません。",
-      "stt_compare_working": "文字起こし中"
+      "stt_compare_working": "文字起こし中",
+      "stt_install_button": "エンジンをインストール",
+      "stt_install_desc": "whisper.cppのCPU版をダウンロードし、Athenaが参照する場所に配置します。約20 MB、現時点ではWindowsのみ対応です。",
+      "stt_install_title": "エンジンを代わりにインストール"
     },
     "artist_gallery": {
       "loading_viewer": "ビューアを読み込み中…",
