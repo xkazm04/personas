@@ -1,25 +1,27 @@
-// VARIANT B — "Console v2". The Upgrade lane DISSOLVED into the modal chrome
-// instead of pasted beside it.
+// The Monitoring modal's body — "Console v2", the prototype winner (2026-08-06,
+// rounds 1–5; the Pipeline / Rows / Focus / Ledger / Track variants and the
+// separate Upgrade lane are gone).
 //
-// The first v2 put the classic panel next to the grid almost 1:1 — a rail of
-// the popover's boxes wearing new CSS. This one breaks the lane into the parts
-// it was made of and gives each the place it belongs:
+// The old deploy popover's content is DISSOLVED into the chrome rather than
+// kept as a second lane:
 //
-//   HEADER  the readings — current observability level as a mini segmented bar
-//           (the wall's own level grammar), and the matching vault connectors
-//           as view-only marks. Facts you glance at, so they live where the eye
-//           starts and never scroll.
-//   GRID    the same four capability cards as Console, plus one new control:
-//           a FOCUSED SCAN per card. The whole-dimension deploy asks one
-//           session to fix observability at large; these specialize — one
-//           session owns logs & tracing, another metrics — so each stays on its
-//           area instead of grazing the union of all four.
-//   FOOTER  the dimension-wide deployment actions — Queue / Deploy now /
-//           "queue for all N projects" — where a dialog keeps its commit row.
+//   HEADER  the readings — current observability level as the wall's own
+//           segmented-level strip (ladderFor + ordinalTint), and the matching
+//           vault connectors as view-only marks with health dimming. Glanceable
+//           facts live where the eye starts and never scroll.
+//   GRID    2×2 capability cards. Each is split LEFT = codebase / RIGHT = vault,
+//           both drawn as hero-size tool marks; the split collapses to one mark
+//           when both sides name the same tool — the only visual state that
+//           means "done". Each card also carries a FOCUSED SCAN dispatching a
+//           Dev-runner session specialized to that one area.
+//   FOOTER  the dimension-wide deployment actions in the dialog's commit row,
+//           right-aligned. Project-specific on purpose — the fleet-wide "queue
+//           for all N" stays in the wall popover (ImproveClassicPanel), not
+//           here.
 //
-// Nothing is re-implemented: readings come from `ladderFor` + the rows' own
-// candidates, actions run through the same `useImproveActions` the classic
-// panel uses, so "queue for all N" still exists exactly once.
+// One implementation throughout: readings via ladderFor, actions via the same
+// `useImproveActions` the classic popover panel runs on.
+import { useState } from 'react';
 import { ScanSearch } from 'lucide-react';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -27,12 +29,13 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { ordinalTint } from '../passportModel';
 import { ladderFor } from './levels';
-import { ConsoleCard } from './MonitoringConsoleVariant';
-import { ToolMark } from './monitoringCard';
+import {
+  CandidateList, CapabilityCard, CapabilityHead, CardAction, DeployNote, MergedTool, sameTool, SideHalf, ToolMark, UnbindButton,
+} from './monitoringCard';
 import type { MonitoringRow, MonitoringVariantProps } from './monitoringTypes';
 import { useImproveActions } from './useImproveActions';
 
-export function MonitoringConsoleV2Variant({
+export function MonitoringConsole({
   rows, busyKey, deploying, onAssign, onDeploy, slug, upgradeRow, onDone, areaScanning, onAreaScan,
 }: MonitoringVariantProps & {
   slug: string;
@@ -102,8 +105,10 @@ export function MonitoringConsoleV2Variant({
         ))}
       </div>
 
+      {/* Commit row — right-aligned like every dialog's action edge. Only THIS
+          project's runs; the fleet-wide batch lives in the wall popover. */}
       {ops && ops.actions.length > 0 && (
-        <div className="flex items-center gap-3 px-4 py-2 border-t border-primary/10 bg-secondary/10 flex-shrink-0 min-w-0 overflow-x-auto">
+        <div className="flex items-center justify-end gap-3 px-4 py-2 border-t border-primary/10 bg-secondary/10 flex-shrink-0 min-w-0 overflow-x-auto">
           {ops.actions.map((a) => (
             <div key={a.id} className="flex items-center gap-1.5 min-w-0 shrink-0">
               <Tooltip content={a.hint} placement="top">
@@ -122,17 +127,6 @@ export function MonitoringConsoleV2Variant({
                 <>
                   <FooterButton onClick={() => void ops.run(a, 'queue')} busy={ops.busy === a.id} label={d.monitoring_queue_task} />
                   <FooterButton primary onClick={() => void ops.run(a, 'deploy')} busy={ops.busy === a.id} label={d.monitoring_deploy_now} />
-                  {ops.batchSize(a) > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => void ops.runBatch(a)}
-                      disabled={ops.busy === a.id}
-                      className="typo-caption text-primary hover:underline disabled:opacity-50 shrink-0"
-                      style={{ fontWeight: 400 }}
-                    >
-                      {tx(d.monitoring_queue_all, { count: ops.batchSize(a) })}
-                    </button>
-                  )}
                 </>
               )}
             </div>
@@ -140,6 +134,66 @@ export function MonitoringConsoleV2Variant({
         </div>
       )}
     </>
+  );
+}
+
+/** One capability. Split body (code | vault) in hero-size tool marks; merged to
+ *  a single mark when both sides agree; flips into the candidate list to bind. */
+function ConsoleCard({ row, busy, deploying, onAssign, onDeploy, footerExtra }: {
+  row: MonitoringRow;
+  busy: boolean;
+  deploying: boolean;
+  onAssign: (credentialId: string | null) => void;
+  onDeploy: () => void;
+  /** Extra control beside the main action — the focused-scan button. */
+  footerExtra?: React.ReactNode;
+}) {
+  const { t } = useTranslation();
+  const d = t.plugins.dev_tools;
+  const [picking, setPicking] = useState(false);
+  const merged = sameTool(row.detected, row.bound);
+
+  return (
+    <CapabilityCard icon={row.def.icon} testId={`monitoring-card-${row.def.key}`}>
+      <CapabilityHead icon={row.def.icon} label={d[`monitoring_item_${row.def.labelKey}`]} state={row.state} />
+
+      {picking ? (
+        <CandidateList
+          row={row}
+          busy={busy}
+          onAssign={(id) => { onAssign(id); setPicking(false); }}
+          onCancel={() => setPicking(false)}
+        />
+      ) : (
+        <>
+          <div className="relative flex-1 min-h-0 flex items-stretch overflow-y-auto">
+            {merged && row.bound ? (
+              <MergedTool label={row.bound.name} serviceType={row.bound.serviceType}>
+                <UnbindButton busy={busy} onClick={() => onAssign(null)} />
+              </MergedTool>
+            ) : (
+              <>
+                <SideHalf side="code" toolLabel={row.detected} />
+                <span className="w-px my-2 bg-primary/10 shrink-0" aria-hidden />
+                <SideHalf side="vault" toolLabel={row.bound?.name ?? null} serviceType={row.bound?.serviceType}>
+                  {row.bound && <UnbindButton busy={busy} onClick={() => onAssign(null)} />}
+                </SideHalf>
+              </>
+            )}
+          </div>
+
+          {row.state === 'not_implemented' && (
+            <div className="relative px-3 pb-2"><DeployNote /></div>
+          )}
+          <div className="relative px-3 py-2 border-t border-primary/10 flex items-center gap-1.5">
+            <span className="flex-1 min-w-0">
+              <CardAction row={row} busy={busy} deploying={deploying} onPick={() => setPicking(true)} onDeploy={onDeploy} />
+            </span>
+            {footerExtra}
+          </div>
+        </>
+      )}
+    </CapabilityCard>
   );
 }
 
