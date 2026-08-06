@@ -433,6 +433,57 @@ pub fn set_verdict(
 /// proactive card per op telling the user what survived and what their
 /// options are. The `(kind, ref=op_id)` dedupe makes a re-fire across
 /// boots harmless. Returns the number of ops swept.
+/// Is dev-mode autonomy on? The recovery COMMIT below writes to a branch on
+/// the operator's behalf, so it is gated on the same wrench toggle that gates
+/// every other dev-mode action. Without it we only report, never write.
+fn dev_autonomy_enabled(app: &tauri::AppHandle) -> bool {
+    use tauri::Manager;
+    app.try_state::<std::sync::Arc<crate::AppState>>()
+        .is_some_and(|state| crate::commands::companion::chat::dev_mode_enabled(&state.db))
+}
+
+/// Commit whatever a dead session left uncommitted in its own worktree, so
+/// the work re-enters the merge handshake instead of being parked forever.
+///
+/// Paths are staged EXPLICITLY from `git status --porcelain` rather than with
+/// a catch-all `add -A`: the worktree is isolated, but the habit of staging
+/// only what you enumerated is the one that keeps parallel sessions' work
+/// safe everywhere else. Returns the new short sha, or `None` when there was
+/// nothing to save (or git refused).
+fn recover_uncommitted_work(workspace: &std::path::Path, request: &str) -> Option<String> {
+    restore_lockfile_noise(workspace);
+    let status = run_git(workspace, &["status", "--porcelain"]).ok()?;
+    let paths: Vec<String> = status
+        .lines()
+        .filter_map(|line| {
+            // Porcelain v1: `XY <path>`, with `->` for renames.
+            let rest = line.get(3..)?.trim();
+            let path = rest.rsplit(" -> ").next()?.trim().trim_matches('"');
+            (!path.is_empty()).then(|| path.to_string())
+        })
+        .collect();
+    if paths.is_empty() {
+        return None;
+    }
+    for path in &paths {
+        if let Err(e) = run_git(workspace, &["add", "--", path]) {
+            tracing::warn!(error = %e, path = %path, "dev recovery: stage failed");
+        }
+    }
+    let clip: String = request.chars().take(90).collect();
+    let message = format!(
+        "[recovered] {clip}\n\nAssembled by Athena's boot recovery pass from {} \
+         uncommitted path(s) left behind when the dev session died with an app restart. \
+         Not reviewed by the session that wrote it.",
+        paths.len()
+    );
+    if let Err(e) = run_git(workspace, &["commit", "-m", &message]) {
+        tracing::warn!(error = %e, "dev recovery: commit failed");
+        return None;
+    }
+    latest_commit_short(workspace)
+}
+
 pub fn recover_interrupted_dev_ops(
     pool: &crate::db::UserDbPool,
     app: &tauri::AppHandle,
@@ -456,9 +507,27 @@ pub fn recover_interrupted_dev_ops(
         if live.contains(&meta.fleet_session_id) {
             continue;
         }
+        // Before writing the op off, try to SAVE what the dead session left
+        // in its tree. An interrupted backend run's worktree routinely holds
+        // finished-but-uncommitted work, and marking the op `interrupted`
+        // parks it behind a worktree nobody comes back to — the merge
+        // handshake only ever looks at commits.
+        let recovered = if meta.backend && dev_autonomy_enabled(app) {
+            recover_uncommitted_work(&meta.workspace, &meta.request)
+        } else {
+            None
+        };
+        if let Some(sha) = recovered.as_deref() {
+            // Flip the row back into the normal lifecycle so the ordinary
+            // dev_merge handshake can apply it — no bespoke recovery path.
+            mark_dev_op(pool, &op_id, "completed", Some(sha));
+        }
+
         // Capture what survived before flipping the status.
-        let commit = latest_commit_short(&meta.workspace);
-        mark_dev_op(pool, &op_id, "interrupted", commit.as_deref());
+        let commit = recovered.clone().or_else(|| latest_commit_short(&meta.workspace));
+        if recovered.is_none() {
+            mark_dev_op(pool, &op_id, "interrupted", commit.as_deref());
+        }
         swept += 1;
 
         let req_clip: String = {
@@ -468,7 +537,15 @@ pub fn recover_interrupted_dev_ops(
             }
             s
         };
-        let survives = if meta.backend {
+        let survives = if let Some(sha) = recovered.as_deref() {
+            format!(
+                "Its uncommitted work was RECOVERED into commit `{sha}` on branch `{}`, and the \
+                 op is back in the normal lifecycle — the dev_merge handshake will apply it \
+                 (op_id `{op_id}`). Review the commit before merging; it was assembled by the \
+                 recovery pass, not by the session.",
+                meta.branch.as_deref().unwrap_or("?"),
+            )
+        } else if meta.backend {
             format!(
                 "Its worktree survives at `{}` (branch `{}`{}) — if the work was committed, \
                  the dev_merge handshake still applies it (op_id `{op_id}`); otherwise \
@@ -645,11 +722,82 @@ fn commits_ahead(cwd: &std::path::Path, base: &str, tip: &str) -> Option<usize> 
 /// checkout, then clean up the worktree. Thin wrapper over
 /// [`apply_dev_branch`] with the real repo root; kept separate so the
 /// apply logic is testable against a throwaway repo.
-pub fn merge_dev_branch(meta: &DevOpMeta) -> Result<String, String> {
+pub fn merge_dev_branch(meta: &DevOpMeta) -> Result<MergeOutcome, String> {
     let Some(branch) = meta.branch.as_deref() else {
         return Err("this dev op has no worktree branch (frontend run — nothing to merge)".into());
     };
     apply_dev_branch(&repo_root(), &meta.workspace, branch)
+}
+
+/// The result of a VERIFIED merge. `landed_sha` is the live checkout's HEAD
+/// after verification passed, and is what gets stamped on the ledger row —
+/// the old code reported success out of a string and stored no sha at all,
+/// so "merged" was an unfalsifiable claim.
+#[derive(Debug, Clone)]
+pub struct MergeOutcome {
+    pub message: String,
+    pub landed_sha: String,
+}
+
+/// Verdict of the pre-merge patch-equivalence probe.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CherryVerdict {
+    /// Every commit on the branch already exists on HEAD as a patch. Nothing
+    /// to apply and nothing lost — the change landed via another route
+    /// (typically a parallel session that committed it to master first).
+    AlreadyApplied,
+    /// At least one commit is genuinely unapplied.
+    HasUnapplied,
+    /// `git cherry` could not answer. Never treated as already-applied.
+    Unknown,
+}
+
+/// Ask git whether the branch's commits are already on HEAD *as patches*.
+///
+/// `git cherry HEAD <branch>` prints one line per branch commit: `+ <sha>`
+/// when it is NOT in HEAD, `- <sha>` when an equivalent patch already is.
+/// This is the probe the old code lacked: when a parallel session had
+/// already landed the same change on master, the cherry-pick came back
+/// EMPTY, git exited non-zero, and the merge was reported as a total
+/// failure even though the content was safely on master.
+fn cherry_verdict(root: &std::path::Path, branch: &str) -> CherryVerdict {
+    let Ok(out) = run_git(root, &["cherry", "HEAD", branch]) else {
+        return CherryVerdict::Unknown;
+    };
+    let mut saw_any = false;
+    for line in out.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        saw_any = true;
+        if line.starts_with('+') {
+            return CherryVerdict::HasUnapplied;
+        }
+    }
+    // No lines at all also means nothing to apply (branch is not ahead).
+    if saw_any || commits_ahead(root, "HEAD", branch) == Some(0) {
+        CherryVerdict::AlreadyApplied
+    } else {
+        CherryVerdict::Unknown
+    }
+}
+
+/// Confirm the branch's content actually reached HEAD.
+///
+/// The general test is patch-equivalence: after the apply, no branch commit
+/// may still be missing from HEAD. That covers all three strategies —
+/// fast-forward and merge (branch not ahead at all), and cherry-pick (the
+/// sha changes, so an ancestor test would wrongly fail; a plain
+/// `git diff branch HEAD` would too, since HEAD legitimately carries the
+/// commits master moved by). The ancestor check stays as a cheap fast path.
+///
+/// This runs BEFORE any success is reported and before anything is pruned.
+fn merge_landed(root: &std::path::Path, branch: &str) -> bool {
+    if run_git(root, &["merge-base", "--is-ancestor", branch, "HEAD"]).is_ok() {
+        return true;
+    }
+    cherry_verdict(root, branch) == CherryVerdict::AlreadyApplied
 }
 
 /// Apply `branch` (checked out in `workspace`, a worktree under `root`)
@@ -669,7 +817,12 @@ pub fn apply_dev_branch(
     root: &std::path::Path,
     workspace: &std::path::Path,
     branch: &str,
-) -> Result<String, String> {
+) -> Result<MergeOutcome, String> {
+    // The branch tip, captured up front. Every refusal path below reports it,
+    // so a commit can never be stranded behind a pruned worktree with no sha
+    // written down anywhere.
+    let tip = run_git(root, &["rev-parse", "--short", branch]).unwrap_or_else(|_| "?".into());
+
     // Tolerate node-tooling lockfile drift before judging the tree dirty.
     restore_lockfile_noise(workspace);
 
@@ -677,10 +830,28 @@ pub fn apply_dev_branch(
     let dirty = run_git(workspace, &["status", "--porcelain"]).unwrap_or_default();
     if !dirty.trim().is_empty() {
         return Err(format!(
-            "worktree has uncommitted changes ({} path(s)) — resolve or commit them first:\n{}",
+            "worktree has uncommitted changes ({} path(s)) — resolve or commit them first \
+             (branch tip `{tip}`):\n{}",
             dirty.lines().filter(|l| !l.trim().is_empty()).count(),
             dirty.trim(),
         ));
+    }
+
+    // Already-applied FIRST. When a parallel session landed the same change on
+    // master, every branch commit is patch-equivalent to HEAD: there is
+    // nothing to merge and nothing was lost. The old code reached this state
+    // through a cherry-pick that came back empty, git exiting non-zero, and a
+    // report of total failure over content that was safely on master.
+    if cherry_verdict(root, branch) == CherryVerdict::AlreadyApplied {
+        let head = run_git(root, &["rev-parse", "--short", "HEAD"]).unwrap_or_default();
+        let notes = prune_worktree(root, workspace, branch, true);
+        return Ok(MergeOutcome {
+            message: format!(
+                "`{branch}` was already applied upstream — its commits are patch-equivalent to \
+                 `{head}`. Nothing to merge; worktree cleaned up.{notes}"
+            ),
+            landed_sha: head,
+        });
     }
 
     // Fast-forward is the clean case (master unmoved since dispatch).
@@ -688,57 +859,111 @@ pub fn apply_dev_branch(
         Ok(_) => "fast-forward",
         Err(ff_err) => match commits_ahead(root, "HEAD", branch) {
             // Focused single-commit run → cherry-pick onto the moved master.
-            Some(1) => {
-                apply_single_commit(root, branch).map_err(|e| {
+            Some(1) => match apply_single_commit(root, branch)? {
+                PickOutcome::Applied => "cherry-pick",
+                PickOutcome::AlreadyApplied => "already-applied",
+            },
+            // Multi-commit divergence. A real merge commit is the honest
+            // answer: refusing here used to strand the whole run behind a
+            // worktree nobody came back to. Conflicts are still never
+            // auto-resolved — the merge aborts and we hand it back.
+            Some(n) if n > 1 => {
+                run_git(root, &["merge", "--no-ff", "--no-edit", branch]).map_err(|merge_err| {
+                    let _ = run_git(root, &["merge", "--abort"]);
                     format!(
-                        "fast-forward failed ({ff_err}) and the cherry-pick fallback also \
-                         failed ({e}). Merge manually at the repo root (`git merge {branch}`, \
-                         or `git cherry-pick <sha>`), then remove the worktree."
+                        "fast-forward failed ({ff_err}) and the {n}-commit merge of `{branch}` \
+                         conflicts ({merge_err}). The merge was aborted, so the live checkout is \
+                         untouched and the branch is intact at `{tip}`. Resolve manually at the \
+                         repo root (`git merge {branch}`), then remove the worktree."
                     )
                 })?;
-                "cherry-pick"
+                "merge"
             }
-            // Zero commits (nothing to apply) or many (too much to auto-apply).
+            // Zero commits, or git could not tell us.
             other => {
                 let n = other.map(|n| n.to_string()).unwrap_or_else(|| "?".into());
                 return Err(format!(
                     "fast-forward merge of `{branch}` failed ({ff_err}) and the branch is {n} \
-                     commit(s) ahead of the live checkout — {}. The main checkout moved since \
-                     the dispatch; merge manually (`git merge {branch}`), then remove the \
-                     worktree.",
-                    if other == Some(0) {
-                        "nothing to apply"
-                    } else {
-                        "too much to auto-apply safely"
-                    }
+                     commit(s) ahead of the live checkout. Nothing was applied; the branch is \
+                     intact at `{tip}` and the worktree is preserved. Merge manually \
+                     (`git merge {branch}`), then remove the worktree."
                 ));
             }
         },
     };
 
+    // VERIFY before reporting anything and before pruning anything. The old
+    // code declared success straight out of the strategy match and pruned the
+    // worktree + branch on an unverified Ok.
+    if !merge_landed(root, branch) {
+        return Err(format!(
+            "`{branch}` reported a {strategy} but the content is NOT on HEAD — the branch is \
+             intact at `{tip}` and the worktree was left in place on purpose. Inspect with \
+             `git diff {branch} HEAD` at the repo root before doing anything else."
+        ));
+    }
+
     let sha = run_git(root, &["rev-parse", "--short", "HEAD"]).unwrap_or_default();
-    // Cleanup is best-effort — a failure leaves a stale worktree, not a
-    // broken merge. A cherry-pick leaves the branch un-merged from git's
-    // view (new commit ≠ branch tip), so force-delete in that case only.
+    // A cherry-pick leaves the branch un-merged from git's view (new commit ≠
+    // branch tip), so force-delete in that case only.
+    let force_delete = matches!(strategy, "cherry-pick" | "already-applied");
+    let notes = prune_worktree(root, workspace, branch, force_delete);
+    Ok(MergeOutcome {
+        message: format!("applied `{branch}` → verified on `{sha}` ({strategy}){notes}"),
+        landed_sha: sha,
+    })
+}
+
+/// Remove the worktree + branch. Best-effort and ONLY ever called after
+/// verification passed — a failure here leaves a stale worktree, not a lost
+/// commit. Returns any warnings to append to the report.
+fn prune_worktree(
+    root: &std::path::Path,
+    workspace: &std::path::Path,
+    branch: &str,
+    force_delete: bool,
+) -> String {
     let mut notes = String::new();
     if let Err(e) = run_git(root, &["worktree", "remove", &workspace.to_string_lossy()]) {
         notes.push_str(&format!("\n⚠ worktree remove failed: {e}"));
     }
-    let del_flag = if strategy == "cherry-pick" { "-D" } else { "-d" };
+    let del_flag = if force_delete { "-D" } else { "-d" };
     if let Err(e) = run_git(root, &["branch", del_flag, branch]) {
         notes.push_str(&format!("\n⚠ branch delete failed: {e}"));
     }
-    Ok(format!("applied `{branch}` → `{sha}` ({strategy}){notes}"))
+    notes
 }
 
-/// Cherry-pick `branch`'s tip commit onto the live HEAD. On conflict,
-/// abort so the working tree is left clean (no half-applied pick).
-fn apply_single_commit(root: &std::path::Path, branch: &str) -> Result<(), String> {
+/// What a single-commit apply actually did.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum PickOutcome {
+    Applied,
+    /// The pick came back empty — the change is already on HEAD.
+    AlreadyApplied,
+}
+
+/// Cherry-pick `branch`'s tip commit onto the live HEAD.
+///
+/// An EMPTY pick is a success, not a failure: git exits non-zero with "The
+/// previous cherry-pick is now empty" when the commit's content already
+/// landed (a parallel session got there first). That case is skipped and
+/// reported as already-applied. Any other conflict aborts so the working
+/// tree is left clean (no half-applied pick).
+fn apply_single_commit(root: &std::path::Path, branch: &str) -> Result<PickOutcome, String> {
     match run_git(root, &["cherry-pick", branch]) {
-        Ok(_) => Ok(()),
+        Ok(_) => Ok(PickOutcome::Applied),
         Err(e) => {
+            let lower = e.to_lowercase();
+            if lower.contains("is now empty") || lower.contains("nothing to commit") {
+                let _ = run_git(root, &["cherry-pick", "--skip"]);
+                return Ok(PickOutcome::AlreadyApplied);
+            }
             let _ = run_git(root, &["cherry-pick", "--abort"]);
-            Err(e)
+            Err(format!(
+                "cherry-picking `{branch}` onto the live checkout conflicts ({e}). The pick was \
+                 aborted, so the checkout is untouched and the branch is intact. Merge manually \
+                 at the repo root (`git merge {branch}`), then remove the worktree."
+            ))
         }
     }
 }
@@ -1044,7 +1269,7 @@ mod tests {
         }
         let root = t_fresh_repo();
         let (wt, branch) = t_worktree(&root);
-        let out = apply_dev_branch(&root, &wt, &branch).expect("ff applies");
+        let out = apply_dev_branch(&root, &wt, &branch).expect("ff applies").message;
         assert!(out.contains("fast-forward"), "got: {out}");
         // `.contains` (not byte-equality) — Windows autocrlf may rewrite \n→\r\n.
         assert!(
@@ -1071,7 +1296,7 @@ mod tests {
         run_git(&root, &["add", "b.txt"]).unwrap();
         t_commit(&root, "master moves");
 
-        let out = apply_dev_branch(&root, &wt, &branch).expect("cherry-pick applies");
+        let out = apply_dev_branch(&root, &wt, &branch).expect("cherry-pick applies").message;
         assert!(out.contains("cherry-pick"), "got: {out}");
         // Both the dev change and the divergent master commit are present.
         assert!(
@@ -1084,24 +1309,82 @@ mod tests {
     }
 
     #[test]
-    fn apply_dev_branch_refuses_multi_commit_divergence() {
+    fn apply_dev_branch_merges_multi_commit_divergence() {
         if !git_available() {
             return;
         }
         let root = t_fresh_repo();
         let (wt, branch) = t_worktree(&root);
-        // Second dev commit → branch is 2 ahead → not auto-applicable.
+        // Second dev commit → branch is 2 ahead.
         std::fs::write(wt.join("a.txt"), "base\ndev-change\nmore\n").unwrap();
         run_git(&wt, &["add", "a.txt"]).unwrap();
         t_commit(&wt, "second dev change");
-        // Diverge master so ff can't apply.
+        // Diverge master on an unrelated path so ff can't apply but the
+        // merge is clean.
         std::fs::write(root.join("b.txt"), "on-master\n").unwrap();
         run_git(&root, &["add", "b.txt"]).unwrap();
         t_commit(&root, "master moves");
 
+        let out = apply_dev_branch(&root, &wt, &branch).expect("multi-commit merges");
+        assert!(out.message.contains("merge"), "got: {}", out.message);
+        assert!(!out.landed_sha.is_empty(), "landed sha reported");
+        let a = std::fs::read_to_string(root.join("a.txt")).unwrap();
+        assert!(a.contains("dev-change") && a.contains("more"), "both commits landed");
+        assert!(root.join("b.txt").exists(), "master's own commit survived");
+        assert!(!wt.exists(), "worktree removed after verification");
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn apply_dev_branch_refuses_a_conflicting_merge_without_touching_the_checkout() {
+        if !git_available() {
+            return;
+        }
+        let root = t_fresh_repo();
+        let (wt, branch) = t_worktree(&root);
+        std::fs::write(wt.join("a.txt"), "base\ndev-change\nmore\n").unwrap();
+        run_git(&wt, &["add", "a.txt"]).unwrap();
+        t_commit(&wt, "second dev change");
+        // Master edits the SAME line region → the merge conflicts.
+        std::fs::write(root.join("a.txt"), "base\nmaster-took-this-line\n").unwrap();
+        run_git(&root, &["add", "a.txt"]).unwrap();
+        t_commit(&root, "master moves on a.txt");
+
         let err = apply_dev_branch(&root, &wt, &branch).unwrap_err();
-        assert!(err.contains("2 commit"), "got: {err}");
+        assert!(err.contains("conflict"), "got: {err}");
+        // The whole point: nothing lost. Branch intact, worktree preserved,
+        // live checkout unchanged and not mid-merge.
         assert!(wt.exists(), "worktree preserved for manual merge");
+        assert!(run_git(&root, &["rev-parse", "--verify", &branch]).is_ok(), "branch intact");
+        assert!(
+            std::fs::read_to_string(root.join("a.txt")).unwrap().contains("master-took-this-line"),
+            "live checkout untouched"
+        );
+        assert!(
+            run_git(&root, &["rev-parse", "--verify", "MERGE_HEAD"]).is_err(),
+            "no half-finished merge left in progress"
+        );
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn apply_dev_branch_reports_success_when_the_change_already_landed_upstream() {
+        if !git_available() {
+            return;
+        }
+        let root = t_fresh_repo();
+        let (wt, branch) = t_worktree(&root);
+        // A parallel session lands the SAME patch on master first. The old
+        // code cherry-picked, got an empty pick, and reported total failure
+        // over content that was safely on master.
+        std::fs::write(root.join("a.txt"), "base\ndev-change\n").unwrap();
+        run_git(&root, &["add", "a.txt"]).unwrap();
+        t_commit(&root, "parallel session landed the same change");
+
+        let out = apply_dev_branch(&root, &wt, &branch).expect("already-applied is a success");
+        assert!(out.message.contains("already applied"), "got: {}", out.message);
+        assert!(!out.landed_sha.is_empty());
+        assert!(!wt.exists(), "worktree cleaned up — there is nothing to come back for");
         let _ = std::fs::remove_dir_all(&root);
     }
 
@@ -1133,7 +1416,7 @@ mod tests {
         std::fs::write(wt.join("pnpm-lock.yaml"), "v2-drifted-by-npx\n").unwrap();
 
         // Drift alone must NOT block the merge — it's restored to HEAD first.
-        let out = apply_dev_branch(&root, &wt, &branch).expect("lockfile drift tolerated");
+        let out = apply_dev_branch(&root, &wt, &branch).expect("lockfile drift tolerated").message;
         assert!(out.contains("fast-forward"), "got: {out}");
         let _ = std::fs::remove_dir_all(&root);
     }

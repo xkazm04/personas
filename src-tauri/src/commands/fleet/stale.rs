@@ -79,6 +79,29 @@ pub const NEVER_ATTACHED_SECS: i64 = 2 * 60;
 /// for the full 6-minute flat-log cutoff.
 pub const STALLED_AFTER_SECS: i64 = 2 * 60;
 
+/// Multiplier applied to [`STALLED_AFTER_SECS`] for Athena's own dev
+/// sessions (`athena-dev*`).
+///
+/// The frozen verdict reads "no bytes and no transcript growth" as hung.
+/// That inference holds for a conversational session; it is simply wrong for
+/// a dev run, whose normal working state is a **silent `cargo check`** that
+/// on this repo routinely runs 5-15 minutes with no PTY output and no
+/// transcript lines. At 2 min every such compile was reported frozen, which
+/// is how a healthy build came to wear a "safe to kill" label. 8× puts the
+/// verdict at 16 min — past any ordinary compile, still short of a real hang.
+pub const DEV_SESSION_STALL_MULTIPLIER: i64 = 8;
+
+/// True when this session is one of Athena's dev runs, by name
+/// (`athena-dev…` — the rename applied at dispatch in `execute_dev_improve`).
+fn is_dev_session(name: Option<&str>) -> bool {
+    name.is_some_and(|n| {
+        n.contains(&format!(
+            "{}-dev",
+            super::registry::ATHENA_SESSION_NAME_SENTINEL
+        ))
+    })
+}
+
 /// How often the ticker runs. 30s is a good balance between
 /// responsiveness and idle CPU.
 pub const TICK_INTERVAL_SECS: u64 = 30;
@@ -520,6 +543,18 @@ fn tick_once(app: &AppHandle) {
                 .copied()
                 .unwrap_or(0)
                 .max(session.last_activity_ms);
+
+            // Athena's own dev sessions spend their normal working life in a
+            // silent multi-minute `cargo check`, which the frozen rules below
+            // would (and did) read as hung. They get a much longer fuse.
+            let (stalled_ms, stalled_secs) = if is_dev_session(session.name.as_deref()) {
+                (
+                    stalled_ms * DEV_SESSION_STALL_MULTIPLIER,
+                    stalled_secs * DEV_SESSION_STALL_MULTIPLIER,
+                )
+            } else {
+                (stalled_ms, stalled_secs)
+            };
 
             // Frozen-process fast path (before the generous flat-log cutoff):
             // total PTY silence while Running means hung, not thinking — flag
@@ -1231,6 +1266,39 @@ mod tests {
     const CUTOFF: i64 = 5 * 60 * 1000;
     const FRESH: i64 = NOW - 60_000; // 1 min ago
     const OLD: i64 = NOW - 6 * 60_000; // 6 min ago
+
+    #[test]
+    fn dev_sessions_get_a_much_longer_frozen_fuse() {
+        assert!(is_dev_session(Some("athena-dev")));
+        assert!(is_dev_session(Some("athena-dev · personas")));
+        assert!(!is_dev_session(Some("athena · personas")));
+        assert!(!is_dev_session(None));
+
+        // A dev run silent for 10 minutes is a `cargo check`, not a hang: the
+        // ordinary 2-min fuse fires, the dev fuse does not.
+        let stalled_ms = STALLED_AFTER_SECS * 1000;
+        let silent_10min = NOW - 10 * 60_000;
+        assert!(
+            is_frozen_mid_run(
+                FleetSessionState::Running,
+                silent_10min,
+                silent_10min,
+                NOW,
+                stalled_ms
+            ),
+            "ordinary session at 10 min silence reads as frozen"
+        );
+        assert!(
+            !is_frozen_mid_run(
+                FleetSessionState::Running,
+                silent_10min,
+                silent_10min,
+                NOW,
+                stalled_ms * DEV_SESSION_STALL_MULTIPLIER
+            ),
+            "a dev session mid-compile must NOT be labelled frozen"
+        );
+    }
 
     #[test]
     fn growth_revives_stale_and_idle_to_running() {
