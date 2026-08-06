@@ -108,3 +108,30 @@ export function integrationPrompt(itemLabel: string, connectorName: string, serv
     'Make sure the project still builds before finishing.',
   ].join('\n');
 }
+
+/**
+ * A FOCUSED scan for one grid item — Console v2's per-capability dispatch. The
+ * whole-dimension deploy asks one session to fix observability at large; these
+ * sessions specialize: one owns logs & tracing, another metrics, so each stays
+ * on its area instead of grazing the union of all four.
+ */
+export function areaScanPrompt(areaLabel: string, detected: string | null, connectorName: string | null): string {
+  return [
+    `Run a focused audit of ${areaLabel} in this project. This session covers ONLY that area — do not drift into other observability concerns.`,
+    '',
+    detected
+      ? `The codebase currently shows: ${detected}.`
+      : 'The codebase currently shows nothing for this area.',
+    connectorName
+      ? `The operator has bound the ${connectorName} connector for it in the Personas app.`
+      : 'No connector is bound for it yet.',
+    '',
+    '1. Map what exists today for this area: SDKs, config, where signals are emitted.',
+    '2. List the gaps that keep it below production grade, ranked by value.',
+    '3. Implement the single highest-value gap now, idiomatically for this stack.',
+    '',
+    'Read every credential/DSN/key from an environment variable — never hardcode a secret.',
+    'Finish with a short summary: what exists, what you changed, what remains.',
+  ].join('\n');
+}
+

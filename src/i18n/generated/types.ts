@@ -14239,15 +14239,15 @@ export type Translations = {
       monitoring_health_ok: string;
       monitoring_health_unknown: string;
       monitoring_merged_hint: string;
-      monitoring_upgrade_none: string;
-      monitoring_view_prompt: string;
-      monitoring_hide_prompt: string;
       monitoring_rescan_incremental: string;
       monitoring_rescan_full: string;
       monitoring_run_scan: string;
       monitoring_queue_task: string;
       monitoring_deploy_now: string;
       monitoring_queue_all: string;
+      monitoring_current_level: string;
+      monitoring_area_scan_hint: string;
+      monitoring_area_scan_started: string;
     };
     doc_signing: {
       sign_heading: string;

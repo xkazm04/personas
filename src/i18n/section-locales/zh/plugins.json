@@ -1517,15 +1517,15 @@
     "monitoring_health_ok": "正常",
     "monitoring_health_unknown": "状态未知",
     "monitoring_deploy_now": "立即部署",
-    "monitoring_hide_prompt": "隐藏提示词",
     "monitoring_merged_hint": "代码与保险库指向同一个工具",
     "monitoring_queue_all": "为需要它的全部 {count} 个项目排队 →",
     "monitoring_queue_task": "将任务排队",
     "monitoring_rescan_full": "完整重新扫描",
     "monitoring_rescan_incremental": "重新扫描已更改文件",
     "monitoring_run_scan": "运行扫描",
-    "monitoring_upgrade_none": "此处目前没有可升级的内容。",
-    "monitoring_view_prompt": "查看提示词"
+    "monitoring_area_scan_hint": "派出仅专注于 {area} 的 Claude 会话",
+    "monitoring_area_scan_started": "已派发聚焦扫描",
+    "monitoring_current_level": "当前级别"
   },
   "doc_signing": {
     "sign_heading": "签署文档",

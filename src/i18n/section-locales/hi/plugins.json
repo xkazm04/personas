@@ -1517,15 +1517,15 @@
     "monitoring_health_ok": "ठीक",
     "monitoring_health_unknown": "स्थिति अज्ञात",
     "monitoring_deploy_now": "अभी डिप्लॉय करें",
-    "monitoring_hide_prompt": "प्रॉम्प्ट छिपाएँ",
     "monitoring_merged_hint": "कोडबेस और आपका वॉल्ट एक ही टूल बताते हैं",
     "monitoring_queue_all": "जिन {count} प्रोजेक्ट को यह चाहिए, सभी के लिए कतार में डालें →",
     "monitoring_queue_task": "कार्य कतार में डालें",
     "monitoring_rescan_full": "पूर्ण री-स्कैन",
     "monitoring_rescan_incremental": "बदली फ़ाइलें री-स्कैन करें",
     "monitoring_run_scan": "स्कैन चलाएँ",
-    "monitoring_upgrade_none": "यहाँ अभी सुधारने के लिए कुछ नहीं है।",
-    "monitoring_view_prompt": "प्रॉम्प्ट देखें"
+    "monitoring_area_scan_hint": "सिर्फ़ {area} पर केंद्रित Claude सत्र भेजें",
+    "monitoring_area_scan_started": "केंद्रित स्कैन भेजा गया",
+    "monitoring_current_level": "वर्तमान स्तर"
   },
   "doc_signing": {
     "sign_heading": "दस्तावेज़ पर हस्ताक्षर करें",

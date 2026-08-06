@@ -35,7 +35,7 @@ import { hasClassicContent, ImproveClassicPanel } from './ImproveClassicPanel';
 import { bindingKey, useEnvConnectors } from './envConnectors';
 import { MONITORING_DIMENSION } from './improveRows';
 import {
-  integrationPrompt, MONITORING_ENV, MONITORING_ITEMS, monitoringState,
+  areaScanPrompt, integrationPrompt, MONITORING_ENV, MONITORING_ITEMS, monitoringState,
 } from './monitoringModel';
 import type { MonitoringRow } from './monitoringTypes';
 import { MonitoringConsoleVariant } from './MonitoringConsoleVariant';
@@ -66,6 +66,7 @@ export function MonitoringModal({ slug, projectName, passport, onClose }: {
   const [lane, setLane] = useState<Lane>('capabilities');
   const [variant, setVariant] = useState<Variant>('console');
   const [deploying, setDeploying] = useState<string | null>(null);
+  const [areaScanning, setAreaScanning] = useState<string | null>(null);
 
   const classic = hasClassicContent(slug, UPGRADE_ROW, engine);
 
@@ -107,6 +108,29 @@ export function MonitoringModal({ slug, projectName, passport, onClose }: {
         toastCatch('monitoring deploy')(err);
       } finally {
         setDeploying(null);
+      }
+    })();
+  }, [engine, slug, addToast, d]);
+
+  /** v2's per-card focused scan — a Dev-runner session specialized to ONE
+   *  capability area, so it audits logs OR metrics instead of grazing all four. */
+  const onAreaScan = useCallback((row: MonitoringRow) => {
+    if (!engine) return;
+    const label = d[`monitoring_item_${row.def.labelKey}`];
+    setAreaScanning(row.def.key);
+    void (async () => {
+      try {
+        const taskId = await engine.deployNow(
+          slug,
+          `Focused scan: ${label}`,
+          areaScanPrompt(label, row.detected, row.bound?.name ?? null),
+        );
+        useImproveActivityStore.getState().start(`${slug}:${MONITORING_DIMENSION}`, taskId, 'deploy');
+        addToast(d.monitoring_area_scan_started, 'success');
+      } catch (err) {
+        toastCatch('monitoring area scan')(err);
+      } finally {
+        setAreaScanning(null);
       }
     })();
   }, [engine, slug, addToast, d]);
@@ -164,12 +188,14 @@ export function MonitoringModal({ slug, projectName, passport, onClose }: {
         ) : variant === 'console' ? (
           <MonitoringConsoleVariant {...shared} />
         ) : (
-          <MonitoringConsoleV2Variant {...shared} slug={slug} upgradeRow={UPGRADE_ROW} onDone={onClose} />
+          <MonitoringConsoleV2Variant {...shared} slug={slug} upgradeRow={UPGRADE_ROW} onDone={onClose} areaScanning={areaScanning} onAreaScan={onAreaScan} />
         )}
 
-        <div className="px-4 py-2 border-t border-primary/10 bg-secondary/10 flex-shrink-0">
-          <span className="typo-caption text-foreground/45" style={{ fontWeight: 400 }}>{d.monitoring_modal_footer}</span>
-        </div>
+        {variant !== 'v2' && (
+          <div className="px-4 py-2 border-t border-primary/10 bg-secondary/10 flex-shrink-0">
+            <span className="typo-caption text-foreground/45" style={{ fontWeight: 400 }}>{d.monitoring_modal_footer}</span>
+          </div>
+        )}
       </div>
     </BaseModal>
   );

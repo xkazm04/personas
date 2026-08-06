@@ -14233,15 +14233,15 @@
       "monitoring_health_ok": "healthy",
       "monitoring_health_unknown": "health unknown",
       "monitoring_merged_hint": "The codebase and your vault name the same tool",
-      "monitoring_upgrade_none": "Nothing to upgrade here right now.",
-      "monitoring_view_prompt": "View prompt",
-      "monitoring_hide_prompt": "Hide prompt",
       "monitoring_rescan_incremental": "Re-scan changed files",
       "monitoring_rescan_full": "Full re-scan",
       "monitoring_run_scan": "Run scan",
       "monitoring_queue_task": "Queue task",
       "monitoring_deploy_now": "Deploy now",
-      "monitoring_queue_all": "Queue for all {count} projects that need this →"
+      "monitoring_queue_all": "Queue for all {count} projects that need this →",
+      "monitoring_current_level": "Current level",
+      "monitoring_area_scan_hint": "Dispatch a Claude session focused only on {area}",
+      "monitoring_area_scan_started": "Focused scan dispatched"
     },
     "doc_signing": {
       "sign_heading": "Sign a Document",
