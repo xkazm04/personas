@@ -18,10 +18,12 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { ENV_KEYS, ENV_LABEL, type AppPassport } from '../passportModel';
 import { EnvConnectorSlot } from './EnvConnectorSlot';
 import { bindingKey, DATABASE_SERVICE_TYPES, useEnvConnectors } from './envConnectors';
+import { DATABASE_DIMENSION } from './improveRows';
 
 /** The passport row key this modal owns — also the `dimension` its bindings are
- *  stored under. */
-export const DATABASE_DIMENSION = 'persistence';
+ *  stored under. Defined in `improveRows` so pure predicate modules can read it
+ *  without importing this component. */
+export { DATABASE_DIMENSION } from './improveRows';
 
 export function DatabaseModal({ slug, projectName, passport, onClose }: {
   slug: string;
