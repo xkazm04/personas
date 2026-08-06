@@ -2330,7 +2330,7 @@ pub fn dispatch_with_sys(
                 };
                 note_read_op_result(pool, session_id, action, query, &body);
             }
-            Ok(env) if env.op == "propose_action" => {
+            Ok(mut env) if env.op == "propose_action" => {
                 if !ALLOWED_ACTIONS.contains(&env.action.as_str()) {
                     out.warnings
                         .push(format!("rejected unknown action `{}`", env.action));
@@ -2399,6 +2399,52 @@ pub fn dispatch_with_sys(
                                 .push(format!("rejected update_identity: {err}"));
                             cleaned_lines.push(line);
                             continue;
+                        }
+                    }
+                }
+                // Session-targeting fleet actions: resolve the target (Athena
+                // may hold the claude_session_id rather than the fleet id —
+                // either form resolves), normalize `session_id` to the fleet
+                // id, and stamp the session's human label into the params and
+                // the rationale — the approval card renders both, so the user
+                // sees WHICH session is being typed into / closed instead of
+                // a bare UUID.
+                if matches!(
+                    env.action.as_str(),
+                    "fleet_send_input" | "fleet_intervene" | "fleet_kill"
+                ) {
+                    let raw = env
+                        .params
+                        .get("session_id")
+                        .and_then(|v| v.as_str())
+                        .map(str::to_string);
+                    if let Some(raw) = raw {
+                        let registry = crate::commands::fleet::registry::registry();
+                        if let Some(fleet_id) = registry.resolve_session_id(&raw) {
+                            let label = registry.try_lookup_label(&fleet_id);
+                            if let Some(obj) = env.params.as_object_mut() {
+                                if fleet_id != raw {
+                                    obj.insert(
+                                        "session_id".into(),
+                                        serde_json::Value::String(fleet_id.clone()),
+                                    );
+                                }
+                                if let Some(label) = label.as_deref() {
+                                    obj.insert(
+                                        "session_label".into(),
+                                        serde_json::Value::String(label.to_string()),
+                                    );
+                                }
+                            }
+                            if let Some(label) = label {
+                                if !env.rationale.contains(&label) {
+                                    env.rationale = if env.rationale.trim().is_empty() {
+                                        format!("Session: {label}")
+                                    } else {
+                                        format!("{} — session: {label}", env.rationale.trim())
+                                    };
+                                }
+                            }
                         }
                     }
                 }

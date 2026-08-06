@@ -528,6 +528,33 @@ impl FleetRegistry {
         })
     }
 
+    /// Resolve either id a caller may hold to the registry's fleet-session id.
+    ///
+    /// The registry is keyed by our internal fleet-session id, but Athena (and
+    /// hooks, transcripts, decision-ledger rows) often carry the bound
+    /// `claude_session_id` instead — passing that to a keyed lookup fails with
+    /// "session not found" even though the session is right there. Accepts
+    /// EITHER: a direct key hit returns as-is; otherwise the sessions are
+    /// scanned for a matching `claude_session_id` (preferring a non-exited row,
+    /// since a wake can leave an exited predecessor with the same cc id).
+    /// `None` when neither form matches.
+    pub fn resolve_session_id(&self, id: &str) -> Option<String> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        if map.contains_key(id) {
+            return Some(id.to_string());
+        }
+        map.values()
+            .find(|s| {
+                !matches!(s.state, FleetSessionState::Exited)
+                    && s.claude_session_id.as_deref() == Some(id)
+            })
+            .or_else(|| {
+                map.values()
+                    .find(|s| s.claude_session_id.as_deref() == Some(id))
+            })
+            .map(|s| s.id.clone())
+    }
+
     /// Current `state_reason` without blocking — the debug log's detail column
     /// for an exit, where the reason already carries claude's own final line.
     /// See `try_lookup_label` for why this must not block.
@@ -1651,6 +1678,24 @@ mod tests {
         assert!(!reg.is_athena_owned("anon"));
         // Unknown id — the hallucinated/stale-session_id case the guard exists for.
         assert!(!reg.is_athena_owned("does-not-exist"));
+    }
+
+    #[test]
+    fn resolve_session_id_accepts_either_id_form() {
+        let reg = FleetRegistry::default();
+        reg.insert(session("fleet-1", FleetSessionState::Idle, Some("cc-1")));
+        reg.insert(session("fleet-2", FleetSessionState::Running, None));
+        // Fleet id → itself; claude_session_id → the owning fleet id.
+        assert_eq!(reg.resolve_session_id("fleet-1").as_deref(), Some("fleet-1"));
+        assert_eq!(reg.resolve_session_id("cc-1").as_deref(), Some("fleet-1"));
+        assert_eq!(reg.resolve_session_id("fleet-2").as_deref(), Some("fleet-2"));
+        // Unknown either way → None.
+        assert_eq!(reg.resolve_session_id("nope"), None);
+        // A live row wins over an exited predecessor sharing the same cc id
+        // (a wake mints a new fleet id but keeps the claude_session_id).
+        reg.insert(session("fleet-old", FleetSessionState::Exited, Some("cc-shared")));
+        reg.insert(session("fleet-new", FleetSessionState::Idle, Some("cc-shared")));
+        assert_eq!(reg.resolve_session_id("cc-shared").as_deref(), Some("fleet-new"));
     }
 
     #[test]
