@@ -57,8 +57,8 @@ describe('companionStore message queue', () => {
 
   it('enqueues and shifts FIFO with mode preserved', () => {
     const s = useCompanionStore.getState();
-    s.enqueueMessage(CONV, 'first', 'queue');
-    s.enqueueMessage(CONV, 'second', 'interrupt');
+    s.enqueueMessage(CONV, 'first', 'queue', 'nonce-first');
+    s.enqueueMessage(CONV, 'second', 'interrupt', 'nonce-second');
     expect(useCompanionStore.getState().queuedMessages).toHaveLength(2);
 
     const a = useCompanionStore.getState().shiftQueuedMessage(CONV);
@@ -72,8 +72,8 @@ describe('companionStore message queue', () => {
 
   it('removes a specific queued message by id', () => {
     const s = useCompanionStore.getState();
-    s.enqueueMessage(CONV, 'keep', 'queue');
-    s.enqueueMessage(CONV, 'drop', 'queue');
+    s.enqueueMessage(CONV, 'keep', 'queue', 'nonce-keep');
+    s.enqueueMessage(CONV, 'drop', 'queue', 'nonce-drop');
     const drop = useCompanionStore.getState().queuedMessages.find((m) => m.text === 'drop')!;
     s.removeQueuedMessage(CONV, drop.id);
     const left = useCompanionStore.getState().queuedMessages;

@@ -1,6 +1,10 @@
 // One project as a honeycomb puzzle: core cell + dimension cells snapped
-// edge-to-edge on the axial hex lattice. Round-3 LOD (band-driven):
-//   far/mid  → FOUR category hexes (runtime/delivery/agentic/product), each a
+// edge-to-edge on the axial hex lattice. LOD is band-driven:
+//   far      → ONE large hex: the live-process count, or a sleeping mark when
+//              nothing is running, with the process breakdown on its border
+//              (see FarProcessHex). At portfolio distance the question is
+//              "where is work happening", not "how is this project wired".
+//   mid      → FOUR category hexes (runtime/delivery/agentic/product), each a
 //              fullscale icon in its rolled-up status colour — 15 same-sized
 //              dots is not a shape you can read from orbit
 //   near     → the full lattice explodes back: full-hex watermark icon with the
@@ -14,6 +18,7 @@ import { memo, useRef, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { DimGlyph } from '../lib/DimGlyph';
+import { FarProcessHex } from '../lib/FarProcessHex';
 import { CATEGORY_ICON, categoryNodes, type CategoryNode } from '../lib/dimCategories';
 import { cellHint } from '../lib/dimMeta';
 import { DIM_REGISTRY } from '../lib/dimRegistry';
@@ -84,9 +89,11 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
   const leftX = Math.min(0, ...xs) - CELL;
   const rightX = Math.max(0, ...xs) + CELL;
   const haloR = Math.max(CELL * 3.1, (botY - topY) / 2 + CELL * 0.8);
-  // Zoomed-out bands collapse the body to its four category cells; the context
-  // menu's hover echo follows onto the category that owns the hovered dimension.
-  const collapsed = band === 'far' || band === 'mid';
+  // `far` is now its own body (one process hex); `mid` is the band that
+  // collapses to four category cells, with the context menu's hover echo
+  // following onto the category that owns the hovered dimension.
+  const far = band === 'far';
+  const collapsed = band === 'mid';
   const categories = collapsed ? categoryNodes(island.nodes) : [];
   const categoryOfHighlight = highlightKey ? DIM_REGISTRY[highlightKey as keyof typeof DIM_REGISTRY]?.category : undefined;
   // Demo islands carry no passport, so every cell resolves to no action and
@@ -111,7 +118,9 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
           rasterization cost during zoom. */}
       <circle r={haloR * 1.18} fill={`url(#mm-halo-${island.state})`} opacity={0.5} />
 
-      {collapsed
+      {far ? (
+        <FarProcessHex fleet={island.fleet} personas={island.personasRunning} attention={island.attention} />
+      ) : collapsed
         ? categories.map((c, k) => {
           const ax = CAT_AXIAL[k];
           if (!ax) return null;
@@ -148,9 +157,12 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
           );
         })}
 
-      {/* core cell */}
-      <polygon points={hexPoints(0, 0, CELL - 1.5)} fill={mix(ink, 26, 'var(--secondary)')} stroke={mix(ink, 70)} strokeWidth={2} strokeLinejoin="round" />
-      {(band === 'far' || band === 'mid') && (
+      {/* Core cell. Suppressed at `far`: the process hex IS the body there, and
+          a second hex sitting inside it would read as a target, not a project. */}
+      {!far && (
+        <polygon points={hexPoints(0, 0, CELL - 1.5)} fill={mix(ink, 26, 'var(--secondary)')} stroke={mix(ink, 70)} strokeWidth={2} strokeLinejoin="round" />
+      )}
+      {band === 'mid' && (
         <circle r={CELL * 0.32} fill="none" stroke={mix(ink, 85)} strokeWidth={5} />
       )}
       {(band === 'near' || band === 'close') && (
@@ -173,15 +185,21 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
         onContextMenu={(e) => onIslandMenu(island.slug, e)}
         onShipOpen={mode === 'edit' ? () => onShipOpen(island.slug) : undefined}
       />
-      {band !== 'far' && <StatColumns stats={island.stats} z={z} leftX={leftX} rightX={rightX} />}
-      <FleetBadges
-        fleet={island.fleet}
-        personas={island.personasRunning}
-        z={z}
-        yWorld={botY + 12}
-        onOpenList={(state, e) => onFleetList(island.slug, state, e)}
-        onOpenPersonas={(e) => onPersonasOpen(island.slug, e)}
-      />
+      {!far && <StatColumns stats={island.stats} z={z} leftX={leftX} rightX={rightX} />}
+      {/* Badges are the per-state fleet/persona readout — which is exactly what
+          the far hex's number and border already are. Showing both would print
+          the same fact twice, so they start at `mid`, where they become the
+          clickable way INTO each state's session list. */}
+      {!far && (
+        <FleetBadges
+          fleet={island.fleet}
+          personas={island.personasRunning}
+          z={z}
+          yWorld={botY + 12}
+          onOpenList={(state, e) => onFleetList(island.slug, state, e)}
+          onOpenPersonas={(e) => onPersonasOpen(island.slug, e)}
+        />
+      )}
     </g>
   );
 });

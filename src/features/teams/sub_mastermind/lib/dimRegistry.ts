@@ -123,8 +123,12 @@ export type DimKey = typeof DIM_ORDER[number];
 // ── The registry. Keyed by DimKey; entries must appear in DIM_ORDER order. ────
 export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
   db: {
+    // `persistence`, not `migrations`: the cell is LABELLED Database and derives
+    // from `stack.persistence`, so pointing its click at the migrations row sent
+    // it to a surface about something else — and, once Database grew a real
+    // modal, meant the canvas silently kept opening the generic deploy popover.
     label: 'Database', category: 'runtime', icon: Database,
-    rowKey: 'migrations', action: 'deploy', payloadKind: 'icon',
+    rowKey: 'persistence', action: 'deploy', payloadKind: 'icon',
     derive: (p) => {
       const db = p.stack.persistence.filter((x) => x.kind !== 'none');
       return {
@@ -135,8 +139,11 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     },
   },
   monitoring: {
+    // Same correction as `db`: the wall's Monitoring row key is `monitoring`.
+    // `observability` is a different (ordinal) row, and routing here sent the
+    // canvas to the deploy popover instead of the Monitoring modal.
     label: 'Monitoring', category: 'runtime', icon: Activity,
-    rowKey: 'observability', action: 'deploy', payloadKind: 'icon',
+    rowKey: 'monitoring', action: 'deploy', payloadKind: 'icon',
     derive: (p, { monitorErrors }) => {
       const monTools = [p.stack.monitoring.errorTracking, p.stack.monitoring.logs, p.stack.monitoring.metrics, p.stack.monitoring.tracing]
         .filter((x): x is string => Boolean(x));

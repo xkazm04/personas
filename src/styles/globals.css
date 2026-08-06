@@ -5422,3 +5422,49 @@ html[data-motion="reduce"] .companion-typing-dot {
 .fleet-typescale .typo-caption     { font-size: 0.875rem; }  /* 12 → 14px */
 .fleet-typescale .typo-label       { font-size: 0.875rem; }  /* 12 → 14px */
 .fleet-typescale .typo-card-label  { font-size: 1rem; }      /* 14 → 16px */
+
+/* ---------------------------------------------------------------------------
+   Mastermind canvas chrome (`.mm-chrome`)
+   ---------------------------------------------------------------------------
+   The canvas paints its own sea from `--background` + a `--secondary` rim (see
+   the `mm-sea` radial gradient in CanvasShell). Every floating control on top of
+   it used to be `bg-secondary/70`, which is the SAME token the sea's outer stop
+   is mixed from — so on every dark theme the chrome floated *lighter* than the
+   map it sits on, reading as content rather than as controls, and the panel
+   edges dissolved into the sea's rim.
+
+   `.mm-chrome` inverts that relationship the way the rest of the app's chrome
+   already works: on dark themes the panel is a step DARKER than the darkest
+   point of the sea, so controls recede and the islands stay the brightest thing
+   on screen. On light themes the same rule points the other way (chrome comes
+   forward as near-white over the soft gray canvas), which is what the light
+   palette's own tonal ladder does — hence the `[data-theme^="light"]` override
+   rather than one token that tries to serve both.
+
+   Declared in `@layer components` on purpose: callers still layer plain
+   Tailwind utilities on top (`hover:bg-primary/12`, `border-accent/45`), and
+   utilities outrank components in Tailwind 4's layer order. Unlayered rules
+   would beat them and silently kill every hover state on the chrome.
+--------------------------------------------------------------------------- */
+@layer components {
+  .mm-chrome {
+    --mm-chrome-bg: color-mix(in srgb, #000 46%, var(--background));
+    --mm-chrome-border: color-mix(in srgb, var(--foreground) 13%, transparent);
+    background-color: color-mix(in srgb, var(--mm-chrome-bg) 92%, transparent);
+    border: 1px solid var(--mm-chrome-border);
+    box-shadow: var(--shadow-elevation-3);
+  }
+
+  /* Hairline divider inside a chrome cluster — reads against the panel, not
+     against the sea, so it has to track the panel's own border tone. */
+  .mm-chrome-rule {
+    background-color: var(--mm-chrome-border);
+  }
+
+  [data-theme^="light"] .mm-chrome {
+    --mm-chrome-bg: color-mix(in srgb, #fff 86%, var(--secondary));
+    --mm-chrome-border: color-mix(in srgb, var(--foreground) 15%, transparent);
+    background-color: color-mix(in srgb, var(--mm-chrome-bg) 95%, transparent);
+    box-shadow: var(--shadow-elevation-2);
+  }
+}

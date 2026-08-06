@@ -69,7 +69,9 @@ describe('useCanvasCamera', () => {
   it('fit centres the given bounds in the viewport', () => {
     const { result } = renderHook(() => useCanvasCamera(makeSvgRef()));
     const bounds = { minX: -400, minY: -300, maxX: 400, maxY: 300 };
-    act(() => result.current.fit(bounds));
+    // fit() returns a settle promise; discard it here — returning it from the
+    // act() callback would flip act into (unawaited) async mode.
+    act(() => { void result.current.fit(bounds); });
     const { cam } = result.current;
     // World centre of the bounds should land at the viewport centre.
     const centreX = (bounds.minX + bounds.maxX) / 2;
@@ -81,10 +83,10 @@ describe('useCanvasCamera', () => {
   it('fit clamps zoom into [0.12, 0.9]', () => {
     const { result } = renderHook(() => useCanvasCamera(makeSvgRef()));
     // Tiny bounds would zoom way in → clamped to the 0.9 ceiling.
-    act(() => result.current.fit({ minX: 0, minY: 0, maxX: 1, maxY: 1 }));
+    act(() => { void result.current.fit({ minX: 0, minY: 0, maxX: 1, maxY: 1 }); });
     expect(result.current.cam.z).toBeCloseTo(0.9, 6);
     // Huge bounds would zoom way out → clamped to the 0.12 floor.
-    act(() => result.current.fit({ minX: -100000, minY: -100000, maxX: 100000, maxY: 100000 }));
+    act(() => { void result.current.fit({ minX: -100000, minY: -100000, maxX: 100000, maxY: 100000 }); });
     expect(result.current.cam.z).toBeCloseTo(0.12, 6);
   });
 });

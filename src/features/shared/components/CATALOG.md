@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**127 reusable components** live under `src/features/shared/components/`.
+**128 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -106,6 +106,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 |---|---|
 | `AccessibleToggle` | Accessible on/off switch. Use instead of a raw checkbox styled as a toggle. |
 | `CharBudget` | _(add a `@catalog` tag)_ |
+| `ChatInputBar` | Universal pill-shaped chat input row — text field + optional mic + |
 | `ColorPicker` | Color selection control. |
 | `ColumnDropdownFilter` | Filter options — first option should represent "no filter" (e. |
 | `DesignInput` | _(add a `@catalog` tag)_ |
@@ -211,4 +212,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_127 components, 44 without a `@catalog` description._
+_128 components, 44 without a `@catalog` description._

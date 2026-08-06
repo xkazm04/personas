@@ -52,6 +52,15 @@ pub(crate) const AUTOAPPROVE_ALLOWLIST: &[&str] = &[
     // transcript, so a hallucinated target revives nothing.
     "fleet_wake",
     "fleet_resume",
+    // Autonomous fleet hygiene: close a FINISHED/idle session Athena spawned
+    // herself. Without this, every `fleet_kill` she proposes parks as a consult
+    // and done sessions pile up burning resources. Guarded HARD in
+    // `auto_resolve_if_allowed`: auto-fire requires `is_athena_owned` (the
+    // spawn-time name sentinel — never a user's own terminal) AND the session
+    // resting in `Finished`/`Idle` — a working (Running/Spawning) or
+    // user-attention (AwaitingInput) session is never auto-killed. Anything
+    // failing the guard stays a pending approval card for a deliberate click.
+    "fleet_kill",
     // WP2 (2026-08-04) — CONTAINMENT CHANGE, operator's explicit call, risk
     // accepted. `fleet_spawn` and `fleet_dispatch` START NEW TERMINALS. Stated
     // plainly: with the boldness dial on `Bold` (the DEFAULT, and full-auto
@@ -210,6 +219,55 @@ pub async fn auto_resolve_if_allowed(
                 return Ok(true);
             }
         }
+    } else if approval.action.as_str() == "fleet_kill" {
+        // Autonomous close-out of a finished session. Two-part gate:
+        // (1) the same boldness × class × confidence bar as the other fleet
+        //     actions (a bare `fleet_kill` carries no confidence, so under
+        //     Cautious/Balanced it always defers to a consult; Bold fires);
+        // (2) a HARD structural guard the dial can't relax — the target must
+        //     resolve (either id form), be Athena-owned (spawn-time name
+        //     sentinel), and be resting in `Finished`/`Idle`. Never auto-kill
+        //     a working session or anything the user spawned themselves.
+        use crate::commands::fleet::types::FleetSessionState;
+        let boldness = crate::commands::companion::chat::fleet_boldness(&state.db);
+        if !fleet_action_auto_fires(&approval.params_json, boldness) {
+            record_fleet_decision(
+                &state.db,
+                &approval.action,
+                &approval.params_json,
+                "deferred",
+                Some("below_confidence_bar"),
+            );
+            return Ok(false);
+        }
+        let registry = crate::commands::fleet::registry::registry();
+        let resolved = serde_json::from_str::<serde_json::Value>(&approval.params_json)
+            .ok()
+            .as_ref()
+            .and_then(|v| v.get("session_id"))
+            .and_then(|v| v.as_str())
+            .and_then(|sid| registry.resolve_session_id(sid));
+        let safe_to_close = resolved.as_deref().is_some_and(|fid| {
+            registry.is_athena_owned(fid)
+                && matches!(
+                    registry.session_state(fid),
+                    Some(FleetSessionState::Finished | FleetSessionState::Idle)
+                )
+        });
+        if !safe_to_close {
+            tracing::info!(
+                approval_id = %approval.id,
+                "autonomous autoapprove deferred: fleet_kill target is not an Athena-owned Finished/Idle session — left pending for a user click"
+            );
+            record_fleet_decision(
+                &state.db,
+                &approval.action,
+                &approval.params_json,
+                "deferred",
+                Some("kill_target_not_athena_owned_or_not_done"),
+            );
+            return Ok(false);
+        }
     } else if matches!(
         approval.action.as_str(),
         "fleet_wake" | "fleet_resume" | "fleet_spawn" | "fleet_dispatch"
@@ -263,6 +321,7 @@ pub async fn auto_resolve_if_allowed(
         "schedule_proactive" => execute_schedule_proactive(&state, &params),
         "fleet_send_input" => execute_fleet_send_input(app, &params),
         "fleet_intervene" => execute_fleet_intervene(app, &params),
+        "fleet_kill" => execute_fleet_kill(&params),
         "fleet_wake" => execute_fleet_wake(app, &params).await,
         "fleet_resume" => execute_fleet_resume(app, &params).await,
         // WP2 — see the containment note on AUTOAPPROVE_ALLOWLIST. Both

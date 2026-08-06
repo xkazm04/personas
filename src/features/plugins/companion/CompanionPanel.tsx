@@ -18,6 +18,7 @@ import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { DEFAULT_CONVERSATION_ID, useCompanionStore } from './companionStore';
+import { createSendNonce, hasAcceptedNonce, recordAcceptedNonce } from './sendNonceLedger';
 import { DailyGoalsBar } from './DailyGoalsBar';
 import { AttentionBar } from './attention/AttentionBar';
 import { isCountableNudge, nudgeSeverity } from './attention/attentionKinds';
@@ -91,6 +92,7 @@ import { FleetBoldnessDial } from './FleetBoldnessDial';
 import { DevOpLedger } from './DevOpLedger';
 import { BrainViewer } from './BrainViewer';
 import { CompanionToolbar } from './CompanionToolbar';
+import { FleetStatsSidePanel } from './fleet/FleetStatsSidePanel';
 import { ConnectorCallCard } from './ConnectorCallCard';
 import { RecallStrip } from './RecallStrip';
 import { ActivityTray } from './ActivityTray';
@@ -374,7 +376,7 @@ export default function CompanionPanel() {
           style={morph.style}
           className={`fixed bottom-12 left-4 ${fleetGridOpen ? 'z-[220]' : 'z-[60]'} ${
             panelCompact ? 'w-[350px]' : 'w-[760px]'
-          } h-[900px] max-h-[calc(100vh-5rem)] flex flex-col rounded-card bg-background/95 backdrop-blur-md border border-foreground/10 shadow-elevation-4 overflow-hidden transition-[width] duration-200 ease-out ${
+          } h-[880px] max-h-[calc(100vh-5rem)] flex flex-col rounded-card bg-background/95 backdrop-blur-md border border-foreground/10 shadow-elevation-4 overflow-hidden transition-[width] duration-200 ease-out ${
             autonomousMode ? 'companion-autonomous' : ''
           }`}
           role="region"
@@ -1579,13 +1581,24 @@ function Body(props: BodyProps) {
   );
 
   const send = useCallback(
-    async (text: string) => {
+    async (text: string, nonce?: string) => {
       const trimmed = text.trim();
       if (!trimmed) return;
       // Re-entrancy guard: a turn is already starting/running. Without this,
       // two rapid sends both pass sendOrQueue's stale-closure gate and call
       // send() concurrently, producing duplicate turns. Cleared in finally.
       if (sendingRef.current) return;
+      // Idempotency guard: dedupe on the client-generated nonce, NOT on
+      // message text, and check a ledger that's persisted to localStorage —
+      // unlike sendingRef this survives a restart. A nonce we've already
+      // accepted for dispatch (this session or, if replayed after a
+      // restart, a prior one) is dropped here rather than fired again. A
+      // caller with no nonce (internal call sites: retry, quick replies,
+      // daily brief, queue drain of legacy entries) mints one on the spot —
+      // there's nothing upstream that could replay those after a restart.
+      const sendNonce = nonce ?? createSendNonce();
+      if (hasAcceptedNonce(sendNonce)) return;
+      recordAcceptedNonce(sendNonce);
       sendingRef.current = true;
       // Pin the turn to the conversation focused at send time — the user
       // can switch threads while the turn runs, and every lifecycle write
@@ -1736,7 +1749,7 @@ function Body(props: BodyProps) {
   // either interrupts the in-flight turn (redirect / "stop") or queues
   // behind it (additive / ambiguous). When idle it sends directly.
   const sendOrQueue = useCallback(
-    (text: string) => {
+    (text: string, nonce: string) => {
       const trimmed = text.trim();
       if (!trimmed) return;
       // Gate on the live store value (+ the in-flight ref), not the render
@@ -1745,13 +1758,15 @@ function Body(props: BodyProps) {
       // branch. The flat mirror IS the focused thread's streaming state.
       const s = useCompanionStore.getState();
       if (!s.streaming && !sendingRef.current) {
-        void send(trimmed);
+        void send(trimmed, nonce);
         return;
       }
       const mode = classifyMidTurnIntent(trimmed);
       // Queue on the focused thread — the drain effect shifts from this
-      // same thread's queue when ITS turn completes.
-      s.enqueueMessage(s.activeConversationId, trimmed, mode);
+      // same thread's queue when ITS turn completes. The nonce rides along
+      // so the eventual drained send dedupes on the same key this intent
+      // was minted with.
+      s.enqueueMessage(s.activeConversationId, trimmed, mode, nonce);
       // A redirect stops the current turn now; the drain effect fires the
       // queued message the instant `streaming` flips false.
       if (mode === 'interrupt') handleInterrupt();
@@ -1776,7 +1791,7 @@ function Body(props: BodyProps) {
     prevActiveForQueueRef.current = activeConversationId;
     if (was && !streaming && wasConversation === activeConversationId) {
       const next = useCompanionStore.getState().shiftQueuedMessage(activeConversationId);
-      if (next) void send(next.text);
+      if (next) void send(next.text, next.nonce);
     }
   }, [streaming, activeConversationId, send]);
 
@@ -1886,7 +1901,12 @@ function Body(props: BodyProps) {
     <div className="flex flex-row flex-1 min-h-0">
       <div className="relative flex flex-col flex-1 min-w-0">
         <div className="relative flex-1 min-h-0 flex flex-col">
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5 space-y-3 scrollbar-thin companion-scroll">
+        <div
+          ref={scrollRef}
+          className={`flex-1 overflow-y-auto scrollbar-thin companion-scroll ${
+            compact ? 'px-2.5 py-2.5 space-y-1.5' : 'px-5 py-5 space-y-3'
+          }`}
+        >
           {/* Earlier-messages page in flight. Sits above the transcript so
               it reads as "there is more up here", and carries no label —
               the position is the whole message. */}
@@ -2044,7 +2064,7 @@ function Body(props: BodyProps) {
               const narration =
                 m.role === 'assistant' ? narrationByEpisodeId[m.id] : undefined;
               return (
-                <div key={m.id} className="space-y-1 animate-fade-slide-in">
+                <div key={m.id} className={`animate-fade-slide-in ${compact ? 'space-y-0.5' : 'space-y-1'}`}>
                   {daySep && (
                     <div
                       className="flex items-center gap-2 my-1"
@@ -2070,6 +2090,7 @@ function Body(props: BodyProps) {
                     createdAt={m.createdAt}
                     groupStart={groupStart}
                     groupEnd={groupEnd}
+                    compact={compact}
                   >
                     {m.content}
                   </Bubble>
@@ -2143,7 +2164,7 @@ function Body(props: BodyProps) {
                     onOpenInBrain={handleOpenInBrain}
                   />
                 )}
-                <div className="space-y-1.5">
+                <div className={compact ? 'space-y-1' : 'space-y-1.5'}>
                   {/*
                     We intentionally do NOT render the live token stream
                     here — the token-by-token prose reflowed constantly and
@@ -2156,7 +2177,7 @@ function Body(props: BodyProps) {
                     replaces this bubble in one piece when the turn finishes.
                     See docs/features/companion/conversation-orchestration.md.
                   */}
-                  <Bubble role="assistant" streaming index={messages.length}>
+                  <Bubble role="assistant" streaming index={messages.length} compact={compact}>
                     {/* Athena's own progress beat (Variant B) wins over the
                         derived phase; fall back to phase, then "Thinking…".
                         Animated dots signal "in progress" alongside the label. */}
@@ -2178,7 +2199,9 @@ function Body(props: BodyProps) {
                     <button
                       type="button"
                       onClick={handleInterrupt}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive bg-foreground/10 hover:bg-foreground/15 text-foreground/85 typo-caption font-medium shadow-elevation-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30"
+                      className={`inline-flex items-center rounded-interactive bg-foreground/10 hover:bg-foreground/15 text-foreground/85 typo-caption font-medium shadow-elevation-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 ${
+                        compact ? 'gap-1 px-2 py-0.5' : 'gap-1.5 px-2.5 py-1'
+                      }`}
                       aria-label={t.plugins.companion.stop_turn}
                       title={t.plugins.companion.stop_turn}
                       data-testid="companion-stop-turn"
@@ -2279,7 +2302,7 @@ function Body(props: BodyProps) {
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  <InlineChatCard card={card} />
+                  <InlineChatCard card={card} index={idx} />
                 </motion.div>
               ))}
             </AnimatePresence>
@@ -2348,6 +2371,7 @@ function Body(props: BodyProps) {
           // while streaming — mid-turn input is routed through sendOrQueue
           // (interrupt vs queue) instead of being blocked.
           disabled={!initialized || brainView.open}
+          compact={compact}
           onSend={sendOrQueue}
           onAnalyzeFleet={() => {
             // Deterministic trigger — bypasses the chat turn so Athena can't
@@ -2373,6 +2397,13 @@ function Body(props: BodyProps) {
           />
         )}
       </div>
+      {/* Inner side-panel slot — sits to the LEFT of the outer CompanionToolbar
+          edge rail, right of the chat column. Hidden entirely in compact mode:
+          compact already exists to free up screen real estate, so a second
+          panel competing for that same ~350px would squeeze the chat below a
+          usable width. At full width the chat column still gets the lion's
+          share (760px − 44px toolbar − up to 176px slot ≈ 540px). */}
+      {!compact && <FleetStatsSidePanel />}
       <CompanionToolbar
         onOpenBrain={() =>
           setBrainView({

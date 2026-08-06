@@ -1689,6 +1689,24 @@ export interface CompanionComposeCanvasPanelEvent {
   spec: string;
 }
 
+/**
+ * Tauri event for `canvas_control` auto-fire (WP4 — Athena steering the
+ * Mastermind canvas). The backend validated the action against the grammar and
+ * resolved any slug against the published scene; the listener routes to
+ * Teams → Mastermind, dispatches into `canvasActionStore`, and reports the
+ * settled result back via `companion_canvas_control_result` so it lands in the
+ * session as a next-turn system note.
+ */
+export const COMPANION_CANVAS_CONTROL_EVENT = 'companion://canvas-control';
+
+/** Payload of {@link COMPANION_CANVAS_CONTROL_EVENT}. */
+export interface CompanionCanvasControlEvent {
+  /** Companion session the op came from — echoed back with the result. */
+  sessionId: string;
+  /** Serialized, dispatcher-validated `CanvasActionRequest` JSON. */
+  action: string;
+}
+
 // ── Inline chat-cards (show_* ops) ───────────────────────────────────
 
 /**

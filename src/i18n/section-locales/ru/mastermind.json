@@ -134,5 +134,17 @@
   "athena_panel_reset_body": "Удаляет панель, которую Athena составила для {name}. Панели других проектов остаются нетронутыми, и она может составить новую в любое время.",
   "athena_panel_reset_title": "Сбросить эту панель?",
   "athena_panel_unreadable": "Не удалось отобразить эту панель.",
-  "athena_panel_unreadable_hint": "Athena составила её в формате, который эта версия не понимает. Сбросьте панель и попросите новую."
+  "athena_panel_unreadable_hint": "Athena составила её в формате, который эта версия не понимает. Сбросьте панель и попросите новую.",
+  "far_active_one": "{count} процесс запущен",
+  "far_active_other": "{count} процессов запущено",
+  "far_idle": "Здесь ничего не выполняется",
+  "far_idle_hint": "Над этим проектом не работает ни одна сессия Fleet или персона",
+  "far_personas_one": "{count} персона",
+  "far_personas_other": "{count} персон",
+  "_comment_far_active_one": "Far-zoom island tooltip, headline when exactly 1 live process (Fleet session or persona) is running behind the project.",
+  "_comment_far_active_other": "Far-zoom island tooltip, headline for 2+ live processes.",
+  "_comment_far_idle": "Far-zoom island tooltip, headline: nothing is running on this project right now. Keep short — it is the label on a sleeping-moon mark.",
+  "_comment_far_idle_hint": "Far-zoom island tooltip, second clause explaining what 'nothing running' counted. 'Fleet' is the product's CLI-session feature — keep it capitalised and untranslated.",
+  "_comment_far_personas_one": "Far-zoom island tooltip, breakdown item for the persona lane (singular).",
+  "_comment_far_personas_other": "Far-zoom island tooltip, breakdown item for the persona lane (plural)."
 }

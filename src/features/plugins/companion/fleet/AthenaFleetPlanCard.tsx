@@ -1,11 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Terminal } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { silentCatch } from '@/lib/silentCatch';
 import { companionDispatchFleetPlan, type FleetPlanRow } from '@/api/companion';
+import { useSystemStore } from '@/stores/systemStore';
 import { AthenaFleetPlanRow } from './AthenaFleetPlanRow';
+import { AthenaFleetPlanResult } from './AthenaFleetPlanResult';
+import { useCompanionStore } from '../companionStore';
 
 /** Parse the `fleet_plan` chat-card config the dispatcher validated. */
 export function parsePlanRows(raw: unknown): FleetPlanRow[] {
@@ -32,9 +36,15 @@ export function parsePlanRows(raw: unknown): FleetPlanRow[] {
 export function AthenaFleetPlanCard({
   config,
   title,
+  cardIndex,
 }: {
   config?: Record<string, unknown>;
   title?: string;
+  /** This card's position in the shared `chatCards` store array. Required to
+   *  persist the post-confirm outcome back into the store — without it the
+   *  outcome lives only in this component's local state and is lost the
+   *  moment the chat panel (and this component with it) unmounts. */
+  cardIndex?: number;
 }) {
   const { t, tx } = useTranslation();
   const c = t.plugins.companion;
@@ -42,35 +52,55 @@ export function AthenaFleetPlanCard({
   const [rows, setRows] = useState<FleetPlanRow[]>(() => parsePlanRows(config?.rows));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<string | null>(null);
+  // Restore a prior dispatch outcome from the persisted card config, so a
+  // panel close/reopen (which remounts this component) reflects "already
+  // dispatched" instead of reverting to the pre-confirm editable plan.
+  const [result, setResult] = useState<string | null>(() =>
+    typeof config?.resultMessage === 'string' ? config.resultMessage : null,
+  );
   const [dismissed, setDismissed] = useState(false);
+  const [dispatchedRows, setDispatchedRows] = useState<FleetPlanRow[]>(() =>
+    config?.dispatched === true ? parsePlanRows(config.dispatchedRows) : [],
+  );
+
+  const fleetRefresh = useSystemStore((s) => s.fleetRefresh);
+
+  // Whenever this card is showing a dispatched outcome (freshly confirmed, or
+  // restored from the persisted config after a close/reopen), pull a fresh
+  // Fleet snapshot so AthenaFleetPlanResult's "still running" count is live
+  // rather than whatever the store happened to hold last (possibly empty, if
+  // the Fleet grid was never opened this app session).
+  useEffect(() => {
+    if (dispatchedRows.length > 0) {
+      fleetRefresh().catch(silentCatch('athena_fleet_plan_card_refresh'));
+    }
+  }, [dispatchedRows, fleetRefresh]);
 
   if (dismissed) return null;
 
   if (result !== null) {
-    return (
-      <div
-        className="rounded-card border border-emerald-500/30 bg-emerald-500/[0.06] p-3 typo-caption text-foreground"
-        data-testid="athena-plan-card"
-      >
-        {result}
-      </div>
-    );
+    return <AthenaFleetPlanResult result={result} dispatchedRows={dispatchedRows} />;
   }
 
   const confirm = async () => {
     setBusy(true);
     setError(null);
     try {
-      const message = await companionDispatchFleetPlan(
-        intent,
-        rows.map((r) => ({
-          cwd: r.cwd,
-          objective: r.objective.trim(),
-          skill: r.skill?.trim() ? r.skill.trim() : null,
-        })),
-      );
+      const confirmedRows = rows.map((r) => ({
+        cwd: r.cwd,
+        objective: r.objective.trim(),
+        skill: r.skill?.trim() ? r.skill.trim() : null,
+      }));
+      const message = await companionDispatchFleetPlan(intent, confirmedRows);
       setResult(message);
+      setDispatchedRows(confirmedRows);
+      if (cardIndex !== undefined) {
+        useCompanionStore.getState().patchChatCardConfig(cardIndex, {
+          dispatched: true,
+          resultMessage: message,
+          dispatchedRows: confirmedRows,
+        });
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {

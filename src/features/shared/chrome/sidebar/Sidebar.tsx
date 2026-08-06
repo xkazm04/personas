@@ -196,10 +196,16 @@ export default function Sidebar() {
             tabIndex={IS_MOBILE ? -1 : undefined}
             role={IS_MOBILE ? 'dialog' : undefined}
             aria-label={IS_MOBILE ? 'Navigation drawer' : undefined}
+            /* Geometry hook for surfaces that TAKE OVER this slot rather than
+               opening yet another floating panel beside it (first user: the
+               Mastermind canvas project list). They measure this element and
+               dock over it, so the takeover survives sidebar collapse, tier
+               width changes and the mobile drawer with no hardcoded offsets. */
+            data-sidebar-l2=""
             className={
             IS_MOBILE
               ? 'fixed left-[52px] top-0 bottom-0 z-40 w-[calc(100vw-64px)] max-w-[240px] bg-secondary/95 backdrop-blur-sm border-r border-primary/15 flex flex-col overflow-hidden shadow-elevation-4 focus:outline-none'
-              : 'w-[240px] bg-secondary/30 border-r border-primary/15 flex flex-col overflow-hidden'
+              : 'relative w-[240px] bg-secondary/30 border-r border-primary/15 flex flex-col overflow-hidden'
           }>
             <div className="px-4 py-3 border-b border-primary/10 bg-primary/5">
               <h2 className="typo-label text-foreground/90">

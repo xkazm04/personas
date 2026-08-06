@@ -17,7 +17,7 @@ const MODES: Array<{ id: CanvasMode; icon: typeof Move; key: string }> = [
 const modeLabel = (t: Translations, id: CanvasMode) =>
   ({ edit: t.mastermind.mode_edit, group: t.mastermind.mode_group, connect: t.mastermind.mode_connect, note: t.mastermind.mode_note })[id];
 
-// One-line orientation per mode — what the mouse does right now.
+// One-line orientation per mode — what the mouse does in it.
 const modeHint = (t: Translations, id: CanvasMode) =>
   ({ edit: t.mastermind.hint_edit, group: t.mastermind.hint_group, connect: t.mastermind.hint_connect, note: t.mastermind.hint_note })[id];
 
@@ -25,13 +25,18 @@ export function CanvasToolbar({ mode, onModeChange }: { mode: CanvasMode; onMode
   const { t } = useTranslation();
   return (
     <div
-      className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 inline-flex flex-wrap justify-center items-center gap-1 p-1 max-w-[calc(100vw-6.5rem)] rounded-interactive bg-secondary/70 border border-primary/12 shadow-elevation-2 backdrop-blur-sm"
+      className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 inline-flex items-center gap-1 p-1 max-w-[calc(100vw-6.5rem)] rounded-interactive mm-chrome surface-blur-tooltip"
       role="group"
       aria-label={t.mastermind.toolbar_label}
     >
       {MODES.map(({ id, icon: Icon, key }) => {
         const active = mode === id;
         const label = modeLabel(t, id);
+        // The hint used to occupy a second row of the toolbar, which is what
+        // pushed the cluster to two lines on narrow canvases. It now rides on
+        // EVERY mode's own tooltip rather than only describing the active one:
+        // the orientation is available before you commit to a mode, and the
+        // toolbar is a single row at every width.
         return (
           <button
             key={id}
@@ -39,9 +44,9 @@ export function CanvasToolbar({ mode, onModeChange }: { mode: CanvasMode; onMode
             data-testid={`mm-mode-${id}`}
             onClick={() => onModeChange(id)}
             aria-pressed={active}
-            title={`${label} (${key})`}
+            title={`${label} (${key}) — ${modeHint(t, id)}`}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption font-medium transition-colors focus-ring ${
-              active ? 'bg-primary/15 text-foreground' : 'text-foreground/70 hover:bg-primary/5 hover:text-foreground'
+              active ? 'bg-primary/20 text-foreground' : 'text-foreground/65 hover:bg-primary/10 hover:text-foreground'
             }`}
           >
             <Icon className="w-3.5 h-3.5" aria-hidden />
@@ -49,15 +54,6 @@ export function CanvasToolbar({ mode, onModeChange }: { mode: CanvasMode; onMode
           </button>
         );
       })}
-      {/* The hint is the only thing on screen that says what the mouse does in
-          the current (sticky, global) mode — so it survives every width. It
-          used to be `hidden sm:inline`, which dropped the one affordance that
-          recovers a lost user exactly when space got tight. Now it wraps onto
-          its own row instead: full-width and centred when the modes no longer
-          fit beside it, inline with a divider once they do. */}
-      <span className="basis-full order-last text-center pt-1 sm:basis-auto sm:order-none sm:text-left sm:pt-0 sm:border-l sm:border-primary/15 sm:pl-2.5 sm:ml-1 pr-1.5 min-w-0 truncate typo-caption text-foreground/55">
-        {modeHint(t, mode)}
-      </span>
     </div>
   );
 }

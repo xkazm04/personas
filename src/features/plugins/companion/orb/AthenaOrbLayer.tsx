@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ROUTE_DECISION_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { useSystemStore } from '@/stores/systemStore';
@@ -6,6 +6,7 @@ import { useCompanionStore } from '../companionStore';
 import { explainDecision, runDecisionOption } from '../decision/resolveDecision';
 import { useHoldToTalk } from '../useHoldToTalk';
 import { AthenaOrb } from './AthenaOrb';
+import { OrbQuickInputBar } from './OrbQuickInputBar';
 
 /** How long the `;` leader stays armed before a digit must follow (Slice 5). */
 const LEADER_WINDOW_MS = 2000;
@@ -46,6 +47,10 @@ export default function AthenaOrbLayer() {
   const state = useCompanionStore((s) => s.state);
   const setState = useCompanionStore((s) => s.setState);
   const talk = useHoldToTalk();
+  // Compact quick-message bar toggle (see OrbQuickInputBar). Local state, not
+  // persisted — declared before the `orbEnabled`/`state` early return below so
+  // hook order stays stable across minimized ⇄ open flips.
+  const [quickInputOpen, setQuickInputOpen] = useState(false);
 
   // Slice 5 — `;`-leader numeric decision syntax. While a decision is pending,
   // pressing `;` (outside a typing target) arms a short window; the next digit
@@ -170,7 +175,12 @@ export default function AthenaOrbLayer() {
       aria-live="polite"
       data-testid="companion-orb-layer"
     >
-      <AthenaOrb talk={talk} />
+      <AthenaOrb
+        talk={talk}
+        quickInputOpen={quickInputOpen}
+        onToggleQuickInput={() => setQuickInputOpen((v) => !v)}
+      />
+      {quickInputOpen && <OrbQuickInputBar onClose={() => setQuickInputOpen(false)} />}
     </div>,
     document.body,
   );

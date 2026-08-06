@@ -1,0 +1,132 @@
+import type { ReactNode } from 'react';
+import { Mic, MicOff, Send } from 'lucide-react';
+import Button, { type ButtonSize } from '@/features/shared/components/buttons/Button';
+
+export interface ChatInputBarVoice {
+  /** True when the browser exposes a speech-recognition implementation — hides the mic button otherwise. */
+  supported: boolean;
+  listening: boolean;
+  onToggle: () => void;
+  startLabel: string;
+  listeningLabel: string;
+}
+
+export interface ChatInputBarProps {
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+  placeholder?: string;
+  /** Disables the text input AND the send button (mirrors a turn already in flight). */
+  disabled?: boolean;
+  /** Shows the send button's loading spinner. */
+  busy?: boolean;
+  /** `md` (default) is Studio's full-size pill; `sm` is a slimmer variant for compact surfaces like the companion Orb. */
+  size?: 'sm' | 'md';
+  /** Passed straight through to the pill container's inline `boxShadow` (e.g. a state-driven glow). */
+  boxShadow?: string;
+  /** Rendered before the input — e.g. an expand/collapse toggle. */
+  leading?: ReactNode;
+  /** Rendered between the input (or mic) and the send button — e.g. extra tool buttons. */
+  trailing?: ReactNode;
+  /** Omit for a text-only bar; provide to add a mic toggle (text+voice). */
+  voice?: ChatInputBarVoice;
+  /** Accessible name for the send button. Omit to rely on `sendLabel`'s visible text instead. */
+  sendAriaLabel?: string;
+  /** Visible send-button label (e.g. "Send"). Hidden automatically in the `sm` size, which renders an icon-only button. */
+  sendLabel?: ReactNode;
+  sendTestId?: string;
+  inputTestId?: string;
+  autoFocus?: boolean;
+  className?: string;
+}
+
+/**
+ * @catalog Universal pill-shaped chat input row — text field + optional mic +
+ * send button, parametric for size/placement and text-only vs text+voice.
+ * Extracted from Studio's build-chat input; Studio wraps it unchanged (leading/
+ * trailing slots carry its extra tool buttons), and the companion Orb's
+ * quick-input bar uses the slim `size="sm"` + `voice` variant.
+ */
+export function ChatInputBar({
+  value,
+  onChange,
+  onSubmit,
+  placeholder,
+  disabled,
+  busy,
+  size = 'md',
+  boxShadow,
+  leading,
+  trailing,
+  voice,
+  sendAriaLabel,
+  sendLabel,
+  sendTestId,
+  inputTestId,
+  autoFocus,
+  className = '',
+}: ChatInputBarProps) {
+  const compact = size === 'sm';
+  const sendButtonSize: ButtonSize = compact ? 'icon-sm' : 'sm';
+
+  return (
+    <div
+      className={`pointer-events-auto flex items-center rounded-full border border-border bg-background/90 shadow-elevation-3 backdrop-blur transition-shadow duration-300 ${
+        compact ? 'gap-1.5 py-1 pl-1.5 pr-1' : 'gap-2 py-1.5 pl-2 pr-1.5'
+      } ${className}`}
+      style={boxShadow ? { boxShadow } : undefined}
+    >
+      {leading}
+      <input
+        data-testid={inputTestId}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            onSubmit();
+          }
+        }}
+        placeholder={placeholder}
+        disabled={disabled}
+        autoFocus={autoFocus}
+        className={`min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-foreground/45 disabled:opacity-60 ${
+          compact ? 'text-sm' : 'text-md'
+        }`}
+      />
+      {voice?.supported && (
+        <button
+          type="button"
+          onClick={voice.onToggle}
+          disabled={disabled}
+          aria-pressed={voice.listening}
+          aria-label={voice.listening ? voice.listeningLabel : voice.startLabel}
+          title={voice.listening ? voice.listeningLabel : voice.startLabel}
+          className={`flex shrink-0 items-center justify-center rounded-full transition-colors disabled:opacity-40 ${
+            compact ? 'h-7 w-7' : 'h-8 w-8'
+          } ${
+            voice.listening
+              ? 'bg-red-500/15 text-red-400 hover:bg-red-500/25'
+              : 'text-foreground/55 hover:bg-secondary/60 hover:text-primary'
+          }`}
+        >
+          {voice.listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+        </button>
+      )}
+      {trailing}
+      <Button
+        variant="primary"
+        size={sendButtonSize}
+        className="shrink-0 rounded-full"
+        icon={<Send className="h-4 w-4" />}
+        loading={busy}
+        disabled={!value.trim() || disabled}
+        onClick={onSubmit}
+        data-testid={sendTestId}
+        aria-label={sendAriaLabel}
+      >
+        {compact ? undefined : sendLabel}
+      </Button>
+    </div>
+  );
+}

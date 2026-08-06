@@ -3,6 +3,7 @@ use tauri::State;
 
 mod competitions;
 pub mod contexts;
+pub mod env_connectors;
 pub mod git_ops;
 pub mod goals;
 pub mod milestones;
@@ -18,6 +19,7 @@ pub mod workspace;
 // [[Architect/decisions/2026-05-10-dev-tools-split]].
 pub use competitions::*;
 pub use contexts::*;
+pub use env_connectors::*;
 pub use git_ops::*;
 pub use goals::*;
 pub use milestones::*;

@@ -64,7 +64,7 @@ export function DimLegend() {
     <div ref={ref} className="absolute bottom-3 left-3 z-10 flex flex-col items-start gap-1.5">
       {open && (
         <div
-          className="inline-flex flex-col gap-1 p-2 rounded-interactive bg-secondary/70 border border-primary/12 shadow-elevation-2 backdrop-blur-sm"
+          className="inline-flex flex-col gap-1 p-2 rounded-interactive mm-chrome surface-blur-tooltip"
           data-testid="mm-legend-panel"
         >
           {/* No heading inside the panel: the toggle that opened it already
@@ -77,7 +77,7 @@ export function DimLegend() {
           ))}
           {/* The one state that needs more than a label: `unknown` is deliberately
               distinct from a healthy zero, and that distinction is the point. */}
-          <span className="typo-caption text-foreground max-w-52 pt-1 mt-0.5 border-t border-primary/12">
+          <span className="typo-caption text-foreground max-w-52 pt-1 mt-0.5 border-t border-primary/15">
             {t.mastermind.legend_unknown_note}
           </span>
         </div>
@@ -88,8 +88,8 @@ export function DimLegend() {
         aria-expanded={open}
         aria-label={t.mastermind.legend_toggle}
         data-testid="mm-legend-toggle"
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption font-medium bg-secondary/70 border border-primary/12 shadow-elevation-2 backdrop-blur-sm transition-colors focus-ring ${
-          open ? 'text-foreground' : 'text-foreground/70 hover:text-foreground'
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption font-medium mm-chrome surface-blur-tooltip transition-colors focus-ring ${
+          open ? 'text-foreground' : 'text-foreground/65 hover:text-foreground'
         }`}
       >
         <KeyRound className="w-3.5 h-3.5" aria-hidden />

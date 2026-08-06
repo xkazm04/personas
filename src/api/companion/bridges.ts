@@ -104,6 +104,27 @@ export const companionRecordFleetEvent = (input: CompanionFleetEventInput) =>
   invoke<string>('companion_record_fleet_event', { input });
 
 // ============================================================================
+// Canvas steering (canvas_control result feedback)
+// ============================================================================
+
+export interface CompanionCanvasControlResultInput {
+  /** Companion session the op came from (echoed off the steering event). */
+  sessionId: string;
+  /** Action kind that settled, e.g. `camera.focus` — names the system note. */
+  kind: string;
+  /** Serialized `CanvasActionResult` envelope (compacted by the bridge). */
+  result: string;
+}
+
+/**
+ * Report a settled `canvas_control` action back into the companion session as
+ * a System episode — what Athena reads on her next turn to learn where the
+ * camera actually landed (or why the action refused).
+ */
+export const companionCanvasControlResult = (input: CompanionCanvasControlResultInput) =>
+  invoke<void>('companion_canvas_control_result', { input });
+
+// ============================================================================
 // Team assignments
 // ============================================================================
 

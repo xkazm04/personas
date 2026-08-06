@@ -2840,6 +2840,7 @@ pub fn run() {
             commands::companion::chat::companion_set_fleet_boldness,
             commands::companion::chat::companion_get_fleet_boldness,
             commands::companion::chat::companion_wake_stats,
+            commands::companion::canvas_control::companion_canvas_control_result,
             commands::companion::fleet_bridge::companion_record_fleet_event,
             commands::companion::fleet_bridge::companion_get_operative_memory_digest,
             commands::companion::mcp_bridge::companion_mcp_resolve_request,
@@ -3265,6 +3266,8 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_undispatched_ideas,
             // Dev Tools -- Context Groups
             commands::infrastructure::dev_tools::dev_tools_list_context_groups,
+            commands::infrastructure::dev_tools::dev_tools_list_env_connectors,
+            commands::infrastructure::dev_tools::dev_tools_set_env_connector,
             commands::infrastructure::dev_tools::dev_tools_create_context_group,
             commands::infrastructure::dev_tools::dev_tools_update_context_group,
             commands::infrastructure::dev_tools::dev_tools_delete_context_group,

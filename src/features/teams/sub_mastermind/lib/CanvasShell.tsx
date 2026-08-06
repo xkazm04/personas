@@ -38,17 +38,38 @@ import { Route } from './Route';
 import { useEventCallback } from './useEventCallback';
 import { ZoomBadge } from './ZoomBadge';
 import { ZoomControls } from './ZoomControls';
-import { sceneBounds, zoomBand, type CanvasMode, type CanvasNote, type DimNode, type GroupRect, type Island, type UserLink, type VariantProps, type ZoomBand } from './types';
-import { useCanvasCamera } from './useCanvasCamera';
-import type { CategoryNode } from './dimCategories';
+import { bandGte, sceneBounds, zoomBand, type CanvasMode, type CanvasNote, type DimNode, type GroupRect, type Island, type UserLink, type VariantProps, type ZoomBand } from './types';
+import { MAX_Z, MIN_Z, useCanvasCamera } from './useCanvasCamera';
+import { categoryNodes, type CategoryNode } from './dimCategories';
+import {
+  DIM_OPEN_MIN_BAND,
+  bandTargetZ,
+  dimReadPayload,
+  islandReadPayload,
+  takeCanvasActions,
+  useCanvasActionVersion,
+  type CanvasActionFailReason,
+  type CanvasActionRequest,
+  type CanvasActionResult,
+  type CanvasCameraReadout,
+} from './canvasActionStore';
+import { useCanvasTestBridge } from './canvasTestBridge';
 
 
 const MIN_GROUP_SIZE = 60; // world px — smaller drags are treated as clicks
 // Half an island footprint (~900×800 world units) plus slack, so an island is
 // only culled once its whole body is well clear of the viewport — no popping.
 const CULL_MARGIN = 700;
-// Islands committed per animation frame on first mount (see mountBudget).
-const MOUNT_WAVE = 5;
+// Islands committed per animation frame on first mount (see mountBudget). The
+// wave ADAPTS instead of being a constant: one island is ~150 SVG nodes, and
+// how many of those fit in a frame is a property of the machine, not of the
+// canvas — a fixed 5 either stalls a busy laptop or wastes frames on a
+// workstation. Each wave is timed and the next one is sized from the result.
+const MOUNT_WAVE_START = 4;
+const MOUNT_WAVE_MIN = 1;
+const MOUNT_WAVE_MAX = 14;
+/** Commit time above which the previous wave is judged too big (~1.5 frames). */
+const MOUNT_FRAME_BUDGET_MS = 24;
 
 export interface IslandCtx {
   z: number;
@@ -88,7 +109,7 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
   const { t, tx } = useTranslation();
   const svgRef = useRef<SVGSVGElement>(null);
   const worldRef = useRef<SVGGElement>(null);
-  const { cam, camRef, panning, fit, zoomBy, handlers } = useCanvasCamera(svgRef, worldRef);
+  const { cam, camRef, panning, fit, zoomBy, animateTo, handlers } = useCanvasCamera(svgRef, worldRef);
   const [hover, setHover] = useState<string | null>(null);
   // Canvas objects live in the layout store, not in local state: Athena writes
   // to the same board out of band, and a `useState` snapshot would neither show
@@ -231,24 +252,64 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
   // ...and they mount in WAVES. Culling alone still commits every on-screen
   // island in ONE synchronous pass; at 30+ projects (13 dimension cells +
   // stat columns + banner each) that pass is seconds of blocked main thread.
-  // MOUNT_WAVE islands per animation frame lets the first ones paint while the
-  // rest stream in. The budget only ever grows, so a later pan (already past
-  // the island count) mounts immediately with no re-stagger.
-  const [mountBudget, setMountBudget] = useState(MOUNT_WAVE);
+  // A wave per animation frame lets the first ones paint while the rest stream
+  // in. The budget only ever grows, so a later pan (already past the island
+  // count) mounts immediately with no re-stagger.
+  const [mountBudget, setMountBudget] = useState(MOUNT_WAVE_START);
+  const waveSize = useRef(MOUNT_WAVE_START);
+  const waveAt = useRef(0);
+  const waveMeasuredFor = useRef(-1);
   useEffect(() => {
     if (mountBudget >= visibleIslands.length) return;
-    const id = requestAnimationFrame(() => setMountBudget((n) => n + MOUNT_WAVE));
+    // Size the NEXT wave from how long the one we just committed took. This is a
+    // passive effect, so it runs after paint and the measurement covers the real
+    // cost — render, commit and raster. Guarded on the budget it measured, so a
+    // data-family arrival re-running this effect can't be mistaken for a slow
+    // frame and shrink the wave to a crawl.
+    if (waveMeasuredFor.current !== mountBudget) {
+      waveMeasuredFor.current = mountBudget;
+      const elapsed = waveAt.current === 0 ? 0 : performance.now() - waveAt.current;
+      if (elapsed > MOUNT_FRAME_BUDGET_MS) waveSize.current = Math.max(MOUNT_WAVE_MIN, Math.floor(waveSize.current / 2));
+      else if (elapsed > 0 && elapsed < MOUNT_FRAME_BUDGET_MS / 2) waveSize.current = Math.min(MOUNT_WAVE_MAX, waveSize.current + 2);
+    }
+    const id = requestAnimationFrame(() => {
+      waveAt.current = performance.now();
+      setMountBudget((n) => n + waveSize.current);
+    });
     return () => cancelAnimationFrame(id);
   }, [mountBudget, visibleIslands.length]);
+
+  // Fill ORDER: nearest the viewport centre first. The camera opens framed on
+  // the whole portfolio, so on a cold load every island passes the cull and the
+  // waves filled the map in scene order (alphabetical) — the middle of the
+  // screen, which is exactly where the user is looking, arrived last. Ranking by
+  // distance to the viewport centre makes the load resolve outward from there.
+  //
+  // Only the SET is chosen by rank; `mountedIslands` below stays in scene order,
+  // so SVG paint order and React's child keys never shuffle underneath. `null`
+  // once the budget covers everything — the rank is then pure waste, and this
+  // memo would otherwise re-sort on every committed camera change.
+  const mountRank = useMemo(() => {
+    if (mountBudget >= visibleIslands.length || !visibleRect) return null;
+    const cx = (visibleRect.minX + visibleRect.maxX) / 2;
+    const cy = (visibleRect.minY + visibleRect.maxY) / 2;
+    const d2 = (i: Island) => (i.x - cx) * (i.x - cx) + (i.y - cy) * (i.y - cy);
+    const rank = new Map<string, number>();
+    [...visibleIslands].sort((a, b) => d2(a) - d2(b)).forEach((i, k) => rank.set(i.slug, k));
+    return rank;
+  }, [mountBudget, visibleIslands, visibleRect]);
+
   // The keyboard cursor is always mounted, even mid-flight to an off-screen
   // island: focus travel is an animated pan, so without this the focused island
   // would be culled for the duration and the ring would draw over nothing.
   const mountedIslands = useMemo(() => {
-    const base = mountBudget >= visibleIslands.length ? visibleIslands : visibleIslands.slice(0, mountBudget);
+    const base = mountRank === null
+      ? visibleIslands
+      : visibleIslands.filter((i) => (mountRank.get(i.slug) ?? 0) < mountBudget);
     if (!kbFocus || base.some((i) => i.slug === kbFocus)) return base;
     const f = bySlug.get(kbFocus);
     return f ? [...base, f] : base;
-  }, [mountBudget, visibleIslands, kbFocus, bySlug]);
+  }, [mountRank, mountBudget, visibleIslands, kbFocus, bySlug]);
 
   // Gesture-time world math reads the LIVE camera (camRef) so it stays correct
   // even mid-pan, when `cam` state is intentionally stale for render-freedom.
@@ -490,6 +551,157 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
       y: (rect?.top ?? 0) + i.y * c.z + c.y,
     };
   };
+
+  // --- programmatic canvas actions (canvasActionStore) -----------------------
+  // One consumer effect answering the typed grammar — camera verbs reuse the
+  // exact fit/animateTo the human affordances use; inspection verbs reuse the
+  // page popover callbacks with an anchor synthesized at the island's screen
+  // position. Serial on purpose: a batch executes in dispatch order, each
+  // awaiting its camera settle, so readbacks are deterministic.
+  const clampCamZ = (z: number) => Math.min(MAX_Z, Math.max(MIN_Z, z));
+
+  const cameraReadout = (): CanvasCameraReadout => {
+    const c = camRef.current;
+    const rect = svgRef.current?.getBoundingClientRect();
+    const w = rect?.width ?? 0;
+    const h = rect?.height ?? 0;
+    const visibleSlugs = w && h
+      ? scene.islands
+        .filter((i) => {
+          const sx = i.x * c.z + c.x;
+          const sy = i.y * c.z + c.y;
+          return sx >= 0 && sx <= w && sy >= 0 && sy <= h;
+        })
+        .map((i) => i.slug)
+      : [];
+    return { x: c.x, y: c.y, z: c.z, band: zoomBand(c.z), viewport: { w, h }, visibleSlugs };
+  };
+
+  /** Tween to the island, centred, at the band's target z. */
+  const travelToBand = (island: Island, band: ZoomBand) => {
+    const rect = svgRef.current?.getBoundingClientRect();
+    const w = rect?.width ?? 0;
+    const h = rect?.height ?? 0;
+    const z = clampCamZ(bandTargetZ(band));
+    return animateTo({ z, x: w / 2 - island.x * z, y: h / 2 - island.y * z });
+  };
+
+  const runCanvasAction = useEventCallback(async (action: CanvasActionRequest): Promise<Omit<CanvasActionResult, 'seq'>> => {
+    const fail = (reason: CanvasActionFailReason) => ({ ok: false as const, reason, camera: cameraReadout() });
+    const okWith = (extra?: { payload?: unknown; clamped?: boolean }) => ({ ok: true as const, ...extra, camera: cameraReadout() });
+
+    switch (action.kind) {
+      case 'camera.read':
+        return okWith();
+      case 'camera.pan': {
+        if (!Number.isFinite(action.dx) || !Number.isFinite(action.dy)) return fail('bad_request');
+        const c = camRef.current;
+        // Moving the VIEW by +dx world units means the world shifts left on
+        // screen: camera translate decreases by dx·z (or by raw px for screen).
+        const k = action.unit === 'screen' ? 1 : c.z;
+        await animateTo({ z: c.z, x: c.x - action.dx * k, y: c.y - action.dy * k });
+        return okWith();
+      }
+      case 'camera.zoom': {
+        const c = camRef.current;
+        const targetZ = action.band
+          ? bandTargetZ(action.band)
+          : typeof action.factor === 'number' && action.factor > 0 ? c.z * action.factor : NaN;
+        if (!Number.isFinite(targetZ)) return fail('bad_request');
+        const z = clampCamZ(targetZ);
+        const rect = svgRef.current?.getBoundingClientRect();
+        const w = rect?.width ?? 0;
+        const h = rect?.height ?? 0;
+        // Same pivot math as zoomAt, around the viewport centre.
+        const k = z / c.z;
+        await animateTo({ z, x: w / 2 - (w / 2 - c.x) * k, y: h / 2 - (h / 2 - c.y) * k });
+        return okWith(z !== targetZ ? { clamped: true } : undefined);
+      }
+      case 'camera.focus': {
+        const island = bySlug.get(action.slug);
+        if (!island) return fail('unknown_slug');
+        await travelToBand(island, action.band ?? 'close');
+        return okWith();
+      }
+      case 'camera.fit': {
+        let list = scene.islands;
+        if (action.slugs) {
+          const picked = action.slugs.map((s) => bySlug.get(s));
+          if (picked.some((i) => !i)) return fail('unknown_slug');
+          list = picked as Island[];
+          if (list.length === 0) return fail('bad_request');
+        }
+        await fit(sceneBounds(list), true);
+        return okWith();
+      }
+      case 'island.read':
+      case 'dim.read':
+      case 'dim.open':
+      case 'category.open':
+      case 'island.menu': {
+        // Inspection refuses the demo scene outright — same rule as the scene
+        // publisher and the Rust read ops: never describe projects that aren't there.
+        if (scene.demo) return fail('demo_scene');
+        const island = bySlug.get(action.slug);
+        if (!island) return fail('unknown_slug');
+        if (action.kind === 'island.read') return okWith({ payload: islandReadPayload(island) });
+        if (action.kind === 'dim.read' || action.kind === 'dim.open') {
+          const node = island.nodes.find((n) => n.key === action.key);
+          if (!node) return fail('unknown_target');
+          if (action.kind === 'dim.read') return okWith({ payload: dimReadPayload(node) });
+          if (!bandGte(zoomBand(camRef.current.z), DIM_OPEN_MIN_BAND)) {
+            if (action.travel === false) return fail('band_too_far');
+            await travelToBand(island, 'close');
+          }
+          const p = islandScreenPos(island);
+          onDimOpenStable(island.slug, node, synthAnchorEvent(p.x, p.y));
+          return okWith({ payload: dimReadPayload(node) });
+        }
+        if (action.kind === 'category.open') {
+          const cat = categoryNodes(island.nodes).find((cn) => cn.key === action.category);
+          if (!cat) return fail('unknown_target');
+          const p = islandScreenPos(island);
+          onCategoryOpenStable(island.slug, cat, synthAnchorEvent(p.x, p.y));
+          return okWith({
+            payload: {
+              key: cat.key,
+              status: cat.status,
+              total: cat.total,
+              solid: cat.solid,
+              attention: cat.attention,
+              dims: cat.nodes.map(dimReadPayload),
+            },
+          });
+        }
+        // island.menu — same clamp the pointer path applies (setMenu is
+        // container-relative where popover anchors are client coords).
+        const p = islandScreenPos(island);
+        const rect = svgRef.current?.getBoundingClientRect();
+        setMenu({
+          slug: island.slug,
+          x: Math.min(p.x - (rect?.left ?? 0), (rect?.width ?? 600) - 320),
+          y: Math.min(p.y - (rect?.top ?? 0), (rect?.height ?? 400) - 340),
+        });
+        return okWith({ payload: { terminalEnabled: canOpenTerminal(island.slug), navEnabled: !scene.demo } });
+      }
+      default:
+        return fail('bad_request');
+    }
+  });
+
+  const actionVersion = useCanvasActionVersion();
+  useEffect(() => {
+    const entries = takeCanvasActions();
+    if (entries.length === 0) return;
+    void (async () => {
+      for (const entry of entries) {
+        const result = await runCanvasAction(entry.action);
+        entry.settle({ seq: entry.seq, ...result });
+      }
+    })();
+  }, [actionVersion, runCanvasAction]);
+
+  useCanvasTestBridge();
 
   const stateLabel = (s: Island['state']) =>
     ({
@@ -798,6 +1010,17 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
     </>
   );
 }
+
+/** Minimal synthetic anchor for the page popover callbacks — every consumer
+ *  reads only clientX/clientY (see MastermindPage.onDimOpen); the no-op
+ *  methods are defensive against a future handler calling them. */
+const synthAnchorEvent = (x: number, y: number): React.MouseEvent =>
+  ({
+    clientX: x,
+    clientY: y,
+    preventDefault: () => undefined,
+    stopPropagation: () => undefined,
+  }) as unknown as React.MouseEvent;
 
 const normalize = (d: { x0: number; y0: number; x1: number; y1: number }) => ({
   x: Math.min(d.x0, d.x1),

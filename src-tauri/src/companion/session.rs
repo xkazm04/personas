@@ -278,6 +278,15 @@ pub const EXPLAIN_COCKPIT_EVENT: &str = "companion://explain-cockpit";
 /// can reach it.
 pub const COMPOSE_CANVAS_PANEL_EVENT: &str = "companion://compose-canvas-panel";
 
+/// Tauri event for `canvas_control` auto-fire (WP4 — steering the Mastermind
+/// canvas). Payload is `{ sessionId, action }` where `action` is the
+/// serialized, dispatcher-validated `CanvasActionRequest` JSON. Nothing is
+/// persisted: steering is view state. The frontend bridge dispatches into the
+/// canvas action grammar and reports the settled result back through the
+/// `companion_canvas_control_result` command (a System episode keyed by the
+/// echoed `sessionId`), which is why the session id rides in the payload.
+pub const CANVAS_CONTROL_EVENT: &str = "companion://canvas-control";
+
 /// Tauri event for inline chat-cards emitted via `show_persona_overview`,
 /// `show_connected_services`, `show_decisions`. Payload is the list of cards
 /// for this turn; the frontend appends them to the latest assistant bubble.
@@ -778,6 +787,7 @@ pub async fn send_turn(
                     cockpits: Vec::new(),
                     explain_cockpits: Vec::new(),
                     canvas_panels: Vec::new(),
+                    canvas_controls: Vec::new(),
                     chat_cards: Vec::new(),
                     guide_walkthroughs: Vec::new(),
                     point_ats: Vec::new(),
@@ -1135,6 +1145,21 @@ pub async fn send_turn(
         });
         if let Err(e) = app.emit(COMPOSE_CANVAS_PANEL_EVENT, payload) {
             tracing::warn!(error = %e, "companion compose_canvas_panel event emit failed");
+        }
+    }
+
+    // canvas_control auto-fire (WP4). One event per validated steering action,
+    // in emission order — the frontend grammar queue executes them serially,
+    // so a focus-then-open sequence lands as she wrote it. The session id in
+    // the payload is what lets the bridge report the settled result back to
+    // THIS conversation via `companion_canvas_control_result`.
+    for control in &dispatched.canvas_controls {
+        let payload = serde_json::json!({
+            "sessionId": session_id,
+            "action": control.action,
+        });
+        if let Err(e) = app.emit(CANVAS_CONTROL_EVENT, payload) {
+            tracing::warn!(error = %e, "companion canvas_control event emit failed");
         }
     }
 

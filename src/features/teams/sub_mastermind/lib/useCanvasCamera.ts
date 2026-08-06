@@ -21,8 +21,10 @@ import type { Camera } from './types';
 // longer drag across empty sea until release.
 const PAN_COMMIT_WORLD = 350;
 
-const MIN_Z = 0.06;
-const MAX_Z = 3;
+// Exported for the canvas action layer: a programmatic zoom past the clamp
+// must report `clamped: true` instead of silently landing short.
+export const MIN_Z = 0.06;
+export const MAX_Z = 3;
 
 const clampZ = (z: number) => Math.min(MAX_Z, Math.max(MIN_Z, z));
 
@@ -37,10 +39,14 @@ export interface CameraControl {
   camRef: RefObject<Camera>;
   panning: boolean;
   /** Frame the given world bounds. `animate` tweens there linearly (~380ms)
-   *  instead of jumping; any wheel/drag input cancels the tween. */
-  fit: (b: { minX: number; minY: number; maxX: number; maxY: number }, animate?: boolean) => void;
+   *  instead of jumping; any wheel/drag input cancels the tween. Resolves when
+   *  the camera settles (immediately when not animating; on cancel, early). */
+  fit: (b: { minX: number; minY: number; maxX: number; maxY: number }, animate?: boolean) => Promise<void>;
   /** Zoom by a factor around the viewport centre (toolbar +/− buttons). */
   zoomBy: (factor: number) => void;
+  /** Tween straight to a camera. The settle promise is what makes programmatic
+   *  drives (canvasActionStore) deterministic: dispatch → await → read back. */
+  animateTo: (target: Camera, duration?: number) => Promise<void>;
   handlers: {
     onPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void;
     onPointerMove: (e: React.PointerEvent<SVGSVGElement>) => void;
@@ -69,9 +75,15 @@ export function useCanvasCamera(
   // Accumulated wheel intent for the current frame: combined factor + last pivot.
   const zoomAccum = useRef<{ px: number; py: number; factor: number } | null>(null);
 
+  // Settle notifier for the in-flight tween — resolved on completion AND on
+  // cancel (a user wheel/drag interrupting a programmatic travel must not leave
+  // an awaiting caller hanging; it observes wherever the camera ended up).
+  const animDone = useRef<(() => void) | null>(null);
   const cancelTween = useCallback(() => {
     if (animFrame.current !== null) cancelAnimationFrame(animFrame.current);
     animFrame.current = null;
+    animDone.current?.();
+    animDone.current = null;
   }, []);
   useEffect(() => cancelTween, [cancelTween]);
 
@@ -90,18 +102,31 @@ export function useCanvasCamera(
   /** Linear camera tween (per the double-click-zoom brief: no sudden jump). */
   const animateTo = useCallback((target: Camera, duration = 380) => {
     cancelTween();
-    const from = camRef.current;
-    const start = performance.now();
-    const step = (now: number) => {
-      const t = Math.min(1, (now - start) / duration);
-      setCam({
-        x: from.x + (target.x - from.x) * t,
-        y: from.y + (target.y - from.y) * t,
-        z: from.z + (target.z - from.z) * t,
-      });
-      animFrame.current = t < 1 ? requestAnimationFrame(step) : null;
-    };
-    animFrame.current = requestAnimationFrame(step);
+    return new Promise<void>((resolve) => {
+      animDone.current = resolve;
+      const from = camRef.current;
+      const start = performance.now();
+      const step = (now: number) => {
+        const t = Math.min(1, (now - start) / duration);
+        const c = {
+          x: from.x + (target.x - from.x) * t,
+          y: from.y + (target.y - from.y) * t,
+          z: from.z + (target.z - from.z) * t,
+        };
+        // Keep the live camera exact per frame — gesture math and the action
+        // layer's post-travel readbacks must not lag the tween by a render.
+        camRef.current = c;
+        setCam(c);
+        if (t < 1) {
+          animFrame.current = requestAnimationFrame(step);
+        } else {
+          animFrame.current = null;
+          animDone.current?.();
+          animDone.current = null;
+        }
+      };
+      animFrame.current = requestAnimationFrame(step);
+    });
   }, [cancelTween]);
 
   // Zoom toward a screen-space pivot, keeping the world point under it fixed.
@@ -199,15 +224,16 @@ export function useCanvasCamera(
 
   const fit = useCallback((b: { minX: number; minY: number; maxX: number; maxY: number }, animate = false) => {
     const el = svgRef.current;
-    if (!el) return;
+    if (!el) return Promise.resolve();
     const { width, height } = el.getBoundingClientRect();
-    if (!width || !height) return;
+    if (!width || !height) return Promise.resolve();
     const bw = Math.max(1, b.maxX - b.minX);
     const bh = Math.max(1, b.maxY - b.minY);
     const z = Math.min(0.9, Math.max(0.12, Math.min(width / bw, height / bh)));
     const target = { z, x: width / 2 - ((b.minX + b.maxX) / 2) * z, y: height / 2 - ((b.minY + b.maxY) / 2) * z };
-    if (animate) animateTo(target);
-    else setCam(target);
+    if (animate) return animateTo(target);
+    setCam(target);
+    return Promise.resolve();
   }, [svgRef, animateTo]);
 
   return {
@@ -216,6 +242,7 @@ export function useCanvasCamera(
     panning,
     fit,
     zoomBy,
+    animateTo,
     handlers: { onPointerDown, onPointerMove, onPointerUp: endDrag, onPointerCancel: endDrag, onDoubleClick },
   };
 }

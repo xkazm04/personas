@@ -605,10 +605,18 @@ pub(crate) fn execute_fleet_send_input(
     app: &tauri::AppHandle,
     params: &serde_json::Value,
 ) -> Result<ExecuteResult, AppError> {
-    let session_id = params
+    let raw_id = params
         .get("session_id")
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("fleet_send_input: missing `session_id`".into()))?;
+    // Accept either the fleet-session id or the bound claude_session_id —
+    // Athena frequently holds the latter (transcript/cc id), and the registry
+    // is keyed by the former. Unresolvable ids pass through unchanged so the
+    // downstream writers report their normal "session not found".
+    let session_id = crate::commands::fleet::registry::registry()
+        .resolve_session_id(raw_id)
+        .unwrap_or_else(|| raw_id.to_string());
+    let session_id = session_id.as_str();
     let text = params
         .get("text")
         .and_then(|v| v.as_str())
@@ -789,9 +797,13 @@ pub(crate) fn execute_fleet_send_input(
             .map_err(AppError::Internal)?;
     }
     Ok(ExecuteResult::message(format!(
-        "Typed {} chars into fleet session `{}`{}.",
+        "Typed {} chars into fleet session `{}`{}{}.",
         text.chars().count(),
         &session_id[..session_id.len().min(8)],
+        crate::commands::fleet::registry::registry()
+            .try_lookup_label(session_id)
+            .map(|l| format!(" ({l})"))
+            .unwrap_or_default(),
         if press_enter { " (submit confirmed asynchronously)" } else { "" },
     )))
 }
@@ -969,21 +981,33 @@ pub(crate) fn execute_fleet_broadcast(params: &serde_json::Value) -> Result<Exec
 }
 
 pub(crate) fn execute_fleet_kill(params: &serde_json::Value) -> Result<ExecuteResult, AppError> {
-    let session_id = params
+    let raw_id = params
         .get("session_id")
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("fleet_kill: missing `session_id`".into()))?;
+    let registry = crate::commands::fleet::registry::registry();
+    // Athena often holds the `claude_session_id` (the cc/transcript id) rather
+    // than the fleet-session id the registry is keyed by — accept either, so a
+    // kill she proposes from a transcript id actually closes the session
+    // instead of failing "not found".
+    let session_id = registry.resolve_session_id(raw_id).ok_or_else(|| {
+        AppError::Internal(format!(
+            "fleet_kill: session `{raw_id}` not found (checked fleet + claude session ids)"
+        ))
+    })?;
+    let label = registry.try_lookup_label(&session_id);
     // Soft-kill (PTY EOF). Future hard-kill (Child::kill) is a Phase 6
     // enhancement in the fleet module itself.
-    let ok = crate::commands::fleet::registry::registry().close_pty_handles(session_id);
+    let ok = registry.close_pty_handles(&session_id);
     if !ok {
         return Err(AppError::Internal(format!(
             "fleet_kill: session `{session_id}` not found"
         )));
     }
     Ok(ExecuteResult::message(format!(
-        "Closed fleet session `{}` (soft kill — PTY EOF sent).",
+        "Closed fleet session `{}`{} (soft kill — PTY EOF sent).",
         &session_id[..session_id.len().min(8)],
+        label.map(|l| format!(" ({l})")).unwrap_or_default(),
     )))
 }
 
@@ -1069,20 +1093,27 @@ pub(crate) fn execute_fleet_spawn(
     )
     .map_err(AppError::Internal)?;
 
-    // Recursion guard sentinel: tag this session with the user-visible
-    // name "athena" so it's obvious in the fleet UI which sessions are
-    // Athena-spawned. This same sentinel gates the autonomous
-    // `fleet_send_input` autoapprove path (see `is_athena_owned` /
-    // `fleet_send_input_targets_athena_session`), so it's sourced from the
-    // shared `ATHENA_SESSION_NAME_SENTINEL` constant to keep tag + guard in
-    // lockstep. Public rename() preserves the optimistic-update path.
-    let _ = crate::commands::fleet::registry::registry().rename(
-        &id,
-        Some(crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL.to_string()),
-    );
+    // Recursion guard sentinel: tag this session with a user-visible name
+    // that STARTS WITH "athena" so it's obvious in the fleet UI which sessions
+    // are Athena-spawned. This same sentinel prefix gates the autonomous
+    // `fleet_send_input`/`fleet_kill` autoapprove paths (see `is_athena_owned`),
+    // so it's sourced from the shared `ATHENA_SESSION_NAME_SENTINEL` constant
+    // to keep tag + guard in lockstep (`is_athena_owned` matches by prefix).
+    // The project label (via `try_lookup_label`, which falls back to
+    // `project_label` while `name` is unset) is appended so the operator —
+    // and Athena, who sees session names in her fleet digest — can tell
+    // Athena-spawned sessions apart by what they're working on.
+    let name = match crate::commands::fleet::registry::registry().try_lookup_label(&id) {
+        Some(label) => format!(
+            "{} · {label}",
+            crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL
+        ),
+        None => crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL.to_string(),
+    };
+    let _ = crate::commands::fleet::registry::registry().rename(&id, Some(name.clone()));
 
     Ok(ExecuteResult::message(format!(
-        "Spawned fleet session `{}` in `{}`. Tagged \"athena\" for visibility.",
+        "Spawned fleet session `{}` in `{}`. Named \"{name}\" for visibility.",
         &id[..id.len().min(8)],
         cwd,
     )))
@@ -1205,18 +1236,24 @@ pub(crate) fn execute_fleet_dispatch(
         let _ = crate::companion::orchestration::operative_memory::memory()
             .attach_session_to_operation(&op_id, &id, &role, cwd);
 
-        // Visible-name = "athena-<role>" so the user sees both the
-        // recursion-guard sentinel AND the role in the Fleet UI. Sourced from
+        // Visible-name = "athena-<role> · <project>" so the user sees the
+        // recursion-guard sentinel, the role AND what the session works on in
+        // the Fleet UI (the project label comes from `try_lookup_label`, which
+        // falls back to `project_label` while `name` is unset). Sourced from
         // the shared `ATHENA_SESSION_NAME_SENTINEL` so the autonomous
-        // `fleet_send_input` guard (`is_athena_owned`) recognizes these
-        // dispatched sessions as Athena-owned.
-        let _ = crate::commands::fleet::registry::registry().rename(
-            &id,
-            Some(format!(
+        // `fleet_send_input`/`fleet_kill` guard (`is_athena_owned`) recognizes
+        // these dispatched sessions as Athena-owned (prefix match).
+        let dispatch_name = {
+            let base = format!(
                 "{}-{role}",
                 crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL
-            )),
-        );
+            );
+            match crate::commands::fleet::registry::registry().try_lookup_label(&id) {
+                Some(label) => format!("{base} · {label}"),
+                None => base,
+            }
+        };
+        let _ = crate::commands::fleet::registry::registry().rename(&id, Some(dispatch_name));
 
         spawned.push((id[..id.len().min(8)].to_string(), role));
     }
@@ -1268,12 +1305,19 @@ pub(crate) fn execute_fleet_intervene(
     app: &tauri::AppHandle,
     params: &serde_json::Value,
 ) -> Result<ExecuteResult, AppError> {
-    let session_id = params
+    let raw_id = params
         .get("session_id")
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .ok_or_else(|| AppError::Internal("fleet_intervene: missing `session_id`".into()))?;
+    // Either id form resolves (fleet id or claude_session_id) — see
+    // `FleetRegistry::resolve_session_id`. Unresolvable ids pass through so
+    // the write path reports its normal "session not found".
+    let session_id = crate::commands::fleet::registry::registry()
+        .resolve_session_id(raw_id)
+        .unwrap_or_else(|| raw_id.to_string());
+    let session_id = session_id.as_str();
     let message = params
         .get("message")
         .and_then(|v| v.as_str())
