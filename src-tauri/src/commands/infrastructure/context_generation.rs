@@ -568,6 +568,13 @@ struct ContextGenSummary {
     groups_created: i32,
     contexts_created: i32,
     files_mapped: i32,
+    /// Reference entries this scan REFUSED to publish because they resolved to
+    /// nothing (see `prune_unresolvable_references`). Reported so a scan that
+    /// discarded 40 invented cross-refs says so instead of looking spotless.
+    /// `u32` deliberately: ts-rs maps `i64` to `bigint`, which the frontend
+    /// cannot add to its other counts.
+    db_tables_dropped: u32,
+    cross_refs_dropped: u32,
     status: String,
     error: Option<String>,
 }
@@ -727,6 +734,8 @@ pub(crate) fn launch_context_scan(
                         "groups_created": summary.groups_created,
                         "contexts_created": summary.contexts_created,
                         "files_mapped": summary.files_mapped,
+                        "db_tables_dropped": summary.db_tables_dropped,
+                        "cross_refs_dropped": summary.cross_refs_dropped,
                         "scan_id": scan_id_for_task,
                     }),
                 );
@@ -1118,6 +1127,10 @@ async fn run_context_generation(
                         groups_created: 0,
                         contexts_created: 0,
                         files_mapped: 0,
+                        // Nothing was written, so nothing was validated. A scan
+                        // that publishes no reference drops none.
+                        db_tables_dropped: 0,
+                        cross_refs_dropped: 0,
                         status: "completed".to_string(),
                         error: None,
                     });
@@ -1264,6 +1277,11 @@ async fn run_context_generation(
     // — that suspicious precision is what exposed it. Dedupe by name within the
     // scan; a context emitted twice is one context either way.
     let mut seen_contexts: std::collections::HashSet<String> = std::collections::HashSet::new();
+    // Ids of the contexts THIS scan actually wrote (not merely saw — a context
+    // whose paths were all non-source is skipped). Post-scan reference
+    // validation is scoped to exactly these; see
+    // `prune_unresolvable_references`.
+    let mut written_context_ids: Vec<String> = Vec::new();
     // Lazy clear: only wipe the existing map once the run produces its first real
     // output, so a failed/empty rescan can't destroy the curated map up-front.
     //
@@ -1419,8 +1437,9 @@ async fn run_context_generation(
                                     Some(&fp_json), Some(&ep_json), db_json.as_deref(), Some(&kw_json), api_surface.as_deref(), cr_json.as_deref(), Some(&ts_json),
                                     category.as_deref(), business_feature.as_deref(),
                                 ) {
-                                    Ok(_) => {
+                                    Ok(created) => {
                                         contexts_created += 1;
+                                        written_context_ids.push(created.id);
                                         files_mapped += file_count;
                                         // `files_mapped` sums path SLOTS across contexts, and
                                         // the model routinely files one path under several
@@ -1509,6 +1528,13 @@ async fn run_context_generation(
             // Persist hashes even on partial success — better to under-detect
             // changes next time than to over-trigger full rescans.
             persist_scan_hashes(app, scan_id, pool, project_id, root_path).await;
+            // A partial map publishes too, so it gets the same reference
+            // validation — and it needs it more: the contexts a timed-out scan
+            // wrote reference siblings it never got to emit.
+            let (db_tables_dropped, cross_refs_dropped) = prune_unresolvable_references(
+                app, scan_id, pool, project_id, root_path, &written_context_ids,
+            )
+            .await;
             reconcile_links(app, scan_id, pool, project_id, &link_snapshot);
             write_harness_docs(app, scan_id, pool, project_id, root_path);
             return Ok(ContextGenSummary {
@@ -1516,6 +1542,8 @@ async fn run_context_generation(
                 groups_created,
                 contexts_created,
                 files_mapped,
+                db_tables_dropped,
+                cross_refs_dropped,
                 status: "completed_with_warning".to_string(),
                 error: Some(
                     "Scan exceeded 30-minute timeout but partial results were saved".to_string(),
@@ -1668,6 +1696,15 @@ async fn run_context_generation(
     // never fail here; it just tidies before publishing.
     prune_dangling_file_paths(app, scan_id, pool, project_id, root_path);
 
+    // Same contract, one level up from file paths: a published map must not
+    // name a table the project has no schema for, or a sibling context that
+    // does not exist. Deliberately AFTER the retire step and after every
+    // context is written — a context may reference a sibling the same scan
+    // emits later, so this is only decidable once the scan's writes are in.
+    let (db_tables_dropped, cross_refs_dropped) =
+        prune_unresolvable_references(app, scan_id, pool, project_id, root_path, &written_context_ids)
+            .await;
+
     // Restore the use-case slice + context-scoped KPIs the rebuild detached.
     reconcile_links(app, scan_id, pool, project_id, &link_snapshot);
 
@@ -1688,6 +1725,8 @@ async fn run_context_generation(
         groups_created,
         contexts_created,
         files_mapped,
+        db_tables_dropped,
+        cross_refs_dropped,
         status: "completed".to_string(),
         error: None,
     })
@@ -1868,6 +1907,247 @@ fn prune_dangling_file_paths(
             ),
         );
     }
+}
+
+/// Split a reference list into `(kept, dropped)`, preserving order. `key` maps
+/// an entry to the form used for the lookup; an entry with NO lookup form —
+/// prose, punctuation, an empty string — can never be kept, because it names
+/// nothing. Pure, so the drop decision is testable without a scan or a DB.
+fn split_known(
+    entries: &[String],
+    known: &std::collections::HashSet<String>,
+    key: impl Fn(&str) -> Option<String>,
+) -> (Vec<String>, Vec<String>) {
+    let mut kept = Vec::new();
+    let mut dropped = Vec::new();
+    for e in entries {
+        match key(e) {
+            Some(k) if known.contains(&k) => kept.push(e.clone()),
+            _ => dropped.push(e.clone()),
+        }
+    }
+    (kept, dropped)
+}
+
+/// Lookup form of a `cross_refs` entry: a context name, matched literally.
+/// Whitespace is forgiven because it is invisible; nothing else is, since the
+/// map is read by agents that resolve these names verbatim.
+fn normalize_cross_ref(raw: &str) -> Option<String> {
+    let t = raw.trim();
+    (!t.is_empty()).then(|| t.to_string())
+}
+
+/// Serialize a pruned list the way the write path stores it: an empty list
+/// becomes SQL NULL, matching `create_context` (which passes `None` when the
+/// model emitted nothing), so a pruned-to-nothing field is indistinguishable
+/// from a never-populated one instead of becoming a decorative `[]`.
+fn pruned_json(kept: &[String]) -> Option<String> {
+    (!kept.is_empty()).then(|| serde_json::to_string(kept).unwrap_or_else(|_| "[]".into()))
+}
+
+/// How many entries of one field to name in the operator line before eliding.
+const MAX_REPORTED_DROPS: usize = 5;
+
+fn format_drop_examples(samples: &[String], total: usize) -> String {
+    if samples.is_empty() {
+        return String::new();
+    }
+    let shown = samples.join(", ");
+    if total > samples.len() {
+        format!(" e.g. {shown}, +{} more", total - samples.len())
+    } else {
+        format!(" ({shown})")
+    }
+}
+
+/// Post-scan referential integrity for the two reference fields the model
+/// INVENTS rather than observes: `db_tables` and `cross_refs`.
+///
+/// `normalize_category` / `normalize_domain` already drop a bogus enum value
+/// rather than persisting it. These two fields had no such gate and are
+/// provably wrong on the shipped map: `workspace-governance` claimed tables
+/// `standards_violations` and `doc_rot_findings`, neither of which exists, and
+/// hundreds of `cross_refs` name contexts that were never created. Same
+/// treatment as the enums, and as `prune_dangling_file_paths` above: drop what
+/// resolves to nothing, report exactly how much, never fail the scan.
+///
+/// **Ordering — why post-scan.** A per-context check at write time cannot work:
+/// a context legitimately cross-references a sibling the same scan has not
+/// emitted YET, so a mid-stream check would delete valid refs and get more
+/// wrong the earlier a context appeared. The name set is only true once the
+/// scan's writes are in AND the superseded-subtree retire has run (a ref to a
+/// context this scan just replaced must not survive). So this runs where
+/// `prune_dangling_file_paths` runs, for the same reason, and before the audit
+/// so its report describes the map that actually publishes.
+///
+/// **Scope — only what THIS scan wrote.** A subtree scan must not silently
+/// rewrite contexts it never looked at, and a pinned context is human-curated;
+/// repairing those is the consolidation/repair path's job, not a scan's. On a
+/// whole-tree rescan the map was cleared first, so "what this scan wrote" is
+/// the whole map anyway.
+///
+/// Returns `(db_table entries dropped, cross_ref entries dropped)`.
+async fn prune_unresolvable_references(
+    app: &tauri::AppHandle,
+    scan_id: &str,
+    pool: &crate::db::DbPool,
+    project_id: &str,
+    root_path: &str,
+    written_ids: &[String],
+) -> (u32, u32) {
+    if written_ids.is_empty() {
+        return (0, 0);
+    }
+    let contexts = match repo::list_contexts_by_project(pool, project_id, None) {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::warn!(error = %e, "reference validation: list contexts failed; skipping");
+            return (0, 0);
+        }
+    };
+    // The set of context names that exist NOW, at scan completion — including
+    // siblings written after the context under inspection, and preserved
+    // contexts this scan never touched.
+    let known_names: std::collections::HashSet<String> =
+        contexts.iter().map(|c| c.name.trim().to_string()).collect();
+    let written: std::collections::HashSet<&str> =
+        written_ids.iter().map(String::as_str).collect();
+
+    // The project's own schema, read from the project's own source. An
+    // incomplete vocabulary must never drop a name, so an unusable one skips
+    // the db_tables half entirely — and says so, because a silent no-op looks
+    // exactly like a clean map.
+    let root = std::path::PathBuf::from(root_path);
+    let vocab = match tokio::task::spawn_blocking(move || {
+        super::schema_vocabulary::collect_table_names(&root)
+    })
+    .await
+    {
+        Ok(v) => Some(v),
+        Err(e) => {
+            CONTEXT_GEN_JOBS.emit_line(
+                app,
+                scan_id,
+                format!("[Warn] Could not read the project's schema ({e}); db_tables were left unchecked."),
+            );
+            None
+        }
+    };
+    let table_names = match vocab.as_ref() {
+        Some(v) if v.is_usable() => Some(&v.names),
+        Some(v) => {
+            let reason = if v.truncated {
+                format!(
+                    "the project tree could not be read in full{}",
+                    v.first_unreadable
+                        .as_ref()
+                        .map(|p| format!(" (first unreadable: {p})"))
+                        .unwrap_or_default()
+                )
+            } else {
+                "this project defines no tables in its own source".to_string()
+            };
+            CONTEXT_GEN_JOBS.emit_line(
+                app,
+                scan_id,
+                format!("[Heal] db_tables left unchecked — {reason}, so nothing could be verified and nothing was dropped."),
+            );
+            None
+        }
+        None => None,
+    };
+
+    let (mut tables_dropped, mut tables_touched) = (0u32, 0usize);
+    let (mut refs_dropped, mut refs_touched) = (0u32, 0usize);
+    let mut table_samples: Vec<String> = Vec::new();
+    let mut ref_samples: Vec<String> = Vec::new();
+
+    for c in contexts.iter().filter(|c| written.contains(c.id.as_str())) {
+        let mut new_tables: Option<Option<String>> = None;
+        let mut new_refs: Option<Option<String>> = None;
+
+        if let Some(vocab) = table_names {
+            let entries: Vec<String> =
+                serde_json::from_str(c.db_tables.as_deref().unwrap_or("[]")).unwrap_or_default();
+            if !entries.is_empty() {
+                let (kept, dropped) = split_known(&entries, vocab, |s| {
+                    super::schema_vocabulary::normalize_table_ref(s)
+                });
+                if !dropped.is_empty() {
+                    tables_dropped += dropped.len() as u32;
+                    tables_touched += 1;
+                    for d in &dropped {
+                        if table_samples.len() < MAX_REPORTED_DROPS {
+                            table_samples.push(format!("{d} in {}", c.name));
+                        }
+                    }
+                    new_tables = Some(pruned_json(&kept));
+                }
+            }
+        }
+
+        let refs: Vec<String> =
+            serde_json::from_str(c.cross_refs.as_deref().unwrap_or("[]")).unwrap_or_default();
+        if !refs.is_empty() {
+            let (kept, dropped) = split_known(&refs, &known_names, normalize_cross_ref);
+            if !dropped.is_empty() {
+                refs_dropped += dropped.len() as u32;
+                refs_touched += 1;
+                for d in &dropped {
+                    if ref_samples.len() < MAX_REPORTED_DROPS {
+                        ref_samples.push(format!("{d} in {}", c.name));
+                    }
+                }
+                new_refs = Some(pruned_json(&kept));
+            }
+        }
+
+        if new_tables.is_none() && new_refs.is_none() {
+            continue;
+        }
+        let tables_arg = new_tables.as_ref().map(|o| o.as_deref());
+        let refs_arg = new_refs.as_ref().map(|o| o.as_deref());
+        if let Err(e) = repo::update_context(
+            pool,
+            &c.id,
+            None,
+            None,
+            None,
+            None,
+            tables_arg,
+            None,
+            None,
+            refs_arg,
+            None,
+            None,
+            None,
+        ) {
+            tracing::warn!(error = %e, context = %c.name, "reference validation: update failed");
+        }
+    }
+
+    if tables_dropped > 0 {
+        CONTEXT_GEN_JOBS.emit_line(
+            app,
+            scan_id,
+            format!(
+                "[Heal] Dropped {tables_dropped} db_table name(s) from {tables_touched} context(s) — this project defines no such table{}.",
+                format_drop_examples(&table_samples, tables_dropped as usize)
+            ),
+        );
+    }
+    if refs_dropped > 0 {
+        CONTEXT_GEN_JOBS.emit_line(
+            app,
+            scan_id,
+            format!(
+                "[Heal] Dropped {refs_dropped} cross_ref(s) from {refs_touched} context(s) naming a context that does not exist{}.",
+                format_drop_examples(&ref_samples, refs_dropped as usize)
+            ),
+        );
+    }
+
+    (tables_dropped, refs_dropped)
 }
 
 /// Run the advisory context audit and put its verdict on the scan stream, where
@@ -2081,5 +2361,139 @@ mod tests {
         assert!(!is_mappable_path("Makefile"));
         assert!(!is_mappable_path("LICENSE"));
         assert!(!is_mappable_path(""));
+    }
+
+    // -------------------------------------------------------------------------
+    // Reference validation (db_tables / cross_refs). The write path persisted
+    // both verbatim; these pin the drop decision and, above all, the ORDER it
+    // has to be made in.
+    // -------------------------------------------------------------------------
+
+    use std::collections::HashSet;
+
+    fn set(items: &[&str]) -> HashSet<String> {
+        items.iter().map(|s| s.to_string()).collect()
+    }
+
+    fn owned(items: &[&str]) -> Vec<String> {
+        items.iter().map(|s| s.to_string()).collect()
+    }
+
+    #[test]
+    fn table_names_the_project_defines_survive_and_invented_ones_do_not() {
+        // The exact failure on the shipped map: `workspace-governance` claimed
+        // two tables that have never existed alongside two that do.
+        let schema = set(&["dev_standards", "doc_status", "doc_read_events"]);
+        let claimed = owned(&[
+            "dev_standards",
+            "standards_violations",
+            "doc_status",
+            "doc_rot_findings",
+        ]);
+        let (kept, dropped) = split_known(&claimed, &schema, |s| {
+            super::super::schema_vocabulary::normalize_table_ref(s)
+        });
+        assert_eq!(kept, owned(&["dev_standards", "doc_status"]));
+        assert_eq!(dropped, owned(&["standards_violations", "doc_rot_findings"]));
+    }
+
+    #[test]
+    fn a_table_reference_resolves_through_case_and_qualification() {
+        let schema = set(&["dev_contexts"]);
+        let claimed = owned(&["Dev_Contexts", "main.dev_contexts", "\"dev_contexts\""]);
+        let (kept, dropped) = split_known(&claimed, &schema, |s| {
+            super::super::schema_vocabulary::normalize_table_ref(s)
+        });
+        assert_eq!(kept.len(), 3, "the same table written three ways is one table");
+        assert!(dropped.is_empty());
+    }
+
+    #[test]
+    fn prose_in_a_table_list_is_dropped_not_kept_as_decoration() {
+        let schema = set(&["dev_contexts"]);
+        let claimed = owned(&["(all tables — this context owns the schema)", "dev_contexts"]);
+        let (kept, dropped) = split_known(&claimed, &schema, |s| {
+            super::super::schema_vocabulary::normalize_table_ref(s)
+        });
+        assert_eq!(kept, owned(&["dev_contexts"]));
+        assert_eq!(dropped.len(), 1);
+    }
+
+    #[test]
+    fn cross_ref_to_a_sibling_created_later_in_the_same_scan_is_kept() {
+        // The ordering criterion, stated as a test. The scan emits `alpha`
+        // first; `alpha` references `omega`, which the SAME scan emits later.
+        // A naive per-context check at write time sees only what exists so far
+        // and deletes a perfectly valid reference — so the check must run
+        // against the name set as it stands when the scan COMPLETES.
+        let refs = owned(&["omega"]);
+
+        let mid_stream_names = set(&["alpha"]); // what a write-time check would see
+        let (_, dropped_if_checked_early) = split_known(&refs, &mid_stream_names, normalize_cross_ref);
+        assert_eq!(
+            dropped_if_checked_early,
+            owned(&["omega"]),
+            "this is the false drop a mid-stream check would make"
+        );
+
+        let post_scan_names = set(&["alpha", "omega"]); // …and what the real check sees
+        let (kept, dropped) = split_known(&refs, &post_scan_names, normalize_cross_ref);
+        assert_eq!(kept, owned(&["omega"]), "a forward reference is valid");
+        assert!(dropped.is_empty());
+    }
+
+    #[test]
+    fn cross_ref_naming_nothing_is_dropped_even_when_siblings_resolve() {
+        let post_scan_names = set(&["alpha", "omega"]);
+        let refs = owned(&["omega", "ghost-context", "  alpha  ", ""]);
+        let (kept, dropped) = split_known(&refs, &post_scan_names, normalize_cross_ref);
+        assert_eq!(
+            kept,
+            owned(&["omega", "  alpha  "]),
+            "invisible whitespace is forgiven; a wrong name is not"
+        );
+        assert_eq!(dropped, owned(&["ghost-context", ""]));
+    }
+
+    #[test]
+    fn a_field_pruned_to_nothing_is_stored_as_null_not_an_empty_list() {
+        // Matches `create_context`, which passes None when the model emitted
+        // nothing — otherwise a fully-invented field would publish as `[]` and
+        // read as "checked, genuinely none".
+        assert_eq!(pruned_json(&[]), None);
+        assert_eq!(
+            pruned_json(&owned(&["dev_contexts"])).as_deref(),
+            Some(r#"["dev_contexts"]"#)
+        );
+    }
+
+    #[test]
+    fn the_report_names_examples_and_admits_what_it_elided() {
+        let samples = owned(&["ghost in alpha", "phantom in beta"]);
+        let line = format_drop_examples(&samples, 2);
+        assert!(line.contains("ghost in alpha") && line.contains("phantom in beta"), "{line}");
+        assert!(!line.contains("more"), "nothing was elided: {line}");
+
+        let elided = format_drop_examples(&samples, 40);
+        assert!(elided.contains("+38 more"), "a cap that hides its size is not a report: {elided}");
+    }
+
+    #[test]
+    fn an_unusable_vocabulary_drops_nothing() {
+        // The safety property that keeps a validator from deleting truth: with
+        // no schema evidence the known-set is empty, and the caller is required
+        // to skip rather than treat every name as invented.
+        let empty = super::super::schema_vocabulary::TableVocabulary {
+            names: HashSet::new(),
+            truncated: false,
+            first_unreadable: None,
+        };
+        assert!(!empty.is_usable());
+        let truncated = super::super::schema_vocabulary::TableVocabulary {
+            names: set(&["dev_contexts"]),
+            truncated: true,
+            first_unreadable: Some("C:/locked".into()),
+        };
+        assert!(!truncated.is_usable(), "a partial vocabulary would delete true names");
     }
 }

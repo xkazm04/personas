@@ -11,6 +11,7 @@ pub mod context_consolidate;
 pub mod context_fingerprints;
 pub mod context_generation;
 pub mod context_map_export;
+pub mod schema_vocabulary;
 pub mod dev_tools;
 pub mod dev_tools_http;
 pub mod dev_workspaces;

@@ -553,6 +553,15 @@ export interface ContextGenCompletePayload {
   groups_created: number;
   contexts_created: number;
   files_mapped: number;
+  /**
+   * Reference entries the scan refused to publish because they resolved to
+   * nothing: `db_tables` naming no table the project defines, `cross_refs`
+   * naming no existing context. Emitted by
+   * `context_generation.rs::prune_unresolvable_references` so a scan that
+   * discarded invented references reports it instead of looking spotless.
+   */
+  db_tables_dropped?: number;
+  cross_refs_dropped?: number;
   status: string;
   error?: string;
 }
