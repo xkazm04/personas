@@ -547,14 +547,20 @@ evidence. Observe the actual output.
 
 This repo captures the operator's decisions to build a behavioral profile for
 Athena (design + schema: [`docs/concepts/decision-mirror.md`](../docs/concepts/decision-mirror.md)).
-Selects/multiselects are captured automatically by a PostToolUse hook — no
-session action needed. **Your one duty:** when the user CORRECTS your course
-mid-session (overrides an approach, reverses a decision, redirects scope),
-record it in the same turn:
+Selects/multiselects are captured automatically by a PostToolUse hook, and every
+prompt he types plus what your turn did with it by a UserPromptSubmit + Stop
+hook pair — no session action needed for either. **Your one duty:** when the
+user CORRECTS your course mid-session (overrides an approach, reverses a
+decision, redirects scope), record it in the same turn:
 
 ```bash
-node scripts/decision-ledger/capture-decision.mjs --correction "<what the user directed, near-verbatim>" --was "<what you were doing>" --context "<one-line situation>"
+MSYS_NO_PATHCONV=1 node scripts/decision-ledger/capture-decision.mjs --correction "<what the user directed, near-verbatim>" --was "<what you were doing>" --context "<one-line situation>"
 ```
+
+The `MSYS_NO_PATHCONV=1` prefix is load-bearing on Windows: without it, a
+`--context` that opens with a slash-command name gets rewritten by MSYS path
+conversion, and four corrections in the ledger now read
+`C:/Program Files/Git/architect …` instead of `/architect …`.
 
 Corrections are the highest-value signal in the ledger — never skip one, never
 paraphrase away the user's reasoning. The ledger (`.claude/decision-ledger/`)
