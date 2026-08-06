@@ -773,6 +773,49 @@ const EMPTY_AUDIT: ContextAuditReport = {
 export const auditContexts = (projectId: string) =>
   safeInvoke<ContextAuditReport>(EMPTY_AUDIT, "dev_tools_audit_contexts", { projectId });
 
+// Cross-ref repair. Mirrors the Rust `CrossRefRepairPlan`
+// (commands/infrastructure/context_consolidate.rs). Typed inline for the same
+// reason as the audit above: it is not a ts_rs binding, so it never shows up as
+// an orphan in check-unused-bindings.
+export interface CrossRefRewrite {
+  context: string;
+  from: string;
+  /** null when the remap makes the ref name its own owner, so it is dropped. */
+  to: string | null;
+}
+export interface AmbiguousGhost {
+  name: string;
+  claimedBy: string[];
+}
+export interface CrossRefRepairPlan {
+  projectId: string;
+  dryRun: boolean;
+  contextsScanned: number;
+  danglingBefore: number;
+  ghostNames: number;
+  rewritten: number;
+  selfDropped: number;
+  deduped: number;
+  contextsTouched: number;
+  unresolved: number;
+  unresolvedNames: string[];
+  ambiguous: AmbiguousGhost[];
+  danglingAfter: number;
+  contextsWritten: number;
+  rewrites: CrossRefRewrite[];
+  rewritesOmitted: number;
+}
+
+/**
+ * Plan (and only when `apply` is explicitly true, perform) the repair of
+ * `cross_refs` orphaned by consolidations that ran before the merge rewrote
+ * them. DRY RUN BY DEFAULT — `dev_contexts` has no version column and context
+ * scans are not recorded in `dev_scans`, so the write has no undo inside the
+ * app. Show the plan, then let the operator ask for it.
+ */
+export const repairCrossRefs = (projectId: string, apply = false) =>
+  invoke<CrossRefRepairPlan>("dev_tools_repair_cross_refs", { projectId, apply });
+
 // ============================================================================
 // Context Group Relationships
 // ============================================================================
