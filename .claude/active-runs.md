@@ -9,6 +9,7 @@
 
 
 
+
 ### prototype-mm-goals — /prototype: consolidated Goals modal for the Mastermind Goals dimension — session opus-5[1m]
 - Started: 2026-08-04. Status: started. Worktree `.claude/worktrees/prototype-mm-goals` (branch `worktree-prototype-mm-goals`).
 - Fuses `sub_mastermind/lib/GoalListPopover.tsx` (inert title-list popover) with the goal-acceptance surface (`sub_goals/{acceptancePrimitives,AcceptanceTriagePolished,GoalAcceptanceView}.tsx`) into ONE project-scoped modal. 3 directional variants → operator picks one → both predecessors deleted, and the app-header Goal-management tray entry (`shared/chrome/useTitleBarTray.tsx`) is optionally dropped.
@@ -104,6 +105,13 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### athena-stt-compare — side-by-side STT engine bench — COMPLETE, commit 9a4e800bc — session opus-5 (xhigh)
+- 2026-08-06. Voice tab gains **Compare engines**: one spoken take, browser + local-Whisper transcripts side by side with per-engine latency (stop-speaking → text). New `useSttComparison` composes `useDictation` + `useLocalDictation` unchanged; `SttCompareModal` is shared primitives only (BaseModal/Button/CopyButton/ErrorBanner/LoadingSpinner), zero persistence, entry disabled while a real hold-to-talk capture owns the mic.
+- **Design constraint worth remembering**: `SpeechRecognition` takes NO audio buffer (live mic only), so "record once, transcribe twice" is impossible and recording twice would compare different takes. Concurrent capture is the only fair A/B; it works because the two paths open independent captures and an input device is not exclusive. Failure is per-column (missing model / denied mic fails one engine, not the test).
+- Gates: tsc 0 · eslint 0 on new files · companion vitest 383/383 (7 new, hook mocked since jsdom has neither SpeechRecognition nor getUserMedia) · i18n strict + untranslated 0/0 x14.
+- **The tests caught a real bug pre-merge**: I regenerated `i18n/generated/types.ts` but not `enSectionStrings.ts`, so every new key rendered EMPTY at runtime while tsc stayed happy. `gen-types` is the compile-time tree; `split-locales` is the runtime one — run BOTH (or just `translate-merge`, which does it).
+- NOT live-verified: whether this machine's WebView2 actually permits two simultaneous mic consumers is exactly what the first real run will answer; if it does not, expect one column to report a mic error and the design note above is where to start.
 
 ### athena-goal-edit — read + edit daily goals in full — COMPLETE, commit 60be0852a (worktree 390bc42ed) — session opus-5 (xhigh)
 - 2026-08-05. Goal chips ellipsize at one line, so created goals could never be read back. Added: hover tooltip carrying the full title, a pencil button opening the authoring modal prefilled with the active set (fields switched input→textarea so the whole goal is visible), and `companion_daily_goals_update` (brain `update_set`) rewriting the active set's texts. A free slot filled in edit mode appends (3 max); emptying an existing goal is REFUSED (dropping the last open goal would leave a set logically complete but never stamped, so done/discard stay the only exits); an edit never touches done state.
@@ -3077,3 +3085,10 @@ timestamp — the next session can recognize it as abandoned.
 
 #### spark-agent-candidate-bridge — UPDATE 2026-08-04 (2): kp side MERGED to kp main (765cfee6, gates green). Personas branch worktree-spark-agent-candidate-bridge is COMPLETE (WP3 449861d61 + WP4 25bde5428, all gates green) and READY TO MERGE — held because master's working tree has uncommitted changes to src-tauri/db/src/repos/execution/executions.rs (another session) which the branch also modifies (adds get_monthly_rollup). Whoever owns that dirty state: commit it, then `git merge worktree-spark-agent-candidate-bridge` resolves the rest. Worktree kept alive until merged.
 
+
+#### reflect-me-run1 + prose-capture — Decision Mirror: first /reflect-me distillation, then Phase 1c prose channel — session opus-5[1m]
+- Started/completed: 2026-08-06. Status: COMPLETE, commit 770fed8a4.
+- Paths touched (tracked): scripts/decision-ledger/{capture-prose,backfill-prose}.mjs (new), .claude/skills/reflect-me/SKILL.md, docs/concepts/decision-mirror.md, .claude/CLAUDE.md.
+- Paths touched (gitignored, machine-local): .claude/decision-ledger/{profile.md,profile-changelog.md,state.json,prose-2026-07.jsonl,prose-2026-08.jsonl,archive/events-2026-07.jsonl}, .claude/settings.local.json (hook registration).
+- Stayed on main checkout rather than a worktree by design: the hooks and the gitignored ledger are main-checkout-only, so the feature cannot run or be verified from a worktree. Index verified clean before staging; 5 files staged, 5 committed.
+- No overlap with active entries (spark-agent-candidate-bridge owns engine/management_api + approvals; this run owns scripts/decision-ledger + reflect-me only).
