@@ -1671,6 +1671,14 @@ async fn run_context_generation(
     // Restore the use-case slice + context-scoped KPIs the rebuild detached.
     reconcile_links(app, scan_id, pool, project_id, &link_snapshot);
 
+    // Ask the detector. A whole-tree scan rebuilds the map wholesale, which is
+    // exactly when a reference can start naming nothing — and the audit that
+    // catches it has existed, tested and registered, with zero callers. Advisory:
+    // it reports on the stream and never fails the scan.
+    if subtree.is_none() {
+        report_context_audit(app, scan_id, pool, project_id);
+    }
+
     // Write the server-free harness docs (context-map.json + managed CLAUDE.md
     // section) into the managed project so a CLI opened there sees the map.
     write_harness_docs(app, scan_id, pool, project_id, root_path);
@@ -1859,6 +1867,52 @@ fn prune_dangling_file_paths(
                 "[Heal] Pruned {files_pruned} dangling file path(s) from {contexts_touched} context(s) before publishing."
             ),
         );
+    }
+}
+
+/// Run the advisory context audit and put its verdict on the scan stream, where
+/// the operator already reads `[Coverage]` and `[Heal]`.
+///
+/// Advisory by contract (`context_audit.rs:4-5`): a governance scanner that can
+/// fail a save is a scanner people disable. So this only ever reports — an
+/// error here is a warning line, and the scan publishes either way. The verdict
+/// is retained in the job's output ring (readable via scan-status) and mirrored
+/// to the tracing log, so it survives the window closing.
+fn report_context_audit(
+    app: &tauri::AppHandle,
+    scan_id: &str,
+    pool: &crate::db::DbPool,
+    project_id: &str,
+) {
+    match super::context_audit::audit_from_db(pool, project_id) {
+        Ok(report) => {
+            let line = super::context_audit::summarize(&report);
+            tracing::info!(project_id, audit = %line, "post-scan context audit");
+            CONTEXT_GEN_JOBS.emit_line(
+                app,
+                scan_id,
+                format!(
+                    "[{}] {line}",
+                    if report.balanced { "Audit" } else { "Audit — attention" }
+                ),
+            );
+            if report.totals.unresolved_cross_refs > 0 {
+                CONTEXT_GEN_JOBS.emit_line(
+                    app,
+                    scan_id,
+                    format!(
+                        "[Audit] {} cross-ref(s) name a context that does not exist. Every agent \
+                         navigating by this map reads them as real. Run the cross-ref repair \
+                         (dry run first) or fix them on the Context Map.",
+                        report.totals.unresolved_cross_refs
+                    ),
+                );
+            }
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "post-scan context audit failed");
+            CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!("[Warning] Context audit skipped: {e}"));
+        }
     }
 }
 

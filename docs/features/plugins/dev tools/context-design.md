@@ -145,7 +145,15 @@ The map is a self-validating artifact, not a fire-and-forget snapshot:
 - **On-demand audit** — `dev_tools_audit_contexts` reports (never mutates):
   `dangling_file_path`, `unresolved_cross_ref` (a `cross_refs` entry naming no
   real context), `stale_context` (a mapped file whose content hash changed
-  since the last scan).
+  since the last scan). All three cap their findings at 25; `totals` keeps the
+  exact count. It runs from the **Map health** panel, after a whole-tree scan,
+  and after a consolidation — advisory in every case.
+- **No orphaned references** — a consolidation rewrites `cross_refs` inside the
+  merge transaction for both ghost paths (absorbed name; survivor renamed), and
+  the dry run reports what it *would* orphan before applying. Pre-existing
+  damage is repaired by `dev_tools_repair_cross_refs`, which resolves ghosts
+  through the `[Consolidated …: absorbed …]` markers and is **dry-run by
+  default** because contexts carry no version history.
 - **Provenance** — the export stamps `git_commit` / `git_commit_count` and each
   context carries `last_written_at`, so any reader can judge staleness against
   the current HEAD instead of a bare timestamp.
@@ -401,8 +409,9 @@ behavioral unit) and 2 (needs cheap measurements to difference).
 | Delta engine | `src-tauri/src/commands/infrastructure/incremental_scan.rs` (`walk_project_files`, `compute_delta`, `dev_tools_compute_scan_delta`) |
 | Export | `src-tauri/src/commands/infrastructure/context_map_export.rs` (`context-map.json` v2 + managed CLAUDE.md splice) |
 | Repo layer | `src-tauri/src/db/repos/dev_tools.rs` (`clear_project_context_map`, `set_context_pinned`, `replace_file_hashes`) |
-| Audit | `dev_tools_audit_contexts` |
-| Frontend | `src/features/plugins/dev-tools/sub_context/` (`ContextMapPage`, `ContextLedger`, `contextLedgerShared`, `ContextDetail`, `ScanOverlay`, `useUseCases`) |
+| Audit | `dev_tools_audit_contexts` · `context_audit::audit_from_db` / `summarize` (the callers: `ContextMapHealth`, post-scan `report_context_audit`, `consolidate_contexts_route`) |
+| Consolidation & reference repair | `src-tauri/src/commands/infrastructure/context_consolidate.rs` (`consolidate_contexts`, `rename_map`/`remap_cross_refs`, `repair_cross_refs`, `dev_tools_repair_cross_refs`) · `POST /dev-tools/{consolidate-contexts,repair-cross-refs}` |
+| Frontend | `src/features/plugins/dev-tools/sub_context/` (`ContextMapPage`, `ContextMapHealth`, `ContextLedger`, `contextLedgerShared`, `ContextDetail`, `ScanOverlay`, `useUseCases`) |
 | Use cases | `dev_tools_{list,get,create,update,delete}_use_case[s]` · `_list_use_cases_for_context` · `_backfill_use_cases` · `use_case_scan.rs` (`dev_tools_scan_use_cases`) · repo `snapshot_context_links` / `reconcile_context_links` · `src/lib/useCaseSlug.ts` (join key) |
 | MCP tools | `src-tauri/src/mcp_server/tools.rs` (`context_list_groups` / `context_search_by_keyword` / `context_get_by_file_path` / `context_neighbors`) |
 | KPI pairing | `kpi_scan.rs` (proposal scope rules), `engine/kpi_derivation.rs` (scope-filtered goal derivation), `src/features/teams/sub_factory/` (matrix + console) |

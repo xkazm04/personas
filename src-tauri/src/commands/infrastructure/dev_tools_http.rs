@@ -26,6 +26,7 @@
 //!   POST /kpi-rebind                        → re-point a KPI at a context { kpi_id, context_id }
 //!   POST /export-context-map                → re-write context-map.json + CLAUDE.md from the DB (after repairs)
 //!   POST /consolidate-contexts              → merge micro-contexts into the 10-30 band, re-pointing every anchored artifact { project_id, dry_run }
+//!   POST /repair-cross-refs                 → re-point cross_refs orphaned by past consolidations { project_id, apply } — DRY RUN unless `apply`
 //!
 //! The last four exist for the `project-populate` skill, which conducts the
 //! app's own scan lanes from a terminal: it gates each lane on freshness, then
@@ -87,6 +88,7 @@ pub fn router(app: AppHandle) -> Router {
         .route("/merge-context-groups", post(merge_context_groups))
         .route("/export-context-map", post(export_context_map))
         .route("/consolidate-contexts", post(consolidate_contexts_route))
+        .route("/repair-cross-refs", post(repair_cross_refs_route))
         .route("/use-cases/{project_id}", get(list_use_cases))
         .route("/use-case-decision", post(use_case_decision))
         .route("/kpi-sim/prepare", post(kpi_sim_prepare))
@@ -363,8 +365,15 @@ struct ConsolidateContextsBody {
 
 /// Merge micro-contexts into the 10-30-file band without a rescan, keeping
 /// every anchored artifact (KPIs, use-case slices, ideas, goals, memory
-/// nodes) attached via re-pointing. See context_consolidate.rs. Repair, then
-/// export: a non-dry run rewrites context-map.json + the backlog digest.
+/// nodes, cross_refs) attached via re-pointing. See context_consolidate.rs.
+/// Repair, then export: a non-dry run rewrites context-map.json + the backlog
+/// digest.
+///
+/// The audit runs on the way out — on the dry run over the CURRENT map (so the
+/// caller sees what is already broken before deciding), and on the real run
+/// over the merged map (so a merge that damaged something says so in the same
+/// response instead of being discovered two days later). It is advisory: an
+/// audit failure never fails the consolidation.
 async fn consolidate_contexts_route(
     State(s): State<DevToolsHttp>,
     Json(b): Json<ConsolidateContextsBody>,
@@ -387,6 +396,67 @@ async fn consolidate_contexts_route(
         );
         out["exportedContexts"] = serde_json::json!(exported);
     }
+    out["audit"] = attach_audit(&pool, &b.project_id);
+    Ok(Json(out))
+}
+
+/// Run the context audit and shape it for a bridge response. Advisory by
+/// contract, so an error becomes a reported reason, never a failed request.
+fn attach_audit(pool: &DbPool, project_id: &str) -> Value {
+    use crate::commands::infrastructure::context_audit;
+    match context_audit::audit_from_db(pool, project_id) {
+        Ok(report) => {
+            let line = context_audit::summarize(&report);
+            tracing::info!(project_id, audit = %line, "context audit");
+            serde_json::json!({
+                "summary": line,
+                "balanced": report.balanced,
+                "totals": report.totals,
+                "findings": report.findings,
+            })
+        }
+        Err(e) => serde_json::json!({ "error": e.to_string() }),
+    }
+}
+
+#[derive(Deserialize)]
+struct RepairCrossRefsBody {
+    project_id: String,
+    /// DRY RUN BY DEFAULT. `dev_contexts` has no version column, no soft-delete
+    /// and no `absorbed_from`, and context scans are never recorded in
+    /// `dev_scans` — a bad repair cannot be rolled back from inside the app, so
+    /// writing is an explicit second act.
+    #[serde(default)]
+    apply: bool,
+}
+
+/// Repair `cross_refs` orphaned by consolidations that ran before the merge
+/// rewrote them, resolving ghosts through the `[Consolidated …: absorbed …]`
+/// markers those merges stamped into each survivor's description. Reports what
+/// it cannot resolve rather than deleting it. Never wired into a scan hook.
+async fn repair_cross_refs_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<RepairCrossRefsBody>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let project = require_project(&s, &b.project_id)?;
+    let pool = db(&s);
+    let plan = crate::commands::infrastructure::context_consolidate::repair_cross_refs(
+        &pool,
+        &b.project_id,
+        b.apply,
+    )
+    .map_err(err)?;
+    let mut out = serde_json::to_value(&plan).map_err(|e| {
+        (StatusCode::INTERNAL_SERVER_ERROR, format!("serialize repair plan: {e}"))
+    })?;
+    if b.apply && plan.contexts_written > 0 {
+        // Repair, then export — the same discipline the consolidate route
+        // follows, so context-map.json can't keep publishing the dead pointers.
+        let exported =
+            write_context_map_artifacts(&pool, &b.project_id, &project.root_path).map_err(err)?;
+        out["exportedContexts"] = serde_json::json!(exported);
+    }
+    out["audit"] = attach_audit(&pool, &b.project_id);
     Ok(Json(out))
 }
 
