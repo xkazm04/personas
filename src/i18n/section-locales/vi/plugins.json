@@ -1511,11 +1511,11 @@
     "monitoring_lane_aria": "Phần giám sát",
     "monitoring_lane_capabilities": "Năng lực",
     "monitoring_lane_upgrade": "Nâng cấp",
-    "monitoring_ledger_available": "Trong kho của bạn",
-    "monitoring_ledger_count": "{count} khả dụng",
     "monitoring_none_dash": "—",
-    "monitoring_track_step_code": "Trong mã nguồn",
-    "monitoring_track_step_vault": "Trình kết nối"
+    "monitoring_vault_available": "Trong kho của bạn",
+    "monitoring_vault_count": "{count} khả dụng",
+    "monitoring_health_ok": "bình thường",
+    "monitoring_health_unknown": "không rõ trạng thái"
   },
   "doc_signing": {
     "sign_heading": "Ký tài liệu",

@@ -4,11 +4,18 @@
 //   · Capabilities — the four-item grid: bind a connector per capability, and
 //     dispatch the integration for the one state that needs code.
 //   · Upgrade      — `ImproveClassicPanel`, i.e. exactly what the old deploy
-//     popover showed. Routing this row to a modal had silently dropped all of
-//     it: "why this rating", the level ladder, the connector icon grid, the
-//     golden-standard actions with prompt preview / Queue / Deploy now, and
-//     "queue for all N projects that need this". None of that is re-implemented
-//     here — the panel is the popover's own body, shared.
+//     popover showed: "why this rating", the level ladder, the connector icon
+//     grid, the golden-standard actions with prompt preview / Queue / Deploy
+//     now, and "queue for all N projects that need this". None of it is
+//     re-implemented here — the panel is the popover's own body, shared.
+//
+//     It reads the **observability** row, not `monitoring`. That is where every
+//     one of those features is actually keyed: the deploy action is
+//     `row: 'observability'`, and `LADDERS` has an `observability` entry and no
+//     `monitoring` one. Pointing the lane at `monitoring` (the row this modal
+//     opens from) therefore produced an EMPTY panel — and, because the tab was
+//     gated on the panel having content, usually no tab at all. Same class of
+//     bug as the canvas row-key mismatch: two names for one dimension.
 //
 // PROTOTYPE SCAFFOLD: the variant pill in the header is throwaway. It switches
 // only the Capabilities lane; consolidation deletes it and the loser files.
@@ -32,11 +39,15 @@ import {
 } from './monitoringModel';
 import type { MonitoringRow } from './monitoringTypes';
 import { MonitoringConsoleVariant } from './MonitoringConsoleVariant';
-import { MonitoringLedgerVariant } from './MonitoringLedgerVariant';
-import { MonitoringTrackVariant } from './MonitoringTrackVariant';
+import { MonitoringRowsVariant } from './MonitoringRowsVariant';
+import { MonitoringFocusVariant } from './MonitoringFocusVariant';
 
 type Lane = 'capabilities' | 'upgrade';
-type Variant = 'console' | 'ledger' | 'track';
+type Variant = 'console' | 'rows' | 'focus';
+
+/** The passport row whose golden-standard actions, level ladder and provenance
+ *  describe this dimension. See the note above: it is NOT `monitoring`. */
+const UPGRADE_ROW = 'observability';
 
 /** Union of every service type any item accepts — one vault fetch covers all
  *  four rows; each row filters the result to its own accepted types. */
@@ -57,7 +68,7 @@ export function MonitoringModal({ slug, projectName, passport, onClose }: {
   const [variant, setVariant] = useState<Variant>('console');
   const [deploying, setDeploying] = useState<string | null>(null);
 
-  const classic = hasClassicContent(slug, MONITORING_DIMENSION, engine);
+  const classic = hasClassicContent(slug, UPGRADE_ROW, engine);
 
   const rows = useMemo<MonitoringRow[]>(() => MONITORING_ITEMS.map((def) => {
     const boundId = env.bindings.get(bindingKey(def.key, MONITORING_ENV));
@@ -104,8 +115,11 @@ export function MonitoringModal({ slug, projectName, passport, onClose }: {
   const shared = { rows, busyKey: env.saving?.split('|')[0] ?? null, deploying, onAssign, onDeploy };
 
   return (
-    <BaseModal isOpen onClose={onClose} titleId="monitoring-modal-title" size="lg" portal staggerChildren={false}>
-      <div className="flex flex-col h-[470px]" data-testid="monitoring-modal">
+    <BaseModal isOpen onClose={onClose} titleId="monitoring-modal-title" size="6xl" portal staggerChildren={false}>
+      {/* Viewport-relative like SkillsWorkbench. The tiles were ~370x195 in
+          a 470px `lg` shell — too small to hold facts AND a picker, which is
+          why every variant had to hide one to show the other. */}
+      <div className="flex flex-col h-[calc(100dvh-160px)] min-h-[520px] max-h-[760px]" data-testid="monitoring-modal">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10 bg-primary/[0.04] flex-shrink-0">
           <Activity className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
           <span id="monitoring-modal-title" className="typo-title truncate">{d.monitoring_modal_title}</span>
@@ -117,8 +131,8 @@ export function MonitoringModal({ slug, projectName, passport, onClose }: {
               <SegmentedTabs
                 tabs={[
                   { id: 'console', label: 'A · Console' },
-                  { id: 'ledger', label: 'B · Ledger' },
-                  { id: 'track', label: 'C · Track' },
+                  { id: 'rows', label: 'B · Rows' },
+                  { id: 'focus', label: 'C · Focus' },
                 ]}
                 activeTab={variant}
                 onTabChange={(v) => setVariant(v as Variant)}
@@ -147,18 +161,18 @@ export function MonitoringModal({ slug, projectName, passport, onClose }: {
 
         {lane === 'upgrade' ? (
           <div className="flex-1 min-h-0 overflow-y-auto p-4">
-            <ImproveClassicPanel slug={slug} rowKey={MONITORING_DIMENSION} onDone={onClose} />
+            <ImproveClassicPanel slug={slug} rowKey={UPGRADE_ROW} onDone={onClose} />
           </div>
         ) : variant === 'console' ? (
           <MonitoringConsoleVariant {...shared} />
-        ) : variant === 'ledger' ? (
-          <MonitoringLedgerVariant {...shared} />
+        ) : variant === 'rows' ? (
+          <MonitoringRowsVariant {...shared} />
         ) : (
-          <MonitoringTrackVariant {...shared} />
+          <MonitoringFocusVariant {...shared} />
         )}
 
         <div className="px-4 py-2 border-t border-primary/10 bg-secondary/10 flex-shrink-0">
-          <span className="typo-label text-foreground/40">{d.monitoring_modal_footer}</span>
+          <span className="typo-caption text-foreground/45" style={{ fontWeight: 400 }}>{d.monitoring_modal_footer}</span>
         </div>
       </div>
     </BaseModal>

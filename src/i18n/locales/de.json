@@ -13933,11 +13933,11 @@
       "monitoring_lane_aria": "Monitoring-Bereich",
       "monitoring_lane_capabilities": "Fähigkeiten",
       "monitoring_lane_upgrade": "Upgrade",
-      "monitoring_ledger_available": "In deinem Vault",
-      "monitoring_ledger_count": "{count} verfügbar",
       "monitoring_none_dash": "—",
-      "monitoring_track_step_code": "Im Code",
-      "monitoring_track_step_vault": "Connector"
+      "monitoring_vault_available": "In deinem Vault",
+      "monitoring_vault_count": "{count} verfügbar",
+      "monitoring_health_ok": "in Ordnung",
+      "monitoring_health_unknown": "Status unbekannt"
     },
     "doc_signing": {
       "sign_heading": "Dokument signieren",

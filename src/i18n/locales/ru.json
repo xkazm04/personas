@@ -13933,11 +13933,11 @@
       "monitoring_lane_aria": "Раздел мониторинга",
       "monitoring_lane_capabilities": "Возможности",
       "monitoring_lane_upgrade": "Улучшение",
-      "monitoring_ledger_available": "В вашем хранилище",
-      "monitoring_ledger_count": "доступно: {count}",
       "monitoring_none_dash": "—",
-      "monitoring_track_step_code": "В коде",
-      "monitoring_track_step_vault": "Коннектор"
+      "monitoring_vault_available": "В вашем хранилище",
+      "monitoring_vault_count": "доступно: {count}",
+      "monitoring_health_ok": "в порядке",
+      "monitoring_health_unknown": "состояние неизвестно"
     },
     "doc_signing": {
       "sign_heading": "Подписать документ",

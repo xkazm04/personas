@@ -1511,11 +1511,11 @@
     "monitoring_lane_aria": "监控板块",
     "monitoring_lane_capabilities": "能力",
     "monitoring_lane_upgrade": "升级",
-    "monitoring_ledger_available": "保险库中",
-    "monitoring_ledger_count": "{count} 个可用",
     "monitoring_none_dash": "—",
-    "monitoring_track_step_code": "代码中",
-    "monitoring_track_step_vault": "连接器"
+    "monitoring_vault_available": "保险库中",
+    "monitoring_vault_count": "{count} 个可用",
+    "monitoring_health_ok": "正常",
+    "monitoring_health_unknown": "状态未知"
   },
   "doc_signing": {
     "sign_heading": "签署文档",

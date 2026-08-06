@@ -1511,11 +1511,11 @@
     "monitoring_lane_aria": "মনিটরিং বিভাগ",
     "monitoring_lane_capabilities": "সক্ষমতা",
     "monitoring_lane_upgrade": "আপগ্রেড",
-    "monitoring_ledger_available": "আপনার ভল্টে",
-    "monitoring_ledger_count": "{count}টি উপলব্ধ",
     "monitoring_none_dash": "—",
-    "monitoring_track_step_code": "কোডবেসে",
-    "monitoring_track_step_vault": "কানেক্টর"
+    "monitoring_vault_available": "আপনার ভল্টে",
+    "monitoring_vault_count": "{count}টি উপলব্ধ",
+    "monitoring_health_ok": "সুস্থ",
+    "monitoring_health_unknown": "স্বাস্থ্য অজানা"
   },
   "doc_signing": {
     "sign_heading": "ডকুমেন্ট স্বাক্ষর করুন",

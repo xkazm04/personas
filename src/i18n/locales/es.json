@@ -13933,11 +13933,11 @@
       "monitoring_lane_aria": "Sección de monitorización",
       "monitoring_lane_capabilities": "Capacidades",
       "monitoring_lane_upgrade": "Mejora",
-      "monitoring_ledger_available": "En tu bóveda",
-      "monitoring_ledger_count": "{count} disponibles",
       "monitoring_none_dash": "—",
-      "monitoring_track_step_code": "En el código",
-      "monitoring_track_step_vault": "Conector"
+      "monitoring_vault_available": "En tu bóveda",
+      "monitoring_vault_count": "{count} disponibles",
+      "monitoring_health_ok": "correcto",
+      "monitoring_health_unknown": "estado desconocido"
     },
     "doc_signing": {
       "sign_heading": "Firmar un Documento",

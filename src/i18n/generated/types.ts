@@ -14234,10 +14234,10 @@ export type Translations = {
       monitoring_lane_capabilities: string;
       monitoring_lane_upgrade: string;
       monitoring_lane_aria: string;
-      monitoring_ledger_available: string;
-      monitoring_ledger_count: string;
-      monitoring_track_step_code: string;
-      monitoring_track_step_vault: string;
+      monitoring_vault_available: string;
+      monitoring_vault_count: string;
+      monitoring_health_ok: string;
+      monitoring_health_unknown: string;
     };
     doc_signing: {
       sign_heading: string;

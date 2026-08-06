@@ -13933,11 +13933,11 @@
       "monitoring_lane_aria": "قسم المراقبة",
       "monitoring_lane_capabilities": "القدرات",
       "monitoring_lane_upgrade": "الترقية",
-      "monitoring_ledger_available": "في خزنتك",
-      "monitoring_ledger_count": "{count} متاح",
       "monitoring_none_dash": "—",
-      "monitoring_track_step_code": "في الشيفرة",
-      "monitoring_track_step_vault": "الموصّل"
+      "monitoring_vault_available": "في خزنتك",
+      "monitoring_vault_count": "{count} متاح",
+      "monitoring_health_ok": "سليم",
+      "monitoring_health_unknown": "الحالة غير معروفة"
     },
     "doc_signing": {
       "sign_heading": "توقيع مستند",

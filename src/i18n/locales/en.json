@@ -14228,10 +14228,10 @@
       "monitoring_lane_capabilities": "Capabilities",
       "monitoring_lane_upgrade": "Upgrade",
       "monitoring_lane_aria": "Monitoring section",
-      "monitoring_ledger_available": "In your vault",
-      "monitoring_ledger_count": "{count} available",
-      "monitoring_track_step_code": "In the codebase",
-      "monitoring_track_step_vault": "Connector"
+      "monitoring_vault_available": "In your vault",
+      "monitoring_vault_count": "{count} available",
+      "monitoring_health_ok": "healthy",
+      "monitoring_health_unknown": "health unknown"
     },
     "doc_signing": {
       "sign_heading": "Sign a Document",
