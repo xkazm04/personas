@@ -2694,7 +2694,11 @@
     "orb_quick_input_close": "Schnellnachricht schließen",
     "orb_quick_input_last_reply_label": "Athenas letzte Antwort",
     "orb_quick_input_open": "Schnellnachricht senden",
-    "orb_quick_input_placeholder": "Nachricht an Athena…"
+    "orb_quick_input_placeholder": "Nachricht an Athena…",
+    "orb_unread_one": "{count} neue Nachricht von Athena",
+    "orb_unread_other": "{count} neue Nachrichten von Athena",
+    "_comment_orb_unread_one": "Athena's floating orb — badge label when exactly 1 reply arrived while the chat panel was closed. Announced to screen readers and shown as the badge tooltip.",
+    "_comment_orb_unread_other": "Athena's floating orb — badge label for 2+ replies that arrived while the chat panel was closed."
   },
   "artist_gallery": {
     "loading_viewer": "Viewer wird geladen…",

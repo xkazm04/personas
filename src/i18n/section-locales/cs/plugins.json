@@ -2694,7 +2694,11 @@
     "orb_quick_input_close": "Zavřít rychlou zprávu",
     "orb_quick_input_last_reply_label": "Poslední odpověď Athény",
     "orb_quick_input_open": "Odeslat rychlou zprávu",
-    "orb_quick_input_placeholder": "Napište Athéně…"
+    "orb_quick_input_placeholder": "Napište Athéně…",
+    "orb_unread_one": "{count} nová zpráva od Atheny",
+    "orb_unread_other": "{count} nových zpráv od Atheny",
+    "_comment_orb_unread_one": "Athena's floating orb — badge label when exactly 1 reply arrived while the chat panel was closed. Announced to screen readers and shown as the badge tooltip.",
+    "_comment_orb_unread_other": "Athena's floating orb — badge label for 2+ replies that arrived while the chat panel was closed."
   },
   "artist_gallery": {
     "loading_viewer": "Načítání prohlížeče…",

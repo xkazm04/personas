@@ -2694,7 +2694,11 @@
     "orb_quick_input_close": "إغلاق الرسالة السريعة",
     "orb_quick_input_last_reply_label": "آخر رد من أثينا",
     "orb_quick_input_open": "إرسال رسالة سريعة",
-    "orb_quick_input_placeholder": "راسل أثينا…"
+    "orb_quick_input_placeholder": "راسل أثينا…",
+    "orb_unread_one": "{count} رسالة جديدة من Athena",
+    "orb_unread_other": "{count} رسائل جديدة من Athena",
+    "_comment_orb_unread_one": "Athena's floating orb — badge label when exactly 1 reply arrived while the chat panel was closed. Announced to screen readers and shown as the badge tooltip.",
+    "_comment_orb_unread_other": "Athena's floating orb — badge label for 2+ replies that arrived while the chat panel was closed."
   },
   "artist_gallery": {
     "loading_viewer": "جارٍ تحميل العارض…",

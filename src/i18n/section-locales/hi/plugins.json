@@ -2694,7 +2694,11 @@
     "orb_quick_input_close": "त्वरित संदेश बंद करें",
     "orb_quick_input_last_reply_label": "एथेना का अंतिम उत्तर",
     "orb_quick_input_open": "त्वरित संदेश भेजें",
-    "orb_quick_input_placeholder": "एथेना को संदेश भेजें…"
+    "orb_quick_input_placeholder": "एथेना को संदेश भेजें…",
+    "orb_unread_one": "Athena से {count} नया संदेश",
+    "orb_unread_other": "Athena से {count} नए संदेश",
+    "_comment_orb_unread_one": "Athena's floating orb — badge label when exactly 1 reply arrived while the chat panel was closed. Announced to screen readers and shown as the badge tooltip.",
+    "_comment_orb_unread_other": "Athena's floating orb — badge label for 2+ replies that arrived while the chat panel was closed."
   },
   "artist_gallery": {
     "loading_viewer": "viewer लोड हो रहा है…",

@@ -168,6 +168,26 @@ interface CompanionStore {
   streamingBeat: string | null;
   sendError: string | null;
 
+  /**
+   * Replies that have arrived since the chat panel was last open — the orb's
+   * message badge.
+   *
+   * The orb already REACTS to a landing reply (a one-shot avatar clip + a
+   * border glow), but a one-shot is invisible to anyone who wasn't looking at
+   * that exact second, so Athena could answer, go quiet, and leave no trace
+   * that she had. This is the durable half of that signal: it survives until
+   * the user actually opens the chat, and it is cleared by nothing else — not
+   * by time, not by the reaction clip finishing.
+   */
+  unreadReplies: number;
+  /**
+   * A reply landed, or Athena reached out unprompted. Deliberately a no-op
+   * while the panel is `open`: the message is already on screen, and badging
+   * it would make the user dismiss an indicator for something they just read.
+   */
+  noteIncomingReply: () => void;
+  clearUnreadReplies: () => void;
+
   setState: (state: CompanionState) => void;
   setBrainPath: (path: string | null) => void;
   setInitError: (error: string | null) => void;
@@ -713,7 +733,14 @@ export const useCompanionStore = create<CompanionStore>()(
   streamingBeat: null,
   sendError: null,
 
-  setState: (state) => set({ state }),
+  unreadReplies: 0,
+  noteIncomingReply: () =>
+    set((s) => (s.state === 'open' ? {} : { unreadReplies: s.unreadReplies + 1 })),
+  clearUnreadReplies: () => set({ unreadReplies: 0 }),
+
+  // Opening the chat IS reading it, so the badge clears HERE — one place —
+  // rather than at each of the several points a reply can land.
+  setState: (state) => set(state === 'open' ? { state, unreadReplies: 0 } : { state }),
   setBrainPath: (brainPath) => set({ brainPath }),
   setInitError: (initError) => set({ initError }),
   setInitialized: (initialized) => set({ initialized }),
@@ -875,7 +902,12 @@ export const useCompanionStore = create<CompanionStore>()(
       // Dedupe by id — the scheduler can re-fire if the user reopens
       // the app while a message is already loaded from the listing.
       if (s.proactive.some((m) => m.id === msg.id)) return s;
-      return { proactive: [msg, ...s.proactive] };
+      // Athena reaching out unprompted is the clearest case the orb badge
+      // exists for: she has something to say and nobody asked her to.
+      return {
+        proactive: [msg, ...s.proactive],
+        unreadReplies: s.state === 'open' ? s.unreadReplies : s.unreadReplies + 1,
+      };
     }),
   removeProactive: (id) =>
     set((s) => ({ proactive: s.proactive.filter((m) => m.id !== id) })),

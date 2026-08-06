@@ -146,5 +146,13 @@
   "_comment_far_idle": "Far-zoom island tooltip, headline: nothing is running on this project right now. Keep short — it is the label on a sleeping-moon mark.",
   "_comment_far_idle_hint": "Far-zoom island tooltip, second clause explaining what 'nothing running' counted. 'Fleet' is the product's CLI-session feature — keep it capitalised and untranslated.",
   "_comment_far_personas_one": "Far-zoom island tooltip, breakdown item for the persona lane (singular).",
-  "_comment_far_personas_other": "Far-zoom island tooltip, breakdown item for the persona lane (plural)."
+  "_comment_far_personas_other": "Far-zoom island tooltip, breakdown item for the persona lane (plural).",
+  "family_runners": "Dev runners",
+  "lane_none": "Nichts läuft",
+  "lane_personas": "Personas",
+  "lane_runners": "Runner",
+  "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
+  "_comment_lane_none": "Mastermind mid-zoom island: shown in a work lane that currently has nothing running.",
+  "_comment_lane_personas": "Mastermind mid-zoom island: label for the persona work lane. Short — it sits under a small icon.",
+  "_comment_lane_runners": "Mastermind mid-zoom island: label for the dev-runner work lane (queued/running engine tasks). Short — it sits under a small icon."
 }

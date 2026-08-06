@@ -1164,6 +1164,11 @@ function Body(props: BodyProps) {
           if (backendTurnConversationsRef.current.has(evConversation)) {
             backendTurnConversationsRef.current.delete(evConversation);
             store.endLiveTurn(evConversation);
+            // A backend-owned turn finishing is a reply the user never asked
+            // for and, by definition, was not watching arrive — badge the orb.
+            // Deliberately NOT hooked inside `endLiveTurn`: the error path
+            // below ends the turn too, and a failed turn is not a message.
+            store.noteIncomingReply();
             if (isActive) {
               companionListRecentMessages(50, evConversation)
                 .then((msgs) => {
@@ -1650,6 +1655,11 @@ function Body(props: BodyProps) {
         // Only when this thread is STILL the focused one — the visible
         // transcript and quick-reply chips belong to whatever thread the
         // user is looking at now.
+        // The assistant turn is committed. Badge the orb for it — a send can
+        // start from the orb's quick-input bar with the panel closed, and the
+        // reply would otherwise land in a transcript nobody is looking at.
+        // (No-op while the panel is open; the store owns that rule.)
+        useCompanionStore.getState().noteIncomingReply();
         const fresh = await companionListRecentMessages(50, conversationId);
         if (useCompanionStore.getState().activeConversationId === conversationId) {
           setMessages(fresh);

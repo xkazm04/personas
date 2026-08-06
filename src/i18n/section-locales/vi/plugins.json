@@ -2694,7 +2694,11 @@
     "orb_quick_input_close": "Đóng tin nhắn nhanh",
     "orb_quick_input_last_reply_label": "Phản hồi gần nhất của Athena",
     "orb_quick_input_open": "Gửi tin nhắn nhanh",
-    "orb_quick_input_placeholder": "Nhắn tin cho Athena…"
+    "orb_quick_input_placeholder": "Nhắn tin cho Athena…",
+    "orb_unread_one": "{count} tin nhắn mới từ Athena",
+    "orb_unread_other": "{count} tin nhắn mới từ Athena",
+    "_comment_orb_unread_one": "Athena's floating orb — badge label when exactly 1 reply arrived while the chat panel was closed. Announced to screen readers and shown as the badge tooltip.",
+    "_comment_orb_unread_other": "Athena's floating orb — badge label for 2+ replies that arrived while the chat panel was closed."
   },
   "artist_gallery": {
     "loading_viewer": "Đang tải trình xem…",

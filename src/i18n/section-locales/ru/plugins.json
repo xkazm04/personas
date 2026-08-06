@@ -2694,7 +2694,11 @@
     "orb_quick_input_close": "Закрыть быстрое сообщение",
     "orb_quick_input_last_reply_label": "Последний ответ Афины",
     "orb_quick_input_open": "Отправить быстрое сообщение",
-    "orb_quick_input_placeholder": "Сообщение Афине…"
+    "orb_quick_input_placeholder": "Сообщение Афине…",
+    "orb_unread_one": "{count} новое сообщение от Athena",
+    "orb_unread_other": "{count} новых сообщений от Athena",
+    "_comment_orb_unread_one": "Athena's floating orb — badge label when exactly 1 reply arrived while the chat panel was closed. Announced to screen readers and shown as the badge tooltip.",
+    "_comment_orb_unread_other": "Athena's floating orb — badge label for 2+ replies that arrived while the chat panel was closed."
   },
   "artist_gallery": {
     "loading_viewer": "Загрузка просмотрщика…",

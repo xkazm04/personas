@@ -14518,6 +14518,10 @@ export type Translations = {
       orb_quick_input_placeholder: string;
       orb_quick_input_last_reply_label: string;
       orb_managing_fleet: string;
+      _comment_orb_unread_one: string;
+      orb_unread_one: string;
+      _comment_orb_unread_other: string;
+      orb_unread_other: string;
       forward_ack_speech: string;
       guide_stop: string;
       guide_skip: string;
@@ -19569,6 +19573,14 @@ export type Translations = {
     personas_title: string;
     _comment_far_idle: string;
     far_idle: string;
+    _comment_family_runners: string;
+    family_runners: string;
+    _comment_lane_personas: string;
+    lane_personas: string;
+    _comment_lane_runners: string;
+    lane_runners: string;
+    _comment_lane_none: string;
+    lane_none: string;
     _comment_far_idle_hint: string;
     far_idle_hint: string;
     _comment_far_active_one: string;
