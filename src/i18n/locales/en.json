@@ -14224,11 +14224,14 @@
       "monitoring_deploying": "Dispatching…",
       "monitoring_deploy_started": "Claude is wiring this integration",
       "monitoring_deploy_blurb": "A connector is bound but the codebase emits nothing for it. Claude can read the wiring and add the integration.",
-      "monitoring_candidates": "Connectors in your vault",
-      "monitoring_chain_no_code": "nothing in the code",
-      "monitoring_chain_no_connector": "no connector",
-      "monitoring_pick_title": "Pick a capability",
-      "monitoring_pick_body": "Select a row to bind a connector or dispatch the missing integration."
+      "monitoring_none_dash": "—",
+      "monitoring_lane_capabilities": "Capabilities",
+      "monitoring_lane_upgrade": "Upgrade",
+      "monitoring_lane_aria": "Monitoring section",
+      "monitoring_ledger_available": "In your vault",
+      "monitoring_ledger_count": "{count} available",
+      "monitoring_track_step_code": "In the codebase",
+      "monitoring_track_step_vault": "Connector"
     },
     "doc_signing": {
       "sign_heading": "Sign a Document",

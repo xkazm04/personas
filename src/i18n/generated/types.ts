@@ -14230,11 +14230,14 @@ export type Translations = {
       monitoring_deploying: string;
       monitoring_deploy_started: string;
       monitoring_deploy_blurb: string;
-      monitoring_candidates: string;
-      monitoring_chain_no_code: string;
-      monitoring_chain_no_connector: string;
-      monitoring_pick_title: string;
-      monitoring_pick_body: string;
+      monitoring_none_dash: string;
+      monitoring_lane_capabilities: string;
+      monitoring_lane_upgrade: string;
+      monitoring_lane_aria: string;
+      monitoring_ledger_available: string;
+      monitoring_ledger_count: string;
+      monitoring_track_step_code: string;
+      monitoring_track_step_vault: string;
     };
     doc_signing: {
       sign_heading: string;
