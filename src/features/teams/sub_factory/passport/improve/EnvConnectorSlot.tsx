@@ -57,7 +57,7 @@ export function EnvConnectorSlot({
       <div className="px-3 py-2.5 space-y-3 flex-1 min-h-0">
         {/* DETECTED — read-only; a fact about the codebase. */}
         <div>
-          <p className="typo-label text-foreground/35 mb-1">{d.envslot_detected}</p>
+          <p className="typo-caption text-foreground/45 mb-1" style={{ fontWeight: 400 }}>{d.envslot_detected}</p>
           {detected
             ? (
               <>
@@ -70,7 +70,7 @@ export function EnvConnectorSlot({
 
         {/* BOUND — the operator's declaration; the only writable half. */}
         <div>
-          <p className="typo-label text-foreground/35 mb-1">{d.envslot_connector}</p>
+          <p className="typo-caption text-foreground/45 mb-1" style={{ fontWeight: 400 }}>{d.envslot_connector}</p>
           {bound ? (
             <div className="flex items-center gap-2 min-w-0">
               <ConnectorGlyph serviceType={bound.serviceType} size="w-4 h-4" />
@@ -118,7 +118,7 @@ export function EnvConnectorSlot({
                   <ConnectorGlyph serviceType={c.serviceType} size="w-3.5 h-3.5" />
                   <span className="typo-caption text-foreground truncate flex-1 min-w-0 text-left">{c.name}</span>
                   {health[c.id] === false && (
-                    <span className="typo-label text-[var(--status-error)] shrink-0">{d.envslot_unhealthy}</span>
+                    <span className="typo-caption text-[var(--status-error)] shrink-0" style={{ fontWeight: 400 }}>{d.envslot_unhealthy}</span>
                   )}
                   {bound?.id === c.id && <Check className="w-3 h-3 text-primary shrink-0" aria-hidden />}
                 </button>

@@ -1,19 +1,20 @@
-// VARIANT A — "Console". The baseline the other two are built on.
+// VARIANT A — "Console". 2 × 2 tiles.
 //
-// 2×2 grid of neutral capability cards. Information design: PROSE FACTS —
-// two labelled lines, "In the codebase" and "Bound connector", read top to
-// bottom the way the Skills workbench reads. The state is one dot-and-word in
-// the heading; nothing else is tinted.
+// Grid shape: four equal cards, each ~430 × 280 in the enlarged modal. Every
+// capability gets identical weight and the whole set is visible at once — the
+// layout for "which of these four is not okay".
 //
-// This is the plainest of the three on purpose: it is the control. B and C keep
-// this exact card and grid and change only how the two facts are presented.
+// Cost of the shape: a tile is too small to hold the facts AND the candidate
+// list, so binding flips the tile over. You cannot read what a capability
+// currently has while choosing its replacement. B and C each spend their extra
+// room buying that back, in different ways.
 import { useState } from 'react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { TechInk } from '../passportInk';
 import {
-  BoundConnector, CandidateList, CapabilityCard, CapabilityHead, CardAction, Fact, FactValue,
+  Absent, BoundConnector, CandidateList, CapabilityCard, CapabilityHead, CardAction, DeployNote, Fact,
 } from './monitoringCard';
 import type { MonitoringRow, MonitoringVariantProps } from './monitoringTypes';
 
@@ -58,15 +59,16 @@ function ConsoleCard({ row, busy, deploying, onAssign, onDeploy }: {
         />
       ) : (
         <>
-          <div className="relative flex-1 min-h-0 px-3 pb-2 space-y-2.5 overflow-y-auto">
+          <div className="relative flex-1 min-h-0 px-3 pb-2 space-y-3 overflow-y-auto">
             <Fact label={d.envslot_detected}>
-              {row.detected ? <TechInk label={row.detected} muted /> : <FactValue value={null} />}
+              {row.detected ? <TechInk label={row.detected} /> : <Absent />}
             </Fact>
             <Fact label={d.envslot_connector}>
               {row.bound
-                ? <BoundConnector credential={row.bound} busy={busy} onUnbind={() => onAssign(null)} />
-                : <FactValue value={null} />}
+                ? <BoundConnector credential={row.bound} healthy={row.health[row.bound.id]} busy={busy} onUnbind={() => onAssign(null)} />
+                : <Absent />}
             </Fact>
+            {row.state === 'not_implemented' && <DeployNote />}
           </div>
           <div className="relative px-3 py-2 border-t border-primary/10">
             <CardAction row={row} busy={busy} deploying={deploying} onPick={() => setPicking(true)} onDeploy={onDeploy} />

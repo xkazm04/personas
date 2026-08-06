@@ -75,7 +75,7 @@ export function DatabaseModal({ slug, projectName, passport, onClose }: {
         </div>
 
         <div className="px-4 py-2 border-t border-primary/10 bg-secondary/10 flex-shrink-0">
-          <span className="typo-label text-foreground/35">{d.database_modal_footer}</span>
+          <span className="typo-caption text-foreground/45" style={{ fontWeight: 400 }}>{d.database_modal_footer}</span>
         </div>
       </div>
     </BaseModal>

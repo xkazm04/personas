@@ -1511,11 +1511,11 @@
     "monitoring_lane_aria": "निगरानी अनुभाग",
     "monitoring_lane_capabilities": "क्षमताएँ",
     "monitoring_lane_upgrade": "उन्नयन",
-    "monitoring_ledger_available": "आपके वॉल्ट में",
-    "monitoring_ledger_count": "{count} उपलब्ध",
     "monitoring_none_dash": "—",
-    "monitoring_track_step_code": "कोडबेस में",
-    "monitoring_track_step_vault": "कनेक्टर"
+    "monitoring_vault_available": "आपके वॉल्ट में",
+    "monitoring_vault_count": "{count} उपलब्ध",
+    "monitoring_health_ok": "ठीक",
+    "monitoring_health_unknown": "स्थिति अज्ञात"
   },
   "doc_signing": {
     "sign_heading": "दस्तावेज़ पर हस्ताक्षर करें",
