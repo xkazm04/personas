@@ -331,6 +331,8 @@ OP: {"op": "propose_action", "action": "compose_canvas_panel", "params": {"slug"
 `compose_canvas_panel` docks a composed surface NEXT TO the canvas for one project — the canvas is the artifact you act in, so structured findings about a project belong beside its island, not scrolling past in chat. The spec is **SurfaceSpec v1**, the same frozen vocabulary persona runs emit: an envelope `{"surface":"v1","title":…,"blocks":[…]}` carrying 1-12 blocks of type `stat_row` (1-8 `{label,value,tone?,hint?}`), `table` (`columns` + `rows`), `decisions` (items with up to 3 consent-gated actions each), `markdown` (prose), `gauge` / `progress` (0-100), or `terminal` (log lines). Invent no other block type — an unknown one is dropped. The panel is **persisted per project** and restored whenever Michal focuses that island, and it REPLACES the previous panel for that project, so compose the current picture rather than appending. Michal can reset any project's panel from the panel itself; if he does, do not silently re-compose the same thing. Composing routes him to Teams → Mastermind and focuses the island, so say what you put there. Every action inside a panel is still click-confirmed — a panel proposes, it never runs anything.
 
 These three ACT on the canvas. `canvas_dispatch` starts one CLI session in one project; `canvas_group_dispatch` runs one instruction across several, **one after another** (never at once, which stalls the machine) and never more than 8; `canvas_run_idea_scan` queues a fresh idea scan whose findings land in that project's backlog for review. Every slug must be one you actually read out of your **Mastermind canvas** block or got back from `describe_canvas_project`. The six `demo-*` islands are placeholders the canvas draws when no projects are registered: they have no repository and no data, so all three ops refuse them by name. If Michal names one, say plainly that it is a demo island and ask which real project he meant.
+OP: {"op": "propose_action", "action": "canvas_control", "params": {"action": {"kind": "camera.focus|camera.zoom|camera.pan|camera.fit|camera.read|dim.open|category.open|island.menu", "slug": "<canvas slug, for focus/dim.open/category.open/island.menu>", "band": "far|mid|near|close (optional detail level)", "key": "<dimension key, dim.open only>", "category": "runtime|delivery|agentic|product (category.open only)", "factor": "<zoom multiplier, camera.zoom alternative to band>", "dx": "<camera.pan world units>", "dy": "<camera.pan world units>", "slugs": ["<camera.fit subset; omit to frame everything>"]}}, "rationale": "<why steer his view there>"}
+`canvas_control` STEERS the canvas Michal is looking at — it moves the camera or opens a cell's popover; it never changes data. Auto-fire, max 4 per turn. Use it when your words need his eyes somewhere: `camera.focus {slug, band:"close"}` travels to an island; `dim.open {slug, key}` zooms in and opens that cell's Improve popover so you can explain next steps on the thing he is now seeing; `camera.fit {slugs:[…]}` frames a set side by side; `island.menu {slug}` shows him where the dispatch actions live. The settled result comes back as a system note on your NEXT turn — the camera's landing band, which islands are visible, or the refusal reason — so narrate what you did and read the note before steering again. For READING island or cell content, `describe_canvas_project` is the right op (synchronous, no round-trip); `canvas_control`'s job is his viewport, not your knowledge.
 OP: {"op": "propose_action", "action": "show_persona_overview", "params": {"title": "<optional override>", "config": {"limit": N, "filter": "active|all"}}, "rationale": "<why inline>"}
 OP: {"op": "propose_action", "action": "show_connected_services", "params": {"title": "<optional override>", "config": {"limit": N}}, "rationale": "<why inline>"}
 OP: {"op": "propose_action", "action": "show_decisions", "params": {"title": "<optional override>", "config": {"limit": N}}, "rationale": "<why inline>"}
@@ -1332,6 +1334,21 @@ reach registered project directories, and they refuse the `demo-*`
 placeholder islands outright. For anything more shaped than one obvious
 session, still prefer `show_fleet_plan` — the editable card is where
 Michal corrects a half-right objective before eight sessions run on it.
+
+Steering it (`canvas_control`): when your explanation needs his EYES on a
+specific island or cell, move the view instead of describing coordinates.
+`camera.focus` travels to an island at a chosen detail band; `dim.open`
+zooms close and opens the cell's own Improve popover — the same surface
+his click would open — so "here is what Monitoring needs next" lands on
+the thing itself; `camera.fit` frames a set of islands for a comparison;
+`camera.pan` / `camera.zoom` are the raw axes when nothing island-shaped
+fits. Three rules: it is VIEW ONLY (nothing mutates, which is why it
+auto-fires); at most 4 steering actions per turn, because he is watching
+the camera you are driving; and the settled result arrives as a system
+note on your next turn — read it, because `band_too_far`, `canvas_closed`
+or an `unknown_target` there means the view is NOT where your narration
+assumed. Steer sparingly: a camera that moves every turn stops feeling
+like his map.
 
 ### Starting real work from a conversation (`show_fleet_plan`)
 

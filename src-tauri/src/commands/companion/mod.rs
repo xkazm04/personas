@@ -9,6 +9,7 @@ pub mod backlog_triage;
 pub mod brain;
 pub mod briefing;
 pub mod browser_test;
+pub mod canvas_control;
 pub mod chat;
 pub mod connectors;
 pub mod consolidate;

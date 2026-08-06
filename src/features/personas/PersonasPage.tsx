@@ -20,6 +20,7 @@ import DesktopFooter from '@/features/shared/chrome/DesktopFooter';
 import { useFleetCompanionBridge } from '@/features/plugins/companion/useFleetCompanionBridge';
 import { useMcpRequestBridge } from '@/features/plugins/companion/mcp/useMcpRequestBridge';
 import { useOperativeMemoryBridge } from '@/features/plugins/companion/orchestration/useOperativeMemoryBridge';
+import { useCanvasControlBridge } from '@/features/teams/sub_mastermind/lib/useCanvasControlBridge';
 import { useCanvasPanelBridge } from '@/features/teams/sub_mastermind/lib/useCanvasPanelBridge';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { renderSectionRoute, isRoutableSection, isSectionGated } from '@/features/personas/sectionRouter';
@@ -97,6 +98,10 @@ export default function PersonasPage() {
   // canvas layout doc, then routes to Teams → Mastermind and focuses the
   // island. App-wide so a composition lands wherever the user is standing.
   useCanvasPanelBridge();
+  // WP4 — `canvas_control`: routes to the canvas, dispatches Athena's steering
+  // action into the canvas action grammar, and reports the settled result back
+  // into her session. App-wide for the same reason as the panel bridge.
+  useCanvasControlBridge();
   const { sidebarSection, cloudTab, agentTab, teamsTab, pluginTab, isCreatingPersona, isLoading, error } = useSystemStore(
     useShallow((s) => ({
       sidebarSection: s.sidebarSection,

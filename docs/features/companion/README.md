@@ -370,6 +370,12 @@ Athena is wired into the [Mastermind canvas](../teams/README.md) at the same **r
 - Rendering goes through the shared `SurfaceRenderer`: a hallucinated block is dropped rather than rendered, and every action inside a panel is still consent-gated at click time. A panel proposes; it never runs anything.
 - **Per-project reset.** The panel carries its own reset control (`mm-athena-panel-reset`), separate from the canvas-wide annotation revert — persisting a composed surface is only safe if one click removes it. An envelope version this build does not understand degrades to *no panel*, never a permanent error box.
 
+### Steering the canvas — constitution v49 (`canvas_control`)
+
+- **`canvas_control { action }`** (auto-fire, max 4 per turn) is the door onto the canvas **action grammar** (`sub_mastermind/lib/canvasActionStore.ts`): camera verbs (`camera.read` / `pan` / `zoom` by factor or band / `focus` / `fit`) plus the zoom-gated opens (`dim.open` travels close and opens the cell's own Improve popover; `category.open`; `island.menu`). View only — the camera moves or a popover opens, nothing mutates, which is the whole consent argument for auto-fire.
+- The dispatcher validates what the frontend cannot: the kind is one the grammar speaks, any slug resolves against the **published scene** (demo islands refused by name), bands ∈ far/mid/near/close, numbers finite. Only validated fields are re-serialized, so an invented param never crosses the IPC boundary. The read kinds (`island.read`/`dim.read`) are refused with a pointer to `describe_canvas_project`, which answers synchronously without a frontend round-trip.
+- `session.rs` emits `companion://canvas-control` with `{ sessionId, action }`; the app-wide bridge (`useCanvasControlBridge`, mounted beside the panel bridge) routes to Teams → Mastermind, dispatches into the grammar queue (whose 2s pickup window carries the action across the route-in mount), and reports the settled `CanvasActionResult` back through **`companion_canvas_control_result`** — a System episode in the originating session, so Athena reads on her next turn where the camera actually landed (band, visible islands, clamps) or why it refused (`band_too_far`, `unknown_target`, `canvas_closed`). The same grammar is drivable without Athena via the dev-gated `window.__mmCanvas` bridge (`canvasTestBridge.ts`) for live testing on :17320.
+
 ## Incidents (proactive blocker nudge)
 
 Athena proactively surfaces OPEN high/critical [audit incidents](../overview/README.md) so the user is nudged about them even while away/unattended.

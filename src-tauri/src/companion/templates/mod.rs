@@ -366,4 +366,9 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// confirms before anything is written. Its doctrine: every `item_id` comes
 /// from something she actually read, members are use cases and goals ONLY, and
 /// KPIs are the outcome layer above a milestone rather than part of one.
-pub const CONSTITUTION_VERSION: u32 = 48;
+/// v49 (canvas steering) adds `canvas_control` — the door onto the frontend's
+/// canvas action grammar: camera verbs plus the zoom-gated cell/popover opens.
+/// Its doctrine: view only (auto-fire, nothing mutates), max 4 per turn, the
+/// settled result returns as a next-turn system note that must be read before
+/// steering again, and reading content stays on `describe_canvas_project`.
+pub const CONSTITUTION_VERSION: u32 = 49;

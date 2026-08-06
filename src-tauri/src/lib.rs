@@ -2840,6 +2840,7 @@ pub fn run() {
             commands::companion::chat::companion_set_fleet_boldness,
             commands::companion::chat::companion_get_fleet_boldness,
             commands::companion::chat::companion_wake_stats,
+            commands::companion::canvas_control::companion_canvas_control_result,
             commands::companion::fleet_bridge::companion_record_fleet_event,
             commands::companion::fleet_bridge::companion_get_operative_memory_digest,
             commands::companion::mcp_bridge::companion_mcp_resolve_request,

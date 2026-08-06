@@ -64,6 +64,16 @@ pub struct Dispatched {
     /// control can reach it. Auto-fire: a panel proposes, it never runs
     /// anything — every action inside it is still consent-gated on render.
     pub canvas_panels: Vec<CanvasPanelCompose>,
+    /// `canvas_control` steering actions (WP4 — the v2 door onto the
+    /// frontend's canvas action grammar, `canvasActionStore`). Auto-fire:
+    /// every accepted kind is reversible VIEW state — the camera moves or a
+    /// popover opens; nothing mutates. Slugs inside were resolved against the
+    /// published scene here, so the frontend can trust them exactly like a
+    /// composed panel's slug. session.rs emits one event per entry carrying
+    /// the session id; the frontend bridge answers through
+    /// `companion_canvas_control_result`, which lands as a System episode
+    /// Athena reads on her next turn.
+    pub canvas_controls: Vec<CanvasControlDispatch>,
     /// Inline chat cards from `show_persona_overview` / `show_connected_services`
     /// / `show_decisions`. Auto-fire (no approval) — companion uses these to
     /// surface contextual info inside the chat transcript when she judges it
@@ -155,6 +165,43 @@ pub const CANVAS_PANEL_SPEC_VERSION: u32 = 1;
 /// so an over-long composition is refused here rather than silently truncated
 /// by the renderer.
 const CANVAS_PANEL_MAX_BLOCKS: usize = 12;
+
+/// One validated `canvas_control` steering action (WP4). `action` is the
+/// re-serialized, validated grammar object — only the fields the validator
+/// accepted survive, so a stray `travel:false` or an invented field never
+/// reaches the frontend.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CanvasControlDispatch {
+    /// Serialized `CanvasActionRequest` JSON (`{"kind":"camera.focus",…}`),
+    /// matching `sub_mastermind/lib/canvasActionStore.ts` exactly.
+    pub action: String,
+}
+
+/// Steering actions one turn may emit. More is camera thrash, not guidance —
+/// the user is watching the view she's driving.
+const CANVAS_CONTROL_MAX_PER_TURN: usize = 4;
+
+/// Action kinds `canvas_control` accepts — the STEERING half of the frontend
+/// grammar. The read kinds (`island.read` / `dim.read`) are deliberately
+/// absent: `describe_canvas_project` already answers those synchronously from
+/// the published scene, without a frontend round-trip.
+const CANVAS_CONTROL_KINDS: &[&str] = &[
+    "camera.read",
+    "camera.pan",
+    "camera.zoom",
+    "camera.focus",
+    "camera.fit",
+    "dim.open",
+    "category.open",
+    "island.menu",
+];
+
+/// Zoom bands the grammar speaks (`types.ts::ZoomBand`).
+const CANVAS_CONTROL_BANDS: &[&str] = &["far", "mid", "near", "close"];
+
+/// Category keys the far/mid rollup cells use (`dimCategories.ts`).
+const CANVAS_CONTROL_CATEGORIES: &[&str] = &["runtime", "delivery", "agentic", "product"];
 
 /// An ad-hoc `point_at` request: Athena rings one allow-listed UI anchor and
 /// narrates it, with no pre-authored walkthrough topic. `anchor` is validated
@@ -1535,6 +1582,48 @@ pub fn dispatch_with_sys(
                     }
                 }
             }
+            // ─────────────────────────────────────────────────────────────
+            // WP4 — steering the Mastermind canvas (`canvas_control`).
+            //
+            // The v2 door onto the frontend's canvas action grammar
+            // (`canvasActionStore`): camera verbs plus the zoom-gated popover
+            // opens. Auto-fire, no approval: every accepted kind is
+            // reversible VIEW state and mutates nothing — the same consent
+            // posture as compose. Rust validates what the frontend cannot:
+            // that any slug names an island in the PUBLISHED scene, that the
+            // kind is one the grammar speaks, and that bands / numbers are
+            // well-formed. The settled result (band, camera, refusal) comes
+            // back through `companion_canvas_control_result` as a System
+            // episode on the next turn.
+            // ─────────────────────────────────────────────────────────────
+            Ok(env) if env.op == "propose_action" && env.action == "canvas_control" => {
+                if out.canvas_controls.len() >= CANVAS_CONTROL_MAX_PER_TURN {
+                    out.warnings.push(format!(
+                        "canvas_control: more than {CANVAS_CONTROL_MAX_PER_TURN} steering \
+                         actions in one turn is camera thrash; the extras were dropped."
+                    ));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let Some(db) = sys_db else {
+                    out.warnings.push(
+                        "canvas_control could not be validated: the canvas snapshot is not \
+                         reachable from this turn. Tell the user rather than steering blind."
+                            .into(),
+                    );
+                    cleaned_lines.push(line);
+                    continue;
+                };
+                match validate_canvas_control(db, &env.params) {
+                    Ok(action_json) => out
+                        .canvas_controls
+                        .push(CanvasControlDispatch { action: action_json }),
+                    Err(reason) => {
+                        out.warnings.push(format!("canvas_control: {reason}"));
+                        cleaned_lines.push(line);
+                    }
+                }
+            }
             Ok(env) if env.op == "propose_action" && env.action == "open_lab" => {
                 let persona_id = env
                     .params
@@ -2394,6 +2483,126 @@ struct OpEnvelope {
 /// Best-effort: if the insert itself fails, we swallow the error so
 /// the dispatcher path isn't blocked. A failed insert turns this back
 /// into the pre-fix silent-drop, which is no worse than what we had.
+/// Validate a `canvas_control` op's params into the exact action JSON the
+/// frontend grammar (`canvasActionStore.ts`) accepts. Fail-closed and
+/// specific: every error string lands in Athena's next-turn context, so it
+/// names what to fix. Only validated fields survive into the output — an
+/// invented param never reaches the frontend.
+fn validate_canvas_control(
+    db: &crate::db::DbPool,
+    params: &serde_json::Value,
+) -> Result<String, String> {
+    let action = params.get("action").ok_or(
+        "missing `action` — pass the grammar object, e.g. \
+         {\"kind\":\"camera.focus\",\"slug\":\"<canvas slug>\",\"band\":\"close\"}",
+    )?;
+    let kind = action.get("kind").and_then(|v| v.as_str()).unwrap_or("");
+    if kind == "island.read" || kind == "dim.read" {
+        return Err(format!(
+            "`{kind}` has a faster path: `describe_canvas_project` answers from the \
+             published scene without a frontend round-trip. Use that instead."
+        ));
+    }
+    if !CANVAS_CONTROL_KINDS.contains(&kind) {
+        return Err(format!(
+            "unknown kind `{kind}` (expected one of {CANVAS_CONTROL_KINDS:?})"
+        ));
+    }
+    let mut clean = serde_json::Map::new();
+    clean.insert("kind".into(), serde_json::json!(kind));
+    if let Some(band) = action.get("band") {
+        let b = band.as_str().unwrap_or("");
+        if !CANVAS_CONTROL_BANDS.contains(&b) {
+            return Err(format!(
+                "`band` must be one of {CANVAS_CONTROL_BANDS:?}, got `{b}`"
+            ));
+        }
+        clean.insert("band".into(), band.clone());
+    }
+    match kind {
+        "camera.pan" => {
+            for axis in ["dx", "dy"] {
+                let v = action
+                    .get(axis)
+                    .and_then(|v| v.as_f64())
+                    .filter(|v| v.is_finite())
+                    .ok_or_else(|| format!("`camera.pan` needs a finite numeric `{axis}`"))?;
+                clean.insert(axis.into(), serde_json::json!(v));
+            }
+            if let Some(u) = action.get("unit").and_then(|v| v.as_str()) {
+                if u != "world" && u != "screen" {
+                    return Err("`unit` must be `world` or `screen`".into());
+                }
+                clean.insert("unit".into(), serde_json::json!(u));
+            }
+        }
+        "camera.zoom" => {
+            let has_band = clean.contains_key("band");
+            match action.get("factor").and_then(|v| v.as_f64()) {
+                Some(f) if f.is_finite() && f > 0.0 => {
+                    clean.insert("factor".into(), serde_json::json!(f));
+                }
+                Some(_) => return Err("`factor` must be a positive finite number".into()),
+                None if has_band => {}
+                None => return Err("`camera.zoom` needs `factor` or `band`".into()),
+            }
+        }
+        "camera.focus" | "dim.open" | "category.open" | "island.menu" => {
+            let slug = action.get("slug").and_then(|v| v.as_str()).unwrap_or("");
+            let resolved = crate::companion::canvas::resolve_scene_slug(db, slug)?;
+            clean.insert("slug".into(), serde_json::json!(resolved));
+            if kind == "dim.open" {
+                let key = action.get("key").and_then(|v| v.as_str()).unwrap_or("");
+                if key.is_empty() || key.len() > 40 {
+                    return Err(
+                        "`dim.open` needs `key` — a dimension key you read from \
+                         `describe_canvas_project` (db, monitoring, ci, …)"
+                            .into(),
+                    );
+                }
+                clean.insert("key".into(), serde_json::json!(key));
+                // `travel` stays at the grammar's default (true): steering the
+                // view there is the point of opening the cell for the user.
+            }
+            if kind == "category.open" {
+                let cat = action.get("category").and_then(|v| v.as_str()).unwrap_or("");
+                if !CANVAS_CONTROL_CATEGORIES.contains(&cat) {
+                    return Err(format!(
+                        "`category.open` needs `category` ∈ {CANVAS_CONTROL_CATEGORIES:?}"
+                    ));
+                }
+                clean.insert("category".into(), serde_json::json!(cat));
+            }
+        }
+        "camera.fit" => {
+            if let Some(slugs) = action.get("slugs") {
+                let arr = slugs
+                    .as_array()
+                    .ok_or("`slugs` must be an array of canvas slugs")?;
+                if arr.is_empty() || arr.len() > 12 {
+                    return Err(
+                        "`slugs` must carry 1-12 canvas slugs (omit it entirely to \
+                         frame the whole portfolio)"
+                            .into(),
+                    );
+                }
+                let mut resolved_list = Vec::with_capacity(arr.len());
+                for s in arr {
+                    let resolved = crate::companion::canvas::resolve_scene_slug(
+                        db,
+                        s.as_str().unwrap_or(""),
+                    )?;
+                    resolved_list.push(serde_json::json!(resolved));
+                }
+                clean.insert("slugs".into(), serde_json::Value::Array(resolved_list));
+            }
+        }
+        // camera.read carries nothing else.
+        _ => {}
+    }
+    Ok(serde_json::Value::Object(clean).to_string())
+}
+
 fn note_dispatcher_rejection(
     pool: &UserDbPool,
     session_id: &str,
@@ -3776,6 +3985,132 @@ OP: {{"op":"propose_action","action":"compose_canvas_panel","params":{{"slug":"{
                 .any(|w| w.contains("has not published a scene")),
             "{:?}",
             unpublished.warnings
+        );
+    }
+
+    /// One `canvas_control` op line with the given grammar action JSON.
+    fn control_line(action: &str) -> String {
+        format!(
+            r#"Steering.
+OP: {{"op":"propose_action","action":"canvas_control","params":{{"action":{action}}},"rationale":"why"}}"#
+        )
+    }
+
+    #[test]
+    fn canvas_control_validates_and_emits_steering_actions() {
+        let pool = test_pool();
+        let sys = canvas_sys_pool(Some(CANVAS_FIXTURE));
+        // Focus by NAME resolves to the canonical slug; the band survives.
+        let out = dispatch_with_sys(
+            &pool,
+            Some(&sys),
+            "default",
+            &control_line(r#"{"kind":"camera.focus","slug":"Personas","band":"close"}"#),
+        )
+        .expect("dispatch ok");
+        assert_eq!(out.canvas_controls.len(), 1, "warnings: {:?}", out.warnings);
+        let action: serde_json::Value =
+            serde_json::from_str(&out.canvas_controls[0].action).expect("valid JSON");
+        assert_eq!(action["kind"], "camera.focus");
+        assert_eq!(action["slug"], "proj_1");
+        assert_eq!(action["band"], "close");
+        // Auto-fire arm: no approval card, the op line is stripped, and it
+        // lives in neither op list (an entry there would be a dead card).
+        assert!(out.approvals.is_empty());
+        assert!(!out.cleaned_text.contains("OP:"), "{}", out.cleaned_text);
+        assert!(!ALLOWED_ACTIONS.contains(&"canvas_control"));
+        assert!(!READ_OPS.contains(&"canvas_control"));
+
+        // dim.open carries slug + key; pan carries validated numbers only.
+        let dim = dispatch_with_sys(
+            &pool,
+            Some(&sys),
+            "default",
+            &control_line(r#"{"kind":"dim.open","slug":"proj_1","key":"tests","invented":"x"}"#),
+        )
+        .expect("dispatch ok");
+        assert_eq!(dim.canvas_controls.len(), 1, "warnings: {:?}", dim.warnings);
+        let dim_action: serde_json::Value =
+            serde_json::from_str(&dim.canvas_controls[0].action).expect("valid JSON");
+        assert_eq!(dim_action["key"], "tests");
+        // Only validated fields survive re-serialization.
+        assert!(dim_action.get("invented").is_none());
+
+        let pan = dispatch_with_sys(
+            &pool,
+            Some(&sys),
+            "default",
+            &control_line(r#"{"kind":"camera.pan","dx":500,"dy":-120,"unit":"world"}"#),
+        )
+        .expect("dispatch ok");
+        assert_eq!(pan.canvas_controls.len(), 1, "warnings: {:?}", pan.warnings);
+    }
+
+    #[test]
+    fn canvas_control_refuses_bad_kinds_slugs_and_params() {
+        let pool = test_pool();
+        let sys = canvas_sys_pool(Some(CANVAS_FIXTURE));
+        for (action, needle) in [
+            // Reads have a synchronous op already — point her at it.
+            (r#"{"kind":"island.read","slug":"proj_1"}"#, "describe_canvas_project"),
+            (r#"{"kind":"dim.read","slug":"proj_1","key":"ci"}"#, "describe_canvas_project"),
+            (r#"{"kind":"island.move","slug":"proj_1"}"#, "unknown kind"),
+            (r#"{"kind":"camera.focus","slug":"demo-web"}"#, "demo islands"),
+            (r#"{"kind":"camera.focus","slug":"not-a-project"}"#, "No project matches"),
+            (r#"{"kind":"camera.zoom"}"#, "needs `factor` or `band`"),
+            (r#"{"kind":"camera.zoom","factor":-2}"#, "positive finite"),
+            (r#"{"kind":"camera.zoom","band":"orbit"}"#, "`band` must be one of"),
+            (r#"{"kind":"camera.pan","dx":1}"#, "finite numeric `dy`"),
+            (r#"{"kind":"dim.open","slug":"proj_1"}"#, "needs `key`"),
+            (r#"{"kind":"category.open","slug":"proj_1","category":"vibes"}"#, "category"),
+            (r#"{"kind":"camera.fit","slugs":[]}"#, "1-12"),
+        ] {
+            let out = dispatch_with_sys(&pool, Some(&sys), "default", &control_line(action))
+                .expect("dispatch ok");
+            assert!(out.canvas_controls.is_empty(), "{action} should refuse");
+            assert!(
+                out.warnings.iter().any(|w| w.contains(needle)),
+                "{action}: wanted `{needle}` in {:?}",
+                out.warnings
+            );
+        }
+        // Fail closed when no system DB is reachable — even for slug-less kinds.
+        let blind = dispatch(&pool, "default", &control_line(r#"{"kind":"camera.read"}"#))
+            .expect("dispatch ok");
+        assert!(blind.canvas_controls.is_empty());
+        assert!(
+            blind.warnings.iter().any(|w| w.contains("not reachable")),
+            "{:?}",
+            blind.warnings
+        );
+    }
+
+    #[test]
+    fn canvas_control_resolves_fit_slugs_and_caps_actions_per_turn() {
+        let pool = test_pool();
+        let sys = canvas_sys_pool(Some(CANVAS_FIXTURE));
+        // fit with names → canonical slugs.
+        let fit = dispatch_with_sys(
+            &pool,
+            Some(&sys),
+            "default",
+            &control_line(r#"{"kind":"camera.fit","slugs":["Personas","Vibeman"]}"#),
+        )
+        .expect("dispatch ok");
+        assert_eq!(fit.canvas_controls.len(), 1, "warnings: {:?}", fit.warnings);
+        let fit_action: serde_json::Value =
+            serde_json::from_str(&fit.canvas_controls[0].action).expect("valid JSON");
+        assert_eq!(fit_action["slugs"], serde_json::json!(["proj_1", "proj_2"]));
+
+        // Six steering ops in one turn → first four kept, the rest warned away.
+        let line = r#"OP: {"op":"propose_action","action":"canvas_control","params":{"action":{"kind":"camera.read"}},"rationale":"w"}"#;
+        let burst = std::iter::repeat(line).take(6).collect::<Vec<_>>().join("\n");
+        let out = dispatch_with_sys(&pool, Some(&sys), "default", &burst).expect("dispatch ok");
+        assert_eq!(out.canvas_controls.len(), CANVAS_CONTROL_MAX_PER_TURN);
+        assert!(
+            out.warnings.iter().any(|w| w.contains("camera thrash")),
+            "{:?}",
+            out.warnings
         );
     }
 

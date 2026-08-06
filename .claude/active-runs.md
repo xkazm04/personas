@@ -2,6 +2,11 @@
 
 ## Active
 
+### canvas-control-op — v2 Athena `canvas_control` companion op onto the shipped canvas action grammar (5d3b102a9) — session fable-5
+- Started: 2026-08-06. Status: started. Committing on master per operator instruction (continuation of canvas-action-grammar).
+- Scope: `src-tauri/src/companion/{dispatcher.rs,session.rs,templates/{constitution.md,mod.rs}}` (new op arm + event + constitution §canvas + version bump), NEW `src-tauri/src/commands/companion/canvas_control.rs` (+ mod.rs, lib.rs registration), `src/api/companion.ts` (event const), NEW `src/features/teams/sub_mastermind/lib/useCanvasControlBridge.ts` + mount in `src/features/personas/PersonasPage.tsx`, `src/lib/commandNames.generated.ts` (regen), docs/CHANGELOG.
+- **NOTE FOR OTHER SESSIONS:** no ts-rs derives added → `src/lib/bindings/` untouched (the known drift stays unowned). No i18n keys.
+
 ### canvas-action-grammar — programmatic canvas actions v1 (camera verbs + zoom-gated inspection) for future Athena control — session fable-5 — **COMPLETE**, commit `5d3b102a9`
 - Started/completed: 2026-08-06. Gates: tsc clean · eslint 0 on touched files · vitest sub_mastermind 192/192 (13 new). Verified LIVE via :17320 `/eval` + DOM stash: zoom-to-band, axis-exact pan, island.read (15 dims), `band_too_far` refusal, auto-travel dim.open (Database modal opened on the real Apprenticeship Placement island), camera.fit restore, unknown_slug. v2 door (Athena `canvas_control` op) NOT started.
 - Scope: NEW `sub_mastermind/lib/canvasActionStore.ts` (typed action grammar + request queue, focusStore pattern generalized) + NEW `lib/canvasTestBridge.ts` (dev-only `window.__mmCanvas` + DOM stash for :17320 /eval readback); `lib/useCanvasCamera.ts` (tween-settle promise, exported `animateTo`); `lib/CanvasShell.tsx` (one consumer effect answering actions); NEW `__tests__/canvasActionStore.test.ts`. No i18n keys, no Rust, no MastermindPage edits.
