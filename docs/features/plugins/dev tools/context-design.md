@@ -128,6 +128,16 @@ scans. Progress streams to the UI (`CONTEXT_GEN_OUTPUT/STATUS/COMPLETE`); the
 - `persist_scan_hashes` — refresh the hash cache in one transaction.
 - `prune_dangling_file_paths` — drop mapped paths that no longer exist on disk
   (self-heal; the pruned count is surfaced on the stream).
+- `prune_unresolvable_references` — same contract one level up: drop
+  `db_tables` naming a table the project's own source never defines (vocabulary
+  built by `schema_vocabulary.rs` from SQL DDL / Prisma / Drizzle / SQLAlchemy /
+  Django / ActiveRecord, **never** from Personas' own SQLite) and `cross_refs`
+  naming a context that does not exist. Post-scan and after the subtree retire
+  by necessity — a context may reference a sibling the same scan emits *later*,
+  so a mid-stream check would delete valid refs. Scoped to the contexts this
+  scan wrote, so a subtree scan never rewrites contexts it never looked at.
+  An incomplete or empty table vocabulary drops **nothing** and says so. Counts
+  ride out on `ContextGenSummary.{db_tables_dropped,cross_refs_dropped}`.
 - `write_harness_docs` — regenerate the export artifacts (§5) **from the DB**.
 
 ---
@@ -373,11 +383,16 @@ today it silently analyzes a stale description against new code.
 
 ### 4. Contexts as verified contracts + an impact graph
 
-`api_surface`, `db_tables`, and `cross_refs` are descriptive strings the LLM
-emitted once. Verify them: extend `dev_tools_audit_contexts` to check
-`db_tables` against the live schema and `api_surface` against the generated
-command registry, and materialize `cross_refs` into a queryable dependency
-graph. Then use it for **impact analysis**: a task or goal scoped to context X
+`api_surface`, `db_tables`, and `cross_refs` were descriptive strings the LLM
+emitted once. **Two of the three are now verified at the write site** rather
+than only audited: `prune_unresolvable_references` (§3) drops a `db_tables`
+entry the project's schema does not define and a `cross_refs` entry naming no
+existing context, and reports the counts. Measured against the shipped map the
+day it landed: 150 of 290 `db_tables` entries and 449 of 555 `cross_refs`
+resolved to nothing. Still open here: `api_surface` (free prose — it needs the
+generated command registry to have anything to check against), and
+materializing `cross_refs` into a queryable dependency graph. Then use it for
+**impact analysis**: a task or goal scoped to context X
 automatically declares X's neighbors as review scope; the Task Runner injects
 the owning context's file set + one-hop neighbors as the working set; a PR
 touching files across N contexts gets flagged for cross-context review. This
