@@ -1517,15 +1517,15 @@
     "monitoring_health_ok": "en bon état",
     "monitoring_health_unknown": "état inconnu",
     "monitoring_deploy_now": "Déployer maintenant",
-    "monitoring_hide_prompt": "Masquer le prompt",
     "monitoring_merged_hint": "Le code et votre coffre désignent le même outil",
     "monitoring_queue_all": "Mettre en file pour les {count} projets concernés →",
     "monitoring_queue_task": "Mettre la tâche en file",
     "monitoring_rescan_full": "Réanalyse complète",
     "monitoring_rescan_incremental": "Réanalyser les fichiers modifiés",
     "monitoring_run_scan": "Lancer l’analyse",
-    "monitoring_upgrade_none": "Rien à améliorer ici pour le moment.",
-    "monitoring_view_prompt": "Voir le prompt"
+    "monitoring_area_scan_hint": "Lancer une session Claude dédiée uniquement à {area}",
+    "monitoring_area_scan_started": "Analyse ciblée lancée",
+    "monitoring_current_level": "Niveau actuel"
   },
   "doc_signing": {
     "sign_heading": "Signer un document",

@@ -37,12 +37,14 @@ export function MonitoringConsoleVariant({ rows, busyKey, deploying, onAssign, o
   );
 }
 
-export function ConsoleCard({ row, busy, deploying, onAssign, onDeploy }: {
+export function ConsoleCard({ row, busy, deploying, onAssign, onDeploy, footerExtra }: {
   row: MonitoringRow;
   busy: boolean;
   deploying: boolean;
   onAssign: (credentialId: string | null) => void;
   onDeploy: () => void;
+  /** Extra control beside the main action — v2's focused-scan button. */
+  footerExtra?: React.ReactNode;
 }) {
   const { t } = useTranslation();
   const d = t.plugins.dev_tools;
@@ -81,8 +83,11 @@ export function ConsoleCard({ row, busy, deploying, onAssign, onDeploy }: {
           {row.state === 'not_implemented' && (
             <div className="relative px-3 pb-2"><DeployNote /></div>
           )}
-          <div className="relative px-3 py-2 border-t border-primary/10">
-            <CardAction row={row} busy={busy} deploying={deploying} onPick={() => setPicking(true)} onDeploy={onDeploy} />
+          <div className="relative px-3 py-2 border-t border-primary/10 flex items-center gap-1.5">
+            <span className="flex-1 min-w-0">
+              <CardAction row={row} busy={busy} deploying={deploying} onPick={() => setPicking(true)} onDeploy={onDeploy} />
+            </span>
+            {footerExtra}
           </div>
         </>
       )}

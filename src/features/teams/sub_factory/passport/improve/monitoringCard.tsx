@@ -104,7 +104,7 @@ export function StateMark({ state }: { state: MonitoringState }) {
 /** A tool's own mark at display size: the brand glyph when we recognise it,
  *  else a neutral tile carrying its initial so an unknown tool still reads as a
  *  thing rather than as an error. */
-export function ToolMark({ label, serviceType, size = 28 }: {
+export function ToolMark({ label, serviceType, size = 64 }: {
   label: string;
   /** Set for a vault credential; the connector catalog has its icon. */
   serviceType?: string;
@@ -114,7 +114,13 @@ export function ToolMark({ label, serviceType, size = 28 }: {
   if (serviceType) {
     const meta = getConnectorMeta(serviceType);
     if (meta.iconUrl) {
-      return <ThemedConnectorIcon url={meta.iconUrl} label={label} color={meta.color} size={size >= 28 ? 'w-7 h-7' : 'w-5 h-5'} />;
+      // ThemedConnectorIcon sizes by class; a sized wrapper + w-full/h-full
+      // lets the mark scale to whatever the layout gives it.
+      return (
+        <span className="inline-flex shrink-0" style={{ width: size, height: size }}>
+          <ThemedConnectorIcon url={meta.iconUrl} label={label} color={meta.color} size="w-full h-full" />
+        </span>
+      );
     }
   }
   if (brand) {
@@ -138,14 +144,14 @@ export function ToolMark({ label, serviceType, size = 28 }: {
 
 /** The absent mark: a dashed tile with the side's own icon, ghosted. Reads as
  *  "this slot exists and is empty" — not as a missing image. */
-function EmptyMark({ icon: Icon, size = 28 }: { icon: LucideIcon; size?: number }) {
+function EmptyMark({ icon: Icon, size = 64 }: { icon: LucideIcon; size?: number }) {
   return (
     <span
       className="inline-flex items-center justify-center rounded-interactive border border-dashed border-primary/20 text-foreground/25 shrink-0"
       style={{ width: size, height: size }}
       aria-hidden
     >
-      <Icon style={{ width: size * 0.5, height: size * 0.5 }} />
+      <Icon style={{ width: size * 0.45, height: size * 0.45 }} strokeWidth={1.5} />
     </span>
   );
 }
@@ -166,10 +172,10 @@ export function SideHalf({ side, toolLabel, serviceType, children }: {
   const sideName = side === 'code' ? d.envslot_detected : d.envslot_connector;
 
   return (
-    <div className="flex-1 min-w-0 flex flex-col items-center gap-1.5 px-2 py-2.5 text-center">
+    <div className="flex-1 min-w-0 flex flex-col items-center justify-center gap-2 px-2 py-2.5 text-center">
       <Tooltip content={sideName} placement="top">
         <span className="inline-flex items-center text-foreground/35" aria-label={sideName}>
-          <SideIcon className="w-3 h-3" />
+          <SideIcon className="w-3.5 h-3.5" />
         </span>
       </Tooltip>
       {toolLabel
@@ -201,7 +207,7 @@ export function MergedTool({ label, serviceType, children }: {
           <Plug className="w-3 h-3" />
         </span>
       </Tooltip>
-      <ToolMark label={label} serviceType={serviceType} size={40} />
+      <ToolMark label={label} serviceType={serviceType} size={88} />
       <span className="typo-body font-semibold text-foreground truncate max-w-full">{label}</span>
       {children}
     </div>

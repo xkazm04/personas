@@ -13939,15 +13939,15 @@
       "monitoring_health_ok": "in Ordnung",
       "monitoring_health_unknown": "Status unbekannt",
       "monitoring_deploy_now": "Jetzt ausrollen",
-      "monitoring_hide_prompt": "Prompt ausblenden",
       "monitoring_merged_hint": "Code und Vault nennen dasselbe Tool",
       "monitoring_queue_all": "Für alle {count} Projekte einreihen, die das brauchen →",
       "monitoring_queue_task": "Aufgabe einreihen",
       "monitoring_rescan_full": "Voller Re-Scan",
       "monitoring_rescan_incremental": "Geänderte Dateien neu scannen",
       "monitoring_run_scan": "Scan starten",
-      "monitoring_upgrade_none": "Hier gibt es gerade nichts zu verbessern.",
-      "monitoring_view_prompt": "Prompt ansehen"
+      "monitoring_area_scan_hint": "Eine Claude-Session nur für {area} starten",
+      "monitoring_area_scan_started": "Fokussierter Scan gestartet",
+      "monitoring_current_level": "Aktuelles Level"
     },
     "doc_signing": {
       "sign_heading": "Dokument signieren",

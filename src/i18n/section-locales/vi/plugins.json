@@ -1517,15 +1517,15 @@
     "monitoring_health_ok": "bình thường",
     "monitoring_health_unknown": "không rõ trạng thái",
     "monitoring_deploy_now": "Triển khai ngay",
-    "monitoring_hide_prompt": "Ẩn prompt",
     "monitoring_merged_hint": "Mã nguồn và kho của bạn cùng chỉ một công cụ",
     "monitoring_queue_all": "Xếp hàng cho cả {count} dự án cần điều này →",
     "monitoring_queue_task": "Xếp hàng tác vụ",
     "monitoring_rescan_full": "Quét lại toàn bộ",
     "monitoring_rescan_incremental": "Quét lại tệp đã thay đổi",
     "monitoring_run_scan": "Chạy quét",
-    "monitoring_upgrade_none": "Hiện chưa có gì để nâng cấp ở đây.",
-    "monitoring_view_prompt": "Xem prompt"
+    "monitoring_area_scan_hint": "Gửi một phiên Claude chỉ tập trung vào {area}",
+    "monitoring_area_scan_started": "Đã gửi quét tập trung",
+    "monitoring_current_level": "Mức hiện tại"
   },
   "doc_signing": {
     "sign_heading": "Ký tài liệu",

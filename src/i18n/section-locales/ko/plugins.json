@@ -1517,15 +1517,15 @@
     "monitoring_health_ok": "정상",
     "monitoring_health_unknown": "상태 알 수 없음",
     "monitoring_deploy_now": "지금 배포",
-    "monitoring_hide_prompt": "프롬프트 숨기기",
     "monitoring_merged_hint": "코드베이스와 보관함이 같은 도구를 가리킵니다",
     "monitoring_queue_all": "이것이 필요한 {count}개 프로젝트 전체를 대기열에 →",
     "monitoring_queue_task": "작업 대기열에 추가",
     "monitoring_rescan_full": "전체 재스캔",
     "monitoring_rescan_incremental": "변경된 파일 재스캔",
     "monitoring_run_scan": "스캔 실행",
-    "monitoring_upgrade_none": "지금 여기서 업그레이드할 것이 없습니다.",
-    "monitoring_view_prompt": "프롬프트 보기"
+    "monitoring_area_scan_hint": "{area}에만 집중하는 Claude 세션 보내기",
+    "monitoring_area_scan_started": "집중 스캔이 시작되었습니다",
+    "monitoring_current_level": "현재 수준"
   },
   "doc_signing": {
     "sign_heading": "문서 서명하기",

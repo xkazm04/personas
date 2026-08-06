@@ -13939,15 +13939,15 @@
       "monitoring_health_ok": "v pořádku",
       "monitoring_health_unknown": "stav neznámý",
       "monitoring_deploy_now": "Nasadit hned",
-      "monitoring_hide_prompt": "Skrýt prompt",
       "monitoring_merged_hint": "Kód i váš trezor uvádějí stejný nástroj",
       "monitoring_queue_all": "Zařadit pro všech {count} projektů, které to potřebují →",
       "monitoring_queue_task": "Zařadit úlohu",
       "monitoring_rescan_full": "Úplný re-scan",
       "monitoring_rescan_incremental": "Re-scan změněných souborů",
       "monitoring_run_scan": "Spustit sken",
-      "monitoring_upgrade_none": "Tady teď není co vylepšovat.",
-      "monitoring_view_prompt": "Zobrazit prompt"
+      "monitoring_area_scan_hint": "Vyslat session Clauda zaměřenou jen na {area}",
+      "monitoring_area_scan_started": "Cílený sken odeslán",
+      "monitoring_current_level": "Aktuální úroveň"
     },
     "doc_signing": {
       "sign_heading": "Podepsat dokument",

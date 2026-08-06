@@ -13939,15 +13939,15 @@
       "monitoring_health_ok": "سليم",
       "monitoring_health_unknown": "الحالة غير معروفة",
       "monitoring_deploy_now": "النشر الآن",
-      "monitoring_hide_prompt": "إخفاء الموجّه",
       "monitoring_merged_hint": "الشيفرة وخزنتك تشيران إلى الأداة نفسها",
       "monitoring_queue_all": "إدراج في الطابور لكل المشاريع الـ {count} التي تحتاج ذلك ←",
       "monitoring_queue_task": "إضافة مهمة للطابور",
       "monitoring_rescan_full": "إعادة فحص كاملة",
       "monitoring_rescan_incremental": "إعادة فحص الملفات المتغيّرة",
       "monitoring_run_scan": "تشغيل الفحص",
-      "monitoring_upgrade_none": "لا شيء لترقيته هنا الآن.",
-      "monitoring_view_prompt": "عرض الموجّه"
+      "monitoring_area_scan_hint": "إرسال جلسة Claude مركّزة على {area} فقط",
+      "monitoring_area_scan_started": "تم إرسال الفحص المركّز",
+      "monitoring_current_level": "المستوى الحالي"
     },
     "doc_signing": {
       "sign_heading": "توقيع مستند",

@@ -1517,15 +1517,15 @@
     "monitoring_health_ok": "correcto",
     "monitoring_health_unknown": "estado desconocido",
     "monitoring_deploy_now": "Desplegar ahora",
-    "monitoring_hide_prompt": "Ocultar prompt",
     "monitoring_merged_hint": "El código y tu bóveda nombran la misma herramienta",
     "monitoring_queue_all": "Poner en cola para los {count} proyectos que lo necesitan →",
     "monitoring_queue_task": "Poner tarea en cola",
     "monitoring_rescan_full": "Reescaneo completo",
     "monitoring_rescan_incremental": "Reescanear archivos cambiados",
     "monitoring_run_scan": "Ejecutar escaneo",
-    "monitoring_upgrade_none": "Aquí no hay nada que mejorar ahora mismo.",
-    "monitoring_view_prompt": "Ver prompt"
+    "monitoring_area_scan_hint": "Lanzar una sesión de Claude centrada solo en {area}",
+    "monitoring_area_scan_started": "Escaneo enfocado enviado",
+    "monitoring_current_level": "Nivel actual"
   },
   "doc_signing": {
     "sign_heading": "Firmar un Documento",
