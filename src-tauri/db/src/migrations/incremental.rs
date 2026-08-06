@@ -4172,6 +4172,26 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Doc-rot content signal. The git rule (coupled sources newer than the
+    // doc) cannot express "this doc names a file that no longer exists" — and
+    // that case used to be INVISIBLE: a doc whose references had all been
+    // renamed away coupled to nothing, went unscoped, and unscoped never went
+    // dirty. `broken_refs` is the JSON list of referenced repo paths that are
+    // gone while their parent directory still stands. Additive; a legacy row
+    // reads NULL and degrades to "no content evidence", never to a false pass.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "doc_rot_broken_refs",
+            description: "doc_status.broken_refs — referenced repo paths that no longer exist",
+            already_applied: |conn| has_column(conn, "doc_status", "broken_refs"),
+            apply: |conn| {
+                ddl_step(conn, "ALTER TABLE doc_status ADD COLUMN broken_refs TEXT")?;
+                Ok(())
+            },
+        },
+    )?;
+
     // Memory claims + knowledge health (Brainiac-adoption P3). memory_claims =
     // the open-until-resolved dispute loop (Brainiac memory_feedback): a
     // negative claim (`wrong`/`outdated`) stays OPEN until a human answers
