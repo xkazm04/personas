@@ -14609,6 +14609,8 @@
       "stt_engine_status_desc": "Local transcription needs the whisper.cpp binary installed.",
       "stt_installed": "Engine installed",
       "stt_not_installed": "Engine not installed",
+      "voice_section_output": "Speech output",
+      "voice_section_input": "Speech input",
       "stt_models_summary": "{downloaded} of {total}",
       "stt_models_engine_first": "The engine above is not installed yet. You can download a model now, but transcription only works once both are in place.",
       "stt_install_title": "Install the engine for me",

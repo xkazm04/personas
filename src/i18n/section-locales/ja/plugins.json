@@ -2667,7 +2667,9 @@
     "stt_install_desc": "whisper.cppのCPU版をダウンロードし、Athenaが参照する場所に配置します。約20 MB、現時点ではWindowsのみ対応です。",
     "stt_install_title": "エンジンを代わりにインストール",
     "stt_models_engine_first": "上記のエンジンはまだインストールされていません。今すぐモデルをダウンロードできますが、文字起こしは両方揃って初めて機能します。",
-    "stt_models_summary": "{total}件中{downloaded}件"
+    "stt_models_summary": "{total}件中{downloaded}件",
+    "voice_section_input": "音声入力",
+    "voice_section_output": "音声出力"
   },
   "artist_gallery": {
     "loading_viewer": "ビューアを読み込み中…",

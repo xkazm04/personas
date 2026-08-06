@@ -15119,7 +15119,9 @@
       "stt_install_desc": "whisper.cpp CPU 빌드를 다운로드하여 Athena가 찾는 위치에 저장합니다. 약 20MB이며, 현재는 Windows에서만 지원됩니다.",
       "stt_install_title": "엔진 설치해 주세요",
       "stt_models_engine_first": "위의 엔진이 아직 설치되지 않았습니다. 지금 모델을 다운로드할 수 있지만, 두 가지가 모두 준비되어야 전사가 작동합니다.",
-      "stt_models_summary": "{downloaded}/{total}"
+      "stt_models_summary": "{downloaded}/{total}",
+      "voice_section_input": "음성 입력",
+      "voice_section_output": "음성 출력"
     },
     "artist_gallery": {
       "loading_viewer": "뷰어 로딩 중…",

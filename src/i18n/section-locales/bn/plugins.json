@@ -2667,7 +2667,9 @@
     "stt_install_desc": "whisper.cpp-এর CPU বিল্ড ডাউনলোড করে Athena যেখানে খোঁজে সেখানে রাখে। প্রায় 20 MB, আপাতত শুধু Windows-এর জন্য।",
     "stt_install_title": "আমার জন্য ইঞ্জিন ইনস্টল করুন",
     "stt_models_engine_first": "উপরের ইঞ্জিনটি এখনো ইনস্টল করা হয়নি। আপনি এখনই একটি মডেল ডাউনলোড করতে পারেন, তবে ট্রান্সক্রিপশন তখনই কাজ করবে যখন দুটোই প্রস্তুত থাকবে।",
-    "stt_models_summary": "{total} এর মধ্যে {downloaded}"
+    "stt_models_summary": "{total} এর মধ্যে {downloaded}",
+    "voice_section_input": "স্পিচ ইনপুট",
+    "voice_section_output": "স্পিচ আউটপুট"
   },
   "artist_gallery": {
     "loading_viewer": "ভিউয়ার লোড হচ্ছে…",

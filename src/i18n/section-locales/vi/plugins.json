@@ -2667,7 +2667,9 @@
     "stt_install_desc": "Tải xuống bản dựng CPU của whisper.cpp và đặt vào đúng vị trí Athena tìm kiếm. Khoảng 20 MB, hiện tại chỉ hỗ trợ Windows.",
     "stt_install_title": "Cài đặt engine cho tôi",
     "stt_models_engine_first": "Công cụ ở trên vẫn chưa được cài đặt. Bạn có thể tải mô hình xuống ngay bây giờ, nhưng việc phiên âm chỉ hoạt động khi cả hai đã sẵn sàng.",
-    "stt_models_summary": "{downloaded}/{total}"
+    "stt_models_summary": "{downloaded}/{total}",
+    "voice_section_input": "Đầu vào giọng nói",
+    "voice_section_output": "Đầu ra giọng nói"
   },
   "artist_gallery": {
     "loading_viewer": "Đang tải trình xem…",

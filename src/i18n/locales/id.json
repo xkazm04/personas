@@ -15119,7 +15119,9 @@
       "stt_install_desc": "Mengunduh build CPU whisper.cpp dan menempatkannya di lokasi yang dicari Athena. Sekitar 20 MB, untuk saat ini hanya Windows.",
       "stt_install_title": "Instalkan Mesinnya untuk Saya",
       "stt_models_engine_first": "Mesin di atas belum terpasang. Anda bisa mengunduh model sekarang, tetapi transkripsi baru berfungsi setelah keduanya terpasang.",
-      "stt_models_summary": "{downloaded} dari {total}"
+      "stt_models_summary": "{downloaded} dari {total}",
+      "voice_section_input": "Input Suara",
+      "voice_section_output": "Output Suara"
     },
     "artist_gallery": {
       "loading_viewer": "Memuat penampil…",

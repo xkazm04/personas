@@ -14615,6 +14615,8 @@ export type Translations = {
       stt_engine_status_desc: string;
       stt_installed: string;
       stt_not_installed: string;
+      voice_section_output: string;
+      voice_section_input: string;
       stt_models_summary: string;
       stt_models_engine_first: string;
       stt_install_title: string;

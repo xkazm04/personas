@@ -2667,7 +2667,9 @@
     "stt_install_desc": "Descarga la compilación de CPU de whisper.cpp y la coloca donde Athena la busca. Unos 20 MB, por ahora solo Windows.",
     "stt_install_title": "Instalar el motor por mí",
     "stt_models_engine_first": "El motor indicado arriba aún no está instalado. Puedes descargar un modelo ahora, pero la transcripción solo funcionará cuando ambos estén disponibles.",
-    "stt_models_summary": "{downloaded} de {total}"
+    "stt_models_summary": "{downloaded} de {total}",
+    "voice_section_input": "Entrada de voz",
+    "voice_section_output": "Salida de voz"
   },
   "artist_gallery": {
     "loading_viewer": "Cargando visor…",
