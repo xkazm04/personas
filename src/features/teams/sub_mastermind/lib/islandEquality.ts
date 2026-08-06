@@ -90,6 +90,12 @@ export function sameIslandContent(a: Island, b: Island): boolean {
   for (let i = 0; i < a.personasRunning.length; i++) {
     if (a.personasRunning[i] !== b.personasRunning[i]) return false;
   }
+  if (a.runners.length !== b.runners.length) return false;
+  for (let i = 0; i < a.runners.length; i++) {
+    const x = a.runners[i]!;
+    const y = b.runners[i]!;
+    if (x.id !== y.id || x.status !== y.status || x.progress !== y.progress || x.title !== y.title) return false;
+  }
   const s = a.ship ?? null;
   const t = b.ship ?? null;
   if (s === null || t === null) return s === t;

@@ -66,12 +66,13 @@ import { loadPositions, savePositions } from './lib/positions';
 import { PersonaListPopover, type PersonaRow } from './lib/PersonaListPopover';
 import { ProjectListSidebar } from './lib/ProjectListSidebar';
 import { ProjectSidebar } from './lib/ProjectSidebar';
-import type { CanvasMode, DimNode, FleetNode, IslandShip } from './lib/types';
+import type { CanvasMode, DimNode, FleetNode, IslandShip, RunnerNode } from './lib/types';
 import { MastermindHexMosaic } from './variants/MastermindHexMosaic';
 
 /** Stable empty fallbacks — a fresh [] per island would defeat the identity cache. */
 const EMPTY_FLEET: FleetNode[] = [];
 const EMPTY_NAMES: string[] = [];
+const EMPTY_RUNNERS: RunnerNode[] = [];
 /** Stable empty KPI list — a fresh `[]` per render would remount the goals modal. */
 const EMPTY_KPIS: KpiListItem[] = [];
 
@@ -136,6 +137,9 @@ function MastermindInner() {
   const loadScans = useSceneStore((s) => s.loadScans);
   const loadSentry = useSceneStore((s) => s.loadSentry);
   const loadGoals = useSceneStore((s) => s.loadGoals);
+  const storeRunners = useSceneStore((s) => s.runners);
+  const runnersStatus = useSceneStore((s) => s.runnersStatus);
+  const loadRunners = useSceneStore((s) => s.loadRunners);
   const loadLlmSpend = useSceneStore((s) => s.loadLlmSpend);
   const invalidateScans = useSceneStore((s) => s.invalidateScans);
   const retryFailed = useSceneStore((s) => s.retryFailed);
@@ -223,7 +227,8 @@ function MastermindInner() {
     void loadMeta();
     void loadScans();
     void loadGoals();
-  }, [loadMeta, loadScans, loadGoals]);
+    void loadRunners();
+  }, [loadMeta, loadScans, loadGoals, loadRunners]);
 
   // Ship-milestone chips: ONE batched wall-summary IPC for every real project,
   // reduced to the banner's next/shipped/late shape via the same roadmap
@@ -417,6 +422,22 @@ function MastermindInner() {
     return m;
   }, [agentPersonas, activeProcesses, projects]);
 
+  // Dev-runner tasks per project, reduced to the canvas node shape. The store
+  // already filtered to live statuses and grouped by project; this only trims
+  // each row to what an island paints.
+  const runnersByProject = useMemo(() => {
+    const m = new Map<string, RunnerNode[]>();
+    for (const [slug, rows] of storeRunners) {
+      m.set(slug, rows.map((t) => ({
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        progress: t.progress_pct,
+      })));
+    }
+    return m;
+  }, [storeRunners]);
+
   const ideaScanAt = useMemo(() => {
     const m = new Map<string, string | null>();
     for (const [slug, rows] of scans) m.set(slug, rows[0]?.created_at ?? null);
@@ -452,11 +473,12 @@ function MastermindInner() {
     if (error) out.push(t.mastermind.family_passports);
     if (bad(metaStatus)) out.push(t.mastermind.family_relations);
     if (bad(scansStatus)) out.push(t.mastermind.family_scans);
+    if (bad(runnersStatus)) out.push(t.mastermind.family_runners);
     if (factoryError) out.push(t.mastermind.family_kpi);
     if (bad(sentryStatus)) out.push(t.mastermind.family_monitoring);
     if (fleetSessionsError) out.push(t.mastermind.family_fleet);
     return out;
-  }, [error, metaStatus, scansStatus, factoryError, sentryStatus, fleetSessionsError, t]);
+  }, [error, metaStatus, scansStatus, runnersStatus, factoryError, sentryStatus, fleetSessionsError, t]);
 
   const onRetryData = useCallback(() => {
     retryFailed();
@@ -494,7 +516,7 @@ function MastermindInner() {
   const islandCache = useRef(new Map<string, {
     base: (typeof scene.islands)[number]; passport: unknown; raw: unknown;
     oX: number | undefined; oY: number | undefined;
-    fleetKey: string; personasKey: string; busy: boolean; shipKey: string;
+    fleetKey: string; personasKey: string; busy: boolean; shipKey: string; runnerKey: string;
     out: (typeof scene.islands)[number];
   }>());
   // HYDRATION WAVES (staggered data adoption): the identity cache above stops
@@ -521,12 +543,14 @@ function MastermindInner() {
       const o = overrides[i.slug];
       const fleet = scene.demo ? i.fleet : fleetByProject.get(i.slug) ?? EMPTY_FLEET;
       const personasRunning = scene.demo ? i.personasRunning : personasByProject.get(i.slug) ?? EMPTY_NAMES;
+      const runners = scene.demo ? i.runners : runnersByProject.get(i.slug) ?? EMPTY_RUNNERS;
       const passport = passportBySlug.get(i.slug);
       const raw = rawByProject.get(i.slug);
       const busy = busySlugs.has(i.slug);
       const ship = shipByProject.get(i.slug) ?? null;
       const fleetKey = fleet.map((f) => `${f.id}:${f.state}`).join('|');
       const personasKey = personasRunning.join('|');
+      const runnerKey = runners.map((r) => `${r.id}:${r.status}:${r.progress}`).join('|');
       const shipKey = ship ? `${ship.next}|${ship.shipped}/${ship.total}|${ship.late}` : '';
       const c = cache.get(i.slug);
       // Cheap scalar checks first, the island walk last — a fleet tick or a drag
@@ -534,6 +558,7 @@ function MastermindInner() {
       if (c && c.passport === passport && c.raw === raw
         && c.oX === o?.x && c.oY === o?.y && c.fleetKey === fleetKey
         && c.personasKey === personasKey && c.busy === busy && c.shipKey === shipKey
+        && c.runnerKey === runnerKey
         && sameIslandContent(c.base, i)) {
         next.set(i.slug, c);
         return c.out;
@@ -565,14 +590,14 @@ function MastermindInner() {
       // demo fleet for demo islands) — a needs-you marker the banner shows at
       // every zoom band.
       const attention = computeAttention(fleet);
-      const out = { ...i, ...(o ? { x: o.x, y: o.y } : {}), fleet, personasRunning, nodes, attention, ship };
-      const entry = { base: i, passport, raw, oX: o?.x, oY: o?.y, fleetKey, personasKey, busy, shipKey, out };
+      const out = { ...i, ...(o ? { x: o.x, y: o.y } : {}), fleet, personasRunning, runners, nodes, attention, ship };
+      const entry = { base: i, passport, raw, oX: o?.x, oY: o?.y, fleetKey, personasKey, busy, shipKey, runnerKey, out };
       next.set(i.slug, entry);
       return out;
     });
     islandCache.current = next;
     return { ...scene, islands };
-  }, [scene, overrides, fleetByProject, personasByProject, passportBySlug, rawByProject, busySlugs, kpiListByProject, shipByProject, hydrateTick]);
+  }, [scene, overrides, fleetByProject, personasByProject, runnersByProject, passportBySlug, rawByProject, busySlugs, kpiListByProject, shipByProject, hydrateTick]);
 
   // Drain deferred adoptions one animation frame at a time. Runs after every
   // commit (no dep array on purpose): whenever the pass above left islands on
@@ -607,9 +632,10 @@ function MastermindInner() {
     scans: scansStatus,
     sentry: sentryStatus,
     goals: goalsStatus,
+    runners: runnersStatus,
     llmSpend: llmSpendStatus,
     kpi: factoryError ? 'failed' : 'loaded',
-  }), [error, loading, metaStatus, scansStatus, sentryStatus, goalsStatus, llmSpendStatus, factoryError]);
+  }), [error, loading, metaStatus, scansStatus, sentryStatus, goalsStatus, runnersStatus, llmSpendStatus, factoryError]);
 
   // `positioned`, not `canvasScene`: hiding an island is a view filter, and a
   // digest that silently drops projects the user tucked away would let her

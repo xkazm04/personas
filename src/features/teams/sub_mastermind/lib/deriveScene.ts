@@ -67,6 +67,7 @@ function toIsland(p: AppPassport, i: number, kpi: KpiRollup | undefined, lastSca
     nodes: dimNodes(p, kpi, lastScanAt, monitoring?.unresolvedIssues, goalsOngoing, families),
     fleet: [],
     personasRunning: [],
+    runners: [],
     attention: false,
     stats: buildIslandStats(p, { kpi, monitoring, llmSpend }),
   };
@@ -136,6 +137,9 @@ const mk = (slug: string, name: string, purpose: string, i: number, state: Islan
   nodes: rows.map(([key, status, detail, reached, steps, days]) => ({ key, label: DIM_REGISTRY[key].label, status, detail, reached, steps, days: days ?? null })),
   fleet,
   personasRunning: DEMO_PERSONAS[slug] ?? [],
+  // Demo islands carry no runner tasks: a fixture task would be a lie the
+  // Run Desk could not corroborate (nothing to open, nothing to cancel).
+  runners: [],
   // Live fields: the page attaches `attention` from the resolved fleet (demo
   // fleet included); colour stays readiness-derived in the demo scene.
   attention: false,

@@ -1,11 +1,12 @@
 // The far band's island body. `far` used to share `mid`'s four category hexes;
 // it is now one large process hex, and these assert the swap in both
 // directions — what far gained, and what it must NOT still be drawing.
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 
 import { FLEET_INK } from '../lib/ink';
 import { MosaicIsland } from '../variants/MosaicIsland';
+import { setMidVariant } from '../lib/midVariantStore';
 import type { IslandCtx } from '../lib/CanvasShell';
 import type { FleetNode, Island, ZoomBand } from '../lib/types';
 import { DIM_ORDER, DIM_REGISTRY } from '../lib/dimRegistry';
@@ -33,6 +34,11 @@ const ctx = (band: ZoomBand): IslandCtx => ({
 
 const session = (id: string, state: string): FleetNode => ({ id, label: id, state });
 
+// The mid band is mid-`/prototype`: its default body is a candidate variant,
+// not the category quad. These assertions are about the BASELINE mid body, so
+// they select it explicitly rather than depending on which variant is winning.
+beforeEach(() => setMidVariant('baseline'));
+
 const island = (over: Partial<Island> = {}): Island => ({
   slug: 'acme', name: 'Acme', purpose: 'Test fixture',
   x: 0, y: 0,
@@ -44,7 +50,7 @@ const island = (over: Partial<Island> = {}): Island => ({
     key, label: DIM_REGISTRY[key].label, status: 'absent' as const,
     detail: null, reached: 0, steps: 0, days: null,
   })),
-  fleet: [], personasRunning: [], attention: false,
+  fleet: [], personasRunning: [], runners: [], attention: false,
   monitorErrors: null, stats: [], ship: null,
   ...over,
 });

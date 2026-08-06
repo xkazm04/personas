@@ -27,6 +27,7 @@ import { useCanvasFocus } from './focusStore';
 import { nearestTo, pickInDirection } from './kbNav';
 import { tidyLayout, type TidyResult } from './tidyLayout';
 import { DimLegend } from './DimLegend';
+import { MidVariantSwitcher } from './MidVariantSwitcher';
 import { FleetListPopover } from './FleetListPopover';
 import { GroupLayer, type GroupMember } from './GroupLayer';
 import { IslandMenu } from './IslandMenu';
@@ -907,6 +908,9 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
       </span>
 
       <DimLegend />
+      {/* THROWAWAY /prototype A/B for the mid band's island body. Deleted at
+          consolidation along with the losing variants. */}
+      <MidVariantSwitcher atMid={band === 'mid'} />
       <ZoomBadge z={cam.z} />
       {/* Athena's contribution, and the one way out of it. Sits with the other
           global canvas controls, above the zoom cluster. */}

@@ -19,6 +19,9 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { DimGlyph } from '../lib/DimGlyph';
 import { FarProcessHex } from '../lib/FarProcessHex';
+import { MidFacetCube } from '../lib/MidFacetCube';
+import { MidTallyBoard } from '../lib/MidTallyBoard';
+import { useMidVariant } from '../lib/midVariantStore';
 import { CATEGORY_ICON, categoryNodes, type CategoryNode } from '../lib/dimCategories';
 import { cellHint } from '../lib/dimMeta';
 import { DIM_REGISTRY } from '../lib/dimRegistry';
@@ -93,7 +96,12 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
   // collapses to four category cells, with the context menu's hover echo
   // following onto the category that owns the hovered dimension.
   const far = band === 'far';
-  const collapsed = band === 'mid';
+  // PROTOTYPE (mid A/B): `collapsed` is now the BASELINE mid body — the two
+  // candidate variants render instead when selected. Consolidation deletes the
+  // switcher and whichever two of the three lose.
+  const midVariant = useMidVariant();
+  const mid = band === 'mid';
+  const collapsed = mid && midVariant === 'baseline';
   const categories = collapsed ? categoryNodes(island.nodes) : [];
   const categoryOfHighlight = highlightKey ? DIM_REGISTRY[highlightKey as keyof typeof DIM_REGISTRY]?.category : undefined;
   // Demo islands carry no passport, so every cell resolves to no action and
@@ -119,7 +127,11 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
       <circle r={haloR * 1.18} fill={`url(#mm-halo-${island.state})`} opacity={0.5} />
 
       {far ? (
-        <FarProcessHex fleet={island.fleet} personas={island.personasRunning} attention={island.attention} />
+        <FarProcessHex fleet={island.fleet} personas={island.personasRunning} runners={island.runners} attention={island.attention} />
+      ) : mid && midVariant === 'facet' ? (
+        <MidFacetCube fleet={island.fleet} personas={island.personasRunning} runners={island.runners} />
+      ) : mid && midVariant === 'tally' ? (
+        <MidTallyBoard fleet={island.fleet} personas={island.personasRunning} runners={island.runners} />
       ) : collapsed
         ? categories.map((c, k) => {
           const ax = CAT_AXIAL[k];
@@ -159,10 +171,10 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
 
       {/* Core cell. Suppressed at `far`: the process hex IS the body there, and
           a second hex sitting inside it would read as a target, not a project. */}
-      {!far && (
+      {!far && !(mid && midVariant !== 'baseline') && (
         <polygon points={hexPoints(0, 0, CELL - 1.5)} fill={mix(ink, 26, 'var(--secondary)')} stroke={mix(ink, 70)} strokeWidth={2} strokeLinejoin="round" />
       )}
-      {band === 'mid' && (
+      {collapsed && (
         <circle r={CELL * 0.32} fill="none" stroke={mix(ink, 85)} strokeWidth={5} />
       )}
       {(band === 'near' || band === 'close') && (
