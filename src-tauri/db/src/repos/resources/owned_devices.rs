@@ -94,12 +94,100 @@ pub fn register_owned_device(
         .ok_or_else(|| AppError::Internal("owned device vanished after insert".into()))
 }
 
+/// Record a device that completed the signed pairing ceremony.
+///
+/// Same idempotency contract as [`register_owned_device`], plus the pairing
+/// facts: `paired_at` (now) and the peer's Ed25519 `public_key` as proven during
+/// the handshake. `is_home` is deliberately NOT set here — a freshly paired
+/// device defaults to false and only becomes home via [`set_device_home`].
+pub fn register_paired_device(
+    pool: &DbPool,
+    peer_id: &str,
+    device_group_id: &str,
+    display_name: &str,
+    public_key_b64: &str,
+) -> Result<OwnedDevice, AppError> {
+    if peer_id.trim().is_empty() {
+        return Err(AppError::Validation("peer_id must not be empty".into()));
+    }
+    let conn = pool.get()?;
+    let now = chrono::Utc::now().to_rfc3339();
+    conn.execute(
+        "INSERT INTO owned_devices
+            (peer_id, device_group_id, display_name, added_at, last_synced_at, is_home, paired_at, public_key)
+         VALUES (?1, ?2, ?3, ?4, NULL, 0, ?4, ?5)
+         ON CONFLICT(peer_id) DO UPDATE SET
+            device_group_id = excluded.device_group_id,
+            display_name    = excluded.display_name,
+            paired_at       = excluded.paired_at,
+            public_key      = excluded.public_key",
+        rusqlite::params![peer_id, device_group_id, display_name, now, public_key_b64],
+    )?;
+    get_owned_device(pool, peer_id)?
+        .ok_or_else(|| AppError::Internal("owned device vanished after insert".into()))
+}
+
+/// Nominate (or un-nominate) a device as the user's home machine.
+///
+/// Setting `is_home = true` clears the flag on every other row first, so the
+/// "home device" is always singular. Returns the updated row.
+pub fn set_device_home(
+    pool: &DbPool,
+    peer_id: &str,
+    is_home: bool,
+) -> Result<OwnedDevice, AppError> {
+    let conn = pool.get()?;
+    let tx = conn.unchecked_transaction()?;
+    if is_home {
+        // Clear first — the partial unique index on `is_home = 1` would
+        // otherwise reject the second home before we ever demote the first.
+        tx.execute(
+            "UPDATE owned_devices SET is_home = 0 WHERE peer_id <> ?1 AND is_home = 1",
+            rusqlite::params![peer_id],
+        )?;
+    }
+    let affected = tx.execute(
+        "UPDATE owned_devices SET is_home = ?2 WHERE peer_id = ?1",
+        rusqlite::params![peer_id, is_home as i32],
+    )?;
+    if affected == 0 {
+        return Err(AppError::NotFound(format!(
+            "No owned device with peer_id {peer_id}"
+        )));
+    }
+    tx.commit()?;
+    get_owned_device(pool, peer_id)?
+        .ok_or_else(|| AppError::Internal("owned device vanished after update".into()))
+}
+
+/// Overwrite the local device-group anchor (used when a pairing responder joins
+/// the initiator's existing group). Returns the value that landed.
+pub fn set_device_group_id(pool: &DbPool, device_group_id: &str) -> Result<String, AppError> {
+    if device_group_id.trim().is_empty() {
+        return Err(AppError::Validation(
+            "device_group_id must not be empty".into(),
+        ));
+    }
+    let conn = pool.get()?;
+    let affected = conn.execute(
+        "UPDATE local_identity SET device_group_id = ?1 WHERE id = 1",
+        rusqlite::params![device_group_id],
+    )?;
+    if affected == 0 {
+        return Err(AppError::Internal(
+            "local identity not initialized; cannot assign a device group".into(),
+        ));
+    }
+    Ok(device_group_id.to_string())
+}
+
 /// Fetch a single owned device by peer id.
 pub fn get_owned_device(pool: &DbPool, peer_id: &str) -> Result<Option<OwnedDevice>, AppError> {
     let conn = pool.get()?;
     let row = conn
         .query_row(
-            "SELECT peer_id, device_group_id, display_name, added_at, last_synced_at
+            "SELECT peer_id, device_group_id, display_name, added_at, last_synced_at,
+                    is_home, paired_at, public_key
              FROM owned_devices WHERE peer_id = ?1",
             rusqlite::params![peer_id],
             map_owned_device,
@@ -112,7 +200,8 @@ pub fn get_owned_device(pool: &DbPool, peer_id: &str) -> Result<Option<OwnedDevi
 pub fn list_owned_devices(pool: &DbPool) -> Result<Vec<OwnedDevice>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
-        "SELECT peer_id, device_group_id, display_name, added_at, last_synced_at
+        "SELECT peer_id, device_group_id, display_name, added_at, last_synced_at,
+                is_home, paired_at, public_key
          FROM owned_devices ORDER BY added_at DESC",
     )?;
     let rows = stmt
@@ -148,6 +237,9 @@ fn map_owned_device(row: &rusqlite::Row<'_>) -> rusqlite::Result<OwnedDevice> {
         display_name: row.get(2)?,
         added_at: row.get(3)?,
         last_synced_at: row.get(4)?,
+        is_home: row.get::<_, i64>(5)? != 0,
+        paired_at: row.get(6)?,
+        public_key: row.get(7)?,
     })
 }
 
@@ -256,5 +348,69 @@ mod tests {
         let pool = test_pool();
         let group = ensure_device_group_id(&pool).expect("group");
         assert!(register_owned_device(&pool, "  ", &group, "x").is_err());
+    }
+
+    #[test]
+    fn paired_device_defaults_to_not_home_and_records_pairing_facts() {
+        let pool = test_pool();
+        let group = ensure_device_group_id(&pool).expect("group");
+        let dev = register_paired_device(&pool, "peerA", &group, "Laptop", "PUBKEYB64")
+            .expect("register paired");
+        assert!(!dev.is_home, "a freshly paired device must not be home");
+        assert!(dev.paired_at.is_some(), "paired_at must be stamped");
+        assert_eq!(dev.public_key.as_deref(), Some("PUBKEYB64"));
+    }
+
+    #[test]
+    fn set_device_home_toggles_and_stays_singular() {
+        let pool = test_pool();
+        let group = ensure_device_group_id(&pool).expect("group");
+        register_paired_device(&pool, "peerA", &group, "Laptop", "kA").expect("A");
+        register_paired_device(&pool, "peerB", &group, "Desktop", "kB").expect("B");
+
+        let a = set_device_home(&pool, "peerA", true).expect("home A");
+        assert!(a.is_home);
+
+        // Promoting B must demote A — exactly one home at any time.
+        let b = set_device_home(&pool, "peerB", true).expect("home B");
+        assert!(b.is_home);
+        let homes: Vec<String> = list_owned_devices(&pool)
+            .expect("list")
+            .into_iter()
+            .filter(|d| d.is_home)
+            .map(|d| d.peer_id)
+            .collect();
+        assert_eq!(homes, vec!["peerB".to_string()]);
+
+        // And it toggles back off.
+        let b = set_device_home(&pool, "peerB", false).expect("unhome B");
+        assert!(!b.is_home);
+        assert!(list_owned_devices(&pool)
+            .expect("list")
+            .iter()
+            .all(|d| !d.is_home));
+    }
+
+    #[test]
+    fn set_device_home_on_unknown_peer_is_not_found() {
+        let pool = test_pool();
+        assert!(set_device_home(&pool, "ghost", true).is_err());
+    }
+
+    /// The pairing-column migration must be safe to replay: `run_incremental`
+    /// runs on every launch, and an ALTER TABLE that is not column-guarded
+    /// aborts startup with "duplicate column name" the second time around.
+    #[test]
+    fn pairing_columns_migration_is_idempotent() {
+        let pool = test_pool();
+        let conn = pool.get().expect("conn");
+        for _ in 0..3 {
+            crate::migrations::run_incremental(&conn).expect("replay incremental migrations");
+        }
+        // Columns present exactly once, and the table still reads.
+        drop(conn);
+        let group = ensure_device_group_id(&pool).expect("group");
+        let dev = register_paired_device(&pool, "peerA", &group, "Laptop", "k").expect("register");
+        assert!(!dev.is_home);
     }
 }
