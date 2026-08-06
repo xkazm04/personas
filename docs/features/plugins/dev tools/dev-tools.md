@@ -683,7 +683,27 @@ src/features/plugins/dev-tools/
     └── SkillContextsModal.tsx    # per-context progress modal (Bars)
 ```
 
-**One Skills UI, two entry points (2026-08-04).** The Skills surfaces are no
+**Database & Monitoring dimension modals (2026-08-06).** The wall's Database and
+Monitoring cells no longer fall through to the generic deploy popover — each
+opens its own modal (`improve/DatabaseModal.tsx`, `improve/MonitoringModal.tsx`),
+reachable identically from the wall and the Mastermind canvas via the shared
+`improve/ImproveSurface.tsx` router (ONE row-key → surface decision for every
+entry point; the canvas previously carried a two-branch copy that silently
+missed every modal row). Both ride the new per-environment connector table
+(`dev_project_env_connectors`, keyed project × dimension × env, capability
+suffixes like `monitoring.logs`). Database: three env slots (local/test/prod),
+each showing the DETECTED engine (brand glyph via techIcons — 15 new DB-provider
+glyphs) beside the BOUND vault connector, assign/reassign/unbind per slot.
+Monitoring ("Console v2", prototype winner): 2×2 capability cards — technical /
+LLM / logs+tracing / metrics — each split codebase|vault with hero-size tool
+marks that merge to a single mark when both sides name the same tool; four
+states (empty / unconfirmed / not-implemented / covered) from crossing the two
+facts; NOT_IMPLEMENTED offers a Claude integration deploy that reads the bound
+connector. Header carries the current observability level (segmented strip) +
+view-only vault marks; the commit-row footer carries THIS project's
+queue/deploy actions (fleet-wide "queue for all N" stays in the wall popover,
+whose body is now the shared `ImproveClassicPanel` over `useImproveActions`).
+Each card also dispatches a FOCUSED per-area scan session. **One Skills UI, two entry points (2026-08-04).** The Skills surfaces are no
 longer page-only. `SkillsOverviewPanel` (Overview board) and `RegistryTab`
 (coverage heatmap) are mountable components, and the **Skills Workbench modal**
 — opened from the Passport wall's skills cell and from the Mastermind canvas's

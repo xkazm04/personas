@@ -14217,7 +14217,6 @@ export type Translations = {
       database_modal_title: string;
       database_modal_footer: string;
       monitoring_modal_title: string;
-      monitoring_modal_footer: string;
       monitoring_item_technical: string;
       monitoring_item_llm: string;
       monitoring_item_logs: string;
@@ -14231,9 +14230,6 @@ export type Translations = {
       monitoring_deploy_started: string;
       monitoring_deploy_blurb: string;
       monitoring_none_dash: string;
-      monitoring_lane_capabilities: string;
-      monitoring_lane_upgrade: string;
-      monitoring_lane_aria: string;
       monitoring_vault_available: string;
       monitoring_vault_count: string;
       monitoring_health_ok: string;
@@ -14244,7 +14240,6 @@ export type Translations = {
       monitoring_run_scan: string;
       monitoring_queue_task: string;
       monitoring_deploy_now: string;
-      monitoring_queue_all: string;
       monitoring_current_level: string;
       monitoring_area_scan_hint: string;
       monitoring_area_scan_started: string;

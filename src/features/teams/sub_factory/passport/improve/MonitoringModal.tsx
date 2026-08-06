@@ -1,28 +1,21 @@
 // Monitoring dimension — the modal behind the passport's Monitoring cell.
+// Consolidated 2026-08-06: the prototype switcher and every losing variant are
+// gone; `MonitoringConsole` is the sole body (see its header comment for the
+// layout doctrine — readings in the header, capability cards in the grid, this
+// project's deployment actions in the commit row).
 //
-// TWO LANES, the SkillsWorkbench arrangement:
-//   · Capabilities — the four-item grid: bind a connector per capability, and
-//     dispatch the integration for the one state that needs code.
-//   · Upgrade      — `ImproveClassicPanel`, i.e. exactly what the old deploy
-//     popover showed: "why this rating", the level ladder, the connector icon
-//     grid, the golden-standard actions with prompt preview / Queue / Deploy
-//     now, and "queue for all N projects that need this". None of it is
-//     re-implemented here — the panel is the popover's own body, shared.
+// This file owns the WIRING only: the four capability rows (monitoringModel),
+// their bindings from the per-environment connector table, and the two Claude
+// dispatches — the integration deploy for a NOT_IMPLEMENTED card, and the
+// per-card focused scan.
 //
-//     It reads the **observability** row, not `monitoring`. That is where every
-//     one of those features is actually keyed: the deploy action is
-//     `row: 'observability'`, and `LADDERS` has an `observability` entry and no
-//     `monitoring` one. Pointing the lane at `monitoring` (the row this modal
-//     opens from) therefore produced an EMPTY panel — and, because the tab was
-//     gated on the panel having content, usually no tab at all. Same class of
-//     bug as the canvas row-key mismatch: two names for one dimension.
-//
-// PROTOTYPE SCAFFOLD: the variant pill in the header is throwaway. It switches
-// only the Capabilities lane; consolidation deletes it and the loser files.
+// The Upgrade lane is gone because its content is dissolved into the console's
+// chrome; the fleet-wide "queue for all N projects" deliberately did NOT come
+// along — this modal is one project's cockpit, and the batch stays in the wall
+// popover (ImproveClassicPanel).
 import { useCallback, useMemo, useState } from 'react';
 import { Activity } from 'lucide-react';
 
-import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { BaseModal } from '@/features/shared/components/modals';
 import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
@@ -31,21 +24,18 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import type { AppPassport } from '../passportModel';
 import { useImprove } from './ImproveContext';
-import { hasClassicContent, ImproveClassicPanel } from './ImproveClassicPanel';
 import { bindingKey, useEnvConnectors } from './envConnectors';
 import { MONITORING_DIMENSION } from './improveRows';
 import {
   areaScanPrompt, integrationPrompt, MONITORING_ENV, MONITORING_ITEMS, monitoringState,
 } from './monitoringModel';
 import type { MonitoringRow } from './monitoringTypes';
-import { MonitoringConsoleVariant } from './MonitoringConsoleVariant';
-import { MonitoringConsoleV2Variant } from './MonitoringConsoleV2Variant';
-
-type Lane = 'capabilities' | 'upgrade';
-type Variant = 'console' | 'v2';
+import { MonitoringConsole } from './MonitoringConsole';
 
 /** The passport row whose golden-standard actions, level ladder and provenance
- *  describe this dimension. See the note above: it is NOT `monitoring`. */
+ *  describe this dimension. NOT `monitoring` — the deploy action is keyed
+ *  `row: 'observability'` and LADDERS has only an `observability` entry; the
+ *  round-3 lane pointed at `monitoring` and rendered nothing. */
 const UPGRADE_ROW = 'observability';
 
 /** Union of every service type any item accepts — one vault fetch covers all
@@ -63,12 +53,8 @@ export function MonitoringModal({ slug, projectName, passport, onClose }: {
   const engine = useImprove();
   const addToast = useToastStore((s) => s.addToast);
   const env = useEnvConnectors(slug, ALL_SERVICE_TYPES);
-  const [lane, setLane] = useState<Lane>('capabilities');
-  const [variant, setVariant] = useState<Variant>('console');
   const [deploying, setDeploying] = useState<string | null>(null);
   const [areaScanning, setAreaScanning] = useState<string | null>(null);
-
-  const classic = hasClassicContent(slug, UPGRADE_ROW, engine);
 
   const rows = useMemo<MonitoringRow[]>(() => MONITORING_ITEMS.map((def) => {
     const boundId = env.bindings.get(bindingKey(def.key, MONITORING_ENV));
@@ -112,7 +98,7 @@ export function MonitoringModal({ slug, projectName, passport, onClose }: {
     })();
   }, [engine, slug, addToast, d]);
 
-  /** v2's per-card focused scan — a Dev-runner session specialized to ONE
+  /** The per-card focused scan — a Dev-runner session specialized to ONE
    *  capability area, so it audits logs OR metrics instead of grazing all four. */
   const onAreaScan = useCallback((row: MonitoringRow) => {
     if (!engine) return;
@@ -135,67 +121,27 @@ export function MonitoringModal({ slug, projectName, passport, onClose }: {
     })();
   }, [engine, slug, addToast, d]);
 
-  const shared = { rows, busyKey: env.saving?.split('|')[0] ?? null, deploying, onAssign, onDeploy };
-
   return (
     <BaseModal isOpen onClose={onClose} titleId="monitoring-modal-title" size="6xl" portal staggerChildren={false}>
-      {/* Viewport-relative like SkillsWorkbench. The tiles were ~370x195 in
-          a 470px `lg` shell — too small to hold facts AND a picker, which is
-          why every variant had to hide one to show the other. */}
       <div className="flex flex-col h-[calc(100dvh-160px)] min-h-[520px] max-h-[760px]" data-testid="monitoring-modal">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10 bg-primary/[0.04] flex-shrink-0">
           <Activity className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
           <span id="monitoring-modal-title" className="typo-title truncate">{d.monitoring_modal_title}</span>
           <span className="typo-caption text-foreground/60 truncate" style={{ fontWeight: 400 }}>· {projectName}</span>
-          <span className="ml-auto flex items-center gap-2 shrink-0">
-            {/* PROTOTYPE ONLY — switches the Capabilities lane; removed on
-                consolidation along with the two loser files. */}
-            {(lane === 'capabilities' || variant === 'v2') && (
-              <SegmentedTabs
-                tabs={[
-                  { id: 'console', label: 'A · Console' },
-                  { id: 'v2', label: 'B · Console v2' },
-                ]}
-                activeTab={variant}
-                onTabChange={(v) => setVariant(v as Variant)}
-                variant="pill"
-                size="sm"
-                fullWidth={false}
-                ariaLabel="Prototype variant"
-              />
-            )}
-            {classic && variant === 'console' && (
-              <SegmentedTabs
-                tabs={[
-                  { id: 'capabilities', label: d.monitoring_lane_capabilities },
-                  { id: 'upgrade', label: d.monitoring_lane_upgrade },
-                ]}
-                activeTab={lane}
-                onTabChange={(v) => setLane(v as Lane)}
-                variant="segment"
-                size="sm"
-                fullWidth={false}
-                ariaLabel={d.monitoring_lane_aria}
-              />
-            )}
-          </span>
         </div>
 
-        {lane === 'upgrade' && variant === 'console' ? (
-          <div className="flex-1 min-h-0 overflow-y-auto p-4">
-            <ImproveClassicPanel slug={slug} rowKey={UPGRADE_ROW} onDone={onClose} />
-          </div>
-        ) : variant === 'console' ? (
-          <MonitoringConsoleVariant {...shared} />
-        ) : (
-          <MonitoringConsoleV2Variant {...shared} slug={slug} upgradeRow={UPGRADE_ROW} onDone={onClose} areaScanning={areaScanning} onAreaScan={onAreaScan} />
-        )}
-
-        {variant !== 'v2' && (
-          <div className="px-4 py-2 border-t border-primary/10 bg-secondary/10 flex-shrink-0">
-            <span className="typo-caption text-foreground/45" style={{ fontWeight: 400 }}>{d.monitoring_modal_footer}</span>
-          </div>
-        )}
+        <MonitoringConsole
+          rows={rows}
+          busyKey={env.saving?.split('|')[0] ?? null}
+          deploying={deploying}
+          onAssign={onAssign}
+          onDeploy={onDeploy}
+          slug={slug}
+          upgradeRow={UPGRADE_ROW}
+          onDone={onClose}
+          areaScanning={areaScanning}
+          onAreaScan={onAreaScan}
+        />
       </div>
     </BaseModal>
   );
