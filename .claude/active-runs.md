@@ -2,8 +2,8 @@
 
 ## Active
 
-### canvas-action-grammar — programmatic canvas actions v1 (camera verbs + zoom-gated inspection) for future Athena control — session fable-5
-- Started: 2026-08-06. Status: started. Committing on master per the operator's explicit instruction (no worktree).
+### canvas-action-grammar — programmatic canvas actions v1 (camera verbs + zoom-gated inspection) for future Athena control — session fable-5 — **COMPLETE**, commit `5d3b102a9`
+- Started/completed: 2026-08-06. Gates: tsc clean · eslint 0 on touched files · vitest sub_mastermind 192/192 (13 new). Verified LIVE via :17320 `/eval` + DOM stash: zoom-to-band, axis-exact pan, island.read (15 dims), `band_too_far` refusal, auto-travel dim.open (Database modal opened on the real Apprenticeship Placement island), camera.fit restore, unknown_slug. v2 door (Athena `canvas_control` op) NOT started.
 - Scope: NEW `sub_mastermind/lib/canvasActionStore.ts` (typed action grammar + request queue, focusStore pattern generalized) + NEW `lib/canvasTestBridge.ts` (dev-only `window.__mmCanvas` + DOM stash for :17320 /eval readback); `lib/useCanvasCamera.ts` (tween-settle promise, exported `animateTo`); `lib/CanvasShell.tsx` (one consumer effect answering actions); NEW `__tests__/canvasActionStore.test.ts`. No i18n keys, no Rust, no MastermindPage edits.
 - **NOTE FOR OTHER SESSIONS:** does not touch `MastermindPage.tsx` (prototype-mm-goals owns its goals branch), `FarProcessHex`/`SleepingMark`/`farProcesses`/`FleetPreviewPanel`/`fleetMeta`/`MosaicIsland` (another mastermind session holds them dirty), or `src/i18n/**`.
 
