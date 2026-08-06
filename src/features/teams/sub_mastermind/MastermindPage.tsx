@@ -59,11 +59,12 @@ import { useAthenaPanels, useLayoutHidden, useLayoutPositions } from './lib/useL
 import { AthenaPanel } from './lib/AthenaPanel';
 import { clearCanvasFocus, focusCanvasProject, useFocusedProjectSlug } from './lib/focusStore';
 import { publishCanvasScene } from './lib/scenePublish';
-import { openFactory, openSkillsManager } from './lib/navigate';
+import { openFactory, openRunDesk, openSkillsManager } from './lib/navigate';
 import { computeAttention } from './lib/liveState';
 import { useSceneStore, type FamilyStatus } from './lib/sceneStore';
 import { loadPositions, savePositions } from './lib/positions';
 import { PersonaListPopover, type PersonaRow } from './lib/PersonaListPopover';
+import { RunnerListPopover } from './lib/RunnerListPopover';
 import { ProjectListSidebar } from './lib/ProjectListSidebar';
 import { ProjectSidebar } from './lib/ProjectSidebar';
 import type { CanvasMode, DimNode, FleetNode, IslandShip, RunnerNode } from './lib/types';
@@ -189,6 +190,8 @@ function MastermindInner() {
   const hiddenSlugs = useLayoutHidden();
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [personaMenu, setPersonaMenu] = useState<{ slug: string; x: number; y: number } | null>(null);
+  // Mid runner face clicked — the dev-runner task list for that island.
+  const [runnerMenu, setRunnerMenu] = useState<{ slug: string; x: number; y: number } | null>(null);
   // Goals is a MODAL now (not an anchored popover) — the click point no longer
   // matters, only which project was clicked.
   const [goalSlug, setGoalSlug] = useState<string | null>(null);
@@ -846,6 +849,7 @@ function MastermindInner() {
           onSkillsOpen={openSkillsManager}
           onDimOpen={onDimOpen}
           onPersonasOpen={(slug, e) => setPersonaMenu({ slug, x: Math.min(e.clientX, window.innerWidth - 244), y: Math.min(e.clientY + 10, window.innerHeight - 280) })}
+          onRunnersOpen={(slug, e) => setRunnerMenu({ slug, x: Math.min(e.clientX, window.innerWidth - 292), y: Math.min(e.clientY + 10, window.innerHeight - 300) })}
           onCategoryOpen={(slug, category, e) => setCategoryPopup({ slug, category, x: Math.min(e.clientX, window.innerWidth - 300), y: Math.min(e.clientY + 10, window.innerHeight - 320) })}
           onOpenTerminal={openTerminal}
           onDispatchFleet={setDispatchSlug}
@@ -909,6 +913,16 @@ function MastermindInner() {
           y={personaMenu.y}
           onOpen={openPersona}
           onClose={() => setPersonaMenu(null)}
+        />
+      )}
+
+      {runnerMenu && (
+        <RunnerListPopover
+          rows={positioned.islands.find((i) => i.slug === runnerMenu.slug)?.runners ?? EMPTY_RUNNERS}
+          x={runnerMenu.x}
+          y={runnerMenu.y}
+          onOpen={() => openRunDesk(runnerMenu.slug)}
+          onClose={() => setRunnerMenu(null)}
         />
       )}
 

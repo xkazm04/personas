@@ -1,12 +1,11 @@
 // The far band's island body. `far` used to share `mid`'s four category hexes;
 // it is now one large process hex, and these assert the swap in both
 // directions — what far gained, and what it must NOT still be drawing.
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 
 import { FLEET_INK } from '../lib/ink';
 import { MosaicIsland } from '../variants/MosaicIsland';
-import { setMidVariant } from '../lib/midVariantStore';
 import type { IslandCtx } from '../lib/CanvasShell';
 import type { FleetNode, Island, ZoomBand } from '../lib/types';
 import { DIM_ORDER, DIM_REGISTRY } from '../lib/dimRegistry';
@@ -33,11 +32,6 @@ const ctx = (band: ZoomBand): IslandCtx => ({
 });
 
 const session = (id: string, state: string): FleetNode => ({ id, label: id, state });
-
-// The mid band is mid-`/prototype`: its default body is a candidate variant,
-// not the category quad. These assertions are about the BASELINE mid body, so
-// they select it explicitly rather than depending on which variant is winning.
-beforeEach(() => setMidVariant('baseline'));
 
 const island = (over: Partial<Island> = {}): Island => ({
   slug: 'acme', name: 'Acme', purpose: 'Test fixture',
@@ -77,10 +71,10 @@ describe('far band — one process hex', () => {
     expect(q(far, '[data-testid^="mm-fleet-badge-"]')).toHaveLength(0);
   });
 
-  it('leaves the mid band on its category quad, badges intact', () => {
+  it('leaves the mid band to the Facet cube, badges intact', () => {
     const mid = paint('mid', { fleet: [session('a', 'running')] });
     expect(q(mid, '[data-testid="mm-far-hex"]')).toHaveLength(0);
-    expect(q(mid, '[data-testid^="mm-category-"]').length).toBeGreaterThan(0);
+    expect(q(mid, '[data-testid="mm-mid-facet"]')).toHaveLength(1);
     expect(q(mid, '[data-testid^="mm-fleet-badge-"]').length).toBeGreaterThan(0);
   });
 

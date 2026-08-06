@@ -25,9 +25,9 @@ import { useAthenaObjectCount, useLayoutGroups, useLayoutLinks, useLayoutNotes }
 import { AthenaRevertControl } from './AthenaRevertControl';
 import { useCanvasFocus } from './focusStore';
 import { nearestTo, pickInDirection } from './kbNav';
+import { isLiveSession } from './farProcesses';
 import { tidyLayout, type TidyResult } from './tidyLayout';
 import { DimLegend } from './DimLegend';
-import { MidVariantSwitcher } from './MidVariantSwitcher';
 import { FleetListPopover } from './FleetListPopover';
 import { GroupLayer, type GroupMember } from './GroupLayer';
 import { IslandMenu } from './IslandMenu';
@@ -94,17 +94,21 @@ export interface IslandCtx {
   onIslandMenu: (slug: string, e: React.MouseEvent) => void;
   /** Dimension key highlighted for THIS island (context-menu row hover). */
   highlightKey: string | null;
-  /** Fleet badge clicked — open the state-filtered session list. */
+  /** Fleet badge / mid fleet face clicked — open the session list. `state` is
+   *  a session state for the per-state badges, or `'all'` for every live
+   *  session (the mid face has no per-state pre-filter). */
   onFleetList: (slug: string, state: string, e: React.MouseEvent) => void;
   /** Actionable dimension cell clicked — page opens its Improve popover. */
   onDimOpen: (slug: string, node: DimNode, e: React.MouseEvent) => void;
   /** In-progress-personas badge clicked — page opens the persona list. */
   onPersonasOpen: (slug: string, e: React.MouseEvent) => void;
+  /** Mid runner face clicked — page opens the dev-runner task list. */
+  onRunnersOpen: (slug: string, e: React.MouseEvent) => void;
   /** Collapsed category cell clicked — page opens its dimension list. */
   onCategoryOpen: (slug: string, category: CategoryNode, e: React.MouseEvent) => void;
 }
 
-export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjectOpen, onShipOpen, onFactoryOpen, onSkillsOpen, onDimOpen, onPersonasOpen, onCategoryOpen, onOpenTerminal, onDispatchFleet, onDispatchGroupFleet, canOpenTerminal, renderIsland }: VariantProps & {
+export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjectOpen, onShipOpen, onFactoryOpen, onSkillsOpen, onDimOpen, onPersonasOpen, onRunnersOpen, onCategoryOpen, onOpenTerminal, onDispatchFleet, onDispatchGroupFleet, canOpenTerminal, renderIsland }: VariantProps & {
   renderIsland: (island: Island, ctx: IslandCtx) => ReactNode;
 }) {
   const { t, tx } = useTranslation();
@@ -413,6 +417,7 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
   const onShipOpenStable = useEventCallback(onShipOpen);
   const onDimOpenStable = useEventCallback(onDimOpen);
   const onPersonasOpenStable = useEventCallback(onPersonasOpen);
+  const onRunnersOpenStable = useEventCallback(onRunnersOpen);
   const onCategoryOpenStable = useEventCallback(onCategoryOpen);
 
   // --- Tidy map: one-shot relation-aware arrangement + single-level undo. -------
@@ -816,6 +821,7 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
     onFleetList,
     onDimOpen: onDimOpenStable,
     onPersonasOpen: onPersonasOpenStable,
+    onRunnersOpen: onRunnersOpenStable,
     onCategoryOpen: onCategoryOpenStable,
   });
 
@@ -908,9 +914,6 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
       </span>
 
       <DimLegend />
-      {/* THROWAWAY /prototype A/B for the mid band's island body. Deleted at
-          consolidation along with the losing variants. */}
-      <MidVariantSwitcher atMid={band === 'mid'} />
       <ZoomBadge z={cam.z} />
       {/* Athena's contribution, and the one way out of it. Sits with the other
           global canvas controls, above the zoom cluster. */}
@@ -1002,7 +1005,7 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
         if (!island) return null;
         return (
           <FleetListPopover
-            sessions={island.fleet.filter((f) => f.state === fleetMenu.state)}
+            sessions={island.fleet.filter((f) => (fleetMenu.state === 'all' ? isLiveSession(f) : f.state === fleetMenu.state))}
             state={fleetMenu.state}
             x={fleetMenu.x}
             y={fleetMenu.y}

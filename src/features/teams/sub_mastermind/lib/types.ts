@@ -189,6 +189,8 @@ export interface VariantProps {
   onDimOpen: (slug: string, node: DimNode, e: React.MouseEvent) => void;
   /** In-progress-personas badge clicked — open the persona name list. */
   onPersonasOpen: (slug: string, e: React.MouseEvent) => void;
+  /** Mid-band runner face clicked — open the island's dev-runner task list. */
+  onRunnersOpen: (slug: string, e: React.MouseEvent) => void;
   /** Collapsed category cell clicked at far/mid zoom — open the list of the
    *  dimensions it rolled up, each still routable to its own action. */
   onCategoryOpen: (slug: string, category: CategoryNode, e: React.MouseEvent) => void;

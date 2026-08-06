@@ -4,8 +4,8 @@
 // counts must sum to exactly the number the far band renders. If they ever
 // diverge, one of the two bands is lying to an operator who zooms between them
 // constantly — so that invariant is pinned first and hardest.
-import { beforeEach, describe, expect, it } from 'vitest';
-import { render } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, render } from '@testing-library/react';
 
 import {
   PERSONA_INK, RUNNER_INK,
@@ -13,8 +13,6 @@ import {
 } from '../lib/farProcesses';
 import { FLEET_INK } from '../lib/ink';
 import { MidFacetCube } from '../lib/MidFacetCube';
-import { MidTallyBoard } from '../lib/MidTallyBoard';
-import { setMidVariant } from '../lib/midVariantStore';
 import { MosaicIsland } from '../variants/MosaicIsland';
 import type { IslandCtx } from '../lib/CanvasShell';
 import { DIM_ORDER, DIM_REGISTRY } from '../lib/dimRegistry';
@@ -78,20 +76,21 @@ describe('process lanes — the mid band model', () => {
   });
 });
 
-describe('mid variants render the lanes', () => {
-  const paintVariant = (Variant: typeof MidFacetCube | typeof MidTallyBoard) =>
+describe('the Facet cube renders the lanes', () => {
+  const paint = (over: { fleet?: FleetNode[]; personas?: string[]; runners?: RunnerNode[]; onLaneOpen?: (lane: string, e: unknown) => void } = {}) =>
     render(
       <svg>
-        <Variant
-          fleet={[session('a', 'awaiting_input'), session('b', 'running')]}
-          personas={['Dev Clone']}
-          runners={[task('t1', 'running', 40), task('t2', 'queued')]}
+        <MidFacetCube
+          fleet={over.fleet ?? [session('a', 'awaiting_input'), session('b', 'running')]}
+          personas={over.personas ?? ['Dev Clone']}
+          runners={over.runners ?? [task('t1', 'running', 40), task('t2', 'queued')]}
+          onLaneOpen={over.onLaneOpen}
         />
       </svg>,
     ).container;
 
-  it('Facet draws three faces with a count each, and holds the far total at the centre', () => {
-    const c = paintVariant(MidFacetCube);
+  it('draws three faces with a count each, and holds the far total at the centre', () => {
+    const c = paint();
     expect(q(c, '[data-testid^="mm-facet-face-"]')).toHaveLength(3);
     expect(c.querySelector('[data-testid="mm-facet-count-fleet"]')?.textContent).toBe('2');
     expect(c.querySelector('[data-testid="mm-facet-count-persona"]')?.textContent).toBe('1');
@@ -103,51 +102,48 @@ describe('mid variants render the lanes', () => {
     expect(q(c, '[data-testid="mm-facet-attention"]')).toHaveLength(1);
   });
 
-  it('Tally draws one pip per process, in each session/task state', () => {
-    const c = paintVariant(MidTallyBoard);
-    expect(q(c, '[data-testid="mm-tally-pip-fleet"]')).toHaveLength(2);
-    expect(q(c, '[data-testid="mm-tally-pip-persona"]')).toHaveLength(1);
-    expect(q(c, '[data-testid="mm-tally-pip-runner"]')).toHaveLength(2);
-    // The stuck session is visibly THE ringed pip, sorted to the front of its row.
-    expect(q(c, '[data-testid="mm-tally-attn-pip"]')).toHaveLength(1);
-    const fleetPips = [...q(c, '[data-testid="mm-tally-pip-fleet"]')];
-    expect(fleetPips[0]!.getAttribute('fill')).toBe(FLEET_INK.awaiting_input);
-    // A queued task exists but has not started: hollow pip, after the running one.
-    const runnerPips = [...q(c, '[data-testid="mm-tally-pip-runner"]')];
-    expect(runnerPips[0]!.getAttribute('fill')).toBe(RUNNER_INK);
-    expect(runnerPips[1]!.getAttribute('fill')).toBe('none');
-    expect(c.querySelector('[data-testid="mm-tally-count-fleet"]')?.textContent).toBe('2');
+  it('an empty face shows its watermark and NOTHING else — no numeral, no dash', () => {
+    const c = paint({ personas: [], runners: [] });
+    const face = c.querySelector('[data-testid="mm-facet-face-persona"]')!;
+    expect(face.querySelector('text')).toBeNull();
+    expect(face.textContent).not.toContain('–');
+    // The watermark glyph still names the lane.
+    expect(face.querySelectorAll('svg')).toHaveLength(1);
   });
 
-  it('renders an empty lane as an empty lane, never as a missing one', () => {
-    const c = render(
-      <svg><MidTallyBoard fleet={[session('a', 'running')]} personas={[]} runners={[]} /></svg>,
-    ).container;
-    expect(q(c, '[data-testid^="mm-tally-row-"]')).toHaveLength(3);
-    expect(q(c, '[data-testid="mm-tally-empty-persona"]')).toHaveLength(1);
-    expect(q(c, '[data-testid="mm-tally-empty-runner"]')).toHaveLength(1);
+  it('routes a click on a LIVE face to its lane, and refuses clicks on empty ones', () => {
+    const onLaneOpen = vi.fn();
+    const c = paint({ personas: [], onLaneOpen });
+    fireEvent.click(c.querySelector('[data-testid="mm-facet-face-fleet"]')!);
+    fireEvent.click(c.querySelector('[data-testid="mm-facet-face-runner"]')!);
+    // Empty persona lane: nothing to list, so the face is inert.
+    fireEvent.click(c.querySelector('[data-testid="mm-facet-face-persona"]')!);
+    expect(onLaneOpen.mock.calls.map((call) => call[0])).toEqual(['fleet', 'runner']);
+  });
+
+  it('stays inert without onLaneOpen (non-edit modes)', () => {
+    const c = paint();
+    // No handler wired: clicking must not throw and no cursor affordance shows.
+    fireEvent.click(c.querySelector('[data-testid="mm-facet-face-fleet"]')!);
+    expect(c.querySelector('[data-testid="mm-facet-face-fleet"]')!.getAttribute('style')).toBeNull();
   });
 
   it('an idle island sleeps at mid the same way it sleeps at far', () => {
-    for (const Variant of [MidFacetCube, MidTallyBoard]) {
-      const c = render(<svg><Variant fleet={[]} personas={[]} runners={[]} /></svg>).container;
-      // The sleeping mark is the one nested svg inside the body.
-      expect(q(c, 'svg svg')).toHaveLength(1);
-    }
+    const c = paint({ fleet: [], personas: [], runners: [] });
+    // Only the sleeping mark — no faces, no counts.
+    expect(q(c, '[data-testid^="mm-facet-face-"]')).toHaveLength(0);
+    expect(q(c, 'svg svg')).toHaveLength(1);
   });
 
   it('every lane glyph is a POSITIONED nested svg — the round-1 regression', () => {
     // Round 1 shipped glyphs whose x/y/width/height were silently dropped
     // (FleetShipIcon had a fixed prop list); an unpositioned nested <svg>
     // defaults to 100% of the viewport and painted ship icons across the whole
-    // canvas. Pin the fix: every nested svg a variant renders must carry an
-    // explicit width.
-    for (const Variant of [MidFacetCube, MidTallyBoard]) {
-      const c = paintVariant(Variant);
-      const nested = [...q(c, 'svg svg')];
-      expect(nested.length).toBeGreaterThan(0);
-      for (const el of nested) expect(el.getAttribute('width')).toBeTruthy();
-    }
+    // canvas. Pin the fix: every nested svg the body renders carries a width.
+    const c = paint();
+    const nested = [...q(c, 'svg svg')];
+    expect(nested.length).toBeGreaterThan(0);
+    for (const el of nested) expect(el.getAttribute('width')).toBeTruthy();
   });
 });
 
@@ -173,19 +169,12 @@ describe('band wiring', () => {
   const paint = (band: ZoomBand, over: Partial<Island> = {}) =>
     render(<svg><MosaicIsland island={island(over)} {...ctx(band)} /></svg>).container;
 
-  beforeEach(() => setMidVariant('baseline'));
-
-  it('the selected variant owns the mid body, and only at mid', () => {
-    setMidVariant('facet');
+  it('Facet owns the mid body, and only at mid', () => {
     expect(q(paint('mid', { fleet: [session('a', 'running')] }), '[data-testid="mm-mid-facet"]')).toHaveLength(1);
     expect(q(paint('far', { fleet: [session('a', 'running')] }), '[data-testid="mm-mid-facet"]')).toHaveLength(0);
-    setMidVariant('tally');
-    expect(q(paint('mid', { fleet: [session('a', 'running')] }), '[data-testid="mm-mid-tally"]')).toHaveLength(1);
-    expect(q(paint('mid'), '[data-testid="mm-mid-facet"]')).toHaveLength(0);
   });
 
-  it('a mid variant replaces the category quad and the core cell', () => {
-    setMidVariant('facet');
+  it('the category quad and the core cell are gone from mid', () => {
     const c = paint('mid');
     expect(q(c, '[data-testid^="mm-category-"]')).toHaveLength(0);
   });

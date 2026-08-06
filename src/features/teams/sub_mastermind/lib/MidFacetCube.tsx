@@ -1,29 +1,33 @@
-// MID VARIANT A (round 2) — "Facet".
+// The MID band's island body — "Facet" (consolidated /prototype winner).
 //
-// METAPHOR: the far band's hex does not crack apart or get replaced — it stays
+// The far band's hex does not crack apart or get replaced at mid — it stays
 // EXACTLY where it was and its interior resolves into three rhombic faces
 // meeting at the centre, the classic isometric-cube reading a hexagon carries
 // for free. Top face = Fleet, lower-left = Personas, lower-right = Runners.
 // Zooming far→mid keeps one silhouette on screen; only the inside gains
 // structure — which is what zooming is supposed to mean.
 //
-// Round-1 lessons built in structurally:
+// Structural rules (learned the hard way in the prototype rounds):
 //   * ONE silhouette, FAR_RADIUS — nothing can collide with the banner (top
 //     −234), badges (+236) or stat columns (±280), because nothing leaves the
 //     hex the far band already proved fits between them.
 //   * No text smaller than a count numeral. Mid spans z 0.20–0.50, so a
 //     12-world-px label renders at 2–6 screen px — unreadable. Identity is
-//     carried by fixed position + glyph + colour; words live in tooltips.
+//     carried by position + the lane's watermark glyph + colour (the near
+//     band's icon strategy: the glyph fills the face as a low-opacity
+//     background); words live in tooltips.
 //   * Lane glyphs are wrapped in their own <g transform> and sized explicitly
-//     (FleetShipIcon now forwards SVG props — the round-1 "icons everywhere"
-//     bug was that it silently dropped them).
+//     (FleetShipIcon forwards SVG props — an unsized nested svg defaults to
+//     100% of the viewport, the round-1 "icons everywhere" bug).
+import { useState } from 'react';
+
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { FAR_RADIUS } from './FarProcessHex';
 import { hexPoints } from './hex';
 import { FLEET_INK, mix, SERIF } from './ink';
 import { LANE_ICON, laneTip } from './laneMeta';
-import { processBuckets, processLanes, processTotal, runnerProgress, type ProcessLane } from './farProcesses';
+import { processBuckets, processLanes, processTotal, runnerProgress, type LaneKey, type ProcessLane } from './farProcesses';
 import { SleepingMark } from './SleepingMark';
 import type { FleetNode, RunnerNode } from './types';
 
@@ -43,35 +47,43 @@ const pt = (v: { x: number; y: number }) => `${v.x.toFixed(1)},${v.y.toFixed(1)}
 
 /** The three cube faces: each rhombus = centre + three hex vertices. `outer` is
  *  the polyline along the hexagon border that belongs to this face — the rim
- *  that carries the lane's ink, continuing far's border-as-lane-colour rule. */
+ *  that carries the lane's ink, continuing far's border-as-lane-colour rule.
+ *  `wm` is the watermark glyph's centre (the face's visual centroid); the
+ *  numeral sits below it toward the face's outer corner. */
 const FACES = [
   { // Fleet — the top face; the interactive lane gets the crown position.
     points: `0,0 ${pt(V210)} ${pt(V270)} ${pt(V330)}`,
     outer: [V210, V270, V330],
+    wm: { x: 0, y: -98 },
     num: { x: 0, y: -74 },
-    glyph: { x: 0, y: -148 },
   },
   { // Personas — lower-left face.
     points: `0,0 ${pt(V90)} ${pt(V150)} ${pt(V210)}`,
     outer: [V210, V150, V90],
+    wm: { x: -85, y: 49 },
     num: { x: -88, y: 86 },
-    glyph: { x: -88, y: 2 },
   },
   { // Runners — lower-right face.
     points: `0,0 ${pt(V330)} ${pt(V30)} ${pt(V90)}`,
     outer: [V330, V30, V90],
+    wm: { x: 85, y: 49 },
     num: { x: 88, y: 86 },
-    glyph: { x: 88, y: 2 },
   },
 ] as const;
 
-const GLYPH = 34;
-const NUM_FS = 64;
+/** Watermark glyph box — sized to fill the face the way the near band's cell
+ *  watermark fills its hex, verified against the rhombus edges so it never
+ *  bleeds across a seam (top face tapers to ±80 at the watermark's top edge). */
+const WM = 110;
+const NUM_FS = 67;
 
-export function MidFacetCube({ fleet, personas, runners }: {
+export function MidFacetCube({ fleet, personas, runners, onLaneOpen }: {
   fleet: FleetNode[];
   personas: string[];
   runners: RunnerNode[];
+  /** A live face was clicked — the page opens that lane's list popover.
+   *  Undefined outside edit mode: no cursor, no click, no swallowed drags. */
+  onLaneOpen?: (lane: LaneKey, e: React.MouseEvent) => void;
 }) {
   const { t } = useTranslation();
   const lanes = processLanes(fleet, personas, runners);
@@ -109,6 +121,7 @@ export function MidFacetCube({ fleet, personas, runners }: {
             face={face}
             tip={laneTip(t, lane)}
             progress={lane.key === 'runner' ? progress : null}
+            onOpen={onLaneOpen && lane.count > 0 ? (e) => onLaneOpen(lane.key, e) : undefined}
           />
         );
       })}
@@ -139,12 +152,14 @@ export function MidFacetCube({ fleet, personas, runners }: {
   );
 }
 
-function Face({ lane, face, tip, progress }: {
+function Face({ lane, face, tip, progress, onOpen }: {
   lane: ProcessLane;
   face: (typeof FACES)[number];
   tip: string;
   /** 0–1 fraction along this face's outer rim (runner lane only). */
   progress: number | null;
+  /** Set only for live faces in edit mode — enables click + hover affordance. */
+  onOpen?: (e: React.MouseEvent) => void;
 }) {
   const empty = lane.count === 0;
   const Icon = LANE_ICON[lane.key];
@@ -152,21 +167,30 @@ function Face({ lane, face, tip, progress }: {
   const outerPts = face.outer.map(pt).join(' ');
   // Two hexagon sides per face; each side's length equals R.
   const rimLen = 2 * R;
+  const [hovered, setHovered] = useState(false);
 
   return (
-    <g data-testid={`mm-facet-face-${lane.key}`}>
+    <g
+      data-testid={`mm-facet-face-${lane.key}`}
+      style={onOpen ? { cursor: 'pointer' } : undefined}
+      onPointerEnter={onOpen ? () => setHovered(true) : undefined}
+      onPointerLeave={onOpen ? () => setHovered(false) : undefined}
+      onPointerDown={onOpen ? (e) => e.stopPropagation() : undefined}
+      onClick={onOpen ? (e) => { e.stopPropagation(); onOpen(e); } : undefined}
+    >
       <title>{tip}</title>
       <polygon
         points={face.points}
-        fill={empty ? mix('var(--secondary)', 42, 'var(--background)') : mix(lane.ink, 17, 'var(--secondary)')}
+        fill={empty ? mix('var(--secondary)', 42, 'var(--background)') : mix(lane.ink, hovered ? 26 : 17, 'var(--secondary)')}
         opacity={empty ? 0.7 : 1}
       />
       {/* Face rim on the hexagon border, in the lane's ink — far's border rule,
-          now owned per-face. Muted when the lane is empty. */}
+          now owned per-face. Muted when the lane is empty; brightens on hover
+          as the "this face answers clicks" affordance. */}
       <polyline
         points={outerPts}
         fill="none"
-        stroke={empty ? mix('var(--muted-foreground)', 30) : mix(lane.ink, 60)}
+        stroke={empty ? mix('var(--muted-foreground)', 30) : mix(lane.ink, hovered ? 90 : 60)}
         strokeWidth={6}
         strokeLinecap="round"
         pointerEvents="none"
@@ -193,15 +217,16 @@ function Face({ lane, face, tip, progress }: {
         </g>
       )}
 
-      <g transform={`translate(${face.glyph.x} ${face.glyph.y})`} pointerEvents="none" opacity={empty ? 0.45 : 0.85}>
-        <Icon x={-GLYPH / 2} y={-GLYPH / 2} width={GLYPH} height={GLYPH} strokeWidth={1.6} style={{ color: ink }} />
+      {/* Watermark glyph — the near band's icon strategy applied per face: the
+          lane's mark fills the face as a low-opacity background, the numeral
+          reads over it. On an empty face the watermark IS the content — the
+          lane announces itself quietly and shows nothing else (no numeral, no
+          placeholder dash: an empty lane displays nothing). */}
+      <g transform={`translate(${face.wm.x} ${face.wm.y})`} pointerEvents="none" opacity={empty ? 0.12 : 0.16}>
+        <Icon x={-WM / 2} y={-WM / 2} width={WM} height={WM} strokeWidth={1.1} style={{ color: ink }} />
       </g>
 
-      {empty ? (
-        <text x={face.num.x} y={face.num.y} textAnchor="middle" fontSize={NUM_FS * 0.62} fontWeight={700} fontFamily={SERIF} fill={mix('var(--muted-foreground)', 65)} pointerEvents="none">
-          –
-        </text>
-      ) : (
+      {!empty && (
         <text
           x={face.num.x} y={face.num.y}
           textAnchor="middle"

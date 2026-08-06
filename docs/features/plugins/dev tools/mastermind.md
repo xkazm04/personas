@@ -34,9 +34,12 @@ MastermindPage (data joins, popover/sidebar state, mode state)
         │            hover focus, connect gesture, zoom chrome)
         └── renderIsland(island, ctx) → MosaicIsland
             ├── IslandBanner (counter-scaled header = drag handle + Ship milestone chip)
-            ├── FarProcessHex (far band ONLY — one large hex: live-process count
+            ├── FarProcessHex (far band — one large hex: live-process count
             │                  or a sleeping mark, breakdown on its border)
-            ├── dimension cells (MosaicCell hexes; category quad at mid)
+            ├── MidFacetCube (mid band — the same hex split into three cube
+            │                 faces: Fleet / Personas / Runners, count per face;
+            │                 live faces open their lane's list popover)
+            ├── dimension cells (MosaicCell hexes; near/close only)
             ├── StatColumns (side stats, band-gated — REAL sensors via lib/islandStats: KPI attainment, live Sentry errors, 30d LLM spend via lib/llmSpend, tests/auto/prod from the passport; demo islands keep statsMock)
             └── FleetBadges (terminals + personas ops row; mid and closer)
 ```
@@ -126,7 +129,7 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 
 **Skills Workbench (shared with the Passport wall):** a green Skills cell (project has installed `.claude/skills`) resolves to `dimActions`' `'skills-run'` action and opens the unified **`SkillsWorkbench`** (`sub_factory/passport/improve/`) on its **Dispatch** lane — the SAME fixed-size component the Passport wall's skills cell opens on its **Manage** lane. A landing chooser (Manage vs Dispatch) leads into a two-pane workbench (title-only skill list grouped by category — Development / Testing / Maintenance / Data / Other from SKILL.md `category:` frontmatter, groups name-asc, uncategorized under Other; the share LLM assigns the category when generalizing into the library + detail pane); Dispatch runs `/skill <args>` as a background Fleet session via `spawnSession` (staying on the canvas), Manage adopts/shares via `engine.deployNow`. The workbench folds all three lanes (adopt/share/dispatch) through one `useSkillsWorkbench` hook.
 
-**Dimension categories (mid LOD).** Fifteen same-sized dots is not a shape you can read from orbit, so the mid band collapses the body into the four registry `category` groups — **Runtime · Delivery · Agentic · Product** — and near/close explodes it back to the full lattice. (Far went further still and dropped dimensions altogether; see §6.1.) `lib/dimCategories.ts` owns the pure rollup (unit-tested in `__tests__/dimCategories.test.ts`); the registry's `category` field, reserved since it was written, is what it reads.
+**Dimension categories (menu + action grammar).** The four registry `category` groups — **Runtime · Delivery · Agentic · Product** — used to render as the mid band's body (four rolled-up cells). That body was retired when the whole zoomed-out ladder moved to the live-process story (§6.1–6.2): categories no longer render as cells at any band, but the grouping itself is alive in the island **context menu** (dimensions grouped by category, worst-first) and in the **canvas-action grammar** (`category.open` still opens `CategoryPopover` programmatically — Athena's door). `lib/dimCategories.ts` owns the pure rollup (unit-tested in `__tests__/dimCategories.test.ts`); the registry's `category` field, reserved since it was written, is what it reads.
 
 Rollup rule, pessimistic about problems and strict about green: any `alert` → `alert`; else any `risk` → `risk`; else any `unknown` → `unknown` (a failed data family must never read as healthy); else all-`absent` → `absent`; else all-`solid` → `solid`; else `partial`. Each cell renders the category icon (`Cpu` / `PackageCheck` / `Sparkles` / `Compass`) in that colour plus a `solid/total` ratio, with a native `<title>` carrying "*{solid} of {total} wired*". A category holding `alert` or `risk` dimensions also gets a corner **attention badge** with that count — the colour says *something* is wrong, the badge says *how many*. `attention` deliberately excludes `absent`: a gap you chose is not a problem (pinned by a test).
 
@@ -143,7 +146,7 @@ This is what lifts the ~15-cell ceiling: a 16th dimension needs a registry entry
 | Band | Cells render | Identity |
 | --- | --- | --- |
 | far | **one process hex** (see §6.1) — the live-process count, or a sleeping mark when nothing is running; process breakdown on the border | counter-scaled **banner** (name + state dot + blockers + A·P scores) at 20 px screen |
-| mid | **4 category cells** (see §5 Dimension categories) — fullscale icon in the rolled-up status colour + `solid/total` ratio | banner 18 px |
+| mid | **the Facet cube** (see §6.2) — the same hex, its interior split into three rhombic faces (Fleet / Personas / Runners) with a count per face and the far total at the centre seam | banner 18 px |
 | near | the full lattice **explodes back** — the dimension icon fills the hex as a low-opacity watermark and the **state value** (ordinal progress `2/4`, freshness `12d`, or a status mark for boolean dims) is the foreground, uppercase label below | banner 17 px; stat columns visible |
 | close | inspection detail — small icon + label + tool detail + ordinal progress bar | banner 16 px |
 
@@ -165,6 +168,16 @@ Two states:
 So the number says *how much*, the border says *of what kind and in what state*, and neither needs a label the band has no room for. Readiness has not gone anywhere — the island's state halo sits behind the hex and still carries it as colour. The full breakdown in words lives in the native `<title>` (the group is deliberately hit-testable, with no handlers of its own, because a `pointer-events: none` group would make that tooltip unreachable; every gesture still bubbles to the island root and the canvas).
 
 `FleetBadges` and the core cell are suppressed at far: the badges are the same fleet/persona readout the hex now *is*, and a second small hex inside the big one reads as a target, not a project. Badges resume at mid, where they are the clickable way into each state's session list.
+
+### 6.2 Mid band — the Facet cube
+
+Mid continues far's story one step closer (`lib/MidFacetCube.tsx`, the consolidated `/prototype` winner): the SAME hex stays on screen and its interior resolves into three rhombic faces meeting at the centre — the isometric-cube reading a hexagon carries for free. Top face = **Fleet**, lower-left = **Personas**, lower-right = **Runners** (dev-runner tasks — the `runners` scene family; one batched `listTasks` IPC, live statuses only). Both bands reduce from the same `farProcesses` lane model, so the three face counts provably sum to the far number, which is held in a chip at the seam junction.
+
+Each face: the lane's glyph fills it as a **low-opacity watermark** (the near band's icon strategy — identity without a label the band has no room for), one bold numeral (`NUM_FS` 67), and the lane's ink on that face's stretch of the hexagon border — far's border-as-lane-colour rule, owned per-face. Runner progress fills the runner rim as its running tasks advance; a stopped session re-strokes the fleet rim in the awaiting ink (static, no pulse). An **empty face shows only its dim watermark** — no numeral, no placeholder. An idle island sleeps at mid exactly as it sleeps at far.
+
+**Click reactions** (edit mode, live faces only — empty faces are inert): fleet face → `FleetListPopover` with `state='all'` (every live session, each row in its own state's ink + translated state label); persona face → the existing `PersonaListPopover`; runner face → `RunnerListPopover` (`lib/RunnerListPopover.tsx`, ListPopover shell: task title, running % or execution status token, hollow/filled dot per the queued/running encoding), whose rows open the **Run Desk** with the project active (`openRunDesk` in `lib/navigate.ts`).
+
+Sizing discipline (why this shape survived where two prototype rounds died): everything lives inside the far hex's silhouette, so nothing can collide with the banner/badges/stat columns; the only text is numerals (mid spans z 0.20–0.50 — a 12-world-px label renders at 2–6 screen px); and every lane glyph is an explicitly sized nested svg (`FleetShipIcon` forwards SVG props — an unsized nested svg defaults to 100% of the viewport, which painted ship icons across the whole canvas in prototype round 1).
 
 ## 7. Canvas view
 

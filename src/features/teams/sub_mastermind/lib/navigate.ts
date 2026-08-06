@@ -30,3 +30,18 @@ export function openSkillsManager(projectId: string): void {
       n.setDevToolsTab('skills');
     });
 }
+
+/** Open the Run Desk (dev-runner queue) with this project active — the runner
+ *  popover's row destination. Same fire-and-forget active-project switch as
+ *  the Skills door: the Run Desk keys on activeProjectId. */
+export function openRunDesk(projectId: string): void {
+  const s = useSystemStore.getState();
+  s.setActiveProject(projectId)
+    .catch(silentCatch('mastermind openRunDesk'))
+    .finally(() => {
+      const n = useSystemStore.getState();
+      n.setSidebarSection('plugins');
+      n.setPluginTab('dev-tools');
+      n.setDevToolsTab('task-runner');
+    });
+}
