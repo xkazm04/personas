@@ -715,6 +715,14 @@ Backend lives under `src-tauri/src/companion/stt/` mirroring the Piper TTS layou
 
 **Why subprocess (same rationale as Piper):** users can swap newer whisper.cpp builds without recompiling, and the engine's ggml/BLAS stack stays in its own process.
 
+### Comparing the two engines (`SttCompareModal`)
+
+Which engine is better depends on the operator's microphone and room, not on anything the app can know, so `SttPanel` offers a bench instead of an opinion: **Compare engines** opens a modal where one spoken take is transcribed by both engines and the two transcripts sit side by side, each with the wall-clock ms from "stopped speaking" to "text on screen" (whisper is generally more accurate and always slower; the trade only reads if both are visible).
+
+**Both engines listen at once, and that is forced, not chosen.** `SpeechRecognition` accepts no audio buffer — it only ever consumes a live mic — so there is no way to replay one captured clip into both. Recording twice would compare two different takes, which answers nothing. `useSttComparison` therefore runs `useDictation` and `useLocalDictation` concurrently over the same speech; they open independent captures (the browser engine's internal one, `getUserMedia` + AudioContext for whisper) and an input device is not exclusive, so both hear it.
+
+Failure is **per-engine**: a refused mic permission or a missing Whisper model fails only that column, and the other still produces a transcript — a one-column result is more useful than an error dialog. The missing-model case is named explicitly rather than surfacing the engine's raw `no_model_selected`. The modal composes shared primitives only (`BaseModal` / `Button` / `CopyButton` / `ErrorBanner` / `LoadingSpinner`), holds **no persistence** (transcripts live for the life of the modal), and the entry button is disabled while a real hold-to-talk capture is live, since that session owns the mic.
+
 ## Dev mode — the self-development loop (`dev_improve` / `dev_merge`)
 
 > Supersedes the old composer wrench-send self-improve loop (2026-07-04). Full direction + build log: [`docs/tests/athena/dev-mode-direction.md`](../../tests/athena/dev-mode-direction.md).

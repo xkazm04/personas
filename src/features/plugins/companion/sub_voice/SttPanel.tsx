@@ -7,11 +7,14 @@ import {
   Download,
   HardDrive,
   Loader2,
+  Mic,
   RefreshCw,
   Trash2,
   XCircle,
 } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
+import Button from '@/features/shared/components/buttons/Button';
+import { SttCompareModal } from './SttCompareModal';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ActivityDot } from '@/features/shared/components/display/ActivityDot';
 import { useSystemStore } from '@/stores/systemStore';
@@ -47,6 +50,7 @@ export default function SttPanel() {
   // capture would swap the controller's hook reference and strand the running
   // mic. The capture hooks (footer/orb) mirror their state into this flag.
   const captureActive = useCompanionStore((s) => s.voiceCaptureActive);
+  const [compareOpen, setCompareOpen] = useState(false);
 
   return (
     <div className="space-y-4">
@@ -80,7 +84,30 @@ export default function SttPanel() {
             </p>
           </div>
         )}
+        {/*
+          Which engine is better depends on this microphone and this room,
+          so the panel offers a bench instead of an opinion: one spoken
+          take, both transcripts side by side. Locked out while a real
+          hold-to-talk capture is live (that mic session owns the device).
+        */}
+        <div className="mx-1 mb-2 flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<Mic className="w-3.5 h-3.5" />}
+            onClick={() => setCompareOpen(true)}
+            disabled={captureActive}
+            data-testid="stt-compare-open"
+          >
+            {t.plugins.companion.stt_compare_open}
+          </Button>
+          <span className="typo-caption text-foreground">
+            {t.plugins.companion.stt_compare_open_hint}
+          </span>
+        </div>
       </SectionCard>
+
+      <SttCompareModal isOpen={compareOpen} onClose={() => setCompareOpen(false)} />
 
       {engine === 'whisper' && <WhisperConfig />}
     </div>
