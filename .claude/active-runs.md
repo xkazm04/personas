@@ -2,8 +2,8 @@
 
 ## Active
 
-### canvas-control-op — v2 Athena `canvas_control` companion op onto the shipped canvas action grammar (5d3b102a9) — session fable-5
-- Started: 2026-08-06. Status: started. Committing on master per operator instruction (continuation of canvas-action-grammar).
+### canvas-control-op — v2 Athena `canvas_control` companion op onto the shipped canvas action grammar (5d3b102a9) — session fable-5 — **COMPLETE**, commit `5a3ea36ff`
+- Started/completed: 2026-08-06. Gates: cargo check + clippy (0 new warnings) · dispatcher tests 71/71 (3 new) · tsc clean · eslint clean · vitest sub_mastermind 192/192 + companion 394/394. Frontend loop verified LIVE via synthetic `companion://canvas-control` event (camera landed at band mid, exact BAND_TARGET_Z). Full Rust loop (op → event → result episode) unit-tested; needs an app rebuild + real Athena turn for E2E — the running binary predates this Rust. Constitution bumped to v49.
 - Scope: `src-tauri/src/companion/{dispatcher.rs,session.rs,templates/{constitution.md,mod.rs}}` (new op arm + event + constitution §canvas + version bump), NEW `src-tauri/src/commands/companion/canvas_control.rs` (+ mod.rs, lib.rs registration), `src/api/companion.ts` (event const), NEW `src/features/teams/sub_mastermind/lib/useCanvasControlBridge.ts` + mount in `src/features/personas/PersonasPage.tsx`, `src/lib/commandNames.generated.ts` (regen), docs/CHANGELOG.
 - **NOTE FOR OTHER SESSIONS:** no ts-rs derives added → `src/lib/bindings/` untouched (the known drift stays unowned). No i18n keys.
 
