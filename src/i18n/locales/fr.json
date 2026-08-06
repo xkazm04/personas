@@ -15117,7 +15117,9 @@
       "stt_compare_working": "Transcription",
       "stt_install_button": "Installer le moteur",
       "stt_install_desc": "Télécharge la version CPU de whisper.cpp et la place là où Athena la cherche. Environ 20 MB, Windows uniquement pour le moment.",
-      "stt_install_title": "Installer le moteur pour moi"
+      "stt_install_title": "Installer le moteur pour moi",
+      "stt_models_engine_first": "Le moteur ci-dessus n'est pas encore installé. Vous pouvez télécharger un modèle maintenant, mais la transcription ne fonctionnera que lorsque les deux seront présents.",
+      "stt_models_summary": "{downloaded} sur {total}"
     },
     "artist_gallery": {
       "loading_viewer": "Chargement du visualiseur…",

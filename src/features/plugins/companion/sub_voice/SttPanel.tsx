@@ -152,7 +152,7 @@ function EngineButton({ active, onClick, icon, label, caption, disabled = false 
 }
 
 function WhisperConfig() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const modelId = useSystemStore((s) => s.companionSttModelId);
   const setModelId = useSystemStore((s) => s.setCompanionSttModelId);
 
@@ -245,84 +245,116 @@ function WhisperConfig() {
 
   return (
     <>
+      {/*
+        SECTION 1 — the engine. One question ("is it here?"), one answer,
+        one action. Status drives the card's accent, the path is evidence
+        for that answer, and Refresh moved into the header slot: it is
+        chrome for the section, not a peer of the install button.
+      */}
       <SectionCard
         title={t.plugins.companion.stt_engine_status_title}
         subtitle={t.plugins.companion.stt_engine_status_desc}
         titleClassName="text-primary"
+        icon={
+          <Cpu
+            className={`w-4 h-4 ${status?.installed ? 'text-emerald-400' : 'text-foreground'}`}
+          />
+        }
+        status={statusLoading ? 'neutral' : status?.installed ? 'success' : 'warning'}
+        action={
+          <button
+            type="button"
+            onClick={() => void refreshStatus()}
+            className="p-1.5 rounded-interactive bg-secondary/40 hover:bg-secondary/60 border border-foreground/10 text-foreground transition-colors focus-ring"
+            title={t.plugins.companion.stt_refresh}
+            aria-label={t.plugins.companion.stt_refresh}
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+          </button>
+        }
       >
-        <div className="px-1 py-2">
+        <div className="px-1 py-2 space-y-2">
           {statusLoading ? (
             <div className="flex items-center gap-2 typo-caption text-foreground">
               <LoadingSpinner size="sm" />
               {t.plugins.companion.stt_loading}
             </div>
           ) : (
-            <div className="flex items-start gap-3">
-              <Cpu
-                className={`w-4 h-4 mt-0.5 shrink-0 ${status?.installed ? 'text-emerald-400' : 'text-foreground'}`}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="typo-body font-medium">
-                  {status?.installed
-                    ? t.plugins.companion.stt_installed
-                    : t.plugins.companion.stt_not_installed}
-                </div>
-                {!status?.installed && (
-                  <p className="typo-caption mt-1">
-                    {/* The manual route stays documented for macOS/Linux,
-                        where the pinned win-x64 asset does not apply. */}
-                    {t.plugins.companion.stt_install_hint}
-                  </p>
-                )}
-                {status && (
-                  <p className="typo-code text-[11px] text-foreground mt-1 break-all">
-                    {status.installed ? status.binaryPath : status.expectedPath}
-                  </p>
-                )}
+            <>
+              <div className="typo-body">
+                {status?.installed
+                  ? t.plugins.companion.stt_installed
+                  : t.plugins.companion.stt_not_installed}
               </div>
-              <button
-                type="button"
-                onClick={() => void refreshStatus()}
-                className="p-2 rounded-interactive bg-secondary/40 hover:bg-secondary/60 border border-foreground/10 text-foreground transition-colors focus-ring shrink-0"
-                title={t.plugins.companion.stt_refresh}
-                aria-label={t.plugins.companion.stt_refresh}
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
-          {/*
-            One-click install of the sidecar — the last manual step in the
-            voice stack (models already self-download). Same block the
-            Kokoro/Pocket panels use, so the button locks itself, streams
-            phase + percent, and calls refreshStatus on completion: the
-            Installed badge flips without the user hitting Refresh.
-          */}
-          {!statusLoading && !status?.installed && (
-            <div className="px-1 pb-2">
-              <VoiceEngineInstallBlock
-                progressEvent={STT_INSTALL_EVENT}
-                onDownload={companionSttInstallEngine}
-                onDone={() => void refreshStatus()}
-                icon={<Download className="w-4 h-4" />}
-                title={t.plugins.companion.stt_install_title}
-                desc={t.plugins.companion.stt_install_desc}
-                installButtonLabel={t.plugins.companion.stt_install_button}
-                logPrefix="stt.install"
-              />
-            </div>
+              {status && (
+                <p className="typo-code text-[11px] text-foreground break-all">
+                  {status.installed ? status.binaryPath : status.expectedPath}
+                </p>
+              )}
+              {/*
+                The action lives with the information it acts on. The
+                manual route stays as the install block's own fallback
+                text for macOS/Linux, where the pinned win-x64 asset does
+                not apply.
+              */}
+              {!status?.installed && (
+                <>
+                  <VoiceEngineInstallBlock
+                    progressEvent={STT_INSTALL_EVENT}
+                    onDownload={companionSttInstallEngine}
+                    onDone={() => void refreshStatus()}
+                    icon={<Download className="w-4 h-4" />}
+                    title={t.plugins.companion.stt_install_title}
+                    desc={t.plugins.companion.stt_install_desc}
+                    installButtonLabel={t.plugins.companion.stt_install_button}
+                    logPrefix="stt.install"
+                  />
+                  <p className="typo-caption">{t.plugins.companion.stt_install_hint}</p>
+                </>
+              )}
+            </>
           )}
         </div>
       </SectionCard>
 
+      {/*
+        SECTION 2 — the models, folded away. A model list is a long,
+        rarely-touched thing next to a one-line engine answer, so it opens
+        on click and remembers that choice across sessions (storageKey).
+        The header carries the only facts worth seeing while collapsed:
+        how many are downloaded, and whether one is selected.
+      */}
       <SectionCard
         title={t.plugins.companion.stt_models_title}
         subtitle={t.plugins.companion.stt_models_desc}
         titleClassName="text-primary"
+        collapsible
+        storageKey="companion.stt.models"
+        defaultCollapsed
+        icon={<HardDrive className="w-4 h-4 text-foreground" />}
+        action={
+          <span className="typo-caption text-foreground tabular-nums">
+            {tx(t.plugins.companion.stt_models_summary, {
+              downloaded: models?.filter((m) => m.isDownloaded).length ?? 0,
+              total: models?.length ?? 0,
+            })}
+          </span>
+        }
       >
         <div className="px-1 py-2 space-y-2">
           {modelsError && (
             <p className="typo-caption text-status-warning">{modelsError}</p>
+          )}
+          {/*
+            Downloading a model with no engine to run it is a dead end the
+            UI used to let you walk into silently. Say the order once, here,
+            rather than blocking the download — a user pre-fetching a model
+            before installing is a legitimate thing to do.
+          */}
+          {!statusLoading && !status?.installed && (
+            <p className="typo-caption text-amber-300">
+              {t.plugins.companion.stt_models_engine_first}
+            </p>
           )}
           {models === null ? (
             <div className="flex items-center gap-2 typo-caption text-foreground">

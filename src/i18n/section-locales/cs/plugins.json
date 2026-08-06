@@ -2665,7 +2665,9 @@
     "stt_compare_working": "Přepisuje",
     "stt_install_button": "Nainstalovat",
     "stt_install_desc": "Stáhne CPU sestavení whisper.cpp a umístí ho tam, kde ho Athena hledá. Přibližně 20 MB, zatím jen pro Windows.",
-    "stt_install_title": "Nainstalovat engine za mě"
+    "stt_install_title": "Nainstalovat engine za mě",
+    "stt_models_engine_first": "Výše uvedený engine ještě není nainstalován. Model si můžete stáhnout hned, ale přepis bude fungovat až po instalaci obou součástí.",
+    "stt_models_summary": "{downloaded} z {total}"
   },
   "artist_gallery": {
     "loading_viewer": "Načítání prohlížeče…",

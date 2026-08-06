@@ -15117,7 +15117,9 @@
       "stt_compare_working": "ट्रांसक्राइब हो रहा है",
       "stt_install_button": "इंजन इंस्टॉल करें",
       "stt_install_desc": "यह whisper.cpp का CPU बिल्ड डाउनलोड करता है और इसे वहाँ रखता है जहाँ Athena इसे खोजती है। लगभग 20 MB, फ़िलहाल केवल Windows के लिए उपलब्ध है।",
-      "stt_install_title": "मेरे लिए इंजन इंस्टॉल करें"
+      "stt_install_title": "मेरे लिए इंजन इंस्टॉल करें",
+      "stt_models_engine_first": "ऊपर दिया गया इंजन अभी इंस्टॉल नहीं है। आप अभी एक मॉडल डाउनलोड कर सकते हैं, लेकिन ट्रांसक्रिप्शन तभी काम करेगा जब दोनों मौजूद हों।",
+      "stt_models_summary": "{total} में से {downloaded}"
     },
     "artist_gallery": {
       "loading_viewer": "viewer लोड हो रहा है…",

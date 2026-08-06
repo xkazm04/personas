@@ -15117,7 +15117,9 @@
       "stt_compare_working": "Расшифровка",
       "stt_install_button": "Установить движок",
       "stt_install_desc": "Загружает CPU-сборку whisper.cpp и помещает её туда, где её ищет Athena. Около 20 MB, пока только для Windows.",
-      "stt_install_title": "Установи движок за меня"
+      "stt_install_title": "Установи движок за меня",
+      "stt_models_engine_first": "Движок, указанный выше, еще не установлен. Скачать модель можно уже сейчас, но транскрибация заработает только тогда, когда будут готовы оба компонента.",
+      "stt_models_summary": "{downloaded} из {total}"
     },
     "artist_gallery": {
       "loading_viewer": "Загрузка просмотрщика…",

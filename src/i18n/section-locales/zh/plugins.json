@@ -2665,7 +2665,9 @@
     "stt_compare_working": "转录中",
     "stt_install_button": "安装引擎",
     "stt_install_desc": "下载 whisper.cpp CPU 版本并放到 Athena 查找的位置。约 20 MB,目前仅支持 Windows。",
-    "stt_install_title": "帮我安装引擎"
+    "stt_install_title": "帮我安装引擎",
+    "stt_models_engine_first": "上方的引擎尚未安装。您现在可以下载模型，但转录功能只有在两者都准备就绪后才能正常工作。",
+    "stt_models_summary": "{downloaded}/{total}"
   },
   "artist_gallery": {
     "loading_viewer": "加载查看器中…",

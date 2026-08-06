@@ -2665,7 +2665,9 @@
     "stt_compare_working": "Transkribieren",
     "stt_install_button": "Engine installieren",
     "stt_install_desc": "Lädt den whisper.cpp-CPU-Build herunter und legt ihn dort ab, wo Athena danach sucht. Etwa 20 MB, vorerst nur für Windows.",
-    "stt_install_title": "Installiere die Engine für mich"
+    "stt_install_title": "Installiere die Engine für mich",
+    "stt_models_engine_first": "Die oben genannte Engine ist noch nicht installiert. Du kannst jetzt ein Modell herunterladen, aber die Transkription funktioniert erst, wenn beide vorhanden sind.",
+    "stt_models_summary": "{downloaded} von {total}"
   },
   "artist_gallery": {
     "loading_viewer": "Viewer wird geladen…",

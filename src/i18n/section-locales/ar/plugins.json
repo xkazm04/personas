@@ -2665,7 +2665,9 @@
     "stt_compare_working": "جارٍ النسخ",
     "stt_install_button": "تثبيت المحرك",
     "stt_install_desc": "يقوم بتنزيل نسخة whisper.cpp المخصصة للمعالج ويضعها في المكان الذي تبحث فيه Athena عنها. بحجم 20 MB تقريبًا، ويعمل حاليًا على Windows فقط.",
-    "stt_install_title": "ثبّت المحرك من أجلي"
+    "stt_install_title": "ثبّت المحرك من أجلي",
+    "stt_models_engine_first": "المحرك أعلاه غير مثبت بعد. يمكنك تنزيل نموذج الآن، لكن النسخ الصوتي يعمل فقط بعد توفر الاثنين معاً.",
+    "stt_models_summary": "{downloaded} من {total}"
   },
   "artist_gallery": {
     "loading_viewer": "جارٍ تحميل العارض…",
