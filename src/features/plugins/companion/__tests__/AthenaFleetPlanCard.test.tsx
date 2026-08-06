@@ -56,8 +56,22 @@ describe('AthenaFleetPlanCard', () => {
     expect(dispatchFleetPlan).toHaveBeenCalledWith(
       'harden the auth surface',
       [
-        { cwd: 'C:/repo-0', objective: 'the objective the user rewrote', skill: null },
-        { cwd: 'C:/repo-1', objective: 'objective 1', skill: 'scan-sweep' },
+        {
+          cwd: 'C:/repo-0',
+          objective: 'the objective the user rewrote',
+          skill: null,
+          label: null,
+          model: null,
+          effort: null,
+        },
+        {
+          cwd: 'C:/repo-1',
+          objective: 'objective 1',
+          skill: 'scan-sweep',
+          label: null,
+          model: null,
+          effort: null,
+        },
       ],
       undefined,
     );

@@ -140,6 +140,14 @@ export interface FleetPlanRow {
   objective: string;
   /** Optional installed skill name; leads the prompt as `/skill …`. */
   skill?: string | null;
+  /** Operator-facing session name. Wins over the auto-naming — eight sessions
+   *  all called `athena · personas` tell you nothing about which is which. */
+  label?: string | null;
+  /** Model id for this session (`--model`). Null leaves the CLI default. */
+  model?: string | null;
+  /** Reasoning effort (`--effort`): low | medium | high | xhigh. Validated
+   *  backend-side; null leaves the CLI default. */
+  effort?: string | null;
 }
 
 /**

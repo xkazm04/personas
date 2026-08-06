@@ -20,6 +20,11 @@ export function parsePlanRows(raw: unknown): FleetPlanRow[] {
       cwd: typeof r.cwd === 'string' ? r.cwd : '',
       objective: typeof r.objective === 'string' ? r.objective : '',
       skill: typeof r.skill === 'string' ? r.skill : null,
+      // Presentation/routing fields the dispatcher validated. Carried through
+      // the card untouched so Confirm dispatches what was proposed.
+      label: typeof r.label === 'string' ? r.label : null,
+      model: typeof r.model === 'string' ? r.model : null,
+      effort: typeof r.effort === 'string' ? r.effort : null,
     }))
     .filter((r) => r.cwd.length > 0);
 }
@@ -91,6 +96,9 @@ export function AthenaFleetPlanCard({
         cwd: r.cwd,
         objective: r.objective.trim(),
         skill: r.skill?.trim() ? r.skill.trim() : null,
+        label: r.label?.trim() ? r.label.trim() : null,
+        model: r.model?.trim() ? r.model.trim() : null,
+        effort: r.effort?.trim() ? r.effort.trim() : null,
       }));
       const message = await companionDispatchFleetPlan(intent, confirmedRows, cardId);
       setResult(message);

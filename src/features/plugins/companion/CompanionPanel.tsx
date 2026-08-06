@@ -1317,6 +1317,15 @@ function Body(props: BodyProps) {
         useSystemStore.getState().setMonitorOpen(true);
         return;
       }
+      // "mastermind" is the other pseudo-route: Teams → Mastermind. Arriving
+      // is not just navigation — mounting the canvas is what publishes its
+      // scene to the settings key every canvas op Athena has reads, so this
+      // is also how a stale (or absent) snapshot gets refreshed.
+      if (route === 'mastermind') {
+        useSystemStore.getState().setSidebarSection('teams');
+        useSystemStore.getState().setTeamsTab('mastermind');
+        return;
+      }
       if (!COMPANION_NAV_ROUTES.includes(route as SidebarSection)) return;
       useSystemStore.getState().setSidebarSection(route as SidebarSection);
       // Briefly ring the destination's primary surface (if one is mapped) so

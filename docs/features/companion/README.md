@@ -315,8 +315,13 @@ Three blocks now ride in every system prompt, each a **name + real id + one line
 | `describe_context` | one dev context in full | same |
 | `describe_skill` | one skill's full when-to-use | same |
 | `list_teams` | the team roster with ids (`LIST_TEAMS_MAX_ROWS = 25`) | — |
+| `list_runner_tasks` | the Dev Runner's live queue — queued + running only, ≤20, optional name/project filter | says the queue is empty rather than returning a blank body |
 
 Teams were deliberately left **out** of the always-on index and given a lookup instead: `assign_team` needs a `team_id`, but a roster is not worth permanent prompt rent.
+
+**The Dev Runner is the second execution lane, and it now has a door.** Athena could dispatch Fleet sessions all day while a task for the same work sat queued on the Run Desk, because she could not see it. `list_runner_tasks` is the read half; **`enqueue_runner_task { title, description?, depth?, project… }`** is the write half, and it mirrors the fleet ops' grammar exactly: approval-gated (deliberately absent from `AUTOAPPROVE_ALLOWLIST`), containment through the same `resolve_dev_project` registry lookup every other dev op uses, bounded input, `depth` validated against `quick | campaign | deep_build`. It **only enqueues** — starting a task stays the operator's click on the Run Desk, because execution spends real money and the queue is the reviewable surface between a proposal and that spend.
+
+**`open_route` gained `mastermind`.** Like `monitor` it is a pseudo-route (it resolves to Teams → Mastermind rather than a sidebar section). It earns one because Athena can already read, annotate, compose on and steer that canvas but had no way to simply take you there — and because *arriving* is what makes the canvas publish its scene to the settings key that every one of those ops reads, so navigation doubles as the refresh for a stale or absent snapshot.
 
 Two properties worth keeping when this is extended:
 
@@ -575,8 +580,21 @@ click, and **Cancel** dismisses the card with no side effect at all.
   `validate_fleet_cwd_in_db`. A rejected plan produces a dispatcher warning Athena
   reads on her next turn and the op line is stripped from the reply. If the project
   registry is not reachable for that turn the arm **fails closed** — no card.
-- **Argv is backend-owned.** A row contributes exactly one positional token: the
-  objective, or `/<skill> <objective>` when a skill is chosen.
+- **Per-row `label`, `model` and `effort` (all optional).** `label` is the
+  operator-facing session name and **wins over the auto-naming** — eight
+  sessions all reading `athena · personas` tell you nothing about which is
+  which, and the plan's author is the one who knows. `model` and `effort`
+  become `--model <id>` / `--effort <low|medium|high|xhigh>`, the same flag
+  vocabulary the headless lane uses (`engine/prompt/cli_args.rs`), so a cheap
+  survey row and an expensive build row can sit in one plan. All three are
+  validated at PROPOSAL time like every other field (bounded; effort against a
+  fixed set; a model value that starts with `-` or contains whitespace is
+  refused, because these become command-line tokens). `--effort` is registered
+  in `fleet::naming::VALUE_FLAGS` — without that its value would be read as the
+  task prompt and become the session title.
+- **Argv is backend-owned.** A row contributes its flags (if any) and then
+  exactly one positional token: the objective, or `/<skill> <objective>` when a
+  skill is chosen. The prompt is always LAST.
   `fleet::pty::spawn_session` appends the variadic `--mcp-config` *last*, after
   the caller's args; anything emitted after it would be swallowed as a config
   path, so no caller assembles flags.
