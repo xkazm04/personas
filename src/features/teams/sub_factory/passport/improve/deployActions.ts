@@ -86,19 +86,33 @@ export const DEPLOY_ACTIONS: DeployAction[] = [
     label: 'Refresh stale docs',
     hint: 'Deploy Claude Code to update the docs whose coupled sources changed after them',
     kind: 'task',
-    applicable: (p) => (p.automationReadiness.artifacts.docRot?.dirty ?? 0) > 0,
+    applicable: (p) => {
+      const rot = p.automationReadiness.artifacts.docRot;
+      return (rot?.dirty ?? 0) > 0 || (rot?.broken ?? 0) > 0;
+    },
     taskTitle: (project) => `Refresh stale docs in ${project.name}`,
-    prompt: (_project, p) =>
-      [
-        `${p.automationReadiness.artifacts.docRot?.dirty ?? 0} docs in this repo are STALE: source paths they document changed after the doc's last update.`,
+    prompt: (_project, p) => {
+      const rot = p.automationReadiness.artifacts.docRot;
+      return [
+        `${rot?.dirty ?? 0} docs in this repo are STALE: source paths they document changed after the doc's last update.`,
+        ...((rot?.broken ?? 0) > 0
+          ? [`${rot?.broken ?? 0} docs are BROKEN: they name repo paths that no longer exist, though the parent directories still do — those targets were renamed or deleted.`]
+          : []),
         '',
         'For each stale doc (git tells you which — compare each doc\'s last commit against commits touching the source areas it references):',
         '1. Read the doc, then read what actually changed in its coupled sources since the doc was last touched (`git log` + the diffs).',
         '2. Update ONLY what those changes made wrong or missing — keep unaffected sections byte-identical.',
         '3. Never describe behaviour you cannot point to in the current code; when a documented feature was removed, say so rather than silently deleting the section.',
+        ...((rot?.broken ?? 0) > 0
+          ? [
+              '',
+              'For each broken path reference: find where the target moved (`git log --diff-filter=D --name-only`, `git log --follow`) and correct the path. If it was removed outright, say so in the doc rather than deleting the sentence.',
+            ]
+          : []),
         '',
         'Prefer several small accurate edits over one rewrite. Do not touch application code.',
-      ].join('\n'),
+      ].join('\n');
+    },
   },
   {
     id: 'memory-seed',

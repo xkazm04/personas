@@ -285,6 +285,10 @@ export interface RottingDoc {
   changed_sources: string[];
   reads_30d: number;
   dirty_reads_30d: number;
+  /** Repo paths the doc names that no longer exist. Optional so a caller on an
+   *  older build (column absent) degrades to "no content evidence" rather than
+   *  crashing — never to a false clean. */
+  broken_refs?: string[];
 }
 
 /** Harm-ranked: docs being read WHILE stale first (rot being consumed —
@@ -322,6 +326,48 @@ export function emitDocRotFindings(docs: RottingDoc[]): FindingDraft[] {
       effort: 2,
       risk: 1,
     }));
+}
+
+/** Docs that NAME a repo path which no longer exists. Independent of E7's git
+ *  signal on purpose: a doc whose every reference was renamed away couples to
+ *  nothing, so it is never "stale" — it used to be indistinguishable from a
+ *  healthy doc, and it is the likeliest of all to be wrong. Ranked by how many
+ *  references are gone, then by consumption. */
+export function emitDocBrokenRefFindings(docs: RottingDoc[]): FindingDraft[] {
+  return docs
+    .filter((d) => (d.broken_refs?.length ?? 0) > 0)
+    .sort((a, b) =>
+      (b.broken_refs?.length ?? 0) !== (a.broken_refs?.length ?? 0)
+        ? (b.broken_refs?.length ?? 0) - (a.broken_refs?.length ?? 0)
+        : b.reads_30d - a.reads_30d,
+    )
+    .slice(0, DOC_ROT_TOP_N)
+    .map((d) => {
+      const refs = d.broken_refs ?? [];
+      return {
+        origin: 'doc_rot' as const,
+        title: `Doc names paths that no longer exist: ${d.doc_path}`,
+        description:
+          `${d.doc_path} references ${refs.length} repo path${refs.length === 1 ? '' : 's'} that ` +
+          `${refs.length === 1 ? 'does' : 'do'} not exist (${refs.slice(0, 5).join(', ')})` +
+          `${d.reads_30d > 0 ? `, and it was read ${d.reads_30d}× in the last 30 days` : ''}. ` +
+          `Each parent directory still exists, so these were renamed or deleted rather than never written. ` +
+          `For each one: find where it moved with \`git log --diff-filter=D --name-only\` / \`git log --follow\`, ` +
+          `then correct the reference to the current path. If the thing itself was removed, say it was removed — ` +
+          `do not silently delete the section, and do not describe behaviour you cannot point to in the current code.`,
+        category: 'maintainability',
+        evidence: {
+          docPath: d.doc_path,
+          brokenRefs: refs,
+          brokenRefCount: refs.length,
+          reads30d: d.reads_30d,
+        },
+        dedupKey: `doc-refs:${d.doc_path}`,
+        impact: d.reads_30d > 0 ? 4 : 3,
+        effort: 2,
+        risk: 1,
+      };
+    });
 }
 
 // ---------------------------------------------------------------------------

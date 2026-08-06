@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import {
+  emitDocBrokenRefFindings,
   emitDocRotFindings,
   emitKpiFindings,
   emitLlmCostFindings,
@@ -248,6 +249,46 @@ describe('emitDocRotFindings (E7)', () => {
     expect(out[0]!.description).toContain('src/a.rs');
     expect(out[0]!.evidence).toMatchObject({ changedSources: ['src/a.rs', 'src/b.rs'] });
     expect(out[0]!.description).not.toMatch(/undefined/);
+  });
+});
+
+describe('emitDocBrokenRefFindings (E7b — the content signal)', () => {
+  const doc = (over: Partial<RottingDoc>): RottingDoc => ({
+    doc_path: 'docs/x.md',
+    dirty_since: null,
+    changed_sources: [],
+    reads_30d: 0,
+    dirty_reads_30d: 0,
+    ...over,
+  });
+
+  it('fires on a doc git can say nothing about', () => {
+    // Every reference renamed away → no coupling → never stale. Before the
+    // content check this doc was indistinguishable from a healthy one.
+    const out = emitDocBrokenRefFindings([
+      doc({ doc_path: 'docs/moved.md', dirty_since: null, broken_refs: ['src/x/Gone.tsx'] }),
+    ]);
+    expect(out).toHaveLength(1);
+    expect(out[0]!.dedupKey).toBe('doc-refs:docs/moved.md');
+    expect(out[0]!.description).toContain('src/x/Gone.tsx');
+    expect(out[0]!.description).not.toMatch(/undefined|NaN/);
+  });
+
+  it('ignores docs with no broken references and ranks by how much is gone', () => {
+    const out = emitDocBrokenRefFindings([
+      doc({ doc_path: 'docs/ok.md' }),
+      doc({ doc_path: 'docs/one.md', broken_refs: ['src/x/a.ts'] }),
+      doc({ doc_path: 'docs/many.md', broken_refs: ['src/x/a.ts', 'src/x/b.ts', 'src/x/c.ts'] }),
+    ]);
+    expect(out.map((f) => f.dedupKey)).toEqual(['doc-refs:docs/many.md', 'doc-refs:docs/one.md']);
+    expect(out[0]!.evidence).toMatchObject({ brokenRefCount: 3 });
+  });
+
+  it('does not collide with the staleness emitter on the same doc', () => {
+    const both = doc({ doc_path: 'docs/x.md', dirty_since: '2026-06-01 00:00:00', broken_refs: ['src/x/a.ts'] });
+    const stale = emitDocRotFindings([both]);
+    const broken = emitDocBrokenRefFindings([both]);
+    expect(stale[0]!.dedupKey).not.toBe(broken[0]!.dedupKey);
   });
 });
 

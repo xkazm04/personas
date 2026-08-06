@@ -137,6 +137,22 @@ export interface AppCost {
   parseError?: boolean;
 }
 
+/** Per-project doc-rot tallies. The buckets are deliberately NOT collapsible
+ *  into "healthy / not healthy": `unverifiable` docs are ones the scan could
+ *  not judge at all, and folding them into the clean remainder is exactly the
+ *  lie this rollup exists to stop telling. */
+export interface DocRotRollup {
+  tracked: number;
+  /** Coupled sources committed after the doc — the git staleness signal. */
+  dirty: number;
+  /** Names at least one repo path that no longer exists — the content signal. */
+  broken: number;
+  /** No coupling could be established: unjudged, NOT clean. */
+  unverifiable: number;
+  /** Tracked docs no session has read since telemetry began. */
+  neverRead: number;
+}
+
 export interface PassportArtifacts {
   agentInstructions: string[];
   contextGraph: GraphLevel;
@@ -148,13 +164,12 @@ export interface PassportArtifacts {
   /** Design-system readability — see DesignSystemLevel. Optional so a passport
    *  derived before this probe existed doesn't render a false 'none'. */
   designSystem?: DesignSystemLevel;
-  /** Doc-rot rollup (P2 git scan): dirty = coupled sources newer than the doc;
-   *  neverRead = tracked docs no session has read since telemetry began.
-   *  Absent when the rot scan hasn't run — the row omits its health sub-label
-   *  rather than guessing zeros. The MATURITY ladder above stays stable;
-   *  volatile health rides here (deliberate deviation from the plan's 'fresh'
-   *  rung — a ladder that bounces week-to-week isn't a maturity ladder). */
-  docRot?: { tracked: number; dirty: number; neverRead: number };
+  /** Doc-rot rollup (P2 scan). Absent when the rot scan hasn't run — the row
+   *  omits its health sub-label rather than guessing zeros. The MATURITY
+   *  ladder above stays stable; volatile health rides here (deliberate
+   *  deviation from the plan's 'fresh' rung — a ladder that bounces
+   *  week-to-week isn't a maturity ladder). */
+  docRot?: DocRotRollup;
   /** Memory-engine health for the project's bound team (P3 snapshots):
    *  composite score, previous snapshot's score (trend), live disputed count.
    *  Absent when the project has no team or the health sweep hasn't run —

@@ -15,7 +15,7 @@ import {
   type GraphLevel, type CiLevel, type IntegrationKind, type PassportIntegration,
   type PassportLanguage, type TestsLevel, type EvalsLevel, type MigrationsLevel,
   type SecurityLevel, type MemoryLevel, type DocsLevel, type DesignSystemLevel,
-  type AppCost, type EnvSlot, type PassportEnvironments,
+  type AppCost, type EnvSlot, type PassportEnvironments, type DocRotRollup,
 } from './passportModel';
 import { parseStandards } from './improve/standards';
 
@@ -85,7 +85,7 @@ export function derivePassportFromMetadata(
     hasSkills?: boolean;
     evidence?: RepoEvidence | null;
     skillCounts?: { reused: number; own: number; dormant?: number };
-    docRot?: { tracked: number; dirty: number; neverRead: number };
+    docRot?: DocRotRollup;
     memHealth?: { score: number; prevScore: number | null; disputed: number; capturedAt: string };
     /** Related data-processing project NAMES (resolved from data_links ids). */
     dataLinks?: string[];

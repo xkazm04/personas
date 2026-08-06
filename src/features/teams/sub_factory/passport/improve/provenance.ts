@@ -47,9 +47,21 @@ export function dimensionReason(rowKey: string, raw: ImproveRaw): string | null 
       const ev = raw.evidence;
       const n = ev?.docs_file_count ?? 0;
       const rot = raw.docRot;
-      const rotBit = rot && rot.dirty > 0
-        ? ` Rot scan: ${rot.dirty} of ${rot.tracked} tracked docs are stale vs their coupled sources.`
-        : rot ? ` Rot scan: all ${rot.tracked} tracked docs are current.` : '';
+      // "all N tracked docs are current" used to be printed whenever nothing
+      // was stale — including when most of those docs had no coupling at all
+      // and so could not have been judged. Say what was actually established.
+      let rotBit = '';
+      if (rot) {
+        const parts: string[] = [];
+        if (rot.dirty > 0) parts.push(`${rot.dirty} stale vs their coupled sources`);
+        if (rot.broken > 0) parts.push(`${rot.broken} naming repo paths that no longer exist`);
+        if (rot.unverifiable > 0) {
+          parts.push(`${rot.unverifiable} that could not be judged at all (no coupling to source could be established — not a clean bill of health)`);
+        }
+        rotBit = parts.length
+          ? ` Rot scan of ${rot.tracked} tracked docs: ${parts.join('; ')}.`
+          : ` Rot scan: all ${rot.tracked} tracked docs are coupled to source and current.`;
+      }
       if (ev?.has_doc_map) return `${n} docs pages + a doc-map manifest; source→doc coupling is managed.${rotBit}`;
       if (n >= 3) return `${n} markdown pages under docs/, but no doc-map coupling them to source.${rotBit}`;
       return (ev?.has_readme ? 'README only, no docs/ tree detected.' : 'No README or docs/ detected.') + rotBit;

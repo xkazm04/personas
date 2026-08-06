@@ -1670,13 +1670,25 @@ export const getSkillUsageOverview = () =>
 
 // -- doc-rot telemetry (Brainiac-adoption P2) ---------------------------------
 
+/** The verdict on one tracked doc. `unverifiable` is deliberately NOT `clean`:
+ *  it means no coupling could be established, so the detector could not judge
+ *  the doc at all — the highest-risk state, not a healthy one. */
+export type DocRotStatus = 'broken' | 'stale' | 'unverifiable' | 'clean';
+
 /** One tracked doc + its rot state and read aggregates. Mirrors the Rust
  *  `DocRotRow` (snake_case). `unscoped` = no coupling known (doc-map or
- *  referenced paths) — tracked but never dirty-able. */
+ *  referenced paths) — tracked but never dirty-able, and reported as
+ *  `unverifiable` rather than passed off as clean. */
 export interface DocRotRow {
   project_id: string;
   doc_path: string;
   unscoped: boolean;
+  /** broken > stale > unverifiable > clean. Render this, not `dirty_since`
+   *  alone — a doc the scan could not judge must never look healthy. */
+  status: DocRotStatus;
+  /** Repo paths the doc names that no longer exist, though their parent
+   *  directory still does. The content signal git timestamps cannot express. */
+  broken_refs: string[];
   last_doc_commit: string | null;
   last_source_commit: string | null;
   /** The local dirty_at — set while coupled sources are newer than the doc. */
@@ -1692,12 +1704,17 @@ export interface DocRotRow {
 /** Git-based doc-rot scan over every registered project. Throttled per project
  *  (6h) unless `force`; one bounded `git log` per repo. */
 export const scanDocRot = (force = false) =>
-  invoke<{ projects_scanned: number; docs_tracked: number; dirty: number }>(
-    "doc_rot_scan",
-    { force },
-    undefined,
-    120_000,
-  );
+  invoke<{
+    projects_scanned: number;
+    docs_tracked: number;
+    dirty: number;
+    /** Docs whose coupling could not be established — unjudged, not healthy. */
+    unverifiable: number;
+    /** Docs naming at least one repo path that no longer exists. */
+    broken: number;
+    /** The doc budget ran out: some pages were NOT looked at. */
+    docs_truncated: boolean;
+  }>("doc_rot_scan", { force }, undefined, 120_000);
 
 export const getDocRotOverview = () =>
   safeInvoke<DocRotRow[]>([], "doc_rot_overview", {});
