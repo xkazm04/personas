@@ -1356,6 +1356,35 @@ impl FleetRegistry {
         let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         map.remove(session_id).is_some()
     }
+
+    /// Remove a session ONLY if it has no live PTY in this process — no tracked
+    /// child pid, no writer, no master. That's the shape of a rehydrated
+    /// tombstone (restored after a restart), a dozed row after the reaper ran,
+    /// or a hibernated row whose child already exited. Killing such a row via
+    /// [`Self::close_pty_handles`] just nulls already-null handles and leaves it
+    /// in the registry forever; forgetting it is the honest close. The check and
+    /// the removal happen under one lock so a session that respawns in the
+    /// window can't be swept. Returns `false` for unknown ids and for anything
+    /// still holding a live process (caller should soft-kill instead).
+    pub fn forget_dead(&self, session_id: &str) -> bool {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get(session_id) else { return false };
+        let live = session.child_pid.is_some()
+            || session
+                .writer
+                .lock()
+                .map(|w| w.is_some())
+                .unwrap_or(true)
+            || session
+                .master
+                .lock()
+                .map(|m| m.is_some())
+                .unwrap_or(true);
+        if live {
+            return false;
+        }
+        map.remove(session_id).is_some()
+    }
 }
 
 /// Serialize one user turn as a stream-json input line for a headless
@@ -1678,6 +1707,49 @@ mod tests {
         assert!(!reg.is_athena_owned("anon"));
         // Unknown id — the hallucinated/stale-session_id case the guard exists for.
         assert!(!reg.is_athena_owned("does-not-exist"));
+    }
+
+    #[test]
+    fn forget_dead_removes_only_sessions_without_a_live_pty() {
+        let reg = FleetRegistry::default();
+        // The test helper builds rows with handles None but child_pid Some —
+        // the shape of a live session whose PTY plumbing the test skips.
+        reg.insert(session("live", FleetSessionState::Running, Some("cc-live")));
+        reg.insert(session("stale", FleetSessionState::Stale, Some("cc-stale")));
+        reg.insert(session("hib", FleetSessionState::Hibernated, Some("cc-hib")));
+
+        // A tracked child pid counts as live → refuse, row stays.
+        assert!(!reg.forget_dead("live"));
+        assert!(reg.session_state("live").is_some());
+
+        // Clear the pid (what the reaper does once the child truly exited /
+        // what a rehydrated tombstone looks like from birth) → forgettable.
+        reg.clear_child_pid("stale");
+        reg.clear_child_pid("hib");
+        assert!(reg.forget_dead("stale"));
+        assert!(reg.forget_dead("hib"));
+        assert!(reg.session_state("stale").is_none());
+        assert!(reg.session_state("hib").is_none());
+
+        // Unknown id → false, no panic.
+        assert!(!reg.forget_dead("missing"));
+    }
+
+    #[test]
+    fn rehydrated_tombstone_is_forgettable_and_keeps_athena_ownership() {
+        // A restart round-trip: an Athena-dispatched session persists with its
+        // sentinel name, restores as a dozing tombstone (no pid, no handles),
+        // and must still (a) read as Athena-owned — the broadened autonomous
+        // fleet_kill gate depends on it — and (b) be removable via forget_dead.
+        let reg = FleetRegistry::default();
+        let mut inner = session("dispatched", FleetSessionState::Stale, Some("cc-d"));
+        inner.name = Some(format!("{ATHENA_SESSION_NAME_SENTINEL} · personas"));
+        let row = super::super::persist::row_from_inner(&inner).expect("bound row persists");
+        reg.insert(super::super::persist::inner_from_row(&row));
+
+        assert!(reg.is_athena_owned("dispatched"));
+        assert!(reg.forget_dead("dispatched"));
+        assert!(reg.session_state("dispatched").is_none());
     }
 
     #[test]

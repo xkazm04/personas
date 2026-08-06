@@ -140,7 +140,7 @@ pub async fn companion_approve_action(
         // Phase J — Fleet integration.
         "fleet_send_input" => execute_fleet_send_input(&app, &params),
         "fleet_broadcast" => execute_fleet_broadcast(&params),
-        "fleet_kill" => execute_fleet_kill(&params),
+        "fleet_kill" => execute_fleet_kill(&app, &params),
         "fleet_spawn" => execute_fleet_spawn(&app, &params),
         "fleet_dispatch" => execute_fleet_dispatch(&app, &params),
         // WP2 — Mastermind canvas actions. Thin slug-resolving wrappers over

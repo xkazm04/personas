@@ -52,14 +52,17 @@ pub(crate) const AUTOAPPROVE_ALLOWLIST: &[&str] = &[
     // transcript, so a hallucinated target revives nothing.
     "fleet_wake",
     "fleet_resume",
-    // Autonomous fleet hygiene: close a FINISHED/idle session Athena spawned
-    // herself. Without this, every `fleet_kill` she proposes parks as a consult
-    // and done sessions pile up burning resources. Guarded HARD in
+    // Autonomous fleet hygiene: close a session Athena spawned herself that is
+    // NOT actively working. Without this, every `fleet_kill` she proposes parks
+    // as a consult and done/dead sessions pile up burning resources (or, for
+    // rehydrated tombstones, cluttering the sidebar forever). Guarded HARD in
     // `auto_resolve_if_allowed`: auto-fire requires `is_athena_owned` (the
     // spawn-time name sentinel — never a user's own terminal) AND the session
-    // resting in `Finished`/`Idle` — a working (Running/Spawning) or
-    // user-attention (AwaitingInput) session is never auto-killed. Anything
-    // failing the guard stays a pending approval card for a deliberate click.
+    // resting in `Finished`/`Idle`/`Stale`/`Hibernated` (the last two cover
+    // dead tombstones rehydrated after a restart, which restore as Stale) — a
+    // working (Running/Spawning) or user-attention (AwaitingInput) session is
+    // never auto-killed. Anything failing the guard stays a pending approval
+    // card for a deliberate click.
     "fleet_kill",
     // WP2 (2026-08-04) — CONTAINMENT CHANGE, operator's explicit call, risk
     // accepted. `fleet_spawn` and `fleet_dispatch` START NEW TERMINALS. Stated
@@ -220,15 +223,20 @@ pub async fn auto_resolve_if_allowed(
             }
         }
     } else if approval.action.as_str() == "fleet_kill" {
-        // Autonomous close-out of a finished session. Two-part gate:
+        // Autonomous close-out of a session that is NOT actively working.
+        // Two-part gate:
         // (1) the same boldness × class × confidence bar as the other fleet
         //     actions (a bare `fleet_kill` carries no confidence, so under
         //     Cautious/Balanced it always defers to a consult; Bold fires);
         // (2) a HARD structural guard the dial can't relax — the target must
         //     resolve (either id form), be Athena-owned (spawn-time name
-        //     sentinel), and be resting in `Finished`/`Idle`. Never auto-kill
-        //     a working session or anything the user spawned themselves.
-        use crate::commands::fleet::types::FleetSessionState;
+        //     sentinel, which survives a restart via the durable
+        //     fleet_sessions `name` column), and be resting in a
+        //     not-actively-working state (`fleet_kill_state_is_closable`:
+        //     Finished / Idle / Stale / Hibernated — which also covers
+        //     rehydrated dead tombstones, restored as Stale). Never auto-kill
+        //     a Running / AwaitingInput / Spawning session or anything the
+        //     user spawned themselves.
         let boldness = crate::commands::companion::chat::fleet_boldness(&state.db);
         if !fleet_action_auto_fires(&approval.params_json, boldness) {
             record_fleet_decision(
@@ -249,15 +257,12 @@ pub async fn auto_resolve_if_allowed(
             .and_then(|sid| registry.resolve_session_id(sid));
         let safe_to_close = resolved.as_deref().is_some_and(|fid| {
             registry.is_athena_owned(fid)
-                && matches!(
-                    registry.session_state(fid),
-                    Some(FleetSessionState::Finished | FleetSessionState::Idle)
-                )
+                && fleet_kill_state_is_closable(registry.session_state(fid))
         });
         if !safe_to_close {
             tracing::info!(
                 approval_id = %approval.id,
-                "autonomous autoapprove deferred: fleet_kill target is not an Athena-owned Finished/Idle session — left pending for a user click"
+                "autonomous autoapprove deferred: fleet_kill target is not an Athena-owned resting (Finished/Idle/Stale/Hibernated) session — left pending for a user click"
             );
             record_fleet_decision(
                 &state.db,
@@ -321,7 +326,7 @@ pub async fn auto_resolve_if_allowed(
         "schedule_proactive" => execute_schedule_proactive(&state, &params),
         "fleet_send_input" => execute_fleet_send_input(app, &params),
         "fleet_intervene" => execute_fleet_intervene(app, &params),
-        "fleet_kill" => execute_fleet_kill(&params),
+        "fleet_kill" => execute_fleet_kill(app, &params),
         "fleet_wake" => execute_fleet_wake(app, &params).await,
         "fleet_resume" => execute_fleet_resume(app, &params).await,
         // WP2 — see the containment note on AUTOAPPROVE_ALLOWLIST. Both
@@ -611,6 +616,29 @@ pub(crate) fn spawn_action_reaction(
 // roundtrip. Each returns a human-readable message that lands as a
 // system episode so Athena can quote it on the next turn.
 
+/// The structural half of the autonomous `fleet_kill` gate: which session
+/// states count as "not actively working" and may be auto-closed (given the
+/// target is also Athena-owned). `Finished`/`Idle` are the classic done
+/// states; `Stale`/`Hibernated` cover parked sessions and dead tombstones
+/// rehydrated after a restart (which restore as Stale, or Hibernated if they
+/// slept). A `Running`/`Spawning` session is working and an `AwaitingInput`
+/// one needs the USER — neither is ever auto-killed. `None` (unknown id)
+/// fails closed.
+pub(crate) fn fleet_kill_state_is_closable(
+    state: Option<crate::commands::fleet::types::FleetSessionState>,
+) -> bool {
+    use crate::commands::fleet::types::FleetSessionState;
+    matches!(
+        state,
+        Some(
+            FleetSessionState::Finished
+                | FleetSessionState::Idle
+                | FleetSessionState::Stale
+                | FleetSessionState::Hibernated
+        )
+    )
+}
+
 /// Whether a screen-driving fleet proposal (`fleet_send_input` / `fleet_intervene`)
 /// self-reports HIGH confidence — the strictest rung of the autonomous autoapprove
 /// gate. Only an explicit `"high"` lets Athena act unsupervised at every dial;
@@ -797,6 +825,38 @@ mod confidence_gate_tests {
     }
 }
 
+
+#[cfg(test)]
+mod fleet_kill_gate_tests {
+    use super::fleet_kill_state_is_closable;
+    use crate::commands::fleet::types::FleetSessionState;
+
+    /// The broadened structural gate: any Athena-owned session that is NOT
+    /// actively working may auto-close — including the stale / hibernated /
+    /// rehydrated-tombstone shapes that previously parked as consult cards
+    /// forever. Working and user-attention states never auto-close.
+    #[test]
+    fn resting_states_are_closable_working_states_never() {
+        for s in [
+            FleetSessionState::Finished,
+            FleetSessionState::Idle,
+            FleetSessionState::Stale,      // incl. rehydrated dead tombstones
+            FleetSessionState::Hibernated, // slept rows restored after a restart
+        ] {
+            assert!(fleet_kill_state_is_closable(Some(s)), "{s:?} should auto-close");
+        }
+        for s in [
+            FleetSessionState::Running,
+            FleetSessionState::Spawning,
+            FleetSessionState::AwaitingInput,
+            FleetSessionState::Exited,
+        ] {
+            assert!(!fleet_kill_state_is_closable(Some(s)), "{s:?} must NOT auto-close");
+        }
+        // Unknown / hallucinated session id fails closed.
+        assert!(!fleet_kill_state_is_closable(None));
+    }
+}
 
 #[cfg(test)]
 mod containment_posture_tests {

@@ -980,7 +980,10 @@ pub(crate) fn execute_fleet_broadcast(params: &serde_json::Value) -> Result<Exec
     )))
 }
 
-pub(crate) fn execute_fleet_kill(params: &serde_json::Value) -> Result<ExecuteResult, AppError> {
+pub(crate) fn execute_fleet_kill(
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
     let raw_id = params
         .get("session_id")
         .and_then(|v| v.as_str())
@@ -996,6 +999,20 @@ pub(crate) fn execute_fleet_kill(params: &serde_json::Value) -> Result<ExecuteRe
         ))
     })?;
     let label = registry.try_lookup_label(&session_id);
+    // A dead row (rehydrated tombstone / hibernated-after-exit / dozed) has no
+    // process to soft-kill — `close_pty_handles` would null already-null
+    // handles, report success, and leave the row parked in the registry AND the
+    // durable fleet_sessions table forever. Forget it instead: remove from the
+    // in-memory map and let the "removed" registry event prune the durable row
+    // so the sidebar actually drops it.
+    if registry.forget_dead(&session_id) {
+        crate::commands::fleet::pty::emit_registry_changed(app, "removed", &session_id);
+        return Ok(ExecuteResult::message(format!(
+            "Removed fleet session `{}`{} (no live process — cleared from the registry).",
+            &session_id[..session_id.len().min(8)],
+            label.map(|l| format!(" ({l})")).unwrap_or_default(),
+        )));
+    }
     // Soft-kill (PTY EOF). Future hard-kill (Child::kill) is a Phase 6
     // enhancement in the fleet module itself.
     let ok = registry.close_pty_handles(&session_id);
