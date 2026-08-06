@@ -1254,6 +1254,77 @@ mod tests {
         assert_eq!(plan.contexts_written, 0);
     }
 
+    /// APPLY the repair against a REAL `personas.db`. Ignored by default and
+    /// double-guarded: it needs both the two env vars the dry-run harness needs
+    /// AND `PERSONAS_MAP_APPLY=i-have-a-backup`, because `dev_contexts` has no
+    /// version column, no soft-delete and no scan ledger — this write cannot be
+    /// rolled back from inside the app.
+    ///
+    /// The guard is a literal string rather than a boolean so it cannot be
+    /// tripped by an inherited `=1` in a shell that happens to export it.
+    ///
+    /// ```text
+    /// PERSONAS_MAP_DB=<path> PERSONAS_MAP_PROJECT=<id> PERSONAS_MAP_APPLY=i-have-a-backup \
+    ///   node scripts/build/run-rust-tests.mjs -- --ignored --nocapture repair_apply_against_a_real_map
+    /// ```
+    #[test]
+    #[ignore = "MUTATES a real DB; needs PERSONAS_MAP_APPLY=i-have-a-backup"]
+    fn repair_apply_against_a_real_map() {
+        let Ok(path) = std::env::var("PERSONAS_MAP_DB") else { return };
+        if std::env::var("PERSONAS_MAP_APPLY").as_deref() != Ok("i-have-a-backup") {
+            panic!("refusing to write: set PERSONAS_MAP_APPLY=i-have-a-backup");
+        }
+        let project_id = std::env::var("PERSONAS_MAP_PROJECT").expect("PERSONAS_MAP_PROJECT");
+        let pool = crate::db::open_pool_at(std::path::Path::new(&path)).expect("open db");
+
+        // Plan first, so the record shows what was about to change.
+        let plan = repair_cross_refs(&pool, &project_id, false).expect("plan");
+        println!("PLAN {}", serde_json::to_string_pretty(&plan).unwrap());
+        assert_eq!(plan.ambiguous.len(), 0, "refusing to apply with ambiguous ghosts");
+
+        let applied = repair_cross_refs(&pool, &project_id, true).expect("apply");
+        println!("APPLIED {}", serde_json::to_string_pretty(&applied).unwrap());
+        assert!(!applied.dry_run);
+
+        // Re-plan: the only refs left must be the ones no marker explains.
+        let after = repair_cross_refs(&pool, &project_id, false).expect("verify");
+        println!("AFTER {}", serde_json::to_string_pretty(&after).unwrap());
+        assert_eq!(after.stats.rewritten, 0, "a second pass must find nothing to rewrite");
+        assert_eq!(after.dangling_before, plan.unresolved, "residue must equal the unresolvable set");
+    }
+
+    /// Re-publish `context-map.json` (and the `CLAUDE.md` managed block) from the
+    /// DB, using the real exporter. The map is a write-only projection — nothing
+    /// in the running app reads it, but every skill and dispatched agent does, so
+    /// after a repair the DB and the published file disagree until this runs.
+    ///
+    /// Ignored + guarded like the apply harness: it writes files in the repo.
+    ///
+    /// ```text
+    /// PERSONAS_MAP_DB=<path> PERSONAS_MAP_PROJECT=<id> PERSONAS_MAP_ROOT=<repo root> \
+    /// PERSONAS_MAP_APPLY=i-have-a-backup \
+    ///   node scripts/build/run-rust-tests.mjs -- --ignored --nocapture republish_map_from_a_real_db
+    /// ```
+    #[test]
+    #[ignore = "writes context-map.json; needs PERSONAS_MAP_APPLY=i-have-a-backup"]
+    fn republish_map_from_a_real_db() {
+        let Ok(path) = std::env::var("PERSONAS_MAP_DB") else { return };
+        if std::env::var("PERSONAS_MAP_APPLY").as_deref() != Ok("i-have-a-backup") {
+            panic!("refusing to write: set PERSONAS_MAP_APPLY=i-have-a-backup");
+        }
+        let project_id = std::env::var("PERSONAS_MAP_PROJECT").expect("PERSONAS_MAP_PROJECT");
+        let root = std::env::var("PERSONAS_MAP_ROOT").expect("PERSONAS_MAP_ROOT");
+        let pool = crate::db::open_pool_at(std::path::Path::new(&path)).expect("open db");
+        let n = crate::commands::infrastructure::context_map_export::write_context_map_artifacts(
+            &pool,
+            &project_id,
+            &root,
+        )
+        .expect("export");
+        println!("EXPORTED contexts={n}");
+        assert!(n > 0);
+    }
+
     #[test]
     fn repair_refuses_to_guess_an_ambiguous_ghost() {
         let pool = crate::db::init_test_db().unwrap();
