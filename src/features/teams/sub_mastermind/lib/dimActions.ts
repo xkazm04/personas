@@ -4,6 +4,7 @@
 import { applicableDeployActions } from '@/features/teams/sub_factory/passport/improve/deployActions';
 import { applicableStandardsActions } from '@/features/teams/sub_factory/passport/improve/standards';
 import { connectorSpecFor } from '@/features/teams/sub_factory/passport/improve/connectors';
+import { MODAL_ROWS } from '@/features/teams/sub_factory/passport/improve/improveRows';
 import type { ImproveRaw } from '@/features/teams/sub_factory/passport/improve/ImproveContext';
 import type { AppPassport } from '@/features/teams/sub_factory/passport/passportModel';
 
@@ -47,6 +48,12 @@ export function dimAction(
     const canAdopt = (raw?.skillsToAdd?.length ?? 0) > 0;
     return { rowKey, action: canAdopt ? 'deploy' : null };
   }
+  // Modal dimensions are ALWAYS actionable on a real project. Their surface is
+  // a declaration modal (bind a connector per environment / per capability),
+  // not a gap-filling deploy — so gating them on "is there a gap" would make the
+  // cell inert exactly when everything is already wired, which is when you most
+  // want to see what is bound.
+  if (MODAL_ROWS.has(rowKey)) return { rowKey, action: 'deploy' };
   const hasDeploy = applicableDeployActions(rowKey, passport).length > 0;
   const hasConnector = Boolean(connectorSpecFor(rowKey)?.applicable(passport));
   const hasSkills = rowKey === 'skills' && (raw?.skillsToAdd?.length ?? 0) > 0;

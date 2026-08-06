@@ -21,8 +21,7 @@ import { FactoryDataProvider, useFactoryData } from '@/features/teams/sub_factor
 import { buildCoverRoadmap } from '@/features/teams/sub_factory/passport/CoverRoadmap';
 import { collectKpiAttention, groupKpis, kpiStatus } from '@/features/teams/sub_factory/factoryModel';
 import { ImproveProvider } from '@/features/teams/sub_factory/passport/improve/ImproveContext';
-import { DeployPopover } from '@/features/teams/sub_factory/passport/improve/DeployPopover';
-import { ImprovePopover } from '@/features/teams/sub_factory/passport/improve/ImprovePopover';
+import { ImproveSurface } from '@/features/teams/sub_factory/passport/improve/ImproveSurface';
 import { useImproveEngine } from '@/features/teams/sub_factory/passport/improve/useImproveEngine';
 import { usePassportData } from '@/features/teams/sub_factory/passport/usePassportData';
 import { useAutoRescanOnFleetExit } from '@/features/teams/sub_factory/passport/useAutoRescanOnFleetExit';
@@ -157,7 +156,9 @@ function MastermindInner() {
   const [dispatchSlug, setDispatchSlug] = useState<string | null>(null);
   // Slug whose "Run a skill" modal is open (green Skills cell click; null = closed).
   const [skillRunSlug, setSkillRunSlug] = useState<string | null>(null);
-  const [improvePopup, setImprovePopup] = useState<{ slug: string; rowKey: string; standards: boolean; anchor: DOMRect } | null>(null);
+  // No `standards` flag: which surface a row opens is ImproveSurface's call,
+  // not the canvas's. The canvas only says WHICH row was clicked and WHERE.
+  const [improvePopup, setImprovePopup] = useState<{ slug: string; rowKey: string; anchor: DOMRect } | null>(null);
   const [scanPopup, setScanPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
   // Projects with an idea scan WE dispatched still in flight. Per-project (a
   // scan for one project must not disable the popover for another), and each
@@ -684,7 +685,7 @@ function MastermindInner() {
       return;
     }
     if (!node.action || !node.rowKey) return;
-    setImprovePopup({ slug, rowKey: node.rowKey, standards: node.action === 'standards', anchor: new DOMRect(e.clientX, e.clientY, 1, 1) });
+    setImprovePopup({ slug, rowKey: node.rowKey, anchor: new DOMRect(e.clientX, e.clientY, 1, 1) });
   };
 
   // Persona rows for one island. Demo islands have names but no processes
@@ -962,11 +963,20 @@ function MastermindInner() {
         <SkillsWorkbench slug={skillRunSlug} onClose={() => setSkillRunSlug(null)} />
       )}
 
-      {improvePopup && (improvePopup.standards ? (
-        <ImprovePopover slug={improvePopup.slug} rowKey={improvePopup.rowKey} anchor={improvePopup.anchor} onClose={() => setImprovePopup(null)} />
-      ) : (
-        <DeployPopover slug={improvePopup.slug} rowKey={improvePopup.rowKey} anchor={improvePopup.anchor} onClose={() => setImprovePopup(null)} />
-      ))}
+      {/* One router for every entry point (see ImproveSurface). The canvas used
+          to carry its OWN two-branch copy of this, so each dimension added to
+          the ladder was reachable from the Passport wall and silently NOT from
+          here — clicking Database or Monitoring on an island opened the generic
+          deploy popover and the new modal never mounted. */}
+      {improvePopup && passportBySlug.get(improvePopup.slug) && (
+        <ImproveSurface
+          slug={improvePopup.slug}
+          rowKey={improvePopup.rowKey}
+          passport={passportBySlug.get(improvePopup.slug)!}
+          anchor={improvePopup.anchor}
+          onClose={() => setImprovePopup(null)}
+        />
+      )}
 
       {scanPopup && (
         <IdeaScanPopover

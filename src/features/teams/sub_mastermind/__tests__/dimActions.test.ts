@@ -32,9 +32,15 @@ const raw = (standardsConfig: string | null = null, skillsToAdd: ImproveRaw['ski
 describe('dimActions — dim → wall-row mapping (via the dimension registry)', () => {
   it('maps every canvas dim to its wall row (snapshot)', () => {
     const mapping = Object.fromEntries(DIM_ORDER.map((k) => [k, DIM_REGISTRY[k].rowKey]));
+    // 2026-08-06 — `db` and `monitoring` were corrected from 'migrations' /
+    // 'observability' to the rows they are actually ABOUT. Both cells are
+    // labelled and derived from stack.persistence / stack.monitoring, but their
+    // click routed to a different wall row; once those two dimensions grew real
+    // modals the canvas kept silently opening the generic deploy popover
+    // instead. This snapshot pinned the mismatch, so it is updated with it.
     expect(mapping).toEqual({
-      db: 'migrations',
-      monitoring: 'observability',
+      db: 'persistence',
+      monitoring: 'monitoring',
       ci: 'ci',
       tests: 'tests',
       security: 'security',
@@ -85,7 +91,17 @@ describe('dimActions — dimAction applicability', () => {
   });
 
   it('a real row without a passport is inert but still reports its rowKey', () => {
-    expect(dimAction('db', undefined, undefined)).toEqual({ rowKey: 'migrations', action: null });
+    expect(dimAction('db', undefined, undefined)).toEqual({ rowKey: 'persistence', action: null });
+  });
+
+  // Modal dimensions are declaration surfaces, not gap-fillers: gating them on
+  // "is something missing" made the cell inert exactly when everything was
+  // wired — which is when you most want to open it and see what is bound.
+  it('modal rows stay actionable on a real project even with no gap to fill', () => {
+    mockDeploy.mockReturnValue([]);
+    mockConnector.mockReturnValue(null);
+    expect(dimAction('db', passport, raw())).toEqual({ rowKey: 'persistence', action: 'deploy' });
+    expect(dimAction('monitoring', passport, raw())).toEqual({ rowKey: 'monitoring', action: 'deploy' });
   });
 
   it('ci → standards when standards actions apply, else inert', () => {

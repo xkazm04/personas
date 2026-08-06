@@ -13,17 +13,8 @@ import { useImprove } from './ImproveContext';
 import { applicableStandardsActions } from './standards';
 import { applicableDeployActions } from './deployActions';
 import { connectorSpecFor } from './connectors';
-import { ImprovePopover } from './ImprovePopover';
-import { DeployPopover } from './DeployPopover';
-import { SkillsWorkbench } from './SkillsWorkbench';
-import { DataLinksPopover } from './DataLinksPopover';
-import { DatabaseModal, DATABASE_DIMENSION } from './DatabaseModal';
-import { MonitoringModal } from './MonitoringModal';
-
-// Rows whose improve action is a pure Tier-0 config toggle (ImprovePopover).
-// Security moved to the deploy/scan path (DeployPopover) so it can offer a real
-// security scan + the level ladder, not just the generic standards toggles.
-const STANDARDS_ROWS = new Set(['ci', 'selfverify']);
+import { ImproveSurface } from './ImproveSurface';
+import { DATABASE_DIMENSION, MONITORING_DIMENSION, STANDARDS_ROWS } from './improveRows';
 
 export function ImproveCell({ slug, rowKey, passport, children }: { slug: string; rowKey: string; passport: AppPassport; children: ReactNode }) {
   const engine = useImprove();
@@ -45,7 +36,7 @@ export function ImproveCell({ slug, rowKey, passport, children }: { slug: string
   const isDatabase = rowKey === DATABASE_DIMENSION;
   // Monitoring likewise: four capabilities x two independent facts each, which
   // the generic deploy popover cannot express.
-  const isMonitoring = rowKey === 'monitoring';
+  const isMonitoring = rowKey === MONITORING_DIMENSION;
   const hasStandards = isStandards && raw ? applicableStandardsActions(raw.project.standards_config).length > 0 : false;
   const hasDeploy = !isStandards && applicableDeployActions(rowKey, passport).length > 0; // LLM-upgradeable
   const hasConnector = !isStandards && Boolean(connectorSpecFor(rowKey)?.applicable(passport));
@@ -104,17 +95,9 @@ export function ImproveCell({ slug, rowKey, passport, children }: { slug: string
           <Sparkles className="w-3 h-3 flex-shrink-0 text-primary opacity-0 group-hover/imp:opacity-70 transition-opacity" aria-hidden />
         </button>
       )}
-      {open && (isSkills
-        ? <SkillsWorkbench slug={slug} initialMode="manage" onClose={() => setOpen(false)} />
-        : isDatabase
-        ? <DatabaseModal slug={slug} projectName={raw?.project.name ?? slug} passport={passport} onClose={() => setOpen(false)} />
-        : isMonitoring
-        ? <MonitoringModal slug={slug} projectName={raw?.project.name ?? slug} passport={passport} onClose={() => setOpen(false)} />
-        : isDataLinks
-          ? <DataLinksPopover slug={slug} anchor={anchor} onClose={() => setOpen(false)} />
-          : isStandards
-            ? <ImprovePopover slug={slug} rowKey={rowKey} anchor={anchor} onClose={() => setOpen(false)} />
-            : <DeployPopover slug={slug} rowKey={rowKey} anchor={anchor} onClose={() => setOpen(false)} />)}
+      {open && (
+        <ImproveSurface slug={slug} rowKey={rowKey} passport={passport} anchor={anchor} onClose={() => setOpen(false)} />
+      )}
     </>
   );
 }
