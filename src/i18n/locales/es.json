@@ -14728,7 +14728,6 @@
       "stt_engine_status_desc": "La transcripción local necesita tener instalado el binario de whisper.cpp.",
       "stt_installed": "Motor instalado",
       "stt_not_installed": "Motor no instalado",
-      "stt_install_hint": "Coloque el binario de whisper.cpp en la ruta indicada abajo (o defina PERSONAS_WHISPER_BIN). Descargue una compilación desde github.com/ggerganov/whisper.cpp/releases.",
       "stt_models_title": "Modelos",
       "stt_models_desc": "Download a modelo, then select it. Smaller = faster; larger = more accurate.",
       "stt_model_select": "Usar",
@@ -15116,12 +15115,12 @@
       "stt_compare_whisper_unsupported": "La captura de micrófono no está disponible, así que el motor local no puede ejecutarse aquí.",
       "stt_compare_working": "Transcribiendo",
       "stt_install_button": "Instalar motor",
-      "stt_install_desc": "Descarga la compilación de CPU de whisper.cpp y la coloca donde Athena la busca. Unos 20 MB, por ahora solo Windows.",
       "stt_install_title": "Instalar el motor por mí",
       "stt_models_engine_first": "El motor indicado arriba aún no está instalado. Puedes descargar un modelo ahora, pero la transcripción solo funcionará cuando ambos estén disponibles.",
       "stt_models_summary": "{downloaded} de {total}",
       "voice_section_input": "Entrada de voz",
-      "voice_section_output": "Salida de voz"
+      "voice_section_output": "Salida de voz",
+      "stt_install_desc": "Descarga la compilación de whisper.cpp y la coloca donde Athena la busca. Aproximadamente 8 MB, por ahora solo para Windows."
     },
     "artist_gallery": {
       "loading_viewer": "Cargando visor…",

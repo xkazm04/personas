@@ -2276,7 +2276,6 @@
     "stt_engine_status_desc": "本地转录需要安装 whisper.cpp 可执行文件。",
     "stt_installed": "引擎已安装",
     "stt_not_installed": "引擎未安装",
-    "stt_install_hint": "请将 whisper.cpp 可执行文件放到下方路径（或设置 PERSONAS_WHISPER_BIN）。可从 github.com/ggerganov/whisper.cpp/releases 获取已编译的版本。",
     "stt_models_title": "模型",
     "stt_models_desc": "Download a 模型, then select it. Smaller = faster; larger = more accurate.",
     "stt_model_select": "使用",
@@ -2664,12 +2663,12 @@
     "stt_compare_whisper_unsupported": "无法使用麦克风录音，本地引擎无法在此运行。",
     "stt_compare_working": "转录中",
     "stt_install_button": "安装引擎",
-    "stt_install_desc": "下载 whisper.cpp CPU 版本并放到 Athena 查找的位置。约 20 MB,目前仅支持 Windows。",
     "stt_install_title": "帮我安装引擎",
     "stt_models_engine_first": "上方的引擎尚未安装。您现在可以下载模型，但转录功能只有在两者都准备就绪后才能正常工作。",
     "stt_models_summary": "{downloaded}/{total}",
     "voice_section_input": "语音输入",
-    "voice_section_output": "语音输出"
+    "voice_section_output": "语音输出",
+    "stt_install_desc": "下载 whisper.cpp 构建版本,并放置在 Athena 查找的位置。大约 8 MB,目前仅支持 Windows。"
   },
   "artist_gallery": {
     "loading_viewer": "加载查看器中…",

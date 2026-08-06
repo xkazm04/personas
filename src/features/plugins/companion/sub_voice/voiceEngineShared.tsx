@@ -102,6 +102,38 @@ interface VoiceEngineInstallBlockProps {
   installButtonLabel: string;
   /** Sentry/console breadcrumb prefix (e.g. `'kokoro.install'`). */
   logPrefix: string;
+  /**
+   * Render as a child of a section that already has its own heading:
+   * drops the title/desc/border chrome and keeps only the button and the
+   * progress bar. `title`/`desc`/`icon` are then unused.
+   */
+  embedded?: boolean;
+}
+
+/**
+ * Human text out of whatever the IPC layer threw.
+ *
+ * Rust returns a structured `AppError` (`{ kind, error, category, … }`),
+ * not an `Error`, so `String(e)` on it produced the literal
+ * `[object Object]` in the failure line — the one place the user most
+ * needs to read what happened. Prefer the backend's own message, then
+ * anything Error-shaped, and only fall back to serialization.
+ */
+export function installErrorText(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (typeof e === 'string') return e;
+  if (e && typeof e === 'object') {
+    const o = e as Record<string, unknown>;
+    for (const k of ['error', 'message', 'reason'] as const) {
+      if (typeof o[k] === 'string' && o[k]) return o[k] as string;
+    }
+    try {
+      return JSON.stringify(e);
+    } catch {
+      return String(e);
+    }
+  }
+  return String(e);
 }
 
 /**
@@ -119,6 +151,7 @@ export function VoiceEngineInstallBlock({
   desc,
   installButtonLabel,
   logPrefix,
+  embedded = false,
 }: VoiceEngineInstallBlockProps) {
   const { t } = useTranslation();
   const [installing, setInstalling] = useState(false);
@@ -160,7 +193,7 @@ export function VoiceEngineInstallBlock({
         phase: 'failed',
         bytesDownloaded: 0,
         bytesTotal: null,
-        error: e instanceof Error ? e.message : String(e),
+        error: installErrorText(e),
       });
       silentCatch(logPrefix)(e);
     }
@@ -190,12 +223,27 @@ export function VoiceEngineInstallBlock({
   const failed = progress?.phase === 'failed';
 
   return (
-    <div className="rounded-card border border-primary/25 bg-primary/[0.06] p-3 space-y-2">
-      <div className="flex items-center gap-2">
-        {icon}
-        <span className="typo-title text-primary">{title}</span>
-      </div>
-      <p className="typo-caption">{desc}</p>
+    <div
+      className={
+        embedded
+          ? 'space-y-2'
+          : 'rounded-card border border-primary/25 bg-primary/[0.06] p-3 space-y-2'
+      }
+    >
+      {/*
+        Embedded: the host section already carries the title and the
+        explanation, so repeating them here rendered as a second card
+        inside the first. Drop the chrome and keep the action.
+      */}
+      {!embedded && (
+        <>
+          <div className="flex items-center gap-2">
+            {icon}
+            <span className="typo-title text-primary">{title}</span>
+          </div>
+          <p className="typo-caption">{desc}</p>
+        </>
+      )}
       {installing ? (
         <div className="space-y-1.5">
           <div className="flex items-center gap-2 typo-caption text-foreground">

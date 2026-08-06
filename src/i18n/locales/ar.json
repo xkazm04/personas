@@ -14728,7 +14728,6 @@
       "stt_engine_status_desc": "يتطلب التفريغ الصوتي المحلي تثبيت الملف التنفيذي لـ whisper.cpp.",
       "stt_installed": "المحرك مثبَّت",
       "stt_not_installed": "المحرك غير مثبَّت",
-      "stt_install_hint": "ضع الملف التنفيذي لـ whisper.cpp في المسار الموضح أدناه (أو عيّن PERSONAS_WHISPER_BIN). يمكنك تنزيل نسخة من github.com/ggerganov/whisper.cpp/releases.",
       "stt_models_title": "النماذج",
       "stt_models_desc": "Download a نموذج, then select it. Smaller = faster; larger = more accurate.",
       "stt_model_select": "استخدام",
@@ -15116,12 +15115,12 @@
       "stt_compare_whisper_unsupported": "التقاط الميكروفون غير متاح، لذا لا يمكن تشغيل المحرك المحلي هنا.",
       "stt_compare_working": "جارٍ النسخ",
       "stt_install_button": "تثبيت المحرك",
-      "stt_install_desc": "يقوم بتنزيل نسخة whisper.cpp المخصصة للمعالج ويضعها في المكان الذي تبحث فيه Athena عنها. بحجم 20 MB تقريبًا، ويعمل حاليًا على Windows فقط.",
       "stt_install_title": "ثبّت المحرك من أجلي",
       "stt_models_engine_first": "المحرك أعلاه غير مثبت بعد. يمكنك تنزيل نموذج الآن، لكن النسخ الصوتي يعمل فقط بعد توفر الاثنين معاً.",
       "stt_models_summary": "{downloaded} من {total}",
       "voice_section_input": "الإدخال الصوتي",
-      "voice_section_output": "الإخراج الصوتي"
+      "voice_section_output": "الإخراج الصوتي",
+      "stt_install_desc": "يُنزّل إصدار whisper.cpp ويضعه في المكان الذي تبحث فيه Athena عنه. حوالي 8 MB، ومتاح حالياً على Windows فقط."
     },
     "artist_gallery": {
       "loading_viewer": "جارٍ تحميل العارض…",

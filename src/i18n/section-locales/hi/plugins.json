@@ -2276,7 +2276,6 @@
     "stt_engine_status_desc": "स्थानीय ट्रांसक्रिप्शन के लिए whisper.cpp बाइनरी इंस्टॉल होनी चाहिए।",
     "stt_installed": "इंजन इंस्टॉल है",
     "stt_not_installed": "इंजन इंस्टॉल नहीं है",
-    "stt_install_hint": "whisper.cpp बाइनरी को नीचे दिए गए पथ पर रखें (या PERSONAS_WHISPER_BIN सेट करें)। github.com/ggerganov/whisper.cpp/releases से एक बिल्ड प्राप्त करें।",
     "stt_models_title": "मॉडल",
     "stt_models_desc": "Download a मॉडल, then select it. Smaller = faster; larger = more accurate.",
     "stt_model_select": "उपयोग करें",
@@ -2664,12 +2663,12 @@
     "stt_compare_whisper_unsupported": "माइक्रोफ़ोन कैप्चर उपलब्ध नहीं है, इसलिए लोकल इंजन यहाँ नहीं चल सकता।",
     "stt_compare_working": "ट्रांसक्राइब हो रहा है",
     "stt_install_button": "इंजन इंस्टॉल करें",
-    "stt_install_desc": "यह whisper.cpp का CPU बिल्ड डाउनलोड करता है और इसे वहाँ रखता है जहाँ Athena इसे खोजती है। लगभग 20 MB, फ़िलहाल केवल Windows के लिए उपलब्ध है।",
     "stt_install_title": "मेरे लिए इंजन इंस्टॉल करें",
     "stt_models_engine_first": "ऊपर दिया गया इंजन अभी इंस्टॉल नहीं है। आप अभी एक मॉडल डाउनलोड कर सकते हैं, लेकिन ट्रांसक्रिप्शन तभी काम करेगा जब दोनों मौजूद हों।",
     "stt_models_summary": "{total} में से {downloaded}",
     "voice_section_input": "आवाज़ इनपुट",
-    "voice_section_output": "आवाज़ आउटपुट"
+    "voice_section_output": "आवाज़ आउटपुट",
+    "stt_install_desc": "whisper.cpp बिल्ड डाउनलोड करता है और उसे वहां रखता है जहां Athena उसे ढूंढता है। लगभग 8 MB, फिलहाल केवल Windows के लिए।"
   },
   "artist_gallery": {
     "loading_viewer": "viewer लोड हो रहा है…",

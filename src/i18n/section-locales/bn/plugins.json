@@ -2276,7 +2276,6 @@
     "stt_engine_status_desc": "স্থানীয় ট্রান্সক্রিপশনের জন্য whisper.cpp বাইনারি ইনস্টল থাকা প্রয়োজন।",
     "stt_installed": "ইঞ্জিন ইনস্টল করা আছে",
     "stt_not_installed": "ইঞ্জিন ইনস্টল করা নেই",
-    "stt_install_hint": "নিচের পথে whisper.cpp বাইনারি রাখুন (অথবা PERSONAS_WHISPER_BIN সেট করুন)। github.com/ggerganov/whisper.cpp/releases থেকে একটি বিল্ড সংগ্রহ করুন।",
     "stt_models_title": "মডেল",
     "stt_models_desc": "Download a মডেল, then select it. Smaller = faster; larger = more accurate.",
     "stt_model_select": "ব্যবহার করুন",
@@ -2664,12 +2663,12 @@
     "stt_compare_whisper_unsupported": "মাইক্রোফোন ক্যাপচার উপলব্ধ নেই, তাই লোকাল ইঞ্জিন এখানে চলতে পারবে না।",
     "stt_compare_working": "ট্রান্সক্রাইব হচ্ছে",
     "stt_install_button": "ইঞ্জিন ইনস্টল করুন",
-    "stt_install_desc": "whisper.cpp-এর CPU বিল্ড ডাউনলোড করে Athena যেখানে খোঁজে সেখানে রাখে। প্রায় 20 MB, আপাতত শুধু Windows-এর জন্য।",
     "stt_install_title": "আমার জন্য ইঞ্জিন ইনস্টল করুন",
     "stt_models_engine_first": "উপরের ইঞ্জিনটি এখনো ইনস্টল করা হয়নি। আপনি এখনই একটি মডেল ডাউনলোড করতে পারেন, তবে ট্রান্সক্রিপশন তখনই কাজ করবে যখন দুটোই প্রস্তুত থাকবে।",
     "stt_models_summary": "{total} এর মধ্যে {downloaded}",
     "voice_section_input": "স্পিচ ইনপুট",
-    "voice_section_output": "স্পিচ আউটপুট"
+    "voice_section_output": "স্পিচ আউটপুট",
+    "stt_install_desc": "whisper.cpp বিল্ড ডাউনলোড করে Athena যেখানে এটি খোঁজে সেখানে রাখে। প্রায় 8 MB, আপাতত শুধু Windows-এর জন্য।"
   },
   "artist_gallery": {
     "loading_viewer": "ভিউয়ার লোড হচ্ছে…",

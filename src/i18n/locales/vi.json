@@ -14728,7 +14728,6 @@
       "stt_engine_status_desc": "Phiên âm cục bộ cần cài đặt tệp thực thi whisper.cpp.",
       "stt_installed": "Đã cài đặt công cụ",
       "stt_not_installed": "Chưa cài đặt công cụ",
-      "stt_install_hint": "Đặt tệp thực thi whisper.cpp vào đường dẫn bên dưới (hoặc đặt biến PERSONAS_WHISPER_BIN). Tải bản build tại github.com/ggerganov/whisper.cpp/releases.",
       "stt_models_title": "Mô hình",
       "stt_models_desc": "Download a mô hình, then select it. Smaller = faster; larger = more accurate.",
       "stt_model_select": "Dùng",
@@ -15116,12 +15115,12 @@
       "stt_compare_whisper_unsupported": "Không thể truy cập micro, nên công cụ cục bộ không thể chạy ở đây.",
       "stt_compare_working": "Đang phiên âm",
       "stt_install_button": "Cài đặt",
-      "stt_install_desc": "Tải xuống bản dựng CPU của whisper.cpp và đặt vào đúng vị trí Athena tìm kiếm. Khoảng 20 MB, hiện tại chỉ hỗ trợ Windows.",
       "stt_install_title": "Cài đặt engine cho tôi",
       "stt_models_engine_first": "Công cụ ở trên vẫn chưa được cài đặt. Bạn có thể tải mô hình xuống ngay bây giờ, nhưng việc phiên âm chỉ hoạt động khi cả hai đã sẵn sàng.",
       "stt_models_summary": "{downloaded}/{total}",
       "voice_section_input": "Đầu vào giọng nói",
-      "voice_section_output": "Đầu ra giọng nói"
+      "voice_section_output": "Đầu ra giọng nói",
+      "stt_install_desc": "Tải xuống bản build whisper.cpp và đặt vào nơi Athena tìm kiếm. Khoảng 8 MB, hiện chỉ hỗ trợ Windows."
     },
     "artist_gallery": {
       "loading_viewer": "Đang tải trình xem…",

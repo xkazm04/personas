@@ -14728,7 +14728,6 @@
       "stt_engine_status_desc": "Lokální přepis vyžaduje nainstalovaný binární soubor whisper.cpp.",
       "stt_installed": "Modul nainstalován",
       "stt_not_installed": "Modul není nainstalován",
-      "stt_install_hint": "Umístěte binární soubor whisper.cpp na cestu níže (nebo nastavte PERSONAS_WHISPER_BIN). Sestavení najdete na github.com/ggerganov/whisper.cpp/releases.",
       "stt_models_title": "Modely",
       "stt_models_desc": "Stáhněte model a poté ho vyberte. Menší = rychlejší, větší = přesnější.",
       "stt_model_select": "Použít",
@@ -15116,12 +15115,12 @@
       "stt_compare_whisper_unsupported": "Záznam z mikrofonu není k dispozici, takže lokální engine tu nemůže fungovat.",
       "stt_compare_working": "Přepisuje",
       "stt_install_button": "Nainstalovat",
-      "stt_install_desc": "Stáhne CPU sestavení whisper.cpp a umístí ho tam, kde ho Athena hledá. Přibližně 20 MB, zatím jen pro Windows.",
       "stt_install_title": "Nainstalovat engine za mě",
       "stt_models_engine_first": "Výše uvedený engine ještě není nainstalován. Model si můžete stáhnout hned, ale přepis bude fungovat až po instalaci obou součástí.",
       "stt_models_summary": "{downloaded} z {total}",
       "voice_section_input": "Hlasový vstup",
-      "voice_section_output": "Hlasový výstup"
+      "voice_section_output": "Hlasový výstup",
+      "stt_install_desc": "Stáhne sestavení whisper.cpp a umístí ho tam, kde ho Athena hledá. Přibližně 8 MB, zatím pouze pro Windows."
     },
     "artist_gallery": {
       "loading_viewer": "Načítání prohlížeče…",

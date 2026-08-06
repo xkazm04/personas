@@ -14728,7 +14728,6 @@
       "stt_engine_status_desc": "Transkripsi lokal memerlukan binary whisper.cpp yang terpasang.",
       "stt_installed": "Mesin terpasang",
       "stt_not_installed": "Mesin tidak terpasang",
-      "stt_install_hint": "Letakkan binary whisper.cpp di jalur di bawah ini (atau atur PERSONAS_WHISPER_BIN). Unduh build dari github.com/ggerganov/whisper.cpp/releases.",
       "stt_models_title": "Model",
       "stt_models_desc": "Unduh model, lalu pilih. Lebih kecil = lebih cepat; lebih besar = lebih akurat.",
       "stt_model_select": "Gunakan",
@@ -15116,12 +15115,12 @@
       "stt_compare_whisper_unsupported": "Penangkapan mikrofon tidak tersedia, jadi mesin lokal tidak dapat berjalan di sini.",
       "stt_compare_working": "Mentranskripsi",
       "stt_install_button": "Instal Mesin",
-      "stt_install_desc": "Mengunduh build CPU whisper.cpp dan menempatkannya di lokasi yang dicari Athena. Sekitar 20 MB, untuk saat ini hanya Windows.",
       "stt_install_title": "Instalkan Mesinnya untuk Saya",
       "stt_models_engine_first": "Mesin di atas belum terpasang. Anda bisa mengunduh model sekarang, tetapi transkripsi baru berfungsi setelah keduanya terpasang.",
       "stt_models_summary": "{downloaded} dari {total}",
       "voice_section_input": "Input Suara",
-      "voice_section_output": "Output Suara"
+      "voice_section_output": "Output Suara",
+      "stt_install_desc": "Mengunduh build whisper.cpp dan menempatkannya di lokasi yang dicari Athena. Sekitar 8 MB, saat ini hanya untuk Windows."
     },
     "artist_gallery": {
       "loading_viewer": "Memuat penampil…",

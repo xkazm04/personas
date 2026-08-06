@@ -299,7 +299,15 @@ function WhisperConfig() {
               */}
               {!status?.installed && (
                 <>
+                  <p className="typo-caption">{t.plugins.companion.stt_install_desc}</p>
+                  {/*
+                    Embedded: this section already IS "Whisper engine", so
+                    the install block contributes only its action and its
+                    progress bar. A bordered card with its own title inside
+                    this card read as two panels sharing one box.
+                  */}
                   <VoiceEngineInstallBlock
+                    embedded
                     progressEvent={STT_INSTALL_EVENT}
                     onDownload={companionSttInstallEngine}
                     onDone={() => void refreshStatus()}
@@ -309,7 +317,6 @@ function WhisperConfig() {
                     installButtonLabel={t.plugins.companion.stt_install_button}
                     logPrefix="stt.install"
                   />
-                  <p className="typo-caption">{t.plugins.companion.stt_install_hint}</p>
                 </>
               )}
             </>

@@ -14728,7 +14728,6 @@
       "stt_engine_status_desc": "Для локальной расшифровки нужен установленный бинарный файл whisper.cpp.",
       "stt_installed": "Движок установлен",
       "stt_not_installed": "Движок не установлен",
-      "stt_install_hint": "Поместите бинарный файл whisper.cpp по указанному ниже пути (или задайте PERSONAS_WHISPER_BIN). Скачать сборку можно на github.com/ggerganov/whisper.cpp/releases.",
       "stt_models_title": "Модели",
       "stt_models_desc": "Download a модель, then select it. Smaller = faster; larger = more accurate.",
       "stt_model_select": "Использовать",
@@ -15116,12 +15115,12 @@
       "stt_compare_whisper_unsupported": "Захват микрофона недоступен, поэтому локальный движок здесь не работает.",
       "stt_compare_working": "Расшифровка",
       "stt_install_button": "Установить движок",
-      "stt_install_desc": "Загружает CPU-сборку whisper.cpp и помещает её туда, где её ищет Athena. Около 20 MB, пока только для Windows.",
       "stt_install_title": "Установи движок за меня",
       "stt_models_engine_first": "Движок, указанный выше, еще не установлен. Скачать модель можно уже сейчас, но транскрибация заработает только тогда, когда будут готовы оба компонента.",
       "stt_models_summary": "{downloaded} из {total}",
       "voice_section_input": "Голосовой ввод",
-      "voice_section_output": "Голосовой вывод"
+      "voice_section_output": "Голосовой вывод",
+      "stt_install_desc": "Загружает сборку whisper.cpp и помещает её туда, где её ищет Athena. Около 8 MB, пока только для Windows."
     },
     "artist_gallery": {
       "loading_viewer": "Загрузка просмотрщика…",

@@ -41,8 +41,14 @@ pub const INSTALL_EVENT: &str = "companion://stt-install";
 /// Pinned to a specific tag rather than `latest` so an upstream release
 /// cannot silently change what this button installs. Bumping it is a
 /// one-line change here.
+///
+/// **Verify a new URL with an actual request before pinning it.** The
+/// first version of this constant was wrong twice over: the `ggerganov/`
+/// org (the repo now lives under `ggml-org/`) and tag `v1.7.4`, which
+/// predates these Windows assets. Both looked plausible and both 404'd
+/// on the very first click. The asset NAME was the only correct part.
 const ENGINE_ARCHIVE_URL: &str =
-    "https://github.com/ggerganov/whisper.cpp/releases/download/v1.7.4/whisper-bin-x64.zip";
+    "https://github.com/ggml-org/whisper.cpp/releases/download/v1.9.2/whisper-bin-x64.zip";
 
 const DOWNLOAD_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(20 * 60);
 
