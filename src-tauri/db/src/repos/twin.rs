@@ -36,7 +36,11 @@ fn row_to_twin_profile(row: &Row) -> rusqlite::Result<TwinProfile> {
 /// Slugify a display name into a vault-folder-safe identifier.
 /// Lowercases, replaces non-alphanumeric runs with `-`, trims leading/trailing
 /// dashes. Empty result falls back to "twin".
-fn slugify(name: &str) -> String {
+///
+/// `pub` so importers (portability bundles) can re-derive a slug rather than
+/// carry the source machine's — the slug is UNIQUE and doubles as the Obsidian
+/// vault folder name, so it can never travel.
+pub fn slugify(name: &str) -> String {
     let mut out = String::with_capacity(name.len());
     let mut prev_dash = true; // suppress leading dashes
     for ch in name.chars() {
@@ -63,6 +67,14 @@ fn slugify(name: &str) -> String {
 /// Resolve a unique slug given a base — appends `-2`, `-3`, ... if needed.
 fn unique_slug(pool: &DbPool, base: &str) -> Result<String, AppError> {
     let conn = pool.get()?;
+    unique_slug_on(&conn, base)
+}
+
+/// Connection-scoped flavour of [`unique_slug`]. A bulk importer inserts many
+/// twins inside ONE transaction; the pool-based variant would hand out a second
+/// connection that cannot see those uncommitted rows and would happily return a
+/// slug that is about to collide.
+pub fn unique_slug_on(conn: &rusqlite::Connection, base: &str) -> Result<String, AppError> {
     let mut candidate = base.to_string();
     let mut suffix = 2;
     loop {

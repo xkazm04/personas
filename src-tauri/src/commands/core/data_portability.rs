@@ -26,7 +26,7 @@ use crate::db::repos::resources::{
     team_memories as team_memory_repo, teams as team_repo, tools as tool_repo,
     triggers as trigger_repo,
 };
-use crate::db::DbPool;
+use crate::db::{DbPool, UserDbPool};
 use crate::engine::crypto;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync, require_privileged};
@@ -73,6 +73,23 @@ const MAX_KPI_MEASUREMENTS: usize = 100;
 const MAX_DEV_PROJECTS: usize = 25;
 const MAX_KNOWLEDGE_ENTRIES: usize = 2000;
 
+// Twin plugin caps. A twin's history is the bulkiest thing in a bundle (a
+// year of chat traffic is tens of thousands of rows), so every one of these
+// truncates with an explicit warning rather than silently — see
+// `push_truncation_warning`.
+const MAX_TWINS: usize = 10;
+const MAX_TWIN_COMMUNICATIONS: usize = 5000;
+const MAX_TWIN_MEMORIES: usize = 5000;
+const MAX_TWIN_FACTS: usize = 2000;
+const MAX_TWIN_CONTACTS: usize = 1000;
+const MAX_TWIN_REFLECTIONS: usize = 500;
+const MAX_TWIN_TONES: usize = 50;
+const MAX_TWIN_CHANNELS: usize = 50;
+/// Text-tier knowledge-base caps. Vectors NEVER travel — the target rebuilds
+/// them with its own embedding model via `kb_reindex`.
+const MAX_KB_DOCUMENTS: usize = 500;
+const MAX_KB_CHUNKS: usize = 10_000;
+
 /// Hard ceiling on a single exported skill file. Skills are markdown +
 /// small reference files; anything bigger is a binary asset or generated
 /// artifact that has no business travelling in a portability bundle.
@@ -112,6 +129,19 @@ pub struct PortabilityBundle {
     pub dev_projects: Vec<DevProjectExport>,
     #[serde(default)]
     pub workspace_knowledge: Vec<WorkspaceKnowledgeExport>,
+    /// Digital twins (profile + tone/communication/memory/fact/contact/
+    /// reflection/channel graph + the TEXT tier of a bound knowledge base).
+    /// Additive + serde-default, same precedent as `kpis` / `dev_projects` —
+    /// no `format_version` bump.
+    #[serde(default)]
+    pub twins: Vec<TwinExport>,
+    /// What the export DROPPED, in the exporter's own words. Every cap in this
+    /// module truncates rather than failing; before this field existed those
+    /// truncations were completely silent on both ends. The importer replays
+    /// them into `PortabilityImportResult.warnings` so the person who receives
+    /// a bundle learns what is missing from it. See `push_truncation_warning`.
+    #[serde(default)]
+    pub export_warnings: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encrypted_credentials: Option<CredentialExportEnvelope>,
 }
@@ -129,6 +159,8 @@ pub enum ExportScope {
         project_ids: Vec<String>,
         #[serde(default)]
         workspace_ids: Vec<String>,
+        #[serde(default)]
+        twin_ids: Vec<String>,
     },
 }
 
@@ -813,6 +845,211 @@ pub struct WorkspaceAdoptionExport {
 }
 
 // ============================================================================
+// Twin export types
+//
+// `TwinExport` mirrors `twin_profiles` BY EXCLUSION: every column travels
+// except the three that are meaningless (or actively harmful) on another
+// machine —
+//   * `slug`             — machine-derived, UNIQUE; re-derived on import.
+//   * `is_active`        — a global singleton (`set_active_profile` demotes
+//                          every other row); an import must never seize it.
+//   * `obsidian_subpath` — a local vault path.
+// `knowledge_base_id` is not carried as a raw id either: the id addresses a
+// row in ANOTHER database (the user DB) that would not exist on the target,
+// so the KB itself travels as `knowledge_base` (text tier only) and the
+// binding is re-established against the freshly created row.
+//
+// `twin_voice_profiles` is NOT exported at all — the voice milestone was
+// retired 2026-07-10 and the table is dead.
+// ============================================================================
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TwinExport {
+    pub id: String,
+    pub name: String,
+    pub bio: Option<String>,
+    pub role: Option<String>,
+    pub languages: Option<String>,
+    pub pronouns: Option<String>,
+    pub training_directives: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+    #[serde(default)]
+    pub tones: Vec<TwinToneExport>,
+    #[serde(default)]
+    pub communications: Vec<TwinCommunicationExport>,
+    #[serde(default)]
+    pub pending_memories: Vec<TwinPendingMemoryExport>,
+    #[serde(default)]
+    pub distilled_facts: Vec<TwinDistilledFactExport>,
+    #[serde(default)]
+    pub contacts: Vec<TwinContactExport>,
+    #[serde(default)]
+    pub reflections: Vec<TwinReflectionExport>,
+    #[serde(default)]
+    pub channels: Vec<TwinChannelExport>,
+    /// Text tier of the bound knowledge base, when one is bound AND resolvable.
+    /// Never contains vectors.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub knowledge_base: Option<TwinKnowledgeBaseExport>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TwinToneExport {
+    pub id: String,
+    pub channel: String,
+    pub voice_directives: String,
+    pub examples_json: Option<String>,
+    pub constraints_json: Option<String>,
+    pub length_hint: Option<String>,
+    pub updated_at: String,
+}
+
+/// One logged interaction. `summary` and `key_facts_json` are MANDATORY, not
+/// optional garnish: the Training Studio stores the interview QUESTION in
+/// `summary` (and its extracted facts in `key_facts_json`) while `content`
+/// holds only the answer. Dropping them loses half of every training pair.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TwinCommunicationExport {
+    pub id: String,
+    pub channel: String,
+    pub direction: String,
+    pub contact_handle: Option<String>,
+    pub content: String,
+    pub summary: Option<String>,
+    pub key_facts_json: Option<String>,
+    pub occurred_at: String,
+    pub created_at: String,
+}
+
+/// A memory in the approval inbox. ALL THREE statuses travel
+/// (pending / approved / rejected) along with `reviewer_notes` — a rejected
+/// memory plus the reason it was rejected is training signal about the
+/// operator's taste, not garbage.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TwinPendingMemoryExport {
+    pub id: String,
+    pub channel: Option<String>,
+    pub content: String,
+    pub title: Option<String>,
+    pub importance: i32,
+    pub status: String,
+    pub reviewer_notes: Option<String>,
+    pub source_communication_id: Option<String>,
+    pub created_at: String,
+    pub reviewed_at: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TwinDistilledFactExport {
+    pub id: String,
+    pub contact_handle: Option<String>,
+    pub content: String,
+    pub importance: i32,
+    /// JSON array of source `twin_communications` ids. Remapped on import;
+    /// a fact whose sources all fail to remap is DROPPED, never written with
+    /// an empty array (the repo rejects that shape outright).
+    pub sources_json: String,
+    pub created_at: String,
+    pub last_seen_at: String,
+}
+
+/// A contact row read straight from `twin_contacts`. Note that
+/// `repos::twin::list_contacts_with_activity` returns computed
+/// `message_count` / `last_seen_at` columns that do NOT exist in the table —
+/// this export queries the table directly so nothing derived travels.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TwinContactExport {
+    pub id: String,
+    pub handle: String,
+    pub alias: Option<String>,
+    pub notes: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TwinReflectionExport {
+    pub id: String,
+    pub prompt_seed: String,
+    pub content: String,
+    pub created_at: String,
+}
+
+/// A deployment channel binding. `credential_id` / `persona_id` are LOCAL vault
+/// / persona references that almost never resolve on another machine, so the
+/// import keeps them verbatim, forces `is_active = 0`, and warns — auto-matching
+/// a channel onto the wrong credential would post as the twin to a stranger's
+/// Discord.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TwinChannelExport {
+    pub id: String,
+    pub channel_type: String,
+    pub credential_id: String,
+    pub persona_id: Option<String>,
+    pub label: Option<String>,
+    pub is_active: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+/// The TEXT tier of a twin's bound knowledge base, read from the USER database
+/// (`personas_data.db`) rather than the app database the rest of this bundle
+/// comes from. Vectors are deliberately absent: `kb_vec_*` virtual tables and
+/// every embedding stay home, and the target regenerates them with its own
+/// embedding model via `kb_reindex` after the import commits.
+///
+/// `credential_id`, `document_count`, `chunk_count` and `status` are omitted —
+/// all four are re-derived on the target (the vault shell gets a fresh
+/// `kb-cred-<id>`, the counts are recomputed from what actually landed).
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TwinKnowledgeBaseExport {
+    pub id: String,
+    pub name: String,
+    pub description: Option<String>,
+    pub embedding_model: String,
+    pub embedding_dims: i64,
+    pub chunk_size: i64,
+    pub chunk_overlap: i64,
+    pub created_at: String,
+    pub updated_at: String,
+    #[serde(default)]
+    pub documents: Vec<KbDocumentExport>,
+    #[serde(default)]
+    pub chunks: Vec<KbChunkExport>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct KbDocumentExport {
+    pub id: String,
+    pub source_type: String,
+    pub source_path: Option<String>,
+    pub title: String,
+    pub content_hash: String,
+    pub byte_size: i64,
+    pub metadata_json: Option<String>,
+    pub page_count: Option<i64>,
+    pub empty_pages: i64,
+    pub status: String,
+    pub error_message: Option<String>,
+    pub indexed_at: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct KbChunkExport {
+    pub id: String,
+    pub document_id: String,
+    pub chunk_index: i64,
+    pub content: String,
+    pub token_count: i64,
+    pub metadata_json: Option<String>,
+    pub source_page: Option<i64>,
+    pub extraction_confidence: f64,
+    pub created_at: String,
+}
+
+// ============================================================================
 // Import result types
 // ============================================================================
 
@@ -839,10 +1076,18 @@ pub struct PortabilityImportResult {
     pub skills_written: u32,
     #[serde(default)]
     pub skills_deferred: u32,
-    /// Non-empty when project conflicts were detected on pass 1 — the frontend
-    /// shows a resolution UI and re-invokes with `project_resolutions_json`.
+    // Twin counters (WP1).
     #[serde(default)]
-    pub project_conflicts: Vec<ProjectConflict>,
+    pub twins_imported: u32,
+    #[serde(default)]
+    pub twins_skipped: u32,
+    #[serde(default)]
+    pub twin_kb_chunks_imported: u32,
+    /// Non-empty when conflicts were detected on pass 1 — the frontend shows a
+    /// resolution UI and re-invokes with `resolutions_json`, whose keys
+    /// are `"<kind>:<bundle_id>"` (see [`ImportConflict`]).
+    #[serde(default)]
+    pub import_conflicts: Vec<ImportConflict>,
     /// Path of the selected bundle file — returned alongside conflicts so the
     /// frontend can pass it back for the resolution pass (mirrors
     /// `CredentialImportResult::file_path`).
@@ -850,23 +1095,53 @@ pub struct PortabilityImportResult {
     pub bundle_file_path: Option<String>,
     pub warnings: Vec<String>,
     pub id_mapping: std::collections::HashMap<String, String>,
+    /// Knowledge bases created by this import that still need their vectors
+    /// rebuilt. Internal plumbing between [`import_bundle`] and the command
+    /// layer (which owns the `AppHandle` + embedder needed to run
+    /// `kb_reindex`) — never crosses IPC, because a vector index is a local
+    /// artifact and not part of what the user asked to see.
+    #[serde(skip)]
+    #[ts(skip)]
+    pub pending_kb_reindex: Vec<String>,
 }
 
-/// A bundled dev project that collides with a project already in this
-/// workspace. Matched primarily by `root_path` (UNIQUE in `dev_projects`),
-/// falling back to a case-insensitive name match. The caller resolves each
-/// conflict with `"replace" | "skip" | "duplicate"` keyed by
-/// `bundle_project_id`.
+/// A bundled entity that collides with one already present in this workspace.
+///
+/// Generic over the entity kind so a single two-pass resolution flow serves
+/// every section of the bundle. The caller resolves each conflict with
+/// `"replace" | "skip" | "duplicate"` in a flat map keyed
+/// **`"<kind>:<bundle_id>"`** (e.g. `"project:abc"`, `"twin:def"`).
+///
+/// | `kind`    | matched by                          | `detail`    |
+/// |-----------|-------------------------------------|-------------|
+/// | `project` | `root_path` (UNIQUE), else `name`   | `root_path` |
+/// | `twin`    | `name COLLATE NOCASE`               | `None`      |
+///
+/// Twins are matched on name, never slug: the slug is machine-derived from the
+/// name at creation time and collides only by accident.
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
-pub struct ProjectConflict {
-    pub bundle_project_id: String,
+pub struct ImportConflict {
+    /// `"project"` | `"twin"`. Kept a `String` on the Rust side (adding a kind
+    /// is a one-line change at the call site), but exported to TypeScript as
+    /// the literal union so the frontend can exhaustively switch on it.
+    #[ts(type = "\"project\" | \"twin\"")]
+    pub kind: String,
+    pub bundle_id: String,
     pub name: String,
-    pub root_path: String,
-    pub existing_project_id: String,
-    /// `"root_path"` or `"name"`.
+    /// Extra disambiguation for the resolution UI — the project's `root_path`,
+    /// or `None` when the kind has nothing further to show.
+    pub detail: Option<String>,
+    pub existing_id: String,
+    /// `"root_path"` | `"name"` | `"slug"`.
     pub matched_by: String,
+}
+
+/// Resolution-map key for a conflict. The map is flat and shared by every
+/// entity kind, so the key has to carry the kind.
+fn conflict_key(kind: &str, bundle_id: &str) -> String {
+    format!("{kind}:{bundle_id}")
 }
 
 // ============================================================================
@@ -886,6 +1161,15 @@ pub struct ExportStats {
     pub kpi_count: u32,
     pub dev_project_count: u32,
     pub workspace_knowledge_count: u32,
+    pub twin_count: u32,
+    /// Pre-flight truncation forecast: which top-level caps this workspace
+    /// already exceeds, so the export modal can say what an export would drop
+    /// BEFORE the user runs it. The export commands themselves return only
+    /// `bool`, so this preview is the only channel that reaches the exporting
+    /// user; the actual per-site truncation records ride inside the bundle as
+    /// `PortabilityBundle::export_warnings` and surface on the import side.
+    #[serde(default)]
+    pub warnings: Vec<String>,
 }
 
 // ============================================================================
@@ -932,6 +1216,47 @@ fn compute_export_stats(pool: &DbPool) -> Result<ExportStats, AppError> {
     let dev_project_count = scalar_count("SELECT COUNT(*) FROM dev_projects").unwrap_or(0);
     let workspace_knowledge_count =
         scalar_count("SELECT COUNT(*) FROM workspace_knowledge").unwrap_or(0);
+    let twin_count = scalar_count("SELECT COUNT(*) FROM twin_profiles").unwrap_or(0);
+
+    // Pre-flight cap forecast. Only the workspace-wide top-level caps can be
+    // checked from scalar counts; per-entity caps (a single twin's 5k-message
+    // history, a project's skills) are reported by the export itself through
+    // the bundle's `export_warnings`.
+    //
+    // The two behaviours are NOT the same and the message must not blur them:
+    // projects / KPIs / twins truncate on the way out, while personas / tools /
+    // teams / credentials are not capped by the exporter at all — an oversize
+    // bundle writes fine and is then REJECTED by `validate_bundle` on the way
+    // in. That asymmetry is pre-existing; naming it is the least this preview
+    // can do.
+    let mut warnings = Vec::new();
+    let truncates = |w: &mut Vec<String>, label: &str, have: u32, cap: usize| {
+        if have as usize > cap {
+            w.push(format!(
+                "{label}: this workspace has {have}, but an export carries at most {cap} — {} will be left behind.",
+                have as usize - cap
+            ));
+        }
+    };
+    let rejects = |w: &mut Vec<String>, label: &str, have: u32, cap: usize| {
+        if have as usize > cap {
+            w.push(format!(
+                "{label}: this workspace has {have}, over the {cap} an import accepts. The file will be written but refused when imported — split the selection."
+            ));
+        }
+    };
+    rejects(&mut warnings, "Personas", personas.len() as u32, MAX_PERSONAS);
+    rejects(&mut warnings, "Tools", tools.len() as u32, MAX_TOOLS);
+    rejects(&mut warnings, "Teams", teams.len() as u32, MAX_TEAMS);
+    rejects(
+        &mut warnings,
+        "Credentials",
+        credentials.len() as u32,
+        MAX_CREDENTIALS,
+    );
+    truncates(&mut warnings, "KPIs", kpi_count, MAX_KPIS);
+    truncates(&mut warnings, "Projects", dev_project_count, MAX_DEV_PROJECTS);
+    truncates(&mut warnings, "Twins", twin_count, MAX_TWINS);
 
     Ok(ExportStats {
         persona_count: personas.len() as u32,
@@ -944,7 +1269,29 @@ fn compute_export_stats(pool: &DbPool) -> Result<ExportStats, AppError> {
         kpi_count,
         dev_project_count,
         workspace_knowledge_count,
+        twin_count,
+        warnings,
     })
+}
+
+/// Record a cap-truncation in the export's warning channel. Every `.take()` /
+/// `break` in this module funnels through here — before it existed the caps
+/// dropped data with no signal on either end while the import side hard-
+/// rejected the very same overflow.
+fn push_truncation_warning(
+    warnings: &mut Vec<String>,
+    what: &str,
+    kept: usize,
+    total: usize,
+    context: &str,
+) {
+    if total <= kept {
+        return;
+    }
+    warnings.push(format!(
+        "{context}: kept {kept} of {total} {what}; {} dropped (export cap).",
+        total - kept
+    ));
 }
 
 /// A KPI is part of an exportable "setup" when it is actively measured or
@@ -966,8 +1313,13 @@ pub async fn export_full(
 ) -> Result<bool, AppError> {
     let pool = &state.db;
     // Full export carries the entire workspace, KPI setup included.
-    let mut bundle =
-        build_export_bundle(pool, ExportScope::Full, include_memories.unwrap_or(true), true)?;
+    let mut bundle = build_export_bundle(
+        pool,
+        Some(&state.user_db),
+        ExportScope::Full,
+        include_memories.unwrap_or(true),
+        true,
+    )?;
 
     if let Some(ref pp) = passphrase {
         if pp.len() >= 8 {
@@ -993,6 +1345,7 @@ pub async fn export_selective(
     credential_ids: Vec<String>,
     project_ids: Vec<String>,
     workspace_ids: Vec<String>,
+    twin_ids: Vec<String>,
     include_memories: Option<bool>,
     include_kpis: Option<bool>,
     passphrase: Option<String>,
@@ -1011,9 +1364,11 @@ pub async fn export_selective(
         credential_ids: credential_ids.clone(),
         project_ids: project_ids.clone(),
         workspace_ids: workspace_ids.clone(),
+        twin_ids: twin_ids.clone(),
     };
     let mut bundle = build_export_bundle(
         pool,
+        Some(&state.user_db),
         scope,
         include_memories.unwrap_or(true),
         include_kpis.unwrap_or(true),
@@ -1039,21 +1394,29 @@ pub async fn export_selective(
 /// When `passphrase` is provided and the bundle contains `encrypted_credentials`,
 /// credential secrets are decrypted and written to the imported credential shells.
 ///
-/// Two-pass project conflict flow (mirrors `import_credentials`):
-/// - Pass 1 (no `project_resolutions_json`): all non-project sections import
-///   immediately; conflicting dev projects are returned in
-///   `project_conflicts` together with `bundle_file_path`.
-/// - Pass 2: the caller re-invokes with `project_resolutions_json` (a JSON map
-///   of bundle project id → `"replace" | "skip" | "duplicate"`) and
+/// Two-pass conflict flow (mirrors `import_credentials`):
+/// - Pass 1 (no `resolutions_json`): all non-conflicting sections
+///   import immediately; colliding entities are returned in `import_conflicts`
+///   together with `bundle_file_path`.
+/// - Pass 2: the caller re-invokes with `resolutions_json` (a JSON map
+///   of `"<kind>:<bundle_id>"` → `"replace" | "skip" | "duplicate"`) and
 ///   `file_path_override` set to the returned `bundle_file_path`; only the
-///   resolved projects are processed.
+///   resolved entities are processed.
+///
+/// The parameter was `project_resolutions_json` while the flow was
+/// project-only; it is `resolutions_json` (invoke key `resolutionsJson`) now
+/// that the map is generic. Tauri silently drops payload keys a command does
+/// not declare, so a caller still sending only the old name degrades into a
+/// pass-1 re-run rather than erroring — the remaining call sites
+/// (`src/api/system/dataPortability.ts`, `src/test/automation/bridge.ts`,
+/// `tools/test-mcp/e2e_portability.py`) must send the new key.
 #[tauri::command]
 #[requires(privileged)]
 pub async fn import_portability_bundle(
     state: State<'_, Arc<AppState>>,
     app: AppHandle,
     passphrase: Option<String>,
-    project_resolutions_json: Option<String>,
+    resolutions_json: Option<String>,
     file_path_override: Option<String>,
 ) -> Result<Option<PortabilityImportResult>, AppError> {
     let path = if let Some(override_path) = file_path_override {
@@ -1081,11 +1444,53 @@ pub async fn import_portability_bundle(
 
     let result = run_bundle_import(
         &state.db,
+        Some(&state.user_db),
         &path,
         passphrase.as_deref(),
-        project_resolutions_json.as_deref(),
+        resolutions_json.as_deref(),
     )?;
+    spawn_pending_kb_reindex(&app, &state, &result);
     Ok(Some(result))
+}
+
+/// Kick the background re-embed for every knowledge base an import created.
+/// Vectors never travel in a bundle, so a freshly imported KB has text but no
+/// index until this runs. Fire-and-forget by design: `kb_reindex` returns a job
+/// id immediately and reports through the usual `kb:ingest_*` events, and a
+/// build without the `ml` feature has no embedder at all — in which case the
+/// KB stays searchable by keyword (FTS) and the user can reindex later.
+fn spawn_pending_kb_reindex(
+    app: &AppHandle,
+    state: &State<'_, Arc<AppState>>,
+    result: &PortabilityImportResult,
+) {
+    if result.pending_kb_reindex.is_empty() {
+        return;
+    }
+    #[cfg(feature = "ml")]
+    {
+        for kb_id in &result.pending_kb_reindex {
+            let app = app.clone();
+            let state = state.inner().clone();
+            let kb_id = kb_id.clone();
+            tauri::async_runtime::spawn(async move {
+                if let Err(e) =
+                    crate::commands::credentials::vector_kb::reindex_kb_internal(app, state, kb_id.clone())
+                        .await
+                {
+                    tracing::warn!(kb_id = %kb_id, error = %e, "Imported knowledge base could not be re-indexed");
+                }
+            });
+        }
+    }
+    #[cfg(not(feature = "ml"))]
+    {
+        let _ = (app, state);
+        tracing::info!(
+            count = result.pending_kb_reindex.len(),
+            "Imported knowledge base(s) left unindexed — this build has no embedder (ml feature off)"
+        );
+    }
 }
 
 /// Parse a competitive workflow file (n8n, Zapier, Make) and return a preview
@@ -1155,6 +1560,7 @@ pub async fn export_selective_to_path(
     credential_ids: Vec<String>,
     project_ids: Vec<String>,
     workspace_ids: Vec<String>,
+    twin_ids: Vec<String>,
     include_memories: Option<bool>,
     include_kpis: Option<bool>,
     passphrase: Option<String>,
@@ -1173,9 +1579,11 @@ pub async fn export_selective_to_path(
         credential_ids: credential_ids.clone(),
         project_ids: project_ids.clone(),
         workspace_ids: workspace_ids.clone(),
+        twin_ids: twin_ids.clone(),
     };
     let mut bundle = build_export_bundle(
         pool,
+        Some(&state.user_db),
         scope,
         include_memories.unwrap_or(true),
         include_kpis.unwrap_or(true),
@@ -1209,30 +1617,34 @@ pub async fn export_selective_to_path(
 #[requires(privileged)]
 pub async fn import_portability_bundle_from_path(
     state: State<'_, Arc<AppState>>,
+    app: AppHandle,
     passphrase: Option<String>,
     file_path: String,
-    project_resolutions_json: Option<String>,
+    resolutions_json: Option<String>,
 ) -> Result<Option<PortabilityImportResult>, AppError> {
     let path = std::path::PathBuf::from(&file_path);
     let result = run_bundle_import(
         &state.db,
+        Some(&state.user_db),
         &path,
         passphrase.as_deref(),
-        project_resolutions_json.as_deref(),
+        resolutions_json.as_deref(),
     )?;
+    spawn_pending_kb_reindex(&app, &state, &result);
     Ok(Some(result))
 }
 
 /// Shared body of [`import_portability_bundle`] and its debug from-path twin:
 /// read + parse + version-gate + validate the bundle at `path`, run the DB
-/// import (with optional project conflict resolutions), then apply embedded
-/// encrypted credentials. Keeping the two commands on one code path is what
-/// keeps them in lockstep.
+/// import (with optional conflict resolutions), then apply embedded encrypted
+/// credentials. Keeping the two commands on one code path is what keeps them
+/// in lockstep.
 fn run_bundle_import(
     pool: &DbPool,
+    user_db: Option<&UserDbPool>,
     path: &std::path::Path,
     passphrase: Option<&str>,
-    project_resolutions_json: Option<&str>,
+    resolutions_json: Option<&str>,
 ) -> Result<PortabilityImportResult, AppError> {
     let content = if path.extension().is_some_and(|ext| ext == "zip") {
         read_zip_bundle(path)?
@@ -1253,16 +1665,16 @@ fn run_bundle_import(
 
     validate_bundle(&bundle)?;
 
-    let resolutions: HashMap<String, String> = project_resolutions_json
+    let resolutions: HashMap<String, String> = resolutions_json
         .and_then(|s| serde_json::from_str(s).ok())
         .unwrap_or_default();
     let is_resolution_pass = !resolutions.is_empty();
 
-    let mut result = import_bundle(pool, &bundle, &resolutions)?;
+    let mut result = import_bundle(pool, user_db, &bundle, &resolutions)?;
 
     // Returned conflicts need the file path back so the frontend can re-invoke
     // the resolution pass against the same bundle without a second dialog.
-    if !result.project_conflicts.is_empty() {
+    if !result.import_conflicts.is_empty() {
         result.bundle_file_path = Some(path.to_string_lossy().to_string());
     }
 
@@ -1326,10 +1738,14 @@ fn portable_team_memory_tags(tags: &Option<String>) -> Option<String> {
 
 fn build_export_bundle(
     pool: &DbPool,
+    user_db: Option<&UserDbPool>,
     scope: ExportScope,
     include_memories: bool,
     include_kpis: bool,
 ) -> Result<PortabilityBundle, AppError> {
+    // Everything this export DROPS gets recorded here and travels with the
+    // bundle, so the machine that receives it can tell what is missing.
+    let mut export_warnings: Vec<String> = Vec::new();
     let all_personas = persona_repo::get_all(pool)?;
     let all_tools = tool_repo::get_all_definitions(pool)?;
     let all_teams = team_repo::get_all(pool)?;
@@ -1603,9 +2019,19 @@ fn build_export_bundle(
             }
         };
 
-        source_kpis
+        let exportable: Vec<_> = source_kpis
             .into_iter()
             .filter(|k| is_exportable_kpi(&k.status))
+            .collect();
+        push_truncation_warning(
+            &mut export_warnings,
+            "KPIs",
+            MAX_KPIS.min(exportable.len()),
+            exportable.len(),
+            "KPI setup",
+        );
+        exportable
+            .into_iter()
             .take(MAX_KPIS)
             .map(|k| {
                 let measurements = dev_tools_repo::list_kpi_measurements(
@@ -1654,19 +2080,35 @@ fn build_export_bundle(
     // Dev-tools projects + workspace knowledge. Full scope takes every
     // project and workspace; selective scope takes exactly the requested ids
     // (an empty list means none — same semantics as personas/teams above).
-    let (project_filter, workspace_filter): (Option<&[String]>, Option<&[String]>) = match &scope {
-        ExportScope::Full => (None, None),
+    /// `None` = every row of that kind (Full scope); `Some(ids)` = exactly
+    /// those, where an EMPTY slice means none.
+    type IdFilter<'a> = Option<&'a [String]>;
+    let (project_filter, workspace_filter, twin_filter): (IdFilter, IdFilter, IdFilter) = match
+        &scope
+    {
+        ExportScope::Full => (None, None, None),
         ExportScope::Selective {
             project_ids,
             workspace_ids,
+            twin_ids,
             ..
-        } => (Some(project_ids.as_slice()), Some(workspace_ids.as_slice())),
+        } => (
+            Some(project_ids.as_slice()),
+            Some(workspace_ids.as_slice()),
+            Some(twin_ids.as_slice()),
+        ),
     };
-    let dev_project_exports = collect_dev_project_exports(pool, project_filter)?;
+    let dev_project_exports =
+        collect_dev_project_exports(pool, project_filter, &mut export_warnings)?;
     let bundled_project_ids: Vec<String> =
         dev_project_exports.iter().map(|p| p.id.clone()).collect();
-    let workspace_exports =
-        collect_workspace_knowledge_exports(pool, workspace_filter, &bundled_project_ids)?;
+    let workspace_exports = collect_workspace_knowledge_exports(
+        pool,
+        workspace_filter,
+        &bundled_project_ids,
+        &mut export_warnings,
+    )?;
+    let twin_exports = collect_twin_exports(pool, user_db, twin_filter, &mut export_warnings)?;
 
     Ok(PortabilityBundle {
         format_version: 2,
@@ -1680,6 +2122,8 @@ fn build_export_bundle(
         kpis: kpi_exports,
         dev_projects: dev_project_exports,
         workspace_knowledge: workspace_exports,
+        twins: twin_exports,
+        export_warnings,
         encrypted_credentials: None,
     })
 }
@@ -1709,6 +2153,7 @@ fn query_rows<T>(
 fn collect_dev_project_exports(
     pool: &DbPool,
     filter_ids: Option<&[String]>,
+    export_warnings: &mut Vec<String>,
 ) -> Result<Vec<DevProjectExport>, AppError> {
     if filter_ids.is_some_and(|ids| ids.is_empty()) {
         return Ok(Vec::new());
@@ -1766,6 +2211,9 @@ fn collect_dev_project_exports(
 
     let project_rows: Vec<ProjectRow> = match filter_ids {
         None => {
+            let total: usize = conn
+                .query_row("SELECT COUNT(*) FROM dev_projects", [], |r| r.get::<_, i64>(0))
+                .unwrap_or(0) as usize;
             let sql = format!("SELECT {PROJECT_COLS} FROM dev_projects ORDER BY created_at");
             let mut stmt = conn.prepare(&sql).map_err(AppError::Database)?;
             let rows = stmt.query_map([], map_project).map_err(AppError::Database)?;
@@ -1776,16 +2224,27 @@ fn collect_dev_project_exports(
                     break;
                 }
             }
+            push_truncation_warning(export_warnings, "projects", out.len(), total, "Dev projects");
             out
         }
         Some(ids) => {
-            let sql = format!("SELECT {PROJECT_COLS} FROM dev_projects WHERE id = ?1");
+            let mut unique: Vec<&String> = Vec::new();
             let mut seen = std::collections::HashSet::new();
-            let mut out = Vec::new();
-            for id in ids.iter().take(MAX_DEV_PROJECTS) {
-                if !seen.insert(id.clone()) {
-                    continue;
+            for id in ids {
+                if seen.insert(id.clone()) {
+                    unique.push(id);
                 }
+            }
+            push_truncation_warning(
+                export_warnings,
+                "selected projects",
+                MAX_DEV_PROJECTS.min(unique.len()),
+                unique.len(),
+                "Dev projects",
+            );
+            let sql = format!("SELECT {PROJECT_COLS} FROM dev_projects WHERE id = ?1");
+            let mut out = Vec::new();
+            for id in unique.into_iter().take(MAX_DEV_PROJECTS) {
                 let mut stmt = conn.prepare(&sql).map_err(AppError::Database)?;
                 let mut rows = stmt.query_map([id.as_str()], map_project).map_err(AppError::Database)?;
                 if let Some(row) = rows.next() {
@@ -2423,7 +2882,7 @@ fn collect_dev_project_exports(
             },
         )?;
 
-        let skills = collect_project_skills(&root_path);
+        let skills = collect_project_skills(&root_path, &name, export_warnings);
 
         exports.push(DevProjectExport {
             id,
@@ -2482,7 +2941,11 @@ fn collect_dev_project_exports(
 /// directory (SKILL.md + optional reference files, possibly nested) or a
 /// single `<name>.md`. Missing/unreadable dirs yield an empty vec — a
 /// project whose repo isn't on this machine still exports its DB graph.
-fn collect_project_skills(root_path: &str) -> Vec<SkillFileExport> {
+fn collect_project_skills(
+    root_path: &str,
+    project_name: &str,
+    export_warnings: &mut Vec<String>,
+) -> Vec<SkillFileExport> {
     let skills_dir = std::path::Path::new(root_path).join(".claude").join("skills");
     let Ok(read_dir) = std::fs::read_dir(&skills_dir) else {
         return Vec::new();
@@ -2503,10 +2966,11 @@ fn collect_project_skills(root_path: &str) -> Vec<SkillFileExport> {
             continue;
         }
 
+        let mut dropped: Vec<String> = Vec::new();
         let (name, mut files) = if path.is_dir() {
             let mut files = Vec::new();
-            collect_skill_dir_files(&path, &path, &mut files);
-            (entry_name, files)
+            collect_skill_dir_files(&path, &path, &mut files, &mut dropped);
+            (entry_name.clone(), files)
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             // Single-file skill: skills/<name>.md
             let stem = path
@@ -2514,19 +2978,29 @@ fn collect_project_skills(root_path: &str) -> Vec<SkillFileExport> {
                 .and_then(|s| s.to_str())
                 .unwrap_or("unknown")
                 .to_string();
-            match read_skill_file(&path) {
-                Some(content) => (
+            match read_skill_file_checked(&path) {
+                Ok(content) => (
                     stem,
                     vec![SkillFileEntry {
-                        rel_path: entry_name,
+                        rel_path: entry_name.clone(),
                         content,
                     }],
                 ),
-                None => continue,
+                Err(reason) => {
+                    export_warnings.push(format!(
+                        "Project '{project_name}': skill '{entry_name}' not exported ({reason})."
+                    ));
+                    continue;
+                }
             }
         } else {
             continue;
         };
+        for d in dropped {
+            export_warnings.push(format!(
+                "Project '{project_name}': skill '{entry_name}' file {d} — not exported."
+            ));
+        }
 
         if files.is_empty() {
             continue;
@@ -2558,21 +3032,34 @@ fn collect_project_skills(root_path: &str) -> Vec<SkillFileExport> {
 /// Recursively collect a skill directory's exportable files (rel paths with
 /// forward slashes). Skips the provenance sidecar, oversize files, and
 /// non-UTF-8 content.
-fn collect_skill_dir_files(base: &std::path::Path, dir: &std::path::Path, out: &mut Vec<SkillFileEntry>) {
+fn collect_skill_dir_files(
+    base: &std::path::Path,
+    dir: &std::path::Path,
+    out: &mut Vec<SkillFileEntry>,
+    dropped: &mut Vec<String>,
+) {
     let Ok(read_dir) = std::fs::read_dir(dir) else {
         return;
     };
     for entry in read_dir.flatten() {
         let path = entry.path();
         if path.is_dir() {
-            collect_skill_dir_files(base, &path, out);
+            collect_skill_dir_files(base, &path, out, dropped);
             continue;
         }
         if path.file_name().and_then(|n| n.to_str()) == Some(SKILL_PROVENANCE_FILE) {
             continue;
         }
-        let Some(content) = read_skill_file(&path) else {
-            continue;
+        let rel_label = path
+            .strip_prefix(base)
+            .map(|r| r.to_string_lossy().replace('\\', "/"))
+            .unwrap_or_else(|_| path.to_string_lossy().to_string());
+        let content = match read_skill_file_checked(&path) {
+            Ok(c) => c,
+            Err(reason) => {
+                dropped.push(format!("'{rel_label}' ({reason})"));
+                continue;
+            }
         };
         let Ok(rel) = path.strip_prefix(base) else {
             continue;
@@ -2586,15 +3073,43 @@ fn collect_skill_dir_files(base: &std::path::Path, dir: &std::path::Path, out: &
     }
 }
 
-/// Read one skill file as UTF-8 text, or None when it is oversize
-/// (> [`MAX_SKILL_FILE_BYTES`]), unreadable, or not valid UTF-8.
-fn read_skill_file(path: &std::path::Path) -> Option<String> {
-    let meta = std::fs::metadata(path).ok()?;
-    if meta.len() > MAX_SKILL_FILE_BYTES {
-        return None;
+/// Why a skill file did not make it into the bundle. Reported (not swallowed)
+/// on the export path — a skill silently missing half its reference files is
+/// indistinguishable from a skill that never had them.
+enum SkillFileSkip {
+    Oversize(u64),
+    NotUtf8,
+    Unreadable,
+}
+
+impl std::fmt::Display for SkillFileSkip {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SkillFileSkip::Oversize(len) => write!(
+                f,
+                "{len} bytes exceeds the {MAX_SKILL_FILE_BYTES}-byte per-file cap"
+            ),
+            SkillFileSkip::NotUtf8 => write!(f, "not valid UTF-8 text"),
+            SkillFileSkip::Unreadable => write!(f, "unreadable"),
+        }
     }
-    let bytes = std::fs::read(path).ok()?;
-    String::from_utf8(bytes).ok()
+}
+
+/// Read one skill file as UTF-8 text, naming the reason when it cannot travel.
+fn read_skill_file_checked(path: &std::path::Path) -> Result<String, SkillFileSkip> {
+    let meta = std::fs::metadata(path).map_err(|_| SkillFileSkip::Unreadable)?;
+    if meta.len() > MAX_SKILL_FILE_BYTES {
+        return Err(SkillFileSkip::Oversize(meta.len()));
+    }
+    let bytes = std::fs::read(path).map_err(|_| SkillFileSkip::Unreadable)?;
+    String::from_utf8(bytes).map_err(|_| SkillFileSkip::NotUtf8)
+}
+
+/// Read one skill file as UTF-8 text, or None when it is oversize
+/// (> [`MAX_SKILL_FILE_BYTES`]), unreadable, or not valid UTF-8. Used where
+/// the reason does not matter (the import-side drift comparison).
+fn read_skill_file(path: &std::path::Path) -> Option<String> {
+    read_skill_file_checked(path).ok()
 }
 
 /// Collect workspaces with their knowledge library and adoption cells.
@@ -2605,6 +3120,7 @@ fn collect_workspace_knowledge_exports(
     pool: &DbPool,
     filter_ids: Option<&[String]>,
     bundled_project_ids: &[String],
+    export_warnings: &mut Vec<String>,
 ) -> Result<Vec<WorkspaceKnowledgeExport>, AppError> {
     if filter_ids.is_some_and(|ids| ids.is_empty()) {
         return Ok(Vec::new());
@@ -2690,6 +3206,13 @@ fn collect_workspace_knowledge_exports(
                 })
             },
         )?;
+        push_truncation_warning(
+            export_warnings,
+            "knowledge entries",
+            MAX_KNOWLEDGE_ENTRIES.min(knowledge.len()),
+            knowledge.len(),
+            &format!("Workspace '{name}'"),
+        );
         let knowledge: Vec<WorkspaceKnowledgeEntryExport> =
             knowledge.into_iter().take(MAX_KNOWLEDGE_ENTRIES).collect();
 
@@ -2726,6 +3249,529 @@ fn collect_workspace_knowledge_exports(
     }
 
     Ok(exports)
+}
+
+// ============================================================================
+// Twin export collection
+// ============================================================================
+
+/// Collect digital twins with their full child graph.
+///
+/// `filter_ids: None` = every twin (Full scope, capped); `Some(ids)` = exactly
+/// those, silently skipping unknown ones — same posture as the persona / team /
+/// project selective filters.
+///
+/// `user_db` is the SEPARATE user database (`personas_data.db`) that hosts the
+/// vector knowledge base. It is optional because every unit test drives this
+/// module with only an app-DB pool; a twin whose KB cannot be reached exports
+/// without it plus a warning, never as an error.
+fn collect_twin_exports(
+    pool: &DbPool,
+    user_db: Option<&UserDbPool>,
+    filter_ids: Option<&[String]>,
+    export_warnings: &mut Vec<String>,
+) -> Result<Vec<TwinExport>, AppError> {
+    if filter_ids.is_some_and(|ids| ids.is_empty()) {
+        return Ok(Vec::new());
+    }
+    let conn = pool.get()?;
+    // Very old databases predate the twin plugin entirely — treat a missing
+    // table as "no twins", exactly how the KPI / dev-tools counters do.
+    if conn
+        .query_row(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='twin_profiles'",
+            [],
+            |_| Ok(()),
+        )
+        .is_err()
+    {
+        return Ok(Vec::new());
+    }
+
+    // Deliberately NOT `SELECT *`: naming the columns is what keeps `slug`,
+    // `is_active` and `obsidian_subpath` out of the bundle no matter what a
+    // future migration adds to the table.
+    const TWIN_COLS: &str = "id, name, bio, role, languages, pronouns, training_directives, \
+         knowledge_base_id, created_at, updated_at";
+    type TwinRow = (
+        String,
+        String,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        String,
+        String,
+    );
+    let map_twin = |r: &rusqlite::Row<'_>| -> rusqlite::Result<TwinRow> {
+        Ok((
+            r.get(0)?,
+            r.get(1)?,
+            r.get(2)?,
+            r.get(3)?,
+            r.get(4)?,
+            r.get(5)?,
+            r.get(6)?,
+            r.get(7)?,
+            r.get(8)?,
+            r.get(9)?,
+        ))
+    };
+
+    let twin_rows: Vec<TwinRow> = match filter_ids {
+        None => {
+            let total: usize = conn
+                .query_row("SELECT COUNT(*) FROM twin_profiles", [], |r| r.get::<_, i64>(0))
+                .unwrap_or(0) as usize;
+            let sql = format!("SELECT {TWIN_COLS} FROM twin_profiles ORDER BY created_at");
+            let mut stmt = conn.prepare(&sql).map_err(AppError::Database)?;
+            let rows = stmt.query_map([], map_twin).map_err(AppError::Database)?;
+            let mut out = Vec::new();
+            for r in rows {
+                out.push(r.map_err(AppError::Database)?);
+                if out.len() >= MAX_TWINS {
+                    break;
+                }
+            }
+            push_truncation_warning(export_warnings, "twins", out.len(), total, "Twins");
+            out
+        }
+        Some(ids) => {
+            let mut unique: Vec<&String> = Vec::new();
+            let mut seen = std::collections::HashSet::new();
+            for id in ids {
+                if seen.insert(id.clone()) {
+                    unique.push(id);
+                }
+            }
+            push_truncation_warning(
+                export_warnings,
+                "selected twins",
+                MAX_TWINS.min(unique.len()),
+                unique.len(),
+                "Twins",
+            );
+            let sql = format!("SELECT {TWIN_COLS} FROM twin_profiles WHERE id = ?1");
+            let mut out = Vec::new();
+            for id in unique.into_iter().take(MAX_TWINS) {
+                let mut stmt = conn.prepare(&sql).map_err(AppError::Database)?;
+                let mut rows = stmt
+                    .query_map([id.as_str()], map_twin)
+                    .map_err(AppError::Database)?;
+                if let Some(row) = rows.next() {
+                    out.push(row.map_err(AppError::Database)?);
+                }
+            }
+            out
+        }
+    };
+
+    let mut exports = Vec::with_capacity(twin_rows.len());
+    for (
+        id,
+        name,
+        bio,
+        role,
+        languages,
+        pronouns,
+        training_directives,
+        knowledge_base_id,
+        created_at,
+        updated_at,
+    ) in twin_rows
+    {
+        let tid = id.as_str();
+
+        let tones = capped(
+            query_rows(
+                &conn,
+                "SELECT id, channel, voice_directives, examples_json, constraints_json, \
+                        length_hint, updated_at \
+                 FROM twin_tones WHERE twin_id = ?1 ORDER BY channel",
+                tid,
+                |r| {
+                    Ok(TwinToneExport {
+                        id: r.get(0)?,
+                        channel: r.get(1)?,
+                        voice_directives: r.get(2)?,
+                        examples_json: r.get(3)?,
+                        constraints_json: r.get(4)?,
+                        length_hint: r.get(5)?,
+                        updated_at: r.get(6)?,
+                    })
+                },
+            )?,
+            MAX_TWIN_TONES,
+            "tone profiles",
+            &name,
+            export_warnings,
+        );
+
+        // `summary` + `key_facts_json` are load-bearing: the Training Studio
+        // stores the interview QUESTION in `summary`, so an export without it
+        // keeps only half of every training pair. Newest-first so a truncated
+        // history keeps the RECENT traffic, which is what a twin reasons from.
+        let communications = capped(
+            query_rows(
+                &conn,
+                "SELECT id, channel, direction, contact_handle, content, summary, \
+                        key_facts_json, occurred_at, created_at \
+                 FROM twin_communications WHERE twin_id = ?1 ORDER BY occurred_at DESC",
+                tid,
+                |r| {
+                    Ok(TwinCommunicationExport {
+                        id: r.get(0)?,
+                        channel: r.get(1)?,
+                        direction: r.get(2)?,
+                        contact_handle: r.get(3)?,
+                        content: r.get(4)?,
+                        summary: r.get(5)?,
+                        key_facts_json: r.get(6)?,
+                        occurred_at: r.get(7)?,
+                        created_at: r.get(8)?,
+                    })
+                },
+            )?,
+            MAX_TWIN_COMMUNICATIONS,
+            "communications",
+            &name,
+            export_warnings,
+        );
+
+        // ALL statuses — a rejected memory plus its reviewer note records what
+        // the operator refused, which is exactly the signal a re-trained twin
+        // needs in order not to re-propose it.
+        let pending_memories = capped(
+            query_rows(
+                &conn,
+                "SELECT id, channel, content, title, importance, status, reviewer_notes, \
+                        source_communication_id, created_at, reviewed_at \
+                 FROM twin_pending_memories WHERE twin_id = ?1 ORDER BY created_at DESC",
+                tid,
+                |r| {
+                    Ok(TwinPendingMemoryExport {
+                        id: r.get(0)?,
+                        channel: r.get(1)?,
+                        content: r.get(2)?,
+                        title: r.get(3)?,
+                        importance: r.get(4)?,
+                        status: r.get(5)?,
+                        reviewer_notes: r.get(6)?,
+                        source_communication_id: r.get(7)?,
+                        created_at: r.get(8)?,
+                        reviewed_at: r.get(9)?,
+                    })
+                },
+            )?,
+            MAX_TWIN_MEMORIES,
+            "pending memories",
+            &name,
+            export_warnings,
+        );
+
+        let distilled_facts = capped(
+            query_rows(
+                &conn,
+                "SELECT id, contact_handle, content, importance, sources_json, created_at, \
+                        last_seen_at \
+                 FROM twin_distilled_facts WHERE twin_id = ?1 \
+                 ORDER BY importance DESC, last_seen_at DESC",
+                tid,
+                |r| {
+                    Ok(TwinDistilledFactExport {
+                        id: r.get(0)?,
+                        contact_handle: r.get(1)?,
+                        content: r.get(2)?,
+                        importance: r.get(3)?,
+                        sources_json: r.get(4)?,
+                        created_at: r.get(5)?,
+                        last_seen_at: r.get(6)?,
+                    })
+                },
+            )?,
+            MAX_TWIN_FACTS,
+            "distilled facts",
+            &name,
+            export_warnings,
+        );
+
+        // Straight from the table. `list_contacts_with_activity` would hand
+        // back computed `message_count` / `last_seen_at` columns that do not
+        // exist here — derived values have no business in a bundle.
+        let contacts = capped(
+            query_rows(
+                &conn,
+                "SELECT id, handle, alias, notes, created_at, updated_at \
+                 FROM twin_contacts WHERE twin_id = ?1 ORDER BY handle",
+                tid,
+                |r| {
+                    Ok(TwinContactExport {
+                        id: r.get(0)?,
+                        handle: r.get(1)?,
+                        alias: r.get(2)?,
+                        notes: r.get(3)?,
+                        created_at: r.get(4)?,
+                        updated_at: r.get(5)?,
+                    })
+                },
+            )?,
+            MAX_TWIN_CONTACTS,
+            "contacts",
+            &name,
+            export_warnings,
+        );
+
+        let reflections = capped(
+            query_rows(
+                &conn,
+                "SELECT id, prompt_seed, content, created_at \
+                 FROM twin_reflections WHERE twin_id = ?1 ORDER BY created_at DESC",
+                tid,
+                |r| {
+                    Ok(TwinReflectionExport {
+                        id: r.get(0)?,
+                        prompt_seed: r.get(1)?,
+                        content: r.get(2)?,
+                        created_at: r.get(3)?,
+                    })
+                },
+            )?,
+            MAX_TWIN_REFLECTIONS,
+            "reflections",
+            &name,
+            export_warnings,
+        );
+
+        let channels = capped(
+            query_rows(
+                &conn,
+                "SELECT id, channel_type, credential_id, persona_id, label, is_active, \
+                        created_at, updated_at \
+                 FROM twin_channels WHERE twin_id = ?1 ORDER BY channel_type",
+                tid,
+                |r| {
+                    Ok(TwinChannelExport {
+                        id: r.get(0)?,
+                        channel_type: r.get(1)?,
+                        credential_id: r.get(2)?,
+                        persona_id: r.get(3)?,
+                        label: r.get(4)?,
+                        is_active: r.get::<_, i32>(5)? != 0,
+                        created_at: r.get(6)?,
+                        updated_at: r.get(7)?,
+                    })
+                },
+            )?,
+            MAX_TWIN_CHANNELS,
+            "channels",
+            &name,
+            export_warnings,
+        );
+
+        let knowledge_base = match knowledge_base_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            None => None,
+            Some(kb_id) => match user_db {
+                None => {
+                    export_warnings.push(format!(
+                        "Twin '{name}': knowledge base '{kb_id}' not exported (the vector database is not available in this context)."
+                    ));
+                    None
+                }
+                Some(udb) => match collect_twin_knowledge_base(udb, kb_id, &name, export_warnings) {
+                    Ok(kb) => kb,
+                    Err(e) => {
+                        export_warnings.push(format!(
+                            "Twin '{name}': knowledge base '{kb_id}' not exported ({e})."
+                        ));
+                        None
+                    }
+                },
+            },
+        };
+
+        exports.push(TwinExport {
+            id,
+            name,
+            bio,
+            role,
+            languages,
+            pronouns,
+            training_directives,
+            created_at,
+            updated_at,
+            tones,
+            communications,
+            pending_memories,
+            distilled_facts,
+            contacts,
+            reflections,
+            channels,
+            knowledge_base,
+        });
+    }
+
+    Ok(exports)
+}
+
+/// Truncate a twin child collection to `cap`, recording what was dropped.
+fn capped<T>(
+    rows: Vec<T>,
+    cap: usize,
+    what: &str,
+    twin_name: &str,
+    export_warnings: &mut Vec<String>,
+) -> Vec<T> {
+    push_truncation_warning(
+        export_warnings,
+        what,
+        cap.min(rows.len()),
+        rows.len(),
+        &format!("Twin '{twin_name}'"),
+    );
+    rows.into_iter().take(cap).collect()
+}
+
+/// Read the TEXT tier of a knowledge base out of the user database.
+///
+/// Never touches `kb_vec_*` or any embedding — those are a local artifact of
+/// whatever embedding model this machine happens to run, and the target
+/// rebuilds them from this text with its own model. `Ok(None)` means the bound
+/// id no longer resolves (the KB was deleted); that is a warning, not a failure.
+fn collect_twin_knowledge_base(
+    user_db: &UserDbPool,
+    kb_id: &str,
+    twin_name: &str,
+    export_warnings: &mut Vec<String>,
+) -> Result<Option<TwinKnowledgeBaseExport>, AppError> {
+    let conn = user_db.get()?;
+
+    let head = conn
+        .query_row(
+            "SELECT id, name, description, embedding_model, embedding_dims, chunk_size, \
+                    chunk_overlap, created_at, updated_at \
+             FROM knowledge_bases WHERE id = ?1",
+            [kb_id],
+            |r| {
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, String>(1)?,
+                    r.get::<_, Option<String>>(2)?,
+                    r.get::<_, String>(3)?,
+                    r.get::<_, i64>(4)?,
+                    r.get::<_, i64>(5)?,
+                    r.get::<_, i64>(6)?,
+                    r.get::<_, String>(7)?,
+                    r.get::<_, String>(8)?,
+                ))
+            },
+        )
+        .ok();
+    let Some((
+        id,
+        name,
+        description,
+        embedding_model,
+        embedding_dims,
+        chunk_size,
+        chunk_overlap,
+        created_at,
+        updated_at,
+    )) = head
+    else {
+        export_warnings.push(format!(
+            "Twin '{twin_name}': bound knowledge base '{kb_id}' no longer exists; exported without it."
+        ));
+        return Ok(None);
+    };
+
+    let documents = query_rows(
+        &conn,
+        "SELECT id, source_type, source_path, title, content_hash, byte_size, metadata_json, \
+                page_count, empty_pages, status, error_message, indexed_at, created_at \
+         FROM kb_documents WHERE kb_id = ?1 ORDER BY created_at",
+        kb_id,
+        |r| {
+            Ok(KbDocumentExport {
+                id: r.get(0)?,
+                source_type: r.get(1)?,
+                source_path: r.get(2)?,
+                title: r.get(3)?,
+                content_hash: r.get(4)?,
+                byte_size: r.get(5)?,
+                metadata_json: r.get(6)?,
+                page_count: r.get(7)?,
+                empty_pages: r.get(8)?,
+                status: r.get(9)?,
+                error_message: r.get(10)?,
+                indexed_at: r.get(11)?,
+                created_at: r.get(12)?,
+            })
+        },
+    )?;
+    push_truncation_warning(
+        export_warnings,
+        "knowledge-base documents",
+        MAX_KB_DOCUMENTS.min(documents.len()),
+        documents.len(),
+        &format!("Twin '{twin_name}'"),
+    );
+    let documents: Vec<KbDocumentExport> = documents.into_iter().take(MAX_KB_DOCUMENTS).collect();
+    let kept_docs: std::collections::HashSet<&str> =
+        documents.iter().map(|d| d.id.as_str()).collect();
+
+    let chunks = query_rows(
+        &conn,
+        "SELECT id, document_id, chunk_index, content, token_count, metadata_json, \
+                source_page, extraction_confidence, created_at \
+         FROM kb_chunks WHERE kb_id = ?1 ORDER BY document_id, chunk_index",
+        kb_id,
+        |r| {
+            Ok(KbChunkExport {
+                id: r.get(0)?,
+                document_id: r.get(1)?,
+                chunk_index: r.get(2)?,
+                content: r.get(3)?,
+                token_count: r.get(4)?,
+                metadata_json: r.get(5)?,
+                source_page: r.get(6)?,
+                extraction_confidence: r.get(7)?,
+                created_at: r.get(8)?,
+            })
+        },
+    )?;
+    // A chunk whose document got truncated away would import as an orphan.
+    let chunks: Vec<KbChunkExport> = chunks
+        .into_iter()
+        .filter(|c| kept_docs.contains(c.document_id.as_str()))
+        .collect();
+    push_truncation_warning(
+        export_warnings,
+        "knowledge-base chunks",
+        MAX_KB_CHUNKS.min(chunks.len()),
+        chunks.len(),
+        &format!("Twin '{twin_name}'"),
+    );
+    let chunks: Vec<KbChunkExport> = chunks.into_iter().take(MAX_KB_CHUNKS).collect();
+
+    Ok(Some(TwinKnowledgeBaseExport {
+        id,
+        name,
+        description,
+        embedding_model,
+        embedding_dims,
+        chunk_size,
+        chunk_overlap,
+        created_at,
+        updated_at,
+        documents,
+        chunks,
+    }))
 }
 
 async fn save_bundle_to_file(
@@ -2830,6 +3876,8 @@ fn validate_bundle(bundle: &PortabilityBundle) -> Result<(), AppError> {
     validation::require_max_count("credentials", &bundle.credentials, MAX_CREDENTIALS)?;
     validation::require_max_count("kpis", &bundle.kpis, MAX_KPIS)?;
     validation::require_max_count("dev_projects", &bundle.dev_projects, MAX_DEV_PROJECTS)?;
+    validation::require_max_count("twins", &bundle.twins, MAX_TWINS)?;
+    validate_twins(bundle)?;
     for (i, w) in bundle.workspace_knowledge.iter().enumerate() {
         validation::require_max_count(
             &format!("workspace_knowledge[{i}].knowledge"),
@@ -3193,10 +4241,300 @@ fn validate_bundle(bundle: &PortabilityBundle) -> Result<(), AppError> {
     Ok(())
 }
 
+/// Per-field validation of the twin section.
+///
+/// Deliberately NOT modelled on the count-only precedent used by
+/// `dev_projects` / `workspace_knowledge`: a section that checks array sizes
+/// but never string lengths is an unbounded-string import path, and a twin's
+/// bundle is mostly free text (communications, memories, KB chunks). Every
+/// text column that reaches the DB is bounded here.
+fn validate_twins(bundle: &PortabilityBundle) -> Result<(), AppError> {
+    const TWIN_STATUSES: [&str; 3] = ["pending", "approved", "rejected"];
+    const TWIN_DIRECTIONS: [&str; 2] = ["in", "out"];
+
+    for (i, tw) in bundle.twins.iter().enumerate() {
+        let p = format!("twin[{i}]");
+        validation::require_non_empty(&format!("{p}.name"), &tw.name)?;
+        validation::require_max_len(&format!("{p}.name"), &tw.name, MAX_NAME_LEN)?;
+        validation::require_optional_max_len(&format!("{p}.bio"), &tw.bio, MAX_DESIGN_CONTEXT_LEN)?;
+        validation::require_optional_max_len(&format!("{p}.role"), &tw.role, MAX_SHORT_FIELD_LEN)?;
+        validation::require_optional_max_len(
+            &format!("{p}.languages"),
+            &tw.languages,
+            MAX_SHORT_FIELD_LEN,
+        )?;
+        validation::require_optional_max_len(
+            &format!("{p}.pronouns"),
+            &tw.pronouns,
+            MAX_SHORT_FIELD_LEN,
+        )?;
+        validation::require_optional_max_len(
+            &format!("{p}.training_directives"),
+            &tw.training_directives,
+            MAX_DESIGN_CONTEXT_LEN,
+        )?;
+
+        validation::require_max_count(&format!("{p}.tones"), &tw.tones, MAX_TWIN_TONES)?;
+        validation::require_max_count(
+            &format!("{p}.communications"),
+            &tw.communications,
+            MAX_TWIN_COMMUNICATIONS,
+        )?;
+        validation::require_max_count(
+            &format!("{p}.pending_memories"),
+            &tw.pending_memories,
+            MAX_TWIN_MEMORIES,
+        )?;
+        validation::require_max_count(
+            &format!("{p}.distilled_facts"),
+            &tw.distilled_facts,
+            MAX_TWIN_FACTS,
+        )?;
+        validation::require_max_count(&format!("{p}.contacts"), &tw.contacts, MAX_TWIN_CONTACTS)?;
+        validation::require_max_count(
+            &format!("{p}.reflections"),
+            &tw.reflections,
+            MAX_TWIN_REFLECTIONS,
+        )?;
+        validation::require_max_count(&format!("{p}.channels"), &tw.channels, MAX_TWIN_CHANNELS)?;
+
+        for (j, t) in tw.tones.iter().enumerate() {
+            let q = format!("{p}.tone[{j}]");
+            validation::require_max_len(&format!("{q}.channel"), &t.channel, MAX_SHORT_FIELD_LEN)?;
+            validation::require_max_len(
+                &format!("{q}.voice_directives"),
+                &t.voice_directives,
+                MAX_DESIGN_CONTEXT_LEN,
+            )?;
+            validation::require_optional_max_len(
+                &format!("{q}.examples_json"),
+                &t.examples_json,
+                MAX_CONFIG_LEN,
+            )?;
+            validation::require_optional_max_len(
+                &format!("{q}.constraints_json"),
+                &t.constraints_json,
+                MAX_CONFIG_LEN,
+            )?;
+            validation::require_optional_max_len(
+                &format!("{q}.length_hint"),
+                &t.length_hint,
+                MAX_SHORT_FIELD_LEN,
+            )?;
+        }
+
+        for (j, c) in tw.communications.iter().enumerate() {
+            let q = format!("{p}.communication[{j}]");
+            validation::require_max_len(&format!("{q}.channel"), &c.channel, MAX_SHORT_FIELD_LEN)?;
+            if !TWIN_DIRECTIONS.contains(&c.direction.as_str()) {
+                return Err(AppError::Validation(format!(
+                    "{q}.direction must be one of {TWIN_DIRECTIONS:?}, got '{}'",
+                    c.direction
+                )));
+            }
+            validation::require_optional_max_len(
+                &format!("{q}.contact_handle"),
+                &c.contact_handle,
+                MAX_SHORT_FIELD_LEN,
+            )?;
+            validation::require_max_len(
+                &format!("{q}.content"),
+                &c.content,
+                MAX_MEMORY_CONTENT_LEN,
+            )?;
+            validation::require_optional_max_len(
+                &format!("{q}.summary"),
+                &c.summary,
+                MAX_MEMORY_CONTENT_LEN,
+            )?;
+            validation::require_optional_max_len(
+                &format!("{q}.key_facts_json"),
+                &c.key_facts_json,
+                MAX_CONFIG_LEN,
+            )?;
+        }
+
+        for (j, m) in tw.pending_memories.iter().enumerate() {
+            let q = format!("{p}.pending_memory[{j}]");
+            validation::require_optional_max_len(
+                &format!("{q}.channel"),
+                &m.channel,
+                MAX_SHORT_FIELD_LEN,
+            )?;
+            validation::require_max_len(
+                &format!("{q}.content"),
+                &m.content,
+                MAX_MEMORY_CONTENT_LEN,
+            )?;
+            validation::require_optional_max_len(&format!("{q}.title"), &m.title, MAX_NAME_LEN)?;
+            if !TWIN_STATUSES.contains(&m.status.as_str()) {
+                return Err(AppError::Validation(format!(
+                    "{q}.status must be one of {TWIN_STATUSES:?}, got '{}'",
+                    m.status
+                )));
+            }
+            validation::require_optional_max_len(
+                &format!("{q}.reviewer_notes"),
+                &m.reviewer_notes,
+                MAX_MEMORY_CONTENT_LEN,
+            )?;
+            validation::require_optional_max_len(
+                &format!("{q}.source_communication_id"),
+                &m.source_communication_id,
+                MAX_SHORT_FIELD_LEN,
+            )?;
+        }
+
+        for (j, f) in tw.distilled_facts.iter().enumerate() {
+            let q = format!("{p}.distilled_fact[{j}]");
+            validation::require_optional_max_len(
+                &format!("{q}.contact_handle"),
+                &f.contact_handle,
+                MAX_SHORT_FIELD_LEN,
+            )?;
+            validation::require_max_len(
+                &format!("{q}.content"),
+                &f.content,
+                MAX_MEMORY_CONTENT_LEN,
+            )?;
+            validation::require_max_len(
+                &format!("{q}.sources_json"),
+                &f.sources_json,
+                MAX_CONFIG_LEN,
+            )?;
+        }
+
+        for (j, c) in tw.contacts.iter().enumerate() {
+            let q = format!("{p}.contact[{j}]");
+            validation::require_non_empty(&format!("{q}.handle"), &c.handle)?;
+            validation::require_max_len(&format!("{q}.handle"), &c.handle, MAX_SHORT_FIELD_LEN)?;
+            validation::require_optional_max_len(&format!("{q}.alias"), &c.alias, MAX_NAME_LEN)?;
+            validation::require_optional_max_len(
+                &format!("{q}.notes"),
+                &c.notes,
+                MAX_MEMORY_CONTENT_LEN,
+            )?;
+        }
+
+        for (j, r) in tw.reflections.iter().enumerate() {
+            let q = format!("{p}.reflection[{j}]");
+            validation::require_max_len(
+                &format!("{q}.prompt_seed"),
+                &r.prompt_seed,
+                MAX_DESCRIPTION_LEN,
+            )?;
+            validation::require_max_len(
+                &format!("{q}.content"),
+                &r.content,
+                MAX_MEMORY_CONTENT_LEN,
+            )?;
+        }
+
+        for (j, c) in tw.channels.iter().enumerate() {
+            let q = format!("{p}.channel[{j}]");
+            validation::require_non_empty(&format!("{q}.channel_type"), &c.channel_type)?;
+            validation::require_max_len(
+                &format!("{q}.channel_type"),
+                &c.channel_type,
+                MAX_SHORT_FIELD_LEN,
+            )?;
+            validation::require_max_len(
+                &format!("{q}.credential_id"),
+                &c.credential_id,
+                MAX_SHORT_FIELD_LEN,
+            )?;
+            validation::require_optional_max_len(
+                &format!("{q}.persona_id"),
+                &c.persona_id,
+                MAX_SHORT_FIELD_LEN,
+            )?;
+            validation::require_optional_max_len(&format!("{q}.label"), &c.label, MAX_NAME_LEN)?;
+        }
+
+        if let Some(kb) = &tw.knowledge_base {
+            let q = format!("{p}.knowledge_base");
+            validation::require_non_empty(&format!("{q}.name"), &kb.name)?;
+            validation::require_max_len(&format!("{q}.name"), &kb.name, MAX_NAME_LEN)?;
+            validation::require_optional_max_len(
+                &format!("{q}.description"),
+                &kb.description,
+                MAX_DESCRIPTION_LEN,
+            )?;
+            validation::require_max_len(
+                &format!("{q}.embedding_model"),
+                &kb.embedding_model,
+                MAX_SHORT_FIELD_LEN,
+            )?;
+            validation::require_max_count(
+                &format!("{q}.documents"),
+                &kb.documents,
+                MAX_KB_DOCUMENTS,
+            )?;
+            validation::require_max_count(&format!("{q}.chunks"), &kb.chunks, MAX_KB_CHUNKS)?;
+
+            for (j, d) in kb.documents.iter().enumerate() {
+                let r = format!("{q}.document[{j}]");
+                validation::require_max_len(&format!("{r}.title"), &d.title, MAX_NAME_LEN)?;
+                validation::require_max_len(
+                    &format!("{r}.source_type"),
+                    &d.source_type,
+                    MAX_SHORT_FIELD_LEN,
+                )?;
+                validation::require_optional_max_len(
+                    &format!("{r}.source_path"),
+                    &d.source_path,
+                    MAX_DESCRIPTION_LEN,
+                )?;
+                validation::require_max_len(
+                    &format!("{r}.content_hash"),
+                    &d.content_hash,
+                    MAX_SHORT_FIELD_LEN,
+                )?;
+                validation::require_optional_max_len(
+                    &format!("{r}.metadata_json"),
+                    &d.metadata_json,
+                    MAX_CONFIG_LEN,
+                )?;
+                validation::require_max_len(
+                    &format!("{r}.status"),
+                    &d.status,
+                    MAX_SHORT_FIELD_LEN,
+                )?;
+                validation::require_optional_max_len(
+                    &format!("{r}.error_message"),
+                    &d.error_message,
+                    MAX_DESCRIPTION_LEN,
+                )?;
+            }
+
+            for (j, c) in kb.chunks.iter().enumerate() {
+                let r = format!("{q}.chunk[{j}]");
+                validation::require_max_len(
+                    &format!("{r}.content"),
+                    &c.content,
+                    MAX_MEMORY_CONTENT_LEN,
+                )?;
+                validation::require_optional_max_len(
+                    &format!("{r}.metadata_json"),
+                    &c.metadata_json,
+                    MAX_CONFIG_LEN,
+                )?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// `resolutions` is the flat conflict-resolution map keyed `"<kind>:<id>"`
+/// (see [`ImportConflict`]). `user_db` is the separate user database that
+/// hosts knowledge bases; `None` (unit tests, or a caller without one) simply
+/// means a bundled KB is reported as un-importable rather than silently lost.
 fn import_bundle(
     pool: &DbPool,
+    user_db: Option<&UserDbPool>,
     bundle: &PortabilityBundle,
-    project_resolutions: &HashMap<String, String>,
+    resolutions: &HashMap<String, String>,
 ) -> Result<PortabilityImportResult, AppError> {
     let mut conn = pool.get()?;
     let tx = conn.transaction().map_err(AppError::Database)?;
@@ -3214,21 +4552,25 @@ fn import_bundle(
         knowledge_skipped_duplicates: 0,
         skills_written: 0,
         skills_deferred: 0,
-        project_conflicts: Vec::new(),
+        twins_imported: 0,
+        twins_skipped: 0,
+        twin_kb_chunks_imported: 0,
+        import_conflicts: Vec::new(),
         bundle_file_path: None,
         warnings: Vec::new(),
         id_mapping: std::collections::HashMap::new(),
+        pending_kb_reindex: Vec::new(),
     };
 
     let now = chrono::Utc::now().to_rfc3339();
 
     // A non-empty resolutions map marks the second (resolution) pass of the
-    // two-pass project conflict flow: the non-project sections were already
-    // imported on pass 1, so only the resolved projects (plus their adoption
+    // two-pass conflict flow: the non-conflicting sections were already
+    // imported on pass 1, so only the resolved entities (plus their adoption
     // cells / skills) are processed. The workspace-knowledge phase still runs
     // — its id/dedup checks make it idempotent — so the knowledge id map is
     // available for adoption cells of the newly resolved projects.
-    let is_resolution_pass = !project_resolutions.is_empty();
+    let is_resolution_pass = !resolutions.is_empty();
 
     // Phase 2: Import tool definitions (map old IDs to new IDs, skip builtins)
     if !is_resolution_pass {
@@ -3734,7 +5076,9 @@ fn import_bundle(
     let mut project_id_map: HashMap<String, String> = HashMap::new();
     let mut pending_skills: Vec<(String, bool, usize)> = Vec::new(); // (root_path, overwrite, bundle index)
     for (idx, p) in bundle.dev_projects.iter().enumerate() {
-        let resolution = project_resolutions.get(&p.id).map(String::as_str);
+        let resolution = resolutions
+            .get(&conflict_key("project", &p.id))
+            .map(String::as_str);
         if is_resolution_pass && resolution.is_none() {
             // Pass 2 touches only the projects the caller resolved; everything
             // else was handled (imported or conflict-listed) on pass 1.
@@ -3744,11 +5088,12 @@ fn import_bundle(
         let conflict = find_project_conflict(&tx, p);
         let mode = match (&conflict, resolution) {
             (Some((existing_id, matched_by)), None) => {
-                result.project_conflicts.push(ProjectConflict {
-                    bundle_project_id: p.id.clone(),
+                result.import_conflicts.push(ImportConflict {
+                    kind: "project".into(),
+                    bundle_id: p.id.clone(),
                     name: p.name.clone(),
-                    root_path: p.root_path.clone(),
-                    existing_project_id: existing_id.clone(),
+                    detail: Some(p.root_path.clone()),
+                    existing_id: existing_id.clone(),
                     matched_by: (*matched_by).to_string(),
                 });
                 continue;
@@ -3852,16 +5197,120 @@ fn import_bundle(
         }
     }
 
+    // Phase 10: Twins. Same two-pass conflict flow as dev projects, keyed
+    // `"twin:<bundle id>"`. Everything lands under FRESH uuids (a twin id has
+    // no external meaning), so the whole soft-ref graph is remapped. A twin's
+    // knowledge base is NOT written here: it lives in the other database, so
+    // it is queued and created after this transaction commits.
+    let mut pending_twin_kbs: Vec<(String, usize)> = Vec::new(); // (target twin id, bundle index)
+    for (idx, tw) in bundle.twins.iter().enumerate() {
+        let resolution = resolutions
+            .get(&conflict_key("twin", &tw.id))
+            .map(String::as_str);
+        if is_resolution_pass && resolution.is_none() {
+            continue;
+        }
+
+        let conflict = find_twin_conflict(&tx, tw);
+        let mode = match (&conflict, resolution) {
+            (Some(existing_id), None) => {
+                result.import_conflicts.push(ImportConflict {
+                    kind: "twin".into(),
+                    bundle_id: tw.id.clone(),
+                    name: tw.name.clone(),
+                    detail: None,
+                    existing_id: existing_id.clone(),
+                    matched_by: "name".into(),
+                });
+                continue;
+            }
+            (Some(_), Some("skip")) => {
+                result.twins_skipped += 1;
+                continue;
+            }
+            (Some(existing_id), Some("replace")) => TwinImportMode::Replace {
+                existing_id: existing_id.clone(),
+            },
+            (Some(_), Some("duplicate")) => TwinImportMode::Duplicate,
+            (None, _) => TwinImportMode::Fresh,
+            (Some(_), Some(other)) => {
+                result.warnings.push(format!(
+                    "Twin '{}': unknown resolution '{}'; not imported",
+                    tw.name, other
+                ));
+                continue;
+            }
+        };
+
+        match import_twin(&tx, tw, &mode, &now, &mut result) {
+            Some(target_id) => {
+                result.twins_imported += 1;
+                if tw.knowledge_base.is_some() {
+                    pending_twin_kbs.push((target_id, idx));
+                }
+            }
+            None => { /* row-level failure already surfaced as a warning */ }
+        }
+    }
+
     // Commit the transaction -- all entities are persisted atomically.
     // If anything above returned a hard error (not a warning), we would
     // have already returned Err and the transaction would roll back on drop.
     tx.commit().map_err(AppError::Database)?;
 
-    // Phase 10 (post-commit, filesystem): write imported skills under each
+    // Phase 11 (post-commit, filesystem): write imported skills under each
     // project's `<root_path>/.claude/skills/`. Deliberately after the commit —
     // disk must never change for a rolled-back import.
     for (root_path, overwrite, idx) in pending_skills {
         write_project_skills(&root_path, &bundle.dev_projects[idx].skills, overwrite, &mut result);
+    }
+
+    // Phase 12 (post-commit, other database): recreate each imported twin's
+    // knowledge base in the USER database and rebind the profile to it. Same
+    // reasoning as the skills phase — a rolled-back import must not leave
+    // orphan rows in a store the transaction above could not cover.
+    for (twin_id, idx) in pending_twin_kbs {
+        let tw = &bundle.twins[idx];
+        let Some(kb) = tw.knowledge_base.as_ref() else {
+            continue;
+        };
+        let Some(udb) = user_db else {
+            result.warnings.push(format!(
+                "Twin '{}': knowledge base '{}' not imported (the vector database is not available in this context).",
+                tw.name, kb.name
+            ));
+            continue;
+        };
+        match import_twin_knowledge_base(pool, udb, &twin_id, kb, &now) {
+            Ok(landed) => {
+                result.twin_kb_chunks_imported += landed.chunks_imported;
+                result.pending_kb_reindex.push(landed.kb_id);
+                // A "replace" onto a twin that already had a KB rebinds it to
+                // the incoming one. Say so, and name the old id: an orphaned
+                // vector store can be gigabytes, and silently leaking it is
+                // worse than asking the user to delete it in Connections.
+                if let Some(old) = landed.replaced_kb_id {
+                    result.warnings.push(format!(
+                        "Twin '{}': was bound to knowledge base '{old}', now bound to the imported one. The old base is still in Connections — delete it there if you no longer need it.",
+                        tw.name
+                    ));
+                }
+            }
+            Err(e) => result.warnings.push(format!(
+                "Twin '{}': knowledge base '{}' could not be imported ({e}); the twin was imported without it.",
+                tw.name, kb.name
+            )),
+        }
+    }
+
+    // The bundle records what the EXPORT dropped. Replay it here — the person
+    // receiving the bundle is the one who needs to know it is incomplete, and
+    // the export commands themselves have no channel back to a UI. Pass 1 only,
+    // so a two-pass conflict resolution does not list them twice.
+    if !is_resolution_pass {
+        for w in &bundle.export_warnings {
+            result.warnings.push(format!("Export note — {w}"));
+        }
     }
 
     Ok(result)
@@ -4828,6 +6277,558 @@ fn import_workspace_knowledge(
     }
 }
 
+// ============================================================================
+// Twin import helpers (WP1)
+// ============================================================================
+
+/// How a bundled twin lands in this database. Mirrors [`ProjectImportMode`],
+/// minus the `Fresh`-keeps-original-uuids nuance: a twin id addresses nothing
+/// outside its own graph, so EVERY mode that creates a row creates a fresh
+/// uuid. That removes a whole class of "the bundle's id happened to exist
+/// here" collisions for free.
+enum TwinImportMode {
+    /// No conflict.
+    Fresh,
+    /// Keep the existing twin row (and therefore its `slug`, `is_active` and
+    /// `obsidian_subpath` — the vault folder on THIS machine), overwrite its
+    /// profile fields, and replace its children wholesale.
+    Replace { existing_id: String },
+    /// Land alongside the existing twin under a new name suffix.
+    Duplicate,
+}
+
+/// A bundled twin conflicts when a twin of the same name (case-insensitive)
+/// already exists. Matching on `slug` would be worse than useless: the slug is
+/// derived from the name at creation time and re-derived on import, so it
+/// differs by construction whenever the target already holds that name.
+fn find_twin_conflict(tx: &rusqlite::Transaction<'_>, tw: &TwinExport) -> Option<String> {
+    tx.query_row(
+        "SELECT id FROM twin_profiles WHERE name = ?1 COLLATE NOCASE",
+        [tw.name.as_str()],
+        |r| r.get::<_, String>(0),
+    )
+    .ok()
+}
+
+/// The twin child tables this import owns end to end. `twin_voice_profiles` is
+/// absent on purpose (dead table, voice milestone retired 2026-07-10) — a
+/// replace must not delete rows the bundle cannot restore.
+const TWIN_CHILD_TABLES: [&str; 7] = [
+    "twin_tones",
+    "twin_communications",
+    "twin_pending_memories",
+    "twin_distilled_facts",
+    "twin_contacts",
+    "twin_reflections",
+    "twin_channels",
+];
+
+/// Import one twin and its whole child graph. Returns the id the twin landed
+/// under, or `None` when the profile row itself failed (already warned).
+fn import_twin(
+    tx: &rusqlite::Transaction<'_>,
+    tw: &TwinExport,
+    mode: &TwinImportMode,
+    now: &str,
+    result: &mut PortabilityImportResult,
+) -> Option<String> {
+    let warnings = &mut result.warnings;
+
+    let (target_id, display_name) = match mode {
+        TwinImportMode::Replace { existing_id } => {
+            // Profile fields only — `slug`, `is_active` and `obsidian_subpath`
+            // belong to THIS machine and are never overwritten by a bundle.
+            if !exec_row(
+                tx,
+                "UPDATE twin_profiles SET name = ?2, bio = ?3, role = ?4, languages = ?5, \
+                        pronouns = ?6, training_directives = ?7, updated_at = ?8 \
+                 WHERE id = ?1",
+                rusqlite::params![
+                    existing_id,
+                    tw.name,
+                    tw.bio,
+                    tw.role,
+                    tw.languages,
+                    tw.pronouns,
+                    tw.training_directives,
+                    now
+                ],
+                &format!("Twin '{}'", tw.name),
+                warnings,
+            ) {
+                return None;
+            }
+            for table in TWIN_CHILD_TABLES {
+                let _ = tx.execute(
+                    &format!("DELETE FROM {table} WHERE twin_id = ?1"),
+                    [existing_id.as_str()],
+                );
+            }
+            (existing_id.clone(), tw.name.clone())
+        }
+        TwinImportMode::Fresh | TwinImportMode::Duplicate => {
+            let name = match mode {
+                TwinImportMode::Duplicate => format!("{} (imported)", tw.name),
+                _ => tw.name.clone(),
+            };
+            let id = uuid::Uuid::new_v4().to_string();
+            let base = crate::db::repos::twin::slugify(&name);
+            let slug = match crate::db::repos::twin::unique_slug_on(tx, &base) {
+                Ok(s) => s,
+                Err(e) => {
+                    warnings.push(format!("Twin '{name}': could not derive a slug ({e})"));
+                    return None;
+                }
+            };
+            let obsidian_subpath = format!("personas/twins/{slug}");
+            // `is_active` is ALWAYS 0. The active twin is a global singleton
+            // (`set_active_profile` demotes every row before promoting one);
+            // importing a bundle must never silently seize it from whatever
+            // the user has selected here.
+            if !exec_row(
+                tx,
+                "INSERT INTO twin_profiles \
+                    (id, name, slug, bio, role, languages, pronouns, obsidian_subpath, \
+                     is_active, knowledge_base_id, training_directives, created_at, updated_at) \
+                 VALUES (?1,?2,?3,?4,?5,?6,?7,?8,0,NULL,?9,?10,?11)",
+                rusqlite::params![
+                    id,
+                    name,
+                    slug,
+                    tw.bio,
+                    tw.role,
+                    tw.languages,
+                    tw.pronouns,
+                    obsidian_subpath,
+                    tw.training_directives,
+                    tw.created_at,
+                    now
+                ],
+                &format!("Twin '{name}'"),
+                warnings,
+            ) {
+                return None;
+            }
+            (id, name)
+        }
+    };
+
+    // --- children, all under fresh uuids ------------------------------------
+
+    for t in &tw.tones {
+        exec_row(
+            tx,
+            "INSERT INTO twin_tones \
+                (id, twin_id, channel, voice_directives, examples_json, constraints_json, \
+                 length_hint, updated_at) \
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
+            rusqlite::params![
+                uuid::Uuid::new_v4().to_string(),
+                target_id,
+                t.channel,
+                t.voice_directives,
+                t.examples_json,
+                t.constraints_json,
+                t.length_hint,
+                t.updated_at
+            ],
+            &format!("Twin '{display_name}' tone '{}'", t.channel),
+            warnings,
+        );
+    }
+
+    // Communications first — pending memories and distilled facts both cite
+    // them, so their remap table has to exist before those run.
+    let mut comm_map: HashMap<String, String> = HashMap::new();
+    for c in &tw.communications {
+        let id = uuid::Uuid::new_v4().to_string();
+        if exec_row(
+            tx,
+            "INSERT INTO twin_communications \
+                (id, twin_id, channel, direction, contact_handle, content, summary, \
+                 key_facts_json, occurred_at, created_at) \
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)",
+            rusqlite::params![
+                id,
+                target_id,
+                c.channel,
+                c.direction,
+                c.contact_handle,
+                c.content,
+                c.summary,
+                c.key_facts_json,
+                c.occurred_at,
+                c.created_at
+            ],
+            &format!("Twin '{display_name}' communication"),
+            warnings,
+        ) {
+            comm_map.insert(c.id.clone(), id);
+        }
+    }
+
+    for m in &tw.pending_memories {
+        // Provenance is a soft ref: a memory whose source communication fell
+        // outside the export cap keeps the memory and drops the citation.
+        let source = m
+            .source_communication_id
+            .as_deref()
+            .and_then(|sid| comm_map.get(sid).cloned());
+        exec_row(
+            tx,
+            "INSERT INTO twin_pending_memories \
+                (id, twin_id, channel, content, title, importance, status, reviewer_notes, \
+                 source_communication_id, created_at, reviewed_at) \
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)",
+            rusqlite::params![
+                uuid::Uuid::new_v4().to_string(),
+                target_id,
+                m.channel,
+                m.content,
+                m.title,
+                m.importance,
+                m.status,
+                m.reviewer_notes,
+                source,
+                m.created_at,
+                m.reviewed_at
+            ],
+            &format!("Twin '{display_name}' memory"),
+            warnings,
+        );
+    }
+
+    for f in &tw.distilled_facts {
+        // `sources_json` is a hard provenance contract, not decoration:
+        // `repos::twin::create_distilled_fact` rejects an empty array outright
+        // because a cited fact with no citation is exactly the hallucination
+        // shape the table exists to prevent. So a fact whose sources ALL fail
+        // to remap is dropped with a warning — never rewritten as `[]`.
+        let original: Vec<String> = serde_json::from_str(&f.sources_json).unwrap_or_default();
+        let remapped: Vec<String> = original
+            .iter()
+            .filter_map(|sid| comm_map.get(sid).cloned())
+            .collect();
+        if remapped.is_empty() {
+            warnings.push(format!(
+                "Twin '{display_name}': fact '{}' dropped — none of its {} source communication(s) travelled with the bundle, and a fact without provenance is not storable.",
+                truncate_for_warning(&f.content),
+                original.len()
+            ));
+            continue;
+        }
+        if remapped.len() < original.len() {
+            warnings.push(format!(
+                "Twin '{display_name}': fact '{}' kept {} of {} source citations; the rest were outside the export.",
+                truncate_for_warning(&f.content),
+                remapped.len(),
+                original.len()
+            ));
+        }
+        let sources_json = match serde_json::to_string(&remapped) {
+            Ok(s) => s,
+            Err(e) => {
+                warnings.push(format!("Twin '{display_name}': fact sources unencodable ({e})"));
+                continue;
+            }
+        };
+        exec_row(
+            tx,
+            "INSERT INTO twin_distilled_facts \
+                (id, twin_id, contact_handle, content, importance, sources_json, created_at, \
+                 last_seen_at) \
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
+            rusqlite::params![
+                uuid::Uuid::new_v4().to_string(),
+                target_id,
+                f.contact_handle,
+                f.content,
+                f.importance,
+                sources_json,
+                f.created_at,
+                f.last_seen_at
+            ],
+            &format!("Twin '{display_name}' fact"),
+            warnings,
+        );
+    }
+
+    // Contacts and facts join communications by `contact_handle`, a STRING —
+    // portable as-is, no remap needed.
+    for c in &tw.contacts {
+        exec_row(
+            tx,
+            "INSERT INTO twin_contacts \
+                (id, twin_id, handle, alias, notes, created_at, updated_at) \
+             VALUES (?1,?2,?3,?4,?5,?6,?7)",
+            rusqlite::params![
+                uuid::Uuid::new_v4().to_string(),
+                target_id,
+                c.handle,
+                c.alias,
+                c.notes,
+                c.created_at,
+                c.updated_at
+            ],
+            &format!("Twin '{display_name}' contact '{}'", c.handle),
+            warnings,
+        );
+    }
+
+    for r in &tw.reflections {
+        exec_row(
+            tx,
+            "INSERT INTO twin_reflections (id, twin_id, prompt_seed, content, created_at) \
+             VALUES (?1,?2,?3,?4,?5)",
+            rusqlite::params![
+                uuid::Uuid::new_v4().to_string(),
+                target_id,
+                r.prompt_seed,
+                r.content,
+                r.created_at
+            ],
+            &format!("Twin '{display_name}' reflection"),
+            warnings,
+        );
+    }
+
+    for ch in &tw.channels {
+        // Deliberately NOT auto-matched and NOT dropped. `credential_id` and
+        // `persona_id` are kept verbatim so the user can see what the channel
+        // pointed at, and `is_active` is forced to 0 so nothing can post as
+        // this twin until a human re-links it. Guessing a credential here
+        // would mean speaking to a stranger's Discord in the twin's voice.
+        let credential_ok = row_exists(
+            tx,
+            "SELECT 1 FROM persona_credentials WHERE id = ?1",
+            &ch.credential_id,
+        );
+        let persona_ok = ch
+            .persona_id
+            .as_deref()
+            .map(|pid| row_exists(tx, "SELECT 1 FROM personas WHERE id = ?1", pid))
+            .unwrap_or(true);
+        if exec_row(
+            tx,
+            "INSERT INTO twin_channels \
+                (id, twin_id, channel_type, credential_id, persona_id, label, is_active, \
+                 created_at, updated_at) \
+             VALUES (?1,?2,?3,?4,?5,?6,0,?7,?8)",
+            rusqlite::params![
+                uuid::Uuid::new_v4().to_string(),
+                target_id,
+                ch.channel_type,
+                ch.credential_id,
+                ch.persona_id,
+                ch.label,
+                ch.created_at,
+                now
+            ],
+            &format!("Twin '{display_name}' channel '{}'", ch.channel_type),
+            warnings,
+        ) {
+            let label = ch.label.as_deref().unwrap_or(&ch.channel_type);
+            let mut missing: Vec<&str> = Vec::new();
+            if !credential_ok {
+                missing.push("credential");
+            }
+            if !persona_ok {
+                missing.push("persona");
+            }
+            let detail = if missing.is_empty() {
+                "re-link and re-enable it in the Twin plugin's Channels tab".to_string()
+            } else {
+                format!(
+                    "its {} does not exist here — re-link and re-enable it in the Twin plugin's Channels tab",
+                    missing.join(" and ")
+                )
+            };
+            warnings.push(format!(
+                "Twin '{display_name}': channel '{label}' imported disabled — {detail}."
+            ));
+        }
+    }
+
+    Some(target_id)
+}
+
+/// Shorten free text for a warning line so a 50KB memory cannot swamp the list.
+fn truncate_for_warning(s: &str) -> String {
+    const MAX: usize = 60;
+    let trimmed = s.trim();
+    if trimmed.chars().count() <= MAX {
+        return trimmed.to_string();
+    }
+    let head: String = trimmed.chars().take(MAX).collect();
+    format!("{head}…")
+}
+
+/// Recreate a twin's knowledge base in the USER database and rebind the
+/// profile to it. Runs POST-COMMIT: this store is not covered by the app-DB
+/// transaction, so writing during it would leave orphans behind a rollback.
+///
+/// Vectors are not created here — the caller queues the new KB id for a
+/// background `kb_reindex`, which is what actually embeds these chunks with
+/// THIS machine's model.
+fn import_twin_knowledge_base(
+    pool: &DbPool,
+    user_db: &UserDbPool,
+    twin_id: &str,
+    kb: &TwinKnowledgeBaseExport,
+    now: &str,
+) -> Result<ImportedKb, AppError> {
+    let new_kb_id = uuid::Uuid::new_v4().to_string();
+    let credential_id = format!("kb-cred-{new_kb_id}");
+    let name = format!("{} (imported)", kb.name);
+
+    let mut doc_map: HashMap<&str, String> = HashMap::new();
+    let mut chunks_written: u32 = 0;
+
+    {
+        let mut conn = user_db.get()?;
+        let tx = conn.transaction().map_err(AppError::Database)?;
+        tx.execute(
+            "INSERT INTO knowledge_bases \
+                (id, credential_id, name, description, embedding_model, embedding_dims, \
+                 chunk_size, chunk_overlap, document_count, chunk_count, status, created_at, updated_at) \
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,0,0,'ready',?9,?10)",
+            rusqlite::params![
+                new_kb_id,
+                credential_id,
+                name,
+                kb.description,
+                kb.embedding_model,
+                kb.embedding_dims,
+                kb.chunk_size,
+                kb.chunk_overlap,
+                kb.created_at,
+                now
+            ],
+        )
+        .map_err(AppError::Database)?;
+
+        for d in &kb.documents {
+            let doc_id = uuid::Uuid::new_v4().to_string();
+            tx.execute(
+                "INSERT INTO kb_documents \
+                    (id, kb_id, source_type, source_path, title, content_hash, byte_size, \
+                     chunk_count, metadata_json, page_count, empty_pages, status, error_message, \
+                     indexed_at, created_at) \
+                 VALUES (?1,?2,?3,?4,?5,?6,?7,0,?8,?9,?10,?11,?12,?13,?14)",
+                rusqlite::params![
+                    doc_id,
+                    new_kb_id,
+                    d.source_type,
+                    d.source_path,
+                    d.title,
+                    d.content_hash,
+                    d.byte_size,
+                    d.metadata_json,
+                    d.page_count,
+                    d.empty_pages,
+                    d.status,
+                    d.error_message,
+                    d.indexed_at,
+                    d.created_at
+                ],
+            )
+            .map_err(AppError::Database)?;
+            doc_map.insert(d.id.as_str(), doc_id);
+        }
+
+        for c in &kb.chunks {
+            let Some(doc_id) = doc_map.get(c.document_id.as_str()) else {
+                // Orphan chunk (its document did not travel) — skipped rather
+                // than written against a dangling document_id.
+                continue;
+            };
+            tx.execute(
+                "INSERT INTO kb_chunks \
+                    (id, kb_id, document_id, chunk_index, content, token_count, metadata_json, \
+                     source_page, extraction_confidence, created_at) \
+                 VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)",
+                rusqlite::params![
+                    uuid::Uuid::new_v4().to_string(),
+                    new_kb_id,
+                    doc_id,
+                    c.chunk_index,
+                    c.content,
+                    c.token_count,
+                    c.metadata_json,
+                    c.source_page,
+                    c.extraction_confidence,
+                    c.created_at
+                ],
+            )
+            .map_err(AppError::Database)?;
+            chunks_written += 1;
+        }
+
+        // Keep the denormalized counters honest with what actually landed.
+        tx.execute(
+            "UPDATE knowledge_bases SET document_count = ?2, chunk_count = ?3 WHERE id = ?1",
+            rusqlite::params![new_kb_id, doc_map.len() as i64, chunks_written as i64],
+        )
+        .map_err(AppError::Database)?;
+
+        tx.commit().map_err(AppError::Database)?;
+    }
+
+    // Vault shell in the app DB so the imported KB shows up in Connections,
+    // mirroring `vector_kb::create_knowledge_base`.
+    let replaced_kb_id = {
+        let conn = pool.get()?;
+        let _ = conn.execute(
+            "INSERT OR IGNORE INTO persona_credentials \
+                (id, name, service_type, encrypted_data, iv, metadata, created_at, updated_at) \
+             VALUES (?1,?2,'personas_vector_db','{}','',?3,?4,?4)",
+            rusqlite::params![
+                credential_id,
+                format!("KB: {name}"),
+                format!(
+                    r#"{{"is_builtin":false,"kb_id":"{new_kb_id}","description":"Vector knowledge base for semantic search."}}"#
+                ),
+                now
+            ],
+        );
+        // Whatever this twin pointed at before (only non-NULL on a "replace"
+        // onto a twin that already had a base) — reported, never deleted.
+        let previous: Option<String> = conn
+            .query_row(
+                "SELECT knowledge_base_id FROM twin_profiles WHERE id = ?1",
+                [twin_id],
+                |r| r.get::<_, Option<String>>(0),
+            )
+            .ok()
+            .flatten()
+            .filter(|s| !s.trim().is_empty());
+        conn.execute(
+            "UPDATE twin_profiles SET knowledge_base_id = ?2, updated_at = ?3 WHERE id = ?1",
+            rusqlite::params![twin_id, new_kb_id, now],
+        )
+        .map_err(AppError::Database)?;
+        previous
+    };
+
+    Ok(ImportedKb {
+        kb_id: new_kb_id,
+        chunks_imported: chunks_written,
+        replaced_kb_id,
+    })
+}
+
+/// What [`import_twin_knowledge_base`] landed.
+struct ImportedKb {
+    /// Id of the newly created knowledge base — queued for a background
+    /// re-embed, since a bundle carries text but never vectors.
+    kb_id: String,
+    chunks_imported: u32,
+    /// The base this twin was bound to beforehand, if any. It is left in
+    /// place (deleting a user's vector store on an import would be
+    /// unforgivable) and merely reported.
+    replaced_kb_id: Option<String>,
+}
+
 // ----------------------------------------------------------------------------
 // Skills-to-disk (post-commit)
 // ----------------------------------------------------------------------------
@@ -4874,7 +6875,9 @@ fn hash_existing_skill_dir(dir: &std::path::Path) -> Option<String> {
         return None;
     }
     let mut files = Vec::new();
-    collect_skill_dir_files(dir, dir, &mut files);
+    // Drop reasons are irrelevant here: this hash only has to match what the
+    // exporter would have produced from the same directory.
+    collect_skill_dir_files(dir, dir, &mut files, &mut Vec::new());
     if files.is_empty() {
         return None;
     }
@@ -5817,6 +7820,8 @@ mod tests {
             kpis: Vec::new(),
             dev_projects: Vec::new(),
             workspace_knowledge: Vec::new(),
+            twins: Vec::new(),
+            export_warnings: Vec::new(),
             encrypted_credentials: None,
         }
     }
@@ -5856,7 +7861,7 @@ mod tests {
             },
         ]));
 
-        let result = import_bundle(&pool, &bundle, &HashMap::new()).expect("import must succeed");
+        let result = import_bundle(&pool, None, &bundle, &HashMap::new()).expect("import must succeed");
         assert_eq!(result.teams_created, 1);
         assert_eq!(result.team_memories_created, 2);
 
@@ -5884,7 +7889,7 @@ mod tests {
         let mut bundle = empty_bundle();
         bundle.teams.push(team_with_memories(Vec::new()));
 
-        let result = import_bundle(&pool, &bundle, &HashMap::new()).expect("import must succeed");
+        let result = import_bundle(&pool, None, &bundle, &HashMap::new()).expect("import must succeed");
         assert_eq!(result.teams_created, 1);
         assert_eq!(result.team_memories_created, 0);
     }
@@ -5982,7 +7987,7 @@ mod tests {
             ],
         ));
 
-        let result = import_bundle(&pool, &bundle, &HashMap::new()).expect("import must succeed");
+        let result = import_bundle(&pool, None, &bundle, &HashMap::new()).expect("import must succeed");
         assert_eq!(result.kpis_created, 1);
 
         let conn = pool.get().unwrap();
@@ -6015,9 +8020,9 @@ mod tests {
         let mut bundle = empty_bundle();
         bundle.kpis.push(kpi_export("Coverage", Vec::new()));
 
-        assert_eq!(import_bundle(&pool, &bundle, &HashMap::new()).unwrap().kpis_created, 1);
+        assert_eq!(import_bundle(&pool, None, &bundle, &HashMap::new()).unwrap().kpis_created, 1);
         // Second import reuses the Imported project and skips the duplicate.
-        assert_eq!(import_bundle(&pool, &bundle, &HashMap::new()).unwrap().kpis_created, 0);
+        assert_eq!(import_bundle(&pool, None, &bundle, &HashMap::new()).unwrap().kpis_created, 0);
 
         let conn = pool.get().unwrap();
         let kpi_count: i32 = conn
@@ -6134,7 +8139,7 @@ mod tests {
         seed_dev_project(&pool, "p1", &tmp.path().to_string_lossy());
         seed_dev_project_graph(&pool, "p1");
 
-        let bundle = build_export_bundle(&pool, ExportScope::Full, true, true).unwrap();
+        let bundle = build_export_bundle(&pool, None, ExportScope::Full, true, true).unwrap();
         assert_eq!(bundle.dev_projects.len(), 1);
         let p = &bundle.dev_projects[0];
         assert_eq!(p.id, "p1");
@@ -6212,8 +8217,9 @@ mod tests {
             credential_ids: Vec::new(),
             project_ids: vec!["p1".into()],
             workspace_ids: Vec::new(),
+            twin_ids: Vec::new(),
         };
-        let bundle = build_export_bundle(&pool, scope, true, true).unwrap();
+        let bundle = build_export_bundle(&pool, None, scope, true, true).unwrap();
         assert_eq!(bundle.dev_projects.len(), 1);
         assert_eq!(bundle.dev_projects[0].id, "p1");
         // Empty workspace selection means none travel.
@@ -6225,8 +8231,9 @@ mod tests {
             credential_ids: Vec::new(),
             project_ids: Vec::new(),
             workspace_ids: vec!["w1".into()],
+            twin_ids: Vec::new(),
         };
-        let bundle = build_export_bundle(&pool, scope, true, true).unwrap();
+        let bundle = build_export_bundle(&pool, None, scope, true, true).unwrap();
         assert!(bundle.dev_projects.is_empty());
         assert_eq!(bundle.workspace_knowledge.len(), 1);
         assert_eq!(bundle.workspace_knowledge[0].id, "w1");
@@ -6256,8 +8263,9 @@ mod tests {
             credential_ids: Vec::new(),
             project_ids: vec!["p1".into()],
             workspace_ids: vec!["w1".into()],
+            twin_ids: Vec::new(),
         };
-        let bundle = build_export_bundle(&pool, scope, true, true).unwrap();
+        let bundle = build_export_bundle(&pool, None, scope, true, true).unwrap();
         assert_eq!(bundle.workspace_knowledge.len(), 1);
         let w = &bundle.workspace_knowledge[0];
         assert_eq!(w.knowledge.len(), 3);
@@ -6367,10 +8375,14 @@ mod tests {
             knowledge_skipped_duplicates: 0,
             skills_written: 0,
             skills_deferred: 0,
-            project_conflicts: Vec::new(),
+            twins_imported: 0,
+            twins_skipped: 0,
+            twin_kb_chunks_imported: 0,
+            import_conflicts: Vec::new(),
             bundle_file_path: None,
             warnings: Vec::new(),
             id_mapping: HashMap::new(),
+            pending_kb_reindex: Vec::new(),
         }
     }
 
@@ -6389,7 +8401,7 @@ mod tests {
             )
             .unwrap();
         }
-        build_export_bundle(&source, ExportScope::Full, true, true).unwrap()
+        build_export_bundle(&source, None, ExportScope::Full, true, true).unwrap()
     }
 
     #[test]
@@ -6397,9 +8409,9 @@ mod tests {
         let bundle = source_bundle("/tmp/portability-rt-p1");
         let target = init_test_db().unwrap();
 
-        let result = import_bundle(&target, &bundle, &HashMap::new()).expect("import");
+        let result = import_bundle(&target, None, &bundle, &HashMap::new()).expect("import");
         assert_eq!(result.projects_imported, 1);
-        assert!(result.project_conflicts.is_empty());
+        assert!(result.import_conflicts.is_empty());
         assert_eq!(result.projects_skipped, 0);
         assert_eq!(result.knowledge_imported, 3);
         assert_eq!(result.knowledge_skipped_duplicates, 0);
@@ -6475,15 +8487,16 @@ mod tests {
     fn reimport_returns_conflicts_then_skip_resolution_imports_nothing() {
         let bundle = source_bundle("/tmp/portability-cf-p1");
         let target = init_test_db().unwrap();
-        import_bundle(&target, &bundle, &HashMap::new()).unwrap();
+        import_bundle(&target, None, &bundle, &HashMap::new()).unwrap();
 
         // Pass 1 again: the project now conflicts by root_path and is NOT imported.
-        let second = import_bundle(&target, &bundle, &HashMap::new()).unwrap();
+        let second = import_bundle(&target, None, &bundle, &HashMap::new()).unwrap();
         assert_eq!(second.projects_imported, 0);
-        assert_eq!(second.project_conflicts.len(), 1);
-        let c = &second.project_conflicts[0];
-        assert_eq!(c.bundle_project_id, "p1");
-        assert_eq!(c.existing_project_id, "p1");
+        assert_eq!(second.import_conflicts.len(), 1);
+        let c = &second.import_conflicts[0];
+        assert_eq!(c.kind, "project");
+        assert_eq!(c.bundle_id, "p1");
+        assert_eq!(c.existing_id, "p1");
         assert_eq!(c.matched_by, "root_path");
         // Re-run of the knowledge phase skipped everything as duplicates.
         assert_eq!(second.knowledge_imported, 0);
@@ -6491,8 +8504,8 @@ mod tests {
 
         // Pass 2 with skip: nothing imported, nothing duplicated.
         let mut res = HashMap::new();
-        res.insert("p1".to_string(), "skip".to_string());
-        let third = import_bundle(&target, &bundle, &res).unwrap();
+        res.insert("project:p1".to_string(), "skip".to_string());
+        let third = import_bundle(&target, None, &bundle, &res).unwrap();
         assert_eq!(third.projects_skipped, 1);
         assert_eq!(third.projects_imported, 0);
 
@@ -6511,7 +8524,7 @@ mod tests {
     fn replace_resolution_keeps_id_replaces_children_and_spares_telemetry() {
         let bundle = source_bundle("/tmp/portability-rp-p1");
         let target = init_test_db().unwrap();
-        import_bundle(&target, &bundle, &HashMap::new()).unwrap();
+        import_bundle(&target, None, &bundle, &HashMap::new()).unwrap();
 
         {
             let conn = target.get().unwrap();
@@ -6533,10 +8546,10 @@ mod tests {
         }
 
         let mut res = HashMap::new();
-        res.insert("p1".to_string(), "replace".to_string());
-        let result = import_bundle(&target, &bundle, &res).unwrap();
+        res.insert("project:p1".to_string(), "replace".to_string());
+        let result = import_bundle(&target, None, &bundle, &res).unwrap();
         assert_eq!(result.projects_imported, 1);
-        assert!(result.project_conflicts.is_empty());
+        assert!(result.import_conflicts.is_empty());
 
         let conn = target.get().unwrap();
         // Project id is stable, children carry their original uuids again.
@@ -6582,11 +8595,11 @@ mod tests {
         });
 
         let target = init_test_db().unwrap();
-        import_bundle(&target, &bundle, &HashMap::new()).unwrap();
+        import_bundle(&target, None, &bundle, &HashMap::new()).unwrap();
 
         let mut res = HashMap::new();
-        res.insert("p1".to_string(), "duplicate".to_string());
-        let result = import_bundle(&target, &bundle, &res).unwrap();
+        res.insert("project:p1".to_string(), "duplicate".to_string());
+        let result = import_bundle(&target, None, &bundle, &res).unwrap();
         assert_eq!(result.projects_imported, 1);
 
         let conn = target.get().unwrap();
@@ -6653,7 +8666,7 @@ mod tests {
     fn knowledge_dedups_by_dedup_key_and_kind_title_across_fresh_ids() {
         let bundle = source_bundle("/tmp/portability-kn-p1");
         let target = init_test_db().unwrap();
-        let first = import_bundle(&target, &bundle, &HashMap::new()).unwrap();
+        let first = import_bundle(&target, None, &bundle, &HashMap::new()).unwrap();
         assert_eq!(first.knowledge_imported, 3);
 
         // Same entries under FRESH ids: dedup_key catches dk1, (kind, title)
@@ -6663,7 +8676,7 @@ mod tests {
             k.id = format!("fresh-{}", k.id);
         }
         rekeyed.dev_projects.clear();
-        let second = import_bundle(&target, &rekeyed, &HashMap::new()).unwrap();
+        let second = import_bundle(&target, None, &rekeyed, &HashMap::new()).unwrap();
         assert_eq!(second.knowledge_imported, 0);
         assert_eq!(second.knowledge_skipped_duplicates, 3);
 
@@ -6681,7 +8694,7 @@ mod tests {
         // projects section is emptied out.
         bundle.dev_projects.clear();
         let target = init_test_db().unwrap();
-        let result = import_bundle(&target, &bundle, &HashMap::new()).unwrap();
+        let result = import_bundle(&target, None, &bundle, &HashMap::new()).unwrap();
         assert_eq!(result.knowledge_imported, 3);
 
         let conn = target.get().unwrap();
@@ -6748,7 +8761,7 @@ mod tests {
         bundle.dev_projects = vec![p, p2];
 
         let target = init_test_db().unwrap();
-        let result = import_bundle(&target, &bundle, &HashMap::new()).unwrap();
+        let result = import_bundle(&target, None, &bundle, &HashMap::new()).unwrap();
         assert_eq!(result.projects_imported, 2);
         assert_eq!(result.skills_written, 2, "warnings: {:?}", result.warnings);
         assert_eq!(result.skills_deferred, 1);
@@ -6817,5 +8830,837 @@ mod tests {
             "incoming content"
         );
         assert!(foo_dir.join(SKILL_PROVENANCE_FILE).exists());
+    }
+
+    // ------------------------------------------------------------------
+    // Twins (WP1)
+    // ------------------------------------------------------------------
+
+    /// Seed one twin with at least one row in every EXPORTED child table,
+    /// plus a `twin_voice_profiles` row that must NOT travel.
+    fn seed_twin(pool: &DbPool, id: &str, name: &str, kb_id: Option<&str>) {
+        let conn = pool.get().unwrap();
+        conn.execute(
+            "INSERT INTO twin_profiles \
+                (id, name, slug, bio, role, languages, pronouns, obsidian_subpath, is_active, \
+                 knowledge_base_id, training_directives, created_at, updated_at) \
+             VALUES (?1,?2,?3,'A bio','Founder','en,cs','they/them',?4,1,?5,'Be terse.',\
+                     '2026-01-01T00:00:00Z','2026-01-02T00:00:00Z')",
+            rusqlite::params![
+                id,
+                name,
+                format!("slug-{id}"),
+                format!("personas/twins/slug-{id}"),
+                kb_id
+            ],
+        )
+        .unwrap();
+
+        conn.execute(
+            "INSERT INTO twin_tones \
+                (id, twin_id, channel, voice_directives, examples_json, constraints_json, \
+                 length_hint, updated_at) \
+             VALUES (?1,?2,'generic','Warm but brief','[\"hi\"]','{\"no\":1}','short',\
+                     '2026-01-02T00:00:00Z')",
+            rusqlite::params![format!("tone-{id}"), id],
+        )
+        .unwrap();
+
+        // Two communications: the training pair (question in `summary`) and a
+        // plain inbound message.
+        conn.execute(
+            "INSERT INTO twin_communications \
+                (id, twin_id, channel, direction, contact_handle, content, summary, \
+                 key_facts_json, occurred_at, created_at) \
+             VALUES (?1,?2,'discord','out','alice','The answer text',\
+                     'What is your pricing philosophy?','[\"round up\"]',\
+                     '2026-01-03T00:00:00Z','2026-01-03T00:00:00Z')",
+            rusqlite::params![format!("comm-a-{id}"), id],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO twin_communications \
+                (id, twin_id, channel, direction, contact_handle, content, summary, \
+                 key_facts_json, occurred_at, created_at) \
+             VALUES (?1,?2,'discord','in','alice','Hello there',NULL,NULL,\
+                     '2026-01-04T00:00:00Z','2026-01-04T00:00:00Z')",
+            rusqlite::params![format!("comm-b-{id}"), id],
+        )
+        .unwrap();
+
+        for (suffix, status, notes) in [
+            ("p", "pending", None::<&str>),
+            ("a", "approved", Some("looks right")),
+            ("r", "rejected", Some("too personal")),
+        ] {
+            conn.execute(
+                "INSERT INTO twin_pending_memories \
+                    (id, twin_id, channel, content, title, importance, status, reviewer_notes, \
+                     source_communication_id, created_at, reviewed_at) \
+                 VALUES (?1,?2,'discord',?3,'A memory',4,?4,?5,?6,'2026-01-05T00:00:00Z',NULL)",
+                rusqlite::params![
+                    format!("mem-{suffix}-{id}"),
+                    id,
+                    format!("memory {suffix}"),
+                    status,
+                    notes,
+                    format!("comm-a-{id}")
+                ],
+            )
+            .unwrap();
+        }
+
+        // One fact whose sources all travel, one whose source does not exist.
+        conn.execute(
+            "INSERT INTO twin_distilled_facts \
+                (id, twin_id, contact_handle, content, importance, sources_json, created_at, \
+                 last_seen_at) \
+             VALUES (?1,?2,'alice','Prefers async',5,?3,'2026-01-06T00:00:00Z',\
+                     '2026-01-06T00:00:00Z')",
+            rusqlite::params![
+                format!("fact-ok-{id}"),
+                id,
+                format!("[\"comm-a-{id}\"]")
+            ],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO twin_distilled_facts \
+                (id, twin_id, contact_handle, content, importance, sources_json, created_at, \
+                 last_seen_at) \
+             VALUES (?1,?2,NULL,'Orphan fact',3,'[\"comm-gone\"]','2026-01-06T00:00:00Z',\
+                     '2026-01-06T00:00:00Z')",
+            rusqlite::params![format!("fact-orphan-{id}"), id],
+        )
+        .unwrap();
+
+        conn.execute(
+            "INSERT INTO twin_contacts (id, twin_id, handle, alias, notes, created_at, updated_at) \
+             VALUES (?1,?2,'alice','Alice A.','Main collaborator','2026-01-01T00:00:00Z',\
+                     '2026-01-07T00:00:00Z')",
+            rusqlite::params![format!("contact-{id}"), id],
+        )
+        .unwrap();
+
+        conn.execute(
+            "INSERT INTO twin_reflections (id, twin_id, prompt_seed, content, created_at) \
+             VALUES (?1,?2,'How is Alice?','A long reflection','2026-01-08T00:00:00Z')",
+            rusqlite::params![format!("refl-{id}"), id],
+        )
+        .unwrap();
+
+        conn.execute(
+            "INSERT INTO twin_channels \
+                (id, twin_id, channel_type, credential_id, persona_id, label, is_active, \
+                 created_at, updated_at) \
+             VALUES (?1,?2,'discord','cred-does-not-exist','persona-gone','Main server',1,\
+                     '2026-01-01T00:00:00Z','2026-01-01T00:00:00Z')",
+            rusqlite::params![format!("chan-{id}"), id],
+        )
+        .unwrap();
+
+        // Dead table — must never appear in a bundle.
+        conn.execute(
+            "INSERT INTO twin_voice_profiles (id, twin_id, provider, voice_id) \
+             VALUES (?1,?2,'elevenlabs','voice-123')",
+            rusqlite::params![format!("voice-{id}"), id],
+        )
+        .unwrap();
+    }
+
+    fn seed_twin_kb(user_db: &UserDbPool, kb_id: &str) {
+        let conn = user_db.get().unwrap();
+        conn.execute(
+            "INSERT INTO knowledge_bases \
+                (id, credential_id, name, description, embedding_model, embedding_dims, \
+                 chunk_size, chunk_overlap, created_at, updated_at) \
+             VALUES (?1,'kb-cred-old','Twin Brain','Notes','AllMiniLML6V2Q',384,512,50,\
+                     '2026-01-01T00:00:00Z','2026-01-01T00:00:00Z')",
+            rusqlite::params![kb_id],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO kb_documents \
+                (id, kb_id, source_type, source_path, title, content_hash, byte_size, \
+                 chunk_count, status, created_at) \
+             VALUES ('doc-1',?1,'file','/tmp/notes.md','Notes','deadbeef',123,2,'indexed',\
+                     '2026-01-01T00:00:00Z')",
+            rusqlite::params![kb_id],
+        )
+        .unwrap();
+        for (cid, idx, text) in [("chunk-1", 0, "first chunk"), ("chunk-2", 1, "second chunk")] {
+            conn.execute(
+                "INSERT INTO kb_chunks \
+                    (id, kb_id, document_id, chunk_index, content, token_count, created_at) \
+                 VALUES (?1,?2,'doc-1',?3,?4,7,'2026-01-01T00:00:00Z')",
+                rusqlite::params![cid, kb_id, idx, text],
+            )
+            .unwrap();
+        }
+    }
+
+    fn twin_bundle(pool: &DbPool, user_db: Option<&UserDbPool>) -> PortabilityBundle {
+        build_export_bundle(pool, user_db, ExportScope::Full, true, true).unwrap()
+    }
+
+    /// AC1 — every exported column survives a round trip, `summary` and
+    /// `key_facts_json` included.
+    #[test]
+    fn twin_round_trips_every_exported_table_and_column() {
+        let source = init_test_db().unwrap();
+        seed_twin(&source, "t1", "Founder Twin", None);
+        let bundle = twin_bundle(&source, None);
+
+        assert_eq!(bundle.twins.len(), 1);
+        let tw = &bundle.twins[0];
+        assert_eq!(tw.name, "Founder Twin");
+        assert_eq!(tw.bio.as_deref(), Some("A bio"));
+        assert_eq!(tw.role.as_deref(), Some("Founder"));
+        assert_eq!(tw.languages.as_deref(), Some("en,cs"));
+        assert_eq!(tw.pronouns.as_deref(), Some("they/them"));
+        assert_eq!(tw.training_directives.as_deref(), Some("Be terse."));
+        assert_eq!(tw.tones.len(), 1);
+        assert_eq!(tw.communications.len(), 2);
+        assert_eq!(tw.pending_memories.len(), 3);
+        assert_eq!(tw.distilled_facts.len(), 2);
+        assert_eq!(tw.contacts.len(), 1);
+        assert_eq!(tw.reflections.len(), 1);
+        assert_eq!(tw.channels.len(), 1);
+
+        // The interview QUESTION lives only in `summary`; its extracted facts
+        // only in `key_facts_json`. Losing either halves every training pair.
+        let training = tw
+            .communications
+            .iter()
+            .find(|c| c.direction == "out")
+            .expect("outbound communication");
+        assert_eq!(
+            training.summary.as_deref(),
+            Some("What is your pricing philosophy?")
+        );
+        assert_eq!(training.key_facts_json.as_deref(), Some("[\"round up\"]"));
+
+        // All three memory statuses + reviewer notes travel.
+        let statuses: std::collections::HashSet<&str> = tw
+            .pending_memories
+            .iter()
+            .map(|m| m.status.as_str())
+            .collect();
+        assert_eq!(
+            statuses,
+            ["pending", "approved", "rejected"].into_iter().collect()
+        );
+        assert!(tw
+            .pending_memories
+            .iter()
+            .any(|m| m.reviewer_notes.as_deref() == Some("too personal")));
+
+        // Contact aliases/notes, tone payloads, reflections, channel refs.
+        assert_eq!(tw.contacts[0].alias.as_deref(), Some("Alice A."));
+        assert_eq!(tw.contacts[0].notes.as_deref(), Some("Main collaborator"));
+        assert_eq!(tw.tones[0].examples_json.as_deref(), Some("[\"hi\"]"));
+        assert_eq!(tw.reflections[0].prompt_seed, "How is Alice?");
+        assert_eq!(tw.channels[0].credential_id, "cred-does-not-exist");
+        assert_eq!(tw.channels[0].persona_id.as_deref(), Some("persona-gone"));
+
+        // Import into a fresh DB and read the rows back.
+        let target = init_test_db().unwrap();
+        let result = import_bundle(&target, None, &bundle, &HashMap::new()).unwrap();
+        assert_eq!(result.twins_imported, 1);
+        assert!(result.import_conflicts.is_empty());
+
+        let conn = target.get().unwrap();
+        let (tid, slug, is_active, directives): (String, String, i32, Option<String>) = conn
+            .query_row(
+                "SELECT id, slug, is_active, training_directives FROM twin_profiles \
+                 WHERE name = 'Founder Twin'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+            )
+            .unwrap();
+        // Fresh uuid, re-derived slug, never active.
+        assert_ne!(tid, "t1");
+        assert_eq!(slug, "founder-twin");
+        assert_eq!(is_active, 0);
+        assert_eq!(directives.as_deref(), Some("Be terse."));
+
+        let child_count = |table: &str| -> i32 {
+            conn.query_row(
+                &format!("SELECT COUNT(*) FROM {table} WHERE twin_id = ?1"),
+                [tid.as_str()],
+                |r| r.get(0),
+            )
+            .unwrap()
+        };
+        assert_eq!(child_count("twin_tones"), 1);
+        assert_eq!(child_count("twin_communications"), 2);
+        assert_eq!(child_count("twin_pending_memories"), 3);
+        assert_eq!(child_count("twin_contacts"), 1);
+        assert_eq!(child_count("twin_reflections"), 1);
+        assert_eq!(child_count("twin_channels"), 1);
+        // The orphan-sourced fact is dropped (AC3); the cited one survives.
+        assert_eq!(child_count("twin_distilled_facts"), 1);
+
+        let summary: Option<String> = conn
+            .query_row(
+                "SELECT summary FROM twin_communications WHERE twin_id = ?1 AND direction = 'out'",
+                [tid.as_str()],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(summary.as_deref(), Some("What is your pricing philosophy?"));
+    }
+
+    /// AC5 — the three excluded profile columns and the dead voice table never
+    /// appear anywhere in a serialized bundle, by name or by value.
+    #[test]
+    fn twin_bundle_never_carries_slug_is_active_subpath_or_voice() {
+        let source = init_test_db().unwrap();
+        seed_twin(&source, "t1", "Founder Twin", None);
+        let bundle = twin_bundle(&source, None);
+        let json = serde_json::to_string(&bundle).unwrap();
+
+        for forbidden in [
+            "\"slug\"",
+            "\"obsidian_subpath\"",
+            "voice_profiles",
+            "\"voice_id\"",
+            "voice-123",
+            "slug-t1",
+            "personas/twins/slug-t1",
+        ] {
+            assert!(
+                !json.contains(forbidden),
+                "bundle must not contain {forbidden}"
+            );
+        }
+        // `is_active` DOES appear on channel rows (it is a real exported column
+        // there, and the import forces it to 0); the PROFILE-level one is what
+        // must never travel, so assert on the twin object's shape.
+        let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+        let twin = &v["twins"][0];
+        assert!(twin.get("slug").is_none());
+        assert!(twin.get("is_active").is_none());
+        assert!(twin.get("obsidian_subpath").is_none());
+        assert!(twin.get("knowledge_base_id").is_none());
+    }
+
+    /// AC3 — a fact whose sources all fail to remap is dropped with a warning,
+    /// never written with an empty `sources_json` (which the repo rejects).
+    #[test]
+    fn twin_facts_never_import_with_empty_sources() {
+        let source = init_test_db().unwrap();
+        seed_twin(&source, "t1", "Founder Twin", None);
+        let bundle = twin_bundle(&source, None);
+        let target = init_test_db().unwrap();
+        let result = import_bundle(&target, None, &bundle, &HashMap::new()).unwrap();
+
+        let conn = target.get().unwrap();
+        let mut stmt = conn
+            .prepare("SELECT sources_json FROM twin_distilled_facts")
+            .unwrap();
+        let rows: Vec<String> = stmt
+            .query_map([], |r| r.get::<_, String>(0))
+            .unwrap()
+            .map(Result::unwrap)
+            .collect();
+        assert_eq!(rows.len(), 1);
+        for s in &rows {
+            let ids: Vec<String> = serde_json::from_str(s).unwrap();
+            assert!(!ids.is_empty(), "sources_json must never be empty");
+            // Remapped, not the source machine's ids.
+            assert!(!ids.iter().any(|i| i.starts_with("comm-")));
+        }
+        assert!(result
+            .warnings
+            .iter()
+            .any(|w| w.contains("Orphan fact") && w.contains("without provenance")));
+    }
+
+    /// AC4 — an unresolvable channel imports disabled and says what to re-link.
+    #[test]
+    fn twin_channel_with_dead_credential_imports_disabled_with_warning() {
+        let source = init_test_db().unwrap();
+        seed_twin(&source, "t1", "Founder Twin", None);
+        let bundle = twin_bundle(&source, None);
+        let target = init_test_db().unwrap();
+        let result = import_bundle(&target, None, &bundle, &HashMap::new()).unwrap();
+
+        let conn = target.get().unwrap();
+        let (is_active, cred, persona): (i32, String, Option<String>) = conn
+            .query_row(
+                "SELECT is_active, credential_id, persona_id FROM twin_channels",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .unwrap();
+        assert_eq!(is_active, 0, "an imported channel must never be live");
+        // Kept verbatim — never auto-matched onto some other credential.
+        assert_eq!(cred, "cred-does-not-exist");
+        assert_eq!(persona.as_deref(), Some("persona-gone"));
+        assert!(result.warnings.iter().any(|w| {
+            w.contains("Main server") && w.contains("credential") && w.contains("persona")
+        }));
+    }
+
+    /// AC2 — twin conflict detection + all three resolutions.
+    #[test]
+    fn twin_reimport_conflicts_then_skip_replace_duplicate() {
+        let source = init_test_db().unwrap();
+        seed_twin(&source, "t1", "Founder Twin", None);
+        let bundle = twin_bundle(&source, None);
+        let target = init_test_db().unwrap();
+        import_bundle(&target, None, &bundle, &HashMap::new()).unwrap();
+
+        let first_id: String = {
+            let conn = target.get().unwrap();
+            conn.query_row("SELECT id FROM twin_profiles", [], |r| r.get(0))
+                .unwrap()
+        };
+
+        // Pass 1 again: matched by name (NOT slug — the slug was re-derived).
+        let second = import_bundle(&target, None, &bundle, &HashMap::new()).unwrap();
+        assert_eq!(second.twins_imported, 0);
+        assert_eq!(second.import_conflicts.len(), 1);
+        let c = &second.import_conflicts[0];
+        assert_eq!(c.kind, "twin");
+        assert_eq!(c.bundle_id, "t1");
+        assert_eq!(c.name, "Founder Twin");
+        assert_eq!(c.detail, None);
+        assert_eq!(c.existing_id, first_id);
+        assert_eq!(c.matched_by, "name");
+
+        // skip → nothing new.
+        let mut res = HashMap::new();
+        res.insert("twin:t1".to_string(), "skip".to_string());
+        let third = import_bundle(&target, None, &bundle, &res).unwrap();
+        assert_eq!(third.twins_skipped, 1);
+        assert_eq!(third.twins_imported, 0);
+        {
+            let conn = target.get().unwrap();
+            let n: i32 = conn
+                .query_row("SELECT COUNT(*) FROM twin_profiles", [], |r| r.get(0))
+                .unwrap();
+            assert_eq!(n, 1);
+        }
+
+        // replace → same id survives, children rebuilt (no duplication).
+        let mut res = HashMap::new();
+        res.insert("twin:t1".to_string(), "replace".to_string());
+        let fourth = import_bundle(&target, None, &bundle, &res).unwrap();
+        assert_eq!(fourth.twins_imported, 1);
+        {
+            let conn = target.get().unwrap();
+            let ids: Vec<String> = conn
+                .prepare("SELECT id FROM twin_profiles")
+                .unwrap()
+                .query_map([], |r| r.get::<_, String>(0))
+                .unwrap()
+                .map(Result::unwrap)
+                .collect();
+            assert_eq!(ids, vec![first_id.clone()]);
+            let comms: i32 = conn
+                .query_row("SELECT COUNT(*) FROM twin_communications", [], |r| r.get(0))
+                .unwrap();
+            assert_eq!(comms, 2, "replace rebuilds children, it does not append");
+        }
+
+        // duplicate → a second twin, every soft ref remapped onto its own rows.
+        let mut res = HashMap::new();
+        res.insert("twin:t1".to_string(), "duplicate".to_string());
+        let fifth = import_bundle(&target, None, &bundle, &res).unwrap();
+        assert_eq!(fifth.twins_imported, 1);
+
+        let conn = target.get().unwrap();
+        let dup_id: String = conn
+            .query_row(
+                "SELECT id FROM twin_profiles WHERE name = 'Founder Twin (imported)'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_ne!(dup_id, first_id);
+        let dup_slug: String = conn
+            .query_row("SELECT slug FROM twin_profiles WHERE id = ?1", [dup_id.as_str()], |r| {
+                r.get(0)
+            })
+            .unwrap();
+        assert_eq!(dup_slug, "founder-twin-imported");
+        // The duplicate's fact cites the duplicate's OWN communication.
+        let (fact_sources, dup_comm_ids): (String, Vec<String>) = {
+            let s: String = conn
+                .query_row(
+                    "SELECT sources_json FROM twin_distilled_facts WHERE twin_id = ?1",
+                    [dup_id.as_str()],
+                    |r| r.get(0),
+                )
+                .unwrap();
+            let ids: Vec<String> = conn
+                .prepare("SELECT id FROM twin_communications WHERE twin_id = ?1")
+                .unwrap()
+                .query_map([dup_id.as_str()], |r| r.get::<_, String>(0))
+                .unwrap()
+                .map(Result::unwrap)
+                .collect();
+            (s, ids)
+        };
+        let cited: Vec<String> = serde_json::from_str(&fact_sources).unwrap();
+        assert_eq!(cited.len(), 1);
+        assert!(dup_comm_ids.contains(&cited[0]));
+        // …and the memory's provenance points at the duplicate's own row too.
+        let mem_source: Option<String> = conn
+            .query_row(
+                "SELECT source_communication_id FROM twin_pending_memories \
+                 WHERE twin_id = ?1 LIMIT 1",
+                [dup_id.as_str()],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert!(dup_comm_ids.contains(&mem_source.expect("memory keeps its provenance")));
+    }
+
+    /// AC6 — exceeding a cap warns, naming what was dropped and how much.
+    #[test]
+    fn exceeding_twin_caps_warns_instead_of_dropping_silently() {
+        let pool = init_test_db().unwrap();
+        seed_twin(&pool, "t1", "Founder Twin", None);
+        {
+            let conn = pool.get().unwrap();
+            for i in 0..(MAX_TWIN_REFLECTIONS + 3) {
+                conn.execute(
+                    "INSERT INTO twin_reflections (id, twin_id, prompt_seed, content, created_at) \
+                     VALUES (?1,'t1','seed','body','2026-01-09T00:00:00Z')",
+                    rusqlite::params![format!("extra-refl-{i}")],
+                )
+                .unwrap();
+            }
+        }
+        let mut warnings = Vec::new();
+        let twins = collect_twin_exports(&pool, None, None, &mut warnings).unwrap();
+        assert_eq!(twins[0].reflections.len(), MAX_TWIN_REFLECTIONS);
+        let w = warnings
+            .iter()
+            .find(|w| w.contains("reflections"))
+            .expect("truncation must be reported");
+        assert!(w.contains("Founder Twin"), "warning names the twin: {w}");
+        assert!(w.contains("dropped"), "warning says how much: {w}");
+        assert!(w.contains(&format!("{}", MAX_TWIN_REFLECTIONS)));
+
+        // …and the bundle carries the warning to whoever imports it.
+        let bundle = twin_bundle(&pool, None);
+        assert!(bundle
+            .export_warnings
+            .iter()
+            .any(|w| w.contains("reflections")));
+        let target = init_test_db().unwrap();
+        let result = import_bundle(&target, None, &bundle, &HashMap::new()).unwrap();
+        assert!(result
+            .warnings
+            .iter()
+            .any(|w| w.starts_with("Export note —") && w.contains("reflections")));
+    }
+
+    /// The workspace-wide caps a preview CAN see are forecast on the stats
+    /// call, which is the only export channel that reaches the exporting user.
+    #[test]
+    fn export_stats_forecasts_twin_cap_overflow() {
+        let pool = init_test_db().unwrap();
+        for i in 0..(MAX_TWINS + 2) {
+            seed_twin(&pool, &format!("t{i}"), &format!("Twin {i}"), None);
+            // Only the first twin may be active; seed_twin sets is_active=1.
+            let conn = pool.get().unwrap();
+            conn.execute("UPDATE twin_profiles SET is_active = 0", []).unwrap();
+        }
+        let stats = compute_export_stats(&pool).unwrap();
+        assert_eq!(stats.twin_count as usize, MAX_TWINS + 2);
+        assert!(stats
+            .warnings
+            .iter()
+            .any(|w| w.contains("Twins") && w.contains("at most")));
+    }
+
+    /// Selective scope honours `twin_ids` — empty means none, like every other
+    /// selective section.
+    #[test]
+    fn selective_scope_filters_twins() {
+        let pool = init_test_db().unwrap();
+        seed_twin(&pool, "t1", "Founder Twin", None);
+        seed_twin(&pool, "t2", "Personal Twin", None);
+
+        let scope = ExportScope::Selective {
+            persona_ids: Vec::new(),
+            team_ids: Vec::new(),
+            credential_ids: Vec::new(),
+            project_ids: Vec::new(),
+            workspace_ids: Vec::new(),
+            twin_ids: vec!["t2".into()],
+        };
+        let bundle = build_export_bundle(&pool, None, scope, true, true).unwrap();
+        assert_eq!(bundle.twins.len(), 1);
+        assert_eq!(bundle.twins[0].name, "Personal Twin");
+
+        let scope = ExportScope::Selective {
+            persona_ids: Vec::new(),
+            team_ids: Vec::new(),
+            credential_ids: Vec::new(),
+            project_ids: Vec::new(),
+            workspace_ids: Vec::new(),
+            twin_ids: Vec::new(),
+        };
+        let bundle = build_export_bundle(&pool, None, scope, true, true).unwrap();
+        assert!(bundle.twins.is_empty());
+    }
+
+    /// AC2/§2 — the knowledge base travels as TEXT only, lands under fresh
+    /// ids in the user database, rebinds the twin, and queues a re-embed.
+    #[test]
+    fn twin_knowledge_base_round_trips_text_only_and_queues_reindex() {
+        let source = init_test_db().unwrap();
+        let source_user = crate::db::init_test_user_db().unwrap();
+        seed_twin_kb(&source_user, "kb-old");
+        seed_twin(&source, "t1", "Founder Twin", Some("kb-old"));
+
+        let bundle = twin_bundle(&source, Some(&source_user));
+        let kb = bundle.twins[0]
+            .knowledge_base
+            .as_ref()
+            .expect("bound KB travels");
+        assert_eq!(kb.documents.len(), 1);
+        assert_eq!(kb.chunks.len(), 2);
+        assert_eq!(kb.embedding_dims, 384);
+
+        // No vectors, no embeddings, no local credential ref.
+        let json = serde_json::to_string(&bundle).unwrap();
+        for forbidden in ["kb_vec", "embedding\"", "\"credential_id\":\"kb-cred-old\""] {
+            assert!(!json.contains(forbidden), "bundle must not contain {forbidden}");
+        }
+
+        let target = init_test_db().unwrap();
+        let target_user = crate::db::init_test_user_db().unwrap();
+        let result = import_bundle(&target, Some(&target_user), &bundle, &HashMap::new()).unwrap();
+        assert_eq!(result.twins_imported, 1);
+        assert_eq!(result.twin_kb_chunks_imported, 2);
+        assert_eq!(result.pending_kb_reindex.len(), 1);
+
+        let new_kb_id = &result.pending_kb_reindex[0];
+        assert_ne!(new_kb_id, "kb-old");
+
+        let uconn = target_user.get().unwrap();
+        let (docs, chunks): (i64, i64) = uconn
+            .query_row(
+                "SELECT document_count, chunk_count FROM knowledge_bases WHERE id = ?1",
+                [new_kb_id.as_str()],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!((docs, chunks), (1, 2));
+        let contents: Vec<String> = uconn
+            .prepare("SELECT content FROM kb_chunks WHERE kb_id = ?1 ORDER BY chunk_index")
+            .unwrap()
+            .query_map([new_kb_id.as_str()], |r| r.get::<_, String>(0))
+            .unwrap()
+            .map(Result::unwrap)
+            .collect();
+        assert_eq!(contents, vec!["first chunk", "second chunk"]);
+
+        // The twin is rebound to the NEW kb, and a vault shell exists for it.
+        let conn = target.get().unwrap();
+        let bound: Option<String> = conn
+            .query_row(
+                "SELECT knowledge_base_id FROM twin_profiles WHERE name = 'Founder Twin'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(bound.as_deref(), Some(new_kb_id.as_str()));
+        let shells: i32 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM persona_credentials WHERE service_type = 'personas_vector_db'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(shells, 1);
+    }
+
+    /// An unreachable knowledge base never fails the export — the twin travels
+    /// without it plus a warning.
+    #[test]
+    fn twin_with_unresolvable_kb_exports_with_a_warning() {
+        let source = init_test_db().unwrap();
+        let user = crate::db::init_test_user_db().unwrap();
+        seed_twin(&source, "t1", "Founder Twin", Some("kb-missing"));
+
+        let mut warnings = Vec::new();
+        let twins = collect_twin_exports(&source, Some(&user), None, &mut warnings).unwrap();
+        assert_eq!(twins.len(), 1);
+        assert!(twins[0].knowledge_base.is_none());
+        assert!(warnings
+            .iter()
+            .any(|w| w.contains("kb-missing") && w.contains("no longer exists")));
+    }
+
+    /// Per-field length validation — NOT just count caps. A bundle with an
+    /// oversize communication is rejected before it reaches the DB layer.
+    #[test]
+    fn validate_bundle_rejects_oversize_twin_text_and_bad_enums() {
+        let source = init_test_db().unwrap();
+        seed_twin(&source, "t1", "Founder Twin", None);
+
+        let mut bundle = twin_bundle(&source, None);
+        bundle.twins[0].communications[0].content = "x".repeat(MAX_MEMORY_CONTENT_LEN + 1);
+        assert!(validate_bundle(&bundle).is_err());
+
+        let mut bundle = twin_bundle(&source, None);
+        bundle.twins[0].pending_memories[0].reviewer_notes =
+            Some("y".repeat(MAX_MEMORY_CONTENT_LEN + 1));
+        assert!(validate_bundle(&bundle).is_err());
+
+        let mut bundle = twin_bundle(&source, None);
+        bundle.twins[0].pending_memories[0].status = "bogus".into();
+        assert!(validate_bundle(&bundle).is_err());
+
+        let mut bundle = twin_bundle(&source, None);
+        bundle.twins[0].communications[0].direction = "sideways".into();
+        assert!(validate_bundle(&bundle).is_err());
+
+        // The unmodified bundle still validates.
+        assert!(validate_bundle(&twin_bundle(&source, None)).is_ok());
+    }
+
+    #[test]
+    fn validate_bundle_rejects_too_many_twins() {
+        let source = init_test_db().unwrap();
+        seed_twin(&source, "t1", "Founder Twin", None);
+        let mut bundle = twin_bundle(&source, None);
+        while bundle.twins.len() <= MAX_TWINS {
+            let tw = &bundle.twins[0];
+            bundle.twins.push(TwinExport {
+                id: uuid::Uuid::new_v4().to_string(),
+                name: tw.name.clone(),
+                bio: None,
+                role: None,
+                languages: None,
+                pronouns: None,
+                training_directives: None,
+                created_at: tw.created_at.clone(),
+                updated_at: tw.updated_at.clone(),
+                tones: Vec::new(),
+                communications: Vec::new(),
+                pending_memories: Vec::new(),
+                distilled_facts: Vec::new(),
+                contacts: Vec::new(),
+                reflections: Vec::new(),
+                channels: Vec::new(),
+                knowledge_base: None,
+            });
+        }
+        assert!(validate_bundle(&bundle).is_err());
+    }
+
+    // ------------------------------------------------------------------
+    // AC7 — dev-project conflict REGRESSION guard
+    //
+    // The project conflict path is shipped, working code that WP1 only
+    // genericized (`ProjectConflict` → `ImportConflict`, flat `"kind:id"`
+    // resolution keys). This test pins the behaviour end to end so the
+    // refactor can be shown not to have changed it: same detection, same
+    // matched_by, same replace/skip/duplicate outcomes, same counters —
+    // with the project's `root_path` now surfacing through the generic
+    // `detail` field.
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn dev_project_conflict_path_is_unchanged_by_genericization() {
+        let bundle = source_bundle("/tmp/portability-regression-p1");
+        let target = init_test_db().unwrap();
+
+        // Pass 1, fresh target: imports cleanly, no conflicts.
+        let first = import_bundle(&target, None, &bundle, &HashMap::new()).unwrap();
+        assert_eq!(first.projects_imported, 1);
+        assert_eq!(first.projects_skipped, 0);
+        assert!(first.import_conflicts.is_empty());
+
+        // Pass 1, second run: conflict by root_path, project NOT imported.
+        let second = import_bundle(&target, None, &bundle, &HashMap::new()).unwrap();
+        assert_eq!(second.projects_imported, 0);
+        assert_eq!(second.projects_skipped, 0);
+        assert_eq!(second.import_conflicts.len(), 1);
+        let c = &second.import_conflicts[0];
+        assert_eq!(c.kind, "project");
+        assert_eq!(c.bundle_id, "p1");
+        assert_eq!(c.name, "Project p1");
+        assert_eq!(c.existing_id, "p1");
+        assert_eq!(c.matched_by, "root_path");
+        // root_path moved from its own field into the generic `detail`.
+        assert_eq!(c.detail.as_deref(), Some("/tmp/portability-regression-p1"));
+
+        // A resolution keyed the OLD way (bare id) must not be honoured —
+        // otherwise the two-pass flow would silently half-work.
+        let mut legacy_key = HashMap::new();
+        legacy_key.insert("p1".to_string(), "duplicate".to_string());
+        let ignored = import_bundle(&target, None, &bundle, &legacy_key).unwrap();
+        assert_eq!(ignored.projects_imported, 0);
+        assert_eq!(ignored.projects_skipped, 0);
+
+        // skip / replace / duplicate all behave exactly as before.
+        let mut res = HashMap::new();
+        res.insert("project:p1".to_string(), "skip".to_string());
+        let skipped = import_bundle(&target, None, &bundle, &res).unwrap();
+        assert_eq!(skipped.projects_skipped, 1);
+        assert_eq!(skipped.projects_imported, 0);
+
+        let mut res = HashMap::new();
+        res.insert("project:p1".to_string(), "replace".to_string());
+        let replaced = import_bundle(&target, None, &bundle, &res).unwrap();
+        assert_eq!(replaced.projects_imported, 1);
+        assert!(replaced.import_conflicts.is_empty());
+        {
+            // Scoped to the BUNDLED project: the KPI phase also materializes a
+            // dormant "Imported" placeholder project, which predates this work.
+            let conn = target.get().unwrap();
+            let n: i32 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM dev_projects WHERE root_path = ?1",
+                    ["/tmp/portability-regression-p1"],
+                    |r| r.get(0),
+                )
+                .unwrap();
+            assert_eq!(n, 1, "replace keeps exactly one copy of the bundled project");
+            let id: String = conn
+                .query_row(
+                    "SELECT id FROM dev_projects WHERE root_path = ?1",
+                    ["/tmp/portability-regression-p1"],
+                    |r| r.get(0),
+                )
+                .unwrap();
+            assert_eq!(id, "p1", "replace preserves the existing project id");
+        }
+
+        let mut res = HashMap::new();
+        res.insert("project:p1".to_string(), "duplicate".to_string());
+        let duplicated = import_bundle(&target, None, &bundle, &res).unwrap();
+        assert_eq!(duplicated.projects_imported, 1);
+        {
+            let conn = target.get().unwrap();
+            let n: i32 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM dev_projects WHERE name LIKE 'Project p1%'",
+                    [],
+                    |r| r.get(0),
+                )
+                .unwrap();
+            assert_eq!(n, 2, "duplicate lands alongside the original");
+        }
+
+        // Unknown resolution: warned, not imported (unchanged behaviour).
+        let mut res = HashMap::new();
+        res.insert("project:p1".to_string(), "nonsense".to_string());
+        let bad = import_bundle(&target, None, &bundle, &res).unwrap();
+        assert_eq!(bad.projects_imported, 0);
+        assert!(bad
+            .warnings
+            .iter()
+            .any(|w| w.contains("unknown resolution 'nonsense'")));
     }
 }

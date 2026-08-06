@@ -1685,6 +1685,31 @@ pub fn init_test_db() -> Result<DbPool, AppError> {
     Ok(pool)
 }
 
+/// Throwaway USER database (the `personas_data.db` counterpart of
+/// [`init_test_db`]) for tests that exercise code spanning BOTH pools — the
+/// portability importer reads twins out of the app database but their
+/// knowledge bases out of this one.
+///
+/// Only [`KNOWLEDGE_BASE_SCHEMA`] is applied; nothing that needs this also
+/// needs the companion schema, and applying it would cost every call.
+#[cfg(any(test, feature = "test-support"))]
+pub fn init_test_user_db() -> Result<UserDbPool, AppError> {
+    use std::time::Duration;
+
+    let tmp = std::env::temp_dir().join(format!("personas_user_test_{}.db", uuid::Uuid::new_v4()));
+    let manager = SqliteConnectionManager::file(&tmp);
+    let pool = Pool::builder()
+        .max_size(2)
+        .connection_timeout(Duration::from_secs(5))
+        .connection_customizer(Box::new(SqlitePragmaCustomizer))
+        .build(manager)?;
+    {
+        let conn = pool.get()?;
+        conn.execute_batch(KNOWLEDGE_BASE_SCHEMA)?;
+    }
+    Ok(pool)
+}
+
 #[cfg(test)]
 mod boot_tests {
     use super::*;
