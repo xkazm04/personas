@@ -2022,6 +2022,22 @@ const bridge: TestBridge = {
   /** Debug-only round-trip helper: export selected personas/teams/credentials
    *  to a known path, bypassing the OS save dialog. The Tauri command is
    *  gated by #[cfg(debug_assertions)] so this only works in dev builds. */
+  /**
+   * NOTE ON THE SIGNATURE SHAPE — deliberately still one parameter per scope.
+   *
+   * The app-side export chain was collapsed to a single `ExportSelectionArgs`
+   * object precisely so an added scope cannot transpose arguments. This
+   * harness method keeps the flat parameter list because `/bridge-exec`
+   * dispatches by *parameter-name reflection* (`resolveArgs` above): the
+   * Python caller sends a NAMED dict and the dispatcher maps each key onto the
+   * matching declared parameter. Destructuring into `({ personaIds, … })`
+   * defeats that regex and silently falls back to `Object.values(params)`,
+   * which is exactly the positional-order bug we are removing everywhere else.
+   *
+   * So the transposition hazard does not exist here (callers never pass a
+   * positional tuple), and new scopes are appended at the END so existing
+   * callers that omit them keep working via the defaults.
+   */
   async exportPortabilityToPath(
     personaIds: string[],
     teamIds: string[],
@@ -2032,6 +2048,8 @@ const bridge: TestBridge = {
     projectIds: string[] | null = null,
     workspaceIds: string[] | null = null,
     includeKpis: boolean | null = null,
+    twinIds: string[] | null = null,
+    athenaTiers: string[] | null = null,
   ) {
     try {
       const wrote = await invoke<boolean>('export_selective_to_path', {
@@ -2040,6 +2058,8 @@ const bridge: TestBridge = {
         credentialIds,
         projectIds: projectIds ?? [],
         workspaceIds: workspaceIds ?? [],
+        twinIds: twinIds ?? [],
+        athenaTiers: athenaTiers ?? [],
         includeMemories,
         includeKpis,
         passphrase,
@@ -2054,8 +2074,10 @@ const bridge: TestBridge = {
   /** Debug-only round-trip helper: import a portability bundle from a known
    *  path, bypassing the OS file picker. Returns the PortabilityImportResult
    *  shape so the smoke test can assert on counts and warnings.
-   *  `projectResolutionsJson` drives the pass-2 dev-project conflict
-   *  resolution (JSON map bundleProjectId → replace|skip|duplicate). */
+   *  `projectResolutionsJson` drives the pass-2 conflict resolution (JSON map
+   *  `"<kind>:<bundleId>"` → replace|skip|duplicate, covering dev projects and
+   *  twins). Both the legacy and generalised argument names are sent so this
+   *  works against either Rust signature; Tauri ignores undeclared keys. */
   async importPortabilityFromPath(
     passphrase: string | null,
     filePath: string,
@@ -2064,7 +2086,7 @@ const bridge: TestBridge = {
     try {
       const result = await invoke<Record<string, unknown> | null>(
         'import_portability_bundle_from_path',
-        { passphrase, filePath, projectResolutionsJson },
+        { passphrase, filePath, projectResolutionsJson, resolutionsJson: projectResolutionsJson },
       );
       return { success: true, result };
     } catch (e: unknown) {

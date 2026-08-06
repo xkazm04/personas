@@ -9,7 +9,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { PasswordToggleField } from '@/features/shared/components/forms/PasswordToggleField';
 import { ExportSelectionModal } from './ExportSelectionModal';
 import { ImportConflictPanel } from './ImportConflictPanel';
-import type { PortabilityImportResult } from '@/api/system/dataPortability';
+import type { PortabilityImportResult, ExportSelectionArgs } from '@/api/system/dataPortability';
 import { useTranslation } from '@/i18n/useTranslation';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
@@ -21,7 +21,7 @@ interface ExportSectionProps {
   showExportModal: boolean;
   onOpenExportModal: () => void;
   onCloseExportModal: () => void;
-  onExportSelective: (personaIds: string[], teamIds: string[], credentialIds: string[], projectIds: string[], workspaceIds: string[], includeMemories: boolean, includeKpis: boolean, passphrase?: string) => void;
+  onExportSelective: (args: ExportSelectionArgs) => void;
   onImport: (passphrase?: string) => void;
   onImportWithResolutions: (resolutions: Record<string, string>) => void;
   onDismissConflicts: () => void;
@@ -123,10 +123,10 @@ export function ExportSection({
         )}
       </div>
 
-      {/* Project conflict resolution (pass 2) */}
-      {importResult && importResult.project_conflicts.length > 0 && (
+      {/* Conflict resolution (pass 2) — dev projects and twins */}
+      {importResult && importResult.import_conflicts.length > 0 && (
         <ImportConflictPanel
-          conflicts={importResult.project_conflicts}
+          conflicts={importResult.import_conflicts}
           busy={importStatus === 'loading'}
           onConfirm={onImportWithResolutions}
           onDismiss={onDismissConflicts}
@@ -176,6 +176,22 @@ export function ExportSection({
             )}
             {importResult.skills_deferred > 0 && (
               <span>{s.import_skills_deferred.replace('{count}', String(importResult.skills_deferred))}</span>
+            )}
+            {importResult.twins_imported > 0 && (
+              <span>{s.import_twins.replace('{count}', String(importResult.twins_imported))}</span>
+            )}
+            {importResult.twins_skipped > 0 && (
+              <span>{s.import_twins_skipped.replace('{count}', String(importResult.twins_skipped))}</span>
+            )}
+            {importResult.twin_kb_chunks_imported > 0 && (
+              <span>{s.import_twin_kb_chunks.replace('{count}', String(importResult.twin_kb_chunks_imported))}</span>
+            )}
+            {importResult.athena_memory_imported > 0 && (
+              <span>{s.import_athena_memory.replace('{count}', String(importResult.athena_memory_imported))}</span>
+            )}
+            {importResult.athena_identity_replaced && <span>{s.import_athena_identity_replaced}</span>}
+            {importResult.reembed_queued > 0 && (
+              <span>{s.import_reembed_queued.replace('{count}', String(importResult.reembed_queued))}</span>
             )}
           </div>
           {importResult.warnings.length > 0 && (

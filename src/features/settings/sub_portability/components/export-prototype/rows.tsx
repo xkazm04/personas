@@ -1,4 +1,4 @@
-import { Cpu, ShieldCheck, KeyRound, Users, Target, AlertTriangle, Power, FolderGit2, BookOpen } from 'lucide-react';
+import { Cpu, ShieldCheck, KeyRound, Users, Target, AlertTriangle, Power, FolderGit2, BookOpen, Fingerprint, Sparkles, Library, Database, Quote } from 'lucide-react';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -7,6 +7,8 @@ import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { DevWorkspace } from '@/lib/bindings/DevWorkspace';
+import type { TwinProfile } from '@/lib/bindings/TwinProfile';
+import type { AthenaTierRow } from './types';
 import { SelectBox, StatChip } from './atoms';
 
 const ROW_BASE =
@@ -233,6 +235,97 @@ export function WorkspacePickRow({
           <p className="typo-caption text-foreground truncate">{workspace.description}</p>
         )}
       </div>
+    </label>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Twin row — profile identity + what ships with its brain.
+// ---------------------------------------------------------------------------
+
+export function TwinPickRow({
+  twin,
+  factCount,
+  selected,
+  onToggle,
+}: {
+  twin: TwinProfile;
+  factCount: number;
+  selected: boolean;
+  onToggle: () => void;
+}) {
+  const { t } = useTranslation();
+  const p = t.settings.portability.proto;
+  return (
+    <label className={`${ROW_BASE} ${rowTone(selected)}`} data-testid={`portability-twin-row-${twin.id}`}>
+      <SelectBox state={selected} onChange={onToggle} ariaLabel={twin.name} />
+      <span className="w-8 h-8 rounded-card flex items-center justify-center bg-rose-500/10 text-rose-300 flex-shrink-0">
+        <Fingerprint className="w-4 h-4" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="typo-body font-medium text-foreground truncate">{twin.name}</div>
+        <div className="typo-caption text-foreground truncate" title={twin.obsidian_subpath}>
+          {twin.obsidian_subpath}
+        </div>
+      </div>
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        {twin.is_active && (
+          <StatChip icon={<Sparkles className="w-3 h-3" />} tone="emerald" title={p.twin_active}>
+            {p.twin_active}
+          </StatChip>
+        )}
+        {twin.role && (
+          <StatChip icon={<Quote className="w-3 h-3" />} tone="rose" title={p.twin_role_label}>
+            <span className="max-w-[8rem] truncate">{twin.role}</span>
+          </StatChip>
+        )}
+        <StatChip icon={<Library className="w-3 h-3" />} title={p.twin_facts_label}>
+          {factCount}
+        </StatChip>
+        <StatChip
+          icon={<Database className="w-3 h-3" />}
+          tone={twin.knowledge_base_id ? 'violet' : 'neutral'}
+          title={twin.knowledge_base_id ? p.twin_kb_bound : p.twin_no_kb}
+        >
+          {twin.knowledge_base_id ? p.twin_kb_bound : p.twin_no_kb}
+        </StatChip>
+      </div>
+    </label>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Athena memory tier row — a synthetic row, not a database entity. Athena is a
+// singleton, so the scope's "list" is two fixed tiers with real counts.
+// ---------------------------------------------------------------------------
+
+export function AthenaTierPickRow({
+  tier,
+  selected,
+  onToggle,
+}: {
+  tier: AthenaTierRow;
+  selected: boolean;
+  onToggle: () => void;
+}) {
+  const { t, tx } = useTranslation();
+  const p = t.settings.portability.proto;
+  const isCore = tier.id === 'core';
+  const title = isCore ? p.athena_core_title : p.athena_learned_title;
+  const hint = isCore ? p.athena_core_hint : p.athena_learned_hint;
+  return (
+    <label className={`${ROW_BASE} ${rowTone(selected)}`} data-testid={`portability-athena-row-${tier.id}`}>
+      <SelectBox state={selected} onChange={onToggle} ariaLabel={title} />
+      <span className="w-8 h-8 rounded-card flex items-center justify-center bg-fuchsia-500/10 text-fuchsia-300 flex-shrink-0">
+        <Sparkles className="w-4 h-4" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="typo-body font-medium text-foreground truncate">{title}</div>
+        <p className="typo-caption text-foreground truncate">{hint}</p>
+      </div>
+      <StatChip icon={<Library className="w-3 h-3" />} tone="violet" title={p.athena_items_label}>
+        {tx(p.athena_items, { count: tier.count })}
+      </StatChip>
     </label>
   );
 }

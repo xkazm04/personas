@@ -11166,6 +11166,21 @@ export type Translations = {
       import_failed: string;
       cred_export_failed: string;
       cred_import_failed: string;
+      twins: string;
+      athena_core: string;
+      athena_learned: string;
+      items_exist: string;
+      items_exist_plural: string;
+      import_conflict_hint: string;
+      matched_by_slug: string;
+      conflict_kind_project: string;
+      conflict_kind_twin: string;
+      import_twins: string;
+      import_twins_skipped: string;
+      import_twin_kb_chunks: string;
+      import_athena_memory: string;
+      import_athena_identity_replaced: string;
+      import_reembed_queued: string;
       proto: {
         search_placeholder: string;
         filter_all: string;
@@ -11218,6 +11233,25 @@ export type Translations = {
         memories_hint: string;
         encryption_title: string;
         encryption_hint: string;
+        scope_twins: string;
+        scope_athena: string;
+        row_twins: string;
+        row_athena: string;
+        encrypted_scope: string;
+        twin_active: string;
+        twin_role_label: string;
+        twin_facts_label: string;
+        twin_kb_bound: string;
+        twin_no_kb: string;
+        athena_core_title: string;
+        athena_core_hint: string;
+        athena_learned_title: string;
+        athena_learned_hint: string;
+        athena_items: string;
+        athena_items_label: string;
+        encryption_title_required: string;
+        passphrase_required_hint: string;
+        secrets_blocked: string;
       };
     };
     config: {

@@ -1,4 +1,4 @@
-import { HardDriveDownload, AlertTriangle, Boxes, Download, ShieldCheck, HardDrive, Bot, Users, Wrench, KeyRound, Brain, BrainCircuit, FlaskConical, Target, FolderGit2, BookOpen, type LucideIcon } from 'lucide-react';
+import { HardDriveDownload, AlertTriangle, Boxes, Download, ShieldCheck, HardDrive, Bot, Users, Wrench, KeyRound, Brain, BrainCircuit, FlaskConical, Target, FolderGit2, BookOpen, Fingerprint, Sparkles, Library, type LucideIcon } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -58,6 +58,22 @@ export default function DataPortabilitySettings() {
               <StatBadge icon={Target} label={s.kpis} value={dp.stats.kpi_count} accent="text-pink-400" />
               <StatBadge icon={FolderGit2} label={s.dev_projects} value={dp.stats.dev_project_count} accent="text-lime-400" />
               <StatBadge icon={BookOpen} label={s.workspace_knowledge} value={dp.stats.workspace_knowledge_count} accent="text-indigo-400" />
+              <StatBadge icon={Fingerprint} label={s.twins} value={dp.stats.twin_count} accent="text-rose-300" />
+              <StatBadge icon={Sparkles} label={s.athena_core} value={dp.stats.athena_core_count} accent="text-fuchsia-400" />
+              <StatBadge icon={Library} label={s.athena_learned} value={dp.stats.athena_learned_count} accent="text-fuchsia-300" />
+            </div>
+          )}
+
+          {/* Export-side truncation warnings (e.g. a capped history window) —
+              surfaced next to the counts they qualify. */}
+          {dp.stats && dp.stats.warnings.length > 0 && (
+            <div data-testid="portability-export-warnings" className="space-y-1">
+              <p className="typo-body font-medium text-amber-400">{s.warnings}</p>
+              {dp.stats.warnings.map((w, i) => (
+                <p key={i} className="typo-body text-foreground pl-2">
+                  - {w}
+                </p>
+              ))}
             </div>
           )}
         </div>
@@ -78,7 +94,7 @@ export default function DataPortabilitySettings() {
           onExportSelective={dp.handleExportSelective}
           onImport={dp.handleImport}
           onImportWithResolutions={dp.handleImportWithResolutions}
-          onDismissConflicts={dp.dismissProjectConflicts}
+          onDismissConflicts={dp.dismissImportConflicts}
         />
       ),
     },

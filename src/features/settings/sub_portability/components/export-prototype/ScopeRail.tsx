@@ -1,14 +1,33 @@
-import { Bot, Users, KeyRound, FolderGit2, BookOpen, Boxes, Eraser, type LucideIcon } from 'lucide-react';
+import { Bot, Users, KeyRound, FolderGit2, BookOpen, Fingerprint, Sparkles, Boxes, Eraser, Lock, type LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ExportKind, ExportPicker } from './types';
+import { ENCRYPTED_SCOPES } from './types';
 
-export const SCOPES: { key: ExportKind; icon: LucideIcon; accent: string }[] = [
-  { key: 'personas', icon: Bot, accent: 'bg-violet-500/10 text-violet-300' },
-  { key: 'teams', icon: Users, accent: 'bg-sky-500/10 text-sky-300' },
-  { key: 'credentials', icon: KeyRound, accent: 'bg-amber-500/10 text-amber-300' },
-  { key: 'projects', icon: FolderGit2, accent: 'bg-emerald-500/10 text-emerald-300' },
-  { key: 'knowledge', icon: BookOpen, accent: 'bg-indigo-500/10 text-indigo-300' },
+/** Icon + accent per scope. A total `Record` on purpose — an eighth
+ *  `ExportKind` without an entry here fails typecheck instead of rendering
+ *  an undefined icon. */
+export const SCOPE_META: Record<ExportKind, { icon: LucideIcon; accent: string }> = {
+  personas: { icon: Bot, accent: 'bg-violet-500/10 text-violet-300' },
+  teams: { icon: Users, accent: 'bg-sky-500/10 text-sky-300' },
+  credentials: { icon: KeyRound, accent: 'bg-amber-500/10 text-amber-300' },
+  projects: { icon: FolderGit2, accent: 'bg-emerald-500/10 text-emerald-300' },
+  knowledge: { icon: BookOpen, accent: 'bg-indigo-500/10 text-indigo-300' },
+  twins: { icon: Fingerprint, accent: 'bg-rose-500/10 text-rose-300' },
+  athena: { icon: Sparkles, accent: 'bg-fuchsia-500/10 text-fuchsia-300' },
+};
+
+/** Rail order (also the tab order of the picker). */
+export const SCOPES: ExportKind[] = [
+  'personas',
+  'teams',
+  'credentials',
+  'projects',
+  'knowledge',
+  'twins',
+  'athena',
 ];
+
+const ENCRYPTED = new Set<string>(ENCRYPTED_SCOPES);
 
 export function ScopeRail({
   scope,
@@ -21,30 +40,33 @@ export function ScopeRail({
 }) {
   const { t, tx } = useTranslation();
   const p = t.settings.portability.proto;
-  const { inv } = picker;
 
-  const scopeLabel = (k: ExportKind) =>
-    k === 'personas'
-      ? p.scope_personas
-      : k === 'teams'
-        ? p.scope_teams
-        : k === 'credentials'
-          ? p.scope_credentials
-          : k === 'projects'
-            ? p.scope_projects
-            : p.scope_knowledge;
+  // Exhaustive switch — the old ternary chain fell through to the knowledge
+  // label, so a new scope would have silently rendered "Knowledge".
+  const scopeLabel = (k: ExportKind): string => {
+    switch (k) {
+      case 'personas': return p.scope_personas;
+      case 'teams': return p.scope_teams;
+      case 'credentials': return p.scope_credentials;
+      case 'projects': return p.scope_projects;
+      case 'knowledge': return p.scope_knowledge;
+      case 'twins': return p.scope_twins;
+      case 'athena': return p.scope_athena;
+      default: {
+        const _exhaustive: never = k;
+        return _exhaustive;
+      }
+    }
+  };
 
   const setAll = (on: boolean) => {
-    picker.setMany('personas', inv.personas.map((x) => x.id), on);
-    picker.setMany('teams', inv.teams.map((x) => x.id), on);
-    picker.setMany('credentials', inv.credentials.map((x) => x.id), on);
-    picker.setMany('projects', inv.projects.map((x) => x.id), on);
-    picker.setMany('knowledge', inv.workspaces.map((x) => x.id), on);
+    for (const k of SCOPES) picker.setMany(k, picker.allIds[k], on);
   };
 
   return (
     <nav className="w-56 flex-shrink-0 border-r border-primary/10 bg-secondary/5 p-3 flex flex-col gap-1 overflow-y-auto">
-      {SCOPES.map(({ key, icon: Icon, accent }) => {
+      {SCOPES.map((key) => {
+        const { icon: Icon, accent } = SCOPE_META[key];
         const c = picker.counts[key];
         const active = scope === key;
         return (
@@ -53,6 +75,7 @@ export function ScopeRail({
             type="button"
             onClick={() => onScope(key)}
             aria-current={active}
+            data-testid={`portability-scope-${key}`}
             className={`relative flex items-center gap-2.5 pl-3 pr-2.5 py-2.5 rounded-card text-left transition-colors ${
               active ? 'bg-primary/10 border border-primary/20' : 'border border-transparent hover:bg-secondary/20'
             }`}
@@ -67,6 +90,9 @@ export function ScopeRail({
                 {tx(p.selected_of, { selected: c.selected, total: c.total })}
               </span>
             </span>
+            {ENCRYPTED.has(key) && (
+              <Lock className="w-3 h-3 text-amber-300 flex-shrink-0" aria-label={p.encrypted_scope} />
+            )}
           </button>
         );
       })}
@@ -75,6 +101,7 @@ export function ScopeRail({
         <button
           type="button"
           onClick={() => setAll(true)}
+          data-testid="portability-select-everything"
           className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-card typo-caption font-medium text-foreground hover:bg-secondary/25 transition-colors"
         >
           <Boxes className="w-3.5 h-3.5" /> {p.select_everything}
@@ -82,6 +109,7 @@ export function ScopeRail({
         <button
           type="button"
           onClick={() => setAll(false)}
+          data-testid="portability-clear-all"
           className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-card typo-caption font-medium text-foreground hover:bg-secondary/25 transition-colors"
         >
           <Eraser className="w-3.5 h-3.5" /> {p.clear_all}

@@ -1,4 +1,4 @@
-import { Download, Brain, KeyRound, Info, Lock, ShieldOff, Target, type LucideIcon } from 'lucide-react';
+import { Download, Brain, KeyRound, Info, Lock, ShieldOff, ShieldAlert, Target, type LucideIcon } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { PasswordToggleField } from '@/features/shared/components/forms/PasswordToggleField';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
@@ -81,6 +81,7 @@ export function SecuritySection({ picker }: { picker: ExportPicker }) {
   const s = t.settings.portability;
   const p = s.proto;
   const valid = picker.passphraseValid;
+  const gated = picker.passphraseMissing;
   return (
     <div className="space-y-3">
       {/* Memories */}
@@ -99,23 +100,38 @@ export function SecuritySection({ picker }: { picker: ExportPicker }) {
         />
       </div>
 
-      {/* Passphrase */}
-      <div className="rounded-card border border-primary/10 bg-secondary/5 px-3.5 py-3 space-y-2">
+      {/* Passphrase — optional for credentials, MANDATORY once twins or Athena
+          memory are in the manifest (both ship inside the AES-256-GCM
+          envelope, so there is nothing to write without a key). */}
+      <div
+        className={`rounded-card border px-3.5 py-3 space-y-2 ${
+          gated ? 'border-amber-500/30 bg-amber-500/5' : 'border-primary/10 bg-secondary/5'
+        }`}
+      >
         <label className="flex items-center gap-2 typo-body font-medium text-foreground">
           <KeyRound className="w-4 h-4 text-amber-300" />
-          {p.encryption_title}
+          {picker.passphraseRequired ? p.encryption_title_required : p.encryption_title}
         </label>
         <PasswordToggleField
           placeholder={s.passphrase_placeholder}
           value={picker.passphrase}
           onChange={(e) => picker.setPassphrase(e.target.value)}
           hasError={!valid}
+          data-testid="portability-passphrase-input"
           inputClassName={`w-full px-3 py-2 rounded-card border bg-secondary/20 typo-body text-foreground placeholder:text-foreground/40 outline-none ${
             !valid ? 'border-red-500/30 focus-visible:border-red-500/50' : 'border-primary/10 focus-visible:border-amber-500/30'
           }`}
         />
         {!valid ? (
           <p className="typo-caption text-red-400">{s.passphrase_too_short}</p>
+        ) : gated ? (
+          <p
+            data-testid="portability-passphrase-gate"
+            className="flex items-start gap-1.5 typo-caption text-amber-400 leading-snug"
+          >
+            <ShieldAlert className="w-3.5 h-3.5 mt-px flex-shrink-0" />
+            {p.passphrase_required_hint}
+          </p>
         ) : (
           <p className="typo-caption text-foreground leading-snug">{p.encryption_hint}</p>
         )}
@@ -132,6 +148,14 @@ export function SecretsStatus({ picker }: { picker: ExportPicker }) {
   const { t } = useTranslation();
   const p = t.settings.portability.proto;
   const encrypted = picker.passphrase.length >= 8;
+  if (picker.passphraseMissing) {
+    return (
+      <div className="flex items-center gap-2 typo-caption text-amber-400">
+        <ShieldAlert className="w-3.5 h-3.5 flex-shrink-0" />
+        {p.secrets_blocked}
+      </div>
+    );
+  }
   return (
     <div className={`flex items-center gap-2 typo-caption ${encrypted ? 'text-emerald-300' : 'text-foreground'}`}>
       {encrypted ? <Lock className="w-3.5 h-3.5" /> : <ShieldOff className="w-3.5 h-3.5" />}
@@ -172,7 +196,8 @@ export function ExportButton({
 }) {
   const { t, tx } = useTranslation();
   const s = t.settings.portability;
-  const disabled = exporting || picker.totalSelected === 0 || !picker.passphraseValid;
+  const disabled =
+    exporting || picker.totalSelected === 0 || !picker.passphraseValid || picker.passphraseMissing;
   const label = exporting
     ? s.exporting
     : picker.isFullExport

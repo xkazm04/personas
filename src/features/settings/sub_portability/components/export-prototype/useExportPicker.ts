@@ -5,6 +5,8 @@ import { listTeams, listTeamMembers } from '@/api/pipeline/teams';
 import { listAllKpis } from '@/api/devTools/kpis';
 import { listProjects } from '@/api/devTools/devTools';
 import { listWorkspaces } from '@/api/devTools/workspaces';
+import { listProfiles as listTwinProfiles, listDistilledFacts } from '@/api/twin/twin';
+import { getExportStats } from '@/api/system/dataPortability';
 import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';
 import { silentCatch } from '@/lib/silentCatch';
 import type { Persona } from '@/lib/bindings/Persona';
@@ -13,7 +15,17 @@ import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { DevWorkspace } from '@/lib/bindings/DevWorkspace';
-import type { ExportInventory, ExportKind, ExportPicker, OnExport } from './types';
+import type { TwinProfile } from '@/lib/bindings/TwinProfile';
+import type { ExportStats } from '@/api/system/dataPortability';
+import type {
+  AthenaTier,
+  AthenaTierRow,
+  ExportInventory,
+  ExportKind,
+  ExportPicker,
+  OnExport,
+} from './types';
+import { ENCRYPTED_SCOPES } from './types';
 
 const EMPTY_INVENTORY: ExportInventory = {
   loading: true,
@@ -22,6 +34,9 @@ const EMPTY_INVENTORY: ExportInventory = {
   credentials: [],
   projects: [],
   workspaces: [],
+  twins: [],
+  athenaTiers: [],
+  twinFactCount: new Map(),
   personaTeams: new Map(),
   teamMemberCount: new Map(),
   teamKpiCount: new Map(),
@@ -29,6 +44,18 @@ const EMPTY_INVENTORY: ExportInventory = {
   eligibleKpiCount: 0,
   kpiIdsForTeams: () => [],
 };
+
+/** Athena's two synthetic rows, built from `get_export_stats`. A tier with
+ *  nothing in it is dropped rather than shown as a zero row — otherwise every
+ *  workspace would carry two permanently-unselectable items and "export
+ *  everything" could never be true. */
+function athenaRowsFrom(stats: ExportStats | null): AthenaTierRow[] {
+  if (!stats) return [];
+  const rows: AthenaTierRow[] = [];
+  if (stats.athena_core_count > 0) rows.push({ id: 'core', count: stats.athena_core_count });
+  if (stats.athena_learned_count > 0) rows.push({ id: 'learned', count: stats.athena_learned_count });
+  return rows;
+}
 
 /** Loads the full exportable inventory + relations once per open, and owns the
  *  selection state the modal renders over. KPIs are project-scoped and ride
@@ -41,6 +68,9 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
     kpis: DevKpi[];
     projects: DevProject[];
     workspaces: DevWorkspace[];
+    twins: TwinProfile[];
+    twinFactCount: Map<string, number>;
+    athenaTiers: AthenaTierRow[];
     memberMap: Map<string, string[]>; // teamId → personaIds
   } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,6 +80,8 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
   const [selectedCredentials, setSelectedCredentials] = useState<Set<string>>(new Set());
   const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set());
   const [selectedWorkspaces, setSelectedWorkspaces] = useState<Set<string>>(new Set());
+  const [selectedTwins, setSelectedTwins] = useState<Set<string>>(new Set());
+  const [selectedAthenaTiers, setSelectedAthenaTiers] = useState<Set<string>>(new Set());
   const [includeKpiSetup, setIncludeKpiSetup] = useState(true);
   const [includeMemories, setIncludeMemories] = useState(true);
   const [passphrase, setPassphrase] = useState('');
@@ -63,7 +95,7 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
     setIncludeKpiSetup(true);
 
     (async () => {
-      const [personas, teams, credentials, kpis, projects, workspaces] = await Promise.all([
+      const [personas, teams, credentials, kpis, projects, workspaces, twins, stats] = await Promise.all([
         listPersonas().catch((e) => {
           silentCatch('useExportPicker:listPersonas')(e);
           return [] as Persona[];
@@ -88,27 +120,57 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
           silentCatch('useExportPicker:listWorkspaces')(e);
           return [] as DevWorkspace[];
         }),
+        listTwinProfiles().catch((e) => {
+          silentCatch('useExportPicker:listTwinProfiles')(e);
+          return [] as TwinProfile[];
+        }),
+        // Athena has no list API — its two tier rows are sized from the same
+        // stats call the Portability overview uses.
+        getExportStats().catch((e) => {
+          silentCatch('useExportPicker:getExportStats')(e);
+          return null;
+        }),
       ]);
 
-      const memberLists = await Promise.all(
-        teams.map((t) =>
-          listTeamMembers(t.id)
-            .then((ms) => [t.id, ms.map((m) => m.persona_id)] as const)
-            .catch((e) => {
-              silentCatch('useExportPicker:listTeamMembers')(e);
-              return [t.id, [] as string[]] as const;
-            }),
+      const [memberLists, twinFactLists] = await Promise.all([
+        Promise.all(
+          teams.map((t) =>
+            listTeamMembers(t.id)
+              .then((ms) => [t.id, ms.map((m) => m.persona_id)] as const)
+              .catch((e) => {
+                silentCatch('useExportPicker:listTeamMembers')(e);
+                return [t.id, [] as string[]] as const;
+              }),
+          ),
         ),
-      );
+        Promise.all(
+          twins.map((tw) =>
+            listDistilledFacts(tw.id)
+              .then((facts) => [tw.id, facts.length] as const)
+              .catch((e) => {
+                silentCatch('useExportPicker:listDistilledFacts')(e);
+                return [tw.id, 0] as const;
+              }),
+          ),
+        ),
+      ]);
       const memberMap = new Map<string, string[]>(memberLists);
+      const twinFactCount = new Map<string, number>(twinFactLists);
+      const athenaTiers = athenaRowsFrom(stats);
 
       if (cancelled) return;
-      setRaw({ personas, teams, credentials, kpis, projects, workspaces, memberMap });
+      setRaw({ personas, teams, credentials, kpis, projects, workspaces, twins, twinFactCount, athenaTiers, memberMap });
       setSelectedPersonas(new Set(personas.map((p) => p.id)));
       setSelectedTeams(new Set(teams.map((t) => t.id)));
       setSelectedCredentials(new Set(credentials.map((c) => c.id)));
       setSelectedProjects(new Set(projects.map((p) => p.id)));
       setSelectedWorkspaces(new Set(workspaces.map((w) => w.id)));
+      // Twins and Athena memory are deliberately NOT preselected: both are
+      // passphrase-encrypted, so auto-selecting them would turn today's
+      // one-click "export everything" into a blocked button on any workspace
+      // that happens to own a twin. They stay opt-in.
+      setSelectedTwins(new Set());
+      setSelectedAthenaTiers(new Set());
       setLoading(false);
     })();
 
@@ -119,7 +181,7 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
 
   const inv: ExportInventory = useMemo(() => {
     if (!raw) return EMPTY_INVENTORY;
-    const { personas, teams, credentials, kpis, projects, workspaces, memberMap } = raw;
+    const { personas, teams, credentials, kpis, projects, workspaces, twins, twinFactCount, athenaTiers, memberMap } = raw;
 
     // personaId → teams (membership-based).
     const personaTeams = new Map<string, PersonaTeam[]>();
@@ -177,6 +239,9 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
       credentials: [...credentials].sort((a, b) => a.name.localeCompare(b.name)),
       projects: [...projects].sort((a, b) => a.name.localeCompare(b.name)),
       workspaces: [...workspaces].sort((a, b) => a.name.localeCompare(b.name)),
+      twins: [...twins].sort((a, b) => Number(b.is_active) - Number(a.is_active) || a.name.localeCompare(b.name)),
+      athenaTiers,
+      twinFactCount,
       personaTeams,
       teamMemberCount,
       teamKpiCount,
@@ -187,33 +252,47 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
   }, [raw]);
 
   // ---- selection plumbing -------------------------------------------------
+  //
+  // `setterFor` / `setFor` are exhaustive switches on purpose. They used to be
+  // ternary chains whose final `else` returned the workspace set, which meant a
+  // newly added ExportKind compiled clean and silently mutated the wrong scope.
 
   const setterFor = useCallback(
-    (kind: ExportKind): React.Dispatch<React.SetStateAction<Set<string>>> =>
-      kind === 'personas'
-        ? setSelectedPersonas
-        : kind === 'teams'
-          ? setSelectedTeams
-          : kind === 'credentials'
-            ? setSelectedCredentials
-            : kind === 'projects'
-              ? setSelectedProjects
-              : setSelectedWorkspaces,
+    (kind: ExportKind): React.Dispatch<React.SetStateAction<Set<string>>> => {
+      switch (kind) {
+        case 'personas': return setSelectedPersonas;
+        case 'teams': return setSelectedTeams;
+        case 'credentials': return setSelectedCredentials;
+        case 'projects': return setSelectedProjects;
+        case 'knowledge': return setSelectedWorkspaces;
+        case 'twins': return setSelectedTwins;
+        case 'athena': return setSelectedAthenaTiers;
+        default: {
+          const _exhaustive: never = kind;
+          return _exhaustive;
+        }
+      }
+    },
     [],
   );
 
   const setFor = useCallback(
-    (kind: ExportKind): Set<string> =>
-      kind === 'personas'
-        ? selectedPersonas
-        : kind === 'teams'
-          ? selectedTeams
-          : kind === 'credentials'
-            ? selectedCredentials
-            : kind === 'projects'
-              ? selectedProjects
-              : selectedWorkspaces,
-    [selectedPersonas, selectedTeams, selectedCredentials, selectedProjects, selectedWorkspaces],
+    (kind: ExportKind): Set<string> => {
+      switch (kind) {
+        case 'personas': return selectedPersonas;
+        case 'teams': return selectedTeams;
+        case 'credentials': return selectedCredentials;
+        case 'projects': return selectedProjects;
+        case 'knowledge': return selectedWorkspaces;
+        case 'twins': return selectedTwins;
+        case 'athena': return selectedAthenaTiers;
+        default: {
+          const _exhaustive: never = kind;
+          return _exhaustive;
+        }
+      }
+    },
+    [selectedPersonas, selectedTeams, selectedCredentials, selectedProjects, selectedWorkspaces, selectedTwins, selectedAthenaTiers],
   );
 
   const isSelected = useCallback((kind: ExportKind, id: string) => setFor(kind).has(id), [setFor]);
@@ -247,47 +326,66 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
     [includeKpiSetup, inv, selectedTeams],
   );
 
-  const counts = useMemo(
+  // A total `Record<ExportKind, …>` — omitting a scope is a compile error, so
+  // select-all/clear-all and the tallies can never miss one.
+  const allIds: Record<ExportKind, string[]> = useMemo(
     () => ({
-      personas: { selected: selectedPersonas.size, total: inv.personas.length },
-      teams: { selected: selectedTeams.size, total: inv.teams.length },
-      credentials: { selected: selectedCredentials.size, total: inv.credentials.length },
-      projects: { selected: selectedProjects.size, total: inv.projects.length },
-      knowledge: { selected: selectedWorkspaces.size, total: inv.workspaces.length },
+      personas: inv.personas.map((x) => x.id),
+      teams: inv.teams.map((x) => x.id),
+      credentials: inv.credentials.map((x) => x.id),
+      projects: inv.projects.map((x) => x.id),
+      knowledge: inv.workspaces.map((x) => x.id),
+      twins: inv.twins.map((x) => x.id),
+      athena: inv.athenaTiers.map((x) => x.id),
     }),
-    [selectedPersonas, selectedTeams, selectedCredentials, selectedProjects, selectedWorkspaces, inv],
+    [inv],
   );
 
-  const totalItems =
-    inv.personas.length +
-    inv.teams.length +
-    inv.credentials.length +
-    inv.projects.length +
-    inv.workspaces.length;
-  const totalSelected =
-    selectedPersonas.size +
-    selectedTeams.size +
-    selectedCredentials.size +
-    selectedProjects.size +
-    selectedWorkspaces.size;
+  const counts: Record<ExportKind, { selected: number; total: number }> = useMemo(
+    () => ({
+      personas: { selected: selectedPersonas.size, total: allIds.personas.length },
+      teams: { selected: selectedTeams.size, total: allIds.teams.length },
+      credentials: { selected: selectedCredentials.size, total: allIds.credentials.length },
+      projects: { selected: selectedProjects.size, total: allIds.projects.length },
+      knowledge: { selected: selectedWorkspaces.size, total: allIds.knowledge.length },
+      twins: { selected: selectedTwins.size, total: allIds.twins.length },
+      athena: { selected: selectedAthenaTiers.size, total: allIds.athena.length },
+    }),
+    [selectedPersonas, selectedTeams, selectedCredentials, selectedProjects, selectedWorkspaces, selectedTwins, selectedAthenaTiers, allIds],
+  );
+
+  const { totalItems, totalSelected } = useMemo(() => {
+    let items = 0;
+    let selected = 0;
+    for (const c of Object.values(counts)) {
+      items += c.total;
+      selected += c.selected;
+    }
+    return { totalItems: items, totalSelected: selected };
+  }, [counts]);
+
   const isFullExport = totalItems > 0 && totalSelected === totalItems;
   const passphraseValid = passphrase.length === 0 || passphrase.length >= 8;
+  const passphraseRequired = ENCRYPTED_SCOPES.some((k) => counts[k].selected > 0);
+  const passphraseMissing = passphraseRequired && passphrase.length < 8;
 
   const commit = useCallback(() => {
     // `includeKpiSetup` (all-or-none) is the user's intent; the Rust
     // export_selective resolves each selected team's project KPIs server-side
     // and bundles them (active/paused only, with capped measurement history).
-    onExport(
-      Array.from(selectedPersonas),
-      Array.from(selectedTeams),
-      Array.from(selectedCredentials),
-      Array.from(selectedProjects),
-      Array.from(selectedWorkspaces),
+    onExport({
+      personaIds: Array.from(selectedPersonas),
+      teamIds: Array.from(selectedTeams),
+      credentialIds: Array.from(selectedCredentials),
+      projectIds: Array.from(selectedProjects),
+      workspaceIds: Array.from(selectedWorkspaces),
+      twinIds: Array.from(selectedTwins),
+      athenaTiers: Array.from(selectedAthenaTiers) as AthenaTier[],
       includeMemories,
-      includeKpiSetup,
-      passphrase.length >= 8 ? passphrase : undefined,
-    );
-  }, [onExport, selectedPersonas, selectedTeams, selectedCredentials, selectedProjects, selectedWorkspaces, includeMemories, includeKpiSetup, passphrase]);
+      includeKpis: includeKpiSetup,
+      passphrase: passphrase.length >= 8 ? passphrase : undefined,
+    });
+  }, [onExport, selectedPersonas, selectedTeams, selectedCredentials, selectedProjects, selectedWorkspaces, selectedTwins, selectedAthenaTiers, includeMemories, includeKpiSetup, passphrase]);
 
   return {
     inv: { ...inv, loading: loading || inv.loading },
@@ -296,6 +394,8 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
     selectedCredentials,
     selectedProjects,
     selectedWorkspaces,
+    selectedTwins,
+    selectedAthenaTiers,
     includeKpiSetup,
     includeMemories,
     passphrase,
@@ -305,12 +405,15 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
     setIncludeKpiSetup,
     setIncludeMemories,
     setPassphrase,
+    allIds,
     counts,
     kpiShipCount,
     totalSelected,
     totalItems,
     isFullExport,
     passphraseValid,
+    passphraseRequired,
+    passphraseMissing,
     commit,
   };
 }
