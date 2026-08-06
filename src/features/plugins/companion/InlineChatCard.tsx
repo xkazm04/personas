@@ -54,7 +54,7 @@ const PINNABLE_KINDS = new Set([
  * to do anything; they're contextual UI snippets that ride along with
  * the chat reply.
  */
-export function InlineChatCard({ card, index }: { card: ChatCard; index: number }) {
+export function InlineChatCard({ card }: { card: ChatCard }) {
   const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const [pinState, setPinState] = useState<'idle' | 'pinning' | 'pinned'>('idle');
@@ -62,12 +62,11 @@ export function InlineChatCard({ card, index }: { card: ChatCard; index: number 
   // `fleet_plan` is deliberately NOT a cockpit widget: it is an actionable
   // proposal that starts real CLI sessions on confirm, so it must never be
   // pinnable to a dashboard or re-rendered outside the chat that consented to
-  // it. Chat is its only dimension. `cardIndex` lets it write its post-confirm
-  // outcome back into the shared `chatCards` store entry, so a close/reopen of
-  // the panel (which unmounts this component but not the store) restores the
-  // dispatched state instead of reverting to the pre-confirm editable plan.
+  // it. Chat is its only dimension. `cardId` is its durable row: it lets the
+  // card write its post-confirm outcome back, survive a refresh, and be
+  // claimed exactly once at dispatch.
   if (card.kind === 'fleet_plan') {
-    return <AthenaFleetPlanCard config={card.config} title={card.title} cardIndex={index} />;
+    return <AthenaFleetPlanCard config={card.config} title={card.title} cardId={card.id} />;
   }
 
   // `ship_milestone` makes the same call as `fleet_plan` and for the same
@@ -76,7 +75,9 @@ export function InlineChatCard({ card, index }: { card: ChatCard; index: number 
   // widget registry. A pinned copy would be a create button with no
   // conversation behind it.
   if (card.kind === 'ship_milestone') {
-    return <AthenaShipMilestoneCard config={card.config} title={card.title} />;
+    return (
+      <AthenaShipMilestoneCard config={card.config} title={card.title} cardId={card.id} />
+    );
   }
 
   const Component = cockpitWidgetRegistry[card.kind];

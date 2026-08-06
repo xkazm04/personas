@@ -2694,7 +2694,8 @@
     "orb_quick_input_close": "Đóng tin nhắn nhanh",
     "orb_quick_input_last_reply_label": "Phản hồi gần nhất của Athena",
     "orb_quick_input_open": "Gửi tin nhắn nhanh",
-    "orb_quick_input_placeholder": "Nhắn tin cho Athena…"
+    "orb_quick_input_placeholder": "Nhắn tin cho Athena…",
+    "chat_cards_restored_label": "Đang chờ bạn từ lượt trước"
   },
   "artist_gallery": {
     "loading_viewer": "Đang tải trình xem…",

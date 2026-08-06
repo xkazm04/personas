@@ -2694,7 +2694,8 @@
     "orb_quick_input_close": "关闭快速消息",
     "orb_quick_input_last_reply_label": "Athena 的最新回复",
     "orb_quick_input_open": "发送快速消息",
-    "orb_quick_input_placeholder": "给 Athena 发消息…"
+    "orb_quick_input_placeholder": "给 Athena 发消息…",
+    "chat_cards_restored_label": "上一轮起就在等你处理"
   },
   "artist_gallery": {
     "loading_viewer": "加载查看器中…",

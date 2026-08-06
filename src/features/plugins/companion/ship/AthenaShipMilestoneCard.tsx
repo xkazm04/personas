@@ -6,6 +6,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { companionCreateShipMilestone, type ShipMilestoneRow } from '@/api/companion';
 import { AthenaShipMilestoneRow } from './AthenaShipMilestoneRow';
+import { resolveChatCard } from '../useChatCards';
 
 /** Parse the `ship_milestone` chat-card config the dispatcher validated. */
 export function parseMilestoneRows(raw: unknown): ShipMilestoneRow[] {
@@ -33,9 +34,13 @@ export function parseMilestoneRows(raw: unknown): ShipMilestoneRow[] {
 export function AthenaShipMilestoneCard({
   config,
   title,
+  cardId,
 }: {
   config?: Record<string, unknown>;
   title?: string;
+  /** Durable `companion_chat_card` row id — see `AthenaFleetPlanCard`. Lets
+   *  this proposal survive a refresh and records its resolution. */
+  cardId?: string;
 }) {
   const { t, tx } = useTranslation();
   const c = t.plugins.companion;
@@ -81,11 +86,16 @@ export function AthenaShipMilestoneCard({
           description: r.description?.trim() ? r.description.trim() : null,
         })),
       );
-      setCreated(
-        tx(c.ship_milestone_created, {
-          name: result.name,
-          count: result.itemsCreated,
-        }),
+      const message = tx(c.ship_milestone_created, {
+        name: result.name,
+        count: result.itemsCreated,
+      });
+      setCreated(message);
+      resolveChatCard(
+        cardId,
+        'dispatched',
+        { created: true, resultMessage: message },
+        JSON.stringify({ message }),
       );
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : String(err));
@@ -174,7 +184,10 @@ export function AthenaShipMilestoneCard({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setDismissed(true)}
+          onClick={() => {
+            setDismissed(true);
+            resolveChatCard(cardId, 'dismissed');
+          }}
           disabled={busy}
           data-testid="athena-ship-cancel"
         >

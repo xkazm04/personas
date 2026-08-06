@@ -1686,16 +1686,31 @@ pub(crate) fn validate_fleet_plan(
 /// not the ones Athena proposed. One row spawns a single session
 /// (`fleet_spawn`); two or more become one Operation with N role sessions
 /// (`fleet_dispatch`).
+///
+/// `card_id` is the durable `companion_chat_card` row backing the card. When
+/// present it is CLAIMED (pending → dispatched) before anything spawns, which
+/// is the idempotency guard: a double-click, a replayed event, or a re-mounted
+/// card after a refresh can no longer start a second fleet of CLI sessions.
+/// A claim taken for a dispatch that then failed outright is released.
 #[tauri::command]
 pub async fn companion_dispatch_fleet_plan(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     operation_intent: String,
     rows: Vec<serde_json::Value>,
+    card_id: Option<String>,
 ) -> Result<String, AppError> {
     ipc_auth::require_auth(&state).await?;
     let (intent, plan) =
         validate_fleet_plan(&state.db, &operation_intent, &rows).map_err(AppError::Validation)?;
+
+    // Claim BEFORE the executors run. Validation errors above are safe to
+    // retry, so they must not burn the card.
+    let card_id = card_id.map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
+    if let Some(id) = card_id.as_deref() {
+        let conn = state.user_db.get()?;
+        crate::commands::companion::chat_cards::claim_for_dispatch(&conn, id)?;
+    }
 
     let (action, params) = fleet_plan_dispatch_params(&intent, &plan);
     tracing::info!(
@@ -1723,6 +1738,34 @@ pub async fn companion_dispatch_fleet_plan(
         FLEET_PLAN_OUTCOME_CONFIRMED_FAILED
     };
     record_fleet_plan_decision(&state.db, action, &intent, &plan, outcome);
+
+    // Settle the durable card in the same breath as the audit row: a
+    // successful dispatch stores its outcome (so a re-hydrated card renders
+    // "already dispatched" rather than an editable plan), a failed one hands
+    // the claim back so the operator can correct and retry.
+    if let Some(id) = card_id.as_deref() {
+        if let Ok(conn) = state.user_db.get() {
+            match &result {
+                Ok(r) => crate::commands::companion::chat_cards::record_dispatch_result(
+                    &conn,
+                    id,
+                    serde_json::json!({
+                        "message": r.message,
+                        "dispatchedRows": plan
+                            .iter()
+                            .map(|row| serde_json::json!({
+                                "cwd": row.cwd,
+                                "objective": row.objective,
+                                "skill": row.skill,
+                            }))
+                            .collect::<Vec<_>>(),
+                    })
+                    .to_string(),
+                ),
+                Err(_) => crate::commands::companion::chat_cards::release_claim(&conn, id),
+            }
+        }
+    }
     Ok(result?.message)
 }
 

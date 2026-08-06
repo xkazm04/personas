@@ -15116,7 +15116,8 @@
       "orb_quick_input_close": "দ্রুত বার্তা বন্ধ করুন",
       "orb_quick_input_last_reply_label": "অ্যাথেনার সর্বশেষ উত্তর",
       "orb_quick_input_open": "একটি দ্রুত বার্তা পাঠান",
-      "orb_quick_input_placeholder": "অ্যাথেনাকে বার্তা পাঠান…"
+      "orb_quick_input_placeholder": "অ্যাথেনাকে বার্তা পাঠান…",
+      "chat_cards_restored_label": "আগের একটি ধাপ থেকে আপনার জবাবের অপেক্ষায়"
     },
     "artist_gallery": {
       "loading_viewer": "ভিউয়ার লোড হচ্ছে…",

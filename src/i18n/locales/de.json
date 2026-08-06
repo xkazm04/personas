@@ -15116,7 +15116,8 @@
       "orb_quick_input_close": "Schnellnachricht schließen",
       "orb_quick_input_last_reply_label": "Athenas letzte Antwort",
       "orb_quick_input_open": "Schnellnachricht senden",
-      "orb_quick_input_placeholder": "Nachricht an Athena…"
+      "orb_quick_input_placeholder": "Nachricht an Athena…",
+      "chat_cards_restored_label": "Wartet seit einem früheren Schritt auf dich"
     },
     "artist_gallery": {
       "loading_viewer": "Viewer wird geladen…",

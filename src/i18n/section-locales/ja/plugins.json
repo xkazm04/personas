@@ -2694,7 +2694,8 @@
     "orb_quick_input_close": "クイックメッセージを閉じる",
     "orb_quick_input_last_reply_label": "アテナの最新の返信",
     "orb_quick_input_open": "クイックメッセージを送信",
-    "orb_quick_input_placeholder": "アテナにメッセージ…"
+    "orb_quick_input_placeholder": "アテナにメッセージ…",
+    "chat_cards_restored_label": "前のターンから返答待ちです"
   },
   "artist_gallery": {
     "loading_viewer": "ビューアを読み込み中…",

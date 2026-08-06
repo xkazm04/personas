@@ -2694,7 +2694,8 @@
     "orb_quick_input_close": "빠른 메시지 닫기",
     "orb_quick_input_last_reply_label": "아테나의 마지막 답변",
     "orb_quick_input_open": "빠른 메시지 보내기",
-    "orb_quick_input_placeholder": "아테나에게 메시지…"
+    "orb_quick_input_placeholder": "아테나에게 메시지…",
+    "chat_cards_restored_label": "이전 차례부터 응답을 기다리는 중"
   },
   "artist_gallery": {
     "loading_viewer": "뷰어 로딩 중…",

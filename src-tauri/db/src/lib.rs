@@ -1272,6 +1272,31 @@ CREATE TABLE IF NOT EXISTS companion_turn_sidecar (
     recall_json    TEXT,
     created_at     TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Durable inline chat-cards. Informational cards (persona_overview, …) stay
+-- transient by design — they are UI snippets riding along with a reply. But
+-- ACTIONABLE cards (fleet_plan, ship_milestone) are proposals the operator is
+-- expected to confirm, and the plan JSON is stripped from the assistant text
+-- before episode persistence: once the transient store array was cleared (next
+-- send, panel reset, dev refresh) the proposal was unrecoverable. An Aug 2026
+-- session silently lost six dispatched builds that way. Actionable cards now
+-- get a row here BEFORE the event is emitted; the row id rides in the payload
+-- and the frontend resolves it. status: pending → dispatched | dismissed |
+-- superseded (dispatched is terminal — its sessions are real).
+CREATE TABLE IF NOT EXISTS companion_chat_card (
+    id              TEXT PRIMARY KEY,
+    conversation_id TEXT NOT NULL,
+    episode_id      TEXT,
+    kind            TEXT NOT NULL,
+    title           TEXT,
+    config_json     TEXT NOT NULL DEFAULT '{}',
+    status          TEXT NOT NULL DEFAULT 'pending',
+    result_json     TEXT,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    resolved_at     TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_companion_chat_card_pending
+    ON companion_chat_card(conversation_id, status, created_at DESC);
 "#;
 
 /// Seed all built-in local credentials if they don't already exist.

@@ -11,6 +11,7 @@ pub mod briefing;
 pub mod browser_test;
 pub mod canvas_control;
 pub mod chat;
+pub mod chat_cards;
 pub mod connectors;
 pub mod consolidate;
 pub mod conversation;

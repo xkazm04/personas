@@ -2,9 +2,12 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 const dispatchFleetPlan = vi.fn();
+const resolveChatCardIpc = vi.fn();
 
 vi.mock('@/api/companion', () => ({
   companionDispatchFleetPlan: (...args: unknown[]) => dispatchFleetPlan(...args),
+  companionListChatCards: vi.fn(async () => []),
+  companionResolveChatCard: (...args: unknown[]) => resolveChatCardIpc(...args),
 }));
 
 import { AthenaFleetPlanCard } from '../fleet/AthenaFleetPlanCard';
@@ -26,6 +29,8 @@ describe('AthenaFleetPlanCard', () => {
   beforeEach(() => {
     dispatchFleetPlan.mockReset();
     dispatchFleetPlan.mockResolvedValue('Started 2 sessions.');
+    resolveChatCardIpc.mockReset();
+    resolveChatCardIpc.mockResolvedValue(undefined);
     useSystemStore.setState({ fleetSessions: [] });
   });
 
@@ -48,10 +53,14 @@ describe('AthenaFleetPlanCard', () => {
     fireEvent.click(screen.getByTestId('athena-plan-confirm'));
 
     await waitFor(() => expect(dispatchFleetPlan).toHaveBeenCalledTimes(1));
-    expect(dispatchFleetPlan).toHaveBeenCalledWith('harden the auth surface', [
-      { cwd: 'C:/repo-0', objective: 'the objective the user rewrote', skill: null },
-      { cwd: 'C:/repo-1', objective: 'objective 1', skill: 'scan-sweep' },
-    ]);
+    expect(dispatchFleetPlan).toHaveBeenCalledWith(
+      'harden the auth surface',
+      [
+        { cwd: 'C:/repo-0', objective: 'the objective the user rewrote', skill: null },
+        { cwd: 'C:/repo-1', objective: 'objective 1', skill: 'scan-sweep' },
+      ],
+      undefined,
+    );
   });
 
   it('drops a removed row from what is dispatched', async () => {
@@ -107,9 +116,9 @@ describe('AthenaFleetPlanCard', () => {
 
   it('persists the dispatched outcome into the shared chatCards store on confirm', async () => {
     useCompanionStore.setState({
-      chatCards: [{ kind: 'fleet_plan', config: config(2) }],
+      chatCards: [{ id: 'card_1', kind: 'fleet_plan', config: config(2) }],
     });
-    render(<AthenaFleetPlanCard config={config(2)} cardIndex={0} />);
+    render(<AthenaFleetPlanCard config={config(2)} cardId="card_1" />);
     fireEvent.click(screen.getByTestId('athena-plan-confirm'));
 
     await waitFor(() => expect(dispatchFleetPlan).toHaveBeenCalledTimes(1));
@@ -121,6 +130,21 @@ describe('AthenaFleetPlanCard', () => {
     });
   });
 
+  it('claims its durable card id so a re-confirm cannot spawn a second fleet', async () => {
+    render(<AthenaFleetPlanCard config={config(2)} cardId="card_1" />);
+    fireEvent.click(screen.getByTestId('athena-plan-confirm'));
+    await waitFor(() => expect(dispatchFleetPlan).toHaveBeenCalledTimes(1));
+    // The id must reach the backend — that is where the single-winner claim
+    // lives. Without it the dispatch is unguarded.
+    expect(dispatchFleetPlan.mock.calls[0][2]).toBe('card_1');
+  });
+
+  it('records a Cancel as a dismissal so the proposal does not re-hydrate', () => {
+    render(<AthenaFleetPlanCard config={config(1)} cardId="card_2" />);
+    fireEvent.click(screen.getByTestId('athena-plan-cancel'));
+    expect(resolveChatCardIpc).toHaveBeenCalledWith('card_2', 'dismissed', null);
+  });
+
   it('restores the dispatched view (not the editable plan) when remounted from a persisted config', () => {
     // Simulates a panel close/reopen: a fresh AthenaFleetPlanCard instance is
     // mounted with the SAME config a prior instance wrote back on confirm.
@@ -130,7 +154,7 @@ describe('AthenaFleetPlanCard', () => {
       resultMessage: 'Started 2 sessions.',
       dispatchedRows: config(2).rows,
     };
-    render(<AthenaFleetPlanCard config={dispatchedConfig} cardIndex={0} />);
+    render(<AthenaFleetPlanCard config={dispatchedConfig} cardId="card_1" />);
 
     expect(screen.getByTestId('athena-plan-card')).toHaveTextContent('Started 2 sessions.');
     expect(screen.queryByTestId('athena-plan-row-0')).toBeNull();
@@ -152,7 +176,7 @@ describe('AthenaFleetPlanCard', () => {
       resultMessage: 'Started 2 sessions.',
       dispatchedRows: rows,
     };
-    render(<AthenaFleetPlanCard config={dispatchedConfig} cardIndex={0} />);
+    render(<AthenaFleetPlanCard config={dispatchedConfig} cardId="card_1" />);
 
     expect(screen.getByTestId('athena-plan-live-status')).toHaveTextContent('1');
   });

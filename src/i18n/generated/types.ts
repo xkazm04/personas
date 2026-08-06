@@ -14943,6 +14943,7 @@ export type Translations = {
       connector_label_slack: string;
       brain_kind_unknown_fallback: string;
       chat_card_unknown_kind: string;
+      chat_cards_restored_label: string;
       persona_overview_empty: string;
       persona_overview_open_in_editor: string;
       persona_overview_hover_hint: string;

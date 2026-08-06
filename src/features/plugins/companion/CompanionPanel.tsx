@@ -17,7 +17,12 @@ import { useTranslation, getActiveTranslations } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { DEFAULT_CONVERSATION_ID, useCompanionStore } from './companionStore';
+import {
+  DEFAULT_CONVERSATION_ID,
+  isActionableChatCard,
+  useCompanionStore,
+} from './companionStore';
+import { useChatCardHydration } from './useChatCards';
 import { createSendNonce, hasAcceptedNonce, recordAcceptedNonce } from './sendNonceLedger';
 import { DailyGoalsBar } from './DailyGoalsBar';
 import { AttentionBar } from './attention/AttentionBar';
@@ -792,6 +797,11 @@ function Body(props: BodyProps) {
   // doesn't strip older turns back to bare text.
   useTurnSidecarHydration(messages);
 
+  // Re-hydrate this thread's PENDING actionable chat-cards (fleet plans, ship
+  // milestones). They are proposals the operator still owes an answer to, and
+  // before they were durable a refresh destroyed them unrecoverably.
+  useChatCardHydration(activeConversationId, initialized);
+
   // Initial pending-approvals + proactive fetch — once init is done. (The
   // transcript itself is loaded by the active-conversation effect above.)
   const fetchedRef = useRef(false);
@@ -1424,14 +1434,23 @@ function Body(props: BodyProps) {
   );
 
   // Inline chat-cards (show_persona_overview / show_connected_services /
-  // show_decisions). One-shot — companion emits them per turn when she
-  // judges a UI snippet beats prose. Cleared on next send / reset above.
+  // show_decisions). INFORMATIONAL kinds are one-shot — companion emits them
+  // per turn when she judges a UI snippet beats prose, and they clear on the
+  // next send. ACTIONABLE kinds (fleet_plan / ship_milestone) arrive with a
+  // durable `id` and are preserved across sends until the operator resolves
+  // them, so this handler layers the new turn's cards on top of any pending
+  // proposal rather than replacing the whole array.
   useTauriEvent<CompanionChatCardsEvent>(
     COMPANION_CHAT_CARDS_EVENT,
     useCallback((event) => {
       const cards = event.payload?.cards;
       if (cards && cards.length > 0) {
-        useCompanionStore.getState().setChatCards(cards);
+        const store = useCompanionStore.getState();
+        const arriving = new Set(cards.map((c) => c.id).filter(Boolean));
+        const kept = store.chatCards.filter(
+          (c) => isActionableChatCard(c) && !arriving.has(c.id),
+        );
+        store.setChatCards([...kept, ...cards]);
       }
     }, []),
     'companion_chat_cards_listen',
@@ -1606,11 +1625,14 @@ function Body(props: BodyProps) {
       // happens to be focused when the promise settles.
       const conversationId = useCompanionStore.getState().activeConversationId;
       setSendError(null);
-      // Quick-replies + inline chat-cards are one-shot — clear before the
-      // new turn so they don't linger if Athena's reply doesn't offer fresh
-      // ones.
+      // Quick-replies + INFORMATIONAL chat-cards are one-shot — clear before
+      // the new turn so they don't linger if Athena's reply doesn't offer
+      // fresh ones. Pending actionable proposals (fleet_plan /
+      // ship_milestone) survive: they are decisions the operator still owes
+      // an answer to, and wiping them here is what silently killed six
+      // dispatched builds in Aug 2026.
       setQuickReplies([]);
-      setChatCards([]);
+      useCompanionStore.getState().clearTransientChatCards();
       // Optimistic user bubble.
       const optimistic = {
         id: `optim_${Date.now()}`,
@@ -2293,16 +2315,28 @@ function Body(props: BodyProps) {
             </AnimatePresence>
           </div>
           <div ref={chatCardsAnchorRef} data-companion-section="chat-cards">
+            {/* Recovery strip: proposals from PRIOR turns, re-hydrated from
+                the durable card table. They used to evaporate on the next
+                send or a dev refresh — labelling them keeps the operator from
+                mistaking an older, still-unanswered plan for this turn's. */}
+            {chatCards.some((card) => card.restored) && (
+              <p
+                className="typo-caption text-primary pb-1"
+                data-testid="companion-chat-cards-restored"
+              >
+                {t.plugins.companion.chat_cards_restored_label}
+              </p>
+            )}
             <AnimatePresence initial={false}>
               {chatCards.map((card, idx) => (
                 <motion.div
-                  key={`${card.kind}-${idx}`}
+                  key={card.id ?? `${card.kind}-${idx}`}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  <InlineChatCard card={card} index={idx} />
+                  <InlineChatCard card={card} />
                 </motion.div>
               ))}
             </AnimatePresence>

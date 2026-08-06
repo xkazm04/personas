@@ -2694,7 +2694,8 @@
     "orb_quick_input_close": "त्वरित संदेश बंद करें",
     "orb_quick_input_last_reply_label": "एथेना का अंतिम उत्तर",
     "orb_quick_input_open": "त्वरित संदेश भेजें",
-    "orb_quick_input_placeholder": "एथेना को संदेश भेजें…"
+    "orb_quick_input_placeholder": "एथेना को संदेश भेजें…",
+    "chat_cards_restored_label": "पिछले चरण से आपके जवाब की प्रतीक्षा में"
   },
   "artist_gallery": {
     "loading_viewer": "viewer लोड हो रहा है…",

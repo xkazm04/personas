@@ -15116,7 +15116,8 @@
       "orb_quick_input_close": "إغلاق الرسالة السريعة",
       "orb_quick_input_last_reply_label": "آخر رد من أثينا",
       "orb_quick_input_open": "إرسال رسالة سريعة",
-      "orb_quick_input_placeholder": "راسل أثينا…"
+      "orb_quick_input_placeholder": "راسل أثينا…",
+      "chat_cards_restored_label": "بانتظار ردّك من دور سابق"
     },
     "artist_gallery": {
       "loading_viewer": "جارٍ تحميل العارض…",

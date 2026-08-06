@@ -14937,6 +14937,7 @@
       "connector_label_slack": "Slack",
       "brain_kind_unknown_fallback": "Memory",
       "chat_card_unknown_kind": "Athena tried to show a card we don't recognize yet — looks like something updated. Reopen the chat to refresh.",
+      "chat_cards_restored_label": "Waiting on you from an earlier turn",
       "persona_overview_empty": "No personas yet",
       "persona_overview_open_in_editor": "Open in editor",
       "persona_overview_hover_hint": "Hover a node to inspect it. Click to open in the editor.",

@@ -588,6 +588,38 @@ click, and **Cancel** dismisses the card with no side effect at all.
   proposal that starts real processes, so it must not be re-rendered outside the
   conversation that consented to it.
 
+### Durable chat-cards — actionable proposals survive a refresh
+
+Chat cards used to be one-shot Tauri events into a non-persisted Zustand array,
+cleared on the next send and on reset. For informational kinds that is the
+intent. For **actionable** kinds (`fleet_plan`, `ship_milestone`) it was data
+loss: the plan JSON is stripped from the assistant text before the episode is
+persisted, so once the array was cleared — by the next message, a panel reset,
+or a dev refresh — the proposal was gone with no way back. An Aug 2026 session
+lost six dispatched builds that way.
+
+- **A row before the event.** Actionable cards get a `companion_chat_card` row
+  (`id`, `conversation_id`, `episode_id`, `kind`, `title`, `config_json`,
+  `status`, `result_json`, timestamps) written *before* `CHAT_CARDS_EVENT` is
+  emitted, and the row id rides in the payload. Persistence failure degrades to
+  the old transient behaviour rather than dropping the card.
+- **Status is `pending → dispatched | dismissed | superseded`**, and
+  `dispatched` is terminal — its sessions are real, so it can never be walked
+  back. `companion_list_chat_cards(conversation_id, pending_only)` and
+  `companion_resolve_chat_card(id, status, result_json)` are the read/write
+  surface.
+- **Dispatch is idempotent.** `companion_dispatch_fleet_plan` takes an optional
+  `card_id` and CLAIMS it (`pending → dispatched`, single SQL update) before
+  anything spawns. A double-click, a replayed event, or a re-mounted card is
+  refused with a clear message instead of starting a second fleet. Validation
+  errors happen before the claim (safe to retry); a dispatch that fails outright
+  releases the claim.
+- **Hydration and the recovery strip.** On mount and on every conversation
+  switch the panel merges that thread's pending cards back into the transcript
+  (live entries win on id), labelled *"Waiting on you from an earlier turn"* so
+  an older unanswered proposal is not mistaken for this turn's. Clearing on send
+  now only clears informational kinds.
+
 ## `show_ship_milestone` — the editable milestone card (conversational ship planning)
 
 The same contract as the plan card above, aimed at the Ship layer. Athena emits

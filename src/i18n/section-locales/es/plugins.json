@@ -2694,7 +2694,8 @@
     "orb_quick_input_close": "Cerrar mensaje rápido",
     "orb_quick_input_last_reply_label": "Última respuesta de Athena",
     "orb_quick_input_open": "Enviar un mensaje rápido",
-    "orb_quick_input_placeholder": "Escribe a Athena…"
+    "orb_quick_input_placeholder": "Escribe a Athena…",
+    "chat_cards_restored_label": "Pendiente de ti desde un turno anterior"
   },
   "artist_gallery": {
     "loading_viewer": "Cargando visor…",
