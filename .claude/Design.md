@@ -37,6 +37,15 @@
 Defined in **`src/styles/typography.css`**. Use semantic `.typo-*` classes, not
 raw Tailwind text-size combos (`custom/no-raw-text-classes` warns).
 
+> **Weight is a signal, not decoration.** Body and secondary prose — `typo-body`,
+> `typo-caption`, `typo-code` — sit at **400**, because they are what most of the
+> app is made of. Weight climbs only when something earns it: 600 for titles and
+> section headers, 700 for headings, hero, and labels. If a description renders
+> as heavy as the title above it, the hierarchy is gone and both stop reading as
+> emphasis. When a caption needs to stand out, promote it to `typo-title` — do
+> not add a `font-*` utility, which silently loses to these unlayered rules (§2
+> gotcha below).
+
 | Class | Size (default scale) | Weight | Line-height | Notes |
 |---|---|---|---|---|
 | `typo-hero` | 2.25rem (text-4xl) | 700 | 1.15 | Page greeting; `-0.015em` tracking |
@@ -48,7 +57,7 @@ raw Tailwind text-size combos (`custom/no-raw-text-classes` warns).
 | `typo-title-lg` | 1rem | 600 | 1.45 | Content headlines |
 | `typo-body` | 0.875rem (text-sm) | 400 | 1.65 | Paragraphs, descriptions |
 | `typo-body-lg` | 1rem (text-base) | 400 | 1.7 | Prominent descriptions |
-| `typo-caption` | 0.875rem | 500 | 1.5 | Secondary text; color = 70% foreground via `@layer base` so explicit `text-*` utilities still win |
+| `typo-caption` | 0.875rem | 400 | 1.5 | Secondary text; **normal weight on purpose** — same size as `typo-title`, so weight must not compete with it (2026-08-06, was 500). Color = 70% foreground via `@layer base` so explicit `text-*` utilities still win |
 | `typo-label` | 0.75rem (text-xs) | 700 | 1 | UPPERCASE, `0.15em` tracking; badges, dividers |
 | `typo-data` | 0.875rem | 500 | 1.4 | Numbers/metrics; tabular + lining nums |
 | `typo-data-lg` | 1.5rem (text-2xl) | 700 | 1.2 | Hero metrics, big counters |

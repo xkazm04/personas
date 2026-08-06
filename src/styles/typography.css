@@ -150,10 +150,21 @@ body {
    Body-sized (was text-xs; bumped +2px 2026-06-10 for readability) but
    muted to 70% foreground so the title/description pair reads as two
    distinct tiers. The color lives in @layer base (below) so any explicit
-   text-* utility — status colors, accent chips, badges — still wins. */
+   text-* utility — status colors, accent chips, badges — still wins.
+
+   WEIGHT IS 400 ON PURPOSE (was 500 until 2026-08-06). Caption and
+   .typo-title share the same 0.875rem size, so at 500-vs-600 the pair
+   differed by one step at identical size and read as two bold lines —
+   the separation was being carried entirely by color, not weight.
+   Secondary prose is the app's default voice: it stays normal so that
+   weight itself means "this matters". Anything that needs emphasis
+   should move up a token (.typo-title / .typo-heading), NOT add a
+   font-* utility here: the rules in this file are unlayered and beat
+   Tailwind's @layer utilities, so `typo-caption font-semibold` is
+   silently a no-op. */
 .typo-caption {
   font-size: 0.875rem;           /* text-sm */
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.5;
   font-feature-settings: "kern" 1, "liga" 1;
 }
