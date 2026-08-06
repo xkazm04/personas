@@ -39,11 +39,10 @@ import {
 } from './monitoringModel';
 import type { MonitoringRow } from './monitoringTypes';
 import { MonitoringConsoleVariant } from './MonitoringConsoleVariant';
-import { MonitoringRowsVariant } from './MonitoringRowsVariant';
-import { MonitoringFocusVariant } from './MonitoringFocusVariant';
+import { MonitoringConsoleV2Variant } from './MonitoringConsoleV2Variant';
 
 type Lane = 'capabilities' | 'upgrade';
-type Variant = 'console' | 'rows' | 'focus';
+type Variant = 'console' | 'v2';
 
 /** The passport row whose golden-standard actions, level ladder and provenance
  *  describe this dimension. See the note above: it is NOT `monitoring`. */
@@ -127,12 +126,11 @@ export function MonitoringModal({ slug, projectName, passport, onClose }: {
           <span className="ml-auto flex items-center gap-2 shrink-0">
             {/* PROTOTYPE ONLY — switches the Capabilities lane; removed on
                 consolidation along with the two loser files. */}
-            {lane === 'capabilities' && (
+            {(lane === 'capabilities' || variant === 'v2') && (
               <SegmentedTabs
                 tabs={[
                   { id: 'console', label: 'A · Console' },
-                  { id: 'rows', label: 'B · Rows' },
-                  { id: 'focus', label: 'C · Focus' },
+                  { id: 'v2', label: 'B · Console v2' },
                 ]}
                 activeTab={variant}
                 onTabChange={(v) => setVariant(v as Variant)}
@@ -142,7 +140,7 @@ export function MonitoringModal({ slug, projectName, passport, onClose }: {
                 ariaLabel="Prototype variant"
               />
             )}
-            {classic && (
+            {classic && variant === 'console' && (
               <SegmentedTabs
                 tabs={[
                   { id: 'capabilities', label: d.monitoring_lane_capabilities },
@@ -159,16 +157,14 @@ export function MonitoringModal({ slug, projectName, passport, onClose }: {
           </span>
         </div>
 
-        {lane === 'upgrade' ? (
+        {lane === 'upgrade' && variant === 'console' ? (
           <div className="flex-1 min-h-0 overflow-y-auto p-4">
             <ImproveClassicPanel slug={slug} rowKey={UPGRADE_ROW} onDone={onClose} />
           </div>
         ) : variant === 'console' ? (
           <MonitoringConsoleVariant {...shared} />
-        ) : variant === 'rows' ? (
-          <MonitoringRowsVariant {...shared} />
         ) : (
-          <MonitoringFocusVariant {...shared} />
+          <MonitoringConsoleV2Variant {...shared} slug={slug} upgradeRow={UPGRADE_ROW} onDone={onClose} />
         )}
 
         <div className="px-4 py-2 border-t border-primary/10 bg-secondary/10 flex-shrink-0">

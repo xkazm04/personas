@@ -1,20 +1,22 @@
-// VARIANT A — "Console". 2 × 2 tiles.
+// VARIANT A — "Console". The winner's shape: 2 × 2 capability tiles, each split
+// into the two facts that define it.
 //
-// Grid shape: four equal cards, each ~430 × 280 in the enlarged modal. Every
-// capability gets identical weight and the whole set is visible at once — the
-// layout for "which of these four is not okay".
+// LEFT is the codebase, RIGHT is the vault, and both are drawn as tool marks —
+// a brand glyph when we recognise it, a dashed tile when the side is empty. The
+// divider between them is the question the card asks.
 //
-// Cost of the shape: a tile is too small to hold the facts AND the candidate
-// list, so binding flips the tile over. You cannot read what a capability
-// currently has while choosing its replacement. B and C each spend their extra
-// room buying that back, in different ways.
+// When the two sides are the same tool the divider disappears and the card
+// shows one mark with its name: there is nothing left to compare, and "the code
+// and the vault agree" is exactly what a covered capability means.
+//
+// Pairs with the Upgrade lane, which carries the golden-standard actions.
+// Console v2 folds that lane into this grid instead.
 import { useState } from 'react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { TechInk } from '../passportInk';
 import {
-  Absent, BoundConnector, CandidateList, CapabilityCard, CapabilityHead, CardAction, DeployNote, Fact,
+  CandidateList, CapabilityCard, CapabilityHead, CardAction, DeployNote, MergedTool, sameTool, SideHalf, UnbindButton,
 } from './monitoringCard';
 import type { MonitoringRow, MonitoringVariantProps } from './monitoringTypes';
 
@@ -35,7 +37,7 @@ export function MonitoringConsoleVariant({ rows, busyKey, deploying, onAssign, o
   );
 }
 
-function ConsoleCard({ row, busy, deploying, onAssign, onDeploy }: {
+export function ConsoleCard({ row, busy, deploying, onAssign, onDeploy }: {
   row: MonitoringRow;
   busy: boolean;
   deploying: boolean;
@@ -45,6 +47,7 @@ function ConsoleCard({ row, busy, deploying, onAssign, onDeploy }: {
   const { t } = useTranslation();
   const d = t.plugins.dev_tools;
   const [picking, setPicking] = useState(false);
+  const merged = sameTool(row.detected, row.bound);
 
   return (
     <CapabilityCard icon={row.def.icon} testId={`monitoring-card-${row.def.key}`}>
@@ -59,17 +62,25 @@ function ConsoleCard({ row, busy, deploying, onAssign, onDeploy }: {
         />
       ) : (
         <>
-          <div className="relative flex-1 min-h-0 px-3 pb-2 space-y-3 overflow-y-auto">
-            <Fact label={d.envslot_detected}>
-              {row.detected ? <TechInk label={row.detected} /> : <Absent />}
-            </Fact>
-            <Fact label={d.envslot_connector}>
-              {row.bound
-                ? <BoundConnector credential={row.bound} healthy={row.health[row.bound.id]} busy={busy} onUnbind={() => onAssign(null)} />
-                : <Absent />}
-            </Fact>
-            {row.state === 'not_implemented' && <DeployNote />}
+          <div className="relative flex-1 min-h-0 flex items-stretch overflow-y-auto">
+            {merged && row.bound ? (
+              <MergedTool label={row.bound.name} serviceType={row.bound.serviceType}>
+                <UnbindButton busy={busy} onClick={() => onAssign(null)} />
+              </MergedTool>
+            ) : (
+              <>
+                <SideHalf side="code" toolLabel={row.detected} />
+                <span className="w-px my-2 bg-primary/10 shrink-0" aria-hidden />
+                <SideHalf side="vault" toolLabel={row.bound?.name ?? null} serviceType={row.bound?.serviceType}>
+                  {row.bound && <UnbindButton busy={busy} onClick={() => onAssign(null)} />}
+                </SideHalf>
+              </>
+            )}
           </div>
+
+          {row.state === 'not_implemented' && (
+            <div className="relative px-3 pb-2"><DeployNote /></div>
+          )}
           <div className="relative px-3 py-2 border-t border-primary/10">
             <CardAction row={row} busy={busy} deploying={deploying} onPick={() => setPicking(true)} onDeploy={onDeploy} />
           </div>

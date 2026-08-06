@@ -1515,7 +1515,17 @@
     "monitoring_vault_available": "Vault 内",
     "monitoring_vault_count": "{count} 件利用可能",
     "monitoring_health_ok": "正常",
-    "monitoring_health_unknown": "状態不明"
+    "monitoring_health_unknown": "状態不明",
+    "monitoring_deploy_now": "今すぐデプロイ",
+    "monitoring_hide_prompt": "プロンプトを隠す",
+    "monitoring_merged_hint": "コードと Vault が同じツールを指しています",
+    "monitoring_queue_all": "これが必要な {count} プロジェクトすべてをキューに →",
+    "monitoring_queue_task": "タスクをキューに追加",
+    "monitoring_rescan_full": "フル再スキャン",
+    "monitoring_rescan_incremental": "変更ファイルを再スキャン",
+    "monitoring_run_scan": "スキャンを実行",
+    "monitoring_upgrade_none": "ここで今アップグレードするものはありません。",
+    "monitoring_view_prompt": "プロンプトを見る"
   },
   "doc_signing": {
     "sign_heading": "ドキュメントに署名",
