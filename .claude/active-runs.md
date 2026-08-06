@@ -2,6 +2,11 @@
 
 ## Active
 
+### canvas-action-grammar — programmatic canvas actions v1 (camera verbs + zoom-gated inspection) for future Athena control — session fable-5
+- Started: 2026-08-06. Status: started. Committing on master per the operator's explicit instruction (no worktree).
+- Scope: NEW `sub_mastermind/lib/canvasActionStore.ts` (typed action grammar + request queue, focusStore pattern generalized) + NEW `lib/canvasTestBridge.ts` (dev-only `window.__mmCanvas` + DOM stash for :17320 /eval readback); `lib/useCanvasCamera.ts` (tween-settle promise, exported `animateTo`); `lib/CanvasShell.tsx` (one consumer effect answering actions); NEW `__tests__/canvasActionStore.test.ts`. No i18n keys, no Rust, no MastermindPage edits.
+- **NOTE FOR OTHER SESSIONS:** does not touch `MastermindPage.tsx` (prototype-mm-goals owns its goals branch), `FarProcessHex`/`SleepingMark`/`farProcesses`/`FleetPreviewPanel`/`fleetMeta`/`MosaicIsland` (another mastermind session holds them dirty), or `src/i18n/**`.
+
 ### athena-fleet-op-grammar — document the real fleet dispatcher surface in Athena's constitution — session opus-5[1m]
 - Started: 2026-08-06. Status: started.
 - Scope: prompt/docs only, **no behavioral Rust change**. The constitution taught Athena only `fleet_wake` / `fleet_resume` / `show_fleet_plan`, while `dispatcher.rs::ALLOWED_ACTIONS` registers seven more fleet ops (`fleet_send_input`, `fleet_kill`, `fleet_broadcast`, `fleet_spawn`, `fleet_dispatch`, `fleet_intervene`, `fleet_redirect_op`). Adds exact OP grammar + approval/confidence gating per op, and the **fleet-session-id vs Claude-Code `cc:` id** contract Athena has been conflating (both are v4 uuids; executors do exact-match `map.get(id)`, digests print only 8 chars).
