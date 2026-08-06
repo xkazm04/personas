@@ -602,6 +602,8 @@ fn tick_once(app: &AppHandle) {
                 Some(FleetSessionState::Running) => {
                     session.state = FleetSessionState::Running;
                     session.state_reason = Some("Transcript growing — session is active".into());
+                    // Back at work — whatever it was parked on no longer holds.
+                    session.stale_kind = None;
                     revived.push(session.id.clone());
                 }
                 // Corroboration veto: the transcript is flat, but the screen
@@ -632,6 +634,10 @@ fn tick_once(app: &AppHandle) {
         // not leave a clock behind for a future id to inherit.
         silent.retain(|k, _| map.contains_key(k));
     }
+
+    // Pass D — read the transcript for every parked session and turn the one
+    // amber "stale" bucket into a typed verdict. Runs outside every lock.
+    classify_pass(app, &grew_ids);
 
     // Emit state changes outside the lock.
     for sid in revived {
@@ -896,6 +902,113 @@ const LIMIT_RETRY_MAX: u32 = 24;
 /// arms the doze guard so the process stays alive between attempts; after
 /// [`LIMIT_RETRY_MAX`] attempts the session is left to doze (a multi-hour cap
 /// is the operator's call — the next app-side wake still finds it).
+/// Read every PARKED session's transcript tail and give it a typed verdict.
+///
+/// "Stale" conflated three situations the operator responds to completely
+/// differently — the task is DONE, the session is BLOCKED on a question or a
+/// permission prompt, or it is genuinely HUNG mid-tool — and the ticker never
+/// looked at the one artifact that knows which: the transcript. This pass
+/// closes that, and maps each verdict onto the EXISTING lifecycle rather than
+/// inventing a state:
+///
+/// - `Done`   → `mark_finished` (the same path the `FLEET:DONE` cue uses), and
+///              the completion is handed to Athena's fleet bridge so a finished
+///              run finally reaches the chat instead of dying in the grid.
+/// - `Blocked`→ `AwaitingInput` with a typed reason.
+/// - `Hung`   → left `Stale`; only the typed kind is stamped, because the
+///              existing frozen reasons already say it well.
+fn classify_pass(app: &AppHandle, grew_ids: &HashSet<String>) {
+    use super::classify::{classify_parked, verdict_token, BlockedKind, ParkedVerdict};
+
+    // Candidates: parked states only. A Running session is not parked, and a
+    // Finished/Exited one has nothing left to decide.
+    let candidates: Vec<(String, Option<String>)> = {
+        let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.values()
+            .filter(|s| {
+                matches!(
+                    s.state,
+                    FleetSessionState::Stale
+                        | FleetSessionState::AwaitingInput
+                        | FleetSessionState::Idle
+                )
+            })
+            .map(|s| (s.id.clone(), s.claude_session_id.clone()))
+            .collect()
+    };
+
+    for (sid, csid) in candidates {
+        let Some(csid) = csid else { continue };
+        let Some(tail) = super::transcript_read::tail_lines(&csid) else {
+            continue;
+        };
+        let screen = registry()
+            .render_screen_for(&sid)
+            .map(|(_, lines)| lines.join("\n"));
+        let verdict = classify_parked(&tail, screen.as_deref(), grew_ids.contains(&sid));
+        if verdict == ParkedVerdict::Unknown {
+            continue;
+        }
+        let changed = registry().set_stale_kind(&sid, verdict_token(&verdict).map(str::to_string));
+
+        match &verdict {
+            ParkedVerdict::Done { summary } => {
+                let summary = if summary.is_empty() {
+                    "detected complete".to_string()
+                } else {
+                    summary.clone()
+                };
+                if let Some(prev) = registry().mark_finished(&sid, &summary) {
+                    super::pty::emit_session_state(
+                        app,
+                        &sid,
+                        Some(prev),
+                        "finished",
+                        Some(format!("Task complete: {summary}")),
+                    );
+                    super::debug_log::athena(
+                        &sid,
+                        "finished (classified)",
+                        &format!("transcript tail reads as done — {summary}"),
+                    );
+                    crate::commands::companion::fleet_bridge::notify_completion(
+                        app, &sid, &summary,
+                    );
+                }
+            }
+            ParkedVerdict::Blocked(kind) => {
+                let reason = match kind {
+                    BlockedKind::Question => {
+                        "Waiting on your answer — the session asked a question."
+                    }
+                    BlockedKind::Permission => {
+                        "Waiting on you — a permission or login prompt is on screen."
+                    }
+                };
+                if let Some(prev) = registry().escalate_to_awaiting(&sid, reason) {
+                    super::pty::emit_session_state(
+                        app,
+                        &sid,
+                        Some(prev),
+                        "awaiting_input",
+                        Some(reason.to_string()),
+                    );
+                } else if changed {
+                    super::pty::emit_registry_changed(app, "updated", &sid);
+                }
+            }
+            // Hung keeps whatever frozen reason the time rules already wrote —
+            // they describe it accurately. Only the typed kind is new.
+            ParkedVerdict::Hung(_) => {
+                if changed {
+                    super::pty::emit_registry_changed(app, "updated", &sid);
+                }
+            }
+            ParkedVerdict::Unknown => {}
+        }
+    }
+}
+
 fn limit_retry_pass(app: &AppHandle, now: i64) {
     let candidates: Vec<(String, bool)> = {
         let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());

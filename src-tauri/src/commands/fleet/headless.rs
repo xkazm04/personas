@@ -212,6 +212,7 @@ pub fn spawn_headless_session(
         limit_reset_at_ms: 0,
         run_id,
         run_label,
+        stale_kind: None,
         master: Mutex::new(None),
         writer: Mutex::new(Some(Box::new(stdin))),
         hibernating: std::sync::atomic::AtomicBool::new(false),

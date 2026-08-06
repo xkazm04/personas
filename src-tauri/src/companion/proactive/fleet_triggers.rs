@@ -86,6 +86,14 @@ pub fn fleet_attention() -> Vec<Nudge> {
             }
             // AwaitingInput is owned by orchestrate_on_awaiting /
             // reassess_stale_awaiting (see module docs) — no blind nudge.
+            //
+            // Finished is owned by `fleet_bridge::notify_completion`, which
+            // announces per OPERATION (last one out) and bypasses the daily
+            // proposal budget because the operator dispatched the work and is
+            // always owed the outcome. A second nudge from here would
+            // double-announce every completed run, so this arm stays silent
+            // ON PURPOSE — not by oversight, which is what it looked like
+            // while no completion lane existed at all.
             FleetSessionState::Spawning
             | FleetSessionState::Running
             | FleetSessionState::Idle

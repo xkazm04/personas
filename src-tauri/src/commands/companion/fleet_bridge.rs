@@ -2081,6 +2081,136 @@ fn reconcile_if_dispatched(
     }
 }
 
+// ── Completion → chat ───────────────────────────────────────────────────
+//
+// A finished session used to reach nothing. `fleet_triggers` explicitly
+// ignores `Finished`; the wake census dropped a zero-pending fleet so "they
+// all finished" never woke Athena; and `athena://orchestration/operation-
+// completed` had no frontend listener at all. So the moment the operator most
+// wants to hear about — the work is done — was the one moment the system was
+// silent. This lane fixes that, and deliberately does NOT go through the
+// speculative-nudge budget: the operator dispatched this work and is always
+// owed the outcome.
+
+/// Sessions already announced, so a re-detection on the next 30s tick cannot
+/// announce twice.
+fn completion_notified() -> &'static Mutex<std::collections::HashSet<String>> {
+    static NOTIFIED: OnceLock<Mutex<std::collections::HashSet<String>>> = OnceLock::new();
+    NOTIFIED.get_or_init(|| Mutex::new(std::collections::HashSet::new()))
+}
+
+/// What to do about a detected completion.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum CompletionPolicy {
+    /// Write it to the chat AND spend a turn on it.
+    Wake,
+    /// Write it to the chat, but don't wake her — the operator will read it
+    /// when they look.
+    Quiet,
+    /// Say nothing here; someone else owns the announcement.
+    Defer,
+}
+
+/// Decide how loudly a completion lands.
+///
+/// Pure, so the policy is testable without a fleet or a clock. `siblings_running`
+/// is the last-one-out test — announcing each session of a five-session
+/// operation separately is exactly the noise that made the fleet unreadable.
+pub(crate) fn completion_policy(
+    athena_owned: bool,
+    siblings_running: bool,
+    quiet_hours: bool,
+) -> CompletionPolicy {
+    if siblings_running {
+        // The operation is not done; the last session out announces for all.
+        return CompletionPolicy::Defer;
+    }
+    if quiet_hours {
+        return CompletionPolicy::Quiet;
+    }
+    // A session Athena dispatched is one she is accountable for — she speaks.
+    // One the operator started by hand gets the line in the transcript without
+    // a turn spent on it.
+    if athena_owned {
+        CompletionPolicy::Wake
+    } else {
+        CompletionPolicy::Quiet
+    }
+}
+
+/// Announce a detected completion. Called by the fleet ticker's parked-state
+/// classifier when a session's transcript reads as done.
+pub fn notify_completion(app: &tauri::AppHandle, session_id: &str, summary: &str) {
+    {
+        let mut seen = completion_notified().lock().unwrap_or_else(|e| e.into_inner());
+        if !seen.insert(session_id.to_string()) {
+            return;
+        }
+        // Cheap bound — this set only ever holds finished session ids.
+        if seen.len() > 500 {
+            seen.clear();
+            seen.insert(session_id.to_string());
+        }
+    }
+    use tauri::Manager;
+    let Some(state) = app.try_state::<Arc<AppState>>() else {
+        return;
+    };
+
+    let registry = crate::commands::fleet::registry::registry();
+    let label = registry
+        .try_lookup_label(session_id)
+        .unwrap_or_else(|| session_id.chars().take(8).collect());
+    let athena_owned = registry.is_athena_owned(session_id);
+
+    // Last one out: is any sibling of the same operation still working?
+    let siblings_running = crate::companion::orchestration::operative_memory::memory()
+        .find_operation_for_session(session_id)
+        .and_then(|op_id| {
+            crate::companion::orchestration::operative_memory::memory().snapshot_operation(&op_id)
+        })
+        .map(|op| matches!(op.status, OperationStatus::Active))
+        .unwrap_or(false);
+
+    let quiet = crate::companion::proactive::quiet::is_quiet_now(&state.user_db).unwrap_or(false);
+    let policy = completion_policy(athena_owned, siblings_running, quiet);
+    if policy == CompletionPolicy::Defer {
+        return;
+    }
+
+    // The chat-visible line. `Bubble.tsx` renders a system message whose text
+    // starts with `[Fleet` in the fleet voice, which is exactly the register
+    // this belongs in — a report from the machinery, not from Athena.
+    let body = format!("[Fleet] {label} finished — {summary}");
+    if let Err(e) = crate::companion::brain::episodic::append_episode(
+        &state.user_db,
+        crate::companion::session::DEFAULT_SESSION_ID,
+        crate::companion::brain::episodic::EpisodeRole::System,
+        &body,
+    ) {
+        tracing::warn!(error = %e, session_id, "fleet completion: episode append failed");
+    }
+
+    if policy != CompletionPolicy::Wake {
+        return;
+    }
+    let directive = format!(
+        "[Fleet] `{label}` just finished: {summary}\n\nTell the operator in one or two \
+         sentences what landed and what — if anything — it now unblocks. Do not re-plan and \
+         do not dispatch anything; if follow-up work is obvious, name it and stop."
+    );
+    crate::companion::session::spawn_proactive_turn(
+        app.clone(),
+        Arc::new(state.user_db.clone()),
+        Arc::new(state.db.clone()),
+        #[cfg(feature = "ml")]
+        state.embedding_manager.clone(),
+        "fleet_completion".to_string(),
+        Some(session_id.to_string()),
+        directive,
+    );
+}
+
 /// Build the user-facing chat-card body for a fleet wrap-up. Keep it
 /// short — the proactive card shows it in a constrained surface; the
 /// full synthesized summary lives in the episode body for Athena to

@@ -207,6 +207,15 @@ pub struct FleetSession {
     /// see when the fleet comes back instead of watching retries burn cycles.
     /// Always in the future; a lapsed stamp is not surfaced.
     pub limit_reset_at_ms: Option<i64>,
+    /// TYPED read of why a parked session is parked, from the transcript
+    /// classifier (`fleet::classify`): `done` | `blocked_question` |
+    /// `blocked_permission` | `hung_mid_tool`, or `None` when the classifier
+    /// abstained. `state` alone conflated a finished run, a run waiting on a
+    /// question, and a genuinely wedged run into one amber bucket, and the
+    /// distinction lived only inside free-text `state_reason` prose the UI
+    /// then string-matched. Advisory: it never overrides `state`, it explains
+    /// it.
+    pub stale_kind: Option<String>,
 }
 
 /// Snapshot of the full fleet registry — returned by `fleet_list_sessions`.

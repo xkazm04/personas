@@ -405,6 +405,10 @@ pub struct FleetSessionInner {
     pub run_id: Option<String>,
     /// Human label for the run (e.g. "perfect round 9"). Display only.
     pub run_label: Option<String>,
+    /// Latest typed parked-state verdict from `fleet::classify`, as its
+    /// token. Written by the staleness ticker, cleared whenever the session
+    /// goes back to work. Advisory — it explains `state`, never overrides it.
+    pub stale_kind: Option<String>,
     /// PTY master — needed for resize. `None` after exit.
     pub master: Mutex<Option<Box<dyn MasterPty + Send>>>,
     /// PTY writer — for write_input. `None` after exit.
@@ -460,6 +464,7 @@ impl FleetSessionInner {
             // Only surfaced while the reset is still ahead of us — a lapsed
             // stamp would render a countdown to a moment that already passed.
             limit_reset_at_ms: Some(self.limit_reset_at_ms).filter(|&ms| ms > now_ms()),
+            stale_kind: self.stale_kind.clone(),
         }
     }
 }
@@ -571,6 +576,21 @@ impl FleetRegistry {
     /// not reentrant, so a blocking lookup there would deadlock the app in a
     /// debugging tool. Contention is instead reported as `None` and the caller
     /// degrades to the short session id.
+    /// Stamp (or clear) the typed parked-state verdict. Advisory metadata —
+    /// it never changes `state`, only explains it. Returns true when the
+    /// stored value actually changed, so the caller can skip a needless emit.
+    pub fn set_stale_kind(&self, session_id: &str, kind: Option<String>) -> bool {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else {
+            return false;
+        };
+        if session.stale_kind == kind {
+            return false;
+        }
+        session.stale_kind = kind;
+        true
+    }
+
     pub fn try_lookup_label(&self, session_id: &str) -> Option<String> {
         let map = self.sessions.try_lock().ok()?;
         map.get(session_id)
@@ -1516,6 +1536,7 @@ mod tests {
             limit_reset_at_ms: 0,
             run_id: None,
             run_label: None,
+            stale_kind: None,
             master: Mutex::new(None),
             writer: Mutex::new(None),
             hibernating: AtomicBool::new(false),
