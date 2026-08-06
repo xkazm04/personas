@@ -1,13 +1,17 @@
 // Monitoring dimension — the modal behind the passport's Monitoring cell.
 //
-// Owns the wiring only: the four capability rows (see monitoringModel), their
-// bindings from the per-environment connector table, the vault candidates, and
-// the Claude deployment a NOT_IMPLEMENTED item dispatches. Shape follows
-// SkillsWorkbench / DatabaseModal — BaseModal, header band, fixed body height,
-// footer strip.
+// TWO LANES, the SkillsWorkbench arrangement:
+//   · Capabilities — the four-item grid: bind a connector per capability, and
+//     dispatch the integration for the one state that needs code.
+//   · Upgrade      — `ImproveClassicPanel`, i.e. exactly what the old deploy
+//     popover showed. Routing this row to a modal had silently dropped all of
+//     it: "why this rating", the level ladder, the connector icon grid, the
+//     golden-standard actions with prompt preview / Queue / Deploy now, and
+//     "queue for all N projects that need this". None of that is re-implemented
+//     here — the panel is the popover's own body, shared.
 //
-// PROTOTYPE SCAFFOLD: the `variant` state + the SegmentedTabs in the header are
-// throwaway; consolidation deletes them and the loser file.
+// PROTOTYPE SCAFFOLD: the variant pill in the header is throwaway. It switches
+// only the Capabilities lane; consolidation deletes it and the loser files.
 import { useCallback, useMemo, useState } from 'react';
 import { Activity } from 'lucide-react';
 
@@ -20,15 +24,19 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import type { AppPassport } from '../passportModel';
 import { useImprove } from './ImproveContext';
+import { hasClassicContent, ImproveClassicPanel } from './ImproveClassicPanel';
 import { bindingKey, useEnvConnectors } from './envConnectors';
+import { MONITORING_DIMENSION } from './improveRows';
 import {
   integrationPrompt, MONITORING_ENV, MONITORING_ITEMS, monitoringState,
 } from './monitoringModel';
 import type { MonitoringRow } from './monitoringTypes';
 import { MonitoringConsoleVariant } from './MonitoringConsoleVariant';
-import { MonitoringPipelineVariant } from './MonitoringPipelineVariant';
+import { MonitoringLedgerVariant } from './MonitoringLedgerVariant';
+import { MonitoringTrackVariant } from './MonitoringTrackVariant';
 
-type Variant = 'console' | 'pipeline';
+type Lane = 'capabilities' | 'upgrade';
+type Variant = 'console' | 'ledger' | 'track';
 
 /** Union of every service type any item accepts — one vault fetch covers all
  *  four rows; each row filters the result to its own accepted types. */
@@ -45,9 +53,11 @@ export function MonitoringModal({ slug, projectName, passport, onClose }: {
   const engine = useImprove();
   const addToast = useToastStore((s) => s.addToast);
   const env = useEnvConnectors(slug, ALL_SERVICE_TYPES);
+  const [lane, setLane] = useState<Lane>('capabilities');
   const [variant, setVariant] = useState<Variant>('console');
-  const [selected, setSelected] = useState<string | null>(null);
   const [deploying, setDeploying] = useState<string | null>(null);
+
+  const classic = hasClassicContent(slug, MONITORING_DIMENSION, engine);
 
   const rows = useMemo<MonitoringRow[]>(() => MONITORING_ITEMS.map((def) => {
     const boundId = env.bindings.get(bindingKey(def.key, MONITORING_ENV));
@@ -81,7 +91,7 @@ export function MonitoringModal({ slug, projectName, passport, onClose }: {
           `Wire ${label} (${row.bound!.serviceType})`,
           integrationPrompt(label, row.bound!.name, row.bound!.serviceType),
         );
-        useImproveActivityStore.getState().start(`${slug}:monitoring`, taskId, 'deploy');
+        useImproveActivityStore.getState().start(`${slug}:${MONITORING_DIMENSION}`, taskId, 'deploy');
         addToast(d.monitoring_deploy_started, 'success');
       } catch (err) {
         toastCatch('monitoring deploy')(err);
@@ -95,31 +105,60 @@ export function MonitoringModal({ slug, projectName, passport, onClose }: {
 
   return (
     <BaseModal isOpen onClose={onClose} titleId="monitoring-modal-title" size="lg" portal staggerChildren={false}>
-      <div className="flex flex-col h-[460px]" data-testid="monitoring-modal">
+      <div className="flex flex-col h-[470px]" data-testid="monitoring-modal">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10 bg-primary/[0.04] flex-shrink-0">
           <Activity className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
           <span id="monitoring-modal-title" className="typo-title truncate">{d.monitoring_modal_title}</span>
-          <span className="typo-caption text-foreground/70 truncate">· {projectName}</span>
-          {/* PROTOTYPE ONLY — removed on consolidation. */}
-          <span className="ml-auto shrink-0">
-            <SegmentedTabs
-              tabs={[{ id: 'console', label: 'A · Console' }, { id: 'pipeline', label: 'B · Pipeline' }]}
-              activeTab={variant}
-              onTabChange={(v) => setVariant(v as Variant)}
-              variant="pill"
-              size="sm"
-              fullWidth={false}
-              ariaLabel="Prototype variant"
-            />
+          <span className="typo-caption text-foreground/60 truncate" style={{ fontWeight: 400 }}>· {projectName}</span>
+          <span className="ml-auto flex items-center gap-2 shrink-0">
+            {/* PROTOTYPE ONLY — switches the Capabilities lane; removed on
+                consolidation along with the two loser files. */}
+            {lane === 'capabilities' && (
+              <SegmentedTabs
+                tabs={[
+                  { id: 'console', label: 'A · Console' },
+                  { id: 'ledger', label: 'B · Ledger' },
+                  { id: 'track', label: 'C · Track' },
+                ]}
+                activeTab={variant}
+                onTabChange={(v) => setVariant(v as Variant)}
+                variant="pill"
+                size="sm"
+                fullWidth={false}
+                ariaLabel="Prototype variant"
+              />
+            )}
+            {classic && (
+              <SegmentedTabs
+                tabs={[
+                  { id: 'capabilities', label: d.monitoring_lane_capabilities },
+                  { id: 'upgrade', label: d.monitoring_lane_upgrade },
+                ]}
+                activeTab={lane}
+                onTabChange={(v) => setLane(v as Lane)}
+                variant="segment"
+                size="sm"
+                fullWidth={false}
+                ariaLabel={d.monitoring_lane_aria}
+              />
+            )}
           </span>
         </div>
 
-        {variant === 'console'
-          ? <MonitoringConsoleVariant {...shared} />
-          : <MonitoringPipelineVariant {...shared} selected={selected} onSelect={setSelected} />}
+        {lane === 'upgrade' ? (
+          <div className="flex-1 min-h-0 overflow-y-auto p-4">
+            <ImproveClassicPanel slug={slug} rowKey={MONITORING_DIMENSION} onDone={onClose} />
+          </div>
+        ) : variant === 'console' ? (
+          <MonitoringConsoleVariant {...shared} />
+        ) : variant === 'ledger' ? (
+          <MonitoringLedgerVariant {...shared} />
+        ) : (
+          <MonitoringTrackVariant {...shared} />
+        )}
 
         <div className="px-4 py-2 border-t border-primary/10 bg-secondary/10 flex-shrink-0">
-          <span className="typo-label text-foreground/35">{d.monitoring_modal_footer}</span>
+          <span className="typo-label text-foreground/40">{d.monitoring_modal_footer}</span>
         </div>
       </div>
     </BaseModal>
