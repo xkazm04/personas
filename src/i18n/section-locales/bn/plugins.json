@@ -1515,7 +1515,17 @@
     "monitoring_vault_available": "আপনার ভল্টে",
     "monitoring_vault_count": "{count}টি উপলব্ধ",
     "monitoring_health_ok": "সুস্থ",
-    "monitoring_health_unknown": "স্বাস্থ্য অজানা"
+    "monitoring_health_unknown": "স্বাস্থ্য অজানা",
+    "monitoring_deploy_now": "এখনই ডিপ্লয় করুন",
+    "monitoring_hide_prompt": "প্রম্পট লুকান",
+    "monitoring_merged_hint": "কোডবেস ও আপনার ভল্ট একই টুলের নাম বলছে",
+    "monitoring_queue_all": "যে {count}টি প্রকল্পে এটি দরকার সবগুলির জন্য সারিবদ্ধ করুন →",
+    "monitoring_queue_task": "টাস্ক সারিবদ্ধ করুন",
+    "monitoring_rescan_full": "সম্পূর্ণ পুনঃস্ক্যান",
+    "monitoring_rescan_incremental": "পরিবর্তিত ফাইল পুনঃস্ক্যান",
+    "monitoring_run_scan": "স্ক্যান চালান",
+    "monitoring_upgrade_none": "এখানে এই মুহূর্তে আপগ্রেড করার কিছু নেই।",
+    "monitoring_view_prompt": "প্রম্পট দেখুন"
   },
   "doc_signing": {
     "sign_heading": "ডকুমেন্ট স্বাক্ষর করুন",

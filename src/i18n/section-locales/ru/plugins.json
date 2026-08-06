@@ -1515,7 +1515,17 @@
     "monitoring_vault_available": "В вашем хранилище",
     "monitoring_vault_count": "доступно: {count}",
     "monitoring_health_ok": "в порядке",
-    "monitoring_health_unknown": "состояние неизвестно"
+    "monitoring_health_unknown": "состояние неизвестно",
+    "monitoring_deploy_now": "Развернуть сейчас",
+    "monitoring_hide_prompt": "Скрыть промпт",
+    "monitoring_merged_hint": "Код и ваше хранилище называют один и тот же инструмент",
+    "monitoring_queue_all": "Поставить в очередь для всех {count} проектов, которым это нужно →",
+    "monitoring_queue_task": "Поставить задачу в очередь",
+    "monitoring_rescan_full": "Полное пересканирование",
+    "monitoring_rescan_incremental": "Пересканировать изменённые файлы",
+    "monitoring_run_scan": "Запустить сканирование",
+    "monitoring_upgrade_none": "Здесь сейчас нечего улучшать.",
+    "monitoring_view_prompt": "Показать промпт"
   },
   "doc_signing": {
     "sign_heading": "Подписать документ",

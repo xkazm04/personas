@@ -13937,7 +13937,17 @@
       "monitoring_vault_available": "Di vault Anda",
       "monitoring_vault_count": "{count} tersedia",
       "monitoring_health_ok": "sehat",
-      "monitoring_health_unknown": "status tidak diketahui"
+      "monitoring_health_unknown": "status tidak diketahui",
+      "monitoring_deploy_now": "Deploy sekarang",
+      "monitoring_hide_prompt": "Sembunyikan prompt",
+      "monitoring_merged_hint": "Kode dan vault Anda menyebut alat yang sama",
+      "monitoring_queue_all": "Antrekan untuk semua {count} proyek yang membutuhkannya →",
+      "monitoring_queue_task": "Antrekan tugas",
+      "monitoring_rescan_full": "Pindai ulang penuh",
+      "monitoring_rescan_incremental": "Pindai ulang berkas yang berubah",
+      "monitoring_run_scan": "Jalankan pemindaian",
+      "monitoring_upgrade_none": "Tidak ada yang perlu ditingkatkan di sini saat ini.",
+      "monitoring_view_prompt": "Lihat prompt"
     },
     "doc_signing": {
       "sign_heading": "Tandatangani Dokumen",
