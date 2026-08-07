@@ -7470,6 +7470,17 @@ export type Translations = {
       jobs_completed: string;
       jobs_failed: string;
       errors: string;
+      spend_title: string;
+      spend_hint: string;
+      spend_day: string;
+      spend_origin: string;
+      spend_ledger: string;
+      spend_ledger_turn: string;
+      spend_ledger_dev: string;
+      spend_turns: string;
+      spend_cost: string;
+      spend_empty_title: string;
+      spend_empty_description: string;
     };
     activity: {
       title: string;

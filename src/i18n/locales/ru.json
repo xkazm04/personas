@@ -7968,7 +7968,18 @@
       "triage_title": "Воронка триажа",
       "turns": "Ходы",
       "vs_fleet": "Athena против флота",
-      "vs_fleet_hint": "{athena} из {total} общих расходов за период"
+      "vs_fleet_hint": "{athena} из {total} общих расходов за период",
+      "spend_cost": "Стоимость",
+      "spend_day": "День",
+      "spend_empty_description": "За этот период Athena не выполнила ни одного учтённого вызова.",
+      "spend_empty_title": "Расходы не зафиксированы",
+      "spend_hint": "Все журналы, куда попадают расходы Athena",
+      "spend_ledger": "Журнал",
+      "spend_ledger_dev": "Фоновые",
+      "spend_ledger_turn": "Ходы",
+      "spend_origin": "Источник",
+      "spend_title": "Расходы",
+      "spend_turns": "Вызовы"
     },
     "heartbeats": {
       "all_clear_detail": "Каждая отслеживаемая персона работает в нормальных пределах.",

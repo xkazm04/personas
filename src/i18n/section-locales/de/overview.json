@@ -1743,7 +1743,18 @@
     "triage_title": "Triage-Trichter",
     "turns": "Runden",
     "vs_fleet": "Athena vs. Fleet",
-    "vs_fleet_hint": "{athena} von {total} Gesamtausgaben in diesem Zeitfenster"
+    "vs_fleet_hint": "{athena} von {total} Gesamtausgaben in diesem Zeitfenster",
+    "spend_cost": "Kosten",
+    "spend_day": "Tag",
+    "spend_empty_description": "Athena hat in diesem Zeitraum keinen erfassten Aufruf ausgeführt.",
+    "spend_empty_title": "Keine Ausgaben erfasst",
+    "spend_hint": "Alle Journale, in denen Athenas Kosten anfallen",
+    "spend_ledger": "Journal",
+    "spend_ledger_dev": "Hintergrund",
+    "spend_ledger_turn": "Züge",
+    "spend_origin": "Herkunft",
+    "spend_title": "Ausgaben",
+    "spend_turns": "Aufrufe"
   },
   "heartbeats": {
     "all_clear_detail": "Jede überwachte Persona operiert innerhalb gesunder Schwellenwerte.",

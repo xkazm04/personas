@@ -7463,7 +7463,18 @@
       "jobs_title": "Background jobs",
       "jobs_completed": "Completed",
       "jobs_failed": "Failed",
-      "errors": "Turn errors"
+      "errors": "Turn errors",
+      "spend_title": "Spend",
+      "spend_hint": "Every ledger Athena's cost lands in",
+      "spend_day": "Day",
+      "spend_origin": "Origin",
+      "spend_ledger": "Ledger",
+      "spend_ledger_turn": "Turns",
+      "spend_ledger_dev": "Background",
+      "spend_turns": "Calls",
+      "spend_cost": "Cost",
+      "spend_empty_title": "No spend recorded",
+      "spend_empty_description": "Athena has not run a metered call in this window."
     },
     "activity": {
       "title": "Activity",

@@ -1743,7 +1743,18 @@
     "triage_title": "Entonnoir de triage",
     "turns": "Tours",
     "vs_fleet": "Athena vs flotte",
-    "vs_fleet_hint": "{athena} sur {total} dépenses totales dans cette fenêtre"
+    "vs_fleet_hint": "{athena} sur {total} dépenses totales dans cette fenêtre",
+    "spend_cost": "Coût",
+    "spend_day": "Jour",
+    "spend_empty_description": "Athena n'a effectué aucun appel mesuré sur cette période.",
+    "spend_empty_title": "Aucune dépense enregistrée",
+    "spend_hint": "Tous les journaux où atterrit le coût d'Athena",
+    "spend_ledger": "Journal",
+    "spend_ledger_dev": "Arrière-plan",
+    "spend_ledger_turn": "Tours",
+    "spend_origin": "Origine",
+    "spend_title": "Dépenses",
+    "spend_turns": "Appels"
   },
   "heartbeats": {
     "all_clear_detail": "Chaque persona surveillé fonctionne dans des seuils sains.",

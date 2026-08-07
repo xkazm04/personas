@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { Bot, Filter, Bell } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAthenaHealth } from '../libs/useAthenaHealth';
+import { AthenaSpendSection } from './AthenaSpendSection';
 
 /**
  * Athena operational-health panel in the Observability tab (direction 6 / A4).
@@ -115,6 +116,12 @@ export const AthenaHealthPanel = memo(function AthenaHealthPanel() {
               accent={errors > 0 ? 'text-rose-400' : 'text-foreground'}
             />
           </div>
+
+          {/* Spend — the union of both ledgers Athena's cost lands in. Owns
+              its own fetch so a slow rollup never delays the health stats
+              above it, and so the loading-v2 machine can live entirely inside
+              UnifiedTable. */}
+          <AthenaSpendSection />
         </>
       )}
     </div>

@@ -7968,7 +7968,18 @@
       "triage_title": "分诊漏斗",
       "turns": "轮次",
       "vs_fleet": "Athena 与队列",
-      "vs_fleet_hint": "此窗口内总支出 {total} 中 Athena 占 {athena}"
+      "vs_fleet_hint": "此窗口内总支出 {total} 中 Athena 占 {athena}",
+      "spend_cost": "费用",
+      "spend_day": "日期",
+      "spend_empty_description": "在此时间范围内 Athena 未进行任何计费调用。",
+      "spend_empty_title": "暂无支出记录",
+      "spend_hint": "Athena 费用所归属的全部账本",
+      "spend_ledger": "账本",
+      "spend_ledger_dev": "后台",
+      "spend_ledger_turn": "对话轮次",
+      "spend_origin": "来源",
+      "spend_title": "支出",
+      "spend_turns": "调用次数"
     },
     "heartbeats": {
       "all_clear_detail": "所有受监控的角色均在健康阈值内运行。",

@@ -2923,6 +2923,7 @@ pub fn run() {
             commands::companion::observability::companion_get_adaptations,
             commands::companion::observability::companion_prompt_block_stats,
             commands::companion::observability::companion_get_prompt_churn,
+            commands::companion::observability::companion_get_spend_rollup,
             commands::companion::proactive::companion_evaluate_proactive_now,
             commands::companion::proactive::companion_list_proactive_messages,
             commands::companion::proactive::companion_engage_proactive,

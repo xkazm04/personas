@@ -7968,7 +7968,18 @@
       "triage_title": "قمع الفرز",
       "turns": "الدورات",
       "vs_fleet": "Athena مقابل الأسطول",
-      "vs_fleet_hint": "{athena} من {total} إجمالي الإنفاق في هذه الفترة"
+      "vs_fleet_hint": "{athena} من {total} إجمالي الإنفاق في هذه الفترة",
+      "spend_cost": "التكلفة",
+      "spend_day": "اليوم",
+      "spend_empty_description": "لم تُجرِ Athena أي استدعاء محتسَب خلال هذه الفترة.",
+      "spend_empty_title": "لا توجد نفقات مسجَّلة",
+      "spend_hint": "كل السجلات التي تُقيَّد فيها تكلفة Athena",
+      "spend_ledger": "السجل",
+      "spend_ledger_dev": "في الخلفية",
+      "spend_ledger_turn": "الأدوار",
+      "spend_origin": "المصدر",
+      "spend_title": "النفقات",
+      "spend_turns": "الاستدعاءات"
     },
     "heartbeats": {
       "all_clear_detail": "كل شخصية مراقبة تعمل ضمن حدود سليمة.",

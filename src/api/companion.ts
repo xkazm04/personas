@@ -5,6 +5,7 @@ import type { DailyGoalsState } from '@/lib/bindings/DailyGoalsState';
 import type { AthenaAdaptation } from '@/lib/bindings/AthenaAdaptation';
 import type { AthenaUsageDashboard } from '@/lib/bindings/AthenaUsageDashboard';
 import type { AthenaHealth } from '@/lib/bindings/AthenaHealth';
+import type { AthenaSpendRow } from '@/lib/bindings/AthenaSpendRow';
 import type { ConversationRow } from '@/lib/bindings/ConversationRow';
 import type { CompanionTurnSidecar } from '@/lib/bindings/CompanionTurnSidecar';
 import type { ReembedResult } from '@/lib/bindings/ReembedResult';
@@ -1617,6 +1618,22 @@ export async function companionGetUsageDashboard(days: number): Promise<AthenaUs
  */
 export async function companionGetHealth(days: number): Promise<AthenaHealth> {
   return invoke<AthenaHealth>('companion_get_health', { days });
+}
+
+/**
+ * Athena's spend over the last `days`, per day and origin, with the ledger
+ * each row came from stated explicitly (`turn` = `companion_turn`,
+ * `dev_spend` = `dev_llm_spend`).
+ *
+ * "What does Athena cost per month" was previously unanswerable because her
+ * spend was assumed to be split across two ledgers that nothing unioned. The
+ * 2026-08-08 audit behind `companion_get_spend_rollup` found the `dev_spend`
+ * half is currently empty — no companion path writes that table — so today
+ * every row comes back tagged `turn`. The tag is carried anyway: it is what
+ * keeps a future migration from silently double-counting.
+ */
+export async function companionGetSpendRollup(days: number): Promise<AthenaSpendRow[]> {
+  return invoke<AthenaSpendRow[]>('companion_get_spend_rollup', { days });
 }
 
 // ── Cockpit (compose_cockpit op) ─────────────────────────────────────

@@ -7968,7 +7968,18 @@
       "triage_title": "ट्रायज फनल",
       "turns": "टर्न",
       "vs_fleet": "Athena बनाम फ्लीट",
-      "vs_fleet_hint": "इस विंडो में कुल {total} खर्च में से {athena}"
+      "vs_fleet_hint": "इस विंडो में कुल {total} खर्च में से {athena}",
+      "spend_cost": "लागत",
+      "spend_day": "दिन",
+      "spend_empty_description": "इस अवधि में Athena ने कोई मापी गई कॉल नहीं चलाई।",
+      "spend_empty_title": "कोई खर्च दर्ज नहीं",
+      "spend_hint": "हर वह बही जिसमें Athena की लागत दर्ज होती है",
+      "spend_ledger": "बही",
+      "spend_ledger_dev": "पृष्ठभूमि",
+      "spend_ledger_turn": "टर्न",
+      "spend_origin": "स्रोत",
+      "spend_title": "खर्च",
+      "spend_turns": "कॉल"
     },
     "heartbeats": {
       "all_clear_detail": "हर मॉनिटर्ड पर्सोना स्वस्थ सीमा के भीतर काम कर रहा है।",

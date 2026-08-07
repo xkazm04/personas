@@ -1743,7 +1743,18 @@
     "triage_title": "ট্রিয়াজ ফানেল",
     "turns": "টার্ন",
     "vs_fleet": "Athena বনাম ফ্লিট",
-    "vs_fleet_hint": "এই উইন্ডোতে মোট {total}-এর মধ্যে {athena}"
+    "vs_fleet_hint": "এই উইন্ডোতে মোট {total}-এর মধ্যে {athena}",
+    "spend_cost": "খরচ",
+    "spend_day": "দিন",
+    "spend_empty_description": "এই সময়সীমায় Athena কোনো পরিমাপকৃত কল চালায়নি।",
+    "spend_empty_title": "কোনো খরচ নথিভুক্ত নেই",
+    "spend_hint": "Athena-র খরচ যেসব খতিয়ানে জমা হয়",
+    "spend_ledger": "খতিয়ান",
+    "spend_ledger_dev": "নেপথ্যে",
+    "spend_ledger_turn": "টার্ন",
+    "spend_origin": "উৎস",
+    "spend_title": "খরচ",
+    "spend_turns": "কল"
   },
   "heartbeats": {
     "all_clear_detail": "প্রতিটি পর্যবেক্ষিত পার্সোনা সুস্থ থ্রেশহোল্ডের মধ্যে কাজ করছে।",

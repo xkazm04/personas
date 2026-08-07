@@ -403,6 +403,333 @@ pub fn companion_prompt_block_stats(
     Ok(rows.collect::<Result<Vec<_>, _>>()?)
 }
 
+// ── Unified spend rollup ────────────────────────────────────────────────
+//
+// "What does Athena cost per month" had no single answer, because Athena's
+// spend was assumed to be split across two ledgers: `companion_turn` (the
+// companion user DB) and `dev_llm_spend` (the app DB). Nothing unioned them.
+//
+// ## The audit (2026-08-08) — and what it actually found
+//
+// Grepping every `dev_llm_spend` writer in the tree turns up SIX distinct
+// `source` tiers, and **not one of them is Athena**:
+//
+// | `source`     | write sites |
+// |--------------|-------------|
+// | `scanner`    | `infrastructure/idea_scanner.rs:807`, `kpi_scan.rs:759`, `standards_scan.rs:291`, `task_executor.rs:977`, `use_case_scan.rs:451`, `context_generation.rs:1304` |
+// | `evaluator`  | `engine/genome_critique.rs:60`, `engine/src/auto_triage.rs:375`, `engine/src/eval.rs:652`, `engine/src/test_runner.rs:402` |
+// | `design`     | `design/smart_search.rs:318`, `design/team_synthesis.rs:451`, `credentials/credential_design.rs:101` |
+// | `kpi`        | `engine/kpi_binding.rs:488`, `engine/kpi_derivation.rs:319`, `infrastructure/kpi_compose.rs:476` |
+// | `workspace`  | `infrastructure/workspace_divergence.rs:393`, `workspace_verify.rs:378` |
+// | `image_gen`  | `core/persona_icon_gen.rs:68` |
+//
+// `grep -rn "llm_spend\|SpendCtx" src-tauri/src/companion/ src-tauri/src/commands/companion/`
+// returns only two lines, both comments. Athena's headless legs do NOT land
+// here: they all route through `athena_reaction::cli_text_tracked`, which
+// writes `companion_turn` with `origin='headless'` (`athena_reaction.rs:480`;
+// callers at `:406`, `:828`, `:1259`, `proactive/message_triage.rs:306`,
+// `proactive/backlog_triage.rs:312`, `proactive/execution_review.rs:718`,
+// `brain/profile_synthesis.rs:89`). The *untracked* `cli_text` variant has
+// zero callers; `cli_text_with_usage` has two (`kpi_binding`,
+// `kpi_derivation`) — engine KPI work that merely borrows Athena's CLI
+// plumbing and is correctly metered as `source='kpi'`, NOT as Athena.
+//
+// So the honest allowlist below is **empty**, and this rollup returns only
+// `companion_turn` rows today. That is the point: a rollup that summed the
+// whole table would bill Athena for every idea scan and persona-lab eval on
+// the machine, which is worse than no number. The union shape and the
+// explicit `ledger` tag stay because they cost nothing and the moment an
+// Athena path does meter into `dev_llm_spend`, it is one entry away.
+//
+// KNOWN GAP, deliberately not closed here: `brain/oneshot.rs` (consolidation,
+// reflection, recall synthesis, briefing, night-shift planner + unattended,
+// tours) spawns its own `claude -p` and collects only assistant-text deltas —
+// it never parses the terminal `result` event, so it writes to NEITHER ledger.
+// That spend is invisible in both, and it is exactly the machinery L1's sleep
+// cycle runs on. Metering it needs a pool threaded through seven call sites
+// plus a decision about which ledger owns it — an L1 call, not an L0 one.
+
+/// `dev_llm_spend.source` values attributable to Athena.
+///
+/// Empty as of the 2026-08-08 audit above — no companion code path writes that
+/// table. Kept as a named const rather than inlined so the next Athena leg
+/// that DOES meter there is one line, and so this list is a reviewable claim
+/// instead of a buried SQL literal.
+const ATHENA_DEV_SPEND_SOURCES: &[&str] = &[];
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct AthenaSpendRow {
+    /// `YYYY-MM-DD`.
+    pub day: String,
+    /// `companion_turn.origin` (`chat` | `headless` | `autonomous` | …) for
+    /// turn rows; `dev_llm_spend.trigger_kind` for dev-spend rows.
+    pub origin: String,
+    /// Which ledger the row came from: `turn` | `dev_spend`. Explicit rather
+    /// than inferred, so a reader can never silently double-count a migration
+    /// that moves a leg from one ledger to the other.
+    pub ledger: String,
+    pub cost_usd: f64,
+    pub turn_count: f64,
+}
+
+/// Union both ledgers into per-day, per-origin spend rows.
+///
+/// Split from the command so it can be tested against two fixture databases
+/// without a Tauri `State`. `athena_sources` is the `dev_llm_spend.source`
+/// allowlist; an empty slice skips that ledger entirely (an empty SQL `IN ()`
+/// is not valid).
+///
+/// Cost is `COALESCE(SUM(cost_usd), 0)` and the count is `COUNT(*)`: a turn
+/// that failed before the CLI reported usage has a NULL cost but still
+/// happened, and dropping it would quietly shrink the denominator of every
+/// per-turn average built on this.
+fn spend_rollup_rows(
+    user_conn: &rusqlite::Connection,
+    app_conn: &rusqlite::Connection,
+    days: u32,
+    athena_sources: &[&str],
+) -> Result<Vec<AthenaSpendRow>, AppError> {
+    let modifier = format!("-{days} days");
+    let mut out: Vec<AthenaSpendRow> = Vec::new();
+
+    {
+        let mut stmt = user_conn.prepare(
+            "SELECT date(created_at) AS d, origin,
+                    COALESCE(SUM(cost_usd), 0), COUNT(*)
+             FROM companion_turn
+             WHERE created_at >= datetime('now', ?1)
+             GROUP BY d, origin",
+        )?;
+        let rows = stmt.query_map([&modifier], |r| {
+            Ok(AthenaSpendRow {
+                day: r.get(0)?,
+                origin: r.get(1)?,
+                ledger: "turn".to_string(),
+                cost_usd: r.get(2)?,
+                turn_count: r.get(3)?,
+            })
+        })?;
+        out.extend(rows.collect::<Result<Vec<_>, _>>()?);
+    }
+
+    if !athena_sources.is_empty() {
+        let placeholders = (0..athena_sources.len())
+            .map(|i| format!("?{}", i + 2))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let sql = format!(
+            "SELECT date(created_at) AS d, trigger_kind,
+                    COALESCE(SUM(cost_usd), 0), COUNT(*)
+             FROM dev_llm_spend
+             WHERE created_at >= datetime('now', ?1)
+               AND source IN ({placeholders})
+             GROUP BY d, trigger_kind"
+        );
+        let mut params: Vec<&dyn rusqlite::ToSql> = vec![&modifier];
+        for s in athena_sources {
+            params.push(s);
+        }
+        let mut stmt = app_conn.prepare(&sql)?;
+        let rows = stmt.query_map(params.as_slice(), |r| {
+            Ok(AthenaSpendRow {
+                day: r.get(0)?,
+                origin: r.get(1)?,
+                ledger: "dev_spend".to_string(),
+                cost_usd: r.get(2)?,
+                turn_count: r.get(3)?,
+            })
+        })?;
+        out.extend(rows.collect::<Result<Vec<_>, _>>()?);
+    }
+
+    // Newest day first, then a stable order within the day. Sorting here
+    // rather than in SQL is what lets the two ledgers interleave correctly.
+    out.sort_by(|a, b| {
+        b.day
+            .cmp(&a.day)
+            .then(a.ledger.cmp(&b.ledger))
+            .then(a.origin.cmp(&b.origin))
+    });
+    Ok(out)
+}
+
+/// Athena's total spend over the last `days`, per day and origin, with the
+/// ledger each row came from stated explicitly.
+///
+/// This is the baseline every later longevity phase's savings claim is
+/// measured against (`docs/plans/athena-longevity.md`, phase L0). Read the
+/// module comment above for why the `dev_llm_spend` half is currently empty —
+/// that is an audited finding, not an oversight.
+#[tauri::command]
+pub fn companion_get_spend_rollup(
+    state: State<'_, Arc<AppState>>,
+    days: u32,
+) -> Result<Vec<AthenaSpendRow>, AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    let days = days.clamp(1, 365);
+    let user_conn = state.user_db.get()?;
+    let app_conn = state.db.get()?;
+    spend_rollup_rows(&user_conn, &app_conn, days, ATHENA_DEV_SPEND_SOURCES)
+}
+
+#[cfg(test)]
+mod spend_rollup_tests {
+    use super::*;
+    use rusqlite::Connection;
+
+    fn user_db() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE companion_turn (
+                id TEXT PRIMARY KEY, origin TEXT NOT NULL, cost_usd REAL,
+                created_at TEXT NOT NULL
+            );",
+        )
+        .unwrap();
+        conn
+    }
+
+    fn app_db() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE dev_llm_spend (
+                id TEXT PRIMARY KEY, source TEXT NOT NULL, trigger_kind TEXT NOT NULL,
+                cost_usd REAL, created_at TEXT NOT NULL
+            );",
+        )
+        .unwrap();
+        conn
+    }
+
+    fn turn(conn: &Connection, id: &str, origin: &str, cost: Option<f64>, at: &str) {
+        conn.execute(
+            "INSERT INTO companion_turn (id, origin, cost_usd, created_at) VALUES (?1, ?2, ?3, ?4)",
+            rusqlite::params![id, origin, cost, at],
+        )
+        .unwrap();
+    }
+
+    fn spend(conn: &Connection, id: &str, source: &str, kind: &str, cost: f64, at: &str) {
+        conn.execute(
+            "INSERT INTO dev_llm_spend (id, source, trigger_kind, cost_usd, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            rusqlite::params![id, source, kind, cost, at],
+        )
+        .unwrap();
+    }
+
+    /// The union: rows from both ledgers, per-day totals correct on each side,
+    /// and the ledger tag carried explicitly so the two can never be conflated.
+    #[test]
+    fn unions_both_ledgers_with_correct_per_day_totals() {
+        let user = user_db();
+        let app = app_db();
+        let today = "-0 days";
+        turn(&user, "t1", "chat", Some(1.50), &sql_now(today));
+        turn(&user, "t2", "chat", Some(0.50), &sql_now(today));
+        turn(&user, "t3", "headless", Some(0.06), &sql_now(today));
+        spend(&app, "s1", "athena_test", "cycle", 0.25, &sql_now(today));
+        spend(&app, "s2", "athena_test", "cycle", 0.75, &sql_now(today));
+
+        let rows = spend_rollup_rows(&user, &app, 30, &["athena_test"]).unwrap();
+
+        let chat = rows
+            .iter()
+            .find(|r| r.ledger == "turn" && r.origin == "chat")
+            .expect("chat row");
+        assert_eq!(chat.turn_count, 2.0);
+        assert!((chat.cost_usd - 2.00).abs() < 1e-9);
+
+        let headless = rows
+            .iter()
+            .find(|r| r.ledger == "turn" && r.origin == "headless")
+            .expect("headless row");
+        assert_eq!(headless.turn_count, 1.0);
+
+        let dev = rows
+            .iter()
+            .find(|r| r.ledger == "dev_spend")
+            .expect("dev_spend row — the union must reach the second ledger");
+        assert_eq!(dev.origin, "cycle");
+        assert_eq!(dev.turn_count, 2.0);
+        assert!((dev.cost_usd - 1.00).abs() < 1e-9);
+    }
+
+    /// A rollup that summed the whole `dev_llm_spend` table would bill Athena
+    /// for every idea scan and persona-lab eval on the machine. Only the
+    /// allowlisted sources may cross over.
+    #[test]
+    fn foreign_dev_spend_sources_are_excluded() {
+        let user = user_db();
+        let app = app_db();
+        spend(&app, "s1", "scanner", "idea_scan", 9.99, &sql_now("-0 days"));
+        spend(&app, "s2", "evaluator", "eval_judge", 5.00, &sql_now("-0 days"));
+        spend(&app, "s3", "athena_test", "cycle", 0.10, &sql_now("-0 days"));
+
+        let rows = spend_rollup_rows(&user, &app, 30, &["athena_test"]).unwrap();
+        assert_eq!(rows.len(), 1, "only the allowlisted source may cross over");
+        assert_eq!(rows[0].origin, "cycle");
+        assert!((rows[0].cost_usd - 0.10).abs() < 1e-9);
+    }
+
+    /// The shipped configuration. `ATHENA_DEV_SPEND_SOURCES` is empty (see the
+    /// audit above), so the dev-spend lane contributes nothing and — crucially
+    /// — an empty allowlist must not produce invalid SQL (`IN ()`).
+    #[test]
+    fn an_empty_allowlist_skips_the_dev_ledger_without_erroring() {
+        let user = user_db();
+        let app = app_db();
+        turn(&user, "t1", "chat", Some(1.0), &sql_now("-0 days"));
+        spend(&app, "s1", "scanner", "idea_scan", 9.99, &sql_now("-0 days"));
+
+        let rows = spend_rollup_rows(&user, &app, 30, ATHENA_DEV_SPEND_SOURCES).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].ledger, "turn");
+    }
+
+    /// A turn that died before the CLI reported usage has a NULL cost. It
+    /// still happened: dropping the row would shrink the denominator of every
+    /// per-turn average built on this rollup, and the round-4 failure ledger
+    /// exists precisely so failed turns stop being invisible.
+    #[test]
+    fn a_null_cost_turn_counts_as_a_zero_cost_row_not_a_missing_one() {
+        let user = user_db();
+        let app = app_db();
+        turn(&user, "t1", "chat", Some(1.0), &sql_now("-0 days"));
+        turn(&user, "t2", "chat", None, &sql_now("-0 days"));
+
+        let rows = spend_rollup_rows(&user, &app, 30, &[]).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].turn_count, 2.0, "the failed turn must be counted");
+        assert!((rows[0].cost_usd - 1.0).abs() < 1e-9);
+    }
+
+    /// The window is a real filter, not decoration.
+    #[test]
+    fn rows_outside_the_window_are_excluded_and_days_sort_newest_first() {
+        let user = user_db();
+        let app = app_db();
+        turn(&user, "t1", "chat", Some(1.0), &sql_now("-0 days"));
+        turn(&user, "t2", "chat", Some(2.0), &sql_now("-3 days"));
+        turn(&user, "t3", "chat", Some(4.0), &sql_now("-90 days"));
+
+        let rows = spend_rollup_rows(&user, &app, 7, &[]).unwrap();
+        assert_eq!(rows.len(), 2, "the 90-day-old turn is outside a 7-day window");
+        assert!(rows[0].day >= rows[1].day, "newest day first");
+    }
+
+    /// Resolve a SQLite datetime modifier (`"-0 days"`, `"-3 days"`, …) to the
+    /// literal timestamp the fixtures store, so tests never depend on the
+    /// host clock's formatting.
+    fn sql_now(modifier: &str) -> String {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.query_row("SELECT datetime('now', ?1)", [modifier], |r| r.get(0))
+            .unwrap()
+    }
+}
+
 // ── Prompt churn ────────────────────────────────────────────────────────
 //
 // The size ledger above answers "how big is each block". It cannot answer the

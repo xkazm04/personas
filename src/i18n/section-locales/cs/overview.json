@@ -1743,7 +1743,18 @@
     "triage_title": "Třídící trychtýř",
     "turns": "Tahy",
     "vs_fleet": "Athena vs. flotila",
-    "vs_fleet_hint": "{athena} z celkových výdajů {total} v tomto okně"
+    "vs_fleet_hint": "{athena} z celkových výdajů {total} v tomto okně",
+    "spend_cost": "Náklady",
+    "spend_day": "Den",
+    "spend_empty_description": "Athena v tomto období neprovedla žádné měřené volání.",
+    "spend_empty_title": "Žádné náklady nezaznamenány",
+    "spend_hint": "Všechny evidence, kam spadají náklady Atheny",
+    "spend_ledger": "Evidence",
+    "spend_ledger_dev": "Na pozadí",
+    "spend_ledger_turn": "Tahy",
+    "spend_origin": "Původ",
+    "spend_title": "Náklady",
+    "spend_turns": "Volání"
   },
   "heartbeats": {
     "all_clear_detail": "Každá monitorovaná persona funguje v rámci zdravých prahových hodnot.",

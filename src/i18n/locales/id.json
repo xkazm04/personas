@@ -7968,7 +7968,18 @@
       "triage_title": "Corong triase",
       "turns": "Giliran",
       "vs_fleet": "Athena vs armada",
-      "vs_fleet_hint": "{athena} dari {total} total pengeluaran jendela ini"
+      "vs_fleet_hint": "{athena} dari {total} total pengeluaran jendela ini",
+      "spend_cost": "Biaya",
+      "spend_day": "Hari",
+      "spend_empty_description": "Athena tidak menjalankan panggilan terukur pada rentang ini.",
+      "spend_empty_title": "Belum ada pengeluaran tercatat",
+      "spend_hint": "Semua buku besar tempat biaya Athena dicatat",
+      "spend_ledger": "Buku besar",
+      "spend_ledger_dev": "Latar belakang",
+      "spend_ledger_turn": "Giliran",
+      "spend_origin": "Asal",
+      "spend_title": "Pengeluaran",
+      "spend_turns": "Panggilan"
     },
     "heartbeats": {
       "all_clear_detail": "Setiap persona yang dipantau beroperasi dalam batas sehat.",

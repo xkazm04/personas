@@ -7968,7 +7968,18 @@
       "triage_title": "Embudo de triage",
       "turns": "Turnos",
       "vs_fleet": "Athena vs flota",
-      "vs_fleet_hint": "{athena} de {total} del gasto total en este período"
+      "vs_fleet_hint": "{athena} de {total} del gasto total en este período",
+      "spend_cost": "Coste",
+      "spend_day": "Día",
+      "spend_empty_description": "Athena no ha realizado ninguna llamada medida en este periodo.",
+      "spend_empty_title": "Sin gasto registrado",
+      "spend_hint": "Todos los registros donde se imputa el coste de Athena",
+      "spend_ledger": "Registro",
+      "spend_ledger_dev": "Segundo plano",
+      "spend_ledger_turn": "Turnos",
+      "spend_origin": "Origen",
+      "spend_title": "Gasto",
+      "spend_turns": "Llamadas"
     },
     "heartbeats": {
       "all_clear_detail": "Todas las personas monitorizadas operan dentro de los umbrales saludables.",

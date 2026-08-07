@@ -1743,7 +1743,18 @@
     "triage_title": "Kênh phân loại",
     "turns": "Lượt",
     "vs_fleet": "Athena so với Fleet",
-    "vs_fleet_hint": "{athena} trong tổng chi tiêu {total} trong khoảng này"
+    "vs_fleet_hint": "{athena} trong tổng chi tiêu {total} trong khoảng này",
+    "spend_cost": "Chi phí",
+    "spend_day": "Ngày",
+    "spend_empty_description": "Athena chưa thực hiện lệnh gọi nào được đo lường trong khoảng này.",
+    "spend_empty_title": "Chưa ghi nhận chi tiêu",
+    "spend_hint": "Mọi sổ ghi nhận chi phí của Athena",
+    "spend_ledger": "Sổ ghi",
+    "spend_ledger_dev": "Nền",
+    "spend_ledger_turn": "Lượt",
+    "spend_origin": "Nguồn",
+    "spend_title": "Chi tiêu",
+    "spend_turns": "Lệnh gọi"
   },
   "heartbeats": {
     "all_clear_detail": "Mọi persona được theo dõi đều hoạt động trong ngưỡng bình thường.",

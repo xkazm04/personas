@@ -7968,7 +7968,18 @@
       "triage_title": "トリアージファネル",
       "turns": "ターン",
       "vs_fleet": "Athena vs フリート",
-      "vs_fleet_hint": "この期間の総支出 {total} のうち {athena}"
+      "vs_fleet_hint": "この期間の総支出 {total} のうち {athena}",
+      "spend_cost": "コスト",
+      "spend_day": "日付",
+      "spend_empty_description": "この期間に Athena は計測対象の呼び出しを実行していません。",
+      "spend_empty_title": "支出の記録なし",
+      "spend_hint": "Athena のコストが計上されるすべての台帳",
+      "spend_ledger": "台帳",
+      "spend_ledger_dev": "バックグラウンド",
+      "spend_ledger_turn": "ターン",
+      "spend_origin": "発生元",
+      "spend_title": "支出",
+      "spend_turns": "呼び出し"
     },
     "heartbeats": {
       "all_clear_detail": "監視中のすべてのペルソナが正常なしきい値内で動作しています。",

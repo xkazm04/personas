@@ -1743,7 +1743,18 @@
     "triage_title": "분류 퍼널",
     "turns": "턴",
     "vs_fleet": "Athena 대 플릿",
-    "vs_fleet_hint": "이 기간 총 지출 {total} 중 {athena}"
+    "vs_fleet_hint": "이 기간 총 지출 {total} 중 {athena}",
+    "spend_cost": "비용",
+    "spend_day": "날짜",
+    "spend_empty_description": "이 기간에 Athena가 실행한 계측 호출이 없습니다.",
+    "spend_empty_title": "기록된 지출 없음",
+    "spend_hint": "Athena 비용이 집계되는 모든 원장",
+    "spend_ledger": "원장",
+    "spend_ledger_dev": "백그라운드",
+    "spend_ledger_turn": "턴",
+    "spend_origin": "출처",
+    "spend_title": "지출",
+    "spend_turns": "호출"
   },
   "heartbeats": {
     "all_clear_detail": "모니터링되는 모든 페르소나가 정상 임계값 내에서 작동 중입니다.",
