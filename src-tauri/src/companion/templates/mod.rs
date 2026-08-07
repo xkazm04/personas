@@ -371,4 +371,17 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// Its doctrine: view only (auto-fire, nothing mutates), max 4 per turn, the
 /// settled result returns as a next-turn system note that must be read before
 /// steering again, and reading content stays on `describe_canvas_project`.
-pub const CONSTITUTION_VERSION: u32 = 49;
+/// v50 (cross-device link) adds `remote_instruct` — Athena hands an
+/// instruction to ANOTHER of Michal's paired devices, where that device's own
+/// Athena runs it as a real turn with her own ops and her own approval rules.
+/// The doctrine that needed teaching rather than listing: it is a colleague,
+/// not a remote shell, so the instruction must be self-contained (the other
+/// side cannot see this conversation, and a pronoun reaches nobody); the answer
+/// arrives later as system notes, so "it's running over there" is the honest
+/// report until it does; and the consent rule is mode-conditional — with
+/// autonomous mode OFF only the HOME device is reachable and only behind an
+/// approval card, any other paired device is refused outright, while with the
+/// mode ON it fires to any paired device. She has no paired-device digest in
+/// her prompt, so the names come from Michal or not at all, and omitting
+/// `device` means the home machine.
+pub const CONSTITUTION_VERSION: u32 = 50;
