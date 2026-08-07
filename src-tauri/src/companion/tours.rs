@@ -488,6 +488,15 @@ mod tests {
     #[test]
     fn manifest_hash_is_stable() {
         assert_eq!(manifest_hash(), manifest_hash());
-        assert_eq!(manifest_hash().len(), 64);
+        // `util::sha256_hex` returns the ALGORITHM-PREFIXED form — `sha256:`
+        // plus 64 hex chars = 71. This assertion said 64 and had been failing
+        // since `f7993851d`, the refactor that deduped the brain string
+        // helpers and gave the shared helper its prefix (which `util.rs`'s own
+        // `sha256_hex_is_stable_and_prefixed` pins as intentional). Assert the
+        // prefix as well as the length, so the next change to either half has
+        // to come past this test rather than around it.
+        let hash = manifest_hash();
+        assert!(hash.starts_with("sha256:"), "expected a prefixed digest, got {hash}");
+        assert_eq!(hash.len(), "sha256:".len() + 64);
     }
 }
