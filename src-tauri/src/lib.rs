@@ -1769,6 +1769,14 @@ pub fn run() {
                 let ns_pool = state_arc.db.clone();
                 let p2p_app_handle = restore_handle.clone();
                 tauri::async_runtime::spawn(async move {
+                    // Athena takes over the remote-job seam BEFORE the network
+                    // starts listening. Until it is installed, an arriving job
+                    // is answered by `UnhandledRemoteJobs` — accepted, then
+                    // immediately failed with "no assistant configured" — so
+                    // installing after `start()` would leave a real window in
+                    // which a paired device's request is refused by a device
+                    // that can, in fact, run it.
+                    companion::remote_jobs::install(&p2p_app_handle, &ns).await;
                     tokio::time::sleep(std::time::Duration::from_secs(3)).await;
                     if let Ok(identity) = engine::identity::get_or_create_identity(&ns_pool) {
                         if let Err(e) = ns.start(ns_pool, identity.peer_id, identity.display_name, Some(p2p_app_handle)).await {
