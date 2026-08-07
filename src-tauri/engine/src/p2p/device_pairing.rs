@@ -35,9 +35,22 @@
 //! ## Group semantics
 //!
 //! The responder JOINS the initiator's device group (adopts its
-//! `device_group_id`). A responder that already had devices under a different
-//! group is logged at `warn` — see the module TODO; deciding what a merge means
-//! is out of scope for the pairing primitive.
+//! `device_group_id`) — but only when joining strands nobody. Re-anchoring does
+//! not rewrite the `owned_devices` rows the responder already holds, so a
+//! responder that adopts a different group while other devices are paired under
+//! its own splits the group in two: it moves, they stay.
+//!
+//! So `confirm` refuses instead. If the responder is already paired with any
+//! device other than the initiator under a *different* group, it returns
+//! [`AppError::DeviceGroupConflict`] before writing anything, naming the devices
+//! that would be stranded and telling the operator to unpair on one side first.
+//! Merging two populated groups is still out of scope for this primitive; the
+//! change is that the primitive now says so instead of quietly fragmenting.
+//!
+//! Pairing proceeds normally when the responder has no other paired devices (the
+//! fresh-device case) or when both sides already share the group (an idempotent
+//! re-pair). See [`owned_devices_repo::join_device_group`] for the exact
+//! predicate, including why the initiator's own row never counts.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -338,21 +351,15 @@ impl DevicePairing {
         };
         let (display_name, device_group_id, public_key_b64) = pending;
 
-        // Join the initiator's group. A responder that already belonged to a
-        // populated group of its own is a merge, which this primitive does not
-        // model — surface it loudly rather than silently re-anchoring.
-        let existing = owned_devices_repo::list_owned_devices(&self.pool)?;
-        if existing
-            .iter()
-            .any(|d| d.device_group_id != device_group_id)
-        {
-            tracing::warn!(
-                peer_id = %peer_id,
-                new_group = %device_group_id,
-                "This device already has owned devices in a different group; adopting the initiator's group"
-            );
-        }
-        owned_devices_repo::set_device_group_id(&self.pool, &device_group_id)?;
+        // Join the initiator's group -- but only when nothing gets left behind.
+        // Re-anchoring does not rewrite the `owned_devices` rows we already
+        // hold, so adopting a different group while other devices are paired
+        // under ours would split the group in two. `join_device_group` refuses
+        // that with a typed `DeviceGroupConflict`, which travels straight up
+        // through the `confirm_device_pairing` command to the person who just
+        // pressed confirm. This runs BEFORE any write, so a refused pairing
+        // leaves the registry exactly as it was.
+        owned_devices_repo::join_device_group(&self.pool, &device_group_id, peer_id)?;
 
         let local = crate::identity::get_or_create_identity(&self.pool)?;
         let device = owned_devices_repo::register_paired_device(

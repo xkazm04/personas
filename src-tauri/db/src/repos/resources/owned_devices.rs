@@ -160,8 +160,95 @@ pub fn set_device_home(
         .ok_or_else(|| AppError::Internal("owned device vanished after update".into()))
 }
 
-/// Overwrite the local device-group anchor (used when a pairing responder joins
-/// the initiator's existing group). Returns the value that landed.
+/// Move the local device-group anchor to `proposed_group_id`, refusing when the
+/// move would strand devices this machine is already paired with.
+///
+/// The anchor is a single value in `local_identity`, but every row in
+/// `owned_devices` carries the group it was registered under. Re-anchoring does
+/// NOT rewrite those rows, so a device that already has peers under group `G`
+/// and then adopts group `H` silently splits its group in two: the peers keep
+/// pointing at `G` while this machine now claims `H`. That is the fragmentation
+/// this guard exists to prevent.
+///
+/// A group counts as populated only through *other* devices:
+/// - the local machine has no `owned_devices` row of its own, and any row that
+///   ever matched `local_identity.peer_id` is excluded defensively;
+/// - `pairing_peer_id` is excluded too, because [`register_paired_device`]
+///   rewrites exactly that row to the new group in the same ceremony, so it
+///   cannot be stranded. Re-pairing a peer that moved groups therefore still
+///   works when it is this machine's only paired device.
+///
+/// Returns [`AppError::DeviceGroupConflict`] when the move is unsafe, with the
+/// stranded devices named and the remedy stated. Nothing is written in that
+/// case.
+pub fn join_device_group(
+    pool: &DbPool,
+    proposed_group_id: &str,
+    pairing_peer_id: &str,
+) -> Result<String, AppError> {
+    if proposed_group_id.trim().is_empty() {
+        return Err(AppError::Validation(
+            "device_group_id must not be empty".into(),
+        ));
+    }
+    let conn = pool.get()?;
+    let current: Option<String> = conn
+        .query_row(
+            "SELECT device_group_id FROM local_identity WHERE id = 1",
+            [],
+            |row| row.get::<_, Option<String>>(0),
+        )
+        .optional_flatten();
+
+    // No anchor yet, or already anchored where we are being asked to go: nothing
+    // can be left behind, so the join is a no-op or a first-time anchor.
+    if let Some(current) = current.as_deref().filter(|c| *c != proposed_group_id) {
+        let mut stmt = conn.prepare(
+            "SELECT display_name FROM owned_devices
+             WHERE device_group_id = ?1
+               AND peer_id <> ?2
+               AND peer_id <> COALESCE((SELECT peer_id FROM local_identity WHERE id = 1), '')
+             ORDER BY added_at DESC",
+        )?;
+        let stranded = stmt
+            .query_map(rusqlite::params![current, pairing_peer_id], |row| {
+                row.get::<_, String>(0)
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        if !stranded.is_empty() {
+            return Err(AppError::DeviceGroupConflict(format!(
+                "Pairing refused: this device already belongs to a device group that also contains {}. \
+                 Joining the other device's group would strand those devices. \
+                 Unpair them here, or unpair the conflicting devices on the other side, then pair again.",
+                summarize_names(&stranded)
+            )));
+        }
+    }
+
+    drop(conn);
+    set_device_group_id(pool, proposed_group_id)
+}
+
+/// Render a device-name list for an operator-facing message: at most three
+/// names, then a count for the rest.
+fn summarize_names(names: &[String]) -> String {
+    const SHOWN: usize = 3;
+    let head = names
+        .iter()
+        .take(SHOWN)
+        .map(|n| format!("\"{n}\""))
+        .collect::<Vec<_>>()
+        .join(", ");
+    if names.len() > SHOWN {
+        format!("{head} and {} more", names.len() - SHOWN)
+    } else {
+        head
+    }
+}
+
+/// Overwrite the local device-group anchor. Prefer [`join_device_group`] on any
+/// path where the new group comes from a peer: this function is the unguarded
+/// primitive and will happily strand already-paired devices.
 pub fn set_device_group_id(pool: &DbPool, device_group_id: &str) -> Result<String, AppError> {
     if device_group_id.trim().is_empty() {
         return Err(AppError::Validation(
@@ -395,6 +482,113 @@ mod tests {
     fn set_device_home_on_unknown_peer_is_not_found() {
         let pool = test_pool();
         assert!(set_device_home(&pool, "ghost", true).is_err());
+    }
+
+    // -- join_device_group: the anti-fragmentation guard --------------------
+    //
+    // Re-anchoring never rewrites the `owned_devices` rows we already hold, so
+    // the only question that matters is "would anyone be left behind?".
+
+    /// The common case: a device with nothing paired yet joins an existing
+    /// group. Nothing can be stranded, so it must simply anchor.
+    #[test]
+    fn join_group_from_an_empty_group_succeeds() {
+        let pool = test_pool();
+        let own = ensure_device_group_id(&pool).expect("group");
+        let theirs = "their-group-id";
+
+        let landed = join_device_group(&pool, theirs, "peerA").expect("fresh device joins");
+        assert_eq!(landed, theirs);
+        assert_ne!(landed, own, "the anchor really moved");
+        assert_eq!(ensure_device_group_id(&pool).expect("re-read"), theirs);
+    }
+
+    /// Neither side has anything paired. Same outcome, but pinned separately so
+    /// a future guard cannot start requiring a non-empty registry.
+    #[test]
+    fn join_group_with_both_registries_empty_succeeds() {
+        let pool = test_pool();
+        ensure_device_group_id(&pool).expect("group");
+        assert!(list_owned_devices(&pool).expect("list").is_empty());
+        assert!(join_device_group(&pool, "fresh-group", "peerA").is_ok());
+    }
+
+    /// Re-pairing devices that already share a group is idempotent: the anchor
+    /// is unchanged, and a populated registry must NOT trip the guard.
+    #[test]
+    fn join_same_group_is_idempotent_even_when_populated() {
+        let pool = test_pool();
+        let group = ensure_device_group_id(&pool).expect("group");
+        register_paired_device(&pool, "peerA", &group, "Laptop", "kA").expect("A");
+        register_paired_device(&pool, "peerB", &group, "Desktop", "kB").expect("B");
+
+        let landed = join_device_group(&pool, &group, "peerA").expect("same-group re-pair");
+        assert_eq!(landed, group);
+        assert_eq!(ensure_device_group_id(&pool).expect("re-read"), group);
+    }
+
+    /// The refusal. Two populated groups cannot be merged by re-anchoring, so
+    /// the join is rejected with a typed error that names what would be
+    /// stranded and what to do about it -- and writes nothing.
+    #[test]
+    fn join_different_populated_group_is_refused_with_a_typed_conflict() {
+        let pool = test_pool();
+        let group = ensure_device_group_id(&pool).expect("group");
+        register_paired_device(&pool, "peerA", &group, "Laptop", "kA").expect("A");
+        register_paired_device(&pool, "peerB", &group, "Desktop", "kB").expect("B");
+
+        let err = join_device_group(&pool, "other-group", "peerC")
+            .expect_err("a populated group must not be silently abandoned");
+        assert!(
+            matches!(err, AppError::DeviceGroupConflict(_)),
+            "expected a typed DeviceGroupConflict, got {err:?}"
+        );
+        let msg = err.to_string();
+        assert!(msg.contains("Laptop") && msg.contains("Desktop"), "{msg}");
+        assert!(msg.contains("Unpair"), "the remedy must be in the message: {msg}");
+
+        assert_eq!(
+            ensure_device_group_id(&pool).expect("re-read"),
+            group,
+            "a refused join must not move the anchor"
+        );
+    }
+
+    /// The device being paired with is not "left behind" -- the same ceremony
+    /// rewrites its row to the new group. So a machine whose only paired device
+    /// is the one re-pairing can still follow it into another group.
+    #[test]
+    fn join_ignores_the_peer_being_paired() {
+        let pool = test_pool();
+        let group = ensure_device_group_id(&pool).expect("group");
+        register_paired_device(&pool, "peerA", &group, "Laptop", "kA").expect("A");
+
+        assert!(
+            join_device_group(&pool, "moved-group", "peerA").is_ok(),
+            "the only paired device is the one asking; nothing is stranded"
+        );
+        // A *second* device under the old group flips the same call to a refusal.
+        let pool2 = test_pool();
+        let group2 = ensure_device_group_id(&pool2).expect("group");
+        register_paired_device(&pool2, "peerA", &group2, "Laptop", "kA").expect("A");
+        register_paired_device(&pool2, "peerB", &group2, "Phone", "kB").expect("B");
+        assert!(join_device_group(&pool2, "moved-group", "peerA").is_err());
+    }
+
+    /// The local device is not a member of its own registry, but if a row ever
+    /// matched `local_identity.peer_id` it must not make the group look
+    /// populated -- the local machine cannot strand itself.
+    #[test]
+    fn join_does_not_count_the_local_device_as_populating_the_group() {
+        let pool = test_pool();
+        let group = ensure_device_group_id(&pool).expect("group");
+        // `test_pool` seeds local_identity.peer_id = 'test-peer'.
+        register_paired_device(&pool, "test-peer", &group, "This Machine", "kSelf").expect("self");
+
+        assert!(
+            join_device_group(&pool, "other-group", "peerZ").is_ok(),
+            "our own row must not block a join"
+        );
     }
 
     /// The pairing-column migration must be safe to replay: `run_incremental`
