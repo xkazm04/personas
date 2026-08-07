@@ -121,8 +121,12 @@ const StudioAttention = lazyRetry(() => import("@/features/studio/StudioAttentio
 // Fleet grid is an app-wide LAYER, not a page surface: the footer raises it
 // over whatever you're looking at so checking a CLI never costs a navigation.
 // The component itself is cheap (no xterm) — it lazy-loads the terminal grid
-// on first open. DEV-only, matching Fleet's availability.
+// on first open. DEV-only: the grid overlay is dev tooling.
 const FleetGridLayer = lazyRetry(() => import("@/features/plugins/fleet/FleetGridLayer"));
+// Fleet's app-wide bootstrap (session listeners + snapshot + the Rust ticker
+// policy push). SEPARATE from FleetGridLayer on purpose and mounted UNGATED —
+// see the two mounts below and FleetBootstrap's own header.
+const FleetBootstrap = lazyRetry(() => import("@/features/plugins/fleet/FleetBootstrap"));
 const AthenaGuideLayer = lazyRetry(() => import("@/features/plugins/companion/orb/AthenaGuideLayer"));
 // First-run onboarding overlay. Self-guards on `onboardingActive` (returns null
 // until startOnboarding() flips it), so it's safe to mount unconditionally once
@@ -372,7 +376,19 @@ export default function App() {
                   <AthenaOrbLayer />
                   <AthenaGuideLayer />
                   {import.meta.env.DEV && <StudioAttention />}
+                  {/* Fleet is TWO mounts, and the split is load-bearing.
+                      The grid OVERLAY is dev tooling, so it stays gated — in a
+                      prod build `import.meta.env.DEV` folds to `false` and
+                      Rollup drops the branch (and everything inside it).
+                      The BOOTSTRAP must survive that, because Fleet itself is
+                      not dev-only (minTier: TEAM) and the session listeners
+                      feed shipping surfaces — the sidebar awaiting-input badge,
+                      the memory-outbox ingest on session exit, the Rust
+                      hibernate/live-slot policy. Gating them together silently
+                      deleted the bootstrap from every shipped build; do not
+                      re-fuse them. */}
                   {import.meta.env.DEV && <FleetGridLayer />}
+                  <FleetBootstrap />
                 </Suspense>
               </SilentErrorBoundary>
             </>

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useSystemStore } from '@/stores/systemStore';
 
@@ -20,27 +20,18 @@ const FleetGridOverlayHost = lazy(() => import('./FleetGridOverlayHost'));
  * page underneath never moved.
  *
  * This component is intentionally cheap (no terminal imports): it owns the
- * fleet's app-wide *bootstrap* and defers everything visual to the lazy host.
+ * grid's raise/minimize behaviour and defers everything visual to the lazy host.
+ *
+ * It used to own the fleet's app-wide **bootstrap** too. That was a defect: this
+ * component's mount is dev-gated (correctly — the overlay is dev tooling), so
+ * the bootstrap was dead-code-eliminated from production alongside it. The
+ * bootstrap now lives in its own always-mounted `FleetBootstrap`; do not move it
+ * back in here.
  */
 export default function FleetGridLayer() {
   const gridOpen = useSystemStore((s) => s.fleetGridOpen);
   const setGridOpen = useSystemStore((s) => s.fleetSetGridOpen);
   const sessions = useSystemStore(useShallow((s) => s.fleetSessions));
-  const refresh = useSystemStore((s) => s.fleetRefresh);
-  const startSessionListeners = useSystemStore((s) => s.fleetStartSessionListeners);
-
-  // Bootstrap the fleet client cache once per app process. Before this, the
-  // session list only became live when someone opened the Fleet page — which
-  // left the footer status cluster blank until then. It also lands the
-  // persisted auto-hibernate / live-slot / cutoff policy on the Rust ticker at
-  // startup instead of on first Fleet visit (the follow-up noted in fleet.md).
-  const booted = useRef(false);
-  useEffect(() => {
-    if (booted.current) return;
-    booted.current = true;
-    startSessionListeners();
-    void refresh();
-  }, [startSessionListeners, refresh]);
 
   // Exited/hibernated sessions keep their tiles (in-place tombstones), so the
   // grid only auto-minimizes once NOTHING is tracked at all — i.e. the last
