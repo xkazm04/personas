@@ -330,10 +330,15 @@ pub const TURN_SUMMARY_EVENT: &str = "companion://turn-summary";
 /// gets that Athena is doing someone else's errand — the orb notice hangs
 /// off it. No persistence: the durable record is the `remote_jobs` row,
 /// which has its own `network:remote-job-updated` event.
+// Only the `p2p` build has a consumer (the remote-job executor). The
+// declaration stays unconditional so this file reads the same in both
+// feature sets rather than growing a cfg maze around one string.
+#[cfg_attr(not(feature = "p2p"), allow(dead_code))]
 pub const REMOTE_JOB_TURN_EVENT: &str = "companion://remote-job-turn";
 
 /// Wire shape for [`REMOTE_JOB_TURN_EVENT`]. `phase` is
 /// `"started" | "completed" | "failed"`; `summary` is empty on `started`.
+#[cfg_attr(not(feature = "p2p"), allow(dead_code))]
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RemoteJobTurnEvent {
@@ -360,6 +365,7 @@ const REMOTE_DEVICE_SOURCE_SUFFIX: &str = " (paired device)";
 
 /// Build the `TurnOrigin::External::source` label for an instruction that
 /// arrived from a paired device.
+#[cfg_attr(not(feature = "p2p"), allow(dead_code))]
 pub fn remote_device_source(display_name: &str) -> String {
     let name = display_name.trim();
     let name = if name.is_empty() { "A paired device" } else { name };
@@ -405,6 +411,7 @@ pub struct TurnResult {
     /// `suppress_chat` turn persists NO episode, so `assistant_episode_id` is
     /// empty and the text would otherwise be unreachable. The remote-job
     /// executor reports this back to the device that asked.
+    #[cfg_attr(not(feature = "p2p"), allow(dead_code))]
     pub assistant_text: String,
     pub quick_replies: Vec<String>,
     pub tts_text: Option<String>,

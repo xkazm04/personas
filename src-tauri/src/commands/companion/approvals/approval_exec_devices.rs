@@ -70,7 +70,7 @@ pub(crate) fn gate_remote_instruct(autonomous: bool, target: &OwnedDevice) -> Re
         // to normalize behind a one-click habit.
         (false, false) => RemoteInstructGate::Refused(format!(
             "With autonomous mode off I only send work to your home device. \
-             \"{}\" is paired but is not the home device — set it as home under \
+             \"{}\" is paired but is not the home device. Set it as home under \
              Settings > Devices, or turn autonomous mode on, if you meant it.",
             target.display_name
         )),
@@ -257,7 +257,7 @@ async fn send_instruction(
             job.refusal_reason.unwrap_or_default()
         ),
         _ => format!(
-            "Sent to \"{name}\" — it's running there now, and I'll tell you what it says."
+            "Sent to \"{name}\". It's running there now, and I'll tell you what it says."
         ),
     }))
 }

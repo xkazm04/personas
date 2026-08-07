@@ -146,7 +146,7 @@ async fn run_assignment(app: AppHandle, job: RemoteJobAssignment, handle: Remote
         Ok(text) => {
             let text = cap(text, MAX_SUMMARY_CHARS);
             let text = if text.trim().is_empty() {
-                "Done — she finished without a written summary.".to_string()
+                "Done, though she finished without a written summary.".to_string()
             } else {
                 text
             };
@@ -231,6 +231,7 @@ fn local_device_label(app: &AppHandle) -> String {
 ///   2. the terminal transition writes the episode that matters — status,
 ///      summary, and a digest of up to [`EPISODE_NOTE_CAP`] notes, each capped
 ///      at [`EPISODE_NOTE_CHARS`] characters.
+///
 /// Everything in between stays where it already lives: the `remote_job_notes`
 /// rows and the Devices tab that renders them.
 ///
