@@ -1304,7 +1304,7 @@ pub fn run() {
                             req.persona_id,
                             None,
                             Some(req.input),
-                            None,
+                            req.use_case_id,
                             None,
                             None,
                             false,

@@ -103,6 +103,57 @@ pub fn decide(
     FixDecision::ReEnter { fix_prompt: build_fix_prompt(failures), attempt: attempt + 1 }
 }
 
+/// Build the corrective re-entry's `input_data`, carrying the ORIGINAL input
+/// forward alongside the fix metadata.
+///
+/// The re-entry used to be `{_fix_attempt, _fix_instruction}` and **nothing
+/// else**, so attempt 2 was assembled from an input the persona had never seen:
+///
+/// * every `{{var}}` failed to resolve and leaked its literal template syntax
+///   into the prompt (`prompt::variables`),
+/// * `## Input Data` held only the fix metadata,
+/// * and because `_use_case` / `_time_filter` travel *inside* `input_data`,
+///   the corrective run lost `## Current Focus`, the capability
+///   generation-policy lines and the query time bounds —
+///
+/// all while [`build_fix_prompt`] told the persona to "produce a corrected
+/// result that satisfies every check". The recovery path was strictly
+/// worse-informed than the attempt it was correcting.
+///
+/// `prior_input` is the previous execution's stored `input_data` column. The
+/// shapes it can hold mirror what the executor accepts:
+/// * a JSON object → carried forward key for key,
+/// * anything else (plain prose, a bare JSON scalar) → wrapped as `user_input`,
+///   the same fallback `execute_persona_inner` applies when `input_data` does
+///   not parse as JSON, so the same `{{user_input}}` resolves on attempt 2,
+/// * absent or blank → nothing to carry.
+///
+/// The two `_fix_*` keys are inserted LAST and therefore always win: a prior
+/// input that was itself a fix attempt cannot pin the attempt counter and loop
+/// forever.
+#[must_use]
+pub fn build_reentry_input(prior_input: Option<&str>, attempt: u32, fix_prompt: &str) -> String {
+    fn user_input_map(text: String) -> serde_json::Map<String, Value> {
+        let mut m = serde_json::Map::new();
+        m.insert("user_input".to_string(), Value::String(text));
+        m
+    }
+
+    let mut merged = prior_input
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| match serde_json::from_str::<Value>(s) {
+            Ok(Value::Object(map)) => map,
+            Ok(Value::String(text)) => user_input_map(text),
+            Ok(_) | Err(_) => user_input_map(s.to_string()),
+        })
+        .unwrap_or_default();
+
+    merged.insert("_fix_attempt".to_string(), Value::from(attempt));
+    merged.insert("_fix_instruction".to_string(), Value::String(fix_prompt.to_string()));
+    Value::Object(merged).to_string()
+}
+
 /// Construct the corrective instruction injected as the next run's input.
 #[must_use]
 pub fn build_fix_prompt(failures: &[String]) -> String {
@@ -192,6 +243,58 @@ mod tests {
                 assert!(fix_prompt.contains("lint failed"));
             }
             other => panic!("expected ReEnter, got {other:?}"),
+        }
+    }
+
+    fn reentry(prior: Option<&str>, attempt: u32) -> serde_json::Map<String, Value> {
+        match serde_json::from_str::<Value>(&build_reentry_input(prior, attempt, "fix it")) {
+            Ok(Value::Object(m)) => m,
+            other => panic!("re-entry must be a JSON object, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn reentry_carries_the_original_input_forward() {
+        let prior = r#"{"ticket":"PROD-1","_use_case":{"id":"uc-1"},"_time_filter":{"field":"created_at"}}"#;
+        let m = reentry(Some(prior), 1);
+        assert_eq!(m.get("ticket").and_then(Value::as_str), Some("PROD-1"));
+        assert!(m.contains_key("_use_case"), "capability scope must survive the re-entry");
+        assert!(m.contains_key("_time_filter"), "query bounds must survive the re-entry");
+        assert_eq!(m.get("_fix_attempt").and_then(Value::as_u64), Some(1));
+        assert_eq!(m.get("_fix_instruction").and_then(Value::as_str), Some("fix it"));
+    }
+
+    #[test]
+    fn reentry_fix_metadata_always_wins_so_the_counter_cannot_be_pinned() {
+        // A prior input that was ITSELF a fix attempt must not carry its stale
+        // counter forward — otherwise `attempt` never advances and the bound
+        // never trips.
+        let prior = r#"{"_fix_attempt":1,"_fix_instruction":"stale","k":"v"}"#;
+        let m = reentry(Some(prior), 2);
+        assert_eq!(m.get("_fix_attempt").and_then(Value::as_u64), Some(2));
+        assert_eq!(m.get("_fix_instruction").and_then(Value::as_str), Some("fix it"));
+        assert_eq!(m.get("k").and_then(Value::as_str), Some("v"));
+    }
+
+    #[test]
+    fn reentry_wraps_non_object_input_as_user_input() {
+        // Plain prose: the same fallback `execute_persona_inner` applies.
+        let m = reentry(Some("just some prose"), 1);
+        assert_eq!(m.get("user_input").and_then(Value::as_str), Some("just some prose"));
+        // A bare JSON string unwraps rather than keeping its quotes.
+        let m = reentry(Some("\"quoted\""), 1);
+        assert_eq!(m.get("user_input").and_then(Value::as_str), Some("quoted"));
+        // A JSON array has no key/value shape; keep the source text.
+        let m = reentry(Some("[1,2,3]"), 1);
+        assert_eq!(m.get("user_input").and_then(Value::as_str), Some("[1,2,3]"));
+    }
+
+    #[test]
+    fn reentry_handles_absent_and_blank_prior_input() {
+        for prior in [None, Some(""), Some("   ")] {
+            let m = reentry(prior, 1);
+            assert_eq!(m.len(), 2, "nothing to carry -> just the fix metadata");
+            assert_eq!(m.get("_fix_attempt").and_then(Value::as_u64), Some(1));
         }
     }
 
