@@ -47,7 +47,10 @@ export interface PairingRefusal {
   detail: string;
 }
 
-/** Ordered marker table — first match wins, so put the specific ones first. */
+/**
+ * Message markers, used only for refusals the backend has NOT given a dedicated
+ * `AppError` variant. Ordered — first match wins, specific patterns first.
+ */
 const MARKERS: ReadonlyArray<readonly [PairingRefusalCode, RegExp]> = [
   ['self_pair', /pair a device with itself|its own remote device/i],
   ['not_connected', /requires an authenticated connection|not connected to peer/i],
@@ -71,6 +74,12 @@ export function classifyPairingRefusal(err: unknown): PairingRefusal {
   }
 
   const detail = toDetail(err);
+
+  // The backend gives the most important refusal its own AppError variant, so
+  // classify it structurally and never on message text.
+  if (isTauriError(err) && err.kind === 'device_group_conflict') {
+    return { code: 'group_conflict', detail };
+  }
 
   if (isTauriError(err) && err.kind === 'auth') {
     return { code: 'unauthorized', detail };

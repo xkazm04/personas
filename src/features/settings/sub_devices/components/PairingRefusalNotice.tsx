@@ -9,6 +9,13 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { PairingRefusalCode } from '../lib/pairingRefusal';
 import type { PairingOutcome } from '../lib/pairingMachine';
 
+/**
+ * Codes whose backend message adds information the localized copy cannot: the
+ * group conflict names the specific devices that would be stranded, and an
+ * unclassified refusal has no localized text at all.
+ */
+const DETAIL_CODES = new Set<PairingRefusalCode>(['group_conflict', 'unknown']);
+
 interface PairingRefusalNoticeProps {
   outcome: Extract<PairingOutcome, { kind: 'refused' }>;
   onDismiss: () => void;
@@ -49,7 +56,7 @@ export function PairingRefusalNotice({ outcome, onDismiss }: PairingRefusalNotic
         <p className="typo-caption text-foreground">{copy.title}</p>
         <p className="typo-caption text-foreground/90">{copy.fix}</p>
         {/* The backend's own words, kept for the codes we could not classify. */}
-        {outcome.refusal.code === 'unknown' && outcome.refusal.detail && (
+        {DETAIL_CODES.has(outcome.refusal.code) && outcome.refusal.detail && (
           <p data-testid="pairing-refusal-detail" className="typo-code text-foreground/90 break-words">
             {outcome.refusal.detail}
           </p>

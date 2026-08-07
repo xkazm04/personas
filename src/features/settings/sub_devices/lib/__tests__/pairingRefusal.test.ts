@@ -14,6 +14,16 @@ describe('classifyPairingRefusal', () => {
     expect(r.code).toBe('group_conflict');
   });
 
+  it('classifies the group conflict on the typed AppError kind, not the wording', () => {
+    // The backend gave this refusal its own variant precisely because it is the
+    // one with an actionable remedy; wording changes must not reclassify it.
+    const r = classifyPairingRefusal(
+      appError('Pairing would strand Studio Mac and Laptop', 'device_group_conflict'),
+    );
+    expect(r.code).toBe('group_conflict');
+    expect(r.detail).toBe('Pairing would strand Studio Mac and Laptop');
+  });
+
   it('recognises other phrasings of the same group conflict', () => {
     for (const message of [
       'Cannot pair: the device groups differ between these machines',
