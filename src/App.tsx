@@ -115,7 +115,7 @@ const HealingToast = lazyRetry(() => import("@/features/overview/components/feed
 const AlertToastContainer = lazyRetry(() => import("@/features/overview/sub_observability/components/AlertToastContainer").then(m => ({ default: m.AlertToastContainer })));
 const NotificationCenter = lazyRetry(() => import("@/features/shared/chrome/notifications/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
 const ShareLinkHandler = lazyRetry(() => import("@/features/settings/sub_network/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
-const CompanionPanel = lazyRetry(() => import("@/features/plugins/companion/CompanionPanel"));
+const CompanionPanel = lazyRetry(() => import("@/features/plugins/companion/chat/AthenaChatPanel"));
 const AthenaOrbLayer = lazyRetry(() => import("@/features/plugins/companion/orb/AthenaOrbLayer"));
 const StudioAttention = lazyRetry(() => import("@/features/studio/StudioAttention"));
 // Fleet grid is an app-wide LAYER, not a page surface: the footer raises it
@@ -149,7 +149,7 @@ const LAZY_OVERLAY_IMPORTS = [
   () => import("@/features/overview/sub_observability/components/AlertToastContainer"),
   () => import("@/features/shared/chrome/notifications/NotificationCenter"),
   () => import("@/features/settings/sub_network/components/ShareLinkHandler"),
-  () => import("@/features/plugins/companion/CompanionPanel"),
+  () => import("@/features/plugins/companion/chat/AthenaChatPanel"),
   () => import("@/features/plugins/companion/orb/AthenaOrbLayer"),
   () => import("@/features/plugins/companion/orb/AthenaGuideLayer"),
 ] as const;

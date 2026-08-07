@@ -2,6 +2,11 @@
 
 ## Active
 
+### athena-chat-refactor — CompanionPanel → `chat/` component split + perf/motion/layout pass — session opus-5[1m]
+- Started: 2026-08-07. Status: started.
+- Scope: **frontend companion chat only.** (1) Split the 2475-line `CompanionPanel.tsx` into NEW `src/features/plugins/companion/chat/` (`AthenaChat<Component>.tsx` / `athenaChat<helper>.ts`, ≤200 LOC each). (2) Perf: kill the `streamingText` subscription that re-renders the whole transcript every RAF; memoize message rows; render only the last 10 rounds with older revealed on scroll-to-top. (3) Motion on resize + toggles. (4) Panel geometry: max-height must clear the 48px titlebar, expanded width 760→912px. (5) Hide `CompanionToolbar` in compact mode. (6) Stop-reply moves inline beside `TypingDots`; descope NarrationLiveLog/NarrationTrail/in-turn tool tasks (files kept, just unmounted). (7) `[canvas]` system episodes render as a short human line instead of a raw `CanvasActionResult` JSON dump.
+- Paths: `src/features/plugins/companion/{CompanionPanel.tsx,chat/**,Bubble.tsx,ActivityTray.tsx,CompanionToolbar.tsx}`, `src/i18n/locales/*.json` (additive keys), `.claude/active-runs.md`, docs/CHANGELOG.
+- **NOTE FOR OTHER SESSIONS:** working tree was clean at session start. No Rust, no ts-rs derives → `src/lib/bindings/` untouched. `NarrationThread.tsx` / `OperationalThread.tsx` / `narrationTimeline.ts` stay on disk and keep their store plumbing — only their mount sites change. Committing on master per the operator's standing develop-on-master instruction (no worktree; live verification needs the main checkout's running app).
 
 ### canvas-control-op — v2 Athena `canvas_control` companion op onto the shipped canvas action grammar (5d3b102a9) — session fable-5 — **COMPLETE**, commit `5a3ea36ff`
 - Started/completed: 2026-08-06. Gates: cargo check + clippy (0 new warnings) · dispatcher tests 71/71 (3 new) · tsc clean · eslint clean · vitest sub_mastermind 192/192 + companion 394/394. Frontend loop verified LIVE via synthetic `companion://canvas-control` event (camera landed at band mid, exact BAND_TARGET_Z). Full Rust loop (op → event → result episode) unit-tested; needs an app rebuild + real Athena turn for E2E — the running binary predates this Rust. Constitution bumped to v49.

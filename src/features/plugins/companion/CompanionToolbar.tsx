@@ -10,6 +10,7 @@ import {
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
+import { useSystemStore } from '@/stores/systemStore';
 import {
   companionListActiveConnectors,
   companionListPluginToggles,
@@ -47,28 +48,39 @@ import { useTtsVoiceSelection } from './useTtsVoiceSelection';
  * Layout: 44px wide, three groups separated by thin dividers, with
  * a flex spacer pushing connectors to the bottom edge.
  */
-export function CompanionToolbar({
-  onOpenBrain,
-  brainOpen,
-  compact,
-  onToggleCompact,
-}: {
-  onOpenBrain: () => void;
-  brainOpen: boolean;
+export function CompanionToolbar(props: {
+  /** Overrides the default store-backed brain toggle. */
+  onOpenBrain?: () => void;
+  brainOpen?: boolean;
   /**
-   * Turn-in-flight gate, still passed by CompanionPanel. No longer consumed
-   * by any button here (the deterministic action buttons that used it moved
-   * to the slash-command palette), but kept on the contract so the caller
-   * doesn't need to change.
+   * Turn-in-flight gate. No longer consumed by any button here (the
+   * deterministic action buttons that used it moved to the slash-command
+   * palette), but kept on the contract so existing callers don't need to change.
    */
-  disabled: boolean;
-  /** Panel minimize (compact) state, driven from CompanionPanel. */
-  compact: boolean;
+  disabled?: boolean;
+  /** Panel minimize (compact) state. Defaults to the persisted store value. */
+  compact?: boolean;
   /** Toggle the panel between full and compact width. */
-  onToggleCompact: () => void;
-}) {
+  onToggleCompact?: () => void;
+} = {}) {
   const { t } = useTranslation();
   const voiceConfigured = useTtsVoiceSelection().configured;
+
+  // Self-sufficient by default: the chat renders this rail with no props and
+  // lets it read the same store the rest of the panel does. Props stay
+  // supported so tests (and any other host) can drive it explicitly.
+  const storeBrainOpen = useCompanionStore((s) => s.brainView.open);
+  const storeCompact = useSystemStore((s) => s.companionPanelCompact);
+  const setStoreCompact = useSystemStore((s) => s.setCompanionPanelCompact);
+  const brainOpen = props.brainOpen ?? storeBrainOpen;
+  const compact = props.compact ?? storeCompact;
+  const onOpenBrain =
+    props.onOpenBrain ??
+    (() =>
+      useCompanionStore
+        .getState()
+        .setBrainView({ open: !storeBrainOpen, kind: null, id: null }));
+  const onToggleCompact = props.onToggleCompact ?? (() => setStoreCompact(!storeCompact));
 
   const connectors = useCompanionStore((s) => s.connectors);
   const setConnectors = useCompanionStore((s) => s.setConnectors);
