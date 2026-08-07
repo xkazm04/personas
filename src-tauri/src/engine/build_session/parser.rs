@@ -65,8 +65,19 @@ pub(super) fn parse_build_line(line: &str, session_id: &str) -> Vec<BuildEvent> 
     };
 
     let obj = match json.as_object() {
+        // Valid JSON that is not an object (a bare array, string or number).
+        // It carries no envelope and no event, but dropping it silently means
+        // the transcript loses a line the model actually emitted.
+        None => {
+            return vec![BuildEvent::Progress {
+                session_id: session_id.to_string(),
+                dimension: None,
+                message: trimmed.to_string(),
+                percent: None,
+                activity: None,
+            }]
+        }
         Some(o) => o,
-        None => return vec![],
     };
 
     // Check for CLI streaming envelope
@@ -94,7 +105,21 @@ pub(super) fn parse_build_line(line: &str, session_id: &str) -> Vec<BuildEvent> 
             if let Some(result_text) = obj.get("result").and_then(|v| v.as_str()) {
                 return parse_llm_text_content(result_text, session_id);
             }
-            return vec![];
+            // A `result` envelope is the model's FINAL word for the turn. When
+            // it carries no text — `error_max_turns`, `error_during_execution`
+            // — dropping it made a turn that BROKE look identical to a turn
+            // that simply had nothing to add. Name the subtype instead.
+            let subtype = obj
+                .get("subtype")
+                .and_then(|v| v.as_str())
+                .unwrap_or("no result text");
+            return vec![BuildEvent::Progress {
+                session_id: session_id.to_string(),
+                dimension: None,
+                message: format!("The build model's turn ended without output ({subtype})."),
+                percent: None,
+                activity: None,
+            }];
         }
         _ => {} // Fall through to direct JSON parsing (backward compat)
     }
@@ -144,6 +169,20 @@ pub(super) fn extract_result_usage(line: &str) -> Option<ResultUsage> {
     })
 }
 
+/// The structured payloads the build prompt asks the model to emit. Used only
+/// to decide whether an unparseable blob was *meant* to be an event — prose
+/// containing a stray `{` should not raise an alarm, a mangled `agent_ir`
+/// should.
+const STRUCTURED_KEYS: &[&str] = &[
+    "behavior_core",
+    "capability_enumeration",
+    "capability_resolution",
+    "persona_resolution",
+    "clarifying_question",
+    "agent_ir",
+    "test_report",
+];
+
 /// Parse the LLM's actual text content (unwrapped from CLI envelope).
 /// Handles multiple JSON objects per response (e.g., 3 resolved dimensions + 1 question).
 fn parse_llm_text_content(text: &str, session_id: &str) -> Vec<BuildEvent> {
@@ -152,34 +191,427 @@ fn parse_llm_text_content(text: &str, session_id: &str) -> Vec<BuildEvent> {
     // Strip markdown code fences
     let cleaned = text.replace("```json", "").replace("```", "");
 
-    // Try each line as a potential JSON object
-    for line in cleaned.lines() {
-        let trimmed = line.trim();
-        if trimmed.is_empty() || !trimmed.starts_with('{') {
-            continue;
-        }
-
-        if let Ok(val) = serde_json::from_str::<serde_json::Value>(trimmed) {
-            if let Some(obj) = val.as_object() {
-                events.extend(parse_json_object(obj, &val, session_id));
-            }
+    // Walk balanced braces rather than lines.
+    //
+    // The build prompt asks for one compact JSON object per line, and the
+    // model routinely pretty-prints instead. Under the old line-oriented loop
+    // a pretty-printed object matched NOTHING: `{` alone is not valid JSON, so
+    // an entire `agent_ir` — the build's whole output — silently degraded into
+    // a 200-character `Progress` line with the rest thrown away.
+    // `tool_tests::extract_test_plan` already parsed multi-line; this is the
+    // same capability, applied to every event type.
+    let scan = scan_json_objects(&cleaned);
+    for val in &scan.objects {
+        if let Some(obj) = val.as_object() {
+            events.extend(parse_json_object(obj, val, session_id));
         }
     }
 
-    // If no structured events found, emit the text as progress
-    if events.is_empty() && !text.trim().is_empty() {
-        // Truncate long progress messages
-        let msg = if text.len() > 200 { crate::utils::text::truncate_on_char_boundary(&text, 200) } else { text };
+    if !events.is_empty() {
+        return events;
+    }
+
+    if text.trim().is_empty() {
+        return events;
+    }
+
+    // Nothing structured came out. If the text was *carrying* a structured
+    // payload we could not read, say so — that is a dropped build event, not a
+    // status line, and truncating it to 200 characters hid which.
+    let looks_structured = STRUCTURED_KEYS
+        .iter()
+        .any(|k| cleaned.contains(&format!("\"{k}\"")));
+    if looks_structured && scan.unparsed > 0 {
+        tracing::warn!(
+            session_id = %session_id,
+            unparsed_candidates = scan.unparsed,
+            text_bytes = text.len(),
+            excerpt = %crate::utils::text::truncate_on_char_boundary(text, 400),
+            "build parser: response carried a structured payload that could not be parsed as JSON — dropped"
+        );
         events.push(BuildEvent::Progress {
             session_id: session_id.to_string(),
             dimension: None,
-            message: msg.trim().to_string(),
+            message: format!(
+                "The build model emitted a structured block ({} characters) that could not be read as JSON, so it was dropped.",
+                text.len()
+            ),
             percent: None,
             activity: None,
         });
+        return events;
     }
 
+    // Ordinary prose — emit as progress, truncated as before.
+    let msg = if text.len() > 200 {
+        crate::utils::text::truncate_on_char_boundary(text, 200)
+    } else {
+        text
+    };
+    events.push(BuildEvent::Progress {
+        session_id: session_id.to_string(),
+        dimension: None,
+        message: msg.trim().to_string(),
+        percent: None,
+        activity: None,
+    });
+
     events
+}
+
+/// What a balanced-brace scan found in a blob of model text.
+struct ScanOutcome {
+    objects: Vec<serde_json::Value>,
+    /// `{`s that opened something which could not be parsed as JSON. Counted
+    /// so an unreadable payload can be reported rather than silently skipped.
+    unparsed: usize,
+}
+
+/// Find every JSON object in `text` that *starts* a line, however it is
+/// formatted afterwards.
+///
+/// Line-anchoring is deliberate and matches the old behaviour: the build
+/// prompt asks for structured objects on their own lines, and scanning
+/// mid-sentence braces would let prose like `use {"error": "…"} for failures`
+/// mint a real `BuildEvent::Error` (which flips the session to `failed`). What
+/// changes is that the object no longer has to FIT on that line — the scan
+/// walks to the matching `}` with a string/escape-aware depth counter, so
+/// braces inside string values (`"curl": "curl {…}"`) do not throw it off, and
+/// a pretty-printed object spanning 40 lines parses as one value.
+///
+/// Nested objects are not re-reported: the scan resumes AFTER a parsed object,
+/// so `{"a":{"b":1}}` yields one value, not two.
+fn scan_json_objects(text: &str) -> ScanOutcome {
+    let bytes = text.as_bytes();
+    let mut objects = Vec::new();
+    let mut unparsed = 0usize;
+    let mut pos = 0usize;
+
+    while pos < text.len() {
+        let line_end = text[pos..]
+            .find('\n')
+            .map(|i| pos + i)
+            .unwrap_or_else(|| text.len());
+
+        // First non-whitespace byte on what is left of this line.
+        let mut start = pos;
+        while start < line_end && bytes[start].is_ascii_whitespace() {
+            start += 1;
+        }
+
+        if start < line_end && bytes[start] == b'{' {
+            match balanced_object_end(bytes, start) {
+                // `{` and `}` are ASCII, so both indices are char boundaries.
+                Some(end) => match serde_json::from_str::<serde_json::Value>(&text[start..=end]) {
+                    Ok(val) => {
+                        objects.push(val);
+                        pos = end + 1;
+                        continue;
+                    }
+                    Err(_) => unparsed += 1,
+                },
+                None => {
+                    // Unbalanced to the end of the text — a truncated stream.
+                    // Nothing after this can close either, so stop.
+                    unparsed += 1;
+                    break;
+                }
+            }
+        }
+
+        pos = line_end + 1;
+    }
+
+    ScanOutcome { objects, unparsed }
+}
+
+/// Index of the `}` that closes the `{` at `start`, or `None` if unbalanced.
+fn balanced_object_end(bytes: &[u8], start: usize) -> Option<usize> {
+    let mut depth = 0usize;
+    let mut in_string = false;
+    let mut escape_next = false;
+
+    for (i, &b) in bytes.iter().enumerate().skip(start) {
+        if escape_next {
+            escape_next = false;
+            continue;
+        }
+        if in_string {
+            match b {
+                b'\\' => escape_next = true,
+                b'"' => in_string = false,
+                _ => {}
+            }
+            continue;
+        }
+        match b {
+            b'"' => in_string = true,
+            b'{' => depth += 1,
+            b'}' => {
+                // Only reachable with depth >= 1: the caller always points at
+                // a `{`. Guarded anyway rather than risking an underflow panic
+                // inside the build parser.
+                depth = depth.saturating_sub(1);
+                if depth == 0 {
+                    return Some(i);
+                }
+            }
+            _ => {}
+        }
+    }
+    None
+}
+
+// =============================================================================
+// Tests
+// =============================================================================
+//
+// Run with: node scripts/build/run-rust-tests.mjs -- build_session
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const SID: &str = "sess-1";
+
+    fn kinds(events: &[BuildEvent]) -> Vec<&'static str> {
+        events
+            .iter()
+            .map(|e| match e {
+                BuildEvent::CellUpdate { .. } => "cell",
+                BuildEvent::Question { .. } => "question",
+                BuildEvent::Progress { .. } => "progress",
+                BuildEvent::Error { .. } => "error",
+                BuildEvent::SessionStatus { .. } => "status",
+                BuildEvent::BehaviorCoreUpdate { .. } => "behavior_core",
+                BuildEvent::CapabilityEnumerationUpdate { .. } => "cap_enum",
+                BuildEvent::CapabilityResolutionUpdate { .. } => "cap_res",
+                BuildEvent::PersonaResolutionUpdate { .. } => "persona_res",
+                BuildEvent::ClarifyingQuestionV3 { .. } => "question_v3",
+            })
+            .collect()
+    }
+
+    fn progress_messages(events: &[BuildEvent]) -> Vec<String> {
+        events
+            .iter()
+            .filter_map(|e| match e {
+                BuildEvent::Progress { message, .. } => Some(message.clone()),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// Wrap `text` the way the CLI's stream-json assistant envelope does.
+    fn assistant(text: &str) -> String {
+        serde_json::json!({
+            "type": "assistant",
+            "message": { "content": [{ "type": "text", "text": text }] },
+        })
+        .to_string()
+    }
+
+    // ── the multi-line drop ──────────────────────────────────────────────
+
+    /// The regression this file was opened for. A pretty-printed `agent_ir` —
+    /// the entire output of a build — matched nothing under the old
+    /// line-oriented loop, because `{` on its own is not valid JSON. The whole
+    /// response then degraded into a truncated 200-character `Progress`.
+    #[test]
+    fn a_pretty_printed_agent_ir_is_no_longer_dropped() {
+        let pretty = r#"{
+  "agent_ir": {
+    "name": "Inbox Triage",
+    "tools": [
+      { "name": "gmail" }
+    ]
+  }
+}"#;
+        let events = parse_build_line(&assistant(pretty), SID);
+        assert_eq!(kinds(&events), vec!["cell"], "got: {events:?}");
+        match &events[0] {
+            BuildEvent::CellUpdate {
+                cell_key, data, ..
+            } => {
+                assert_eq!(cell_key, "agent_ir");
+                assert_eq!(data["name"], serde_json::json!("Inbox Triage"));
+            }
+            other => panic!("expected a cell update, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn a_pretty_printed_v3_event_still_emits_its_legacy_mirror() {
+        let pretty = "{\n  \"behavior_core\": {\n    \"mission\": \"triage\"\n  }\n}";
+        let events = parse_build_line(&assistant(pretty), SID);
+        assert_eq!(kinds(&events), vec!["behavior_core", "cell"]);
+    }
+
+    #[test]
+    fn compact_one_object_per_line_output_still_parses() {
+        // The shape the prompt actually asks for: several objects, one per
+        // line. Both must be seen — the scan must not stop after the first.
+        let text = "{\"persona_resolution\":{\"field\":\"tools\",\"value\":[]}}\n\
+                    {\"agent_ir\":{\"name\":\"x\"}}";
+        let events = parse_build_line(&assistant(text), SID);
+        assert_eq!(kinds(&events), vec!["persona_res", "cell"]);
+        match events.last().expect("the agent_ir object") {
+            BuildEvent::CellUpdate { cell_key, .. } => assert_eq!(cell_key, "agent_ir"),
+            other => panic!("expected the second object to parse, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn braces_inside_string_values_do_not_break_the_scan() {
+        // A curl command in a description is the realistic case.
+        let text = "{\n  \"agent_ir\": {\n    \"note\": \"run curl -w '{http_code}' \\\"x\\\"\"\n  }\n}";
+        let events = parse_build_line(&assistant(text), SID);
+        assert_eq!(kinds(&events), vec!["cell"]);
+    }
+
+    #[test]
+    fn a_nested_object_is_not_reported_as_a_second_event() {
+        let text = "{\"agent_ir\":{\"question\":\"not a question event\"}}";
+        let events = parse_build_line(&assistant(text), SID);
+        assert_eq!(kinds(&events), vec!["cell"]);
+    }
+
+    /// Line-anchoring is load-bearing: `parse_json_object` turns any object
+    /// carrying an `error` key into `BuildEvent::Error`, which flips the whole
+    /// session to `failed`. Prose that merely mentions one must not do that.
+    #[test]
+    fn a_json_object_quoted_mid_sentence_does_not_mint_an_event() {
+        let text = "If a tool breaks I will emit {\"error\": \"…\"} and stop.";
+        let events = parse_build_line(&assistant(text), SID);
+        assert_eq!(kinds(&events), vec!["progress"]);
+    }
+
+    // ── surfacing what could not be parsed ───────────────────────────────
+
+    #[test]
+    fn a_truncated_structured_payload_is_reported_not_silently_truncated() {
+        // A stream that died mid-object: balanced-brace scan finds no close.
+        let broken = format!(
+            "{{\n  \"agent_ir\": {{\n    \"name\": \"{}\",\n    \"tools\": [",
+            "x".repeat(400)
+        );
+        let events = parse_build_line(&assistant(&broken), SID);
+        assert_eq!(kinds(&events), vec!["progress"]);
+        let msg = &progress_messages(&events)[0];
+        assert!(
+            msg.contains("could not be read as JSON"),
+            "a dropped build event must say it was dropped, got: {msg}"
+        );
+        assert!(
+            !msg.contains("xxxxx"),
+            "and must not pass a JSON fragment off as a status line: {msg}"
+        );
+    }
+
+    #[test]
+    fn ordinary_prose_still_becomes_a_plain_truncated_progress_line() {
+        let prose = "Looking at the connectors you have available. ".repeat(20);
+        let events = parse_build_line(&assistant(&prose), SID);
+        assert_eq!(kinds(&events), vec!["progress"]);
+        let msg = &progress_messages(&events)[0];
+        assert!(msg.starts_with("Looking at the connectors"));
+        assert!(msg.len() <= 200);
+    }
+
+    #[test]
+    fn a_result_envelope_with_no_text_names_why_instead_of_vanishing() {
+        // `error_max_turns` used to be indistinguishable from a silent turn.
+        let line = r#"{"type":"result","subtype":"error_max_turns","is_error":true}"#;
+        let events = parse_build_line(line, SID);
+        assert_eq!(kinds(&events), vec!["progress"]);
+        assert!(progress_messages(&events)[0].contains("error_max_turns"));
+    }
+
+    #[test]
+    fn a_non_object_json_line_is_surfaced_rather_than_dropped() {
+        let events = parse_build_line("[\"not an envelope at all\"]", SID);
+        assert_eq!(kinds(&events), vec!["progress"]);
+    }
+
+    // ── behaviour that must not change ───────────────────────────────────
+
+    #[test]
+    fn system_and_rate_limit_envelopes_stay_silent() {
+        for line in [
+            r#"{"type":"system","subtype":"init","cwd":"/x"}"#,
+            r#"{"type":"rate_limit_event","retry_after":30}"#,
+        ] {
+            assert!(parse_build_line(line, SID).is_empty(), "{line}");
+        }
+    }
+
+    #[test]
+    fn an_assistant_envelope_carrying_only_tool_use_stays_silent() {
+        // Every build turn emits these; surfacing them would flood the stream.
+        let line = serde_json::json!({
+            "type": "assistant",
+            "message": { "content": [{ "type": "tool_use", "name": "Read", "input": {} }] },
+        })
+        .to_string();
+        assert!(parse_build_line(&line, SID).is_empty());
+    }
+
+    #[test]
+    fn short_non_json_lines_take_the_fast_path_to_progress() {
+        let events = parse_build_line("thinking…", SID);
+        assert_eq!(kinds(&events), vec!["progress"]);
+        assert_eq!(progress_messages(&events)[0], "thinking…");
+    }
+
+    #[test]
+    fn blank_lines_produce_nothing() {
+        assert!(parse_build_line("   ", SID).is_empty());
+    }
+
+    // ── the scanner itself ───────────────────────────────────────────────
+
+    #[test]
+    fn scanner_finds_multiple_pretty_printed_objects() {
+        let text = "{\n \"a\": 1\n}\n{\n \"b\": 2\n}\n";
+        let scan = scan_json_objects(text);
+        assert_eq!(scan.objects.len(), 2);
+        assert_eq!(scan.unparsed, 0);
+    }
+
+    #[test]
+    fn scanner_counts_an_unbalanced_tail_as_unparsed() {
+        let scan = scan_json_objects("{\n \"a\": 1\n}\n{\n \"b\":");
+        assert_eq!(scan.objects.len(), 1);
+        assert_eq!(scan.unparsed, 1);
+    }
+
+    #[test]
+    fn scanner_survives_multibyte_text() {
+        let text = "{\n  \"agent_ir\": { \"name\": \"Přehled — 日本語\" }\n}";
+        let scan = scan_json_objects(text);
+        assert_eq!(scan.objects.len(), 1);
+        assert_eq!(
+            scan.objects[0]["agent_ir"]["name"],
+            serde_json::json!("Přehled — 日本語")
+        );
+    }
+
+    #[test]
+    fn scanner_ignores_a_line_that_does_not_start_with_a_brace() {
+        let scan = scan_json_objects("here is one: {\"a\":1}\n");
+        assert_eq!(scan.objects.len(), 0);
+        assert_eq!(scan.unparsed, 0, "prose braces are not a parse failure");
+    }
+
+    #[test]
+    fn extract_result_usage_reads_only_result_envelopes() {
+        let line = r#"{"type":"result","total_cost_usd":0.42,"usage":{"input_tokens":10,"output_tokens":5}}"#;
+        let usage = extract_result_usage(line).expect("a result envelope carries usage");
+        assert_eq!(usage.cost_usd, 0.42);
+        assert_eq!(usage.input_tokens, 10);
+        assert_eq!(usage.output_tokens, 5);
+        assert!(extract_result_usage(r#"{"type":"assistant","message":{}}"#).is_none());
+    }
 }
 
 /// Parse a single JSON object into one or more `BuildEvent`s.
