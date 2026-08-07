@@ -13,7 +13,6 @@ import { useCallback, useRef } from 'react';
 import type { BrainKind } from '@/api/companion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { Collapse } from '@/features/shared/components/display/Collapse';
 import { useSystemStore } from '@/stores/systemStore';
 import { useCompanionStore } from '../companionStore';
 import { BrainViewer } from '../BrainViewer';
@@ -138,12 +137,13 @@ export function AthenaChatBody({ compact }: { compact: boolean }) {
           />
         )}
       </div>
-      {/* Inner side-panel slot, left of the toolbar rail. Collapsed rather than
-          plainly unmounted in compact mode so the change reads as the panel
-          folding, not as content vanishing. */}
-      <Collapse open={!compact} unmountWhenClosed duration={280} className="shrink-0">
-        <FleetStatsSidePanel />
-      </Collapse>
+      {/* Inner side-panel slot, left of the toolbar rail. NOT wrapped in
+          `Collapse`: that primitive animates HEIGHT (the grid 0fr→1fr trick),
+          which is the wrong axis for a side rail and — because the child then
+          sizes to a grid row — also defeats the panel's full-height stretch.
+          The rail animates its own width instead, and compact simply drops it
+          while the whole window is already animating narrower. */}
+      {!compact && <FleetStatsSidePanel />}
       {/* Compact hides the rail entirely so the shrunk panel is chat and
           nothing else; the expand handle it normally hosts moves to the panel
           edge (see AthenaChatCompactHandle). */}

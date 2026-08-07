@@ -28,6 +28,7 @@ import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { stripModelDirectives } from './athenaLabels';
 import { BrainLinksStrip } from './BrainLinksStrip';
+import { systemMarkerOf } from './systemMarkers';
 
 export function Bubble({
   role,
@@ -61,27 +62,20 @@ export function Bubble({
   // System turns that aren't the user talking and aren't Athena's prose —
   // autonomous continuations and forwarded system requests (e.g. Fleet's
   // "Ask Athena") — render as a slim labeled divider, never a user/assistant
-  // bubble, so provenance reads at a glance.
-  const isAutonomousMarker =
-    isSystem &&
-    isString &&
-    (children as string).startsWith('[autonomous continuation');
-  const isFleetMarker = isSystem && isString && /^\[fleet\b/i.test((children as string).trim());
+  // bubble, so provenance reads at a glance. A `[proactive: <kind>]` opener
+  // carries no user-facing prose at all, so it renders as nothing; the
+  // assistant reply that follows IS what the user reads.
+  const marker = isSystem && isString ? systemMarkerOf(children as string) : null;
+  if (marker === 'proactive') return null;
 
-  // Machine-initiated turn opener (proactive scheduler / action-reaction). The
-  // backend persists a `[proactive: <kind>]` System episode purely to mark the
-  // turn as self-initiated — it carries no user-facing prose, so hide it; the
-  // assistant reply that follows IS what the user reads. Previously these only
-  // landed in the hidden "Notices" thread; an action-reaction lands in the main
-  // thread (right after the action outcome), so it now needs suppressing here.
-  const isProactiveMarker =
-    isSystem && isString && /^\[proactive:/i.test((children as string).trim());
-  if (isProactiveMarker) return null;
-
-  if (isAutonomousMarker || isFleetMarker) {
-    const raw = (children as string).trim();
-    // Fleet markers are a bare "[Fleet]" tag — strip the brackets for display.
-    const label = isFleetMarker ? raw.replace(/^\[|\]$/g, '') : raw;
+  const isFleetMarker = marker === 'fleet';
+  if (marker) {
+    // The persisted body is a bracketed machine tag ("[Fleet]",
+    // "[autonomous continuation #3]"). Strip the brackets and capitalize:
+    // with the uppercase CSS gone, the raw form would render as literal
+    // punctuation in the middle of the conversation.
+    const raw = (children as string).trim().replace(/^\[|\]$/g, '');
+    const label = raw.charAt(0).toUpperCase() + raw.slice(1);
     const MarkerIcon = isFleetMarker ? LayoutGrid : InfinityIcon;
     return (
       <div
@@ -91,7 +85,9 @@ export function Bubble({
         data-companion-bubble-index={index}
       >
         <div className="flex-1 h-px bg-primary/20" aria-hidden />
-        <span className="inline-flex items-center gap-1.5 typo-caption tracking-wide uppercase text-primary/70">
+        {/* Sentence case, not caps: a shouted label competes with the
+            conversation it is only annotating. */}
+        <span className="inline-flex items-center gap-1.5 typo-caption tracking-wide text-primary/70">
           <MarkerIcon className="w-3 h-3" aria-hidden />
           {label}
         </span>

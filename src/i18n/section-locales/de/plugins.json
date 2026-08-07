@@ -2725,7 +2725,18 @@
     "canvas_note_visible_other": "{count} Projekte im Blick",
     "transcript_earlier_one": "{count} frühere Nachricht",
     "transcript_earlier_other": "{count} frühere Nachrichten",
-    "working": "Arbeitet…"
+    "working": "Arbeitet…",
+    "orb_quick_input_expand": "Vollständigen Chat öffnen",
+    "orb_unread_dismiss": "Als gelesen markieren",
+    "orb_unread_more": "+{count} weitere",
+    "orb_unread_open": "Chat öffnen",
+    "orb_unread_title": "Athena hat geantwortet",
+    "side_panel_open_terminal": "Terminal dieser Sitzung öffnen",
+    "system_note_dispatcher": "Aktion blockiert",
+    "system_note_fleet_op": "Flotten-Vorgang",
+    "system_note_less": "Weniger anzeigen",
+    "system_note_more": "Mehr anzeigen",
+    "system_note_plain": "Notiz"
   },
   "artist_gallery": {
     "loading_viewer": "Viewer wird geladen…",

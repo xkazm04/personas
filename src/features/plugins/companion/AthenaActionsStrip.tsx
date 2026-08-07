@@ -66,7 +66,7 @@ export function AthenaActionsStrip() {
               className="rounded-input border border-primary/15 bg-background/40 px-2.5 py-1.5"
             >
               <div className="flex items-baseline gap-2">
-                <span className="typo-label uppercase tracking-wider font-medium text-primary truncate">
+                <span className="typo-caption tracking-wide font-semibold text-primary truncate">
                   {a.projectLabel || t.plugins.companion.fleet_auto_decided}
                 </span>
                 <RelativeTime

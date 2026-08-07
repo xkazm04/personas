@@ -148,7 +148,7 @@ export function ConversationSwitcher() {
           role="menu"
           className="absolute left-0 top-[calc(100%+6px)] z-40 min-w-[248px] max-w-[300px] p-1.5 rounded-card border border-foreground/15 bg-secondary/95 backdrop-blur-md shadow-elevation-3"
         >
-          <div className="px-2 pt-1 pb-1.5 typo-caption uppercase tracking-wide">
+          <div className="px-2 pt-1 pb-1.5 typo-caption tracking-wide">
             {t.plugins.companion.conversations}
           </div>
           <div className="max-h-[300px] overflow-y-auto flex flex-col gap-0.5">

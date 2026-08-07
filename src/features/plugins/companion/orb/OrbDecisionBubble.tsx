@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import type { CSSProperties } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 import { Lightbulb, ChevronDown, ChevronUp, Loader2, Sparkles, MessageSquareText, TriangleAlert, ShieldCheck, Mail, X } from 'lucide-react';
@@ -9,9 +8,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useCompanionStore } from '../companionStore';
 import { explainDecision, runDecisionOption } from '../decision/resolveDecision';
 import type { DecisionOption, DecisionSource } from '../decision/types';
-import { ORB_SIZE } from './AthenaOrb';
-
-const BUBBLE_GAP = 12;
+import { orbDock } from './athenaOrbDock';
 
 /** Symbol shown on the collapsed chip, by what produced the decision. */
 const SOURCE_ICON: Record<DecisionSource, LucideIcon> = {
@@ -157,26 +154,11 @@ export function OrbDecisionBubble() {
   // input methods resolve identically.
   const pick = (opt: DecisionOption) => runDecisionOption(opt);
 
-  // Position off the orb's last-known target (set by the orb on drag/dock) or
-  // the persisted dock fraction as a fallback so the bubble has a home even
-  // before the orb has reported a pixel target this session.
-  const fallbackLeft = orbPos.x * Math.max(window.innerWidth - ORB_SIZE, 0);
-  const fallbackTop = orbPos.y * Math.max(window.innerHeight - ORB_SIZE, 0);
-  const anchorLeft = orbTarget?.left ?? fallbackLeft;
-  const anchorTop = orbTarget?.top ?? fallbackTop;
-
-  const dockedLeft = anchorLeft + ORB_SIZE / 2 < window.innerWidth / 2;
-  // Sit the bubble above the orb, nudged toward whichever side has room.
-  const pos: CSSProperties = dockedLeft
-    ? { left: anchorLeft, bottom: window.innerHeight - anchorTop + BUBBLE_GAP }
-    : {
-        right: window.innerWidth - anchorLeft - ORB_SIZE,
-        bottom: window.innerHeight - anchorTop + BUBBLE_GAP,
-      };
-
-  // The arrow/handle bridges the surface to the orb AND is the show/hide
-  // toggle. It sits at the bottom on the docked side, pointing at the orb.
-  const handleSide: CSSProperties = dockedLeft ? { left: 14 } : { right: 14 };
+  // Sit the bubble above the orb, nudged toward whichever side has room. The
+  // arrow/handle bridges the surface to the orb AND is the show/hide toggle, so
+  // it sits at the bottom on the docked side, pointing back at her. Shared with
+  // `OrbUnreadBubble` — see `athenaOrbDock`.
+  const { pos, handleSide } = orbDock(orbTarget, orbPos);
 
   // A markdown-free label for the collapsed chip: the full first line of
   // the prompt, untruncated — the chip wraps instead of ellipsizing so the
@@ -285,7 +267,7 @@ export function OrbDecisionBubble() {
               data-testid="athena-decision-recommendation"
               className="mt-2.5 rounded-input border border-primary/20 bg-primary/5 px-3 py-2.5"
             >
-              <p className="typo-label uppercase tracking-wider font-medium text-primary">
+              <p className="typo-caption tracking-wide font-semibold text-primary">
                 {t.plugins.companion.decision_recommend_prefix}
               </p>
               <MarkdownRenderer content={decision.recommendation} className="mt-1 typo-body text-foreground/90 leading-relaxed" />

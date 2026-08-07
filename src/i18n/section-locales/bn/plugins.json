@@ -2725,7 +2725,18 @@
     "canvas_note_visible_other": "দৃশ্যে {count}টি প্রকল্প",
     "transcript_earlier_one": "{count}টি আগের বার্তা",
     "transcript_earlier_other": "{count}টি আগের বার্তা",
-    "working": "কাজ চলছে…"
+    "working": "কাজ চলছে…",
+    "orb_quick_input_expand": "পুরো চ্যাট খুলুন",
+    "orb_unread_dismiss": "পঠিত হিসেবে চিহ্নিত করুন",
+    "orb_unread_more": "আরও {count}টি",
+    "orb_unread_open": "চ্যাট খুলুন",
+    "orb_unread_title": "Athena উত্তর দিয়েছেন",
+    "side_panel_open_terminal": "এই সেশনের টার্মিনাল খুলুন",
+    "system_note_dispatcher": "কাজটি আটকানো হয়েছে",
+    "system_note_fleet_op": "ফ্লিট অপারেশন",
+    "system_note_less": "কম দেখান",
+    "system_note_more": "আরও দেখান",
+    "system_note_plain": "নোট"
   },
   "artist_gallery": {
     "loading_viewer": "ভিউয়ার লোড হচ্ছে…",

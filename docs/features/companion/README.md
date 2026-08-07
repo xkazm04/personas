@@ -86,6 +86,8 @@ or helper per file, none over 200 lines, named `AthenaChat<Component>.tsx` /
 | `athenaChatSend.ts` / `athenaChatQueue.ts` | One turn end-to-end, and the interrupt-vs-queue front door |
 | `athenaChatVoice.ts` / `athenaChatAudio.ts` | Spoken ack/heartbeat/beats, and the two exclusive audio channels |
 
+The orb got the same treatment. `orb/AthenaOrb.tsx` is now a shell over `athenaOrbGeometry` (fractions ⇄ pixels, viewport, dock side), `athenaOrbGesture` (tap / hold-to-talk / drag-and-snap), `athenaOrbPresence` (posture, counts, caption, aria label), `athenaOrbReactions` (the one-shot message + forward-ack pulses), `athenaOrbGlow` (the imperative audio-reactive bloom) and `AthenaOrbDecor` / `AthenaOrbCornerActions` for the visuals — every file under 200 lines. `OrbDecisionBubble` has not been split yet and is the one file in `orb/` still over.
+
 **Render pressure is the reason for most of the shape.** The panel this replaced
 subscribed to `streamingText` at the top and threaded ~25 props into a single
 `Body`, so every animation frame of a reply re-rendered the whole transcript —
@@ -135,6 +137,109 @@ instead: "Travelled to a project on the canvas — close view · 14 projects in
 view", or, on a refusal, "Couldn't steer the canvas — the view was zoomed too
 far out". A truncated envelope still yields the action name.
 
+### System messages — the app's own voice
+
+`role: 'system'` covers four unrelated things, and the transcript used to render
+all of them as assistant-shaped bubbles: Athena's avatar beside text she never
+wrote, machine notes at the same visual weight as an answer. They are now split
+(`systemMarkers.ts` + `chat/athenaChatSystemKind.ts`):
+
+| Kind | Example | Rendering |
+| --- | --- | --- |
+| **Marker** | `[autonomous continuation #3]`, `[Fleet]`, `[proactive: …]` | Slim divider (`Bubble`); `proactive` renders nothing at all |
+| **Canvas readback** | `[canvas] Result of your \`canvas_control\` (…)` | One-line human summary (`AthenaChatCanvasNote`) |
+| **Tagged note** | `[dispatcher] Your last \`OP: …\` was rejected…` | `AthenaChatSystemNote` — "Action blocked" |
+| **Operation record** | `fleet-orchestration op:… state:… intent:…` | `AthenaChatSystemNote` — "Fleet operation", correlators demoted to a meta line |
+
+`AthenaChatSystemNote` reads as a **margin note**, not a reply: a hairline accent
+rail down the left, a small Title-Case label naming what produced it, and the
+body set as real markdown — which is the point, since these rows carry bullet
+lists and inline code (`OP: use_connector{…}`) that a plain paragraph destroyed.
+Notes past ~260 characters clamp behind a fade with a "Show more" toggle: the
+dispatcher's rejection note is several sentences of instruction addressed to
+Athena, and the user should not have to scroll a briefing to reach the next
+message. Nothing is ellipsized — the fade says there is more, the button opens it.
+
+**No shouting.** Every all-caps label in the companion is gone. Removing the
+Tailwind `uppercase` class was only half of it: the `typo-label` token itself
+carries `text-transform: uppercase`, so surfaces using it ("ATHENA NEEDS A
+DECISION", the side-panel header) still shouted afterwards. Those now use
+`typo-caption` + a weight bump, which holds the same visual rank without the
+volume. Verified live: zero elements with a computed `text-transform: uppercase`
+inside the chat panel or the orb layer.
+
+**Markdown at chat scale** (`globals.css`, scoped to `.athena-chat-md`). The
+shared renderer is tuned for full-width documents — an `h1` is `typo-heading-lg`
+with a rule under it, top margins run `mt-10/8/6` — which inside a reply column
+reads as a banner and pushes the answer below the fold. The chat now compresses
+the scale and carries hierarchy through weight and colour: h1/h2 at foreground
+weight 650, h3/h4 at body-plus-a-notch in a primary-tinted hue, no rule under
+h1, tighter paragraph and list rhythm, inline code that doesn't grow its own
+line box. Measured live at the app's "large" text scale: **17 / 16 / 15 px
+headings over 14px body, 12px inline code**.
+
+> **Watch the specificity.** These heading rules use a DOUBLED class
+> (`.athena-chat-md.athena-chat-md h1`). The app's text-size preference overrides
+> the typography tokens through `[data-text-scale="large"] .typo-heading-lg` — an
+> attribute+class selector at (0,2,0) that outranks a plain `.athena-chat-md h1`
+> at (0,1,1). Without the bump the chat h1 quietly stayed at document scale while
+> every other rule in the block applied, which is exactly the bug the block
+> exists to fix.
+
+### Inner side panel
+
+`CompanionSidePanel` is the reusable inner dock between the chat column and the
+outer toolbar rail. Three fixes worth remembering, all of them structural:
+
+- **Always full height.** It used to size to its content, so a quiet fleet left a
+  stub of a panel floating against the chat's full-height column with the border
+  stopping halfway down. `self-stretch h-full` makes it read as part of the
+  window frame at any content length. It is deliberately NOT wrapped in the
+  shared `Collapse` primitive — that animates height (the grid `0fr→1fr` trick),
+  which is the wrong axis for a side rail and, by sizing the child to a grid row,
+  defeats the stretch outright.
+- **The toggle handle escapes the panel's clip.** The handle straddles the
+  panel's left border, and a shared `overflow-hidden` on the same element that
+  positioned it clipped the outer half away — leaving a half-moon that read as
+  sitting *behind* the chat column. The clip now lives on the inner body; the
+  rail itself is `overflow-visible` and `z-20`. Verified live with
+  `elementFromPoint` at the handle's own centre.
+- **A session row opens its terminal.** Clicking a row raises the app-wide fleet
+  grid focused on that session (`fleetSetActiveSession` + `fleetSetGridOpen`)
+  rather than growing a second terminal host. The chat panel already lifts itself
+  to `z-[220]` above that overlay, so the conversation stays readable the whole
+  time — glance at the terminal, hit Back (or Escape), keep talking. The
+  "no sessions tracked" line is gone: the count above it already says zero.
+
+### Unread replies on the orb (`orb/OrbUnreadBubble`)
+
+The orb could already tell you that N replies landed while the chat was closed.
+A count is a poor signal — it says something happened without saying whether it
+can wait, so the only way to triage was to open the chat, which is the exact
+interruption the minimized presence exists to avoid.
+
+The reply itself now docks above the orb: the newest unread message rendered as
+markdown (short, word-boundary trimmed, never mid-word), a **read-aloud** control
+for hearing it again when a voice engine is configured, and **Open chat**.
+Dismiss means *mark as read*, not *hide* — leaving the badge up after the user
+has read the words here would make it lie.
+
+`companionStore` gained `unreadPreview` beside `unreadReplies`, plus
+`setUnreadPreview` for the common case where the badge is raised before the
+reply's words arrive (a transcript refetch resolving a beat later). It no-ops
+when nothing is unread, so a slow refetch can never resurrect a preview for a
+message already read. Callers that have no text — a background thread's turn,
+which never refetches a transcript the user isn't looking at — omit it and the
+prior preview is kept.
+
+**It defers completely to the decision bubble.** A decision is a question
+addressed to the operator and a message is news, so while `pendingDecision` is
+set this stays down and returns the moment it clears. Both share one docking
+geometry (`orb/athenaOrbDock.ts`) so they can never drift a few pixels apart and
+start looking like two different components. *(Note when testing: the decision
+queue is always on, so in an app with real pending incidents the unread bubble is
+legitimately invisible — stub `setPendingDecision` to observe it in isolation.)*
+
 ### Attention bar — two levels instead of six stacks
 
 Six independent surfaces used to pin themselves above the transcript unconditionally: MCP pending requests, the chat decision card, assignment cards, the autonomous-actions ledger, and one full `ProactiveCard` per nudge. On a busy day that pushed the actual conversation off screen, which is the opposite of what a chat window is for.
@@ -166,7 +271,9 @@ Step 2 of [`athena-orb-overlay-plan.md`](./athena-orb-overlay-plan.md) promotes 
 - **One pointer surface, three gestures:** tap → open the full chat panel; hold (≥220ms) → dictate a voice turn (via the same `useHoldToTalk` → `voiceTurnRequest` path as the footer); drag past ~6px → relocate. A drag cancels an armed hold so moving never records. While listening, the interim transcript shows as a caption beside the orb.
 - **Dock + persistence:** on drop the X position snaps to the nearest side edge; position is stored as viewport fractions (`companionOrbPos`) and resolved to pixels at render so it survives window resizes and restarts. A hover-revealed `×` dismisses the orb (→ `collapsed`).
 - **Footer + panel wiring:** when the orb is enabled (`companionOrbEnabled`, default on, toggled in Companion → Setup → "Floating avatar"), the footer button summons/hides the orb (`minimized ↔ collapsed`) and the chat panel's close button returns to the orb instead of vanishing. `AthenaOrbLayer` promotes a dormant (`collapsed`) Athena to `minimized` once on mount so the presence is there from launch. With the orb disabled, the footer keeps its classic open/collapse behavior.
-- **Quick-input bar:** a small `Keyboard`-icon affordance on the orb (`orb/OrbQuickInputBar.tsx`) toggles a compact bottom bar for typing (or dictating) a message without opening the chat panel — the most recent assistant reply stays readable above the bar so a short back-and-forth never needs the full window. It submits through the same `voiceTurnRequest` bridge as hold-to-talk, so it runs the identical `send()` pipeline (streaming, transcript persistence, TTS). The bar's input row is the slim `size="sm"` + `voice` variant of the shared `ChatInputBar` (`shared/components/forms/ChatInputBar.tsx`), the same parametric component Studio's build chat (`StudioChatInput.tsx`) wraps for its full-size pill.
+- **Quick-input bar:** a small `Keyboard`-icon affordance on the orb (`orb/OrbQuickInputBar.tsx`) toggles a compact bottom bar for a whole exchange with Athena without opening the chat panel. It submits through the same `voiceTurnRequest` bridge as hold-to-talk, so it runs the identical `send()` pipeline (streaming, transcript persistence, TTS).
+  **The reading half is the point of the surface**, and it used to be an afterthought: the reply was a three-line clamp of raw text, so a structured answer arrived as a wall with its ending cut off and the only way to see the rest was to open the very window the bar exists to avoid. It is now a real reading surface — **50% wider** (`max-w-xl`), rendered as markdown through the same `athena-chat-md` scale the panel uses, at reading size rather than caption size, sized to its content and scrollable past **38vh**. The governing rule is *a paragraph fits without scrolling and anything longer scrolls rather than truncating*; nothing here ends in an ellipsis. A new reply resets the scroll to its own beginning, the header carries a read-aloud control and an expand-to-chat button, and an in-flight turn shows typing dots instead of a stale answer.
+  The composer is the slim `size="sm"` + `voice` variant of the shared `ChatInputBar` (`shared/components/forms/ChatInputBar.tsx`) in its new opt-in **`multiline`** mode: an auto-growing textarea (Enter sends, Shift+Enter newlines, capped at 6 rows then scrolls) so a paragraph can be written as well as read. Studio's build chat wraps the same component and is untouched — `multiline` is off by default.
 
 **Polish (Step 2b).** Opening from the orb morphs the panel out of the orb's position (it flies + scales from the orb's recorded center, anchored to the panel's bottom-left corner, and collapses back on close). A global **Cmd/Ctrl+Shift+A** summons Athena and starts a voice turn (press again to send, **Esc** to cancel — the shared `useHoldToTalk` instance lives in `AthenaOrbLayer` so the orb and the keyboard drive one session). All of it honors `prefers-reduced-motion`.
 

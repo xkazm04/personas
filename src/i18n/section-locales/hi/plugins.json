@@ -2725,7 +2725,18 @@
     "canvas_note_visible_other": "दृश्य में {count} प्रोजेक्ट",
     "transcript_earlier_one": "{count} पुराना संदेश",
     "transcript_earlier_other": "{count} पुराने संदेश",
-    "working": "काम चल रहा है…"
+    "working": "काम चल रहा है…",
+    "orb_quick_input_expand": "पूरी चैट खोलें",
+    "orb_unread_dismiss": "पढ़ा हुआ चिह्नित करें",
+    "orb_unread_more": "+{count} और",
+    "orb_unread_open": "चैट खोलें",
+    "orb_unread_title": "Athena ने उत्तर दिया",
+    "side_panel_open_terminal": "इस सत्र का टर्मिनल खोलें",
+    "system_note_dispatcher": "कार्रवाई रोकी गई",
+    "system_note_fleet_op": "फ़्लीट संचालन",
+    "system_note_less": "कम दिखाएं",
+    "system_note_more": "और दिखाएं",
+    "system_note_plain": "नोट"
   },
   "artist_gallery": {
     "loading_viewer": "viewer लोड हो रहा है…",

@@ -3,6 +3,7 @@ import { useGuidanceRunner } from '../guidance/useGuidanceRunner';
 import { TrackedGlowRing } from './TrackedGlowRing';
 import { GuideCaption } from './GuideCaption';
 import { OrbDecisionBubble } from './OrbDecisionBubble';
+import { OrbUnreadBubble } from './OrbUnreadBubble';
 import { DecisionDriver } from '../decision/useDecisionQueue';
 
 /**
@@ -20,6 +21,10 @@ import { DecisionDriver } from '../decision/useDecisionQueue';
  *    navigate/compose. Same primitive, different store slot + CSS treatment.
  *  - `GuideCaption` — the narration card + Back/Pause/Skip/Stop controls
  *    (renders nothing unless a walkthrough is active).
+ *  - `OrbDecisionBubble` / `OrbUnreadBubble` — the two surfaces that dock
+ *    above the orb. Mutually exclusive by construction: the unread bubble
+ *    stands down whenever a decision is pending, because a question aimed at
+ *    the operator outranks news.
  *
  * The layer itself is `pointer-events-none`; interactive children opt back in.
  * Distinct from `AthenaOrbLayer` (which only mounts while `state === 'minimized'`)
@@ -37,6 +42,7 @@ export default function AthenaGuideLayer() {
       <TrackedGlowRing source="flash" />
       <GuideCaption />
       <OrbDecisionBubble />
+      <OrbUnreadBubble />
       <DecisionDriver />
     </div>,
     document.body,

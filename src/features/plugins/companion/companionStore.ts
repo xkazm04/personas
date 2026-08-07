@@ -197,11 +197,30 @@ interface CompanionStore {
    */
   unreadReplies: number;
   /**
+   * The text of the newest unread reply, for the orb to actually SHOW rather
+   * than merely count. A badge tells you something happened; it does not tell
+   * you whether it can wait, which is the only question you have while looking
+   * away from the chat. Null whenever nothing is unread.
+   */
+  unreadPreview: string | null;
+  /**
    * A reply landed, or Athena reached out unprompted. Deliberately a no-op
    * while the panel is `open`: the message is already on screen, and badging
    * it would make the user dismiss an indicator for something they just read.
+   *
+   * `preview` is the reply's own text where the caller has it. Callers that
+   * don't (a background thread's turn, which never refetches a transcript the
+   * user isn't looking at) omit it and the prior preview is KEPT — a count
+   * without words beats replacing real words with nothing.
    */
-  noteIncomingReply: () => void;
+  noteIncomingReply: (preview?: string | null) => void;
+  /**
+   * Attach text to an ALREADY-COUNTED unread reply — used where the reply's
+   * words only arrive after the badge (a transcript refetch resolving a beat
+   * later). A no-op when nothing is unread, so a late refetch can never
+   * resurrect a preview for a message the user has since read.
+   */
+  setUnreadPreview: (preview: string) => void;
   clearUnreadReplies: () => void;
 
   setState: (state: CompanionState) => void;
@@ -760,13 +779,28 @@ export const useCompanionStore = create<CompanionStore>()(
   sendError: null,
 
   unreadReplies: 0,
-  noteIncomingReply: () =>
-    set((s) => (s.state === 'open' ? {} : { unreadReplies: s.unreadReplies + 1 })),
-  clearUnreadReplies: () => set({ unreadReplies: 0 }),
+  unreadPreview: null,
+  noteIncomingReply: (preview) =>
+    set((s) => {
+      if (s.state === 'open') return {};
+      const trimmed = preview?.trim();
+      return {
+        unreadReplies: s.unreadReplies + 1,
+        unreadPreview: trimmed ? trimmed : s.unreadPreview,
+      };
+    }),
+  setUnreadPreview: (preview) =>
+    set((s) => {
+      const trimmed = preview.trim();
+      if (s.unreadReplies === 0 || !trimmed) return {};
+      return { unreadPreview: trimmed };
+    }),
+  clearUnreadReplies: () => set({ unreadReplies: 0, unreadPreview: null }),
 
   // Opening the chat IS reading it, so the badge clears HERE — one place —
   // rather than at each of the several points a reply can land.
-  setState: (state) => set(state === 'open' ? { state, unreadReplies: 0 } : { state }),
+  setState: (state) =>
+    set(state === 'open' ? { state, unreadReplies: 0, unreadPreview: null } : { state }),
   setBrainPath: (brainPath) => set({ brainPath }),
   setInitError: (initError) => set({ initError }),
   setInitialized: (initialized) => set({ initialized }),
@@ -946,9 +980,11 @@ export const useCompanionStore = create<CompanionStore>()(
       if (s.proactive.some((m) => m.id === msg.id)) return s;
       // Athena reaching out unprompted is the clearest case the orb badge
       // exists for: she has something to say and nobody asked her to.
+      if (s.state === 'open') return { proactive: [msg, ...s.proactive] };
       return {
         proactive: [msg, ...s.proactive],
-        unreadReplies: s.state === 'open' ? s.unreadReplies : s.unreadReplies + 1,
+        unreadReplies: s.unreadReplies + 1,
+        unreadPreview: msg.message?.trim() || s.unreadPreview,
       };
     }),
   removeProactive: (id) =>

@@ -18,6 +18,7 @@ import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { useCompanionStore } from '../companionStore';
 import { createSendNonce, hasAcceptedNonce, recordAcceptedNonce } from '../sendNonceLedger';
+import { lastAssistantText } from './athenaChatPreview';
 import type { AthenaChatVoice } from './athenaChatVoice';
 
 export interface AthenaChatSend {
@@ -100,6 +101,11 @@ export function useAthenaChatSend(args: {
         // panel is open; the store owns that rule.)
         useCompanionStore.getState().noteIncomingReply();
         const fresh = await companionListRecentMessages(50, conversationId);
+        // Give the badge its words. Separate from the count above on purpose:
+        // the count must survive a refetch that fails, and the preview is only
+        // available once the canonical transcript lands.
+        const preview = lastAssistantText(fresh);
+        if (preview) useCompanionStore.getState().setUnreadPreview(preview);
         const live = useCompanionStore.getState();
         if (live.activeConversationId === conversationId) {
           live.setMessages(fresh);

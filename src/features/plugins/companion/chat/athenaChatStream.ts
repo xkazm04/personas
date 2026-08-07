@@ -34,6 +34,7 @@ import { extractStreamPhase, extractToolEvents } from '../extractStreamPhase';
 import { extractTodoWrite } from '../operationalSteps';
 import { persistTurnSidecar } from '../useTurnSidecars';
 import { useAthenaChatDeltas } from './athenaChatDeltas';
+import { lastAssistantText } from './athenaChatPreview';
 
 export function useAthenaChatStream(args: {
   /** Updated on every focused-thread event — drives the slow-progress chip. */
@@ -159,6 +160,11 @@ export function useAthenaChatStream(args: {
               // Re-check focus — the user may have switched mid-refetch.
               const live = useCompanionStore.getState();
               if (live.activeConversationId === conv) live.setMessages(msgs);
+              // Give the orb badge its words. `setUnreadPreview` no-ops when
+              // the panel was opened in between, so a slow refetch can't
+              // resurrect a preview for a reply already read.
+              const preview = lastAssistantText(msgs);
+              if (preview) live.setUnreadPreview(preview);
             })
             .catch(silentCatch('companion_list_recent_messages'));
           return;

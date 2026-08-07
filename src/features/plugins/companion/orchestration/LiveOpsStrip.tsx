@@ -55,7 +55,7 @@ export function LiveOpsStrip() {
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 px-3 py-1.5 typo-label text-foreground hover:bg-secondary/30 transition-colors"
+        className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption font-semibold text-foreground hover:bg-secondary/30 transition-colors"
       >
         {expanded ? (
           <ChevronDown className="size-3.5 shrink-0" />

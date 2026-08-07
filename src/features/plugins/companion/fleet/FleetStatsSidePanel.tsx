@@ -22,6 +22,13 @@ import { CompanionSidePanel } from '../CompanionSidePanel';
  * differently across surfaces. Exited sessions are dropped from the list
  * (history, not something to glance at) but still count toward the page
  * link's context.
+ *
+ * **Clicking a row raises that session's terminal.** It reuses the app-wide
+ * fleet grid layer rather than growing a second terminal host: set the active
+ * session, raise `fleetGridOpen`, and the existing overlay opens focused on it
+ * with its own Back button (and Escape) to return. The chat panel already
+ * lifts itself above that overlay, so the conversation stays readable the
+ * whole time — glance at the terminal, come back, keep talking.
  */
 export function FleetStatsSidePanel() {
   const { t, tx } = useTranslation();
@@ -56,6 +63,12 @@ export function FleetStatsSidePanel() {
     setDevToolsTab('fleet');
   };
 
+  const openTerminal = (sessionId: string) => {
+    const sys = useSystemStore.getState();
+    sys.fleetSetActiveSession(sessionId);
+    sys.fleetSetGridOpen(true);
+  };
+
   return (
     <CompanionSidePanel
       icon={<FleetShipIcon className="w-3.5 h-3.5 text-foreground" />}
@@ -88,33 +101,38 @@ export function FleetStatsSidePanel() {
         </div>
       )}
 
-      {liveCount === 0 ? (
-        <p className="px-1 py-2 typo-caption text-foreground">{t.plugins.fleet.footer_empty}</p>
-      ) : (
+      {/* No empty-state line: the count above already says "0 sessions", and a
+          second sentence saying the same thing is the panel talking twice. */}
+      {liveCount > 0 && (
         <ul className="space-y-1" data-testid="companion-fleet-side-panel-list">
           {rows.map((s) => {
             const meta = FLEET_STATE_META.find((m) => m.id === s.state) ?? FLEET_STATE_META[0]!;
             return (
-              <li
-                key={s.id}
-                data-testid={`companion-fleet-side-panel-row-${s.id}`}
-                className="rounded-input bg-secondary/30 px-1.5 py-1"
-              >
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <span className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${meta.dot}`} aria-hidden="true" />
-                  <span className="flex-1 min-w-0 truncate typo-caption text-foreground" title={s.projectLabel}>
-                    {s.name ?? s.projectLabel}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-1 pl-3">
-                  <span className={`truncate text-[10px] ${meta.text}`}>{t.plugins.fleet[meta.labelKey]}</span>
-                  <span
-                    className="shrink-0 text-[10px] text-foreground tabular-nums"
-                    title={t.plugins.companion.side_panel_activity_label}
-                  >
-                    {formatAgo(t, Number(s.lastActivityMs), now)}
-                  </span>
-                </div>
+              <li key={s.id}>
+                <button
+                  type="button"
+                  onClick={() => openTerminal(s.id)}
+                  data-testid={`companion-fleet-side-panel-row-${s.id}`}
+                  title={t.plugins.companion.side_panel_open_terminal}
+                  aria-label={`${s.name ?? s.projectLabel} — ${t.plugins.companion.side_panel_open_terminal}`}
+                  className="w-full text-left rounded-input bg-secondary/30 hover:bg-secondary/60 px-1.5 py-1 transition-colors focus-ring"
+                >
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${meta.dot}`} aria-hidden="true" />
+                    <span className="flex-1 min-w-0 truncate typo-caption text-foreground" title={s.projectLabel}>
+                      {s.name ?? s.projectLabel}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-1 pl-3">
+                    <span className={`truncate text-[10px] ${meta.text}`}>{t.plugins.fleet[meta.labelKey]}</span>
+                    <span
+                      className="shrink-0 text-[10px] text-foreground tabular-nums"
+                      title={t.plugins.companion.side_panel_activity_label}
+                    >
+                      {formatAgo(t, Number(s.lastActivityMs), now)}
+                    </span>
+                  </div>
+                </button>
               </li>
             );
           })}

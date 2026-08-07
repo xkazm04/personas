@@ -96,7 +96,7 @@ export default function DecisionsPanel() {
           >
             <div className="flex items-center gap-1.5 px-2 pb-2">
               <Layers className="w-3.5 h-3.5 text-fuchsia-400" />
-              <span className="typo-label text-foreground">
+              <span className="typo-caption font-semibold text-foreground">
                 {t.plugins.companion.decisions_atlas_contexts}
               </span>
             </div>
@@ -175,7 +175,7 @@ function ContextThread({ group }: { group: DecisionGroup }) {
               className="absolute -left-[27px] top-1.5 w-2.5 h-2.5 rounded-full bg-fuchsia-500/50 ring-2 ring-fuchsia-500/20"
             />
             <div className="flex items-baseline justify-between gap-3">
-              <span className="typo-label text-fuchsia-300/90 min-w-0 truncate">
+              <span className="typo-caption font-semibold text-fuchsia-300/90 min-w-0 truncate">
                 {row.label}
               </span>
               <RelativeTime

@@ -2725,7 +2725,18 @@
     "canvas_note_visible_other": "{count} مشاريع في العرض",
     "transcript_earlier_one": "{count} رسالة سابقة",
     "transcript_earlier_other": "{count} رسائل سابقة",
-    "working": "جارٍ العمل…"
+    "working": "جارٍ العمل…",
+    "orb_quick_input_expand": "فتح المحادثة الكاملة",
+    "orb_unread_dismiss": "تحديد كمقروء",
+    "orb_unread_more": "+{count} أخرى",
+    "orb_unread_open": "فتح المحادثة",
+    "orb_unread_title": "ردّت Athena",
+    "side_panel_open_terminal": "فتح طرفية هذه الجلسة",
+    "system_note_dispatcher": "تم حظر الإجراء",
+    "system_note_fleet_op": "عملية الأسطول",
+    "system_note_less": "عرض أقل",
+    "system_note_more": "عرض المزيد",
+    "system_note_plain": "ملاحظة"
   },
   "artist_gallery": {
     "loading_viewer": "جارٍ تحميل العارض…",

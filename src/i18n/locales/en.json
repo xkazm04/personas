@@ -15441,7 +15441,18 @@
       "canvas_note_reason_band_too_far": "the view was zoomed too far out",
       "canvas_note_reason_demo_scene": "the canvas is showing demo data",
       "canvas_note_reason_canvas_closed": "the canvas wasn't open",
-      "canvas_note_reason_bad_request": "the request was malformed"
+      "canvas_note_reason_bad_request": "the request was malformed",
+      "side_panel_open_terminal": "Open this session's terminal",
+      "system_note_dispatcher": "Action blocked",
+      "system_note_fleet_op": "Fleet operation",
+      "system_note_plain": "Note",
+      "system_note_more": "Show more",
+      "system_note_less": "Show less",
+      "orb_unread_title": "Athena replied",
+      "orb_unread_more": "+{count} more",
+      "orb_unread_open": "Open chat",
+      "orb_unread_dismiss": "Mark as read",
+      "orb_quick_input_expand": "Open the full chat"
     },
     "artist_gallery": {
       "loading_viewer": "Loading viewer…",

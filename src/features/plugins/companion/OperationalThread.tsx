@@ -43,7 +43,7 @@ export function OperationalThread({ steps }: { steps: TodoStep[] }) {
   return (
     <div className="rounded-card border border-foreground/10 bg-foreground/[0.04] px-3 py-2 space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="typo-caption uppercase tracking-wide text-foreground">
+        <span className="typo-caption font-medium tracking-wide text-foreground">
           {c.ops_thread_label}
         </span>
         <span className="typo-caption tabular-nums text-foreground">

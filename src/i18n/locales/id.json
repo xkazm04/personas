@@ -15147,7 +15147,18 @@
       "canvas_note_visible_other": "{count} proyek terlihat",
       "transcript_earlier_one": "{count} pesan sebelumnya",
       "transcript_earlier_other": "{count} pesan sebelumnya",
-      "working": "Sedang bekerja…"
+      "working": "Sedang bekerja…",
+      "orb_quick_input_expand": "Buka obrolan lengkap",
+      "orb_unread_dismiss": "Tandai sudah dibaca",
+      "orb_unread_more": "+{count} lagi",
+      "orb_unread_open": "Buka obrolan",
+      "orb_unread_title": "Athena membalas",
+      "side_panel_open_terminal": "Buka terminal sesi ini",
+      "system_note_dispatcher": "Tindakan diblokir",
+      "system_note_fleet_op": "Operasi fleet",
+      "system_note_less": "Tampilkan lebih sedikit",
+      "system_note_more": "Tampilkan selengkapnya",
+      "system_note_plain": "Catatan"
     },
     "artist_gallery": {
       "loading_viewer": "Memuat penampil…",

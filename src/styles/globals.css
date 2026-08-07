@@ -5201,12 +5201,87 @@ html[data-motion="reduce"] .animate-fade-slide-in {
   background: color-mix(in srgb, var(--primary) 7%, transparent);
 }
 
-/* Tighten heading top-rhythm for the narrow chat column — the renderer's
-   default mt-10/mt-8/mt-6 are tuned for full-width docs and read as dead
-   gaps inside a reply bubble. */
-.athena-chat-md h1 { margin-top: 1.25rem; }
-.athena-chat-md h2 { margin-top: 1.1rem; }
-.athena-chat-md h3 { margin-top: 0.9rem; }
+/* Headings at CHAT scale.
+
+   NOTE THE DOUBLED CLASS on these selectors. The renderer's headings carry the
+   typography tokens (`typo-heading-lg`, `typo-heading`), and the app's text-size
+   preference overrides those through `[data-text-scale="large"] .typo-heading-lg`
+   — an attribute+class selector at (0,2,0) that outranks a plain
+   `.athena-chat-md h1` at (0,1,1). The result was a chat h1 that quietly stayed
+   at document scale while every other rule here applied, which is exactly the
+   bug this block exists to fix. Repeating the class lifts these to (0,2,1) so
+   they win, without `!important` and without depending on which utility classes
+   the renderer happens to ship.
+   The renderer's defaults are tuned for full-width documents: h1 is
+   typo-heading-lg with a rule under it, and the top margins run mt-10/8/6.
+   Inside a ~520px reply column that reads as a banner and pushes the actual
+   answer below the fold. Here a heading's job is only to say "new section" at
+   a glance while staying obviously subordinate to the conversation, so the
+   scale compresses hard and the hierarchy is carried by WEIGHT and COLOR
+   rather than size alone — h1/h2 are foreground and heavy, h3 shifts to the
+   primary hue at body size. Rhythm is tightened to match. */
+.athena-chat-md.athena-chat-md h1 {
+  font-size: 1.15rem;
+  line-height: 1.4;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-top: 1.15rem;
+  margin-bottom: 0.4rem;
+}
+.athena-chat-md.athena-chat-md h2 {
+  font-size: 1.05rem;
+  line-height: 1.4;
+  font-weight: 650;
+  color: var(--foreground);
+  margin-top: 1rem;
+  margin-bottom: 0.35rem;
+}
+.athena-chat-md.athena-chat-md h3,
+.athena-chat-md.athena-chat-md h4 {
+  font-size: 1rem;
+  line-height: 1.45;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: color-mix(in srgb, var(--primary) 72%, var(--foreground));
+  margin-top: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Bold inside prose must out-weigh body copy without going to heading weight —
+   at the renderer's default it was nearly indistinguishable at chat size. */
+.athena-chat-md.athena-chat-md strong {
+  font-weight: 650;
+  color: var(--foreground);
+}
+
+/* Paragraph + list rhythm. Chat is a dense medium: mb-3 between every
+   paragraph and 1.5 between every bullet turns a five-point answer into a
+   scroll. Tighter here, and the last block never leaves a dead gap above the
+   bubble's bottom padding. */
+.athena-chat-md p { margin-bottom: 0.5rem; }
+.athena-chat-md ul,
+.athena-chat-md ol {
+  margin-bottom: 0.5rem;
+  padding-left: 1.15rem;
+}
+.athena-chat-md li + li { margin-top: 0.2rem; }
+.athena-chat-md li > ul,
+.athena-chat-md li > ol {
+  margin-top: 0.25rem;
+  margin-bottom: 0;
+}
+.athena-chat-md > *:last-child { margin-bottom: 0; }
+
+/* Inline code sits INSIDE a line of prose, so it must not push the line box
+   taller than its neighbours. */
+.athena-chat-md :not(pre) > code {
+  font-size: 0.8125em;
+  padding: 0.05em 0.35em;
+}
 
 /* ---------------------------------------------------------------------------
    Athena chat — syntax highlighting tuned to the app palette, SCOPED to the

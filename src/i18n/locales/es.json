@@ -15147,7 +15147,18 @@
       "canvas_note_visible_other": "{count} proyectos a la vista",
       "transcript_earlier_one": "{count} mensaje anterior",
       "transcript_earlier_other": "{count} mensajes anteriores",
-      "working": "Trabajando…"
+      "working": "Trabajando…",
+      "orb_quick_input_expand": "Abrir el chat completo",
+      "orb_unread_dismiss": "Marcar como leído",
+      "orb_unread_more": "+{count} más",
+      "orb_unread_open": "Abrir el chat",
+      "orb_unread_title": "Athena respondió",
+      "side_panel_open_terminal": "Abrir la terminal de esta sesión",
+      "system_note_dispatcher": "Acción bloqueada",
+      "system_note_fleet_op": "Operación de flota",
+      "system_note_less": "Ver menos",
+      "system_note_more": "Ver más",
+      "system_note_plain": "Nota"
     },
     "artist_gallery": {
       "loading_viewer": "Cargando visor…",

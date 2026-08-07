@@ -150,7 +150,7 @@ function GuidanceCard({ request }: { request: McpPendingRequest }) {
       <div className="flex items-start gap-2 mb-2">
         <HelpCircle className="size-4 text-foreground shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <div className="typo-label text-foreground">
+          <div className="typo-caption font-semibold text-foreground">
             {t.plugins.companion.orchestration.guidance_from} {sessionLabel(request.fleetSessionId)}
           </div>
           <div className="typo-body text-foreground mt-1">{payload.question}</div>
@@ -214,7 +214,7 @@ function ApprovalCard({ request }: { request: McpPendingRequest }) {
       <div className="flex items-start gap-2 mb-2">
         <ShieldQuestion className="size-4 text-foreground shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <div className="typo-label text-foreground">
+          <div className="typo-caption font-semibold text-foreground">
             {t.plugins.companion.orchestration.approval_from} {sessionLabel(request.fleetSessionId)}
           </div>
           <div className="typo-body text-foreground mt-1">{payload.action}</div>

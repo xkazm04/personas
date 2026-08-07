@@ -15147,7 +15147,18 @@
       "canvas_note_visible_other": "화면에 프로젝트 {count}개",
       "transcript_earlier_one": "이전 메시지 {count}개",
       "transcript_earlier_other": "이전 메시지 {count}개",
-      "working": "작업 중…"
+      "working": "작업 중…",
+      "orb_quick_input_expand": "전체 채팅 열기",
+      "orb_unread_dismiss": "읽음으로 표시",
+      "orb_unread_more": "{count}개 더",
+      "orb_unread_open": "채팅 열기",
+      "orb_unread_title": "Athena가 답장했습니다",
+      "side_panel_open_terminal": "이 세션의 터미널 열기",
+      "system_note_dispatcher": "작업이 차단됨",
+      "system_note_fleet_op": "플릿 작업",
+      "system_note_less": "간략히 보기",
+      "system_note_more": "더 보기",
+      "system_note_plain": "메모"
     },
     "artist_gallery": {
       "loading_viewer": "뷰어 로딩 중…",

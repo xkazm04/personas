@@ -15147,7 +15147,18 @@
       "canvas_note_visible_other": "{count} projektů v záběru",
       "transcript_earlier_one": "{count} starší zpráva",
       "transcript_earlier_other": "{count} starších zpráv",
-      "working": "Pracuji…"
+      "working": "Pracuji…",
+      "orb_quick_input_expand": "Otevřít celý chat",
+      "orb_unread_dismiss": "Označit jako přečtené",
+      "orb_unread_more": "a další {count}",
+      "orb_unread_open": "Otevřít chat",
+      "orb_unread_title": "Athena odpověděla",
+      "side_panel_open_terminal": "Otevřít terminál této relace",
+      "system_note_dispatcher": "Akce zablokována",
+      "system_note_fleet_op": "Operace flotily",
+      "system_note_less": "Zobrazit méně",
+      "system_note_more": "Zobrazit více",
+      "system_note_plain": "Poznámka"
     },
     "artist_gallery": {
       "loading_viewer": "Načítání prohlížeče…",

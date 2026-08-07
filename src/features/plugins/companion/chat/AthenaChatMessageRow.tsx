@@ -23,8 +23,10 @@ import { RecallStrip } from '../RecallStrip';
 import { TurnSummaryChip } from '../TurnSummaryChip';
 import type { TodoStep } from '../operationalSteps';
 import type { StoredTurnSummary } from '../companionStore';
+import { systemMarkerOf } from '../systemMarkers';
 import { AthenaChatCanvasNote } from './AthenaChatCanvasNote';
 import { AthenaChatMessageJobs } from './AthenaChatMessageJobs';
+import { AthenaChatSystemNote } from './AthenaChatSystemNote';
 import { AthenaChatTurnActions } from './AthenaChatTurnActions';
 import { parseCanvasNote } from './athenaChatCanvasSummary';
 
@@ -87,17 +89,23 @@ export const AthenaChatMessageRow = memo(function AthenaChatMessageRow({
   onJumpSummary,
   onSend,
 }: AthenaChatMessageRowProps) {
-  // `[canvas]` System episodes are a machine readback written for Athena — a
-  // raw CanvasActionResult envelope. Render the human summary instead; the
-  // episode body itself is untouched, so her next turn still reads the facts.
-  const canvasNote =
-    message.role === 'system' ? parseCanvasNote(message.content) : null;
+  // A system row is one of four things (see `systemMarkers` /
+  // `athenaChatSystemKind`). Markers stay with `Bubble`, which draws them as
+  // dividers; a `[canvas]` readback becomes its one-line summary; everything
+  // else is app-authored content and gets the margin-note treatment rather
+  // than an assistant-shaped bubble with Athena's face beside text she never
+  // wrote. The episode bodies themselves are untouched — this is display only.
+  const isSystem = message.role === 'system';
+  const canvasNote = isSystem ? parseCanvasNote(message.content) : null;
+  const isSystemNote = isSystem && !canvasNote && !systemMarkerOf(message.content);
 
   return (
     <div className={`animate-fade-slide-in ${compact ? 'space-y-0.5' : 'space-y-1'}`}>
       {daySepLabel && <DaySeparator label={daySepLabel} />}
       {canvasNote ? (
         <AthenaChatCanvasNote note={canvasNote} />
+      ) : isSystemNote ? (
+        <AthenaChatSystemNote content={message.content} compact={compact} index={index} />
       ) : (
         <>
           {recall && <RecallStrip preview={recall} onOpenInBrain={onOpenInBrain} />}

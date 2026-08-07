@@ -15147,7 +15147,18 @@
       "canvas_note_visible_other": "{count} dự án trong tầm nhìn",
       "transcript_earlier_one": "{count} tin nhắn trước đó",
       "transcript_earlier_other": "{count} tin nhắn trước đó",
-      "working": "Đang xử lý…"
+      "working": "Đang xử lý…",
+      "orb_quick_input_expand": "Mở toàn bộ cuộc trò chuyện",
+      "orb_unread_dismiss": "Đánh dấu đã đọc",
+      "orb_unread_more": "+{count} nữa",
+      "orb_unread_open": "Mở cuộc trò chuyện",
+      "orb_unread_title": "Athena đã trả lời",
+      "side_panel_open_terminal": "Mở terminal của phiên này",
+      "system_note_dispatcher": "Hành động bị chặn",
+      "system_note_fleet_op": "Thao tác fleet",
+      "system_note_less": "Thu gọn",
+      "system_note_more": "Xem thêm",
+      "system_note_plain": "Ghi chú"
     },
     "artist_gallery": {
       "loading_viewer": "Đang tải trình xem…",

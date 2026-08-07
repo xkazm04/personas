@@ -761,7 +761,7 @@ function IdentityAdaptations() {
   if (mods.length === 0) return null;
   return (
     <div className="rounded-card border border-primary/15 bg-primary/[0.03] px-3 py-2.5 space-y-1">
-      <div className="typo-caption uppercase tracking-wider text-primary">{c.identity_adapts_title}</div>
+      <div className="typo-caption tracking-wide font-semibold text-primary">{c.identity_adapts_title}</div>
       {mods.map((m) => (
         <div key={m.kind} className="typo-caption text-foreground">
           {tx(c.identity_adapts_row, {
@@ -800,7 +800,7 @@ function IdentityClaimCorrections({ content }: { content: string }) {
 
   return (
     <div className="space-y-1.5 pt-2 border-t border-foreground/10">
-      <div className="typo-caption uppercase tracking-wider text-foreground">{c.identity_correct_title}</div>
+      <div className="typo-caption tracking-wide font-semibold text-foreground">{c.identity_correct_title}</div>
       <p className="typo-caption text-foreground">{c.identity_correct_hint}</p>
       {claims.map((claim) => {
         const done = corrected.has(claim.bullet);

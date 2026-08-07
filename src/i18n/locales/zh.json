@@ -15147,7 +15147,18 @@
       "canvas_note_visible_other": "视野内 {count} 个项目",
       "transcript_earlier_one": "{count} 条更早的消息",
       "transcript_earlier_other": "{count} 条更早的消息",
-      "working": "正在处理…"
+      "working": "正在处理…",
+      "orb_quick_input_expand": "打开完整聊天",
+      "orb_unread_dismiss": "标记为已读",
+      "orb_unread_more": "还有 {count} 条",
+      "orb_unread_open": "打开聊天",
+      "orb_unread_title": "Athena 回复了",
+      "side_panel_open_terminal": "打开该会话的终端",
+      "system_note_dispatcher": "操作被阻止",
+      "system_note_fleet_op": "舰队操作",
+      "system_note_less": "收起",
+      "system_note_more": "展开",
+      "system_note_plain": "备注"
     },
     "artist_gallery": {
       "loading_viewer": "加载查看器中…",

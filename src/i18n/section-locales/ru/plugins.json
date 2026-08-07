@@ -2725,7 +2725,18 @@
     "canvas_note_visible_other": "{count} проектов в поле зрения",
     "transcript_earlier_one": "{count} более раннее сообщение",
     "transcript_earlier_other": "{count} более ранних сообщений",
-    "working": "Работаю…"
+    "working": "Работаю…",
+    "orb_quick_input_expand": "Открыть полный чат",
+    "orb_unread_dismiss": "Отметить прочитанным",
+    "orb_unread_more": "ещё {count}",
+    "orb_unread_open": "Открыть чат",
+    "orb_unread_title": "Athena ответила",
+    "side_panel_open_terminal": "Открыть терминал этой сессии",
+    "system_note_dispatcher": "Действие заблокировано",
+    "system_note_fleet_op": "Операция флота",
+    "system_note_less": "Свернуть",
+    "system_note_more": "Показать полностью",
+    "system_note_plain": "Заметка"
   },
   "artist_gallery": {
     "loading_viewer": "Загрузка просмотрщика…",

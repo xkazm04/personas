@@ -15448,6 +15448,17 @@ export type Translations = {
       canvas_note_reason_demo_scene: string;
       canvas_note_reason_canvas_closed: string;
       canvas_note_reason_bad_request: string;
+      side_panel_open_terminal: string;
+      system_note_dispatcher: string;
+      system_note_fleet_op: string;
+      system_note_plain: string;
+      system_note_more: string;
+      system_note_less: string;
+      orb_unread_title: string;
+      orb_unread_more: string;
+      orb_unread_open: string;
+      orb_unread_dismiss: string;
+      orb_quick_input_expand: string;
     };
     artist_gallery: {
       loading_viewer: string;

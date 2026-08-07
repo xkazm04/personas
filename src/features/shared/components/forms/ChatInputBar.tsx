@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { Mic, MicOff, Send } from 'lucide-react';
 import Button, { type ButtonSize } from '@/features/shared/components/buttons/Button';
 
@@ -38,6 +38,17 @@ export interface ChatInputBarProps {
   inputTestId?: string;
   autoFocus?: boolean;
   className?: string;
+  /**
+   * Grow into a textarea as the text wraps, instead of scrolling a single line
+   * sideways. Off by default so existing callers are untouched.
+   *
+   * With it on, Enter still submits and Shift+Enter inserts a newline — the
+   * same contract as the full chat composer, so muscle memory carries between
+   * the two surfaces.
+   */
+  multiline?: boolean;
+  /** Rows the field may grow to before it starts scrolling. Multiline only. */
+  maxRows?: number;
 }
 
 /**
@@ -65,35 +76,77 @@ export function ChatInputBar({
   inputTestId,
   autoFocus,
   className = '',
+  multiline = false,
+  maxRows = 6,
 }: ChatInputBarProps) {
   const compact = size === 'sm';
   const sendButtonSize: ButtonSize = compact ? 'icon-sm' : 'sm';
+  const areaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-grow: reset to `auto` first so the height can SHRINK when text is
+  // deleted (scrollHeight never reports smaller than the current height), then
+  // adopt the content height up to the row cap. `useLayoutEffect` so the
+  // resize is committed in the same frame as the keystroke — measuring in a
+  // passive effect makes the field visibly lag a fast typist by one character.
+  useLayoutEffect(() => {
+    const el = areaRef.current;
+    if (!multiline || !el) return;
+    el.style.height = 'auto';
+    const line = parseFloat(getComputedStyle(el).lineHeight) || 20;
+    el.style.height = `${Math.min(el.scrollHeight, line * maxRows)}px`;
+  }, [multiline, maxRows, value]);
+
+  useEffect(() => {
+    if (multiline && autoFocus) areaRef.current?.focus();
+  }, [multiline, autoFocus]);
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== 'Enter') return;
+    // Shift+Enter is a newline in multiline mode; everywhere else Enter sends.
+    if (multiline && e.shiftKey) return;
+    e.preventDefault();
+    onSubmit();
+  };
+
+  const fieldClass = `min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-foreground/45 disabled:opacity-60 ${
+    compact ? 'text-sm' : 'text-md'
+  }`;
 
   return (
     <div
-      className={`pointer-events-auto flex items-center rounded-full border border-border bg-background/90 shadow-elevation-3 backdrop-blur transition-shadow duration-300 ${
-        compact ? 'gap-1.5 py-1 pl-1.5 pr-1' : 'gap-2 py-1.5 pl-2 pr-1.5'
-      } ${className}`}
+      className={`pointer-events-auto flex border border-border bg-background/90 shadow-elevation-3 backdrop-blur transition-shadow duration-300 ${
+        // A grown textarea inside a pill reads as a lozenge with the controls
+        // stranded mid-height, so multiline switches to a softened rectangle and
+        // bottom-aligns its buttons against the last line.
+        multiline ? 'items-end rounded-3xl' : 'items-center rounded-full'
+      } ${compact ? 'gap-1.5 py-1 pl-1.5 pr-1' : 'gap-2 py-1.5 pl-2 pr-1.5'} ${className}`}
       style={boxShadow ? { boxShadow } : undefined}
     >
       {leading}
-      <input
-        data-testid={inputTestId}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            onSubmit();
-          }
-        }}
-        placeholder={placeholder}
-        disabled={disabled}
-        autoFocus={autoFocus}
-        className={`min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-foreground/45 disabled:opacity-60 ${
-          compact ? 'text-sm' : 'text-md'
-        }`}
-      />
+      {multiline ? (
+        <textarea
+          ref={areaRef}
+          rows={1}
+          data-testid={inputTestId}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder={placeholder}
+          disabled={disabled}
+          className={`${fieldClass} resize-none overflow-y-auto scrollbar-thin py-1 leading-relaxed`}
+        />
+      ) : (
+        <input
+          data-testid={inputTestId}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder={placeholder}
+          disabled={disabled}
+          autoFocus={autoFocus}
+          className={fieldClass}
+        />
+      )}
       {voice?.supported && (
         <button
           type="button"
