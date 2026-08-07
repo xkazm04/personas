@@ -41,7 +41,7 @@ function ResourceExposureCard({
   resource: ExposedResource;
   onDelete: (id: string) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const AccessIcon = ACCESS_ICONS[resource.access_level] ?? Eye;
   const colorClass = ACCESS_COLORS[resource.access_level] ?? ACCESS_COLORS.read;
 
@@ -81,7 +81,7 @@ function ResourceExposureCard({
         )}
       </div>
       <InlineConfirm
-        message={`Remove exposure for ${resource.display_name || resource.resource_id}?`}
+        message={tx(t.sharing.remove_exposure_confirm, { name: resource.display_name || resource.resource_id })}
         onConfirm={() => onDelete(resource.id)}
       >
         {({ requestConfirm }) => (
@@ -224,7 +224,7 @@ export default function ExposureManager() {
   const fetchPersonas = useAgentStore((s) => s.fetchPersonas);
   const addToast = useToastStore((s) => s.addToast);
 
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const st = t.sharing;
   const [showAddForm, setShowAddForm] = useState(false);
   const [showExport, setShowExport] = useState(false);
@@ -263,22 +263,22 @@ export default function ExposureManager() {
     try {
       const res = await createExposedResource(input);
       setShowAddForm(false);
-      addToast(`Resource "${res.display_name || res.resource_id}" exposed`, 'success');
+      addToast(tx(st.resource_exposed_toast, { name: res.display_name || res.resource_id }), 'success');
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       logger.warn('Failed to expose resource', { resource_type: input.resource_type, resource_id: input.resource_id, error: msg });
-      addToast(`Failed to expose resource: ${msg}`, 'error');
+      addToast(st.expose_failed_toast, 'error');
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteExposedResource(id);
-      addToast('Resource exposure removed', 'success');
+      addToast(st.exposure_removed_toast, 'success');
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       logger.warn('Failed to remove exposure', { id, error: msg });
-      addToast(`Failed to remove exposure: ${msg}`, 'error');
+      addToast(st.remove_exposure_failed_toast, 'error');
     }
   };
 

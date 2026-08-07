@@ -1,12 +1,12 @@
 // ExportSelectionModal — "Manifest" layout (consolidated production component).
 // ---------------------------------------------------------------------------
 // A near-full-app, three-pane export picker built to handpick among 100+
-// personas: a scope rail (Personas / Teams / Credentials) → a search-first,
-// filterable list → a live "manifest" cart that tallies exactly what ships,
-// its encryption state, and the export CTA. KPIs are not a standalone scope —
-// they ride along with their team via the all-or-none "Include KPI setup"
-// control in the cart.
-import { useMemo, useState } from 'react';
+// personas: a scope rail (Personas / Teams / Credentials / Dev projects /
+// Knowledge / Twins / Athena memory) → a search-first, filterable list → a live
+// "manifest" cart that tallies exactly what ships, its encryption state, and the
+// export CTA. KPIs are not a standalone scope — they ride along with their team
+// via the all-or-none "Include KPI setup" control in the cart.
+import { useMemo, useState, type ReactNode } from 'react';
 import { Search, X, CheckCheck, HardDriveDownload } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -14,7 +14,15 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useExportPicker } from './export-prototype/useExportPicker';
 import { ScopeRail } from './export-prototype/ScopeRail';
 import { ManifestCart } from './export-prototype/ManifestCart';
-import { PersonaPickRow, TeamPickRow, CredentialRow, ProjectPickRow, WorkspacePickRow } from './export-prototype/rows';
+import {
+  PersonaPickRow,
+  TeamPickRow,
+  CredentialRow,
+  ProjectPickRow,
+  WorkspacePickRow,
+  TwinPickRow,
+  AthenaTierPickRow,
+} from './export-prototype/rows';
 import type { ExportKind, OnExport } from './export-prototype/types';
 
 interface ExportSelectionModalProps {
@@ -39,43 +47,155 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
   const q = query.trim().toLowerCase();
 
   // Filtered ids for the active scope (drives "select shown" + the list).
-  const shownIds = useMemo(() => {
-    if (scope === 'personas') {
-      return inv.personas
-        .filter((person) => {
-          const teams = inv.personaTeams.get(person.id) ?? [];
-          if (personaFilter === 'teamed' && teams.length === 0) return false;
-          if (personaFilter === 'unteamed' && teams.length > 0) return false;
-          if (personaFilter === 'enabled' && !person.enabled) return false;
-          if (personaFilter === 'starred' && !person.starred) return false;
-          if (!q) return true;
-          return (
-            person.name.toLowerCase().includes(q) ||
-            (person.description ?? '').toLowerCase().includes(q) ||
-            (person.model_profile ?? '').toLowerCase().includes(q) ||
-            teams.some((tm) => tm.name.toLowerCase().includes(q))
-          );
-        })
-        .map((x) => x.id);
+  // Exhaustive switch: the previous ternary chain fell through to credentials,
+  // so a new ExportKind would have silently filtered the wrong collection.
+  const shownIds = useMemo((): string[] => {
+    switch (scope) {
+      case 'personas':
+        return inv.personas
+          .filter((person) => {
+            const teams = inv.personaTeams.get(person.id) ?? [];
+            if (personaFilter === 'teamed' && teams.length === 0) return false;
+            if (personaFilter === 'unteamed' && teams.length > 0) return false;
+            if (personaFilter === 'enabled' && !person.enabled) return false;
+            if (personaFilter === 'starred' && !person.starred) return false;
+            if (!q) return true;
+            return (
+              person.name.toLowerCase().includes(q) ||
+              (person.description ?? '').toLowerCase().includes(q) ||
+              (person.model_profile ?? '').toLowerCase().includes(q) ||
+              teams.some((tm) => tm.name.toLowerCase().includes(q))
+            );
+          })
+          .map((x) => x.id);
+      case 'teams':
+        return inv.teams.filter((tm) => !q || tm.name.toLowerCase().includes(q)).map((x) => x.id);
+      case 'credentials':
+        return inv.credentials
+          .filter((c) => !q || c.name.toLowerCase().includes(q) || c.serviceType.toLowerCase().includes(q))
+          .map((x) => x.id);
+      case 'projects':
+        return inv.projects
+          .filter((pr) => !q || pr.name.toLowerCase().includes(q) || pr.root_path.toLowerCase().includes(q))
+          .map((x) => x.id);
+      case 'knowledge':
+        return inv.workspaces.filter((w) => !q || w.name.toLowerCase().includes(q)).map((x) => x.id);
+      case 'twins':
+        return inv.twins
+          .filter(
+            (tw) =>
+              !q ||
+              tw.name.toLowerCase().includes(q) ||
+              (tw.role ?? '').toLowerCase().includes(q) ||
+              tw.slug.toLowerCase().includes(q),
+          )
+          .map((x) => x.id);
+      case 'athena':
+        // Two synthetic tier rows — matched on the tier id so the search box
+        // still narrows ("core" / "learned") instead of doing nothing.
+        return inv.athenaTiers.filter((tier) => !q || tier.id.includes(q)).map((x) => x.id);
+      default: {
+        const _exhaustive: never = scope;
+        return _exhaustive;
+      }
     }
-    if (scope === 'teams') {
-      return inv.teams.filter((tm) => !q || tm.name.toLowerCase().includes(q)).map((x) => x.id);
-    }
-    if (scope === 'projects') {
-      return inv.projects
-        .filter((pr) => !q || pr.name.toLowerCase().includes(q) || pr.root_path.toLowerCase().includes(q))
-        .map((x) => x.id);
-    }
-    if (scope === 'knowledge') {
-      return inv.workspaces.filter((w) => !q || w.name.toLowerCase().includes(q)).map((x) => x.id);
-    }
-    return inv.credentials
-      .filter((c) => !q || c.name.toLowerCase().includes(q) || c.serviceType.toLowerCase().includes(q))
-      .map((x) => x.id);
   }, [scope, q, personaFilter, inv]);
 
   const shownSet = useMemo(() => new Set(shownIds), [shownIds]);
   const allShownSelected = shownIds.length > 0 && shownIds.every((id) => picker.isSelected(scope, id));
+
+  // Row renderer per scope. Also an exhaustive switch — the old ternary chain
+  // ended in the credential list, so an unhandled scope rendered credentials.
+  const renderRows = (): ReactNode => {
+    switch (scope) {
+      case 'personas':
+        return inv.personas
+          .filter((person) => shownSet.has(person.id))
+          .map((person) => (
+            <PersonaPickRow
+              key={person.id}
+              persona={person}
+              teams={inv.personaTeams.get(person.id) ?? []}
+              selected={picker.isSelected('personas', person.id)}
+              onToggle={() => picker.toggle('personas', person.id)}
+            />
+          ));
+      case 'teams':
+        return inv.teams
+          .filter((tm) => shownSet.has(tm.id))
+          .map((tm) => (
+            <TeamPickRow
+              key={tm.id}
+              team={tm}
+              memberCount={inv.teamMemberCount.get(tm.id) ?? 0}
+              kpiCount={inv.teamKpiCount.get(tm.id) ?? 0}
+              offTrackCount={inv.teamOffTrackCount.get(tm.id) ?? 0}
+              selected={picker.isSelected('teams', tm.id)}
+              onToggle={() => picker.toggle('teams', tm.id)}
+            />
+          ));
+      case 'credentials':
+        return inv.credentials
+          .filter((c) => shownSet.has(c.id))
+          .map((c) => (
+            <CredentialRow
+              key={c.id}
+              credential={c}
+              selected={picker.isSelected('credentials', c.id)}
+              onToggle={() => picker.toggle('credentials', c.id)}
+            />
+          ));
+      case 'projects':
+        return inv.projects
+          .filter((pr) => shownSet.has(pr.id))
+          .map((pr) => (
+            <ProjectPickRow
+              key={pr.id}
+              project={pr}
+              selected={picker.isSelected('projects', pr.id)}
+              onToggle={() => picker.toggle('projects', pr.id)}
+            />
+          ));
+      case 'knowledge':
+        return inv.workspaces
+          .filter((w) => shownSet.has(w.id))
+          .map((w) => (
+            <WorkspacePickRow
+              key={w.id}
+              workspace={w}
+              selected={picker.isSelected('knowledge', w.id)}
+              onToggle={() => picker.toggle('knowledge', w.id)}
+            />
+          ));
+      case 'twins':
+        return inv.twins
+          .filter((tw) => shownSet.has(tw.id))
+          .map((tw) => (
+            <TwinPickRow
+              key={tw.id}
+              twin={tw}
+              factCount={inv.twinFactCount.get(tw.id) ?? 0}
+              selected={picker.isSelected('twins', tw.id)}
+              onToggle={() => picker.toggle('twins', tw.id)}
+            />
+          ));
+      case 'athena':
+        return inv.athenaTiers
+          .filter((tier) => shownSet.has(tier.id))
+          .map((tier) => (
+            <AthenaTierPickRow
+              key={tier.id}
+              tier={tier}
+              selected={picker.isSelected('athena', tier.id)}
+              onToggle={() => picker.toggle('athena', tier.id)}
+            />
+          ));
+      default: {
+        const _exhaustive: never = scope;
+        return _exhaustive;
+      }
+    }
+  };
 
   const filterChips: { key: PersonaFilter; label: string }[] = [
     { key: 'all', label: p.filter_all },
@@ -172,6 +292,7 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
                   type="button"
                   onClick={() => picker.setMany(scope, shownIds, !allShownSelected)}
                   disabled={shownIds.length === 0}
+                  data-testid="portability-select-filtered"
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-input typo-caption font-medium border border-emerald-500/20 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/15 transition-colors disabled:opacity-40"
                 >
                   <CheckCheck className="w-3.5 h-3.5" />
@@ -189,65 +310,8 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
                   <p className="typo-body font-medium text-foreground">{p.no_results_title}</p>
                   <p className="typo-caption text-foreground">{p.no_results_hint}</p>
                 </div>
-              ) : scope === 'personas' ? (
-                inv.personas
-                  .filter((person) => shownSet.has(person.id))
-                  .map((person) => (
-                    <PersonaPickRow
-                      key={person.id}
-                      persona={person}
-                      teams={inv.personaTeams.get(person.id) ?? []}
-                      selected={picker.isSelected('personas', person.id)}
-                      onToggle={() => picker.toggle('personas', person.id)}
-                    />
-                  ))
-              ) : scope === 'teams' ? (
-                inv.teams
-                  .filter((tm) => shownSet.has(tm.id))
-                  .map((tm) => (
-                    <TeamPickRow
-                      key={tm.id}
-                      team={tm}
-                      memberCount={inv.teamMemberCount.get(tm.id) ?? 0}
-                      kpiCount={inv.teamKpiCount.get(tm.id) ?? 0}
-                      offTrackCount={inv.teamOffTrackCount.get(tm.id) ?? 0}
-                      selected={picker.isSelected('teams', tm.id)}
-                      onToggle={() => picker.toggle('teams', tm.id)}
-                    />
-                  ))
-              ) : scope === 'projects' ? (
-                inv.projects
-                  .filter((pr) => shownSet.has(pr.id))
-                  .map((pr) => (
-                    <ProjectPickRow
-                      key={pr.id}
-                      project={pr}
-                      selected={picker.isSelected('projects', pr.id)}
-                      onToggle={() => picker.toggle('projects', pr.id)}
-                    />
-                  ))
-              ) : scope === 'knowledge' ? (
-                inv.workspaces
-                  .filter((w) => shownSet.has(w.id))
-                  .map((w) => (
-                    <WorkspacePickRow
-                      key={w.id}
-                      workspace={w}
-                      selected={picker.isSelected('knowledge', w.id)}
-                      onToggle={() => picker.toggle('knowledge', w.id)}
-                    />
-                  ))
               ) : (
-                inv.credentials
-                  .filter((c) => shownSet.has(c.id))
-                  .map((c) => (
-                    <CredentialRow
-                      key={c.id}
-                      credential={c}
-                      selected={picker.isSelected('credentials', c.id)}
-                      onToggle={() => picker.toggle('credentials', c.id)}
-                    />
-                  ))
+                renderRows()
               )}
             </div>
           </div>

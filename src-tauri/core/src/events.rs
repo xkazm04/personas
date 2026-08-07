@@ -242,6 +242,25 @@ event_names! {
     // P2P
     P2P_MANIFEST_SYNC_PROGRESS => "p2p:manifest-sync-progress",
     NETWORK_SNAPSHOT_UPDATED   => "network:snapshot-updated",
+    // Payload: the full Vec<DevicePairingRequest> of pairings awaiting a
+    // decision. Sent as the whole list (not a delta) so a listener that missed
+    // an earlier event still converges on the right state.
+    DEVICE_PAIRING_REQUESTED   => "network:device-pairing-requested",
+    // Payload: the single `RemoteJob` row that just changed (created, acked,
+    // progressed, finished). Emitted on BOTH roles, so one listener drives the
+    // "I asked" and "I was asked" halves of the UI. Fired only on a genuine
+    // state change — a note redelivered after a reconnect is applied silently.
+    REMOTE_JOB_UPDATED         => "network:remote-job-updated",
+    // Payload: `RemoteJobTurnEvent` — the answering turn for a job another
+    // paired device asked THIS one to run, started or finished. That turn runs
+    // with `suppress_chat`, so this is the ONLY signal the frontend gets; the
+    // ambient orb notice hangs off it. Distinct from REMOTE_JOB_UPDATED, which
+    // is the durable `remote_jobs` row changing on both roles.
+    //
+    // Emitted from `companion::remote_jobs` via
+    // `companion::session::REMOTE_JOB_TURN_EVENT`, which is the `p2p`-gated
+    // const holding this same string.
+    REMOTE_JOB_TURN            => "companion://remote-job-turn",
 
     // Notification delivery
     NOTIFICATION_DELIVERY      => "notification-delivery",

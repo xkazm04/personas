@@ -1279,6 +1279,13 @@ CREATE TABLE IF NOT EXISTS dev_tasks (
   started_at      TEXT,
   completed_at    TEXT,
   created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  -- Last mutation stamp. Nullable on purpose: SQLite cannot ALTER-ADD a column
+  -- with a non-constant default, so the migration that adds this to existing
+  -- installs (`dev_tasks_updated_at`) can only add it nullable + backfill. A
+  -- NOT NULL here would make a fresh database structurally different from a
+  -- migrated one, which is worse than one nullable column. Every repo write
+  -- path sets it explicitly; readers COALESCE onto created_at.
+  updated_at      TEXT,
   -- Retry lineage: attempt N points at attempt N-1. Mirrored by an
   -- ALTER in ensure_composite_fires_table for pre-existing databases.
   parent_task_id  TEXT,

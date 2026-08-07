@@ -1159,7 +1159,12 @@
     "friendly_rate_limited": "Der Dienst hat die Anfrage durch ein Rate-Limit begrenzt. Das ist vorübergehend — versuchen Sie es in ein paar Minuten erneut.",
     "friendly_service_error": "Der Dienst hat aktuell Probleme. Das liegt nicht an Ihrem Agenten — versuchen Sie es später erneut.",
     "friendly_timeout": "Zeitüberschreitung bei der Verbindung. Der Dienst ist im Moment möglicherweise langsam oder nicht verfügbar.",
-    "friendly_missing_credentials": "Zugangsdaten fehlen. Öffnen Sie **Zugangsdaten**, um die benötigten Zugangsdaten für den Dienst hinzuzufügen."
+    "friendly_missing_credentials": "Zugangsdaten fehlen. Öffnen Sie **Zugangsdaten**, um die benötigten Zugangsdaten für den Dienst hinzuzufügen.",
+    "unverified_default": "**{subject}** wurde nie aufgerufen, daher können wir nicht bestätigen, dass es funktioniert.",
+    "unverified_hint": "Diese Tools wurden aufgeführt, aber nie tatsächlich ausgeführt. Dieser Build wird daher nicht automatisch freigegeben, bis sie geprüft werden können.",
+    "status_unverified": "Nicht verifiziert",
+    "unverified": "{count} nicht verifiziert",
+    "not_verified": "Nie aufgerufen"
   },
   "complexity": {
     "beginner": "Einsteiger",

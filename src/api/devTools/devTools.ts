@@ -10,6 +10,9 @@ import type { DevGoalItem } from "@/lib/bindings/DevGoalItem";
 import type { GoalProgressSuggestion } from "@/lib/bindings/GoalProgressSuggestion";
 import type { PendingAcceptanceGoal } from "@/lib/bindings/PendingAcceptanceGoal";
 import type { PendingCounts } from "@/lib/bindings/PendingCounts";
+import type { AttentionQueue } from "@/lib/bindings/AttentionQueue";
+import type { AttentionThresholds } from "@/lib/bindings/AttentionThresholds";
+import type { UndispatchedIdea } from "@/lib/bindings/UndispatchedIdea";
 import type { DevContextGroup } from "@/lib/bindings/DevContextGroup";
 import type { DevContext } from "@/lib/bindings/DevContext";
 import type { DevContextGroupRelationship } from "@/lib/bindings/DevContextGroupRelationship";
@@ -290,6 +293,38 @@ export const countPendingAcceptance = () =>
  */
 export const pendingCounts = () =>
   invoke<PendingCounts>("dev_tools_pending_counts", {});
+
+/**
+ * The cross-project "needs you" queue over goals, ideas AND tasks.
+ *
+ * One flat `items` list ordered by `rank` — awaiting-review team steps (0),
+ * overdue goals (1), stalled goals (2), unstaffed goals (3), accepted ideas
+ * that never became a task (4), running tasks whose heartbeat went quiet (5),
+ * queued tasks nothing picked up (6) — plus a count per signal.
+ *
+ * Every threshold is optional; omitted ones use the backend defaults (goal
+ * stalled after 7d, idea undispatched after 3d, running task stuck after 4h of
+ * silence, queued task stale after 24h). The response echoes back the set that
+ * was actually used in `thresholds`, so don't hardcode these numbers in copy.
+ */
+export const attentionQueue = (thresholds?: Partial<AttentionThresholds>) =>
+  invoke<AttentionQueue>("dev_tools_attention_queue", {
+    staleGoalDays: thresholds?.staleGoalDays,
+    ideaDispatchDays: thresholds?.ideaDispatchDays,
+    taskRunningHours: thresholds?.taskRunningHours,
+    taskQueuedHours: thresholds?.taskQueuedHours,
+  });
+
+/**
+ * Every `accepted` idea with no `dev_tasks` row — a decision a human made that
+ * never became work. Oldest first; `limit` defaults to 200.
+ *
+ * Unfiltered by age on purpose: each row carries its own `ageHours`, so the
+ * caller decides what counts as forgotten. `attentionQueue` applies a threshold
+ * to the same data if you want only the stale ones.
+ */
+export const undispatchedIdeas = (projectId?: string, limit?: number) =>
+  invoke<UndispatchedIdea[]>("dev_tools_undispatched_ideas", { projectId, limit });
 
 /** Accept (→ done, off-board) or reject (→ in-progress, with a comment) a goal. */
 export const resolveGoalAcceptance = (goalId: string, decision: "accept" | "reject", comment?: string) =>
@@ -759,6 +794,49 @@ const EMPTY_AUDIT: ContextAuditReport = {
 
 export const auditContexts = (projectId: string) =>
   safeInvoke<ContextAuditReport>(EMPTY_AUDIT, "dev_tools_audit_contexts", { projectId });
+
+// Cross-ref repair. Mirrors the Rust `CrossRefRepairPlan`
+// (commands/infrastructure/context_consolidate.rs). Typed inline for the same
+// reason as the audit above: it is not a ts_rs binding, so it never shows up as
+// an orphan in check-unused-bindings.
+export interface CrossRefRewrite {
+  context: string;
+  from: string;
+  /** null when the remap makes the ref name its own owner, so it is dropped. */
+  to: string | null;
+}
+export interface AmbiguousGhost {
+  name: string;
+  claimedBy: string[];
+}
+export interface CrossRefRepairPlan {
+  projectId: string;
+  dryRun: boolean;
+  contextsScanned: number;
+  danglingBefore: number;
+  ghostNames: number;
+  rewritten: number;
+  selfDropped: number;
+  deduped: number;
+  contextsTouched: number;
+  unresolved: number;
+  unresolvedNames: string[];
+  ambiguous: AmbiguousGhost[];
+  danglingAfter: number;
+  contextsWritten: number;
+  rewrites: CrossRefRewrite[];
+  rewritesOmitted: number;
+}
+
+/**
+ * Plan (and only when `apply` is explicitly true, perform) the repair of
+ * `cross_refs` orphaned by consolidations that ran before the merge rewrote
+ * them. DRY RUN BY DEFAULT — `dev_contexts` has no version column and context
+ * scans are not recorded in `dev_scans`, so the write has no undo inside the
+ * app. Show the plan, then let the operator ask for it.
+ */
+export const repairCrossRefs = (projectId: string, apply = false) =>
+  invoke<CrossRefRepairPlan>("dev_tools_repair_cross_refs", { projectId, apply });
 
 // ============================================================================
 // Context Group Relationships
@@ -1592,13 +1670,25 @@ export const getSkillUsageOverview = () =>
 
 // -- doc-rot telemetry (Brainiac-adoption P2) ---------------------------------
 
+/** The verdict on one tracked doc. `unverifiable` is deliberately NOT `clean`:
+ *  it means no coupling could be established, so the detector could not judge
+ *  the doc at all — the highest-risk state, not a healthy one. */
+export type DocRotStatus = 'broken' | 'stale' | 'unverifiable' | 'clean';
+
 /** One tracked doc + its rot state and read aggregates. Mirrors the Rust
  *  `DocRotRow` (snake_case). `unscoped` = no coupling known (doc-map or
- *  referenced paths) — tracked but never dirty-able. */
+ *  referenced paths) — tracked but never dirty-able, and reported as
+ *  `unverifiable` rather than passed off as clean. */
 export interface DocRotRow {
   project_id: string;
   doc_path: string;
   unscoped: boolean;
+  /** broken > stale > unverifiable > clean. Render this, not `dirty_since`
+   *  alone — a doc the scan could not judge must never look healthy. */
+  status: DocRotStatus;
+  /** Repo paths the doc names that no longer exist, though their parent
+   *  directory still does. The content signal git timestamps cannot express. */
+  broken_refs: string[];
   last_doc_commit: string | null;
   last_source_commit: string | null;
   /** The local dirty_at — set while coupled sources are newer than the doc. */
@@ -1614,12 +1704,17 @@ export interface DocRotRow {
 /** Git-based doc-rot scan over every registered project. Throttled per project
  *  (6h) unless `force`; one bounded `git log` per repo. */
 export const scanDocRot = (force = false) =>
-  invoke<{ projects_scanned: number; docs_tracked: number; dirty: number }>(
-    "doc_rot_scan",
-    { force },
-    undefined,
-    120_000,
-  );
+  invoke<{
+    projects_scanned: number;
+    docs_tracked: number;
+    dirty: number;
+    /** Docs whose coupling could not be established — unjudged, not healthy. */
+    unverifiable: number;
+    /** Docs naming at least one repo path that no longer exists. */
+    broken: number;
+    /** The doc budget ran out: some pages were NOT looked at. */
+    docs_truncated: boolean;
+  }>("doc_rot_scan", { force }, undefined, 120_000);
 
 export const getDocRotOverview = () =>
   safeInvoke<DocRotRow[]>([], "doc_rot_overview", {});

@@ -37,6 +37,7 @@ import type { PlanItem } from '@/features/teams/sub_factory/passport/improve/imp
 import { silentCatch } from '@/lib/silentCatch';
 
 import {
+  emitDocBrokenRefFindings,
   emitDocRotFindings,
   emitKpiFindings,
   emitLlmCostFindings,
@@ -203,6 +204,9 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
       skippedSensors.push('docs');
     } else {
       drafts.push(...emitDocRotFindings(rot));
+      // The content signal — a doc naming a path that is gone. Separate from
+      // the git one because it fires on docs the git rule cannot reach at all.
+      drafts.push(...emitDocBrokenRefFindings(rot));
       probedOrigins.add('doc_rot');
     }
   } catch (e) {

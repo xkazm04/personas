@@ -27,6 +27,7 @@ import ContextDetail from './ContextDetail';
 import ContextLedger from './ContextLedger';
 import { useContextRuntime } from './useContextRuntime';
 import ContextGroupRowsStats from './ContextGroupRowsStats';
+import { ContextMapHealth } from './ContextMapHealth';
 import type { ContextLedgerProps } from './contextLedgerShared';
 import { buildKpiStatusByContext } from './contextKpiStatus';
 import { useUseCases } from './useUseCases';
@@ -591,6 +592,12 @@ export default function ContextMapPage() {
             </span>
           )}
         </ActionRow>
+
+        {/* Advisory map health. The audit has been registered and tested since
+            the integrity checks were written and had zero callers until now —
+            so the map could lose its whole topology layer and nothing said so.
+            Read-only until the operator explicitly asks for the repair. */}
+        {hasContexts && activeProjectId && <ContextMapHealth projectId={activeProjectId} />}
 
         {/* Layout switcher — the two views coexist; see VIEW_TABS. */}
         {hasContexts && (

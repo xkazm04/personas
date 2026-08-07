@@ -186,5 +186,13 @@
     "transport": "Koneksi gagal",
     "unknown": "Kesalahan tidak dikenal",
     "unsupported": "Tidak dapat dijalankan di sini"
+  },
+  "remote_job": {
+    "completed": "Selesai",
+    "failed": "Gagal",
+    "cancelled": "Dibatalkan",
+    "refused": "Ditolak",
+    "pending": "Menunggu",
+    "running": "Berjalan"
   }
 }

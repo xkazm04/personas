@@ -121,6 +121,11 @@ pub async fn companion_approve_action(
         // spontaneously requested this gate during the 2026-05-27
         // connector audit.
         "use_connector" => execute_use_connector(&state, &params).await,
+        // Cross-device link (WP3). The mode-conditional consent rule runs
+        // INSIDE the executor, so this manual path enforces it too: a card
+        // filed while autonomous mode was on and clicked after it was turned
+        // off is refused at fire time, naming the reason.
+        "remote_instruct" => execute_remote_instruct(&state, &params).await,
         // Phase G — project registry + background jobs.
         "register_project" => execute_register_project(&state, &app, &params),
         "enqueue_dev_job" => execute_enqueue_dev_job(&state, &app, &params),

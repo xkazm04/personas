@@ -421,7 +421,7 @@ export type LegacyEditorTab = "prompt" | "connectors" | "health";
 export type OverviewTab = "home" | "incidents" | "executions" | "manual-review" | "messages" | "events" | "memories" | "patterns" | "extracted" | "memory-graph" | "sla" | "health" | "leaderboard" | "director" | "certification";
 export type TemplateTab = "n8n" | "generated" | "explore" | "recipes" | "presets";
 export type CloudTab = "cloud" | "gitlab" | "unified";
-export type SettingsTab = "account" | "appearance" | "notifications" | "radio" | "engine" | "byom" | "portability" | "network" | "admin" | "api-keys" | "history" | "limits";
+export type SettingsTab = "account" | "appearance" | "notifications" | "radio" | "engine" | "byom" | "portability" | "network" | "devices" | "admin" | "api-keys" | "history" | "limits";
 /** Approvals' three decision modes — also the deep-link target for handoffs
  *  that want to land the user on a specific Approvals tab. */
 export type ApprovalsMode = "reviews" | "backlog" | "knowledge";

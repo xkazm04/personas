@@ -1,4 +1,4 @@
-import { Bot, Users, KeyRound, FolderGit2, BookOpen, PackageOpen } from 'lucide-react';
+import { Bot, Users, KeyRound, FolderGit2, BookOpen, Fingerprint, Sparkles, PackageOpen } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ExportPicker } from './types';
 import {
@@ -50,6 +50,8 @@ export function ManifestCart({
             <CategoryCountRow icon={KeyRound} label={p.row_credentials} {...picker.counts.credentials} accent="bg-amber-500/10 text-amber-300" />
             <CategoryCountRow icon={FolderGit2} label={p.row_projects} {...picker.counts.projects} accent="bg-emerald-500/10 text-emerald-300" />
             <CategoryCountRow icon={BookOpen} label={p.row_knowledge} {...picker.counts.knowledge} accent="bg-indigo-500/10 text-indigo-300" />
+            <CategoryCountRow icon={Fingerprint} label={p.row_twins} {...picker.counts.twins} accent="bg-rose-500/10 text-rose-300" />
+            <CategoryCountRow icon={Sparkles} label={p.row_athena} {...picker.counts.athena} accent="bg-fuchsia-500/10 text-fuchsia-300" />
           </div>
         )}
 

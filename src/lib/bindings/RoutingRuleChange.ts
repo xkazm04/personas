@@ -4,12 +4,12 @@ import type { RoutingClaim } from "./RoutingClaim";
 /**
  * A candidate `ModelRoutingRule` diff with its quantified claim.
  */
-export type RoutingRuleChange = {
+export type RoutingRuleChange = { 
 /**
  * Category the rule targets (`None` would be a universal rule — the v1
  * generator always proposes per-category, so this is always `Some`).
  */
-category?: string,
+category?: string, 
 /**
  * Model the category currently resolves to (rule or observed dominant).
  */

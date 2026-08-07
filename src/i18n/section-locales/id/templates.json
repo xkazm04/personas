@@ -1159,7 +1159,12 @@
     "friendly_rate_limited": "Layanan membatasi laju permintaan ini. Ini bersifat sementara — coba lagi dalam beberapa menit.",
     "friendly_service_error": "Layanan sedang mengalami gangguan. Ini bukan masalah pada agen Anda — coba lagi nanti.",
     "friendly_timeout": "Koneksi habis waktu. Layanan mungkin sedang lambat atau tidak tersedia saat ini.",
-    "friendly_missing_credentials": "Kredensial belum ada. Buka **Kunci API** untuk menambahkan kredensial layanan yang diperlukan."
+    "friendly_missing_credentials": "Kredensial belum ada. Buka **Kunci API** untuk menambahkan kredensial layanan yang diperlukan.",
+    "unverified_default": "**{subject}** tidak pernah dipanggil, jadi kami tidak dapat memastikan bahwa alat ini berfungsi.",
+    "unverified_hint": "Alat-alat ini terdaftar tetapi tidak pernah benar-benar dijalankan, sehingga build ini tidak akan dipromosikan otomatis sampai semuanya dapat diuji.",
+    "status_unverified": "Belum Terverifikasi",
+    "unverified": "{count} belum terverifikasi",
+    "not_verified": "Tidak Pernah Dipanggil"
   },
   "complexity": {
     "beginner": "Pemula",

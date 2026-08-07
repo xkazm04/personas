@@ -6,24 +6,24 @@ import type { HealingEffectivenessReport } from "./HealingEffectivenessReport";
  * The full evidence snapshot a generation pass runs over. Persisted (as a
  * per-proposal slice) so every proposal's raw evidence stays inspectable.
  */
-export type PolicyEvidenceSnapshot = {
+export type PolicyEvidenceSnapshot = { 
 /**
  * `polsnap_<uuid>` — referenced by proposals and applied-rule provenance.
  */
-id: string, windowDays: number, generatedAt: string, cells: Array<EvidenceCell>,
+id: string, windowDays: number, generatedAt: string, cells: Array<EvidenceCell>, 
 /**
  * Healing effectiveness over the same window (context evidence; no
  * healing proposals are generated in v1 — see module docs).
  */
-healing: HealingEffectivenessReport,
+healing: HealingEffectivenessReport, 
 /**
  * Calendar-month spend from `dev_llm_spend` (budget-ceiling evidence).
  */
-monthlySpendUsd: number,
+monthlySpendUsd: number, 
 /**
  * Rows behind `monthly_spend_usd` — its own evidence floor.
  */
-monthlySpendRows: number,
+monthlySpendRows: number, 
 /**
  * Current `monthly_cost_ceiling_usd` setting (`0` = no ceiling).
  */

@@ -25,6 +25,7 @@ const markAllRead = vi.fn();
 const setHeaderOverlay = vi.fn();
 const openPalette = vi.fn();
 const refreshPendingCounts = vi.fn();
+const refreshUndispatchedIdeas = vi.fn();
 const registerTicker = vi.fn();
 const disposeTicker = vi.fn();
 
@@ -59,6 +60,10 @@ const systemState = {
   keyboardNavActive: false,
   pendingCounts: null as PendingCountsShape | null,
   refreshPendingCounts,
+  // Accepted ideas with no task — the dispatch capsule's badge. `null` is the
+  // pre-first-read state and must render exactly like an empty queue.
+  undispatchedIdeas: null as { id: string }[] | null,
+  refreshUndispatchedIdeas,
 };
 
 const paletteState = { openPalette };
@@ -87,16 +92,19 @@ vi.mock('@/lib/polling/pollingCoordinator', () => ({
   getPollingCoordinator: () => ({
     register: (...args: unknown[]) => {
       registerTicker(...args);
-      return { id: 'titleBarPendingCounts', bucket: 30_000, dispose: disposeTicker };
+      return { id: String(args[0]), bucket: 30_000, dispose: disposeTicker };
     },
   }),
 }));
 
-// The tray mounts these lazily-summoned surfaces; neither is under test and
-// both drag in half the app's feature tree.
+// The tray mounts these lazily-summoned surfaces; none is under test and they
+// drag in half the app's feature tree.
 vi.mock('@/features/fleet/monitor', () => ({ PersonaMonitor: () => null }));
 vi.mock('@/features/agents/quick-answer/QuickAnswerPopover', () => ({
   QuickAnswerPopover: () => null,
+}));
+vi.mock('@/features/overview/sub_manual-review/components/dispatch/DispatchPanel', () => ({
+  DispatchPanel: () => null,
 }));
 
 vi.mock('@/hooks/utility/interaction/useMotion', () => ({ useReducedMotion: () => true }));
@@ -112,6 +120,8 @@ vi.mock('@/i18n/useTranslation', () => ({
         tray_schedules_today: '{count} today',
         tray_notifications: 'Notifications',
         tray_notifications_unread: '{count} unread',
+        tray_dispatch: 'Approved work',
+        tray_dispatch_waiting: '{count} approved ideas never dispatched',
       },
       monitor: {
         review_titlebar: 'Human review & questions',
@@ -164,6 +174,7 @@ beforeEach(() => {
   systemState.headerOverlay = 'none';
   systemState.keyboardNavActive = false;
   systemState.pendingCounts = null;
+  systemState.undispatchedIdeas = null;
 });
 
 afterEach(cleanup);
@@ -239,7 +250,58 @@ describe('the capsule renders a count the way the dock says it does', () => {
   });
 });
 
-describe('the tray offers five actions and no Goals button', () => {
+describe('the dispatch capsule counts approved work nothing acted on', () => {
+  /** Whatever the dispatch capsule is currently showing, as text. */
+  const dispatchBadge = () => screen.getByTestId('titlebar-dispatch').textContent ?? '';
+
+  function undispatched(n: number) {
+    return Array.from({ length: n }, (_, i) => ({ id: `idea-${i}` }));
+  }
+
+  it('shows how many approved ideas never became a task', () => {
+    systemState.undispatchedIdeas = undispatched(7);
+
+    render(<TitleBarDock />);
+
+    expect(dispatchBadge()).toBe('7');
+    expect(screen.getByTestId('titlebar-dispatch').getAttribute('aria-label')).toBe(
+      '7 approved ideas never dispatched',
+    );
+  });
+
+  it('collapses at zero — an empty runway is nothing to report', () => {
+    systemState.undispatchedIdeas = [];
+
+    render(<TitleBarDock />);
+
+    expect(dispatchBadge()).toBe('');
+    expect(screen.getByTestId('titlebar-dispatch').getAttribute('aria-label')).toBe('Approved work');
+  });
+
+  it('renders no number before the first read lands', () => {
+    // `null` is "not asked yet", not "nothing waiting" — and a badge must not
+    // claim the second while it only knows the first.
+    systemState.undispatchedIdeas = null;
+
+    render(<TitleBarDock />);
+
+    expect(dispatchBadge()).toBe('');
+  });
+
+  it('does NOT fold into the human-review count', () => {
+    // The review capsule counts decisions still owed; this one counts decisions
+    // already made. Summing them would give one number answering neither.
+    systemState.pendingCounts = counts({ ideas: 4, total: 4 });
+    systemState.undispatchedIdeas = undispatched(3);
+
+    render(<TitleBarDock />);
+
+    expect(reviewBadge()).toBe('4');
+    expect(dispatchBadge()).toBe('3');
+  });
+});
+
+describe('the tray offers six actions and no Goals button', () => {
   it('renders exactly the dock item set', () => {
     render(<TitleBarDock />);
 
@@ -248,6 +310,7 @@ describe('the tray offers five actions and no Goals button', () => {
       'titlebar-search',
       'titlebar-schedules',
       'titlebar-human-review',
+      'titlebar-dispatch',
       'titlebar-process-activity',
       'titlebar-notifications',
     ]);
@@ -260,26 +323,30 @@ describe('the tray offers five actions and no Goals button', () => {
   });
 });
 
-describe('the badge owns its own freshness', () => {
-  it('registers one coordinated ticker rather than a raw interval', () => {
+describe('the badges own their own freshness', () => {
+  /** The coordinator registration for one badge, by its id. */
+  function registration(id: string) {
+    return registerTicker.mock.calls.find((call) => call[0] === id) as
+      | [string, () => unknown, { interval: number }]
+      | undefined;
+  }
+
+  it('registers coordinated tickers rather than raw intervals', () => {
     render(<TitleBarDock />);
 
-    expect(registerTicker).toHaveBeenCalledTimes(1);
-    const [id, fn, options] = registerTicker.mock.calls[0] as [
-      string,
-      () => unknown,
-      { interval: number },
-    ];
-    expect(id).toBe('titleBarPendingCounts');
-    expect(fn).toBe(refreshPendingCounts);
-    // The shared 30s bucket the sidebar badges already ride, so SQLite warms
-    // its cache once for both instead of once each.
-    expect(options.interval).toBe(30_000);
+    // Two badges, two reads, ONE bucket — the shared 30s tick the sidebar
+    // badges already ride, so SQLite warms its cache once for all of them.
+    const ids = registerTicker.mock.calls.map((call) => call[0]);
+    expect(ids).toEqual(['titleBarPendingCounts', 'titleBarUndispatchedIdeas']);
+    expect(registration('titleBarPendingCounts')?.[1]).toBe(refreshPendingCounts);
+    expect(registration('titleBarUndispatchedIdeas')?.[1]).toBe(refreshUndispatchedIdeas);
+    expect(registration('titleBarPendingCounts')?.[2].interval).toBe(30_000);
+    expect(registration('titleBarUndispatchedIdeas')?.[2].interval).toBe(30_000);
   });
 
-  it('disposes the ticker when the dock unmounts', () => {
+  it('disposes every ticker when the dock unmounts', () => {
     const { unmount } = render(<TitleBarDock />);
     unmount();
-    expect(disposeTicker).toHaveBeenCalledTimes(1);
+    expect(disposeTicker).toHaveBeenCalledTimes(2);
   });
 });

@@ -1159,7 +1159,12 @@
     "friendly_rate_limited": "Dịch vụ đã giới hạn tốc độ của yêu cầu này. Đây chỉ là tạm thời — hãy thử lại sau vài phút.",
     "friendly_service_error": "Dịch vụ đang gặp sự cố. Đây không phải lỗi từ tác nhân của bạn — hãy thử lại sau.",
     "friendly_timeout": "Kết nối đã hết thời gian chờ. Dịch vụ hiện có thể đang chậm hoặc không khả dụng.",
-    "friendly_missing_credentials": "Thiếu thông tin xác thực. Vào phần **Khóa** để thêm thông tin xác thực cần thiết cho dịch vụ."
+    "friendly_missing_credentials": "Thiếu thông tin xác thực. Vào phần **Khóa** để thêm thông tin xác thực cần thiết cho dịch vụ.",
+    "unverified_default": "**{subject}** chưa từng được gọi, nên chúng tôi không thể xác nhận rằng nó hoạt động.",
+    "unverified_hint": "Các công cụ này được liệt kê nhưng chưa bao giờ thực sự chạy, nên bản dựng này sẽ không được tự động phát hành cho đến khi chúng có thể được kiểm tra.",
+    "status_unverified": "Chưa xác minh",
+    "unverified": "{count} chưa được xác minh",
+    "not_verified": "Chưa từng được gọi"
   },
   "complexity": {
     "beginner": "Cơ bản",

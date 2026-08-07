@@ -23,11 +23,29 @@ export default function VoicePanel() {
   const engine = normalizeCompanionTtsEngine(
     useSystemStore((s) => s.companionVoiceEngine),
   );
+  const { t } = useTranslation();
   return (
-    <div className="space-y-4 max-w-2xl">
-      <EngineSelectorCard />
-      {engine === 'pocket_tts' ? <PocketVoicePanel /> : <KokoroVoicePanel />}
-      <SttPanel />
+    /*
+      Output and input are two independent setups that happen to share a
+      tab, so on a wide window they sit side by side rather than stacked
+      600px deep. `items-start` keeps each column its own height (the STT
+      side collapses its model list, the TTS side does not), and the
+      single-column fallback below `lg` is the old layout unchanged.
+    */
+    <div className="grid gap-x-5 gap-y-4 lg:grid-cols-2 items-start">
+      <section className="space-y-4 min-w-0">
+        <h2 className="typo-label text-foreground px-1">
+          {t.plugins.companion.voice_section_output}
+        </h2>
+        <EngineSelectorCard />
+        {engine === 'pocket_tts' ? <PocketVoicePanel /> : <KokoroVoicePanel />}
+      </section>
+      <section className="space-y-4 min-w-0">
+        <h2 className="typo-label text-foreground px-1">
+          {t.plugins.companion.voice_section_input}
+        </h2>
+        <SttPanel />
+      </section>
     </div>
   );
 }

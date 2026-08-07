@@ -99,8 +99,16 @@ export function useLifecycle({
             connector: event.payload.connector,
           };
           store.appendToolTestResult(result);
+          const marker =
+            result.status === "passed" ? "PASS"
+            : result.status === "skipped" ? "SKIP"
+            // Never called — logging it as FAIL would blame a tool that may be
+            // perfectly fine, and logging it as PASS is the lie this whole
+            // path exists to remove.
+            : result.status === "unverified" ? "UNVERIFIED"
+            : "FAIL";
           store.appendTestOutput(
-            `${result.status === "passed" ? "PASS" : result.status === "skipped" ? "SKIP" : "FAIL"} ${result.tool_name}${result.http_status ? ` (${result.http_status})` : ""}${result.latency_ms ? ` ${result.latency_ms}ms` : ""}`
+            `${marker} ${result.tool_name}${result.http_status ? ` (${result.http_status})` : ""}${result.latency_ms ? ` ${result.latency_ms}ms` : ""}`
           );
         },
       );
@@ -144,13 +152,20 @@ export function useLifecycle({
       if (report.summary) store.setTestSummary(report.summary);
       if (report.connectors_resolved) store.setTestConnectors(report.connectors_resolved);
 
-      // All passed = no failures AND at least one tool actually passed.
-      // Skipped tools (e.g. missing credentials) are NOT tested, so a draft whose
-      // tools were all skipped must not read as "passed / ready to promote".
-      const allPassed = report.tools_failed === 0 && report.tools_passed > 0;
+      // All passed = no failures, nothing unverified, AND at least one tool
+      // actually passed. Skipped tools (e.g. missing credentials) are NOT
+      // tested, so a draft whose tools were all skipped must not read as
+      // "passed / ready to promote" — and neither must one whose tools were
+      // counted but never called. `unverified` is what the backend's promote
+      // gate holds on (oneshot.rs::evaluate_promote_gate); showing a green
+      // "Approve and promote" over a held build would put the two decision
+      // centres back out of step.
+      const unverified = report.tools_unverified ?? 0;
+      const allPassed = report.tools_failed === 0 && unverified === 0 && report.tools_passed > 0;
+      const unverifiedNote = unverified > 0 ? `, ${unverified} unverified (never called)` : '';
       const summary = report.tools_failed === 0
-        ? `${report.tools_passed} passed${report.tools_skipped > 0 ? `, ${report.tools_skipped} skipped` : ''}`
-        : `${report.tools_passed}/${report.tools_tested} passed, ${report.tools_failed} failed${report.credential_issues.length > 0 ? `, ${report.credential_issues.length} credential issue(s)` : ""}`;
+        ? `${report.tools_passed} passed${report.tools_skipped > 0 ? `, ${report.tools_skipped} skipped` : ''}${unverifiedNote}`
+        : `${report.tools_passed}/${report.tools_tested} passed, ${report.tools_failed} failed${unverifiedNote}${report.credential_issues.length > 0 ? `, ${report.credential_issues.length} credential issue(s)` : ""}`;
       store.handleTestComplete(allPassed, summary);
       sendAppNotification(
         allPassed ? 'Agent Test Passed' : 'Agent Test Complete',

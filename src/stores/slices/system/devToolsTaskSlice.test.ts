@@ -42,6 +42,7 @@ function makeTask(overrides: Partial<DevTask> & { id: string }): DevTask {
     started_at: null,
     completed_at: null,
     created_at: '2026-07-27T00:00:00Z',
+    updated_at: null,
     depth: 'quick',
     parent_task_id: null,
     attempt: 1,

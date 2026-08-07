@@ -130,6 +130,15 @@ pub async fn auto_resolve_if_allowed(
     app: &tauri::AppHandle,
     approval: &crate::companion::dispatcher::CreatedApproval,
 ) -> Result<bool, AppError> {
+    // `remote_instruct` (WP3) is the one action whose auto-fire decision is
+    // CONDITIONAL — on the autonomous-mode row and on whether the target is the
+    // home device. `AUTOAPPROVE_ALLOWLIST` is a flat name set with no such form,
+    // so this action gets its own arm and returns before the allowlist is ever
+    // consulted. It must stay OFF that list (pinned by a test below) or the
+    // generic path could resolve it with none of the rule applied.
+    if approval.action == "remote_instruct" {
+        return auto_resolve_remote_instruct(app, approval).await;
+    }
     if !AUTOAPPROVE_ALLOWLIST.contains(&approval.action.as_str()) {
         return Ok(false);
     }
@@ -872,6 +881,21 @@ mod containment_posture_tests {
     fn session_starting_fleet_actions_follow_the_boldness_dial() {
         assert!(AUTOAPPROVE_ALLOWLIST.contains(&"fleet_spawn"));
         assert!(AUTOAPPROVE_ALLOWLIST.contains(&"fleet_dispatch"));
+    }
+
+    /// WP3's cross-device op must NEVER appear on the flat allowlist. Its rule
+    /// is conditional (autonomous mode × home-device), and the generic path
+    /// applies neither condition — a name added here would auto-fire an
+    /// instruction to ANY paired device with the mode off, which is precisely
+    /// the case the rule refuses. The dedicated arm at the top of
+    /// `auto_resolve_if_allowed` is the only door.
+    #[test]
+    fn remote_instruct_is_not_on_the_generic_allowlist() {
+        assert!(!AUTOAPPROVE_ALLOWLIST.contains(&"remote_instruct"));
+        assert!(
+            crate::companion::dispatcher::action_is_allowed("remote_instruct"),
+            "remote_instruct needs an ALLOWED_ACTIONS entry or no approval row is ever created"
+        );
     }
 
     /// The counterweight: a batch that would rewrite durable memory still

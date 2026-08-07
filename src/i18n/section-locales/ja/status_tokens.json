@@ -186,5 +186,13 @@
     "transport": "接続失敗",
     "unknown": "不明なエラー",
     "unsupported": "ここでは実行できません"
+  },
+  "remote_job": {
+    "completed": "完了",
+    "failed": "失敗",
+    "cancelled": "キャンセル済み",
+    "refused": "拒否済み",
+    "pending": "保留中",
+    "running": "実行中"
   }
 }

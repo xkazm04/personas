@@ -3,11 +3,11 @@
 /**
  * A candidate budget-ceiling change with its evidence.
  */
-export type BudgetCeilingChange = {
+export type BudgetCeilingChange = { 
 /**
  * `0` = currently no ceiling.
  */
-currentCeilingUsd: number, proposedCeilingUsd: number, observedMonthlySpendUsd: number, spendRows: number,
+currentCeilingUsd: number, proposedCeilingUsd: number, observedMonthlySpendUsd: number, spendRows: number, 
 /**
  * `"introduce"` | `"raise"` | `"lower"` — token, translated in the UI.
  */

@@ -6,8 +6,8 @@
       "category": "ui",
       "cross_refs": [
         "persona-editor",
-        "agent-settings",
-        "persona-overview-director"
+        "agents-use-cases",
+        "agents-components-allpersonas"
       ],
       "db_tables": [
         "personas",
@@ -49,7 +49,7 @@
         "issue",
         "monitor"
       ],
-      "last_written_at": "2026-07-30T07:44:46.701549300+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "agent-health",
       "pinned": false,
       "tech_stack": [
@@ -64,8 +64,6 @@
       "business_feature": "Persona Overview List",
       "category": "ui",
       "cross_refs": [
-        "persona-overview-cards",
-        "persona-overview-director",
         "persona-shared-ui"
       ],
       "db_tables": [
@@ -118,7 +116,7 @@
         "table",
         "batch"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "agents-components-allpersonas",
       "pinned": false,
       "tech_stack": [
@@ -134,9 +132,7 @@
       "category": "ui",
       "cross_refs": [
         "persona-editor",
-        "connector-automation",
-        "notification-channels",
-        "quick-config-shared"
+        "agents-quick-answer"
       ],
       "db_tables": [
         "connectors",
@@ -195,7 +191,7 @@
         "condition",
         "action"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "agents-connectors",
       "pinned": false,
       "tech_stack": [
@@ -209,10 +205,7 @@
       "api_surface": "cloudListExecutions, cloudExecutionStats, cloudGetExecutionOutput (Tauri IPC)",
       "business_feature": "Cloud Execution History",
       "category": "ui",
-      "cross_refs": [
-        "cloud-deploy-panel",
-        "deployment-health"
-      ],
+      "cross_refs": [],
       "db_tables": [],
       "description": "Displays cloud execution history with filterable list (by persona, status, time period) and aggregated stats cards (total runs, success rate, total cost, average duration). Renders a DailyBreakdownChart for trend visualization, surfaces top error messages from stats, and shows expandable execution rows with full output via an LRU-cached output fetcher. Uses live polling to keep the history current. [Consolidated 2026-08-04: absorbed cloud-connection-form, cloud-deploy-panel, cloud-deployments-panel, cloud-health-monitor, cloud-oauth-panel, cloud-reconcile-banner, cloud-schedules-panel, cloud-status-panel, deployment-dashboard, deployment-health, deployment-table, deployment-test, deployment-types-core, unified-deployment-history, execution-mini-player]",
       "entry_points": [
@@ -273,7 +266,7 @@
         "connection",
         "cloud"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "agents-deployment",
       "pinned": false,
       "tech_stack": [
@@ -367,7 +360,7 @@
       "category": "ui",
       "cross_refs": [
         "persona-overview-page",
-        "agent-settings",
+        "agents-use-cases",
         "ai-design-tab",
         "agent-health",
         "model-config"
@@ -434,7 +427,7 @@
         "log",
         "events"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "agents-editor",
       "pinned": false,
       "tech_stack": [
@@ -526,11 +519,7 @@
       "api_surface": "",
       "business_feature": "Triage Swipe Deck",
       "category": "ui",
-      "cross_refs": [
-        "triage-core",
-        "triage-unified-hook",
-        "quick-answer-shell"
-      ],
+      "cross_refs": [],
       "db_tables": [],
       "description": "The full-app swipe deck that replaced the 576px anchored popover. Shows one card at a time from the unified queue with drag-to-decide physics ported from the existing `SwipeCard` / `BacklogFocusDeck` — reviewers already know the gesture. Includes the deck chrome (top bar with filter chips and progress, action bar with flanks, loading and cleared states), the `TriageCard` (draggable verdict card with markdown body, facts ledger, tags, alert banner, and branch buttons), and `QuestionPanel` (non-draggable, collects answers for build-question items). Keyboard: arrows decide, digit keys fire branches, Escape skips. [Consolidated 2026-08-04: absorbed quick-answer-legacy-rails, quick-answer-shell, triage-core, triage-tests, triage-unified-hook, quick-config-shared]",
       "entry_points": [
@@ -590,7 +579,7 @@
         "review-card",
         "question-group"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "agents-quick-answer",
       "pinned": false,
       "tech_stack": [
@@ -687,8 +676,6 @@
       "business_feature": "Persona Lifecycle Management",
       "category": "api",
       "cross_refs": [
-        "persona-execution-chat-api",
-        "persona-tools-automation-api",
         "design-template-api"
       ],
       "db_tables": [
@@ -757,7 +744,7 @@
         "build",
         "session"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "api-agents",
       "pinned": false,
       "tech_stack": [
@@ -772,9 +759,9 @@
       "category": "test",
       "cross_refs": [
         "persona-lifecycle-api",
-        "persona-execution-chat-api",
-        "credential-core-api",
-        "overview-metrics-api",
+        "api-agents",
+        "api-vault",
+        "api-overview",
         "trigger-scheduler-api"
       ],
       "db_tables": [],
@@ -811,7 +798,7 @@
         "personas",
         "observability"
       ],
-      "last_written_at": "2026-07-29T21:38:18.234489300+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "api-bridge-tests",
       "pinned": false,
       "tech_stack": [
@@ -825,8 +812,7 @@
       "business_feature": "API Key & MCP Access Management",
       "category": "ui",
       "cross_refs": [
-        "settings-shell",
-        "account-cloud-sync"
+        "settings-network"
       ],
       "db_tables": [
         "external_api_keys"
@@ -859,7 +845,7 @@
         "external-client",
         "audit"
       ],
-      "last_written_at": "2026-07-29T22:32:03.324835+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "api-key-management",
       "pinned": false,
       "tech_stack": [
@@ -873,9 +859,8 @@
       "business_feature": "Incidents, Reviews & Audit Trail",
       "category": "api",
       "cross_refs": [
-        "overview-metrics-api",
-        "team-communication-api",
-        "lab-testing-api"
+        "api-pipeline",
+        "api-agents"
       ],
       "db_tables": [
         "audit_incidents",
@@ -941,7 +926,7 @@
         "dispute",
         "health"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "api-overview",
       "pinned": false,
       "tech_stack": [
@@ -955,9 +940,8 @@
       "business_feature": "Trigger & Scheduler",
       "category": "api",
       "cross_refs": [
-        "persona-execution-chat-api",
-        "events-automation-api",
-        "team-management-api"
+        "api-agents",
+        "api-overview"
       ],
       "db_tables": [
         "persona_triggers",
@@ -998,7 +982,7 @@
         "team channel",
         "deliberation"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "api-pipeline",
       "pinned": false,
       "tech_stack": [
@@ -1013,8 +997,8 @@
       "category": "api",
       "cross_refs": [
         "persona-lifecycle-api",
-        "build-session-api",
-        "overview-intelligence-api"
+        "api-agents",
+        "api-overview"
       ],
       "db_tables": [
         "template_feedback",
@@ -1068,7 +1052,7 @@
         "recipe",
         "settings"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "api-system",
       "pinned": false,
       "tech_stack": [
@@ -1082,9 +1066,7 @@
       "business_feature": "Credential Acquisition",
       "category": "api",
       "cross_refs": [
-        "credential-core-api",
-        "connector-discovery-api",
-        "vault-intelligence-api"
+        "api-agents"
       ],
       "db_tables": [
         "credential_recipes"
@@ -1126,7 +1108,7 @@
         "credential",
         "vault"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "api-vault",
       "pinned": false,
       "tech_stack": [
@@ -1140,7 +1122,7 @@
       "business_feature": "Appearance Customisation",
       "category": "ui",
       "cross_refs": [
-        "settings-shell"
+        "settings-network"
       ],
       "db_tables": [
         "app_settings"
@@ -1179,7 +1161,7 @@
         "dark-mode",
         "custom-theme"
       ],
-      "last_written_at": "2026-07-29T22:32:03.347891500+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "appearance-settings",
       "pinned": false,
       "tech_stack": [
@@ -1194,8 +1176,7 @@
       "business_feature": "Bring-Your-Own-Model Policy",
       "category": "ui",
       "cross_refs": [
-        "engine-capability-matrix",
-        "settings-shell"
+        "settings-network"
       ],
       "db_tables": [
         "app_settings",
@@ -1234,7 +1215,7 @@
         "audit-log",
         "usage"
       ],
-      "last_written_at": "2026-07-29T22:32:03.342718700+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "byom-provider-settings",
       "pinned": false,
       "tech_stack": [
@@ -1300,8 +1281,7 @@
       "category": "test",
       "cross_refs": [
         "cockpit-design-flow-widgets",
-        "cockpit-decision-widgets",
-        "cockpit-fleet-widgets"
+        "home-cockpit-widgets"
       ],
       "db_tables": [],
       "description": "Vitest unit and integration tests for the cockpit widget library. Covers rendering, config-driven content, empty states, and interaction for the most complex widgets (decision log, design capabilities, model tier choice, observability plan, persona ready, persona walkthrough, recent decisions, template suggestions, trigger set, use-case set, and persona stats utility).",
@@ -1334,7 +1314,7 @@
         "persona-ready",
         "template-suggestions"
       ],
-      "last_written_at": "2026-07-29T21:42:14.236118900+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "cockpit-widget-tests",
       "pinned": false,
       "tech_stack": [
@@ -1348,8 +1328,7 @@
       "business_feature": "Observability Metrics",
       "category": "api",
       "cross_refs": [
-        "execution-core",
-        "event-bus",
+        "commands-execution",
         "resource-tracking"
       ],
       "db_tables": [
@@ -1394,7 +1373,7 @@
         "sla",
         "subscribe"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "commands-communication",
       "pinned": false,
       "tech_stack": [
@@ -1409,10 +1388,9 @@
       "business_feature": "Companion Integrations",
       "category": "api",
       "cross_refs": [
-        "companion-core",
-        "fleet-core",
-        "mcp-gateway",
-        "template-library"
+        "commands-fleet",
+        "commands-credentials",
+        "commands-design"
       ],
       "db_tables": [
         "companion_jobs",
@@ -1476,7 +1454,7 @@
         "autopilot",
         "action"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "commands-companion",
       "pinned": false,
       "tech_stack": [
@@ -1491,9 +1469,7 @@
       "business_feature": "Persona Management",
       "category": "api",
       "cross_refs": [
-        "execution-core",
-        "persona-portability",
-        "persona-memory"
+        "commands-execution"
       ],
       "db_tables": [
         "personas",
@@ -1540,7 +1516,7 @@
         "generate",
         "leonardo"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "commands-core",
       "pinned": false,
       "tech_stack": [
@@ -1555,8 +1531,7 @@
       "business_feature": "Credential Authentication",
       "category": "api",
       "cross_refs": [
-        "credential-vault",
-        "mcp-gateway"
+        "credential-vault"
       ],
       "db_tables": [
         "persona_credentials",
@@ -1610,7 +1585,7 @@
         "discover",
         "recipe"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "commands-credentials",
       "pinned": false,
       "tech_stack": [
@@ -1625,7 +1600,7 @@
       "business_feature": "n8n Integration",
       "category": "api",
       "cross_refs": [
-        "platform-integrations",
+        "commands-tools",
         "tools-management"
       ],
       "db_tables": [
@@ -1690,7 +1665,7 @@
         "simulate",
         "review"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "commands-design",
       "pinned": false,
       "tech_stack": [
@@ -1704,10 +1679,7 @@
       "api_surface": "run_lab_experiment, list_test_suites, run_assertions, list_knowledge_entries",
       "business_feature": "Execution Lab & Testing",
       "category": "api",
-      "cross_refs": [
-        "execution-core",
-        "eval-runs"
-      ],
+      "cross_refs": [],
       "db_tables": [
         "lab_runs",
         "test_suites",
@@ -1756,7 +1728,7 @@
         "incident",
         "annotation"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "commands-execution",
       "pinned": false,
       "tech_stack": [
@@ -1770,7 +1742,6 @@
       "business_feature": "Fleet Sessions",
       "category": "api",
       "cross_refs": [
-        "fleet-core",
         "observability-metrics"
       ],
       "db_tables": [
@@ -1823,7 +1794,7 @@
         "dispatch",
         "run"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "commands-fleet",
       "pinned": false,
       "tech_stack": [
@@ -1837,8 +1808,7 @@
       "business_feature": "Recipe Intelligence",
       "category": "api",
       "cross_refs": [
-        "recipe-core",
-        "credential-intelligence"
+        "commands-credentials"
       ],
       "db_tables": [
         "recipes",
@@ -1879,7 +1849,7 @@
         "execute",
         "template"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "commands-recipes",
       "pinned": false,
       "tech_stack": [
@@ -1893,9 +1863,8 @@
       "business_feature": "Tools & Automations",
       "category": "api",
       "cross_refs": [
-        "recipe-core",
-        "execution-core",
-        "platform-integrations"
+        "commands-recipes",
+        "commands-execution"
       ],
       "db_tables": [
         "persona_tools",
@@ -1934,7 +1903,7 @@
         "integration",
         "workflow"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "commands-tools",
       "pinned": false,
       "tech_stack": [
@@ -1948,10 +1917,8 @@
       "business_feature": "Companion Infrastructure",
       "category": "lib",
       "cross_refs": [
-        "companion-session-orchestration",
-        "companion-episodic-memory",
-        "companion-voice-synthesis",
-        "companion-voice-transcription"
+        "companion-brain",
+        "companion-proactive"
       ],
       "db_tables": [],
       "description": "Core infrastructure and integration layer for the Athena companion system. Covers disk path resolution (`~/.personas/companion-brain/`), shared utilities (SHA-256, slugify, excerpt, short-id), model routing (which Claude model variant to use per request type), observability/tracing, generated UI anchors for the companion panel, wake-window scheduling, and the top-level companion module declaration. Also includes integration shims connecting Athena to the rest of the app: dev-mode overlay, dev sessions, athena_reaction event handler, connector and plugin adapters, and project context. [Consolidated 2026-08-04: absorbed companion-session-orchestration]",
@@ -1999,7 +1966,7 @@
         "athena",
         "claude-cli"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "companion",
       "pinned": false,
       "tech_stack": [
@@ -2014,9 +1981,7 @@
       "business_feature": "Fleet Intelligence",
       "category": "lib",
       "cross_refs": [
-        "companion-hybrid-retrieval",
-        "companion-fleet-orchestration",
-        "companion-session-orchestration"
+        "companion"
       ],
       "db_tables": [
         "companion_node",
@@ -2079,7 +2044,7 @@
         "goals",
         "backlog"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "companion-brain",
       "pinned": false,
       "tech_stack": [
@@ -2094,8 +2059,7 @@
       "category": "ui",
       "cross_refs": [
         "companion-core-store",
-        "companion-narration-ops",
-        "companion-stream-processing"
+        "companion-narration-ops"
       ],
       "db_tables": [
         "conversations"
@@ -2159,7 +2123,7 @@
         "kokoro",
         "sherpa-onnx"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "companion-chat-bubbles",
       "pinned": false,
       "tech_stack": [
@@ -2174,9 +2138,8 @@
       "business_feature": "Companion Core State",
       "category": "lib",
       "cross_refs": [
-        "companion-chat-panel",
-        "companion-orb",
-        "companion-stream-processing",
+        "plugins-companion-decision",
+        "companion-narration-ops",
         "companion-decision"
       ],
       "db_tables": [],
@@ -2216,7 +2179,7 @@
         "chat",
         "tauri-events"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "companion-core-store",
       "pinned": false,
       "tech_stack": [
@@ -2232,7 +2195,6 @@
       "category": "ui",
       "cross_refs": [
         "companion-core-store",
-        "companion-stream-processing",
         "companion-chat-bubbles"
       ],
       "db_tables": [],
@@ -2295,7 +2257,7 @@
         "phase",
         "todo-write"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "companion-narration-ops",
       "pinned": false,
       "tech_stack": [
@@ -2310,8 +2272,8 @@
       "business_feature": "Proactive Messaging",
       "category": "lib",
       "cross_refs": [
-        "companion-behavioral-memory",
-        "companion-session-orchestration",
+        "companion-brain",
+        "companion",
         "companion-fleet-intelligence"
       ],
       "db_tables": [
@@ -2365,7 +2327,7 @@
         "stt",
         "speech-to-text"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "companion-proactive",
       "pinned": false,
       "tech_stack": [
@@ -2455,8 +2417,7 @@
       "business_feature": "Core Platform Foundation",
       "category": "lib",
       "cross_refs": [
-        "core-error-handling",
-        "execution-state-models",
+        "recipe-build-models",
         "core-ipc-infrastructure"
       ],
       "db_tables": [],
@@ -2518,7 +2479,7 @@
         "AES-256-GCM",
         "RSA"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "core",
       "pinned": false,
       "tech_stack": [
@@ -2534,9 +2495,8 @@
       "business_feature": "Input Validation",
       "category": "lib",
       "cross_refs": [
-        "core-error-handling",
-        "persona-genome-models",
-        "cron-scheduling"
+        "core",
+        "recipe-build-models"
       ],
       "db_tables": [],
       "description": "Input validation for the Tauri IPC boundary: HTML/XSS stripping via ammonia, persona field constraints (name length, system prompt size, timeout clamping against engine limits), trigger schedule and webhook validation, chat message validation, memory content checks, and build-session contract verification. All validations return `AppError::Validation` so the frontend receives structured error messages. [Consolidated 2026-08-04: absorbed memory-knowledge-models, webhook-relay-models, core-retrieval, core-utilities]",
@@ -2579,7 +2539,7 @@
         "vector-store",
         "injection"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "core-validation",
       "pinned": false,
       "tech_stack": [
@@ -2594,7 +2554,7 @@
       "cross_refs": [
         "agent-persona-repo",
         "execution-repo",
-        "credentials-repo"
+        "teams-collaboration-repo"
       ],
       "db_tables": [],
       "description": "Provides reusable query-builder helpers, shared macros for CRUD code generation, and row-mapper utilities that reduce boilerplate across all repository modules. Also includes performance measurement helpers for tracking query latency. These primitives are the foundation for the entire repository layer. [Consolidated 2026-08-04: absorbed builtin-connector-seed, chain-byom-repo, change-data-capture, credential-fields, db-backup, db-pool-init, model-routing, vector-store]",
@@ -2638,7 +2598,7 @@
         "templates",
         "shared-events"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "db",
       "pinned": false,
       "tech_stack": [
@@ -2650,10 +2610,7 @@
       "api_surface": "",
       "business_feature": "AI Dev Tools Memory & Checkpoints",
       "category": "data",
-      "cross_refs": [
-        "companion-brain-repo",
-        "fleet-sessions-repo"
-      ],
+      "cross_refs": [],
       "db_tables": [
         "dev_memories",
         "dev_run_checkpoints",
@@ -2710,7 +2667,7 @@
         "memory",
         "facts"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "db-repos",
       "pinned": false,
       "tech_stack": [
@@ -2782,7 +2739,6 @@
       "category": "data",
       "cross_refs": [
         "execution-repo",
-        "agent-memory-repo",
         "tools-repo"
       ],
       "db_tables": [
@@ -2829,7 +2785,7 @@
         "proposals",
         "review"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "db-repos-core",
       "pinned": false,
       "tech_stack": [
@@ -2843,8 +2799,7 @@
       "category": "data",
       "cross_refs": [
         "agent-persona-repo",
-        "execution-metrics-repo",
-        "healing-repo"
+        "db-repos"
       ],
       "db_tables": [
         "persona_executions",
@@ -2900,7 +2855,7 @@
         "policy",
         "violations"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "db-repos-execution",
       "pinned": false,
       "tech_stack": [
@@ -2913,8 +2868,7 @@
       "business_feature": "Persona Versioning & Evolution",
       "category": "data",
       "cross_refs": [
-        "agent-persona-repo",
-        "lab-ab-testing-repo"
+        "agent-persona-repo"
       ],
       "db_tables": [
         "persona_versions",
@@ -2958,7 +2912,7 @@
         "matrix",
         "variants"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "db-repos-lab",
       "pinned": false,
       "tech_stack": [
@@ -2971,7 +2925,6 @@
       "business_feature": "Developer Tools Features",
       "category": "api",
       "cross_refs": [
-        "dev-tools-core",
         "workspace-governance"
       ],
       "db_tables": [
@@ -3006,7 +2959,7 @@
         "competition",
         "context"
       ],
-      "last_written_at": "2026-07-29T21:05:54.819262800+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "dev-tools-features",
       "pinned": false,
       "tech_stack": [
@@ -3022,11 +2975,11 @@
       "category": "ui",
       "cross_refs": [
         "project-overview",
-        "context-map-core",
+        "plugins-dev-tools-context",
         "run-desk",
         "skills-manager-core",
-        "lifecycle-setup",
-        "llm-monitoring-pinpoints",
+        "plugins-dev-tools-lifecycle",
+        "plugins-dev-tools-llm-overview",
         "workspace-knowledge"
       ],
       "db_tables": [],
@@ -3059,7 +3012,7 @@
         "scan-agents",
         "plugin-shell"
       ],
-      "last_written_at": "2026-07-29T21:22:02.430683900+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "dev-tools-shell",
       "pinned": false,
       "tech_stack": [
@@ -3075,7 +3028,6 @@
       "business_feature": "Data Formatters",
       "category": "ui",
       "cross_refs": [
-        "display-status-badges",
         "display-table-primitives"
       ],
       "db_tables": [],
@@ -3136,7 +3088,7 @@
         "metric",
         "counter"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "display-data-formatters",
       "pinned": false,
       "tech_stack": [
@@ -3149,9 +3101,8 @@
       "business_feature": "Table & List Primitives",
       "category": "ui",
       "cross_refs": [
-        "display-status-badges",
-        "form-input-controls",
-        "decision-review"
+        "shared-components-forms",
+        "shared-components-layout"
       ],
       "db_tables": [],
       "description": "Full suite of table and list layout primitives: UnifiedTable (standard sortable table), SortableHeader (clickable column with sort indicator), ColumnResize (drag handle), DataGrid (CSS-grid fraction layout), DragHandle (grip icon), DropIndicator (DnD position indicator), ScrollShadowContainer (overflow fade), FacetedDecisionTable (slash-path facet tree + toolbar + grid), GroupedVirtualList (virtualized sticky-header grouped list), and their pure model/grouping logic and tests. [Consolidated 2026-08-04: absorbed display-motion-empty, display-status-badges]",
@@ -3211,7 +3162,7 @@
         "animation",
         "empty state"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "display-table-primitives",
       "pinned": false,
       "tech_stack": [
@@ -3223,9 +3174,7 @@
       "api_surface": "run_tool_tests (internal)",
       "business_feature": "Build Session Quality Gates",
       "category": "lib",
-      "cross_refs": [
-        "build-session-lifecycle"
-      ],
+      "cross_refs": [],
       "db_tables": [
         "build_sessions",
         "recipe_definitions"
@@ -3288,7 +3237,7 @@
         "multi-turn",
         "interactive"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "engine-build-session",
       "pinned": false,
       "tech_stack": [
@@ -3301,9 +3250,9 @@
       "business_feature": "Engine Infrastructure",
       "category": "lib",
       "cross_refs": [
-        "build-session-lifecycle",
+        "engine-build-session",
         "execution-runner",
-        "team-orchestration"
+        "webhook-ingestion"
       ],
       "db_tables": [
         "recipe_definitions",
@@ -3369,7 +3318,7 @@
         "ambient",
         "clipboard"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "engine-core-infrastructure",
       "pinned": false,
       "tech_stack": [
@@ -3385,7 +3334,6 @@
       "business_feature": "Project Activity Tracking",
       "category": "lib",
       "cross_refs": [
-        "project-tracking-watchers",
         "engine-core-infrastructure"
       ],
       "db_tables": [
@@ -3444,7 +3392,7 @@
         "ledger watcher",
         "Obsidian watcher"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "engine-project-tracking",
       "pinned": false,
       "tech_stack": [
@@ -3461,7 +3409,7 @@
       "cross_refs": [
         "execution-list",
         "execution-replay",
-        "execution-trace-primitives"
+        "agents-executions-components"
       ],
       "db_tables": [
         "executions",
@@ -3513,7 +3461,7 @@
         "logs",
         "memories"
       ],
-      "last_written_at": "2026-07-30T07:44:46.700146900+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "execution-detail-inspector",
       "pinned": false,
       "tech_stack": [
@@ -3528,7 +3476,7 @@
       "category": "ui",
       "cross_refs": [
         "execution-detail-inspector",
-        "execution-trace-primitives"
+        "agents-executions-components"
       ],
       "db_tables": [
         "executions",
@@ -3565,7 +3513,7 @@
         "cost",
         "sandbox"
       ],
-      "last_written_at": "2026-07-30T07:44:46.700310500+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "execution-replay",
       "pinned": false,
       "tech_stack": [
@@ -3579,9 +3527,9 @@
       "business_feature": "Feedback & Error States",
       "category": "ui",
       "cross_refs": [
-        "display-status-badges",
-        "button-primitives",
-        "modal-overlay-dispatch"
+        "display-table-primitives",
+        "shared-components-layout",
+        "display-data-formatters"
       ],
       "db_tables": [],
       "description": "All user-facing feedback and error-state components: LoadingSpinner (canonical spinner with a11y label), ErrorBoundary (React error boundary with dashboard recovery), ErrorBanner (inline/banner/panel with retry+dismiss), ErrorRecoveryBanner, InlineErrorBanner, Banner (info/warn/error), ConfirmDialog (confirm/cancel for destructive actions), SuspenseFallback, Reveal (fade+slide-up mount transition), StalenessIndicator, ScenarioEmptyState, DropZoneGlow, ConnectionStatusBadge, and AriaLiveProvider.",
@@ -3621,7 +3569,7 @@
         "suspense",
         "stale"
       ],
-      "last_written_at": "2026-07-29T21:29:01.260232800+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "feedback-primitives",
       "pinned": false,
       "tech_stack": [
@@ -3635,10 +3583,7 @@
       "business_feature": "Fleet Channel Workspace",
       "category": "ui",
       "cross_refs": [
-        "fleet-monitor-shell",
-        "fleet-channel-lens-stream",
-        "fleet-merged-feed",
-        "fleet-channel-map"
+        "fleet-monitor-shell"
       ],
       "db_tables": [
         "team_channel_items",
@@ -3701,7 +3646,7 @@
         "channel kind",
         "event family"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "fleet-monitor-channels",
       "pinned": false,
       "tech_stack": [
@@ -3717,9 +3662,8 @@
       "category": "ui",
       "cross_refs": [
         "fleet-triage-columns",
-        "fleet-grid-view",
-        "fleet-channel-workspace",
-        "fleet-live-overlay"
+        "fleet-monitor-channels",
+        "fleet-channel-workspace"
       ],
       "db_tables": [
         "manual_reviews",
@@ -3756,7 +3700,7 @@
         "health",
         "process activity"
       ],
-      "last_written_at": "2026-07-29T21:52:06.867205200+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "fleet-monitor-shell",
       "pinned": false,
       "tech_stack": [
@@ -3773,11 +3717,7 @@
       "category": "ui",
       "cross_refs": [
         "fleet-terminal-manager",
-        "fleet-session-status",
-        "fleet-session-operations",
-        "fleet-skill-library",
-        "fleet-session-insights",
-        "fleet-harvest-reports"
+        "plugins-fleet-tests"
       ],
       "db_tables": [],
       "description": "Primary Sessions tab showing the live list of Claude Code sessions with per-session controls (spawn, kill, hibernate, wake, broadcast). Manages the active-session selection, session list filtering by state, and the sub-panel that hosts the terminal pane, insights, or harvest report. Integrates the skill library drawer and Athena attention wiring. [Consolidated 2026-08-04: absorbed fleet-page-shell, fleet-session-status, fleet-terminal-overlay, fleet-footer-cluster, fleet-debug-tools, research-lab-shell]",
@@ -3839,7 +3779,7 @@
         "tab",
         "shell"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "fleet-session-grid",
       "pinned": false,
       "tech_stack": [
@@ -3854,9 +3794,8 @@
       "business_feature": "Fleet Terminal Manager",
       "category": "lib",
       "cross_refs": [
-        "fleet-terminal-overlay",
         "fleet-session-grid",
-        "fleet-settings"
+        "plugins-fleet-tests"
       ],
       "db_tables": [],
       "description": "Singleton xterm.js lifecycle manager keyed by session ID. Creates, parks (LRU up to 6), and disposes Terminal instances so switching sessions or opening the grid overlay re-attaches the same buffered terminal instead of rebuilding it. Handles PTY output hydration, WebGL renderer loading, copy-on-select, right-click paste, and per-session IPC subscription/unsubscription. [Consolidated 2026-08-04: absorbed fleet-session-operations, fleet-mobile-companion]",
@@ -3892,7 +3831,7 @@
         "ring buffer",
         "spawn"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "fleet-terminal-manager",
       "pinned": false,
       "tech_stack": [
@@ -3954,7 +3893,7 @@
       "cross_refs": [
         "glyph-persona-card",
         "connector-status",
-        "notification-channels",
+        "agents-connectors",
         "execution-runner"
       ],
       "db_tables": [],
@@ -4004,7 +3943,7 @@
         "picker",
         "dispatch"
       ],
-      "last_written_at": "2026-07-30T07:44:46.703295700+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "glyph-command-panel",
       "pinned": false,
       "tech_stack": [
@@ -4020,8 +3959,7 @@
       "category": "data",
       "cross_refs": [
         "sigil-core",
-        "glyph-card-display",
-        "glyph-utilities"
+        "shared-glyph"
       ],
       "db_tables": [],
       "description": "Static glyph data definition files, one per feature area, that describe how each feature's capabilities map onto the 8 sigil dimensions. Each file exports a GlyphRow[] or similar structure consumed by GlyphCard and related components to populate the sigil for coaching, feeds, goals, KPIs, rate-limiting, relay, roadmap routes, roadmap waypoints, and scope maps.",
@@ -4053,7 +3991,7 @@
         "scope map",
         "dimensions"
       ],
-      "last_written_at": "2026-07-29T22:32:03.341621600+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "glyph-definitions",
       "pinned": false,
       "tech_stack": [
@@ -4138,7 +4076,7 @@
       "business_feature": "Design & Flow Widgets",
       "category": "ui",
       "cross_refs": [
-        "cockpit-panel"
+        "home-welcome"
       ],
       "db_tables": [],
       "description": "Cockpit widgets supporting Athena's persona-design and workflow-decomposition flows: model tier choice, observability planning, design capabilities catalog, persona walkthrough plans, persona-ready build summaries, creation offer CTAs, use-case decompositions, trigger-set breakdowns, template match suggestions, browser-test structured reports, and walkthrough offer cards. [Consolidated 2026-08-04: absorbed cockpit-decision-widgets, cockpit-explainer-widgets, cockpit-fleet-widgets]",
@@ -4198,7 +4136,7 @@
         "decisions",
         "decision-log"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "home-cockpit-widgets",
       "pinned": false,
       "tech_stack": [
@@ -4212,7 +4150,7 @@
       "business_feature": "Roadmap & Releases",
       "category": "ui",
       "cross_refs": [
-        "home-page-shell"
+        "home-welcome"
       ],
       "db_tables": [],
       "description": "The 'What's New' / Roadmap tab: displays the live roadmap fetched from a remote endpoint (NOW/NEXT/LATER lanes with a hero in-progress item), falls back to bundled static roadmap items, and shows shipped release cards below. Includes a freshness pill with manual refresh, an i18n adapter that reshapes flat t.releases.* keys into the shape the view consumes, and a lazy-loaded empty-lane traced SVG glyph. [Consolidated 2026-08-04: absorbed home-learning-hub, home-power-moves]",
@@ -4257,7 +4195,7 @@
         "tour-registry",
         "completion"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "home-learning",
       "pinned": false,
       "tech_stack": [
@@ -4269,9 +4207,7 @@
       "api_surface": "",
       "business_feature": "Welcome Status Logic",
       "category": "lib",
-      "cross_refs": [
-        "home-welcome-surface"
-      ],
+      "cross_refs": [],
       "db_tables": [
         "executions",
         "personas",
@@ -4332,7 +4268,7 @@
         "navigation",
         "nav-card"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "home-welcome",
       "pinned": false,
       "tech_stack": [
@@ -4346,8 +4282,6 @@
       "business_feature": "AI Persona Design Core",
       "category": "lib",
       "cross_refs": [
-        "credential-design-hooks",
-        "template-recipe-hooks",
         "build-session-hooks"
       ],
       "db_tables": [
@@ -4413,7 +4347,7 @@
         "negotiator",
         "foraging"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "hooks-design",
       "pinned": false,
       "tech_stack": [
@@ -4429,7 +4363,7 @@
       "category": "lib",
       "cross_refs": [
         "realtime-event-bus-hooks",
-        "agent-list-hooks"
+        "hooks-realtime"
       ],
       "db_tables": [
         "executions"
@@ -4471,7 +4405,7 @@
         "system-trace",
         "healing"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "hooks-execution",
       "pinned": false,
       "tech_stack": [
@@ -4487,7 +4421,7 @@
       "category": "lib",
       "cross_refs": [
         "execution-streaming-hooks",
-        "execution-monitoring-hooks"
+        "hooks-execution"
       ],
       "db_tables": [],
       "description": "Provides singleton Tauri event bus subscriptions shared across the UI so only one native listener is registered per channel. Covers the main PersonaEvent bus, run-scoped events, message-created events, animated event rendering, timeline replay, event coloring, Smee relay status, cloud webhook relay, and deployment event emission. Uses a createSingletonListener factory to avoid duplicate subscriptions when multiple components mount. [Consolidated 2026-08-04: absorbed agent-list-hooks, lab-testing-hooks, overview-dashboard-hooks, sidebar-chrome-hooks, theming-platform-hooks]",
@@ -4547,7 +4481,7 @@
         "persona",
         "agent"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "hooks-realtime",
       "pinned": false,
       "tech_stack": [
@@ -4561,8 +4495,7 @@
       "business_feature": "App Settings & Capabilities",
       "category": "lib",
       "cross_refs": [
-        "data-collection-hooks",
-        "theming-platform-hooks"
+        "hooks-realtime"
       ],
       "db_tables": [
         "settings"
@@ -4608,7 +4541,7 @@
         "persisted-context",
         "filtered-collection"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "hooks-utility-data",
       "pinned": false,
       "tech_stack": [
@@ -4688,8 +4621,7 @@
       "business_feature": "English Base Bundle",
       "category": "lib",
       "cross_refs": [
-        "i18n-translation-hook",
-        "i18n-type-system"
+        "i18n-generated"
       ],
       "db_tables": [],
       "description": "Manages the English base translation bundle through a lazy-parse cache. `englishSections.ts` stores all sections as raw JSON strings (generated into `enSectionStrings.ts`) and parses each section on first access, eliminating the 500KB+ cold-parse cost. `en.ts` is a backward-compat Proxy shim so legacy imports of `{ en, type Translations }` continue to compile without per-file updates. [Consolidated 2026-08-04: absorbed error-analytics, i18n-debt-text, i18n-error-resolution, i18n-locale-registry, i18n-pseudo-locale, i18n-route-sections, i18n-token-resolution, i18n-translation-hook]",
@@ -4730,7 +4662,7 @@
         "silent-catch",
         "error-handling"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "i18n",
       "pinned": false,
       "tech_stack": [
@@ -4742,8 +4674,7 @@
       "business_feature": "I18n Test Coverage",
       "category": "test",
       "cross_refs": [
-        "i18n-error-resolution",
-        "i18n-token-resolution"
+        "i18n"
       ],
       "db_tables": [],
       "description": "Test suite and behavioral contract for the i18n system. `useTranslatedError.test.ts` pins the four-link error resolution fallback chain (translated → raw fallback → English friendly → generic). `chainStopReasons.parity.test.ts` enforces parity between the Rust backend's `stop_reason` string constants and the i18n `status_tokens.chain_stop` keys, catching untranslated tokens at build time. `CONTRACT.md` documents the four-layer translation contract (Rust codes → IPC → React → translators). [Consolidated 2026-08-04: absorbed i18n-type-system]",
@@ -4773,7 +4704,7 @@
         "autocomplete",
         "gen-types"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "i18n-generated",
       "pinned": false,
       "tech_stack": [
@@ -5009,8 +4940,7 @@
       "business_feature": "Connector Catalog",
       "category": "lib",
       "cross_refs": [
-        "vault-connector-picker",
-        "credential-recipe-registry"
+        "vault-connector-picker"
       ],
       "db_tables": [],
       "description": "Defines the static catalog of builtin connectors (Airtable, GitHub, Notion, etc.) loaded from JSON seeds, plus cross-cutting metadata: functional role groupings (source_control, ci_cd, knowledge_base…), per-connector audience tags (developer/support/manager), and license tier classification (personal/paid/enterprise). Together these power the connector picker's filter, search, and role-interchange UI. Depends on connector JSON seeds under scripts/connectors/builtin/ and i18n types. [Consolidated 2026-08-04: absorbed connector-api-endpoints, connector-catalog-tests, credential-ledger-parsing, credential-recipe-registry, credential-remediation]",
@@ -5048,7 +4978,7 @@
         "endpoint",
         "openapi"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "lib-credentials",
       "pinned": false,
       "tech_stack": [
@@ -5060,9 +4990,7 @@
       "api_surface": "getKnowledgeInjection API call; Sentry captureMessage; storeBus execution:completed event",
       "business_feature": "Execution Pipeline Middleware",
       "category": "lib",
-      "cross_refs": [
-        "execution-pipeline-core"
-      ],
+      "cross_refs": [],
       "db_tables": [],
       "description": "Implements and registers all pipeline middleware that run at specific stage boundaries: knowledge-graph guidance injection (validate stage), audit logging (create_record + finalize_status), Sentry telemetry capture (finalize_status), stage-timing persistence to localStorage (frontend_complete), storeBus notification emission (frontend_complete), budget-cache invalidation (frontend_complete), and design-drift detection comparing execution outcomes against persona design expectations (frontend_complete). The central index.ts wires all middleware in priority order at app startup. [Consolidated 2026-08-04: absorbed execution-pipeline-core]",
       "entry_points": [
@@ -5101,7 +5029,7 @@
         "pipeline",
         "execution"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "lib-execution",
       "pinned": false,
       "tech_stack": [
@@ -5114,14 +5042,7 @@
       "api_surface": "",
       "business_feature": "Harness Type System",
       "category": "lib",
-      "cross_refs": [
-        "harness-orchestrator",
-        "harness-executor",
-        "harness-verifier",
-        "harness-plan-builder",
-        "harness-guide-generator",
-        "harness-scenario-runner"
-      ],
+      "cross_refs": [],
       "db_tables": [],
       "description": "Defines the complete type system for the autonomous harness loop and exports the public library surface. Contains every interface (HarnessPlan, ModuleArea, ExecutorResult, VerificationReport, HarnessGuide, ScenarioDefinition, etc.) and the barrel re-exports that make the harness consumable as a module. This is the single source of truth for all data shapes flowing between orchestrator, executor, verifier, plan-builder, and guide-generator. [Consolidated 2026-08-04: absorbed harness-executor, harness-guide-generator, harness-orchestrator, harness-plan-builder, harness-scenario-runner, harness-verifier]",
       "entry_points": [
@@ -5157,7 +5078,7 @@
         "claude-cli",
         "spawn"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "lib-harness",
       "pinned": false,
       "tech_stack": [
@@ -5168,10 +5089,7 @@
       "api_surface": "parseWorkflowFile(content, fileName): WorkflowParseResult",
       "business_feature": "Workflow Import",
       "category": "lib",
-      "cross_refs": [
-        "structured-prompt",
-        "persona-scoring"
-      ],
+      "cross_refs": [],
       "db_tables": [],
       "description": "Enables importing external automation workflows (n8n, Zapier, Make, GitHub Actions) into the persona system. Detects the source platform from file content, routes to a platform-specific parser, and runs a shared extraction pipeline that outputs a normalized AgentIR (suggested tools, triggers, connectors, and structured prompt). Platform capability definitions (node-type maps, credential consolidation rules, protocol detection) live in platformDefinitions.ts and are consumed by the parsers. [Consolidated 2026-08-04: absorbed persona-scoring, structured-prompt, template-catalog]",
       "entry_points": [
@@ -5217,7 +5135,7 @@
         "trigger",
         "trust"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "lib-personas",
       "pinned": false,
       "tech_stack": [
@@ -5231,10 +5149,7 @@
       "api_surface": "",
       "business_feature": "Team, Design & Template Types",
       "category": "lib",
-      "cross_refs": [
-        "core-persona-types",
-        "build-session-types"
-      ],
+      "cross_refs": [],
       "db_tables": [],
       "description": "Shared type definitions for team configuration, design review workflows, and persona templates. teamConfigTypes.ts covers team goal structures and workspace settings; designTypes.ts defines the DesignReview lifecycle and scoring model; templateTypes.ts declares the template schema consumed by the Build Studio's template picker and recipe system. [Consolidated 2026-08-04: absorbed build-session-types, composition-workflow-types, core-persona-types, frontend-model-types, infrastructure-primitive-types, schedule-types]",
       "entry_points": [
@@ -5273,7 +5188,7 @@
         "capability",
         "matrix"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "lib-types",
       "pinned": false,
       "tech_stack": [
@@ -5341,10 +5256,7 @@
       "business_feature": "Utility Tests",
       "category": "test",
       "cross_refs": [
-        "tauri-ipc-utils",
-        "url-html-sanitization",
-        "prompt-injection-defense",
-        "formatters-and-display"
+        "lib-utils"
       ],
       "db_tables": [],
       "description": "Unit tests for the shared utility layer, covering terminal line classification, formatter edge cases, safeInvoke command-not-found detection, URL sanitization, and prompt injection stripping. These tests act as a regression guard for security-sensitive primitives that have no higher-level integration tests. [Consolidated 2026-08-04: absorbed prompt-injection-defense, sensitive-data-masking, url-html-sanitization, connector-helpers, crypto-utils, model-pricing, platform-detection]",
@@ -5390,7 +5302,7 @@
         "variable-substitution",
         "workflow"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "lib-utils-sanitizers",
       "pinned": false,
       "tech_stack": [
@@ -5403,9 +5315,8 @@
       "business_feature": "Mastermind Popovers",
       "category": "ui",
       "cross_refs": [
-        "mastermind-dimension-system",
-        "mastermind-canvas-page",
-        "mastermind-scene-store"
+        "mastermind-scene-store",
+        "teams-canvas"
       ],
       "db_tables": [],
       "description": "Floating overlay components that appear on dimension cell clicks and tool actions: CategoryPopover (collapsed category drill-down), DimListPopover (stack-list items like datalinks/support), GoalListPopover (ongoing dev goals), KpiListPopover (per-project KPI status list), IdeaScanPopover (scan dispatch with agent/context/target controls), PersonaListPopover (running personas with navigation), FleetListPopover (live CLI sessions), and the base ListPopover. Also includes LinkEditor and NoteEditor for canvas annotation tools. [Consolidated 2026-08-04: absorbed mastermind-canvas-shell, mastermind-island-ui, mastermind-sidebars-panels]",
@@ -5466,7 +5377,7 @@
         "canvas",
         "camera"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "mastermind-popovers",
       "pinned": false,
       "tech_stack": [
@@ -5479,8 +5390,7 @@
       "business_feature": "Mastermind Data Spine",
       "category": "lib",
       "cross_refs": [
-        "mastermind-scene-model",
-        "mastermind-canvas-page"
+        "teams-canvas"
       ],
       "db_tables": [
         "dev_scans",
@@ -5538,7 +5448,7 @@
         "group",
         "link"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "mastermind-scene-store",
       "pinned": false,
       "tech_stack": [
@@ -5552,11 +5462,8 @@
       "business_feature": "Mastermind Test Suite",
       "category": "test",
       "cross_refs": [
-        "mastermind-scene-model",
         "mastermind-scene-store",
-        "mastermind-layout-persistence",
-        "mastermind-dimension-system",
-        "mastermind-canvas-shell"
+        "mastermind-popovers"
       ],
       "db_tables": [],
       "description": "Unit and integration tests covering the Mastermind canvas's core logic: scene derivation (status, edges, live state, idea-scan freshness, unknown family states), sceneStore lifecycle, layoutStore persistence and migration, canvas camera interactions, tidy-tree layout algorithm, keyboard navigation, dimension action decoration, and category grouping. Includes a passportFactory test helper for constructing minimal AppPassport fixtures.",
@@ -5594,7 +5501,7 @@
         "dim actions",
         "passport factory"
       ],
-      "last_written_at": "2026-07-30T11:18:40.875538800+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "mastermind-tests",
       "pinned": false,
       "tech_stack": [
@@ -5606,9 +5513,7 @@
       "api_surface": "walk_vault(), tfidf_scores(), tokenize(), snippet_for() — used by obsidian_vault_search and obsidian_vault_write_note tools",
       "business_feature": "Obsidian Vault Search",
       "category": "lib",
-      "cross_refs": [
-        "mcp-tool-handlers"
-      ],
+      "cross_refs": [],
       "db_tables": [
         "app_settings"
       ],
@@ -5645,7 +5550,7 @@
         "capability-token",
         "authentication"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "mcp-server",
       "pinned": false,
       "tech_stack": [
@@ -5723,8 +5628,7 @@
       "category": "lib",
       "cross_refs": [
         "n8n-wizard-steps",
-        "n8n-wizard-state",
-        "n8n-connector-analysis",
+        "templates-n8n-steps",
         "draft-editor"
       ],
       "db_tables": [],
@@ -5759,7 +5663,7 @@
         "lifecycle",
         "workflow import"
       ],
-      "last_written_at": "2026-07-29T21:05:21.485767900+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "n8n-wizard-orchestration",
       "pinned": false,
       "tech_stack": [
@@ -5773,9 +5677,9 @@
       "business_feature": "Observability & Audit Models",
       "category": "data",
       "cross_refs": [
-        "execution-state-models",
-        "execution-tracing-budget",
-        "core-utilities"
+        "recipe-build-models",
+        "core",
+        "core-validation"
       ],
       "db_tables": [
         "observability_metrics",
@@ -5847,7 +5751,7 @@
         "vault",
         "OAuth"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "observability-audit-models",
       "pinned": false,
       "tech_stack": [
@@ -5861,8 +5765,8 @@
       "business_feature": "Obsidian Brain",
       "category": "api",
       "cross_refs": [
-        "companion-intelligence",
-        "research-tools"
+        "commands-companion",
+        "resource-tracking"
       ],
       "db_tables": [],
       "description": "Obsidian vault integration — reads and writes markdown notes, traverses the vault graph, lints markdown quality, resolves conflicts between Personas-managed notes and user edits, revitalises stale notes, and mirrors test data. Acts as a persistent knowledge-management backend backed by a local Obsidian vault.",
@@ -5894,7 +5798,7 @@
         "conflict",
         "revitalize"
       ],
-      "last_written_at": "2026-07-29T21:05:54.818223+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "obsidian-brain",
       "pinned": false,
       "tech_stack": [
@@ -5908,10 +5812,7 @@
       "api_surface": "",
       "business_feature": "Tour Panel Body & Navigation",
       "category": "ui",
-      "cross_refs": [
-        "guided-tour-engine",
-        "tour-step-content"
-      ],
+      "cross_refs": [],
       "db_tables": [],
       "description": "The body content area of the tour panel, including step navigation, sub-step checklist, the 'Show me' focus-scroll affordance, step progress breadcrumbs, and the tour intro card shown on first entry. TourPanelBody dispatches between generic informational content (for tours 2+) and specialized interactive components (TourAppearanceContent, CredentialsTourContent, PersonaCreationCoach) for the Getting Started tour. TourHandoffOffer is a one-time card bridging the onboarding modal completion into the tour. [Consolidated 2026-08-04: absorbed guided-tour-engine, onboarding-modal-shell, onboarding-state-orchestration, onboarding-steps, tour-narration, tour-spotlight, tour-step-content]",
       "entry_points": [
@@ -5962,7 +5863,7 @@
         "navigateToStep",
         "step-completion"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "onboarding-components",
       "pinned": false,
       "tech_stack": [
@@ -5976,8 +5877,8 @@
       "business_feature": "Output Stream Parsing",
       "category": "lib",
       "cross_refs": [
-        "execution-core",
-        "ai-provider-layer"
+        "commands-execution",
+        "engine-build-session"
       ],
       "db_tables": [],
       "description": "Parses the raw JSONL output stream from Claude CLI into typed protocol messages and stream line events. Handles tool use blocks, subagent fan-out attribution (P4), message chunking, safe JSON sanitization, and tool outcome classification. Forms the boundary between raw CLI bytes and typed execution events. [Consolidated 2026-08-04: absorbed outbound-notifications, ai-self-healing, api-proxy-access, credential-lifecycle, desktop-app-bridges, director-coaching, engine-shared-utilities]",
@@ -6039,7 +5940,7 @@
         "Slack",
         "Discord"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "output-stream-parser",
       "pinned": false,
       "tech_stack": [
@@ -6053,7 +5954,7 @@
       "category": "ui",
       "cross_refs": [
         "overview-usage-charts",
-        "overview-execution-detail",
+        "overview-observability",
         "overview-dashboard-shell"
       ],
       "db_tables": [
@@ -6095,7 +5996,7 @@
         "activity",
         "KPI"
       ],
-      "last_written_at": "2026-07-29T22:32:03.364246900+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "overview-activity-metrics",
       "pinned": false,
       "tech_stack": [
@@ -6111,7 +6012,7 @@
       "category": "ui",
       "cross_refs": [
         "overview-leaderboard",
-        "overview-director-scoring"
+        "overview-director"
       ],
       "db_tables": [
         "eval_runs",
@@ -6152,7 +6053,7 @@
         "cert-status",
         "standards"
       ],
-      "last_written_at": "2026-07-29T17:50:48.012696800+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "overview-certification",
       "pinned": false,
       "tech_stack": [
@@ -6168,7 +6069,7 @@
       "category": "ui",
       "cross_refs": [
         "overview-activity-metrics",
-        "overview-mission-control",
+        "overview-director",
         "overview-usage-charts"
       ],
       "db_tables": [],
@@ -6226,7 +6127,7 @@
         "disk-usage",
         "configuration"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "overview-components",
       "pinned": false,
       "tech_stack": [
@@ -6241,7 +6142,6 @@
       "business_feature": "Director Coaching",
       "category": "ui",
       "cross_refs": [
-        "overview-director-scoring",
         "overview-manual-review-inbox"
       ],
       "db_tables": [
@@ -6307,7 +6207,7 @@
         "attention-triage",
         "momentum"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "overview-director",
       "pinned": false,
       "tech_stack": [
@@ -6321,7 +6221,7 @@
       "business_feature": "Overview Empty States",
       "category": "ui",
       "cross_refs": [
-        "overview-memories-browser",
+        "overview-memories",
         "overview-leaderboard",
         "overview-messages"
       ],
@@ -6356,7 +6256,7 @@
         "activity-motif",
         "knowledge-motif"
       ],
-      "last_written_at": "2026-07-29T22:32:03.332972+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "overview-empty-states",
       "pinned": false,
       "tech_stack": [
@@ -6370,8 +6270,7 @@
       "business_feature": "Vitals Ledger",
       "category": "ui",
       "cross_refs": [
-        "overview-health-dashboard",
-        "overview-healing-monitor"
+        "overview-observability"
       ],
       "db_tables": [
         "executions",
@@ -6435,7 +6334,7 @@
         "status-page",
         "heartbeat"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "overview-health",
       "pinned": false,
       "tech_stack": [
@@ -6448,8 +6347,7 @@
       "business_feature": "Incidents Inbox",
       "category": "ui",
       "cross_refs": [
-        "overview-incident-detail",
-        "overview-healing-monitor"
+        "overview-observability"
       ],
       "db_tables": [
         "incidents",
@@ -6497,7 +6395,7 @@
         "resolution",
         "escalate"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "overview-incidents",
       "pinned": false,
       "tech_stack": [
@@ -6510,7 +6408,7 @@
       "business_feature": "Persona Leaderboard",
       "category": "ui",
       "cross_refs": [
-        "overview-director-scoring",
+        "overview-director",
         "overview-certification"
       ],
       "db_tables": [
@@ -6546,7 +6444,7 @@
         "persona-performance",
         "multi-dimension"
       ],
-      "last_written_at": "2026-07-29T17:50:48.012862500+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "overview-leaderboard",
       "pinned": false,
       "tech_stack": [
@@ -6560,9 +6458,7 @@
       "business_feature": "Manual Review Inbox",
       "category": "ui",
       "cross_refs": [
-        "overview-review-focus",
-        "overview-review-backlog",
-        "overview-knowledge"
+        "overview-director"
       ],
       "db_tables": [
         "review_queue",
@@ -6624,7 +6520,7 @@
         "Athena-verdict",
         "backlog-table"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "overview-manual-review",
       "pinned": false,
       "tech_stack": [
@@ -6638,7 +6534,6 @@
       "business_feature": "Memory Management",
       "category": "ui",
       "cross_refs": [
-        "overview-memories-browser",
         "overview-review-inbox"
       ],
       "db_tables": [
@@ -6690,7 +6585,7 @@
         "memory-card",
         "graph-view"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "overview-memories",
       "pinned": false,
       "tech_stack": [
@@ -6747,10 +6642,7 @@
       "api_surface": "listAlertRules, getAthenaHealthStatus, getAnomalyData",
       "business_feature": "Alert & Anomaly Detection",
       "category": "ui",
-      "cross_refs": [
-        "overview-healing-monitor",
-        "overview-observability-traces"
-      ],
+      "cross_refs": [],
       "db_tables": [
         "alert_rules",
         "alert_history"
@@ -6812,7 +6704,7 @@
         "HealingTimelineEvent",
         "chain-id"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "overview-observability",
       "pinned": false,
       "tech_stack": [
@@ -6824,10 +6716,7 @@
       "api_surface": "decideWorkspaceKnowledge",
       "business_feature": "Practice Detail & Review",
       "category": "ui",
-      "cross_refs": [
-        "knowledge-library-host",
-        "practice-rollout-modal"
-      ],
+      "cross_refs": [],
       "db_tables": [
         "workspace_knowledge"
       ],
@@ -6876,7 +6765,7 @@
         "manual authoring",
         "proposed"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "overview-patterns",
       "pinned": false,
       "tech_stack": [
@@ -6891,7 +6780,7 @@
       "category": "lib",
       "cross_refs": [
         "overview-dashboard-shell",
-        "overview-mission-control",
+        "overview-director",
         "overview-usage-charts"
       ],
       "db_tables": [],
@@ -6925,7 +6814,7 @@
         "animations",
         "event-visuals"
       ],
-      "last_written_at": "2026-07-29T22:32:03.333453100+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "overview-shared-libs",
       "pinned": false,
       "tech_stack": [
@@ -6993,8 +6882,8 @@
       "business_feature": "P2P LAN Networking",
       "category": "lib",
       "cross_refs": [
-        "p2p-identity-enclave",
-        "cross-device-workspace-sync"
+        "pipeline-and-automation",
+        "engine-project-tracking"
       ],
       "db_tables": [],
       "description": "Full LAN peer-to-peer networking stack for the Invisible Apps system, providing mDNS discovery, QUIC transport, connection management, agent-to-agent messaging, and manifest sync. Compiled only with the p2p feature flag; the NetworkService struct orchestrates all sub-systems and exposes a typed API for persona canvas sharing and peer execution.",
@@ -7026,7 +6915,7 @@
         "network",
         "peer"
       ],
-      "last_written_at": "2026-07-29T21:36:02.405896500+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "p2p-lan-network",
       "pinned": false,
       "tech_stack": [
@@ -7041,7 +6930,7 @@
       "category": "api",
       "cross_refs": [
         "credential-auth",
-        "fleet-core"
+        "commands-fleet"
       ],
       "db_tables": [
         "owned_devices",
@@ -7074,7 +6963,7 @@
         "device",
         "signing"
       ],
-      "last_written_at": "2026-07-29T21:05:54.820187200+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "p2p-network",
       "pinned": false,
       "tech_stack": [
@@ -7152,7 +7041,7 @@
       "category": "ui",
       "cross_refs": [
         "passport-wall-model",
-        "passport-improve-ui",
+        "teams-factory-passport-improve",
         "mastermind-scene-derive"
       ],
       "db_tables": [
@@ -7195,7 +7084,7 @@
         "roadmap",
         "populate"
       ],
-      "last_written_at": "2026-07-29T17:51:48.989945900+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "passport-wall-ui",
       "pinned": false,
       "tech_stack": [
@@ -7211,7 +7100,7 @@
       "category": "ui",
       "cross_refs": [
         "persona-editor",
-        "persona-creation-flow",
+        "agents-components-allpersonas",
         "ai-design-tab"
       ],
       "db_tables": [
@@ -7248,7 +7137,7 @@
         "behavior",
         "resources"
       ],
-      "last_written_at": "2026-07-30T07:44:46.698972+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "persona-build-matrix",
       "pinned": false,
       "tech_stack": [
@@ -7320,8 +7209,8 @@
       "cross_refs": [
         "sigil-core",
         "glyph-canvas",
-        "glyph-card-display",
-        "modal-overlay-dispatch"
+        "shared-glyph",
+        "display-data-formatters"
       ],
       "db_tables": [],
       "description": "The persona detail page layout system built around the sigil: PersonaLayout (three-mode layout — view/adoption/scratch — with two responsive sidebars and a hero column), PersonaHero (name + sigil hero band), PersonaSigilSummary (compact summary in hero), CapabilityTabBar (dimension switcher), PetalRow and UseCaseRow (dimension/use-case list rows), AddCapabilityRow (CTA for adding capabilities), SigilEditModal and its per-dimension body variants.",
@@ -7354,7 +7243,7 @@
         "tab bar",
         "petal row"
       ],
-      "last_written_at": "2026-07-29T22:32:03.342091600+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "persona-glyph-layout",
       "pinned": false,
       "tech_stack": [
@@ -7368,7 +7257,7 @@
       "business_feature": "Persona Shared UI Primitives",
       "category": "ui",
       "cross_refs": [
-        "persona-overview-cards",
+        "agents-components-allpersonas",
         "persona-editor",
         "glyph-persona-card"
       ],
@@ -7405,7 +7294,7 @@
         "quick-edit",
         "filter"
       ],
-      "last_written_at": "2026-07-30T07:44:46.697793100+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "persona-shared-ui",
       "pinned": false,
       "tech_stack": [
@@ -7419,8 +7308,8 @@
       "business_feature": "Team Pipeline Execution",
       "category": "lib",
       "cross_refs": [
-        "platform-adapters",
-        "team-orchestration",
+        "engine-build-session",
+        "webhook-ingestion",
         "execution-runner"
       ],
       "db_tables": [
@@ -7470,7 +7359,7 @@
         "connector",
         "negotiation"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "pipeline-and-automation",
       "pinned": false,
       "tech_stack": [
@@ -7484,9 +7373,9 @@
       "business_feature": "Artist Asset Gallery",
       "category": "ui",
       "cross_refs": [
-        "artist-plugin-shell",
+        "plugins-obsidian-brain",
         "artist-asset-hooks",
-        "artist-creative-studio"
+        "plugins-artist-media-studio"
       ],
       "db_tables": [
         "artist_assets"
@@ -7531,7 +7420,7 @@
         "three.js",
         "3d"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "plugins-artist-gallery",
       "pinned": false,
       "tech_stack": [
@@ -7547,7 +7436,7 @@
       "category": "lib",
       "cross_refs": [
         "artist-gallery",
-        "artist-plugin-shell"
+        "plugins-obsidian-brain"
       ],
       "db_tables": [
         "artist_assets"
@@ -7586,7 +7475,7 @@
         "connectors",
         "streaming"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "plugins-artist-hooks",
       "pinned": false,
       "tech_stack": [
@@ -7601,8 +7490,7 @@
       "business_feature": "Timeline Editor",
       "category": "ui",
       "cross_refs": [
-        "artist-media-studio-core",
-        "artist-playback"
+        "plugins-artist-media-studio-hooks"
       ],
       "db_tables": [],
       "description": "Visual timeline editor UI components: the scrollable multi-lane panel, per-lane strips (Video, Audio, Image, Text/Beat, Title), individual clip cards with drag-to-reposition, a ruler showing time markers, clip context menu for actions like split/duplicate/delete, and a transition picker between video clips. [Consolidated 2026-08-04: absorbed artist-composition-preview, artist-media-studio-core, artist-creative-studio]",
@@ -7652,7 +7540,7 @@
         "context-menu",
         "preview"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "plugins-artist-media-studio",
       "pinned": false,
       "tech_stack": [
@@ -7666,8 +7554,7 @@
       "business_feature": "Media Studio Hooks",
       "category": "lib",
       "cross_refs": [
-        "artist-media-studio-core",
-        "artist-playback"
+        "plugins-artist-media-studio"
       ],
       "db_tables": [],
       "description": "React hooks for Media Studio non-UI logic: composition state machine with 80-step undo/redo history and coalescing (useMediaStudio), file-persistence with MRU list and auto-thumbnail on save (useMediaStudioPersistence), FFmpeg binary detection (useFfmpegDetect), export progress tracking over IPC events (useMediaExport), media file picker via Tauri dialogs (useMediaFilePicker), audio waveform computation (useAudioWaveform), and video thumbnail generation (useVideoThumbnails). [Consolidated 2026-08-04: absorbed artist-playback, artist-render-plan, artist-toolbar-beat-sidebar]",
@@ -7716,7 +7603,7 @@
         "play",
         "pause"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "plugins-artist-media-studio-hooks",
       "pinned": false,
       "tech_stack": [
@@ -7731,8 +7618,7 @@
       "category": "lib",
       "cross_refs": [
         "companion-core-store",
-        "companion-orb",
-        "companion-voice-input"
+        "companion-chat-bubbles"
       ],
       "db_tables": [],
       "description": "Hands-free decision layer that surfaces single numbered-choice prompts above the orb for the user to resolve approvals, human-review items, and incidents without opening the full panel. useDecisionQueue aggregates sources and feeds items one-at-a-time; resolveDecision maps Tauri events to PendingDecision shapes; parseSpokenDecision extracts digit picks from voice input. DecisionsPanel is the manager tab for reviewing design decisions. [Consolidated 2026-08-04: absorbed companion-orb, companion-orchestration, companion-setup]",
@@ -7788,7 +7674,7 @@
         "glow",
         "walkthrough"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "plugins-companion-decision",
       "pinned": false,
       "tech_stack": [
@@ -7802,7 +7688,6 @@
       "business_feature": "Companion Inbox Adapters",
       "category": "lib",
       "cross_refs": [
-        "companion-inbox-hooks",
         "companion-core-store"
       ],
       "db_tables": [],
@@ -7863,7 +7748,7 @@
         "cockpit-summary",
         "illustration"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "plugins-companion-inbox",
       "pinned": false,
       "tech_stack": [
@@ -7875,7 +7760,6 @@
       "business_feature": "Context Map Scan Runtime",
       "category": "lib",
       "cross_refs": [
-        "context-map-core",
         "dev-tools-shell"
       ],
       "db_tables": [
@@ -7923,7 +7807,7 @@
         "context-detail",
         "color-picker"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "plugins-dev-tools-context",
       "pinned": false,
       "tech_stack": [
@@ -7937,9 +7821,7 @@
       "api_surface": "createCompetition, listCompetitions, getCompetitionSlots via devTools API",
       "business_feature": "Prompt Competitions",
       "category": "ui",
-      "cross_refs": [
-        "lifecycle-setup"
-      ],
+      "cross_refs": [],
       "db_tables": [
         "dev_competitions",
         "dev_competition_slots"
@@ -7989,7 +7871,7 @@
         "review-event",
         "persona-trigger"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "plugins-dev-tools-lifecycle",
       "pinned": false,
       "tech_stack": [
@@ -8004,7 +7886,6 @@
       "business_feature": "LLM Connector Assignment Matrix",
       "category": "lib",
       "cross_refs": [
-        "llm-monitoring-pinpoints",
         "dev-tools-shell"
       ],
       "db_tables": [
@@ -8042,7 +7923,7 @@
         "latency",
         "time-window"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "plugins-dev-tools-llm-overview",
       "pinned": false,
       "tech_stack": [
@@ -8057,7 +7938,6 @@
       "business_feature": "Dev Project Manager",
       "category": "ui",
       "cross_refs": [
-        "project-pipeline",
         "project-overview",
         "dev-tools-shell"
       ],
@@ -8104,7 +7984,7 @@
         "standards",
         "pipeline-rail"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "plugins-dev-tools-projects",
       "pinned": false,
       "tech_stack": [
@@ -8119,9 +7999,8 @@
       "business_feature": "Skills Manager",
       "category": "ui",
       "cross_refs": [
-        "skills-analytics",
         "dev-tools-shell",
-        "context-map-core"
+        "plugins-dev-tools-context"
       ],
       "db_tables": [
         "workspace_skills",
@@ -8167,7 +8046,7 @@
         "usage-history",
         "static-scan"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "plugins-dev-tools-skills",
       "pinned": false,
       "tech_stack": [
@@ -8182,7 +8061,6 @@
       "business_feature": "Dev Findings Sweep Engine",
       "category": "lib",
       "cross_refs": [
-        "triage-rules",
         "project-overview",
         "run-desk"
       ],
@@ -8235,7 +8113,7 @@
         "effort-risk",
         "finding-categories"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "plugins-dev-tools-triage",
       "pinned": false,
       "tech_stack": [
@@ -8249,11 +8127,7 @@
       "api_surface": "",
       "business_feature": "Drive Plugin Tests",
       "category": "test",
-      "cross_refs": [
-        "drive-navigation-state",
-        "drive-browser-components",
-        "drive-page"
-      ],
+      "cross_refs": [],
       "db_tables": [],
       "description": "Unit and component test suite for the Drive plugin. Covers designToken utilities (visual preset resolution, kind bucket ordering), component rendering for DriveEmptyHint and DropCountChip, the useDrive state hook (navigation, selection, mutations, search), and useScrollShadows behaviour. Also includes integration-level tests for image blob preview rendering. [Consolidated 2026-08-04: absorbed drive-browser-components, drive-detail-components, drive-knowledge, drive-navigation-state, drive-ocr, drive-page, drive-signing, drive-utility-hooks]",
       "entry_points": [
@@ -8311,7 +8185,7 @@
         "file list",
         "folder tree"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "plugins-drive",
       "pinned": false,
       "tech_stack": [
@@ -8325,10 +8199,6 @@
       "business_feature": "Fleet Tests",
       "category": "test",
       "cross_refs": [
-        "fleet-session-status",
-        "fleet-terminal-overlay",
-        "fleet-harvest-reports",
-        "fleet-skill-library",
         "fleet-session-grid"
       ],
       "db_tables": [],
@@ -8391,7 +8261,7 @@
         "transcript",
         "recent"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "plugins-fleet-tests",
       "pinned": false,
       "tech_stack": [
@@ -8405,10 +8275,7 @@
       "api_surface": "gitlabFetchPipelines, gitlabTriggerPipelineAction, gitlabRefreshPipeline, gitlabFetchJobLog (systemStore)",
       "business_feature": "GitLab Pipeline Monitor",
       "category": "ui",
-      "cross_refs": [
-        "gitlab-panel-shell",
-        "gitlab-pipeline-notifications"
-      ],
+      "cross_refs": [],
       "db_tables": [],
       "description": "Real-time pipeline monitor that lists recent pipelines for the selected project and shows job-level detail with expandable log output. Supports manual pipeline triggering and auto-refreshes running pipelines via visibility-aware polling. Dispatches desktop and in-app notifications on status transitions through usePipelineNotifications. [Consolidated 2026-08-04: absorbed gitlab-agent-management, gitlab-connection, gitlab-deploy, gitlab-deployment-history, gitlab-gitops-versioning, gitlab-panel-shell, gitlab-pipeline-notifications]",
       "entry_points": [
@@ -8449,7 +8316,7 @@
         "undeploy",
         "redeploy"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "plugins-gitlab",
       "pinned": false,
       "tech_stack": [
@@ -8463,13 +8330,9 @@
       "business_feature": "Twin Plugin Shell",
       "category": "ui",
       "cross_refs": [
-        "twin-profiles",
-        "twin-brain",
-        "twin-channels",
-        "twin-knowledge-memory",
-        "twin-training",
-        "twin-tone",
-        "twin-identity"
+        "plugins-twin-training",
+        "plugins-twin-shared",
+        "twin-training"
       ],
       "db_tables": [
         "twin_profiles",
@@ -8532,7 +8395,7 @@
         "lazy-panel",
         "tour-anchor"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "plugins-obsidian-brain",
       "pinned": false,
       "tech_stack": [
@@ -8546,10 +8409,7 @@
       "api_surface": "Consumes: radio_play, radio_pause, radio_next, radio_prev, radio_set_station, radio_set_volume, radio_report_status, radio_track_ended, radio_fetch_somafm_metadata, get_radio_state, get_now_playing, list_stations; Listens: radio:state Tauri event",
       "business_feature": "Radio Playback Engine",
       "category": "ui",
-      "cross_refs": [
-        "radio-station-management",
-        "radio-ui-primitives"
-      ],
+      "cross_refs": [],
       "db_tables": [],
       "description": "Dual-engine audio controller that drives background music from the desktop footer. Manages an HTML5 `<audio>` element for SomaFM internet-radio streams and a hidden YouTube IFrame Player for curated video-track playlists, with crossfade, watchdog timeouts, a session blacklist for unplayable videos, and auto-resume on startup. Receives authoritative `radio:state` events from the Rust backend via Tauri `listen` and reports play-status back via `radio_report_status` IPC to keep persisted state in sync. [Consolidated 2026-08-04: absorbed radio-station-management, radio-ui-primitives]",
       "entry_points": [
@@ -8590,7 +8450,7 @@
         "settings",
         "station"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "plugins-radio",
       "pinned": false,
       "tech_stack": [
@@ -8605,9 +8465,7 @@
       "business_feature": "Research Report Generation",
       "category": "ui",
       "cross_refs": [
-        "research-lab-findings",
-        "research-lab-hypotheses",
-        "research-lab-experiments",
+        "plugins-research-lab-shared",
         "research-lab-shared-run-persona",
         "research-lab-shared-download"
       ],
@@ -8649,7 +8507,7 @@
         "project-form",
         "cartograph"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "plugins-research-lab-reports",
       "pinned": false,
       "tech_stack": [
@@ -8664,8 +8522,7 @@
       "category": "ui",
       "cross_refs": [
         "research-lab-shared-ingest",
-        "research-lab-shared-tokens",
-        "research-lab-shared-primitives"
+        "research-lab-shared-tokens"
       ],
       "db_tables": [
         "research_sources"
@@ -8726,7 +8583,7 @@
         "status-color",
         "experiment-config"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "plugins-research-lab-shared",
       "pinned": false,
       "tech_stack": [
@@ -8742,13 +8599,8 @@
       "category": "ui",
       "cross_refs": [
         "twin-shell",
-        "twin-profiles",
-        "twin-tone",
-        "twin-brain",
-        "twin-channels",
-        "twin-knowledge-memory",
-        "twin-training",
-        "twin-identity"
+        "plugins-twin-training",
+        "twin-training"
       ],
       "db_tables": [],
       "description": "Shared presentational components and utility modules used across all Twin sub-pages. Includes the unified TwinHeaderBand (gradient hero band with KPI slots, readiness ribbon, and decoration prop), the ReadinessGapPopover and gap-ranking logic, a TwinPicker selector, channel palette definitions, gender-sigil helpers, and decorative SVG elements. [Consolidated 2026-08-04: absorbed twin-tests, twin-brain, twin-channels, twin-identity, twin-knowledge-memory, twin-variant-tabs]",
@@ -8809,7 +8661,7 @@
         "unit test",
         "milestone"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "plugins-twin-shared",
       "pinned": false,
       "tech_stack": [
@@ -8826,7 +8678,7 @@
       "category": "ui",
       "cross_refs": [
         "twin-shell",
-        "twin-knowledge-memory",
+        "plugins-twin-shared",
         "twin-shared-ui"
       ],
       "db_tables": [
@@ -8874,7 +8726,7 @@
         "create twin",
         "wizard"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "plugins-twin-training",
       "pinned": false,
       "tech_stack": [
@@ -8890,9 +8742,8 @@
       "business_feature": "Progress & Transform UI",
       "category": "ui",
       "cross_refs": [
-        "terminal-ui",
-        "feedback-primitives",
-        "display-metrics-counters"
+        "display-data-formatters",
+        "feedback-primitives"
       ],
       "db_tables": [],
       "description": "Multi-phase progress and data-transform UI used during import and pipeline flows: AnalysisModeView and TransformModeView (the two phases of an import), TransformProgress and TransformStatusPanels (progress display and per-step status), EstimatedProgressBar (colour-ramp bar: primary at low %, accent near complete), WizardStepper (multi-step indicator), ContentLoader (generic loading state), a phase-detection pure-logic module, and shared transform progress types.",
@@ -8925,7 +8776,7 @@
         "status panels",
         "progress bar"
       ],
-      "last_written_at": "2026-07-29T21:29:01.261264200+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "progress-transform",
       "pinned": false,
       "tech_stack": [
@@ -8938,7 +8789,7 @@
       "business_feature": "Project Overview Dashboard",
       "category": "ui",
       "cross_refs": [
-        "project-pipeline",
+        "plugins-dev-tools-projects",
         "dev-tools-shell",
         "triage-findings"
       ],
@@ -8974,7 +8825,7 @@
         "pulse-glyph",
         "adapters"
       ],
-      "last_written_at": "2026-07-29T21:22:02.431839100+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "project-overview",
       "pinned": false,
       "tech_stack": [
@@ -8989,9 +8840,9 @@
       "business_feature": "Prompt Assembly Engine",
       "category": "lib",
       "cross_refs": [
-        "cli-process-driver",
-        "ambient-desktop-signals",
-        "cli-session-awareness"
+        "webhook-ingestion",
+        "engine-core-infrastructure",
+        "engine-build-session"
       ],
       "db_tables": [],
       "description": "Assembles the full system prompt injected into every Claude CLI execution, composing persona instructions, connector hints, memory, capabilities, runtime safety rules, and CLI arguments. Submodules handle: templates (base system-prompt sections), variables ({{param.KEY}} substitution), capabilities (tool/connector hints), advisory (policy advisory blocks), cli_args (flag construction), resume_prompt (session continuation context), and runtime_safety (guardrail injections).",
@@ -9021,7 +8872,7 @@
         "safety",
         "memory-injection"
       ],
-      "last_written_at": "2026-07-29T22:32:03.340656200+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "prompt-assembly-engine",
       "pinned": false,
       "tech_stack": [
@@ -9033,9 +8884,8 @@
       "business_feature": "Recipe & Build Session Models",
       "category": "data",
       "cross_refs": [
-        "persona-genome-models",
         "core-validation",
-        "chat-review-models"
+        "observability-audit-models"
       ],
       "db_tables": [
         "recipe_definitions",
@@ -9104,7 +8954,7 @@
         "evolution",
         "breeding"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "recipe-build-models",
       "pinned": false,
       "tech_stack": [
@@ -9117,11 +8967,7 @@
       "api_surface": "executeRecipe, updateRecipe (sample_inputs patch) via @/api/recipes/recipes",
       "business_feature": "Recipe Playground",
       "category": "ui",
-      "cross_refs": [
-        "recipe-versioning",
-        "recipe-shared",
-        "recipe-list"
-      ],
+      "cross_refs": [],
       "db_tables": [
         "recipes",
         "recipe_executions"
@@ -9179,7 +9025,7 @@
         "versioning",
         "AI-generated"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "recipes-playground",
       "pinned": false,
       "tech_stack": [
@@ -9194,7 +9040,7 @@
       "business_feature": "Resource Tracking",
       "category": "api",
       "cross_refs": [
-        "execution-core",
+        "commands-execution",
         "observability-metrics"
       ],
       "db_tables": [
@@ -9239,7 +9085,7 @@
         "idea",
         "scan"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "resource-tracking",
       "pinned": false,
       "tech_stack": [
@@ -9255,7 +9101,7 @@
       "cross_refs": [
         "dev-tools-shell",
         "triage-findings",
-        "lifecycle-setup"
+        "plugins-dev-tools-lifecycle"
       ],
       "db_tables": [
         "dev_tasks",
@@ -9290,7 +9136,7 @@
         "pr-bridge",
         "task-status"
       ],
-      "last_written_at": "2026-07-29T21:22:02.432478700+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "run-desk",
       "pinned": false,
       "tech_stack": [
@@ -9304,9 +9150,7 @@
       "api_surface": "cronFireTimesInRange, listRecentScheduleRuns",
       "business_feature": "Schedule Calendar",
       "category": "ui",
-      "cross_refs": [
-        "schedule-timeline"
-      ],
+      "cross_refs": [],
       "db_tables": [
         "executions",
         "schedule_runs"
@@ -9357,7 +9201,7 @@
         "backfill",
         "skip"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "schedules-components",
       "pinned": false,
       "tech_stack": [
@@ -9370,10 +9214,7 @@
       "api_surface": "saveScraperConfig, previewScraperExtract (via @/api/scraper)",
       "business_feature": "Scrape Editor Wizard",
       "category": "ui",
-      "cross_refs": [
-        "scraper-control-room",
-        "extraction-rules"
-      ],
+      "cross_refs": [],
       "db_tables": [
         "scraper_configs"
       ],
@@ -9412,7 +9253,7 @@
         "regex",
         "json pointer"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "scraper",
       "pinned": false,
       "tech_stack": [
@@ -9425,10 +9266,7 @@
       "api_surface": "ExposedResource CRUD (network/exposure); BundleImportPreview, NetworkAccessScope (network/bundle); EnclavePolicy, EnclaveVerifyResult (network/enclave)",
       "business_feature": "Network Bundle & Resource Sharing",
       "category": "ui",
-      "cross_refs": [
-        "network-peer-management",
-        "settings-shell"
-      ],
+      "cross_refs": [],
       "db_tables": [
         "exposed_resources"
       ],
@@ -9491,7 +9329,7 @@
         "peer",
         "P2P"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "settings-network",
       "pinned": false,
       "tech_stack": [
@@ -9505,9 +9343,7 @@
       "api_surface": "listPersonas, listCredentials, listTeams, listTeamMembers, listAllKpis",
       "business_feature": "Selective Export Picker",
       "category": "ui",
-      "cross_refs": [
-        "data-portability-settings"
-      ],
+      "cross_refs": [],
       "db_tables": [],
       "description": "A prototype UI harness for granular selective export: a scope rail for choosing export categories (personas, teams, credentials, KPIs, etc.), a scrollable manifest cart showing selected items with counts, atom/panel/row primitives for the picker layout, and a useExportPicker hook that fetches live data from personas, credentials, teams, and KPI APIs to populate the selection UI. This is an experimental refinement of the ExportSelectionModal, kept isolated in the export-prototype sub-directory while it matures. [Consolidated 2026-08-04: absorbed data-portability-settings]",
       "entry_points": [
@@ -9547,7 +9383,7 @@
         "portability",
         "backup"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "settings-portability",
       "pinned": false,
       "tech_stack": [
@@ -9560,10 +9396,7 @@
       "api_surface": null,
       "business_feature": "Sidebar Navigation",
       "category": "ui",
-      "cross_refs": [
-        "window-chrome",
-        "footer-and-notifications"
-      ],
+      "cross_refs": [],
       "db_tables": [],
       "description": "Two-level collapsible sidebar with icon rail (L1) and label-level nav (L2), section badges, tier gates, and group nav. Persists collapsed state in localStorage and adapts for mobile. Section-specific sub-navs for Agents, Plugins, and Teams inject domain content into the L2 slot, while BadgeSlot and OrbitDots supply unread-count and active-item decoration. [Consolidated 2026-08-04: absorbed background-fleet-chrome, command-palette, footer-and-notifications, window-chrome]",
       "entry_points": [
@@ -9624,7 +9457,7 @@
         "fleet",
         "background services"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "shared-chrome",
       "pinned": false,
       "tech_stack": [
@@ -9638,8 +9471,6 @@
       "business_feature": "Specialized Form Controls",
       "category": "ui",
       "cross_refs": [
-        "form-input-controls",
-        "form-validation",
         "display-table-primitives"
       ],
       "db_tables": [],
@@ -9700,7 +9531,7 @@
         "dropdown",
         "toggle"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "shared-components-forms",
       "pinned": false,
       "tech_stack": [
@@ -9715,7 +9546,6 @@
       "business_feature": "Layout Structure",
       "category": "ui",
       "cross_refs": [
-        "layout-skeleton-settings",
         "display-table-primitives",
         "feedback-primitives"
       ],
@@ -9778,7 +9608,7 @@
         "skeleton",
         "loading placeholder"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "shared-components-layout",
       "pinned": false,
       "tech_stack": [
@@ -9793,7 +9623,6 @@
       "category": "ui",
       "cross_refs": [
         "glyph-canvas",
-        "glyph-card-display",
         "persona-glyph-layout"
       ],
       "db_tables": [],
@@ -9842,7 +9671,7 @@
         "grid",
         "totem"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "shared-glyph",
       "pinned": false,
       "tech_stack": [
@@ -9856,10 +9685,8 @@
       "business_feature": "System Store Composition",
       "category": "lib",
       "cross_refs": [
-        "system-ui-theme-state",
-        "system-onboarding-state",
-        "system-devtools-state",
-        "fleet-orchestration-state"
+        "stores-slices-system",
+        "system-devtools-state"
       ],
       "db_tables": [],
       "description": "Top-level Zustand stores for cross-cutting app concerns: the system store composes UI, cloud, GitLab, onboarding, tour, dev-tools, fleet, network, and plugin slices. Satellite stores handle i18n locale selection, command palette state, toast notifications, and remote command dispatch. [Consolidated 2026-08-04: absorbed overview-store-root, pipeline-store-root, vault-store-root, creative-media-api, fleet-director-api, system-sync-api, app-state-hooks]",
@@ -9914,7 +9741,7 @@
         "dashboard",
         "store"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "stores",
       "pinned": false,
       "tech_stack": [
@@ -9927,8 +9754,7 @@
       "business_feature": "Agent Lab & Quality State",
       "category": "lib",
       "cross_refs": [
-        "agent-persona-state",
-        "agent-execution-state"
+        "stores-util"
       ],
       "db_tables": [
         "lab_runs",
@@ -9974,7 +9800,7 @@
         "session",
         "message"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "stores-slices-agents",
       "pinned": false,
       "tech_stack": [
@@ -9988,8 +9814,7 @@
       "business_feature": "Events & Alerts State",
       "category": "lib",
       "cross_refs": [
-        "overview-store-root",
-        "overview-health-state"
+        "stores"
       ],
       "db_tables": [
         "events",
@@ -10046,7 +9871,7 @@
         "homeSpine",
         "windows"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "stores-slices-overview",
       "pinned": false,
       "tech_stack": [
@@ -10060,8 +9885,7 @@
       "business_feature": "Developer Tools State",
       "category": "lib",
       "cross_refs": [
-        "system-store-root",
-        "fleet-orchestration-state"
+        "system-store-root"
       ],
       "db_tables": [],
       "description": "Slices powering the developer tools overlay — code context scanning, project indexing, task management, triage workflows, and the dev-tools scanner that maps file contexts. These slices back the DevInspector and context-scanning features used during active development sessions. [Consolidated 2026-08-04: absorbed fleet-orchestration-state, plugin-companion-state, plugin-obsidian-state, system-ambient-context-state, system-cloud-integration-state, system-onboarding-state, system-ui-theme-state]",
@@ -10122,7 +9946,7 @@
         "headless",
         "CLI"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "stores-slices-system",
       "pinned": false,
       "tech_stack": [
@@ -10136,8 +9960,7 @@
       "business_feature": "Credential Rotation State",
       "category": "lib",
       "cross_refs": [
-        "vault-store-root",
-        "vault-credentials-state"
+        "stores"
       ],
       "db_tables": [
         "rotation_policies",
@@ -10176,7 +9999,7 @@
         "encrypt",
         "secret"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "stores-slices-vault",
       "pinned": false,
       "tech_stack": [
@@ -10190,9 +10013,7 @@
       "business_feature": "Agent Store Composition",
       "category": "lib",
       "cross_refs": [
-        "agent-persona-state",
-        "agent-execution-state",
-        "agent-chat-state",
+        "stores-slices-agents",
         "agent-lab-quality-state"
       ],
       "db_tables": [],
@@ -10230,7 +10051,7 @@
         "detailCache",
         "create"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "stores-util",
       "pinned": false,
       "tech_stack": [
@@ -10243,10 +10064,7 @@
       "api_surface": "webbuildListVersions, webbuildRestoreVersion, webbuildBunStatus, webbuildNextReady",
       "business_feature": "Studio Project & Tab Management",
       "category": "ui",
-      "cross_refs": [
-        "studio-core",
-        "studio-chat"
-      ],
+      "cross_refs": [],
       "db_tables": [],
       "description": "Multi-project lifecycle management: a browser-style tab strip (StudioTabBar) showing live status dots per open project with a picker for new/import/re-open, a vision-phase onboarding screen (StudioVisionStart) with prompt starters that seed the initial Athena build session, a version history panel (StudioVersions) that lists build-turn git snapshots and restores them safely, and a global attention pill (StudioAttention) that surfaces across the app when Athena is waiting for a decision in a Studio project the user isn't currently viewing. [Consolidated 2026-08-04: absorbed studio-build-controls, studio-chat, studio-core, studio-plan, triggers-page-shell]",
       "entry_points": [
@@ -10292,7 +10110,7 @@
         "effort",
         "style"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "studio",
       "pinned": false,
       "tech_stack": [
@@ -10308,8 +10126,7 @@
       "business_feature": "Desktop-to-Cloud Data Sync",
       "category": "lib",
       "cross_refs": [
-        "remote-command-approval",
-        "cloud-orchestrator-client"
+        "core"
       ],
       "db_tables": [
         "personas",
@@ -10353,7 +10170,7 @@
         "RLS",
         "dirty-flag"
       ],
-      "last_written_at": "2026-07-30T11:22:03.256345+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "supabase-sync-pipeline",
       "pinned": false,
       "tech_stack": [
@@ -10371,7 +10188,7 @@
       "business_feature": "System Health",
       "category": "api",
       "cross_refs": [
-        "app-settings",
+        "workspace-governance",
         "observability-metrics"
       ],
       "db_tables": [
@@ -10405,7 +10222,7 @@
         "metrics",
         "system"
       ],
-      "last_written_at": "2026-07-29T21:05:54.818960500+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "system-health",
       "pinned": false,
       "tech_stack": [
@@ -10419,8 +10236,8 @@
       "business_feature": "Team Memory",
       "category": "ui",
       "cross_refs": [
-        "team-studio",
-        "team-collaboration-channels"
+        "teams-teamworkspace",
+        "teams-goals"
       ],
       "db_tables": [
         "team_memories"
@@ -10464,7 +10281,7 @@
         "importance",
         "run filter"
       ],
-      "last_written_at": "2026-07-29T17:51:48.986808200+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "team-memory",
       "pinned": false,
       "tech_stack": [
@@ -10478,10 +10295,7 @@
       "api_surface": null,
       "business_feature": "Team Canvas Controls & Debugger",
       "category": "ui",
-      "cross_refs": [
-        "team-canvas-core",
-        "team-canvas-nodes-edges"
-      ],
+      "cross_refs": [],
       "db_tables": [],
       "description": "Pipeline control panel, toolbar, optimizer, and debug tooling for the legacy team DAG canvas. The debugger supports dry-run step-through with variable inspection; the assistant provides a conversational interface for canvas edits; the optimizer analyses the pipeline for bottlenecks. All sit above the canvas core reducers. [Consolidated 2026-08-04: absorbed team-canvas-core, team-canvas-nodes-edges, team-assignment-tracking, mastermind-canvas-page]",
       "entry_points": [
@@ -10542,7 +10356,7 @@
         "reducer",
         "drag"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "teams-canvas",
       "pinned": false,
       "tech_stack": [
@@ -10638,9 +10452,8 @@
       "business_feature": "Factory KPI Overview",
       "category": "ui",
       "cross_refs": [
-        "factory-kpi-actions",
-        "factory-project-tabs",
-        "kpi-math-models"
+        "teams-factory-l2",
+        "teams-kpis"
       ],
       "db_tables": [
         "dev_projects",
@@ -10690,7 +10503,7 @@
         "compose task",
         "view model"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "teams-factory",
       "pinned": false,
       "tech_stack": [
@@ -10705,7 +10518,6 @@
       "business_feature": "Factory Ship Milestone",
       "category": "ui",
       "cross_refs": [
-        "factory-project-tabs",
         "factory-kpi-display"
       ],
       "db_tables": [
@@ -10758,7 +10570,7 @@
         "l2",
         "factory drill-down"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "teams-factory-l2",
       "pinned": false,
       "tech_stack": [
@@ -10773,7 +10585,6 @@
       "business_feature": "Passport Improve Engine",
       "category": "lib",
       "cross_refs": [
-        "passport-improve-ui",
         "passport-wall-model"
       ],
       "db_tables": [],
@@ -10829,7 +10640,7 @@
         "golden gauge",
         "deploy"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "teams-factory-passport-improve",
       "pinned": false,
       "tech_stack": [
@@ -10843,7 +10654,6 @@
       "business_feature": "Goal Board",
       "category": "ui",
       "cross_refs": [
-        "goal-acceptance",
         "kpi-tracking",
         "mastermind-scene-derive"
       ],
@@ -10910,7 +10720,7 @@
         "triage",
         "kpi link"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "teams-goals",
       "pinned": false,
       "tech_stack": [
@@ -10926,9 +10736,8 @@
       "business_feature": "KPI Tracking",
       "category": "ui",
       "cross_refs": [
-        "kpi-math-models",
         "factory-kpi-display",
-        "goal-acceptance"
+        "teams-goals"
       ],
       "db_tables": [
         "kpis",
@@ -10983,7 +10792,7 @@
         "convergence",
         "provenance"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "teams-kpis",
       "pinned": false,
       "tech_stack": [
@@ -10999,9 +10808,7 @@
       "business_feature": "Team Workspace Shell",
       "category": "ui",
       "cross_refs": [
-        "team-studio",
-        "team-preset-studio",
-        "team-assignment-tracking"
+        "teams-canvas"
       ],
       "db_tables": [
         "teams"
@@ -11057,7 +10864,7 @@
         "adoption",
         "connection graph"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "teams-teamworkspace",
       "pinned": false,
       "tech_stack": [
@@ -11074,7 +10881,7 @@
       "category": "ui",
       "cross_refs": [
         "template-adoption-questionnaire",
-        "template-adoption-chronology",
+        "templates-generated-adoption-ucpicker",
         "template-adoption-uc-picker-core"
       ],
       "db_tables": [],
@@ -11110,7 +10917,7 @@
         "adoption impact",
         "matrix"
       ],
-      "last_written_at": "2026-07-29T21:05:21.484219700+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "template-adoption-persona-layout",
       "pinned": false,
       "tech_stack": [
@@ -11125,7 +10932,7 @@
       "category": "ui",
       "cross_refs": [
         "template-adoption-persona-layout",
-        "template-adoption-chronology",
+        "templates-generated-adoption-ucpicker",
         "template-adoption-support"
       ],
       "db_tables": [],
@@ -11164,7 +10971,7 @@
         "keyboard nav",
         "credential blocker"
       ],
-      "last_written_at": "2026-07-29T21:05:21.484107400+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "template-adoption-questionnaire",
       "pinned": false,
       "tech_stack": [
@@ -11177,7 +10984,7 @@
       "business_feature": "Adoption Flow Utilities",
       "category": "lib",
       "cross_refs": [
-        "template-adoption-chronology",
+        "templates-generated-adoption-ucpicker",
         "template-adoption-questionnaire",
         "template-shared-primitives"
       ],
@@ -11213,7 +11020,7 @@
         "glyph animation",
         "quick add credential"
       ],
-      "last_written_at": "2026-07-29T21:05:21.484860700+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "template-adoption-support",
       "pinned": false,
       "tech_stack": [
@@ -11271,7 +11078,7 @@
       "category": "ui",
       "cross_refs": [
         "template-gallery-card-actions",
-        "template-adoption-chronology",
+        "templates-generated-adoption-ucpicker",
         "template-shared-primitives"
       ],
       "db_tables": [
@@ -11306,7 +11113,7 @@
         "modal stack",
         "recommended"
       ],
-      "last_written_at": "2026-07-29T21:05:21.483495+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "template-gallery-modals",
       "pinned": false,
       "tech_stack": [
@@ -11321,7 +11128,7 @@
       "category": "ui",
       "cross_refs": [
         "template-gallery-card-actions",
-        "template-gallery-card-renderers"
+        "templates-generated-gallery-cards"
       ],
       "db_tables": [],
       "description": "Full search and filter bar for the template gallery: structured query chips, AI-powered autocomplete suggestions, connector/component/sort/density/admin filter dropdowns, and a filter chip row. useStructuredQuery converts free-text input into typed query chips (keyword, connector, tag, use-case) that the virtual list filters against.",
@@ -11358,7 +11165,7 @@
         "density",
         "AI search"
       ],
-      "last_written_at": "2026-07-29T21:05:21.483338600+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "template-gallery-search",
       "pinned": false,
       "tech_stack": [
@@ -11429,7 +11236,7 @@
       "business_feature": "Template Shared Primitives",
       "category": "lib",
       "cross_refs": [
-        "template-adoption-chronology",
+        "templates-generated-adoption-ucpicker",
         "template-gallery-modals",
         "template-generation",
         "template-design-preview"
@@ -11470,7 +11277,7 @@
         "adoption readiness",
         "architectural categories"
       ],
-      "last_written_at": "2026-07-29T21:05:21.484999200+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "template-shared-primitives",
       "pinned": false,
       "tech_stack": [
@@ -11545,8 +11352,7 @@
       "business_feature": "Use-Case Picker Core",
       "category": "ui",
       "cross_refs": [
-        "template-adoption-persona-layout",
-        "template-adoption-uc-picker-variants"
+        "template-adoption-persona-layout"
       ],
       "db_tables": [],
       "description": "Core use-case picker shell that lets users select how a template will be activated (schedule, event, cockpit, forge). The panel hosts route toggles, a card-based selection grid, and the cockpit/power-rail views. useUcPickerState manages the picker's internal tab and selection state, and ucPickerHelpers provides normalization utilities. [Consolidated 2026-08-04: absorbed template-adoption-uc-picker-variants, template-adoption-chronology]",
@@ -11600,7 +11406,7 @@
         "time card",
         "forge editor"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "templates-generated-adoption-ucpicker",
       "pinned": false,
       "tech_stack": [
@@ -11613,10 +11419,9 @@
       "business_feature": "Template Gallery Card List",
       "category": "ui",
       "cross_refs": [
-        "template-gallery-card-renderers",
         "template-gallery-search",
         "template-gallery-modals",
-        "template-adoption-chronology"
+        "templates-generated-adoption-ucpicker"
       ],
       "db_tables": [
         "persona_design_reviews"
@@ -11678,7 +11483,7 @@
         "density",
         "comfortable row"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "templates-generated-gallery-cards",
       "pinned": false,
       "tech_stack": [
@@ -11693,7 +11498,6 @@
       "category": "ui",
       "cross_refs": [
         "n8n-wizard-orchestration",
-        "n8n-wizard-upload",
         "draft-editor"
       ],
       "db_tables": [],
@@ -11747,7 +11551,7 @@
         "drag and drop",
         "workflow JSON"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "templates-n8n-steps",
       "pinned": false,
       "tech_stack": [
@@ -11760,8 +11564,7 @@
       "business_feature": "Recipe Logic & Eligibility",
       "category": "lib",
       "cross_refs": [
-        "recipe-catalog",
-        "template-explore-view"
+        "templates-draft-editor"
       ],
       "db_tables": [
         "recipes",
@@ -11823,7 +11626,7 @@
         "eligibility chip",
         "recipe detail"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "templates-recipes",
       "pinned": false,
       "tech_stack": [
@@ -11836,9 +11639,7 @@
       "business_feature": "Test Automation Bridge",
       "category": "test",
       "cross_refs": [
-        "companion-conversation",
-        "companion-ui-controls",
-        "guided-tour-smoke"
+        "companion-ui-controls"
       ],
       "db_tables": [],
       "description": "Core HTTP harness that drives the real Tauri app via the test-automation server on port 17320. The CompanionBridge class wraps /query, /click-testid, /bridge-exec and other primitives into a typed API that all Playwright specs share. Also exports the ALL_TOUR_IDS registry and shared type definitions for panel state, brain counts, and tour snapshots. [Consolidated 2026-08-04: absorbed template-adoption-e2e, template-marathon-bridge, template-marathon-e2e]",
@@ -11870,7 +11671,7 @@
         "scroll",
         "modal"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "test-bridge-core",
       "pinned": false,
       "tech_stack": [
@@ -11884,8 +11685,8 @@
       "business_feature": "Test Runner & Lab Evaluation",
       "category": "lib",
       "cross_refs": [
-        "execution-core",
-        "cli-process-driver"
+        "commands-execution",
+        "webhook-ingestion"
       ],
       "db_tables": [
         "executions",
@@ -11950,7 +11751,7 @@
         "rate-limit",
         "session"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "test-runner-lab",
       "pinned": false,
       "tech_stack": [
@@ -12008,7 +11809,7 @@
       "category": "ui",
       "cross_refs": [
         "trigger-list-management",
-        "trigger-schedule"
+        "triggers-triggers"
       ],
       "db_tables": [
         "triggers"
@@ -12046,7 +11847,7 @@
         "config",
         "trigger-type"
       ],
-      "last_written_at": "2026-07-29T17:42:49.057488100+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "trigger-config",
       "pinned": false,
       "tech_stack": [
@@ -12059,12 +11860,7 @@
       "api_surface": "listAllTriggers, listEvents, createTrigger",
       "business_feature": "Chain Studio",
       "category": "ui",
-      "cross_refs": [
-        "studio-routing-state",
-        "studio-system-ops",
-        "studio-commit-logic",
-        "trigger-operations-hook"
-      ],
+      "cross_refs": [],
       "db_tables": [
         "triggers",
         "trigger_events"
@@ -12128,7 +11924,7 @@
         "binding",
         "event-row"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "triggers-studio",
       "pinned": false,
       "tech_stack": [
@@ -12144,7 +11940,7 @@
       "business_feature": "Shared Event Feeds",
       "category": "ui",
       "cross_refs": [
-        "triggers-page-shell"
+        "studio"
       ],
       "db_tables": [
         "shared_event_catalog",
@@ -12182,7 +11978,7 @@
         "dry-run",
         "manual"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "triggers-test",
       "pinned": false,
       "tech_stack": [
@@ -12198,9 +11994,7 @@
       "category": "ui",
       "cross_refs": [
         "trigger-config",
-        "trigger-schedule",
-        "trigger-operations-hook",
-        "nl-trigger-parser"
+        "triggers-studio"
       ],
       "db_tables": [
         "triggers"
@@ -12262,7 +12056,7 @@
         "parser",
         "cron"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "triggers-triggers",
       "pinned": false,
       "tech_stack": [
@@ -12277,7 +12071,7 @@
       "business_feature": "Automated Credential Setup",
       "category": "ui",
       "cross_refs": [
-        "vault-catalog-autocred-session",
+        "vault-catalog-schemas",
         "vault-catalog-picker"
       ],
       "db_tables": [
@@ -12341,7 +12135,7 @@
         "phases",
         "modal"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "vault-catalog-autocred-ui",
       "pinned": false,
       "tech_stack": [
@@ -12356,7 +12150,6 @@
       "category": "ui",
       "cross_refs": [
         "vault-credentials-manager",
-        "vault-catalog-design-modal",
         "vault-catalog-autocred-ui"
       ],
       "db_tables": [
@@ -12421,7 +12214,7 @@
         "setup-instructions",
         "markdown"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "vault-catalog-picker",
       "pinned": false,
       "tech_stack": [
@@ -12436,9 +12229,8 @@
       "business_feature": "Connector Schema Forms",
       "category": "ui",
       "cross_refs": [
-        "vault-catalog-forms",
         "vault-credentials-form",
-        "vault-catalog-design-modal"
+        "vault-catalog-autocred-ui"
       ],
       "db_tables": [],
       "description": "Connector schema-driven form rendering. CredentialSchemaForm renders a dynamic form from a connector's JSON auth schema; SchemaFormFields maps schema field types to React inputs; ExtraFieldRenderers handles non-standard field types; McpPrefilledForm pre-fills known MCP server fields; schemaConfigs centralizes per-connector field overrides. [Consolidated 2026-08-04: absorbed vault-catalog-forms, vault-catalog-autocred-session, vault-root-components]",
@@ -12486,7 +12278,7 @@
         "codebase",
         "picker"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "vault-catalog-schemas",
       "pinned": false,
       "tech_stack": [
@@ -12501,8 +12293,7 @@
       "category": "ui",
       "cross_refs": [
         "vault-shared-hooks",
-        "vault-credential-rotation",
-        "vault-credentials-list"
+        "vault-credentials-components-forms"
       ],
       "db_tables": [
         "credentials",
@@ -12557,7 +12348,7 @@
         "schedule",
         "secret"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "vault-credentials-components-features",
       "pinned": false,
       "tech_stack": [
@@ -12650,7 +12441,7 @@
       "business_feature": "Credential Manager",
       "category": "ui",
       "cross_refs": [
-        "vault-credentials-list",
+        "vault-credentials-components-forms",
         "vault-credentials-form",
         "vault-shared-hooks",
         "vault-catalog-picker"
@@ -12687,7 +12478,7 @@
         "FSM",
         "undo-delete"
       ],
-      "last_written_at": "2026-07-29T21:04:58.412295900+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "vault-credentials-manager",
       "pinned": false,
       "tech_stack": [
@@ -12702,9 +12493,8 @@
       "business_feature": "Database Explorer Shell",
       "category": "ui",
       "cross_refs": [
-        "vault-database-query-editor",
-        "vault-database-table-browser",
-        "vault-database-chat"
+        "vault-databases-tabs",
+        "vault-database-table-browser"
       ],
       "db_tables": [
         "credentials"
@@ -12739,7 +12529,7 @@
         "query-runner",
         "CodeMirror"
       ],
-      "last_written_at": "2026-07-29T22:32:03.334866700+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "vault-database-shell",
       "pinned": false,
       "tech_stack": [
@@ -12756,7 +12546,7 @@
       "category": "test",
       "cross_refs": [
         "vault-database-shell",
-        "vault-database-query-editor",
+        "vault-databases-tabs",
         "vault-database-table-browser"
       ],
       "db_tables": [],
@@ -12786,7 +12576,7 @@
         "SQL",
         "Vitest"
       ],
-      "last_written_at": "2026-07-29T22:32:03.335263500+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "vault-database-tests",
       "pinned": false,
       "tech_stack": [
@@ -12800,8 +12590,7 @@
       "business_feature": "Database Table Browser",
       "category": "ui",
       "cross_refs": [
-        "vault-database-shell",
-        "vault-database-query-editor"
+        "vault-database-shell"
       ],
       "db_tables": [],
       "description": "Table and column browser within the database explorer. TablesTab lists all tables; TableListSidebar provides sidebar navigation; TableDetailPanel shows column details and row preview; ColumnList renders columns with types; TableSearch enables fuzzy search; TableActions and TableContextMenu provide table-level operations; ConnectorCapabilityNote surfaces capability limitations. [Consolidated 2026-08-04: absorbed vault-database-chat, vault-database-query-editor]",
@@ -12849,7 +12638,7 @@
         "natural-language",
         "code-block"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "vault-databases-tabs",
       "pinned": false,
       "tech_stack": [
@@ -12863,7 +12652,7 @@
       "business_feature": "Credential Dependency Graph",
       "category": "ui",
       "cross_refs": [
-        "vault-credentials-list",
+        "vault-credentials-components-forms",
         "vault-credential-health-intel"
       ],
       "db_tables": [
@@ -12901,7 +12690,7 @@
         "persona",
         "relationship"
       ],
-      "last_written_at": "2026-07-29T22:32:03.325678500+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "vault-dependency-graph",
       "pinned": false,
       "tech_stack": [
@@ -12918,7 +12707,7 @@
       "category": "lib",
       "cross_refs": [
         "vault-credentials-form",
-        "vault-credential-rotation",
+        "vault-credentials-components-features",
         "vault-credential-health-intel"
       ],
       "db_tables": [
@@ -12957,7 +12746,7 @@
         "FSM",
         "undo"
       ],
-      "last_written_at": "2026-07-29T21:04:58.411487100+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "vault-shared-hooks",
       "pinned": false,
       "tech_stack": [
@@ -12970,8 +12759,7 @@
       "business_feature": "API Playground Tabs",
       "category": "ui",
       "cross_refs": [
-        "vault-api-playground-shell",
-        "vault-credentials-list"
+        "vault-credentials-components-forms"
       ],
       "db_tables": [],
       "description": "Tab views within the API playground modal: Overview (connector summary, health), API Explorer (endpoint list, request firing, response viewer), MCP Tools (list/invoke MCP tools per server), Executions (recent test runs), and recipe creation flow. useApiExplorerState manages the explorer tab's selected endpoint and response history. [Consolidated 2026-08-04: absorbed vault-api-playground-shell, vault-shared-utils]",
@@ -13027,7 +12815,7 @@
         "response",
         "endpoint"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "vault-shared-playground",
       "pinned": false,
       "tech_stack": [
@@ -13041,8 +12829,7 @@
       "business_feature": "Vector Knowledge Base",
       "category": "ui",
       "cross_refs": [
-        "vault-vector-kb-ingest",
-        "vault-credentials-list"
+        "vault-credentials-components-forms"
       ],
       "db_tables": [
         "knowledge_bases",
@@ -13089,7 +12876,7 @@
         "entity-extraction",
         "schema"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "vault-shared-vector",
       "pinned": false,
       "tech_stack": [
@@ -13103,11 +12890,7 @@
       "api_surface": "list_routes(dir); commit_snapshot(dir, summary); list_versions(dir); restore(dir, sha); preview_agent::ensure(dir)",
       "business_feature": "Web Build Preview & Versioning",
       "category": "lib",
-      "cross_refs": [
-        "webbuild-devserver",
-        "webbuild-project-scaffold",
-        "webbuild-build-turn"
-      ],
+      "cross_refs": [],
       "db_tables": [],
       "description": "Provides the three preview-layer primitives for Athena Studio: (1) Next.js app-router route discovery by scanning `app/` for `page.*` files, used to populate the Studio navigation bar; (2) per-turn git snapshot commit and restore for the version history timeline; and (3) injection of the `AthenaPreviewAgent` TSX component into the generated project's root layout, enabling cross-origin `postMessage` element-location and route-reporting from inside the preview iframe back to the Studio host. [Consolidated 2026-08-04: absorbed webbuild-build-turn, webbuild-bun-runtime, webbuild-devserver, webbuild-project-scaffold]",
       "entry_points": [
@@ -13143,7 +12926,7 @@
         "iframe",
         "bounding rect"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "webbuild",
       "pinned": false,
       "tech_stack": [
@@ -13158,7 +12941,6 @@
       "business_feature": "Webhook Ingestion",
       "category": "api",
       "cross_refs": [
-        "event-subscriptions",
         "execution-runner"
       ],
       "db_tables": [
@@ -13223,7 +13005,7 @@
         "checkpoint",
         "replay"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "webhook-ingestion",
       "pinned": false,
       "tech_stack": [
@@ -13238,7 +13020,6 @@
       "business_feature": "Workspace Governance",
       "category": "api",
       "cross_refs": [
-        "context-scanning",
         "dev-tools-features"
       ],
       "db_tables": [
@@ -13304,7 +13085,7 @@
         "coverage",
         "static-analysis"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
       "name": "workspace-governance",
       "pinned": false,
       "tech_stack": [
@@ -13365,7 +13146,7 @@
       ]
     }
   ],
-  "generated_at": "2026-08-04T11:53:19.771365700+00:00",
+  "generated_at": "2026-08-06T20:23:09.821205800+00:00",
   "generator": "personas-context-scan",
   "groups": [
     {
@@ -13484,11 +13265,11 @@
   "project": {
     "id": "b0c1541f-af08-4912-818e-19ca94f7b6e9",
     "name": "personas",
-    "root": "C:\\Users\\kazda\\kiro\\personas"
+    "root": "C:/Users/kazda/kiro/personas"
   },
   "provenance": {
-    "git_commit": "513a6f6a9c98bee2fa27797d8516cebb23eee724",
-    "git_commit_count": 6712
+    "git_commit": "d9f5643a48126465c288bdf83d6ca3617084834f",
+    "git_commit_count": 6965
   },
   "stats": {
     "contexts": 208,

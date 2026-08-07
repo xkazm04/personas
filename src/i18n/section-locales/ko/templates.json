@@ -1159,7 +1159,12 @@
     "friendly_rate_limited": "서비스가 요청 속도를 제한했습니다 — 일시적인 문제이니 잠시 후 다시 시도하세요.",
     "friendly_service_error": "서비스에 현재 문제가 발생하고 있습니다. 에이전트의 문제가 아닙니다 — 나중에 다시 시도하세요.",
     "friendly_timeout": "연결 시간이 초과되었습니다. 서비스가 느리거나 현재 사용할 수 없는 상태일 수 있습니다.",
-    "friendly_missing_credentials": "자격 증명이 없습니다. **키**로 이동해 필요한 서비스 자격 증명을 추가하세요."
+    "friendly_missing_credentials": "자격 증명이 없습니다. **키**로 이동해 필요한 서비스 자격 증명을 추가하세요.",
+    "unverified_default": "**{subject}**을(를) 한 번도 호출하지 않았으므로 정상 작동하는지 확인할 수 없습니다.",
+    "unverified_hint": "이 도구들은 목록에 있었지만 실제로 실행되지는 않았습니다. 실행해 확인할 수 있을 때까지 이 빌드는 자동으로 승격되지 않습니다.",
+    "status_unverified": "미검증",
+    "unverified": "미검증 {count}개",
+    "not_verified": "호출된 적 없음"
   },
   "complexity": {
     "beginner": "초급",

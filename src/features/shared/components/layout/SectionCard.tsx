@@ -131,6 +131,8 @@ export function SectionCard(props: SectionCardProps) {
       titleClassName={titleClass}
       storageKey={props.storageKey}
       defaultCollapsed={props.defaultCollapsed ?? false}
+      icon={icon}
+      action={action}
     >
       {children}
     </CollapsibleBody>
@@ -148,6 +150,8 @@ function CollapsibleBody({
   titleClassName,
   storageKey,
   defaultCollapsed,
+  icon,
+  action,
   children,
 }: {
   base: string;
@@ -160,6 +164,8 @@ function CollapsibleBody({
   titleClassName: string;
   storageKey?: string;
   defaultCollapsed: boolean;
+  icon?: ReactNode;
+  action?: ReactNode;
   children: ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(() => readStorage(storageKey, defaultCollapsed));
@@ -176,25 +182,36 @@ function CollapsibleBody({
 
   return (
     <div className={`${base} ${roundingClass} ${blurClass} ${className} overflow-hidden`.trim()}>
-      <button
-        type="button"
-        onClick={toggle}
-        className={`w-full flex items-center gap-2.5 ${HEADER_PAD[size]} text-left hover:bg-secondary/20 transition-colors select-none`}
-      >
-        <motion.span
-          animate={{ rotate: collapsed ? 0 : 90 }}
-          transition={{ duration: 0.15 }}
-          className="flex-shrink-0"
+      {/*
+        `action` sits OUTSIDE the toggle button, as a sibling in the header
+        row: an action is usually itself a button or a control, and nesting
+        interactive elements is invalid HTML (the inner one also swallows
+        the toggle's click). The toggle keeps flex-1 so the whole title
+        area stays clickable.
+      */}
+      <div className="flex items-center">
+        <button
+          type="button"
+          onClick={toggle}
+          className={`flex-1 min-w-0 flex items-center gap-2.5 ${HEADER_PAD[size]} text-left hover:bg-secondary/20 transition-colors select-none`}
         >
-          <ChevronRight className="w-3.5 h-3.5 text-foreground" />
-        </motion.span>
-        <div className="flex-1 min-w-0">
-          <h3 className={`typo-heading truncate ${titleClassName}`}>{title}</h3>
-          {subtitle && (
-            <p className="typo-body text-foreground truncate">{subtitle}</p>
-          )}
-        </div>
-      </button>
+          <motion.span
+            animate={{ rotate: collapsed ? 0 : 90 }}
+            transition={{ duration: 0.15 }}
+            className="flex-shrink-0"
+          >
+            <ChevronRight className="w-3.5 h-3.5 text-foreground" />
+          </motion.span>
+          {icon && <span className="flex-shrink-0">{icon}</span>}
+          <div className="flex-1 min-w-0">
+            <h3 className={`typo-heading truncate ${titleClassName}`}>{title}</h3>
+            {subtitle && (
+              <p className="typo-body text-foreground truncate">{subtitle}</p>
+            )}
+          </div>
+        </button>
+        {action && <div className={`flex-shrink-0 ${HEADER_PAD[size]} pl-0`}>{action}</div>}
+      </div>
 
       <Collapse open={!collapsed} unmountWhenClosed revealOverflowWhenOpen duration={200}>
         <div className={`border-t border-primary/8 ${BODY_PAD[size]} pt-3`}>

@@ -3,27 +3,27 @@
 /**
  * One aggregated `(category, model)` evidence cell from the trailing window.
  */
-export type EvidenceCell = {
+export type EvidenceCell = { 
 /**
  * Lowercased persona `template_category`; `"uncategorized"` when absent.
  */
-category: string,
+category: string, 
 /**
  * `persona_executions.model_used`.
  */
-model: string,
+model: string, 
 /**
  * Terminal executions in the window (completed + failed/incomplete/cancelled).
  */
-runs: number, completed: number, failed: number,
+runs: number, completed: number, failed: number, 
 /**
  * `completed / runs`, `0.0..=1.0`.
  */
-successRate: number, avgCostUsd: number, totalCostUsd: number, avgDurationMs: number,
+successRate: number, avgCostUsd: number, totalCostUsd: number, avgDurationMs: number, 
 /**
  * Scored lab results for this model (matrix runs, non-error, quality present).
  */
-labSamples: number,
+labSamples: number, 
 /**
  * Mean `output_quality_score` (0-100) when `lab_samples > 0`.
  */

@@ -186,5 +186,13 @@
     "transport": "Verbindung fehlgeschlagen",
     "unknown": "Unbekannter Fehler",
     "unsupported": "Hier nicht ausführbar"
+  },
+  "remote_job": {
+    "completed": "Abgeschlossen",
+    "failed": "Fehlgeschlagen",
+    "cancelled": "Abgebrochen",
+    "refused": "Abgelehnt",
+    "pending": "Ausstehend",
+    "running": "Läuft"
   }
 }

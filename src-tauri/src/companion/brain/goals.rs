@@ -108,7 +108,9 @@ pub fn write_goal(pool: &UserDbPool, input: &GoalInput<'_>) -> Result<String, Ap
     )?;
     tx.execute(
         "INSERT INTO companion_fts (node_id, body, tags) VALUES (?1, ?2, 'kind:goal status:active')",
-        params![id, format!("{}\n\n{}", input.title, input.description)],
+        params![id, format!("{}
+
+{}", input.title, input.description)],
     )?;
     tx.commit()?;
     Ok(id)

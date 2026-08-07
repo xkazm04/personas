@@ -2027,7 +2027,15 @@ const QUOTA_COOLDOWN_SESSION_SECS: i64 = 900;
 /// execution pipeline) never names `execute_persona_inner`'s future type.
 pub struct FixReentryRequest {
     pub persona_id: String,
+    /// The failed run's own `input_data` with the two `_fix_*` keys merged in
+    /// (see `fix_loop::build_reentry_input`). Carrying the original input is
+    /// what keeps `{{var}}`, `## Current Focus`, the capability policy lines
+    /// and the time filter present on the corrective attempt.
     pub input: String,
+    /// The capability the failed run was scoped to, replayed so attempt 2
+    /// resolves the same `model_override` / capability defaults instead of
+    /// silently dropping to the persona's base model profile.
+    pub use_case_id: Option<String>,
 }
 
 /// Sender to the fix-loop worker, installed once at startup by
@@ -2085,12 +2093,20 @@ async fn maybe_run_fix_loop(
         return;
     }
 
-    // The current attempt rides in the prior execution's input_data.
-    let attempt = crate::db::repos::execution::executions::get_by_id(pool, exec_id)
-        .ok()
-        .and_then(|e| e.input_data)
-        .and_then(|raw| serde_json::from_str::<serde_json::Value>(&raw).ok())
-        .and_then(|v| v.get("_fix_attempt").and_then(serde_json::Value::as_u64))
+    // Load the failed run ONCE: it carries both the attempt counter and the
+    // input the corrective attempt has to inherit. Re-entering with only the
+    // fix metadata assembles a prompt with no resolved variables, no Current
+    // Focus and no capability policy — i.e. attempt 2 arrives knowing less
+    // than the attempt it is supposed to correct.
+    let prior = crate::db::repos::execution::executions::get_by_id(pool, exec_id).ok();
+    let prior_input = prior.as_ref().and_then(|e| e.input_data.clone());
+    let attempt = prior_input
+        .as_deref()
+        .and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok())
+        .and_then(|v| {
+            v.get(fix_loop::FIX_ATTEMPT_KEY)
+                .and_then(serde_json::Value::as_u64)
+        })
         .unwrap_or(0) as u32;
 
     let failures = vec![first_critical_failure
@@ -2106,16 +2122,15 @@ async fn maybe_run_fix_loop(
     };
 
     match fix_loop::decide(&config, &failures, attempt, tripped) {
-        FixDecision::ReEnter { fix_prompt, attempt } => {
-            let input = serde_json::json!({
-                "_fix_attempt": attempt,
-                "_fix_instruction": fix_prompt,
-            })
-            .to_string();
+        FixDecision::ReEnter { fix, attempt } => {
+            let input = fix_loop::build_reentry_input(prior_input.as_deref(), attempt, &fix);
+            let use_case_id = prior.as_ref().and_then(|e| e.use_case_id.clone());
             tracing::info!(
                 execution_id = %exec_id,
                 persona_id,
                 attempt,
+                carried_input = prior_input.is_some(),
+                use_case_id = use_case_id.as_deref().unwrap_or("-"),
                 "fix-loop: re-entering persona with correction"
             );
             // Hand off plain data to the startup-spawned worker. Calling
@@ -2123,7 +2138,11 @@ async fn maybe_run_fix_loop(
             // (spawn_execution_task → handle_execution_result → here → …); the
             // channel decouples it.
             if let Some(tx) = FIX_REENTRY_TX.get() {
-                let _ = tx.send(FixReentryRequest { persona_id: persona_id.to_string(), input });
+                let _ = tx.send(FixReentryRequest {
+                    persona_id: persona_id.to_string(),
+                    input,
+                    use_case_id,
+                });
             } else {
                 tracing::warn!("fix-loop worker not initialized; skipping re-entry");
             }

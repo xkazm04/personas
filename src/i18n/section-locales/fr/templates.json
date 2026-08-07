@@ -1159,7 +1159,12 @@
     "friendly_rate_limited": "Le service a limité la requête. C'est temporaire — réessayez dans quelques minutes.",
     "friendly_service_error": "Le service rencontre actuellement des problèmes. Cela ne provient pas de votre agent — réessayez plus tard.",
     "friendly_timeout": "La connexion a expiré. Le service est peut-être lent ou indisponible pour le moment.",
-    "friendly_missing_credentials": "Identifiants manquants. Rendez-vous dans **Identifiants** pour ajouter les identifiants de service requis."
+    "friendly_missing_credentials": "Identifiants manquants. Rendez-vous dans **Identifiants** pour ajouter les identifiants de service requis.",
+    "unverified_default": "**{subject}** n’a jamais été appelé, nous ne pouvons donc pas confirmer qu’il fonctionne.",
+    "unverified_hint": "Ces outils ont été répertoriés mais jamais réellement exécutés ; cette version ne sera donc pas promue automatiquement tant qu’ils ne pourront pas être testés.",
+    "status_unverified": "Non vérifié",
+    "unverified": "{count} non vérifié(s)",
+    "not_verified": "Jamais appelé"
   },
   "complexity": {
     "beginner": "Débutant",

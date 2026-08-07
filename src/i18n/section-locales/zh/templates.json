@@ -1159,7 +1159,12 @@
     "friendly_rate_limited": "该服务对请求进行了限速处理。这是暂时的——请几分钟后重试。",
     "friendly_service_error": "该服务当前出现故障。这并非您的智能体的问题——请稍后重试。",
     "friendly_timeout": "连接超时。该服务当前可能响应缓慢或暂时不可用。",
-    "friendly_missing_credentials": "缺少凭据。请前往**密钥**添加所需的服务凭据。"
+    "friendly_missing_credentials": "缺少凭据。请前往**密钥**添加所需的服务凭据。",
+    "unverified_default": "从未调用过 **{subject}**，因此无法确认它是否可用。",
+    "unverified_hint": "这些工具只是被列出，但从未真正运行过，因此在能够实际验证之前，此构建不会自动发布。",
+    "status_unverified": "未验证",
+    "unverified": "{count} 项未验证",
+    "not_verified": "从未调用"
   },
   "complexity": {
     "beginner": "入门",

@@ -13,7 +13,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { derivePassportFromMetadata } from './passportDerive';
 import { recordSnapshot } from './passportHistory';
-import { sortByNameAsc, type AppPassport } from './passportModel';
+import { sortByNameAsc, type AppPassport, type DocRotRollup } from './passportModel';
 import type { ImproveRaw } from './improve/ImproveContext';
 
 interface PassportData {
@@ -158,15 +158,24 @@ export function usePassportData(): PassportData {
       listCredentials().catch((err) => { silentCatch('usePassportData:listCredentials')(err); return []; }),
     ]);
     const credServiceById = new Map(credentials.map((c) => [c.id, c.serviceType.toLowerCase()]));
-    // Doc-rot rollup per project (P2): dirty docs + tracked docs that no
-    // session has ever read since telemetry began. Absent rows = scan hasn't
-    // run for that project → no rollup, never a guessed zero.
-    const docRotByProject = new Map<string, { tracked: number; dirty: number; neverRead: number }>();
+    // Doc-rot rollup per project (P2). Four independent tallies, not a
+    // pass/fail split: `unverifiable` docs are ones the scan could not judge
+    // (no coupling), and they must never disappear into the clean remainder.
+    // Absent rows = scan hasn't run for that project → no rollup, never a
+    // guessed zero.
+    const docRotByProject = new Map<string, DocRotRollup>();
     for (const r of docRotRows) {
       let agg = docRotByProject.get(r.project_id);
-      if (!agg) { agg = { tracked: 0, dirty: 0, neverRead: 0 }; docRotByProject.set(r.project_id, agg); }
+      if (!agg) {
+        agg = { tracked: 0, dirty: 0, broken: 0, unverifiable: 0, neverRead: 0 };
+        docRotByProject.set(r.project_id, agg);
+      }
       agg.tracked += 1;
       if (r.dirty_since) agg.dirty += 1;
+      if (r.broken_refs.length > 0) agg.broken += 1;
+      // `status` already applies the precedence (broken > stale >
+      // unverifiable), so this counts only docs with no other verdict.
+      if (r.status === 'unverifiable') agg.unverifiable += 1;
       if (r.last_read_at === null) agg.neverRead += 1;
     }
     // Memory-health rollup per project (P3) — the latest snapshot + live

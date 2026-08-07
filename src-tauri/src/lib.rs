@@ -1304,7 +1304,7 @@ pub fn run() {
                             req.persona_id,
                             None,
                             Some(req.input),
-                            None,
+                            req.use_case_id,
                             None,
                             None,
                             false,
@@ -1769,6 +1769,14 @@ pub fn run() {
                 let ns_pool = state_arc.db.clone();
                 let p2p_app_handle = restore_handle.clone();
                 tauri::async_runtime::spawn(async move {
+                    // Athena takes over the remote-job seam BEFORE the network
+                    // starts listening. Until it is installed, an arriving job
+                    // is answered by `UnhandledRemoteJobs` — accepted, then
+                    // immediately failed with "no assistant configured" — so
+                    // installing after `start()` would leave a real window in
+                    // which a paired device's request is refused by a device
+                    // that can, in fact, run it.
+                    companion::remote_jobs::install(&p2p_app_handle, &ns).await;
                     tokio::time::sleep(std::time::Duration::from_secs(3)).await;
                     if let Ok(identity) = engine::identity::get_or_create_identity(&ns_pool) {
                         if let Err(e) = ns.start(ns_pool, identity.peer_id, identity.display_name, Some(p2p_app_handle)).await {
@@ -2672,6 +2680,7 @@ pub fn run() {
             #[cfg(feature = "p2p")]
             commands::signing::list_document_signatures,
             #[cfg(feature = "p2p")]
+            commands::signing::get_document_signature,
             #[cfg(feature = "p2p")]
             commands::signing::delete_document_signature,
             #[cfg(feature = "p2p")]
@@ -2864,6 +2873,7 @@ pub fn run() {
             commands::companion::brain::companion_delete_brain_item,
             commands::companion::brain::companion_save_identity,
             commands::companion::brain::companion_correct_identity_claim,
+            commands::companion::brain::companion_reembed_missing,
             commands::companion::feedback::companion_beta_flags,
             commands::companion::feedback::companion_record_ux_signal,
             #[cfg(debug_assertions)]
@@ -2892,6 +2902,7 @@ pub fn run() {
             commands::companion::stt::companion_stt_download_model,
             commands::companion::stt::companion_stt_delete_model,
             commands::companion::stt::companion_stt_engine_status,
+            commands::companion::stt::companion_stt_install_engine,
             commands::companion::consolidate::companion_run_consolidation,
             commands::companion::consolidate::companion_list_consolidation_runs,
             commands::companion::consolidate::companion_get_consolidation_items,
@@ -2920,6 +2931,7 @@ pub fn run() {
             #[cfg(feature = "desktop")]
             commands::companion::sensory::companion_set_sensory_source_enabled,
             #[cfg(feature = "desktop")]
+            commands::companion::sensory::companion_purge_sensory_source,
             #[cfg(feature = "desktop")]
             commands::companion::sensory::companion_list_sensory_signals,
             #[cfg(feature = "desktop")]
@@ -3261,6 +3273,10 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_list_goal_dependencies_for_project,
             commands::infrastructure::dev_tools::dev_tools_list_goal_items_for_project,
             commands::infrastructure::dev_tools::dev_tools_goal_advancing_teams,
+            // Staleness engine — goals + ideas + tasks in one ranked queue,
+            // plus the accepted-but-never-dispatched list on its own.
+            commands::infrastructure::dev_tools::dev_tools_attention_queue,
+            commands::infrastructure::dev_tools::dev_tools_undispatched_ideas,
             // Dev Tools -- Context Groups
             commands::infrastructure::dev_tools::dev_tools_list_context_groups,
             commands::infrastructure::dev_tools::dev_tools_list_env_connectors,
@@ -3280,6 +3296,7 @@ pub fn run() {
             commands::infrastructure::context_generation::dev_tools_cancel_scan_codebase,
             commands::infrastructure::context_generation::dev_tools_get_scan_codebase_status,
             commands::infrastructure::context_audit::dev_tools_audit_contexts,
+            commands::infrastructure::context_consolidate::dev_tools_repair_cross_refs,
             commands::infrastructure::context_fingerprints::dev_tools_refresh_context_fingerprints,
             // System operations (trigger → built-in op automations; Chain Studio + Context Map)
             commands::infrastructure::system_ops::system_ops_list_kinds,
@@ -3462,22 +3479,48 @@ pub fn run() {
             commands::network::identity::delete_trusted_peer,
             // Network -- Owned Devices (cross-device persona continuity, ADR 2026-05-24 Stage 2)
             #[cfg(feature = "p2p")]
+            commands::network::owned_devices::get_device_group_id,
             #[cfg(feature = "p2p")]
+            commands::network::owned_devices::list_owned_devices,
             #[cfg(feature = "p2p")]
+            commands::network::owned_devices::register_owned_device,
             #[cfg(feature = "p2p")]
+            commands::network::owned_devices::forget_owned_device,
+            #[cfg(feature = "p2p")]
+            commands::network::owned_devices::set_device_home,
+            // Network -- Device pairing (signed handshake + fingerprint confirm)
+            #[cfg(feature = "p2p")]
+            commands::network::pairing::pair_request,
+            #[cfg(feature = "p2p")]
+            commands::network::pairing::pair_confirm,
+            #[cfg(feature = "p2p")]
+            commands::network::pairing::pair_cancel,
+            #[cfg(feature = "p2p")]
+            commands::network::pairing::list_pending_device_pairings,
+            // Network -- Remote jobs (one paired device runs the other's instruction)
+            #[cfg(feature = "p2p")]
+            commands::network::remote_jobs::list_remote_jobs,
+            #[cfg(feature = "p2p")]
+            commands::network::remote_jobs::list_remote_job_notes,
+            #[cfg(feature = "p2p")]
+            commands::network::remote_jobs::send_remote_instruction,
             // Network -- Exposure Manifest (Invisible Apps Phase 1)
             #[cfg(feature = "p2p")]
             commands::network::exposure::list_exposed_resources,
             #[cfg(feature = "p2p")]
+            commands::network::exposure::get_exposed_resource,
             #[cfg(feature = "p2p")]
             commands::network::exposure::create_exposed_resource,
             #[cfg(feature = "p2p")]
+            commands::network::exposure::update_exposed_resource,
             #[cfg(feature = "p2p")]
             commands::network::exposure::delete_exposed_resource,
             #[cfg(feature = "p2p")]
+            commands::network::exposure::get_exposure_manifest,
             #[cfg(feature = "p2p")]
             commands::network::exposure::list_provenance,
             #[cfg(feature = "p2p")]
+            commands::network::exposure::get_resource_provenance,
             // Network -- Bundle (Invisible Apps Phase 1)
             #[cfg(feature = "p2p")]
             commands::network::bundle::export_persona_bundle,
@@ -3486,6 +3529,7 @@ pub fn run() {
             #[cfg(feature = "p2p")]
             commands::network::bundle::apply_bundle_import,
             #[cfg(feature = "p2p")]
+            commands::network::bundle::verify_bundle,
             #[cfg(feature = "p2p")]
             commands::network::bundle::export_bundle_to_clipboard,
             #[cfg(feature = "p2p")]
@@ -3499,6 +3543,7 @@ pub fn run() {
             #[cfg(feature = "p2p")]
             commands::network::bundle::import_from_share_link,
             #[cfg(feature = "p2p")]
+            commands::network::bundle::resolve_share_deep_link,
             // Network -- Sovereign Enclaves
             #[cfg(feature = "p2p")]
             commands::network::enclave::seal_enclave,
@@ -3516,16 +3561,25 @@ pub fn run() {
             #[cfg(feature = "p2p")]
             commands::network::discovery::sync_peer_manifest,
             #[cfg(feature = "p2p")]
+            commands::network::discovery::get_connection_status,
             #[cfg(feature = "p2p")]
             commands::network::discovery::get_network_status,
             #[cfg(feature = "p2p")]
+            commands::network::discovery::get_connection_health,
             #[cfg(feature = "p2p")]
             commands::network::discovery::get_network_snapshot,
             #[cfg(feature = "p2p")]
             commands::network::discovery::get_messaging_metrics,
+            // Agent-to-agent messaging over the (now signed-handshake) p2p link.
+            // Registered: both commands are thin wrappers over MessageRouter,
+            // already `require_auth`-gated, and the peer they address is
+            // authenticated at handshake time as of PROTOCOL_VERSION 2.
             #[cfg(feature = "p2p")]
+            commands::network::discovery::send_agent_message,
             #[cfg(feature = "p2p")]
+            commands::network::discovery::get_received_messages,
             #[cfg(feature = "p2p")]
+            commands::network::discovery::set_network_config,
             // Vector Knowledge Base
             #[cfg(feature = "ml")]
             commands::credentials::vector_kb::create_knowledge_base,
@@ -3702,5 +3756,190 @@ mod registry_target_tests {
         // recipe_generation produces a brand-new recipe and sets no target.
         reg.set_id("recipe_generation", "gen-1".into());
         assert_eq!(reg.active_target("recipe_generation"), None);
+    }
+}
+
+/// Structural guard for the `generate_handler!` registration list.
+///
+/// Rust silently applies a *stack* of `#[cfg(...)]` attributes to whatever item
+/// comes next, so a line like
+///
+/// ```text
+/// #[cfg(feature = "p2p")]
+/// #[cfg(feature = "p2p")]
+/// commands::network::exposure::create_exposed_resource,
+/// ```
+///
+/// compiles cleanly while the command that was *supposed* to sit under the first
+/// cfg has silently vanished from the IPC surface. That exact bug removed 15
+/// `commands::network::*` commands from `generate_handler!` and shipped —
+/// nothing in the compiler, clippy, or the test suite noticed, because the
+/// missing entry is a *deletion*, not an error.
+///
+/// This test parses the source text (not the macro expansion, which is
+/// feature-gated and therefore can't be reflected on in a lite build) and
+/// asserts the two lists agree. It is intentionally NOT `#[cfg(feature = "p2p")]`
+/// so it guards the registration list in every build configuration.
+#[cfg(test)]
+mod network_command_registration_tests {
+    use std::collections::BTreeSet;
+
+    /// Extract `name` from a `pub fn name(` / `pub async fn name(` signature line.
+    fn command_fn_name(line: &str) -> Option<&str> {
+        let rest = line.trim().strip_prefix("pub ")?;
+        let rest = rest.strip_prefix("async ").unwrap_or(rest);
+        let rest = rest.strip_prefix("fn ")?;
+        let end = rest.find(['(', '<', ' '])?;
+        let name = &rest[..end];
+        if name.is_empty() {
+            None
+        } else {
+            Some(name)
+        }
+    }
+
+    /// Every `#[tauri::command]`-annotated fn under `src/commands/network/`,
+    /// as `("<module>", "<fn name>")`.
+    fn declared_network_commands() -> BTreeSet<(String, String)> {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/commands/network");
+        let mut found = BTreeSet::new();
+        let entries = std::fs::read_dir(&dir)
+            .unwrap_or_else(|e| panic!("cannot read {}: {e}", dir.display()));
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("rs") {
+                continue;
+            }
+            let module = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or_default()
+                .to_string();
+            if module == "mod" {
+                continue;
+            }
+            let content = std::fs::read_to_string(&path).expect("read command module");
+            let lines: Vec<&str> = content.lines().collect();
+            for (i, line) in lines.iter().enumerate() {
+                if line.trim() != "#[tauri::command]" {
+                    continue;
+                }
+                // Skip any attributes between the marker and the signature
+                // (`#[allow(...)]`, doc comments, `#[cfg(...)]`, ...).
+                let mut j = i + 1;
+                while let Some(next) = lines.get(j) {
+                    let t = next.trim();
+                    if t.starts_with('#') || t.starts_with("///") || t.starts_with("//") {
+                        j += 1;
+                    } else {
+                        break;
+                    }
+                }
+                let sig = lines
+                    .get(j)
+                    .unwrap_or_else(|| panic!("#[tauri::command] at {}:{} has no fn", path.display(), i + 1));
+                let name = command_fn_name(sig).unwrap_or_else(|| {
+                    panic!(
+                        "cannot parse fn name from {}:{} -- {sig:?}",
+                        path.display(),
+                        j + 1
+                    )
+                });
+                found.insert((module.clone(), name.to_string()));
+            }
+        }
+        found
+    }
+
+    /// The body of `tauri::generate_handler![ ... ]` in `src/lib.rs`.
+    fn generate_handler_body() -> String {
+        let lib = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/lib.rs");
+        let src = std::fs::read_to_string(&lib).expect("read lib.rs");
+        let start = src
+            .find("generate_handler![")
+            .expect("lib.rs must contain a generate_handler![ list");
+        let open = start + "generate_handler![".len();
+        let mut depth = 1usize;
+        for (offset, ch) in src[open..].char_indices() {
+            match ch {
+                '[' => depth += 1,
+                ']' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        return src[open..open + offset].to_string();
+                    }
+                }
+                _ => {}
+            }
+        }
+        panic!("unterminated generate_handler![ list in lib.rs");
+    }
+
+    /// A `#[cfg(...)]` line immediately followed by another attribute line with
+    /// no item between them means the first cfg silently swallowed nothing --
+    /// the entry it was meant to gate is gone. Catch the shape directly so the
+    /// failure names the mechanism, not just the missing command.
+    #[test]
+    fn generate_handler_has_no_orphaned_cfg_attributes() {
+        let body = generate_handler_body();
+        let lines: Vec<&str> = body.lines().collect();
+        let mut orphans = Vec::new();
+        for (i, line) in lines.iter().enumerate() {
+            let t = line.trim();
+            if !t.starts_with("#[cfg(") {
+                continue;
+            }
+            // Walk forward past comments; the next *code* line must be a path,
+            // not another attribute.
+            let mut j = i + 1;
+            while let Some(next) = lines.get(j) {
+                let n = next.trim();
+                if n.is_empty() || n.starts_with("//") {
+                    j += 1;
+                } else {
+                    break;
+                }
+            }
+            if let Some(next) = lines.get(j) {
+                if next.trim().starts_with("#[cfg(") {
+                    orphans.push(format!("{}: {t}", i + 1));
+                }
+            } else {
+                orphans.push(format!("{}: {t} (trailing)", i + 1));
+            }
+        }
+        assert!(
+            orphans.is_empty(),
+            "stacked #[cfg] attributes with no item between them in generate_handler! \
+             (each one silently deleted the command that belonged under it):\n{orphans:#?}"
+        );
+    }
+
+    #[test]
+    fn every_network_command_is_registered_in_generate_handler() {
+        let declared = declared_network_commands();
+        assert!(
+            declared.len() > 20,
+            "expected to find well over 20 #[tauri::command] fns under \
+             src/commands/network/, found {} -- the source walk is broken, \
+             not the app",
+            declared.len()
+        );
+
+        let body = generate_handler_body();
+        let missing: Vec<String> = declared
+            .iter()
+            .filter(|(module, name)| {
+                let path = format!("commands::network::{module}::{name},");
+                !body.contains(&path)
+            })
+            .map(|(module, name)| format!("commands::network::{module}::{name}"))
+            .collect();
+
+        assert!(
+            missing.is_empty(),
+            "network commands defined but NOT present in generate_handler! -- \
+             they are unreachable from the frontend:\n{missing:#?}"
+        );
     }
 }

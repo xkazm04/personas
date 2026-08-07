@@ -7,8 +7,9 @@ import type { AthenaUsageDashboard } from '@/lib/bindings/AthenaUsageDashboard';
 import type { AthenaHealth } from '@/lib/bindings/AthenaHealth';
 import type { ConversationRow } from '@/lib/bindings/ConversationRow';
 import type { CompanionTurnSidecar } from '@/lib/bindings/CompanionTurnSidecar';
+import type { ReembedResult } from '@/lib/bindings/ReembedResult';
 
-export type { CompanionTurnSidecar };
+export type { CompanionTurnSidecar, ReembedResult };
 
 /**
  * Initialize the companion-brain disk layout (idempotent).
@@ -669,6 +670,19 @@ export async function companionSttDownloadModel(modelId: string): Promise<void> 
 
 export async function companionSttDeleteModel(modelId: string): Promise<void> {
   return invoke<void>('companion_stt_delete_model', { modelId });
+}
+
+/** Tauri event channel for whisper sidecar install progress. */
+export const STT_INSTALL_EVENT = 'companion://stt-install';
+
+/**
+ * One-click download + extract of the whisper.cpp sidecar. Progress
+ * streams on {@link STT_INSTALL_EVENT} (same `SidecarInstallProgress`
+ * shape the TTS installers use); resolves once the binary is in place and
+ * resolvable. Windows-only for now.
+ */
+export async function companionSttInstallEngine(): Promise<void> {
+  return invoke<void>('companion_stt_install_engine');
 }
 
 export async function companionSttEngineStatus(): Promise<SttEngineStatus> {
@@ -1423,6 +1437,24 @@ export async function companionRejectConsolidationItem(
 
 export async function companionDecayUnusedFacts(): Promise<number> {
   return invoke<number>('companion_decay_unused_facts');
+}
+
+/**
+ * Re-embed every memory that has no vector, or whose vector was written under a
+ * different embedding model.
+ *
+ * Semantic recall only ever indexed memory at write time, so anything that
+ * arrived another way — a portability import, a restored brain directory, a
+ * write made while the embedder was down — had text and no vector permanently.
+ * `available: false` means this build ships without an embedder; that is a
+ * no-op, not a failure.
+ *
+ * Can take a while on a large brain, hence the generous timeout.
+ */
+export async function companionReembedMissing(): Promise<ReembedResult> {
+  return invoke<ReembedResult>('companion_reembed_missing', undefined, {
+    timeoutMs: 15 * 60 * 1000,
+  });
 }
 
 export interface ReflectionRow {

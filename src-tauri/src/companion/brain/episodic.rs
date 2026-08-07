@@ -143,8 +143,10 @@ pub fn append_episode(
         params![id, rel_path, hash, excerpt, now_str, session_id],
     )?;
 
-    // Mirror into FTS for keyword fallback retrieval (Phase 2 retrieval will
-    // also use this; harmless to populate eagerly now).
+    // Mirror into FTS: `brain::keyword` reads this table with BM25, so the
+    // mirror is the keyword lane's only source. (A sibling device deleted this
+    // write on 2026-08-07 because the table then had no reader; the 2026-08-08
+    // merge restored it, because now it does.)
     conn.execute(
         "INSERT INTO companion_fts (node_id, body, tags) VALUES (?1, ?2, ?3)",
         params![id, content, format!("session:{session_id} role:{role_str}")],

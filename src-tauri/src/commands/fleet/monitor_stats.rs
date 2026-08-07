@@ -25,12 +25,13 @@ use std::sync::{Mutex, OnceLock};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::error::AppError;
+
 use super::process_scan::memory_bytes_for;
 use super::registry::registry;
 use super::screen_activity::ScreenActivity;
 use super::transcript_read::{summary_for_session, FleetTranscriptSummary};
 use super::types::FleetSessionState;
-use crate::error::AppError;
 
 /// The tool Claude Code invokes to spawn a subagent — counting it in the
 /// rollup gives "subagents this session has launched".

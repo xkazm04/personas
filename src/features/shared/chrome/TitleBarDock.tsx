@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, CalendarClock, ClipboardCheck, Search } from 'lucide-react';
+import { Bell, CalendarClock, ClipboardCheck, Rocket, Search } from 'lucide-react';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { isTypingTarget } from '@/lib/keyboard/KeyboardNavMode';
@@ -10,7 +10,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useTitleBarTray, TrayOverlays } from '@/features/shared/chrome/useTitleBarTray';
 
 /**
- * @catalog Title-bar quick-action dock — capsule tray (search / schedules / review / monitor / notifications) with inline counts and keyboard-nav key hints.
+ * @catalog Title-bar quick-action dock — capsule tray (search / schedules / review / dispatch / monitor / notifications) with inline counts and keyboard-nav key hints.
  *
  * The title bar's quick-action tray. Counts are first-class data, not
  * stickers: every signal renders INLINE beside its glyph inside a capsule
@@ -21,9 +21,10 @@ import { useTitleBarTray, TrayOverlays } from '@/features/shared/chrome/useTitle
  * single instrument.
  *
  * Keyboard: while `;` keyboard-nav mode is active (see `KeyboardNavMode`),
- * each capsule shows its key on a hint chip below the bar and S / C / R / M /
- * N toggle the matching surface. Surface keys keep the mode armed — it stays
- * on until `;` / Esc / the footer switch. The keys do nothing outside nav mode.
+ * each capsule shows its key on a hint chip below the bar and S / C / R / D /
+ * M / N toggle the matching surface. Surface keys keep the mode armed — it
+ * stays on until `;` / Esc / the footer switch. The keys do nothing outside
+ * nav mode.
  */
 export default function TitleBarDock() {
   const { t, tx } = useTranslation();
@@ -50,6 +51,10 @@ export default function TitleBarDock() {
         case 'r':
           e.preventDefault();
           tray.toggleReview();
+          return true;
+        case 'd':
+          e.preventDefault();
+          tray.toggleDispatch();
           return true;
         case 'm':
           e.preventDefault();
@@ -109,6 +114,23 @@ export default function TitleBarDock() {
           quickAnswerTrigger
         >
           <ClipboardCheck width={17} height={17} strokeWidth={1.6} />
+        </DockAction>
+
+        {/* Approved but never sent. Distinct from the review capsule on its
+            left: that one counts decisions still owed, this one counts
+            decisions already made that nothing acted on. */}
+        <DockAction
+          onClick={tray.toggleDispatch}
+          active={tray.dispatchOpen}
+          count={tray.undispatchedCount}
+          countClass="text-status-warning"
+          label={tray.undispatchedCount > 0 ? tx(t.chrome.tray_dispatch_waiting, { count: tray.undispatchedCount }) : t.chrome.tray_dispatch}
+          title={tray.undispatchedCount > 0 ? tx(t.chrome.tray_dispatch_waiting, { count: tray.undispatchedCount }) : t.chrome.tray_dispatch}
+          testId="titlebar-dispatch"
+          hintKey="D"
+          showHint={keyboardNavActive}
+        >
+          <Rocket size={17} strokeWidth={1.6} />
         </DockAction>
 
         <DockAction

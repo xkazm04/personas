@@ -4,6 +4,7 @@ import { TrackedGlowRing } from './TrackedGlowRing';
 import { GuideCaption } from './GuideCaption';
 import { OrbDecisionBubble } from './OrbDecisionBubble';
 import { OrbUnreadBubble } from './OrbUnreadBubble';
+import { RemoteJobNoticeChip } from './RemoteJobNoticeChip';
 import { DecisionDriver } from '../decision/useDecisionQueue';
 
 /**
@@ -25,6 +26,10 @@ import { DecisionDriver } from '../decision/useDecisionQueue';
  *    above the orb. Mutually exclusive by construction: the unread bubble
  *    stands down whenever a decision is pending, because a question aimed at
  *    the operator outranks news.
+ *  - `RemoteJobNoticeChip` — the ambient "a paired device asked Athena to run
+ *    something" notice (renders nothing unless one is live). Docks BELOW the
+ *    orb so it never competes with the caption or the decision bubble — and,
+ *    being below, it does not contend with the two bubbles above either.
  *
  * The layer itself is `pointer-events-none`; interactive children opt back in.
  * Distinct from `AthenaOrbLayer` (which only mounts while `state === 'minimized'`)
@@ -43,6 +48,7 @@ export default function AthenaGuideLayer() {
       <GuideCaption />
       <OrbDecisionBubble />
       <OrbUnreadBubble />
+      <RemoteJobNoticeChip />
       <DecisionDriver />
     </div>,
     document.body,

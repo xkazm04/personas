@@ -20,8 +20,28 @@ Athena communicates on exactly **two** surfaces, and nowhere else:
 - **CHAT** (`chat/AthenaChatPanel`) — the full-information dimension. Everything she has
   to say in words lives here: replies, approval cards, proactive cards, the
   in-chat decision card, and the ledger of what she did without asking.
-- **ORB** (`AthenaOrbLayer` + `OrbDecisionBubble` / `GuideCaption` / the orb's
-  glow, captions, and avatar postures) — the quick-info and decision dimension.
+- **ORB** (`AthenaOrbLayer` + `OrbDecisionBubble` / `GuideCaption` /
+  `RemoteJobNoticeChip` / the orb's glow, captions, and avatar postures) — the
+  quick-info and decision dimension.
+
+### Remote-instruction arrival notice
+
+When another of the user's own machines asks THIS one to run something (see
+Settings → Devices), the answering turn runs with `suppress_chat`, so nothing
+appears in the transcript. `companion://remote-job-turn` is the only signal the
+frontend gets, and `RemoteJobNoticeChip` (hosted by `AthenaGuideLayer`) turns it
+into a quiet chip docked BELOW the orb, naming the source device. It updates on
+`completed` / `failed` and clears itself on a short TTL. This is ambient
+awareness, deliberately not a modal, a toast or a chat entry: the durable record
+is the remote-job row in Settings → Devices. The chip yields entirely while a
+decision is pending, because that surface is asking for an answer and this one is
+an FYI.
+
+The state machine (`src/lib/network/remoteJobNotice.ts`) is written for unordered
+delivery: a `started` arriving after its own terminal phase is ignored, the first
+terminal phase wins, a terminal phase whose `started` was missed still surfaces,
+and a `started` whose terminal phase never arrives is swept by a TTL just past
+the companion's own turn ceiling rather than pinning the chip forever.
 
 There is deliberately **no third dimension**. Athena raises no toasts, no footer
 notice popovers, and no corner pop-ups. Surfaces that used to do so, and where
@@ -403,6 +423,42 @@ The same conversation-only window feeds **consolidation** and **reflection**. Di
 `decay_unused_facts` (importance −1, floor 1, once per 30-day window per fact) and `prune_low_value_facts` (demote to `importance = 0` above 500 facts per scope) were reachable only from two manual commands and from the tail of a consolidation run — and consolidation had not run in 77 days, so no fact had ever decayed. Forgetting that only happens when someone presses a button is not forgetting.
 
 `consolidation::maybe_run_lifecycle_sweep` now runs from the recall path, self-throttled to at most once per 6 hours per process (the decay query is idempotent inside its own window, so the throttle needs no schema). Neither action deletes: decay lowers salience, pruning flips retrieval-eligibility while keeping the markdown and the SQL row for provenance. Both manual commands still work and are unchanged.
+## Rebuild search index
+
+The **Memory** tab's action bar carries a **Rebuild search index** button, next to Run consolidation, Generate reflection, and Decay unused facts. It re-embeds every memory that has no vector at all, or whose vector was written under a different embedding model. It is safe to run at any time: a second pass finds nothing left to do, and it reports back one of three things (how many memories became searchable again, that everything was already indexed, or that this build ships without an embedding model and so cannot rebuild). On a large brain it can take a while.
+
+It exists for a standing reason, not only for imports. Semantic recall only ever indexed a memory **at the moment it was written**, so anything that arrived any other way had text and no vector, permanently: a portability import, a brain directory restored from a backup, a write made while the embedder was down. Separately, recall applies a model guard that **drops hits whose vectors were recorded under a different embedding model** and logs an instruction to re-embed the brain. Until this action existed nothing in the app could carry that instruction out, so switching embedding models silently narrowed what Athena could find. Doctrine was the one lane that self-healed, because it re-ingests on boot.
+
+Backend: `companion_reembed_missing` (`src-tauri/src/companion/brain/embeddings.rs`), wrapped by `companionReembedMissing()` in `src/api/companion.ts`. Builds without the `ml` feature return `available: false`, which is a clean no-op rather than an error.
+
+## Carrying Athena's memory to another device
+
+Athena's memory is portable. **Settings → Data → Export Workspace** carries an **Athena memory** scope, and because she is a singleton rather than a list it is picked by **tier** rather than by row. The bundle format, the passphrase rules, and the import result are documented in [`settings/README.md`](../settings/README.md#athenas-memory-core-self-and-learned-memory).
+
+**Core self** carries her `identity.md`, a small whitelist of portable preferences, and the conversation roster: thread titles, pins, origin, and status. The `claude_session_id` that lets a thread resume its local CLI session is a machine-local pointer and never travels.
+
+**Learned memory** carries facts, procedurals, goals, backlog items, rituals, and design decisions, each as its markdown body plus the sidecar row behind it. Each memory's file path travels relative to the brain root rather than as an absolute path, so it lands correctly under a different home directory.
+
+Both tiers are **encrypted scopes**: they export only under a passphrase of at least 8 characters, and they are not preselected when the export modal opens.
+
+### What deliberately does not travel
+
+- **Conversation history.** Athena carries what she learned, not what was said. Episodes, turns, and turn sidecars stay on the machine that recorded them.
+- **Doctrine.** Almost every doctrine node is compiled from documentation shipped inside the binary and is rebuilt on the target's first boot, so shipping it would be dead weight that also went stale.
+- **`constitution.md`**, for the same reason.
+- **Reflections, cockpit and dashboard state, archived episodes, identity backups**, and the machine-local telemetry tables (known projects, embeddings, edges, audit, wake log, budgets, approvals, background jobs, night plans, daily goals, plugin toggles).
+
+A test asserts every one of those exclusions **by name**, both as a forbidden JSON key and as a forbidden node kind or file path, and additionally seeds sentinel strings and asserts they are absent from the serialized bundle. A future section cannot quietly widen the payload.
+
+### What import does
+
+Import **merges additively with dedup**; it does not replace. Dedup is by content rather than by id (a fact by its scope and key, a procedural by its trigger pattern, a goal by its title, a backlog item by its summary, a ritual by its kind and description), so a device that already has memory of its own loses nothing and a re-import is not a way to double it. Items that matched something already in the brain are counted as skipped, not as imported, and reported that way.
+
+`identity.md` is the single exception: it is genuinely replaced, and the existing file is backed up next to it first through the same timestamped `identity.bak-<timestamp>-<uuid>.md` path that Athena's own `update_identity` op uses. The import result reports whether a replacement actually happened.
+
+Imported preferences are constrained by a fixed whitelist, checked both when the bundle is validated and again when it is applied, so a crafted bundle cannot set an arbitrary app setting.
+
+Because the bundle carries text and never vectors, everything imported starts unsearchable. A re-embed is fired in the background as soon as an Athena import lands, and the import result reports how many items were queued for it. If that background pass does not finish (the app is closed, the build has no embedder), **Rebuild search index** above is the manual path.
 
 ## Identity layer (`identity.md`, F1 — direction 7)
 
@@ -650,6 +706,28 @@ Athena is wired into the [Mastermind canvas](../teams/README.md) at the same **r
 - **`canvas_control { action }`** (auto-fire, max 4 per turn) is the door onto the canvas **action grammar** (`sub_mastermind/lib/canvasActionStore.ts`): camera verbs (`camera.read` / `pan` / `zoom` by factor or band / `focus` / `fit`) plus the zoom-gated opens (`dim.open` travels close and opens the cell's own Improve popover; `category.open`; `island.menu`). View only — the camera moves or a popover opens, nothing mutates, which is the whole consent argument for auto-fire.
 - The dispatcher validates what the frontend cannot: the kind is one the grammar speaks, any slug resolves against the **published scene** (demo islands refused by name), bands ∈ far/mid/near/close, numbers finite. Only validated fields are re-serialized, so an invented param never crosses the IPC boundary. The read kinds (`island.read`/`dim.read`) are refused with a pointer to `describe_canvas_project`, which answers synchronously without a frontend round-trip.
 - `session.rs` emits `companion://canvas-control` with `{ sessionId, action }`; the app-wide bridge (`useCanvasControlBridge`, mounted beside the panel bridge) routes to Teams → Mastermind, dispatches into the grammar queue (whose 2s pickup window carries the action across the route-in mount), and reports the settled `CanvasActionResult` back through **`companion_canvas_control_result`** — a System episode in the originating session, so Athena reads on her next turn where the camera actually landed (band, visible islands, clamps) or why it refused (`band_too_far`, `unknown_target`, `canvas_closed`). The same grammar is drivable without Athena via the dev-gated `window.__mmCanvas` bridge (`canvasTestBridge.ts`) for live testing on :17320.
+
+## Another one of your devices — constitution v50 (`remote_instruct`)
+
+Two paired Personas installs on one LAN can hand each other work (pairing and the job transport are documented in [sharing](../sharing/README.md)). Athena is wired to both ends of it.
+
+**Outbound — `remote_instruct`.** She proposes `{ device, instruction }`; `device` is a display name, a device id, or the literal `home`, and omitting it means the home device. The instruction must be self-contained: the assistant on the other machine cannot see this conversation. The consent rule is **mode-conditional**, stated once in `approval_exec_devices::gate_remote_instruct` and enforced by both the approval path and the autonomous path:
+
+| Autonomous mode | Target | What happens |
+| --- | --- | --- |
+| OFF | the home device | an approval card, resolved by a click |
+| OFF | any other paired device | refused, naming the rule and the remedy |
+| ON | any paired device | fires immediately, no card |
+
+It is **not** an `AUTOAPPROVE_ALLOWLIST` entry — that list is a flat set of names with no conditional form — but a dedicated arm ahead of it in `auto_resolve_if_allowed`, with a test pinning the name off the list. The executor calls the same gate, so a card filed under one mode and clicked under another is judged when it fires, not when it was proposed. Failures stay actionable: an unpaired peer and an unreachable device surface their own typed messages ("not one of your paired devices", "…is not reachable right now").
+
+**Inbound — the arriving instruction becomes a real turn.** The device that was asked runs it through the ordinary turn machinery as `TurnOrigin::External`, tagged `[Automated request from <device> (paired device) — not the user]`, with Athena's **full op set**: her approval rows, autopilot allowlist, boldness matrix and structural backstops apply unchanged, because the sender already cleared the pairing gate and the request is the operator's own arriving over another keyboard. The turn runs with `suppress_chat`, so the answer travels back over the job's wire and onto the orb (`companion://remote-job-turn`, phases `started` / `completed` / `failed`) rather than into that machine's transcript.
+
+A job can never be left `Running`: the turn is an inner spawned task whose `JoinHandle` converts a panic into a reported failure, wrapped in a 27-minute ceiling above the CLI's own, and a startup sweep fails inbound jobs a crash interrupted (the originator learns about those through the reconnect resume exchange).
+
+**Back on the originating device**, results become `System` episodes so Athena can report what the other machine did — capped at **two per job**: one when the first progress note lands, one on the terminal transition carrying the summary and a digest of the last five notes. Everything else stays in the job's notes and the Devices tab.
+
+`remote_instruct` is deliberately not `p2p`-gated: the op surface is identical in a lite build, where it answers that this build has no device link.
 
 ## Incidents (proactive blocker nudge)
 
@@ -1041,6 +1119,18 @@ Athena's hold-to-talk (footer + orb) routes through `useSpeechInput`, which pick
 Backend lives under `src-tauri/src/companion/stt/` mirroring the Piper TTS layout: `whisper.rs` (sidecar lookup `PERSONAS_WHISPER_BIN` → `~/.personas/companion-stt/bin/` → PATH; spawns `whisper-cli -m model -f wav -nt -np [-l lang]`), `catalog.rs` (curated ggml model allowlist), `downloader.rs` (atomic `.partial` download from `ggerganov/whisper.cpp`, progress on `companion://stt-download`). Commands: `companion_stt_transcribe`, `companion_stt_list_models`, `companion_stt_download_model`, `companion_stt_delete_model`, `companion_stt_engine_status`. The Voice tab's `SttPanel` exposes the engine selector, install status, and model browser. **Two preconditions for the local engine** (same UX as Piper TTS): a `whisper-cli` binary at `~/.personas/companion-stt/bin/`, and a downloaded model.
 
 **Why subprocess (same rationale as Piper):** users can swap newer whisper.cpp builds without recompiling, and the engine's ggml/BLAS stack stays in its own process.
+
+**One-click engine install (`stt/installer.rs`).** The binary used to be the last manual step in the whole voice stack — models already self-download, but the sidecar meant "go find a GitHub release, unzip it, drop the exe here, come back and hit Refresh". `companion_stt_install_engine` now does it: pinned release asset → streamed download → extract → verify, with progress on `companion://stt-install` in the same `SidecarInstallProgress` shape the TTS installers emit, so the panel reuses `VoiceEngineInstallBlock` unchanged (button locks itself, phase + percent render, `onDone` refreshes the status badge without a manual re-check). An `InflightGuard` refuses a second concurrent install.
+
+Deliberate choices: the asset is **pinned to a tag, not `latest`**, so an upstream release cannot silently change what the button installs (bumping it is a one-line change); it is the **plain CPU x64 build, not BLAS/cuBLAS**, because the accelerated variants expect extra runtime DLLs and an engine that fails to *start* is worse than one that transcribes slowly; extraction takes exes + DLLs and **flattens** them into the bin dir (upstream has shipped both root-level and `Release/`-prefixed layouts, and the resolver only looks directly in the bin dir), using `enclosed_name` so a hostile archive cannot traverse out; and an archive containing no executable **fails loudly** rather than reporting a successful install — that is the shape-drift alarm if upstream repackages. Windows-only, like the Kokoro installer; macOS/Linux keep the manual instructions on the card, which is why that hint text stays.
+
+### Comparing the two engines (`SttCompareModal`)
+
+Which engine is better depends on the operator's microphone and room, not on anything the app can know, so `SttPanel` offers a bench instead of an opinion: **Compare engines** opens a modal where one spoken take is transcribed by both engines and the two transcripts sit side by side, each with the wall-clock ms from "stopped speaking" to "text on screen" (whisper is generally more accurate and always slower; the trade only reads if both are visible).
+
+**Both engines listen at once, and that is forced, not chosen.** `SpeechRecognition` accepts no audio buffer — it only ever consumes a live mic — so there is no way to replay one captured clip into both. Recording twice would compare two different takes, which answers nothing. `useSttComparison` therefore runs `useDictation` and `useLocalDictation` concurrently over the same speech; they open independent captures (the browser engine's internal one, `getUserMedia` + AudioContext for whisper) and an input device is not exclusive, so both hear it.
+
+Failure is **per-engine**: a refused mic permission or a missing Whisper model fails only that column, and the other still produces a transcript — a one-column result is more useful than an error dialog. The missing-model case is named explicitly rather than surfacing the engine's raw `no_model_selected`. The modal composes shared primitives only (`BaseModal` / `Button` / `CopyButton` / `ErrorBanner` / `LoadingSpinner`), holds **no persistence** (transcripts live for the life of the modal), and the entry button is disabled while a real hold-to-talk capture is live, since that session owns the mic.
 
 ## Dev mode — the self-development loop (`dev_improve` / `dev_merge`)
 

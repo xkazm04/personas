@@ -789,6 +789,15 @@ CREATE TABLE IF NOT EXISTS companion_fact (
 CREATE INDEX IF NOT EXISTS idx_companion_fact_scope ON companion_fact(scope, fact_key);
 CREATE INDEX IF NOT EXISTS idx_companion_fact_super ON companion_fact(supersedes_id);
 
+-- The keyword lane that this table's comments used to only PROMISE now exists:
+-- `companion::brain::keyword` reads it with BM25 (`ORDER BY bm25(companion_fts)`)
+-- and it is the sole retrieval lane on the non-`ml` build. A sibling device
+-- dropped this table on 2026-08-07 on the correct-at-the-time premise that it
+-- had no reader; the 2026-08-08 merge restored it, because it now has one.
+-- The open trade-off it correctly identified stands: this is a second plaintext
+-- copy of every memory body, transcripts included, and it is NOT covered by the
+-- encrypted-section work. Retiring it means porting the lane to `companion_node`,
+-- not just deleting the table — the reader would silently return nothing.
 CREATE VIRTUAL TABLE IF NOT EXISTS companion_fts USING fts5(node_id UNINDEXED, body, tags);
 
 CREATE TABLE IF NOT EXISTS companion_approval (
@@ -1713,6 +1722,49 @@ pub fn init_test_db() -> Result<DbPool, AppError> {
     seed_builtin_connectors(&conn)?;
     seed_builtin_shared_events(&conn)?;
     drop(conn);
+    Ok(pool)
+}
+
+/// Throwaway USER database (the `personas_data.db` counterpart of
+/// [`init_test_db`]) for tests that exercise code spanning BOTH pools — the
+/// portability importer reads twins out of the app database but their
+/// knowledge bases out of this one.
+///
+/// Applies [`KNOWLEDGE_BASE_SCHEMA`] **and** [`COMPANION_SCHEMA`] plus the
+/// post-CREATE ALTERs `init_user_db` performs, so a test pool is shaped like a
+/// real `personas_data.db`. (It used to be knowledge-base only, on the grounds
+/// that nothing needing this pool also needed the brain — Athena's memory
+/// section of the portability bundle needs both, and a fixture whose columns
+/// differ from production is a test that proves the wrong thing.)
+#[cfg(any(test, feature = "test-support"))]
+pub fn init_test_user_db() -> Result<UserDbPool, AppError> {
+    use std::time::Duration;
+
+    let tmp = std::env::temp_dir().join(format!("personas_user_test_{}.db", uuid::Uuid::new_v4()));
+    let manager = SqliteConnectionManager::file(&tmp);
+    let pool = Pool::builder()
+        .max_size(2)
+        .connection_timeout(Duration::from_secs(5))
+        .connection_customizer(Box::new(SqlitePragmaCustomizer))
+        .build(manager)?;
+    {
+        let conn = pool.get()?;
+        conn.execute_batch(KNOWLEDGE_BASE_SCHEMA)?;
+        conn.execute_batch(COMPANION_SCHEMA)?;
+        // The columns `init_user_db` adds after the CREATE. Same
+        // failure-ignoring contract: "duplicate column name" is the success
+        // path on a re-run.
+        for stmt in &[
+            "ALTER TABLE companion_session ADD COLUMN title TEXT;",
+            "ALTER TABLE companion_session ADD COLUMN status TEXT NOT NULL DEFAULT 'active';",
+            "ALTER TABLE companion_session ADD COLUMN last_read_at TEXT;",
+            "ALTER TABLE companion_session ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0;",
+            "ALTER TABLE companion_session ADD COLUMN origin TEXT NOT NULL DEFAULT 'user';",
+            "ALTER TABLE companion_node ADD COLUMN session_id TEXT;",
+        ] {
+            let _ = conn.execute_batch(stmt);
+        }
+    }
     Ok(pool)
 }
 

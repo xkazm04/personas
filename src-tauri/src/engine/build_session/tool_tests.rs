@@ -23,6 +23,195 @@ use super::super::runner as engine_runner;
 use super::super::tool_runner;
 
 // =============================================================================
+// The promote-gate decision table
+// =============================================================================
+//
+// Direction `a-checkmark-that-means-something` (settled with the user
+// 2026-08-07). A build promoted out of the autonomous one-shot flow is armed
+// with a schedule trigger and a public webhook and executes against the user's
+// real credentials — so "the tools passed" has to mean a call was actually
+// made. Four separate paths used to reach `tools_failed: 0` with nothing
+// executed. The settled verdicts:
+//
+//   | plan entry                          | verdict    | why                          |
+//   |-------------------------------------|------------|------------------------------|
+//   | persona has zero tools              | pass       | nothing to exercise          |
+//   | empty `curl`, no `cli_native` claim | skipped    | the prompt invites these (§4)|
+//   | `cli_native: true`                  | UNVERIFIED | an LLM boolean is not a call |
+//   | no parseable plan → cred substring  | UNVERIFIED | a vault row is not a test    |
+//
+// `unverified` is a THIRD outcome, distinct from both pass and fail: nothing
+// went wrong, but nothing was proven either. It holds promotion (see
+// `oneshot::evaluate_promote_gate`) without being reported as a failure the
+// fix-pass LLM should burn retries trying to "correct".
+//
+// The one carve-out on `cli_native` is a platform built-in the BACKEND itself
+// recognises by name (below). That pass is authored by this code from a fixed
+// allow-list, not by the model, and there is no external service or credential
+// behind it — the same class of defensible pass as "the persona has no tools".
+
+/// Result status for an entry that was counted but never executed.
+pub(super) const STATUS_UNVERIFIED: &str = "unverified";
+
+/// Tool names this backend recognises as in-process platform capabilities.
+/// Nothing external is called, no user credential is involved, so counting
+/// these as a pass is a code-authored claim rather than a model-authored one.
+///
+/// Why these and not `cli_native` generally — the distinction is the whole
+/// point of this file, and it is an easy one to lose:
+///
+///   * This list is CODE. A model cannot add to it, exactly as it can no
+///     longer mint `personas_gmail` into a platform connector. Membership is
+///     evidence because we put it there knowing what is behind the name.
+///   * `cli_native: true` is a boolean the model writes about its own work,
+///     and it can assert it of ANYTHING — including a real external connector
+///     with a live endpoint and the user's credential behind it, which it
+///     simply never called. That is the false green this direction removes.
+///
+/// `web_search` / `web_fetch` are on the list for the same reason
+/// `personas_database` is: genuinely built into the Claude CLI, no external
+/// service, no credential to resolve, nothing a curl could exercise. Holding
+/// them would be a false HOLD — the exact mirror of the false green — and it
+/// would fire on the canonical case the test prompt itself names below. A
+/// gate that stops honest builds gets muted, and then it protects nothing.
+pub(super) const PLATFORM_BUILTIN_TOOLS: &[&str] = &[
+    "personas_database",
+    "database",
+    "database_query",
+    "db_query",
+    "db_write",
+    "personas_messages",
+    "messaging",
+    "personas_vector_db",
+    "file_read",
+    "file_write",
+    "web_search",
+    "web_fetch",
+];
+
+/// Connector names that are platform-internal and never bind a user
+/// credential. Matched EXACTLY — the previous `connector.starts_with(
+/// "personas_")` prefix test let a model-authored connector name (say
+/// `personas_gmail`) mint itself an auto-pass.
+pub(super) const PLATFORM_CONNECTORS: &[&str] = &[
+    "personas_database",
+    "personas_messages",
+    "personas_vector_db",
+    "messaging",
+    "database",
+    "builtin",
+];
+
+/// Generic infrastructure tools that are conduits, not credential subjects.
+/// Used only by the no-parseable-plan fallback: emitting "http_request needs
+/// credentials" tells the user nothing — the connector it drives is the
+/// credential subject and gets its own entry.
+pub(super) const INFRASTRUCTURE_TOOLS: &[&str] = &[
+    "personas_database",
+    "database",
+    "database_query",
+    "db_query",
+    "db_write",
+    "personas_messages",
+    "messaging",
+    "personas_vector_db",
+    "file_read",
+    "file_write",
+    "web_search",
+    "web_fetch",
+    "http_request",
+    "data_processing",
+    "nlp_parser",
+    "ai_generation",
+    "date_calculation",
+    "notification_sender",
+    "text_analysis",
+    "data_enrichment",
+];
+
+pub(super) fn is_platform_connector(name: &str) -> bool {
+    PLATFORM_CONNECTORS
+        .iter()
+        .any(|c| c.eq_ignore_ascii_case(name))
+}
+
+/// True when this backend — not the model — recognises the entry as an
+/// in-process platform built-in.
+pub(super) fn is_platform_builtin(tool_name: &str, connector: Option<&str>) -> bool {
+    PLATFORM_BUILTIN_TOOLS
+        .iter()
+        .any(|t| t.eq_ignore_ascii_case(tool_name))
+        || connector.is_some_and(is_platform_connector)
+}
+
+/// Did the model assert `cli_native` on this entry?
+///
+/// Fail closed on shape: a non-boolean value (`"true"`, `1`) is still the
+/// model asserting the field, and must not fall through to the benign
+/// empty-curl `skipped` branch as if the key were absent.
+fn claims_cli_native(entry: &serde_json::Value) -> bool {
+    match entry.get("cli_native") {
+        None | Some(serde_json::Value::Null) => false,
+        Some(serde_json::Value::Bool(b)) => *b,
+        Some(_) => true,
+    }
+}
+
+/// How one `test_plan` entry is to be counted — decided before any call.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum EntryClass {
+    /// Backend-recognised in-process built-in. Counts as `passed`.
+    PlatformBuiltin,
+    /// The model claimed `cli_native` for something this backend does not
+    /// recognise as a built-in. Counted `unverified`; holds promotion.
+    ClaimedCliNative,
+    /// Empty curl with no `cli_native` claim — the prompt's §4 "non-testable"
+    /// case. Counted `skipped`; non-blocking, by decision.
+    NotTestable,
+    /// Carries a curl command — execute it and take the real verdict.
+    Executable,
+}
+
+/// The promote-gate decision table, as one pure function.
+pub(super) fn classify_test_entry(entry: &serde_json::Value) -> EntryClass {
+    let tool_name = entry
+        .get("tool_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unknown");
+    let connector = entry.get("connector").and_then(|v| v.as_str());
+
+    if is_platform_builtin(tool_name, connector) {
+        return EntryClass::PlatformBuiltin;
+    }
+    if claims_cli_native(entry) {
+        return EntryClass::ClaimedCliNative;
+    }
+    if entry
+        .get("curl")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .is_empty()
+    {
+        return EntryClass::NotTestable;
+    }
+    EntryClass::Executable
+}
+
+/// One line of "we counted this but never called it", carried in the report so
+/// the hold the promote gate raises names something the user can act on.
+fn unverified_reason(
+    tool_name: &str,
+    connector: Option<&str>,
+    reason: &str,
+) -> serde_json::Value {
+    serde_json::json!({
+        "tool_name": tool_name,
+        "connector": connector,
+        "reason": reason,
+    })
+}
+
+// =============================================================================
 // run_tool_tests -- LLM-driven real API testing for build drafts
 // =============================================================================
 
@@ -78,14 +267,7 @@ pub async fn run_tool_tests(
     }
 
     if tools.is_empty() {
-        return Ok(serde_json::json!({
-            "results": [],
-            "tools_tested": 0,
-            "tools_passed": 0,
-            "tools_failed": 0,
-            "tools_skipped": 0,
-            "credential_issues": [],
-        }));
+        return Ok(empty_tool_report());
     }
 
     let persona_name = agent_ir.name.as_deref().unwrap_or("draft-agent");
@@ -277,19 +459,6 @@ pub async fn run_tool_tests(
         })
         .collect();
 
-    // Built-in platform connectors that never need user credentials
-    let platform_connectors: std::collections::HashSet<&str> = [
-        "personas_database",
-        "personas_messages",
-        "personas_vector_db",
-        "messaging",
-        "database",
-        "builtin",
-    ]
-    .iter()
-    .copied()
-    .collect();
-
     // Build connector resolution list for the report so the frontend can show
     // which connectors were matched to user credentials.
     // Check three sources: resolved env vars, credential hints, AND vault service types.
@@ -302,7 +471,7 @@ pub async fn run_tool_tests(
             .filter_map(|c| c.name().map(|n| n.to_string()))
             .collect();
         names.iter()
-            .filter(|name| !platform_connectors.contains(name.to_lowercase().as_str()))
+            .filter(|name| !is_platform_connector(name))
             .map(|name| {
                 let name_lower = name.to_lowercase();
                 let matched = resolved_cred_names.contains(&name_lower)
@@ -335,128 +504,44 @@ pub async fn run_tool_tests(
         //     — one result entry per connector, each carrying the connector
         //     name so the UI can surface "Alpha Vantage needs credentials"
         //     instead of "http_request needs credentials".
-        let builtin_tool_names: std::collections::HashSet<&str> = [
-            "personas_database",
-            "database",
-            "database_query",
-            "db_query",
-            "db_write",
-            "personas_messages",
-            "messaging",
-            "personas_vector_db",
-            "file_read",
-            "file_write",
-            "web_search",
-            "web_fetch",
-            "http_request",
-            "data_processing",
-            "nlp_parser",
-            "ai_generation",
-            "date_calculation",
-            "notification_sender",
-            "text_analysis",
-            "data_enrichment",
-        ]
-        .iter()
-        .copied()
-        .collect();
+        let tool_names: Vec<String> = tools
+            .iter()
+            .map(|t| t.name().to_string())
+            .filter(|n| !n.is_empty())
+            .collect();
 
-        let mut fb_passed = 0usize;
-        let mut fb_failed = 0usize;
-        let mut fb_cred_issues: Vec<serde_json::Value> = Vec::new();
-        let mut fallback_results: Vec<serde_json::Value> = Vec::new();
-
-        // Infrastructure tools auto-pass — they don't have their own
-        // credentials; they're conduits to whichever connector is bound.
-        for t in tools.iter() {
-            let name = t.name();
-            if name.is_empty() {
-                continue;
-            }
-            if builtin_tool_names.contains(name) {
-                fb_passed += 1;
-                fallback_results.push(serde_json::json!({
-                    "tool_name": name,
-                    "status": "passed",
-                    "http_status": null,
-                    "latency_ms": 0,
-                    "error": null,
-                    "connector": null,
-                    "output_preview": "Built-in platform tool — available at runtime, not executed in this test",
-                }));
-            }
-        }
-
-        // Emit one result per connector. This is what makes the UI's
-        // credential_missing messages specific — the connector name is the
-        // credential subject, not the generic tool name.
-        let connector_names: Vec<String> = agent_ir
+        // Decision-table row 4: a connector whose name merely SHARES A
+        // SUBSTRING with a vault service type used to be stamped
+        // "Credential available — connector verified" and counted as a pass.
+        // Resolve the (fuzzy, unchanged) match here; `build_no_plan_fallback`
+        // decides what it is worth — which is now `unverified`, not a pass.
+        let connectors: Vec<(String, bool)> = agent_ir
             .required_connectors
             .iter()
             .filter_map(|c| c.name().map(|n| n.to_string()))
+            .map(|cname| {
+                let name_lower = cname.to_lowercase();
+                let has_cred = resolved_cred_names.contains(&name_lower)
+                    || resolved_cred_names.iter().any(|cred| {
+                        name_lower.contains(cred.as_str()) || cred.contains(&name_lower)
+                    })
+                    || hints.iter().any(|h| h.to_lowercase().contains(&name_lower))
+                    || vault_types_lower.contains(&name_lower)
+                    || vault_types_lower
+                        .iter()
+                        .any(|vt| name_lower.contains(vt.as_str()) || vt.contains(&name_lower));
+                (cname, has_cred)
+            })
             .collect();
-        for cname in &connector_names {
-            let name_lower = cname.to_lowercase();
-            if platform_connectors.contains(name_lower.as_str()) {
-                fb_passed += 1;
-                fallback_results.push(serde_json::json!({
-                    "tool_name": cname,
-                    "status": "passed",
-                    "http_status": null,
-                    "latency_ms": 0,
-                    "error": null,
-                    "connector": cname,
-                    "output_preview": "Built-in platform connector — available at runtime, not executed in this test",
-                }));
-                continue;
-            }
-            let has_cred = resolved_cred_names.contains(&name_lower)
-                || resolved_cred_names
-                    .iter()
-                    .any(|cred| name_lower.contains(cred.as_str()) || cred.contains(&name_lower))
-                || hints.iter().any(|h| h.to_lowercase().contains(&name_lower))
-                || vault_types_lower.contains(&name_lower)
-                || vault_types_lower
-                    .iter()
-                    .any(|vt| name_lower.contains(vt.as_str()) || vt.contains(&name_lower));
-            if has_cred {
-                fb_passed += 1;
-                fallback_results.push(serde_json::json!({
-                    "tool_name": cname,
-                    "status": "passed",
-                    "http_status": null,
-                    "latency_ms": 0,
-                    "error": null,
-                    "connector": cname,
-                    "output_preview": "Credential available — connector verified",
-                }));
-            } else {
-                fb_failed += 1;
-                fb_cred_issues.push(serde_json::json!({
-                    "connector": cname,
-                    "issue": format!("No credential found for connector '{cname}'. Add it in Keys section."),
-                }));
-                fallback_results.push(serde_json::json!({
-                    "tool_name": cname,
-                    "status": "credential_missing",
-                    "http_status": null,
-                    "latency_ms": 0,
-                    "error": format!("No credential configured for '{cname}'"),
-                    "connector": cname,
-                    "output_preview": null,
-                }));
-            }
-        }
 
-        return Ok(serde_json::json!({
-            "results": fallback_results,
-            "tools_tested": fb_passed + fb_failed,
-            "tools_passed": fb_passed,
-            "tools_failed": fb_failed,
-            "tools_skipped": 0usize,
-            "credential_issues": fb_cred_issues,
-            "connectors_resolved": connectors_resolved,
-        }));
+        let mut report = build_no_plan_fallback(&tool_names, &connectors);
+        if let Some(obj) = report.as_object_mut() {
+            obj.insert(
+                "connectors_resolved".to_string(),
+                serde_json::Value::Array(connectors_resolved),
+            );
+        }
+        return Ok(report);
     }
 
     // Step 4: Execute each test curl command with real credentials
@@ -465,11 +550,7 @@ pub async fn run_tool_tests(
         .map(|(k, v)| (k.as_str(), v.as_str()))
         .collect();
 
-    let mut results: Vec<serde_json::Value> = Vec::new();
-    let mut passed = 0usize;
-    let mut failed = 0usize;
-    let mut skipped = 0usize;
-    let mut credential_issues: Vec<serde_json::Value> = Vec::new();
+    let mut tally = ToolTestTally::default();
 
     for (idx, entry) in test_plan.iter().enumerate() {
         let tool_name = entry
@@ -477,10 +558,6 @@ pub async fn run_tool_tests(
             .and_then(|v| v.as_str())
             .unwrap_or("unknown");
         let curl_cmd = entry.get("curl").and_then(|v| v.as_str()).unwrap_or("");
-        let connector = entry
-            .get("connector")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string());
 
         tracing::info!(
             session_id = %session_id,
@@ -490,86 +567,18 @@ pub async fn run_tool_tests(
             total
         );
 
-        let is_cli_native = entry
-            .get("cli_native")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false);
-        let description = entry
-            .get("description")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-
-        // Auto-pass built-in platform connectors regardless of CLI classification
-        let is_builtin_platform = matches!(
-            tool_name,
-            "personas_database"
-                | "database"
-                | "database_query"
-                | "db_query"
-                | "db_write"
-                | "personas_messages"
-                | "messaging"
-                | "personas_vector_db"
-                | "file_read"
-                | "file_write"
-        ) || connector
-            .as_deref()
-            .is_some_and(|c| c.starts_with("personas_") || c == "builtin");
-
-        let result = if is_cli_native || is_builtin_platform {
-            // CLI-native + built-in platform tools are reported available rather
-            // than executed: there is no live call here, so the preview must not
-            // imply verification. Claiming "tested against live data" for a DB/
-            // messaging tool that was never run is a trust-destroying false green
-            // (UAT 2026-07-20: "a checkmark that means nothing is worse than no
-            // checkmark"). NOTE: these still count toward `passed`/the promote
-            // gate — whether an unexercised built-in should count as a pass is a
-            // separate, gate-affecting decision left to a follow-up.
-            passed += 1;
-            tool_runner::ToolTestResult {
-                tool_name: tool_name.to_string(),
-                status: "passed".to_string(),
-                http_status: None,
-                latency_ms: 0,
-                error: None,
-                connector: connector.clone(),
-                output_preview: Some(format!(
-                    "{description} — available at runtime, not executed in this test"
-                )),
-            }
-        } else if curl_cmd.is_empty() {
-            skipped += 1;
-            tool_runner::ToolTestResult {
-                tool_name: tool_name.to_string(),
-                status: "skipped".to_string(),
-                http_status: None,
-                latency_ms: 0,
-                error: Some(if description.is_empty() {
-                    "No curl command generated".to_string()
-                } else {
-                    description
-                }),
-                connector: connector.clone(),
-                output_preview: None,
-            }
-        } else {
-            let r = tool_runner::execute_test_curl(curl_cmd, &env_map).await;
-            match r.status.as_str() {
-                "passed" => passed += 1,
-                "credential_missing" => {
-                    failed += 1;
-                    credential_issues.push(serde_json::json!({
-                        "connector": connector,
-                        "issue": r.error,
-                    }));
-                }
-                _ => failed += 1,
-            }
-            tool_runner::ToolTestResult {
-                tool_name: tool_name.to_string(),
-                connector: connector.clone(),
-                ..r
+        // The decision table (top of file), applied. `record_planned_entry`
+        // is pure and returns `None` only for entries that must actually be
+        // executed — which is the one thing this loop does that a test can't.
+        let result = match tally.record_planned_entry(entry) {
+            Some(r) => r,
+            None => {
+                let connector = entry
+                    .get("connector")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                let r = tool_runner::execute_test_curl(curl_cmd, &env_map).await;
+                tally.record_executed(tool_name, connector, r)
             }
         };
 
@@ -599,25 +608,292 @@ pub async fn run_tool_tests(
             }),
         );
 
-        results.push(result_json);
+        tally.results.push(result_json);
     }
 
     // Step 5: Generate human-friendly summary via CLI
-    let results_json = serde_json::to_string_pretty(&results).unwrap_or_default();
-    let summary = generate_test_summary(&results_json, persona_name, passed, failed, skipped)
-        .await
-        .unwrap_or_else(|_| build_fallback_summary(&results, passed, failed, skipped));
+    let results_json = serde_json::to_string_pretty(&tally.results).unwrap_or_default();
+    let summary = generate_test_summary(
+        &results_json,
+        persona_name,
+        tally.passed,
+        tally.failed,
+        tally.skipped,
+        tally.unverified,
+    )
+    .await
+    .unwrap_or_else(|_| build_fallback_summary(&tally));
 
-    Ok(serde_json::json!({
-        "results": results,
-        "tools_tested": passed + failed,
-        "tools_passed": passed,
-        "tools_failed": failed,
-        "tools_skipped": skipped,
-        "credential_issues": credential_issues,
-        "connectors_resolved": connectors_resolved,
-        "summary": summary,
-    }))
+    let mut report = tally.into_report();
+    if let Some(obj) = report.as_object_mut() {
+        obj.insert(
+            "connectors_resolved".to_string(),
+            serde_json::Value::Array(connectors_resolved),
+        );
+        obj.insert("summary".to_string(), serde_json::Value::String(summary));
+    }
+    Ok(report)
+}
+
+/// Running totals for one `run_tool_tests` pass.
+///
+/// Extracted so the promote-gate decision table is exercised by tests rather
+/// than only by a live build: every counting decision that does NOT require a
+/// network call happens in [`ToolTestTally::record_planned_entry`], which is
+/// pure. The async loop above is left as a thin driver over it.
+#[derive(Debug, Default)]
+pub(super) struct ToolTestTally {
+    pub results: Vec<serde_json::Value>,
+    pub passed: usize,
+    pub failed: usize,
+    pub skipped: usize,
+    pub unverified: usize,
+    pub unverified_reasons: Vec<serde_json::Value>,
+    pub credential_issues: Vec<serde_json::Value>,
+}
+
+impl ToolTestTally {
+    /// Count one `test_plan` entry that can be decided without making a call.
+    ///
+    /// Returns `None` when the entry carries a real curl command — the caller
+    /// must execute it and feed the verdict back through
+    /// [`Self::record_executed`].
+    pub(super) fn record_planned_entry(
+        &mut self,
+        entry: &serde_json::Value,
+    ) -> Option<tool_runner::ToolTestResult> {
+        let tool_name = entry
+            .get("tool_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown");
+        let connector = entry
+            .get("connector")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+        let description = entry
+            .get("description")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+
+        match classify_test_entry(entry) {
+            EntryClass::Executable => None,
+
+            EntryClass::PlatformBuiltin => {
+                // Built-in platform tools are reported available rather than
+                // executed: there is no live call here, so the preview must not
+                // imply verification. Claiming "tested against live data" for a
+                // DB/messaging tool that was never run is a trust-destroying
+                // false green (UAT 2026-07-20: "a checkmark that means nothing
+                // is worse than no checkmark"). These DO count toward `passed`
+                // — the recognition is this backend's own, from a fixed
+                // allow-list, and there is no external service or user
+                // credential behind them.
+                self.passed += 1;
+                Some(tool_runner::ToolTestResult {
+                    tool_name: tool_name.to_string(),
+                    status: "passed".to_string(),
+                    http_status: None,
+                    latency_ms: 0,
+                    error: None,
+                    connector,
+                    output_preview: Some(format!(
+                        "{description} — available at runtime, not executed in this test"
+                    )),
+                })
+            }
+
+            EntryClass::ClaimedCliNative => {
+                // Decision-table row 3. The model asserted `cli_native: true`
+                // for something this backend does not recognise as a platform
+                // built-in. No call was made, so there is nothing to report as
+                // a pass — it is `unverified`, and unverified holds promotion.
+                self.unverified += 1;
+                self.unverified_reasons.push(unverified_reason(
+                    tool_name,
+                    connector.as_deref(),
+                    "The build model marked this tool as CLI-native, so no call was made against it. Nothing was executed, so it could not be verified.",
+                ));
+                Some(tool_runner::ToolTestResult {
+                    tool_name: tool_name.to_string(),
+                    status: STATUS_UNVERIFIED.to_string(),
+                    http_status: None,
+                    latency_ms: 0,
+                    error: Some(
+                        "Reported as CLI-native by the build model — no call was made, so this tool is unverified.".to_string(),
+                    ),
+                    connector,
+                    output_preview: None,
+                })
+            }
+
+            EntryClass::NotTestable => {
+                // Decision-table row 2. The test prompt explicitly invites
+                // these (§4 "Non-testable → emit an entry with empty curl"),
+                // so they stay non-blocking by decision.
+                self.skipped += 1;
+                Some(tool_runner::ToolTestResult {
+                    tool_name: tool_name.to_string(),
+                    status: "skipped".to_string(),
+                    http_status: None,
+                    latency_ms: 0,
+                    error: Some(if description.is_empty() {
+                        "No curl command generated".to_string()
+                    } else {
+                        description
+                    }),
+                    connector,
+                    output_preview: None,
+                })
+            }
+        }
+    }
+
+    /// Count the verdict of a curl that actually ran.
+    pub(super) fn record_executed(
+        &mut self,
+        tool_name: &str,
+        connector: Option<String>,
+        r: tool_runner::ToolTestResult,
+    ) -> tool_runner::ToolTestResult {
+        match r.status.as_str() {
+            "passed" => self.passed += 1,
+            "credential_missing" => {
+                self.failed += 1;
+                self.credential_issues.push(serde_json::json!({
+                    "connector": connector,
+                    "issue": r.error,
+                }));
+            }
+            _ => self.failed += 1,
+        }
+        tool_runner::ToolTestResult {
+            tool_name: tool_name.to_string(),
+            connector,
+            ..r
+        }
+    }
+
+    pub(super) fn into_report(self) -> serde_json::Value {
+        serde_json::json!({
+            "results": self.results,
+            "tools_tested": self.passed + self.failed,
+            "tools_passed": self.passed,
+            "tools_failed": self.failed,
+            "tools_skipped": self.skipped,
+            "tools_unverified": self.unverified,
+            "unverified_reasons": self.unverified_reasons,
+            "credential_issues": self.credential_issues,
+        })
+    }
+}
+
+/// The report a persona with no tools at all produces.
+///
+/// Decision-table row 1: there is nothing to exercise, so an empty report is
+/// an honest pass rather than a fail-open. Kept as its own constructor so the
+/// test that names this carve-out as intentional
+/// (`zero_tool_persona_report_promotes`) runs against the real shape.
+pub(super) fn empty_tool_report() -> serde_json::Value {
+    ToolTestTally::default().into_report()
+}
+
+/// Build the report for the no-parseable-plan fallback.
+///
+/// Pure by construction — the caller does the vault lookups and hands in, per
+/// connector, whether a credential NAME matched. Decision-table row 4: that
+/// fuzzy substring match used to be stamped `"Credential available —
+/// connector verified"` and counted as a pass. A vault row sharing a substring
+/// with a connector name is not a test, and nothing here executed, so the
+/// verdict is `unverified` — and the word "verified" is gone from the copy.
+///
+/// Infrastructure tools (`http_request`, `web_search`, …) still auto-pass:
+/// they own no credential and are conduits to the connectors, which get their
+/// own entry. Platform connectors likewise — recognised from this backend's
+/// own allow-list, with nothing external behind them.
+pub(super) fn build_no_plan_fallback(
+    tool_names: &[String],
+    connectors: &[(String, bool)],
+) -> serde_json::Value {
+    let mut tally = ToolTestTally::default();
+
+    for name in tool_names {
+        if INFRASTRUCTURE_TOOLS
+            .iter()
+            .any(|t| t.eq_ignore_ascii_case(name))
+        {
+            tally.passed += 1;
+            tally.results.push(serde_json::json!({
+                "tool_name": name,
+                "status": "passed",
+                "http_status": null,
+                "latency_ms": 0,
+                "error": null,
+                "connector": null,
+                "output_preview": "Built-in platform tool — available at runtime, not executed in this test",
+            }));
+        }
+    }
+
+    // One result per connector: the connector name is the credential subject,
+    // so the UI can say "Alpha Vantage needs credentials" rather than
+    // "http_request needs credentials".
+    for (cname, has_cred) in connectors {
+        if is_platform_connector(cname) {
+            tally.passed += 1;
+            tally.results.push(serde_json::json!({
+                "tool_name": cname,
+                "status": "passed",
+                "http_status": null,
+                "latency_ms": 0,
+                "error": null,
+                "connector": cname,
+                "output_preview": "Built-in platform connector — available at runtime, not executed in this test",
+            }));
+        } else if *has_cred {
+            tally.unverified += 1;
+            tally.unverified_reasons.push(unverified_reason(
+                cname,
+                Some(cname),
+                "A credential in the vault matches this connector's name, but the build model produced no test plan, so no call was made against it.",
+            ));
+            tally.results.push(serde_json::json!({
+                "tool_name": cname,
+                "status": STATUS_UNVERIFIED,
+                "http_status": null,
+                "latency_ms": 0,
+                "error": "A matching credential exists, but no call was made against this connector — it is unverified, not verified.",
+                "connector": cname,
+                "output_preview": null,
+            }));
+        } else {
+            tally.failed += 1;
+            tally.credential_issues.push(serde_json::json!({
+                "connector": cname,
+                "issue": format!("No credential found for connector '{cname}'. Add it in Keys section."),
+            }));
+            tally.results.push(serde_json::json!({
+                "tool_name": cname,
+                "status": "credential_missing",
+                "http_status": null,
+                "latency_ms": 0,
+                "error": format!("No credential configured for '{cname}'"),
+                "connector": cname,
+                "output_preview": null,
+            }));
+        }
+    }
+
+    let mut report = tally.into_report();
+    if let Some(obj) = report.as_object_mut() {
+        // The build model returned nothing parseable, so this report is the
+        // degraded path — surfaced so a hold can say WHY nothing ran.
+        obj.insert(
+            "test_plan_parsed".to_string(),
+            serde_json::Value::Bool(false),
+        );
+    }
+    report
 }
 
 /// Ask the CLI to generate a human-friendly summary of test results.
@@ -638,7 +914,8 @@ async fn run_scripted_connector_tests(
     if connector_names.is_empty() {
         return Ok(serde_json::json!({
             "results": [], "tools_tested": 0, "tools_passed": 0, "tools_failed": 0,
-            "tools_skipped": 0, "credential_issues": [], "connectors_resolved": []
+            "tools_skipped": 0, "tools_unverified": 0, "unverified_reasons": [],
+            "credential_issues": [], "connectors_resolved": []
         }));
     }
 
@@ -720,6 +997,10 @@ async fn run_scripted_connector_tests(
         "tools_passed": passed,
         "tools_failed": failed,
         "tools_skipped": 0usize,
+        // Every lane here runs the connector's DECLARED healthcheck, so each
+        // result is a real call — there is nothing unverified to report.
+        "tools_unverified": 0usize,
+        "unverified_reasons": [],
         "credential_issues": credential_issues,
         "connectors_resolved": connector_names,
     }))
@@ -731,6 +1012,7 @@ async fn generate_test_summary(
     passed: usize,
     failed: usize,
     skipped: usize,
+    unverified: usize,
 ) -> Result<String, AppError> {
     let prompt = format!(
         r#"You are writing a test report for a non-technical user who just built an AI agent called "{agent_name}".
@@ -739,7 +1021,7 @@ async fn generate_test_summary(
 {results_json}
 
 ## Stats
-- {passed} passed, {failed} failed, {skipped} skipped
+- {passed} passed, {failed} failed, {skipped} skipped, {unverified} unverified
 
 ## Instructions
 Write a structured report in this EXACT markdown format:
@@ -750,16 +1032,20 @@ One paragraph (2-3 sentences) summarizing the overall result in plain, friendly 
 ### Results
 For EACH tool tested, write exactly one entry:
 - **Tool Name** — ✅ One sentence describing what was verified and that it works. OR
-- **Tool Name** — ❌ One sentence explaining in plain language what went wrong and how to fix it.
+- **Tool Name** — ❌ One sentence explaining in plain language what went wrong and how to fix it. OR
+- **Tool Name** — ⚠️ One sentence saying nothing was run against it, so it is unverified.
 
 ### Next Steps
 If all passed: One encouraging sentence.
 If some failed: 2-3 bullet points with specific, actionable steps the user should take (e.g., "Go to **Keys** section and refresh your Gmail credentials").
+If some are unverified: say that this build will not be promoted automatically until those tools can actually be exercised.
 
 ## Rules
 - Use ONLY the markdown format above (###, **, -, ✅, ❌)
 - Write for a NON-TECHNICAL user — no HTTP codes, no API jargon, no JSON
-- For CLI-native tools (web search, summarization): explain they use built-in capabilities and are always available
+- A tool with status `unverified` was NEVER CALLED. Never write that it works,
+  is available, or was verified — say plainly that nothing was run against it,
+  so we cannot tell you whether it works. Use ⚠️ for these, never ✅.
 - For credential failures: always mention the **Keys** section
 - Keep each tool summary to exactly ONE sentence"#
     );
@@ -806,15 +1092,19 @@ If some failed: 2-3 bullet points with specific, actionable steps the user shoul
 }
 
 /// Build a basic fallback summary when CLI summary generation fails.
-fn build_fallback_summary(
-    results: &[serde_json::Value],
-    passed: usize,
-    failed: usize,
-    skipped: usize,
-) -> String {
+fn build_fallback_summary(tally: &ToolTestTally) -> String {
+    let ToolTestTally {
+        results,
+        passed,
+        failed,
+        skipped,
+        unverified,
+        ..
+    } = tally;
+    let (passed, failed, skipped, unverified) = (*passed, *failed, *skipped, *unverified);
     let mut lines = Vec::new();
 
-    if failed == 0 && passed > 0 {
+    if failed == 0 && unverified == 0 && passed > 0 {
         lines.push(format!(
             "All {} tool connections were verified successfully.",
             passed
@@ -830,6 +1120,12 @@ fn build_fallback_summary(
             passed,
             passed + failed,
             failed
+        ));
+    }
+
+    if unverified > 0 {
+        lines.push(format!(
+            "{unverified} tool(s) were never actually called, so they are unverified — this build won't be promoted automatically until they can be exercised."
         ));
     }
 
@@ -849,7 +1145,12 @@ fn build_fallback_summary(
         let subject = connector.unwrap_or(tool);
         let friendly = subject.replace('_', " ");
 
-        if status == "credential_missing" {
+        if status == STATUS_UNVERIFIED {
+            lines.push(format!(
+                "\"{}\" was never called, so we can't tell you whether it works.",
+                friendly
+            ));
+        } else if status == "credential_missing" {
             lines.push(format!(
                 "\"{}\" needs credentials — add them in the Keys section.",
                 friendly
@@ -911,13 +1212,15 @@ Generic tools (http_request, web_search, file_read, …) are conduits — they d
 For each connector in the list above whose category is an external service (not a platform builtin), compose a minimal safe curl. Set `tool_name` to the connector name (same as `connector`), or to the persona tool that drives the call when that's clearer. ALWAYS set `connector` to the connector's `name` so the UI can surface "Alpha Vantage" instead of "http_request".
 
 ### 2. CLI-native tools (Claude built-ins, no external API)
-`web_search`, `web_fetch`, text summarization, reasoning, etc. are powered by Claude CLI. Mark these with `"cli_native": true` and `"curl": ""`.
+Text summarization, reasoning and similar capabilities are powered by the Claude CLI with no endpoint to hit. Mark these with `"cli_native": true` and `"curl": ""`.
 
-### 3. Built-in platform connectors (always available)
-`personas_database` / `database` / `personas_messages` / `messaging` / `personas_vector_db` / `file_read` / `file_write` — auto-verified. Mark `"cli_native": true`.
+`cli_native` is NOT a shortcut and is NOT a pass. It records that nothing was called, and for any name the backend does not itself recognise as a built-in (§3) the entry is counted as **unverified**, which HOLDS the build from being promoted automatically. If the tool talks to an external service, emit a real curl in §1 instead — a `cli_native` claim on something that has an API is a false green and will block the build rather than help it.
+
+### 3. Built-in platform capabilities (recognised by name, always available)
+`personas_database` / `database` / `database_query` / `db_query` / `db_write` / `personas_messages` / `messaging` / `personas_vector_db` / `file_read` / `file_write` / `web_search` / `web_fetch` are in-process capabilities with no external service and no user credential behind them. Set `tool_name` (or `connector`) to EXACTLY one of those names and leave `curl` empty; the backend recognises them by name and does not need a `cli_native` claim to accept them. Do not invent `personas_*` names for third-party services — only the names listed here are built-ins.
 
 ### 4. Non-testable (write-only or no endpoint)
-Tools that only mutate state — emit an entry with empty curl and a description explaining the skip.
+Tools that only mutate state — emit an entry with empty curl, NO `cli_native` field, and a description explaining the skip. These are recorded as skipped and do not block the build.
 
 ## Rules for API tests
 1. Use GET endpoints or read-only operations only — NO writes, deletes, or mutations.
@@ -1048,4 +1351,236 @@ fn extract_llm_text_from_output(raw: &str) -> String {
     }
     // Prefer result (complete output) over assistant (may be partial/duplicate)
     result_text.or(assistant_text).unwrap_or_default()
+}
+
+// =============================================================================
+// Tests
+// =============================================================================
+//
+// The promote-gate consequences of this file live in `oneshot.rs`'s test
+// module (the four decision-table rows). What is covered here is the
+// classification itself and the plan extraction that feeds it.
+//
+// Run with: node scripts/build/run-rust-tests.mjs -- build_session
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    // ── classify_test_entry ──────────────────────────────────────────────
+
+    #[test]
+    fn a_real_curl_is_executable() {
+        assert_eq!(
+            classify_test_entry(&json!({
+                "tool_name": "alpha_vantage",
+                "connector": "alpha_vantage",
+                "curl": "curl -s 'https://example.test/ping'",
+            })),
+            EntryClass::Executable
+        );
+    }
+
+    #[test]
+    fn platform_builtins_are_recognised_by_this_backend_not_the_model() {
+        for name in PLATFORM_BUILTIN_TOOLS {
+            assert_eq!(
+                classify_test_entry(&json!({ "tool_name": name, "curl": "" })),
+                EntryClass::PlatformBuiltin,
+                "{name} is on the backend's own allow-list"
+            );
+        }
+        // …and via the connector field, matched EXACTLY.
+        assert_eq!(
+            classify_test_entry(&json!({
+                "tool_name": "notify", "connector": "personas_messages", "curl": ""
+            })),
+            EntryClass::PlatformBuiltin
+        );
+    }
+
+    #[test]
+    fn a_model_invented_personas_connector_cannot_mint_itself_a_pass() {
+        // The old test was `connector.starts_with("personas_")`, so the model
+        // could name a third-party service `personas_gmail` and auto-pass it.
+        assert_eq!(
+            classify_test_entry(&json!({
+                "tool_name": "gmail", "connector": "personas_gmail",
+                "curl": "", "cli_native": true
+            })),
+            EntryClass::ClaimedCliNative
+        );
+    }
+
+    #[test]
+    fn cli_native_on_a_non_builtin_is_an_unverified_claim() {
+        // A real external service with a live endpoint and the user's
+        // credential behind it, which the model simply declared it did not
+        // need to call. This is the false green the direction removes.
+        assert_eq!(
+            classify_test_entry(&json!({
+                "tool_name": "gmail", "connector": "gmail", "curl": "", "cli_native": true
+            })),
+            EntryClass::ClaimedCliNative
+        );
+    }
+
+    /// `web_search` / `web_fetch` are on `PLATFORM_BUILTIN_TOOLS` DELIBERATELY,
+    /// not incidentally. They are Claude CLI built-ins: no external service, no
+    /// credential to resolve, nothing a curl could exercise. Holding them would
+    /// be a false HOLD — the mirror of the false green — on the case the test
+    /// prompt itself names, and a gate that stops honest builds gets muted.
+    ///
+    /// The safety property survives because this list is CODE: the model cannot
+    /// add to it, for the same reason `personas_gmail` can no longer mint itself
+    /// a pass. What it must never become is a general amnesty for `cli_native`.
+    #[test]
+    fn claude_cli_builtins_are_on_the_allow_list_on_purpose() {
+        for name in ["web_search", "web_fetch"] {
+            assert!(
+                PLATFORM_BUILTIN_TOOLS.contains(&name),
+                "{name} must stay a code-authored built-in"
+            );
+            assert_eq!(
+                classify_test_entry(&json!({
+                    "tool_name": name, "curl": "", "cli_native": true
+                })),
+                EntryClass::PlatformBuiltin,
+                "{name} is recognised by this backend, so the model's claim is not what carries it"
+            );
+        }
+        // The allow-list is not a general amnesty: an unrecognised name with
+        // the same `cli_native` claim still holds.
+        assert_eq!(
+            classify_test_entry(&json!({
+                "tool_name": "web_scrape_pro", "curl": "", "cli_native": true
+            })),
+            EntryClass::ClaimedCliNative
+        );
+    }
+
+    #[test]
+    fn a_non_boolean_cli_native_still_counts_as_a_claim() {
+        // Fail closed on shape: `"true"` / `1` must not fall through to the
+        // benign `skipped` branch as if the key were absent.
+        for weird in [json!("true"), json!(1), json!("yes"), json!({})] {
+            assert_eq!(
+                classify_test_entry(&json!({
+                    "tool_name": "gmail", "curl": "", "cli_native": weird
+                })),
+                EntryClass::ClaimedCliNative,
+                "cli_native={weird} is still the model asserting the field"
+            );
+        }
+        // An explicit false, or a null, is not a claim.
+        for benign in [json!(false), json!(null)] {
+            assert_eq!(
+                classify_test_entry(&json!({
+                    "tool_name": "gmail", "curl": "", "cli_native": benign
+                })),
+                EntryClass::NotTestable,
+                "cli_native={benign} is not a claim"
+            );
+        }
+    }
+
+    #[test]
+    fn empty_curl_without_a_claim_is_merely_not_testable() {
+        assert_eq!(
+            classify_test_entry(&json!({
+                "tool_name": "crm_create_lead",
+                "connector": "salesforce",
+                "curl": "",
+                "description": "Write-only",
+            })),
+            EntryClass::NotTestable
+        );
+    }
+
+    // ── the no-plan fallback ─────────────────────────────────────────────
+
+    #[test]
+    fn fallback_still_fails_a_connector_with_no_credential() {
+        let report = build_no_plan_fallback(&[], &[("gmail".to_string(), false)]);
+        assert_eq!(report["tools_failed"], json!(1));
+        assert_eq!(report["tools_unverified"], json!(0));
+        assert_eq!(report["results"][0]["status"], json!("credential_missing"));
+        assert_eq!(
+            report["credential_issues"].as_array().map(|a| a.len()),
+            Some(1)
+        );
+    }
+
+    #[test]
+    fn fallback_keeps_platform_connectors_and_infrastructure_tools_passing() {
+        let report = build_no_plan_fallback(
+            &["http_request".to_string(), "web_search".to_string()],
+            &[("personas_database".to_string(), false)],
+        );
+        assert_eq!(report["tools_passed"], json!(3));
+        assert_eq!(report["tools_failed"], json!(0));
+        assert_eq!(report["tools_unverified"], json!(0));
+    }
+
+    #[test]
+    fn fallback_never_calls_an_unexercised_connector_verified() {
+        let report = build_no_plan_fallback(&[], &[("notion".to_string(), true)]);
+        let text = serde_json::to_string(&report).unwrap();
+        assert!(
+            !text.contains("Credential available") && !text.contains("connector verified"),
+            "the old 'Credential available — connector verified' copy is a lie: {text}"
+        );
+        assert_eq!(report["results"][0]["status"], json!(STATUS_UNVERIFIED));
+        assert_eq!(report["tools_passed"], json!(0));
+    }
+
+    // ── the report shape the promote gate depends on ─────────────────────
+
+    #[test]
+    fn every_report_shape_carries_the_fields_the_promote_gate_requires() {
+        // `evaluate_promote_gate` HOLDS on a report missing either counter, so
+        // a producer that forgets one stops every build. Pin all the shapes
+        // this module can return that are reachable without a DB.
+        for (label, report) in [
+            ("zero tools", empty_tool_report()),
+            (
+                "no-plan fallback",
+                build_no_plan_fallback(&["http_request".to_string()], &[]),
+            ),
+            ("executed plan", ToolTestTally::default().into_report()),
+        ] {
+            for field in ["tools_failed", "tools_unverified", "tools_passed"] {
+                assert!(
+                    report.get(field).and_then(|v| v.as_u64()).is_some(),
+                    "{label} report is missing a whole-number `{field}`: {report}"
+                );
+            }
+        }
+    }
+
+    // ── extract_test_plan ────────────────────────────────────────────────
+
+    #[test]
+    fn extracts_a_plan_from_a_stream_json_result_envelope() {
+        let raw = r#"{"type":"system","subtype":"init"}
+{"type":"result","result":"{\"test_plan\":[{\"tool_name\":\"gmail\",\"curl\":\"curl -s x\"}]}"}
+"#;
+        let plan = extract_test_plan(raw);
+        assert_eq!(plan.len(), 1);
+        assert_eq!(plan[0]["tool_name"], json!("gmail"));
+    }
+
+    #[test]
+    fn extracts_a_pretty_printed_multi_line_plan() {
+        let raw = "{\"type\":\"result\",\"result\":\"```json\\n{\\n  \\\"test_plan\\\": [\\n    {\\\"tool_name\\\": \\\"notion\\\", \\\"curl\\\": \\\"curl -s y\\\"}\\n  ]\\n}\\n```\"}\n";
+        let plan = extract_test_plan(raw);
+        assert_eq!(plan.len(), 1, "multi-line plans must still parse");
+        assert_eq!(plan[0]["tool_name"], json!("notion"));
+    }
+
+    #[test]
+    fn an_unparseable_response_yields_no_plan_which_routes_to_the_fallback() {
+        assert!(extract_test_plan("I could not compose a plan, sorry.").is_empty());
+    }
 }

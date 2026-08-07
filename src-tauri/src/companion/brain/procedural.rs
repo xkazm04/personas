@@ -155,7 +155,9 @@ pub fn write_rule(pool: &UserDbPool, input: &ProceduralInput<'_>) -> Result<Stri
         "INSERT INTO companion_fts (node_id, body, tags) VALUES (?1, ?2, ?3)",
         params![
             id,
-            format!("{}\n\n{}", input.trigger, input.behavior),
+            format!("{}
+
+{}", input.trigger, input.behavior),
             format!("kind:procedural scope:{scope_s}")
         ],
     )?;

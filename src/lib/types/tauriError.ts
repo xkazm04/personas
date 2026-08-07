@@ -36,6 +36,7 @@ export type TauriErrorKind =
   | 'retry_exhausted'
   | 'keyring_lost'
   | 'authorization_required'
+  | 'device_group_conflict'
   | 'internal'
   | 'external';
 

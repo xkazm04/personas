@@ -11,6 +11,15 @@ vi.mock("@/api/network/discovery", () => ({
   syncPeerManifest: vi.fn(),
 }));
 
+// The capability probe is exercised in `src/lib/network/__tests__/p2pCapability.test.ts`.
+// Here it is stubbed so these tests stay about the failure counters, and so a
+// mocked-rejecting `getNetworkStatus` cannot be misread as "this build has no p2p".
+vi.mock("@/lib/network/p2pCapability", () => ({
+  probeP2pSupport: vi.fn(() => Promise.resolve(p2pSupported)),
+}));
+
+let p2pSupported = true;
+
 import * as discoveryApi from "@/api/network/discovery";
 import { createNetworkSlice, STALE_THRESHOLD } from "./networkSlice";
 import type { SystemStore } from "../../storeTypes";
@@ -31,6 +40,7 @@ function makeHarness() {
 
 describe("networkSlice STALE_THRESHOLD (per-endpoint)", () => {
   beforeEach(() => {
+    p2pSupported = true;
     vi.mocked(discoveryApi.getDiscoveredPeers).mockReset();
     vi.mocked(discoveryApi.getNetworkStatus).mockReset();
     vi.mocked(discoveryApi.getNetworkSnapshot).mockReset();
@@ -111,5 +121,53 @@ describe("networkSlice STALE_THRESHOLD (per-endpoint)", () => {
     await h.get().fetchDiscoveredPeers();
     await h.get().fetchDiscoveredPeers();
     expect(h.get().networkConsecutiveFailures).toBe(2); // peers = 2, status = 1
+  });
+});
+
+describe("networkSlice p2p capability gate", () => {
+  beforeEach(() => {
+    p2pSupported = true;
+    vi.mocked(discoveryApi.getDiscoveredPeers).mockReset();
+    vi.mocked(discoveryApi.getNetworkSnapshot).mockReset();
+    vi.mocked(discoveryApi.connectToPeer).mockReset();
+  });
+
+  it("skips read IPC entirely when the build has no p2p", async () => {
+    p2pSupported = false;
+    const h = makeHarness();
+    vi.mocked(discoveryApi.getDiscoveredPeers).mockResolvedValue([]);
+
+    await h.get().fetchDiscoveredPeers();
+
+    expect(discoveryApi.getDiscoveredPeers).not.toHaveBeenCalled();
+    expect(h.get().p2pUnavailable).toBe(true);
+    // A skipped read is not a failure: it must not feed the staleness counter.
+    expect(h.get().networkConsecutiveFailures).toBe(0);
+    expect(h.get().networkError).toBeNull();
+  });
+
+  it("rejects MUTATING actions instead of silently no-opping", async () => {
+    // The old sniff was consulted by three read paths only, so writes reported
+    // success against a backend that never received the call.
+    p2pSupported = false;
+    const h = makeHarness();
+
+    await expect(h.get().connectToPeer("peer-a")).rejects.toThrow(/p2p/i);
+    expect(discoveryApi.connectToPeer).not.toHaveBeenCalled();
+  });
+
+  it("does NOT latch on a runtime error once the probe says p2p is present", async () => {
+    const h = makeHarness();
+    // A structured NotFound whose message contains "not found" is exactly what
+    // the old substring sniff mistook for a missing feature.
+    vi.mocked(discoveryApi.getDiscoveredPeers).mockRejectedValue({
+      error: "peer not found",
+      kind: "not_found",
+    });
+
+    await h.get().fetchDiscoveredPeers();
+
+    expect(h.get().p2pUnavailable).toBe(false);
+    expect(h.get().networkConsecutiveFailures).toBe(1);
   });
 });

@@ -24,6 +24,13 @@ pub mod orchestration;
 pub mod plugins;
 pub mod proactive;
 pub mod projects;
+/// Athena's end of the cross-device link. Gated on `p2p` because the seam it
+/// implements (`engine::p2p::remote_jobs::RemoteJobExecutor`) and the transport
+/// it listens to only exist in a build that has the network. The OUTBOUND op
+/// (`remote_instruct`) is deliberately NOT gated — see
+/// `commands::companion::approvals::approval_exec_devices`.
+#[cfg(feature = "p2p")]
+pub mod remote_jobs;
 pub mod wake_window;
 pub mod prompt;
 pub mod session;

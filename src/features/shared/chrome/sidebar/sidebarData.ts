@@ -9,7 +9,7 @@ import {
   User, Mic, Sparkles, Headphones,
   Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon, Bell,
   Terminal, RefreshCw, FolderOpen, ScrollText, History,
-  Clapperboard, MoonStar, Landmark, Library, GitFork,
+  Clapperboard, MoonStar, Landmark, Library, GitFork, Laptop,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -264,7 +264,7 @@ export const templateGroups: SidebarItemGroupDef[] = [
 /** Settings → General / Connect / LLM / Advanced (dev-only surfaces). */
 export const settingsGroups: SidebarItemGroupDef[] = [
   { id: 'general',  labelKey: 'group_general',  itemIds: ['account', 'appearance', 'portability', 'radio', 'notifications'] },
-  { id: 'connect',  labelKey: 'group_connect',  itemIds: ['api-keys', 'network'] },
+  { id: 'connect',  labelKey: 'group_connect',  itemIds: ['api-keys', 'devices', 'network'] },
   { id: 'llm',      labelKey: 'group_llm',      itemIds: ['engine', 'byom', 'limits'] },
   { id: 'advanced', labelKey: 'group_advanced', itemIds: ['history', 'admin'] },
 ];
@@ -315,6 +315,10 @@ export function getSettingsItems(isDev: boolean, activeTier?: Tier): SubNavItem[
     { id: 'portability', label: 'Data', icon: HardDriveDownload, minTier: TIERS.TEAM },
     { id: 'limits', label: 'Limits', icon: Gauge, minTier: TIERS.TEAM },
     { id: 'api-keys', label: 'API Keys', icon: Key, minTier: TIERS.TEAM },
+    // Devices ships in production: linking your own two machines is an
+    // operator task. The Network tab beside it stays devOnly — exposure,
+    // bundles and the raw peer list are diagnostics.
+    { id: 'devices', label: 'Devices', icon: Laptop },
     { id: 'network', label: 'Network', icon: Share2, devOnly: true },
     { id: 'history', label: 'History', icon: History, devOnly: true },
     { id: 'admin', label: 'Admin', icon: Shield, devOnly: true },

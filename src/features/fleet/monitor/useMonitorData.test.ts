@@ -391,7 +391,7 @@ describe('useMonitorData — a poll that changed nothing costs nothing downstrea
     // key their memos on. A new array here rebuilt the entire triage queue.
     mockListReviews.mockResolvedValue([row('r1'), row('r2')]);
     await act(async () => {
-      await result.current.handleReviewAction('r1', 'approved').catch(() => {});
+      await result.current.handleReviewAction('r1', 'approved');
     });
     await waitFor(() => expect(mockListReviews).toHaveBeenCalledTimes(2));
 
@@ -408,7 +408,7 @@ describe('useMonitorData — a poll that changed nothing costs nothing downstrea
       row('r2'),
     ]);
     await act(async () => {
-      await result.current.handleReviewAction('r1', 'approved').catch(() => {});
+      await result.current.handleReviewAction('r1', 'approved');
     });
 
     await waitFor(() => expect(result.current.reviews).not.toBe(first));
@@ -421,7 +421,7 @@ describe('useMonitorData — a poll that changed nothing costs nothing downstrea
 
     mockListReviews.mockResolvedValue([row('r1')]);
     await act(async () => {
-      await result.current.handleReviewAction('r2', 'approved').catch(() => {});
+      await result.current.handleReviewAction('r2', 'approved');
     });
 
     await waitFor(() => expect(result.current.reviews).toHaveLength(1));

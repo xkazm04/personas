@@ -1159,7 +1159,12 @@
     "friendly_rate_limited": "サービスがリクエストをレート制限しました。これは一時的な状態です — 数分待ってから再試行してください。",
     "friendly_service_error": "サービスで問題が発生しています。エージェント側の問題ではありません — しばらくしてから再試行してください。",
     "friendly_timeout": "接続がタイムアウトしました。サービスが低速か、現在利用できない可能性があります。",
-    "friendly_missing_credentials": "認証情報がありません。**キー**セクションで必要なサービスの認証情報を追加してください。"
+    "friendly_missing_credentials": "認証情報がありません。**キー**セクションで必要なサービスの認証情報を追加してください。",
+    "unverified_default": "**{subject}** は一度も呼び出されていないため、正常に動作するかを確認できません。",
+    "unverified_hint": "これらのツールは一覧に含まれていましたが実際には実行されていません。実行して確認できるようになるまで、このビルドは自動的に昇格されません。",
+    "status_unverified": "未検証",
+    "unverified": "未検証 {count} 件",
+    "not_verified": "未呼び出し"
   },
   "complexity": {
     "beginner": "初級",

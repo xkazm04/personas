@@ -140,6 +140,48 @@ Every layer is independent: you can run a twin with just a bio and no KB; you ca
 
 ---
 
+## Carrying a twin to another device
+
+A twin is portable. **Settings → Data → Export Workspace** has a **Twins** scope: tick the twins you want and they ride along in the workspace bundle, one selectable row each. Importing the bundle on the target machine recreates them. The full portability surface (bundle format, import result, conflict panel) is documented in [`settings/README.md`](../settings/README.md#data-portability).
+
+**A twin is always encrypted in transit.** The scope refuses to export without a passphrase of at least 8 characters, and it is not preselected when the export modal opens. Ticking a twin without a passphrase is refused outright rather than quietly thinned; a full-workspace export run without one omits twins and reports that in its warnings rather than failing.
+
+### What travels
+
+| Layer | Notes |
+|---|---|
+| **Profile** | Name, bio, role, languages, pronouns, training directives. |
+| **Tone** | Every per-channel tone row. |
+| **Training corpus** | The whole communications log, including the **question** side of each training Q&A. The interview question is stored on the communication row alongside the extracted facts, so both halves of every training pair travel. |
+| **Memory inbox** | Every pending memory in **all three statuses** (pending, approved, rejected) together with its reviewer notes. A rejected memory plus the reason it was rejected is signal about your taste, not garbage, so it is kept. |
+| **Distilled facts** | Each fact plus its source citations, remapped onto the communications that travelled with it. |
+| **Reflections** and **Contacts** | In full. Contacts join by handle, so no id remapping is needed. |
+| **Channels** | The binding rows, including which credential and which persona they pointed at. See the caveat below. |
+| **Knowledge base** | The bound KB travels **as text**: its documents and its chunk contents. Vectors never travel. |
+
+### What does not travel
+
+- **Voice profiles.** The `twin_voice_profiles` row is not exported at all. The voice layer lost its UI tab in July 2026 and the export treats it as retired, so an ElevenLabs voice config has to be set up again on the target if you use the connector's `get_voice_profile` / `synthesize_speech` tools.
+- **The slug.** It is machine-derived from the name and is re-derived on the target.
+- **The active flag.** An import never seizes the "which twin am I speaking as" selection on the machine receiving it. An imported twin arrives inactive.
+- **The Obsidian subpath.** It points into a vault directory that will not exist on the other machine.
+- **The compiled wiki.** `twin_compile_wiki` output is a derived artifact and is regenerated on demand from the layers that did travel.
+- **The raw knowledge-base id.** It addresses a row in a different database file that does not exist on the target, and a dangling id is worse than none.
+
+### Two things need attention after an import
+
+**Channels arrive disabled and need a re-link.** A channel's credential and persona ids travel verbatim, but auto-matching them onto whatever happens to sit at those ids on the target machine could post as you to a stranger's Discord. So every imported channel lands with its active flag off and produces a warning naming what to fix, then you re-link and re-enable it in the **Channels** tab. The warning distinguishes the two cases: the credential or persona is genuinely missing here, or it exists and only needs confirming.
+
+**The knowledge base is re-indexed, not shipped.** On import the KB is recreated under fresh ids, rebound to the imported twin, and a background reindex regenerates the vectors on the target machine. That means semantic recall is briefly unavailable right after an import while the reindex runs, and on a build without an embedder the text arrives but stays unindexed. Any KB the twin previously pointed at is reported, never deleted.
+
+A distilled fact whose source communications all failed to travel is **dropped with a warning** rather than written without provenance, since a fact with no evidence behind it is not storable. If only some citations were lost, the fact is kept and the warning says how many of how many survived.
+
+### If the twin already exists on the target
+
+Twins take part in the same two-pass conflict flow as dev projects. A bundled twin that matches an existing one **by name, case-insensitively** (never by slug, which is machine-derived and collides only by accident) is held back on pass 1 and offered to you as **Skip**, **Duplicate**, or **Replace**. **Replace** keeps the existing twin's id, so its slug, active flag, and Obsidian subpath survive; the profile fields are updated and every child layer is cleared and rewritten from the bundle. **Duplicate** lands a wholly new, inactive twin named `<name> (imported)`.
+
+---
+
 ## Strongest use case (speculation)
 
 > **A single, portable "how I talk" config that every one of your agents respects — so you scale yourself instead of a fleet of generic LLMs.**

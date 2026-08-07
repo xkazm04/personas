@@ -186,5 +186,13 @@
     "transport": "Échec de la connexion",
     "unknown": "Erreur inconnue",
     "unsupported": "Non exécutable ici"
+  },
+  "remote_job": {
+    "completed": "Terminé",
+    "failed": "Échoué",
+    "cancelled": "Annulé",
+    "refused": "Refusé",
+    "pending": "En attente",
+    "running": "En cours"
   }
 }

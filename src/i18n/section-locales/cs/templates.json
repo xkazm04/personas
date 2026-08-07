@@ -1159,7 +1159,12 @@
     "friendly_rate_limited": "Služba dočasně omezila počet požadavků. Jde o dočasný stav — zkuste to znovu za pár minut.",
     "friendly_service_error": "Služba má momentálně potíže. Nejde o problém na straně vašeho agenta — zkuste to znovu později.",
     "friendly_timeout": "Vypršel časový limit připojení. Služba může být pomalá nebo momentálně nedostupná.",
-    "friendly_missing_credentials": "Chybí přihlašovací údaje. Přejděte do sekce **Klíče** a přidejte potřebné přihlašovací údaje pro tuto službu."
+    "friendly_missing_credentials": "Chybí přihlašovací údaje. Přejděte do sekce **Klíče** a přidejte potřebné přihlašovací údaje pro tuto službu.",
+    "unverified_default": "**{subject}** nebyl nikdy zavolán, takže nemůžeme potvrdit, že funguje.",
+    "unverified_hint": "Tyto nástroje byly uvedeny, ale nikdy skutečně spuštěny, takže tento build nebude automaticky povýšen, dokud je nebude možné vyzkoušet.",
+    "status_unverified": "Neověřeno",
+    "unverified": "{count} neověřeno",
+    "not_verified": "Nikdy nezavoláno"
   },
   "complexity": {
     "beginner": "Začátečník",

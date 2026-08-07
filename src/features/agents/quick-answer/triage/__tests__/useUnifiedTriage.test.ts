@@ -1062,3 +1062,47 @@ describe('useUnifiedTriage — the filtered ending has a way back', () => {
     expect([...result.current.activeKinds].sort()).toEqual([...TRIAGE_KINDS].sort());
   });
 });
+
+describe('useUnifiedTriage — opening the deck does not write the session back', () => {
+  it('serialises NOTHING on mount, and once per change after it', async () => {
+    // Three effects (skips / kinds / resolved) all fired on mount, and at mount
+    // those values are exactly what `loadTriageSession` had just read out of
+    // storage — three full read-modify-write `JSON.stringify` passes to store
+    // byte-identical state, every time the deck is opened. (And the deck is
+    // remounted whenever the header overlay changes.)
+    const writes = vi.spyOn(Storage.prototype, 'setItem');
+    // The decision JOURNAL persists to its own key on the same call path; this
+    // assertion is about the session record alone.
+    const sessionWrites = () =>
+      writes.mock.calls.filter(([key]) => String(key).includes('triage.session')).length;
+    try {
+      const { result } = await mount();
+      expect(sessionWrites()).toBe(0);
+
+      await act(async () => {
+        await result.current.decide({ item: itemOfKind(result, 'idea'), verdict: 'skip' });
+      });
+      // One skip, one write — not one per piece of session state.
+      expect(sessionWrites()).toBe(1);
+    } finally {
+      writes.mockRestore();
+    }
+  });
+
+  it('keeps the session start across the close now that the mount write is gone', async () => {
+    // The mount write used to be what stamped `startedAt`; the hook passes it
+    // explicitly instead. Without that, the session began at the first DECISION
+    // and the summary reported zero for a sitting that had just recorded one.
+    const first = await mount();
+    await act(async () => {
+      await first.result.current.decide({
+        item: itemOfKind(first.result, 'idea'),
+        verdict: 'accept',
+      });
+    });
+    first.unmount();
+
+    const second = await mount();
+    expect(second.result.current.summary.decided).toBe(1);
+  });
+});

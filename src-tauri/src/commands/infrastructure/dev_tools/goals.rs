@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use tauri::State;
-use crate::db::models::{AttentionQueue, DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal, GoalProgressSuggestion, PortfolioSummary};
+use crate::db::models::{AttentionQueue, AttentionThresholds, DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal, GoalProgressSuggestion, PortfolioSummary, UndispatchedIdea};
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
@@ -517,13 +517,48 @@ pub fn dev_tools_portfolio_summary(
     repo::portfolio_summary(&state.db)
 }
 
-/// Cross-project "needs you" queue (awaiting-review / overdue / stalled / unstaffed).
+/// Cross-project "needs you" queue over goals, ideas AND tasks: awaiting-review
+/// / overdue / stalled / unstaffed goals, undispatched accepted ideas, stuck
+/// running tasks, stale queued tasks.
+///
+/// Every threshold is optional and falls back to `AttentionThresholds::default()`
+/// — the caller states the ones it has an opinion about, and the queue echoes
+/// back the set it actually used so the UI never has to guess.
 #[tauri::command]
 pub fn dev_tools_attention_queue(
     state: State<'_, Arc<AppState>>,
+    stale_goal_days: Option<u32>,
+    idea_dispatch_days: Option<u32>,
+    task_running_hours: Option<u32>,
+    task_queued_hours: Option<u32>,
 ) -> Result<AttentionQueue, AppError> {
     require_auth_sync(&state)?;
-    repo::attention_queue(&state.db)
+    let d = AttentionThresholds::default();
+    // A zero threshold would report every live row as stale, which is noise
+    // rather than a signal — treat it as "no opinion" and use the default.
+    let or_default = |v: Option<u32>, fallback: u32| v.filter(|n| *n > 0).unwrap_or(fallback);
+    repo::attention_queue(
+        &state.db,
+        AttentionThresholds {
+            stale_goal_days: or_default(stale_goal_days, d.stale_goal_days),
+            idea_dispatch_days: or_default(idea_dispatch_days, d.idea_dispatch_days),
+            task_running_hours: or_default(task_running_hours, d.task_running_hours),
+            task_queued_hours: or_default(task_queued_hours, d.task_queued_hours),
+        },
+    )
+}
+
+/// Every `accepted` idea that never became a task — the headline "invisible
+/// work" signal. Unfiltered by age; each row carries its own `ageHours` so the
+/// caller decides what counts as forgotten. `limit` defaults to 200.
+#[tauri::command]
+pub fn dev_tools_undispatched_ideas(
+    state: State<'_, Arc<AppState>>,
+    project_id: Option<String>,
+    limit: Option<u32>,
+) -> Result<Vec<UndispatchedIdea>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_undispatched_ideas(&state.db, project_id.as_deref(), limit)
 }
 
 /// `(goal_id, team_name)` pairs for every goal a team_assignment is advancing —

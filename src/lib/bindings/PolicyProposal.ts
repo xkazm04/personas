@@ -6,24 +6,24 @@ import type { RoutingRuleChange } from "./RoutingRuleChange";
 /**
  * One row in `policy_proposals`, hydrated for the frontend.
  */
-export type PolicyProposal = { id: string,
+export type PolicyProposal = { id: string, 
 /**
  * `routing_rule` | `budget_ceiling` (healing_strategy reserved).
  */
-kind: string, category?: string,
+kind: string, category?: string, 
 /**
  * Set when `kind == "routing_rule"`.
  */
-routing?: RoutingRuleChange,
+routing?: RoutingRuleChange, 
 /**
  * Set when `kind == "budget_ceiling"`.
  */
-budget?: BudgetCeilingChange, evidenceSnapshotId: string,
+budget?: BudgetCeilingChange, evidenceSnapshotId: string, 
 /**
  * The snapshot slice this proposal was derived from — the inspectable
  * raw evidence behind the claim.
  */
-evidence: PolicyEvidenceSnapshot,
+evidence: PolicyEvidenceSnapshot, 
 /**
  * `pending` | `applied` | `declined`
  */

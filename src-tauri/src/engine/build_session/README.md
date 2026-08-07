@@ -37,8 +37,12 @@ engine/build_session/
 │                     helpers + clarifying_question event constructor. 686
 │                     lines.
 ├── tool_tests.rs     LLM-driven pre-promote test runner (`run_tool_tests`,
-│                     `extract_test_plan`, `generate_test_summary`). 758
-│                     lines.
+│                     `classify_test_entry` + `ToolTestTally` — the promote
+│                     decision table — `extract_test_plan`,
+│                     `generate_test_summary`).
+├── oneshot.rs        Autonomous `DraftReady → Promoted` orchestrator, and
+│                     `evaluate_promote_gate`: the single predicate that
+│                     arms a persona.
 ├── events.rs         Tauri-channel + DB-update glue: `dual_emit`,
 │                     `emit_session_status`, `emit_error`, `cleanup_session`,
 │                     `update_phase{,_with_error}`. 111 lines.
@@ -140,6 +144,36 @@ exposes one `pub(super)` symbol: `build_template_context`.
   mirror logic lives in `parse_json_object` (mod.rs) and
   `build_clarifying_question_events` (mod.rs); gates and parsers both
   generate mirrored pairs.
+- **A pass must mean a call was made.** `run_tool_tests` reports FOUR
+  outcomes per tool, not three: `passed`, `failed`, `skipped`, and
+  `unverified` — counted, never called. `unverified` is what a model-authored
+  `cli_native: true` on a non-built-in becomes, and what the
+  no-parseable-plan fallback's fuzzy credential-name match becomes. It holds
+  automatic promotion (`oneshot::evaluate_promote_gate`) without routing to
+  the fix-pass loop, which cannot correct "we never called it".
+- **The line is who authored the claim, not whether a call happened.**
+  `PLATFORM_BUILTIN_TOOLS` — which includes `web_search` / `web_fetch`
+  alongside `personas_database` and friends — passes without a call because
+  it is CODE: a model cannot add to it, and we know there is no external
+  service or credential behind any name on it. `cli_native: true` is a
+  boolean the model writes about its own work and can assert of ANYTHING,
+  including a live external connector it never touched, so it carries
+  nothing the backend does not already recognise. Adding a name to the
+  allow-list is a deliberate, reviewable act; do not let it drift into a
+  general amnesty for `cli_native`. Holding a genuine built-in would be a
+  false HOLD — the mirror of the false green — and a gate that stops honest
+  builds gets muted.
+  `evaluate_promote_gate` also fails CLOSED on a malformed report: both
+  `tools_failed` and `tools_unverified` must be present whole numbers, and
+  the declared counts must not undercount what `results` actually lists. Any
+  new producer of a test report must emit both counters or every build it
+  touches will hold. The full decision table, and why each row was settled
+  the way it was, is the comment block at the top of `tool_tests.rs`.
+- **Parser objects are line-ANCHORED, not line-BOUND.** `parse_json_object`
+  turns any object carrying an `error` key into `BuildEvent::Error`, which
+  flips the session to `failed` — so `scan_json_objects` only considers a `{`
+  that starts a line, and prose mentioning a JSON object cannot mint an
+  event. The object may span as many lines as it likes.
 
 ## Cross-module visibility map
 
@@ -152,7 +186,8 @@ Boundary calls are kept to the minimum needed; everything else is private.
 | `session_prompt` | `build_session_prompt` | (none) |
 | `templates` | `build_template_context` | (none) |
 | `runner` | `run_session` | `gates`, `parser`, `events`, `engine::cli_process`, `engine::types`, `crate::notifications`, `super::SessionHandle` |
-| `tool_tests` | `run_tool_tests` (re-exported `pub` in mod.rs for `commands::design::build_sessions`) | `engine::prompt::build_cli_args`, `engine::tool_runner`, `engine::runner::resolve_credential_env_vars` (aliased `engine_runner`) |
+| `tool_tests` | `run_tool_tests` (re-exported `pub` in mod.rs for `commands::design::build_sessions`), `STATUS_UNVERIFIED`, `classify_test_entry`, `EntryClass`, `ToolTestTally`, `build_no_plan_fallback`, `empty_tool_report`, `is_platform_builtin` | `engine::prompt::build_cli_args`, `engine::tool_runner`, `engine::runner::resolve_credential_env_vars` (aliased `engine_runner`) |
+| `oneshot` | `run_post_draft` | `tool_tests` (`STATUS_UNVERIFIED` in the promote gate), `fix_pass`, `events`, `commands::design::build_sessions::promote_build_draft_inner` |
 | `events` | `dual_emit`, `emit_session_status`, `emit_error`, `cleanup_session`, `update_phase`, `update_phase_with_error` | `super::SessionHandle` |
 
 `mod.rs` itself only has to know about `SessionHandle` (kept `pub(super)` for
@@ -172,7 +207,11 @@ Boundary calls are kept to the minimum needed; everything else is private.
 6. To change how stream-json lines are parsed into `BuildEvent`s, or to add
    a new event type / legacy mirror → edit `parser.rs`.
 7. To change how the pre-promote test runner composes its prompt or
-   summarises results → edit `tool_tests.rs`.
+   summarises results → edit `tool_tests.rs`. To change what COUNTS as a
+   pass, edit `classify_test_entry` / `ToolTestTally` there and the matching
+   row of the decision table in `oneshot.rs`'s test module — the four
+   `*_promotes` / `*_holds_promotion` tests are the contract, and they are
+   named that way so a change to the verdict cannot land silently.
 8. To change how events leave this module (Tauri channel, global events,
    DB phase updates) → edit `events.rs`.
 9. To change the public API (`BuildSessionManager`, `run_tool_tests`) →

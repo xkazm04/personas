@@ -679,37 +679,165 @@ pub struct PortfolioSummary {
     pub avg_progress: i32,
 }
 
-/// One row in the cross-project Attention queue — a goal (or team step) that
-/// needs the user. `kind` ∈ awaiting_review | overdue | stalled | unstaffed.
+/// How long a record may sit before the attention queue calls it stale.
+///
+/// Parameters, not constants. The engine used to hard-code `Duration::days(7)`,
+/// which is a defensible number for a GOAL and a nonsense one for a `running`
+/// task; and "stuck" means different things to a nightly sweep and to a panel a
+/// human is staring at. Every field has a shipped default (see `Default`), so a
+/// caller that has no opinion passes none.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct AttentionThresholds {
+    /// Ongoing goal with no write for this many days → `stalled`.
+    pub stale_goal_days: u32,
+    /// `accepted` idea with no `dev_tasks` row for this many days →
+    /// `undispatched_idea`.
+    pub idea_dispatch_days: u32,
+    /// `running` task with no write for this many hours → `stuck_task`.
+    /// This is a HEARTBEAT, not a runtime: `task_executor` writes a progress
+    /// update on every milestone and every 10 output lines, so silence for
+    /// this long means the run is gone, not that the work is big.
+    pub task_running_hours: u32,
+    /// `queued` task untouched for this many hours → `stale_queued_task`.
+    pub task_queued_hours: u32,
+}
+
+impl Default for AttentionThresholds {
+    fn default() -> Self {
+        Self {
+            // 7 — preserved verbatim from the engine's previous hard-coded cutoff.
+            stale_goal_days: 7,
+            // 3 — accepting an idea IS the decision to do it, and the intended
+            // flow dispatches in the same sitting. Three days is past "I'll get
+            // to it today" and short of "nobody remembers agreeing to this".
+            idea_dispatch_days: 3,
+            // 4 — well past any healthy heartbeat gap (milestones land minutes
+            // apart) while still clearing a long, genuinely-chatty deep_build.
+            task_running_hours: 4,
+            // 24 — a queued task is waiting on a runner; one day covers an
+            // overnight gap without flagging a wave that is simply working
+            // through its backlog.
+            task_queued_hours: 24,
+        }
+    }
+}
+
+/// One row in the cross-project Attention queue — a goal, an idea, or a task
+/// that needs the user.
+///
+/// `kind` ∈ `awaiting_review` | `overdue` | `stalled` | `unstaffed`
+///        | `undispatched_idea` | `stuck_task` | `stale_queued_task`.
+///
+/// The first four are goal signals and keep their original `rank` values; the
+/// three record-widening kinds are APPENDED at ranks 4-6 rather than
+/// interleaved, so the pre-existing ordering contract is untouched. Within a
+/// rank the queue sorts by age, worst first.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct AttentionItem {
     pub kind: String,
-    pub goal_id: String,
-    pub goal_title: String,
-    pub project_id: String,
-    pub project_name: String,
+    /// Which record type this row is about: `goal` | `idea` | `task`.
+    pub entity_kind: String,
+    /// Id of the record that needs attention — a goal, idea, or task id.
+    /// Always the thing the UI should open.
+    pub entity_id: String,
+    pub entity_title: String,
+    /// The goal in play. A `goal` row always carries it; an idea or task row
+    /// carries its linked goal when it has one and `None` when it does not.
+    /// (These were non-optional while the queue was goal-only; an idea with no
+    /// goal would have had to be given an empty id that reads as a real link.)
+    pub goal_id: Option<String>,
+    pub goal_title: Option<String>,
+    /// Ideas and tasks may be project-less (`dev_tasks.project_id` and
+    /// `dev_ideas.project_id` are both nullable); goal rows always have one.
+    pub project_id: Option<String>,
+    pub project_name: Option<String>,
     pub status: String,
-    pub progress: i32,
-    /// Human-meaningful context: e.g. "8 days overdue", "stalled 11d", step title.
+    /// 0-100 where the record tracks it (goals, tasks). `None` for ideas, which
+    /// have no progress — a `0` there would read as "started, got nowhere".
+    pub progress: Option<i32>,
+    /// Human-meaningful context: e.g. "8d overdue", "stalled 11d", step title.
     pub detail: String,
     /// Present for `awaiting_review` rows so the UI can resolve the step inline.
     pub assignment_id: Option<String>,
     pub step_id: Option<String>,
+    /// Age of the SIGNAL in whole hours — days overdue, hours since the last
+    /// heartbeat, hours since acceptance. Hours (not days) because a task
+    /// signal lives at hour resolution and a goal signal at day resolution, and
+    /// one unit that can express both beats two fields that disagree.
+    /// `None` when the underlying timestamp could not be parsed — never 0.
+    pub age_hours: Option<u32>,
     /// 0 = highest urgency; drives ranking in the queue.
     pub rank: i32,
 }
 
+/// The cross-project "needs you" queue: one flat, ranked `items` list plus a
+/// count per signal so a caller can render a summary without walking the list.
+///
+/// One list rather than per-kind groups, deliberately: the queue's job is to
+/// answer "what should I look at next" across three record types, and grouping
+/// would push that decision onto every consumer.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct AttentionQueue {
     pub items: Vec<AttentionItem>,
-    pub awaiting_review: i32,
-    pub overdue: i32,
-    pub stalled: i32,
-    pub unstaffed: i32,
+    // -- goal signals (unchanged) --
+    pub awaiting_review: u32,
+    pub overdue: u32,
+    pub stalled: u32,
+    /// Goal-only by design: an ongoing goal nobody is staffed against. Ideas
+    /// and tasks have no equivalent — an idea's "nobody is on this" signal is
+    /// `undispatched_ideas`, and a task IS the staffing.
+    pub unstaffed: u32,
+    // -- record-widening signals --
+    /// `accepted` ideas with no task, past `thresholds.idea_dispatch_days`.
+    /// The unfiltered list lives behind `dev_tools_undispatched_ideas`.
+    pub undispatched_ideas: u32,
+    /// `running` tasks whose heartbeat has gone quiet.
+    pub stuck_tasks: u32,
+    /// `queued` tasks nothing has picked up.
+    pub stale_queued_tasks: u32,
+    /// The thresholds this queue was actually computed with, echoed back so a
+    /// UI can label a row ("no heartbeat in 4h") without hardcoding a number
+    /// the backend may not have used.
+    pub thresholds: AttentionThresholds,
+}
+
+/// An idea a human said YES to that never became work.
+///
+/// Nothing in the app could answer this before. `archive_stale_ideas` has the
+/// same `NOT EXISTS (SELECT 1 FROM dev_tasks WHERE source_idea_id = …)` shape,
+/// but it is scoped to `pending` ideas — so an ACCEPTED idea with no task, a
+/// decision made and then dropped, was invisible in every surface.
+///
+/// Unfiltered by age on purpose: the age is returned so the caller decides what
+/// counts as "too long". The attention queue applies a threshold; a dispatch
+/// panel wants the whole list.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct UndispatchedIdea {
+    pub id: String,
+    pub title: String,
+    pub project_id: Option<String>,
+    pub project_name: Option<String>,
+    pub category: Option<String>,
+    /// `None` = a classic Idea-Scanner idea; `Some` = a sensor finding.
+    pub origin: Option<String>,
+    /// Strategist triage rank, 1 = do next. `None` = unranked.
+    pub priority: Option<i32>,
+    pub impact: Option<i32>,
+    pub effort: Option<i32>,
+    /// When it was accepted, as far as the row knows: `updated_at` (the stamp
+    /// the acceptance write set), falling back to `created_at`.
+    pub accepted_at: String,
+    /// Whole hours since `accepted_at`. `None` when that stamp is unparseable —
+    /// never 0, which would read as "accepted just now".
+    pub age_hours: Option<u32>,
 }
 
 // ============================================================================
@@ -1049,6 +1177,14 @@ pub struct DevTask {
     pub started_at: Option<String>,
     pub completed_at: Option<String>,
     pub created_at: String,
+    /// Last mutation stamp — RFC3339, written by every repo path that changes a
+    /// task. `None` only for a row that predates the `dev_tasks_updated_at`
+    /// migration on a database that has not run it yet; the migration backfills
+    /// `COALESCE(completed_at, started_at, created_at)`. Because the task
+    /// executor writes a progress update on every milestone, this doubles as a
+    /// heartbeat: a `running` task whose `updated_at` has gone quiet is stuck,
+    /// not merely long-running.
+    pub updated_at: Option<String>,
     /// Task depth: "quick" (immediate execution), "campaign" (subtask breakdown),
     /// or "deep_build" (full planning + implementation phases).
     pub depth: String,

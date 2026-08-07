@@ -6,7 +6,7 @@ import {
 import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
-import { listAllTriggers, getTriggerHealthMap } from '@/api/pipeline/triggers';
+import { listAllTriggers } from '@/api/pipeline/triggers';
 import type { PersonaTrigger } from '@/lib/types/types';
 import type { EventBusTab } from '@/lib/types/types';
 import { lazy, Suspense } from "react";
@@ -22,8 +22,6 @@ import { silentCatch } from '@/lib/silentCatch';
 
 const TriggerStudioCanvas = lazy(() => import('./sub_studio/TriggerStudioCanvas').then(m => ({ default: m.TriggerStudioCanvas })));
 const SharedEventsTab = lazy(() => import('./sub_shared/SharedEventsTab').then(m => ({ default: m.SharedEventsTab })));
-
-type BusHealth = "healthy" | "degraded" | "failing" | null;
 
 type IconColor = 'cyan' | 'violet' | 'emerald' | 'amber' | 'blue' | 'indigo' | 'red' | 'primary';
 
@@ -85,7 +83,6 @@ export function TriggersPage() {
   const eventBusTab = useSystemStore((s) => s.eventBusTab);
 
   const [allTriggers, setAllTriggers] = useState<PersonaTrigger[]>([]);
-  const [_busHealth, setBusHealth] = useState<BusHealth>(null);
   const [tabHeaderExtra, setTabHeaderExtra] = useState<ReactNode>(null);
   // True while the initial/refresh listAllTriggers() fetch is in flight.
   // RateLimitDashboard has no data of its own — it derives everything from
@@ -97,20 +94,19 @@ export function TriggersPage() {
   // its own decorations, and stale content from the previous tab would leak.
   useEffect(() => { setTabHeaderExtra(null); }, [eventBusTab]);
 
+  // Triggers only. This page deliberately does NOT fetch `getTriggerHealthMap()`:
+  // it used to, rolled the map up into one healthy/degraded/failing word, and
+  // stored it in state nothing ever read — a per-`personas`-change IPC call whose
+  // result was discarded. Trigger health is already surfaced, at higher fidelity,
+  // one level down: `sub_triggers/TriggerList` fetches the same map and renders a
+  // per-trigger `HealthDot`. Reuse that rather than reviving the rollup here.
   useEffect(() => {
     let stale = false;
     async function load() {
       try {
-        const [triggers, healthMap] = await Promise.all([
-          listAllTriggers(),
-          getTriggerHealthMap(),
-        ]);
+        const triggers = await listAllTriggers();
         if (stale) return;
         setAllTriggers(triggers);
-        const healthValues = Object.values(healthMap);
-        if (healthValues.includes('failing')) setBusHealth('failing');
-        else if (healthValues.includes('degraded')) setBusHealth('degraded');
-        else if (healthValues.length > 0) setBusHealth('healthy');
       } catch (err) { silentCatch("features/triggers/TriggersPage:catch1")(err); }
       finally { if (!stale) setTriggersLoading(false); }
     }

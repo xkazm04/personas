@@ -27,6 +27,7 @@ pub mod persona_change_log;
 pub mod playwright_procedures;
 pub mod recipe_suggestions;
 pub mod recipes;
+pub mod remote_jobs;
 pub mod rotation;
 pub mod settings_audit_log;
 #[cfg(feature = "p2p")]

@@ -31,6 +31,12 @@ const MAX_CONTEXTS_PER_GROUP: usize = 6;
 /// Cap on per-file overlap findings so a badly-overlapping map can't produce a
 /// thousand-line report. The total count is still reported in `totals`.
 const MAX_OVERLAP_FINDINGS: usize = 25;
+/// Cap on unresolved-cross-ref findings. Same reason as its two siblings above,
+/// and the same omission that let one consolidation emit a 449-line wall: a
+/// 449-line report is not a report. The exact total stays in
+/// `totals.unresolved_cross_refs`, and a trailing `…_truncated` note says how
+/// many were withheld — so the cap never hides the size of the problem.
+const MAX_CROSS_REF_FINDINGS: usize = 25;
 
 // Serialized to the frontend via serde; the TS contract is the inline
 // `ContextAuditReport` in `src/api/devTools/devTools.ts` (not a ts_rs binding,
@@ -112,6 +118,7 @@ pub fn audit(
     let mut dangling_files = 0usize;
     let mut dangling_emitted = 0usize;
     let mut unresolved_cross_refs = 0usize;
+    let mut cross_ref_emitted = 0usize;
     let mut stale_contexts = 0usize;
 
     // --- Per-context checks (size + categorization + integrity + freshness) ---
@@ -159,16 +166,20 @@ pub fn audit(
             }
         }
 
-        // Referential integrity: cross_refs must name real contexts.
+        // Referential integrity: cross_refs must name real contexts. Capped so
+        // one bad consolidation can't bury every other finding.
         for r in parse_files(c.cross_refs.as_deref().unwrap_or("[]")) {
             if !context_names.contains(r.as_str()) {
                 unresolved_cross_refs += 1;
-                findings.push(finding(
-                    "warn",
-                    "unresolved_cross_ref",
-                    &c.name,
-                    format!("cross_ref \"{r}\" names no existing context."),
-                ));
+                if cross_ref_emitted < MAX_CROSS_REF_FINDINGS {
+                    cross_ref_emitted += 1;
+                    findings.push(finding(
+                        "warn",
+                        "unresolved_cross_ref",
+                        &c.name,
+                        format!("cross_ref \"{r}\" names no existing context."),
+                    ));
+                }
             }
         }
 
@@ -313,6 +324,17 @@ pub fn audit(
             ),
         ));
     }
+    if unresolved_cross_refs > MAX_CROSS_REF_FINDINGS {
+        findings.push(finding(
+            "info",
+            "unresolved_cross_ref_truncated",
+            "",
+            format!(
+                "{} more unresolved cross-refs not listed.",
+                unresolved_cross_refs - MAX_CROSS_REF_FINDINGS
+            ),
+        ));
+    }
 
     let balanced = !findings
         .iter()
@@ -334,6 +356,53 @@ pub fn audit(
             stale_contexts,
         },
         findings,
+    }
+}
+
+/// Run the structural + referential half of the audit straight from the DB.
+///
+/// Skips the on-disk walk, so `dangling_file_path` and `stale_context` are not
+/// evaluated — which is exactly right for the automatic callers (a scan has
+/// just pruned dangling paths and refreshed the hash cache; a consolidation
+/// never touches the filesystem). Cheap enough to run on every one of them.
+pub fn audit_from_db(
+    pool: &crate::db::DbPool,
+    project_id: &str,
+) -> Result<ContextAuditReport, AppError> {
+    let groups = repo::list_context_groups(pool, project_id)?;
+    let contexts = repo::list_contexts_by_project(pool, project_id, None)?;
+    Ok(audit(project_id, &groups, &contexts, None, None, None))
+}
+
+/// One line naming what the audit found, for an operator-facing log or bridge
+/// response. Referential integrity first: a dead pointer is read as ground
+/// truth by the next agent, which is worse than a context being the wrong size.
+///
+/// This is Layer-1 operator text (scan stream / loopback bridge), never React
+/// copy — the UI renders `kind` codes through i18n, not these sentences.
+pub fn summarize(report: &ContextAuditReport) -> String {
+    let t = &report.totals;
+    let mut parts: Vec<String> = Vec::new();
+    if t.unresolved_cross_refs > 0 {
+        parts.push(format!("{} unresolved cross-ref(s)", t.unresolved_cross_refs));
+    }
+    if t.dangling_files > 0 {
+        parts.push(format!("{} dangling file path(s)", t.dangling_files));
+    }
+    if t.overlapping_files > 0 {
+        parts.push(format!("{} file(s) in more than one context", t.overlapping_files));
+    }
+    if t.uncategorized_contexts > 0 {
+        parts.push(format!("{} uncategorized context(s)", t.uncategorized_contexts));
+    }
+    if t.groups_missing_domain > 0 {
+        parts.push(format!("{} group(s) missing a domain", t.groups_missing_domain));
+    }
+    let head = format!("{} context(s) in {} group(s)", t.contexts, t.groups);
+    if parts.is_empty() {
+        format!("{head} — within policy")
+    } else {
+        format!("{head} — {}", parts.join(", "))
     }
 }
 
@@ -453,6 +522,34 @@ mod tests {
         let r = audit("p", &[], &[a, b], None, None, None);
         assert!(has(&r, "unresolved_cross_ref"));
         assert_eq!(r.totals.unresolved_cross_refs, 1, "only 'ghost' is unresolved");
+    }
+
+    #[test]
+    fn unresolved_cross_refs_are_capped_but_the_total_is_not() {
+        let ghosts: Vec<String> = (0..80).map(|i| format!("ghost-{i}")).collect();
+        let refs: Vec<&str> = ghosts.iter().map(String::as_str).collect();
+        let a = ctx("alpha", &["a.rs"], &refs);
+        let r = audit("p", &[], &[a], None, None, None);
+        assert_eq!(r.totals.unresolved_cross_refs, 80, "the true total is always reported");
+        assert_eq!(
+            r.findings.iter().filter(|f| f.kind == "unresolved_cross_ref").count(),
+            MAX_CROSS_REF_FINDINGS,
+            "findings are capped like dangling_file_path and file_overlap"
+        );
+        let note = r
+            .findings
+            .iter()
+            .find(|f| f.kind == "unresolved_cross_ref_truncated")
+            .expect("a cap that hides its own size is worse than no cap");
+        assert!(note.message.contains("55"), "says how many were withheld: {}", note.message);
+    }
+
+    #[test]
+    fn summarize_names_the_integrity_problems_first() {
+        let a = ctx("alpha", &["a.rs"], &["ghost"]);
+        let r = audit("p", &[], &[a], None, None, None);
+        let line = summarize(&r);
+        assert!(line.contains("1 unresolved cross-ref"), "{line}");
     }
 
     #[test]

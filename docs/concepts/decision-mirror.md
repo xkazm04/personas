@@ -35,13 +35,57 @@ Hook the decision surface itself; never trust session discipline alone.
   `node scripts/decision-ledger/capture-decision.mjs --correction …`
   (see the Decision Mirror section of `.claude/CLAUDE.md`). Corrections are
   the strongest signal of model error and weigh ~10× a select at distillation.
-- **Ledger:** `.claude/decision-ledger/events-YYYY-MM.jsonl` — append-only,
-  schema-versioned, gitignored (explicit entry in `.gitignore` on top of the
-  `.claude/*` default, so future whitelist edits can't leak it).
+- **Prose channel (LIVE since 2026-08-06):** a `UserPromptSubmit` hook records
+  every message the operator types, verbatim and secret-redacted; a paired
+  `Stop` hook records what the turn then *did* (tools, files touched, duration,
+  subagents) and links it by `ref`. Both run
+  `scripts/decision-ledger/capture-prose.mjs`, dispatched on `hook_event_name`.
+  Decisions capture what he chose; prose captures how he frames, asks and
+  reacts. See Phase 1c below.
+- **Ledger:** `.claude/decision-ledger/events-YYYY-MM.jsonl` (decisions) and
+  `prose-YYYY-MM.jsonl` (prose) — append-only, schema-versioned, gitignored
+  (explicit entry in `.gitignore` on top of the `.claude/*` default, so future
+  whitelist edits can't leak it). Separate streams so prose volume never
+  perturbs the Phase 3 decision consumer.
 
 Descoped for now: the other repos and the machine-wide (`~/.claude`) hook.
 When the schema settles, the same hook + script transplant to each repo (or
 one machine-wide hook with per-repo tagging) — that decision is Phase-1b.
+Reconfirmed 2026-08-06 for the prose channel too: offered machine-wide capture
+(which would have tripled the corpus — only 402 of 1,233 surviving messages
+were written in this repo) and the operator chose personas-only, keeping one
+privacy boundary and one ledger.
+
+### Phase 1c — Prose capture (LIVE)
+
+The decision ledger records explicit acts. It cannot see framing, register, or
+the shape of a request — and those are most of what an operator communicates.
+
+- **`UserPromptSubmit` → `{kind:"prompt"}`** — verbatim text, redacted for
+  secret-shaped strings, tagged with session, cwd, and whether it was a slash
+  command. The hook is silent on every path: on this event stdout is injected
+  into the model's context, so a chatty hook would poison every prompt.
+- **`Stop` → `{kind:"turn_outcome"}`** — appended (never edited into the
+  prompt row; the ledger stays append-only) with `ref` pointing at the prompt
+  id, carrying `tools`, `tool_calls`, `files`, `duration_s`, `subagents`,
+  `assistant_chars`. Pairing prompt with outcome is what turns a style corpus
+  into a *cognition* corpus: it shows how much work a given phrasing licensed.
+- **Backfill:** `scripts/decision-ledger/backfill-prose.mjs` recovers what is
+  still on disk (idempotent, keyed on transcript `uuid`). This matters because
+  the CLI prunes transcripts — at first run the oldest surviving message was
+  five weeks old, so unrecorded prose is *actively expiring*.
+- **Human-vs-agent discrimination:** `promptSource ∈ {typed,
+  suggestion_accepted, queued}`. This is the only reliable signal —
+  `userType` is `"external"` for humans and dispatched agents alike, and
+  SDK-dispatched prompts are otherwise indistinguishable apart from length
+  (23k chars mean vs 342 for typed).
+
+Distilled into **§5 Communication profile** and **§6 Cognitive profile**.
+Both are **describe-only by operator decision (2026-08-06)**: sessions and
+Athena read them to mirror his level and avoid known redirect triggers, but
+nothing generates her voice or policy from them. Prose may corroborate a
+§1-§4 claim; it may never be the floor-clearing evidence for one, because
+those sections drive autonomy and autonomy requires an explicit act.
 
 Event schema (v1):
 

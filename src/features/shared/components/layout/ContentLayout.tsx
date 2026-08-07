@@ -272,7 +272,12 @@ export function ContentBody({
         <div
           className={[
             'min-h-full w-full',
-            !noPadding && (IS_MOBILE ? 'p-2.5' : 'p-4 md:p-6 xl:p-8'),
+            // Horizontal padding is deliberately tighter than vertical:
+            // the vertical rhythm separates a page from its header, but
+            // every x pixel here is taken from content width, which
+            // multi-column pages spend better than the gutter does.
+            !noPadding &&
+              (IS_MOBILE ? 'p-2.5' : 'py-4 md:py-6 xl:py-8 px-3 md:px-4 xl:px-5'),
             centered && 'mx-auto',
           ]
             .filter(Boolean)
