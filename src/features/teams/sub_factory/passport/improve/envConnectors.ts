@@ -95,7 +95,7 @@ export function useEnvConnectors(slug: string, serviceTypes: string[]): EnvConne
 
   const bindings = useMemo<EnvBindingMap>(() => {
     const m = new Map<string, string>();
-    for (const r of rows ?? []) m.set(`${r.dimension}|${r.env}`, r.credential_id);
+    for (const r of rows ?? []) m.set(`${r.dimension}|${r.env}`, r.credentialId);
     return m;
   }, [rows]);
 
@@ -110,7 +110,7 @@ export function useEnvConnectors(slug: string, serviceTypes: string[]): EnvConne
         const rest = (prev ?? []).filter((r) => !(r.dimension === dimension && r.env === env));
         if (!credentialId) return rest;
         const now = new Date().toISOString();
-        return [...rest, { project_id: slug, dimension, env, credential_id: credentialId, created_at: now, updated_at: now }];
+        return [...rest, { projectId: slug, dimension, env, credentialId, createdAt: now, updatedAt: now }];
       });
     } finally {
       setSaving(null);

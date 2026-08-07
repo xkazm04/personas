@@ -6,12 +6,12 @@
  * `trust_score` when routing steps for THIS team. Bounded by a hard floor so
  * a few unlucky runs can never death-spiral a persona off the roster.
  */
-export type TeamMemberTrust = { teamId: string, personaId: string,
+export type TeamMemberTrust = { teamId: string, personaId: string, 
 /**
  * 0.0–1.0; floored at the engine's `TRUST_FLOOR`.
  */
-trust: number,
+trust: number, 
 /**
  * How many step outcomes have fed this score (evidence volume).
  */
-samples: number, updatedAt: string, };
+samples: bigint, updatedAt: string, };

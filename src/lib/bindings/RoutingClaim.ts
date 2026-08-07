@@ -5,16 +5,16 @@
  * the embedded evidence snapshot — nothing is estimated beyond the linear
  * projection of window run-rate to 30 days.
  */
-export type RoutingClaim = { projectedMonthlySavingUsd: number,
+export type RoutingClaim = { projectedMonthlySavingUsd: number, 
 /**
  * Relative saving, `0.0..=1.0`.
  */
-savingPct: number,
+savingPct: number, 
 /**
  * `"lab"` when both models had enough scored lab samples, otherwise
  * `"success_rate"` — the claim is explicit about its quality basis.
  */
-qualityBasis: string,
+qualityBasis: string, 
 /**
  * Challenger quality relative to incumbent on that basis
  * (negative = worse), e.g. `-0.02` = 2% below.

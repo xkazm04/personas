@@ -13,4 +13,4 @@
  * `local` | `test` | `production`. A `credential_id` of `None` means the pair
  * was explicitly cleared — the row is deleted rather than kept as a tombstone.
  */
-export type DevProjectEnvConnector = { project_id: string, dimension: string, env: string, credential_id: string, created_at: string, updated_at: string, };
+export type DevProjectEnvConnector = { projectId: string, dimension: string, env: string, credentialId: string, createdAt: string, updatedAt: string, };

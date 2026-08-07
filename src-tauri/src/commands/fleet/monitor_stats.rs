@@ -25,6 +25,8 @@ use std::sync::{Mutex, OnceLock};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::error::AppError;
+
 use super::process_scan::memory_bytes_for;
 use super::registry::registry;
 use super::screen_activity::ScreenActivity;
@@ -166,7 +168,7 @@ struct SessionSeed {
 
 /// Live stats for every tracked session, in one call.
 #[tauri::command]
-pub async fn fleet_monitor_stats() -> Result<Vec<FleetMonitorStats>, String> {
+pub async fn fleet_monitor_stats() -> Result<Vec<FleetMonitorStats>, AppError> {
     // Snapshot first: `list_dto` takes and releases the registry lock, so none
     // of the blocking work below happens while the registry is held.
     let sessions: Vec<SessionSeed> = registry()
@@ -237,7 +239,7 @@ pub async fn fleet_monitor_stats() -> Result<Vec<FleetMonitorStats>, String> {
         Ok(out)
     })
     .await
-    .map_err(|e| format!("monitor stats task failed: {e}"))?
+    .map_err(|e| AppError::Execution(format!("monitor stats task failed: {e}")))?
 }
 
 #[cfg(test)]

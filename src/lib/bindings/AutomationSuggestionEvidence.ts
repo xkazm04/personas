@@ -2,6 +2,28 @@
 
 /**
  * One historical co-occurrence backing a suggestion: event E happened, then
- * the user manually ran persona P `gap_seconds` later.
+ * the user manually ran persona P `gap_seconds` later. Rendered verbatim in
+ * the Studio evidence drawer — the drawer IS the trust mechanism, so this
+ * carries real row ids the user could audit, not aggregates.
  */
-export type AutomationSuggestionEvidence = { eventId: string, eventAt: string, executionId: string, executedAt: string, gapSeconds: number, };
+export type AutomationSuggestionEvidence = { 
+/**
+ * `persona_events.id` of the observed event.
+ */
+eventId: string, 
+/**
+ * When the event was recorded (RFC-3339).
+ */
+eventAt: string, 
+/**
+ * `persona_executions.id` of the manual run that followed.
+ */
+executionId: string, 
+/**
+ * When the manual run was created (RFC-3339).
+ */
+executedAt: string, 
+/**
+ * Seconds between the event and the manual run (0 ≤ gap ≤ window).
+ */
+gapSeconds: number, };

@@ -5,7 +5,7 @@ import type { RuleProvenance } from "./RuleProvenance";
 /**
  * One routing rule: a selector + the model/effort it resolves to.
  */
-export type ModelRoutingRule = { match: RoutingMatch, model: string, effort?: string,
+export type ModelRoutingRule = { match: RoutingMatch, model: string, effort?: string, 
 /**
  * Present iff this rule was written by an applied Self-Tuning proposal.
  */

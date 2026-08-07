@@ -8,28 +8,28 @@
  * result, and the trust delta each step produced — the raw material the
  * retrospective deliberates over and the UI renders as the evidence drawer.
  */
-export type AssignmentOutcome = { id: string, assignmentId: string, teamId: string,
+export type AssignmentOutcome = { id: string, assignmentId: string, teamId: string, 
 /**
  * Terminal assignment status this record captured: done | failed | aborted.
  */
-status: string, stepsTotal: number, stepsDone: number, stepsFailed: number, stepsSkipped: number,
+status: string, stepsTotal: number, stepsDone: number, stepsFailed: number, stepsSkipped: number, 
 /**
  * Steps that needed human/QA intervention (retries or failures).
  */
-reviewInterventions: number,
+reviewInterventions: number, 
 /**
  * Wall-clock seconds from assignment start to completion, when known.
  */
-durationSecs: number | null,
+durationSecs: bigint | null, 
 /**
  * JSON evidence: `{ steps: [{stepId, title, personaId, strategy,
  * confidence, durationSecs, result, retryCount, trustBefore, trustAfter}] }`.
  */
-outcomeJson: string,
+outcomeJson: string, 
 /**
  * The auto-retrospective deliberation seeded from this outcome, if one ran.
  */
-retroDeliberationId: string | null,
+retroDeliberationId: string | null, 
 /**
  * Why no retrospective ran (e.g. `trivial_run`, `active_deliberation`).
  */

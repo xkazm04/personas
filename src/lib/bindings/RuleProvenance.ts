@@ -5,15 +5,15 @@
  * (batch-3 learning grammar: every learned rule is auditable back to the
  * evidence that produced it). Hand-authored rules carry `None`.
  */
-export type RuleProvenance = {
+export type RuleProvenance = { 
 /**
  * `policy_proposals.id` the operator approved.
  */
-proposalId: string,
+proposalId: string, 
 /**
  * `PolicyEvidenceSnapshot.id` the proposal was derived from.
  */
-evidenceSnapshotId: string, appliedAt: string,
+evidenceSnapshotId: string, appliedAt: string, 
 /**
  * Human-readable one-line claim recorded at apply time.
  */

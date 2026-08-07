@@ -3,34 +3,34 @@
 /**
  * Root-cause diagnosis for a single audit incident.
  */
-export type IncidentDiagnosis = { id: string,
+export type IncidentDiagnosis = { id: string, 
 /**
  * FK to `audit_incidents.id` (UNIQUE — one diagnosis per incident).
  */
-incidentId: string,
+incidentId: string, 
 /**
  * One-paragraph root-cause summary (Athena voice, first person, brief).
  */
-summary: string,
+summary: string, 
 /**
  * Evidence lines gathered from healing analysis, recent failures, and
  * the execution-knowledge graph. Stored as a JSON array in SQLite.
  */
-evidence: Array<string>,
+evidence: Array<string>, 
 /**
  * Machine token of the proposed remediation (e.g. `run_persona`), if any.
  * The action itself lives as a PENDING `companion_approval` row.
  */
-proposedAction: string | null,
+proposedAction: string | null, 
 /**
  * Human rationale attached to the proposal.
  */
-proposedRationale: string | null,
+proposedRationale: string | null, 
 /**
  * `companion_approval.id` of the pending proposal. Set at most once per
  * incident — the v1 remediation-loop cap.
  */
-approvalId: string | null,
+approvalId: string | null, 
 /**
  * Heuristic confidence 0..1 — earned from how much corroborating
  * evidence was found, not from a model logit.

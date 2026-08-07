@@ -10,53 +10,53 @@
  * `base_updated_at`) and the change is logged to `persona_change_log`; on
  * rejection only the decision is recorded. There is NO auto-promotion path.
  */
-export type EvolutionPromotionProposal = { id: string,
+export type EvolutionPromotionProposal = { id: string, 
 /**
  * Evolution cycle that produced this proposal.
  */
-cycleId: string, personaId: string,
+cycleId: string, personaId: string, 
 /**
  * `pending` | `approved` | `rejected`.
  */
-status: string,
+status: string, 
 /**
  * JSON-serialized `PersonaGenome` of the winning challenger.
  */
-winnerGenomeJson: string,
+winnerGenomeJson: string, 
 /**
  * The winner's reassembled system prompt (what approval would install).
  */
-newPrompt: string,
+newPrompt: string, 
 /**
  * Incumbent's measured score on the same replay set (0.0--1.0).
  */
-incumbentScore: number,
+incumbentScore: number, 
 /**
  * Winner's measured score on the same replay set (0.0--1.0).
  */
-winnerScore: number,
+winnerScore: number, 
 /**
  * `winner_score - incumbent_score` at filing time.
  */
-improvement: number,
+improvement: number, 
 /**
  * The policy's `improvement_threshold` the winner had to clear.
  */
-threshold: number,
+threshold: number, 
 /**
  * `measured` — score provenance marker (inherited-only cycles never file).
  */
-fitnessSource: string,
+fitnessSource: string, 
 /**
  * Raw evidence JSON: replay counts, per-side measured fitness breakdowns,
  * scenario names, and the cycle's budget state. Inspectable in the UI.
  */
-evidenceJson: string | null,
+evidenceJson: string | null, 
 /**
  * Incumbent's `updated_at` captured when the cycle started — the
  * optimistic-lock token approval must match (stale proposals fail closed).
  */
-baseUpdatedAt: string,
+baseUpdatedAt: string, 
 /**
  * Optional human note recorded at decision time.
  */

@@ -4,16 +4,16 @@
  * An honest "I decline to propose here" record — surfaced verbatim in the
  * UI so sparse data reads as sparse data, not as silence.
  */
-export type DeclinedCell = { category: string, incumbentModel: string,
+export type DeclinedCell = { category: string, incumbentModel: string, 
 /**
  * Machine token: `below_evidence_floor` | `no_qualified_challenger` |
  * `saving_below_threshold` | `quality_regression` | `already_routed`.
  */
-reason: string,
+reason: string, 
 /**
  * Runs backing the incumbent cell (context for the floor message).
  */
-runs: number,
+runs: number, 
 /**
  * The floor that applied.
  */
