@@ -330,4 +330,39 @@ mod tests {
             .unwrap()
             .is_empty());
     }
+
+    /// Every other test in this module builds its own `companion_fts`, so all
+    /// nine would pass unchanged if the REAL schema stopped creating the table —
+    /// the lane would go silently empty and the suite would stay green. That is
+    /// not hypothetical: a sibling device dropped `companion_fts` on 2026-08-07
+    /// (correctly, at the time — it then had no reader), and its tombstone
+    /// invites the next person to do it again. This is the one test that runs
+    /// against `init_test_user_db`'s real schema, so removing the table fails
+    /// loudly here instead of quietly in production recall.
+    #[test]
+    fn the_real_schema_still_carries_the_index_this_lane_reads() {
+        let pool = crate::db::init_test_user_db().unwrap();
+        {
+            let conn = pool.get().unwrap();
+            // Same statement shape the writers use (episodic/doctrine/semantic/
+            // procedural/goals all insert node + mirror).
+            conn.execute(
+                "INSERT INTO companion_node (id, kind, session_id, file_path, content_hash, importance, body_excerpt, created_at, updated_at)
+                 VALUES ('doc_real', 'doctrine', NULL, 'p.md', 'h', 3, 'x', '2026-08-08', '2026-08-08')",
+                [],
+            )
+            .expect("companion_node must exist in the real schema");
+            conn.execute(
+                "INSERT INTO companion_fts (node_id, body, tags) VALUES ('doc_real', 'worktree isolation doctrine', 'doctrine')",
+                [],
+            )
+            .expect("companion_fts must exist in the real schema — the keyword lane reads it");
+        }
+        let hits = search_kind(&pool, "worktree isolation", "doctrine", 5).unwrap();
+        assert_eq!(
+            hits,
+            vec!["doc_real".to_string()],
+            "a row written through the real schema must be retrievable by the lane"
+        );
+    }
 }
