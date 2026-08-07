@@ -15,15 +15,16 @@
 //!  pair_request(peer_id=B)
 //!    session_nonce := random 32B
 //!    fingerprint   := F(A, B, session_nonce)
-//!    ── PairRequest{session_nonce, group_A, name_A} ──▶
+//!    ── PairRequest{session_nonce, group_A, name_A, at_stake_A} ──▶
 //!                                        fingerprint := F(B, A, session_nonce)
 //!                                        (same value — F sorts its peer ids)
 //!    ◀── PairPending ──                  emit DEVICE_PAIRING_REQUESTED
 //!  shows "042-917"                       shows "042-917"  ← human compares
 //!                                        pair_confirm(peer_id=A)
-//!                                          adopt group_A
+//!                                          resolve surviving group
 //!                                          write owned_devices[A]
-//!    ◀── PairResponse{accepted, group, name_B, pk_B} ──
+//!    ◀── PairResponse{accepted, surviving_group, name_B, pk_B} ──
+//!  join surviving_group (re-checked locally)
 //!  write owned_devices[B]
 //! ```
 //!
@@ -32,25 +33,37 @@
 //! at it. Confirmation happens on the *receiving* device and writes the
 //! `owned_devices` row on both sides.
 //!
-//! ## Group semantics
+//! ## Group semantics — one surviving group, decided by who has anything to lose
 //!
-//! The responder JOINS the initiator's device group (adopts its
-//! `device_group_id`) — but only when joining strands nobody. Re-anchoring does
-//! not rewrite the `owned_devices` rows the responder already holds, so a
-//! responder that adopts a different group while other devices are paired under
-//! its own splits the group in two: it moves, they stay.
+//! Both devices must end up in ONE group, and re-anchoring never rewrites the
+//! `owned_devices` rows a machine already holds — so whichever side moves strands
+//! whatever it was already paired with. The ceremony therefore resolves toward
+//! the side that has devices at stake:
 //!
-//! So `confirm` refuses instead. If the responder is already paired with any
-//! device other than the initiator under a *different* group, it returns
-//! [`AppError::DeviceGroupConflict`] before writing anything, naming the devices
-//! that would be stranded and telling the operator to unpair on one side first.
-//! Merging two populated groups is still out of scope for this primitive; the
-//! change is that the primitive now says so instead of quietly fragmenting.
+//! | initiator has devices | responder has devices | outcome |
+//! |---|---|---|
+//! | no  | no  | responder adopts the initiator's group (the deterministic tie-break: the offer on the wire wins) |
+//! | yes | no  | responder adopts the initiator's group |
+//! | no  | yes | **counter-offer** — the responder KEEPS its group and returns it as the surviving group; the initiator adopts it |
+//! | yes | yes | [`AppError::DeviceGroupConflict`] before anything is written, naming the devices that would be stranded and telling the operator to unpair on one side first |
 //!
-//! Pairing proceeds normally when the responder has no other paired devices (the
-//! fresh-device case) or when both sides already share the group (an idempotent
-//! re-pair). See [`owned_devices_repo::join_device_group`] for the exact
-//! predicate, including why the initiator's own row never counts.
+//! Same group on both sides stays idempotent. The counter-offer is what makes a
+//! THIRD device addable: an established machine acting as responder used to have
+//! to refuse every newcomer, because it could not tell "the initiator has nothing
+//! to lose" from "the initiator has devices to lose". `PairRequest.devices_at_stake`
+//! is what tells it apart.
+//!
+//! ### Why a lying peer cannot strand your devices
+//!
+//! `devices_at_stake` is an unauthenticated claim, and the surviving group id in
+//! `PairResponse` is too. Neither is ever the thing that authorizes a re-anchor.
+//! Each side answers "may *I* leave my group?" from its own registry — the claim
+//! only picks between counter-offering and refusing — and every write on both
+//! sides goes through [`owned_devices_repo::join_device_group`], which re-checks
+//! that predicate. A peer claiming a falsely empty group gets a counter-offer,
+//! not a move; a peer claiming a falsely populated one only denies itself the
+//! pairing. See [`owned_devices_repo::resolve_pairing_group`] for the exact
+//! predicate, including why the peer being paired with never counts.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -104,6 +117,9 @@ struct Pending {
     fingerprint: String,
     /// The device group proposed by the initiator.
     device_group_id: String,
+    /// Responder side only: how many devices the initiator CLAIMS are at stake
+    /// in its group. Untrusted — see the module doc.
+    peer_devices_at_stake: u32,
     /// The peer's handshake-proven public key.
     public_key_b64: String,
     role: PairingRole,
@@ -180,6 +196,9 @@ impl DevicePairing {
         }
         let public_key_b64 = self.proven_key(peer_id).await?;
         let device_group_id = owned_devices_repo::ensure_device_group_id(&self.pool)?;
+        // What WE would strand by moving. The responder cannot see our registry,
+        // so without this it has to assume the worst and refuse every newcomer.
+        let devices_at_stake = owned_devices_repo::count_devices_at_stake(&self.pool, peer_id)?;
 
         let session_nonce = protocol::generate_nonce();
         let fingerprint = protocol::pairing_fingerprint(&local.peer_id, peer_id, &session_nonce);
@@ -193,6 +212,7 @@ impl DevicePairing {
             display_name: remote_name,
             fingerprint: fingerprint.clone(),
             device_group_id: device_group_id.clone(),
+            peer_devices_at_stake: 0, // unused on the initiator side
             public_key_b64,
             role: PairingRole::Initiator,
             created: Instant::now(),
@@ -215,6 +235,7 @@ impl DevicePairing {
                     session_nonce,
                     device_group_id,
                     display_name: local.display_name.clone(),
+                    devices_at_stake,
                 },
             )
             .await?;
@@ -277,6 +298,16 @@ impl DevicePairing {
             );
             pending.public_key_b64
         };
+        // `device_group_id` is the group the responder says survived: our own
+        // offer when it joined us, or its own when it counter-offered. Either
+        // way it is a claim off the network, so we adopt it only through the
+        // local guard. If the responder counter-offered while WE hold devices
+        // under a different group — which it can only do by our having lied
+        // about `devices_at_stake`, or by a hostile peer — this refuses with the
+        // same typed `DeviceGroupConflict` and writes nothing. A peer can never
+        // talk us into stranding our own devices.
+        let device_group_id =
+            owned_devices_repo::join_device_group(&self.pool, &device_group_id, peer_id)?;
         owned_devices_repo::register_paired_device(
             &self.pool,
             peer_id,
@@ -299,6 +330,7 @@ impl DevicePairing {
         session_nonce: String,
         device_group_id: String,
         display_name: String,
+        devices_at_stake: u32,
     ) -> Result<Message, AppError> {
         protocol::validate_nonce(&session_nonce, "pairing session")?;
         let local = crate::identity::get_or_create_identity(&self.pool)?;
@@ -319,6 +351,7 @@ impl DevicePairing {
                     display_name,
                     fingerprint,
                     device_group_id,
+                    peer_devices_at_stake: devices_at_stake,
                     public_key_b64,
                     role: PairingRole::Responder,
                     created: Instant::now(),
@@ -347,25 +380,47 @@ impl DevicePairing {
                 p.display_name.clone(),
                 p.device_group_id.clone(),
                 p.public_key_b64.clone(),
+                p.peer_devices_at_stake,
             )
         };
-        let (display_name, device_group_id, public_key_b64) = pending;
+        let (display_name, proposed_group_id, public_key_b64, peer_devices_at_stake) = pending;
 
-        // Join the initiator's group -- but only when nothing gets left behind.
-        // Re-anchoring does not rewrite the `owned_devices` rows we already
-        // hold, so adopting a different group while other devices are paired
-        // under ours would split the group in two. `join_device_group` refuses
-        // that with a typed `DeviceGroupConflict`, which travels straight up
-        // through the `confirm_device_pairing` command to the person who just
-        // pressed confirm. This runs BEFORE any write, so a refused pairing
-        // leaves the registry exactly as it was.
-        owned_devices_repo::join_device_group(&self.pool, &device_group_id, peer_id)?;
+        // Settle on ONE surviving group. Whichever side re-anchors strands the
+        // devices it already holds, so the side with devices at stake is the one
+        // that keeps its group: we adopt the initiator's offer when we have
+        // nothing to lose, counter-offer our own when it does not, and refuse
+        // with a typed `DeviceGroupConflict` when both sides are populated. That
+        // error travels straight up through the `confirm_device_pairing` command
+        // to the person who just pressed confirm. Everything here runs BEFORE any
+        // write, so a refused pairing leaves the registry exactly as it was.
+        //
+        // `peer_devices_at_stake` is the initiator's own unauthenticated claim.
+        // It can only steer us between counter-offering and refusing — whether we
+        // may leave our group is read from our registry, and the adopt path still
+        // goes through `join_device_group`, which re-checks it.
+        let surviving_group_id = match owned_devices_repo::resolve_pairing_group(
+            &self.pool,
+            &proposed_group_id,
+            peer_id,
+            peer_devices_at_stake > 0,
+        )? {
+            owned_devices_repo::GroupResolution::Adopt(group) => {
+                owned_devices_repo::join_device_group(&self.pool, &group, peer_id)?
+            }
+            owned_devices_repo::GroupResolution::Keep(group) => {
+                tracing::info!(
+                    peer_id = %peer_id,
+                    "Counter-offering our device group; the peer reports nothing at stake"
+                );
+                group
+            }
+        };
 
         let local = crate::identity::get_or_create_identity(&self.pool)?;
         let device = owned_devices_repo::register_paired_device(
             &self.pool,
             peer_id,
-            &device_group_id,
+            &surviving_group_id,
             &display_name,
             &public_key_b64,
         )?;
@@ -375,7 +430,7 @@ impl DevicePairing {
             &mut send,
             &Message::PairResponse {
                 accepted: true,
-                device_group_id,
+                device_group_id: surviving_group_id,
                 display_name: local.display_name.clone(),
                 public_key_b64: local.public_key_b64.clone(),
             },

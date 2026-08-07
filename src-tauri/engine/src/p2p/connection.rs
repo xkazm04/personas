@@ -850,9 +850,16 @@ impl ConnectionManager {
                 session_nonce,
                 device_group_id,
                 display_name,
+                devices_at_stake,
             } => {
                 let receipt = pairing
-                    .handle_request(peer_id, session_nonce, device_group_id, display_name)
+                    .handle_request(
+                        peer_id,
+                        session_nonce,
+                        device_group_id,
+                        display_name,
+                        devices_at_stake,
+                    )
                     .await?;
                 protocol::write_message(send, &receipt).await?;
             }

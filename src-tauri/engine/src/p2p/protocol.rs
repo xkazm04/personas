@@ -87,9 +87,18 @@ pub enum Message {
     PairRequest {
         /// Base64 session nonce that seeds the human-comparable fingerprint.
         session_nonce: String,
-        /// The initiator's device-group anchor. The responder joins this group.
+        /// The initiator's device-group anchor — its offer, not a verdict: the
+        /// responder may counter-offer its own group instead.
         device_group_id: String,
         display_name: String,
+        /// How many devices the initiator's group would strand if the initiator
+        /// left it (its own identity row and the responder both excluded). Zero
+        /// means "nothing at stake here, I can move".
+        ///
+        /// This is an UNAUTHENTICATED claim. The responder uses it only to
+        /// choose between counter-offering and refusing; whether the responder
+        /// may leave its OWN group is always answered from its own registry.
+        devices_at_stake: u32,
     },
     /// Receipt for a [`Message::PairRequest`] — the responder has queued the
     /// request for human confirmation. Not an acceptance.
@@ -97,7 +106,10 @@ pub enum Message {
     /// The responder's verdict, sent after the human compared fingerprints.
     PairResponse {
         accepted: bool,
-        /// The group both devices settled on (echoed back on acceptance).
+        /// The SURVIVING group — the single group both devices end up in. Equal
+        /// to the initiator's offer when the responder joined it, or the
+        /// responder's own group when it counter-offered. The initiator adopts
+        /// this value, after re-checking locally that it may leave its own.
         device_group_id: String,
         display_name: String,
         /// The responder's Ed25519 public key (base64), so the initiator can
@@ -354,6 +366,50 @@ mod tests {
 
     fn sign(key: &SigningKey, msg: &[u8]) -> String {
         B64.encode(key.sign(msg).to_bytes())
+    }
+
+    /// The pairing messages carry the two facts the counter-offer needs — the
+    /// initiator's at-stake count out, the surviving group back — and survive
+    /// the positional MessagePack encoding intact. v2 has never shipped, so
+    /// adding the field was a clean wire change with no compatibility shim.
+    #[test]
+    fn pairing_messages_round_trip_the_counter_offer_fields() {
+        assert_eq!(PROTOCOL_VERSION, 2, "the counter-offer ships as part of v2");
+
+        let req = Message::PairRequest {
+            session_nonce: generate_nonce(),
+            device_group_id: "group-A".into(),
+            display_name: "Laptop".into(),
+            devices_at_stake: 3,
+        };
+        let bytes = rmp_serde::to_vec(&req).expect("encode");
+        match rmp_serde::from_slice::<Message>(&bytes).expect("decode") {
+            Message::PairRequest {
+                device_group_id,
+                devices_at_stake,
+                ..
+            } => {
+                assert_eq!(device_group_id, "group-A");
+                assert_eq!(devices_at_stake, 3);
+            }
+            other => panic!("expected PairRequest, got {other:?}"),
+        }
+
+        let resp = Message::PairResponse {
+            accepted: true,
+            device_group_id: "group-B".into(),
+            display_name: "Desktop".into(),
+            public_key_b64: "pk".into(),
+        };
+        let bytes = rmp_serde::to_vec(&resp).expect("encode");
+        match rmp_serde::from_slice::<Message>(&bytes).expect("decode") {
+            // The counter-offer case: the group coming back is the responder's,
+            // not the one the initiator proposed.
+            Message::PairResponse {
+                device_group_id, ..
+            } => assert_eq!(device_group_id, "group-B"),
+            other => panic!("expected PairResponse, got {other:?}"),
+        }
     }
 
     #[test]

@@ -181,6 +181,12 @@ pub fn set_device_home(
 /// Returns [`AppError::DeviceGroupConflict`] when the move is unsafe, with the
 /// stranded devices named and the remedy stated. Nothing is written in that
 /// case.
+///
+/// This is the *local* half of the decision and it is deliberately blind to what
+/// the peer claims: it answers only "may this machine leave its group?".
+/// [`resolve_pairing_group`] adds the peer's side and can resolve a would-be
+/// refusal into a counter-offer — but every write still goes through here, so no
+/// remote claim can talk this machine into stranding its own devices.
 pub fn join_device_group(
     pool: &DbPool,
     proposed_group_id: &str,
@@ -192,41 +198,138 @@ pub fn join_device_group(
         ));
     }
     let conn = pool.get()?;
-    let current: Option<String> = conn
-        .query_row(
-            "SELECT device_group_id FROM local_identity WHERE id = 1",
-            [],
-            |row| row.get::<_, Option<String>>(0),
-        )
-        .optional_flatten();
 
     // No anchor yet, or already anchored where we are being asked to go: nothing
     // can be left behind, so the join is a no-op or a first-time anchor.
-    if let Some(current) = current.as_deref().filter(|c| *c != proposed_group_id) {
-        let mut stmt = conn.prepare(
-            "SELECT display_name FROM owned_devices
-             WHERE device_group_id = ?1
-               AND peer_id <> ?2
-               AND peer_id <> COALESCE((SELECT peer_id FROM local_identity WHERE id = 1), '')
-             ORDER BY added_at DESC",
-        )?;
-        let stranded = stmt
-            .query_map(rusqlite::params![current, pairing_peer_id], |row| {
-                row.get::<_, String>(0)
-            })?
-            .collect::<Result<Vec<_>, _>>()?;
+    if let Some(current) = current_group_id(&conn).filter(|c| c != proposed_group_id) {
+        let stranded = other_devices_in_group(&conn, &current, pairing_peer_id)?;
         if !stranded.is_empty() {
-            return Err(AppError::DeviceGroupConflict(format!(
-                "Pairing refused: this device already belongs to a device group that also contains {}. \
-                 Joining the other device's group would strand those devices. \
-                 Unpair them here, or unpair the conflicting devices on the other side, then pair again.",
-                summarize_names(&stranded)
-            )));
+            return Err(group_conflict(&stranded));
         }
     }
 
     drop(conn);
     set_device_group_id(pool, proposed_group_id)
+}
+
+/// Read the local device-group anchor without creating one.
+fn current_group_id(conn: &rusqlite::Connection) -> Option<String> {
+    conn.query_row(
+        "SELECT device_group_id FROM local_identity WHERE id = 1",
+        [],
+        |row| row.get::<_, Option<String>>(0),
+    )
+    .optional_flatten()
+}
+
+/// Devices in `group_id` that leaving it would strand, newest first.
+///
+/// The exclusions ARE the definition of "at stake" and every caller must use
+/// exactly these two: the local machine's own identity row (it cannot strand
+/// itself) and `pairing_peer_id` (the ceremony rewrites that row to the surviving
+/// group in the same breath, so it moves with us).
+fn other_devices_in_group(
+    conn: &rusqlite::Connection,
+    group_id: &str,
+    pairing_peer_id: &str,
+) -> Result<Vec<String>, AppError> {
+    let mut stmt = conn.prepare(
+        "SELECT display_name FROM owned_devices
+         WHERE device_group_id = ?1
+           AND peer_id <> ?2
+           AND peer_id <> COALESCE((SELECT peer_id FROM local_identity WHERE id = 1), '')
+         ORDER BY added_at DESC",
+    )?;
+    let names = stmt
+        .query_map(rusqlite::params![group_id, pairing_peer_id], |row| {
+            row.get::<_, String>(0)
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(names)
+}
+
+fn group_conflict(stranded: &[String]) -> AppError {
+    AppError::DeviceGroupConflict(format!(
+        "Pairing refused: this device already belongs to a device group that also contains {}. \
+         Joining the other device's group would strand those devices. \
+         Unpair them here, or unpair the conflicting devices on the other side, then pair again.",
+        summarize_names(stranded)
+    ))
+}
+
+/// How many devices the local group would strand if this machine left it — the
+/// number the pairing ceremony puts on the wire so the other side can tell
+/// "nothing at stake" from "devices at stake".
+///
+/// Uses the same exclusions as [`join_device_group`]; returns 0 when there is no
+/// anchor yet.
+pub fn count_devices_at_stake(pool: &DbPool, pairing_peer_id: &str) -> Result<u32, AppError> {
+    let conn = pool.get()?;
+    let Some(current) = current_group_id(&conn) else {
+        return Ok(0);
+    };
+    Ok(other_devices_in_group(&conn, &current, pairing_peer_id)?.len() as u32)
+}
+
+/// Which group survives a pairing ceremony, decided from this machine's point of
+/// view. See [`resolve_pairing_group`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum GroupResolution {
+    /// The peer's group wins: this machine re-anchors onto it.
+    Adopt(String),
+    /// Counter-offer — this machine's group wins and the peer must adopt it.
+    /// Chosen when we have devices at stake and the peer says it has none.
+    Keep(String),
+}
+
+/// Decide the single surviving device group for a pairing, WITHOUT writing.
+///
+/// Two devices can only end up in one group, and re-anchoring never rewrites the
+/// `owned_devices` rows a machine already holds — so whichever side re-anchors
+/// strands whatever it was already paired with. The resolution therefore turns
+/// on which side has anything at stake:
+///
+/// | local has devices | peer claims devices | outcome |
+/// |---|---|---|
+/// | no  | no  | `Adopt` — the peer's group wins (the initiator's group is the deterministic tie-break, because the responder is always the side running this) |
+/// | no  | yes | `Adopt` — nothing here to strand |
+/// | yes | no  | `Keep` — counter-offer; the peer adopts ours |
+/// | yes | yes | [`AppError::DeviceGroupConflict`] — neither side can move |
+///
+/// Same group on both sides is idempotent and always resolves to `Adopt`.
+///
+/// **`peer_has_devices` is an UNTRUSTED claim off the network.** It can only ever
+/// push this machine toward *keeping* its own group or refusing — never toward
+/// abandoning devices it holds, because the "can we leave?" half is answered
+/// locally from `owned_devices`. A peer that lies "I have nothing" gets a
+/// counter-offer, not a re-anchor; a peer that lies "I have devices" only denies
+/// itself the pairing. The caller must still route the surviving group through
+/// [`join_device_group`] before writing, so the local predicate is the last word
+/// on both sides of the wire.
+pub fn resolve_pairing_group(
+    pool: &DbPool,
+    proposed_group_id: &str,
+    pairing_peer_id: &str,
+    peer_has_devices: bool,
+) -> Result<GroupResolution, AppError> {
+    if proposed_group_id.trim().is_empty() {
+        return Err(AppError::Validation(
+            "device_group_id must not be empty".into(),
+        ));
+    }
+    let conn = pool.get()?;
+    let Some(current) = current_group_id(&conn).filter(|c| c != proposed_group_id) else {
+        // No anchor yet, or already where we are being asked to go.
+        return Ok(GroupResolution::Adopt(proposed_group_id.to_string()));
+    };
+    let stranded = other_devices_in_group(&conn, &current, pairing_peer_id)?;
+    if stranded.is_empty() {
+        return Ok(GroupResolution::Adopt(proposed_group_id.to_string()));
+    }
+    if peer_has_devices {
+        return Err(group_conflict(&stranded));
+    }
+    Ok(GroupResolution::Keep(current))
 }
 
 /// Render a device-name list for an operator-facing message: at most three
@@ -589,6 +692,164 @@ mod tests {
             join_device_group(&pool, "other-group", "peerZ").is_ok(),
             "our own row must not block a join"
         );
+    }
+
+    // -- resolve_pairing_group: the counter-offer ---------------------------
+
+    /// The new case. WE have devices at stake, the peer has none, and the groups
+    /// differ -- so the ceremony must resolve toward US: we keep our group and
+    /// the peer adopts it. Refusing here (the old behavior) is what made a third
+    /// device impossible to add.
+    #[test]
+    fn counter_offer_keeps_our_group_when_the_peer_has_nothing_at_stake() {
+        let pool = test_pool();
+        let group = ensure_device_group_id(&pool).expect("group");
+        register_paired_device(&pool, "peerA", &group, "Laptop", "kA").expect("A");
+        register_paired_device(&pool, "peerB", &group, "Desktop", "kB").expect("B");
+
+        let outcome = resolve_pairing_group(&pool, "their-group", "peerC", false)
+            .expect("a peer with nothing at stake must be counter-offered, not refused");
+        assert_eq!(outcome, GroupResolution::Keep(group.clone()));
+        assert_eq!(
+            ensure_device_group_id(&pool).expect("re-read"),
+            group,
+            "resolving must not move the anchor by itself"
+        );
+    }
+
+    /// Row 1 of the table: nobody has anything at stake. The tie-break is
+    /// "the proposing side's group wins", which on the responder (the only side
+    /// that runs this) means the initiator's group survives.
+    #[test]
+    fn resolve_with_neither_side_populated_adopts_the_proposed_group() {
+        let pool = test_pool();
+        ensure_device_group_id(&pool).expect("group");
+        assert_eq!(
+            resolve_pairing_group(&pool, "their-group", "peerA", false).expect("resolve"),
+            GroupResolution::Adopt("their-group".into())
+        );
+    }
+
+    /// Row 2: only the peer has devices at stake, so we move. Today's behavior,
+    /// pinned so the counter-offer cannot accidentally invert it.
+    #[test]
+    fn resolve_adopts_when_only_the_peer_has_devices() {
+        let pool = test_pool();
+        ensure_device_group_id(&pool).expect("group");
+        assert_eq!(
+            resolve_pairing_group(&pool, "their-group", "peerA", true).expect("resolve"),
+            GroupResolution::Adopt("their-group".into())
+        );
+    }
+
+    /// Row 4: both sides populated. Still a typed refusal, still naming the
+    /// devices and the remedy -- merging two populated groups remains out of
+    /// scope for this primitive.
+    #[test]
+    fn resolve_refuses_when_both_sides_have_devices() {
+        let pool = test_pool();
+        let group = ensure_device_group_id(&pool).expect("group");
+        register_paired_device(&pool, "peerA", &group, "Laptop", "kA").expect("A");
+        register_paired_device(&pool, "peerB", &group, "Desktop", "kB").expect("B");
+
+        let err = resolve_pairing_group(&pool, "their-group", "peerC", true)
+            .expect_err("two populated groups cannot merge");
+        assert!(
+            matches!(err, AppError::DeviceGroupConflict(_)),
+            "expected a typed DeviceGroupConflict, got {err:?}"
+        );
+        let msg = err.to_string();
+        assert!(msg.contains("Laptop") && msg.contains("Desktop"), "{msg}");
+        assert!(msg.contains("Unpair"), "the remedy must survive: {msg}");
+    }
+
+    /// Same group on both sides stays idempotent regardless of what the peer
+    /// claims -- there is nothing to resolve, so neither claim can trip a guard.
+    #[test]
+    fn resolve_same_group_is_idempotent_for_either_claim() {
+        let pool = test_pool();
+        let group = ensure_device_group_id(&pool).expect("group");
+        register_paired_device(&pool, "peerA", &group, "Laptop", "kA").expect("A");
+        register_paired_device(&pool, "peerB", &group, "Desktop", "kB").expect("B");
+
+        for claim in [false, true] {
+            assert_eq!(
+                resolve_pairing_group(&pool, &group, "peerA", claim).expect("same-group"),
+                GroupResolution::Adopt(group.clone()),
+                "same-group re-pair must resolve to itself (peer claim: {claim})"
+            );
+        }
+    }
+
+    /// SECURITY. `peer_has_devices` is an unauthenticated claim off the wire, so
+    /// a hostile peer will claim whatever gets us to move. It must not be able
+    /// to: the "may we leave?" half is answered from our own `owned_devices`,
+    /// and `join_device_group` -- which every write goes through -- re-checks it.
+    /// A lying "I have nothing at stake" therefore yields a counter-offer, never
+    /// a re-anchor.
+    #[test]
+    fn a_lying_peer_cannot_make_us_strand_our_own_devices() {
+        let pool = test_pool();
+        let group = ensure_device_group_id(&pool).expect("group");
+        register_paired_device(&pool, "peerA", &group, "Laptop", "kA").expect("A");
+        register_paired_device(&pool, "peerB", &group, "Desktop", "kB").expect("B");
+
+        // The lie: "my group is empty, come join me".
+        let outcome = resolve_pairing_group(&pool, "attacker-group", "peerC", false)
+            .expect("a claim of emptiness is answered, not obeyed");
+        assert_eq!(
+            outcome,
+            GroupResolution::Keep(group.clone()),
+            "we must counter-offer, never adopt, while we hold devices"
+        );
+        assert_eq!(
+            ensure_device_group_id(&pool).expect("re-read"),
+            group,
+            "the anchor must not have moved"
+        );
+
+        // And the write path itself refuses independently, so even a caller that
+        // ignored the resolution cannot strand the devices.
+        assert!(
+            matches!(
+                join_device_group(&pool, "attacker-group", "peerC"),
+                Err(AppError::DeviceGroupConflict(_))
+            ),
+            "the local guard must hold regardless of any remote claim"
+        );
+        assert_eq!(ensure_device_group_id(&pool).expect("re-read"), group);
+    }
+
+    /// The count that goes on the wire must use the ceremony's exclusions: our
+    /// own identity row never counts, and neither does the peer we are pairing
+    /// with (its row moves with us).
+    #[test]
+    fn devices_at_stake_applies_the_pairing_exclusions() {
+        let pool = test_pool();
+        let group = ensure_device_group_id(&pool).expect("group");
+        assert_eq!(count_devices_at_stake(&pool, "peerA").expect("empty"), 0);
+
+        register_paired_device(&pool, "peerA", &group, "Laptop", "kA").expect("A");
+        assert_eq!(
+            count_devices_at_stake(&pool, "peerA").expect("only the pairing peer"),
+            0,
+            "the peer being paired with is not at stake"
+        );
+
+        // `test_pool` seeds local_identity.peer_id = 'test-peer'.
+        register_paired_device(&pool, "test-peer", &group, "This Machine", "kSelf").expect("self");
+        assert_eq!(
+            count_devices_at_stake(&pool, "peerA").expect("self excluded"),
+            0,
+            "our own row must never count as a device at stake"
+        );
+
+        register_paired_device(&pool, "peerB", &group, "Desktop", "kB").expect("B");
+        assert_eq!(count_devices_at_stake(&pool, "peerA").expect("B counts"), 1);
+
+        // A device under some other group is not ours to strand.
+        register_paired_device(&pool, "peerD", "unrelated-group", "Tablet", "kD").expect("D");
+        assert_eq!(count_devices_at_stake(&pool, "peerA").expect("scoped"), 1);
     }
 
     /// The pairing-column migration must be safe to replay: `run_incremental`
