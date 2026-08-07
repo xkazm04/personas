@@ -1,41 +1,23 @@
 /**
- * One hook that wires the whole live chat session together.
+ * The VIEW half of the chat session — everything that only makes sense while
+ * the window is on screen: the scroll container, the transcript window, and
+ * the hand-off between local windowing and backend paging.
  *
- * `AthenaChatBody` used to be both the layout AND the place every subscription,
- * listener and pipeline was assembled — which is how it ended up subscribing to
- * `streamingText` and re-rendering every mounted bubble on every animation
- * frame of a reply. Splitting the wiring out keeps that pressure in one
- * reviewable place and leaves the body as markup.
- *
- * What lives here is only what the body genuinely shares: the scroll container,
- * the transcript window, and the send pipeline. Everything else (alerts, jobs,
- * the streaming bubble, the error chip) reads its own narrow slice.
+ * The listening half (send pipeline, stream, events, triggers) lives in
+ * `athenaChatEngine` and is mounted by the always-on panel shell, so a turn
+ * started from the orb still runs with the window shut. Keeping the two apart
+ * is also what lets the body be staged behind the open animation: it holds
+ * nothing that could miss an event while it waits.
  */
 
-import { useEffect, useRef } from 'react';
-import type { CompanionMessage } from '@/api/companion';
-import { useCompanionStore } from '../companionStore';
+import { useEffect } from 'react';
 import { useChatScroll } from '../useChatScroll';
 import { useTranscriptPages } from '../useTranscriptPages';
 import { useShowEarlierOnScroll } from './athenaChatEarlier';
-import { useAthenaChatEvents } from './athenaChatEvents';
-import { useAthenaChatHydration } from './athenaChatHydration';
-import { useAthenaChatNavigation } from './athenaChatNavigation';
-import { useAthenaChatQueue } from './athenaChatQueue';
-import { useAthenaChatSend } from './athenaChatSend';
-import { useAthenaChatStream } from './athenaChatStream';
-import { useAthenaChatTriggers } from './athenaChatTriggers';
-import { useAthenaChatVoice } from './athenaChatVoice';
 import { useTranscriptWindow, type TranscriptWindow } from './athenaChatWindow';
+import type { AthenaChatEngine } from './athenaChatEngine';
 
-export interface AthenaChatSession {
-  initialized: boolean;
-  initError: string | null;
-  messages: CompanionMessage[];
-  streaming: boolean;
-  brainOpen: boolean;
-  /** Milliseconds since epoch of the last focused-thread stream event. */
-  lastStreamEventAtRef: React.MutableRefObject<number>;
+export interface AthenaChatView {
   scrollRef: React.RefObject<HTMLDivElement | null>;
   atBottom: boolean;
   scrollToBottom: () => void;
@@ -43,38 +25,10 @@ export interface AthenaChatSession {
   loadingOlder: boolean;
   transcriptWindow: TranscriptWindow;
   showEarlier: () => void;
-  send: (text: string) => void;
-  sendOrQueue: (text: string, nonce: string) => void;
-  interrupt: () => void;
 }
 
-export function useAthenaChatSession(): AthenaChatSession {
-  const initialized = useCompanionStore((s) => s.initialized);
-  const initError = useCompanionStore((s) => s.initError);
-  const messages = useCompanionStore((s) => s.messages);
-  const streaming = useCompanionStore((s) => s.streaming);
-  const brainOpen = useCompanionStore((s) => s.brainView.open);
-  const activeConversationId = useCompanionStore((s) => s.activeConversationId);
-
-  // Silence clock for the slow-progress chip and the spoken heartbeat. A ref,
-  // not state: it ticks on every CLI line and must cost nothing to update.
-  const lastStreamEventAtRef = useRef<number>(0);
-
-  const voice = useAthenaChatVoice({ streaming, lastStreamEventAtRef });
-  const { send, isSending, interrupt } = useAthenaChatSend({ voice, lastStreamEventAtRef });
-  const sendOrQueue = useAthenaChatQueue({
-    streaming,
-    activeConversationId,
-    send,
-    isSending,
-    interrupt,
-  });
-
-  useAthenaChatStream({ lastStreamEventAtRef, onTurnStarted: voice.resetTurnProgress });
-  useAthenaChatEvents();
-  useAthenaChatNavigation();
-  useAthenaChatHydration({ initialized, activeConversationId, messages });
-  useAthenaChatTriggers({ streaming, send, playProgressClip: voice.playProgressClip });
+export function useAthenaChatView(engine: AthenaChatEngine): AthenaChatView {
+  const { messages, streaming, initialized, activeConversationId } = engine;
 
   // Bottom-aware autoscroll: pin to the bottom on new content only while the
   // user is already there. Once they scroll up to read history, leave them be
@@ -100,20 +54,11 @@ export function useAthenaChatSession(): AthenaChatSession {
   });
 
   return {
-    initialized,
-    initError,
-    messages,
-    streaming,
-    brainOpen,
-    lastStreamEventAtRef,
     scrollRef,
     atBottom,
     scrollToBottom,
     loadingOlder,
     transcriptWindow,
     showEarlier: showEarlierAnchored,
-    send,
-    sendOrQueue,
-    interrupt,
   };
 }

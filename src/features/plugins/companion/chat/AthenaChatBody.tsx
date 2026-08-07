@@ -2,11 +2,17 @@
  * AthenaChatBody — the open panel's interior: scroll region, footer, side
  * panel and toolbar rail.
  *
- * Layout only. Every subscription, listener and pipeline lives in
- * `useAthenaChatSession`, and the leaves below read their own narrow store
+ * Layout only. The listening half of the session lives in `athenaChatEngine`,
+ * mounted by the always-on panel shell; the view half (scroll, transcript
+ * window, paging) is `useAthenaChatView`. Leaves read their own narrow store
  * slices rather than taking props — the old panel threaded ~25 props down from
  * the top, which made a single high-frequency value re-render everything under
  * it.
+ *
+ * `ready` stages the expensive interior behind the open animation (see
+ * `athenaChatMount`). Only rendering waits: nothing behind that gate listens
+ * for anything, so a turn landing mid-open is already in the store by the time
+ * the transcript exists to show it.
  */
 
 import { useCallback, useRef } from 'react';
@@ -26,14 +32,29 @@ import { AthenaChatFooter } from './AthenaChatFooter';
 import { AthenaChatJumpToLatest } from './AthenaChatJumpToLatest';
 import { AthenaChatLiveRegion } from './AthenaChatLiveRegion';
 import { AthenaChatApprovals, AthenaChatCards } from './AthenaChatProposals';
+import { AthenaChatSkeleton } from './AthenaChatSkeleton';
 import { AthenaChatStreamingTurn } from './AthenaChatStreamingTurn';
 import { AthenaChatTranscript } from './AthenaChatTranscript';
 import type { TurnSummaryJumpTarget } from './AthenaChatMessageRow';
-import { useAthenaChatSession } from './athenaChatSession';
+import type { AthenaChatEngine } from './athenaChatEngine';
+import { useAthenaChatView } from './athenaChatSession';
 
-export function AthenaChatBody({ compact }: { compact: boolean }) {
+export function AthenaChatBody({
+  compact,
+  engine,
+  ready,
+  chromeReady,
+}: {
+  compact: boolean;
+  engine: AthenaChatEngine;
+  /** The open animation has landed — the conversation may mount. */
+  ready: boolean;
+  /** Second wave — the peripheral chrome may mount. See `athenaChatMount`. */
+  chromeReady: boolean;
+}) {
   const { t } = useTranslation();
-  const s = useAthenaChatSession();
+  const view = useAthenaChatView(engine);
+  const brainOpen = useCompanionStore((s) => s.brainView.open);
   const hasProactive = useCompanionStore((st) => st.proactive.length > 0);
 
   const approvalsAnchorRef = useRef<HTMLDivElement>(null);
@@ -59,75 +80,82 @@ export function AthenaChatBody({ compact }: { compact: boolean }) {
   }, []);
 
   const showHero =
-    s.initialized && s.messages.length === 0 && !s.streaming && !hasProactive;
+    engine.initialized && engine.messages.length === 0 && !engine.streaming && !hasProactive;
 
   return (
     <div className="flex flex-row flex-1 min-h-0">
       <div className="relative flex flex-col flex-1 min-w-0">
         <div className="relative flex-1 min-h-0 flex flex-col">
-          <div
-            ref={s.scrollRef}
-            className={`flex-1 overflow-y-auto scrollbar-thin companion-scroll ${
-              compact ? 'px-2.5 py-2.5 space-y-1.5' : 'px-5 py-5 space-y-3'
-            }`}
-          >
-            {/* Earlier page in flight. Above the transcript so it reads as
-                "there is more up here"; no label — the position says it. */}
-            {s.loadingOlder && (
-              <div className="flex justify-center py-1" aria-hidden="true">
-                <LoadingSpinner size="sm" />
-              </div>
-            )}
-            {!s.initialized && !s.initError && (
-              <div className="flex items-center gap-3 text-foreground typo-body">
-                <LoadingSpinner size="sm" />
-                <span>{t.plugins.companion.initializing}</span>
-              </div>
-            )}
-            {s.initError && (
-              <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-body text-rose-400">
-                {t.plugins.companion.init_failed}: {s.initError}
-              </div>
-            )}
-            <AthenaChatAlerts onEngage={s.send} />
-            {showHero && (
-              <WelcomeHero onPick={s.send} disabled={!s.initialized || s.streaming} />
-            )}
-            <AthenaChatTranscript
-              messages={s.transcriptWindow.visible}
-              offset={s.transcriptWindow.hiddenCount}
-              hiddenCount={s.transcriptWindow.hiddenCount}
-              onShowEarlier={s.showEarlier}
-              compact={compact}
-              streaming={s.streaming}
-              interactive={s.initialized}
-              onOpenInBrain={handleOpenInBrain}
-              onJumpSummary={handleJumpSummary}
-              onSend={s.send}
-            />
-            <AthenaChatLiveRegion />
-            <AthenaChatStreamingTurn
-              compact={compact}
-              messageCount={s.messages.length}
-              lastStreamEventAtRef={s.lastStreamEventAtRef}
-              onInterrupt={s.interrupt}
-              onOpenInBrain={handleOpenInBrain}
-            />
-            <AthenaChatApprovals ref={approvalsAnchorRef} />
-            <AthenaChatCards ref={chatCardsAnchorRef} />
-            <AthenaChatErrorNotice onSend={s.send} />
-          </div>
-          <AthenaChatJumpToLatest visible={!s.atBottom} onClick={s.scrollToBottom} />
+          {ready ? (
+            <div
+              ref={view.scrollRef}
+              className={`flex-1 overflow-y-auto scrollbar-thin companion-scroll ${
+                compact ? 'px-2.5 py-2.5 space-y-1.5' : 'px-5 py-5 space-y-3'
+              }`}
+            >
+              {/* Earlier page in flight. Above the transcript so it reads as
+                  "there is more up here"; no label — the position says it. */}
+              {view.loadingOlder && (
+                <div className="flex justify-center py-1" aria-hidden="true">
+                  <LoadingSpinner size="sm" />
+                </div>
+              )}
+              {!engine.initialized && !engine.initError && (
+                <div className="flex items-center gap-3 text-foreground typo-body">
+                  <LoadingSpinner size="sm" />
+                  <span>{t.plugins.companion.initializing}</span>
+                </div>
+              )}
+              {engine.initError && (
+                <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-body text-rose-400">
+                  {t.plugins.companion.init_failed}: {engine.initError}
+                </div>
+              )}
+              <AthenaChatAlerts onEngage={engine.send} />
+              {showHero && (
+                <WelcomeHero
+                  onPick={engine.send}
+                  disabled={!engine.initialized || engine.streaming}
+                />
+              )}
+              <AthenaChatTranscript
+                messages={view.transcriptWindow.visible}
+                offset={view.transcriptWindow.hiddenCount}
+                hiddenCount={view.transcriptWindow.hiddenCount}
+                onShowEarlier={view.showEarlier}
+                compact={compact}
+                streaming={engine.streaming}
+                interactive={engine.initialized}
+                onOpenInBrain={handleOpenInBrain}
+                onJumpSummary={handleJumpSummary}
+                onSend={engine.send}
+              />
+              <AthenaChatLiveRegion />
+              <AthenaChatStreamingTurn
+                compact={compact}
+                messageCount={engine.messages.length}
+                lastStreamEventAtRef={engine.lastStreamEventAtRef}
+                onInterrupt={engine.interrupt}
+                onOpenInBrain={handleOpenInBrain}
+              />
+              <AthenaChatApprovals ref={approvalsAnchorRef} />
+              <AthenaChatCards ref={chatCardsAnchorRef} />
+              <AthenaChatErrorNotice onSend={engine.send} />
+            </div>
+          ) : (
+            <AthenaChatSkeleton compact={compact} />
+          )}
+          <AthenaChatJumpToLatest visible={ready && !view.atBottom} onClick={view.scrollToBottom} />
         </div>
         <AthenaChatFooter
           compact={compact}
-          interactive={s.initialized}
-          streaming={s.streaming}
-          brainOpen={s.brainOpen}
-          onSend={s.send}
-          onSendOrQueue={s.sendOrQueue}
+          interactive={engine.initialized}
+          streaming={engine.streaming}
+          brainOpen={brainOpen}
+          onSend={engine.send}
+          onSendOrQueue={engine.sendOrQueue}
         />
-        {s.brainOpen && (
+        {brainOpen && (
           <BrainViewer
             onClose={() =>
               useCompanionStore
@@ -143,11 +171,11 @@ export function AthenaChatBody({ compact }: { compact: boolean }) {
           sizes to a grid row — also defeats the panel's full-height stretch.
           The rail animates its own width instead, and compact simply drops it
           while the whole window is already animating narrower. */}
-      {!compact && <FleetStatsSidePanel />}
+      {chromeReady && !compact && <FleetStatsSidePanel />}
       {/* Compact hides the rail entirely so the shrunk panel is chat and
           nothing else; the expand handle it normally hosts moves to the panel
           edge (see AthenaChatCompactHandle). */}
-      {compact ? <AthenaChatCompactHandle /> : <CompanionToolbar />}
+      {compact ? <AthenaChatCompactHandle /> : chromeReady && <CompanionToolbar />}
     </div>
   );
 }

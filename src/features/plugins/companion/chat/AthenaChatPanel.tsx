@@ -26,6 +26,8 @@ import { useCompanionStore } from '../companionStore';
 import { AthenaChatBody } from './AthenaChatBody';
 import { AthenaChatHeader, type ToolStrip } from './AthenaChatHeader';
 import { PANEL_HEIGHT_PX, PANEL_MAX_HEIGHT } from './athenaChatGeometry';
+import { useAthenaChatEngine } from './athenaChatEngine';
+import { useChatMount } from './athenaChatMount';
 import { usePanelMotion } from './athenaChatMorph';
 import { useAthenaChatShellEffects } from './athenaChatShell';
 
@@ -54,13 +56,19 @@ export default function AthenaChatPanel() {
   const [expandedStrip, setExpandedStrip] = useState<ToolStrip | null>(null);
 
   useAthenaChatShellEffects(streaming);
+  // The engine listens whether or not the window is up — see `athenaChatEngine`
+  // for why that placement is load-bearing (an orb-initiated turn had nothing
+  // consuming it while the panel was closed).
+  const engine = useAthenaChatEngine();
+  const isOpen = state === 'open';
   const motionProps = usePanelMotion(compact);
+  const mount = useChatMount(isOpen, motionProps.settleMs);
 
   return (
     <AnimatePresence
       onExitComplete={() => useCompanionStore.getState().setOrbOpenOrigin(null)}
     >
-      {state === 'open' && (
+      {isOpen && (
         <motion.div
           key="companion-panel"
           initial={motionProps.initial}
@@ -82,17 +90,21 @@ export default function AthenaChatPanel() {
           data-testid="companion-panel"
           data-companion-compact={compact ? 'true' : 'false'}
           data-companion-streaming={streaming ? 'true' : 'false'}
+          data-companion-body-ready={mount.ready ? 'true' : 'false'}
+          data-companion-chrome-ready={mount.chromeReady ? 'true' : 'false'}
         >
           {/* Watermark layer: the avatar fills the panel at low opacity and
               behaves as living wallpaper. Its poster frame is
               athena_baseline.jpg, so the visual chain is continuous from
               "static still" → "idle loop" → "thinking loop".
               pointer-events-none via -z-10 so it never steals clicks. */}
-          <AthenaAvatar
-            fill
-            state={isSpeaking ? 'speaking' : streaming ? 'thinking' : 'idle'}
-            className="absolute inset-0 -z-10 opacity-[0.05]"
-          />
+          {mount.chromeReady && (
+            <AthenaAvatar
+              fill
+              state={isSpeaking ? 'speaking' : streaming ? 'thinking' : 'idle'}
+              className="absolute inset-0 -z-10 opacity-[0.05]"
+            />
+          )}
           <AthenaChatHeader
             expandedStrip={expandedStrip}
             onToggleStrip={(strip) =>
@@ -114,7 +126,12 @@ export default function AthenaChatPanel() {
           <Collapse open={devModeAvailable && expandedStrip === 'goals'} unmountWhenClosed className="shrink-0">
             <DailyGoalsBar />
           </Collapse>
-          <AthenaChatBody compact={compact} />
+          <AthenaChatBody
+            compact={compact}
+            engine={engine}
+            ready={mount.ready}
+            chromeReady={mount.chromeReady}
+          />
         </motion.div>
       )}
     </AnimatePresence>

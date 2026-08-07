@@ -32,6 +32,8 @@ export interface PanelMotion {
   exit: TargetAndTransition;
   transition: Transition;
   style?: React.CSSProperties;
+  /** How long the open animation takes, in ms — the staged-mount gate. */
+  settleMs: number;
 }
 
 export function usePanelMotion(compact: boolean): PanelMotion {
@@ -54,6 +56,7 @@ export function usePanelMotion(compact: boolean): PanelMotion {
         animate: { opacity: 1, width },
         exit: { opacity: 0 },
         transition: { duration: 0.12, width: widthTransition },
+        settleMs: 120,
       };
     }
 
@@ -66,6 +69,7 @@ export function usePanelMotion(compact: boolean): PanelMotion {
         exit: { opacity: 0, scale: 0.18, x: dx, y: dy },
         transition: { duration: 0.28, ease: CHAT_EASE, width: widthTransition },
         style: { transformOrigin: 'bottom left' },
+        settleMs: 280,
       };
     }
 
@@ -74,6 +78,7 @@ export function usePanelMotion(compact: boolean): PanelMotion {
       animate: { opacity: 1, y: 0, scale: 1, width },
       exit: { opacity: 0, y: 8, scale: 0.98 },
       transition: { duration: 0.18, ease: CHAT_EASE, width: widthTransition },
+      settleMs: 180,
     };
   }, [orbOpenOrigin, reduceMotion, width]);
 }

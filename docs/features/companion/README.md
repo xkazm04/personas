@@ -186,6 +186,65 @@ headings over 14px body, 12px inline code**.
 > every other rule in the block applied, which is exactly the bug the block
 > exists to fix.
 
+### Opening the window — two-phase mount
+
+Opening the chat used to mount the whole interior inside the frame that was
+simultaneously flying out of the orb and scaling from 18%. Measured warm on an
+EMPTY conversation, the frame did not paint for **334ms**, with **257ms** of
+blocked main thread inside that — the morph had no frames to animate with,
+which is what the operator felt as lag.
+
+The frame now paints first and fills afterwards, in two waves
+(`chat/athenaChatMount.ts`):
+
+| Wave | Carries | Lands |
+| --- | --- | --- |
+| Frame | Panel chrome, header, `AthenaChatSkeleton` | ~1 frame |
+| `ready` | Transcript, alerts, proposals, composer | After the morph |
+| `chromeReady` | Toolbar rail, Fleet side panel, video watermark | 2 frames later |
+
+Measured after, median of settled warm opens: **frame at 18ms** (from 334ms),
+longest single task **94ms** (from 155ms), worst frame **111ms** (from 192ms).
+The remaining work happens once the window is up and still, so it no longer
+stutters the animation.
+
+**The gate is a timer, and that is deliberate.** Two more elegant designs were
+tried and measured away first: `onAnimationComplete` and a bare double-`rAF`
+both collapsed back into a single ~130ms block with the skeleton never
+rendering, because the app forces `reducedMotion="always"` whenever the window
+is backgrounded and framer then completes the animation inside the very task
+that mounted the frame. So the gate waits out the morph's own declared duration
+(`usePanelMotion().settleMs` — 280 / 180 / 120ms) and then takes two painted
+frames on top.
+
+**Nothing behind the gate listens.** That is what makes staging safe, and it
+required moving the session's listening half out of the open-only body first —
+see below.
+
+### The engine is always mounted (`chat/athenaChatEngine.ts`)
+
+The send pipeline, the `companion://stream` listener, navigation, guide steps,
+chat cards, approvals, proactive deliveries and the `voiceTurnRequest` consumer
+all used to live inside the body, which exists only while the window is open.
+Three surfaces exist *because* the window is shut — hold-to-talk on the footer
+avatar, the orb's quick-input bar, and "Ask Athena" forwarded from a dashboard —
+and every one of them parks its message in `voiceTurnRequest` for a consumer
+that was not there. **Verified before the fix: with the panel minimized, a
+`voiceTurnRequest` sat unconsumed and no turn ever ran.** Several doc comments
+claimed otherwise; they were describing the component file, which is always
+mounted, not the effect inside it.
+
+`athenaChatShell.ts` was the same bug caught twice before and patched one effect
+at a time (the approval reconcile; the orb's `explain_in_cockpit` flow, after QA
+hit it on 2026-06-10). Hoisting the engine applies that fix to the rest of it,
+and as a side effect the transcript is hydrated app-wide — which is what the
+orb's quick-input bar reads for its last reply, so that surface no longer waits
+for the panel to have been opened once.
+
+Verified live with a real turn: panel minimized, request consumed, turn
+streamed, the reply landed, and the orb raised its badge with the reply's text
+as the unread preview.
+
 ### Inner side panel
 
 `CompanionSidePanel` is the reusable inner dock between the chat column and the
