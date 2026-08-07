@@ -39,6 +39,7 @@ import type { HomeSpineSlice } from "./slices/overview/homeSpineSlice";
 import type { DevToolsSlice } from "./slices/system/devToolsSlice";
 import type { FleetSlice } from "./slices/system/fleetSlice";
 import type { NetworkSlice } from "./slices/network/networkSlice";
+import type { DevicesSlice } from "./slices/network/devicesSlice";
 import type { SetupSlice } from "./slices/system/setupSlice";
 import type { AmbientContextSlice } from "./slices/system/ambientContextSlice";
 import type { ArtistSlice } from "./slices/system/artistSlice";
@@ -249,6 +250,7 @@ export type SystemStore = CoreState &
   DevToolsSlice &
   FleetSlice &
   NetworkSlice &
+  DevicesSlice &
   SetupSlice &
   AmbientContextSlice &
   ArtistSlice &

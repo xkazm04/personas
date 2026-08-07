@@ -239,6 +239,8 @@ export const EventName = {
   // P2P
   P2P_MANIFEST_SYNC_PROGRESS: 'p2p:manifest-sync-progress',
   NETWORK_SNAPSHOT_UPDATED: 'network:snapshot-updated',
+  /** Full list of device pairings awaiting a decision on THIS device. */
+  DEVICE_PAIRING_REQUESTED: 'network:device-pairing-requested',
 
   // Notification delivery
   NOTIFICATION_DELIVERY: 'notification-delivery',
@@ -1036,6 +1038,13 @@ export interface EventPayloadMap {
     connectionMetrics: import('@/api/network/discovery').ConnectionMetricsSnapshot;
     manifestSyncMetrics: import('@/api/network/discovery').ManifestSyncMetrics;
   };
+  /**
+   * Emitted whenever the pending-pairing set changes (a peer asked to pair, a
+   * pairing was confirmed/cancelled/pruned). The payload is the WHOLE pending
+   * list, identical to `list_pending_device_pairings` — so the event path and
+   * the poll recovery path are the same transition for the frontend.
+   */
+  [EventName.DEVICE_PAIRING_REQUESTED]: import('@/api/network/devices').DevicePairingRequest[];
 
   // Notification delivery
   [EventName.NOTIFICATION_DELIVERY]: {

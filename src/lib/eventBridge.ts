@@ -753,6 +753,28 @@ const registry: EventRegistration[] = [
     },
   },
 
+  // -- Device pairing pending set changed (push from the p2p engine) --------
+  //
+  // The payload is the FULL pending list, so this is a straight replace — no
+  // merge, no dedupe. `list_pending_device_pairings` is the recovery path for
+  // an app that was closed when a peer asked to pair; it returns the same
+  // shape, which is why the Devices page can treat both identically.
+  {
+    event: EventName.DEVICE_PAIRING_REQUESTED,
+    setup: async () => {
+      const unlisten = await typedListen(
+        EventName.DEVICE_PAIRING_REQUESTED,
+        (payload) => {
+          useSystemStore.setState({
+            pendingDevicePairings: Array.isArray(payload) ? payload : [],
+            pendingDevicePairingsSynced: true,
+          });
+        },
+      );
+      return [unlisten];
+    },
+  },
+
   // -- Persona health changed (push-based from backend) ---------------------
   {
     event: EventName.PERSONA_HEALTH_CHANGED,

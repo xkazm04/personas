@@ -16,6 +16,7 @@ import { createTourSlice } from "./slices/system/tourSlice";
 import { createDevToolsSlice } from "./slices/system/devToolsSlice";
 import { createFleetSlice } from "./slices/system/fleetSlice";
 import { createNetworkSlice } from "./slices/network/networkSlice";
+import { createDevicesSlice } from "./slices/network/devicesSlice";
 import { createSetupSlice } from "./slices/system/setupSlice";
 import { createAmbientContextSlice } from "./slices/system/ambientContextSlice";
 import { createArtistSlice } from "./slices/system/artistSlice";
@@ -39,6 +40,7 @@ export const useSystemStore = create<SystemStore>()(
       ...createDevToolsSlice(...a),
       ...createFleetSlice(...a),
       ...createNetworkSlice(...a),
+      ...createDevicesSlice(...a),
       ...createSetupSlice(...a),
       ...createAmbientContextSlice(...a),
       ...createArtistSlice(...a),
