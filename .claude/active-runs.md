@@ -2,11 +2,6 @@
 
 ## Active
 
-### spark-athena-device-link — /spark: interconnect two devices, Athena→Athena remote jobs over the unfinished p2p layer — session fable-5
-- Started: 2026-08-06. Status: BUILDING (Phase 5). Design complete + accepted; worktree `.claude/worktrees/spark-athena-device-link` (branch `worktree-spark-athena-device-link`) created, node_modules junctioned. WP1 (signed ed25519 handshake + device pairing + orphaned-#[cfg] registration fix) in flight.
-- Scope (planned, pre-design): the p2p/mDNS/QUIC transport (feature-gated `p2p` code in src-tauri, exact paths to be confirmed by scout), companion/Athena dispatch surfaces (`src-tauri/src/companion/**` read-only during scout), likely new IPC commands + bindings at build time. Build isolates in worktree `.claude/worktrees/spark-athena-device-link`.
-- **NOTE FOR OTHER SESSIONS:** no edits until the build phase; will not touch the companion frontend dirty files, `src/i18n/**`, or `constitution.md` (athena-fleet-op-grammar owns it) without re-checking this ledger first.
-
 ### spark-claude-code-releases — /spark: Claude Code releases as a shared app Event feed (Watchtower) — session opus-5[1m]
 - Started: 2026-08-06. Status: started (Phase 1-2, scouting; no edits yet).
 - Scope (planned, pre-design): the shared-event subsystem — `src/features/triggers/sub_shared/**`, `src/api/events/sharedEvents.ts`, `src-tauri/db/src/builtin_shared_events.rs`, `src-tauri/db/src/repos/communication/shared_events.rs`, `src-tauri/src/commands/communication/shared_events.rs`, `src-tauri/engine/src/shared_event_local_relay.rs`, plus `src/i18n/locales/*.json` (additive keys) and `docs/features/events/README.md`.
@@ -160,6 +155,16 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### spark-athena-device-link — /spark: Athena-to-Athena remote jobs over the finished p2p link — session fable-5 — **COMPLETE**, merged `c2fe3e545`
+- Started/completed 2026-08-06/07. 27 commits on `worktree-spark-athena-device-link`, merged --no-ff; worktree removed, branch deleted, node_modules junction unlinked FIRST (436 entries intact).
+- Gates: tsc 0 | i18n strict 14/14 locales 18836 keys 0 missing 0 extra | vitest 3702 pass / 2 fail | `npm run test:rust` 2300 pass / 2 fail | p2p suites (desktop-full) 55/55 engine, 21/21 owned_devices, 8/8 companion::remote_jobs | cargo check clean on BOTH `desktop-full` and `desktop`.
+- All 4 failures verified pre-existing BY CONTENT not name: `fleet_monitor_stats`, `DevProjectEnvConnector`, `companion::tours::manifest_hash_is_stable`, `engine::fitness_driver::success_rate_is_last_resort_quality_basis`. Neither Rust file is in this branch's diff. Notably the two structural tests DID scan this branch's new commands/types and passed them.
+- Scope: `src-tauri/engine/src/p2p/**` (signed handshake, pairing ceremony, remote_jobs transport), `src-tauri/src/commands/network/**` (+pairing.rs), `src-tauri/src/companion/**` (remote_jobs executor, remote_instruct op, prompt device roster, constitution v49->v51), `src/features/settings/sub_devices/**` (new), `src/lib/network/**`, `src/i18n/locales/*.json` (+110 keys x14), docs/features/{sharing,companion,settings}, CHANGELOG.
+- **Fixed a repo-wide latent bug:** stacked `#[cfg(feature="p2p")]` attributes with no item between them in `lib.rs` had silently dropped 15 `commands/network/` registrations PLUS `companion_purge_sensory_source` and `get_document_signature`. Structural test added (proven fail-first) so it cannot recur quietly.
+- **NOT verified live** — needs two machines on one LAN, both on `desktop-full`. Everything is unit/wire-level.
+- Merge conflicts resolved: `commandNames.generated.ts` by regeneration, `CHANGELOG.md` by keeping both sides. Staged set verified identical to the branch diff; all 44 of other sessions' dirty files left untouched.
+
 
 ### spark-twin-athena-memory-portability — /spark round 6: Twins + Athena memory as portable export scopes — session opus-5[1m] — **COMPLETE + MERGED `a46988905`**
 - 2026-08-06/07. Settings > Data Portability goes 5 scopes -> 7. **Twins** travel whole (profile, tones, training corpus incl. the interview questions that live only in `summary`/`key_facts_json`, memory inbox with all statuses + reviewer_notes, distilled facts, reflections, contacts, channel bindings, and the bound KB as text). **Athena memory** travels in two tiers (identity.md + portable prefs + thread roster; facts/procedurals/goals/backlog/rituals/decisions with sidecar rows) — **conversation history deliberately does NOT travel**, and doctrine is excluded because it regenerates from `include_str!` on boot. Both new scopes are passphrase-encrypted via the existing AES-256-GCM envelope.
