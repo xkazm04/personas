@@ -120,5 +120,6 @@
   "dispatch_waiting_none": "Envoyée",
   "dispatch_waiting_none_hint": "Cette idée a déjà une tâche, elle n'attend donc pas d'envoi.",
   "tray_dispatch": "Travail approuvé",
-  "tray_dispatch_waiting": "{count} idées approuvées jamais envoyées"
+  "tray_dispatch_waiting": "{count} idées approuvées jamais envoyées",
+  "paired_devices": "Appareils jumelés"
 }

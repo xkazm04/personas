@@ -120,5 +120,6 @@
   "dispatch_waiting_none": "ディスパッチ済み",
   "dispatch_waiting_none_hint": "このアイデアにはすでにタスクがあるため、ディスパッチ待ちではありません。",
   "tray_dispatch": "承認済みの作業",
-  "tray_dispatch_waiting": "{count}件の承認済みアイデアが未ディスパッチ"
+  "tray_dispatch_waiting": "{count}件の承認済みアイデアが未ディスパッチ",
+  "paired_devices": "ペアリング済みデバイス"
 }

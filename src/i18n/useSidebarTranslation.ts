@@ -82,6 +82,7 @@ function buildSidebarLabelMap(sb: SidebarBundle): Map<string, string> {
     ['byom', sb.byom],
     ['portability', sb.data],
     ['network', sb.network],
+    ['devices', sb.devices],
     ['admin', sb.admin],
 
     // Agent sub-items

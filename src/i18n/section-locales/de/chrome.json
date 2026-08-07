@@ -120,5 +120,6 @@
   "dispatch_waiting_none": "Gesendet",
   "dispatch_waiting_none_hint": "Diese Idee hat bereits eine Aufgabe und wartet daher nicht auf den Versand.",
   "tray_dispatch": "Genehmigte Arbeiten",
-  "tray_dispatch_waiting": "{count} genehmigte Ideen nie gesendet"
+  "tray_dispatch_waiting": "{count} genehmigte Ideen nie gesendet",
+  "paired_devices": "Gekoppelte Geräte"
 }

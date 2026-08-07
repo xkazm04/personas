@@ -120,5 +120,6 @@
   "dispatch_waiting_none": "تم الإرسال",
   "dispatch_waiting_none_hint": "لهذه الفكرة مهمة بالفعل، لذا فهي ليست بانتظار الإرسال.",
   "tray_dispatch": "الأعمال المعتمدة",
-  "tray_dispatch_waiting": "{count} فكرة معتمدة لم تُرسل قط"
+  "tray_dispatch_waiting": "{count} فكرة معتمدة لم تُرسل قط",
+  "paired_devices": "الأجهزة المقترنة"
 }

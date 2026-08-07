@@ -120,5 +120,6 @@
   "dispatch_waiting_none": "Отправлено",
   "dispatch_waiting_none_hint": "У этой идеи уже есть задача, поэтому она не ожидает отправки.",
   "tray_dispatch": "Одобренная работа",
-  "tray_dispatch_waiting": "{count} одобренных идей так и не отправлено"
+  "tray_dispatch_waiting": "{count} одобренных идей так и не отправлено",
+  "paired_devices": "Сопряжённые устройства"
 }

@@ -120,5 +120,6 @@
   "dispatch_waiting_none": "Đã điều phối",
   "dispatch_waiting_none_hint": "Ý tưởng này đã có tác vụ, nên không còn chờ điều phối.",
   "tray_dispatch": "Công việc đã duyệt",
-  "tray_dispatch_waiting": "{count} ý tưởng đã duyệt chưa từng được điều phối"
+  "tray_dispatch_waiting": "{count} ý tưởng đã duyệt chưa từng được điều phối",
+  "paired_devices": "Thiết bị đã ghép nối"
 }
