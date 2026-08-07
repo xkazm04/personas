@@ -4507,6 +4507,71 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+
+    // -- remote_jobs / remote_job_notes: cross-device instruction dispatch ----
+    // One paired device sends the other a natural-language instruction; the
+    // receiving device runs it and streams back an ack, progress notes and a
+    // final summary. Both roles read and write the SAME table, told apart by
+    // `direction` ('outbound' = I asked, 'inbound' = I was asked), so a device
+    // that does both keeps one chronological history instead of two.
+    //
+    // `last_seq` is the resume anchor and means slightly different things per
+    // side — highest note EMITTED on the inbound (running) side, highest note
+    // RECEIVED on the outbound side — but in both cases it is "everything up to
+    // here is durable", which is exactly what a reconnect needs to replay from.
+    //
+    // The notes live in their own table rather than a JSON column because the
+    // replay reads them with `seq > ?`, and the composite primary key
+    // (job_id, seq) is what makes redelivery idempotent: a replayed note that
+    // already landed hits the PK and is ignored, so exactly-once falls out of
+    // the schema instead of out of careful application code.
+    //
+    // Not `p2p`-gated: the tables are plain data, and a lite build must still
+    // migrate cleanly so a user who switches builds does not lose the history.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "remote_jobs_tables",
+            description: "remote_jobs + remote_job_notes (cross-device instruction dispatch)",
+            already_applied: |conn| {
+                Ok(has_table(conn, "remote_jobs")? && has_table(conn, "remote_job_notes")?)
+            },
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS remote_jobs (
+                        id                 TEXT PRIMARY KEY,
+                        direction          TEXT NOT NULL
+                                             CHECK(direction IN ('outbound','inbound')),
+                        peer_id            TEXT NOT NULL,
+                        peer_display_name  TEXT NOT NULL DEFAULT '',
+                        kind               TEXT NOT NULL DEFAULT 'instruction',
+                        instruction        TEXT NOT NULL,
+                        status             TEXT NOT NULL,
+                        summary            TEXT,
+                        refusal_reason     TEXT,
+                        last_seq           INTEGER NOT NULL DEFAULT 0,
+                        created_at         TEXT NOT NULL,
+                        updated_at         TEXT NOT NULL,
+                        completed_at       TEXT
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_remote_jobs_peer
+                        ON remote_jobs(peer_id, created_at DESC);
+                    CREATE INDEX IF NOT EXISTS idx_remote_jobs_direction_status
+                        ON remote_jobs(direction, status);
+                    CREATE TABLE IF NOT EXISTS remote_job_notes (
+                        job_id      TEXT NOT NULL
+                                      REFERENCES remote_jobs(id) ON DELETE CASCADE,
+                        seq         INTEGER NOT NULL,
+                        text        TEXT NOT NULL,
+                        created_at  TEXT NOT NULL,
+                        PRIMARY KEY (job_id, seq)
+                    );",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
     Ok(())
 }
 
