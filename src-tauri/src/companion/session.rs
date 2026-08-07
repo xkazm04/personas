@@ -24,6 +24,7 @@ use tokio::time::timeout;
 
 use crate::companion::brain::episodic::{self, EpisodeRole};
 use crate::companion::prompt;
+use crate::companion::turn_ledger::CliUsage;
 use crate::db::{DbPool, UserDbPool};
 #[cfg(feature = "ml")]
 use crate::engine::embedder::EmbeddingManager;
@@ -421,14 +422,205 @@ fn turn_lock_for(conversation_id: &str) -> Arc<tokio::sync::Mutex<()>> {
         .clone()
 }
 
+/// The ledger identity of a turn: `(origin, trigger_kind)` as
+/// `companion_turn` stores them. One definition so the success row and the
+/// failure row can never disagree about what kind of turn this was.
+fn ledger_origin_of(origin: &TurnOrigin) -> (&'static str, Option<String>) {
+    match origin {
+        TurnOrigin::User => ("chat", None),
+        TurnOrigin::Autonomous { .. } => ("autonomous", None),
+        TurnOrigin::Proactive { trigger_kind, .. } => ("proactive", Some(trigger_kind.clone())),
+        TurnOrigin::External { source } => ("external", Some(source.clone())),
+    }
+}
+
+/// Why a turn failed, as a low-cardinality token so `GROUP BY error_reason`
+/// stays useful. The raw message is kept separately (in `outcome_json.error`)
+/// for diagnosis — this is the groupable axis, not the detail.
+///
+/// `pub(crate)` because the headless decision legs (`athena_reaction`) classify
+/// their failures through this same function: one taxonomy across every origin,
+/// so `GROUP BY error_reason` means the same thing whichever path produced the
+/// row.
+pub(crate) fn classify_failure(e: &AppError) -> &'static str {
+    let m = e.to_string().to_ascii_lowercase();
+    // Order matters: the stale-`--resume` retry's own timeout is a distinct
+    // failure from a plain 25-minute timeout — it means the self-heal path ran
+    // and still didn't land, which is the more interesting signal.
+    if m.contains("after session reset") {
+        "timeout_after_stale_resume"
+    } else if m.contains("timeout") || m.contains("timed out") {
+        "timeout"
+    } else if is_stale_session_error(e) {
+        // Reached only when there was no session id to retry with; otherwise
+        // `send_turn` self-heals and this never surfaces as the turn's error.
+        "stale_resume"
+    } else if m.contains("spawn claude")        // run_cli
+        || m.contains("failed to spawn")        // athena_reaction::cli_text_inner
+        || m.contains("cli not found")          // ditto, when the binary is absent
+    {
+        // Matched on several phrasings deliberately: the two modules word the
+        // same failure differently, and a taxonomy that silently degrades one
+        // of them to `other` is worse than no taxonomy — it looks precise while
+        // hiding the most actionable cause.
+        "spawn_failed"
+    } else if m.contains("exited with status") {
+        "cli_nonzero_exit"
+    } else if m.contains("produced no assistant text") {
+        "empty_reply"
+    } else if m.contains("stdout")
+        || m.contains("stderr")
+        || m.contains("stdin")
+        || m.contains("wait claude")
+    {
+        // Covers "read claude stdout: …", "claude stdout missing" (run_cli) and
+        // "Missing stdout pipe" (athena_reaction).
+        "cli_io"
+    } else {
+        // DB writes, prompt assembly, embedding — the `?` exits in the turn
+        // body. Rare, but they were equally invisible before.
+        "other"
+    }
+}
+
+/// Records the `is_error = 1` ledger row for a turn that never reached the
+/// success ledger write at the end of `send_turn_inner`.
+///
+/// Every error exit in the turn body returns early, so before this the ledger
+/// only ever saw turns that finished: `is_error` was 0 on all 1,734 rows of
+/// the reference install, and `companion_get_health` reported a flawless error
+/// rate *by construction* — the operator opened Observability, saw zero
+/// errors, and believed it. The wrapper in `send_turn` now converts any `Err`
+/// — a `?` on a DB/prompt failure, a CLI spawn failure, the 25-minute timeout,
+/// or the stale-`--resume` retry giving up — into exactly one row.
+///
+/// `armed` is what keeps the number honest in the *other* direction, and keeps
+/// it to exactly one row per turn:
+///   * It starts **false**, so the two turn-lock SKIP returns (a background
+///     `try_lock` self-skip, a full fleet queue) record nothing. Those are
+///     backpressure, not failures, and counting them would swamp the error rate
+///     with normal behaviour.
+///   * [`arm`](Self::arm) flips it once the lock is held — strictly after both
+///     skip returns, so everything past that point is a genuine turn.
+///   * [`disarm`](Self::disarm) flips it back the moment the turn writes its own
+///     success row, so a later error can never add a second row for the same
+///     turn. (No `?` currently follows that write, but the invariant should not
+///     depend on nobody ever adding one.)
+struct FailedTurnCtx {
+    origin: &'static str,
+    trigger_kind: Option<String>,
+    voice: bool,
+    armed: std::sync::atomic::AtomicBool,
+}
+
+impl FailedTurnCtx {
+    fn new(origin: &TurnOrigin, voice: bool) -> Self {
+        let (origin, trigger_kind) = ledger_origin_of(origin);
+        Self {
+            origin,
+            trigger_kind,
+            voice,
+            armed: std::sync::atomic::AtomicBool::new(false),
+        }
+    }
+
+    /// The turn holds the lock and is really running — from here on, an `Err`
+    /// is a failure worth recording rather than a skip.
+    fn arm(&self) {
+        self.armed.store(true, std::sync::atomic::Ordering::SeqCst);
+    }
+
+    /// The turn recorded its own row; this one must not add another.
+    fn disarm(&self) {
+        self.armed
+            .store(false, std::sync::atomic::Ordering::SeqCst);
+    }
+
+    /// Best-effort failure row. `usage` is whatever the CLI managed to report
+    /// before dying — commonly `None` (spawn failure, timeout), commonly real
+    /// (a non-zero exit still emits a `result` event with cost). A missing
+    /// usage block must never swallow the row: a failed turn with unknown cost
+    /// is still a recorded failed turn.
+    fn record(&self, pool: &UserDbPool, e: &AppError, usage: Option<CliUsage>) {
+        if !self.armed.load(std::sync::atomic::Ordering::SeqCst) {
+            return;
+        }
+        let reason = classify_failure(e);
+        let raw = e.to_string();
+        tracing::warn!(
+            origin = self.origin,
+            reason,
+            error = %raw,
+            "companion: turn failed — recording ledger row"
+        );
+        let mut rec = crate::companion::turn_ledger::failed_turn_record(
+            self.origin,
+            self.trigger_kind.clone(),
+            Some(companion_turn_model()),
+            reason,
+            &raw,
+            usage,
+        );
+        rec.voice = self.voice;
+        crate::companion::turn_ledger::record_turn(pool, &rec);
+    }
+}
+
 /// Run one full turn: persist the user message, call Claude, stream events,
 /// persist the assistant reply. Returns (user_episode_id, assistant_episode_id).
 ///
 /// Streams progress via Tauri events on `STREAM_EVENT` so the UI updates
 /// incrementally. The final returned ids let the caller link UI state to
 /// persisted episodes.
-#[allow(clippy::too_many_arguments)] // +conversation_id; a params struct is more churn than it's worth
+///
+/// This is a thin wrapper over [`send_turn_inner`] whose only job is to make a
+/// failed turn *visible*: any `Err` the body returns, from any exit, lands one
+/// `is_error = 1` row in `companion_turn`. See [`FailedTurnCtx`].
+#[allow(clippy::too_many_arguments)] // mirrors send_turn_inner's param list
 pub async fn send_turn(
+    app: &AppHandle,
+    user_db: Arc<UserDbPool>,
+    sys_db: Arc<DbPool>,
+    #[cfg(feature = "ml")] embedder: Option<Arc<EmbeddingManager>>,
+    user_message: String,
+    origin: TurnOrigin,
+    voice_enabled: bool,
+    recall_synthesis_enabled: bool,
+    autonomous_mode: bool,
+    conversation_id: String,
+) -> Result<TurnResult, AppError> {
+    let ctx = FailedTurnCtx::new(&origin, voice_enabled);
+    // Best-effort cost capture on the failure path. `run_cli` mirrors every
+    // terminal `result` event it parses into this sink, so a turn that errors
+    // — or whose future is dropped outright by the 25-minute timeout, losing
+    // `run_cli`'s own locals — still records what it actually spent.
+    let usage_sink: std::sync::Mutex<Option<CliUsage>> = std::sync::Mutex::new(None);
+    let pool = user_db.clone();
+    let res = send_turn_inner(
+        app,
+        user_db,
+        sys_db,
+        #[cfg(feature = "ml")]
+        embedder,
+        user_message,
+        origin,
+        voice_enabled,
+        recall_synthesis_enabled,
+        autonomous_mode,
+        conversation_id,
+        &ctx,
+        &usage_sink,
+    )
+    .await;
+    if let Err(e) = &res {
+        let usage = usage_sink.lock().ok().and_then(|mut g| g.take());
+        ctx.record(&pool, e, usage);
+    }
+    res
+}
+
+#[allow(clippy::too_many_arguments)] // +conversation_id; a params struct is more churn than it's worth
+async fn send_turn_inner(
     app: &AppHandle,
     user_db: Arc<UserDbPool>,
     sys_db: Arc<DbPool>,
@@ -442,6 +634,12 @@ pub async fn send_turn(
     // its own Claude `--resume` continuity, its own recency lane, its own turn
     // lock. Callers pass DEFAULT_SESSION_ID for the migrated 'General' thread.
     conversation_id: String,
+    // Failure bookkeeping owned by the `send_turn` wrapper — armed below, once
+    // this turn actually holds the lock.
+    ledger: &FailedTurnCtx,
+    // Where `run_cli` mirrors the CLI's terminal `result` usage so the wrapper
+    // can still bill a turn that errored or timed out.
+    usage_sink: &std::sync::Mutex<Option<CliUsage>>,
 ) -> Result<TurnResult, AppError> {
     let session_id = conversation_id;
     let turn_id = format!("turn_{}", crate::companion::util::short_id(12));
@@ -523,6 +721,12 @@ pub async fn send_turn(
             }
         },
     };
+
+    // Past both `try_lock` skip returns above — this turn is really running,
+    // so from here on any `Err` is a failure the ledger should show, not
+    // backpressure. (A skip must NOT count as an error; background ticks skip
+    // constantly by design.)
+    ledger.arm();
 
     // The legacy self-improve orphan sweep that ran here every turn is
     // retired with the wrench-send pipeline; `companion_init` still runs
@@ -700,6 +904,7 @@ pub async fn send_turn(
             None,
             &[],
             !suppress_chat,
+            Some(usage_sink),
         ),
     )
     .await
@@ -737,6 +942,7 @@ pub async fn send_turn(
                     None,
                     &[],
                     !suppress_chat,
+                    Some(usage_sink),
                 ),
             )
             .await
@@ -938,14 +1144,7 @@ pub async fn send_turn(
     // dashboards can show what Athena costs and for what kind of work.
     // Best-effort — never blocks the turn.
     {
-        let (origin_str, trigger_kind) = match &origin {
-            TurnOrigin::User => ("chat", None),
-            TurnOrigin::Autonomous { .. } => ("autonomous", None),
-            TurnOrigin::Proactive { trigger_kind, .. } => {
-                ("proactive", Some(trigger_kind.clone()))
-            }
-            TurnOrigin::External { source } => ("external", Some(source.clone())),
-        };
+        let (origin_str, trigger_kind) = ledger_origin_of(&origin);
         let outcome_json = serde_json::to_string(&serde_json::json!({
             "approvals": dispatched.approvals.len(),
             "cards": dispatched.chat_cards.len(),
@@ -968,8 +1167,15 @@ pub async fn send_turn(
                 outcome_json,
                 prompt_blocks_json: prompt_blocks.to_json(),
                 total_prompt_chars: Some(prompt_blocks.total() as u32),
+                // The turn completed. `CliUsage.is_error` still flags the row
+                // if the CLI itself reported an error result.
+                failed: false,
+                error_reason: None,
             },
         );
+        // This turn is now on the ledger. Any later error must not add a
+        // second row for it.
+        ledger.disarm();
     }
 
     // Goal 3 — conservative autoapprove. When autonomous mode is on,
@@ -1733,6 +1939,9 @@ pub async fn run_build_turn(
             effort,
             mcp,
             false,
+            // Build turns write no `companion_turn` row, so there is nothing
+            // for a usage sink to feed.
+            None,
         ),
     )
     .await
@@ -1757,6 +1966,7 @@ pub async fn run_build_turn(
                     effort,
                     mcp,
                     false,
+                    None,
                 ),
             )
             .await
@@ -1810,6 +2020,12 @@ async fn run_cli(
     // store it as the considered final reply. False for build turns and
     // fleet-orchestration (suppress_chat), which keep the prior behavior.
     persist_progress: bool,
+    // Mirror of the terminal `result` usage, visible to the CALLER even when
+    // this function returns `Err` or its future is dropped by the turn timeout
+    // — both of which discard the local `result_usage` below. That is what
+    // keeps cost capture best-effort on the failure path rather than
+    // all-or-nothing. `None` for build turns, which have no ledger row.
+    usage_sink: Option<&std::sync::Mutex<Option<CliUsage>>>,
 ) -> Result<CliRunOutput, AppError> {
     let (cmd_program, mut argv) = base_cli_invocation();
 
@@ -2099,6 +2315,15 @@ async fn run_cli(
                             if let Some(u) =
                                 crate::companion::turn_ledger::CliUsage::from_result_event(&value)
                             {
+                                // Publish before storing locally: if this turn
+                                // goes on to fail (or the timeout drops this
+                                // whole future), the sink is the only copy the
+                                // caller will still have.
+                                if let Some(sink) = usage_sink {
+                                    if let Ok(mut g) = sink.lock() {
+                                        *g = Some(u.clone());
+                                    }
+                                }
                                 result_usage = Some(u);
                             }
                         }
@@ -2176,7 +2401,13 @@ async fn run_cli(
         } else {
             format!("{assistant_text}\n\n_[interrupted by error: {err_msg}]_")
         };
-        return Ok((body, Vec::new(), result_usage.take()));
+        // Salvaging a partial reply keeps the turn useful, but it did NOT
+        // complete cleanly — flag it even though the CLI died before it could
+        // emit a `result` event saying so. Otherwise a broken pipe is
+        // indistinguishable from success in the ledger.
+        let mut usage = result_usage.take().unwrap_or_default();
+        usage.is_error = true;
+        return Ok((body, Vec::new(), Some(usage)));
     }
 
     if !status.success() {
@@ -2210,7 +2441,11 @@ async fn run_cli(
                 "{assistant_text}\n\n_[interrupted by error: claude exited with status {status}{}]_",
                 if trimmed.is_empty() { String::new() } else { format!(": {trimmed}") }
             );
-            return Ok((body, Vec::new(), result_usage.take()));
+            // Same as the broken-pipe case: a non-zero exit is a failed turn
+            // even when we kept the partial text the user can still read.
+            let mut usage = result_usage.take().unwrap_or_default();
+            usage.is_error = true;
+            return Ok((body, Vec::new(), Some(usage)));
         }
         // No partial — fall through to hard error as before.
         return Err(AppError::Internal(format!(
@@ -2455,6 +2690,164 @@ fn upsert_claude_session_id(
 fn emit(app: &AppHandle, ev: StreamEvent) {
     if let Err(e) = app.emit(STREAM_EVENT, &ev) {
         tracing::warn!(error = %e, "companion stream emit failed");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use r2d2::Pool;
+    use r2d2_sqlite::SqliteConnectionManager;
+
+    /// Unique per test — libtest runs these in parallel and a bare
+    /// `file::memory:?cache=shared` is one database process-wide.
+    fn test_pool(name: &str) -> UserDbPool {
+        let manager =
+            SqliteConnectionManager::file(format!("file:{name}?mode=memory&cache=shared"))
+                .with_flags(
+                    rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE
+                        | rusqlite::OpenFlags::SQLITE_OPEN_CREATE
+                        | rusqlite::OpenFlags::SQLITE_OPEN_URI,
+                );
+        let pool = Pool::builder().max_size(2).build(manager).expect("pool");
+        pool.get()
+            .expect("conn")
+            .execute_batch(
+                "CREATE TABLE IF NOT EXISTS companion_turn (
+                    id TEXT PRIMARY KEY, origin TEXT NOT NULL, trigger_kind TEXT, model TEXT,
+                    input_tokens INTEGER, output_tokens INTEGER, cache_read_tokens INTEGER,
+                    cache_creation_tokens INTEGER, cost_usd REAL, duration_ms INTEGER,
+                    num_turns INTEGER, is_error INTEGER NOT NULL DEFAULT 0,
+                    voice INTEGER NOT NULL DEFAULT 0, assistant_episode_id TEXT,
+                    outcome_json TEXT, prompt_blocks_json TEXT, total_prompt_chars INTEGER,
+                    error_reason TEXT, created_at TEXT NOT NULL DEFAULT (datetime('now'))
+                );",
+            )
+            .expect("schema");
+        pool
+    }
+
+    fn rows(pool: &UserDbPool) -> Vec<(String, i64, Option<String>)> {
+        let conn = pool.get().unwrap();
+        let mut stmt = conn
+            .prepare("SELECT origin, is_error, error_reason FROM companion_turn")
+            .unwrap();
+        let out = stmt
+            .query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+        out
+    }
+
+    /// The literal messages the failure exits in THIS file actually produce.
+    /// Pinning them is the point: reword one and the classifier silently
+    /// degrades that failure to `other`, so the ledger can no longer tell a
+    /// timeout from a crash. This fails instead of degrading quietly.
+    #[test]
+    fn classifies_the_real_failure_exits() {
+        let cases: &[(&str, &str)] = &[
+            // send_turn_inner — the plain 25-minute timeout…
+            ("Turn exceeded 25-minute timeout", "timeout"),
+            // …and the one that fired after the stale-session self-heal retried.
+            (
+                "Turn exceeded 25-minute timeout (after session reset)",
+                "timeout_after_stale_resume",
+            ),
+            // run_cli — spawn, exit status, empty reply, and the pipe/wait IO set.
+            ("spawn claude: program not found", "spawn_failed"),
+            (
+                "claude exited with status exit code: 1: boom",
+                "cli_nonzero_exit",
+            ),
+            ("claude produced no assistant text", "empty_reply"),
+            ("read claude stdout: broken pipe", "cli_io"),
+            ("claude stdout missing", "cli_io"),
+            ("write claude stdin: pipe closed", "cli_io"),
+            ("wait claude: no child process", "cli_io"),
+            // is_stale_session_error's patterns, reached only when there was no
+            // session id to retry with (otherwise send_turn self-heals first).
+            ("No conversation found with session ID: abc", "stale_resume"),
+            // athena_reaction::cli_text_inner words the SAME failures
+            // differently. One taxonomy has to cover both, or a headless
+            // spawn failure silently degrades to `other` — which is exactly
+            // what the headless test caught the first time this ran.
+            (
+                "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code",
+                "spawn_failed",
+            ),
+            ("Failed to spawn Claude CLI: permission denied", "spawn_failed"),
+            ("Missing stdout pipe", "cli_io"),
+            // Everything else: the `?` exits — DB writes, prompt assembly,
+            // embedding. Rare, but equally invisible before.
+            ("failed to open database", "other"),
+        ];
+        for (msg, expected) in cases {
+            assert_eq!(
+                classify_failure(&AppError::Internal((*msg).into())),
+                *expected,
+                "message: {msg}"
+            );
+        }
+    }
+
+    /// A turn-lock SKIP must record NOTHING. Background ticks self-skip
+    /// constantly by design, and a full fleet queue is backpressure — counting
+    /// either would make the error rate dishonest in the opposite direction
+    /// from the structural zero this whole change exists to fix.
+    #[test]
+    fn a_lock_skip_records_no_row() {
+        let pool = test_pool("session_skip");
+        let ctx = FailedTurnCtx::new(&TurnOrigin::Autonomous { chain_index: 1 }, false);
+        // Never armed: the turn never got past `try_lock`.
+        ctx.record(
+            &pool,
+            &AppError::Internal(
+                "A companion turn is already in progress; background turn skipped".into(),
+            ),
+            None,
+        );
+        assert!(
+            rows(&pool).is_empty(),
+            "a skip is backpressure, not a failed turn"
+        );
+    }
+
+    /// An armed turn that fails records exactly one flagged row carrying the
+    /// origin and the reason — with no usage at all, which is the common shape
+    /// for a timeout (the CLI never got to emit a `result` event).
+    #[test]
+    fn an_armed_failure_records_one_flagged_row() {
+        let pool = test_pool("session_failed");
+        let ctx = FailedTurnCtx::new(
+            &TurnOrigin::External {
+                source: "Fleet".into(),
+            },
+            false,
+        );
+        ctx.arm();
+        ctx.record(
+            &pool,
+            &AppError::Internal("Turn exceeded 25-minute timeout".into()),
+            None,
+        );
+        let r = rows(&pool);
+        assert_eq!(r.len(), 1, "exactly one row per failed turn");
+        assert_eq!(r[0].0, "external", "the origin survives the failure");
+        assert_eq!(r[0].1, 1, "and it is visible to the health query");
+        assert_eq!(r[0].2.as_deref(), Some("timeout"));
+    }
+
+    /// Once the turn wrote its own success row it disarms, so a later error
+    /// cannot add a second row for the same turn.
+    #[test]
+    fn disarm_prevents_a_second_row_for_the_same_turn() {
+        let pool = test_pool("session_disarm");
+        let ctx = FailedTurnCtx::new(&TurnOrigin::User, false);
+        ctx.arm();
+        ctx.disarm();
+        ctx.record(&pool, &AppError::Internal("late failure".into()), None);
+        assert!(rows(&pool).is_empty());
     }
 }
 

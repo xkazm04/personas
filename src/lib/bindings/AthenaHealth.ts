@@ -6,5 +6,15 @@ import type { AthenaTriageStats } from "./AthenaTriageStats";
 export type AthenaHealth = { triage: AthenaTriageStats, proactive: AthenaProactiveStats, jobs: AthenaJobStats, 
 /**
  * companion_turn rows flagged `is_error` in the window.
+ *
+ * This was structurally 0 until failed turns were recorded at all: every
+ * error exit in `session::send_turn` returned before the ledger write, so
+ * the panel showed a flawless error rate no matter what actually
+ * happened. Read it together with `turns` — a bare count with no
+ * denominator is what made the old zero so easy to believe.
  */
-errors: number, };
+errors: number, 
+/**
+ * Total companion_turn rows in the window — the denominator for `errors`.
+ */
+turns: number, };

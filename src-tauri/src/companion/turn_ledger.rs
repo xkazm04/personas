@@ -16,6 +16,15 @@
 //! `result` event records a row with NULL usage fields (the turn still
 //! happened); an insert failure is a `tracing::warn!` and nothing more.
 //!
+//! **Failed turns are rows too.** A turn that never reached its reply — the CLI
+//! failed to spawn, the 25-minute timeout fired, a stale `--resume` retry gave
+//! up — records a row with `is_error = 1` and an `error_reason` token
+//! (`session::FailedTurnCtx` drives this). Without it every error exit returned
+//! before the ledger write and `is_error` was 0 on every row ever written, so
+//! the health surface reported a flawless error rate *by construction*. Cost
+//! capture stays best-effort on that path: a failed turn with unknown usage is
+//! still a recorded failed turn.
+//!
 //! The table lives in the companion user DB (`personas_data.db`) next to the
 //! other `companion_*` tables, so Athena's own `operations`/`personas_database`
 //! introspection can reach it with no extra wiring.
@@ -103,6 +112,59 @@ pub struct TurnRecord {
     /// Real `system_prompt.len()`. Pairs with `prompt_blocks_json` so a
     /// growth trend is one query, not a JSON parse per row.
     pub total_prompt_chars: Option<u32>,
+    /// The turn did not complete. ORed with the CLI's own `result.is_error`
+    /// when the row is written, so a turn is flagged whether the CLI reported
+    /// the failure itself or the turn died before the CLI could.
+    ///
+    /// Until this existed, every error exit in `session::send_turn` returned
+    /// *before* the ledger write, so `is_error` was 0 on every row ever
+    /// written — the health surface reported a perfect error rate by
+    /// construction. See `session::FailedTurnCtx`.
+    pub failed: bool,
+    /// Low-cardinality failure token (`timeout`, `spawn_failed`,
+    /// `cli_nonzero_exit`, …) so `GROUP BY error_reason` stays useful. The raw
+    /// message goes to `outcome_json.error` for diagnosis. `None` on a turn
+    /// that ran.
+    pub error_reason: Option<String>,
+}
+
+/// The ledger row for a turn that failed.
+///
+/// One construction site on purpose: the chat/background path
+/// (`session::FailedTurnCtx`) and the headless decision legs
+/// (`athena_reaction`) must never drift into two different failure shapes —
+/// they feed the same `companion_get_health` number.
+///
+/// `reason` is the low-cardinality token (`session::classify_failure` is the
+/// single taxonomy); the raw message rides truncated in `outcome_json.error`
+/// for diagnosis. `usage` is best-effort and commonly `None` — a missing usage
+/// block must never swallow the row. Callers may override `voice` after
+/// construction; nothing else about a failed turn is caller-specific.
+pub fn failed_turn_record(
+    origin: &str,
+    trigger_kind: Option<String>,
+    model: Option<String>,
+    reason: &str,
+    raw_error: &str,
+    usage: Option<CliUsage>,
+) -> TurnRecord {
+    TurnRecord {
+        origin: origin.to_string(),
+        trigger_kind,
+        model,
+        usage,
+        voice: false,
+        // A failed turn produced no reply to point at.
+        assistant_episode_id: None,
+        outcome_json: serde_json::to_string(&serde_json::json!({
+            "error": crate::utils::text::truncate_on_char_boundary(raw_error, 500),
+        }))
+        .ok(),
+        prompt_blocks_json: None,
+        total_prompt_chars: None,
+        failed: true,
+        error_reason: Some(reason.to_string()),
+    }
 }
 
 /// Record a turn and return its generated id. Best-effort: an insert failure
@@ -128,8 +190,8 @@ fn try_record_turn(pool: &UserDbPool, rec: &TurnRecord) -> Result<String, AppErr
            (id, origin, trigger_kind, model, input_tokens, output_tokens,
             cache_read_tokens, cache_creation_tokens, cost_usd, duration_ms,
             num_turns, is_error, voice, assistant_episode_id, outcome_json,
-            prompt_blocks_json, total_prompt_chars)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
+            prompt_blocks_json, total_prompt_chars, error_reason)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)",
         params![
             id,
             rec.origin,
@@ -142,12 +204,15 @@ fn try_record_turn(pool: &UserDbPool, rec: &TurnRecord) -> Result<String, AppErr
             u.cost_usd,
             u.duration_ms,
             u.num_turns,
-            u.is_error as i64,
+            // Either signal flags the row: the CLI told us it errored, or the
+            // turn died somewhere the CLI never got to report from.
+            (u.is_error || rec.failed) as i64,
             rec.voice as i64,
             rec.assistant_episode_id,
             rec.outcome_json,
             rec.prompt_blocks_json,
             rec.total_prompt_chars,
+            rec.error_reason,
         ],
     )?;
     Ok(id)
@@ -208,12 +273,21 @@ mod tests {
     /// In-memory user pool with just the `companion_turn` table — mirrors the
     /// inline-pool idiom in `dispatcher.rs`'s tests (shared-cache file::memory:
     /// so every pooled connection sees the same tables).
-    fn test_pool() -> UserDbPool {
-        let manager = SqliteConnectionManager::file("file::memory:?cache=shared").with_flags(
-            rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE
-                | rusqlite::OpenFlags::SQLITE_OPEN_CREATE
-                | rusqlite::OpenFlags::SQLITE_OPEN_URI,
-        );
+    ///
+    /// `name` MUST be unique per test. libtest runs these in parallel threads
+    /// and a bare `file::memory:?cache=shared` is ONE database process-wide —
+    /// every test would then insert into the same `companion_turn` and the
+    /// `LIMIT 1` / `SUM(is_error)` assertions below would read each other's
+    /// rows. Naming the shared-cache DB per test keeps them isolated while
+    /// still letting every pooled connection see the same tables.
+    fn test_pool(name: &str) -> UserDbPool {
+        let manager =
+            SqliteConnectionManager::file(format!("file:{name}?mode=memory&cache=shared"))
+                .with_flags(
+                    rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE
+                        | rusqlite::OpenFlags::SQLITE_OPEN_CREATE
+                        | rusqlite::OpenFlags::SQLITE_OPEN_URI,
+                );
         let pool = Pool::builder()
             .max_size(2)
             .build(manager)
@@ -239,6 +313,7 @@ mod tests {
                     outcome_json TEXT,
                     prompt_blocks_json TEXT,
                     total_prompt_chars INTEGER,
+                    error_reason TEXT,
                     created_at TEXT NOT NULL DEFAULT (datetime('now'))
                 );",
             )
@@ -297,7 +372,7 @@ mod tests {
 
     #[test]
     fn records_and_prunes_against_in_memory_db() {
-        let pool = test_pool();
+        let pool = test_pool("ledger_roundtrip");
         let id = record_turn(
             &pool,
             &TurnRecord {
@@ -315,6 +390,8 @@ mod tests {
                 outcome_json: Some(r#"{"approvals":1}"#.into()),
                 prompt_blocks_json: Some(r#"{"constitution":120,"identity":40}"#.into()),
                 total_prompt_chars: Some(1234),
+                failed: false,
+                error_reason: None,
             },
         )
         .expect("insert should return an id");
@@ -354,5 +431,111 @@ mod tests {
 
         // Nothing older than the retention window yet → prune is a no-op.
         assert_eq!(prune_old_turns(&pool).unwrap(), 0);
+    }
+
+    /// The whole point of the `failed` flag: a turn that died before the CLI
+    /// could report anything still lands an `is_error = 1` row with a reason.
+    /// Cost capture is best-effort — a missing usage block must NOT swallow
+    /// the row (criterion 4 of "a failed turn is recorded").
+    #[test]
+    fn records_a_failed_turn_with_no_usage_at_all() {
+        let pool = test_pool("ledger_failed_no_usage");
+        record_turn(
+            &pool,
+            &TurnRecord {
+                origin: "chat".into(),
+                failed: true,
+                error_reason: Some("timeout".into()),
+                outcome_json: Some(r#"{"error":"Turn exceeded 25-minute timeout"}"#.into()),
+                usage: None,
+                ..Default::default()
+            },
+        )
+        .expect("a failed turn with unknown cost is still a recorded failed turn");
+
+        let conn = pool.get().unwrap();
+        let (is_error, reason, cost): (i64, String, Option<f64>) = conn
+            .query_row(
+                "SELECT is_error, error_reason, cost_usd FROM companion_turn LIMIT 1",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .unwrap();
+        assert_eq!(is_error, 1, "the failure must be visible to the health query");
+        assert_eq!(reason, "timeout");
+        assert_eq!(cost, None, "unknown cost stays NULL rather than blocking the row");
+
+        // And it is what `companion_get_health` actually counts.
+        let errors: i64 = conn
+            .query_row(
+                "SELECT COALESCE(SUM(is_error), 0) FROM companion_turn",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(errors, 1);
+    }
+
+    /// A failure that DID get a `result` event keeps the CLI's real cost —
+    /// best-effort capture on the failure path, not an all-or-nothing.
+    #[test]
+    fn a_failed_turn_keeps_whatever_usage_the_cli_reported() {
+        let pool = test_pool("ledger_failed_with_usage");
+        record_turn(
+            &pool,
+            &TurnRecord {
+                origin: "external".into(),
+                trigger_kind: Some("Fleet".into()),
+                failed: true,
+                error_reason: Some("cli_nonzero_exit".into()),
+                usage: Some(CliUsage {
+                    cost_usd: Some(0.07),
+                    input_tokens: Some(900),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )
+        .expect("insert");
+        let conn = pool.get().unwrap();
+        let (is_error, cost, origin): (i64, f64, String) = conn
+            .query_row(
+                "SELECT is_error, cost_usd, origin FROM companion_turn LIMIT 1",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .unwrap();
+        assert_eq!(is_error, 1);
+        assert!((cost - 0.07).abs() < 1e-9, "the spend survives the failure");
+        assert_eq!(origin, "external");
+    }
+
+    /// `is_error` is the OR of both signals — the CLI reporting its own error
+    /// must still flag the row on a turn we considered successful.
+    #[test]
+    fn cli_reported_error_flags_the_row_without_the_failed_bit() {
+        let pool = test_pool("ledger_cli_reported_error");
+        record_turn(
+            &pool,
+            &TurnRecord {
+                origin: "chat".into(),
+                failed: false,
+                usage: Some(CliUsage {
+                    is_error: true,
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )
+        .expect("insert");
+        let flagged: i64 = conn_scalar(&pool, "SELECT is_error FROM companion_turn LIMIT 1");
+        assert_eq!(flagged, 1);
+    }
+
+    fn conn_scalar(pool: &UserDbPool, sql: &str) -> i64 {
+        pool.get()
+            .unwrap()
+            .query_row(sql, [], |r| r.get(0))
+            .unwrap()
     }
 }

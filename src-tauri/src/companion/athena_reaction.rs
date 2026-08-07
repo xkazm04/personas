@@ -418,7 +418,11 @@ async fn cli_decide(
 /// headless decision legs so the spend lands in the `companion_turn` ledger.
 pub(crate) async fn cli_text(prompt_text: String) -> Result<String, AppError> {
     let micro = &crate::companion::model_routing::MICRO;
-    Ok(cli_text_inner(prompt_text, micro.model, micro.effort).await?.0)
+    // No user-db handle here, so there is no `companion_turn` row to write or
+    // to flag — these callers meter themselves (`kpi_*` → `dev_llm_spend`).
+    Ok(cli_text_inner(prompt_text, micro.model, micro.effort)
+        .await?
+        .text)
 }
 
 /// Like [`cli_text`], but also returns the parsed terminal `result` usage so an
@@ -430,7 +434,8 @@ pub(crate) async fn cli_text_with_usage(
     prompt_text: String,
 ) -> Result<(String, Option<crate::companion::turn_ledger::CliUsage>), AppError> {
     let micro = &crate::companion::model_routing::MICRO;
-    cli_text_inner(prompt_text, micro.model, micro.effort).await
+    let run = cli_text_inner(prompt_text, micro.model, micro.effort).await?;
+    Ok((run.text, run.usage))
 }
 
 /// Headless decision on an EXPLICIT model (Design D: the deliberation moderator
@@ -444,19 +449,26 @@ pub(crate) async fn cli_decision_with_model(
     trigger_kind: &'static str,
     model: &str,
 ) -> Result<(String, Option<f64>), AppError> {
-    let (text, usage) = cli_text_inner(prompt_text, model, None).await?;
-    let cost = usage.as_ref().and_then(|u| u.cost_usd);
+    let run = match cli_text_inner(prompt_text, model, None).await {
+        Ok(run) => run,
+        Err(e) => {
+            record_headless_failure(user_db, trigger_kind, model, &e);
+            return Err(e);
+        }
+    };
+    let cost = run.usage.as_ref().and_then(|u| u.cost_usd);
     let _ = crate::companion::turn_ledger::record_turn(
         user_db,
         &crate::companion::turn_ledger::TurnRecord {
             origin: "headless".to_string(),
             trigger_kind: Some(trigger_kind.to_string()),
             model: Some(model.to_string()),
-            usage,
+            usage: flag_timeout(run.usage, run.timed_out),
+            error_reason: timeout_reason(run.timed_out),
             ..Default::default()
         },
     );
-    Ok((text, cost))
+    Ok((run.text, cost))
 }
 
 /// Like [`cli_text`], but records a `companion_turn` ledger row
@@ -471,28 +483,122 @@ pub(crate) async fn cli_text_tracked(
     trigger_kind: &'static str,
 ) -> Result<(String, Option<String>), AppError> {
     let micro = &crate::companion::model_routing::MICRO;
-    let (text, usage) = cli_text_inner(prompt_text, micro.model, micro.effort).await?;
+    let run = match cli_text_inner(prompt_text, micro.model, micro.effort).await {
+        Ok(run) => run,
+        Err(e) => {
+            record_headless_failure(user_db, trigger_kind, micro.model, &e);
+            return Err(e);
+        }
+    };
     let turn_id = crate::companion::turn_ledger::record_turn(
         user_db,
         &crate::companion::turn_ledger::TurnRecord {
             origin: "headless".to_string(),
             trigger_kind: Some(trigger_kind.to_string()),
             model: Some(micro.model.to_string()),
-            usage,
+            usage: flag_timeout(run.usage, run.timed_out),
+            error_reason: timeout_reason(run.timed_out),
             ..Default::default()
         },
     );
-    Ok((text, turn_id))
+    Ok((run.text, turn_id))
 }
 
-/// Spawn + drain implementation shared by both wrappers. Returns the display
-/// text plus the parsed terminal `result` usage (`None` if the CLI emitted no
-/// result event).
+/// A headless leg that errored before producing anything is a failed turn —
+/// record it, exactly once, with the same taxonomy every other origin uses.
+///
+/// Until this existed, every `?` in the tracked wrappers returned before their
+/// `record_turn` call, so the ~94% of `companion_turn` rows that are `headless`
+/// were structurally incapable of reporting a failure. Recording only the chat
+/// path would have moved `companion_get_health` from "a perfect error rate by
+/// construction" to "a near-perfect error rate by construction" — the same
+/// falsehood with a smaller coefficient.
+///
+/// Cost is always `None` here, and that is a fact about the call rather than a
+/// shortcut: `cli_text_inner`'s surviving `Err` exits (CLI not found, spawn
+/// failure, missing stdout pipe) all fire *before* the child can emit a
+/// `result` event, so there is no usage block in existence to capture. A failed
+/// leg with unknown cost is still a recorded failed leg.
+fn record_headless_failure(
+    user_db: &crate::db::UserDbPool,
+    trigger_kind: &str,
+    model: &str,
+    e: &AppError,
+) {
+    let reason = crate::companion::session::classify_failure(e);
+    tracing::warn!(
+        trigger_kind,
+        model,
+        reason,
+        error = %e,
+        "companion: headless leg failed — recording ledger row"
+    );
+    crate::companion::turn_ledger::record_turn(
+        user_db,
+        &crate::companion::turn_ledger::failed_turn_record(
+            "headless",
+            Some(trigger_kind.to_string()),
+            Some(model.to_string()),
+            reason,
+            &e.to_string(),
+            None,
+        ),
+    );
+}
+
+/// Mark a timed-out leg's usage as errored.
+///
+/// The 180s cap returns `Ok` with a partial blob, so without this a timeout
+/// books as a clean decision carrying whatever cost it burned — the failure
+/// mode most likely to be common, and the one an error-shaped check cannot
+/// see. Synthesises a usage block when the CLI never emitted a `result` event,
+/// which is the normal shape for a killed child: the row must exist even when
+/// the cost does not.
+fn flag_timeout(
+    usage: Option<crate::companion::turn_ledger::CliUsage>,
+    timed_out: bool,
+) -> Option<crate::companion::turn_ledger::CliUsage> {
+    if !timed_out {
+        return usage;
+    }
+    let mut u = usage.unwrap_or_default();
+    u.is_error = true;
+    Some(u)
+}
+
+/// The `error_reason` token for a timed-out leg. `None` leaves a healthy row's
+/// reason NULL, and leaves a CLI-reported error (`result.is_error`) unlabelled
+/// rather than mislabelling it as a timeout it was not.
+fn timeout_reason(timed_out: bool) -> Option<String> {
+    timed_out.then(|| "timeout".to_string())
+}
+
+/// What one headless CLI leg produced.
+pub(crate) struct HeadlessRun {
+    pub text: String,
+    /// Parsed terminal `result` usage; `None` if the CLI emitted no result
+    /// event (which is exactly what a killed or crashed leg looks like).
+    pub usage: Option<crate::companion::turn_ledger::CliUsage>,
+    /// The 180s cap fired and we killed the child. `text` is whatever streamed
+    /// before the kill, so callers still get their partial blob and behave
+    /// exactly as before — but the leg did NOT complete, and the ledger must
+    /// not book it as a clean decision.
+    pub timed_out: bool,
+}
+
+/// Spawn + drain implementation shared by both wrappers.
+///
+/// Note the asymmetry this returns: once the child spawns, the only `Err`
+/// exits left are a missing stdout pipe — the 180-second timeout resolves to
+/// `Ok` with a partial blob. That is deliberate (the triage legs tolerate a
+/// short blob and record their own `parse_failure`), but it means a timeout is
+/// invisible to an error-shaped check; `timed_out` is how the tracked wrappers
+/// see it.
 async fn cli_text_inner(
     prompt_text: String,
     model: &str,
     effort: Option<&str>,
-) -> Result<(String, Option<crate::companion::turn_ledger::CliUsage>), AppError> {
+) -> Result<HeadlessRun, AppError> {
     let mut cli_args = crate::engine::prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
     cli_args.args.push(model.to_string());
@@ -577,14 +683,19 @@ async fn cli_text_inner(
     })
     .await;
 
-    if stream.is_err() {
+    let timed_out = stream.is_err();
+    if timed_out {
         let _ = child.kill().await;
         let _ = tokio::time::timeout(std::time::Duration::from_secs(5), child.wait()).await;
     } else {
         let _ = child.wait().await;
     }
 
-    Ok((blob, usage))
+    Ok(HeadlessRun {
+        text: blob,
+        usage,
+        timed_out,
+    })
 }
 
 /// Extract the `{"athena_channel": {...}}` object from the model's free-text
@@ -1537,5 +1648,143 @@ later corrected: {"athena_channel":{"react":true,"message":"final","rationale":"
         // The review parser must not match the reaction protocol's envelope.
         let blob = r#"{"athena_channel": {"react": true, "message": "x"}}"#;
         assert!(parse_athena_review(blob).is_none());
+    }
+
+    // ── Headless failure accounting ──────────────────────────────────────
+    //
+    // `headless` is ~94% of companion_turn rows. Until these paths recorded,
+    // the health surface could only ever report a near-perfect error rate by
+    // construction — the same falsehood as the original structural zero, with
+    // a smaller coefficient.
+
+    /// Unique per test — libtest runs these in parallel and a bare
+    /// `file::memory:?cache=shared` is one database process-wide.
+    fn test_pool(name: &str) -> crate::db::UserDbPool {
+        let manager = r2d2_sqlite::SqliteConnectionManager::file(format!(
+            "file:{name}?mode=memory&cache=shared"
+        ))
+        .with_flags(
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE
+                | rusqlite::OpenFlags::SQLITE_OPEN_CREATE
+                | rusqlite::OpenFlags::SQLITE_OPEN_URI,
+        );
+        let pool = r2d2::Pool::builder()
+            .max_size(2)
+            .build(manager)
+            .expect("pool");
+        pool.get()
+            .expect("conn")
+            .execute_batch(
+                "CREATE TABLE IF NOT EXISTS companion_turn (
+                    id TEXT PRIMARY KEY, origin TEXT NOT NULL, trigger_kind TEXT, model TEXT,
+                    input_tokens INTEGER, output_tokens INTEGER, cache_read_tokens INTEGER,
+                    cache_creation_tokens INTEGER, cost_usd REAL, duration_ms INTEGER,
+                    num_turns INTEGER, is_error INTEGER NOT NULL DEFAULT 0,
+                    voice INTEGER NOT NULL DEFAULT 0, assistant_episode_id TEXT,
+                    outcome_json TEXT, prompt_blocks_json TEXT, total_prompt_chars INTEGER,
+                    error_reason TEXT, created_at TEXT NOT NULL DEFAULT (datetime('now'))
+                );",
+            )
+            .expect("schema");
+        pool
+    }
+
+    fn rows(pool: &crate::db::UserDbPool) -> Vec<(String, Option<String>, i64, Option<String>)> {
+        let conn = pool.get().unwrap();
+        let mut stmt = conn
+            .prepare("SELECT origin, trigger_kind, is_error, error_reason FROM companion_turn")
+            .unwrap();
+        let out = stmt
+            .query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)))
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+        out
+    }
+
+    /// A headless leg that never reached the CLI records exactly one flagged
+    /// row, labelled with the leg so the funnel can attribute it.
+    #[test]
+    fn a_failed_headless_leg_records_one_flagged_row() {
+        let pool = test_pool("headless_failed");
+        record_headless_failure(
+            &pool,
+            "exec_triage",
+            "claude-haiku-4-5",
+            &AppError::Internal(
+                "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code"
+                    .into(),
+            ),
+        );
+        let r = rows(&pool);
+        assert_eq!(r.len(), 1, "exactly one row per failed leg");
+        assert_eq!(r[0].0, "headless");
+        assert_eq!(r[0].1.as_deref(), Some("exec_triage"));
+        assert_eq!(r[0].2, 1, "visible to companion_get_health");
+        // Shares session.rs's taxonomy rather than inventing a second one.
+        assert_eq!(r[0].3.as_deref(), Some("spawn_failed"));
+    }
+
+    /// Unknown cost must not swallow the row — the whole point of best-effort
+    /// capture. `cli_text_inner`'s Err exits all precede any usage block, so
+    /// this is the normal shape, not an edge case.
+    #[test]
+    fn a_failed_headless_leg_records_even_with_no_usage() {
+        let pool = test_pool("headless_no_usage");
+        record_headless_failure(
+            &pool,
+            "msg_triage",
+            "claude-haiku-4-5",
+            &AppError::Internal("Missing stdout pipe".into()),
+        );
+        let conn = pool.get().unwrap();
+        let (is_error, cost): (i64, Option<f64>) = conn
+            .query_row(
+                "SELECT is_error, cost_usd FROM companion_turn LIMIT 1",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(is_error, 1);
+        assert_eq!(cost, None, "unknown cost stays NULL rather than blocking the row");
+    }
+
+    /// The 180s cap returns `Ok` with a partial blob, so a timeout is invisible
+    /// to an error-shaped check. It must still land as a failure — otherwise
+    /// the likeliest headless failure books as a clean decision.
+    #[test]
+    fn a_timed_out_leg_is_flagged_even_though_it_returned_ok() {
+        // No result event — the child was killed before it could emit one.
+        let u = flag_timeout(None, true).expect("a timeout synthesises a usage block");
+        assert!(u.is_error);
+        assert_eq!(timeout_reason(true).as_deref(), Some("timeout"));
+
+        // A timeout that DID capture cost keeps it.
+        let partial = crate::companion::turn_ledger::CliUsage {
+            cost_usd: Some(0.004),
+            ..Default::default()
+        };
+        let u = flag_timeout(Some(partial), true).unwrap();
+        assert!(u.is_error);
+        assert_eq!(u.cost_usd, Some(0.004), "the spend survives the timeout");
+    }
+
+    /// A healthy leg is untouched: no error bit, no reason. Backpressure and
+    /// success must not be inflated into failures — the number has to be
+    /// honest in both directions.
+    #[test]
+    fn a_healthy_leg_is_not_flagged() {
+        assert!(flag_timeout(None, false).is_none());
+        assert!(timeout_reason(false).is_none());
+
+        // A CLI-reported error passes through unlabelled rather than being
+        // mislabelled as a timeout it was not.
+        let reported = crate::companion::turn_ledger::CliUsage {
+            is_error: true,
+            ..Default::default()
+        };
+        let u = flag_timeout(Some(reported), false).unwrap();
+        assert!(u.is_error, "the CLI's own error bit still flags the row");
+        assert!(timeout_reason(false).is_none());
     }
 }

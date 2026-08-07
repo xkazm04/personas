@@ -9,6 +9,11 @@ import { useAthenaHealth } from '../libs/useAthenaHealth';
  * economy actually filtering?), the proactive economy (are her nudges engaged
  * or dismissed?), and job/error health. Reads `companion_get_health` via
  * {@link useAthenaHealth}.
+ *
+ * The error stat reads `errors / turns`. It is deliberately a ratio: the count
+ * alone sat at a structural zero for the whole life of the ledger (every failed
+ * turn returned before the ledger write), and a bare "0" gave the operator no
+ * way to tell a healthy run from a blind one.
  */
 
 function Stat({ label, value, accent }: { label: string; value: string; accent?: string }) {
@@ -28,11 +33,18 @@ export const AthenaHealthPanel = memo(function AthenaHealthPanel() {
   if (loading && !data) return null;
   if (!data) return null;
 
-  const { triage, proactive, jobs, errors } = data;
+  const { triage, proactive, jobs, errors, turns } = data;
   const fmt = (n: number) => Math.round(n).toLocaleString(language);
   const engagedRate = proactive.delivered > 0 ? (proactive.engaged / proactive.delivered) * 100 : 0;
+  // `turns > 0` matters on its own: a chat-only user runs no triage passes and
+  // no jobs, and the panel used to claim "no activity" while Athena had been
+  // answering all day.
   const anyActivity =
-    triage.passes > 0 || proactive.delivered > 0 || jobs.completed + jobs.failed > 0 || errors > 0;
+    triage.passes > 0 ||
+    proactive.delivered > 0 ||
+    jobs.completed + jobs.failed > 0 ||
+    turns > 0 ||
+    errors > 0;
 
   return (
     <div className="p-4 rounded-modal border border-primary/10 bg-secondary/20 space-y-4" data-testid="athena-health-panel">
@@ -93,9 +105,13 @@ export const AthenaHealthPanel = memo(function AthenaHealthPanel() {
               value={fmt(jobs.failed)}
               accent={jobs.failed > 0 ? 'text-rose-400' : 'text-foreground'}
             />
+            {/* Errors over turns, not a bare count. A lone "0" is exactly what
+                made the old structural zero so convincing — the denominator
+                shows how much was actually measured to get it. Mirrors the
+                budget stat's "used / cap" shape, so no new label is needed. */}
             <Stat
               label={a.errors}
-              value={fmt(errors)}
+              value={`${fmt(errors)} / ${fmt(turns)}`}
               accent={errors > 0 ? 'text-rose-400' : 'text-foreground'}
             />
           </div>

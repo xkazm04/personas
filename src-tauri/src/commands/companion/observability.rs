@@ -204,7 +204,15 @@ pub struct AthenaHealth {
     pub proactive: AthenaProactiveStats,
     pub jobs: AthenaJobStats,
     /// companion_turn rows flagged `is_error` in the window.
+    ///
+    /// This was structurally 0 until failed turns were recorded at all: every
+    /// error exit in `session::send_turn` returned before the ledger write, so
+    /// the panel showed a flawless error rate no matter what actually
+    /// happened. Read it together with `turns` — a bare count with no
+    /// denominator is what made the old zero so easy to believe.
     pub errors: f64,
+    /// Total companion_turn rows in the window — the denominator for `errors`.
+    pub turns: f64,
 }
 
 /// Operational-quality snapshot for the last `days` (clamped 1..=365).
@@ -290,11 +298,13 @@ pub fn companion_get_health(
         },
     )?;
 
-    let errors: f64 = conn.query_row(
-        "SELECT COALESCE(SUM(is_error), 0) FROM companion_turn
+    // Both halves of the error rate in one pass — the count is only readable
+    // next to how many turns it is out of.
+    let (errors, turns): (f64, f64) = conn.query_row(
+        "SELECT COALESCE(SUM(is_error), 0), COUNT(*) FROM companion_turn
          WHERE created_at >= datetime('now', ?1)",
         [&modifier],
-        |r| r.get(0),
+        |r| Ok((r.get(0)?, r.get(1)?)),
     )?;
 
     Ok(AthenaHealth {
@@ -302,6 +312,7 @@ pub fn companion_get_health(
         proactive,
         jobs,
         errors,
+        turns,
     })
 }
 

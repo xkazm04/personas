@@ -552,6 +552,12 @@ pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
             // than accidental. See companion::prompt::PromptBlockSizes.
             "ALTER TABLE companion_turn ADD COLUMN prompt_blocks_json TEXT;",
             "ALTER TABLE companion_turn ADD COLUMN total_prompt_chars INTEGER;",
+            // Why a turn failed, as a low-cardinality token (`timeout`,
+            // `spawn_failed`, `cli_nonzero_exit`, …). NULL on a turn that ran.
+            // Pairs with `is_error`, which was 0 on every row ever written
+            // until failed turns started being recorded at all — see
+            // companion::session::FailedTurnCtx.
+            "ALTER TABLE companion_turn ADD COLUMN error_reason TEXT;",
         ] {
             let _ = conn.execute_batch(stmt);
         }
