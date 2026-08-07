@@ -25,8 +25,9 @@ import { fleetStateLabel } from './fleetMeta';
 import { hexPoints } from './hex';
 import { FLEET_INK, mix, SERIF } from './ink';
 import { processBuckets, processTotal, type ProcessBucket } from './farProcesses';
+import { laneLabel } from './laneMeta';
 import { SleepingMark } from './SleepingMark';
-import type { FleetNode } from './types';
+import type { FleetNode, RunnerNode } from './types';
 
 /** Circumradius, chosen to match the visual mass of the mid band's category
  *  quad so crossing the far↔mid threshold changes the CONTENT of the island,
@@ -52,20 +53,25 @@ const SEG_MIN = PERIMETER * 0.01;
 const numberSize = (digits: number) =>
   FAR_RADIUS * (digits <= 1 ? 1.15 : digits === 2 ? 0.92 : 0.62);
 
-const bucketLabel = (t: Translations, tx: (s: string, v: Record<string, string | number>) => string, b: ProcessBucket) =>
-  b.kind === 'persona'
-    ? tx(b.count === 1 ? t.mastermind.far_personas_one : t.mastermind.far_personas_other, { count: b.count })
-    : `${b.count} × ${fleetStateLabel(t, b.key)}`;
+const bucketLabel = (t: Translations, tx: (s: string, v: Record<string, string | number>) => string, b: ProcessBucket) => {
+  if (b.kind === 'persona') {
+    return tx(b.count === 1 ? t.mastermind.far_personas_one : t.mastermind.far_personas_other, { count: b.count });
+  }
+  if (b.kind === 'runner') return `${b.count} × ${laneLabel(t, 'runner')}`;
+  return `${b.count} × ${fleetStateLabel(t, b.key)}`;
+};
 
-export function FarProcessHex({ fleet, personas, attention }: {
+export function FarProcessHex({ fleet, personas, runners, attention }: {
   fleet: FleetNode[];
   /** Names of personas with an execution in progress on this project's team. */
   personas: string[];
+  /** In-flight dev-runner tasks — the third live lane. */
+  runners: RunnerNode[];
   /** A session here is awaiting input or has gone stale. */
   attention: boolean;
 }) {
   const { t, tx } = useTranslation();
-  const buckets = processBuckets(fleet, personas);
+  const buckets = processBuckets(fleet, personas, runners);
   const total = processTotal(buckets);
   const idle = total === 0;
 

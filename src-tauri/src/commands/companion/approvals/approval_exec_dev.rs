@@ -604,6 +604,89 @@ pub(crate) fn execute_enqueue_dev_job(
     )))
 }
 
+/// `enqueue_runner_task` — put a task on the Dev Runner queue (Dev Tools →
+/// Run Desk).
+///
+/// The Run Desk is the OTHER execution lane, and Athena had no door into it:
+/// she could dispatch Fleet sessions all day while the same work sat queued
+/// here. This mirrors the fleet ops' grammar exactly — approval-gated (never
+/// on `AUTOAPPROVE_ALLOWLIST`), containment through the registered dev-project
+/// registry (the same `resolve_dev_project` every other dev op uses), bounded
+/// input — and deliberately only ENQUEUES. Starting a task is still the
+/// operator's click on the Run Desk, because execution spends real money and
+/// the queue is the reviewable surface between proposal and spend.
+pub(crate) fn execute_enqueue_runner_task(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    const TITLE_MAX: usize = 200;
+    const DESCRIPTION_MAX: usize = 4000;
+
+    let title = params
+        .get("title")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| {
+            AppError::Internal("enqueue_runner_task: missing `title` (what the task is)".into())
+        })?;
+    if title.chars().count() > TITLE_MAX {
+        return Err(AppError::Internal(format!(
+            "enqueue_runner_task: `title` is too long (max {TITLE_MAX} characters)"
+        )));
+    }
+    let description = params
+        .get("description")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    if description.is_some_and(|d| d.chars().count() > DESCRIPTION_MAX) {
+        return Err(AppError::Internal(format!(
+            "enqueue_runner_task: `description` is too long (max {DESCRIPTION_MAX} characters)"
+        )));
+    }
+    // Depth drives how the runner plans the work; anything unknown would be
+    // silently coerced downstream, so reject it here where it can be explained.
+    let depth = params
+        .get("depth")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("quick");
+    if !matches!(depth, "quick" | "campaign" | "deep_build") {
+        return Err(AppError::Internal(format!(
+            "enqueue_runner_task: unknown `depth` `{depth}` (quick | campaign | deep_build)"
+        )));
+    }
+
+    let (project_id, matched) = {
+        let conn = state.db.get()?;
+        resolve_dev_project(&conn, params)?
+    };
+    let project = crate::db::repos::dev_tools::get_project_by_id(&state.db, &project_id)?;
+    let stale_id_note = stale_project_note(matched);
+
+    let task = crate::db::repos::dev_tools::create_task(
+        &state.db,
+        Some(&project_id),
+        title,
+        description,
+        None,
+        params.get("goal_id").and_then(|v| v.as_str()),
+        Some("queued"),
+        Some(depth),
+    )?;
+
+    Ok(ExecuteResult::message(format!(
+        "Queued **{}** on the Dev Runner for `{}`{} (depth: {depth}, task `{}`).\n\nIt is \
+         QUEUED, not running — start it from Dev Tools → Run Desk when you want the spend.",
+        task.title,
+        project.name,
+        stale_id_note,
+        &task.id[..task.id.len().min(8)],
+    )))
+}
+
 /// `backlog_apply_triage` — apply one batch of Athena backlog verdicts.
 ///
 /// This is the PLAIN door: approving the card from the Approvals list applies
@@ -862,10 +945,41 @@ pub(crate) fn execute_dev_improve(
     Ok(ExecuteResult::message(msg))
 }
 
+/// Fleet sessions that would be killed by the rebuild a merge triggers.
+///
+/// A dev session is a PTY CHILD of this app. Merging makes the dev server
+/// rebuild and restart the app, which takes every in-flight dev session down
+/// with it — mid `cargo check`, mid edit, uncommitted. Naming them before the
+/// merge is the difference between a deliberate choice and a silent kill.
+fn live_dev_sessions(exclude_session_id: &str) -> Vec<String> {
+    use crate::commands::fleet::registry;
+    registry::registry()
+        .list_dto()
+        .into_iter()
+        .filter(|s| s.id != exclude_session_id)
+        .filter(|s| {
+            !matches!(
+                s.state,
+                crate::commands::fleet::types::FleetSessionState::Exited
+                    | crate::commands::fleet::types::FleetSessionState::Hibernated
+                    | crate::commands::fleet::types::FleetSessionState::Finished
+            )
+        })
+        .filter(|s| {
+            s.name
+                .as_deref()
+                .is_some_and(|n| {
+                    n.contains(&format!("{}-dev", registry::ATHENA_SESSION_NAME_SENTINEL))
+                })
+        })
+        .map(|s| s.name.clone().unwrap_or(s.project_label))
+        .collect()
+}
+
 /// DEV MODE — `dev_merge`: the explicit handshake that applies a backend
-/// dev run's branch to the live checkout (fast-forward only; a diverged
-/// master refuses rather than auto-resolving) and cleans up the worktree.
-/// The dev-server rebuild — and therefore an app restart — follows.
+/// dev run's branch to the live checkout and cleans up the worktree, only
+/// after VERIFYING the content actually reached HEAD. The dev-server
+/// rebuild — and therefore an app restart — follows.
 pub(crate) fn execute_dev_merge(
     state: &State<'_, Arc<AppState>>,
     params: &serde_json::Value,
@@ -891,11 +1005,40 @@ pub(crate) fn execute_dev_merge(
              leftover worktree)."
         ))
     })?;
+    // Name the collateral BEFORE merging. `force: true` in the params is the
+    // operator's "yes, take them down with it".
+    let force = params.get("force").and_then(|v| v.as_bool()).unwrap_or(false);
+    let siblings = live_dev_sessions(&meta.fleet_session_id);
+    if !siblings.is_empty() && !force {
+        return Err(AppError::Internal(format!(
+            "dev_merge: {} other dev session(s) are still live ({}). Merging rebuilds the dev \
+             server and restarts the app, which kills them mid-run — uncommitted work included. \
+             Let them finish and merge after, or re-issue with `\"force\": true` to accept that.",
+            siblings.len(),
+            siblings.join(", "),
+        )));
+    }
     let merged = dev_mode::merge_dev_branch(&meta).map_err(AppError::Internal)?;
-    dev_mode::mark_dev_op(&state.user_db, op_id, "merged", None);
-    Ok(ExecuteResult::message(format!(
-        "{merged}\n\nThe dev server will pick up the merged changes — expect a rebuild and \
-         an app restart."
-    )))
+    // The VERIFIED landed sha goes on the ledger row. Before this, "merged"
+    // was recorded with no sha at all — an unfalsifiable claim.
+    dev_mode::mark_dev_op(
+        &state.user_db,
+        op_id,
+        "merged",
+        Some(merged.landed_sha.as_str()),
+    );
+    let mut msg = merged.message;
+    if !siblings.is_empty() {
+        msg.push_str(&format!(
+            "\n\n⚠ {} live dev session(s) will be killed by the restart: {}.",
+            siblings.len(),
+            siblings.join(", "),
+        ));
+    }
+    msg.push_str(
+        "\n\nThe dev server will pick up the merged changes — expect a rebuild and an app \
+         restart.",
+    );
+    Ok(ExecuteResult::message(msg))
 }
 

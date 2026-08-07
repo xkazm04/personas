@@ -141,6 +141,14 @@ export interface FleetPlanRow {
   objective: string;
   /** Optional installed skill name; leads the prompt as `/skill …`. */
   skill?: string | null;
+  /** Operator-facing session name. Wins over the auto-naming — eight sessions
+   *  all called `athena · personas` tell you nothing about which is which. */
+  label?: string | null;
+  /** Model id for this session (`--model`). Null leaves the CLI default. */
+  model?: string | null;
+  /** Reasoning effort (`--effort`): low | medium | high | xhigh. Validated
+   *  backend-side; null leaves the CLI default. */
+  effort?: string | null;
 }
 
 /**
@@ -155,8 +163,13 @@ export interface FleetPlanRow {
 export async function companionDispatchFleetPlan(
   operationIntent: string,
   rows: FleetPlanRow[],
+  cardId?: string | null,
 ): Promise<string> {
-  return invoke<string>('companion_dispatch_fleet_plan', { operationIntent, rows });
+  return invoke<string>('companion_dispatch_fleet_plan', {
+    operationIntent,
+    rows,
+    cardId: cardId ?? null,
+  });
 }
 
 /**
@@ -1739,6 +1752,63 @@ export interface ChatCard {
   kind: string;
   title?: string;
   config?: Record<string, unknown>;
+  /** Durable `companion_chat_card` row id. Present ONLY for actionable kinds
+   *  (`fleet_plan`, `ship_milestone`) — informational cards stay transient by
+   *  design. This id is what makes a proposal survive a refresh, and what the
+   *  dispatch path claims to stop a double-confirm from spawning twice. */
+  id?: string;
+  /** True when this card was re-hydrated from the durable table rather than
+   *  arriving live on the current turn. Drives the recovery-strip label. */
+  restored?: boolean;
+}
+
+/** Statuses a durable chat-card row may resolve to. `dispatched` is terminal. */
+export type ChatCardStatus = 'pending' | 'dispatched' | 'dismissed' | 'superseded';
+
+/** One durable chat-card row, as returned by `companion_list_chat_cards`. */
+export interface CompanionChatCardRow {
+  id: string;
+  conversationId: string;
+  episodeId: string | null;
+  kind: string;
+  title: string | null;
+  configJson: string;
+  status: string;
+  resultJson: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+}
+
+/**
+ * Pending actionable cards for a conversation. Called on mount and on every
+ * conversation switch so a proposal stranded by a refresh comes back instead
+ * of being silently lost.
+ */
+export async function companionListChatCards(
+  conversationId: string,
+  pendingOnly = true,
+): Promise<CompanionChatCardRow[]> {
+  return invoke<CompanionChatCardRow[]>('companion_list_chat_cards', {
+    conversationId,
+    pendingOnly,
+  });
+}
+
+/**
+ * Resolve a durable card. `dispatched` is terminal backend-side (its sessions
+ * are real), so a dismissed-after-dispatch call is rejected, not silently
+ * applied.
+ */
+export async function companionResolveChatCard(
+  id: string,
+  status: Exclude<ChatCardStatus, 'pending'>,
+  resultJson?: string | null,
+): Promise<void> {
+  return invoke<void>('companion_resolve_chat_card', {
+    id,
+    status,
+    resultJson: resultJson ?? null,
+  });
 }
 
 /** Tauri event for chat-card delivery. Auto-fire, no approval. */

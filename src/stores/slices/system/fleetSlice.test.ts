@@ -53,6 +53,7 @@ function makeSession(partial: Partial<FleetSession> = {}): FleetSession {
     athenaActive: false,
     dozing: false,
     limitResetAtMs: null,
+    staleKind: null,
     state: 'spawning',
     lastActivityMs: BigInt(1_000_000),
     lastPtyOutputMs: BigInt(0),

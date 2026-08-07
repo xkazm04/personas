@@ -1243,12 +1243,52 @@ pub async fn send_turn(
         }
     }
 
-    // Inline chat-cards. Transient (no persistence) — emit once per turn
-    // with the full list so the frontend appends to the latest bubble.
+    // Inline chat-cards. Emitted once per turn with the full list so the
+    // frontend appends to the latest bubble.
+    //
+    // INFORMATIONAL kinds stay transient — they are UI snippets riding along
+    // with a reply, and clearing them on the next send is the intent.
+    // ACTIONABLE kinds (fleet_plan / ship_milestone) are proposals that WRITE
+    // on confirm, and their plan JSON is stripped from the assistant text
+    // before episode persistence — so a transient-only card meant a refresh
+    // destroyed the proposal unrecoverably. Those get a durable row FIRST and
+    // the row id rides in the payload, which is what lets the frontend resolve
+    // (and re-hydrate) them. A persistence failure degrades to the old
+    // transient behaviour rather than dropping the card.
     if !dispatched.chat_cards.is_empty() {
+        let cards: Vec<serde_json::Value> = dispatched
+            .chat_cards
+            .iter()
+            .map(|card| {
+                let mut value = serde_json::json!({
+                    "kind": card.kind,
+                    "title": card.title,
+                    "config": card.config,
+                });
+                if crate::commands::companion::chat_cards::is_actionable_kind(&card.kind) {
+                    let config_json = card.config.to_string();
+                    match crate::commands::companion::chat_cards::insert_card(
+                        &user_db,
+                        &session_id,
+                        Some(assistant_ep_id.as_str()),
+                        &card.kind,
+                        card.title.as_deref(),
+                        config_json,
+                    ) {
+                        Ok(id) => {
+                            value["id"] = serde_json::Value::String(id);
+                        }
+                        Err(e) => {
+                            tracing::warn!(error = %e, kind = %card.kind, "companion chat card persist failed");
+                        }
+                    }
+                }
+                value
+            })
+            .collect();
         let payload = serde_json::json!({
             "turnId": turn_id.clone(),
-            "cards": dispatched.chat_cards,
+            "cards": cards,
         });
         if let Err(e) = app.emit(CHAT_CARDS_EVENT, payload) {
             tracing::warn!(error = %e, "companion chat_cards event emit failed");

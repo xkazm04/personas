@@ -12,19 +12,24 @@
 // the context picker, the workspace adoption matrix. Two skills UIs meant every
 // improvement had to be built twice; deleting the modal-only one closes that.
 //
-// A landing chooser is still the first content (two cards — Manage vs Dispatch,
-// each with its icon as an illustrative watermark); picking one enters the lane
-// with a breadcrumb back. `initialMode` lets each entry point land straight in
-// its natural lane. The modal is `6xl` and tall because these surfaces are a
-// two-panel board and a skills × projects matrix, not a list.
+// The landing is a half/half chooser: the Manage card enters the board, while
+// the Dispatch card carries a LIVE quick-dispatch ledger — every installed
+// skill with its total context coverage, one click = a no-args Fleet run (the
+// skill picks its own context). The full registry (aimed dispatch at a specific
+// context group) stays one click away from the card header. `initialMode` lets
+// each entry point land straight in its natural lane. The modal is `6xl` and
+// tall because these surfaces are a two-panel board and a skills × projects
+// matrix, not a list.
 import { useState } from 'react';
-import { ChevronLeft, Puzzle, Rocket, Wand2 } from 'lucide-react';
+import { ArrowRight, ChevronLeft, Puzzle, Rocket, Wand2 } from 'lucide-react';
 
 import { BaseModal } from '@/features/shared/components/modals';
 import { RegistryTab } from '@/features/plugins/dev-tools/sub_skills/registry/RegistryTab';
 import { SkillInfoModal } from '@/features/plugins/dev-tools/sub_skills/SkillInfoModal';
 import { SkillsOverviewPanel } from '@/features/plugins/dev-tools/sub_skills/SkillsOverviewPanel';
 
+import { useQuickDispatch } from './quickDispatch';
+import { QuickDispatchLedger } from './QuickDispatchLedger';
 import { useSkillsWorkbench, type WorkbenchMode } from './skillsWorkbenchData';
 import { WorkbenchCounts } from './workbenchChrome';
 
@@ -40,8 +45,17 @@ export function SkillsWorkbench({ slug, initialMode, onClose }: {
   // Registry's skill-name click opens the shared metadata modal; Manage's lives
   // inside SkillsOverviewPanel.
   const [infoSkill, setInfoSkill] = useState<string | null>(null);
+  // Quick-dispatch (landing): aggregate coverage per installed skill.
+  const quick = useQuickDispatch(slug);
+  const [busySkill, setBusySkill] = useState<string | null>(null);
 
   if (!wb) return null;
+
+  const dispatchQuick = (name: string) => {
+    setBusySkill(name);
+    // No arguments: the skill decides its own context; Fleet is the channel.
+    void wb.runDispatch(name, '').finally(() => setBusySkill(null));
+  };
 
   return (
     <BaseModal isOpen onClose={onClose} titleId="skills-workbench-title" size="6xl" portal staggerChildren={false}>
@@ -55,6 +69,7 @@ export function SkillsWorkbench({ slug, initialMode, onClose }: {
               <span className="ml-auto flex-shrink-0"><WorkbenchCounts counts={wb.counts} /></span>
             </div>
             <div className="flex-1 min-h-0 grid grid-cols-2 gap-4 p-6">
+              {/* ── Manage half — enters the full skills board ──────────── */}
               <ChoiceCard
                 icon={Puzzle}
                 title="Manage skills"
@@ -63,14 +78,29 @@ export function SkillsWorkbench({ slug, initialMode, onClose }: {
                 onClick={() => setMode('manage')}
                 testid="skills-workbench-choose-manage"
               />
-              <ChoiceCard
-                icon={Rocket}
-                title="Dispatch a skill"
-                body="This repo's registry: every installed skill × every context group, shaded by how much of the group it has touched. Click any cell to run it there."
-                meta={wb.dispatch.loading ? 'loading…' : `${wb.dispatch.items.length} installed here`}
-                onClick={() => setMode('dispatch')}
-                testid="skills-workbench-choose-dispatch"
-              />
+
+              {/* ── Dispatch half — live quick-dispatch ledger in place ─── */}
+              <div className="relative flex flex-col gap-2 p-5 min-h-0 rounded-card border border-primary/12 bg-secondary/[0.15]">
+                <div className="flex items-start gap-2">
+                  <CardTitle icon={Rocket} title="Dispatch a skill" />
+                  {/* the aimed path: skill × context-group registry */}
+                  <button
+                    type="button"
+                    onClick={() => setMode('dispatch')}
+                    className="ml-auto flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive border border-primary/15 typo-caption text-foreground/70 hover:text-foreground hover:border-primary/35 hover:bg-primary/[0.06] transition-colors focus-ring"
+                    data-testid="skills-workbench-choose-dispatch"
+                  >
+                    Open the registry
+                    <ArrowRight className="w-3 h-3" aria-hidden />
+                  </button>
+                </div>
+                <p className="typo-caption text-foreground/60 leading-snug" style={{ fontWeight: 400 }}>
+                  One click runs a skill via Fleet — it picks its own context. The registry aims at a specific group.
+                </p>
+                <div className="flex-1 min-h-0 overflow-y-auto mt-1">
+                  <QuickDispatchLedger model={quick} busySkill={busySkill} onDispatch={dispatchQuick} />
+                </div>
+              </div>
             </div>
           </>
         ) : (
@@ -110,6 +140,17 @@ export function SkillsWorkbench({ slug, initialMode, onClose }: {
   );
 }
 
+/** Promoted card heading — same type + accent as the modal header (typo-title,
+ *  primary icon), so each half reads with the header's weight. */
+function CardTitle({ icon: Icon, title }: { icon: typeof Rocket; title: string }) {
+  return (
+    <span className="relative inline-flex items-center gap-2 min-w-0">
+      <Icon className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
+      <span className="typo-title truncate">{title}</span>
+    </span>
+  );
+}
+
 function ChoiceCard({ icon: Icon, title, body, meta, onClick, testid }: {
   icon: typeof Rocket;
   title: string;
@@ -131,7 +172,7 @@ function ChoiceCard({ icon: Icon, title, body, meta, onClick, testid }: {
         strokeWidth={1.25}
         aria-hidden
       />
-      <span className="relative typo-body font-semibold text-foreground">{title}</span>
+      <CardTitle icon={Icon} title={title} />
       <span className="relative typo-caption text-foreground/60 leading-snug" style={{ fontWeight: 400 }}>{body}</span>
       <span className="relative typo-label text-foreground/40 mt-auto pt-1">{meta}</span>
     </button>

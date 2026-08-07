@@ -44,7 +44,7 @@ const island = (over: Partial<Island> = {}): Island => ({
     key, label: DIM_REGISTRY[key].label, status: 'absent' as const,
     detail: null, reached: 0, steps: 0, days: null,
   })),
-  fleet: [], personasRunning: [], attention: false,
+  fleet: [], personasRunning: [], runners: [], attention: false,
   monitorErrors: null, stats: [], ship: null,
   ...over,
 });
@@ -71,10 +71,10 @@ describe('far band — one process hex', () => {
     expect(q(far, '[data-testid^="mm-fleet-badge-"]')).toHaveLength(0);
   });
 
-  it('leaves the mid band on its category quad, badges intact', () => {
+  it('leaves the mid band to the Facet cube, badges intact', () => {
     const mid = paint('mid', { fleet: [session('a', 'running')] });
     expect(q(mid, '[data-testid="mm-far-hex"]')).toHaveLength(0);
-    expect(q(mid, '[data-testid^="mm-category-"]').length).toBeGreaterThan(0);
+    expect(q(mid, '[data-testid="mm-mid-facet"]')).toHaveLength(1);
     expect(q(mid, '[data-testid^="mm-fleet-badge-"]').length).toBeGreaterThan(0);
   });
 

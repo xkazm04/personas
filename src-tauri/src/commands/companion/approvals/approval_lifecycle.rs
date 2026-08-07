@@ -129,6 +129,7 @@ pub async fn companion_approve_action(
         // Phase G — project registry + background jobs.
         "register_project" => execute_register_project(&state, &app, &params),
         "enqueue_dev_job" => execute_enqueue_dev_job(&state, &app, &params),
+        "enqueue_runner_task" => execute_enqueue_runner_task(&state, &params),
         "open_test_env" => execute_open_test_env(&state, &app, &params),
         "update_dev_goal" => execute_update_dev_goal(&state, &params),
         // Workstream 2 — apply one batch of Athena backlog verdicts. Created by
@@ -145,7 +146,7 @@ pub async fn companion_approve_action(
         // Phase J — Fleet integration.
         "fleet_send_input" => execute_fleet_send_input(&app, &params),
         "fleet_broadcast" => execute_fleet_broadcast(&params),
-        "fleet_kill" => execute_fleet_kill(&params),
+        "fleet_kill" => execute_fleet_kill(&app, &params),
         "fleet_spawn" => execute_fleet_spawn(&app, &params),
         "fleet_dispatch" => execute_fleet_dispatch(&app, &params),
         // WP2 — Mastermind canvas actions. Thin slug-resolving wrappers over

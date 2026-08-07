@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { Keyboard, X } from 'lucide-react';
+import { Keyboard, MessageSquareText, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
@@ -79,6 +79,11 @@ export function AthenaOrb({
   });
   const explainComposing = useCompanionStore((s) => s.explainComposing);
   const pendingPlayback = useCompanionStore((s) => s.pendingPlayback);
+  // Replies that landed while the chat was closed. The orb's `message` clip
+  // and border glow below already REACT to a reply — but only for one loop,
+  // so a user who looked away missed it entirely and Athena's answer left no
+  // trace. This is the standing indicator that survives until she's read.
+  const unreadReplies = useCompanionStore((s) => s.unreadReplies);
   // Async-UX phase 3: how many background tasks are in flight. Returns a
   // primitive so the orb only re-renders when the count actually changes.
   const runningTaskCount = useCompanionStore((s) => {
@@ -251,6 +256,11 @@ export function AthenaOrb({
 
   useEffect(() => () => clearHoldTimer(), [clearHoldTimer]);
 
+  const hasUnread = unreadReplies > 0;
+  const unreadLabel = tx(
+    unreadReplies === 1 ? t.plugins.companion.orb_unread_one : t.plugins.companion.orb_unread_other,
+    { count: unreadReplies },
+  );
   const hasUnreadPlayback = pendingPlayback != null && !pendingPlayback.played;
   // Background tasks running (even when no turn is streaming) put the orb
   // in the "working" posture — it borrows the `thinking` avatar and grows
@@ -403,7 +413,12 @@ export function AthenaOrb({
                     : t.plugins.companion.tasks_running_other,
                   { count: runningTaskCount },
                 )
-              : t.plugins.companion.orb_talk_hint
+              : hasUnread
+                // The badge is decorative (aria-hidden), so the count has to
+                // reach assistive tech through the orb's own label — an
+                // unreadable indicator is not an indicator.
+                ? `${unreadLabel} — ${t.plugins.companion.orb_talk_hint}`
+                : t.plugins.companion.orb_talk_hint
         }
       >
         {/* Speaking glow — a bloom while a spoken reply plays. When motion
@@ -431,9 +446,19 @@ export function AthenaOrb({
         {forwardAck && (
           <span aria-hidden className={`absolute -inset-1.5 rounded-full bg-amber-400/55 blur-md ${reduceMotion ? '' : 'animate-pulse'}`} />
         )}
+        {/* Standing unread ring. Ranks BELOW the two one-shots above it: while
+            a reaction is playing the user is being told about this very
+            message, and the standing ring re-asserts itself the moment that
+            loop ends. */}
         <span
           className={`absolute inset-0 rounded-full overflow-hidden shadow-elevation-3 bg-primary/10 transition-[box-shadow] ${
-            forwardAck ? 'ring-2 ring-amber-400' : messageActive ? 'ring-2 ring-primary' : 'ring-1 ring-primary/25'
+            forwardAck
+              ? 'ring-2 ring-amber-400'
+              : messageActive
+                ? 'ring-2 ring-primary'
+                : hasUnread
+                  ? 'ring-2 ring-primary/70'
+                  : 'ring-1 ring-primary/25'
           }`}
         >
           <AthenaAvatar
@@ -447,6 +472,37 @@ export function AthenaOrb({
         {talking && (
           <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center ring-2 ring-background">
             <span className="w-1.5 h-1.5 rounded-full bg-background animate-pulse" />
+          </span>
+        )}
+        {/* Unread-message badge. Bottom-LEFT on purpose: the top arc belongs to
+            the task dots, top-right to dismiss and bottom-right to quick-input,
+            so this is the one corner where it can never be mistaken for a
+            control.
+
+            Deliberately NOT `pointer-events-none`: the badge hangs past the
+            orb's circular edge, and border-radius clips hit-testing — so an
+            inert badge would sit in dead space, and a user who clicked the
+            very thing telling them they have messages would get nothing.
+            Being a plain span inside the orb button, its pointer events
+            bubble into the orb's own tap/hold/drag gestures, so clicking it
+            opens the chat exactly like clicking her does. */}
+        {hasUnread && (
+          <span
+            aria-hidden
+            data-testid="companion-orb-unread"
+            data-unread-count={unreadReplies}
+            title={unreadLabel}
+            className="absolute -bottom-1 -left-1 inline-flex items-center justify-center gap-0.5 h-5 min-w-[1.25rem] px-1 rounded-full bg-primary text-background ring-2 ring-background shadow-elevation-2"
+          >
+            {!reduceMotion && (
+              <span className="absolute inset-0 rounded-full bg-primary/60 animate-ping" />
+            )}
+            <MessageSquareText className="relative w-3 h-3 shrink-0" />
+            {unreadReplies > 1 && (
+              <span className="relative typo-caption font-semibold leading-none tabular-nums">
+                {unreadReplies > 9 ? '9+' : unreadReplies}
+              </span>
+            )}
           </span>
         )}
         {/* Async-UX phase 3: perimeter task dots — one per in-flight task. */}

@@ -9,7 +9,7 @@ import { companionDispatchFleetPlan, type FleetPlanRow } from '@/api/companion';
 import { useSystemStore } from '@/stores/systemStore';
 import { AthenaFleetPlanRow } from './AthenaFleetPlanRow';
 import { AthenaFleetPlanResult } from './AthenaFleetPlanResult';
-import { useCompanionStore } from '../companionStore';
+import { resolveChatCard } from '../useChatCards';
 
 /** Parse the `fleet_plan` chat-card config the dispatcher validated. */
 export function parsePlanRows(raw: unknown): FleetPlanRow[] {
@@ -20,6 +20,11 @@ export function parsePlanRows(raw: unknown): FleetPlanRow[] {
       cwd: typeof r.cwd === 'string' ? r.cwd : '',
       objective: typeof r.objective === 'string' ? r.objective : '',
       skill: typeof r.skill === 'string' ? r.skill : null,
+      // Presentation/routing fields the dispatcher validated. Carried through
+      // the card untouched so Confirm dispatches what was proposed.
+      label: typeof r.label === 'string' ? r.label : null,
+      model: typeof r.model === 'string' ? r.model : null,
+      effort: typeof r.effort === 'string' ? r.effort : null,
     }))
     .filter((r) => r.cwd.length > 0);
 }
@@ -36,15 +41,16 @@ export function parsePlanRows(raw: unknown): FleetPlanRow[] {
 export function AthenaFleetPlanCard({
   config,
   title,
-  cardIndex,
+  cardId,
 }: {
   config?: Record<string, unknown>;
   title?: string;
-  /** This card's position in the shared `chatCards` store array. Required to
-   *  persist the post-confirm outcome back into the store — without it the
-   *  outcome lives only in this component's local state and is lost the
-   *  moment the chat panel (and this component with it) unmounts. */
-  cardIndex?: number;
+  /** Durable `companion_chat_card` row id. It is what makes this proposal
+   *  survive a refresh, what the dispatch path CLAIMS so a double-confirm
+   *  cannot spawn two fleets, and the key the post-confirm outcome is written
+   *  back under. Index keying was the old shape and it mis-targeted the
+   *  moment hydration could reorder the array. */
+  cardId?: string;
 }) {
   const { t, tx } = useTranslation();
   const c = t.plugins.companion;
@@ -90,17 +96,22 @@ export function AthenaFleetPlanCard({
         cwd: r.cwd,
         objective: r.objective.trim(),
         skill: r.skill?.trim() ? r.skill.trim() : null,
+        label: r.label?.trim() ? r.label.trim() : null,
+        model: r.model?.trim() ? r.model.trim() : null,
+        effort: r.effort?.trim() ? r.effort.trim() : null,
       }));
-      const message = await companionDispatchFleetPlan(intent, confirmedRows);
+      const message = await companionDispatchFleetPlan(intent, confirmedRows, cardId);
       setResult(message);
       setDispatchedRows(confirmedRows);
-      if (cardIndex !== undefined) {
-        useCompanionStore.getState().patchChatCardConfig(cardIndex, {
-          dispatched: true,
-          resultMessage: message,
-          dispatchedRows: confirmedRows,
-        });
-      }
+      // The backend already flipped the durable row to `dispatched` and stored
+      // the outcome as part of the claim; this write-through only keeps the
+      // in-memory card in step so a close/reopen renders the result without a
+      // refetch.
+      resolveChatCard(cardId, 'dispatched', {
+        dispatched: true,
+        resultMessage: message,
+        dispatchedRows: confirmedRows,
+      });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -165,7 +176,12 @@ export function AthenaFleetPlanCard({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setDismissed(true)}
+          onClick={() => {
+            setDismissed(true);
+            // Cancel is a real decision, not a fold-away: record it so the
+            // proposal does not come back on the next hydration.
+            resolveChatCard(cardId, 'dismissed');
+          }}
           disabled={busy}
           data-testid="athena-plan-cancel"
         >

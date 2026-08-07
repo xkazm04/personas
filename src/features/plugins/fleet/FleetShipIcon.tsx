@@ -1,5 +1,4 @@
-interface FleetShipIconProps {
-  className?: string;
+interface FleetShipIconProps extends React.SVGProps<SVGSVGElement> {
   /** Stroke weight in viewBox units. Lucide's default is 2; 1.8 keeps the
    *  two-hull composition open at 20px instead of blobbing shut. */
   strokeWidth?: number;
@@ -18,7 +17,14 @@ interface FleetShipIconProps {
  * stay open at that size (verified by rasterising 20/24/32/64px), which is why
  * the hulls are straight-edged trapezoids rather than curved.
  */
-export function FleetShipIcon({ className, strokeWidth = 1.8 }: FleetShipIconProps) {
+export function FleetShipIcon({ strokeWidth = 1.8, ...props }: FleetShipIconProps) {
+  // Rest props are FORWARDED (x / y / width / height / style / className) so
+  // the mark drops into lucide-icon slots in both HTML and SVG contexts. It
+  // used to accept only className and silently swallow the rest — inside an
+  // <svg> world that meant a nested svg with no width/height/position, which
+  // defaults to 100% of the viewport at (0,0): every fleet glyph on the
+  // Mastermind canvas rendered as a screen-sized ship. Never reintroduce a
+  // fixed prop list here.
   return (
     <svg
       viewBox="0 0 24 24"
@@ -27,9 +33,9 @@ export function FleetShipIcon({ className, strokeWidth = 1.8 }: FleetShipIconPro
       strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={className}
       aria-hidden="true"
       focusable="false"
+      {...props}
     >
       {/* Flagship — hull, then mast + sail leech (the hull's deck closes the sail). */}
       <path d="M2 16.4h12.8l-2.2 3.6H4.2z" />

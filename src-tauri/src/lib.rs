@@ -2884,6 +2884,8 @@ pub fn run() {
             commands::companion::daily_goals::companion_daily_goals_toggle,
             commands::companion::daily_goals::companion_daily_goals_discard,
             commands::companion::chat::companion_list_messages_before,
+            commands::companion::chat_cards::companion_list_chat_cards,
+            commands::companion::chat_cards::companion_resolve_chat_card,
             commands::companion::sidecars::companion_save_turn_sidecar,
             commands::companion::sidecars::companion_get_turn_sidecars,
             commands::companion::voice::companion_tts,

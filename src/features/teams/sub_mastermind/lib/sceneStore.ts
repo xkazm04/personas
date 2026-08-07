@@ -16,10 +16,11 @@
 import { create } from 'zustand';
 
 import {
-  getCrossProjectMetadata, listAllGoals, listScans,
+  getCrossProjectMetadata, listAllGoals, listScans, listTasks,
   type CrossProjectMetadataMap,
 } from '@/api/devTools/devTools';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
+import type { DevTask } from '@/lib/bindings/DevTask';
 import type { DevScan } from '@/lib/bindings/DevScan';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
@@ -34,7 +35,13 @@ export type FamilyStatus = 'idle' | 'loading' | 'loaded' | 'failed' | 'stale';
 
 /** The data families the scene store fetches. Fleet + KPI are tracked too (for
  *  the health banner) but their data lives in the system/factory stores. */
-export type SceneFamily = 'relations' | 'scans' | 'sentry' | 'goals' | 'llmSpend';
+export type SceneFamily = 'relations' | 'scans' | 'sentry' | 'goals' | 'llmSpend' | 'runners';
+
+/** Dev-runner task statuses that count as WORK IN FLIGHT. A queued task has
+ *  been handed to the engine and will run without anyone touching it, so it is
+ *  as live as a running one; `failed`/`completed`/`cancelled` are history and
+ *  must never inflate a "what is happening right now" count. */
+export const LIVE_TASK_STATUSES: ReadonlySet<string> = new Set(['running', 'queued']);
 
 /** How many idea-scan rows to pull in the single batched list call. Generous
  *  enough to cover the most-recent scans of every project at realistic counts;
@@ -81,6 +88,13 @@ interface SceneStore {
   /** All dev goals grouped by project id (one batched IPC). */
   goals: Map<string, DevGoal[]>;
   goalsStatus: FamilyStatus;
+
+  /** In-flight dev-runner tasks grouped by project id (one batched IPC).
+   *  The canvas's THIRD live-process lane, alongside Fleet sessions and
+   *  personas — a queued/running task is the engine working on this repo
+   *  with no terminal attached, which the map had no way to show. */
+  runners: Map<string, DevTask[]>;
+  runnersStatus: FamilyStatus;
   /** 30d LLM spend per project id — only wired projects appear (see llmSpend.ts). */
   llmSpend: Map<string, number | null>;
   llmSpendStatus: FamilyStatus;
@@ -97,6 +111,8 @@ interface SceneStore {
   loadSentry: (projects: readonly DevProject[], credentials: readonly PersonaCredential[], force?: boolean) => Promise<void>;
   /** All goals across all projects in one batched IPC, grouped by project. */
   loadGoals: () => Promise<void>;
+  /** All in-flight dev-runner tasks in one batched IPC, grouped by project. */
+  loadRunners: () => Promise<void>;
   /** 30d LLM spend for every wired project (bounded concurrency, throttled). */
   loadLlmSpend: (projects: readonly DevProject[], credentials: readonly PersonaCredential[], force?: boolean) => Promise<void>;
   /** Retry every family currently in a failed/stale state. */
@@ -123,6 +139,8 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
   sentryStatus: 'idle',
   goals: new Map(),
   goalsStatus: 'idle',
+  runners: new Map(),
+  runnersStatus: 'idle',
   llmSpend: new Map(),
   llmSpendStatus: 'idle',
 
@@ -195,6 +213,27 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
     }
   },
 
+  loadRunners: async () => {
+    set({ runnersStatus: 'loading' });
+    try {
+      // One unfiltered list call, filtered + grouped here: `dev_tools_list_tasks`
+      // takes a single status, and the canvas needs two (running AND queued).
+      // Asking twice would double the IPC to save a client-side filter.
+      const rows = await listTasks();
+      const m = new Map<string, DevTask[]>();
+      for (const task of rows) {
+        if (!task.project_id || !LIVE_TASK_STATUSES.has(task.status)) continue;
+        const list = m.get(task.project_id);
+        if (list) list.push(task);
+        else m.set(task.project_id, [task]);
+      }
+      set({ runners: m, runnersStatus: 'loaded' });
+    } catch (err) {
+      silentCatch('mastermind sceneStore.loadRunners')(err);
+      set((s) => ({ runnersStatus: failStatus(s.runnersStatus) }));
+    }
+  },
+
   loadLlmSpend: async (projects, credentials, force = false) => {
     const now = Date.now();
     if (!force && now - lastLlmSpendAt < LLM_SPEND_MIN_INTERVAL && get().llmSpendStatus === 'loaded') return;
@@ -217,6 +256,7 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
     if (s.metaStatus === 'failed' || s.metaStatus === 'stale') void s.loadMeta();
     if (s.scansStatus === 'failed' || s.scansStatus === 'stale') void s.loadScans();
     if (s.goalsStatus === 'failed' || s.goalsStatus === 'stale') void s.loadGoals();
+    if (s.runnersStatus === 'failed' || s.runnersStatus === 'stale') void s.loadRunners();
     if ((s.sentryStatus === 'failed' || s.sentryStatus === 'stale') && lastSentryInputs) {
       void s.loadSentry(lastSentryInputs.projects, lastSentryInputs.credentials, true);
     }

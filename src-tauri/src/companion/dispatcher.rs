@@ -293,6 +293,10 @@ const ALLOWED_ACTIONS: &[&str] = &[
     // Phase G — project registry + background jobs.
     "register_project",
     "enqueue_dev_job",
+    // Dev Runner (Dev Tools → Run Desk) — the second execution lane. Same
+    // grammar as the fleet ops: approval-gated, containment via the registered
+    // dev project, never on the autoapprove allowlist.
+    "enqueue_runner_task",
     // Open a registered dev project's configured test-environment URL in the
     // browser. Goes through approval (not auto-fire) so the user confirms the
     // launch; execute_open_test_env resolves the project and returns an
@@ -427,12 +431,19 @@ const READ_OPS: &[&str] = &[
     // scene snapshot; neither mutates anything.
     "describe_canvas_project",
     "describe_canvas_freshness",
+    // Dev Runner (Dev Tools → Run Desk). The runner queue was invisible to
+    // Athena — she could dispatch Fleet sessions all day and had no idea what
+    // was already queued or running on the OTHER execution lane, which is how
+    // duplicate work gets started. Read-only; the enqueue side is
+    // approval-gated (`enqueue_runner_task`).
+    "list_runner_tasks",
 ];
 
 /// Read ops whose `query` param is optional (they answer for everything when
 /// it is empty). Everything else is rejected without one, because a lookup
 /// with no target is a model that forgot what it was asking about.
-const READ_OPS_QUERY_OPTIONAL: &[&str] = &["list_teams", "describe_canvas_freshness"];
+const READ_OPS_QUERY_OPTIONAL: &[&str] =
+    &["list_teams", "describe_canvas_freshness", "list_runner_tasks"];
 
 /// Longest accepted lookup string. A name or a UUID; anything longer is a
 /// model pasting prose into the param.
@@ -484,6 +495,12 @@ const ALLOWED_ROUTES: &[&str] = &[
     "schedules",
     "settings",
     "monitor",
+    // `mastermind` is a pseudo-route like `monitor` — it resolves to Teams →
+    // Mastermind. It earns a route of its own because Athena can already
+    // read, annotate, compose on and steer that canvas, and had no way to
+    // simply take you there; and because arriving is what makes the canvas
+    // publish its scene, which is the snapshot every one of those ops reads.
+    "mastermind",
 ];
 
 /// Topics Athena may trigger via `start_guided_walkthrough`. Mirrors the
@@ -1936,6 +1953,9 @@ pub fn dispatch_with_sys(
                                     "cwd": r.cwd,
                                     "objective": r.objective,
                                     "skill": r.skill,
+                                    "label": r.label,
+                                    "model": r.model,
+                                    "effort": r.effort,
                                 })
                             })
                             .collect();
@@ -2328,6 +2348,7 @@ pub fn dispatch_with_sys(
                             "describe_canvas_freshness" => {
                                 crate::companion::canvas::describe_canvas_freshness(db, query)
                             }
+                            "list_runner_tasks" => list_runner_tasks(db, query),
                             _ => list_teams(db, query),
                         },
                         None => format!(
@@ -2916,6 +2937,52 @@ fn describe_skill(sys_db: Option<&crate::db::DbPool>, query: &str) -> String {
 /// deliberately left out of the always-on prompt index, so this op is the
 /// only path to one. An empty query lists everything (bounded); a
 /// non-empty one filters by name substring.
+/// `list_runner_tasks` — what is already on the Dev Runner queue.
+///
+/// The runner is the OTHER execution lane. Athena could dispatch Fleet
+/// sessions all day while a task for the same work sat queued on the Run Desk,
+/// because she had no way to see it. `query` optionally filters by project
+/// name/id substring. Read-only, bounded, and it names the empty case rather
+/// than returning a blank body a model would read as an error.
+fn list_runner_tasks(sys_db: &crate::db::DbPool, query: &str) -> String {
+    let tasks = match crate::db::repos::dev_tools::list_tasks(sys_db, None, None) {
+        Ok(t) => t,
+        Err(e) => return format!("Run Desk unavailable: {e}"),
+    };
+    // Only the live half of the queue is decision-relevant — a completed task
+    // is history, and history is what the ledger is for.
+    let want = query.to_ascii_lowercase();
+    let live: Vec<_> = tasks
+        .iter()
+        .filter(|t| matches!(t.status.as_str(), "queued" | "running"))
+        .filter(|t| {
+            want.is_empty()
+                || t.title.to_ascii_lowercase().contains(&want)
+                || t.project_id
+                    .as_deref()
+                    .is_some_and(|p| p.to_ascii_lowercase().contains(&want))
+        })
+        .take(20)
+        .collect();
+    if live.is_empty() {
+        return "Dev Runner queue: nothing queued or running.".to_string();
+    }
+    let mut out = format!("Dev Runner queue — {} live task(s):\n", live.len());
+    for t in live {
+        out.push_str(&format!(
+            "- [{}] {} ({}%{})\n",
+            t.status,
+            t.title,
+            t.progress_pct,
+            t.project_id
+                .as_deref()
+                .map(|p| format!(", project {}", &p[..p.len().min(8)]))
+                .unwrap_or_default(),
+        ));
+    }
+    out
+}
+
 fn list_teams(sys_db: &crate::db::DbPool, query: &str) -> String {
     let Ok(conn) = sys_db.get() else {
         return "database unavailable".to_string();

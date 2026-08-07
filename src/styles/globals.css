@@ -1600,6 +1600,14 @@ body[data-drag-active="true"] * {
   border-color: rgba(56, 189, 248, 0.75);
   animation: fleet-attn-athena 1.6s ease-in-out infinite;
 }
+/* DONE — the task finished. Deliberately STILL (no pulse) and green: a
+   completed session is the one parked state that wants nothing from you, and
+   painting it amber alongside a wedged one is exactly the conflation the
+   parked-state classifier exists to end. */
+.fleet-attn-done {
+  border-color: rgba(52, 211, 153, 0.65);
+  box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.4), 0 0 14px -4px rgba(52, 211, 153, 0.45);
+}
 
 @keyframes athena-ring-lockon {
   from { opacity: 0; transform: scale(1.06); }

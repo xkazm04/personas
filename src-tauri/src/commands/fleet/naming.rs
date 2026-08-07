@@ -47,6 +47,9 @@ fn result_field(result_line: &str) -> Option<String> {
 /// (e.g. the model id after `--model`) for the task prompt.
 const VALUE_FLAGS: &[&str] = &[
     "--model",
+    // Fleet plans can pick a reasoning level per session; without this entry
+    // `medium` would be read as the task prompt and become the session title.
+    "--effort",
     "--session-id",
     "--mcp-config",
     "--append-system-prompt-file",

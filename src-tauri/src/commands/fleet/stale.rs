@@ -79,6 +79,29 @@ pub const NEVER_ATTACHED_SECS: i64 = 2 * 60;
 /// for the full 6-minute flat-log cutoff.
 pub const STALLED_AFTER_SECS: i64 = 2 * 60;
 
+/// Multiplier applied to [`STALLED_AFTER_SECS`] for Athena's own dev
+/// sessions (`athena-dev*`).
+///
+/// The frozen verdict reads "no bytes and no transcript growth" as hung.
+/// That inference holds for a conversational session; it is simply wrong for
+/// a dev run, whose normal working state is a **silent `cargo check`** that
+/// on this repo routinely runs 5-15 minutes with no PTY output and no
+/// transcript lines. At 2 min every such compile was reported frozen, which
+/// is how a healthy build came to wear a "safe to kill" label. 8× puts the
+/// verdict at 16 min — past any ordinary compile, still short of a real hang.
+pub const DEV_SESSION_STALL_MULTIPLIER: i64 = 8;
+
+/// True when this session is one of Athena's dev runs, by name
+/// (`athena-dev…` — the rename applied at dispatch in `execute_dev_improve`).
+fn is_dev_session(name: Option<&str>) -> bool {
+    name.is_some_and(|n| {
+        n.contains(&format!(
+            "{}-dev",
+            super::registry::ATHENA_SESSION_NAME_SENTINEL
+        ))
+    })
+}
+
 /// How often the ticker runs. 30s is a good balance between
 /// responsiveness and idle CPU.
 pub const TICK_INTERVAL_SECS: u64 = 30;
@@ -521,6 +544,18 @@ fn tick_once(app: &AppHandle) {
                 .unwrap_or(0)
                 .max(session.last_activity_ms);
 
+            // Athena's own dev sessions spend their normal working life in a
+            // silent multi-minute `cargo check`, which the frozen rules below
+            // would (and did) read as hung. They get a much longer fuse.
+            let (stalled_ms, stalled_secs) = if is_dev_session(session.name.as_deref()) {
+                (
+                    stalled_ms * DEV_SESSION_STALL_MULTIPLIER,
+                    stalled_secs * DEV_SESSION_STALL_MULTIPLIER,
+                )
+            } else {
+                (stalled_ms, stalled_secs)
+            };
+
             // Frozen-process fast path (before the generous flat-log cutoff):
             // total PTY silence while Running means hung, not thinking — flag
             // it at STALLED_AFTER_SECS with a verdict the operator can act on.
@@ -567,6 +602,8 @@ fn tick_once(app: &AppHandle) {
                 Some(FleetSessionState::Running) => {
                     session.state = FleetSessionState::Running;
                     session.state_reason = Some("Transcript growing — session is active".into());
+                    // Back at work — whatever it was parked on no longer holds.
+                    session.stale_kind = None;
                     revived.push(session.id.clone());
                 }
                 // Corroboration veto: the transcript is flat, but the screen
@@ -597,6 +634,10 @@ fn tick_once(app: &AppHandle) {
         // not leave a clock behind for a future id to inherit.
         silent.retain(|k, _| map.contains_key(k));
     }
+
+    // Pass D — read the transcript for every parked session and turn the one
+    // amber "stale" bucket into a typed verdict. Runs outside every lock.
+    classify_pass(app, &grew_ids);
 
     // Emit state changes outside the lock.
     for sid in revived {
@@ -861,6 +902,113 @@ const LIMIT_RETRY_MAX: u32 = 24;
 /// arms the doze guard so the process stays alive between attempts; after
 /// [`LIMIT_RETRY_MAX`] attempts the session is left to doze (a multi-hour cap
 /// is the operator's call — the next app-side wake still finds it).
+/// Read every PARKED session's transcript tail and give it a typed verdict.
+///
+/// "Stale" conflated three situations the operator responds to completely
+/// differently — the task is DONE, the session is BLOCKED on a question or a
+/// permission prompt, or it is genuinely HUNG mid-tool — and the ticker never
+/// looked at the one artifact that knows which: the transcript. This pass
+/// closes that, and maps each verdict onto the EXISTING lifecycle rather than
+/// inventing a state:
+///
+/// - `Done`   → `mark_finished` (the same path the `FLEET:DONE` cue uses), and
+///              the completion is handed to Athena's fleet bridge so a finished
+///              run finally reaches the chat instead of dying in the grid.
+/// - `Blocked`→ `AwaitingInput` with a typed reason.
+/// - `Hung`   → left `Stale`; only the typed kind is stamped, because the
+///              existing frozen reasons already say it well.
+fn classify_pass(app: &AppHandle, grew_ids: &HashSet<String>) {
+    use super::classify::{classify_parked, verdict_token, BlockedKind, ParkedVerdict};
+
+    // Candidates: parked states only. A Running session is not parked, and a
+    // Finished/Exited one has nothing left to decide.
+    let candidates: Vec<(String, Option<String>)> = {
+        let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.values()
+            .filter(|s| {
+                matches!(
+                    s.state,
+                    FleetSessionState::Stale
+                        | FleetSessionState::AwaitingInput
+                        | FleetSessionState::Idle
+                )
+            })
+            .map(|s| (s.id.clone(), s.claude_session_id.clone()))
+            .collect()
+    };
+
+    for (sid, csid) in candidates {
+        let Some(csid) = csid else { continue };
+        let Some(tail) = super::transcript_read::tail_lines(&csid) else {
+            continue;
+        };
+        let screen = registry()
+            .render_screen_for(&sid)
+            .map(|(_, lines)| lines.join("\n"));
+        let verdict = classify_parked(&tail, screen.as_deref(), grew_ids.contains(&sid));
+        if verdict == ParkedVerdict::Unknown {
+            continue;
+        }
+        let changed = registry().set_stale_kind(&sid, verdict_token(&verdict).map(str::to_string));
+
+        match &verdict {
+            ParkedVerdict::Done { summary } => {
+                let summary = if summary.is_empty() {
+                    "detected complete".to_string()
+                } else {
+                    summary.clone()
+                };
+                if let Some(prev) = registry().mark_finished(&sid, &summary) {
+                    super::pty::emit_session_state(
+                        app,
+                        &sid,
+                        Some(prev),
+                        "finished",
+                        Some(format!("Task complete: {summary}")),
+                    );
+                    super::debug_log::athena(
+                        &sid,
+                        "finished (classified)",
+                        &format!("transcript tail reads as done — {summary}"),
+                    );
+                    crate::commands::companion::fleet_bridge::notify_completion(
+                        app, &sid, &summary,
+                    );
+                }
+            }
+            ParkedVerdict::Blocked(kind) => {
+                let reason = match kind {
+                    BlockedKind::Question => {
+                        "Waiting on your answer — the session asked a question."
+                    }
+                    BlockedKind::Permission => {
+                        "Waiting on you — a permission or login prompt is on screen."
+                    }
+                };
+                if let Some(prev) = registry().escalate_to_awaiting(&sid, reason) {
+                    super::pty::emit_session_state(
+                        app,
+                        &sid,
+                        Some(prev),
+                        "awaiting_input",
+                        Some(reason.to_string()),
+                    );
+                } else if changed {
+                    super::pty::emit_registry_changed(app, "updated", &sid);
+                }
+            }
+            // Hung keeps whatever frozen reason the time rules already wrote —
+            // they describe it accurately. Only the typed kind is new.
+            ParkedVerdict::Hung(_) => {
+                if changed {
+                    super::pty::emit_registry_changed(app, "updated", &sid);
+                }
+            }
+            ParkedVerdict::Unknown => {}
+        }
+    }
+}
+
 fn limit_retry_pass(app: &AppHandle, now: i64) {
     let candidates: Vec<(String, bool)> = {
         let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
@@ -1231,6 +1379,39 @@ mod tests {
     const CUTOFF: i64 = 5 * 60 * 1000;
     const FRESH: i64 = NOW - 60_000; // 1 min ago
     const OLD: i64 = NOW - 6 * 60_000; // 6 min ago
+
+    #[test]
+    fn dev_sessions_get_a_much_longer_frozen_fuse() {
+        assert!(is_dev_session(Some("athena-dev")));
+        assert!(is_dev_session(Some("athena-dev · personas")));
+        assert!(!is_dev_session(Some("athena · personas")));
+        assert!(!is_dev_session(None));
+
+        // A dev run silent for 10 minutes is a `cargo check`, not a hang: the
+        // ordinary 2-min fuse fires, the dev fuse does not.
+        let stalled_ms = STALLED_AFTER_SECS * 1000;
+        let silent_10min = NOW - 10 * 60_000;
+        assert!(
+            is_frozen_mid_run(
+                FleetSessionState::Running,
+                silent_10min,
+                silent_10min,
+                NOW,
+                stalled_ms
+            ),
+            "ordinary session at 10 min silence reads as frozen"
+        );
+        assert!(
+            !is_frozen_mid_run(
+                FleetSessionState::Running,
+                silent_10min,
+                silent_10min,
+                NOW,
+                stalled_ms * DEV_SESSION_STALL_MULTIPLIER
+            ),
+            "a dev session mid-compile must NOT be labelled frozen"
+        );
+    }
 
     #[test]
     fn growth_revives_stale_and_idle_to_running() {

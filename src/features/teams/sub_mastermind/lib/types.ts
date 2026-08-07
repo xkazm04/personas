@@ -29,6 +29,17 @@ export interface FleetNode {
   state: string;
 }
 
+/** One in-flight dev-runner task docked to a project island. Reduced from
+ *  `DevTask` to just what the canvas paints — the Run Desk owns the full row. */
+export interface RunnerNode {
+  id: string;
+  title: string;
+  /** `running` | `queued` (the scene store filters out finished statuses). */
+  status: string;
+  /** 0–100. Meaningful only while `running`; a queued task has not started. */
+  progress: number;
+}
+
 export interface DimNode {
   key: DimKey;
   label: string;
@@ -84,6 +95,10 @@ export interface Island {
   /** Names of personas with an execution in progress for this project's team
    *  (page attaches them — same persona→team→project join the Monitor uses). */
   personasRunning: string[];
+  /** In-flight dev-runner tasks on this project (page attaches them from the
+   *  scene store's `runners` family). The third live-process lane: engine work
+   *  with no terminal and no persona attached. */
+  runners: RunnerNode[];
   /** Live "needs you" marker — true when a fleet session on this project is
    *  awaiting input or has gone stale (page attaches it from the resolved
    *  fleet). Rendered at every zoom band on the counter-scaled banner. */
@@ -174,6 +189,8 @@ export interface VariantProps {
   onDimOpen: (slug: string, node: DimNode, e: React.MouseEvent) => void;
   /** In-progress-personas badge clicked — open the persona name list. */
   onPersonasOpen: (slug: string, e: React.MouseEvent) => void;
+  /** Mid-band runner face clicked — open the island's dev-runner task list. */
+  onRunnersOpen: (slug: string, e: React.MouseEvent) => void;
   /** Collapsed category cell clicked at far/mid zoom — open the list of the
    *  dimensions it rolled up, each still routable to its own action. */
   onCategoryOpen: (slug: string, category: CategoryNode, e: React.MouseEvent) => void;
