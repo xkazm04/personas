@@ -2103,7 +2103,10 @@ async fn maybe_run_fix_loop(
     let attempt = prior_input
         .as_deref()
         .and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok())
-        .and_then(|v| v.get("_fix_attempt").and_then(serde_json::Value::as_u64))
+        .and_then(|v| {
+            v.get(fix_loop::FIX_ATTEMPT_KEY)
+                .and_then(serde_json::Value::as_u64)
+        })
         .unwrap_or(0) as u32;
 
     let failures = vec![first_critical_failure
@@ -2119,9 +2122,8 @@ async fn maybe_run_fix_loop(
     };
 
     match fix_loop::decide(&config, &failures, attempt, tripped) {
-        FixDecision::ReEnter { fix_prompt, attempt } => {
-            let input =
-                fix_loop::build_reentry_input(prior_input.as_deref(), attempt, &fix_prompt);
+        FixDecision::ReEnter { fix, attempt } => {
+            let input = fix_loop::build_reentry_input(prior_input.as_deref(), attempt, &fix);
             let use_case_id = prior.as_ref().and_then(|e| e.use_case_id.clone());
             tracing::info!(
                 execution_id = %exec_id,

@@ -30,6 +30,7 @@ in order. Grep for the section header strings (each `prompt.push_str("##
 |---|---|---|
 | Header (`# Persona: <name>`) | `persona.name` (variable-substituted) | always |
 | Execution mode directive | `EXECUTION_MODE_DIRECTIVE` or `DELIBERATE_MODE_DIRECTIVE` | `persona.execution_discipline` |
+| Correction Required | `fix_loop::FIX_INSTRUCTION_FRAMING` (trusted) + `input_data._fix_failures` (boundary-wrapped) — see `render_correction_required` | fix-loop re-entry only |
 | Triggering event | `input_data._event` | present only on event-driven executions |
 | Description | `persona.description` (variable-substituted) | non-empty |
 | Identity / Instructions | `persona.structured_prompt` OR `persona.system_prompt` | present |
@@ -52,6 +53,16 @@ in order. Grep for the section header strings (each `prompt.push_str("##
   `prompt.push_str(&some_user_value)` without `sanitize_runtime_variable`,
   you've opened a hole. Prefer `wrap_runtime_xml_boundary(tag, value)`
   (which sanitises internally) over raw concatenation.
+
+* **Nothing that arrives in `input_data` is rendered as instruction.**
+  `## Correction Required` is the section that most looks like an
+  exception and is not: its framing is the compile-time constant
+  `fix_loop::FIX_INSTRUCTION_FRAMING`, emitted from the assembler, while
+  the quality-check failures — which quote the model's own previous
+  output, and so can be attacker-influenced — go inside a nonce-tagged
+  boundary like `## Input Data`. If you need a new section that carries
+  runtime text upward into trusted structure, split it the same way at
+  construction rather than promoting a joined string.
 
 * **XML boundary tags use a per-execution nonce.** A fresh nonce from
   `generate_runtime_nonce` is attached to every boundary tag so an
