@@ -8,6 +8,10 @@
 //!   [`RemoteJobExecutor`] seam by running the instruction as a REAL Athena
 //!   turn, with her own ops, her own approval rows and her own autopilot rules.
 //!   Nothing is stripped from her for being remote; see "Why no deny-list".
+//!   The turn is `suppress_chat`, so it leaves the visible conversation alone —
+//!   and would leave no trace at all, which is why every terminal path also
+//!   writes ONE closing `System` episode (see [`runner_note`]). Without it the
+//!   machine that did the work cannot answer "what have you been doing?".
 //! - **Outbound** — [`install`] also registers a listener on the wire's own
 //!   `network:remote-job-updated` event so that what the OTHER machine did
 //!   lands in this Athena's memory as episodes. Without it she can watch a job
@@ -78,6 +82,17 @@ const MAX_SUMMARY_CHARS: usize = 4_000;
 /// device writes for it. See [`append_outbound_episode`] for the volume policy.
 const EPISODE_NOTE_CAP: usize = 5;
 const EPISODE_NOTE_CHARS: usize = 200;
+
+/// How much of the asking device's instruction, and of the outcome text, rides
+/// in the RUNNER's closing note. Both are deliberately tighter than
+/// [`MAX_SUMMARY_CHARS`]: the wire summary is read once by a person, this note
+/// is recalled on ordinary turns for as long as the recording lives.
+const RUNNER_INSTRUCTION_CHARS: usize = 600;
+const RUNNER_OUTCOME_CHARS: usize = 600;
+
+/// Why a swept job failed. One constant so the DB row and the closing note
+/// cannot come to disagree about what happened.
+const SWEEP_REASON: &str = "This device restarted before the assistant finished. Send it again.";
 
 // ── Inbound: an arriving instruction becomes a real turn ────────────────
 
@@ -164,6 +179,69 @@ async fn run_assignment(app: AppHandle, job: RemoteJobAssignment, handle: Remote
         }
     };
     emit_turn_event(&app, &job, phase, &summary);
+
+    // The ONE closing note this device owes itself for the job. It sits after
+    // the single `(phase, summary)` join point ON PURPOSE: success, turn error,
+    // panic and timeout all funnel through that match, so there is no terminal
+    // path that can skip the note and no path that can write it twice. The
+    // opening progress note above writes nothing — a turn's memory is what it
+    // did, not that it started.
+    append_runner_episode(
+        &app,
+        &job.job_id,
+        &job.origin_display_name,
+        &job.instruction,
+        phase == "completed",
+        &summary,
+    )
+    .await;
+}
+
+/// The RUNNER's closing memory note for one inbound job.
+///
+/// The turn itself ran with `suppress_chat`, which is what keeps a request that
+/// came over a different keyboard out of the visible conversation. That is
+/// right for chat and wrong for memory: without this note the machine that did
+/// the work cannot answer "what have you been doing?". So exactly one `System`
+/// episode per job, on the terminal transition only, carrying the three facts
+/// that survive being an hour old — who asked, what they asked, how it ended.
+fn runner_note(origin: &str, instruction: &str, completed: bool, outcome: &str) -> String {
+    let name = origin.trim();
+    let name = if name.is_empty() {
+        "A paired device"
+    } else {
+        name
+    };
+    let verdict = if completed {
+        "finished it"
+    } else {
+        "could not finish it"
+    };
+    let outcome = cap(outcome.trim().to_string(), RUNNER_OUTCOME_CHARS);
+    let outcome = if outcome.is_empty() {
+        String::new()
+    } else {
+        format!(" {outcome}")
+    };
+    format!(
+        "[device: {name}] \"{name}\" asked this device to: {instruction}\n\nI {verdict}.{outcome}",
+        instruction = cap(instruction.trim().to_string(), RUNNER_INSTRUCTION_CHARS),
+    )
+}
+
+/// Write [`runner_note`] as a `System` episode on the default recording — the
+/// same session id every other companion-side system note goes to, so it is
+/// recalled by the ordinary retrieval path with no special casing.
+async fn append_runner_episode(
+    app: &AppHandle,
+    job_id: &str,
+    origin: &str,
+    instruction: &str,
+    completed: bool,
+    outcome: &str,
+) {
+    let content = runner_note(origin, instruction, completed, outcome);
+    write_system_episode(app, job_id, &content).await;
 }
 
 /// One Athena turn, driven exactly like a user-initiated one except for its
@@ -280,6 +358,14 @@ async fn append_outbound_episode(app: &AppHandle, job: &RemoteJob) {
         )
     };
 
+    write_system_episode(app, &job.id, &content).await;
+}
+
+/// Append one `System` episode on the default recording, embedded when the
+/// build and the user's setup allow. Shared by both directions so the outbound
+/// listener and the inbound runner cannot drift on session id, role or the
+/// ml-vs-lite seam.
+async fn write_system_episode(app: &AppHandle, job_id: &str, content: &str) {
     let state = app.state::<Arc<AppState>>();
     let pool = &state.user_db;
     let written = {
@@ -292,25 +378,22 @@ async fn append_outbound_episode(app: &AppHandle, job: &RemoteJob) {
                         emb,
                         DEFAULT_SESSION_ID,
                         EpisodeRole::System,
-                        &content,
+                        content,
                     )
                     .await
                 }
-                None => episodic::append_episode(
-                    pool,
-                    DEFAULT_SESSION_ID,
-                    EpisodeRole::System,
-                    &content,
-                ),
+                None => {
+                    episodic::append_episode(pool, DEFAULT_SESSION_ID, EpisodeRole::System, content)
+                }
             }
         }
         #[cfg(not(feature = "ml"))]
         {
-            episodic::append_episode(pool, DEFAULT_SESSION_ID, EpisodeRole::System, &content)
+            episodic::append_episode(pool, DEFAULT_SESSION_ID, EpisodeRole::System, content)
         }
     };
     if let Err(e) = written {
-        tracing::warn!(job_id = %job.id, error = %e, "remote job: episode write failed");
+        tracing::warn!(job_id = %job_id, error = %e, "remote job: episode write failed");
     }
 }
 
@@ -329,21 +412,20 @@ fn episode_worthy(job: &RemoteJob) -> bool {
 /// Nothing is executing for them — no task survived the process — so leaving
 /// them `Running` would strand the row here AND on the device that asked. The
 /// terminal row is enough: the originator's reconnect sends `RemoteJobResume`,
-/// and `replay_for_peer` answers a terminal job with its result. Returns how
-/// many were swept.
-pub fn sweep_interrupted(db: &crate::db::DbPool) -> Result<usize, AppError> {
-    let mut swept = 0;
+/// and `replay_for_peer` answers a terminal job with its result.
+///
+/// Returns the jobs it actually transitioned — not a count — because each one
+/// still owes this device a closing memory note, and `repo::finish` returning
+/// `true` is the only exactly-once signal there is. A job someone else already
+/// finished is not in the list, so it is never noted twice.
+pub fn sweep_interrupted(db: &crate::db::DbPool) -> Result<Vec<RemoteJob>, AppError> {
+    let mut swept = Vec::new();
     for job in repo::list(db, Some(RemoteJobDirection::Inbound), 500)? {
         if job.status.is_terminal() {
             continue;
         }
-        if repo::finish(
-            db,
-            &job.id,
-            RemoteJobStatus::Failed,
-            "This device restarted before the assistant finished. Send it again.",
-        )? {
-            swept += 1;
+        if repo::finish(db, &job.id, RemoteJobStatus::Failed, SWEEP_REASON)? {
+            swept.push(job);
         }
     }
     Ok(swept)
@@ -351,10 +433,29 @@ pub fn sweep_interrupted(db: &crate::db::DbPool) -> Result<usize, AppError> {
 
 /// Install both ends. Called once at startup, after the network service exists.
 pub async fn install(app: &AppHandle, network: &Arc<crate::engine::p2p::NetworkService>) {
-    let state = app.state::<Arc<AppState>>();
-    match sweep_interrupted(&state.db) {
-        Ok(0) => {}
-        Ok(n) => tracing::info!(count = n, "remote jobs: failed inbound jobs interrupted by a restart"),
+    match sweep_interrupted(&app.state::<Arc<AppState>>().db) {
+        Ok(swept) if swept.is_empty() => {}
+        Ok(swept) => {
+            tracing::info!(
+                count = swept.len(),
+                "remote jobs: failed inbound jobs interrupted by a restart"
+            );
+            // The fourth terminal path, and the one she would otherwise have no
+            // account of at all: the job died with the process, so nothing in
+            // `run_assignment` ever reached its join point. One note each, same
+            // shape as the other three.
+            for job in swept {
+                append_runner_episode(
+                    app,
+                    &job.id,
+                    &job.peer_display_name,
+                    &job.instruction,
+                    false,
+                    SWEEP_REASON,
+                )
+                .await;
+            }
+        }
         Err(e) => tracing::warn!(error = %e, "remote jobs: interrupted-job sweep failed"),
     }
 
@@ -442,11 +543,13 @@ mod tests {
         }
     }
 
-    /// Inbound jobs are OUR errands for someone else. Their result already
-    /// reaches the asker over the wire; writing it into this device's memory
-    /// would put the other person's conversation in Athena's head.
+    /// The OUTBOUND listener must never fire for an inbound job. Inbound jobs
+    /// do earn a memory — `runner_note`, written once from `run_assignment`'s
+    /// terminal join point — but it is a different note in a different voice
+    /// ("someone asked me", not "I asked someone"), and letting both paths
+    /// write would double every remote turn in the recall window.
     #[test]
-    fn inbound_jobs_never_write_episodes_here() {
+    fn inbound_jobs_never_go_through_the_outbound_listener() {
         for status in [
             RemoteJobStatus::Running,
             RemoteJobStatus::Completed,
@@ -464,6 +567,97 @@ mod tests {
         assert!(!session::is_remote_device_source("Fleet"));
         // An unnamed device still produces a legible provenance tag.
         assert!(session::is_remote_device_source(&session::remote_device_source("  ")));
+    }
+
+    // ── The runner's closing note ───────────────────────────────────────
+
+    /// The three facts that must survive being an hour old.
+    #[test]
+    fn the_closing_note_says_who_asked_what_they_asked_and_how_it_ended() {
+        let note = runner_note("Studio Mac", "run the nightly export", true, "Exported 12 rows.");
+        assert!(note.contains("Studio Mac"), "name the asking device: {note}");
+        assert!(note.contains("run the nightly export"), "carry the ask: {note}");
+        assert!(note.contains("finished it"), "state the ending: {note}");
+        assert!(note.contains("Exported 12 rows."), "carry the outcome: {note}");
+        // Same `[device: <name>]` prefix the outbound note uses, so one recall
+        // query finds both halves of a cross-device conversation.
+        assert!(note.starts_with("[device: Studio Mac]"), "{note}");
+    }
+
+    /// Every terminal path `run_assignment` can take — success, empty success,
+    /// turn error, panic, cancel, timeout — writes a note, and the failures say
+    /// so. A job that failed is the one she most needs to remember.
+    #[test]
+    fn every_terminal_outcome_earns_a_note_and_failures_read_as_failures() {
+        // Exactly the values `run_assignment`'s match arms can produce.
+        let completed: Vec<String> = vec![
+            "Done, the report is on your desktop.".into(),
+            "Done, though she finished without a written summary.".into(),
+        ];
+        let failed: Vec<String> = vec![
+            "The assistant could not finish that: connector timed out".into(),
+            "The assistant crashed while working on that.".into(),
+            "The assistant's turn was cancelled before it finished.".into(),
+            "The assistant did not finish within 27 minutes and was stopped.".into(),
+            SWEEP_REASON.into(),
+        ];
+        for outcome in &completed {
+            let note = runner_note("Laptop", "do the thing", true, outcome);
+            assert!(note.contains("I finished it."), "{note}");
+            assert!(note.contains(outcome.as_str()), "{note}");
+        }
+        for outcome in &failed {
+            let note = runner_note("Laptop", "do the thing", false, outcome);
+            assert!(note.contains("I could not finish it."), "{note}");
+            assert!(
+                note.contains(outcome.as_str()),
+                "the reason must be recoverable from memory: {note}"
+            );
+        }
+    }
+
+    /// A remote turn can carry a novel-length instruction or summary; the note
+    /// is recalled on ordinary turns forever, so both ends are bounded.
+    #[test]
+    fn the_closing_note_is_bounded_at_both_ends() {
+        let long = "x".repeat(5_000);
+        let note = runner_note("Laptop", &long, false, &long);
+        assert!(
+            note.chars().count() < RUNNER_INSTRUCTION_CHARS + RUNNER_OUTCOME_CHARS + 200,
+            "note grew to {} chars",
+            note.chars().count()
+        );
+        // An unnamed device still produces a legible note rather than `""`.
+        let anon = runner_note("   ", "do it", true, "done");
+        assert!(anon.contains("A paired device"), "{anon}");
+    }
+
+    /// The startup sweep is the fourth terminal path. It must report each job
+    /// it transitioned exactly once — that list is what `install` turns into
+    /// notes, so a job reported twice is a memory written twice, and a job
+    /// reported zero times is a restart she has no account of.
+    #[test]
+    fn the_sweep_reports_each_interrupted_job_exactly_once() {
+        let db = crate::db::init_test_db().unwrap();
+        for (id, name) in [("j1", "Laptop"), ("j2", "Studio Mac")] {
+            repo::create_inbound(&db, id, &format!("peer-{id}"), name, "instruction", "go").unwrap();
+        }
+        // A job that already ended must not be swept again.
+        repo::create_inbound(&db, "j3", "peer-j3", "Laptop", "instruction", "go").unwrap();
+        repo::finish(&db, "j3", RemoteJobStatus::Completed, "already done").unwrap();
+
+        let first = sweep_interrupted(&db).unwrap();
+        let mut ids: Vec<&str> = first.iter().map(|j| j.id.as_str()).collect();
+        ids.sort_unstable();
+        assert_eq!(ids, vec!["j1", "j2"], "only the unfinished inbound jobs");
+        // Each carries what the note needs.
+        assert!(first.iter().all(|j| !j.peer_display_name.is_empty() && !j.instruction.is_empty()));
+
+        // Idempotent: a second sweep (or a second `install`) writes nothing.
+        assert!(
+            sweep_interrupted(&db).unwrap().is_empty(),
+            "a swept job must never be reported — and so never noted — twice"
+        );
     }
 
     #[test]

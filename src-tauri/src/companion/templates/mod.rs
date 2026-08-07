@@ -384,4 +384,17 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// mode ON it fires to any paired device. She has no paired-device digest in
 /// her prompt, so the names come from Michal or not at all, and omitting
 /// `device` means the home machine.
-pub const CONSTITUTION_VERSION: u32 = 50;
+/// v51 (device roster) gives her the paired-device list v50 explicitly said she
+/// did not have: a `# Paired devices` prompt block naming each of Michal's other
+/// installs, which one is home, and whether it is reachable this turn. The
+/// doctrine had to move with it or the two would contradict each other — v50
+/// told her the names came from Michal or not at all, so the block alone would
+/// have arrived beside an instruction not to trust it. What needed teaching
+/// rather than listing: she may now CHOOSE the machine instead of echoing one
+/// (default to home, deviate only when the work plainly belongs elsewhere); a
+/// device marked unreachable is asleep, so the honest move is to say so and
+/// offer home rather than send into a void; and an ABSENT block means nothing
+/// is paired, which is a fact to report, not a gap to fill with a guess. The
+/// block is absent in a lite build too, where the transport does not exist —
+/// same shape, same reading, no special case.
+pub const CONSTITUTION_VERSION: u32 = 51;
