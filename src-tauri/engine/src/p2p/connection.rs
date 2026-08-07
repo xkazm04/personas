@@ -14,6 +14,7 @@ use super::device_pairing::DevicePairing;
 use super::manifest_sync::ManifestSync;
 use super::messaging::MessageRouter;
 use super::protocol::{self, Message, PROTOCOL_VERSION};
+use super::remote_jobs::RemoteJobs;
 use super::transport::QuicTransport;
 use super::types::{
     ConnectionHealth, ConnectionMetricsSnapshot, ConnectionState, DisconnectReason,
@@ -211,6 +212,7 @@ impl ConnectionManager {
         manifest_sync: Arc<ManifestSync>,
         messages: Arc<MessageRouter>,
         pairing: Arc<DevicePairing>,
+        remote_jobs: Arc<RemoteJobs>,
     ) -> Result<(), AppError> {
         // Don't connect to ourselves
         if peer_id == self.local_peer_id {
@@ -249,7 +251,7 @@ impl ConnectionManager {
             }
         };
 
-        self.connect_to_peer_inner(peer_id, manifest_sync, messages, pairing)
+        self.connect_to_peer_inner(peer_id, manifest_sync, messages, pairing, remote_jobs)
             .await
     }
 
@@ -344,6 +346,7 @@ impl ConnectionManager {
         manifest_sync: Arc<ManifestSync>,
         messages: Arc<MessageRouter>,
         pairing: Arc<DevicePairing>,
+        remote_jobs: Arc<RemoteJobs>,
     ) -> Result<(), AppError> {
         self.metrics
             .connection_attempts
@@ -514,6 +517,7 @@ impl ConnectionManager {
             manifest_sync,
             messages,
             pairing,
+            remote_jobs,
         );
 
         Ok(())
@@ -528,6 +532,7 @@ impl ConnectionManager {
         manifest_sync: Arc<ManifestSync>,
         messages: Arc<MessageRouter>,
         pairing: Arc<DevicePairing>,
+        remote_jobs: Arc<RemoteJobs>,
     ) -> Result<(), AppError> {
         // Enforce max_peers limit for incoming connections
         if self.is_at_capacity().await {
@@ -712,6 +717,7 @@ impl ConnectionManager {
             manifest_sync,
             messages,
             pairing,
+            remote_jobs,
         );
 
         Ok(())
@@ -733,7 +739,20 @@ impl ConnectionManager {
         manifest_sync: Arc<ManifestSync>,
         messages: Arc<MessageRouter>,
         pairing: Arc<DevicePairing>,
+        remote_jobs: Arc<RemoteJobs>,
     ) {
+        // The link is up (again). Ask this peer to replay anything we missed for
+        // the jobs we asked it to run. Spawned separately from the accept loop so
+        // a slow or hostile peer cannot delay us starting to serve it — and it is
+        // a no-op unless the peer is paired and has unfinished work with us.
+        {
+            let remote_jobs = remote_jobs.clone();
+            let peer_id = peer_id.clone();
+            tokio::spawn(async move {
+                remote_jobs.resume_with_peer(&peer_id).await;
+            });
+        }
+
         tokio::spawn(async move {
             let mut rate_window_start = std::time::Instant::now();
             let mut rate_msg_count: u64 = 0;
@@ -778,6 +797,7 @@ impl ConnectionManager {
                 let manifest_sync = manifest_sync.clone();
                 let messages = messages.clone();
                 let pairing = pairing.clone();
+                let remote_jobs = remote_jobs.clone();
 
                 tokio::spawn(async move {
                     let mut send = tokio::io::BufWriter::new(send);
@@ -813,6 +833,7 @@ impl ConnectionManager {
                         &manifest_sync,
                         &messages,
                         &pairing,
+                        &remote_jobs,
                     )
                     .await
                     {
@@ -827,6 +848,7 @@ impl ConnectionManager {
     }
 
     /// Handle a single message received on an inbound stream.
+    #[allow(clippy::too_many_arguments)]
     async fn dispatch_inbound_message(
         msg: Message,
         send: &mut tokio::io::BufWriter<quinn::SendStream>,
@@ -834,8 +856,23 @@ impl ConnectionManager {
         manifest_sync: &ManifestSync,
         messages: &MessageRouter,
         pairing: &DevicePairing,
+        remote_jobs: &Arc<RemoteJobs>,
     ) -> Result<(), AppError> {
         match msg {
+            // Remote jobs are the one inbound family that is NOT open to every
+            // authenticated peer. `handle_message` owns that gate — it refuses
+            // anything from a peer with no `owned_devices` row before touching
+            // the database or the executor — and returns the frames to write
+            // back, so this arm stays pure plumbing.
+            job @ (Message::RemoteJobRequest { .. }
+            | Message::RemoteJobAck { .. }
+            | Message::RemoteJobProgress { .. }
+            | Message::RemoteJobResult { .. }
+            | Message::RemoteJobResume { .. }) => {
+                for reply in remote_jobs.handle_message(peer_id, job).await? {
+                    protocol::write_message(send, &reply).await?;
+                }
+            }
             Message::Ping => {
                 protocol::write_message(send, &Message::Pong).await?;
             }

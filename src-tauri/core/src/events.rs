@@ -246,6 +246,11 @@ event_names! {
     // decision. Sent as the whole list (not a delta) so a listener that missed
     // an earlier event still converges on the right state.
     DEVICE_PAIRING_REQUESTED   => "network:device-pairing-requested",
+    // Payload: the single `RemoteJob` row that just changed (created, acked,
+    // progressed, finished). Emitted on BOTH roles, so one listener drives the
+    // "I asked" and "I was asked" halves of the UI. Fired only on a genuine
+    // state change — a note redelivered after a reconnect is applied silently.
+    REMOTE_JOB_UPDATED         => "network:remote-job-updated",
 
     // Notification delivery
     NOTIFICATION_DELIVERY      => "notification-delivery",

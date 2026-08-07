@@ -116,6 +116,59 @@ pub enum Message {
         /// persist the key it actually paired with.
         public_key_b64: String,
     },
+    /// Ask a PAIRED device to run a natural-language instruction.
+    ///
+    /// Only a peer with a row in `owned_devices` may send this — see
+    /// [`super::remote_jobs::RemoteJobs::handle_message`], which is the single
+    /// place that trust is enforced on the job path. Completing the signed
+    /// handshake is emphatically NOT enough: any LAN peer can do that.
+    RemoteJobRequest {
+        /// Minted by the originating device; both sides key the exchange by it.
+        job_id: String,
+        /// Job discriminator. Only `"instruction"` exists today; the field ships
+        /// now, while v2 is unshipped, so a later typed-job lane (run this
+        /// recipe, sync this persona) needs no protocol break.
+        kind: String,
+        /// What the originating device's Athena was asked to have run.
+        instruction: String,
+        /// The originating device's display name, so the running device can say
+        /// whose request it is without a registry lookup.
+        origin_display_name: String,
+    },
+    /// Receipt for a [`Message::RemoteJobRequest`] — accepted, or refused with
+    /// the reason. Written back on the same stream, like `Ping`→`Pong`.
+    RemoteJobAck {
+        job_id: String,
+        accepted: bool,
+        /// Populated only when `accepted` is false.
+        reason: Option<String>,
+    },
+    /// A progress note from the device running the job.
+    ///
+    /// `seq` is 1-based, monotonic and gapless per job, minted by an atomic bump
+    /// on the running side. It is what makes redelivery after a reconnect
+    /// exactly-once: the originating device keys notes on `(job_id, seq)`.
+    RemoteJobProgress {
+        job_id: String,
+        seq: u32,
+        text: String,
+    },
+    /// The terminal outcome of a remote job.
+    RemoteJobResult {
+        job_id: String,
+        /// A `RemoteJobStatus` token: `completed` / `failed` / `cancelled`.
+        status: String,
+        summary: String,
+    },
+    /// Sent by the ORIGINATING device on reconnect: "for this job I hold every
+    /// note up to `last_seq`; send me the rest."
+    ///
+    /// The running device answers on the same stream with the missing
+    /// [`Message::RemoteJobProgress`] frames in order, followed by
+    /// [`Message::RemoteJobResult`] if the job has since finished. A job that
+    /// was running when the link dropped keeps running; only the delivery
+    /// resumes.
+    RemoteJobResume { job_id: String, last_seq: u32 },
     /// Keep-alive ping.
     Ping,
     /// Keep-alive pong response.
@@ -410,6 +463,116 @@ mod tests {
             } => assert_eq!(device_group_id, "group-B"),
             other => panic!("expected PairResponse, got {other:?}"),
         }
+    }
+
+    /// Every remote-job frame must survive the positional MessagePack encoding
+    /// with its fields intact and in the right slots. Positional encoding means
+    /// a field reordered in the enum silently reinterprets the payload, so this
+    /// asserts VALUES, not just that decoding succeeded.
+    #[test]
+    fn remote_job_messages_round_trip_every_field() {
+        fn round_trip(msg: &Message) -> Message {
+            let bytes = rmp_serde::to_vec(msg).expect("encode");
+            rmp_serde::from_slice::<Message>(&bytes).expect("decode")
+        }
+
+        match round_trip(&Message::RemoteJobRequest {
+            job_id: "job-1".into(),
+            kind: "instruction".into(),
+            instruction: "summarize today's inbox".into(),
+            origin_display_name: "Laptop".into(),
+        }) {
+            Message::RemoteJobRequest {
+                job_id,
+                kind,
+                instruction,
+                origin_display_name,
+            } => {
+                assert_eq!(job_id, "job-1");
+                assert_eq!(kind, "instruction");
+                assert_eq!(instruction, "summarize today's inbox");
+                assert_eq!(origin_display_name, "Laptop");
+            }
+            other => panic!("expected RemoteJobRequest, got {other:?}"),
+        }
+
+        // Both ack shapes: the acceptance carries no reason, the refusal does.
+        match round_trip(&Message::RemoteJobAck {
+            job_id: "job-1".into(),
+            accepted: true,
+            reason: None,
+        }) {
+            Message::RemoteJobAck {
+                accepted, reason, ..
+            } => {
+                assert!(accepted);
+                assert!(reason.is_none());
+            }
+            other => panic!("expected RemoteJobAck, got {other:?}"),
+        }
+        match round_trip(&Message::RemoteJobAck {
+            job_id: "job-1".into(),
+            accepted: false,
+            reason: Some("not a paired device".into()),
+        }) {
+            Message::RemoteJobAck {
+                accepted, reason, ..
+            } => {
+                assert!(!accepted);
+                assert_eq!(reason.as_deref(), Some("not a paired device"));
+            }
+            other => panic!("expected RemoteJobAck, got {other:?}"),
+        }
+
+        match round_trip(&Message::RemoteJobProgress {
+            job_id: "job-1".into(),
+            seq: 7,
+            text: "read 42 messages".into(),
+        }) {
+            Message::RemoteJobProgress { job_id, seq, text } => {
+                assert_eq!(job_id, "job-1");
+                assert_eq!(seq, 7);
+                assert_eq!(text, "read 42 messages");
+            }
+            other => panic!("expected RemoteJobProgress, got {other:?}"),
+        }
+
+        match round_trip(&Message::RemoteJobResult {
+            job_id: "job-1".into(),
+            status: "completed".into(),
+            summary: "three things need you".into(),
+        }) {
+            Message::RemoteJobResult {
+                job_id,
+                status,
+                summary,
+            } => {
+                assert_eq!(job_id, "job-1");
+                assert_eq!(status, "completed");
+                assert_eq!(summary, "three things need you");
+            }
+            other => panic!("expected RemoteJobResult, got {other:?}"),
+        }
+
+        match round_trip(&Message::RemoteJobResume {
+            job_id: "job-1".into(),
+            last_seq: 3,
+        }) {
+            Message::RemoteJobResume { job_id, last_seq } => {
+                assert_eq!(job_id, "job-1");
+                assert_eq!(last_seq, 3);
+            }
+            other => panic!("expected RemoteJobResume, got {other:?}"),
+        }
+    }
+
+    /// The remote-job frames ship as part of the unshipped v2, so no
+    /// compatibility shim exists or is wanted. Pin the version the shape is
+    /// bound to, so adding these variants later against a SHIPPED v2 has to be
+    /// a deliberate decision rather than an accident.
+    #[test]
+    fn remote_job_frames_are_part_of_protocol_v2() {
+        assert_eq!(PROTOCOL_VERSION, 2);
     }
 
     #[test]

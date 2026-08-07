@@ -50,6 +50,7 @@ pub async fn connect_to_peer(
             net.manifest_sync.clone(),
             net.messages.clone(),
             net.pairing.clone(),
+            net.remote_jobs.clone(),
         )
         .await;
     // Push updated snapshot for instant UI feedback
