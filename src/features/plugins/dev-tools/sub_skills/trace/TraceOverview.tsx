@@ -1,0 +1,135 @@
+// Level 1 — the "ember matrix": skills ranked by recency-weighted heat
+// (hottest first — the ranking IS the story), one ember dot per workspace
+// project. Fresh visual direction, deliberately not the Registry tab's
+// contribution field. Click a cell or row → the skill tree (Level 2).
+import { Flame, Info } from 'lucide-react';
+
+import { IllustratedEmptyState } from '@/features/shared/components/display/IllustratedEmptyState';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useTranslation } from '@/i18n/useTranslation';
+
+import { TraceEmberCell } from './TraceEmberCell';
+import { TraceGhosts } from './TraceGhosts';
+import type { HeatTier, TraceModel } from './traceTypes';
+
+export interface TraceOverviewProps {
+  model: TraceModel;
+  onSelectSkill: (skill: string) => void;
+  onOpenInfo: (skill: string) => void;
+}
+
+const TIER_SWATCH: Record<HeatTier, string> = {
+  hot: 'bg-primary opacity-90',
+  warm: 'bg-primary opacity-60',
+  cool: 'bg-primary opacity-30',
+  cold: 'border border-dashed border-foreground/40',
+  absent: 'bg-foreground/15',
+};
+
+export function TraceOverview({ model, onSelectSkill, onOpenInfo }: TraceOverviewProps) {
+  const { t, tx } = useTranslation();
+  const showGhost = model.loading && model.skills.length === 0;
+  const settledEmpty = !model.loading && model.skills.length === 0;
+
+  return (
+    <div className="flex flex-col min-h-0 h-full">
+      {/* chrome renders always (law 1) */}
+      <div className="overflow-auto flex-1 min-h-0 pr-2">
+        <table className="border-separate border-spacing-y-1">
+          <thead>
+            <tr>
+              <th className="sticky left-0 bg-background text-left typo-caption text-foreground font-normal pr-3">
+                {tx(t.plugins.dev_tools.trace_skills_count, { count: model.skills.length })}
+              </th>
+              {model.projects.map((p) => (
+                <th key={p.id} className="typo-caption text-foreground font-normal px-1 max-w-[72px]">
+                  <span className="block truncate" title={p.name}>{p.name}</span>
+                </th>
+              ))}
+              <th aria-hidden className="w-full" />
+            </tr>
+          </thead>
+          <tbody>
+            {showGhost ? (
+              <tr>
+                <td colSpan={model.projects.length + 2}>
+                  <TraceGhosts columns={model.projects.length} />
+                </td>
+              </tr>
+            ) : (
+              model.skills.map((s) => {
+                const Icon = s.visual?.icon ?? Flame;
+                return (
+                  <tr key={s.name} className="group">
+                    <td className="sticky left-0 bg-background pr-3">
+                      <div className="flex items-center gap-2 min-w-52">
+                        <button
+                          type="button"
+                          onClick={() => onSelectSkill(s.name)}
+                          className="flex items-center gap-2 min-w-0 hover:text-primary transition-colors"
+                        >
+                          <Icon size={14} style={s.visual ? { color: s.visual.color } : undefined} className="shrink-0" />
+                          <span className="typo-body truncate">{s.name}</span>
+                          <span className="typo-caption text-foreground shrink-0">
+                            v{s.libraryVersion ?? '1.0'}
+                          </span>
+                        </button>
+                        {/* row heat bar — the ranking, made visible */}
+                        <div className="flex-1 min-w-8 h-1 rounded-full bg-secondary overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-primary/70"
+                            style={{ width: `${Math.min(100, Math.round((s.totalHeat / Math.max(1, model.projects.length)) * 100))}%` }}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => onOpenInfo(s.name)}
+                          aria-label={t.plugins.dev_tools.trace_open_info}
+                          className="opacity-0 group-hover:opacity-100 text-foreground hover:text-foreground transition-opacity"
+                        >
+                          <Info size={13} />
+                        </button>
+                      </div>
+                    </td>
+                    {model.projects.map((p) => (
+                      <td key={p.id} className="text-center">
+                        <TraceEmberCell
+                          cell={model.cell(s.name, p.id)}
+                          accent={s.visual?.color ?? null}
+                          onClick={() => onSelectSkill(s.name)}
+                        />
+                      </td>
+                    ))}
+                    <td aria-hidden />
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+
+        {settledEmpty && (
+          <div className="py-10">
+            <IllustratedEmptyState
+              variant="heatmap"
+              heading={t.plugins.dev_tools.trace_empty_title}
+              description={t.plugins.dev_tools.trace_empty_hint}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* tier legend */}
+      <div className="flex items-center gap-4 pt-2 border-t border-border/50">
+        {(['hot', 'warm', 'cool', 'cold', 'absent'] as HeatTier[]).map((tier) => (
+          <Tooltip key={tier} content={t.plugins.dev_tools[`trace_tier_${tier}_hint` as const]}>
+            <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
+              <span className={`inline-block w-2.5 h-2.5 rounded-full ${TIER_SWATCH[tier]}`} />
+              {t.plugins.dev_tools[`trace_tier_${tier}` as const]}
+            </span>
+          </Tooltip>
+        ))}
+      </div>
+    </div>
+  );
+}
