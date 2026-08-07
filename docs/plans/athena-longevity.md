@@ -203,12 +203,46 @@ the new page's content *is* the cycle's artifacts:
 
 Building the UI first would repeat v1's flaw: a viewer over organs that don't move.
 
+## LS · Cross-device memory sync (project-abstract dimensions)
+
+**D1 resolved by the operator (2026-08-08): both devices are homes — deliberately.** Two paired
+machines sit side by side, each solving different Athena areas and governing different projects
+under Personas; the *user* is the same person on both. Split-brain is the architecture, not a
+hazard, and the obligation becomes: **project-scoped memory stays local; project-abstract memory
+syncs.**
+
+- **What syncs:** facts scoped `user`/`world` (the `scope` column exists today), user-scoped
+  procedurals, preference facts, the taxonomy registry. **What stays local:** episodes (the raw
+  stream), `project`-scope facts, doctrine, goals/backlog, cycle reports.
+- **Sync the distillate, never the stream.** The sleep cycle's compress phase is the producer: the
+  payload is the cycle's project-abstract delta — small, structured, provenance-tagged. Raw
+  transcripts never cross devices.
+- **Identity converges by derivation, not by merging prose.** L3 makes `identity.md`'s evolved
+  section a pure derivation of preference facts. Sync the facts; each device re-derives. The
+  identity fork disappears because its *inputs* converge — no prose diffing, ever.
+- **Conflict resolution IS the sleep cycle.** Incoming deltas land in a staging inbox
+  (`companion_sync_inbox`) tagged with origin device; the next cycle's reconcile phase treats them
+  as semi-trusted evidence — the same supersede/contradict/dedupe machinery, the same proposal
+  gate for touchy dimensions. Sync never force-writes long-term memory. Staging + origin tags give
+  idempotency and echo-prevention for free.
+- **Transport: the device link the other machine shipped** (`remote_jobs.rs`, paired devices,
+  arrival notices — `c2fe3e545`, `122b937ea`) — **verified 2026-08-08 to be instruction-shaped**:
+  a job carries a natural-language `instruction` executed as a real Athena turn. Structured deltas
+  therefore need a new `memory_sync_delta` job kind (or a sibling channel on the same pairing) —
+  ride the pairing/transport/history plumbing, not the instruction semantics. Device↔device only;
+  nothing through third-party clouds; the encrypted-section posture from portability (`b72f6914b`)
+  applies to payloads.
+- **Delta tracking:** per-peer watermark (last acked cycle); items carry origin device +
+  `updated_at`.
+- **Dependencies:** L1 (cycle + staging — L1 must design the staging table and origin-device
+  columns forward-compatibly); full identity convergence arrives with L3.
+
 ## Decisions
 
-- **D1 · Brain home (forced by the 2026-08-08 merge):** sleep cycles running on two devices
-  against two brains **will fork identity** — today's `companion_fts` fork is the proof of
-  mechanism. v0: cycles run only on a designated home device; the portability layer
-  (`b72f6914b`) moves the home deliberately. Revisit if brain sync ever becomes continuous.
+- **D1 · RESOLVED (operator, 2026-08-08): both devices are homes.** The single-home proposal is
+  withdrawn; the answer is the LS sync design above — project-abstract dimensions sync as
+  distillate, conflicts resolve through the sleep cycle, identity converges by re-derivation. The
+  `companion_fts` fork remains the proof of what happens without it.
 - **D2 · Approval posture per dimension** — proposed above; operator-tunable.
 - **D3 · FTS plaintext mirror** (Part I §6): resolve during tier-3 work — port the lane to
   `companion_node` or encrypt the mirror. The schema-guard test (`373e91f2b`) holds the line.
@@ -229,6 +263,24 @@ Building the UI first would repeat v1's flaw: a viewer over organs that don't mo
 - **L4 · Critique phase** (+ surface initiative through nudges/daily goals; note the r4 carry-over
   that nudge cards sit behind a collapsed attention chip — discoverability is part of this).
 - **L5 · Memory page v2.**
+- **LS · Cross-device memory sync** (section above) — starts after L1 (staging + reconcile exist);
+  identity convergence completes with L3. Write-set-disjoint from L4 (remote_jobs/staging vs
+  ledger analysis), so LS and L4 can share a wave.
 
-L1 gates L3–L5. L2 needs only L0. **L0 first is non-negotiable on the evidence:** two rounds of
-unmeasured fixes in this subsystem landed on code paths that never executed.
+L1 gates L3–L5 and LS. L2 needs only L0. **L0 first is non-negotiable on the evidence:** two
+rounds of unmeasured fixes in this subsystem landed on code paths that never executed.
+
+## Execution model (operator directive, 2026-08-08)
+
+The **Director** (this session's model class — strongest available at xhigh) owns phase design,
+builder briefs, diff review, merges, and the **phase gate**: after each wave, measure the phase's
+acceptance criteria with the L0 instruments + the live DB, then go/no-go the next phase.
+**Implementation is done by Opus builder subagents** under the one-branch discipline: one wave
+branch in the main checkout, lots partitioned by pairwise-disjoint write sets, Class A/B/C shared
+resources, `git commit --only`, Rust lots ≤ 2 concurrent. The Director never delegates a decision;
+builders return `DECISION NEEDED` rather than guessing, and hold the licence to refuse a brief
+whose premise their evidence contradicts.
+
+**Wave log**
+- **Wave 1 · L0** — launched 2026-08-08 on branch `longevity/2026-08-08`, single Opus builder,
+  three directions: prompt-churn instrument · unified spend rollup · cycle_report substrate.

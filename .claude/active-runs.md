@@ -2,6 +2,11 @@
 
 ## Active
 
+### athena-longevity-l0 — Athena longevity Wave 1 (L0 instruments): churn, spend rollup, cycle_report — session fable-5 xhigh — **builder in flight**
+- Started: 2026-08-08. **One-branch wave `longevity/2026-08-08` in the MAIN checkout** (ledger showed no live sessions at start) — the checkout's HEAD sits on that branch until the wave merges; coordinate here before starting parallel work.
+- Scope: `src-tauri/src/companion/{prompt.rs,turn_ledger.rs,session.rs,brain/cycle_report.rs(new),brain/mod.rs}` · `src-tauri/src/commands/companion/observability.rs` · `src-tauri/db/src/lib.rs` · `src/api/companion.ts` · `src/features/overview/sub_observability/**` · `src/i18n/locales/*` (builder-owned this wave — single builder) · `src/lib/bindings/`.
+- Plan: `docs/plans/athena-longevity.md` (Part II; phases L0–L5 + LS). Director gates each wave with measured ACs before the next.
+
 ### perfect-b-companion-engine — `/perfect` round 4 Phase B: 3 builders on the companion engine — session opus-5[1m] — **COMPLETE, 4/4 shipped**
 - Started/completed: 2026-08-07. Commits on master: `72c33d2fd` nudges deliver · `00a18dd5c` failed turns recorded · `84a2ee870` recall retrieves · `f0207eafc` machine chatter out of recall · `ee30fd513` (incidental) a tours test red on master since `f7993851d`.
 - **Integration gate on merged master**: tsc clean · Vitest **3608/3608** · `cargo check --features desktop` 0 errors · `companion::` **483 passed / 0 failed** · `personas-core retrieval::` **20/20**.
