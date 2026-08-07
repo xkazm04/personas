@@ -1246,6 +1246,7 @@ async fn send_turn_inner(
                 assistant_episode_id: Some(assistant_ep_id.clone()),
                 outcome_json,
                 prompt_blocks_json: prompt_blocks.to_json(),
+                prompt_block_hashes_json: prompt_blocks.hashes_json(),
                 total_prompt_chars: Some(prompt_blocks.total() as u32),
                 // The turn completed. `CliUsage.is_error` still flags the row
                 // if the CLI itself reported an error result.
@@ -2797,7 +2798,8 @@ mod tests {
                     num_turns INTEGER, is_error INTEGER NOT NULL DEFAULT 0,
                     voice INTEGER NOT NULL DEFAULT 0, assistant_episode_id TEXT,
                     outcome_json TEXT, prompt_blocks_json TEXT, total_prompt_chars INTEGER,
-                    error_reason TEXT, created_at TEXT NOT NULL DEFAULT (datetime('now'))
+                    error_reason TEXT, prompt_block_hashes_json TEXT,
+                    created_at TEXT NOT NULL DEFAULT (datetime('now'))
                 );",
             )
             .expect("schema");

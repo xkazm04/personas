@@ -109,6 +109,17 @@ pub struct TurnRecord {
     /// `prompt::PromptBlockSizes`). `None` for the headless legs, which
     /// compose their own one-shot prompts rather than the full assembly.
     pub prompt_blocks_json: Option<String>,
+    /// `{"constitution": "8f3a1c…", …}` — FNV-1a-64 hex of each block's exact
+    /// bytes for the same turn (see `prompt::PromptBlockSizes::hashes_json`).
+    /// Same population rule as `prompt_blocks_json`: set on tracked full
+    /// turns, `None` on the headless legs.
+    ///
+    /// Sizes answer "how big"; only this answers "did it change". A block can
+    /// hold its char count to the byte and still be rewritten every turn,
+    /// which is what invalidates the prompt cache — the growth this exists to
+    /// find (`cache_creation_tokens` 239,852 → 305,401 across chat turns) is
+    /// invisible to the size column alone.
+    pub prompt_block_hashes_json: Option<String>,
     /// Real `system_prompt.len()`. Pairs with `prompt_blocks_json` so a
     /// growth trend is one query, not a JSON parse per row.
     pub total_prompt_chars: Option<u32>,
@@ -161,6 +172,7 @@ pub fn failed_turn_record(
         }))
         .ok(),
         prompt_blocks_json: None,
+        prompt_block_hashes_json: None,
         total_prompt_chars: None,
         failed: true,
         error_reason: Some(reason.to_string()),
@@ -190,8 +202,9 @@ fn try_record_turn(pool: &UserDbPool, rec: &TurnRecord) -> Result<String, AppErr
            (id, origin, trigger_kind, model, input_tokens, output_tokens,
             cache_read_tokens, cache_creation_tokens, cost_usd, duration_ms,
             num_turns, is_error, voice, assistant_episode_id, outcome_json,
-            prompt_blocks_json, total_prompt_chars, error_reason)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)",
+            prompt_blocks_json, total_prompt_chars, error_reason,
+            prompt_block_hashes_json)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)",
         params![
             id,
             rec.origin,
@@ -213,6 +226,7 @@ fn try_record_turn(pool: &UserDbPool, rec: &TurnRecord) -> Result<String, AppErr
             rec.prompt_blocks_json,
             rec.total_prompt_chars,
             rec.error_reason,
+            rec.prompt_block_hashes_json,
         ],
     )?;
     Ok(id)
@@ -314,6 +328,7 @@ mod tests {
                     prompt_blocks_json TEXT,
                     total_prompt_chars INTEGER,
                     error_reason TEXT,
+                    prompt_block_hashes_json TEXT,
                     created_at TEXT NOT NULL DEFAULT (datetime('now'))
                 );",
             )
@@ -389,6 +404,9 @@ mod tests {
                 assistant_episode_id: Some("ep_xyz".into()),
                 outcome_json: Some(r#"{"approvals":1}"#.into()),
                 prompt_blocks_json: Some(r#"{"constitution":120,"identity":40}"#.into()),
+                prompt_block_hashes_json: Some(
+                    r#"{"constitution":"00000000000000aa","identity":"00000000000000bb"}"#.into(),
+                ),
                 total_prompt_chars: Some(1234),
                 failed: false,
                 error_reason: None,
@@ -408,15 +426,22 @@ mod tests {
         assert_eq!(voice, 1);
 
         // The prompt-size ledger round-trips through the same row.
-        let (blocks, chars): (String, i64) = conn
+        let (blocks, chars, hashes): (String, i64, String) = conn
             .query_row(
-                "SELECT prompt_blocks_json, total_prompt_chars FROM companion_turn LIMIT 1",
+                "SELECT prompt_blocks_json, total_prompt_chars, prompt_block_hashes_json
+                 FROM companion_turn LIMIT 1",
                 [],
-                |r| Ok((r.get(0)?, r.get(1)?)),
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
             )
             .unwrap();
         assert_eq!(blocks, r#"{"constitution":120,"identity":40}"#);
         assert_eq!(chars, 1234);
+        // …and so does the churn half. Sizes without hashes cannot tell a
+        // stable block from one that is rewritten every turn.
+        assert_eq!(
+            hashes,
+            r#"{"constitution":"00000000000000aa","identity":"00000000000000bb"}"#
+        );
 
         // update_outcome attaches verdict counts to the existing row.
         update_outcome(&pool, &id, r#"{"groups":3,"drop":2}"#);

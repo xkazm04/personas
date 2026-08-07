@@ -552,6 +552,13 @@ pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
             // than accidental. See companion::prompt::PromptBlockSizes.
             "ALTER TABLE companion_turn ADD COLUMN prompt_blocks_json TEXT;",
             "ALTER TABLE companion_turn ADD COLUMN total_prompt_chars INTEGER;",
+            // Per-block CONTENT hash — the churn half of the same
+            // instrument. Sizes say how big a block is; only the hash says
+            // whether it changed since the previous turn, which is what
+            // drives `cache_creation_tokens`. `{"constitution":"8f3a…"}`,
+            // FNV-1a-64 hex. See companion::prompt::PromptBlockSizes::
+            // hashes_json and companion_get_prompt_churn.
+            "ALTER TABLE companion_turn ADD COLUMN prompt_block_hashes_json TEXT;",
             // Why a turn failed, as a low-cardinality token (`timeout`,
             // `spawn_failed`, `cli_nonzero_exit`, …). NULL on a turn that ran.
             // Pairs with `is_error`, which was 0 on every row ever written

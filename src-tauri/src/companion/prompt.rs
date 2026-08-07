@@ -1643,11 +1643,59 @@ const BLOCK_BUDGETS: &[(&str, usize)] = &[
     ("static_addenda", 8_000),
 ];
 
-fn budget_for(block: &str) -> Option<usize> {
+/// The declared char budget for a named block, or `None` for a block that has
+/// none. Public so the churn instrument can report "this block changed on 14
+/// of 20 turns *and* it is 4.4× its budget" in one row — the two halves of the
+/// same growth story were previously in two different places.
+pub fn budget_for(block: &str) -> Option<usize> {
     BLOCK_BUDGETS
         .iter()
         .find(|(name, _)| *name == block)
         .map(|(_, max)| *max)
+}
+
+// ── Per-block content hash ──────────────────────────────────────────────
+//
+// Sizes alone cannot answer the question the cache bill asks. Athena's chat
+// `cache_creation_tokens` climbed 239,852 → 305,401 turn over turn, which
+// means the prompt's stable prefix is not stable — something above the
+// volatile line is being rewritten every turn and invalidating the cache.
+// A block can hold its char count to the byte and still churn its content
+// (a reordered list, a re-rendered timestamp), so "did this block change
+// since the previous turn?" needs the content itself, not its length.
+//
+// FNV-1a 64 is deliberate: no new dependency, stable across processes and
+// releases (unlike `std::hash::DefaultHasher`, whose output is explicitly
+// not guaranteed between Rust versions — a churn series must survive an
+// upgrade or it measures the toolchain instead of the prompt), and 64 bits
+// is far more than enough to distinguish "same text" from "different text"
+// across a few hundred ledger rows.
+
+const FNV_OFFSET_BASIS: u64 = 0xcbf2_9ce4_8422_2325;
+const FNV_PRIME: u64 = 0x0000_0100_0000_01b3;
+
+/// Char count + FNV-1a-64 hash over the concatenation of `parts`, in the
+/// order given.
+///
+/// For the two composite buckets (`recall` folds six memory sections,
+/// `static_addenda` folds two) the order here is the bucket's own canonical
+/// order, *not* compose()'s push order — the six recall sections are
+/// interleaved with `observability` in the real prompt, so there is no single
+/// contiguous run to mirror. That is fine and deliberate: the hash answers
+/// "is this bucket's content the same as last turn", which any fixed order
+/// answers correctly. It must simply never change, or every historical
+/// comparison breaks.
+fn block_stat(parts: &[&str]) -> (usize, u64) {
+    let mut chars = 0usize;
+    let mut hash = FNV_OFFSET_BASIS;
+    for part in parts {
+        chars += part.len();
+        for byte in part.as_bytes() {
+            hash ^= u64::from(*byte);
+            hash = hash.wrapping_mul(FNV_PRIME);
+        }
+    }
+    (chars, hash)
 }
 
 /// Per-block char counts for one composed system prompt.
@@ -1659,6 +1707,11 @@ fn budget_for(block: &str) -> Option<usize> {
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct PromptBlockSizes {
     blocks: Vec<(&'static str, usize)>,
+    /// Same block names, same order, FNV-1a-64 of each block's exact bytes.
+    /// Kept as a sibling vec rather than widening `blocks` so `to_json()`'s
+    /// on-the-wire shape (a flat `{name: chars}` map, already written to
+    /// ~1,600 ledger rows) stays byte-identical.
+    hashes: Vec<(&'static str, u64)>,
     total: usize,
 }
 
@@ -1675,6 +1728,25 @@ impl PromptBlockSizes {
             .blocks
             .iter()
             .map(|(name, len)| ((*name).to_string(), serde_json::json!(*len)))
+            .collect();
+        serde_json::to_string(&map).ok()
+    }
+
+    /// `{"constitution": "8f3a1c…", "identity": "0b27…", …}` — the churn
+    /// half of the instrument, written to `companion_turn.
+    /// prompt_block_hashes_json` next to `to_json()`'s sizes. Hex so the
+    /// column stays human-readable in a sqlite shell and JSON never has to
+    /// carry a u64 through a f64.
+    ///
+    /// A NEW column rather than a widened `prompt_blocks_json` on purpose:
+    /// changing the size map's shape would have forced every reader (and
+    /// every historical row) to tolerate two encodings forever. Additive
+    /// columns are the convention this ledger already follows.
+    pub fn hashes_json(&self) -> Option<String> {
+        let map: serde_json::Map<String, serde_json::Value> = self
+            .hashes
+            .iter()
+            .map(|(name, hash)| ((*name).to_string(), serde_json::json!(format!("{hash:016x}"))))
             .collect();
         serde_json::to_string(&map).ok()
     }
@@ -1827,34 +1899,39 @@ fn compose(
     // modification of the turn.
     out.push_str(autonomous_md);
 
-    // Instrumentation only — every count is read off the exact strings that
-    // were just pushed, so this cannot change a single byte of `out`.
+    // Instrumentation only — every count and hash is read off the exact
+    // strings that were just pushed, so this cannot change a single byte of
+    // `out`. (`prompt_is_byte_identical_with_the_churn_instrument` pins that.)
+    let measured: Vec<(&'static str, (usize, u64))> = vec![
+        ("constitution", block_stat(&[constitution])),
+        ("identity", block_stat(&[identity])),
+        ("observability", block_stat(&[observability_md])),
+        (
+            "recall",
+            block_stat(&[
+                episodes_md.as_str(),
+                doctrine_md.as_str(),
+                facts_md.as_str(),
+                goals_md.as_str(),
+                procedurals_md.as_str(),
+                backlog_md.as_str(),
+            ]),
+        ),
+        ("briefing", block_stat(&[synth_md.as_str()])),
+        ("plugins", block_stat(&[plugins_md])),
+        ("connectors", block_stat(&[connectors_md])),
+        ("onboarding", block_stat(&[onboarding_md])),
+        ("voice", block_stat(&[voice_md])),
+        ("display", block_stat(&[display_md])),
+        ("mode_addenda", block_stat(&[autonomous_md])),
+        (
+            "static_addenda",
+            block_stat(&[tools_addendum(), delegation_addendum()]),
+        ),
+    ];
     let sizes = PromptBlockSizes {
-        blocks: vec![
-            ("constitution", constitution.len()),
-            ("identity", identity.len()),
-            ("observability", observability_md.len()),
-            (
-                "recall",
-                episodes_md.len()
-                    + doctrine_md.len()
-                    + facts_md.len()
-                    + goals_md.len()
-                    + procedurals_md.len()
-                    + backlog_md.len(),
-            ),
-            ("briefing", synth_md.len()),
-            ("plugins", plugins_md.len()),
-            ("connectors", connectors_md.len()),
-            ("onboarding", onboarding_md.len()),
-            ("voice", voice_md.len()),
-            ("display", display_md.len()),
-            ("mode_addenda", autonomous_md.len()),
-            (
-                "static_addenda",
-                tools_addendum().len() + delegation_addendum().len(),
-            ),
-        ],
+        blocks: measured.iter().map(|(n, (c, _))| (*n, *c)).collect(),
+        hashes: measured.iter().map(|(n, (_, h))| (*n, *h)).collect(),
         total: out.len(),
     };
     (out, sizes)
@@ -2770,7 +2847,9 @@ mod tests {
 
     #[test]
     fn compose_output_is_byte_identical_under_instrumentation() {
-        // The size ledger must be pure observation. This pins the composed
+        // The size ledger AND the churn hashes (2026-08-08) must both be pure
+        // observation — a "measurement" that perturbs the prompt would make
+        // every L2 before/after comparison meaningless. This pins the composed
         // string against a hand-written expectation assembled in compose()'s
         // documented order, so any future edit that "just" reorders or
         // re-pads a block while touching the instrumentation fails here
@@ -2854,6 +2933,58 @@ mod tests {
         let block_sum: u64 = map.values().filter_map(serde_json::Value::as_u64).sum();
         assert!(block_sum <= sizes.total() as u64);
         assert!(sizes.total() as u64 - block_sum < 128, "scaffolding drifted");
+    }
+
+    /// The hash must be a pure function of the bytes, stable across calls and
+    /// processes — a churn series compares hashes recorded days apart. It must
+    /// also actually discriminate: a same-length, different-content block is
+    /// precisely the case the size ledger is blind to.
+    #[test]
+    fn block_hashes_are_stable_and_content_sensitive() {
+        let recall = empty_recall();
+        let compose_with = |identity: &str| {
+            let (_, sizes) = compose(
+                "CONSTITUTION",
+                identity,
+                "OBSERVABILITY",
+                &recall,
+                None,
+                "PLUGINS",
+                "CONNECTORS",
+                "ONBOARDING",
+                "VOICE",
+                "DISPLAY",
+                "MODE",
+            );
+            let json = sizes.hashes_json().expect("hashes serialize");
+            serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(&json)
+                .expect("hashes are a JSON object")
+        };
+
+        let a = compose_with("IDENTITY");
+        let b = compose_with("IDENTITY");
+        assert_eq!(a, b, "same input must hash the same, every time");
+
+        // Every measured block reports a hash, and it is 16 hex chars.
+        for (name, value) in &a {
+            let hex = value.as_str().unwrap_or_else(|| panic!("{name} not a string"));
+            assert_eq!(hex.len(), 16, "{name} hash is not 16 hex chars: {hex}");
+            assert!(
+                hex.chars().all(|c| c.is_ascii_hexdigit()),
+                "{name} hash is not hex: {hex}"
+            );
+        }
+
+        // Same length, different bytes — invisible to `to_json()`, caught here.
+        let c = compose_with("IDENTITZ");
+        assert_ne!(
+            a["identity"], c["identity"],
+            "a same-length content change must move the hash"
+        );
+        assert_eq!(
+            a["constitution"], c["constitution"],
+            "an untouched block must keep its hash"
+        );
     }
 
     #[test]

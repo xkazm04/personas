@@ -1682,7 +1682,8 @@ later corrected: {"athena_channel":{"react":true,"message":"final","rationale":"
                     num_turns INTEGER, is_error INTEGER NOT NULL DEFAULT 0,
                     voice INTEGER NOT NULL DEFAULT 0, assistant_episode_id TEXT,
                     outcome_json TEXT, prompt_blocks_json TEXT, total_prompt_chars INTEGER,
-                    error_reason TEXT, created_at TEXT NOT NULL DEFAULT (datetime('now'))
+                    error_reason TEXT, prompt_block_hashes_json TEXT,
+                    created_at TEXT NOT NULL DEFAULT (datetime('now'))
                 );",
             )
             .expect("schema");

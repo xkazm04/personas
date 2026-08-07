@@ -402,3 +402,304 @@ pub fn companion_prompt_block_stats(
     })?;
     Ok(rows.collect::<Result<Vec<_>, _>>()?)
 }
+
+// ── Prompt churn ────────────────────────────────────────────────────────
+//
+// The size ledger above answers "how big is each block". It cannot answer the
+// question the cache bill asks. Athena's chat `cache_creation_tokens` climbed
+// 239,852 → 305,401 turn over turn, which only happens when the prompt's
+// stable prefix is not actually stable: a block above the volatile line is
+// being rewritten and invalidating the cached prefix. A block can hold its
+// char count to the byte and still churn (a reordered list, a re-rendered
+// clock), so size is blind to exactly the failure that costs money.
+//
+// This lane reads the per-block content hashes `companion::prompt` writes
+// beside the sizes and reports, per block, how often it changed. Phase L2 of
+// `docs/plans/athena-longevity.md` reorders the prompt by volatility; this is
+// the instrument that makes that reorder measurable rather than guessed —
+// before/after on the same numbers.
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct AthenaPromptChurnBlock {
+    /// Block name as `companion::prompt::compose` labels it.
+    pub block: String,
+    /// Turns in the window that carried this block at all. Less than the
+    /// window size for a block introduced mid-window.
+    pub turns_observed: f64,
+    /// Times the block's hash differed from the previous turn that observed
+    /// it. The first observation is a baseline, never a change — so the
+    /// denominator for a change RATE is `turns_observed - 1`.
+    pub changes: f64,
+    /// Mean chars across the observed turns.
+    pub avg_chars: f64,
+    /// Chars on the most recent observed turn.
+    pub last_chars: f64,
+    /// The block's declared budget from `prompt::BLOCK_BUDGETS`, or null for
+    /// a block that has none. A block that is both volatile and over budget
+    /// is the worst case and now reads off one row.
+    pub budget: Option<f64>,
+}
+
+/// One ledger row's prompt instrumentation, oldest-first when fed to
+/// [`churn_from_turns`].
+struct ChurnSample {
+    blocks_json: String,
+    hashes_json: String,
+}
+
+/// Fold chronologically-ordered turns into per-block churn stats.
+///
+/// Split from the command so the arithmetic is testable without a database or
+/// a Tauri `State`. Rows whose JSON does not parse are skipped rather than
+/// failing the call — an unparseable historical row must not blind the
+/// instrument to the rows around it.
+fn churn_from_turns(samples: &[ChurnSample]) -> Vec<AthenaPromptChurnBlock> {
+    use std::collections::HashMap;
+
+    struct Acc {
+        observed: u64,
+        changes: u64,
+        sum_chars: u64,
+        last_chars: u64,
+        last_hash: Option<String>,
+    }
+
+    let mut acc: HashMap<String, Acc> = HashMap::new();
+
+    for sample in samples {
+        let sizes: serde_json::Map<String, serde_json::Value> =
+            match serde_json::from_str(&sample.blocks_json) {
+                Ok(m) => m,
+                Err(_) => continue,
+            };
+        // Hashes are best-effort: every row written before the churn column
+        // existed has sizes and no hashes. Those rows still contribute their
+        // size statistics; they simply cannot report a change.
+        let hashes: serde_json::Map<String, serde_json::Value> =
+            serde_json::from_str(&sample.hashes_json).unwrap_or_default();
+
+        for (name, chars) in &sizes {
+            let chars = chars.as_u64().unwrap_or(0);
+            let hash = hashes.get(name).and_then(|v| v.as_str()).map(str::to_string);
+            let entry = acc.entry(name.clone()).or_insert_with(|| Acc {
+                observed: 0,
+                changes: 0,
+                sum_chars: 0,
+                last_chars: 0,
+                last_hash: None,
+            });
+            // A change needs two hashes to compare. Two consecutive rows that
+            // both lack one (pre-instrument history) are neither a change nor
+            // evidence of stability — they are silence, and counting them as
+            // "unchanged" would understate churn.
+            if let (Some(prev), Some(cur)) = (entry.last_hash.as_deref(), hash.as_deref()) {
+                if prev != cur {
+                    entry.changes += 1;
+                }
+            }
+            if hash.is_some() {
+                entry.last_hash = hash;
+            }
+            entry.observed += 1;
+            entry.sum_chars += chars;
+            entry.last_chars = chars;
+        }
+    }
+
+    let mut out: Vec<AthenaPromptChurnBlock> = acc
+        .into_iter()
+        .map(|(block, a)| AthenaPromptChurnBlock {
+            turns_observed: a.observed as f64,
+            changes: a.changes as f64,
+            avg_chars: if a.observed > 0 {
+                a.sum_chars as f64 / a.observed as f64
+            } else {
+                0.0
+            },
+            last_chars: a.last_chars as f64,
+            budget: crate::companion::prompt::budget_for(&block).map(|b| b as f64),
+            block,
+        })
+        .collect();
+    // Most volatile first, then biggest — the read order for "what is costing
+    // me cache". Stable tiebreak on name so the list does not shuffle between
+    // calls (HashMap iteration order is not stable).
+    out.sort_by(|a, b| {
+        b.changes
+            .partial_cmp(&a.changes)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then(
+                b.avg_chars
+                    .partial_cmp(&a.avg_chars)
+                    .unwrap_or(std::cmp::Ordering::Equal),
+            )
+            .then(a.block.cmp(&b.block))
+    });
+    out
+}
+
+/// Per-block prompt churn over the last `turns` tracked turns.
+///
+/// "Tracked" means a full assembled prompt — `prompt_blocks_json IS NOT NULL`,
+/// the same predicate `companion_prompt_block_stats` uses. Headless legs
+/// compose one-shot prompts and are correctly absent.
+#[tauri::command]
+pub fn companion_get_prompt_churn(
+    state: State<'_, Arc<AppState>>,
+    turns: u32,
+) -> Result<Vec<AthenaPromptChurnBlock>, AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    let turns = turns.clamp(2, 500);
+    let conn = state.user_db.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT prompt_blocks_json, COALESCE(prompt_block_hashes_json, '{}')
+         FROM companion_turn
+         WHERE prompt_blocks_json IS NOT NULL
+         ORDER BY created_at DESC, rowid DESC
+         LIMIT ?1",
+    )?;
+    let rows = stmt.query_map([turns], |r| {
+        Ok(ChurnSample {
+            blocks_json: r.get(0)?,
+            hashes_json: r.get(1)?,
+        })
+    })?;
+    // The query is newest-first (that is how you take the last N); churn is a
+    // walk forward in time, so reverse before folding.
+    let mut samples = rows.collect::<Result<Vec<_>, _>>()?;
+    samples.reverse();
+    Ok(churn_from_turns(&samples))
+}
+
+#[cfg(test)]
+mod churn_tests {
+    use super::*;
+
+    fn sample(blocks: &str, hashes: &str) -> ChurnSample {
+        ChurnSample {
+            blocks_json: blocks.into(),
+            hashes_json: hashes.into(),
+        }
+    }
+
+    fn find<'a>(v: &'a [AthenaPromptChurnBlock], name: &str) -> &'a AthenaPromptChurnBlock {
+        v.iter()
+            .find(|b| b.block == name)
+            .unwrap_or_else(|| panic!("block {name} missing from {v:?}"))
+    }
+
+    /// The core claim: over a window where one block is rewritten every turn
+    /// and another is byte-stable, the instrument separates them — even though
+    /// BOTH hold a constant char count. Size alone cannot tell these apart,
+    /// which is the entire reason the hash column exists.
+    #[test]
+    fn separates_a_churning_block_from_a_stable_one_of_identical_size() {
+        let out = churn_from_turns(&[
+            sample(
+                r#"{"constitution":100,"observability":50}"#,
+                r#"{"constitution":"aaaa","observability":"1111"}"#,
+            ),
+            sample(
+                r#"{"constitution":100,"observability":50}"#,
+                r#"{"constitution":"aaaa","observability":"2222"}"#,
+            ),
+            sample(
+                r#"{"constitution":100,"observability":50}"#,
+                r#"{"constitution":"aaaa","observability":"3333"}"#,
+            ),
+        ]);
+
+        let constitution = find(&out, "constitution");
+        assert_eq!(constitution.turns_observed, 3.0);
+        assert_eq!(constitution.changes, 0.0, "stable block must not churn");
+        assert_eq!(constitution.avg_chars, 100.0);
+        assert_eq!(constitution.last_chars, 100.0);
+
+        let observability = find(&out, "observability");
+        assert_eq!(observability.turns_observed, 3.0);
+        assert_eq!(
+            observability.changes, 2.0,
+            "3 observations with 3 distinct hashes = 2 transitions"
+        );
+        // Both blocks were a constant size the whole window — the size ledger
+        // would have called them equally stable.
+        assert_eq!(observability.avg_chars, 50.0);
+
+        // Most volatile first.
+        assert_eq!(out[0].block, "observability");
+    }
+
+    /// A block that appears partway through the window is observed fewer
+    /// times than the window is long, and its first appearance is a baseline
+    /// rather than a change. Reporting it as "changed on turn 1" would invent
+    /// churn out of a block simply coming into existence.
+    #[test]
+    fn a_block_introduced_midwindow_counts_only_the_turns_it_appeared_in() {
+        let out = churn_from_turns(&[
+            sample(r#"{"constitution":10}"#, r#"{"constitution":"aaaa"}"#),
+            sample(
+                r#"{"constitution":10,"voice":7}"#,
+                r#"{"constitution":"aaaa","voice":"bbbb"}"#,
+            ),
+            sample(
+                r#"{"constitution":10,"voice":9}"#,
+                r#"{"constitution":"aaaa","voice":"cccc"}"#,
+            ),
+        ]);
+        let voice = find(&out, "voice");
+        assert_eq!(voice.turns_observed, 2.0);
+        assert_eq!(voice.changes, 1.0);
+        assert_eq!(voice.avg_chars, 8.0);
+        assert_eq!(voice.last_chars, 9.0);
+    }
+
+    /// Rows written before the hash column existed carry sizes and no hashes.
+    /// They must still contribute size statistics, and must not be silently
+    /// read as "unchanged" — a missing hash is silence, not stability.
+    #[test]
+    fn history_without_hashes_contributes_sizes_but_never_a_change() {
+        let out = churn_from_turns(&[
+            sample(r#"{"identity":30}"#, "{}"),
+            sample(r#"{"identity":50}"#, "{}"),
+            sample(r#"{"identity":70}"#, r#"{"identity":"aaaa"}"#),
+            sample(r#"{"identity":90}"#, r#"{"identity":"bbbb"}"#),
+        ]);
+        let identity = find(&out, "identity");
+        assert_eq!(identity.turns_observed, 4.0);
+        assert_eq!(
+            identity.changes, 1.0,
+            "only the two hashed turns can be compared"
+        );
+        assert_eq!(identity.avg_chars, 60.0);
+        assert_eq!(identity.last_chars, 90.0);
+    }
+
+    /// An unparseable historical row must not blind the instrument to the
+    /// rows around it.
+    #[test]
+    fn a_corrupt_row_is_skipped_not_fatal() {
+        let out = churn_from_turns(&[
+            sample(r#"{"recall":10}"#, r#"{"recall":"aaaa"}"#),
+            sample("not json", "also not json"),
+            sample(r#"{"recall":20}"#, r#"{"recall":"bbbb"}"#),
+        ]);
+        let recall = find(&out, "recall");
+        assert_eq!(recall.turns_observed, 2.0);
+        assert_eq!(recall.changes, 1.0);
+    }
+
+    /// Budgets ride along so "volatile" and "oversized" read off one row.
+    /// `constitution` has a declared budget; a name that isn't in
+    /// `BLOCK_BUDGETS` reports null rather than a made-up number.
+    #[test]
+    fn budget_comes_from_the_prompt_modules_own_table() {
+        let out = churn_from_turns(&[sample(
+            r#"{"constitution":100,"not_a_real_block":5}"#,
+            r#"{"constitution":"aaaa","not_a_real_block":"bbbb"}"#,
+        )]);
+        assert_eq!(find(&out, "constitution").budget, Some(24_000.0));
+        assert_eq!(find(&out, "not_a_real_block").budget, None);
+    }
+}
