@@ -2,8 +2,13 @@
 
 ## Active
 
-### perfect-b-companion-engine — `/perfect` round 4 Phase B: 3 builders on the companion engine — session opus-5[1m]
-- Started: 2026-08-07. Status: **builders in flight**.
+### perfect-b-companion-engine — `/perfect` round 4 Phase B: 3 builders on the companion engine — session opus-5[1m] — **COMPLETE, 4/4 shipped**
+- Started/completed: 2026-08-07. Commits on master: `72c33d2fd` nudges deliver · `00a18dd5c` failed turns recorded · `84a2ee870` recall retrieves · `f0207eafc` machine chatter out of recall · `ee30fd513` (incidental) a tours test red on master since `f7993851d`.
+- **Integration gate on merged master**: tsc clean · Vitest **3608/3608** · `cargo check --features desktop` 0 errors · `companion::` **483 passed / 0 failed** · `personas-core retrieval::` **20/20**.
+- **Worktrees removed, as the operator asked**: junction `rmdir`'d FIRST each time, real `node_modules` verified intact afterwards (435 packages, `.bin/tsc` present), 3 worktrees removed, 3 branches deleted. `git worktree list` shows only the pre-existing `mm-facet` and `personas-stage-b`, untouched.
+- **The Director's causal claim was wrong in 3 of 3 briefs** — and the newest failure mode is a CALL PATH, not a write site: `brain/retrieval.rs`'s non-ml `retrieve` was unreachable because `prompt.rs::manual_recall` duplicated it and `recall_for` called the duplicate, so the briefed fix would have compiled, passed review and never executed. Builders also found 3 unbriefed defects, incl. a 180s headless cap returning `Ok` with a partial blob so a timed-out leg booked as a clean decision carrying its cost.
+- **Build-environment finding for other sessions:** a shared `CARGO_TARGET_DIR` across parallel Rust builders serves **stale artifacts** (`cargo check` passed while `cargo test` reported a symbol that existed — cleared by `touch`ing the core source) and lets siblings **clobber the shared test exe** mid-run. Compiles hit 24–28 minutes. If you run parallel Rust work, cap at 2 or sequence.
+- 🔴 Still open, untouched: `src/lib/bindings/` staleness (builder C took only `AthenaHealth.ts` and left the 21 drifting bindings alone). `cargo clippy -- -D warnings` was already red at the fork point (3 personas-db / 442 personas-desktop), none in files this wave touched.
 - Wave keyed off FILE DISJOINTNESS, not context count (all 4 directions live in one context):
   **A** `worktree-perfect-companion-recall` → recall-retrieval + episodic-hygiene (they share `brain/retrieval.rs` + `brain/episodic.rs`, so one builder must own both) ·
   **B** `worktree-perfect-companion-proactive` → proactive-delivery (`proactive/**`, tick wiring) ·
