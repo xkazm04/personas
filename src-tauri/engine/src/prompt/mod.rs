@@ -958,8 +958,8 @@ fn render_correction_required(prompt: &mut String, input_data: Option<&serde_jso
 
     // Preferred shape: the failures arrive as their own list, already split
     // from the framing by `fix_loop::build_fix_instruction`.
-    let mut evidence: Vec<&str> = data
-        .get(fix_loop::FIX_EVIDENCE_KEY)
+    let evidence_field = data.get(fix_loop::FIX_EVIDENCE_KEY);
+    let mut evidence: Vec<&str> = evidence_field
         .and_then(|v| v.as_array())
         .map(|items| {
             items
@@ -970,8 +970,12 @@ fn render_correction_required(prompt: &mut String, input_data: Option<&serde_jso
         })
         .unwrap_or_default();
 
-    // Fallback for a payload carrying only the pre-split joined string.
-    if evidence.is_empty() {
+    // Fallback for a payload that predates the split and carries only the
+    // joined string. Gated on the evidence key being ABSENT, not empty: a
+    // present-but-empty list means "no failures worth reporting", and treating
+    // it as "look somewhere else" would render the framing constant a second
+    // time inside its own untrusted boundary.
+    if evidence.is_empty() && evidence_field.is_none() {
         evidence.extend(
             data.get(fix_loop::FIX_FRAMING_KEY)
                 .and_then(|v| v.as_str())
@@ -2473,8 +2477,14 @@ mod tests {
     fn a_run_with_no_fix_metadata_has_no_correction_section() {
         let prompt = assemble_for(&test_persona(), &serde_json::json!({ "k": "v" }));
         assert!(!prompt.contains("## Correction Required"));
-        // An empty failure list is not a correction either.
-        let empty = serde_json::json!({ "_fix_attempt": 1, "_fix_failures": [] });
+        // An empty failure list is not a correction either — and it must NOT
+        // fall through to the framing key, which would render the framing
+        // constant a second time as its own "evidence".
+        let empty = serde_json::json!({
+            "_fix_attempt": 1,
+            "_fix_failures": [],
+            "_fix_instruction": crate::fix_loop::FIX_INSTRUCTION_FRAMING,
+        });
         assert!(!assemble_for(&test_persona(), &empty).contains("## Correction Required"));
     }
 
