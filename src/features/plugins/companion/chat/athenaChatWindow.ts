@@ -27,6 +27,25 @@ export const DEFAULT_VISIBLE_ROUNDS = 10;
 export const ROUND_EXPAND_STEP = 10;
 
 /**
+ * Hard cap on mounted messages, whatever the round count says.
+ *
+ * Rounds alone do not bound this transcript. Measured on the live default
+ * thread: 50 loaded messages contain **6 user messages** — 15 assistant, 9
+ * system, and the rest machine rows — so a 10-round window never finds a tenth
+ * user turn, returns 0, and mounts everything. The windowing shipped and did
+ * nothing, because it was designed against a synthetic transcript of alternating
+ * user/assistant pairs and this app's transcripts are ~20% user.
+ *
+ * So the window is whichever boundary hides MORE, and the message cap is the one
+ * that bites on a system-heavy thread. It is still snapped to a round boundary,
+ * so a reply is never severed from its question.
+ */
+export const MAX_VISIBLE_MESSAGES = 30;
+
+/** Messages added per "show earlier" step, alongside the round step. */
+export const MESSAGE_EXPAND_STEP = 30;
+
+/**
  * Index of the first message belonging to the last `rounds` rounds.
  *
  * Walks backwards counting user messages; the round boundary IS the user
@@ -34,16 +53,34 @@ export const ROUND_EXPAND_STEP = 10;
  * and a reply is never severed from the question that produced it. Returns 0
  * when the transcript holds fewer rounds than asked for — nothing to hide.
  */
-export function windowStartIndex(messages: CompanionMessage[], rounds: number): number {
+export function windowStartIndex(
+  messages: CompanionMessage[],
+  rounds: number,
+  maxMessages = MAX_VISIBLE_MESSAGES,
+): number {
   if (rounds <= 0 || messages.length === 0) return 0;
+
+  // Boundary 1 — the Nth user message from the end opens the oldest kept round.
+  let roundStart = 0;
   let seen = 0;
   for (let i = messages.length - 1; i >= 0; i--) {
     if (messages[i]?.role !== 'user') continue;
     seen += 1;
-    // The Nth user message from the end opens the oldest round we keep.
-    if (seen === rounds) return i;
+    if (seen === rounds) {
+      roundStart = i;
+      break;
+    }
   }
-  return 0;
+
+  // Boundary 2 — the message cap, snapped BACKWARDS to the nearest user message
+  // so the window still opens on a whole round. Snapping backwards (earlier)
+  // rather than forwards means the cap is a target, not a guillotine: we would
+  // rather mount a few extra messages than open mid-turn.
+  let capStart = Math.max(0, messages.length - maxMessages);
+  while (capStart > 0 && messages[capStart]?.role !== 'user') capStart -= 1;
+
+  // Whichever hides more wins.
+  return Math.max(roundStart, capStart);
 }
 
 export interface TranscriptWindow {
@@ -69,21 +106,29 @@ export function useTranscriptWindow(
   conversationId: string,
 ): TranscriptWindow {
   const [rounds, setRounds] = useState(DEFAULT_VISIBLE_ROUNDS);
+  const [maxMessages, setMaxMessages] = useState(MAX_VISIBLE_MESSAGES);
 
   // A thread switch is a different conversation entirely — re-collapse.
   useEffect(() => {
     setRounds(DEFAULT_VISIBLE_ROUNDS);
+    setMaxMessages(MAX_VISIBLE_MESSAGES);
   }, [conversationId]);
 
-  const start = useMemo(() => windowStartIndex(messages, rounds), [messages, rounds]);
+  const start = useMemo(
+    () => windowStartIndex(messages, rounds, maxMessages),
+    [messages, rounds, maxMessages],
+  );
 
   const visible = useMemo(
     () => (start === 0 ? messages : messages.slice(start)),
     [messages, start],
   );
 
+  // Both boundaries move together — relaxing only one leaves the other pinning
+  // the window and the button appears to do nothing.
   const showEarlier = useCallback(() => {
     setRounds((r) => r + ROUND_EXPAND_STEP);
+    setMaxMessages((m) => m + MESSAGE_EXPAND_STEP);
   }, []);
 
   return {

@@ -14,8 +14,22 @@ describe('systemMarkerOf', () => {
   it('leaves real content alone', () => {
     expect(systemMarkerOf('[dispatcher] Your last OP was rejected')).toBeNull();
     expect(systemMarkerOf('The action completed.')).toBeNull();
-    // `[fleet…]` must match on a word boundary, not any bracket starting "fleet".
     expect(systemMarkerOf('[fleetwide] something else')).toBeNull();
+  });
+
+  // The regression this anchoring exists for. The live DB holds 6 of these and
+  // every one was being rendered as a caption-sized divider LABEL — a whole
+  // multi-sentence report reduced to chrome, with a stray `]` on the front.
+  it('a fleet tag followed by prose is CONTENT, not a marker', () => {
+    const real =
+      '[Fleet] athena-scan-sweep finished — No pending question — the scan-sweep ran ' +
+      'end to end without needing input. Current phase is simply "done and idle".';
+    expect(systemMarkerOf(real)).toBeNull();
+    // …and it must classify as a readable note instead.
+    const note = classifySystemNote(real, LABELS);
+    expect(note.kind).toBe('tagged');
+    expect(note.label).toBe('Fleet');
+    expect(note.body.startsWith('athena-scan-sweep finished')).toBe(true);
   });
 });
 
@@ -56,6 +70,32 @@ describe('classifySystemNote', () => {
     expect(note.kind).toBe('tagged');
     expect(note.label).toBe('Skill run');
     expect(note.body).toBe('Finished /scan-sweep on api.');
+  });
+
+  // 259 rows of this shape live; the original regex matched only the
+  // `fleet-orchestration` shape, of which there are ZERO.
+  it('strips the correlator line of a fleet-event row into meta', () => {
+    const note = classifySystemNote(
+      'fleet-event session:d1cccd9f-4a2b-4c1e-9f10-aa0b1c2d3e4f cc:c84915f4-1111-2222-3333-444455556666 state:exited_failed project:personas',
+      LABELS,
+    );
+    expect(note.kind).toBe('fleet_op');
+    expect(note.label).toBe('Fleet operation');
+    // No prose follows the correlator line, so the body is empty and the whole
+    // line lives in meta — with ids shortened, because they identify, not inform.
+    expect(note.body).toBe('');
+    expect(note.meta).toContain('state exited_failed');
+    expect(note.meta).toContain('project personas');
+    expect(note.meta).toContain('session d1cccd9f…');
+    expect(note.meta).not.toContain('d1cccd9f-4a2b');
+  });
+
+  it('keeps prose that follows a fleet-event correlator line', () => {
+    const note = classifySystemNote(
+      'fleet-event session:abc state:done project:personas\n\nThe sweep finished cleanly.',
+      LABELS,
+    );
+    expect(note.body).toBe('The sweep finished cleanly.');
   });
 
   it('treats untagged prose as a plain note', () => {

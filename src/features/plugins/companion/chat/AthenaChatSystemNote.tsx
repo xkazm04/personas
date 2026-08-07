@@ -58,7 +58,11 @@ export function AthenaChatSystemNote({
     fleetOp: c.system_note_fleet_op,
     plain: c.system_note_plain,
   });
-  if (!note.body) return null;
+  // A fleet-event row is correlators and nothing else — no prose follows the
+  // first line. It still deserves a row (a session changed state, and that is
+  // the signal), so an empty body with meta renders as label + meta rather than
+  // vanishing. Only a note with neither is nothing.
+  if (!note.body && !note.meta) return null;
 
   const Icon = ICONS[note.kind];
   const tone = toneOf(note.kind);
