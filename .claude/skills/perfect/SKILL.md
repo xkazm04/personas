@@ -3,7 +3,7 @@ name: perfect
 contexts: tracked
 memory: vault
 category: Development
-description: Session-after-session product perfection loop. The strongest available model at xhigh reasoning (currently Fable 5) directs — it walks the repo's context map context-by-context, proposes 5 challenged, high-value directions per context (features, design elevations, significant optimizations), gates them with the user until 10 are accepted, then orchestrates one Opus-class builder subagent per context in isolated worktrees while making every review/merge decision itself. All state lives in a linked Obsidian vault so any future session resumes the loop exactly where the last one stopped. Invoke with `/perfect [init|propose|build|status|reflect] [context-name]`.
+description: Session-after-session product perfection loop. The strongest available model at xhigh reasoning (currently Fable 5) directs — it walks the repo's context map context-by-context, proposes 5 challenged, high-value directions per context (features, design elevations, significant optimizations), gates them with the user until 10 are accepted, then orchestrates Opus-class builder subagents on ONE shared branch — grouped so their write sets cannot collide — while making every review/merge decision itself. All state lives in a linked Obsidian vault so any future session resumes the loop exactly where the last one stopped. Invoke with `/perfect [init|propose|build|status|reflect] [context-name]`.
 argument-hint: "[init|propose|build|status|reflect] [context]"
 ---
 
@@ -14,7 +14,7 @@ argument-hint: "[init|propose|build|status|reflect] [context]"
 ## Roles — Director and Builders
 
 - **Director (the main session — the strongest available model at xhigh reasoning; currently Fable 5, Opus 5 acceptable fallback).** Owns everything that is judgment: opportunity-scoring contexts, drafting directions, adversarially challenging them before the user ever sees them, running the acceptance gate, writing builder briefs, answering builders' product questions mid-flight, reviewing every diff, deciding merge/redo/drop, running the repo gates, committing, and writing the vault. The Director **never delegates a decision** to a builder and never rubber-stamps a builder's diff.
-- **Builders (Opus-class subagents, `model: "opus"`, one per context).** Each receives a tight brief (direction specs + acceptance criteria + the context's `file_paths` scope + repo-convention digest) and implements in its **own worktree**. Builders return a structured report; when they hit a genuine product ambiguity they **return the question instead of guessing** — the Director answers via `SendMessage` and the builder continues.
+- **Builders (Opus-class subagents, `model: "opus"`, one per *lot* — see Phase B step 1).** Each receives a tight brief (direction specs + acceptance criteria + an explicit **write set** + repo-convention digest) and implements **in the wave's single shared tree**, alongside its siblings. Isolation is not what keeps them from colliding — disjoint grouping is. Builders return a structured report; when they hit a genuine product ambiguity they **return the question instead of guessing** — the Director answers via `SendMessage` and the builder continues.
 - **Scouts (Explore subagents, cheap).** Produce the per-context current-state brief the Director synthesizes directions from. Never used for judgment.
 
 ## The Obsidian vault — durable loop state
@@ -22,7 +22,7 @@ argument-hint: "[init|propose|build|status|reflect] [context]"
 Resolve the vault root (first hit wins), then use `$VAULT/Perfect/`:
 
 ```bash
-VAULT="C:/Users/kazda/Documents/Obsidian/personas"   # verified to exist; contains Perfect/
+VAULT="<obsidian-vault-root>/personas"   # verified to exist; contains Perfect/
 # Portable fallback: if no Obsidian vault exists, use <repo>/.perfect/ (same schema — still an Obsidian-openable folder).
 ```
 
@@ -31,7 +31,7 @@ Perfect/
   Perfect.md               # HOME / Map-of-Content — always reflects current truth:
                            #   mission, the scored context QUEUE with the CURSOR,
                            #   the ACCEPTED POOL (n/10), shipped ledger headline, link to last session
-  config.md                # per-repo overlay: gates to run, worktree recipe, wave size,
+  config.md                # per-repo overlay: gates to run, wave shape, wave size,
                            #   direction sizing rules, cooldown, + ## Skill improvement log
   contexts/<name>.md       # one per context-map context (long-lived, updated in place)
   directions/<slug>.md     # one per direction (long-lived; the atom of the whole loop)
@@ -87,12 +87,19 @@ Every invocation starts the same way; the vault decides which phase runs.
 ### Phase 0 — Recall & register
 1. Read `Perfect.md` (+ last session's `next:` pointer). If missing → run **init** (below).
 2. Read `context-map.json`; diff against `contexts/*` — new contexts get notes + a queue slot, removed ones get archived (`status: retired` in frontmatter).
-   **First verify the map's PROVENANCE and say which source you chose and why** — this file is not automatically yours:
+   **First verify the map's PROVENANCE and say which source you chose and why** — this file is not
+   automatically yours, and in this repo THREE sources disagree:
    ```bash
-   node -e 'const m=require("./context-map.json");console.log(JSON.stringify(m.project||{}))'
-   # this checkout = root C:\Users\mkdol\dolla\personas · app project id 07fe9de7-ef68-4ce6-a78e-551c09acbdce
+   node -e 'const m=require("./context-map.json");console.log(JSON.stringify(m.project||m.$schema||{}))'
    ```
-   As of 2026-08-04 it prints `root: C:\Users\kazda\kiro\personas`, `id: b0c1541f-…` — **a different machine's map** (769 contexts / 16 groups), while the local app DB holds **49 contexts / 8 groups** from a 2026-06-15 scan. All 4,137 of the foreign map's file refs resolve here, so it is a valid and far finer map of this source: **use it for the queue, and use the DB's 49 names for anything the app anchors to** (see § App context coverage). Shape is NOT provenance — the file passes every `version: 2` / no-`$schema` test and is still foreign.
+   As of 2026-08-08: the committed `context-map.json` is a **peer device's** post-consolidation
+   partition (**208 contexts**, produced by `consolidate-contexts`, commit `976da4c5f` "767 -> 208",
+   and confirmed correct by the operator); the **local app DB holds 49 coarse contexts / 8 groups**
+   from an older scan; `.personas/contexts.txt` holds **773** pre-consolidation names dumped by the
+   peer. Map ∩ local DB = **2 names**. There is no import path — `context-map.json` is export-only —
+   so `git pull` does NOT sync a peer's rescan into this machine's DB.
+   **Use the map for the QUEUE (it is the finer, truer partition of this source) and the LOCAL DB's
+   names for anything the app anchors to** (see § App context coverage). Shape is not provenance.
 3. Repo rituals: read `.claude/active-runs.md`, surface overlaps, append this session's entry. Scan MEMORY.md signals that veto directions (e.g. "Langfuse REMOVED — don't re-suggest").
 4. Announce the resumption point in one sentence, then go where the state machine points: pool < 10 → **Propose**; pool ≥ 10 (or user said `build`) → **Build**.
 
@@ -124,44 +131,165 @@ Loop while `pool < 10` and the user hasn't said stop:
 6. Record outcomes in the vault (rejected ones too, with the user's implied reason — rejections steer future proposals). Accepted → `directions/<slug>.md` with `status: accepted`, pool counter++, context gets `cooldown_until`. Update `Perfect.md` after every context, not at session end — a killed session must lose nothing.
 7. **A `none` gate that carries a steer** (the user says what they wanted instead) is a re-scout order, not a rejection of the context: promote the steer to `config.md → ## User taste` if it generalizes, re-scout at the steered depth/angle, and re-propose the SAME context once before advancing the cursor. Never re-present any rejected direction.
 
-### Phase B — Build (one Opus-class builder per context, the Director decides everything)
-1. **Wave plan**: group the pool's accepted directions by context → one builder per context, ≤ `config.wave_size` (default 3) concurrent, and **≤ 3 directions per builder brief** (a 4-direction brief exceeded one agent-session budget in round 1 — split a bigger context into two sequential builders). Present the wave plan in one screen; on user go (or when invoked as `/perfect build`), execute.
-2. **Worktree per builder** — prepared by the Director, NOT via Agent-tool isolation (those worktrees lack `node_modules`):
+### Phase B — Build (ONE branch, disjoint builders, the Director decides everything)
+
+> **Process efficiency is the first constraint, ahead of defensive isolation.** Rounds 1–4 gave each
+> builder its own worktree and its own branch, and the bill came due in round 4: 3 worktree setups +
+> 3 junctions, single compiles of **24m05s and 28m29s** because three *different source paths*
+> thrashed one `CARGO_TARGET_DIR`, a stale `personas-core` artifact that let `cargo check` pass while
+> `cargo test` failed, siblings clobbering the shared test exe twice, N cherry-picks with
+> union-merge hazards that turned master red for two picks, a whole extra cross-builder integration
+> phase, and junction-ordered teardown. Every bit of that bought protection against **a collision
+> that correct grouping prevents for free**.
+>
+> **The rule: isolation is not the answer to collision risk — disjoint grouping is. A wave with a
+> high collision risk is a wave that is grouped wrong.** Fix the grouping; don't build machinery
+> around the mistake.
+
+1. **Partition by write set — the load-bearing step; get this right and the rest is bookkeeping.**
+   For each accepted direction derive its **write set**: the files it will actually modify, taken
+   from the direction's `## Evidence` (`file:line`) plus a Director read of the call path. *A guessed
+   write set is worthless* — if you cannot name the files, the direction is not ready to build, and
+   that is the same reachability discipline Phase P step 4 demands.
+   Group directions into builder **lots** so write sets are **pairwise disjoint**:
+   - Two directions overlap → they go in the **SAME lot** (one builder, sequentially) or one is
+     **deferred** to the next wave. Never split an overlap across concurrent builders.
+   - No disjoint partition exists → **the wave is one builder.** That is a legitimate, honest
+     outcome, not a failure of the plan.
+   - ≤ `config.wave_size` lots concurrent; ≤ 3 directions per lot (a 4-direction brief exceeded one
+     agent-session budget in round 1).
+   - **Rust-touching lots: ≤ 2 concurrent** — round 4 measured why.
+   - Lots need not follow context boundaries. Disjointness is the criterion; one context can be two
+     lots, and two small contexts can share one.
+   Class C files (step 3) are excluded from write-set analysis — nobody but the Director touches
+   them, so they cannot create overlap.
+   Present the wave plan in one screen — **lot ↔ directions ↔ write set** — and say explicitly which
+   directions were merged or deferred to reach disjointness. On user go (or `/perfect build`), execute.
+
+2. **One branch for the whole wave.** No per-builder worktree, no per-builder branch, no per-direction
+   merge.
    ```bash
-   git worktree add .claude/worktrees/perfect-<ctx> -b worktree-perfect-<ctx>
+   git switch -c perfect/<YYYY-MM-DD>      # from a clean master
    ```
-   Then link `node_modules` **from PowerShell with ABSOLUTE paths** (junction, NOT copy):
+   Every builder works in this one tree and commits onto this one branch. One source tree means
+   coherent cargo fingerprints and warm incremental rebuilds — the single largest cost the old shape
+   imposed — and it means the wave is **continuously integrated** rather than integrated at the end.
+   **Where the tree lives:** the main checkout by default. If `.claude/active-runs.md` shows another
+   session live in the main checkout, put the wave in **ONE** worktree (never one per builder) —
+   same branch, same protocol — and apply the junction recipe once:
    ```powershell
-   $root = "<abs repo root>"; $link = "$root\.claude\worktrees\perfect-<ctx>\node_modules"
+   $root = "<abs repo root>"; $link = "$root\.claude\worktrees\perfect-wave\node_modules"
    if (Test-Path $link) { Remove-Item $link -Force -Recurse -Confirm:$false }
    New-Item -ItemType Junction -Path $link -Target "$root\node_modules" | Out-Null
    Test-Path "$link\.bin\tsc"    # MUST print True before you brief anyone
    ```
-   **Do NOT use `cmd //c mklink //J … "..\..\..\node_modules"`** (the recipe this skill shipped
-   until 2026-08-04). `mklink` resolves a RELATIVE target against the **current** directory, not
-   the link's — run from the repo root it silently points at `C:\Users\node_modules` and still
-   prints "Junction created". The failure surfaces much later as a builder that cannot find
-   `tsc`. Retrying the same command with an absolute target then fails with "The system cannot
-   find the path specified". PowerShell's `New-Item -ItemType Junction` is the form that works.
-   **"Junction created" is not evidence — the `Test-Path …\.bin\tsc` assertion is.**
+   **Do NOT use `cmd //c mklink //J … "..\..\..\node_modules"`.** `mklink` resolves a RELATIVE target
+   against the **current** directory, not the link's — from the repo root it silently creates
+   `C:\Users\node_modules` and still prints "Junction created", and the failure only surfaces as a
+   builder that cannot find `tsc`. **"Junction created" is not evidence — the `Test-Path …\.bin\tsc`
+   assertion is.** Teardown at wrap: `cmd //c rmdir` the junction **FIRST**, then `git worktree remove`.
 
-   Builders run Rust checks against the shared target dir:
-   `CARGO_TARGET_DIR=<main>/src-tauri/target cargo check / cargo test --lib`.
-   Write that path with **forward slashes** — Bash mangles the backslash form into a literal
-   `Usersmkdol…` directory inside the worktree.
-3. **Brief** each builder (see template below); launch with `model: "opus"`, `subagent_type: "general-purpose"`, all briefs in one message so they run concurrently. **Brief quality bar:** every brief lists the exact repo gates the builder must pass before reporting done — `npx tsc --noEmit`, `npm run lint` (no new warnings in touched files), targeted vitest, `npm run check:i18n:strict` if any string/locale touched, `cargo test export_bindings` + commit `src/lib/bindings/` if any Rust struct touched. Director review time is for judgment, not gate failures.
-4. **Mid-flight decisions**: a builder returning `DECISION NEEDED: …` gets an answer from the Director via `SendMessage` — product calls, trade-offs, and scope cuts are the Director's alone. A builder that stops without its final report gets one `SendMessage` nudge.
-   **Builder-death recovery (learned round 1 — session limits WILL kill builders):** the instant a builder dies, `git add -A && git commit --no-verify` a `wip(…)` snapshot **inside its worktree** (isolated tree — add-all is safe there; never-lose-work beats commit hygiene). Then the Director either finishes the work inline (review the WIP diff, complete gaps, split into per-direction commits along file boundaries — same-file hunks may share a commit if the message says so) or re-briefs a fresh builder after the limit resets with "continue from the WIP commit".
-5. **Review — the Director earns its title here.** Per builder branch: `git diff master...worktree-perfect-<ctx>` and review against each direction's acceptance criteria, repo conventions (shared-component catalog, design tokens, i18n keys, `invokeWithTimeout`, error registry), and taste. Verdict per direction: **merge** / **redo with notes** (SendMessage, builder fixes in place) / **drop** (`status: failed`, reason recorded). Never merge on "tests pass" alone — read the diff.
-   **Docs-vs-code check (learned round 1):** when a diff documents a behavior (contract text, formula, doc comment), grep for the code that implements it before merging — one builder shipped a beautifully-documented decay formula with the implementing SQL never written. A contract describing behavior the code doesn't have is worse than nothing.
-   **Rust gate calibration:** gate on *no NEW warnings in files this diff touched* (clippy full-crate `-D warnings` fails on hundreds of pre-existing warnings in this repo — compare against master's warnings for the same files before blaming the diff).
-6. **Merge serially**: per direction, `git merge --squash` (or cherry-pick) → ONE atomic commit on master, message `feat(<context>): <direction title>` + `Co-Authored-By` footer. Stage per-file, verify `git diff --cached --stat` matches intent (foreign pre-staged files → `git restore --staged` them). Run the config gates on master after each merge; a red gate is fixed inline before the next merge.
-   **Concurrent-master locale conflicts (learned round 1):** when another session moves the locale files under a pending cherry-pick, don't hand-merge JSON — re-apply the branch's key **adds/removes** programmatically over master's current locale files (flatten base vs branch per locale, set/delete on current, write), then regenerate `gen-types.mjs` + `split-locales.mjs` and `git add` the artifacts before `cherry-pick --continue`. Round 1's script: session scratchpad `merge-locale-keys.mjs` — recreate it from this recipe.
-   **Union-merge discipline (learned round 4 the hard way):** both-append cherry-pick conflicts are USUALLY safe to keep-both — but only when each side is a complete declaration. NEVER blind-union hunks whose sides end mid-function (a glued test-fn and a swallowed closing brace turned master red for two picks). Read every seam; and **read the gate's output BEFORE the next state-changing action** — `cherry-pick --continue` AND `git commit` both count (round 5 repeated round 4's mistake in miniature: an integration fix was committed while its test run sat unread showing 3 failures). A departing builder that flags a master regression in its final report is gold — treat those flags as gate input, not noise.
-   **Concurrent-session DIRTY files blocking a pick (learned round 2):** never stash, never wait — commit around them. (a) Dirty `en.json`: stage `HEAD + your keys` directly into the index (`git hash-object -w` + `git update-index --cacheinfo`), and write `their-working-copy + your keys` to disk — their uncommitted work stays theirs, and their later commit can't revert your keys. (b) Dirty Rust/source file: same index trick, content built by `git merge-file` (base=branch-fork, ours=HEAD, theirs=branch), plus a second merge-file for the working copy. (c) **Shared append-files** (`lib.rs` command registrations, `commandNames.generated.ts`, generated i18n): NEVER wholesale-`checkout` a branch's version across sequential picks — it clobbers earlier picks' registrations (tsc catches it too late). Patch-union (`git diff branch~..branch -- file | git apply --3way`) or regenerate from source, always.
-6b. **Cross-builder integration gate (learned round 3):** parallel builders each verify against the master they forked from — their work can be mutually incompatible (one retired a type-union member another targeted; one restructured a component another wrote tests against). After ALL of a wave's picks land, run tsc + the union of the wave's test suites on master BEFORE wrap; treat failures as Director-fixed integration commits, not builder redos. When two builders share a direction dependency, fork the dependent builder's worktree AFTER the dependency merges (sequenced builder) — it worked cleanly in round 3.
-7. **Doc-sync in the same turn**: user-visible changes update the mapped `docs/features/*` (+ onboarding flow / marketing module if mapped) — the Stop hook will demand it anyway.
-8. **Cleanup**: per worktree — `cmd //c rmdir` the node_modules **junction FIRST**, then `git worktree remove`, then delete the branch once its commits are on master.
+3. **The shared-resource protocol.** One tree means shared mutable state; each piece gets exactly one
+   owner, and this whole block goes verbatim into every brief.
+   - **Class A — your own write set.** Yours alone; edit freely.
+   - **Class B — append-only registries** (`src-tauri/src/lib.rs` command registrations, `mod`/`pub use`
+     lists, `CHANGELOG.md`). Editing allowed, but **re-read the file immediately before each edit and
+     anchor on a string unique to your change** — never rewrite one whole.
+   - **Class C — Director-only.** `src/i18n/locales/*.json` + everything generated from them,
+     `src/lib/bindings/`, `commandNames.generated.ts`, any codegen output — **and the git index**.
+     Builders *report* what they need (new i18n keys as a JSON fragment; new ts-rs structs by name)
+     and the Director applies it once at quiescence, running each codegen once. This deletes the
+     entire locale-conflict machinery rounds 1–2 had to invent.
+   - **Commits — builders still commit their own work** (never-lose-work beats commit hygiene, and
+     builder death is the norm), but through an index-safe form: `git add <only your NEW files>`,
+     then **`git commit --only <every path in this commit>`**. `--only` builds the commit from those
+     paths alone and *disregards whatever else is staged*, so a sibling's in-flight staging can never
+     ride along. **Never** `git add -A` / `git add .` / `git add -u` / bare `git commit` /
+     `git commit -a` / `git stash` / `git checkout <path>` / `git restore`. An `index.lock` race fails
+     loudly and harmlessly — retry it, never work around it.
+   - **Builds:** cargo's own target-dir lock serialises compiles for free within one tree. What it
+     cannot protect against is a sibling's half-written source. **A compile or type error in a file
+     outside your write set is a sibling's transient state: re-run once, then report it — never fix
+     it.** Same for a test that fails in a suite you do not own.
+
+4. **Brief** each lot (template below); launch with `model: "opus"`, `subagent_type: "general-purpose"`,
+   all briefs in one message so they run concurrently. **Brief quality bar:** the write set, the
+   step-3 protocol verbatim, and the exact gates — `npx tsc --noEmit`, `npm run lint` (no new warnings
+   in touched files), targeted vitest, plus the Class C *report-don't-touch* rule for i18n and
+   bindings. Director review time is for judgment, not gate failures.
+
+5. **Mid-flight decisions**: a builder returning `DECISION NEEDED: …` gets an answer from the Director
+   via `SendMessage` — product calls, trade-offs and scope cuts are the Director's alone. A builder
+   that stops without its final report gets one `SendMessage` nudge.
+   **Builder-death recovery (session limits WILL kill builders):** the instant a builder dies, snapshot
+   its work as `wip(…)` with **`git commit --only <its write set> --no-verify`** — *not* `git add -A`,
+   which was safe only while the tree was private and is now actively dangerous. Then the Director
+   either finishes inline or re-briefs a fresh builder with "continue from the WIP commit".
+
+6. **Review — the Director earns its title here.** Per direction: `git show <sha>` (the commits are
+   already atomic and already on the wave branch — there is no branch-vs-master diff to get wrong).
+   Review against the acceptance criteria, repo conventions (shared-component catalog, design tokens,
+   i18n keys, `invokeWithTimeout`, error registry), and taste. Verdict per direction: **keep** /
+   **redo with notes** (SendMessage; the builder fixes in place with a follow-up commit) / **drop**
+   (`git revert` that commit, `status: failed`, reason recorded). Never accept on "tests pass" alone —
+   read the diff. Hold commit messages to the Director's own bar; reword at review if needed.
+   **Docs-vs-code check (learned round 1):** when a diff documents a behavior (contract text, formula,
+   doc comment), grep for the code that implements it — one builder shipped a beautifully-documented
+   decay formula with the implementing SQL never written. A contract describing behavior the code
+   does not have is worse than nothing.
+   **Rust gate calibration:** gate on *no NEW warnings in files this diff touched* (full-crate clippy
+   `-D warnings` fails on hundreds of pre-existing warnings here — compare against master's warnings
+   for the same files before blaming the diff).
+   **Any branch-vs-master comparison, for any purpose, is three-dot or it is wrong** — and after a
+   squash merge neither form answers "did this land": grep for a signature symbol instead.
+
+7. **Integration gate, once, at quiescence.** After every builder has reported and been reviewed, run
+   the `config.md` gates on the wave branch: tsc + the union of the wave's test suites (+ Rust checks
+   if Rust was touched). This is now confirmation rather than discovery — one branch means the
+   builders' work was already compiling against each other all along, which is precisely what round 3
+   had to bolt on a separate phase to catch. Reds are fixed inline as Director commits **and the
+   output is read BEFORE the next state-changing action** (rounds 4 and 5 both committed while an
+   unread test run was showing failures). A departing builder that flags a regression in its final
+   report is gate input, not noise.
+
+8. **Land the wave: ONE merge.** Apply Class C (regenerate i18n from the builders' key fragments,
+   `cargo test export_bindings`, `generate-command-names.mjs`) and commit it. Then:
+   ```bash
+   git switch master && git merge --ff-only perfect/<date>    # or --no-ff if master has moved
+   ```
+   The per-direction commits *are* the atomic history — no cherry-pick, no squash-per-direction, no
+   N-way conflict resolution. If master moved under you, this is one ordinary content merge instead
+   of N. Re-run the gates on master after the merge.
+
+9. **Doc-sync in the same turn**: user-visible changes update the mapped `docs/features/*` (+ onboarding
+   flow / marketing module if mapped) — the Stop hook will demand it anyway.
+
+10. **Cleanup**: delete the wave branch once merged; if a wave worktree was used, `cmd //c rmdir` the
+    node_modules **junction FIRST**, then `git worktree remove`, then verify the main checkout's real
+    `node_modules` is still intact before moving on.
+
+<details><summary><b>Exception path — surgery for a master that moves under you.</b> Not the default any
+more; the one-branch shape removes the cherry-pick class entirely. Reach for these only when a
+concurrent session dirties or advances a file you must land into.</summary>
+
+- **Union-merge discipline:** both-append conflicts are usually safe to keep-both — but only when each
+  side is a complete declaration. NEVER blind-union hunks whose sides end mid-function (a glued test-fn
+  and a swallowed closing brace turned master red for two picks in round 4). Read every seam.
+- **Concurrent-session DIRTY files:** never stash, never wait — commit *around* them. (a) Dirty
+  `en.json`: stage `HEAD + your keys` straight into the index (`git hash-object -w` +
+  `git update-index --cacheinfo`) and write `their-working-copy + your keys` to disk. (b) Dirty
+  source file: same index trick, content built by `git merge-file` (base=fork, ours=HEAD, theirs=branch),
+  plus a second merge-file for the working copy. (c) After re-applying another session's delta, **diff
+  the result against the captured patch and require an exact match** — a reverted value edit leaves both
+  a clean `git status` and a grep-for-the-key satisfied.
+- **Shared append-files** (`lib.rs` registrations, `commandNames.generated.ts`, generated i18n): never
+  wholesale-`checkout` a branch's version across sequential operations — it clobbers earlier ones'
+  registrations and tsc catches it too late. Patch-union
+  (`git diff branch~..branch -- file | git apply --3way`) or regenerate from source, always.
+- **Locale re-application:** don't hand-merge JSON. Re-apply the branch's key **adds/removes**
+  programmatically over master's current locales (flatten base vs branch per locale, set/delete on
+  current, write), then regenerate `gen-types.mjs` + `split-locales.mjs`.
+</details>
 
 ### Phase W — Wrap (every session, even interrupted ones)
 1. Update every touched vault note; write the session note with the **`next:` pointer** (e.g. `next: propose — cursor at overview-analytics, pool 7/10` or `next: build wave 2 — trigger-system + agent-lab remain`).
@@ -180,10 +308,35 @@ Loop while `pool < 10` and the user hasn't said stop:
 ## Builder brief template
 
 ```
-You are an Opus-class builder for the `<context>` context of the Personas desktop app
+You are an Opus-class builder for the Personas desktop app
 (Tauri 2 + React 19 + TS + Tailwind 4 + Zustand 5; local-first SQLite).
-Work ONLY in this worktree: <abs path>. Your scope is this context's files:
-<file_paths from context-map.json>. Touching other contexts requires DECISION NEEDED.
+
+YOU ARE NOT ALONE IN THIS TREE. <n> builders are working in this same checkout
+on this same branch (`perfect/<date>`) right now. You have been grouped so that
+your files and theirs do not overlap — that grouping IS the collision
+avoidance, so respecting it is the whole contract.
+
+YOUR WRITE SET — the only files you may modify:
+<explicit file list>
+Anything outside it requires DECISION NEEDED. A compile error, type error or
+failing test in a file OUTSIDE your write set is a sibling's half-written
+state, not your bug: re-run once, then report it. Never fix it, never revert it.
+
+SHARED-RESOURCE PROTOCOL (non-negotiable):
+- Append-only registries (src-tauri/src/lib.rs registrations, mod/pub use lists,
+  CHANGELOG.md): you MAY edit, but re-read the file immediately before each edit
+  and anchor on a string unique to YOUR change. Never rewrite one whole.
+- DIRECTOR-ONLY, do not touch: src/i18n/locales/*.json and anything generated
+  from them, src/lib/bindings/, commandNames.generated.ts, any codegen output.
+  REPORT what you need instead — new i18n keys as a JSON fragment in your final
+  report, new ts-rs structs by name — and the Director applies them once.
+- COMMITS: `git add <only your NEW files>` then
+  `git commit --only <every path in this commit> -m "..."`.
+  `--only` builds the commit from those paths alone and ignores whatever else is
+  staged, so a sibling's in-flight staging can never ride along in your commit.
+  FORBIDDEN: git add -A · git add . · git add -u · bare git commit · git commit -a
+  · git stash · git checkout <path> · git restore. An index.lock collision is
+  harmless — retry it, never work around it.
 
 Implement these accepted directions, one atomic commit each, message `feat(<context>): <title>`:
 <per direction: What & why · Acceptance criteria · Evidence file:line · Risks/non-goals>
@@ -192,20 +345,24 @@ COMMIT EACH DIRECTION THE MOMENT IT IS DONE AND VERIFIED — never batch commits
 for the end of the session. An interrupted session must lose at most the
 direction in progress, not everything.
 
-FOREGROUND ONLY — this means the tool mechanics: NEVER set run_in_background
-on a shell command, never spawn "waiter" scripts, never end your turn with
-"the notification will tell me" (it won't — you will idle until the Director
-nudges you; this has burned 5+ nudges across waves). Run every compile/test as
-ONE blocking foreground command; shared-cargo-target lock waits are normal.
+RUN COMPILES IN THE FOREGROUND — and if one genuinely exceeds the harness's
+600s cap, background it and then IMMEDIATELY BLOCK on reading its result before
+doing anything else. NEVER end a turn on a pending gate: no notification will
+arrive, you will simply idle until the Director nudges you (this cost 5+ nudges
+across waves and stalled two builders for an hour in round 4). Cargo's
+target-dir lock wait is normal — waiting is correct, ending your turn is not.
 
 SEARCH BEFORE BUILDING: before implementing any new mechanism, grep for an
 existing implementation of the same concept and LAYER ON it rather than
 forking a parallel system (round 3's history builder found a load-bearing
 back-only nav history this way — unifying beat replacing).
 
+A TEST THAT FAILS ON ITS FIRST RUN HAS DONE ITS JOB. Fix the code, not the
+assertion, and pin what you learned — round 4 caught two real defects this way.
+
 NO INTERACTIVE GIT: `git add -p`, `git add -i`, `git rebase -i` HANG this
 harness (a round-5 builder stalled 600s on add -p). When directions interleave
-in shared files, commit by FILE boundaries and document the shared commit —
+in your own files, commit by FILE boundaries and document the shared commit —
 never hunk-split interactively.
 
 Repo law (non-negotiable):
@@ -237,7 +394,8 @@ per direction → status (done|blocked|decision-needed), commits, files, verific
 
 ## Guardrails
 
-- **Never stash, never `git add -A`** — per-file staging, staged-count check before every commit; other sessions' work is sacred (parallel-safety primitives in CLAUDE.md apply in full).
+- **Never stash, never `git add -A`** — per-file staging, staged-count check before every commit; other sessions' work is sacred (parallel-safety primitives in CLAUDE.md apply in full). Inside a wave, `git commit --only <paths>` is the form that makes this safe by construction.
+- **Efficiency outranks defensive isolation.** Before adding any protective step to this loop, ask whether the risk it defends against is instead a signal that the *grouping* is wrong. Machinery that exists to survive a bad wave plan should be deleted and the wave plan fixed.
 - **Cost discipline**: scouts are Explore-tier; builder-tier model spend goes only to accepted work; the Director never re-runs a scout whose brief is < 1 round old (it's in the context note).
 - **Honest ledger**: a direction only reaches `shipped` with gates green AND the Director having read the diff; anything else is `failed` with a reason. No silent drops — every accepted direction's fate is recorded.
 - **Interruptibility is a feature**: write the vault incrementally (after every context in P, after every merge in B) so a killed session resumes losslessly.
@@ -248,12 +406,10 @@ per direction → status (done|blocked|decision-needed), commits, files, verific
 This skill declares `contexts: tracked` — the Personas app measures per-context memory coverage for it. When run inside a Personas-managed repo (a `.personas/` dir exists, or the app dispatched this run), before finishing append JSON lines to `.personas/memory-outbox.jsonl` at the repo root (append, never rewrite) — one node per context you meaningfully worked on:
 
 ```json
-{"type":"node","kind":"progress","title":"<=200 chars: what you did in this context","body":"optional detail","context":"<exact context name from .claude/codebase-context.md>","skill":"perfect"}
+{"type":"node","kind":"progress","title":"<=200 chars: what you did in this context","body":"optional detail","context":"<a name from the local app DB's dev_contexts>","skill":"perfect"}
 ```
 
-**Which name — this is the part that silently fails.** The ingest anchors a node by matching `context` against the names the app actually knows, case-insensitively. A name it does not recognize is NOT an error: the node is stored with a null context and simply never counts toward coverage. Use **`.personas/contexts.txt`** — the registered-name list dumped straight from the app's `dev_contexts`, regenerated after each context scan. That file is the only authority, and it is the one thing to re-check when coverage sits at 0% with no error anywhere.
-
-Do NOT use the two files that look authoritative and are not. `.claude/codebase-context.md` is a 2026-06-16 render of the old 49-context/8-group map; the app has rescanned since and now holds ~767 contexts across 16 groups, so almost every name in it now anchors to nothing. Repo-root `context-map.json` is a foreign Vibeman snapshot (236 mechanical names like `tauri:engine [3/10]`) written by a different tool on a different machine — the root `CLAUDE.md` documents that divergence. Neither has ever been the ingest's matching set.
+**Which name — this is the part that silently fails.** The ingest matches `context` against the names the app actually knows, case-insensitively. An unrecognized name is NOT an error: the node is stored with a null context and never counts toward coverage. **Query the local app DB's `dev_contexts` table** (the same DB `/perfect smoke` opens read-only) and use a name from it — that is the only matching set. Do NOT trust `.claude/codebase-context.md` (a stale render), repo-root `context-map.json` (may be a peer device's or a foreign tool's map), or `.personas/contexts.txt` unless this machine's app dumped it — on 2026-08-08 all three disagreed with the DB, and two of the three would have anchored to nothing.
 
 Always set both `"skill":"perfect"` and `"context":"<name>"` — together they drive the per-skill context-coverage % (last 30 days). Skip silently when not Personas-managed.
 
