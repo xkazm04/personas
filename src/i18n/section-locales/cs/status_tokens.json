@@ -186,5 +186,13 @@
     "transport": "Připojení selhalo",
     "unknown": "Neznámá chyba",
     "unsupported": "Zde nelze spustit"
+  },
+  "remote_job": {
+    "cancelled": "Zrušeno",
+    "completed": "Dokončeno",
+    "failed": "Selhalo",
+    "pending": "Čeká",
+    "refused": "Odmítnuto",
+    "running": "Probíhá"
   }
 }

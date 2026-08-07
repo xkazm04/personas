@@ -6187,7 +6187,41 @@
     "remove_exposure_failed_toast": "无法移除共享",
     "resource_exposed_toast": "资源 \"{name}\" 已共享",
     "scanned_label": "已扫描",
-    "set_as_home": "设为主设备"
+    "set_as_home": "设为主设备",
+    "col_job_device": "设备",
+    "col_job_direction": "方向",
+    "col_job_instruction": "指令",
+    "col_job_status": "状态",
+    "col_job_when": "时间",
+    "direction_filter_all": "双向",
+    "direction_inbound": "对方请求",
+    "direction_outbound": "你发出的请求",
+    "job_notes_empty": "此指令暂无进度记录。",
+    "job_notes_failed": "无法加载进度记录。",
+    "job_notes_loading": "正在加载进度记录",
+    "job_notes_title": "进度",
+    "job_refusal_title": "被拒绝的原因",
+    "job_summary_pending": "正在等待设备完成。",
+    "job_summary_title": "摘要",
+    "remote_jobs_empty_hint": "一旦你请求配对设备执行任务，每次往来都会记录在这里。",
+    "remote_jobs_empty_title": "暂无远程指令",
+    "remote_jobs_subtitle": "你请求其他设备执行的任务，以及其他设备请求本设备执行的任务。",
+    "remote_jobs_title": "远程指令",
+    "remote_notice_completed": "已完成 {device} 的任务",
+    "remote_notice_dismiss": "关闭此通知",
+    "remote_notice_failed": "{device} 的任务未能完成",
+    "remote_notice_label": "远程指令活动",
+    "remote_notice_started": "正在为 {device} 执行任务",
+    "send_instruction_device_label": "目标设备",
+    "send_instruction_failed": "无法发送指令",
+    "send_instruction_hint": "选择一台配对设备并说明它应该做什么。它的 Athena 会将其作为一次真实对话执行，并在这里回报结果。",
+    "send_instruction_no_devices": "请先配对一台设备，然后才能向它发送任务。",
+    "send_instruction_pick_device": "选择设备",
+    "send_instruction_placeholder": "例如：总结今天的构建失败情况",
+    "send_instruction_sending": "发送中",
+    "send_instruction_sent": "已发送至 {device}",
+    "send_instruction_submit": "发送",
+    "send_instruction_title": "请求设备"
   },
   "overview": {
     "filters": {
@@ -12471,6 +12505,14 @@
       "transport": "连接失败",
       "unknown": "未知错误",
       "unsupported": "此处无法运行"
+    },
+    "remote_job": {
+      "cancelled": "已取消",
+      "completed": "已完成",
+      "failed": "失败",
+      "pending": "待处理",
+      "refused": "已拒绝",
+      "running": "运行中"
     }
   },
   "project_overview": {

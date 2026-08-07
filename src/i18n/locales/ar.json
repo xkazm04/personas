@@ -6187,7 +6187,41 @@
     "remove_exposure_failed_toast": "تعذر إزالة الإتاحة",
     "resource_exposed_toast": "تمت إتاحة المورد \"{name}\"",
     "scanned_label": "تم مسحه",
-    "set_as_home": "اجعله رئيسيًا"
+    "set_as_home": "اجعله رئيسيًا",
+    "col_job_device": "الجهاز",
+    "col_job_direction": "الاتجاه",
+    "col_job_instruction": "التعليمة",
+    "col_job_status": "الحالة",
+    "col_job_when": "الوقت",
+    "direction_filter_all": "كلا الاتجاهين",
+    "direction_inbound": "طُلب منك",
+    "direction_outbound": "طلبت أنت",
+    "job_notes_empty": "لم تصل أي ملاحظات تقدم لهذه التعليمة.",
+    "job_notes_failed": "تعذر تحميل ملاحظات التقدم.",
+    "job_notes_loading": "جارٍ تحميل ملاحظات التقدم",
+    "job_notes_title": "التقدم",
+    "job_refusal_title": "سبب الرفض",
+    "job_summary_pending": "في انتظار انتهاء الجهاز.",
+    "job_summary_title": "الملخص",
+    "remote_jobs_empty_hint": "بمجرد أن تطلب من جهاز مقترن القيام بشيء ما، يُسجَّل كل تبادل هنا.",
+    "remote_jobs_empty_title": "لا توجد تعليمات عن بُعد بعد",
+    "remote_jobs_subtitle": "العمل الذي طلبته من جهاز آخر، والعمل الذي طلبه جهاز آخر من هذا الجهاز.",
+    "remote_jobs_title": "التعليمات عن بُعد",
+    "remote_notice_completed": "أنهى المهمة الخاصة بـ {device}",
+    "remote_notice_dismiss": "إغلاق هذا الإشعار",
+    "remote_notice_failed": "لم تكتمل المهمة الخاصة بـ {device}",
+    "remote_notice_label": "نشاط التعليمات عن بُعد",
+    "remote_notice_started": "جارٍ تنفيذ مهمة لـ {device}",
+    "send_instruction_device_label": "الجهاز المستهدف",
+    "send_instruction_failed": "تعذر إرسال التعليمة",
+    "send_instruction_hint": "اختر جهازًا مقترنًا وحدد ما يجب أن يفعله. سيقوم Athena الخاص به بتنفيذها كخطوة فعلية ويرسل النتيجة إلى هنا.",
+    "send_instruction_no_devices": "قم بإقران جهاز أولًا، ثم يمكنك إرسال عمل إليه.",
+    "send_instruction_pick_device": "اختر جهازًا",
+    "send_instruction_placeholder": "على سبيل المثال: لخّص إخفاقات البناء اليوم",
+    "send_instruction_sending": "جارٍ الإرسال",
+    "send_instruction_sent": "تم الإرسال إلى {device}",
+    "send_instruction_submit": "إرسال",
+    "send_instruction_title": "اطلب من جهاز"
   },
   "overview": {
     "filters": {
@@ -12471,6 +12505,14 @@
       "transport": "فشل الاتصال",
       "unknown": "خطأ غير معروف",
       "unsupported": "غير قابل للتشغيل هنا"
+    },
+    "remote_job": {
+      "cancelled": "أُلغيت",
+      "completed": "اكتملت",
+      "failed": "فشلت",
+      "pending": "قيد الانتظار",
+      "refused": "مرفوضة",
+      "running": "قيد التشغيل"
     }
   },
   "project_overview": {

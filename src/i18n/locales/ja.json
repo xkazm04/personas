@@ -6187,7 +6187,41 @@
     "remove_exposure_failed_toast": "公開を解除できませんでした",
     "resource_exposed_toast": "リソース「{name}」を公開しました",
     "scanned_label": "スキャン済み",
-    "set_as_home": "ホームに設定"
+    "set_as_home": "ホームに設定",
+    "col_job_device": "デバイス",
+    "col_job_direction": "方向",
+    "col_job_instruction": "指示",
+    "col_job_status": "状態",
+    "col_job_when": "日時",
+    "direction_filter_all": "両方向",
+    "direction_inbound": "依頼された",
+    "direction_outbound": "依頼した",
+    "job_notes_empty": "この指示に対する進捗メモはまだありません。",
+    "job_notes_failed": "進捗メモを読み込めませんでした。",
+    "job_notes_loading": "進捗メモを読み込み中",
+    "job_notes_title": "進捗",
+    "job_refusal_title": "拒否された理由",
+    "job_summary_pending": "デバイスの完了を待っています。",
+    "job_summary_title": "概要",
+    "remote_jobs_empty_hint": "ペア設定したデバイスに何かを依頼すると、そのやり取りがここに記録されます。",
+    "remote_jobs_empty_title": "リモート指示はまだありません",
+    "remote_jobs_subtitle": "他のデバイスに依頼した作業、および他のデバイスからこのデバイスに依頼された作業。",
+    "remote_jobs_title": "リモート指示",
+    "remote_notice_completed": "{device} の作業を完了しました",
+    "remote_notice_dismiss": "この通知を閉じる",
+    "remote_notice_failed": "{device} の作業が完了しませんでした",
+    "remote_notice_label": "リモート指示のアクティビティ",
+    "remote_notice_started": "{device} の作業を実行中",
+    "send_instruction_device_label": "対象デバイス",
+    "send_instruction_failed": "指示を送信できませんでした",
+    "send_instruction_hint": "ペア設定したデバイスを選び、何をすべきか指示してください。相手のAthenaがそれを1つのターンとして実行し、ここに結果を報告します。",
+    "send_instruction_no_devices": "先にデバイスをペア設定すると、作業を送れるようになります。",
+    "send_instruction_pick_device": "デバイスを選択",
+    "send_instruction_placeholder": "例：今日のビルド失敗をまとめて",
+    "send_instruction_sending": "送信中",
+    "send_instruction_sent": "{device} に送信しました",
+    "send_instruction_submit": "送信",
+    "send_instruction_title": "デバイスに依頼"
   },
   "overview": {
     "filters": {
@@ -12471,6 +12505,14 @@
       "transport": "接続失敗",
       "unknown": "不明なエラー",
       "unsupported": "ここでは実行できません"
+    },
+    "remote_job": {
+      "cancelled": "キャンセル済み",
+      "completed": "完了",
+      "failed": "失敗",
+      "pending": "保留中",
+      "refused": "拒否済み",
+      "running": "実行中"
     }
   },
   "project_overview": {

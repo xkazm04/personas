@@ -6187,7 +6187,41 @@
     "remove_exposure_failed_toast": "공개를 해제할 수 없습니다",
     "resource_exposed_toast": "리소스 \"{name}\"가 공개되었습니다",
     "scanned_label": "스캔됨",
-    "set_as_home": "홈으로 설정"
+    "set_as_home": "홈으로 설정",
+    "col_job_device": "기기",
+    "col_job_direction": "방향",
+    "col_job_instruction": "지시 내용",
+    "col_job_status": "상태",
+    "col_job_when": "시간",
+    "direction_filter_all": "양방향",
+    "direction_inbound": "요청받음",
+    "direction_outbound": "요청함",
+    "job_notes_empty": "이 지시에 대한 진행 메모가 아직 없습니다.",
+    "job_notes_failed": "진행 메모를 불러오지 못했습니다.",
+    "job_notes_loading": "진행 메모 불러오는 중",
+    "job_notes_title": "진행 상황",
+    "job_refusal_title": "거절 사유",
+    "job_summary_pending": "기기가 작업을 마치기를 기다리는 중입니다.",
+    "job_summary_title": "요약",
+    "remote_jobs_empty_hint": "페어링된 기기에 작업을 요청하면 모든 교환 내역이 여기에 기록됩니다.",
+    "remote_jobs_empty_title": "아직 원격 지시가 없습니다",
+    "remote_jobs_subtitle": "다른 기기에 요청한 작업과 이 기기가 요청받은 작업입니다.",
+    "remote_jobs_title": "원격 지시",
+    "remote_notice_completed": "{device}의 작업을 마쳤습니다",
+    "remote_notice_dismiss": "이 알림 닫기",
+    "remote_notice_failed": "{device}의 작업이 완료되지 않았습니다",
+    "remote_notice_label": "원격 지시 활동",
+    "remote_notice_started": "{device}의 작업을 실행하는 중입니다",
+    "send_instruction_device_label": "대상 기기",
+    "send_instruction_failed": "지시를 보내지 못했습니다",
+    "send_instruction_hint": "페어링된 기기를 선택하고 수행할 작업을 입력하세요. 해당 기기의 Athena가 이를 실제 작업으로 실행하고 결과를 여기로 보고합니다.",
+    "send_instruction_no_devices": "먼저 기기를 페어링하면 작업을 보낼 수 있습니다.",
+    "send_instruction_pick_device": "기기 선택",
+    "send_instruction_placeholder": "예: 오늘의 빌드 실패 내역을 요약해줘",
+    "send_instruction_sending": "보내는 중",
+    "send_instruction_sent": "{device}에 보냈습니다",
+    "send_instruction_submit": "보내기",
+    "send_instruction_title": "기기에 요청하기"
   },
   "overview": {
     "filters": {
@@ -12471,6 +12505,14 @@
       "transport": "연결 실패",
       "unknown": "알 수 없는 오류",
       "unsupported": "여기서 실행 불가"
+    },
+    "remote_job": {
+      "cancelled": "취소됨",
+      "completed": "완료됨",
+      "failed": "실패함",
+      "pending": "대기 중",
+      "refused": "거절됨",
+      "running": "실행 중"
     }
   },
   "project_overview": {

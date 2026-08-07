@@ -6187,7 +6187,41 @@
     "remove_exposure_failed_toast": "Не удалось закрыть доступ",
     "resource_exposed_toast": "Ресурс \"{name}\" открыт",
     "scanned_label": "просканировано",
-    "set_as_home": "Сделать домашним"
+    "set_as_home": "Сделать домашним",
+    "col_job_device": "Устройство",
+    "col_job_direction": "Направление",
+    "col_job_instruction": "Инструкция",
+    "col_job_status": "Статус",
+    "col_job_when": "Когда",
+    "direction_filter_all": "Оба направления",
+    "direction_inbound": "Вас попросили",
+    "direction_outbound": "Вы попросили",
+    "job_notes_empty": "По этой инструкции не поступило заметок о ходе выполнения.",
+    "job_notes_failed": "Не удалось загрузить заметки о ходе выполнения.",
+    "job_notes_loading": "Загрузка заметок о ходе выполнения",
+    "job_notes_title": "Ход выполнения",
+    "job_refusal_title": "Причина отказа",
+    "job_summary_pending": "Ожидание завершения на устройстве.",
+    "job_summary_title": "Итог",
+    "remote_jobs_empty_hint": "Как только вы попросите сопряжённое устройство что-то сделать, каждый обмен будет записан здесь.",
+    "remote_jobs_empty_title": "Пока нет удалённых инструкций",
+    "remote_jobs_subtitle": "Работа, которую вы поручили другому устройству, и работа, которую другое устройство поручило этому.",
+    "remote_jobs_title": "Удалённые инструкции",
+    "remote_notice_completed": "Поручение для {device} завершено",
+    "remote_notice_dismiss": "Скрыть это уведомление",
+    "remote_notice_failed": "Поручение для {device} не завершилось",
+    "remote_notice_label": "Активность удалённых инструкций",
+    "remote_notice_started": "Выполняется поручение для {device}",
+    "send_instruction_device_label": "Целевое устройство",
+    "send_instruction_failed": "Не удалось отправить инструкцию",
+    "send_instruction_hint": "Выберите сопряжённое устройство и укажите, что нужно сделать. Его Athena выполнит это как реальный ход и сообщит результат здесь.",
+    "send_instruction_no_devices": "Сначала сопрягите устройство, чтобы отправлять ему задания.",
+    "send_instruction_pick_device": "Выберите устройство",
+    "send_instruction_placeholder": "Например: подведи итог сегодняшних сбоев сборки",
+    "send_instruction_sending": "Отправка",
+    "send_instruction_sent": "Отправлено на {device}",
+    "send_instruction_submit": "Отправить",
+    "send_instruction_title": "Спросить устройство"
   },
   "overview": {
     "filters": {
@@ -12471,6 +12505,14 @@
       "transport": "Ошибка соединения",
       "unknown": "Неизвестная ошибка",
       "unsupported": "Здесь запуск невозможен"
+    },
+    "remote_job": {
+      "cancelled": "Отменено",
+      "completed": "Завершено",
+      "failed": "Ошибка",
+      "pending": "Ожидание",
+      "refused": "Отклонено",
+      "running": "Выполняется"
     }
   },
   "project_overview": {

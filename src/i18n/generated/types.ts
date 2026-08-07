@@ -6411,6 +6411,40 @@ export type Translations = {
     peer_disconnected_toast: string;
     peer_disconnect_failed_toast: string;
     scanned_label: string;
+    remote_jobs_title: string;
+    remote_jobs_subtitle: string;
+    remote_jobs_empty_title: string;
+    remote_jobs_empty_hint: string;
+    col_job_device: string;
+    col_job_direction: string;
+    col_job_instruction: string;
+    col_job_status: string;
+    col_job_when: string;
+    direction_outbound: string;
+    direction_inbound: string;
+    direction_filter_all: string;
+    job_notes_title: string;
+    job_notes_empty: string;
+    job_notes_loading: string;
+    job_notes_failed: string;
+    job_summary_title: string;
+    job_summary_pending: string;
+    job_refusal_title: string;
+    send_instruction_title: string;
+    send_instruction_hint: string;
+    send_instruction_pick_device: string;
+    send_instruction_device_label: string;
+    send_instruction_placeholder: string;
+    send_instruction_submit: string;
+    send_instruction_sending: string;
+    send_instruction_sent: string;
+    send_instruction_failed: string;
+    send_instruction_no_devices: string;
+    remote_notice_started: string;
+    remote_notice_completed: string;
+    remote_notice_failed: string;
+    remote_notice_dismiss: string;
+    remote_notice_label: string;
   };
   overview: {
     filters: {
@@ -12769,6 +12803,14 @@ export type Translations = {
       testing: string;
       test_complete: string;
       promoted: string;
+    };
+    remote_job: {
+      pending: string;
+      running: string;
+      completed: string;
+      failed: string;
+      refused: string;
+      cancelled: string;
     };
   };
   project_overview: {

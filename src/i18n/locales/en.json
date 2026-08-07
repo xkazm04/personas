@@ -6404,7 +6404,41 @@
     "peer_connect_failed_toast": "Could not connect to the peer",
     "peer_disconnected_toast": "Disconnected from peer",
     "peer_disconnect_failed_toast": "Could not disconnect from the peer",
-    "scanned_label": "scanned"
+    "scanned_label": "scanned",
+    "remote_jobs_title": "Remote instructions",
+    "remote_jobs_subtitle": "Work you asked another device to do, and work another device asked of this one.",
+    "remote_jobs_empty_title": "No remote instructions yet",
+    "remote_jobs_empty_hint": "Once you ask a paired device to do something, every exchange is recorded here.",
+    "col_job_device": "Device",
+    "col_job_direction": "Direction",
+    "col_job_instruction": "Instruction",
+    "col_job_status": "Status",
+    "col_job_when": "When",
+    "direction_outbound": "You asked",
+    "direction_inbound": "You were asked",
+    "direction_filter_all": "Both directions",
+    "job_notes_title": "Progress",
+    "job_notes_empty": "No progress notes arrived for this instruction.",
+    "job_notes_loading": "Loading progress notes",
+    "job_notes_failed": "Could not load the progress notes.",
+    "job_summary_title": "Summary",
+    "job_summary_pending": "Waiting for the device to finish.",
+    "job_refusal_title": "Reason it was refused",
+    "send_instruction_title": "Ask a device",
+    "send_instruction_hint": "Pick a paired device and say what it should do. Its Athena runs it as a real turn and reports back here.",
+    "send_instruction_pick_device": "Choose a device",
+    "send_instruction_device_label": "Target device",
+    "send_instruction_placeholder": "For example: summarise the build failures from today",
+    "send_instruction_submit": "Send",
+    "send_instruction_sending": "Sending",
+    "send_instruction_sent": "Sent to {device}",
+    "send_instruction_failed": "Could not send the instruction",
+    "send_instruction_no_devices": "Pair a device first, then you can send it work.",
+    "remote_notice_started": "Running an errand for {device}",
+    "remote_notice_completed": "Finished the errand for {device}",
+    "remote_notice_failed": "The errand for {device} did not finish",
+    "remote_notice_dismiss": "Dismiss this notice",
+    "remote_notice_label": "Remote instruction activity"
   },
   "overview": {
     "filters": {
@@ -12763,6 +12797,14 @@
       "testing": "Testing",
       "test_complete": "Test complete",
       "promoted": "Promoted"
+    },
+    "remote_job": {
+      "pending": "Pending",
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed",
+      "refused": "Refused",
+      "cancelled": "Cancelled"
     }
   },
   "project_overview": {

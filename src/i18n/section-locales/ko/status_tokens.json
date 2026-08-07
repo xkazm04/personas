@@ -186,5 +186,13 @@
     "transport": "연결 실패",
     "unknown": "알 수 없는 오류",
     "unsupported": "여기서 실행 불가"
+  },
+  "remote_job": {
+    "cancelled": "취소됨",
+    "completed": "완료됨",
+    "failed": "실패함",
+    "pending": "대기 중",
+    "refused": "거절됨",
+    "running": "실행 중"
   }
 }

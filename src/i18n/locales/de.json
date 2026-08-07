@@ -6187,7 +6187,41 @@
     "remove_exposure_failed_toast": "Freigabe konnte nicht entfernt werden",
     "resource_exposed_toast": "Ressource \"{name}\" freigegeben",
     "scanned_label": "gescannt",
-    "set_as_home": "Als Zuhause festlegen"
+    "set_as_home": "Als Zuhause festlegen",
+    "col_job_device": "Gerät",
+    "col_job_direction": "Richtung",
+    "col_job_instruction": "Anweisung",
+    "col_job_status": "Status",
+    "col_job_when": "Wann",
+    "direction_filter_all": "Beide Richtungen",
+    "direction_inbound": "Du wurdest gebeten",
+    "direction_outbound": "Du hast gebeten",
+    "job_notes_empty": "Für diese Anweisung sind keine Fortschrittsnotizen eingegangen.",
+    "job_notes_failed": "Die Fortschrittsnotizen konnten nicht geladen werden.",
+    "job_notes_loading": "Fortschrittsnotizen werden geladen",
+    "job_notes_title": "Fortschritt",
+    "job_refusal_title": "Grund der Ablehnung",
+    "job_summary_pending": "Warten darauf, dass das Gerät fertig wird.",
+    "job_summary_title": "Zusammenfassung",
+    "remote_jobs_empty_hint": "Sobald du ein gekoppeltes Gerät bittest, etwas zu erledigen, wird jeder Austausch hier festgehalten.",
+    "remote_jobs_empty_title": "Noch keine Fernanweisungen",
+    "remote_jobs_subtitle": "Arbeit, die du einem anderen Gerät aufgetragen hast, und Arbeit, um die ein anderes Gerät dieses hier gebeten hat.",
+    "remote_jobs_title": "Fernanweisungen",
+    "remote_notice_completed": "Auftrag für {device} abgeschlossen",
+    "remote_notice_dismiss": "Diesen Hinweis verwerfen",
+    "remote_notice_failed": "Der Auftrag für {device} wurde nicht abgeschlossen",
+    "remote_notice_label": "Aktivität bei Fernanweisungen",
+    "remote_notice_started": "Auftrag für {device} wird ausgeführt",
+    "send_instruction_device_label": "Zielgerät",
+    "send_instruction_failed": "Die Anweisung konnte nicht gesendet werden",
+    "send_instruction_hint": "Wähle ein gekoppeltes Gerät aus und sag ihm, was es tun soll. Seine Athena führt es als echten Zug aus und meldet sich hier zurück.",
+    "send_instruction_no_devices": "Koppele zuerst ein Gerät, dann kannst du ihm Aufgaben senden.",
+    "send_instruction_pick_device": "Gerät auswählen",
+    "send_instruction_placeholder": "Zum Beispiel: fasse die heutigen Build-Fehler zusammen",
+    "send_instruction_sending": "Wird gesendet",
+    "send_instruction_sent": "An {device} gesendet",
+    "send_instruction_submit": "Senden",
+    "send_instruction_title": "Ein Gerät bitten"
   },
   "overview": {
     "filters": {
@@ -12471,6 +12505,14 @@
       "transport": "Verbindung fehlgeschlagen",
       "unknown": "Unbekannter Fehler",
       "unsupported": "Hier nicht ausführbar"
+    },
+    "remote_job": {
+      "cancelled": "Abgebrochen",
+      "completed": "Abgeschlossen",
+      "failed": "Fehlgeschlagen",
+      "pending": "Ausstehend",
+      "refused": "Abgelehnt",
+      "running": "Läuft"
     }
   },
   "project_overview": {

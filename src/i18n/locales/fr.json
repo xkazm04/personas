@@ -6187,7 +6187,41 @@
     "remove_exposure_failed_toast": "Impossible de supprimer l'exposition",
     "resource_exposed_toast": "Ressource « {name} » exposée",
     "scanned_label": "scanné",
-    "set_as_home": "Définir comme principal"
+    "set_as_home": "Définir comme principal",
+    "col_job_device": "Appareil",
+    "col_job_direction": "Sens",
+    "col_job_instruction": "Instruction",
+    "col_job_status": "Statut",
+    "col_job_when": "Quand",
+    "direction_filter_all": "Les deux sens",
+    "direction_inbound": "On vous a demandé",
+    "direction_outbound": "Vous avez demandé",
+    "job_notes_empty": "Aucune note de progression n'est arrivée pour cette instruction.",
+    "job_notes_failed": "Impossible de charger les notes de progression.",
+    "job_notes_loading": "Chargement des notes de progression",
+    "job_notes_title": "Progression",
+    "job_refusal_title": "Raison du refus",
+    "job_summary_pending": "En attente que l'appareil termine.",
+    "job_summary_title": "Résumé",
+    "remote_jobs_empty_hint": "Dès que vous demandez à un appareil couplé de faire quelque chose, chaque échange est enregistré ici.",
+    "remote_jobs_empty_title": "Aucune instruction distante pour le moment",
+    "remote_jobs_subtitle": "Travail que vous avez demandé à un autre appareil, et travail qu'un autre appareil a demandé à celui-ci.",
+    "remote_jobs_title": "Instructions distantes",
+    "remote_notice_completed": "Course terminée pour {device}",
+    "remote_notice_dismiss": "Ignorer cette notification",
+    "remote_notice_failed": "La course pour {device} ne s'est pas terminée",
+    "remote_notice_label": "Activité d'instruction distante",
+    "remote_notice_started": "Course en cours pour {device}",
+    "send_instruction_device_label": "Appareil cible",
+    "send_instruction_failed": "Impossible d'envoyer l'instruction",
+    "send_instruction_hint": "Choisissez un appareil couplé et indiquez ce qu'il doit faire. Son Athena l'exécute comme un vrai tour et rend compte ici.",
+    "send_instruction_no_devices": "Couplez d'abord un appareil pour pouvoir lui envoyer du travail.",
+    "send_instruction_pick_device": "Choisissez un appareil",
+    "send_instruction_placeholder": "Par exemple : résume les échecs de build d'aujourd'hui",
+    "send_instruction_sending": "Envoi en cours",
+    "send_instruction_sent": "Envoyé à {device}",
+    "send_instruction_submit": "Envoyer",
+    "send_instruction_title": "Demander à un appareil"
   },
   "overview": {
     "filters": {
@@ -12471,6 +12505,14 @@
       "transport": "Échec de la connexion",
       "unknown": "Erreur inconnue",
       "unsupported": "Non exécutable ici"
+    },
+    "remote_job": {
+      "cancelled": "Annulé",
+      "completed": "Terminé",
+      "failed": "Échoué",
+      "pending": "En attente",
+      "refused": "Refusé",
+      "running": "En cours"
     }
   },
   "project_overview": {

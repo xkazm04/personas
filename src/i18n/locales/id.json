@@ -6187,7 +6187,41 @@
     "remove_exposure_failed_toast": "Tidak dapat menghapus eksposur",
     "resource_exposed_toast": "Sumber daya \"{name}\" diekspos",
     "scanned_label": "dipindai",
-    "set_as_home": "Jadikan utama"
+    "set_as_home": "Jadikan utama",
+    "col_job_device": "Perangkat",
+    "col_job_direction": "Arah",
+    "col_job_instruction": "Instruksi",
+    "col_job_status": "Status",
+    "col_job_when": "Waktu",
+    "direction_filter_all": "Kedua arah",
+    "direction_inbound": "Anda diminta",
+    "direction_outbound": "Anda meminta",
+    "job_notes_empty": "Tidak ada catatan progres untuk instruksi ini.",
+    "job_notes_failed": "Catatan progres gagal dimuat.",
+    "job_notes_loading": "Memuat catatan progres",
+    "job_notes_title": "Progres",
+    "job_refusal_title": "Alasan penolakan",
+    "job_summary_pending": "Menunggu perangkat menyelesaikan tugas.",
+    "job_summary_title": "Ringkasan",
+    "remote_jobs_empty_hint": "Setelah Anda meminta perangkat berpasangan melakukan sesuatu, setiap pertukaran akan dicatat di sini.",
+    "remote_jobs_empty_title": "Belum ada instruksi jarak jauh",
+    "remote_jobs_subtitle": "Tugas yang Anda minta ke perangkat lain, dan tugas yang diminta perangkat lain ke perangkat ini.",
+    "remote_jobs_title": "Instruksi jarak jauh",
+    "remote_notice_completed": "Selesai mengerjakan tugas untuk {device}",
+    "remote_notice_dismiss": "Tutup pemberitahuan ini",
+    "remote_notice_failed": "Tugas untuk {device} tidak selesai",
+    "remote_notice_label": "Aktivitas instruksi jarak jauh",
+    "remote_notice_started": "Menjalankan tugas untuk {device}",
+    "send_instruction_device_label": "Perangkat tujuan",
+    "send_instruction_failed": "Instruksi gagal dikirim",
+    "send_instruction_hint": "Pilih perangkat berpasangan dan sebutkan apa yang harus dilakukan. Athena di perangkat itu menjalankannya sebagai giliran nyata dan melaporkan hasilnya di sini.",
+    "send_instruction_no_devices": "Pasangkan perangkat terlebih dahulu, baru Anda bisa mengirim tugas.",
+    "send_instruction_pick_device": "Pilih perangkat",
+    "send_instruction_placeholder": "Contoh: ringkas kegagalan build hari ini",
+    "send_instruction_sending": "Mengirim",
+    "send_instruction_sent": "Terkirim ke {device}",
+    "send_instruction_submit": "Kirim",
+    "send_instruction_title": "Minta perangkat"
   },
   "overview": {
     "filters": {
@@ -12471,6 +12505,14 @@
       "transport": "Koneksi gagal",
       "unknown": "Kesalahan tidak dikenal",
       "unsupported": "Tidak dapat dijalankan di sini"
+    },
+    "remote_job": {
+      "cancelled": "Dibatalkan",
+      "completed": "Selesai",
+      "failed": "Gagal",
+      "pending": "Menunggu",
+      "refused": "Ditolak",
+      "running": "Berjalan"
     }
   },
   "project_overview": {

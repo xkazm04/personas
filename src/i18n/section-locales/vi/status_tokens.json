@@ -186,5 +186,13 @@
     "transport": "Kết nối thất bại",
     "unknown": "Lỗi không xác định",
     "unsupported": "Không thể chạy ở đây"
+  },
+  "remote_job": {
+    "cancelled": "Đã hủy",
+    "completed": "Đã hoàn tất",
+    "failed": "Thất bại",
+    "pending": "Đang chờ",
+    "refused": "Đã từ chối",
+    "running": "Đang chạy"
   }
 }

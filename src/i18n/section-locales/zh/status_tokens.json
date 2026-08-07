@@ -186,5 +186,13 @@
     "transport": "连接失败",
     "unknown": "未知错误",
     "unsupported": "此处无法运行"
+  },
+  "remote_job": {
+    "cancelled": "已取消",
+    "completed": "已完成",
+    "failed": "失败",
+    "pending": "待处理",
+    "refused": "已拒绝",
+    "running": "运行中"
   }
 }
