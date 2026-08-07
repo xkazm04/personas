@@ -10,14 +10,14 @@ Companion is the Athena assistant plugin. It has two UI surfaces: a plugin setti
 | Setup | Global toggles such as footer icon visibility, chime, and beta self-improve exposure | `sub_setup/SetupPanel.tsx`, `companionPluginSlice.ts` |
 | Memory | Full-page brain viewer over episodes, doctrine, identity, and constitution | `sub_memory/MemoryPanel.tsx`, `BrainViewer.tsx` |
 | Voice | Engine picker (Kokoro / Pocket TTS) + per-engine voice setup | `sub_voice/VoicePanel.tsx`, `commands/companion/voice.rs` |
-| Panel | Chat, streaming, quick replies, approvals, playback | `CompanionPanel.tsx`, `CompanionToolbar.tsx`, `ApprovalCard.tsx` |
+| Panel | Chat, streaming, quick replies, approvals, playback | `chat/` (see **Panel structure** below), `CompanionToolbar.tsx`, `ApprovalCard.tsx` |
 | Avatar/footer | Athena's live video avatar **is** the footer button (left cluster, immediately right of the Network Settings icon) — tap opens/collapses the panel (or summons/hides the orb), **press-and-hold dictates a voice turn without opening the panel**. Avatar reflects state (idle/thinking/speaking); chime, pending playback, thread-attention badge. No text surface — see "Two dimensions" below | `AthenaAvatar.tsx`, `CompanionFooterIcon.tsx`, `chime.ts`, `voicePlayback.ts`, `useDictation.ts`, `companionStore.ts` (`voiceTurnRequest`) |
 
 ## Two dimensions: chat and orb
 
 Athena communicates on exactly **two** surfaces, and nowhere else:
 
-- **CHAT** (`CompanionPanel`) — the full-information dimension. Everything she has
+- **CHAT** (`chat/AthenaChatPanel`) — the full-information dimension. Everything she has
   to say in words lives here: replies, approval cards, proactive cards, the
   in-chat decision card, and the ledger of what she did without asking.
 - **ORB** (`AthenaOrbLayer` + `OrbDecisionBubble` / `GuideCaption` / the orb's
@@ -48,7 +48,7 @@ attention, ad-hoc) is always on one surface or the other, never neither.
 The footer initiation control is Athena's actual animated avatar (`AthenaAvatar`), not a generic glyph — her idle/thinking/speaking video reflects what she's doing at a glance. The button has two gestures:
 
 - **Tap** — opens/collapses the chat panel (the original behavior).
-- **Press-and-hold** (≥220ms) — arms dictation; a mic badge + pulse appear on the avatar. On release, the final transcript is handed to the always-mounted `CompanionPanel` via the `voiceTurnRequest` store slot, which runs the standard `send()` pipeline. The reply streams and (when a voice engine is configured) auto-plays, surfacing through the orb's state change + the Play button — **all without the panel ever opening.** A hold's trailing synthetic `click` is suppressed so releasing doesn't also toggle the panel.
+- **Press-and-hold** (≥220ms) — arms dictation; a mic badge + pulse appear on the avatar. On release, the final transcript is handed to the always-mounted `AthenaChatPanel` via the `voiceTurnRequest` store slot, which runs the standard `send()` pipeline. The reply streams and (when a voice engine is configured) auto-plays, surfacing through the orb's state change + the Play button — **all without the panel ever opening.** A hold's trailing synthetic `click` is suppressed so releasing doesn't also toggle the panel.
 
 `voiceTurnRequest` is deliberately separate from `pendingPrompt`: `pendingPrompt` seeds the composer draft and is only consumed while the panel (and Composer) is mounted, whereas `voiceTurnRequest` is consumed by an always-mounted effect so a footer-initiated turn works with the panel closed.
 
@@ -56,17 +56,84 @@ The footer initiation control is Athena's actual animated avatar (`AthenaAvatar`
 
 ## Chat transcript & message UI
 
-The panel body (`CompanionPanel.tsx` → `Bubble.tsx`) is the primary reading surface and carries most of the chat-window polish:
+The panel body (`chat/AthenaChatTranscript.tsx` → `chat/AthenaChatMessageRow.tsx` → `Bubble.tsx`) is the primary reading surface and carries most of the chat-window polish:
 
 - **Bubbles & grouping.** Assistant turns sit on a defined surface (tint + hairline border + faint elevation) with a small static Athena avatar in the gutter; user turns are right-aligned with a primary tint. Consecutive same-role messages **group** — only the first shows the avatar, the rest align under it with tightened spacing (`groupStart`/`groupEnd` computed in the panel map).
 - **Per-message hover actions.** Hovering (or focusing) a message reveals a copy button (shared `CopyButton`, copies the clean markdown source) and a live relative timestamp (shared `RelativeTime`). The row uses a `grid-rows` 0fr→1fr collapse so it adds zero height when idle and never shifts layout.
 - **Welcome hero.** An empty transcript shows `WelcomeHero` — Athena avatar + greeting + starter-prompt chips that fire real messages through `send()`. The chips reuse the translated slash-palette presets.
 - **Guided empty states.** The Decisions panel and the Brain Viewer's per-kind list both render the shared `feedback/EmptyState` primitive (icon + title + hint) with an actionable CTA instead of a dead text block — mirroring the launchpad feel of `WelcomeHero`. Decisions offers **Ask Athena to log a decision** (seeds the chat with a first-person opener via `setPendingPrompt` + `autoSend` and opens the panel); a filtered-empty list shows the shared `NoResults` reset instead. The Brain Viewer's CTA is kind-aware: `reflection` runs `companion_run_reflection` and jumps to the new entry, fact kinds kick off `companion_run_consolidation` (toast points at the Memory-tab review), and every other kind opens the chat seeded with a "help me add the first entry" prompt.
-- **Streaming state.** The streaming bubble shows the live phase label (e.g. "Searching the web…") paired with animated `TypingDots`; granular progress comes from the **narration timeline live log** (`NarrationThread.tsx` — the dimmed history of this turn's `PROGRESS:` beats + tool calls with durations, last 5 rows + "+N earlier"), the `OperationalThread` checklist (with a progress bar), and the slow-progress hint chip. Reduced motion holds the dots static.
-- **Narration trail.** When a turn used 2+ tools (or any model-authored beat), a collapsed **"What I did — N steps · 48s"** disclosure persists under the completed bubble — the promoted narration timeline (`narrationByEpisodeId`, same promote-on-finish model as the recall strip). Persisted per turn (see **Turn sidecars** below), so it survives an app restart; trivial trails are dropped. See [`conversation-orchestration.md`](./conversation-orchestration.md) (D2).
+- **Streaming state — one surface, not four.** The streaming bubble shows a single generic label ("Working…") paired with animated `TypingDots`, with the **Stop reply** control sitting inline right beside the dots. That is deliberately all there is: a CLI turn used to report itself in four places at once (a phase label naming the live tool, the narration timeline live log, an activity-tray task per slow tool, and the plan checklist), which turned "she's thinking" into a scrolling machine readout. The only detail that survives is the `OperationalThread` checklist, because a TodoWrite plan is HER plan for the user's request rather than a transcript of her tooling. Athena's own `PROGRESS:` beats still outrank the generic label — those are authored prose. The slow-progress hint chip still appears after 30s/2min of CLI silence. Reduced motion holds the dots static. `NarrationThread.tsx` and the narration store slices are intact and still feed the turn sidecar + the dev conversation-log export; they are simply no longer mounted in chat.
+- **Narration trail (recorded, not rendered).** The narration timeline is still built and promoted onto each assistant episode (`narrationByEpisodeId`) and persisted in the turn sidecar, so the dev conversation-log export keeps every tool call with its duration. The collapsed **"What I did — N steps · 48s"** disclosure under the completed bubble was **retired from the chat** in the same pass that reduced the streaming turn to one surface — a per-turn tool inventory is developer telemetry, not conversation. `NarrationTrail` remains in `NarrationThread.tsx` if it is ever wanted back. See [`conversation-orchestration.md`](./conversation-orchestration.md) (D2).
 - **Bottom-aware autoscroll.** `useChatScroll` keeps the transcript pinned to the bottom only while the user is already there; once they scroll up to read history, new content stays put and a floating **Jump to latest** pill appears. Soft top/bottom scroll-fade masks (`companion-scroll`) dissolve messages into the panel chrome at the edges.
 - **Markdown rendering.** Athena's replies render through the shared `MarkdownRenderer` scoped to the chat via `className="athena-chat-md"` + the opt-in `codeBlockActions` prop (other call sites are unaffected). This gives: code blocks with a language-label header + copy + line-wrap toggle + collapse for blocks over 16 lines; a palette-tuned syntax-highlight theme (with a light-theme variant); styled GFM task-lists and zebra-striped tables; external-link affordances; and the inline `chart` bar block. The same treatment is reused inside `ConnectorCallCard` results and `ApprovalCard` params.
 - **Day separators.** A centered date chip (Today / Yesterday / locale date) marks the first message of each new calendar day.
+
+### Panel structure (`chat/`)
+
+The chat window lives in `src/features/plugins/companion/chat/` — one component
+or helper per file, none over 200 lines, named `AthenaChat<Component>.tsx` /
+`athenaChat<helper>.ts`. `AthenaChatPanel.tsx` is the default export App mounts.
+
+| File | Owns |
+| --- | --- |
+| `AthenaChatPanel.tsx` | The always-mounted shell: geometry, orb→chat morph, header, tool strips |
+| `athenaChatShell.ts` | Effects that must run with the panel **closed** (approval reconcile, `explain_in_cockpit`, beta flags) |
+| `AthenaChatBody.tsx` | Layout of the open panel — markup only |
+| `athenaChatSession.ts` | All the wiring: voice, send, queue, stream, events, navigation, hydration, scroll, window |
+| `AthenaChatTranscript.tsx` / `AthenaChatMessageRow.tsx` | The message list and one `memo`'d row |
+| `AthenaChatStreamingTurn.tsx` | The in-flight bubble, typing dots and inline Stop |
+| `athenaChatStream.ts` / `athenaChatDeltas.ts` | The `companion://stream` listener and per-frame token coalescing |
+| `athenaChatSend.ts` / `athenaChatQueue.ts` | One turn end-to-end, and the interrupt-vs-queue front door |
+| `athenaChatVoice.ts` / `athenaChatAudio.ts` | Spoken ack/heartbeat/beats, and the two exclusive audio channels |
+
+**Render pressure is the reason for most of the shape.** The panel this replaced
+subscribed to `streamingText` at the top and threaded ~25 props into a single
+`Body`, so every animation frame of a reply re-rendered the whole transcript —
+every mounted `MarkdownRenderer` with it. Three rules keep that from coming
+back: nothing subscribes to `streamingText` with a selector; `AthenaChatMessageRow`
+is `memo`'d and takes only primitives, store objects and `useCallback`s (job
+cards and the last-turn actions read their own state precisely so the row stays
+memo-clean); and per-tick surfaces (the slow-progress chip, the a11y live
+region, job cards) own their own subscriptions so their ticks re-render
+themselves rather than the body.
+
+**Transcript window.** Only the last **10 rounds** are mounted — a round being
+one user message and everything Athena said in reply, so a cut never orphans a
+reply from its question (`athenaChatWindow.ts`). Older messages stay in the
+store (search, export and Athena's own memory are unaffected) and come back on
+demand: the user clicks the "N earlier messages" divider, or simply scrolls to
+the top, and the window grows a page at a time. Every expansion is
+scroll-anchored (`athenaChatEarlier.ts`) so the reading position doesn't jump.
+Only once everything loaded is on screen does `useTranscriptPages` take over and
+fetch genuinely older rows from the backend — two mechanisms, one gesture.
+
+**Geometry** (`athenaChatGeometry.ts`). The panel is anchored `bottom-12` (48px
+above the viewport floor) and the custom title bar is a fixed 48px band, so the
+max height is `100vh − 112px`: bottom inset + title bar + 16px of breathing
+room. The previous `max-h-[calc(100vh-5rem)]` put the panel's top edge at y=32
+on a tall window — 16px *inside* the app header. Expanded width is **912px**
+(20% wider than the original 760px); compact stays **350px**, since compact
+exists to give the screen back. Width is animated by motion rather than a CSS
+`transition-[width]`, so resizing shares one easing curve with everything else
+the panel does.
+
+**Compact mode is chat and nothing else.** The `CompanionToolbar` rail and the
+inner Fleet side panel are both hidden when compact — the rail is replaced by a
+20px `AthenaChatCompactHandle` carrying the same expand arrow and the same
+`companion-toggle-compact` testid. Show/hide of the tool strips and the side
+panel goes through the shared `Collapse` primitive (`unmountWhenClosed`), so
+they fold instead of blinking and nothing keeps polling behind a shut row.
+
+**`[canvas]` system episodes.** When Athena steers the Mastermind canvas,
+`companion_canvas_control_result` appends the settled `CanvasActionResult` as a
+System episode so she can read on her next turn where the camera ended up. That
+episode is written for *her* — a JSON envelope of camera coordinates, a zoom
+band and island uuids — and the transcript used to render it verbatim. The body
+is unchanged (it is her memory; trimming it would blind her), but the chat now
+parses it (`athenaChatCanvasSummary.ts`) and renders a one-line human note
+instead: "Travelled to a project on the canvas — close view · 14 projects in
+view", or, on a refusal, "Couldn't steer the canvas — the view was zoomed too
+far out". A truncated envelope still yields the action name.
 
 ### Attention bar — two levels instead of six stacks
 
@@ -269,13 +336,13 @@ Queued messages live in `companionStore` (`queuedMessages` + `enqueue/shift/remo
 
 On the model side, an always-on **"delegate, don't inline"** prompt addendum (`prompt.rs` `delegation_addendum`) tells Athena to kick long work off as a background task and reply immediately ("I'm pulling that — back in a moment") rather than holding a silent turn open for minutes. The activity tray + orb dots are what make that delegation observable, so the three phases compose: Athena delegates → the task shows in the tray/orb → the user keeps talking while it runs.
 
-**Long in-turn tool calls as tasks.** Some work happens *inside* Athena's CLI turn — a `WebFetch`, a `Bash` command, a `Task` subagent, any globally-configured MCP tool — which the backend can't offload (it runs in the opaque subprocess). To keep those from looking like a frozen turn, `extractToolEvents` parses `tool_use` / `tool_result` events from the CLI stream and `CompanionPanel` times each call; one that stays pending past a threshold (`IN_TURN_TOOL_THRESHOLD_MS`, 6s) is promoted to a synthetic task in `companionStore.inTurnToolJobs` (kept separate from `jobsById` so it never pins in-chat — the streaming-phase chip already shows the in-bubble view). It surfaces in the activity tray + as an orb dot, completes on its `tool_result`, and the map clears at turn end. Fast tools never reach the threshold, so they never flicker; `TodoWrite` is excluded (it has its own checklist UI).
+**Long in-turn tool calls (no longer promoted to tasks).** Work that happens *inside* Athena's CLI turn — a `WebFetch`, a `Bash` command, a `Task` subagent, a globally-configured MCP tool — used to be timed by the panel and, past `IN_TURN_TOOL_THRESHOLD_MS` (6s), promoted to a synthetic task in `companionStore.inTurnToolJobs` so it surfaced in the activity tray and as an orb dot. That promotion was **removed** with the rest of the per-tool reporting: between the tray row, the phase label and the narration log, one slow tool call announced itself three times, and none of it told the user anything they could act on. The typing dots already say she is working. `extractToolEvents` still runs (it feeds the narration timeline, which backs the turn sidecar and the dev log), and the `inTurnToolJobs` store slice + its ActivityTray merge are intact — nothing writes to them from the chat, so the tray now shows only real backgrounded jobs (connector calls, scans). `TodoWrite` was, and remains, excluded: it has its own checklist UI.
 
 ## Stream deltas & the operational thread
 
 Two surfaces keep a long or autonomous turn from going silent between the user's message and the final reply.
 
-**Stream deltas (consumed, not rendered).** Athena's CLI spawn (`src-tauri/src/companion/session.rs`) passes `--include-partial-messages`, so the CLI emits `stream_event` lines with `content_block_delta` / `text_delta` chunks ahead of the whole `assistant` message. The panel extracts those deltas (`extractAssistantTextDelta`) and accumulates them into the in-flight `streamingText` buffer, coalesced once per animation frame (`flushDeltaBuffer`, `CompanionPanel.tsx`) — but **deliberately does not render them as visible prose** (see the comment at `CompanionPanel.tsx` ~L2034). The raw token stream reflowed constantly and leaked Athena's machine grammar (`OP:`/`QR:`/`TTS:` directives) before the server-side strip, so it was removed (design rationale: [`conversation-orchestration.md`](./conversation-orchestration.md)). The accumulated stream is used for two things instead: (1) firing Athena's `PROGRESS:` beats the instant each one appears (the beat text is split out of `streamingText`), and (2) deduping the trailing whole-message `assistant` text via `sawDeltasRef` so it isn't double-counted. The first `text_delta` flips the status line to "Composing reply…" (the `responding` phase); the streaming bubble stays a single status line + `OperationalThread` until `finished`, when the full prose reply replaces it in one piece. The change is additive: on a CLI that doesn't emit partial messages the panel falls back to the whole-message path unchanged, and the backend's whole-message accumulation (which drives the persisted episode) is untouched.
+**Stream deltas (consumed, not rendered).** Athena's CLI spawn (`src-tauri/src/companion/session.rs`) passes `--include-partial-messages`, so the CLI emits `stream_event` lines with `content_block_delta` / `text_delta` chunks ahead of the whole `assistant` message. The panel extracts those deltas (`extractAssistantTextDelta`) and accumulates them into the in-flight `streamingText` buffer, coalesced once per animation frame (`chat/athenaChatDeltas.ts`) — but **deliberately does not render them as visible prose** (see the comment in `chat/AthenaChatStreamingTurn.tsx`). The raw token stream reflowed constantly and leaked Athena's machine grammar (`OP:`/`QR:`/`TTS:` directives) before the server-side strip, so it was removed (design rationale: [`conversation-orchestration.md`](./conversation-orchestration.md)). The accumulated stream is used for two things instead: (1) firing Athena's `PROGRESS:` beats the instant each one appears (the beat text is split out of `streamingText`), and (2) deduping the trailing whole-message `assistant` text via `sawDeltasRef` so it isn't double-counted. The streaming bubble stays a single status line + `OperationalThread` until `finished`, when the full prose reply replaces it in one piece. Because `streamingText` changes on every animation frame, **nothing subscribes to it with a selector** — the beat scanner (`chat/athenaChatVoice.ts`) reads it through an imperative `useCompanionStore.subscribe`, so the transcript is never re-rendered by the token stream. The change is additive: on a CLI that doesn't emit partial messages the panel falls back to the whole-message path unchanged, and the backend's whole-message accumulation (which drives the persisted episode) is untouched.
 
 **Operational thread (live plan).** When Athena calls TodoWrite during a turn, the panel parses the full checklist (`operationalSteps.extractTodoWrite`, latest call wins) and renders it inline under the bubble as an `OperationalThread` — each step shown as pending / in-progress / completed, updating in place. It uses the same `streamingSteps → stepsByEpisodeId` promote-on-`finished` model as the recall strip and connector cards, so the plan pins under the in-flight bubble while running and under the completed bubble afterward. Persisted in the turn-sidecar row, so it replays after a restart.
 
@@ -727,7 +794,7 @@ Voice playback dispatches to one of two engines, picked by the user in the Voice
 
 Backend code lives under `src-tauri/src/companion/tts/` with one submodule per engine; `commands/companion/voice.rs` is a thin dispatcher that validates input (text length, voice-id format) and routes to the right impl.
 
-**Chat streaming.** The streaming bubble no longer renders the raw token-by-token text (it reflowed and leaked machine grammar). During a turn it shows a single status line plus the `OperationalThread` checklist; the full prose reply lands in one piece when the turn finishes. The status line is **event-driven** (`extractStreamPhase`): it names the real tool with its input detail ("Searching the web · climate data", "Reading files · runner.rs"), shows "Reviewing result…" on tool returns, and "Composing reply…" while the answer generates, falling back to "Thinking…". When voice is active, a short spoken **ack** (~2.5s in) and **heartbeat** (~30s in) fill dead air and are cut off the moment the real reply plays. Athena can also narrate long turns with her own `PROGRESS:` beats — each completed beat shows in the bubble (outranking the derived phase), is logged into the narration timeline, and is spoken live, suppressing the generic ack/heartbeat. The `PROGRESS:` grammar is **always-on** (its own `progress_addendum()` in `prompt.rs`, appended unconditionally — only the `TTS:` grammar that shares the same prompt slot is voice-gated, so text-only users and proactive turns narrate too; D1). Beats aren't discarded from history: `dispatcher.rs` strips them from the *final reply* and captures them in order, then `session.rs` re-persists each as its own lightweight **append-only assistant episode** (prefixed with the `PROGRESS:` sentinel that `Bubble.tsx` renders as a dim aside) — so the transcript keeps the progressive back-and-forth instead of collapsing to one block. They carry no embedding (conversational texture, not memory-worthy facts). This is all three variants (A + B + C) plus the D1/D2 follow-ups from [`conversation-orchestration.md`](./conversation-orchestration.md).
+**Chat streaming.** The streaming bubble no longer renders the raw token-by-token text (it reflowed and leaked machine grammar). During a turn it shows a single status line plus the `OperationalThread` checklist; the full prose reply lands in one piece when the turn finishes. The status line is deliberately **generic** ("Working…"): `extractStreamPhase` still parses the CLI's phases and `phaseLabel` still exists, but the chat no longer names the tool she is running — naming it was one of four simultaneous progress readouts and the least actionable. The inline **Stop reply** control sits beside the typing dots. When voice is active, a short spoken **ack** (~2.5s in) and **heartbeat** (~30s in) fill dead air and are cut off the moment the real reply plays. Athena can also narrate long turns with her own `PROGRESS:` beats — each completed beat shows in the bubble (outranking the derived phase), is logged into the narration timeline, and is spoken live, suppressing the generic ack/heartbeat. The `PROGRESS:` grammar is **always-on** (its own `progress_addendum()` in `prompt.rs`, appended unconditionally — only the `TTS:` grammar that shares the same prompt slot is voice-gated, so text-only users and proactive turns narrate too; D1). Beats aren't discarded from history: `dispatcher.rs` strips them from the *final reply* and captures them in order, then `session.rs` re-persists each as its own lightweight **append-only assistant episode** (prefixed with the `PROGRESS:` sentinel that `Bubble.tsx` renders as a dim aside) — so the transcript keeps the progressive back-and-forth instead of collapsing to one block. They carry no embedding (conversational texture, not memory-worthy facts). This is all three variants (A + B + C) plus the D1/D2 follow-ups from [`conversation-orchestration.md`](./conversation-orchestration.md).
 
 **Voice controls popover.** The chat toolbar's audio button (`VoiceControlPopover`, shown when the active engine is configured — `useTtsVoiceSelection().configured`) opens a popover with: enable/disable spoken summaries, a **volume** slider (`companionVoiceVolume`, default 0.5, applied to every TTS `<audio>` in `voicePlayback.play()` — and **live**: `play()` subscribes to the store so dragging the slider changes Athena mid-sentence; the same slider is mirrored in the Voice tab's engine card), and a **Test voice** button that synthesizes + plays a sample sentence so the user can hear the current engine/voice/volume on demand.
 
