@@ -35,6 +35,9 @@ fn skills_of(root: &str) -> Vec<SkillEntry> {
     scan_skills_dir(&PathBuf::from(root).join(".claude").join("skills"))
 }
 
+/// `(id, name, root_path)` of a registered sibling project.
+type SiblingRow = (String, String, String);
+
 /// Build and write the registry file. Returns the number of skills written.
 pub fn write_skill_registry(
     pool: &DbPool,
@@ -57,7 +60,7 @@ pub fn write_skill_registry(
     let project_name: String = conn
         .query_row("SELECT name FROM dev_projects WHERE id = ?1", [project_id], |r| r.get(0))
         .unwrap_or_else(|_| "unknown".into());
-    let siblings: Vec<(String, String, String)> = match &workspace {
+    let siblings: Vec<SiblingRow> = match &workspace {
         None => Vec::new(),
         Some((wid, _)) => {
             let mut stmt = conn.prepare(
@@ -82,7 +85,7 @@ pub fn write_skill_registry(
         .into_iter()
         .map(|e| (e.name.clone(), e))
         .collect();
-    let sibling_skills: Vec<(&(String, String, String), Vec<SkillEntry>)> =
+    let sibling_skills: Vec<(&SiblingRow, Vec<SkillEntry>)> =
         siblings.iter().map(|s| (s, skills_of(&s.2))).collect();
 
     // 30-day invokes per (skill, project) across the workspace — DB's only

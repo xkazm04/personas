@@ -634,6 +634,9 @@ fn extract_skill_version(content: &str) -> Option<String> {
 
 /// Parse a canonical "major.minor" version into comparable numbers. `None` or
 /// unparseable → `(1, 0)` — the implicit version of a pre-standard skill.
+/// Exercised by unit tests; reserved for backend drift verdicts (today the
+/// frontend ports the same semantics in `trace/traceModel.ts::driftOf`).
+#[cfg_attr(not(test), allow(dead_code))]
 pub(crate) fn parse_skill_version(v: Option<&str>) -> (u32, u32) {
     let Some(v) = v else { return (1, 0) };
     let mut parts = v.splitn(2, '.');
