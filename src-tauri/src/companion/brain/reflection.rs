@@ -38,7 +38,9 @@ pub async fn run_reflection(
     pool: &UserDbPool,
     instructions: Option<&str>,
 ) -> Result<String, AppError> {
-    let episodes = episodic::list_recent(pool, DEFAULT_SESSION_ID, EPISODE_WINDOW)?;
+    // Conversation only — reflecting on machine correlator records produces
+    // reflections about the correlator. Same rationale as consolidation.
+    let episodes = episodic::list_recent_conversation(pool, DEFAULT_SESSION_ID, EPISODE_WINDOW)?;
     if episodes.is_empty() {
         return Err(AppError::Internal(
             "no episodes to reflect on yet — chat with Athena first".into(),

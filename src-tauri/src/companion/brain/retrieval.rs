@@ -28,6 +28,7 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use crate::companion::brain::backlog::{self, BacklogItem};
+use crate::companion::brain::consolidation;
 #[cfg(feature = "ml")]
 use crate::companion::brain::embeddings;
 use crate::companion::brain::episodic::{self, Episode};
@@ -124,7 +125,10 @@ pub async fn retrieve(
     session_id: &str,
     query: &str,
 ) -> Result<Recall, AppError> {
-    let recent = episodic::list_recent(pool, session_id, RECENCY_TURNS).unwrap_or_default();
+    consolidation::maybe_run_lifecycle_sweep(pool);
+
+    let recent =
+        episodic::list_recent_conversation(pool, session_id, RECENCY_TURNS).unwrap_or_default();
     let recent_ids: HashSet<String> = recent.iter().map(|e| e.id.clone()).collect();
 
     let hits = embeddings::search_similar(pool, embedder, query, VECTOR_OVERFETCH)
@@ -305,6 +309,13 @@ pub async fn retrieve(
 /// Every input here except the always-include tiers is now a function of the
 /// query.
 pub fn retrieve_keyword(pool: &UserDbPool, session_id: &str, query: &str) -> Recall {
+    // Memory lifecycle rides the recall path because it is the path that
+    // actually runs — the manual decay/prune commands and the consolidation
+    // tail had never once executed (`companion_consolidation` = 0 rows in 77
+    // days, every fact `last_decayed_at` NULL). Self-throttled to at most once
+    // per 6h per process; a no-op on every other turn.
+    consolidation::maybe_run_lifecycle_sweep(pool);
+
     // Query-independent tiers first — these are the stable "who you are /
     // what you're working toward" floor and must not depend on phrasing.
     let mut facts =
@@ -338,7 +349,8 @@ pub fn retrieve_keyword(pool: &UserDbPool, session_id: &str, query: &str) -> Rec
     let recency_budget = RECALL_EPISODE_TARGET
         .saturating_sub(keyword_episode_ids.len() as u32)
         .max(RECENCY_FLOOR);
-    let recent = episodic::list_recent(pool, session_id, recency_budget).unwrap_or_default();
+    let recent =
+        episodic::list_recent_conversation(pool, session_id, recency_budget).unwrap_or_default();
     let recent_ids: HashSet<String> = recent.iter().map(|e| e.id.clone()).collect();
     let older_ids: Vec<String> = keyword_episode_ids
         .into_iter()
@@ -420,7 +432,7 @@ fn with_recency_tail(
         .saturating_sub(older.len() as u32)
         .max(RECENCY_FLOOR);
     let tail = if budget as usize > already_recent.len() {
-        episodic::list_recent(pool, session_id, budget).unwrap_or(already_recent)
+        episodic::list_recent_conversation(pool, session_id, budget).unwrap_or(already_recent)
     } else {
         already_recent
     };

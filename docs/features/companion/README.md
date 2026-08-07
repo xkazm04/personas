@@ -384,6 +384,26 @@ Two properties are load-bearing:
 
 The episode window is a **budget, not a per-lane quota** — query-relevant older turns first, then a recency tail sized to fill whatever is left, so a lane that finds nothing can't shrink the window.
 
+### The recall window holds conversation, not correlator records
+
+Fleet writes one System episode per session state transition (`fleet-event session:… state:…`, plus `fleet-orchestration …` operation wrap-ups). They were the majority of episodic memory and they were crowding the conversation out of the window Athena reasons over — a 20-slot recall window held **2 user messages**.
+
+Those records are now excluded from the **recency** lane (`episodic::list_recent_conversation`, classifier `episodic::is_machine_episode`). They are **not deleted and not un-written**:
+
+- the append-only markdown on disk, the `companion_node` row and the `companion_fts` row all stay — `list_recent` / `list_before` still return them, so the audit trail is intact;
+- they still compete on **relevance** — ask "what happened with fleet session `abc`" and the keyword lane surfaces them. They just no longer compete on *recency*;
+- live fleet state was never coming from episodes anyway: it comes from `brain/fleet.rs::current_state_digest()` in the observability block, which reads the registry directly.
+
+`[Fleet] … finished` completion lines are deliberately **not** classified as machine records — those are a report to the operator and render in the chat.
+
+The same conversation-only window feeds **consolidation** and **reflection**. Distilling facts from a window that was 57% machine chatter is how the brain ended up holding fleet statistics as semantic "facts" about the user.
+
+### Memory lifecycle runs on the path that runs
+
+`decay_unused_facts` (importance −1, floor 1, once per 30-day window per fact) and `prune_low_value_facts` (demote to `importance = 0` above 500 facts per scope) were reachable only from two manual commands and from the tail of a consolidation run — and consolidation had not run in 77 days, so no fact had ever decayed. Forgetting that only happens when someone presses a button is not forgetting.
+
+`consolidation::maybe_run_lifecycle_sweep` now runs from the recall path, self-throttled to at most once per 6 hours per process (the decay query is idempotent inside its own window, so the throttle needs no schema). Neither action deletes: decay lowers salience, pruning flips retrieval-eligibility while keeping the markdown and the SQL row for provenance. Both manual commands still work and are unchanged.
+
 ## Identity layer (`identity.md`, F1 — direction 7)
 
 `~/.personas/companion-brain/identity.md` is the evolving profile of the user (and Athena's self-model), read into **every** system prompt by `prompt.rs`. It grows by **anchored diffs**, never a whole-file rewrite: the engine in `src-tauri/src/companion/brain/identity.rs` parses the doc into sections (`# heading / ## heading` path) and applies `AppendBullet` / `ReplaceBullet` / `RemoveBullet` against one bullet under a named section, leaving the rest untouched.

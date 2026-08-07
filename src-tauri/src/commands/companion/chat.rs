@@ -368,8 +368,13 @@ pub fn companion_list_recent_messages(
 /// recall/FTS can find them (`fleet-event session:… cc:… state:…`); they
 /// are machine logs, not chat content, so they must not render in the
 /// transcript. Filtered from display only — still searchable in memory.
+///
+/// The classification lives in `episodic::is_machine_episode` so this and the
+/// recall window (`episodic::list_recent_conversation`) can't drift apart —
+/// this used to inline `starts_with("fleet-event ")` and consequently missed
+/// the `fleet-orchestration` wrap-up records.
 fn to_message(e: episodic::Episode) -> Option<CompanionMessage> {
-    if e.content.starts_with("fleet-event ") {
+    if episodic::is_machine_episode(&e.content) {
         return None;
     }
     Some(CompanionMessage {

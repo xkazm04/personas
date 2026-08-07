@@ -16,6 +16,7 @@
 //! bad fact distillation can poison every future retrieval. We make
 //! reviewing fast, not silent.
 
+use std::sync::atomic::{AtomicI64, Ordering};
 use std::time::Duration;
 
 use chrono::Utc;
@@ -165,7 +166,12 @@ pub async fn run_consolidation(
     // material). We hand-build the prompt rather than reusing
     // `prompt::build_system_prompt` because consolidation needs a
     // *different mindset* — analytical, not conversational.
-    let episodes = episodic::list_recent(pool, DEFAULT_SESSION_ID, EPISODE_WINDOW)?;
+    // Conversation only. Fleet correlator rows were 57% of episodic memory,
+    // so the previous read handed Claude a window that was mostly machine
+    // chatter — which is how the brain ended up holding 30 "facts" that are
+    // 70-day-old fleet statistics. Facts should be distilled from the
+    // conversation; fleet state is already live in the observability digest.
+    let episodes = episodic::list_recent_conversation(pool, DEFAULT_SESSION_ID, EPISODE_WINDOW)?;
     let episodes_count = episodes.len() as i32;
     let existing_facts = semantic::list_facts(pool, None, false, 200)?;
 
@@ -552,6 +558,66 @@ pub fn decay_unused_facts(pool: &UserDbPool) -> Result<i64, AppError> {
     conn.execute(&fact_sql, fact_params.as_slice())?;
 
     Ok(updated as i64)
+}
+
+/// Wall-clock timestamp of this process's last lifecycle sweep, 0 = never.
+/// Process-local rather than persisted on purpose: [`decay_unused_facts`] is
+/// already idempotent within its own `DECAY_THRESHOLD_DAYS` window (it guards
+/// on `last_decayed_at`), so a restart re-running the sweep costs one cheap
+/// query and changes nothing. That makes a schema-free throttle correct.
+static LAST_LIFECYCLE_SWEEP: AtomicI64 = AtomicI64::new(0);
+
+/// How often the recall path is allowed to run the lifecycle sweep.
+const LIFECYCLE_SWEEP_MIN_INTERVAL_SECS: i64 = 6 * 3600;
+
+/// Run the memory-lifecycle pass (time-decay, then size-cap) if it hasn't run
+/// recently in this process. Called from the recall path — **the path that
+/// actually runs.**
+///
+/// Both halves existed and neither had ever executed: `decay_unused_facts` and
+/// `prune_low_value_facts` are reachable only from the manual
+/// `companion_decay_unused_facts` / `companion_prune_low_value_facts` commands
+/// and from the tail of a consolidation run, and `companion_consolidation` had
+/// **0 rows** — consolidation had not run in 77 days. So every fact carried
+/// `last_decayed_at = NULL`, and 70-day-old fleet statistics were being recited
+/// as current in every prompt. Forgetting that only happens when a human
+/// remembers to press a button is not forgetting.
+///
+/// Cost is one indexed SELECT plus at most two small UPDATEs, at most once per
+/// [`LIFECYCLE_SWEEP_MIN_INTERVAL_SECS`] per process, on a table capped at
+/// [`MAX_FACTS_PER_SCOPE`] rows per scope. Best-effort: a failure is logged and
+/// never blocks a turn.
+///
+/// Safety of the two actions: decay decrements `importance` by 1 with a floor
+/// of 1 — it lowers salience, it never deletes and never makes a fact
+/// retrieval-ineligible. Pruning demotes to 0 (retrieval-ineligible) but only
+/// for rows *above* the per-scope cap, keeps the markdown and the SQL row for
+/// provenance, and is a no-op on a brain under the cap.
+pub fn maybe_run_lifecycle_sweep(pool: &UserDbPool) {
+    let now = Utc::now().timestamp();
+    let last = LAST_LIFECYCLE_SWEEP.load(Ordering::Relaxed);
+    if last != 0 && now.saturating_sub(last) < LIFECYCLE_SWEEP_MIN_INTERVAL_SECS {
+        return;
+    }
+    // Claim the slot before doing the work so two concurrent turns can't both
+    // run the sweep.
+    if LAST_LIFECYCLE_SWEEP
+        .compare_exchange(last, now, Ordering::Relaxed, Ordering::Relaxed)
+        .is_err()
+    {
+        return;
+    }
+
+    match decay_unused_facts(pool) {
+        Ok(n) if n > 0 => {
+            tracing::info!(decayed = n, "companion: lifecycle sweep decayed unused facts")
+        }
+        Ok(_) => {}
+        Err(e) => tracing::warn!(error = %e, "companion: fact decay failed (continuing)"),
+    }
+    if let Err(e) = prune_low_value_facts(pool) {
+        tracing::warn!(error = %e, "companion: fact prune failed (continuing)");
+    }
 }
 
 /// Demote facts above the per-scope cap (importance → 0). Lowest-value

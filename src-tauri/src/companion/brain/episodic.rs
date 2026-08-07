@@ -22,6 +22,55 @@ use crate::db::UserDbPool;
 use crate::engine::embedder::EmbeddingManager;
 use crate::error::AppError;
 
+/// Body prefixes that mark an episode as a **machine correlator record**
+/// rather than conversation.
+///
+/// Fleet writes one System episode per session state transition
+/// (`brain/fleet.rs`, `commands/companion/fleet_bridge.rs`). The bodies open
+/// with a structured marker line — `fleet-event session:… cc:… state:…` — that
+/// exists precisely so machines can find and classify them; these constants
+/// are the reader's half of that contract.
+///
+/// They are the majority of episodic memory (259 of 907 episodes on the live
+/// brain, inside a 515-system-episode majority) and they were crowding the
+/// conversation out of Athena's own recall window: the live 20-episode window
+/// held **2 user messages**.
+///
+/// NOT included: `[Fleet] …` completion lines. Those are deliberately
+/// chat-visible (`Bubble.tsx` renders them in the fleet voice) — a report to
+/// the operator, not a correlator record.
+///
+/// Every marker must be free of `'` and `%` — they are interpolated into a
+/// SQL `LIKE` pattern by [`machine_marker_exclusion_sql`]. Asserted in tests.
+pub const MACHINE_EPISODE_MARKERS: &[&str] = &["fleet-event ", "fleet-orchestration "];
+
+/// Is this episode body a machine correlator record rather than conversation?
+///
+/// Single source of truth for the classification: the chat transcript
+/// (`companion_list_recent_messages`) and the recall window
+/// ([`list_recent_conversation`]) both ask this question, and they must never
+/// drift apart from each other or from the writer's marker format.
+pub fn is_machine_episode(content: &str) -> bool {
+    MACHINE_EPISODE_MARKERS
+        .iter()
+        .any(|marker| content.starts_with(marker))
+}
+
+/// SQL fragment excluding machine correlator rows, appended to a
+/// `companion_node` WHERE clause. Filtering in SQL rather than in Rust is what
+/// makes the window *fill up* with conversation — a post-filter would just
+/// shrink a 20-row page to 8.
+///
+/// `body_excerpt` holds the raw body (the writer stores `excerpt_500(content)`,
+/// not the frontmatter-wrapped file), so the marker is at offset 0. Rows with a
+/// NULL excerpt are already excluded by the callers' `body_excerpt IS NOT NULL`.
+fn machine_marker_exclusion_sql() -> String {
+    MACHINE_EPISODE_MARKERS
+        .iter()
+        .map(|marker| format!(" AND body_excerpt NOT LIKE '{marker}%'"))
+        .collect()
+}
+
 /// Roles used in conversation episodes. Observation episodes (agent events
 /// auto-captured by the companion) use a separate kind handled later.
 #[derive(Debug, Clone, Copy)]
@@ -139,6 +188,28 @@ pub fn list_recent(
     hydrate_rows(session_id, rows)
 }
 
+/// Like [`list_recent`], but excluding machine correlator records
+/// (see [`MACHINE_EPISODE_MARKERS`]). **This is the read the RECALL window
+/// uses.**
+///
+/// Machine chatter was 57% of episodic memory and it was crowding the
+/// conversation out of the window Athena reasons over: 12 of the live 20
+/// recall slots were system rows, leaving 2 user messages. It still competes
+/// on relevance — the keyword lane can and should surface a fleet event when
+/// the question is about one — it just no longer competes on *recency*.
+///
+/// The full log stays queryable through [`list_recent`] / [`list_before`],
+/// `companion_fts`, and the append-only markdown on disk. Nothing is deleted.
+pub fn list_recent_conversation(
+    pool: &UserDbPool,
+    session_id: &str,
+    limit: u32,
+) -> Result<Vec<Episode>, AppError> {
+    let conn = pool.get()?;
+    let rows = query_recent_conversation_rows(&conn, session_id, limit)?;
+    hydrate_rows(session_id, rows)
+}
+
 /// Keyset page of episodes STRICTLY OLDER than the `(created_at, id)`
 /// cursor, oldest-first — the "load earlier messages" read behind the
 /// transcript's scroll-to-top pagination.
@@ -196,6 +267,32 @@ fn query_recent_rows(
          ORDER BY created_at DESC, id DESC
          LIMIT ?2",
     )?;
+    let rows = stmt
+        .query_map(params![session_id, limit], read_row)?
+        .collect::<rusqlite::Result<Vec<_>>>()?;
+    Ok(rows)
+}
+
+/// The newest `limit` **conversation** index rows for a session, newest-first.
+/// Same shape and ordering as [`query_recent_rows`] with the machine-correlator
+/// exclusion applied in SQL, so the page fills with `limit` conversation turns
+/// instead of shrinking to whatever survives a post-filter.
+fn query_recent_conversation_rows(
+    conn: &rusqlite::Connection,
+    session_id: &str,
+    limit: u32,
+) -> rusqlite::Result<Vec<EpisodeRow>> {
+    let sql = format!(
+        "SELECT id, file_path, body_excerpt, created_at
+         FROM companion_node
+         WHERE kind = 'episode'
+           AND session_id = ?1
+           AND body_excerpt IS NOT NULL{}
+         ORDER BY created_at DESC, id DESC
+         LIMIT ?2",
+        machine_marker_exclusion_sql()
+    );
+    let mut stmt = conn.prepare(&sql)?;
     let rows = stmt
         .query_map(params![session_id, limit], read_row)?
         .collect::<rusqlite::Result<Vec<_>>>()?;
@@ -359,6 +456,31 @@ mod tests {
         .unwrap();
     }
 
+    /// Insert with an explicit body so the machine-correlator filter can be
+    /// exercised. `role` only lands in the file path (the schema has no role
+    /// column — role is derived from the path).
+    fn insert_body(
+        conn: &Connection,
+        id: &str,
+        session: &str,
+        created_at: &str,
+        role: &str,
+        body: &str,
+    ) {
+        conn.execute(
+            "INSERT INTO companion_node (id, kind, session_id, file_path, body_excerpt, created_at)
+             VALUES (?1, 'episode', ?2, ?3, ?4, ?5)",
+            params![
+                id,
+                session,
+                format!("episodes/2026/08/01/{id}_{role}.md"),
+                body,
+                created_at
+            ],
+        )
+        .unwrap();
+    }
+
     fn ids(rows: &[EpisodeRow]) -> Vec<&str> {
         rows.iter().map(|r| r.0.as_str()).collect()
     }
@@ -444,5 +566,126 @@ mod tests {
         sorted.sort();
         sorted.dedup();
         assert_eq!(sorted.len(), 17, "no duplicates across pages");
+    }
+
+    // ── machine correlator records vs conversation ──────────────────────
+
+    /// The markers are interpolated into a SQL `LIKE` pattern, so they must
+    /// carry no quote or wildcard. Guards `machine_marker_exclusion_sql`.
+    #[test]
+    fn markers_are_safe_to_interpolate_into_like() {
+        for m in MACHINE_EPISODE_MARKERS {
+            assert!(!m.contains('\''), "marker {m:?} would break the SQL literal");
+            assert!(!m.contains('%'), "marker {m:?} would act as a LIKE wildcard");
+            assert!(!m.contains('_'), "marker {m:?} would act as a LIKE wildcard");
+            assert!(!m.is_empty());
+        }
+    }
+
+    #[test]
+    fn classifier_matches_the_writers_marker_format() {
+        // Exactly what `brain/fleet.rs::format_episode_body` emits.
+        assert!(is_machine_episode(
+            "fleet-event session:abc123 cc:- state:running project:personas\n\nFleet session **abc123** …"
+        ));
+        // `fleet_bridge.rs` operation wrap-up.
+        assert!(is_machine_episode(
+            "fleet-orchestration op:op_1 state:op_completed intent:ship it\n\n…"
+        ));
+        // Deliberately NOT machine chatter — a report to the operator that
+        // `Bubble.tsx` renders in the chat.
+        assert!(!is_machine_episode("[Fleet] builder finished — 3 commits"));
+        assert!(!is_machine_episode(
+            "Can you check what the fleet-event pipeline is doing?"
+        ));
+        assert!(!is_machine_episode(""));
+    }
+
+    /// The measured live shape: a 20-slot recall window that held **2 user
+    /// messages** because fleet correlator rows had taken 12 of the slots.
+    ///
+    /// Fixture reproduces that ratio — every block of 10 consecutive episodes
+    /// is 1 user + 1 assistant + 8 fleet-event rows — so the unfiltered top-20
+    /// yields exactly the 2 user messages that were observed.
+    #[test]
+    fn conversation_window_stops_losing_the_user_to_machine_chatter() {
+        let conn = test_conn();
+        // 200 episodes, oldest first, so ids sort with time. Enough blocks
+        // that 20 conversation turns exist to fill the filtered window.
+        for i in 0..200 {
+            let ts = format!("2026-08-01T{:02}:{:02}:00Z", i / 60, i % 60);
+            let id = format!("e{i:03}");
+            match i % 10 {
+                0 => insert_body(&conn, &id, "default", &ts, "user", "What should I ship next?"),
+                1 => insert_body(&conn, &id, "default", &ts, "assistant", "Here is what I'd pick."),
+                _ => insert_body(
+                    &conn,
+                    &id,
+                    "default",
+                    &ts,
+                    "system",
+                    "fleet-event session:s1 cc:- state:running project:personas\n\ndetail",
+                ),
+            }
+        }
+
+        let unfiltered = query_recent_rows(&conn, "default", 20).unwrap();
+        let filtered = query_recent_conversation_rows(&conn, "default", 20).unwrap();
+
+        let user_count = |rows: &[EpisodeRow]| {
+            rows.iter()
+                .filter(|r| r.1.ends_with("_user.md"))
+                .count()
+        };
+        let machine_count = |rows: &[EpisodeRow]| {
+            rows.iter().filter(|r| is_machine_episode(&r.2)).count()
+        };
+
+        // Baseline: the defect, reproduced.
+        assert_eq!(unfiltered.len(), 20);
+        assert_eq!(user_count(&unfiltered), 2, "the measured live shape: 2/20");
+        assert_eq!(machine_count(&unfiltered), 16);
+
+        // Fixed: the window still holds 20 rows — it FILLS with conversation
+        // rather than shrinking — and the user share rises 2 → 10.
+        assert_eq!(filtered.len(), 20, "window fills, it does not shrink");
+        assert_eq!(machine_count(&filtered), 0, "no correlator rows in recall");
+        assert_eq!(user_count(&filtered), 10, "user share 2/20 -> 10/20");
+        assert!(
+            user_count(&filtered) >= 5 * user_count(&unfiltered),
+            "material rise, not a rounding difference"
+        );
+    }
+
+    /// Removing correlator rows from RECALL must not remove them from the
+    /// record. `list_recent` (the transcript/audit read) still returns them.
+    #[test]
+    fn fleet_history_stays_queryable_after_it_leaves_the_recall_window() {
+        let conn = test_conn();
+        insert_body(&conn, "e1", "default", "2026-08-01T00:00:01Z", "user", "hi");
+        insert_body(
+            &conn,
+            "e2",
+            "default",
+            "2026-08-01T00:00:02Z",
+            "system",
+            "fleet-event session:s9 cc:- state:exited project:personas\n\nexited cleanly",
+        );
+
+        let recall = query_recent_conversation_rows(&conn, "default", 20).unwrap();
+        assert_eq!(ids(&recall), vec!["e1"], "not in the recall window");
+
+        let audit = query_recent_rows(&conn, "default", 20).unwrap();
+        assert_eq!(ids(&audit), vec!["e2", "e1"], "still in the record");
+    }
+
+    #[test]
+    fn conversation_window_keeps_session_scoping() {
+        let conn = test_conn();
+        insert_body(&conn, "a1", "default", "2026-08-01T00:00:01Z", "user", "mine");
+        insert_body(&conn, "b1", "other", "2026-08-01T00:00:02Z", "user", "theirs");
+
+        let rows = query_recent_conversation_rows(&conn, "default", 20).unwrap();
+        assert_eq!(ids(&rows), vec!["a1"]);
     }
 }
