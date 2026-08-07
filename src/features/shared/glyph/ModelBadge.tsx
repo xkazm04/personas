@@ -73,7 +73,7 @@ export function ModelBadge({ model, rationale }: ModelBadgeProps) {
   return (
     <span
       title={tooltip}
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border typo-label font-bold uppercase tracking-[0.12em] shrink-0 ${tier.bgColor} ${tier.borderColor} ${tier.textColor}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border typo-label font-bold shrink-0 ${tier.bgColor} ${tier.borderColor} ${tier.textColor}`}
     >
       <Sparkles className="w-3 h-3" />
       {tier.label}

@@ -132,7 +132,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
         <div className="flex-shrink-0 w-[300px] flex flex-col border-r border-primary/10 bg-secondary/10">
           {/* WORKSPACE — the mode trio, tightened into one distinct group. */}
           <div className="flex-shrink-0 px-3 pt-3 pb-2">
-            <p className="px-1 mb-1.5 typo-label uppercase tracking-wider text-foreground">
+            <p className="px-1 mb-1.5 typo-label text-foreground">
               {ts.section_workspace}
             </p>
             <div className="flex flex-col gap-0.5 rounded-card bg-secondary/20 p-1">
@@ -176,7 +176,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
 
           {/* MEMBERS — the roster */}
           <div className="flex-shrink-0 px-3 pt-3 pb-1.5 flex items-center justify-between gap-2">
-            <p className="px-1 typo-label uppercase tracking-wider text-foreground">
+            <p className="px-1 typo-label text-foreground">
               {ts.section_members}
             </p>
             <span className="typo-caption text-foreground">{memberCountLabel}</span>
@@ -321,7 +321,7 @@ function MemberAdjustPane({
       {/* Capabilities */}
       <div className="flex items-center gap-2 flex-shrink-0">
         <SlidersHorizontal className="w-4 h-4 text-foreground" />
-        <h4 className="typo-label uppercase tracking-wider text-foreground">{t.pipeline.team_studio.capabilities}</h4>
+        <h4 className="typo-label text-foreground">{t.pipeline.team_studio.capabilities}</h4>
         <span className="typo-caption text-foreground">
           {tx(t.pipeline.team_studio.capabilities_active, {
             active: member.activeUseCaseCount,

@@ -82,7 +82,7 @@ function LaneColumn({ priority, items, enter, t }: { priority: ReleaseItemPriori
   return (
     <div className="flex flex-col gap-3">
       <header className="flex items-center justify-between border-b border-primary/8 pb-2">
-        <span className={`typo-label font-semibold uppercase tracking-[0.18em] ${accent.label}`}>{t.priority[priority]}</span>
+        <span className={`typo-label font-semibold ${accent.label}`}>{t.priority[priority]}</span>
         <span className={`rounded-full border px-1.5 py-0.5 font-mono text-[11px] font-medium ${accent.bg} ${accent.border} ${accent.chip}`}>
           {items.length}
         </span>

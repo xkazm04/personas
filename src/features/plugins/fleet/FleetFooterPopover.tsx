@@ -72,7 +72,7 @@ export function FleetFooterPopover({
                 data-testid={`footer-fleet-lane-${lane}`}
                 className="flex items-baseline justify-between gap-2 px-1"
               >
-                <span className={`typo-label uppercase tracking-wide text-[10px] ${FLEET_LANE_TONE[lane]}`}>
+                <span className={`typo-label text-[10px] ${FLEET_LANE_TONE[lane]}`}>
                   {t.plugins.fleet[FLEET_LANE_LABEL_KEY[lane]]}
                 </span>
                 <span className={`text-[11px] font-semibold tabular-nums ${FLEET_LANE_TONE[lane]}`}>{total}</span>

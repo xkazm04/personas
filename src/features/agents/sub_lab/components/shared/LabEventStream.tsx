@@ -53,7 +53,7 @@ export function LabEventStream({ resultId, resultKind }: LabEventStreamProps) {
       className="group"
       onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}
     >
-      <summary className="flex items-center gap-1.5 typo-label font-semibold text-foreground uppercase tracking-wider cursor-pointer hover:text-muted-foreground/80">
+      <summary className="flex items-center gap-1.5 typo-label font-semibold text-foreground cursor-pointer hover:text-muted-foreground/80">
         <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
         {t.agents.lab.event_stream}
       </summary>

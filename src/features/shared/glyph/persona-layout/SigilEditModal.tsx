@@ -117,7 +117,7 @@ export function SigilEditModal({
       >
         <Icon className={`w-5 h-5 ${meta.colorClass}`} />
         <div className="flex-1 min-w-0">
-          <span className={`typo-label uppercase tracking-[0.18em] ${meta.colorClass}`}>
+          <span className={`typo-label ${meta.colorClass}`}>
             {dimLabel}
           </span>
           {/* Plain-language "what this dimension does" — so editing Memory

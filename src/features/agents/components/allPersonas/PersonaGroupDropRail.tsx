@@ -89,7 +89,7 @@ export function PersonaGroupDropRail({
       aria-label={rail.aria_label}
       className="flex items-center gap-2 px-3 py-2 border-b border-primary/5"
     >
-      <span className="flex items-center gap-1.5 typo-label text-foreground uppercase tracking-wider flex-shrink-0">
+      <span className="flex items-center gap-1.5 typo-label text-foreground flex-shrink-0">
         <Users className="w-3 h-3" />
         {rail.heading}
       </span>

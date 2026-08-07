@@ -162,7 +162,7 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
                 it server-side and hands us `consumers`. */}
             {item.consumers && item.consumers.length > 0 && (
               <div>
-                <p className="typo-label uppercase tracking-wider text-foreground mb-1.5">{t.monitor.channel_heard_by}</p>
+                <p className="typo-label text-foreground mb-1.5">{t.monitor.channel_heard_by}</p>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {item.consumers.map((pid) => (
                     <PersonaChip key={pid} persona={personaIndex.get(pid)} />
@@ -173,7 +173,7 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
             {raw && (
               <details className="group">
                 <summary className="flex items-center justify-between cursor-pointer list-none select-none">
-                  <span className="typo-label uppercase tracking-wider text-foreground group-hover:text-foreground transition-colors">{t.monitor.channel_raw_payload}</span>
+                  <span className="typo-label text-foreground group-hover:text-foreground transition-colors">{t.monitor.channel_raw_payload}</span>
                   <CopyButton text={raw} />
                 </summary>
                 <pre className="mt-1.5 rounded-card border border-primary/10 bg-secondary/20 px-3 py-2 typo-caption font-mono text-foreground overflow-x-auto max-h-72 overflow-y-auto whitespace-pre-wrap break-words">

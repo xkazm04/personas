@@ -62,7 +62,7 @@ export function ReasonStrip({
       aria-label={t.monitor.triage_reason_aria}
     >
       <div className="flex flex-wrap items-center justify-center gap-2">
-        <span className="typo-label uppercase tracking-wide text-status-error">{prompt.title}</span>
+        <span className="typo-label text-status-error">{prompt.title}</span>
 
         {prompt.options.map((option, i) => (
           <button

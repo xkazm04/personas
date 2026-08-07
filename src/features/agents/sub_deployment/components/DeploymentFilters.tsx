@@ -57,7 +57,7 @@ export function DeploymentFilters({
         {filterOpen && (
           <div className="absolute top-full right-0 mt-1 z-30 bg-background border border-primary/20 rounded-modal shadow-elevation-3 p-3 min-w-[200px] space-y-3">
             <div>
-              <label className="typo-label font-medium text-foreground uppercase tracking-wider">{dt.filter_target}</label>
+              <label className="typo-label font-medium text-foreground">{dt.filter_target}</label>
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {(['all', 'cloud', 'gitlab'] as const).map((v) => (
                   <button
@@ -76,7 +76,7 @@ export function DeploymentFilters({
               </div>
             </div>
             <div>
-              <label className="typo-label font-medium text-foreground uppercase tracking-wider">{dt.filter_status}</label>
+              <label className="typo-label font-medium text-foreground">{dt.filter_status}</label>
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {(['all', 'active', 'paused', 'failed', 'file-based'] as const).map((v) => (
                   <button

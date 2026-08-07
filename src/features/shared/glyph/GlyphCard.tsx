@@ -120,7 +120,7 @@ export function GlyphCard({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={motion_.shouldAnimate ? { opacity: 0, y: -4, scale: 0.94 } : { opacity: 0 }}
                   transition={motion_.shouldAnimate ? { duration: 0.18 } : { duration: 0 }}
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1 rounded-full typo-label font-bold uppercase tracking-[0.18em] pointer-events-none"
+                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1 rounded-full typo-label font-bold pointer-events-none"
                   style={{
                     background: `${hoveredColor}1f`,
                     border: `1px solid ${hoveredColor}55`,

@@ -124,7 +124,7 @@ export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetai
         </div>
         <div className="text-right shrink-0">
           <div className="typo-data font-mono text-foreground">{recipes.length}</div>
-          <div className="typo-label uppercase tracking-wider text-foreground">{t.recipes_catalog.available_label}</div>
+          <div className="typo-label text-foreground">{t.recipes_catalog.available_label}</div>
         </div>
       </div>
 
@@ -245,7 +245,7 @@ function CategoryDropdown({ value, onChange, categoryOptions }: CategoryDropdown
           }`}
           title={t.recipes_catalog.category_filter_aria}
         >
-          <span className="typo-label uppercase tracking-wider opacity-70 normal-case tracking-normal">
+          <span className="typo-label opacity-70">
             {t.recipes_catalog.category_filter_prefix}
           </span>
           <span className="font-medium">{current.label}</span>

@@ -191,7 +191,7 @@ function CartoBand({
             <span className="typo-section-title text-foreground truncate">
               {t.research_lab.projects}
             </span>
-            <span className="typo-label uppercase tracking-[0.2em] text-foreground">
+            <span className="typo-label text-foreground">
               <DebtText k="auto_cartograph_phase_domain_cd11034f" />
             </span>
           </div>

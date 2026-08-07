@@ -61,7 +61,7 @@ export function MonitorLedger({
             {COL_KEYS.map((key, i) => (
               <th
                 key={i}
-                className={`typo-label uppercase tracking-wide text-foreground opacity-50 font-normal px-2 py-1.5 border-b border-primary/15 ${
+                className={`typo-label text-foreground opacity-50 font-normal px-2 py-1.5 border-b border-primary/15 ${
                   i >= FIRST_NUMERIC_COL ? 'text-right' : 'text-left'
                 }`}
               >
@@ -77,7 +77,7 @@ export function MonitorLedger({
             return [
               <tr key={`lane-${lane}`}>
                 <td colSpan={COL_KEYS.length} className="px-2 pt-3 pb-1">
-                  <span className={`typo-label uppercase tracking-wide ${LANE_TONE[lane]}`}>
+                  <span className={`typo-label ${LANE_TONE[lane]}`}>
                     {t.plugins.fleet[LANE_LABEL_KEY[lane]]}
                   </span>
                   <span className="ml-2 typo-caption text-foreground opacity-40 font-data">{terms.length}</span>

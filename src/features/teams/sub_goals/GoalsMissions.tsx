@@ -186,7 +186,7 @@ export function GoalsMissions() {
       <div className="w-72 flex-shrink-0 min-h-0 overflow-y-auto pr-1 space-y-4">
         {grouped.map((g) => (
           <div key={g.id}>
-            <p className={`px-1 mb-1.5 typo-label uppercase tracking-wider ${g.tone}`}>
+            <p className={`px-1 mb-1.5 typo-label ${g.tone}`}>
               {ts[g.labelKey]} <span className="text-foreground font-mono">{g.items.length}</span>
             </p>
             <div className="space-y-1.5">

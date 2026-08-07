@@ -46,7 +46,7 @@ function Stat({
       >
         {typeof value === 'number' ? <Numeric value={value} /> : value}
       </p>
-      <p className="typo-label uppercase tracking-wide text-foreground">{label}</p>
+      <p className="typo-label text-foreground">{label}</p>
     </div>
   );
 }
@@ -69,7 +69,7 @@ export function DeckSummary({ summary }: { summary: TriageSessionSummary }) {
       className="w-full rounded-card border border-primary/12 bg-secondary/25 p-4"
       aria-label={m.triage_summary_title}
     >
-      <h3 className="typo-label mb-3 uppercase tracking-wide text-primary">
+      <h3 className="typo-label mb-3 text-primary">
         {m.triage_summary_title}
       </h3>
 

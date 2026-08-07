@@ -47,7 +47,7 @@ export function ChatDecisionCard() {
       data-companion-decision-source={decision.source}
       className="rounded-card border border-primary/30 bg-primary/[0.05] p-3"
     >
-      <p className="typo-caption tracking-wide font-semibold text-primary">
+      <p className="typo-label font-medium text-primary">
         {t.plugins.companion.decision_title}
       </p>
       <div data-testid="athena-chat-decision-prompt" className="mt-1">
@@ -92,7 +92,7 @@ export function ChatDecisionCard() {
           data-testid="athena-chat-decision-recommendation"
           className="mt-2.5 rounded-input border border-primary/20 bg-primary/5 px-3 py-2.5"
         >
-          <p className="typo-caption tracking-wide font-semibold text-primary">
+          <p className="typo-label font-medium text-primary">
             {t.plugins.companion.decision_recommend_prefix}
           </p>
           <MarkdownRenderer

@@ -165,7 +165,7 @@ export function QuickAnswerReviewStepper({
       <div className="px-4 py-3 border-t border-card-border bg-secondary/10 flex flex-col gap-2">
         {actions.length > 0 && (
           <>
-            <p className="typo-label uppercase tracking-wider text-foreground">
+            <p className="typo-label text-foreground">
               {onDispatchAction ? t.monitor.quick_choose_carry_out : t.monitor.quick_choose_action}
             </p>
             <div className="flex flex-col gap-1.5">

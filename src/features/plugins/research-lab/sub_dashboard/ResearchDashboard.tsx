@@ -112,7 +112,7 @@ export default function ResearchDashboard() {
               <span className="typo-section-title text-foreground truncate">
                 {t.research_lab.dashboard}
               </span>
-              <span className="typo-label uppercase tracking-[0.2em] text-foreground">
+              <span className="typo-label text-foreground">
                 {t.research_lab.pipeline_subtitle}
               </span>
             </div>
@@ -177,7 +177,7 @@ export default function ResearchDashboard() {
             {/* Domain distribution strip */}
             <div className="mt-10 pt-6 border-t border-border/40">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="typo-label uppercase tracking-[0.2em] text-foreground">
+                <h3 className="typo-label text-foreground">
                   {t.research_lab.domains}
                 </h3>
                 <span className="typo-caption text-foreground tabular-nums">

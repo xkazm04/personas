@@ -216,14 +216,14 @@ function HubTopBar({
       {/* Phase pill */}
       <div className="relative z-10 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/25 shadow-elevation-1">
         {isRunning && <Loader2 className="w-3.5 h-3.5 text-foreground animate-spin" />}
-        <span className="typo-label font-bold uppercase tracking-[0.15em] text-foreground">
+        <span className="typo-label font-bold text-foreground">
           {phaseText}
         </span>
       </div>
 
       {/* Completeness */}
       <div className="relative z-10 flex items-center gap-2 flex-1 min-w-0 max-w-[320px]">
-        <span className="typo-label font-semibold tracking-[0.12em] text-foreground hidden md:inline">
+        <span className="typo-label font-semibold text-foreground hidden md:inline">
           {t.templates.chronology.hub_completeness_label}
         </span>
         <div className="flex-1 h-2 rounded-full bg-primary/10 overflow-hidden shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]">

@@ -84,7 +84,7 @@ export function LensStream({
   if (data.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <span className="hud-empty typo-label uppercase tracking-wider text-foreground opacity-60">{emptyLabel}</span>
+        <span className="hud-empty typo-label text-foreground opacity-60">{emptyLabel}</span>
       </div>
     );
   }

@@ -369,7 +369,7 @@ export function ExtractionMenu({
               </span>
             </button>
 
-            <div className="typo-label text-muted-foreground uppercase tracking-wide px-2.5 pt-3 pb-1">
+            <div className="typo-label text-muted-foreground px-2.5 pt-3 pb-1">
               {tw.harvest_section}
             </div>
             {memberProjects.length === 0 && (

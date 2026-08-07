@@ -119,7 +119,7 @@ export function PresetQuestionnaireForm({
     >
       <header className="flex items-center gap-2 pb-1 border-b border-primary/10">
         <Settings2 className="w-4 h-4 text-foreground" />
-        <h3 className="typo-label uppercase tracking-wider text-foreground flex-1">
+        <h3 className="typo-label text-foreground flex-1">
           {t.templates.presets.questionnaire_heading}
         </h3>
         <span className="typo-caption text-foreground">

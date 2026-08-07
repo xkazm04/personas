@@ -161,7 +161,7 @@ export const DeckQueueRail = memo(function DeckQueueRail({
       className={`hidden h-full ${RAIL_WIDTH} shrink-0 flex-col border-r border-primary/10 bg-secondary/15 lg:flex`}
     >
       <div className="flex shrink-0 items-baseline justify-between border-b border-primary/10 px-3 py-3">
-        <h2 className="typo-label uppercase tracking-wide text-muted-foreground">
+        <h2 className="typo-label text-muted-foreground">
           {t.monitor.triage_queue_rail_title}
         </h2>
         <span className="typo-data tabular-nums text-foreground">{items.length}</span>

@@ -108,7 +108,7 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
 
               {entry.errorMessage && (
                 <div className="space-y-1">
-                  <div className="typo-label font-medium text-red-400/70 uppercase tracking-wide">Error</div>
+                  <div className="typo-label font-medium text-red-400/70">Error</div>
                   <div className="px-2.5 py-2 rounded-card bg-red-500/5 border border-red-500/10 typo-code text-red-400/90 font-mono whitespace-pre-wrap break-all">
                     {entry.errorMessage}
                   </div>

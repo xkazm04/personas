@@ -201,7 +201,7 @@ export function BuildSimulatePanel({
           ) : (
             <>
               <label className="block">
-                <span className="typo-label uppercase tracking-wide text-foreground mb-1.5 block">
+                <span className="typo-label text-foreground mb-1.5 block">
                   {t.agents.build_simulate.select_capability}
                 </span>
                 <select
@@ -224,7 +224,7 @@ export function BuildSimulatePanel({
               </label>
 
               <label className="block">
-                <span className="typo-label uppercase tracking-wide text-foreground mb-1.5 block">
+                <span className="typo-label text-foreground mb-1.5 block">
                   {t.agents.build_simulate.input_label}
                 </span>
                 <textarea
@@ -349,7 +349,7 @@ function ArtefactsPreview({
       ) : (
         <div className="space-y-4">
           <div>
-            <h4 className="typo-label uppercase tracking-wide text-foreground mb-2">
+            <h4 className="typo-label text-foreground mb-2">
               {reviewsHeading}
             </h4>
             {reviews.length === 0 ? (
@@ -386,7 +386,7 @@ function ArtefactsPreview({
           </div>
 
           <div>
-            <h4 className="typo-label uppercase tracking-wide text-foreground mb-2">
+            <h4 className="typo-label text-foreground mb-2">
               {memoriesHeading}
             </h4>
             {memories.length === 0 ? (

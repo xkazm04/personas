@@ -106,7 +106,7 @@ export function ImprovePopover({
         <div className="px-3 pt-2.5 space-y-1.5">
           <LevelLadder rowKey={rowKey} passport={before} />
           {dimensionReason(rowKey, raw) && (
-            <p className="typo-label text-foreground/45 leading-snug">{dimensionReason(rowKey, raw)}</p>
+            <p className="typo-caption">{dimensionReason(rowKey, raw)}</p>
           )}
         </div>
       )}

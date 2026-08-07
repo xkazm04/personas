@@ -252,7 +252,7 @@ export function QuestionnaireFormGrid({
                           >
                             <div className="flex items-center gap-2 px-4 pt-3 pb-2">
                               <Icon className={`w-4 h-4 ${meta.color}`} />
-                              <span className={`typo-label font-semibold uppercase tracking-wider ${meta.color}`}>
+                              <span className={`typo-label font-semibold ${meta.color}`}>
                                 {meta.label}
                               </span>
                               <span className="text-[10px] text-foreground ml-auto">
@@ -309,7 +309,7 @@ export function QuestionnaireFormGrid({
                     {/* Category header */}
                     <div className="flex items-center gap-2 px-4 pt-3 pb-2">
                       <Icon className={`w-4 h-4 ${meta.color}`} />
-                      <span className={`typo-label font-semibold uppercase tracking-wider ${meta.color}`}>
+                      <span className={`typo-label font-semibold ${meta.color}`}>
                         {meta.label}
                       </span>
                       <span className="text-[10px] text-foreground ml-auto">

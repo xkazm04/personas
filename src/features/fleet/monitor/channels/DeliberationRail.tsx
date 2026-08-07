@@ -160,7 +160,7 @@ export function DeliberationRail({ teamId, deliberationId }: { teamId: string; d
           resolved, not when a turn budget runs out. */}
       {d.agenda.length > 0 && (
         <div>
-          <p className="typo-label uppercase tracking-wider text-foreground opacity-45 mb-1">{t.monitor.delib_agenda}</p>
+          <p className="typo-label text-foreground opacity-45 mb-1">{t.monitor.delib_agenda}</p>
           <div className="space-y-1">
             {d.agenda.map((a) => (
               <div key={a.id} className="flex items-start gap-1.5">

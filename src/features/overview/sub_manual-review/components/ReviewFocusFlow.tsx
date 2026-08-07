@@ -306,7 +306,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
       {/* ---- Queue Sidebar ---- */}
       <div className="w-[330px] flex-shrink-0 border-r border-primary/10 bg-secondary/20 flex flex-col">
         <div className="px-3 py-2.5 border-b border-primary/10 flex items-center justify-between">
-          <span className="typo-label font-semibold text-foreground uppercase tracking-wider">{t.overview.review_focus.queue} ({pending.length})</span>
+          <span className="typo-label font-semibold text-foreground">{t.overview.review_focus.queue} ({pending.length})</span>
           <div className="flex items-center gap-1.5">
             {sevCounts.critical > 0 && (
               <span className="flex items-center gap-1">
@@ -394,7 +394,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                     <div className="ml-auto flex flex-col items-end gap-1">
                       {hasMultipleDecisions && (
                         <div className="flex items-center gap-2">
-                          <span className="typo-label font-semibold uppercase tracking-wider text-foreground">
+                          <span className="typo-label font-semibold text-foreground">
                             Decision {decisionIdx + 1} of {decisions.length}
                           </span>
                           <Button variant="ghost" size="icon-sm" onClick={goPrevDecision} disabled={decisionIdx === 0}>

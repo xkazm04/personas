@@ -231,7 +231,7 @@ function SurfaceBlockView({
         >
           <ConfidenceArc value={block.value} width={72} height={40} showLabel />
           <div className="min-w-0">
-            <span className="typo-label uppercase tracking-wider text-foreground block">{block.label}</span>
+            <span className="typo-label text-foreground block">{block.label}</span>
             {block.hint && <span className="typo-caption text-foreground">{block.hint}</span>}
           </div>
         </div>

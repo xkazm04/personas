@@ -50,7 +50,7 @@ export function SkillActionConfirm({ kind, skill, projectName, busy, preset = fa
         <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10 bg-primary/[0.04]">
           <Icon className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
           <span id="skill-action-confirm-title" className="typo-title truncate">{skill.name}</span>
-          <span className="ml-auto typo-label text-foreground/40 uppercase tracking-[0.1em] flex-shrink-0">{kindLabel}</span>
+          <span className="ml-auto typo-label text-foreground/40 flex-shrink-0">{kindLabel}</span>
         </div>
 
         <div className="px-5 py-4 space-y-3.5">
@@ -63,7 +63,7 @@ export function SkillActionConfirm({ kind, skill, projectName, busy, preset = fa
           </div>
 
           {/* What confirming does — moved out of the (truncated) footer. */}
-          <p className="typo-label text-foreground/50 leading-snug">{blurb}</p>
+          <p className="typo-caption">{blurb}</p>
 
           {kind === 'use' && (
             <div className="space-y-2">

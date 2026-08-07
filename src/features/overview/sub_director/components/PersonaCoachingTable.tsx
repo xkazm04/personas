@@ -83,7 +83,7 @@ export function PersonaCoachingTable({
   return (
     <div>
       {/* header row */}
-      <div className={`${ROW_GRID} px-2.5 pb-2 typo-label uppercase tracking-wider text-foreground border-b border-primary/10`}>
+      <div className={`${ROW_GRID} px-2.5 pb-2 typo-label text-foreground border-b border-primary/10`}>
         <span>{t.director.roster_col_agent}</span>
         <span className="text-center">{t.director.roster_col_score}</span>
         <span>{t.director.roster_col_trend}</span>

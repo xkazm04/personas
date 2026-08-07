@@ -96,7 +96,7 @@ export function PresetGraphAdapter({ preset }: PresetGraphAdapterProps) {
     <section>
       <div className="flex items-center gap-2 mb-2">
         <Users className="w-3.5 h-3.5 text-foreground" />
-        <h3 className="typo-label uppercase tracking-wider text-foreground">
+        <h3 className="typo-label text-foreground">
           {t.templates.presets.preview_graph_heading}
         </h3>
       </div>

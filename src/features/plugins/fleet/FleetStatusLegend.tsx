@@ -43,7 +43,7 @@ export function FleetStatusLegend() {
         className="pointer-events-none absolute right-0 top-full z-20 mt-1 w-56 rounded-card border border-primary/15 bg-secondary/95 p-3 opacity-0 shadow-elevation-2 backdrop-blur-sm transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
       >
         <div className="mb-2">
-          <p className="typo-label mb-1 uppercase tracking-wider text-foreground">
+          <p className="typo-label mb-1 text-foreground">
             {t.plugins.fleet.legend_process}
           </p>
           <ul className="space-y-1">
@@ -53,7 +53,7 @@ export function FleetStatusLegend() {
           </ul>
         </div>
         <div>
-          <p className="typo-label mb-1 uppercase tracking-wider text-foreground">
+          <p className="typo-label mb-1 text-foreground">
             {t.plugins.fleet.legend_activity}
           </p>
           <ul className="space-y-1">

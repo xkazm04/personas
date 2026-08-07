@@ -712,7 +712,7 @@ function PersonaStandard({
         <p className="typo-body-lg font-semibold text-foreground mt-2.5 text-center truncate">
           {name ?? '—'}
         </p>
-        <p className="typo-label text-primary/85 text-center mt-0.5 tracking-widest uppercase">
+        <p className="typo-label text-primary/85 text-center mt-0.5">
           Champion
         </p>
       </div>

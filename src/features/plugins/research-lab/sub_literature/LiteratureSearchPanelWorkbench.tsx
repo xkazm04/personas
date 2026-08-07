@@ -121,7 +121,7 @@ export default function LiteratureSearchPanelWorkbench() {
             </div>
             <div className="flex flex-col leading-tight">
               <span className="typo-section-title text-foreground">{t.research_lab.literature}</span>
-              <span className="typo-label uppercase tracking-[0.2em] text-foreground">
+              <span className="typo-label text-foreground">
                 <DebtText k="auto_workbench_361b6e18" /> {filtered.length} of {sources.length}
               </span>
             </div>

@@ -82,7 +82,7 @@ function ThreadItem({
               )}
             </div>
           ) : state === 'current' ? (
-            <div className="typo-label uppercase tracking-[0.18em] text-primary/80 font-semibold mt-1">
+            <div className="typo-label text-primary/80 font-semibold mt-1">
               current
             </div>
           ) : state === 'blocked' ? (
@@ -150,7 +150,7 @@ export function QuestionnaireStoryThread({
     >
       <div className="flex-shrink-0 px-4 py-3 border-b border-border flex items-center gap-2">
         <BookOpen className="w-4 h-4 text-primary/70" />
-        <span className="typo-label uppercase tracking-[0.2em] text-foreground font-semibold">
+        <span className="typo-label text-foreground font-semibold">
           <DebtText k="auto_story_so_far_615368df" />
         </span>
         <span className="ml-auto typo-data text-foreground tabular-nums">
@@ -173,7 +173,7 @@ export function QuestionnaireStoryThread({
               {showChapter && (
                 <div className="flex items-center gap-2 px-1 pt-3 pb-1.5">
                   <meta.Icon className={`w-3.5 h-3.5 ${meta.color}`} />
-                  <span className={`typo-label uppercase tracking-[0.18em] font-semibold ${meta.color}`}>
+                  <span className={`typo-label font-semibold ${meta.color}`}>
                     {meta.label}
                   </span>
                   <div className="flex-1 h-px bg-border" />

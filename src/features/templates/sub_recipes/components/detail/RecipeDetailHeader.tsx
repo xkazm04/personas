@@ -79,14 +79,14 @@ export function RecipeDetailHeader({
             {hasPersona && <EligibilityChip eligibility={eligibility} />}
             {hasPersona && adopted && stale && (
               <Tooltip content={tx(t.recipes_catalog.update_badge_detail_tooltip, { from: adoptedVersion ?? '?', to: recipe.version })}>
-                <span className="inline-flex items-center gap-0.5 typo-label uppercase tracking-wider px-1.5 py-0.5 rounded border border-status-warning/40 bg-status-warning/10 text-status-warning">
+                <span className="inline-flex items-center gap-0.5 typo-label px-1.5 py-0.5 rounded border border-status-warning/40 bg-status-warning/10 text-status-warning">
                   <ArrowUpCircle className="w-2.5 h-2.5" />
                   {t.recipes_catalog.update_badge}
                 </span>
               </Tooltip>
             )}
             {hasPersona && adopted && !stale && (
-              <span className="inline-flex items-center gap-0.5 typo-label uppercase tracking-wider px-1.5 py-0.5 rounded border border-status-success/35 bg-status-success/10 text-status-success">
+              <span className="inline-flex items-center gap-0.5 typo-label px-1.5 py-0.5 rounded border border-status-success/35 bg-status-success/10 text-status-success">
                 <Check className="w-2.5 h-2.5" />
                 {t.recipes_catalog.adopted_badge}
               </span>
@@ -94,7 +94,7 @@ export function RecipeDetailHeader({
           </div>
           <div className="typo-body text-foreground mt-0.5">{recipe.summary}</div>
           <div className="flex items-center gap-2 mt-2 flex-wrap">
-            <span className="typo-label uppercase tracking-wider px-1.5 py-0.5 rounded border border-primary/30 bg-primary/10 text-primary">
+            <span className="typo-label px-1.5 py-0.5 rounded border border-primary/30 bg-primary/10 text-primary">
               {categoryLabel(t, recipe.category)}
             </span>
             <span className="typo-label font-mono px-1.5 py-0.5 rounded border border-card-border/60 bg-secondary/40 text-foreground">
@@ -212,7 +212,7 @@ function EligibilityBanner({ kind, title, body }: EligibilityBannerProps) {
     <div className={`mx-4 mt-4 px-3 py-2.5 rounded-card border ${cls} flex items-start gap-2`}>
       <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${iconCls}`} />
       <div className="flex-1 min-w-0">
-        <div className={`typo-label uppercase tracking-wider ${iconCls}`}>{title}</div>
+        <div className={`typo-label ${iconCls}`}>{title}</div>
         <div className="typo-caption text-foreground/85 mt-0.5">{body}</div>
       </div>
     </div>

@@ -213,7 +213,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
         {/* Plain rationale fallback (for older results without structured data) */}
         {plain && (
           <div className="space-y-1.5">
-            <h5 className="flex items-center gap-1.5 typo-label font-semibold text-foreground uppercase tracking-wider">
+            <h5 className="flex items-center gap-1.5 typo-label font-semibold text-foreground">
               <MessageSquare className="w-3 h-3" />
               {t.agents.lab.evaluation_notes}
             </h5>
@@ -226,7 +226,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
         {/* Suggestions */}
         {result.suggestions && (
           <div className="space-y-1.5">
-            <h5 className="flex items-center gap-1.5 typo-label font-semibold text-amber-400/80 uppercase tracking-wider">
+            <h5 className="flex items-center gap-1.5 typo-label font-semibold text-amber-400/80">
               <Lightbulb className="w-3 h-3" />
               {t.agents.lab.how_to_fix}
             </h5>
@@ -250,7 +250,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
         {/* Output preview */}
         {result.outputPreview && (
           <details className="group">
-            <summary className="flex items-center gap-1.5 typo-label font-semibold text-foreground uppercase tracking-wider cursor-pointer hover:text-muted-foreground/80">
+            <summary className="flex items-center gap-1.5 typo-label font-semibold text-foreground cursor-pointer hover:text-muted-foreground/80">
               <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
               {t.agents.lab.agent_output}
             </summary>
@@ -268,7 +268,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
         {/* Tool calls */}
         {(expectedCalls.length > 0 || actualCalls.length > 0) && (
           <details className="group">
-            <summary className="flex items-center gap-1.5 typo-label font-semibold text-foreground uppercase tracking-wider cursor-pointer hover:text-muted-foreground/80">
+            <summary className="flex items-center gap-1.5 typo-label font-semibold text-foreground cursor-pointer hover:text-muted-foreground/80">
               <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
               {t.agents.lab.tool_calls}
             </summary>

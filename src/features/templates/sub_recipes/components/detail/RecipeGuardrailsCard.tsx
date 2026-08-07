@@ -40,7 +40,7 @@ export function RecipeGuardrailsCard({ recipe }: RecipeGuardrailsCardProps) {
 
   return (
     <section className="mx-4 mb-6 rounded-card border border-card-border bg-secondary/30 p-4 shadow-elevation-1" data-testid="recipe-guardrails-card">
-      <h4 className="typo-label uppercase tracking-wider text-foreground mb-3">
+      <h4 className="typo-label text-foreground mb-3">
         {t.recipes_catalog.guardrails_heading}
       </h4>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -86,7 +86,7 @@ function PolicyBlock({ icon: Icon, label, badge, body }: PolicyBlockProps) {
         <Icon className="w-3.5 h-3.5 text-foreground shrink-0" />
         <span className="typo-caption font-medium text-foreground">{label}</span>
         {badge && (
-          <span className={`typo-label uppercase tracking-wider px-1.5 py-0.5 rounded border ${badge.cls}`}>
+          <span className={`typo-label px-1.5 py-0.5 rounded border ${badge.cls}`}>
             {badge.label}
           </span>
         )}

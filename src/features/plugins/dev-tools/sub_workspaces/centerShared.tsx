@@ -250,7 +250,7 @@ export function MembershipPanel({
   return (
     <div className="grid grid-cols-2 gap-3 min-w-0">
       <div className="min-w-0">
-        <div className="typo-label text-muted-foreground uppercase tracking-wide mb-2">
+        <div className="typo-label text-muted-foreground mb-2">
           {tx(tw.members_count, { count: members.length })}
         </div>
         <div className="flex flex-col gap-1">
@@ -269,7 +269,7 @@ export function MembershipPanel({
         </div>
       </div>
       <div className="min-w-0">
-        <div className="typo-label text-muted-foreground uppercase tracking-wide mb-2">
+        <div className="typo-label text-muted-foreground mb-2">
           {tx(tw.other_projects, { count: candidates.length })}
         </div>
         <div className="flex flex-col gap-1">
@@ -372,7 +372,7 @@ export function CreateWorkspaceInline({ autoFocus }: { autoFocus?: boolean }) {
         />
         <span className="min-w-0">
           <span className="typo-caption text-foreground block">{tw.adopt_skills_label}</span>
-          <span className="typo-label text-foreground/45 block">{tw.adopt_skills_hint}</span>
+          <span className="typo-caption block">{tw.adopt_skills_hint}</span>
         </span>
       </label>
     </form>

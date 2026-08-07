@@ -95,7 +95,7 @@ export function DimensionPanel({ dim, row, onClose, onRefine, isBuilding }: Dime
         >
           <Icon className="w-4 h-4" style={{ color: '#fff' }} />
         </span>
-        <span className="typo-label font-bold uppercase tracking-[0.18em] text-foreground">
+        <span className="typo-label font-bold text-foreground">
           {dimText.label[dim]}
         </span>
       </div>
@@ -124,7 +124,7 @@ export function DimensionPanel({ dim, row, onClose, onRefine, isBuilding }: Dime
           className="flex flex-col gap-2 px-4 py-3 border-t border-card-border"
           style={{ background: `linear-gradient(180deg, transparent, ${meta.color}0a)` }}
         >
-          <label className="typo-label font-semibold uppercase tracking-[0.18em] text-foreground">
+          <label className="typo-label font-semibold text-foreground">
             {c.refine_dim_label}
           </label>
           <textarea
@@ -152,7 +152,7 @@ export function DimensionPanel({ dim, row, onClose, onRefine, isBuilding }: Dime
       )}
       {!!isBuilding && (
         <div className="px-4 py-3 border-t border-card-border bg-foreground/[0.03]">
-          <span className="typo-label text-foreground italic">
+          <span className="typo-caption italic">
             {c.build_locked_note}
           </span>
         </div>

@@ -77,7 +77,7 @@ export function SkillInfoModal({ skillName, projectId, onClose }: {
         <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10 bg-primary/[0.04]">
           <Icon className="w-4 h-4 flex-shrink-0" style={hue ? { color: hue } : undefined} aria-hidden />
           <span id="skill-info-title" className="typo-title truncate">{skillName}</span>
-          {meta?.category && <span className="ml-auto typo-label text-foreground/40 uppercase tracking-[0.1em] flex-shrink-0">{meta.category}</span>}
+          {meta?.category && <span className="ml-auto typo-label text-foreground/40 flex-shrink-0">{meta.category}</span>}
         </div>
 
         <div className="px-5 py-4 space-y-4">
@@ -91,7 +91,7 @@ export function SkillInfoModal({ skillName, projectId, onClose }: {
                   ? <p className="typo-caption text-foreground/75 leading-relaxed">{meta.description}</p>
                   : <p className="typo-caption text-foreground/35 italic">{d.skills_confirm_no_desc}</p>}
                 {meta?.bodySummary && meta.bodySummary !== meta.description && (
-                  <p className="typo-label text-foreground/45 leading-relaxed mt-2">{meta.bodySummary}</p>
+                  <p className="typo-caption mt-2">{meta.bodySummary}</p>
                 )}
               </div>
 

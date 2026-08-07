@@ -241,7 +241,7 @@ export function DriveSidebar({
           className="border-t border-primary/10 px-4 py-3 bg-background/40"
           title={drive.storage.root}
         >
-          <div className="typo-label text-foreground tracking-wider uppercase mb-1">
+          <div className="typo-label text-foreground mb-1">
             {t.plugins.drive.sidebar_storage}
           </div>
           <div className="typo-section-title tabular-nums text-foreground">

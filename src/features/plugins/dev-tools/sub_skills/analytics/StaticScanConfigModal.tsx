@@ -83,7 +83,7 @@ export function StaticScanConfigModal({
         <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10 bg-primary/[0.04]">
           <Binary className="w-4 h-4 text-status-success flex-shrink-0" aria-hidden />
           <span id="static-scan-config" className="typo-title truncate">{ds.static_config_title}</span>
-          <span className="ml-auto typo-label text-foreground/40 uppercase tracking-[0.1em] flex-shrink-0">{d.skills_static_title}</span>
+          <span className="ml-auto typo-label text-foreground/40 flex-shrink-0">{d.skills_static_title}</span>
         </div>
 
         <div className="px-5 py-4 space-y-4">
@@ -105,7 +105,7 @@ export function StaticScanConfigModal({
               onChange={(e) => setCommand(e.target.value)}
               className="w-full px-3 py-2 typo-body font-mono bg-background/70 border border-primary/15 rounded-input text-foreground placeholder:text-foreground/40 outline-none focus:border-primary/40"
             />
-            <p className="typo-label text-foreground/45 leading-snug">{ds.static_config_command_hint}</p>
+            <p className="typo-caption">{ds.static_config_command_hint}</p>
           </div>
         </div>
 

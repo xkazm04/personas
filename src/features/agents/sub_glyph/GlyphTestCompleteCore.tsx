@@ -52,12 +52,12 @@ export function GlyphTestCompleteCore({
         {testPassed ? (
           <>
             <CheckCircle2 className="w-8 h-8 text-emerald-400" />
-            <span className="typo-label uppercase tracking-[0.2em] text-emerald-400"><DebtText k="auto_tests_passed_acdb861b" /></span>
+            <span className="typo-label text-emerald-400"><DebtText k="auto_tests_passed_acdb861b" /></span>
           </>
         ) : (
           <>
             <AlertCircle className="w-8 h-8 text-orange-400" />
-            <span className="typo-label uppercase tracking-[0.2em] text-orange-400"><DebtText k="auto_tests_failed_30667b92" /></span>
+            <span className="typo-label text-orange-400"><DebtText k="auto_tests_failed_30667b92" /></span>
             {testError && (
               <p className="typo-caption text-foreground max-w-[240px] line-clamp-2">{testError}</p>
             )}

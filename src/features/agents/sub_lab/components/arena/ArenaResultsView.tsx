@@ -164,7 +164,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
 
       {/* Model comparison cards */}
       <div className="space-y-3">
-        <h4 className="typo-label font-semibold text-foreground uppercase tracking-wider px-1">{t.agents.lab.model_performance}</h4>
+        <h4 className="typo-label font-semibold text-foreground px-1">{t.agents.lab.model_performance}</h4>
         <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(aggregates.length, 3)}, 1fr)` }}>
           {aggregates.map((agg, idx) => {
             const isWinner = agg.modelId === bestModelId;
@@ -240,13 +240,13 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
         <details className="group">
           <summary className="flex items-center gap-2 cursor-pointer select-none px-1">
             <ChevronDown className="w-3.5 h-3.5 text-foreground transition-transform group-open:rotate-180" />
-            <h4 className="typo-label font-semibold text-foreground uppercase tracking-wider">{t.agents.lab.insights_suggestions}</h4>
+            <h4 className="typo-label font-semibold text-foreground">{t.agents.lab.insights_suggestions}</h4>
           </summary>
           <div className="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-4">
             {topRationale.length > 0 && (
               <div className="rounded-modal border border-primary/10 bg-secondary/20 overflow-hidden">
                 <div className="px-4 py-2.5 border-b border-primary/5 bg-secondary/30">
-                  <h4 className="flex items-center gap-1.5 typo-label font-semibold text-foreground uppercase tracking-wider">
+                  <h4 className="flex items-center gap-1.5 typo-label font-semibold text-foreground">
                     <MessageSquare className="w-3 h-3" /> {t.agents.lab.evaluation_insights}
                   </h4>
                 </div>
@@ -263,7 +263,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
             {topSuggestions.length > 0 && (
               <div className="rounded-modal border border-amber-500/10 bg-amber-500/[0.03] overflow-hidden">
                 <div className="px-4 py-2.5 border-b border-amber-500/10 bg-amber-500/[0.05]">
-                  <h4 className="flex items-center gap-1.5 typo-label font-semibold text-amber-400/70 uppercase tracking-wider">
+                  <h4 className="flex items-center gap-1.5 typo-label font-semibold text-amber-400/70">
                     <Lightbulb className="w-3 h-3" /> {t.agents.lab.improvement_suggestions}
                   </h4>
                 </div>
@@ -283,16 +283,16 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
       {/* Scenario breakdown */}
       <div className="space-y-3">
         <div className="flex items-center gap-2 px-1">
-          <h4 className="typo-label font-semibold text-foreground uppercase tracking-wider">{t.agents.lab.scenario_breakdown}</h4>
+          <h4 className="typo-label font-semibold text-foreground">{t.agents.lab.scenario_breakdown}</h4>
           <span className="text-[10px] text-foreground">{t.agents.lab.click_cell_details}</span>
         </div>
         <div data-virtual-scroll className="overflow-x-auto max-h-[70vh] overflow-y-auto border border-primary/10 rounded-modal">
           <table className="w-full typo-body">
             <thead>
               <tr className="border-b border-primary/10 bg-secondary/20">
-                <th className="text-left px-3 py-2.5 font-medium text-foreground typo-label uppercase tracking-wider">Scenario</th>
+                <th className="text-left px-3 py-2.5 font-medium text-foreground typo-label">Scenario</th>
                 {models.map((mid) => (
-                  <th key={mid} className={`text-center px-3 py-2.5 font-medium typo-label uppercase tracking-wider ${mid === bestModelId ? 'text-primary/80' : 'text-foreground'}`}>
+                  <th key={mid} className={`text-center px-3 py-2.5 font-medium typo-label ${mid === bestModelId ? 'text-primary/80' : 'text-foreground'}`}>
                     <span className="inline-flex items-center justify-center gap-1">
                       {mid === bestModelId && <Trophy className="w-3 h-3" aria-label={t.agents.lab.best_badge} />}
                       {mid}

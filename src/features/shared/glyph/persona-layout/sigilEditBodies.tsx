@@ -43,7 +43,7 @@ export function resolveSigilEditBody(dim: GlyphDimension, { uc, t }: SigilBodyAr
       if (!label) return inactiveBody(c.sigil_edit_no_trigger);
       return (
         <div className="flex flex-col gap-1.5">
-          <span className="typo-label uppercase tracking-wider text-foreground">{c.sigil_edit_when_label}</span>
+          <span className="typo-label text-foreground">{c.sigil_edit_when_label}</span>
           <span className="typo-body-lg text-foreground">{label}</span>
         </div>
       );
@@ -79,7 +79,7 @@ export function resolveSigilEditBody(dim: GlyphDimension, { uc, t }: SigilBodyAr
       }
       return (
         <div className="flex flex-col gap-1.5">
-          <span className="typo-label uppercase tracking-wider text-foreground">{c.sigil_edit_channels_label}</span>
+          <span className="typo-label text-foreground">{c.sigil_edit_channels_label}</span>
           <ul className="flex flex-col gap-1">
             {channels.map((ch, i) => (
               <li key={`${ch}-${i}`} className="typo-body-lg text-foreground">{ch}</li>

@@ -86,17 +86,15 @@ body {
   line-height: 1.45;
 }
 
-/* Arabic letter spacing -- tighter tracking suits Arabic calligraphic flow */
-[data-lang="ar"] .typo-label {
-  letter-spacing: 0.02em;
-}
-
-/* CJK doesn't benefit from uppercase or wide tracking */
+/* Arabic and CJK take no letter-spacing on labels -- Arabic is cursive (tracking
+   breaks the joins) and CJK glyphs are already on a fixed em grid. Since .typo-label
+   stopped being uppercase + wide-tracked in 2026-08, these are the only remaining
+   script adjustments it needs. */
+[data-lang="ar"] .typo-label,
 [data-lang="zh"] .typo-label,
 [data-lang="ja"] .typo-label,
 [data-lang="ko"] .typo-label {
-  text-transform: none;
-  letter-spacing: 0.05em;
+  letter-spacing: 0;
 }
 
 /* -- Semantic Typography Classes ---------------------------------------------
@@ -175,14 +173,34 @@ body {
   }
 }
 
-/* Label -- uppercase category markers, dividers, badges */
+/* -- Label -------------------------------------------------------------------
+   The small strong tier: category markers, dividers, badges, chip text,
+   column headers — anything that names a thing in less than a line.
+
+   READS AS NORMAL TEXT (changed 2026-08-07). It was 700-weight, 0.15em-tracked
+   UPPERCASE with line-height 1, which is display styling, not reading styling:
+   it forced squinting on anything longer than two words, collapsed acronyms and
+   proper nouns into the surrounding shout, and could not wrap (line-height 1
+   overlaps descenders on a second line). It now sits directly below .typo-title
+   on the same recipe — one size smaller, same weight, same near-normal tracking
+   — so a label/title/caption stack reads as three tiers of the SAME voice.
+
+   Size is the only thing separating it from .typo-title; weight is what
+   separates it from .typo-caption. Do not add font-* utilities here: the rules
+   in this file are unlayered and beat Tailwind's @layer utilities, so
+   `typo-label font-bold` is silently a no-op.
+
+   NOT FOR SENTENCES. If the text is a phrase a user reads rather than scans
+   (roughly 6+ words, or anything that wraps), it is secondary prose — use
+   .typo-caption, which is body-sized, normal weight, and muted for exactly
+   that job. `uppercase` is available as an opt-in utility again now that this
+   token no longer sets text-transform, but the house style is sentence case. */
 .typo-label {
   font-size: 0.75rem;            /* text-xs */
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  font-feature-settings: "kern" 1, "liga" 1, "smcp" 0;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  font-feature-settings: "kern" 1, "liga" 1;
 }
 
 /* Data -- numbers, stats, metrics. Tabular nums for alignment. */

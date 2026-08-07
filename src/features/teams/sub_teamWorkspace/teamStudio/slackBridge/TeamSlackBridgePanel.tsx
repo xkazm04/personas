@@ -68,7 +68,7 @@ export function TeamSlackBridgePanel({ teamId }: { teamId: string }) {
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Hash className="w-3.5 h-3.5 text-teal-300/80" />
-          <span className="typo-label uppercase tracking-wider text-foreground">{ts.slack_bridge_heading}</span>
+          <span className="typo-label text-foreground">{ts.slack_bridge_heading}</span>
         </div>
         <span
           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full typo-caption ${

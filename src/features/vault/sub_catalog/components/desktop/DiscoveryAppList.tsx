@@ -45,7 +45,7 @@ export function DiscoveryAppList({
         <>
           {installedApps.length > 0 && (
             <div className="space-y-2">
-              <h4 className="typo-label font-medium text-foreground uppercase tracking-wide">
+              <h4 className="typo-label font-medium text-foreground">
                 {dd.detected_on_system}
               </h4>
               {installedApps.map((app) => (
@@ -61,7 +61,7 @@ export function DiscoveryAppList({
 
           {notInstalledApps.length > 0 && (
             <div className="space-y-2">
-              <h4 className="typo-label font-medium text-foreground uppercase tracking-wide">
+              <h4 className="typo-label font-medium text-foreground">
                 {dd.not_detected}
               </h4>
               {notInstalledApps.map((app) => (

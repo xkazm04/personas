@@ -212,7 +212,7 @@ export function PersonaLayoutBuild({
       return (
         <div className="pointer-events-auto flex flex-col items-center gap-2 px-5 py-4 rounded-modal bg-status-success/10 border border-status-success/40">
           <CheckCircle2 className="w-8 h-8 text-status-success" />
-          <span className="typo-label uppercase tracking-[0.2em] text-status-success">
+          <span className="typo-label text-status-success">
             {t.templates.matrix_variants.agent_promoted}
           </span>
         </div>
@@ -224,14 +224,14 @@ export function PersonaLayoutBuild({
           {testPassed ? (
             <>
               <CheckCircle2 className="w-7 h-7 text-status-success" />
-              <span className="typo-label uppercase tracking-[0.2em] text-status-success">
+              <span className="typo-label text-status-success">
                 {t.templates.chronology.hub_phase_test_complete}
               </span>
             </>
           ) : (
             <>
               <AlertCircle className="w-7 h-7 text-status-warning" />
-              <span className="typo-label uppercase tracking-[0.2em] text-status-warning">
+              <span className="typo-label text-status-warning">
                 {t.templates.chronology.hub_phase_test_complete}
               </span>
               {testError && (
@@ -248,7 +248,7 @@ export function PersonaLayoutBuild({
       return (
         <div className="pointer-events-auto flex flex-col items-center gap-2 px-5 py-4 rounded-modal bg-background/90 backdrop-blur-md border border-primary/30">
           <Loader2 className="w-7 h-7 text-primary animate-spin" />
-          <span className="typo-label uppercase tracking-[0.2em] text-primary">
+          <span className="typo-label text-primary">
             {buildPhase === 'testing'
               ? t.templates.chronology.hub_phase_testing
               : t.templates.chronology.hub_phase_analyzing}
@@ -264,7 +264,7 @@ export function PersonaLayoutBuild({
     if (buildPhase === 'draft_ready') {
       return (
         <div className="pointer-events-auto flex flex-col items-center gap-2 px-5 py-4 rounded-modal bg-background/90 backdrop-blur-md border border-status-info/35">
-          <span className="typo-label uppercase tracking-[0.2em] text-status-info">
+          <span className="typo-label text-status-info">
             {t.templates.chronology.hub_phase_draft_ready}
           </span>
           <span className="typo-caption text-foreground max-w-[260px] text-center">
@@ -495,7 +495,7 @@ function RefineComposer({ initialText, onCancel, onSend }: RefineComposerProps) 
       <div className="absolute top-0 left-0 w-full h-1 rounded-t-modal bg-gradient-to-r from-primary to-transparent" />
       <div className="flex items-center gap-2 px-5 pt-4 pb-2">
         <RefreshCw className="w-4 h-4 text-primary" />
-        <span className="typo-label uppercase tracking-[0.2em] text-primary font-bold">
+        <span className="typo-label text-primary font-bold">
           {t.common.refine}
         </span>
         <div className="flex-1" />

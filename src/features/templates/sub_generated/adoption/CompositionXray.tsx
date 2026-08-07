@@ -50,7 +50,7 @@ export function CompositionXray({ designResult }: CompositionXrayProps) {
       data-testid="composition-xray"
     >
       <Tooltip content={t.foundry.xray_tooltip}>
-        <span className="inline-flex items-center gap-1.5 typo-label uppercase tracking-wider text-foreground shrink-0">
+        <span className="inline-flex items-center gap-1.5 typo-label text-foreground shrink-0">
           <Layers className="w-3 h-3" />
           {tx(t.foundry.xray_label, { count: refIds.length })}
         </span>

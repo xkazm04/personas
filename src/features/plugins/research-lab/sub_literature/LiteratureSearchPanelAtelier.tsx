@@ -197,7 +197,7 @@ function AtelierHeader({
           </div>
           <div className="flex flex-col leading-tight min-w-0">
             <span className="typo-section-title text-foreground truncate">{title}</span>
-            <span className="typo-label uppercase tracking-[0.2em] text-foreground truncate">
+            <span className="typo-label text-foreground truncate">
               {subtitle}
             </span>
           </div>
@@ -235,7 +235,7 @@ function SourceTypeRail({
 }) {
   return (
     <aside className="hidden lg:flex w-56 flex-shrink-0 flex-col border-r border-border/40 px-3 py-6 gap-1 overflow-y-auto">
-      <p className="typo-label uppercase tracking-[0.2em] text-foreground px-2 mb-2">
+      <p className="typo-label text-foreground px-2 mb-2">
         <DebtText k="auto_source_types_3f7312e0" />
       </p>
       <RailItem label="All sources" count={totalSources} selected={selected === null} onClick={() => onSelect(null)} />
@@ -393,7 +393,7 @@ function ChronologyThread({
   const visible = sources.slice(0, 12);
   return (
     <aside className="hidden xl:flex w-72 flex-shrink-0 flex-col border-l border-border/40 px-4 py-6 gap-3 overflow-y-auto">
-      <p className="typo-label uppercase tracking-[0.2em] text-foreground mb-1">Recent</p>
+      <p className="typo-label text-foreground mb-1">Recent</p>
       {visible.length === 0 && (
         <div className="flex items-center gap-2 typo-caption text-foreground">
           <AlertCircle className="w-3.5 h-3.5" />

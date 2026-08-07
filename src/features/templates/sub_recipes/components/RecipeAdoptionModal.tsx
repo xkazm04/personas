@@ -118,7 +118,7 @@ export function RecipeAdoptionModal({ recipe, onClose, onAdopted }: RecipeAdopti
                   primary CTA stays disabled. */}
               {eligibility.state !== 'incompatible' && recipe.bindings.length > 0 && (
                 <div className="space-y-3 mt-1">
-                  <div className="typo-label uppercase tracking-wider text-foreground">
+                  <div className="typo-label text-foreground">
                     {tx(recipe.bindings.length === 1 ? t.recipes_catalog.configure_settings_one : t.recipes_catalog.configure_settings_other, { count: recipe.bindings.length })}
                   </div>
                   {recipe.bindings.map((b) => (
@@ -198,7 +198,7 @@ function SetupRequiredCallout({ eligibility }: { eligibility: Eligibility & { st
       <div className="flex items-start gap-2">
         <AlertTriangle className="w-4 h-4 text-status-warning mt-0.5 shrink-0" />
         <div className="flex-1 min-w-0">
-          <div className="typo-label uppercase tracking-wider text-status-warning">
+          <div className="typo-label text-status-warning">
             {t.recipes_catalog.callout_setup_title}
           </div>
           <div className="typo-caption text-foreground/85 mt-0.5">
@@ -235,7 +235,7 @@ function IncompatibleCallout({ eligibility }: { eligibility: Eligibility & { sta
   const { t } = useTranslation();
   return (
     <div className="mb-4 px-3 py-2.5 rounded-card border border-card-border bg-secondary/40">
-      <div className="typo-label uppercase tracking-wider text-foreground mb-1">
+      <div className="typo-label text-foreground mb-1">
         {t.recipes_catalog.callout_incompatible_title}
       </div>
       <div className="typo-caption text-foreground/85">{eligibility.reason}</div>
@@ -259,7 +259,7 @@ function BindingField({ binding, value, onChange, error }: BindingFieldProps) {
     <div className="flex items-baseline gap-1.5 mb-1">
       <span className="typo-caption font-medium text-foreground">{binding.label}</span>
       {binding.required && (
-        <span className="typo-label uppercase tracking-wider text-status-warning/85">required</span>
+        <span className="typo-label text-status-warning/85">required</span>
       )}
     </div>
   );
@@ -447,7 +447,7 @@ function BindingInput({ kind, value, onChange }: BindingInputProps) {
                     key={p.cron}
                     type="button"
                     onClick={() => onChange(p.cron)}
-                    className={`px-2 py-1 rounded-full border typo-label uppercase tracking-wider transition-colors cursor-pointer ${
+                    className={`px-2 py-1 rounded-full border typo-label transition-colors cursor-pointer ${
                       isActive
                         ? 'bg-primary/15 border-primary/35 text-primary'
                         : 'bg-secondary/40 border-card-border text-foreground hover:text-foreground hover:border-foreground/30'

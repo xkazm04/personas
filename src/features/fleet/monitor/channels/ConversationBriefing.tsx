@@ -169,7 +169,7 @@ export function ConversationBriefing({
   );
 
   const tabClass = (on: boolean) =>
-    `px-2 py-0.5 rounded-interactive typo-label uppercase tracking-wider transition-colors ${
+`px-2 py-0.5 rounded-interactive typo-label transition-colors ${
       on ? 'text-foreground bg-secondary/40' : 'text-foreground opacity-45 hover:opacity-80'
     }`;
 

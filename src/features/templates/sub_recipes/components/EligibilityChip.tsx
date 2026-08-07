@@ -10,7 +10,7 @@ export function EligibilityChip({ eligibility }: { eligibility: Eligibility }) {
   if (eligibility.state === 'eligible') {
     return (
       <span
-        className="shrink-0 typo-label uppercase tracking-wider px-1.5 py-0.5 rounded border inline-flex items-center gap-1 bg-status-success/12 border-status-success/35 text-status-success/95"
+        className="shrink-0 typo-label px-1.5 py-0.5 rounded border inline-flex items-center gap-1 bg-status-success/12 border-status-success/35 text-status-success/95"
         title={t.recipes_catalog.chip_eligible_tooltip}
       >
         <Check className="w-2.5 h-2.5" />
@@ -22,7 +22,7 @@ export function EligibilityChip({ eligibility }: { eligibility: Eligibility }) {
     const n = eligibility.missingConnectors.length;
     return (
       <span
-        className="shrink-0 typo-label uppercase tracking-wider px-1.5 py-0.5 rounded border inline-flex items-center gap-1 bg-status-warning/12 border-status-warning/35 text-status-warning/95"
+        className="shrink-0 typo-label px-1.5 py-0.5 rounded border inline-flex items-center gap-1 bg-status-warning/12 border-status-warning/35 text-status-warning/95"
         title={`Needs wiring: ${eligibility.missingConnectors.join(', ')}`}
       >
         <AlertTriangle className="w-2.5 h-2.5" />
@@ -34,7 +34,7 @@ export function EligibilityChip({ eligibility }: { eligibility: Eligibility }) {
   // incompatible
   return (
     <span
-      className="shrink-0 typo-label uppercase tracking-wider px-1.5 py-0.5 rounded border inline-flex items-center gap-1 bg-secondary/60 border-card-border text-foreground"
+      className="shrink-0 typo-label px-1.5 py-0.5 rounded border inline-flex items-center gap-1 bg-secondary/60 border-card-border text-foreground"
       title={eligibility.reason}
     >
       <Lock className="w-2.5 h-2.5" />

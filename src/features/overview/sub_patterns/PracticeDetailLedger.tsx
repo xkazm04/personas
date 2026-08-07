@@ -29,7 +29,7 @@ import type { PracticeViewProps } from './practiceViewTypes';
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5 py-2 min-w-0">
-      <span className="typo-label text-muted-foreground uppercase tracking-wide">{label}</span>
+      <span className="typo-label text-muted-foreground">{label}</span>
       <span className="typo-body text-foreground break-words">{children}</span>
     </div>
   );
@@ -107,7 +107,7 @@ export function PracticeDetailLedger({
             </p>
             {practice.detail_md?.trim() && (
               <div className="flex flex-col gap-2">
-                <span className="typo-label text-muted-foreground uppercase tracking-wide">
+                <span className="typo-label text-muted-foreground">
                   {tw.detail_evidence}
                 </span>
                 <MarkdownRenderer

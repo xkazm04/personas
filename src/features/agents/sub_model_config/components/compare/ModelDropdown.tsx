@@ -26,7 +26,7 @@ export function ModelDropdown({
 
   return (
     <div className="space-y-1">
-      <label className={`typo-label font-medium ${accentColor} uppercase tracking-wider`}>{label}</label>
+      <label className={`typo-label font-medium ${accentColor} `}>{label}</label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}

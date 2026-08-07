@@ -173,7 +173,7 @@ export function ChannelMap({
       <div className="relative flex-1 min-h-0">
         {nodes.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="hud-empty typo-label uppercase tracking-wider text-foreground opacity-60">{t.monitor.map_empty}</span>
+            <span className="hud-empty typo-label text-foreground opacity-60">{t.monitor.map_empty}</span>
           </div>
         ) : (
           <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} preserveAspectRatio="xMidYMid meet" className="absolute inset-0 w-full h-full">
@@ -330,20 +330,20 @@ export function ChannelMap({
         {nodes.length > 0 && team && (
           <>
             <div className="absolute top-2 left-3 z-10 font-mono pointer-events-none">
-              <p className="typo-label uppercase tracking-wider text-foreground opacity-45">{t.monitor.stream_group_channel}</p>
+              <p className="typo-label text-foreground opacity-45">{t.monitor.stream_group_channel}</p>
               <p className="typo-caption font-mono uppercase tracking-wider text-foreground opacity-85">{cleanName(team.teamName)}</p>
             </div>
             <div className="absolute top-2 right-3 z-10 font-mono text-right pointer-events-none">
-              <p className="typo-label uppercase tracking-wider text-foreground opacity-45">{t.monitor.map_members}</p>
+              <p className="typo-label text-foreground opacity-45">{t.monitor.map_members}</p>
               <p className="typo-data tabular-nums text-foreground opacity-85">{nodes.length}</p>
             </div>
             <div className="absolute bottom-2 right-3 z-10 font-mono text-right pointer-events-none flex items-center gap-2">
-              <span className="typo-label uppercase tracking-wider text-foreground opacity-45">{t.monitor.presence_working}</span>
+              <span className="typo-label text-foreground opacity-45">{t.monitor.presence_working}</span>
               <span className={`typo-data tabular-nums ${workingCount > 0 ? 'text-status-warning' : 'text-foreground opacity-85'}`}>
                 {workingCount}
               </span>
               <span
-                className={`px-1.5 rounded-pill border typo-label uppercase tracking-wider ${
+                className={`px-1.5 rounded-pill border typo-label ${
                   isLive
                     ? 'border-status-success/40 text-status-success animate-pulse'
                     : 'border-border text-foreground opacity-50'

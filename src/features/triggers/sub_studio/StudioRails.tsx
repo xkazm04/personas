@@ -80,7 +80,7 @@ export function StudioSourceRail({ c, onClose }: { c: StudioComposer; onClose?: 
     <div className="w-72 h-full border-r border-border flex flex-col min-h-0 bg-background">
       <div className="px-3 pt-2.5 pb-2 space-y-1.5">
         <div className="flex items-center justify-between px-1">
-          <span className="typo-label uppercase tracking-wide text-foreground">{st.sources_title}</span>
+          <span className="typo-label text-foreground">{st.sources_title}</span>
           {onClose && (
             <button type="button" onClick={onClose} aria-label={st.close_sources_rail}
               className="p-1 rounded-interactive text-foreground hover:bg-secondary/60 transition-colors">
@@ -185,7 +185,7 @@ export function StudioTargetRail({ c, onClose }: { c: StudioComposer; onClose?: 
     <div className="w-72 h-full border-l border-border flex flex-col min-h-0 bg-background">
       <div className="px-3 pt-2.5 pb-2 space-y-1.5">
         <div className="flex items-center justify-between px-1">
-          <span className="typo-label uppercase tracking-wide text-foreground">{st.targets_title}</span>
+          <span className="typo-label text-foreground">{st.targets_title}</span>
           {onClose && (
             <button type="button" onClick={onClose} aria-label={st.close_targets_rail}
               className="p-1 rounded-interactive text-foreground hover:bg-secondary/60 transition-colors">

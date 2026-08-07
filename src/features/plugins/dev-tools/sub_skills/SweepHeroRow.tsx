@@ -62,7 +62,7 @@ export function SweepHeroRow({ row, projectName, busy, onInfo, onAdopt }: {
           </button>
         )}
       </div>
-      <p className="typo-label text-foreground/50 mt-1.5">{d.skills_sweep_hero_hint}</p>
+      <p className="typo-caption mt-1.5">{d.skills_sweep_hero_hint}</p>
     </div>
   );
 }

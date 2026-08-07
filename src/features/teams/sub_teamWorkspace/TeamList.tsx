@@ -180,7 +180,7 @@ export default function TeamList() {
   const showGhost = isFetching && teams.length === 0;
 
   const tableHeaderRow = (
-    <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-2 bg-secondary/20 border-b border-primary/10 typo-label uppercase tracking-wider text-foreground">
+    <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-2 bg-secondary/20 border-b border-primary/10 typo-label text-foreground">
       <span>{t.pipeline.agent_teams}</span>
       <span className="text-right w-20">{ts.col_members}</span>
       <span className="text-right w-20">{ts.col_status}</span>

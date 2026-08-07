@@ -247,7 +247,7 @@ export function TeamGraphPreview({
   return (
     <section>
       <div className="flex items-center gap-2 mb-2">
-        <h3 className="typo-label uppercase tracking-wider text-foreground">
+        <h3 className="typo-label text-foreground">
           {t.plugins.dev_projects.team_preview_canvas}
         </h3>
         {layout.allUnplaced && (

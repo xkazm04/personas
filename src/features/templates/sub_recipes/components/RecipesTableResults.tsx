@@ -169,7 +169,7 @@ interface ThProps {
 }
 
 function Th({ children, className = '', sortable, active, dir, onClick }: ThProps) {
-  const base = 'group h-9 px-2 text-left typo-label uppercase tracking-wider text-foreground font-medium select-none';
+const base = 'group h-9 px-2 text-left typo-label text-foreground font-medium select-none';
   if (!sortable) {
     return <th className={`${base} ${className}`}>{children}</th>;
   }
@@ -261,14 +261,14 @@ function RecipeRow({ recipe, eligibility, highlight, personaSelected, adopted, s
           </span>
           {adopted && stale ? (
             <Tooltip content={t.recipes_catalog.update_badge_tooltip}>
-              <span className="inline-flex items-center gap-0.5 shrink-0 typo-label uppercase tracking-wider px-1 py-0.5 rounded border border-status-warning/40 bg-status-warning/10 text-status-warning">
+              <span className="inline-flex items-center gap-0.5 shrink-0 typo-label px-1 py-0.5 rounded border border-status-warning/40 bg-status-warning/10 text-status-warning">
                 <ArrowUpCircle className="w-2.5 h-2.5" />
                 {t.recipes_catalog.update_badge}
               </span>
             </Tooltip>
           ) : adopted ? (
             <Tooltip content={t.recipes_catalog.adopted_badge_tooltip}>
-              <span className="inline-flex items-center gap-0.5 shrink-0 typo-label uppercase tracking-wider px-1 py-0.5 rounded border border-status-success/35 bg-status-success/10 text-status-success">
+              <span className="inline-flex items-center gap-0.5 shrink-0 typo-label px-1 py-0.5 rounded border border-status-success/35 bg-status-success/10 text-status-success">
                 <Check className="w-2.5 h-2.5" />
                 {t.recipes_catalog.adopted_badge}
               </span>
@@ -279,7 +279,7 @@ function RecipeRow({ recipe, eligibility, highlight, personaSelected, adopted, s
 
       {/* Category */}
       <td className="px-2 align-middle">
-        <span className="inline-flex typo-label uppercase tracking-wider px-1.5 py-0.5 rounded border border-card-border/60 bg-secondary/40 text-foreground whitespace-nowrap">
+        <span className="inline-flex typo-label px-1.5 py-0.5 rounded border border-card-border/60 bg-secondary/40 text-foreground whitespace-nowrap">
           {categoryLabel(t, recipe.category)}
         </span>
       </td>
@@ -334,7 +334,7 @@ function RecipeRow({ recipe, eligibility, highlight, personaSelected, adopted, s
           type="button"
           onClick={(e) => { e.stopPropagation(); onOpenDetail(); }}
           disabled={incompatible}
-          className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive border typo-label uppercase tracking-wider transition-all cursor-pointer ${
+          className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive border typo-label transition-all cursor-pointer ${
             incompatible
               ? 'border-card-border bg-secondary/40 text-foreground opacity-0'
               : 'border-primary/35 bg-primary/12 text-primary opacity-0 group-hover:opacity-100 hover:bg-primary/22'

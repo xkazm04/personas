@@ -193,7 +193,7 @@ export function ComposerConnectorsPickerModal({
 
       {selectedDbConnectors.length > 0 && (
         <div className="border-t border-border/20 px-5 py-4">
-          <div className="flex items-center gap-2 typo-label uppercase tracking-[0.18em] text-foreground mb-2.5">
+          <div className="flex items-center gap-2 typo-label text-foreground mb-2.5">
             <Database className="w-3.5 h-3.5 text-cyan-400" />
             {t.agents.glyph_db_scope_heading}
           </div>
