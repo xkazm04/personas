@@ -186,5 +186,13 @@
     "transport": "সংযোগ ব্যর্থ",
     "unknown": "অজানা ত্রুটি",
     "unsupported": "এখানে চালানো যাবে না"
+  },
+  "remote_job": {
+    "cancelled": "বাতিল করা হয়েছে",
+    "completed": "সম্পন্ন",
+    "failed": "ব্যর্থ",
+    "pending": "মুলতুবি",
+    "refused": "প্রত্যাখ্যাত",
+    "running": "চলমান"
   }
 }

@@ -184,7 +184,7 @@ pub async fn build_system_prompt(
     // the older flat fleet-state digest with an operation-grouped
     // narrative tied to user intent.
     let observability_md = format!(
-        "{}{}{}{}{}{}{}",
+        "{}{}{}{}{}{}{}{}",
         observability_md,
         crate::companion::orchestration::operative_memory::memory().digest_for_prompt(),
         // Multi-conversation: the roster of the user's OTHER open threads, so one
@@ -205,6 +205,13 @@ pub async fn build_system_prompt(
         // what the portfolio looks like RIGHT NOW, not recalled memory, so it
         // must survive `compose()`'s recall-briefing blanking.
         format_scene_digest(sys_db),
+        // The paired-device roster (WP3). Same slot and the same reasoning as
+        // the index blocks: which machines exist and which are up right now is
+        // a structural fact about this moment, not recalled memory, so it must
+        // survive `compose()`'s recall-briefing blanking. Blanking it would put
+        // her back to naming a device only when the operator says it out loud —
+        // on exactly the turns where recall is richest.
+        format_paired_devices(sys_db),
     );
 
     // The only genuinely ml-vs-non-ml seams: whether retrieval is
@@ -1122,6 +1129,146 @@ fn render_scene_digest(scene: &crate::companion::canvas::CanvasScene) -> String 
          one after another), `canvas_run_idea_scan`. To show structured \
          findings about one project, `compose_canvas_panel` docks a \
          SurfaceSpec v1 panel beside its island.\n"
+    ))
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Paired devices — the "which other machines can I hand work to" block
+//
+// `remote_instruct` (WP3) sends an instruction to another of the user's own
+// Personas installs. Until this block existed Athena had no roster: she could
+// only echo a name the operator had just said out loud, and she could not tell
+// a sleeping laptop from a live one until the send failed. Both are answered
+// by three facts per device — name, home, reachable — and nothing else. A
+// paired device has no other property worth a token on every turn.
+//
+// Budget: its OWN ~200 tokens. It is a handful of short rows; carving it out
+// of `INDEX_CHAR_BUDGET` would make a device roster compete with the persona
+// index for room, which is not a trade anyone would choose deliberately.
+//
+// Ordering is home-first then alphabetical, NOT recency: this block ships on
+// every turn, and a list that reshuffles between turns invalidates the prompt
+// cache for no informational gain. Reachability does churn — that is the point
+// of it — but it churns only when the network actually changed.
+// ─────────────────────────────────────────────────────────────────────────
+
+/// Token budget for the paired-devices block, independent of the index and
+/// scene budgets.
+const DEVICE_TOKEN_BUDGET: usize = 200;
+/// Characters the block may occupy.
+const DEVICE_CHAR_BUDGET: usize = DEVICE_TOKEN_BUDGET * CHARS_PER_TOKEN;
+/// Held back for the truncation footer. Same rule as everywhere else here: a
+/// truncated roster that does not say it is truncated is worse than none.
+const DEVICE_FOOTER_RESERVE: usize = 170;
+/// Longest device name rendered before it is elided.
+const DEVICE_NAME_CHARS: usize = 40;
+
+const _: () = assert!(DEVICE_FOOTER_RESERVE < DEVICE_CHAR_BUDGET);
+
+/// One paired device, reduced to what the prompt actually needs.
+struct PairedDeviceRow {
+    name: String,
+    is_home: bool,
+    reachable: bool,
+}
+
+/// The paired-device roster, with live reachability.
+///
+/// Both halves read the SYSTEM db and nothing else — `owned_devices` for the
+/// roster, `discovered_peers.is_connected` for reachability, which the
+/// connection manager maintains and resets to 0 on every boot. That keeps the
+/// block a pair of cheap synchronous queries on a path that already holds the
+/// pool, instead of an async hop into `NetworkService`.
+#[cfg(feature = "p2p")]
+fn paired_device_rows(sys_db: &DbPool) -> Vec<PairedDeviceRow> {
+    let devices =
+        crate::db::repos::resources::owned_devices::list_owned_devices(sys_db).unwrap_or_default();
+    if devices.is_empty() {
+        return Vec::new();
+    }
+    let connected: std::collections::HashSet<String> = sys_db
+        .get()
+        .ok()
+        .and_then(|conn| {
+            let mut stmt = conn
+                .prepare("SELECT peer_id FROM discovered_peers WHERE is_connected = 1")
+                .ok()?;
+            let ids = stmt
+                .query_map([], |r| r.get::<_, String>(0))
+                .ok()?
+                .filter_map(Result::ok)
+                .collect();
+            Some(ids)
+        })
+        .unwrap_or_default();
+    let mut rows: Vec<PairedDeviceRow> = devices
+        .into_iter()
+        .map(|d| PairedDeviceRow {
+            reachable: connected.contains(&d.peer_id),
+            is_home: d.is_home,
+            name: d.display_name,
+        })
+        .collect();
+    rows.sort_by(|a, b| b.is_home.cmp(&a.is_home).then_with(|| a.name.cmp(&b.name)));
+    rows
+}
+
+/// A lite build (`--features desktop`) has no device link: `remote_instruct` is
+/// still taught and still dispatched, but its transport half fails with an
+/// honest sentence. A roster of machines nothing can reach would be worse than
+/// silence, so the block is simply absent.
+#[cfg(not(feature = "p2p"))]
+fn paired_device_rows(_sys_db: &DbPool) -> Vec<PairedDeviceRow> {
+    Vec::new()
+}
+
+/// The paired-devices block. Empty string when nothing is paired.
+fn format_paired_devices(sys_db: &DbPool) -> String {
+    render_paired_devices(&paired_device_rows(sys_db))
+}
+
+/// Rendering half of [`format_paired_devices`], split out so the shape can be
+/// asserted in BOTH feature sets without a DB or a network.
+fn render_paired_devices(devices: &[PairedDeviceRow]) -> String {
+    let total = devices.len();
+    // No header for an empty roster. A user who never paired anything should
+    // pay nothing for the feature on every single turn.
+    if total == 0 {
+        return String::new();
+    }
+    let mut block = BoundedBlock::new(
+        "\n\n# Paired devices (remote_instruct targets)\n\n\
+         The user's OTHER Personas installs. Name one by the exact name shown; \
+         never invent one. Omitting `device` means the home device, which is \
+         the right default unless the work belongs on a specific machine. \
+         `unreachable` means it is not on the network right now — say that \
+         rather than proposing to send it work.\n\n",
+        DEVICE_CHAR_BUDGET,
+        DEVICE_FOOTER_RESERVE,
+    );
+    for d in devices {
+        let line = format!(
+            "- **{name}** — {home}{reach}\n",
+            name = index_summary(&d.name, DEVICE_NAME_CHARS),
+            home = if d.is_home { "home device · " } else { "" },
+            reach = if d.reachable {
+                "reachable"
+            } else {
+                "unreachable right now"
+            },
+        );
+        if !block.push_row(&line) {
+            break;
+        }
+    }
+    let shown = block.shown;
+    if shown == total {
+        return block.finish("");
+    }
+    block.finish(&format!(
+        "\n_Listing {shown} of {total} paired devices, truncated for prompt \
+         budget. Ask the user which machine he means rather than assuming the \
+         rest are gone._\n"
     ))
 }
 
@@ -2460,6 +2607,76 @@ mod tests {
         // A user who never opens Mastermind must not pay prompt budget for it.
         let pool = index_test_pool();
         assert_eq!(format_scene_digest(&pool), "");
+    }
+
+    // ── Paired devices (WP3) ────────────────────────────────────────────
+    //
+    // Asserted through the render half so the SAME shape is pinned in both
+    // feature sets: the data half is `p2p`-gated, the doctrine surface is not.
+
+    fn device_row(name: &str, is_home: bool, reachable: bool) -> PairedDeviceRow {
+        PairedDeviceRow {
+            name: name.into(),
+            is_home,
+            reachable,
+        }
+    }
+
+    #[test]
+    fn no_paired_devices_means_no_block_at_all() {
+        // Not an empty header — a user who never paired anything pays nothing,
+        // on every single turn. This is also the LITE-build shape: there
+        // `paired_device_rows` always returns empty.
+        assert_eq!(render_paired_devices(&[]), "");
+        let pool = index_test_pool();
+        assert_eq!(format_paired_devices(&pool), "");
+    }
+
+    #[test]
+    fn one_paired_device_renders_its_name_home_flag_and_reachability() {
+        let block = render_paired_devices(&[device_row("Studio Mac", true, true)]);
+        assert!(block.contains("# Paired devices"), "{block}");
+        // The row carries all three facts, in one line she cannot misread.
+        assert!(
+            block.contains("- **Studio Mac** — home device · reachable\n"),
+            "{block}"
+        );
+        // The two rules she cannot derive from the list itself.
+        assert!(block.contains("never invent one"), "{block}");
+        assert!(block.contains("Omitting `device` means the home device"), "{block}");
+        // A complete list carries no truncation footer.
+        assert!(!block.contains("Listing"), "{block}");
+    }
+
+    #[test]
+    fn several_devices_lead_with_home_and_mark_the_unreachable_ones() {
+        let block = render_paired_devices(&[
+            device_row("Desktop", true, true),
+            device_row("Air", false, false),
+            device_row("Work laptop", false, true),
+        ]);
+        let pos = |s: &str| block.find(s).unwrap_or(usize::MAX);
+        assert!(pos("Desktop") < pos("Air"), "home leads: {block}");
+        assert!(pos("Air") < pos("Work laptop"), "then alphabetical: {block}");
+        // Exactly one row is marked home, and the sleeping machine says so.
+        assert_eq!(block.matches("— home device").count(), 1, "{block}");
+        assert!(block.contains("Air** — unreachable right now"), "{block}");
+        assert!(block.contains("Work laptop** — reachable"), "{block}");
+    }
+
+    #[test]
+    fn the_device_block_stays_inside_its_own_budget_and_says_when_it_cut() {
+        let many: Vec<PairedDeviceRow> = (0..60)
+            .map(|i| device_row(&format!("Device number {i:02}"), i == 0, i % 2 == 0))
+            .collect();
+        let block = render_paired_devices(&many);
+        assert!(
+            block.len() <= DEVICE_CHAR_BUDGET,
+            "device block grew to {} chars (budget {DEVICE_CHAR_BUDGET})",
+            block.len()
+        );
+        assert!(block.contains("of 60 paired devices"), "{block}");
+        assert!(!block.contains("Listing 60 of 60"), "{block}");
     }
 
     #[test]

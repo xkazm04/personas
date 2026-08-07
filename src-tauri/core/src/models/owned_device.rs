@@ -19,4 +19,15 @@ pub struct OwnedDevice {
     pub display_name: String,
     pub added_at: String,
     pub last_synced_at: Option<String>,
+    /// True for the single device the user nominates as their "home" machine.
+    /// At most one owned device carries this flag (enforced by a partial unique
+    /// index and by `set_device_home`).
+    #[serde(default)]
+    pub is_home: bool,
+    /// When the pairing ceremony completed, if this row came from one. `None`
+    /// for rows registered manually via `register_owned_device`.
+    pub paired_at: Option<String>,
+    /// The peer's Ed25519 public key (base64) as proven during the signed
+    /// handshake at pairing time. `None` for manually registered rows.
+    pub public_key: Option<String>,
 }

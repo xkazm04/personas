@@ -45,7 +45,13 @@ pub async fn connect_to_peer(
     let net = network(&state)?;
     let result = net
         .connections
-        .connect_to_peer(&peer_id, net.manifest_sync.clone(), net.messages.clone())
+        .connect_to_peer(
+            &peer_id,
+            net.manifest_sync.clone(),
+            net.messages.clone(),
+            net.pairing.clone(),
+            net.remote_jobs.clone(),
+        )
         .await;
     // Push updated snapshot for instant UI feedback
     net.emit_snapshot().await;

@@ -14,6 +14,7 @@ const tabComponents: Record<SettingsTab, React.LazyExoticComponent<React.Compone
   byom: lazy(() => import('@/features/settings/sub_byom/components/ByomSettings')),
   portability: lazy(() => import('@/features/settings/sub_portability/components/DataPortabilitySettings')),
   network: lazy(() => import('@/features/settings/sub_network/components/ExposureManager')),
+  devices: lazy(() => import('@/features/settings/sub_devices/components/DeviceLinkPage')),
   admin: lazy(() => import('@/features/settings/sub_admin/components/AdminSettings')),
   'api-keys': lazy(() => import('@/features/settings/sub_api_keys/components/ApiKeysSettings')),
   history: lazy(() => import('@/features/settings/sub_history/components/SettingsHistoryTab')),

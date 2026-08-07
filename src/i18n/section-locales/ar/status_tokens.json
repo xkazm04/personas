@@ -186,5 +186,13 @@
     "transport": "فشل الاتصال",
     "unknown": "خطأ غير معروف",
     "unsupported": "غير قابل للتشغيل هنا"
+  },
+  "remote_job": {
+    "cancelled": "أُلغيت",
+    "completed": "اكتملت",
+    "failed": "فشلت",
+    "pending": "قيد الانتظار",
+    "refused": "مرفوضة",
+    "running": "قيد التشغيل"
   }
 }

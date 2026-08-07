@@ -120,5 +120,6 @@
   "dispatch_waiting_none": "Enviada",
   "dispatch_waiting_none_hint": "Esta idea ya tiene una tarea, así que no está a la espera de un envío.",
   "tray_dispatch": "Trabajo aprobado",
-  "tray_dispatch_waiting": "{count} ideas aprobadas nunca enviadas"
+  "tray_dispatch_waiting": "{count} ideas aprobadas nunca enviadas",
+  "paired_devices": "Dispositivos emparejados"
 }

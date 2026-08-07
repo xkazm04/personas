@@ -33,7 +33,7 @@ const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {
   // Studio uses a local COPY constant (i18n deferred); only BASE_SECTIONS needed.
   studio: [],
   schedules: ['schedules', 'triggers', 'event_types'],
-  settings: ['settings', 'models', 'tiers', 'auth'],
+  settings: ['settings', 'models', 'tiers', 'auth', 'sharing'],
 };
 
 // Cache route-section results so every useTranslation() consumer sees a

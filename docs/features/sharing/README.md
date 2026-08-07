@@ -54,6 +54,44 @@ Engine helpers backing these commands live in `engine/bundle.rs` and `engine/sha
 
 The frontend `NetworkDashboard` polls `get_connection_health` + `get_messaging_metrics` + `get_network_snapshot` via `usePolling`; threshold colors are derived inline (`<100ms` healthy, `<500ms` warning, missed pings → error).
 
+> Several commands in this table were defined but **never reachable** until the device-link work: stacked `#[cfg(feature = "p2p")]` attributes with no item between them in `lib.rs` silently attached to the following item, dropping fifteen `commands/network/` registrations (plus two elsewhere in the app). Rust accepts that without a warning. A structural test now asserts every `#[tauri::command]` under `commands/network/` appears in `generate_handler!`, so the failure mode cannot return silently.
+
+### `pairing.rs` + `owned_devices.rs` — the device link
+
+Pairing turns two installs that merely *see* each other into two installs that *trust* each other. It is the prerequisite for remote jobs, and the only trust boundary on that path.
+
+| Command | Behavior |
+| --- | --- |
+| `pair_request` | Ask a discovered peer to pair; mints the session nonce both sides derive the code from |
+| `pair_confirm` | Accept an inbound request after the operator has compared the code |
+| `pair_cancel` | Withdraw or decline a pairing in flight |
+| `list_pending_device_pairings` | Recovery path when the `network:device-pairing-requested` event was missed |
+| `list_owned_devices` / `forget_owned_device` | The paired-device roster |
+| `set_device_home` | Mark the home device (exactly one, enforced by a partial unique index) |
+| `get_device_group_id` | The local group anchor |
+
+**Handshake (protocol v2).** Three legs, each signed with the ed25519 identity key: `Hello` (initiator nonce), `HelloAck` (responder nonce, signed over both), `HelloConfirm` (initiator signs the responder's nonce). Two legs would leave the initiator's proof replayable forever, since nothing in `Hello` is chosen by the responder. Every leg checks `peer_id == base58(sha256(public_key))` *before* verifying the signature, so a peer cannot present someone else's key. Refusals log at `warn` with peer id, stage and reason.
+
+**Pairing code.** `SHA256("personas-p2p-pairing/v1" \n lo \n hi \n session_nonce)`, first four bytes mod 1e6, rendered `NNN-NNN`. The two peer ids are sorted lexicographically, which is what makes both devices derive the same code regardless of who initiated.
+
+**Device groups.** `local_identity.device_group_id` is a single local anchor and each `owned_devices` row records the group it was registered under, so re-anchoring a device that has others behind it would strand them. Pairing therefore resolves toward whichever side has something to lose: if only one side has other devices, that side's group survives and the other joins it (the responder states its own claim in `PairResponse`); if both do, pairing is refused with `AppError::DeviceGroupConflict`, which names the devices that would be stranded and tells the operator to unpair on one side first. Counts arriving over the wire are untrusted — each side re-checks its own registry before re-anchoring, so a peer lying about being empty can only cause a counter-offer or a refusal, never a local re-anchor.
+
+### `remote_jobs.rs` — instructing a paired device
+
+| Command | Behavior |
+| --- | --- |
+| `send_remote_instruction` | Hand a natural-language instruction to a paired device; resolves when the peer acks |
+| `list_remote_jobs` | Job history, both directions (`outbound` = we asked, `inbound` = we were asked) |
+| `list_remote_job_notes` | Progress notes for one job, in sequence order |
+
+**Trust.** `RemoteJobs::handle_message` runs `require_paired` before touching the database or the executor, on *every* remote-job frame. This is the only enforcement point on the job path, and it is deliberately separate from the connect path: any LAN peer may complete the signed handshake and pull the public manifest, so **an authenticated connection is not a trusted one**. An unpaired peer's request gets a refusal ack with a reason; unsolicited progress or result frames get no answer at all. A paired peer is further confined to its own jobs by peer id and direction.
+
+**Delivery.** Notes are keyed `(job_id, seq)`. Each side tracks the highest *contiguous* prefix it holds, not the maximum sequence seen — a note landing over a gap would otherwise orphan the missing one permanently. On every reconnect, `RemoteJobResume` states what the asking side already holds and the runner replays only the difference, so a dropped link costs nothing and nothing is delivered twice.
+
+**Failure.** Sending to an unreachable device fails immediately with `AppError::NetworkOffline`, checked before any row is written so no phantom job is left behind. A job whose runner crashed is failed at startup by a sweep and the result reaches the asker through the same resume exchange.
+
+Athena's side of this (the `remote_instruct` op, the inbound turn, and the mode-conditional consent rule) is documented in [companion](../companion/README.md).
+
 ### `exposure.rs` — locally exposed resources
 
 | Command | Behavior |
@@ -92,5 +130,10 @@ The frontend `NetworkDashboard` polls `get_connection_health` + `get_messaging_m
 ## Known gaps
 
 - Sharing has no dedicated sidebar route; surface entries are scattered across Settings → Network, Bundle dialogs invoked from the gallery, and the global deep-link handler. A consolidation pass is queued but not landed.
-- The exposure manager and the trust roster currently live behind the dev-only `network` tab in Settings; tier-gated exposure is on the roadmap.
+- The exposure manager and the trust roster currently live behind the dev-only `network` tab in Settings; tier-gated exposure is on the roadmap. **Settings → Devices is the exception** — pairing and the device link ship reachable in production builds, since a diagnostics tab is the wrong home for an ordinary operator task.
+- **QUIC/TLS authenticates nothing on its own.** Certificates are self-signed and regenerated per bind, unrelated to the ed25519 identity, and the client verifier accepts any certificate. TLS provides encryption; the signed handshake provides authentication. Certificate pinning to the identity key would remove the redundancy but is not implemented.
+- **The connect path is deliberately open.** Any LAN peer that completes the handshake becomes a connected peer and can pull the non-`requires_auth` exposure manifest. Trust is enforced per-capability (the job path checks pairing) rather than at the door.
+- **Pairing leaves an asymmetric registry in one narrow case.** The responder writes its own row before sending `PairResponse`, so if the initiator then refuses locally (a lying peer, or a device gained mid-flight), the responder lists a device that does not list it back. Nothing is stranded and it matches the shape of any mid-flight decline; a clean fix needs a fourth ceremony leg.
+- **The p2p feature is not exercised by CI.** It compiles only under `desktop-full`, while CI runs `--features desktop`. The non-gated pieces (the owned-devices repo, the command-registration structural test) do run there.
+- The device link has **not been verified across two live machines.** Everything above is covered by unit tests, wire round-trips and both cargo feature configurations; the handshake, ceremony and job round-trip have never run over real QUIC between two processes.
 - IPv6 mDNS and dual-stack QUIC binding were enabled mid-2026 — share-link hosts on IPv6 LAN addresses now resolve correctly. Pre-fix bundles created against the old IPv4-only formatting may need reissuing if their hosts moved.

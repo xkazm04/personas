@@ -78,6 +78,17 @@ pub enum AppError {
         authorize_url: String,
     },
 
+    /// A device-pairing ceremony was refused because completing it would split
+    /// an existing device group: the two devices already anchor different,
+    /// non-empty groups and this primitive does not model a merge.
+    ///
+    /// Typed rather than a generic string bail so the pairing UI can recognise
+    /// the refusal (kind `device_group_conflict`) and render the remedy —
+    /// unpair the conflicting devices on one side, then pair again — instead of
+    /// showing an opaque failure. Nothing has been written when this is raised.
+    #[error("Device group conflict: {0}")]
+    DeviceGroupConflict(String),
+
     #[error("{0}")]
     Internal(String),
 
@@ -109,7 +120,9 @@ impl AppError {
             | AppError::KeyringLost(_)
             | AppError::AuthorizationRequired { .. } => C::CredentialError,
             AppError::NetworkOffline(_) => C::Network,
-            AppError::Validation(_) | AppError::Serde(_) => C::Validation,
+            AppError::Validation(_)
+            | AppError::Serde(_)
+            | AppError::DeviceGroupConflict(_) => C::Validation,
             AppError::Cloud(_)
             | AppError::GitLab(_)
             | AppError::Database(_)
@@ -185,6 +198,7 @@ impl Serialize for AppError {
                 AppError::RetryExhausted(_) => "retry_exhausted",
                 AppError::KeyringLost(_) => "keyring_lost",
                 AppError::AuthorizationRequired { .. } => "authorization_required",
+                AppError::DeviceGroupConflict(_) => "device_group_conflict",
                 AppError::Internal(_) => "internal",
                 AppError::External(_) => "external",
             },

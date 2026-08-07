@@ -4462,6 +4462,136 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // -- owned_devices: device-link pairing columns --------------------------
+    // The `owned_devices` registry above predates the pairing ceremony; it only
+    // recorded that a peer *is* one of ours. The signed pairing handshake adds
+    // three facts worth persisting:
+    //   • `is_home`     — which device is the user's primary ("home") machine.
+    //                     At most one row is true; the repo enforces that.
+    //   • `paired_at`   — when the fingerprint confirmation happened, distinct
+    //                     from `added_at` (a row can be registered manually,
+    //                     without a pairing ceremony, and then stay unpaired).
+    //   • `public_key`  — the peer's Ed25519 public key (base64) as proven at
+    //                     handshake time, so a later reconnect can be checked
+    //                     against the key we actually paired with rather than
+    //                     re-trusting whatever key the peer presents.
+    // `display_name` is intentionally NOT added here: the original
+    // `owned_devices` DDL already declares it `TEXT NOT NULL`.
+    //
+    // Guarded per-column (not per-table) because a DB that ran an earlier
+    // partial of this step must be able to finish it. `has_column` on a table
+    // that does not exist returns false, so the `has_table` check in `apply`
+    // keeps an ALTER from firing against a missing table on an exotic DB.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "owned_devices_pairing_columns",
+            description: "Add is_home / paired_at / public_key to owned_devices (device-link pairing)",
+            already_applied: |conn| {
+                Ok(has_column(conn, "owned_devices", "is_home")?
+                    && has_column(conn, "owned_devices", "paired_at")?
+                    && has_column(conn, "owned_devices", "public_key")?)
+            },
+            apply: |conn| {
+                if !has_table(conn, "owned_devices")? {
+                    return Ok(());
+                }
+                if !has_column(conn, "owned_devices", "is_home")? {
+                    ddl_step(
+                        conn,
+                        "ALTER TABLE owned_devices
+                            ADD COLUMN is_home BOOLEAN NOT NULL DEFAULT 0;",
+                    )?;
+                }
+                if !has_column(conn, "owned_devices", "paired_at")? {
+                    ddl_step(
+                        conn,
+                        "ALTER TABLE owned_devices ADD COLUMN paired_at TEXT;",
+                    )?;
+                }
+                if !has_column(conn, "owned_devices", "public_key")? {
+                    ddl_step(
+                        conn,
+                        "ALTER TABLE owned_devices ADD COLUMN public_key TEXT;",
+                    )?;
+                }
+                // At most one home device. A partial unique index is the
+                // cheapest way to make the invariant a schema fact rather than
+                // repo-only etiquette.
+                ddl_step(
+                    conn,
+                    "CREATE UNIQUE INDEX IF NOT EXISTS idx_owned_devices_single_home
+                        ON owned_devices(is_home) WHERE is_home = 1;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // -- remote_jobs / remote_job_notes: cross-device instruction dispatch ----
+    // One paired device sends the other a natural-language instruction; the
+    // receiving device runs it and streams back an ack, progress notes and a
+    // final summary. Both roles read and write the SAME table, told apart by
+    // `direction` ('outbound' = I asked, 'inbound' = I was asked), so a device
+    // that does both keeps one chronological history instead of two.
+    //
+    // `last_seq` is the resume anchor and means slightly different things per
+    // side — highest note EMITTED on the inbound (running) side, highest note
+    // RECEIVED on the outbound side — but in both cases it is "everything up to
+    // here is durable", which is exactly what a reconnect needs to replay from.
+    //
+    // The notes live in their own table rather than a JSON column because the
+    // replay reads them with `seq > ?`, and the composite primary key
+    // (job_id, seq) is what makes redelivery idempotent: a replayed note that
+    // already landed hits the PK and is ignored, so exactly-once falls out of
+    // the schema instead of out of careful application code.
+    //
+    // Not `p2p`-gated: the tables are plain data, and a lite build must still
+    // migrate cleanly so a user who switches builds does not lose the history.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "remote_jobs_tables",
+            description: "remote_jobs + remote_job_notes (cross-device instruction dispatch)",
+            already_applied: |conn| {
+                Ok(has_table(conn, "remote_jobs")? && has_table(conn, "remote_job_notes")?)
+            },
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS remote_jobs (
+                        id                 TEXT PRIMARY KEY,
+                        direction          TEXT NOT NULL
+                                             CHECK(direction IN ('outbound','inbound')),
+                        peer_id            TEXT NOT NULL,
+                        peer_display_name  TEXT NOT NULL DEFAULT '',
+                        kind               TEXT NOT NULL DEFAULT 'instruction',
+                        instruction        TEXT NOT NULL,
+                        status             TEXT NOT NULL,
+                        summary            TEXT,
+                        refusal_reason     TEXT,
+                        last_seq           INTEGER NOT NULL DEFAULT 0,
+                        created_at         TEXT NOT NULL,
+                        updated_at         TEXT NOT NULL,
+                        completed_at       TEXT
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_remote_jobs_peer
+                        ON remote_jobs(peer_id, created_at DESC);
+                    CREATE INDEX IF NOT EXISTS idx_remote_jobs_direction_status
+                        ON remote_jobs(direction, status);
+                    CREATE TABLE IF NOT EXISTS remote_job_notes (
+                        job_id      TEXT NOT NULL
+                                      REFERENCES remote_jobs(id) ON DELETE CASCADE,
+                        seq         INTEGER NOT NULL,
+                        text        TEXT NOT NULL,
+                        created_at  TEXT NOT NULL,
+                        PRIMARY KEY (job_id, seq)
+                    );",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
     Ok(())
 }
 
@@ -7089,6 +7219,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+
     Ok(())
 }
 

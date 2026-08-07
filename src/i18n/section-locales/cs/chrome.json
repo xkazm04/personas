@@ -120,5 +120,6 @@
   "dispatch_waiting_none": "Odesláno",
   "dispatch_waiting_none_hint": "Tento nápad už má úkol, takže nečeká na odeslání.",
   "tray_dispatch": "Schválená práce",
-  "tray_dispatch_waiting": "{count} schválených nápadů nikdy neodesláno"
+  "tray_dispatch_waiting": "{count} schválených nápadů nikdy neodesláno",
+  "paired_devices": "Spárovaná zařízení"
 }

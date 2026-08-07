@@ -120,5 +120,6 @@
   "dispatch_waiting_none": "Terkirim",
   "dispatch_waiting_none_hint": "Ide ini sudah memiliki task, jadi tidak sedang menunggu dispatch.",
   "tray_dispatch": "Pekerjaan Disetujui",
-  "tray_dispatch_waiting": "{count} ide disetujui belum pernah dikirim"
+  "tray_dispatch_waiting": "{count} ide disetujui belum pernah dikirim",
+  "paired_devices": "Perangkat tertaut"
 }

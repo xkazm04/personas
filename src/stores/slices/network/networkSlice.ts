@@ -20,6 +20,7 @@ import * as exposureApi from "@/api/network/exposure";
 import * as bundleApi from "@/api/network/bundle";
 import * as enclaveApi from "@/api/network/enclave";
 import * as discoveryApi from "@/api/network/discovery";
+import { probeP2pSupport } from "@/lib/network/p2pCapability";
 
 /**
  * Number of consecutive poll failures — counted PER ENDPOINT — before
@@ -62,15 +63,16 @@ const ENDPOINT_NETWORK_STATUS = 'networkStatus';
 const ENDPOINT_NETWORK_SNAPSHOT = 'networkSnapshot';
 
 /**
- * Detect a "command not found" error from Tauri. This happens when a backend
- * command is gated behind a Cargo feature (e.g. `p2p`) and the running build
- * doesn't include it — typical with `tauri:dev:lite`. We treat these as
- * "feature unavailable" rather than real errors so the Network tab can render
- * a single calm empty state instead of spamming three toasts.
+ * Thrown by a MUTATING network action when the running build has no `p2p`
+ * feature. Mutators reject (rather than silently no-op) so a caller's `await`
+ * cannot report success for work that never happened; the calm "P2P
+ * unavailable" empty state, not this message, is what the operator sees.
  */
-function isCommandUnavailableError(err: unknown): boolean {
-  const msg = errMsg(err, '').toLowerCase();
-  return msg.includes('not found') || msg.includes('not allowed by the scope') || msg.includes('command') && msg.includes('was not found');
+export class P2pUnavailableError extends Error {
+  constructor() {
+    super('p2p feature is not present in this build');
+    this.name = 'P2pUnavailableError';
+  }
 }
 
 export interface NetworkSlice {
@@ -101,8 +103,19 @@ export interface NetworkSlice {
    * network/identity/snapshot commands aren't registered. UI surfaces should
    * render a "P2P unavailable in this build" empty state instead of error
    * banners when this is true.
+   *
+   * Set ONLY by {@link NetworkSlice.ensureP2pSupport}, which runs the single
+   * structural probe in `@/lib/network/p2pCapability` — never inferred from an
+   * arbitrary error message, and never latched by a runtime failure.
    */
   p2pUnavailable: boolean;
+
+  /**
+   * Resolve (once per session) whether p2p is available, mirroring the verdict
+   * into `p2pUnavailable`. Every p2p-backed action — read AND write — must
+   * await this before its IPC call.
+   */
+  ensureP2pSupport: () => Promise<boolean>;
 
   // Identity actions
   fetchLocalIdentity: () => Promise<void>;
@@ -174,22 +187,28 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   networkFailureCounts: {},
   p2pUnavailable: false,
 
+  // -- Capability ------------------------------------------------------
+
+  ensureP2pSupport: async () => {
+    const supported = await probeP2pSupport();
+    if (get().p2pUnavailable !== !supported) set({ p2pUnavailable: !supported });
+    return supported;
+  },
+
   // -- Identity --------------------------------------------------------
 
   fetchLocalIdentity: async () => {
+    if (!(await get().ensureP2pSupport())) return;
     try {
       const identity = await identityApi.getLocalIdentity();
       set({ localIdentity: identity });
     } catch (err) {
-      if (isCommandUnavailableError(err)) {
-        set({ p2pUnavailable: true });
-        return;
-      }
       reportError(err, "Failed to fetch identity", set);
     }
   },
 
   setDisplayName: async (name: string) => {
+    if (!(await get().ensureP2pSupport())) throw new P2pUnavailableError();
     try {
       const identity = await identityApi.setDisplayName(name);
       set({ localIdentity: identity });
@@ -200,6 +219,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   },
 
   exportIdentityCard: async () => {
+    if (!(await get().ensureP2pSupport())) throw new P2pUnavailableError();
     try {
       return await identityApi.exportIdentityCard();
     } catch (err) {
@@ -211,19 +231,17 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   // -- Trusted Peers --------------------------------------------------
 
   fetchTrustedPeers: async () => {
+    if (!(await get().ensureP2pSupport())) return;
     try {
       const peers = await identityApi.listTrustedPeers();
       set({ trustedPeers: peers });
     } catch (err) {
-      if (isCommandUnavailableError(err)) {
-        set({ p2pUnavailable: true });
-        return;
-      }
       reportError(err, "Failed to fetch trusted peers", set);
     }
   },
 
   importTrustedPeer: async (identityCard: string, notes?: string) => {
+    if (!(await get().ensureP2pSupport())) throw new P2pUnavailableError();
     try {
       const peer = await identityApi.importTrustedPeer(identityCard, notes);
       await get().fetchTrustedPeers();
@@ -235,6 +253,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   },
 
   revokePeerTrust: async (peerId: string) => {
+    if (!(await get().ensureP2pSupport())) throw new P2pUnavailableError();
     try {
       await identityApi.revokePeerTrust(peerId);
       await get().fetchTrustedPeers();
@@ -245,6 +264,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   },
 
   deleteTrustedPeer: async (peerId: string) => {
+    if (!(await get().ensureP2pSupport())) throw new P2pUnavailableError();
     try {
       await identityApi.deleteTrustedPeer(peerId);
       await get().fetchTrustedPeers();
@@ -257,19 +277,17 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   // -- Exposure -------------------------------------------------------
 
   fetchExposedResources: async () => {
+    if (!(await get().ensureP2pSupport())) return;
     try {
       const resources = await exposureApi.listExposedResources();
       set({ exposedResources: resources });
     } catch (err) {
-      if (isCommandUnavailableError(err)) {
-        set({ p2pUnavailable: true });
-        return;
-      }
       reportError(err, "Failed to fetch exposed resources", set);
     }
   },
 
   createExposedResource: async (input) => {
+    if (!(await get().ensureP2pSupport())) throw new P2pUnavailableError();
     try {
       const resource = await exposureApi.createExposedResource(input);
       await get().fetchExposedResources();
@@ -281,6 +299,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   },
 
   deleteExposedResource: async (id) => {
+    if (!(await get().ensureP2pSupport())) throw new P2pUnavailableError();
     try {
       await exposureApi.deleteExposedResource(id);
       await get().fetchExposedResources();
@@ -293,6 +312,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   // -- Provenance -----------------------------------------------------
 
   fetchProvenance: async () => {
+    if (!(await get().ensureP2pSupport())) return;
     try {
       const prov = await exposureApi.listProvenance();
       set({ provenance: prov });
@@ -304,6 +324,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   // -- Bundle ---------------------------------------------------------
 
   exportBundle: async (resourceIds, savePath) => {
+    if (!(await get().ensureP2pSupport())) throw new P2pUnavailableError();
     set({ networkLoading: true });
     try {
       const result = await bundleApi.exportPersonaBundle(resourceIds, savePath);
@@ -316,6 +337,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   },
 
   exportBundleToClipboard: async (resourceIds) => {
+    if (!(await get().ensureP2pSupport())) throw new P2pUnavailableError();
     set({ networkLoading: true });
     try {
       const result = await bundleApi.exportBundleToClipboard(resourceIds);
@@ -328,6 +350,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   },
 
   previewBundleImport: async (filePath) => {
+    if (!(await get().ensureP2pSupport())) throw new P2pUnavailableError();
     set({ networkLoading: true });
     try {
       const preview = await bundleApi.previewBundleImport(filePath);
@@ -340,6 +363,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   },
 
   previewBundleFromClipboard: async (base64Data) => {
+    if (!(await get().ensureP2pSupport())) throw new P2pUnavailableError();
     set({ networkLoading: true });
     try {
       const preview = await bundleApi.previewBundleFromClipboard(base64Data);
@@ -352,6 +376,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   },
 
   applyBundleImport: async (filePath, options) => {
+    if (!(await get().ensureP2pSupport())) throw new P2pUnavailableError();
     set({ networkLoading: true });
     try {
       const result = await bundleApi.applyBundleImport(filePath, options);
@@ -367,6 +392,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   },
 
   applyBundleFromClipboard: async (base64Data, options) => {
+    if (!(await get().ensureP2pSupport())) throw new P2pUnavailableError();
     set({ networkLoading: true });
     try {
       const result = await bundleApi.applyBundleFromClipboard(base64Data, options);
@@ -383,6 +409,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   // -- Share Links ----------------------------------------------------
 
   createShareLink: async (resourceIds) => {
+    if (!(await get().ensureP2pSupport())) throw new P2pUnavailableError();
     set({ networkLoading: true });
     try {
       const result = await bundleApi.createShareLink(resourceIds);
@@ -395,6 +422,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   },
 
   previewShareLink: async (url) => {
+    if (!(await get().ensureP2pSupport())) throw new P2pUnavailableError();
     set({ networkLoading: true });
     try {
       const preview = await bundleApi.previewShareLink(url);
@@ -407,6 +435,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   },
 
   importFromShareLink: async (url, options) => {
+    if (!(await get().ensureP2pSupport())) throw new P2pUnavailableError();
     set({ networkLoading: true });
     try {
       const result = await bundleApi.importFromShareLink(url, options);
@@ -423,6 +452,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   // -- Enclaves -------------------------------------------------------
 
   sealEnclave: async (personaId, policy, savePath) => {
+    if (!(await get().ensureP2pSupport())) throw new P2pUnavailableError();
     set({ networkLoading: true });
     try {
       const result = await enclaveApi.sealEnclave(personaId, policy, savePath);
@@ -435,6 +465,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   },
 
   verifyEnclave: async (filePath) => {
+    if (!(await get().ensureP2pSupport())) throw new P2pUnavailableError();
     set({ networkLoading: true });
     try {
       const result = await enclaveApi.verifyEnclave(filePath);
@@ -449,19 +480,17 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   // -- Discovery (Phase 2) --------------------------------------------
 
   fetchDiscoveredPeers: async () => {
+    if (!(await get().ensureP2pSupport())) return;
     try {
       const peers = await discoveryApi.getDiscoveredPeers();
       set((s) => clearFailure(s, ENDPOINT_DISCOVERED_PEERS, { discoveredPeers: peers }));
     } catch (err) {
-      if (isCommandUnavailableError(err)) {
-        set({ p2pUnavailable: true });
-        return;
-      }
       set((s) => bumpFailure(s, ENDPOINT_DISCOVERED_PEERS, err));
     }
   },
 
   connectToPeer: async (peerId: string) => {
+    if (!(await get().ensureP2pSupport())) throw new P2pUnavailableError();
     try {
       set((s) => ({
         connectionStates: { ...s.connectionStates, [peerId]: "Connecting" as const },
@@ -481,6 +510,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   },
 
   disconnectPeer: async (peerId: string) => {
+    if (!(await get().ensureP2pSupport())) throw new P2pUnavailableError();
     try {
       await discoveryApi.disconnectPeer(peerId);
       set((s) => ({
@@ -494,6 +524,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   },
 
   fetchPeerManifest: async (peerId: string) => {
+    if (!(await get().ensureP2pSupport())) return;
     try {
       const manifest = await discoveryApi.getPeerManifest(peerId);
       set((s) => ({
@@ -505,6 +536,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   },
 
   syncPeerManifest: async (peerId: string) => {
+    if (!(await get().ensureP2pSupport())) throw new P2pUnavailableError();
     try {
       await discoveryApi.syncPeerManifest(peerId);
       await get().fetchPeerManifest(peerId);
@@ -515,20 +547,17 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   },
 
   fetchNetworkStatus: async () => {
+    if (!(await get().ensureP2pSupport())) return;
     try {
       const status = await discoveryApi.getNetworkStatus();
       set((s) => clearFailure(s, ENDPOINT_NETWORK_STATUS, { networkStatus: status }));
     } catch (err) {
-      if (isCommandUnavailableError(err)) {
-        set({ p2pUnavailable: true });
-        return;
-      }
       set((s) => bumpFailure(s, ENDPOINT_NETWORK_STATUS, err));
     }
   },
 
   fetchNetworkSnapshot: async () => {
-    if (get().p2pUnavailable) return;
+    if (!(await get().ensureP2pSupport())) return;
     try {
       const snapshot = await discoveryApi.getNetworkSnapshot();
       set((s) =>
@@ -542,10 +571,6 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
         }),
       );
     } catch (err) {
-      if (isCommandUnavailableError(err)) {
-        set({ p2pUnavailable: true });
-        return;
-      }
       set((s) => bumpFailure(s, ENDPOINT_NETWORK_SNAPSHOT, err));
     }
   },

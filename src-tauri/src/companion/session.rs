@@ -323,6 +323,61 @@ pub struct RecallPreviewEvent {
 /// session-scoped UI, same lifecycle as `RECALL_PREVIEW_EVENT`.
 pub const TURN_SUMMARY_EVENT: &str = "companion://turn-summary";
 
+/// A paired device asked THIS device to run something, and the turn that
+/// answers it is starting / has finished. Payload is a
+/// [`RemoteJobTurnEvent`]. The turn itself runs with `suppress_chat` (see
+/// `remote_device_source`), so this event is the ONLY signal the frontend
+/// gets that Athena is doing someone else's errand — the orb notice hangs
+/// off it. No persistence: the durable record is the `remote_jobs` row,
+/// which has its own `network:remote-job-updated` event.
+// Only the `p2p` build has a consumer (the remote-job executor). The
+// declaration stays unconditional so this file reads the same in both
+// feature sets rather than growing a cfg maze around one string.
+#[cfg_attr(not(feature = "p2p"), allow(dead_code))]
+pub const REMOTE_JOB_TURN_EVENT: &str = "companion://remote-job-turn";
+
+/// Wire shape for [`REMOTE_JOB_TURN_EVENT`]. `phase` is
+/// `"started" | "completed" | "failed"`; `summary` is empty on `started`.
+#[cfg_attr(not(feature = "p2p"), allow(dead_code))]
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RemoteJobTurnEvent {
+    pub job_id: String,
+    /// The originating device's display name, as confirmed at pairing time.
+    pub source: String,
+    pub instruction: String,
+    pub phase: String,
+    pub summary: String,
+}
+
+/// Suffix that marks a [`TurnOrigin::External`] source as "another one of the
+/// user's own devices asked for this", rather than a frontend surface of THIS
+/// app (Fleet's "Ask Athena", …).
+///
+/// It is deliberately part of the human-readable label instead of a new
+/// `TurnOrigin` variant: the string is what the model sees on stdin
+/// (`[Automated request from Laptop (paired device) — not the user]`) and what
+/// the transcript marker would read, so the provenance is legible in the one
+/// place it matters. Everything that must branch on it — the `suppress_chat`
+/// decision below — goes through [`is_remote_device_source`], so the coupling
+/// is one function, not a scattered string compare.
+const REMOTE_DEVICE_SOURCE_SUFFIX: &str = " (paired device)";
+
+/// Build the `TurnOrigin::External::source` label for an instruction that
+/// arrived from a paired device.
+#[cfg_attr(not(feature = "p2p"), allow(dead_code))]
+pub fn remote_device_source(display_name: &str) -> String {
+    let name = display_name.trim();
+    let name = if name.is_empty() { "A paired device" } else { name };
+    format!("{name}{REMOTE_DEVICE_SOURCE_SUFFIX}")
+}
+
+/// True when an `External` turn came from a paired device rather than from a
+/// surface of this app.
+pub fn is_remote_device_source(source: &str) -> bool {
+    source.ends_with(REMOTE_DEVICE_SOURCE_SUFFIX)
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TurnSummaryEvent {
@@ -351,6 +406,13 @@ pub struct TurnSummaryEvent {
 pub struct TurnResult {
     pub user_episode_id: String,
     pub assistant_episode_id: String,
+    /// The considered final reply, cleaned of `OP:` lines — the same text that
+    /// becomes the assistant episode. Carried separately because a
+    /// `suppress_chat` turn persists NO episode, so `assistant_episode_id` is
+    /// empty and the text would otherwise be unreachable. The remote-job
+    /// executor reports this back to the device that asked.
+    #[cfg_attr(not(feature = "p2p"), allow(dead_code))]
+    pub assistant_text: String,
     pub quick_replies: Vec<String>,
     pub tts_text: Option<String>,
     /// Athena emitted `OP: continue_autonomously` this turn. The caller
@@ -543,9 +605,18 @@ pub async fn send_turn(
     // global orb emits (approvals, navigations, …) run unconditionally, so she
     // still surfaces — just on the orb, not in chat. False for every other turn,
     // so the normal chat path is byte-for-byte unchanged.
+    //
+    // A remote-device instruction is suppressed for the same reason: it is
+    // someone else's errand running on this machine. Its answer belongs to the
+    // device that asked (it travels back over the job's own wire, and the orb
+    // announces it via REMOTE_JOB_TURN_EVENT) — not to THIS user's transcript,
+    // which would otherwise fill with half-conversations he never started.
     let suppress_chat = matches!(
         &origin,
         TurnOrigin::Proactive { trigger_kind, .. } if trigger_kind == "fleet_orchestration"
+    ) || matches!(
+        &origin,
+        TurnOrigin::External { source } if is_remote_device_source(source)
     );
 
     let (open_role, open_content) = match &origin {
@@ -893,8 +964,17 @@ pub async fn send_turn(
         );
     }
 
+    // A remote-device errand has its own announcement channel
+    // (REMOTE_JOB_TURN_EVENT, carrying the source device and the outcome), so it
+    // must NOT also take the fleet-framed orb-note path below — that would show
+    // the same reply twice, once labelled as fleet work it isn't.
+    let is_remote_device_turn = matches!(
+        &origin,
+        TurnOrigin::External { source } if is_remote_device_source(source)
+    );
     if suppress_chat
         && !is_fleet_turn
+        && !is_remote_device_turn
         && dispatched.approvals.is_empty()
         && !reply_text.trim().is_empty()
     {
@@ -1250,6 +1330,7 @@ pub async fn send_turn(
     Ok(TurnResult {
         user_episode_id: user_ep_id,
         assistant_episode_id: assistant_ep_id,
+        assistant_text: display_text,
         quick_replies: dispatched.quick_replies,
         tts_text: dispatched.tts_text,
         requests_continuation: dispatched.requests_continuation,

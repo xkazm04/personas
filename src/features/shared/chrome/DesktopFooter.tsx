@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { Palette, Check, Share2, LogOut, PanelLeftClose, PanelLeft, Keyboard, Map, Compass } from 'lucide-react';
+import { Palette, Check, Share2, Laptop, LogOut, PanelLeftClose, PanelLeft, Keyboard, Map, Compass } from 'lucide-react';
 import { SHORTCUTS_OPEN_EVENT } from '@/lib/keyboard/shortcutRegistry';
 import { getActiveTourSteps } from '@/stores/slices/system/tourSlice';
 import { useAuthStore } from '@/stores/authStore';
@@ -248,6 +248,38 @@ function ThemeFooterIcon() {
           </div>
         )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Devices icon -- SHIPS IN PRODUCTION.
+//
+// The Network icon below it is dev-only because exposure/bundles/raw peers are
+// diagnostics. Pairing is not: a user with two machines needs to reach it in a
+// release build, so this is its own always-present door to Settings -> Devices.
+// ---------------------------------------------------------------------------
+
+function DevicesFooterIcon() {
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setSettingsTab = useSystemStore((s) => s.setSettingsTab);
+  const { t: tDevices } = useTranslation();
+
+  const handleClick = useCallback(() => {
+    setSidebarSection('settings');
+    setSettingsTab('devices');
+  }, [setSidebarSection, setSettingsTab]);
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      data-testid="footer-devices"
+      className="w-7 h-7 rounded-card flex items-center justify-center transition-colors text-foreground hover:bg-secondary/50"
+      title={tDevices.chrome.paired_devices}
+      aria-label={tDevices.chrome.paired_devices}
+    >
+      <Laptop className="w-5 h-5" />
+    </button>
   );
 }
 
@@ -501,6 +533,8 @@ export default function DesktopFooter() {
         <ThemeFooterIcon />
         <div className="w-px h-4 bg-primary/10" />
         <ShortcutsFooterIcon />
+        <div className="w-px h-4 bg-primary/10" />
+        <DevicesFooterIcon />
         {import.meta.env.DEV && (
           <>
             <div className="w-px h-4 bg-primary/10" />

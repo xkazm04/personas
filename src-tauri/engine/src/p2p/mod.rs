@@ -4,11 +4,13 @@
 //! manifest sync, and agent-to-agent messaging.
 
 pub mod connection;
+pub mod device_pairing;
 pub mod manifest_sync;
 pub mod mdns;
 pub mod messaging;
 pub mod periodic;
 pub mod protocol;
+pub mod remote_jobs;
 pub mod transport;
 pub mod types;
 
@@ -22,10 +24,12 @@ use crate::event_registry::{emit_event, event_name};
 use personas_core::error::AppError;
 
 use self::connection::ConnectionManager;
+use self::device_pairing::DevicePairing;
 use self::manifest_sync::ManifestSync;
 use self::mdns::MdnsService;
 use self::messaging::MessageRouter;
 use self::periodic::PeriodicTask;
+use self::remote_jobs::RemoteJobs;
 use self::transport::QuicTransport;
 use self::types::{NetworkConfig, NetworkSnapshot, NetworkStatusInfo};
 
@@ -36,6 +40,11 @@ pub struct NetworkService {
     pub connections: Arc<ConnectionManager>,
     pub manifest_sync: Arc<ManifestSync>,
     pub messages: Arc<MessageRouter>,
+    pub pairing: Arc<DevicePairing>,
+    /// Cross-device instruction dispatch. The companion layer installs its
+    /// executor here at startup via `remote_jobs.set_executor(...)`; until it
+    /// does, accepted jobs fail immediately with a stated reason.
+    pub remote_jobs: Arc<RemoteJobs>,
     config: Arc<RwLock<NetworkConfig>>,
     running: Arc<RwLock<bool>>,
     cancel: Arc<RwLock<CancellationToken>>,
@@ -59,6 +68,20 @@ impl NetworkService {
         ));
         let manifest_sync = Arc::new(ManifestSync::new(pool.clone(), connections.clone()));
         let messages = Arc::new(MessageRouter::new(connections.clone()));
+        // Created here (rather than inline in the struct literal) so the same
+        // handle cell is shared with `DevicePairing`, which needs it to emit
+        // pairing events without a second copy that `start()` would forget.
+        let app_handle: Arc<RwLock<Option<tauri::AppHandle>>> = Arc::new(RwLock::new(None));
+        let pairing = Arc::new(DevicePairing::new(
+            pool.clone(),
+            connections.clone(),
+            app_handle.clone(),
+        ));
+        let remote_jobs = Arc::new(RemoteJobs::new(
+            pool.clone(),
+            connections.clone(),
+            app_handle.clone(),
+        ));
 
         // Reset stale is_connected flags from previous app session
         {
@@ -78,11 +101,13 @@ impl NetworkService {
             connections,
             manifest_sync,
             messages,
+            pairing,
+            remote_jobs,
             config,
             running: Arc::new(RwLock::new(false)),
             cancel: Arc::new(RwLock::new(CancellationToken::new())),
             pool,
-            app_handle: Arc::new(RwLock::new(None)),
+            app_handle,
         })
     }
 
@@ -120,9 +145,20 @@ impl NetworkService {
         let connections = self.connections.clone();
         let manifest_sync = self.manifest_sync.clone();
         let messages = self.messages.clone();
+        let pairing = self.pairing.clone();
+        let remote_jobs = self.remote_jobs.clone();
         let cancel = token.clone();
         tokio::spawn(async move {
-            Self::accept_loop(transport, connections, manifest_sync, messages, cancel).await;
+            Self::accept_loop(
+                transport,
+                connections,
+                manifest_sync,
+                messages,
+                pairing,
+                remote_jobs,
+                cancel,
+            )
+            .await;
         });
 
         // Start mDNS registration and browsing
@@ -314,11 +350,14 @@ impl NetworkService {
     }
 
     /// Accept incoming QUIC connections in a loop, exiting when cancelled.
+    #[allow(clippy::too_many_arguments)]
     async fn accept_loop(
         transport: Arc<QuicTransport>,
         connections: Arc<ConnectionManager>,
         manifest_sync: Arc<ManifestSync>,
         messages: Arc<MessageRouter>,
+        pairing: Arc<DevicePairing>,
+        remote_jobs: Arc<RemoteJobs>,
         cancel: CancellationToken,
     ) {
         loop {
@@ -333,8 +372,19 @@ impl NetworkService {
                             let connections = connections.clone();
                             let manifest_sync = manifest_sync.clone();
                             let messages = messages.clone();
+                            let pairing = pairing.clone();
+                            let remote_jobs = remote_jobs.clone();
                             tokio::spawn(async move {
-                                if let Err(e) = connections.handle_incoming(conn, manifest_sync, messages).await {
+                                if let Err(e) = connections
+                                    .handle_incoming(
+                                        conn,
+                                        manifest_sync,
+                                        messages,
+                                        pairing,
+                                        remote_jobs,
+                                    )
+                                    .await
+                                {
                                     tracing::warn!("Incoming connection failed: {}", e);
                                 }
                             });

@@ -15,4 +15,20 @@ peerId: string,
 /**
  * Shared anchor marking this peer as belonging to the same user as us.
  */
-deviceGroupId: string, displayName: string, addedAt: string, lastSyncedAt: string | null, };
+deviceGroupId: string, displayName: string, addedAt: string, lastSyncedAt: string | null, 
+/**
+ * True for the single device the user nominates as their "home" machine.
+ * At most one owned device carries this flag (enforced by a partial unique
+ * index and by `set_device_home`).
+ */
+isHome: boolean, 
+/**
+ * When the pairing ceremony completed, if this row came from one. `None`
+ * for rows registered manually via `register_owned_device`.
+ */
+pairedAt: string | null, 
+/**
+ * The peer's Ed25519 public key (base64) as proven during the signed
+ * handshake at pairing time. `None` for manually registered rows.
+ */
+publicKey: string | null, };

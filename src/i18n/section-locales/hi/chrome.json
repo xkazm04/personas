@@ -120,5 +120,6 @@
   "dispatch_waiting_none": "डिस्पैच हो गया",
   "dispatch_waiting_none_hint": "इस आइडिया के पास पहले से ही एक टास्क है, इसलिए यह डिस्पैच की प्रतीक्षा में नहीं है।",
   "tray_dispatch": "स्वीकृत कार्य",
-  "tray_dispatch_waiting": "{count} स्वीकृत आइडिया कभी डिस्पैच नहीं हुए"
+  "tray_dispatch_waiting": "{count} स्वीकृत आइडिया कभी डिस्पैच नहीं हुए",
+  "paired_devices": "जोड़े गए डिवाइस"
 }

@@ -239,6 +239,16 @@ export const EventName = {
   // P2P
   P2P_MANIFEST_SYNC_PROGRESS: 'p2p:manifest-sync-progress',
   NETWORK_SNAPSHOT_UPDATED: 'network:snapshot-updated',
+  /** Full list of device pairings awaiting a decision on THIS device. */
+  DEVICE_PAIRING_REQUESTED: 'network:device-pairing-requested',
+  /** One remote-job row changed state. Payload is the whole updated row. */
+  REMOTE_JOB_UPDATED: 'network:remote-job-updated',
+  /**
+   * A paired device asked THIS device to run something and the answering turn
+   * started / finished. The turn is `suppress_chat`, so this is the ONLY signal
+   * the frontend gets — it drives the ambient orb notice, nothing else.
+   */
+  REMOTE_JOB_TURN: 'companion://remote-job-turn',
 
   // Notification delivery
   NOTIFICATION_DELIVERY: 'notification-delivery',
@@ -1036,6 +1046,15 @@ export interface EventPayloadMap {
     connectionMetrics: import('@/api/network/discovery').ConnectionMetricsSnapshot;
     manifestSyncMetrics: import('@/api/network/discovery').ManifestSyncMetrics;
   };
+  /**
+   * Emitted whenever the pending-pairing set changes (a peer asked to pair, a
+   * pairing was confirmed/cancelled/pruned). The payload is the WHOLE pending
+   * list, identical to `list_pending_device_pairings` — so the event path and
+   * the poll recovery path are the same transition for the frontend.
+   */
+  [EventName.DEVICE_PAIRING_REQUESTED]: import('@/api/network/devices').DevicePairingRequest[];
+  [EventName.REMOTE_JOB_UPDATED]: import('@/lib/bindings/RemoteJob').RemoteJob;
+  [EventName.REMOTE_JOB_TURN]: import('@/lib/network/remoteJobNotice').RemoteJobTurnEvent;
 
   // Notification delivery
   [EventName.NOTIFICATION_DELIVERY]: {

@@ -281,6 +281,15 @@ const ALLOWED_ACTIONS: &[&str] = &[
     // no approval card" wording here as "writes fire unattended" — they do
     // not; the invariant is locked by `every_write_capability_requires_approval`
     // in connectors.rs.)
+    // Cross-device link (WP3) — hand an instruction to another of the user's
+    // OWN paired devices, where that device's Athena runs it as a real turn.
+    // NOT `p2p`-gated here on purpose: the surface (this list, the lifecycle
+    // arm, the constitution) is identical in a lite build so the parity tests
+    // assert one shape, and the executor answers honestly when the transport
+    // is absent. Its consent rule is mode-conditional and lives in
+    // `approval_exec_devices::gate_remote_instruct`, NOT in
+    // `AUTOAPPROVE_ALLOWLIST` (which has no conditional form).
+    "remote_instruct",
     // Phase G — project registry + background jobs.
     "register_project",
     "enqueue_dev_job",

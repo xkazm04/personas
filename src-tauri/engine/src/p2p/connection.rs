@@ -10,9 +10,11 @@ use std::sync::Arc;
 
 use tokio::sync::RwLock;
 
+use super::device_pairing::DevicePairing;
 use super::manifest_sync::ManifestSync;
 use super::messaging::MessageRouter;
 use super::protocol::{self, Message, PROTOCOL_VERSION};
+use super::remote_jobs::RemoteJobs;
 use super::transport::QuicTransport;
 use super::types::{
     ConnectionHealth, ConnectionMetricsSnapshot, ConnectionState, DisconnectReason,
@@ -112,6 +114,10 @@ impl ConnectionMetrics {
 pub struct PeerConnection {
     pub info: PeerConnectionInfo,
     pub quinn_conn: quinn::Connection,
+    /// The peer's Ed25519 public key (base64) as *proven* during the v2 signed
+    /// handshake — not merely claimed. Pairing persists this so a later session
+    /// can be checked against the key we actually paired with.
+    pub remote_public_key_b64: String,
 }
 
 /// Manages all active peer connections.
@@ -157,6 +163,39 @@ impl ConnectionManager {
         self.max_peers = max_peers;
     }
 
+    /// Log a refused handshake at `warn` with the concrete reason.
+    ///
+    /// A rejected peer is the one event an operator must be able to see after
+    /// the fact — "connection failed" in a UI toast is not enough to tell a
+    /// misconfigured device apart from an impersonation attempt.
+    fn log_handshake_rejection(peer_id: &str, stage: &str, err: &AppError) {
+        tracing::warn!(
+            peer_id = %peer_id,
+            stage = stage,
+            reason = %err,
+            "Rejected P2P handshake: peer failed identity verification"
+        );
+    }
+
+    /// The Ed25519 public key (base64) proven by a currently-connected peer
+    /// during its handshake. `None` if not connected.
+    pub async fn get_remote_public_key(&self, peer_id: &str) -> Option<String> {
+        self.connections
+            .read()
+            .await
+            .get(peer_id)
+            .map(|c| c.remote_public_key_b64.clone())
+    }
+
+    /// The display name a currently-connected peer presented at handshake.
+    pub async fn get_remote_display_name(&self, peer_id: &str) -> Option<String> {
+        self.connections
+            .read()
+            .await
+            .get(peer_id)
+            .map(|c| c.info.display_name.clone())
+    }
+
     /// Check if the connection capacity has been reached.
     async fn is_at_capacity(&self) -> bool {
         self.connections.read().await.len() >= self.max_peers
@@ -172,6 +211,8 @@ impl ConnectionManager {
         peer_id: &str,
         manifest_sync: Arc<ManifestSync>,
         messages: Arc<MessageRouter>,
+        pairing: Arc<DevicePairing>,
+        remote_jobs: Arc<RemoteJobs>,
     ) -> Result<(), AppError> {
         // Don't connect to ourselves
         if peer_id == self.local_peer_id {
@@ -210,7 +251,7 @@ impl ConnectionManager {
             }
         };
 
-        self.connect_to_peer_inner(peer_id, manifest_sync, messages)
+        self.connect_to_peer_inner(peer_id, manifest_sync, messages, pairing, remote_jobs)
             .await
     }
 
@@ -304,6 +345,8 @@ impl ConnectionManager {
         peer_id: &str,
         manifest_sync: Arc<ManifestSync>,
         messages: Arc<MessageRouter>,
+        pairing: Arc<DevicePairing>,
+        remote_jobs: Arc<RemoteJobs>,
     ) -> Result<(), AppError> {
         self.metrics
             .connection_attempts
@@ -327,13 +370,23 @@ impl ConnectionManager {
         let mut send = tokio::io::BufWriter::new(send);
         let mut recv = tokio::io::BufReader::new(recv);
 
-        // Send Hello
+        // -- v2 signed handshake, initiator side --------------------------
+        let local = crate::identity::get_or_create_identity(&self.pool)?;
+        let client_nonce = protocol::generate_nonce();
+        let hello_sig = crate::identity::sign_message(
+            &self.pool,
+            &protocol::hello_transcript(&local.peer_id, &client_nonce),
+        )?;
+
         protocol::write_message(
             &mut send,
             &Message::Hello {
-                peer_id: self.local_peer_id.clone(),
+                peer_id: local.peer_id.clone(),
                 display_name: self.local_display_name.clone(),
                 version: PROTOCOL_VERSION,
+                public_key_b64: local.public_key_b64.clone(),
+                nonce: client_nonce.clone(),
+                signature: hello_sig,
             },
         )
         .await?;
@@ -347,26 +400,30 @@ impl ConnectionManager {
         .map_err(|_| {
             AppError::Internal("HelloAck timeout: peer did not respond within 10s".into())
         })??;
-        let (remote_peer_id, remote_display_name) = match response {
-            Message::HelloAck {
-                peer_id: remote_id,
-                display_name,
-                version,
-            } => {
-                if version != PROTOCOL_VERSION {
-                    return Err(AppError::Validation(format!(
-                        "Incompatible protocol version: peer {} has v{}, we have v{}",
-                        remote_id, version, PROTOCOL_VERSION
-                    )));
+        let (remote_peer_id, remote_display_name, remote_public_key_b64, server_nonce, remote_sig) =
+            match response {
+                Message::HelloAck {
+                    peer_id: remote_id,
+                    display_name,
+                    version,
+                    public_key_b64,
+                    nonce,
+                    signature,
+                } => {
+                    if version != PROTOCOL_VERSION {
+                        return Err(AppError::Validation(format!(
+                            "Incompatible protocol version: peer {} has v{}, we have v{}",
+                            remote_id, version, PROTOCOL_VERSION
+                        )));
+                    }
+                    (remote_id, display_name, public_key_b64, nonce, signature)
                 }
-                (remote_id, display_name)
-            }
-            _ => {
-                return Err(AppError::Internal(
-                    "Expected HelloAck, got different message".into(),
-                ));
-            }
-        };
+                _ => {
+                    return Err(AppError::Internal(
+                        "Expected HelloAck, got different message".into(),
+                    ));
+                }
+            };
 
         // Verify peer_id matches what we expected
         if remote_peer_id != peer_id {
@@ -375,6 +432,34 @@ impl ConnectionManager {
                 peer_id, remote_peer_id
             )));
         }
+
+        // Authenticate the responder: nonce shape, peer_id↔public-key binding,
+        // and a signature over a transcript that includes OUR nonce (so this
+        // proof cannot be a recording of an earlier session).
+        protocol::validate_nonce(&server_nonce, "responder")
+            .inspect_err(|e| Self::log_handshake_rejection(&remote_peer_id, "incoming HelloAck", e))?;
+        protocol::verify_handshake_proof(
+            &remote_peer_id,
+            &remote_public_key_b64,
+            &protocol::hello_ack_transcript(&remote_peer_id, &server_nonce, &client_nonce),
+            &remote_sig,
+        )
+        .inspect_err(|e| Self::log_handshake_rejection(&remote_peer_id, "incoming HelloAck", e))?;
+
+        // Close the loop: prove liveness to the responder by signing ITS nonce.
+        let confirm_sig = crate::identity::sign_message(
+            &self.pool,
+            &protocol::hello_confirm_transcript(&local.peer_id, &client_nonce, &server_nonce),
+        )?;
+        protocol::write_message(
+            &mut send,
+            &Message::HelloConfirm {
+                signature: confirm_sig,
+            },
+        )
+        .await?;
+
+        tracing::debug!(peer_id = %remote_peer_id, "Signed handshake verified (initiator)");
 
         // Clone the connection handle for the dispatch loop before moving into storage.
         let dispatch_conn = quinn_conn.clone();
@@ -391,6 +476,7 @@ impl ConnectionManager {
                 retry_count: 0,
             },
             quinn_conn,
+            remote_public_key_b64,
         };
 
         // Insert with tie-breaker (and authoritative capacity check) to handle
@@ -425,7 +511,14 @@ impl ConnectionManager {
 
         // Spawn inbound dispatch loop so the remote peer can send Pings,
         // ManifestRequests, and AgentMessages back through this connection.
-        Self::spawn_inbound_dispatch(dispatch_conn, peer_id.to_string(), manifest_sync, messages);
+        Self::spawn_inbound_dispatch(
+            dispatch_conn,
+            peer_id.to_string(),
+            manifest_sync,
+            messages,
+            pairing,
+            remote_jobs,
+        );
 
         Ok(())
     }
@@ -438,6 +531,8 @@ impl ConnectionManager {
         quinn_conn: quinn::Connection,
         manifest_sync: Arc<ManifestSync>,
         messages: Arc<MessageRouter>,
+        pairing: Arc<DevicePairing>,
+        remote_jobs: Arc<RemoteJobs>,
     ) -> Result<(), AppError> {
         // Enforce max_peers limit for incoming connections
         if self.is_at_capacity().await {
@@ -468,42 +563,103 @@ impl ConnectionManager {
         .map_err(|_| {
             AppError::Internal("Hello timeout: peer did not send Hello within 10s".into())
         })??;
-        let (remote_peer_id, remote_display_name) = match hello {
-            Message::Hello {
-                peer_id,
-                display_name,
-                version,
-            } => {
-                if version != PROTOCOL_VERSION {
-                    return Err(AppError::Validation(format!(
-                        "Incompatible protocol version: peer {} has v{}, we have v{}",
-                        peer_id, version, PROTOCOL_VERSION
-                    )));
+        let (remote_peer_id, remote_display_name, remote_public_key_b64, client_nonce, hello_sig) =
+            match hello {
+                Message::Hello {
+                    peer_id,
+                    display_name,
+                    version,
+                    public_key_b64,
+                    nonce,
+                    signature,
+                } => {
+                    if version != PROTOCOL_VERSION {
+                        return Err(AppError::Validation(format!(
+                            "Incompatible protocol version: peer {} has v{}, we have v{}",
+                            peer_id, version, PROTOCOL_VERSION
+                        )));
+                    }
+                    (peer_id, display_name, public_key_b64, nonce, signature)
                 }
-                (peer_id, display_name)
-            }
-            _ => {
-                return Err(AppError::Internal(
-                    "Expected Hello, got different message".into(),
-                ));
-            }
-        };
+                _ => {
+                    return Err(AppError::Internal(
+                        "Expected Hello, got different message".into(),
+                    ));
+                }
+            };
 
         // Don't accept connections from ourselves
         if remote_peer_id == self.local_peer_id {
             return Err(AppError::Validation("Rejecting self-connection".into()));
         }
 
-        // Send HelloAck
+        // -- v2 signed handshake, responder side --------------------------
+        // First pass on the initiator's claim: the key must hash to the claimed
+        // peer_id and the Hello signature must verify. This alone is not proof
+        // of liveness (a recorded Hello would pass) — HelloConfirm below closes
+        // that gap by making the initiator sign a nonce we chose.
+        protocol::validate_nonce(&client_nonce, "initiator")
+            .inspect_err(|e| Self::log_handshake_rejection(&remote_peer_id, "incoming Hello", e))?;
+        protocol::verify_handshake_proof(
+            &remote_peer_id,
+            &remote_public_key_b64,
+            &protocol::hello_transcript(&remote_peer_id, &client_nonce),
+            &hello_sig,
+        )
+        .inspect_err(|e| Self::log_handshake_rejection(&remote_peer_id, "incoming Hello", e))?;
+
+        let local = crate::identity::get_or_create_identity(&self.pool)?;
+        let server_nonce = protocol::generate_nonce();
+        let ack_sig = crate::identity::sign_message(
+            &self.pool,
+            &protocol::hello_ack_transcript(&local.peer_id, &server_nonce, &client_nonce),
+        )?;
+
         protocol::write_message(
             &mut send,
             &Message::HelloAck {
-                peer_id: self.local_peer_id.clone(),
+                peer_id: local.peer_id.clone(),
                 display_name: self.local_display_name.clone(),
                 version: PROTOCOL_VERSION,
+                public_key_b64: local.public_key_b64.clone(),
+                nonce: server_nonce.clone(),
+                signature: ack_sig,
             },
         )
         .await?;
+
+        // Require the third leg before the connection counts as established.
+        let confirm = tokio::time::timeout(
+            std::time::Duration::from_secs(10),
+            protocol::decode(&mut recv),
+        )
+        .await
+        .map_err(|_| {
+            let e = AppError::Validation(
+                "HelloConfirm timeout: peer did not prove liveness within 10s".into(),
+            );
+            Self::log_handshake_rejection(&remote_peer_id, "missing HelloConfirm", &e);
+            e
+        })??;
+        let confirm_sig = match confirm {
+            Message::HelloConfirm { signature } => signature,
+            _ => {
+                let e = AppError::Validation("Expected HelloConfirm, got different message".into());
+                Self::log_handshake_rejection(&remote_peer_id, "malformed HelloConfirm", &e);
+                return Err(e);
+            }
+        };
+        protocol::verify_handshake_proof(
+            &remote_peer_id,
+            &remote_public_key_b64,
+            &protocol::hello_confirm_transcript(&remote_peer_id, &client_nonce, &server_nonce),
+            &confirm_sig,
+        )
+        .inspect_err(|e| {
+            Self::log_handshake_rejection(&remote_peer_id, "incoming HelloConfirm", e)
+        })?;
+
+        tracing::debug!(peer_id = %remote_peer_id, "Signed handshake verified (responder)");
 
         // Clone the connection handle for the dispatch loop before moving into storage.
         let dispatch_conn = quinn_conn.clone();
@@ -520,6 +676,7 @@ impl ConnectionManager {
                 retry_count: 0,
             },
             quinn_conn,
+            remote_public_key_b64,
         };
 
         // Insert with tie-breaker (and authoritative capacity check) to handle
@@ -554,7 +711,14 @@ impl ConnectionManager {
         // Spawn a dispatch loop to handle subsequent streams from the remote peer.
         // Without this, Ping/ManifestRequest/AgentMessage streams opened by the
         // connecting peer would be silently dropped.
-        Self::spawn_inbound_dispatch(dispatch_conn, remote_peer_id, manifest_sync, messages);
+        Self::spawn_inbound_dispatch(
+            dispatch_conn,
+            remote_peer_id,
+            manifest_sync,
+            messages,
+            pairing,
+            remote_jobs,
+        );
 
         Ok(())
     }
@@ -574,7 +738,21 @@ impl ConnectionManager {
         peer_id: String,
         manifest_sync: Arc<ManifestSync>,
         messages: Arc<MessageRouter>,
+        pairing: Arc<DevicePairing>,
+        remote_jobs: Arc<RemoteJobs>,
     ) {
+        // The link is up (again). Ask this peer to replay anything we missed for
+        // the jobs we asked it to run. Spawned separately from the accept loop so
+        // a slow or hostile peer cannot delay us starting to serve it — and it is
+        // a no-op unless the peer is paired and has unfinished work with us.
+        {
+            let remote_jobs = remote_jobs.clone();
+            let peer_id = peer_id.clone();
+            tokio::spawn(async move {
+                remote_jobs.resume_with_peer(&peer_id).await;
+            });
+        }
+
         tokio::spawn(async move {
             let mut rate_window_start = std::time::Instant::now();
             let mut rate_msg_count: u64 = 0;
@@ -618,6 +796,8 @@ impl ConnectionManager {
                 let peer_id = peer_id.clone();
                 let manifest_sync = manifest_sync.clone();
                 let messages = messages.clone();
+                let pairing = pairing.clone();
+                let remote_jobs = remote_jobs.clone();
 
                 tokio::spawn(async move {
                     let mut send = tokio::io::BufWriter::new(send);
@@ -652,6 +832,8 @@ impl ConnectionManager {
                         &peer_id,
                         &manifest_sync,
                         &messages,
+                        &pairing,
+                        &remote_jobs,
                     )
                     .await
                     {
@@ -666,14 +848,31 @@ impl ConnectionManager {
     }
 
     /// Handle a single message received on an inbound stream.
+    #[allow(clippy::too_many_arguments)]
     async fn dispatch_inbound_message(
         msg: Message,
         send: &mut tokio::io::BufWriter<quinn::SendStream>,
         peer_id: &str,
         manifest_sync: &ManifestSync,
         messages: &MessageRouter,
+        pairing: &DevicePairing,
+        remote_jobs: &Arc<RemoteJobs>,
     ) -> Result<(), AppError> {
         match msg {
+            // Remote jobs are the one inbound family that is NOT open to every
+            // authenticated peer. `handle_message` owns that gate — it refuses
+            // anything from a peer with no `owned_devices` row before touching
+            // the database or the executor — and returns the frames to write
+            // back, so this arm stays pure plumbing.
+            job @ (Message::RemoteJobRequest { .. }
+            | Message::RemoteJobAck { .. }
+            | Message::RemoteJobProgress { .. }
+            | Message::RemoteJobResult { .. }
+            | Message::RemoteJobResume { .. }) => {
+                for reply in remote_jobs.handle_message(peer_id, job).await? {
+                    protocol::write_message(send, &reply).await?;
+                }
+            }
             Message::Ping => {
                 protocol::write_message(send, &Message::Pong).await?;
             }
@@ -683,6 +882,39 @@ impl ConnectionManager {
             }
             Message::AgentMessage { envelope } => {
                 messages.store_received(peer_id, envelope).await?;
+            }
+            Message::PairRequest {
+                session_nonce,
+                device_group_id,
+                display_name,
+                devices_at_stake,
+            } => {
+                let receipt = pairing
+                    .handle_request(
+                        peer_id,
+                        session_nonce,
+                        device_group_id,
+                        display_name,
+                        devices_at_stake,
+                    )
+                    .await?;
+                protocol::write_message(send, &receipt).await?;
+            }
+            Message::PairResponse {
+                accepted,
+                device_group_id,
+                display_name,
+                public_key_b64,
+            } => {
+                pairing
+                    .handle_response(
+                        peer_id,
+                        accepted,
+                        device_group_id,
+                        display_name,
+                        public_key_b64,
+                    )
+                    .await?;
             }
             other => {
                 tracing::debug!(

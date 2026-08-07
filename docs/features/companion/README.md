@@ -20,8 +20,28 @@ Athena communicates on exactly **two** surfaces, and nowhere else:
 - **CHAT** (`CompanionPanel`) — the full-information dimension. Everything she has
   to say in words lives here: replies, approval cards, proactive cards, the
   in-chat decision card, and the ledger of what she did without asking.
-- **ORB** (`AthenaOrbLayer` + `OrbDecisionBubble` / `GuideCaption` / the orb's
-  glow, captions, and avatar postures) — the quick-info and decision dimension.
+- **ORB** (`AthenaOrbLayer` + `OrbDecisionBubble` / `GuideCaption` /
+  `RemoteJobNoticeChip` / the orb's glow, captions, and avatar postures) — the
+  quick-info and decision dimension.
+
+### Remote-instruction arrival notice
+
+When another of the user's own machines asks THIS one to run something (see
+Settings → Devices), the answering turn runs with `suppress_chat`, so nothing
+appears in the transcript. `companion://remote-job-turn` is the only signal the
+frontend gets, and `RemoteJobNoticeChip` (hosted by `AthenaGuideLayer`) turns it
+into a quiet chip docked BELOW the orb, naming the source device. It updates on
+`completed` / `failed` and clears itself on a short TTL. This is ambient
+awareness, deliberately not a modal, a toast or a chat entry: the durable record
+is the remote-job row in Settings → Devices. The chip yields entirely while a
+decision is pending, because that surface is asking for an answer and this one is
+an FYI.
+
+The state machine (`src/lib/network/remoteJobNotice.ts`) is written for unordered
+delivery: a `started` arriving after its own terminal phase is ignored, the first
+terminal phase wins, a terminal phase whose `started` was missed still surfaces,
+and a `started` whose terminal phase never arrives is swept by a TTL just past
+the companion's own turn ceiling rather than pinning the chip forever.
 
 There is deliberately **no third dimension**. Athena raises no toasts, no footer
 notice popovers, and no corner pop-ups. Surfaces that used to do so, and where
@@ -412,6 +432,28 @@ Athena is wired into the [Mastermind canvas](../teams/README.md) at the same **r
 - **`canvas_control { action }`** (auto-fire, max 4 per turn) is the door onto the canvas **action grammar** (`sub_mastermind/lib/canvasActionStore.ts`): camera verbs (`camera.read` / `pan` / `zoom` by factor or band / `focus` / `fit`) plus the zoom-gated opens (`dim.open` travels close and opens the cell's own Improve popover; `category.open`; `island.menu`). View only — the camera moves or a popover opens, nothing mutates, which is the whole consent argument for auto-fire.
 - The dispatcher validates what the frontend cannot: the kind is one the grammar speaks, any slug resolves against the **published scene** (demo islands refused by name), bands ∈ far/mid/near/close, numbers finite. Only validated fields are re-serialized, so an invented param never crosses the IPC boundary. The read kinds (`island.read`/`dim.read`) are refused with a pointer to `describe_canvas_project`, which answers synchronously without a frontend round-trip.
 - `session.rs` emits `companion://canvas-control` with `{ sessionId, action }`; the app-wide bridge (`useCanvasControlBridge`, mounted beside the panel bridge) routes to Teams → Mastermind, dispatches into the grammar queue (whose 2s pickup window carries the action across the route-in mount), and reports the settled `CanvasActionResult` back through **`companion_canvas_control_result`** — a System episode in the originating session, so Athena reads on her next turn where the camera actually landed (band, visible islands, clamps) or why it refused (`band_too_far`, `unknown_target`, `canvas_closed`). The same grammar is drivable without Athena via the dev-gated `window.__mmCanvas` bridge (`canvasTestBridge.ts`) for live testing on :17320.
+
+## Another one of your devices — constitution v50 (`remote_instruct`)
+
+Two paired Personas installs on one LAN can hand each other work (pairing and the job transport are documented in [sharing](../sharing/README.md)). Athena is wired to both ends of it.
+
+**Outbound — `remote_instruct`.** She proposes `{ device, instruction }`; `device` is a display name, a device id, or the literal `home`, and omitting it means the home device. The instruction must be self-contained: the assistant on the other machine cannot see this conversation. The consent rule is **mode-conditional**, stated once in `approval_exec_devices::gate_remote_instruct` and enforced by both the approval path and the autonomous path:
+
+| Autonomous mode | Target | What happens |
+| --- | --- | --- |
+| OFF | the home device | an approval card, resolved by a click |
+| OFF | any other paired device | refused, naming the rule and the remedy |
+| ON | any paired device | fires immediately, no card |
+
+It is **not** an `AUTOAPPROVE_ALLOWLIST` entry — that list is a flat set of names with no conditional form — but a dedicated arm ahead of it in `auto_resolve_if_allowed`, with a test pinning the name off the list. The executor calls the same gate, so a card filed under one mode and clicked under another is judged when it fires, not when it was proposed. Failures stay actionable: an unpaired peer and an unreachable device surface their own typed messages ("not one of your paired devices", "…is not reachable right now").
+
+**Inbound — the arriving instruction becomes a real turn.** The device that was asked runs it through the ordinary turn machinery as `TurnOrigin::External`, tagged `[Automated request from <device> (paired device) — not the user]`, with Athena's **full op set**: her approval rows, autopilot allowlist, boldness matrix and structural backstops apply unchanged, because the sender already cleared the pairing gate and the request is the operator's own arriving over another keyboard. The turn runs with `suppress_chat`, so the answer travels back over the job's wire and onto the orb (`companion://remote-job-turn`, phases `started` / `completed` / `failed`) rather than into that machine's transcript.
+
+A job can never be left `Running`: the turn is an inner spawned task whose `JoinHandle` converts a panic into a reported failure, wrapped in a 27-minute ceiling above the CLI's own, and a startup sweep fails inbound jobs a crash interrupted (the originator learns about those through the reconnect resume exchange).
+
+**Back on the originating device**, results become `System` episodes so Athena can report what the other machine did — capped at **two per job**: one when the first progress note lands, one on the terminal transition carrying the summary and a digest of the last five notes. Everything else stays in the job's notes and the Devices tab.
+
+`remote_instruct` is deliberately not `p2p`-gated: the op surface is identical in a lite build, where it answers that this build has no device link.
 
 ## Incidents (proactive blocker nudge)
 

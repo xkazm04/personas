@@ -120,5 +120,6 @@
   "dispatch_waiting_none": "디스패치됨",
   "dispatch_waiting_none_hint": "이 아이디어는 이미 작업이 있으므로 디스패치를 기다리지 않습니다.",
   "tray_dispatch": "승인된 작업",
-  "tray_dispatch_waiting": "승인된 아이디어 {count}개가 디스패치되지 않음"
+  "tray_dispatch_waiting": "승인된 아이디어 {count}개가 디스패치되지 않음",
+  "paired_devices": "페어링된 기기"
 }

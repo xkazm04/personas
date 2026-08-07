@@ -120,5 +120,6 @@
   "dispatch_waiting_none": "已分发",
   "dispatch_waiting_none_hint": "此创意已有对应任务，因此无需等待分发。",
   "tray_dispatch": "已批准的工作",
-  "tray_dispatch_waiting": "{count} 项已批准创意从未分发"
+  "tray_dispatch_waiting": "{count} 项已批准创意从未分发",
+  "paired_devices": "已配对设备"
 }

@@ -120,5 +120,6 @@
   "dispatch_waiting_none": "ডিসপ্যাচ হয়েছে",
   "dispatch_waiting_none_hint": "এই আইডিয়ার জন্য ইতিমধ্যে একটি টাস্ক আছে, তাই এটি ডিসপ্যাচের অপেক্ষায় নেই।",
   "tray_dispatch": "অনুমোদিত কাজ",
-  "tray_dispatch_waiting": "{count}টি অনুমোদিত আইডিয়া কখনো ডিসপ্যাচ হয়নি"
+  "tray_dispatch_waiting": "{count}টি অনুমোদিত আইডিয়া কখনো ডিসপ্যাচ হয়নি",
+  "paired_devices": "পেয়ার করা ডিভাইস"
 }

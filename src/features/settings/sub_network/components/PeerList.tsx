@@ -48,11 +48,11 @@ export function PeerList() {
     setConnectingPeers((prev) => new Set(prev).add(peerId));
     try {
       await connectToPeer(peerId);
-      addToast('Connected to peer', 'success');
+      addToast(st.peer_connected_toast, 'success');
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       logger.warn('Failed to connect to peer', { peerId, error: msg });
-      addToast(`Failed to connect to peer: ${msg}`, 'error');
+      addToast(st.peer_connect_failed_toast, 'error');
     } finally {
       setConnectingPeers((prev) => {
         const next = new Set(prev);
@@ -65,11 +65,11 @@ export function PeerList() {
   const handleDisconnect = async (peerId: string) => {
     try {
       await disconnectPeer(peerId);
-      addToast('Disconnected from peer', 'success');
+      addToast(st.peer_disconnected_toast, 'success');
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       logger.warn('Failed to disconnect', { peerId, error: msg });
-      addToast(`Failed to disconnect: ${msg}`, 'error');
+      addToast(st.peer_disconnect_failed_toast, 'error');
     }
   };
 
@@ -94,7 +94,7 @@ export function PeerList() {
           </button>
           {lastScannedAt !== null && (
             <span className="text-[10px] text-foreground">
-              scanned <RelativeTime timestamp={lastScannedAt} showTooltip={false} />
+              {st.scanned_label} <RelativeTime timestamp={lastScannedAt} showTooltip={false} />
             </span>
           )}
         </div>
