@@ -115,7 +115,9 @@ export function TestResultsPanel({
 
       <div className="flex items-center gap-2 pr-8">
         <span className={`typo-heading font-medium ${didPass ? 'text-status-success' : failedCount > 0 ? 'text-status-error' : 'text-status-warning'}`}>
-          {didPass ? 'Tests Passed' : failedCount > 0 ? 'Tests Failed' : unverifiedCount > 0 ? 'Not Verified' : 'Skipped'}
+          {/* The three siblings are pre-existing hardcoded English; the new
+              branch uses the translated key rather than adding a fourth. */}
+          {didPass ? 'Tests Passed' : failedCount > 0 ? 'Tests Failed' : unverifiedCount > 0 ? t.templates.test_report.status_unverified : 'Skipped'}
         </span>
         {toolResults.length > 0 && (
           <span className="typo-body text-foreground">
