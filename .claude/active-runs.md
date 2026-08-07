@@ -2,6 +2,17 @@
 
 ## Active
 
+### perfect-smoke-r4 — `/perfect` round 4: live smoke verification of 15 shipped directions — session opus-5[1m] — **COMPLETE**
+- Started/completed: 2026-08-07. **No repo source changed** — read-only DB diagnostics + two greps. Writes went to the Obsidian vault (`Perfect/`), `.personas/memory-outbox.jsonl` (2 coverage nodes), and this ledger.
+- **Result: all 15 shipped directions verified against the live DB; nothing broken.** Spans 0/90,813 unclosed · incompleteness warning 21 keys / 0 missing across 13 locales · `dev_ideas` 32/33 rejections carry a reason, statuses clean · per-span cost proven root-only (2,827 costed spans, **all** roots) which confirms round 3's scope cut exactly.
+- **Two of the fifteen are untriggered insurance**, not realised value: the 10k span ceiling and its O(1) parent lookup — 0 evictions ever, largest trace of 2,942 is 169 spans (1.7% of the limit). Recorded as such rather than counted as wins.
+- **Two carry-overs re-measured into direction-ready evidence**: `tool_steps` unclosed is now 2,638/39,729 steps (6.6%) across **724/2,278 executions (31.8%)** — rate halved since 08-04, absolute count tripled, writer still producing; and `PipelineWaterfall` falls back to `buildSyntheticTrace` for **every historical execution** while **2,278/2,278 completed runs (100%)** already have a real, fully-closed stored trace.
+- **Vault prose was wrong about the schema and is corrected**: there is no `trace_spans` table and no `tool_steps` table — `execution_traces.spans` and `persona_executions.tool_steps` are JSON TEXT columns, and executions live in `persona_executions`. Also: `.personas/contexts.txt` holds **773** names (the source of the stale "769"), the map holds **208**, and they OVERLAP rather than nest — only 87 map names are anchorable by the app.
+- No scouts, no builders: the standing no-unrequested-agents instruction holds, so Phase P/B wait on the operator.
+- Scope: **read-mostly.** Drives the ALREADY-RUNNING `tauri:dev:test` instance on :17320 and read-only sqlite3 (`mode=ro`) against the live DBs. Writes only to the Obsidian vault (`Perfect/`), `.claude/active-runs.md`, and — if a smoke finding is small and safe — inline fixes with gates run BEFORE commit.
+- Why now: the vault's `next:` pointer has flagged for three rounds that **15 shipped directions have never been verified in a running app**, and the blocker was always "no instance with the test-automation feature". This session already has one up.
+- **NOTE FOR OTHER SESSIONS:** no worktrees, no builders (the standing no-unrequested-agents instruction still holds; Phase B would be gated on the operator). Will not touch `src/i18n/locales/**` or any file another session has dirty.
+
 ### athena-chat-open-perf — two-phase panel mount + hoist the session engine out of the open-only body — session opus-5[1m] — **COMPLETE**
 - Started/completed: 2026-08-07. Gates: `npm run check` 0 errors · full `vitest run` **3602/3602** · companion+shared 619/619.
 - **Measured, not assumed.** Before: frame paints **334ms** after `setState('open')` with **257ms** of blocked main thread and a 192ms worst frame — on an EMPTY conversation, so that is pure chrome cost. After (median of settled warm opens): **frame 18ms**, skeleton 18ms, interior ~326ms (after the morph), longest task **94ms**, worst frame 111ms.
