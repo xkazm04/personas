@@ -10,7 +10,35 @@ import type { PendingApproval } from '@/api/companion';
 
 /** Visual attention a session warrants. `none` → use the base border.
  *  `athena` = she's actively reasoning about this session's ticket (light blue). */
-export type FleetAttention = 'waiting' | 'stale' | 'failed' | 'athena' | 'none';
+export type FleetAttention = 'waiting' | 'stale' | 'failed' | 'athena' | 'done' | 'none';
+
+/**
+ * The parked-state classifier's verdict, as it arrives on the DTO
+ * (`stale.rs` Pass D → `fleet::classify`). Machine tokens, never displayed
+ * raw. `null` means the classifier abstained — the time-based rules stand.
+ */
+export type FleetStaleKind =
+  | 'done'
+  | 'blocked_question'
+  | 'blocked_permission'
+  | 'hung_mid_tool';
+
+/**
+ * What a parked session is ACTUALLY parked on — the distinction "stale" hid.
+ *
+ * Before the classifier, DONE / BLOCKED / HUNG were one amber bucket and the
+ * only way to tell them apart was string-matching `stateReason` prose. This
+ * reads the typed field instead, falling back to the state when the
+ * classifier had nothing to say.
+ */
+export function parkedKind(
+  s: Pick<FleetSession, 'state' | 'staleKind'>,
+): FleetStaleKind | null {
+  const kind = s.staleKind as FleetStaleKind | null | undefined;
+  if (kind) return kind;
+  if (s.state === 'finished') return 'done';
+  return null;
+}
 
 /** Prefix of the Rust ticker's never-attached `state_reason` (see
  *  `stale.rs::is_never_attached`). Keep in sync with that string. */
@@ -32,12 +60,17 @@ export function isNeverAttached(s: Pick<FleetSession, 'stateReason'>): boolean {
 
 /** Classify a session by how much it wants the operator's (or Athena's) eyes. */
 export function sessionAttention(
-  s: Pick<FleetSession, 'state' | 'exitCode' | 'athenaActive'>,
+  s: Pick<FleetSession, 'state' | 'exitCode' | 'athenaActive'> &
+    Partial<Pick<FleetSession, 'staleKind'>>,
 ): FleetAttention {
   // Athena has taken this awaiting ticket and is reasoning — show that (light
   // blue) instead of "needs you" (violet). If she defers or her window lapses,
   // `athenaActive` drops and it falls through to the real state below.
   if (s.athenaActive) return 'athena';
+  // A session the classifier read as DONE is not amber. It finished; painting
+  // it the same as a wedged session is the conflation this whole lane exists
+  // to end.
+  if (s.staleKind === 'done' || s.state === 'finished') return 'done';
   switch (s.state) {
     case 'awaiting_input':
       return 'waiting';
@@ -81,6 +114,8 @@ export function attentionClass(a: FleetAttention): string {
       return 'fleet-attn-failed';
     case 'athena':
       return 'fleet-attn-athena';
+    case 'done':
+      return 'fleet-attn-done';
     default:
       return '';
   }

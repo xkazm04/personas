@@ -1120,12 +1120,21 @@ pub(crate) fn execute_fleet_spawn(
     // `project_label` while `name` is unset) is appended so the operator —
     // and Athena, who sees session names in her fleet digest — can tell
     // Athena-spawned sessions apart by what they're working on.
-    let name = match crate::commands::fleet::registry::registry().try_lookup_label(&id) {
-        Some(label) => format!(
-            "{} · {label}",
-            crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL
-        ),
-        None => crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL.to_string(),
+    // A dispatch-provided `label` WINS over the auto-derived project label:
+    // the plan's author named this session on purpose, and "athena · personas"
+    // eight times over tells the operator nothing about which is which.
+    let sentinel = crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL;
+    let explicit = params
+        .get("label")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    let name = match explicit {
+        Some(label) => format!("{sentinel} · {label}"),
+        None => match crate::commands::fleet::registry::registry().try_lookup_label(&id) {
+            Some(label) => format!("{sentinel} · {label}"),
+            None => sentinel.to_string(),
+        },
     };
     let _ = crate::commands::fleet::registry::registry().rename(&id, Some(name.clone()));
 
@@ -1582,7 +1591,28 @@ pub(crate) struct FleetPlanRow {
     pub cwd: String,
     pub objective: String,
     pub skill: Option<String>,
+    /// Operator-facing name for this session. Without it every dispatched
+    /// session was `athena-plan-3`, which tells you nothing about what it is
+    /// doing when eight of them are on screen. A dispatch-provided label WINS
+    /// over the auto-naming — the caller who wrote the plan knows better than
+    /// a slug derived from a skill name.
+    pub label: Option<String>,
+    /// Model id for this session (`--model`). `None` leaves the CLI default.
+    pub model: Option<String>,
+    /// Reasoning effort for this session (`--effort`). `None` leaves the CLI
+    /// default. Same flag names the headless lane already uses
+    /// (`engine/prompt/cli_args.rs`), so there is one vocabulary.
+    pub effort: Option<String>,
 }
+
+/// Effort levels the CLI accepts. A free-text value would become a command
+/// line, so the plan validator only lets these through.
+pub(crate) const FLEET_PLAN_EFFORTS: &[&str] = &["low", "medium", "high", "xhigh"];
+/// Longest session label. Long enough to be descriptive in the grid, short
+/// enough that it stays a label.
+pub(crate) const FLEET_PLAN_LABEL_MAX: usize = 48;
+/// Longest model id.
+pub(crate) const FLEET_PLAN_MODEL_MAX: usize = 64;
 
 impl FleetPlanRow {
     /// The positional prompt this row spawns with. A chosen skill LEADS the
@@ -1602,10 +1632,35 @@ impl FleetPlanRow {
     }
 
     /// Fleet role label — becomes the visible session name `athena-<role>`.
+    /// An explicit `label` wins: it is what the plan's author chose to call
+    /// this session, and it beats a slug derived from the skill name.
     pub fn role(&self, index: usize) -> String {
-        self.skill
+        self.label
             .clone()
+            .or_else(|| self.skill.clone())
             .unwrap_or_else(|| format!("plan-{}", index + 1))
+    }
+
+    /// This row's full argv contribution: the model/effort flags (when the
+    /// plan chose them), then exactly one positional token — the prompt.
+    ///
+    /// Flag ORDER matters and is why this lives here rather than at the call
+    /// site: `fleet::pty::spawn_session` appends the variadic `--mcp-config`
+    /// after the caller's args, so the positional prompt must be LAST in what
+    /// we hand it, and any value-taking flag must also be listed in
+    /// `fleet::naming::VALUE_FLAGS` or its value becomes the session title.
+    pub fn args(&self) -> Vec<String> {
+        let mut out = Vec::new();
+        if let Some(model) = self.model.as_deref() {
+            out.push("--model".to_string());
+            out.push(model.to_string());
+        }
+        if let Some(effort) = self.effort.as_deref() {
+            out.push("--effort".to_string());
+            out.push(effort.to_string());
+        }
+        out.push(self.prompt());
+        out
     }
 }
 
@@ -1617,6 +1672,33 @@ impl FleetPlanRow {
 /// per row a non-empty bounded objective, a bounded slug-shaped optional skill,
 /// and a `cwd` inside a registered dev project (the shared
 /// [`validate_fleet_cwd_in_db`] — never a second copy of that rule).
+/// Read an optional, trimmed, length-bounded string field off a plan row.
+/// `Ok(None)` for absent/blank; the error string is a suffix the caller
+/// prefixes with the field name.
+fn bounded_opt(
+    row: &serde_json::Value,
+    key: &str,
+    max: usize,
+) -> Result<Option<String>, String> {
+    let Some(raw) = row.get(key) else {
+        return Ok(None);
+    };
+    if raw.is_null() {
+        return Ok(None);
+    }
+    let Some(s) = raw.as_str() else {
+        return Err("must be a string".into());
+    };
+    let s = s.trim();
+    if s.is_empty() {
+        return Ok(None);
+    }
+    if s.chars().count() > max {
+        return Err(format!("is too long (max {max} characters)"));
+    }
+    Ok(Some(s.to_string()))
+}
+
 pub(crate) fn validate_fleet_plan(
     db: &crate::db::DbPool,
     intent: &str,
@@ -1686,10 +1768,43 @@ pub(crate) fn validate_fleet_plan(
                 Some(s.to_string())
             }
         };
+        // Optional presentation/routing fields. Each is bounded and
+        // charset-checked here, at PROPOSAL time, for the same reason every
+        // other field is: these become command-line tokens.
+        let label = match bounded_opt(row, "label", FLEET_PLAN_LABEL_MAX) {
+            Ok(v) => v,
+            Err(e) => return Err(format!("row {n}: `label` {e}")),
+        };
+        let model = match bounded_opt(row, "model", FLEET_PLAN_MODEL_MAX) {
+            Ok(v) => v,
+            Err(e) => return Err(format!("row {n}: `model` {e}")),
+        };
+        if let Some(m) = model.as_deref() {
+            if m.starts_with('-') || m.contains(char::is_whitespace) {
+                return Err(format!(
+                    "row {n}: `model` must be a model id like `opus`, not free text"
+                ));
+            }
+        }
+        let effort = match bounded_opt(row, "effort", 16) {
+            Ok(v) => v,
+            Err(e) => return Err(format!("row {n}: `effort` {e}")),
+        };
+        if let Some(e) = effort.as_deref() {
+            if !FLEET_PLAN_EFFORTS.contains(&e) {
+                return Err(format!(
+                    "row {n}: `effort` must be one of {}",
+                    FLEET_PLAN_EFFORTS.join(" / ")
+                ));
+            }
+        }
         out.push(FleetPlanRow {
             cwd: cwd.to_string(),
             objective: objective.to_string(),
             skill,
+            label,
+            model,
+            effort,
         });
     }
     Ok((intent.to_string(), out))
@@ -1703,16 +1818,31 @@ pub(crate) fn validate_fleet_plan(
 /// not the ones Athena proposed. One row spawns a single session
 /// (`fleet_spawn`); two or more become one Operation with N role sessions
 /// (`fleet_dispatch`).
+///
+/// `card_id` is the durable `companion_chat_card` row backing the card. When
+/// present it is CLAIMED (pending → dispatched) before anything spawns, which
+/// is the idempotency guard: a double-click, a replayed event, or a re-mounted
+/// card after a refresh can no longer start a second fleet of CLI sessions.
+/// A claim taken for a dispatch that then failed outright is released.
 #[tauri::command]
 pub async fn companion_dispatch_fleet_plan(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     operation_intent: String,
     rows: Vec<serde_json::Value>,
+    card_id: Option<String>,
 ) -> Result<String, AppError> {
     ipc_auth::require_auth(&state).await?;
     let (intent, plan) =
         validate_fleet_plan(&state.db, &operation_intent, &rows).map_err(AppError::Validation)?;
+
+    // Claim BEFORE the executors run. Validation errors above are safe to
+    // retry, so they must not burn the card.
+    let card_id = card_id.map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
+    if let Some(id) = card_id.as_deref() {
+        let conn = state.user_db.get()?;
+        crate::commands::companion::chat_cards::claim_for_dispatch(&conn, id)?;
+    }
 
     let (action, params) = fleet_plan_dispatch_params(&intent, &plan);
     tracing::info!(
@@ -1740,6 +1870,34 @@ pub async fn companion_dispatch_fleet_plan(
         FLEET_PLAN_OUTCOME_CONFIRMED_FAILED
     };
     record_fleet_plan_decision(&state.db, action, &intent, &plan, outcome);
+
+    // Settle the durable card in the same breath as the audit row: a
+    // successful dispatch stores its outcome (so a re-hydrated card renders
+    // "already dispatched" rather than an editable plan), a failed one hands
+    // the claim back so the operator can correct and retry.
+    if let Some(id) = card_id.as_deref() {
+        if let Ok(conn) = state.user_db.get() {
+            match &result {
+                Ok(r) => crate::commands::companion::chat_cards::record_dispatch_result(
+                    &conn,
+                    id,
+                    serde_json::json!({
+                        "message": r.message,
+                        "dispatchedRows": plan
+                            .iter()
+                            .map(|row| serde_json::json!({
+                                "cwd": row.cwd,
+                                "objective": row.objective,
+                                "skill": row.skill,
+                            }))
+                            .collect::<Vec<_>>(),
+                    })
+                    .to_string(),
+                ),
+                Err(_) => crate::commands::companion::chat_cards::release_claim(&conn, id),
+            }
+        }
+    }
     Ok(result?.message)
 }
 
@@ -1807,7 +1965,12 @@ pub(crate) fn fleet_plan_dispatch_params(
         let row = &plan[0];
         return (
             "fleet_spawn",
-            serde_json::json!({ "cwd": row.cwd, "args": [row.prompt()] }),
+            serde_json::json!({
+                "cwd": row.cwd,
+                "args": row.args(),
+                // A dispatch-provided label wins over the auto-naming.
+                "label": row.label,
+            }),
         );
     }
     let role_specs: Vec<serde_json::Value> = plan
@@ -1817,7 +1980,7 @@ pub(crate) fn fleet_plan_dispatch_params(
             serde_json::json!({
                 "role": row.role(i),
                 "cwd": row.cwd,
-                "args": [row.prompt()],
+                "args": row.args(),
             })
         })
         .collect();
@@ -1873,6 +2036,74 @@ mod fleet_plan_tests {
             Some(s) => serde_json::json!({ "cwd": cwd, "objective": objective, "skill": s }),
             None => serde_json::json!({ "cwd": cwd, "objective": objective }),
         }
+    }
+
+    #[test]
+    fn label_model_and_effort_ride_through_validation_into_argv() {
+        let root = fixture_project();
+        let pool = pool_with_project(&root);
+        let cwd = root.to_string_lossy().to_string();
+        let rows = vec![serde_json::json!({
+            "cwd": cwd,
+            "objective": "harden the auth surface",
+            "label": "auth hardening",
+            "model": "opus",
+            "effort": "high",
+        })];
+        let (_, plan) = validate_fleet_plan(&pool, "intent", &rows).expect("valid");
+        assert_eq!(plan[0].label.as_deref(), Some("auth hardening"));
+        // The label WINS over the auto-derived role: the plan's author named
+        // this session, and `plan-1` tells the operator nothing.
+        assert_eq!(plan[0].role(0), "auth hardening");
+        // Flags lead, the prompt stays the LAST token (spawn_session appends
+        // the variadic --mcp-config after our args).
+        assert_eq!(
+            plan[0].args(),
+            vec![
+                "--model".to_string(),
+                "opus".to_string(),
+                "--effort".to_string(),
+                "high".to_string(),
+                "harden the auth surface".to_string(),
+            ]
+        );
+        // …and the single-row dispatch carries the label to the executor.
+        let (action, params) = fleet_plan_dispatch_params("intent", &plan);
+        assert_eq!(action, "fleet_spawn");
+        assert_eq!(params["label"], "auth hardening");
+    }
+
+    #[test]
+    fn a_bad_effort_or_model_is_refused_at_proposal_time() {
+        let root = fixture_project();
+        let pool = pool_with_project(&root);
+        let cwd = root.to_string_lossy().to_string();
+        let bad_effort = vec![serde_json::json!({
+            "cwd": cwd, "objective": "o", "effort": "ludicrous",
+        })];
+        assert!(validate_fleet_plan(&pool, "i", &bad_effort)
+            .unwrap_err()
+            .contains("effort"));
+        // A model value that could become a flag never reaches a command line.
+        let bad_model = vec![serde_json::json!({
+            "cwd": cwd, "objective": "o", "model": "--dangerously-something",
+        })];
+        assert!(validate_fleet_plan(&pool, "i", &bad_model)
+            .unwrap_err()
+            .contains("model"));
+    }
+
+    #[test]
+    fn omitting_the_new_fields_changes_nothing() {
+        let root = fixture_project();
+        let pool = pool_with_project(&root);
+        let cwd = root.to_string_lossy().to_string();
+        let rows = vec![row(&cwd, "do the thing", Some("scan-sweep"))];
+        let (_, plan) = validate_fleet_plan(&pool, "i", &rows).expect("valid");
+        assert!(plan[0].label.is_none() && plan[0].model.is_none() && plan[0].effort.is_none());
+        assert_eq!(plan[0].args(), vec!["/scan-sweep do the thing".to_string()]);
+        // Without a label the role still falls back to the skill.
+        assert_eq!(plan[0].role(0), "scan-sweep");
     }
 
     #[test]

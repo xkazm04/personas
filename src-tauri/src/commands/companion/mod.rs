@@ -11,6 +11,7 @@ pub mod briefing;
 pub mod browser_test;
 pub mod canvas_control;
 pub mod chat;
+pub mod chat_cards;
 pub mod connectors;
 pub mod consolidate;
 pub mod conversation;
@@ -272,7 +273,12 @@ fn fleet_census<I: IntoIterator<Item = (crate::commands::fleet::types::FleetSess
             continue;
         }
         census.pending += 1;
-        if matches!(state, S::AwaitingInput) {
+        // `Finished` is priority alongside `AwaitingInput`. Both are states
+        // where the operator is the next mover — one is blocked on an answer,
+        // the other has an outcome nobody has been told about — and making a
+        // finished fleet wait out the periodic window is how "everything is
+        // done" stayed silent for up to the whole window length.
+        if matches!(state, S::AwaitingInput | S::Finished) {
             census.has_priority = true;
         }
     }

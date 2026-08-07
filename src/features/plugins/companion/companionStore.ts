@@ -50,6 +50,22 @@ export type { CompanionMessage };
 export const DEFAULT_CONVERSATION_ID = 'default';
 
 /**
+ * Chat-card kinds that are ACTIONABLE — a proposal that WRITES on confirm
+ * (spawns CLI sessions, creates a milestone). Mirrors `ACTIONABLE_KINDS` in
+ * `src-tauri/src/commands/companion/chat_cards.rs`; only these get a durable
+ * row, survive a send/refresh, and carry a `card.id`.
+ */
+export const ACTIONABLE_CHAT_CARD_KINDS = ['fleet_plan', 'ship_milestone'] as const;
+
+/** True when a card is an unresolved actionable proposal worth preserving. */
+export function isActionableChatCard(card: Pick<ChatCard, 'kind' | 'id'>): boolean {
+  return (
+    Boolean(card.id) &&
+    (ACTIONABLE_CHAT_CARD_KINDS as readonly string[]).includes(card.kind)
+  );
+}
+
+/**
  * The system "Athena / Notices" thread. Mirrors the backend
  * `NOTICES_CONVERSATION_ID` — ownerless proactive nudges land here, and the
  * proactive footer-notice path owns its popover, so the roster's background
@@ -279,12 +295,22 @@ interface CompanionStore {
   // alongside ApprovalCards on the latest assistant turn.
   chatCards: ChatCard[];
   setChatCards: (cards: ChatCard[]) => void;
-  /** Merge `patch` into one chat-card's `config` in place, by index. Lets a
-   *  card (e.g. the fleet-plan dispatch card) write its post-confirm outcome
-   *  back into the shared store so it survives the card component unmounting
-   *  when the panel is closed and reopened — chatCards itself is untouched by
-   *  panel open/close, only the component tree is. */
-  patchChatCardConfig: (index: number, patch: Record<string, unknown>) => void;
+  /** Merge `patch` into one chat-card's `config`, keyed by the card's durable
+   *  row id. Index keying was the old shape and it broke the moment hydration
+   *  could reorder the array — a card would write its dispatch outcome onto a
+   *  DIFFERENT card. Cards without an id (informational kinds) are untouched. */
+  patchChatCardConfig: (id: string, patch: Record<string, unknown>) => void;
+  /** Drop one card from the transcript, by id (Cancel on an actionable card). */
+  removeChatCard: (id: string) => void;
+  /** Clear the one-shot INFORMATIONAL cards at send time while leaving pending
+   *  actionable proposals (fleet_plan / ship_milestone) standing. Clearing
+   *  those was the data-loss bug: they are decisions the operator still owes an
+   *  answer to, not snippets that expire with the turn. */
+  clearTransientChatCards: () => void;
+  /** Merge durable pending cards read back from the DB. Live entries win on id
+   *  collision — a card already on screen holds fresher local edits than the
+   *  row it was created from. */
+  hydrateChatCards: (cards: ChatCard[]) => void;
 
   // Brain Viewer state
   brainView: BrainViewState;
@@ -815,12 +841,28 @@ export const useCompanionStore = create<CompanionStore>()(
 
   chatCards: [],
   setChatCards: (chatCards) => set({ chatCards }),
-  patchChatCardConfig: (index, patch) =>
+  patchChatCardConfig: (id, patch) =>
     set((s) => ({
-      chatCards: s.chatCards.map((card, i) =>
-        i === index ? { ...card, config: { ...(card.config ?? {}), ...patch } } : card,
+      chatCards: s.chatCards.map((card) =>
+        card.id === id ? { ...card, config: { ...(card.config ?? {}), ...patch } } : card,
       ),
     })),
+  removeChatCard: (id) =>
+    set((s) => ({ chatCards: s.chatCards.filter((card) => card.id !== id) })),
+  clearTransientChatCards: () =>
+    set((s) => ({
+      chatCards: s.chatCards.filter((card) => isActionableChatCard(card)),
+    })),
+  hydrateChatCards: (cards) =>
+    set((s) => {
+      const live = new Set(s.chatCards.map((c) => c.id).filter(Boolean));
+      const restored = cards.filter((c) => c.id && !live.has(c.id));
+      if (restored.length === 0) return s;
+      // Restored cards lead: they are older proposals the operator still owes
+      // an answer to, and burying them under the current turn's cards is how
+      // they got missed in the first place.
+      return { chatCards: [...restored, ...s.chatCards] };
+    }),
 
   conversations: [],
   activeConversationId: DEFAULT_CONVERSATION_ID,

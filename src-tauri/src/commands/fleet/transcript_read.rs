@@ -304,6 +304,42 @@ fn find_transcript(claude_session_id: &str) -> Option<PathBuf> {
     None
 }
 
+/// How much of the transcript tail the parked-state classifier reads. A few
+/// records is all it needs (the trailing assistant message and whether its
+/// tool calls resolved); anything larger is pure cost on a 30s ticker.
+pub const TAIL_BYTES: u64 = 4 * 1024;
+
+/// Read the last complete JSONL records of a session's transcript.
+///
+/// This is the classifier's window into what a parked session was DOING when
+/// it stopped — the thing "stale" never looked at, which is why a finished
+/// run, a run waiting on a question, and a genuinely hung run all landed in
+/// one amber bucket. Returns `None` when there is no transcript yet.
+///
+/// A byte-offset seek does not land on a record boundary, so the first
+/// (partial) line is dropped and the bytes are decoded lossily.
+pub fn tail_lines(claude_session_id: &str) -> Option<Vec<String>> {
+    let path = find_transcript(claude_session_id)?;
+    let mut f = std::fs::File::open(&path).ok()?;
+    let size = f.metadata().ok()?.len();
+    let from = size.saturating_sub(TAIL_BYTES);
+    f.seek(SeekFrom::Start(from)).ok()?;
+    let mut buf = Vec::new();
+    f.take(TAIL_BYTES).read_to_end(&mut buf).ok()?;
+    let text = String::from_utf8_lossy(&buf);
+    let mut lines: Vec<String> = text
+        .lines()
+        .map(|l| l.trim().to_string())
+        .filter(|l| !l.is_empty())
+        .collect();
+    // Drop the leading partial record — unless we read the whole file, in
+    // which case the first line is genuinely the first record.
+    if from > 0 && !lines.is_empty() {
+        lines.remove(0);
+    }
+    Some(lines)
+}
+
 /// File size (bytes) of a session's transcript, or `None` if no transcript
 /// exists yet. The staleness ticker polls this to detect *real* log growth
 /// (a more reliable "is it actually working" signal than hook timing or

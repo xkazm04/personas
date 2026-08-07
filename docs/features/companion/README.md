@@ -315,8 +315,13 @@ Three blocks now ride in every system prompt, each a **name + real id + one line
 | `describe_context` | one dev context in full | same |
 | `describe_skill` | one skill's full when-to-use | same |
 | `list_teams` | the team roster with ids (`LIST_TEAMS_MAX_ROWS = 25`) | — |
+| `list_runner_tasks` | the Dev Runner's live queue — queued + running only, ≤20, optional name/project filter | says the queue is empty rather than returning a blank body |
 
 Teams were deliberately left **out** of the always-on index and given a lookup instead: `assign_team` needs a `team_id`, but a roster is not worth permanent prompt rent.
+
+**The Dev Runner is the second execution lane, and it now has a door.** Athena could dispatch Fleet sessions all day while a task for the same work sat queued on the Run Desk, because she could not see it. `list_runner_tasks` is the read half; **`enqueue_runner_task { title, description?, depth?, project… }`** is the write half, and it mirrors the fleet ops' grammar exactly: approval-gated (deliberately absent from `AUTOAPPROVE_ALLOWLIST`), containment through the same `resolve_dev_project` registry lookup every other dev op uses, bounded input, `depth` validated against `quick | campaign | deep_build`. It **only enqueues** — starting a task stays the operator's click on the Run Desk, because execution spends real money and the queue is the reviewable surface between a proposal and that spend.
+
+**`open_route` gained `mastermind`.** Like `monitor` it is a pseudo-route (it resolves to Teams → Mastermind rather than a sidebar section). It earns one because Athena can already read, annotate, compose on and steer that canvas but had no way to simply take you there — and because *arriving* is what makes the canvas publish its scene to the settings key that every one of those ops reads, so navigation doubles as the refresh for a stale or absent snapshot.
 
 Two properties worth keeping when this is extended:
 
@@ -575,8 +580,21 @@ click, and **Cancel** dismisses the card with no side effect at all.
   `validate_fleet_cwd_in_db`. A rejected plan produces a dispatcher warning Athena
   reads on her next turn and the op line is stripped from the reply. If the project
   registry is not reachable for that turn the arm **fails closed** — no card.
-- **Argv is backend-owned.** A row contributes exactly one positional token: the
-  objective, or `/<skill> <objective>` when a skill is chosen.
+- **Per-row `label`, `model` and `effort` (all optional).** `label` is the
+  operator-facing session name and **wins over the auto-naming** — eight
+  sessions all reading `athena · personas` tell you nothing about which is
+  which, and the plan's author is the one who knows. `model` and `effort`
+  become `--model <id>` / `--effort <low|medium|high|xhigh>`, the same flag
+  vocabulary the headless lane uses (`engine/prompt/cli_args.rs`), so a cheap
+  survey row and an expensive build row can sit in one plan. All three are
+  validated at PROPOSAL time like every other field (bounded; effort against a
+  fixed set; a model value that starts with `-` or contains whitespace is
+  refused, because these become command-line tokens). `--effort` is registered
+  in `fleet::naming::VALUE_FLAGS` — without that its value would be read as the
+  task prompt and become the session title.
+- **Argv is backend-owned.** A row contributes its flags (if any) and then
+  exactly one positional token: the objective, or `/<skill> <objective>` when a
+  skill is chosen. The prompt is always LAST.
   `fleet::pty::spawn_session` appends the variadic `--mcp-config` *last*, after
   the caller's args; anything emitted after it would be swallowed as a config
   path, so no caller assembles flags.
@@ -587,6 +605,38 @@ click, and **Cancel** dismisses the card with no side effect at all.
   deliberately not a cockpit widget and not pinnable: it is an actionable
   proposal that starts real processes, so it must not be re-rendered outside the
   conversation that consented to it.
+
+### Durable chat-cards — actionable proposals survive a refresh
+
+Chat cards used to be one-shot Tauri events into a non-persisted Zustand array,
+cleared on the next send and on reset. For informational kinds that is the
+intent. For **actionable** kinds (`fleet_plan`, `ship_milestone`) it was data
+loss: the plan JSON is stripped from the assistant text before the episode is
+persisted, so once the array was cleared — by the next message, a panel reset,
+or a dev refresh — the proposal was gone with no way back. An Aug 2026 session
+lost six dispatched builds that way.
+
+- **A row before the event.** Actionable cards get a `companion_chat_card` row
+  (`id`, `conversation_id`, `episode_id`, `kind`, `title`, `config_json`,
+  `status`, `result_json`, timestamps) written *before* `CHAT_CARDS_EVENT` is
+  emitted, and the row id rides in the payload. Persistence failure degrades to
+  the old transient behaviour rather than dropping the card.
+- **Status is `pending → dispatched | dismissed | superseded`**, and
+  `dispatched` is terminal — its sessions are real, so it can never be walked
+  back. `companion_list_chat_cards(conversation_id, pending_only)` and
+  `companion_resolve_chat_card(id, status, result_json)` are the read/write
+  surface.
+- **Dispatch is idempotent.** `companion_dispatch_fleet_plan` takes an optional
+  `card_id` and CLAIMS it (`pending → dispatched`, single SQL update) before
+  anything spawns. A double-click, a replayed event, or a re-mounted card is
+  refused with a clear message instead of starting a second fleet. Validation
+  errors happen before the claim (safe to retry); a dispatch that fails outright
+  releases the claim.
+- **Hydration and the recovery strip.** On mount and on every conversation
+  switch the panel merges that thread's pending cards back into the transcript
+  (live entries win on id), labelled *"Waiting on you from an earlier turn"* so
+  an older unanswered proposal is not mistaken for this turn's. Clearing on send
+  now only clears informational kinds.
 
 ## `show_ship_milestone` — the editable milestone card (conversational ship planning)
 
@@ -731,11 +781,17 @@ Backend lives under `src-tauri/src/companion/stt/` mirroring the Piper TTS layou
 **What it does:** with dev mode on, Athena's prompt gains a DEV MODE addendum (`companion/dev_mode.rs::addendum_if_enabled`, riding the mode-addenda slot): the self-model ("you run from your own source checkout — the app, including you, is built from this repo"), the **context-map index** (a group-level rollup: one line per group listing its context slugs, descriptions dropped — the per-context format hit ~30KB at 208 contexts; the session reads `context-map.json` itself for details), judgment rules (product action vs code change; ask one clarifying line when ambiguous), and two ops:
 
 - **`dev_improve { request, context, files_hint, backend, confidence, rationale }`** — dispatches **one coding CLI fleet session** at the repo (visible Fleet tile named `athena-*-dev`, operative-memory op, containment via `validate_fleet_cwd` — the repo must be a registered Dev Tools project). The task prompt is assembled **Rust-side** with the resolved context's `file_paths` from the map — never model-recalled paths. Workspace policy: `backend: false` (frontend-only) runs in the **main checkout** and edits hot-reload immediately; `backend: true` (any Rust) runs in an **isolated worktree** (`.claude/worktrees/athena-dev-<id>`) so the running app is undisturbed. Default is `true` — the safe side.
-- **`dev_merge { op_id }`** — the **merge handshake** for backend runs (`dev_mode.rs::apply_dev_branch`): **fast-forwards** when master is unmoved; when master has diverged — the common case here, with parallel sessions moving it constantly — it **cherry-picks IFF the branch is exactly one commit ahead** of the live checkout (a focused dev run). Multi-commit / zero-commit divergence still refuses with manual-merge guidance; a cherry-pick conflict aborts cleanly. Node-tooling **lockfile drift** (`pnpm-lock.yaml`/`package-lock.json`/`yarn.lock`) is restored to HEAD before the dirty-tree check, so a run's `npx` side effects don't block the merge. On success it removes the worktree + branch; the dev-server rebuild + app restart follow. This is the moment user and Athena synchronize update expectations.
+- **`dev_merge { op_id, force? }`** — the **merge handshake** for backend runs (`dev_mode.rs::apply_dev_branch`). The rule it now obeys: **never lose a commit, and never claim one landed without checking.**
+  - **Already applied is a success, not a failure.** Before choosing a strategy it runs `git cherry HEAD <branch>`; if every branch commit is patch-equivalent to HEAD (a parallel session landed the same change on master first) it reports "already applied upstream" and cleans up. The same case inside a single-commit pick — git's `The previous cherry-pick is now empty` — is `--skip`ped and reported as applied. Previously both paths came back as a total failure over content that was safely on master.
+  - **Strategies:** fast-forward when master is unmoved; **cherry-pick** when the branch is exactly one commit ahead of a moved master; **`git merge --no-ff`** for multi-commit divergence (the old code refused outright and stranded whole runs). Conflicts are **never** auto-resolved — the pick/merge is aborted, the live checkout is left untouched, and the refusal names the intact branch tip.
+  - **Post-verification before any report and before any prune.** Success requires the branch tip to be an ancestor of HEAD *or* no branch commit to remain unapplied (`git cherry`, which is the only test that survives a cherry-pick's sha rewrite). Failing that, the merge is reported as failed and **the worktree and branch are left in place on purpose**. Cleanup only ever runs after verification passes, and every refusal path prints the branch tip sha so a commit can never be stranded behind a pruned worktree.
+  - The **verified landed sha** is stamped on the `companion_dev_op` row (`mark_dev_op(..., "merged", Some(sha))`). Before this, "merged" was recorded with no sha at all.
+  - **Live-sibling guard.** A dev session is a PTY child of this app, so the rebuild a merge triggers kills every other in-flight dev session mid-run, uncommitted work included. The merge now refuses while other `athena-dev*` sessions are live, naming them; `{"force": true}` is the explicit "take them down with it".
+  - Node-tooling **lockfile drift** (`pnpm-lock.yaml`/`package-lock.json`/`yarn.lock`) is still restored to HEAD before the dirty-tree check.
 
 **Policy (hard):** neither op is on `AUTOAPPROVE_ALLOWLIST` — **dev-mode operations never auto-fire in any mode**; each dispatch and each merge is an explicit approval click. And **every dev op ends in a reflection**: on session exit, `reconcile_if_dispatched` routes dev ops to `spawn_dev_reflection` — a chat-visible `dev_improve_review` proactive turn carrying the op wrap-up + fresh git evidence (`git log --stat`, tree dirtiness) where Athena reviews what changed vs what was asked, flags risk, and recommends (or argues against) the merge.
 
-**Durability + the experiment ledger.** Every dispatch is a durable `companion_dev_op` row (user db; status `dispatched → completed | closed → merged`, `interrupted` for orphans). It survives the app restart that a backend merge inherently causes: the reflection reconciler, the `dev_merge` handshake, and **boot recovery** (orphaned `dispatched` rows sweep to `interrupted` + one proactive card each describing what survived on disk) all read it. The same table doubles as the **experiment harness** the panel surfaces while dev mode is on — a compact **dev-op ledger** strip (`DevOpLedger.tsx`, `companion_dev_op_ledger`) with the aggregate scoreboard (dispatch→commit rate, merges, rescues) and a **👍/👎 verdict chip** per run (`companion_dev_op_set_verdict` → `user_verdict`, gated on dev mode like the ledger read) — the signal that, over days of use, tells whether dev mode is earning its keep. The dispatch card prints the **full `op_id`** — `dev_merge` looks the op up by exact match, so the displayed id must round-trip into the merge handshake.
+**Durability + the experiment ledger.** Every dispatch is a durable `companion_dev_op` row (user db; status `dispatched → completed | closed → merged`, `interrupted` for orphans). It survives the app restart that a backend merge inherently causes: the reflection reconciler, the `dev_merge` handshake, and **boot recovery** all read it. Boot recovery no longer just writes an op off: when an interrupted BACKEND op's worktree still holds uncommitted work (and dev mode is on), it stages those paths explicitly, commits them with a `[recovered] …` message that says plainly it was assembled by the recovery pass and not reviewed by the session, and flips the row back to `completed` so the **ordinary** `dev_merge` handshake picks it up — no bespoke recovery path. Ops with nothing to save still sweep to `interrupted`. Either way one proactive card describes exactly what survived on disk. The same table doubles as the **experiment harness** the panel surfaces while dev mode is on — a compact **dev-op ledger** strip (`DevOpLedger.tsx`, `companion_dev_op_ledger`) with the aggregate scoreboard (dispatch→commit rate, merges, rescues) and a **👍/👎 verdict chip** per run (`companion_dev_op_set_verdict` → `user_verdict`, gated on dev mode like the ledger read) — the signal that, over days of use, tells whether dev mode is earning its keep. The dispatch card prints the **full `op_id`** — `dev_merge` looks the op up by exact match, so the displayed id must round-trip into the merge handshake.
 
 **Self-review — closing the meta-loop.** The 👍/👎 verdicts used to accumulate and feed back into nothing. A `ScrollText` button on the ledger strip (`companion_dev_op_self_review`, `commands/companion/dev_review.rs`) now spawns **one** proactive turn over Athena's own track record: the aggregate scoreboard plus the last 15 dispatches rendered as evidence (status, backend/frontend, commit, verdict, a 90-char request digest). The directive asks her to find the *shared property* of the runs that landed versus the ones that were interrupted or drew a 👎, write 1 to 3 `write_procedural` memories citing the op ids they came from, and optionally propose **at most one** `dev_improve` at her weakest pattern — which stays an approval card like every other dispatch. Hard rules in the directive: never mark a goal done, never write or change a verdict (the verdict is the operator's signal about her and would be worthless if she could write it). **Manual trigger only** — there is deliberately no scheduler, cron, or periodic pass behind it, and no new table: the ledger already holds everything. Gated loudly (`require_auth_sync` + `dev_mode_enabled`, refusing rather than returning an empty payload, because it spawns a real turn), and refuses on an empty ledger.
 

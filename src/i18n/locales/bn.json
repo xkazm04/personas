@@ -15120,7 +15120,8 @@
       "orb_unread_one": "Athena থেকে {count}টি নতুন বার্তা",
       "orb_unread_other": "Athena থেকে {count}টি নতুন বার্তা",
       "_comment_orb_unread_one": "Athena's floating orb — badge label when exactly 1 reply arrived while the chat panel was closed. Announced to screen readers and shown as the badge tooltip.",
-      "_comment_orb_unread_other": "Athena's floating orb — badge label for 2+ replies that arrived while the chat panel was closed."
+      "_comment_orb_unread_other": "Athena's floating orb — badge label for 2+ replies that arrived while the chat panel was closed.",
+      "chat_cards_restored_label": "আগের একটি ধাপ থেকে আপনার জবাবের অপেক্ষায়"
     },
     "artist_gallery": {
       "loading_viewer": "ভিউয়ার লোড হচ্ছে…",

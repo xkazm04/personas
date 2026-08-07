@@ -476,6 +476,7 @@ pub fn spawn_session(
         // Run-harvest grouping — a burst of spawns shares one dispatch window.
         run_id,
         run_label,
+        stale_kind: None,
         master: Mutex::new(Some(pair.master)),
         writer: Mutex::new(Some(writer)),
         hibernating: std::sync::atomic::AtomicBool::new(false),

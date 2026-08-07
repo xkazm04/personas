@@ -2698,7 +2698,8 @@
     "orb_unread_one": "Athenaからの新着メッセージ {count} 件",
     "orb_unread_other": "Athenaからの新着メッセージ {count} 件",
     "_comment_orb_unread_one": "Athena's floating orb — badge label when exactly 1 reply arrived while the chat panel was closed. Announced to screen readers and shown as the badge tooltip.",
-    "_comment_orb_unread_other": "Athena's floating orb — badge label for 2+ replies that arrived while the chat panel was closed."
+    "_comment_orb_unread_other": "Athena's floating orb — badge label for 2+ replies that arrived while the chat panel was closed.",
+    "chat_cards_restored_label": "前のターンから返答待ちです"
   },
   "artist_gallery": {
     "loading_viewer": "ビューアを読み込み中…",

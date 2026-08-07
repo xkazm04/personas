@@ -394,11 +394,17 @@ mod tests {
                 cwd: "C:/a".into(),
                 objective: objective(),
                 skill: None,
+                label: None,
+                model: None,
+                effort: None,
             },
             FleetPlanRow {
                 cwd: "C:/b".into(),
                 objective: objective(),
                 skill: None,
+                label: None,
+                model: None,
+                effort: None,
             },
         ];
         let (action, params) = fleet_plan_dispatch_params("canvas group", &plan);
