@@ -2299,6 +2299,20 @@ mod tests {
         assert!(attempt_2.contains("Handle: please refund order 88"));
     }
 
+    /// An array/object value cannot fill a `{{var}}`, so the placeholder stays
+    /// literal. That is pre-existing behaviour and this pins it honestly: the
+    /// DATA is not lost — it is complete under `## Input Data` — and the key is
+    /// now named in the unresolved-placeholder warning rather than vanishing.
+    #[test]
+    fn array_value_leaves_its_placeholder_literal_but_keeps_the_data() {
+        let mut persona = test_persona();
+        persona.system_prompt = "Handle these: {{items}}".into();
+        let input = serde_json::json!({ "items": ["alpha", "beta"] });
+        let prompt = assemble_for(&persona, &input);
+        assert!(prompt.contains("Handle these: {{items}}"));
+        assert!(prompt.contains("alpha") && prompt.contains("beta"));
+    }
+
     #[test]
     fn reentry_without_a_prior_input_still_produces_a_valid_payload() {
         let reentry_json = crate::fix_loop::build_reentry_input(None, 1, "fix it");

@@ -51,8 +51,11 @@ pub fn replace_variables(
     // Keys starting with _ are internal metadata (e.g. _use_case, _time_filter)
     // and are not substituted into prompts via {{}} -- they are handled separately.
     let mut user_vars: std::collections::HashMap<String, String> = std::collections::HashMap::new();
-    // Keys present in input_data but NOT substitutable, and keys that got cut.
-    // Both used to happen without a trace; see the logging block below.
+    // Keys present in input_data but NOT substitutable, and keys whose value was
+    // cut by the runtime cap. Both used to happen without a trace. Classification
+    // only — nothing is logged unless THIS text actually references the key, so a
+    // single assembly (which calls this ~15 times, once per persona field) does
+    // not emit the same warning fifteen times.
     let mut non_scalar_keys: Vec<&str> = Vec::new();
     let mut truncated_keys: Vec<&str> = Vec::new();
     if let Some(data) = input_data {
@@ -87,6 +90,7 @@ pub fn replace_variables(
     // Regex to find {{variable}}
     let re = regex::Regex::new(r"\{\{([^}]+)\}\}").unwrap();
     let mut unresolved: Vec<String> = Vec::new();
+    let mut cut: Vec<String> = Vec::new();
     let out = re
         .replace_all(text, |caps: &regex::Captures| {
             let key = caps.get(1).unwrap().as_str().trim();
@@ -94,6 +98,9 @@ pub fn replace_variables(
             if let Some(val) = trusted_vars.get(key) {
                 val.clone()
             } else if let Some(val) = user_vars.get(key) {
+                if truncated_keys.contains(&key) && !cut.iter().any(|k| k == key) {
+                    cut.push(key.to_string());
+                }
                 val.clone()
             } else {
                 // Unresolved: the raw `{{key}}` ships to the model as literal
@@ -101,8 +108,16 @@ pub fn replace_variables(
                 // prompt, so this log is the only signal that a persona ran
                 // against a placeholder it never got a value for — which is
                 // exactly what a fix-loop re-entry used to do to EVERY variable.
-                if !unresolved.iter().any(|k| k == key) {
-                    unresolved.push(key.to_string());
+                // A key that IS present but holds an array/object is named as
+                // such: its data still reaches the model under `## Input Data`,
+                // so the two cases need different follow-up.
+                let label = if non_scalar_keys.contains(&key) {
+                    format!("{key} (present but array/object; value is in the Input Data section)")
+                } else {
+                    key.to_string()
+                };
+                if !unresolved.contains(&label) {
+                    unresolved.push(label);
                 }
                 caps.get(0).unwrap().as_str().to_string()
             }
@@ -116,18 +131,10 @@ pub fn replace_variables(
             "prompt: unresolved placeholder(s) shipped to the model as literal template syntax"
         );
     }
-    if !non_scalar_keys.is_empty() {
-        tracing::debug!(
-            persona_id = %persona.id,
-            keys = %non_scalar_keys.join(", "),
-            "prompt: input_data key(s) are arrays/objects, so their placeholder cannot be \
-             substituted (the values still appear in full under the Input Data section)"
-        );
-    }
-    if !truncated_keys.is_empty() {
+    if !cut.is_empty() {
         tracing::warn!(
             persona_id = %persona.id,
-            keys = %truncated_keys.join(", "),
+            keys = %cut.join(", "),
             max_bytes = MAX_RUNTIME_VAR_LENGTH,
             "prompt: input_data value(s) truncated at the placeholder substitution site \
              (announced inline; the full value remains under the Input Data section)"
