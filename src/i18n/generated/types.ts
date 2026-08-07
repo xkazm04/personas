@@ -9680,6 +9680,7 @@ export type Translations = {
       passed: string;
       failed: string;
       skipped: string;
+      unverified: string;
       test_scope: string;
       overview: string;
       analysis: string;
@@ -9694,6 +9695,8 @@ export type Translations = {
       add_keys_hint: string;
       connection_failed: string;
       builtin_no_test: string;
+      not_verified: string;
+      unverified_hint: string;
       what_happened: string;
       service: string;
       response_preview: string;
@@ -9710,10 +9713,12 @@ export type Translations = {
       status_skipped_builtin: string;
       status_needs_credential: string;
       status_failed: string;
+      status_unverified: string;
       verified_default: string;
       skipped_builtin_default: string;
       credential_missing_default: string;
       fail_default: string;
+      unverified_default: string;
       http_hint_auth: string;
       http_hint_not_found: string;
       http_hint_rate_limited: string;

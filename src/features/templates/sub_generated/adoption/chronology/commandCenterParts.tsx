@@ -95,6 +95,9 @@ export function TestResultsPanel({
   const passedCount = toolResults.filter((r) => r.status === 'passed').length;
   const failedCount = toolResults.filter((r) => r.status === 'failed' || r.status === 'credential_missing').length;
   const skippedCount = toolResults.filter((r) => r.status === 'skipped').length;
+  // Counted, never called — holds promotion on the backend. It belongs in the
+  // chip's own counts, not silently outside all three.
+  const unverifiedCount = toolResults.filter((r) => r.status === 'unverified').length;
 
   return (
     <div className="relative flex flex-col gap-2 py-2 w-full h-full justify-center">
@@ -112,13 +115,14 @@ export function TestResultsPanel({
 
       <div className="flex items-center gap-2 pr-8">
         <span className={`typo-heading font-medium ${didPass ? 'text-status-success' : failedCount > 0 ? 'text-status-error' : 'text-status-warning'}`}>
-          {didPass ? 'Tests Passed' : failedCount > 0 ? 'Tests Failed' : 'Skipped'}
+          {didPass ? 'Tests Passed' : failedCount > 0 ? 'Tests Failed' : unverifiedCount > 0 ? 'Not Verified' : 'Skipped'}
         </span>
         {toolResults.length > 0 && (
           <span className="typo-body text-foreground">
             {passedCount > 0 && <span className="text-status-success/70">{passedCount}</span>}
             {failedCount > 0 && <>{passedCount > 0 && '/'}<span className="text-status-error/70">{failedCount}</span></>}
-            {skippedCount > 0 && <>{(passedCount > 0 || failedCount > 0) && '/'}<span className="text-foreground">{skippedCount}</span></>}
+            {unverifiedCount > 0 && <>{(passedCount > 0 || failedCount > 0) && '/'}<span className="text-status-warning/70">{unverifiedCount}</span></>}
+            {skippedCount > 0 && <>{(passedCount > 0 || failedCount > 0 || unverifiedCount > 0) && '/'}<span className="text-foreground">{skippedCount}</span></>}
           </span>
         )}
       </div>

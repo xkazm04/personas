@@ -300,6 +300,61 @@ describe("useLifecycle", () => {
         expect.stringContaining("failed"),
       );
     });
+
+    // The backend's promote gate HOLDS on `tools_unverified > 0` — a tool the
+    // build model listed but never actually called. If the UI still rendered
+    // that as "all passed / ready to promote", the two decision centres would
+    // disagree and the green Approve button would lie about a held build.
+    it("does not read as passed when tools were counted but never called", async () => {
+      mockTestBuildDraft.mockResolvedValueOnce({
+        tools_tested: 1,
+        tools_passed: 1,
+        tools_failed: 0,
+        tools_skipped: 0,
+        tools_unverified: 1,
+        unverified_reasons: [
+          { tool_name: "web_search", connector: null, reason: "marked CLI-native; no call made" },
+        ],
+        credential_issues: [],
+        results: [
+          { tool_name: "gmail", status: "passed" },
+          { tool_name: "web_search", status: "unverified" },
+        ],
+      });
+
+      setStoreState({ buildPhase: "draft_ready", buildSessionId: "session-123" });
+
+      const { result } = renderHook(() => useLifecycle({ personaId: "persona-1" }));
+      await act(async () => {
+        await result.current.handleStartTest();
+      });
+
+      expect(mockHandleTestComplete).toHaveBeenCalledWith(
+        false,
+        expect.stringContaining("unverified"),
+      );
+    });
+
+    it("still reads as passed when nothing is unverified", async () => {
+      mockTestBuildDraft.mockResolvedValueOnce({
+        tools_tested: 2,
+        tools_passed: 2,
+        tools_failed: 0,
+        tools_skipped: 1,
+        tools_unverified: 0,
+        credential_issues: [],
+        results: [],
+      });
+
+      setStoreState({ buildPhase: "draft_ready", buildSessionId: "session-123" });
+
+      const { result } = renderHook(() => useLifecycle({ personaId: "persona-1" }));
+      await act(async () => {
+        await result.current.handleStartTest();
+      });
+
+      expect(mockHandleTestComplete).toHaveBeenCalledWith(true, "2 passed, 1 skipped");
+    });
   });
 
   // -- Event listeners ---------------------------------------------------

@@ -333,10 +333,18 @@ export interface BuildSessionSummary {
   createdAt: string;
 }
 
-/** Result of testing a single tool against its real API. */
+/**
+ * Result of testing a single tool against its real API.
+ *
+ * `unverified` is a third outcome, distinct from both pass and fail: the tool
+ * was in the test plan but no call was ever made against it (the build model
+ * declared it CLI-native, or it produced no parseable plan at all). Nothing
+ * went wrong; nothing was proven either. It holds automatic promotion — see
+ * `evaluate_promote_gate` in `src-tauri/src/engine/build_session/oneshot.rs`.
+ */
 export interface ToolTestResult {
   tool_name: string;
-  status: "passed" | "failed" | "skipped" | "credential_missing";
+  status: "passed" | "failed" | "skipped" | "credential_missing" | "unverified";
   http_status?: number;
   latency_ms?: number;
   error?: string;
@@ -350,6 +358,14 @@ export interface TestReport {
   tools_passed: number;
   tools_failed: number;
   tools_skipped: number;
+  /** Counted but never called. Non-zero holds promotion. */
+  tools_unverified?: number;
+  /** One entry per unverified tool, saying why nothing ran against it. */
+  unverified_reasons?: Array<{
+    tool_name: string;
+    connector: string | null;
+    reason: string;
+  }>;
   credential_issues: Array<{ connector: string; issue: string }>;
   /** Connector resolution status — which connectors were matched to user credentials */
   connectors_resolved?: Array<{ name: string; has_credential: boolean }>;

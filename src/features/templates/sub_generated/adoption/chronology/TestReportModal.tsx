@@ -7,7 +7,7 @@ import { createPortal } from 'react-dom';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import {
   X, CheckCircle2, XCircle, AlertTriangle, FileText,
-  Zap, Clock, Shield, Key, Copy, Check, Plus,
+  Zap, Clock, Shield, Key, Copy, Check, Plus, HelpCircle,
 } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { ToolTestResult } from '@/lib/types/buildTypes';
@@ -52,7 +52,11 @@ export function TestReportModal({ results, summary, onClose, onCredentialAdded }
   const passedCount = results.filter((r) => r.status === 'passed').length;
   const failedCount = results.filter((r) => r.status === 'failed' || r.status === 'credential_missing').length;
   const skippedCount = results.filter((r) => r.status === 'skipped').length;
-  const allPassed = failedCount === 0 && passedCount > 0;
+  // Counted, never called. Not a pass and not a failure — and not something
+  // the header may quietly leave out of every pill, which is what happened
+  // when the three buckets above were the only ones.
+  const unverifiedCount = results.filter((r) => r.status === 'unverified').length;
+  const allPassed = failedCount === 0 && unverifiedCount === 0 && passedCount > 0;
 
   const sections = summary ? parseReportSections(summary) : null;
   const selectedResult = selectedTool ? results.find((r) => r.tool_name === selectedTool) : null;
@@ -80,12 +84,14 @@ export function TestReportModal({ results, summary, onClose, onCredentialAdded }
               <div className="flex items-center gap-3 mt-1">
                 {passedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-emerald-400/90 font-medium"><CheckCircle2 className="w-3 h-3" />{tx(t.templates.test_report.passed, { count: passedCount })}</span>}
                 {failedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-red-400/90 font-medium"><XCircle className="w-3 h-3" />{tx(t.templates.test_report.failed, { count: failedCount })}</span>}
+                {unverifiedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-amber-400/90 font-medium"><HelpCircle className="w-3 h-3" />{tx(t.templates.test_report.unverified, { count: unverifiedCount })}</span>}
                 {skippedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-foreground"><AlertTriangle className="w-3 h-3" />{tx(t.templates.test_report.skipped, { count: skippedCount })}</span>}
               </div>
               {results.length > 0 && (
                 <div className="flex gap-0.5 mt-2 h-1.5 w-48 rounded-full overflow-hidden bg-secondary/30">
                   {passedCount > 0 && <div className="bg-emerald-400/70 rounded-full" style={{ flex: passedCount }} />}
                   {failedCount > 0 && <div className="bg-red-400/70 rounded-full" style={{ flex: failedCount }} />}
+                  {unverifiedCount > 0 && <div className="bg-amber-400/70 rounded-full" style={{ flex: unverifiedCount }} />}
                   {skippedCount > 0 && <div className="bg-muted-foreground/20 rounded-full" style={{ flex: skippedCount }} />}
                 </div>
               )}
@@ -151,6 +157,8 @@ function ToolTab({ result: r, isActive, onClick }: { result: ToolTestResult; isA
     ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
     : r.status === 'skipped'
     ? <AlertTriangle className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
+    : r.status === 'unverified'
+    ? <HelpCircle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
     : r.status === 'credential_missing'
     ? <Key className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
     : <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />;
@@ -326,17 +334,23 @@ function ReportOverview({ sections, summary, results, connectors = [], onCredent
     const failed = results.filter((r) => r.status === 'failed');
     const credentialMissing = results.filter((r) => r.status === 'credential_missing');
     const skipped = results.filter((r) => r.status === 'skipped');
+    // Bucketed explicitly. Anything not in a bucket here is not merely styled
+    // oddly — `ResultCards` renders buckets, so an unbucketed status vanishes
+    // from the overview entirely.
+    const unverified = results.filter((r) => r.status === 'unverified');
     return (
       <div className="space-y-5">
         <ConnectorHandshakeCard connectors={connectors} onCredentialAdded={onCredentialAdded} />
         <p className="typo-body text-foreground leading-relaxed">
-          {failed.length === 0 && credentialMissing.length === 0 && passed.length > 0
+          {failed.length === 0 && credentialMissing.length === 0 && unverified.length === 0 && passed.length > 0
             ? `Your agent successfully connected to ${passed.length === 1 ? 'its service' : `all ${passed.length} services`}.${skipped.length > 0 ? ` ${skipped.length} tool${skipped.length > 1 ? 's use' : ' uses'} built-in capabilities and didn't need testing.` : ''}`
             : (failed.length > 0 || credentialMissing.length > 0)
-            ? `${failed.length + credentialMissing.length} connection${(failed.length + credentialMissing.length) > 1 ? 's' : ''} need attention.${passed.length > 0 ? ` ${passed.length} verified OK.` : ''}${skipped.length > 0 ? ` ${skipped.length} skipped.` : ''}`
+            ? `${failed.length + credentialMissing.length} connection${(failed.length + credentialMissing.length) > 1 ? 's' : ''} need attention.${passed.length > 0 ? ` ${passed.length} verified OK.` : ''}${unverified.length > 0 ? ` ${unverified.length} never called.` : ''}${skipped.length > 0 ? ` ${skipped.length} skipped.` : ''}`
+            : unverified.length > 0
+            ? `${unverified.length} tool${unverified.length > 1 ? 's were' : ' was'} never called, so we can't tell you whether ${unverified.length > 1 ? 'they work' : 'it works'}.${passed.length > 0 ? ` ${passed.length} verified OK.` : ''}`
             : `${skipped.length} tool${skipped.length > 1 ? 's use' : ' uses'} built-in capabilities and didn't need external testing.`}
         </p>
-        <ResultCards passed={passed} failed={failed} credentialMissing={credentialMissing} skipped={skipped} />
+        <ResultCards passed={passed} failed={failed} credentialMissing={credentialMissing} skipped={skipped} unverified={unverified} />
       </div>
     );
   }
@@ -388,10 +402,17 @@ function SectionBlock({ icon, label, children }: { icon: React.ReactNode; label:
   );
 }
 
-function ResultCards({ passed, failed, credentialMissing, skipped }: { passed: ToolTestResult[]; failed: ToolTestResult[]; credentialMissing: ToolTestResult[]; skipped: ToolTestResult[] }) {
+function ResultCards({ passed, failed, credentialMissing, skipped, unverified = [] }: { passed: ToolTestResult[]; failed: ToolTestResult[]; credentialMissing: ToolTestResult[]; skipped: ToolTestResult[]; unverified?: ToolTestResult[] }) {
   const { t } = useTranslation();
   return (
     <div className="space-y-3">
+      {unverified.length > 0 && (
+        <div className="rounded-modal border border-amber-500/15 bg-amber-500/5 px-4 py-3">
+          <div className="flex items-center gap-2 mb-2"><HelpCircle className="w-4 h-4 text-amber-400" /><h4 className="typo-label font-semibold text-amber-400 uppercase tracking-wider">{t.templates.test_report.not_verified}</h4></div>
+          <div className="space-y-1">{unverified.map((r) => <div key={r.tool_name} className="typo-body text-foreground">{toolLabel(r)}{r.connector ? <span className="text-foreground ml-1.5">({r.connector})</span> : null}</div>)}</div>
+          <p className="text-[11px] text-amber-400/60 mt-2">{t.templates.test_report.unverified_hint}</p>
+        </div>
+      )}
       {passed.length > 0 && (
         <div className="rounded-modal border border-emerald-500/15 bg-emerald-500/5 px-4 py-3">
           <div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-400" /><h4 className="typo-label font-semibold text-emerald-400 uppercase tracking-wider">{t.templates.test_report.connected_successfully}</h4></div>
@@ -471,6 +492,11 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
   const { t, tx } = useTranslation();
   const isPassed = result.status === 'passed';
   const isSkipped = result.status === 'skipped';
+  // Never called. Without its own branch this fell through to the final
+  // `else` of every chain below and rendered as a red "Failed / Could not
+  // connect to the service" — blaming a tool that may be perfectly healthy
+  // for something we simply never attempted.
+  const isUnverified = result.status === 'unverified';
   // Prefer the connector name (the credential subject — e.g. "alpha vantage")
   // over the generic tool that drove the call (e.g. "http request"). Falls
   // back to tool_name for platform-native rows that have no connector.
@@ -481,6 +507,8 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
     ? result.output_preview || t.templates.test_report.verified_default
     : isSkipped
     ? result.error || t.templates.test_report.skipped_builtin_default
+    : isUnverified
+    ? result.error || tx(t.templates.test_report.unverified_default, { subject })
     : result.status === 'credential_missing'
     ? tx(t.templates.test_report.credential_missing_default, { subject })
     : result.error ? formatErrorForUser(t, result.error, result.http_status) : t.templates.test_report.fail_default;
@@ -488,12 +516,12 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
   return (
     <div className="space-y-4">
       <div className={`flex items-center gap-3 px-4 py-3 rounded-modal border ${
-        isPassed ? 'bg-emerald-500/5 border-emerald-500/15' : isSkipped ? 'bg-secondary/30 border-primary/10' : result.status === 'credential_missing' ? 'bg-amber-500/5 border-amber-500/15' : 'bg-red-500/5 border-red-500/15'
+        isPassed ? 'bg-emerald-500/5 border-emerald-500/15' : isSkipped ? 'bg-secondary/30 border-primary/10' : isUnverified || result.status === 'credential_missing' ? 'bg-amber-500/5 border-amber-500/15' : 'bg-red-500/5 border-red-500/15'
       }`}>
-        {isPassed ? <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" /> : isSkipped ? <Zap className="w-5 h-5 text-foreground flex-shrink-0" /> : result.status === 'credential_missing' ? <Key className="w-5 h-5 text-amber-400 flex-shrink-0" /> : <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />}
+        {isPassed ? <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" /> : isSkipped ? <Zap className="w-5 h-5 text-foreground flex-shrink-0" /> : isUnverified ? <HelpCircle className="w-5 h-5 text-amber-400 flex-shrink-0" /> : result.status === 'credential_missing' ? <Key className="w-5 h-5 text-amber-400 flex-shrink-0" /> : <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />}
         <div className="flex-1">
-          <span className={`typo-heading font-semibold ${isPassed ? 'text-emerald-400' : isSkipped ? 'text-foreground' : result.status === 'credential_missing' ? 'text-amber-400' : 'text-red-400'}`}>
-            {isPassed ? t.templates.test_report.status_passed : isSkipped ? t.templates.test_report.status_skipped_builtin : result.status === 'credential_missing' ? t.templates.test_report.status_needs_credential : t.templates.test_report.status_failed}
+          <span className={`typo-heading font-semibold ${isPassed ? 'text-emerald-400' : isSkipped ? 'text-foreground' : isUnverified || result.status === 'credential_missing' ? 'text-amber-400' : 'text-red-400'}`}>
+            {isPassed ? t.templates.test_report.status_passed : isSkipped ? t.templates.test_report.status_skipped_builtin : isUnverified ? t.templates.test_report.status_unverified : result.status === 'credential_missing' ? t.templates.test_report.status_needs_credential : t.templates.test_report.status_failed}
           </span>
           {result.http_status && (
             <span className={`text-[10px] font-mono ml-2 px-1.5 py-0.5 rounded ${result.http_status >= 200 && result.http_status < 300 ? 'bg-emerald-500/10 text-emerald-400/70' : 'bg-red-500/10 text-red-400/70'}`}>
@@ -527,7 +555,11 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
         </div>
       )}
 
-      {!isPassed && !isSkipped && result.error && (
+      {/* An unverified tool has no error — its `error` field carries the
+          reason nothing ran, which is already the description above. Showing
+          it again inside a red "Error Detail" block would re-frame "we never
+          tried" as "it broke". */}
+      {!isPassed && !isSkipped && !isUnverified && result.error && (
         <div>
           <div className="flex items-center justify-between mb-1">
             <h4 className="typo-label font-semibold text-foreground uppercase tracking-wider">{t.templates.test_report.error_detail}</h4>
