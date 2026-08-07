@@ -20,8 +20,28 @@ Athena communicates on exactly **two** surfaces, and nowhere else:
 - **CHAT** (`CompanionPanel`) — the full-information dimension. Everything she has
   to say in words lives here: replies, approval cards, proactive cards, the
   in-chat decision card, and the ledger of what she did without asking.
-- **ORB** (`AthenaOrbLayer` + `OrbDecisionBubble` / `GuideCaption` / the orb's
-  glow, captions, and avatar postures) — the quick-info and decision dimension.
+- **ORB** (`AthenaOrbLayer` + `OrbDecisionBubble` / `GuideCaption` /
+  `RemoteJobNoticeChip` / the orb's glow, captions, and avatar postures) — the
+  quick-info and decision dimension.
+
+### Remote-instruction arrival notice
+
+When another of the user's own machines asks THIS one to run something (see
+Settings → Devices), the answering turn runs with `suppress_chat`, so nothing
+appears in the transcript. `companion://remote-job-turn` is the only signal the
+frontend gets, and `RemoteJobNoticeChip` (hosted by `AthenaGuideLayer`) turns it
+into a quiet chip docked BELOW the orb, naming the source device. It updates on
+`completed` / `failed` and clears itself on a short TTL. This is ambient
+awareness, deliberately not a modal, a toast or a chat entry: the durable record
+is the remote-job row in Settings → Devices. The chip yields entirely while a
+decision is pending, because that surface is asking for an answer and this one is
+an FYI.
+
+The state machine (`src/lib/network/remoteJobNotice.ts`) is written for unordered
+delivery: a `started` arriving after its own terminal phase is ignored, the first
+terminal phase wins, a terminal phase whose `started` was missed still surfaces,
+and a `started` whose terminal phase never arrives is swept by a TTL just past
+the companion's own turn ceiling rather than pinning the chip forever.
 
 There is deliberately **no third dimension**. Athena raises no toasts, no footer
 notice popovers, and no corner pop-ups. Surfaces that used to do so, and where
