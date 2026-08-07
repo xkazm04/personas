@@ -729,6 +729,7 @@ pub struct AttentionQueue {
 /// was explicitly cleared — the row is deleted rather than kept as a tombstone.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct DevProjectEnvConnector {
     pub project_id: String,
     pub dimension: String,

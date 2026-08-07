@@ -22,18 +22,18 @@ generation: number,
  * `MeasuredFitness` produced by replaying the fixture set through this
  * offspring (Darwin Mode). Null only if neither could be computed.
  */
-fitnessJson: string | null,
+fitnessJson: string | null, 
 /**
  * Overall fitness for sorting/ranking. Predicted or measured per
  * `fitness_source`.
  */
-fitnessOverall: number | null,
+fitnessOverall: number | null, 
 /**
  * Provenance of the fitness fields: `"inherited"` (mid-parent prediction)
  * or `"measured"` (fixture-replay evaluation). `None` on legacy rows,
  * which are all inherited.
  */
-fitnessSource: string | null,
+fitnessSource: string | null, 
 /**
  * Whether user adopted this offspring as a new persona.
  */

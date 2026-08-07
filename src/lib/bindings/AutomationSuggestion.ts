@@ -5,4 +5,55 @@ import type { AutomationSuggestionStatus } from "./AutomationSuggestionStatus";
 /**
  * A mined automation-suggestion row (`automation_suggestions` table).
  */
-export type AutomationSuggestion = { id: string, eventType: string, personaId: string, status: AutomationSuggestionStatus, occurrenceCount: number, manualRunCount: number, support: number, windowSeconds: number, lookbackDays: number, evidence: Array<AutomationSuggestionEvidence>, committedTriggerId: string | null, firstSeenAt: string | null, lastSeenAt: string | null, decidedAt: string | null, createdAt: string, updatedAt: string, };
+export type AutomationSuggestion = { id: string, 
+/**
+ * The observed upstream event type (E in "E → run P").
+ */
+eventType: string, 
+/**
+ * The persona the user keeps running manually after E.
+ */
+personaId: string, status: AutomationSuggestionStatus, 
+/**
+ * How many distinct manual runs co-occurred with E inside the window.
+ */
+occurrenceCount: number, 
+/**
+ * Total manual runs of this persona in the lookback — the denominator
+ * behind `support`, kept so the UI can show "9 of 12 manual runs".
+ */
+manualRunCount: number, 
+/**
+ * `occurrence_count / manual_run_count` (0 when no manual runs).
+ */
+support: number, 
+/**
+ * Co-occurrence window the miner used (seconds).
+ */
+windowSeconds: number, 
+/**
+ * Mining lookback horizon (days).
+ */
+lookbackDays: number, 
+/**
+ * The N historical co-occurrences (newest last, capped — see miner).
+ */
+evidence: Array<AutomationSuggestionEvidence>, 
+/**
+ * Set on accept: the `persona_triggers.id` this suggestion became. THE
+ * mined-route tag — the miner excludes this trigger's events and
+ * executions from all future evidence (no self-feeding loops).
+ */
+committedTriggerId: string | null, 
+/**
+ * Oldest co-occurrence backing the current evidence set (RFC-3339).
+ */
+firstSeenAt: string | null, 
+/**
+ * Newest co-occurrence backing the current evidence set (RFC-3339).
+ */
+lastSeenAt: string | null, 
+/**
+ * When the user accepted/rejected (RFC-3339); NULL while proposed.
+ */
+decidedAt: string | null, createdAt: string, updatedAt: string, };
