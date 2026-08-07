@@ -207,6 +207,68 @@ pub fn role_from_episode_path(rel_path: &str) -> Option<&str> {
     }
 }
 
+/// Terms that carry no retrieval signal in an English question and would
+/// otherwise OR-match a large fraction of the corpus. BM25 already discounts
+/// high-document-frequency terms, so this list is about *keeping the MATCH
+/// expression honest* (a query of pure stopwords must return NOTHING rather
+/// than "the least irrelevant rows") — the same principle as the vector lane's
+/// [`MAX_VECTOR_DISTANCE`] floor, applied to the keyword lane.
+const FTS_STOPWORDS: &[&str] = &[
+    "a", "about", "an", "and", "any", "are", "as", "at", "be", "been", "but", "by", "can", "did",
+    "do", "does", "for", "from", "get", "had", "has", "have", "how", "i", "if", "in", "into", "is",
+    "it", "its", "just", "me", "my", "no", "not", "of", "on", "or", "our", "out", "should", "so",
+    "than", "that", "the", "their", "them", "then", "there", "these", "they", "this", "to", "up",
+    "was", "we", "were", "what", "when", "where", "which", "who", "why", "will", "with", "would",
+    "you", "your",
+];
+
+/// Minimum token length for the keyword lane. Two so short technical
+/// identifiers ("ai", "ml", "db", "ts") survive; one-character noise does not.
+const FTS_MIN_TERM_LEN: usize = 2;
+
+/// Build a safe FTS5 `MATCH` expression from free-form user text.
+///
+/// Free-form text cannot be handed to FTS5 directly: `-`, `*`, `:`, `"`,
+/// `NEAR`, `AND`/`OR`/`NOT` and unbalanced quotes are all *operators* in the
+/// FTS5 query grammar, so a natural-language question either errors out or
+/// silently means something other than what the user typed. This tokenizes to
+/// alphanumeric runs, drops stopwords and 1-char noise, dedupes, and quotes
+/// every surviving term so each is matched as a literal — then ORs them so
+/// partial matches still rank (BM25 orders by how many, and how rare, matched).
+///
+/// Returns an EMPTY string when nothing survives; callers must treat that as
+/// "no keyword lane this turn" rather than passing it to `MATCH` (an empty
+/// MATCH expression is a syntax error in FTS5).
+///
+/// Two private forks of this shape already existed in the codebase
+/// (`db::repos::execution::executions` and `commands::credentials::vector_kb`);
+/// this is the unified-lane home for the pattern. Those two are untouched for
+/// now — consolidating them is a separate, behavior-visible change.
+pub fn build_fts5_match_query(query: &str, max_terms: usize) -> String {
+    let mut seen: HashSet<String> = HashSet::new();
+    let mut terms: Vec<String> = Vec::new();
+    for raw in query.split(|c: char| !c.is_alphanumeric()) {
+        if terms.len() >= max_terms {
+            break;
+        }
+        let token = raw.to_lowercase();
+        if token.len() < FTS_MIN_TERM_LEN {
+            continue;
+        }
+        if FTS_STOPWORDS.contains(&token.as_str()) {
+            continue;
+        }
+        if !seen.insert(token.clone()) {
+            continue;
+        }
+        // Tokens are alphanumeric-only by construction, so the quote escape is
+        // belt-and-suspenders — kept so the function stays correct if the
+        // tokenizer is ever loosened.
+        terms.push(format!("\"{}\"", token.replace('"', "\"\"")));
+    }
+    terms.join(" OR ")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -418,5 +480,59 @@ mod tests {
         assert_eq!(role_from_episode_path("episodes/2026/07/10/noext"), None);
         assert_eq!(role_from_episode_path("episodes/2026/07/10/norole.md"), None);
         assert_eq!(role_from_episode_path("episodes/2026/07/10/trailing_.md"), None);
+    }
+
+    // ── FTS5 match-expression builder ───────────────────────────────────
+
+    #[test]
+    fn fts_query_quotes_every_term_and_ors_them() {
+        assert_eq!(
+            build_fts5_match_query("memory decay policy", 12),
+            "\"memory\" OR \"decay\" OR \"policy\""
+        );
+    }
+
+    #[test]
+    fn fts_query_neutralizes_fts5_operators_in_free_text() {
+        // `-`, `*`, `:`, `"` and NEAR are FTS5 grammar. All must arrive as
+        // ordinary quoted literals, never as operators.
+        let q = build_fts5_match_query("what's the fleet-event NEAR \"state:idle\" *", 12);
+        assert!(!q.contains('*'), "no bare wildcard: {q}");
+        assert!(!q.contains(':'), "no bare column filter: {q}");
+        assert!(q.contains("\"fleet\""), "hyphen split into terms: {q}");
+        assert!(q.contains("\"event\""), "hyphen split into terms: {q}");
+        assert!(q.contains("\"near\""), "NEAR is a literal, not an operator: {q}");
+        assert!(q.contains("\"idle\""), "colon split into terms: {q}");
+        // "what" and "the" are stopwords; the apostrophe splits "what's".
+        assert!(!q.contains("\"the\""), "stopword dropped: {q}");
+    }
+
+    #[test]
+    fn fts_query_is_empty_when_only_noise_survives() {
+        // A pure-stopword question must produce NO keyword lane rather than a
+        // MATCH that pulls the least-irrelevant rows. Empty is the signal.
+        assert_eq!(build_fts5_match_query("what is it? and so, they are", 12), "");
+        assert_eq!(build_fts5_match_query("", 12), "");
+        assert_eq!(build_fts5_match_query("!!! ??? ...", 12), "");
+        assert_eq!(build_fts5_match_query("a i x", 12), "", "1-char noise dropped");
+    }
+
+    #[test]
+    fn fts_query_dedupes_and_caps_terms() {
+        assert_eq!(
+            build_fts5_match_query("recall recall RECALL", 12),
+            "\"recall\"",
+            "case-folded dedupe"
+        );
+        let q = build_fts5_match_query("alpha beta gamma delta epsilon", 3);
+        assert_eq!(q.matches(" OR ").count(), 2, "capped at 3 terms: {q}");
+    }
+
+    #[test]
+    fn fts_query_keeps_short_technical_identifiers() {
+        let q = build_fts5_match_query("how do I wire ml and db", 12);
+        assert!(q.contains("\"ml\""), "{q}");
+        assert!(q.contains("\"db\""), "{q}");
+        assert!(q.contains("\"wire\""), "{q}");
     }
 }

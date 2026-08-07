@@ -26,7 +26,6 @@ use crate::companion::brain::recall_synthesis::{
 };
 #[cfg(not(feature = "ml"))]
 use crate::companion::brain::recall_synthesis::Briefing;
-#[cfg(feature = "ml")]
 use crate::companion::brain::retrieval;
 use crate::companion::brain::retrieval::{DoctrineHit, Recall};
 use crate::companion::brain::semantic::Fact;
@@ -265,29 +264,8 @@ pub async fn build_system_prompt(
     Ok((composed, preview, block_sizes))
 }
 
-/// Raw (unsynthesized) recall — shared by both the embedding-backed and
-/// plain retrieval paths.
-fn manual_recall(user_db: &UserDbPool, session_id: &str) -> Recall {
-    Recall {
-        episodes: episodic::list_recent(user_db, session_id, 20).unwrap_or_default(),
-        doctrine: Vec::new(),
-        facts: crate::companion::brain::semantic::list_facts(user_db, None, false, 6)
-            .unwrap_or_default(),
-        procedurals: crate::companion::brain::procedural::list_rules(user_db, None, false, 6)
-            .unwrap_or_default(),
-        goals: crate::companion::brain::goals::list_goals(
-            user_db,
-            Some(crate::companion::brain::goals::GoalStatus::Active),
-            8,
-        )
-        .unwrap_or_default(),
-        backlog: crate::companion::brain::backlog::list_items(user_db, None, true, 6)
-            .unwrap_or_default(),
-    }
-}
-
 /// ml build: embedding-backed hybrid retrieval when an embedder is
-/// configured, falling back to plain recent-history recall otherwise.
+/// configured, falling back to the embedder-free keyword lane otherwise.
 #[cfg(feature = "ml")]
 async fn recall_for(
     user_db: &UserDbPool,
@@ -299,20 +277,29 @@ async fn recall_for(
         Some(emb) => retrieval::retrieve(user_db, emb, session_id, query)
             .await
             .unwrap_or_default(),
-        None => manual_recall(user_db, session_id),
+        None => retrieval::retrieve_keyword(user_db, session_id, query),
     }
 }
 
-/// non-ml build: no embedder type exists at all, so retrieval is always
-/// the plain recent-history recall.
+/// non-ml build (the one that ships): no embedder type exists at all, so
+/// retrieval is the keyword (BM25) lane over `companion_fts` plus the
+/// always-include tiers.
+///
+/// This used to be a local `manual_recall` that duplicated
+/// `retrieval::retrieve`'s non-ml arm with the caps hard-coded as literals —
+/// a silent fork which meant `retrieval`'s own non-ml arm was unreachable
+/// code, and any fix applied there (including adding doctrine to recall)
+/// would never have run. Both arms now go through `retrieval`.
 #[cfg(not(feature = "ml"))]
 async fn recall_for(
     user_db: &UserDbPool,
     _embedder: EmbedderArg<'_>,
     session_id: &str,
-    _query: &str,
+    query: &str,
 ) -> Recall {
-    manual_recall(user_db, session_id)
+    retrieval::retrieve(user_db, session_id, query)
+        .await
+        .unwrap_or_default()
 }
 
 /// Recall synthesis: when the user has opted in AND raw recall exceeds

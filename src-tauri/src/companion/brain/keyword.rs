@@ -1,0 +1,333 @@
+//! Keyword (BM25) retrieval lane over `companion_fts`.
+//!
+//! `companion_fts` has been written by every memory tier since Phase 1 —
+//! episodes (`episodic::append_episode`), facts (`semantic`), procedurals
+//! (`procedural`), goals (`goals`) and doctrine (`doctrine::upsert_chunk`) all
+//! mirror their body into it — but until this module it had **no readers**:
+//! every reference in the tree was a `DELETE` or an `UPDATE`. Every episode
+//! body was stored a second time, in full, and never queried.
+//!
+//! That dead index is the whole reason recall was a constant. The vector lane
+//! is `ml`-gated and the shipped desktop build has no `ml` feature, so the
+//! non-ml path had no query-dependent retrieval at all: it returned the same
+//! N most-recent episodes and the same top-N facts on every turn, and
+//! `doctrine` was hard-coded to `Vec::new()` — 407 indexed doctrine chunks
+//! were never once consulted.
+//!
+//! This lane needs no embedder, so it runs in **both** builds and gives the
+//! ml path a keyword floor for the (currently universal) case where a node
+//! has no vector.
+//!
+//! Ranking is BM25 (`ORDER BY bm25(companion_fts) ASC` — FTS5's bm25 is
+//! negated, so ascending is best-first). The MATCH expression comes from
+//! [`crate::retrieval::build_fts5_match_query`], which is where free-form user
+//! text is made safe for the FTS5 grammar; when it yields nothing the lane
+//! returns empty rather than matching everything.
+
+use rusqlite::{params, Connection};
+
+use crate::db::UserDbPool;
+use crate::error::AppError;
+use crate::retrieval::build_fts5_match_query;
+
+/// Cap on how many query terms ride the MATCH expression. Long pasted
+/// messages otherwise turn into a 200-term OR that matches the whole corpus
+/// and ranks by nothing in particular.
+pub const MAX_QUERY_TERMS: usize = 12;
+
+/// BM25 search restricted to one `companion_node.kind`, newest-relevance
+/// first. Returns node ids in rank order.
+///
+/// Rows with `importance <= 0` are excluded: that is how `semantic` marks a
+/// superseded fact and how `consolidation::prune_low_value_facts` demotes a
+/// low-value one. Honoring it here is what makes forgetting bind on the
+/// keyword lane and not just on the `list_*` reads.
+pub fn search_kind(
+    pool: &UserDbPool,
+    query: &str,
+    kind: &str,
+    limit: usize,
+) -> Result<Vec<String>, AppError> {
+    let conn = pool.get()?;
+    Ok(search_conn(&conn, query, kind, None, limit)?)
+}
+
+/// Same as [`search_kind`], additionally scoped to one companion conversation.
+/// Episodes are per-session; a semantically similar turn from a *different*
+/// conversation must not bleed into this one's working memory (the isolation
+/// `episodic::list_recent` enforces).
+pub fn search_kind_in_session(
+    pool: &UserDbPool,
+    query: &str,
+    kind: &str,
+    session_id: &str,
+    limit: usize,
+) -> Result<Vec<String>, AppError> {
+    let conn = pool.get()?;
+    Ok(search_conn(&conn, query, kind, Some(session_id), limit)?)
+}
+
+/// Connection-level worker — takes a `Connection` rather than a pool so it is
+/// unit-testable against an in-memory database (same shape as
+/// `episodic::query_recent_rows`).
+fn search_conn(
+    conn: &Connection,
+    query: &str,
+    kind: &str,
+    session_id: Option<&str>,
+    limit: usize,
+) -> rusqlite::Result<Vec<String>> {
+    if limit == 0 {
+        return Ok(Vec::new());
+    }
+    let match_expr = build_fts5_match_query(query, MAX_QUERY_TERMS);
+    if match_expr.is_empty() {
+        // No usable terms. An empty MATCH is an FTS5 syntax error, and
+        // "match everything" would reintroduce exactly the constant-recall
+        // behavior this lane exists to kill.
+        return Ok(Vec::new());
+    }
+    let limit = limit as i64;
+
+    let base = "SELECT companion_fts.node_id
+                FROM companion_fts
+                JOIN companion_node ON companion_node.id = companion_fts.node_id
+                WHERE companion_fts MATCH ?1
+                  AND companion_node.kind = ?2
+                  AND companion_node.importance > 0";
+    let tail = " ORDER BY bm25(companion_fts) ASC LIMIT ?3";
+
+    match session_id {
+        Some(sid) => {
+            let sql = format!("{base} AND companion_node.session_id = ?4{tail}");
+            let mut stmt = conn.prepare(&sql)?;
+            let rows = stmt
+                .query_map(params![match_expr, kind, limit, sid], |r| {
+                    r.get::<_, String>(0)
+                })?
+                .collect::<rusqlite::Result<Vec<_>>>();
+            rows
+        }
+        None => {
+            let sql = format!("{base}{tail}");
+            let mut stmt = conn.prepare(&sql)?;
+            let rows = stmt
+                .query_map(params![match_expr, kind, limit], |r| r.get::<_, String>(0))?
+                .collect::<rusqlite::Result<Vec<_>>>();
+            rows
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Minimal shape of the two tables the lane touches. `companion_fts` is
+    /// declared exactly as the real schema declares it
+    /// (`db/src/lib.rs`: `fts5(node_id UNINDEXED, body, tags)`).
+    fn test_conn() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE companion_node (
+                 id           TEXT PRIMARY KEY,
+                 kind         TEXT NOT NULL,
+                 session_id   TEXT,
+                 file_path    TEXT,
+                 importance   INTEGER NOT NULL DEFAULT 3,
+                 body_excerpt TEXT,
+                 created_at   TEXT NOT NULL
+             );
+             CREATE VIRTUAL TABLE companion_fts USING fts5(node_id UNINDEXED, body, tags);",
+        )
+        .unwrap();
+        conn
+    }
+
+    fn insert(conn: &Connection, id: &str, kind: &str, session: &str, body: &str, importance: i32) {
+        conn.execute(
+            "INSERT INTO companion_node (id, kind, session_id, file_path, importance, body_excerpt, created_at)
+             VALUES (?1, ?2, ?3, 'x.md', ?4, ?5, '2026-08-01T00:00:00Z')",
+            params![id, kind, session, importance, body],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO companion_fts (node_id, body, tags) VALUES (?1, ?2, ?3)",
+            params![id, body, format!("kind:{kind}")],
+        )
+        .unwrap();
+    }
+
+    /// The corpus Athena actually has: doctrine chunks on distinct topics,
+    /// which the non-ml build had never once retrieved.
+    fn seed_doctrine(conn: &Connection) {
+        insert(
+            conn,
+            "doc_memory",
+            "doctrine",
+            "",
+            "Memory decay and forgetting. Facts that are not recalled lose importance \
+             over time; consolidation distills episodes into semantic facts.",
+            3,
+        );
+        insert(
+            conn,
+            "doc_connectors",
+            "doctrine",
+            "",
+            "Connector credentials are encrypted at rest with AES-256-GCM and never \
+             leave the local machine. OAuth tokens refresh through the vault.",
+            3,
+        );
+        insert(
+            conn,
+            "doc_scheduling",
+            "doctrine",
+            "",
+            "Triggers fire on a cron schedule. The scheduler debounces overlapping \
+             runs and records every firing in the execution log.",
+            3,
+        );
+    }
+
+    // ── Direction 1 acceptance: doctrine reaches recall ──────────────────
+
+    #[test]
+    fn a_doctrine_question_retrieves_doctrine() {
+        let conn = test_conn();
+        seed_doctrine(&conn);
+
+        let hits = search_conn(&conn, "how does memory decay work?", "doctrine", None, 8).unwrap();
+        assert!(
+            hits.contains(&"doc_memory".to_string()),
+            "the memory-decay doctrine chunk must reach recall, got {hits:?}"
+        );
+    }
+
+    /// The core defect: recall was a CONSTANT — the same rows every turn
+    /// regardless of the question. Two different questions must now produce
+    /// two different recall sets.
+    #[test]
+    fn recall_varies_with_the_query() {
+        let conn = test_conn();
+        seed_doctrine(&conn);
+
+        let about_memory = search_conn(&conn, "memory decay and forgetting", "doctrine", None, 8)
+            .unwrap();
+        let about_creds =
+            search_conn(&conn, "where are credentials encrypted", "doctrine", None, 8).unwrap();
+
+        assert_ne!(
+            about_memory, about_creds,
+            "two different questions must not return the same recall set"
+        );
+        assert_eq!(about_memory.first().map(String::as_str), Some("doc_memory"));
+        assert_eq!(
+            about_creds.first().map(String::as_str),
+            Some("doc_connectors")
+        );
+    }
+
+    #[test]
+    fn an_off_topic_question_returns_nothing_rather_than_filler() {
+        let conn = test_conn();
+        seed_doctrine(&conn);
+        // No corpus term matches. The lane must return empty — padding an
+        // off-topic turn with the least-irrelevant rows is the failure the
+        // vector lane's distance floor exists to prevent, and the keyword
+        // lane owes the same guarantee.
+        let hits = search_conn(&conn, "quokka photography", "doctrine", None, 8).unwrap();
+        assert!(hits.is_empty(), "expected no filler, got {hits:?}");
+    }
+
+    #[test]
+    fn a_pure_stopword_question_returns_nothing() {
+        let conn = test_conn();
+        seed_doctrine(&conn);
+        let hits = search_conn(&conn, "what is it? and so?", "doctrine", None, 8).unwrap();
+        assert!(hits.is_empty(), "expected no filler, got {hits:?}");
+    }
+
+    // ── lane hygiene ────────────────────────────────────────────────────
+
+    #[test]
+    fn the_lane_is_scoped_to_one_kind() {
+        let conn = test_conn();
+        seed_doctrine(&conn);
+        insert(
+            &conn,
+            "ep_1",
+            "episode",
+            "default",
+            "I was asking about memory decay yesterday.",
+            3,
+        );
+
+        let doctrine = search_conn(&conn, "memory decay", "doctrine", None, 8).unwrap();
+        assert!(!doctrine.contains(&"ep_1".to_string()));
+        let episodes = search_conn(&conn, "memory decay", "episode", None, 8).unwrap();
+        assert_eq!(episodes, vec!["ep_1".to_string()]);
+    }
+
+    #[test]
+    fn episode_search_stays_inside_one_conversation() {
+        let conn = test_conn();
+        insert(&conn, "ep_a", "episode", "default", "the kpi dashboard", 3);
+        insert(&conn, "ep_b", "episode", "other", "the kpi dashboard", 3);
+
+        let hits =
+            search_conn(&conn, "kpi dashboard", "episode", Some("default"), 8).unwrap();
+        assert_eq!(hits, vec!["ep_a".to_string()], "no cross-session bleed");
+    }
+
+    /// Superseded facts (`importance = 0`) and facts demoted by
+    /// `prune_low_value_facts` must not ride the keyword lane either.
+    #[test]
+    fn demoted_rows_are_excluded() {
+        let conn = test_conn();
+        insert(&conn, "fact_live", "fact", "", "operator prefers terse replies", 4);
+        insert(&conn, "fact_dead", "fact", "", "operator prefers verbose replies", 0);
+
+        let hits = search_conn(&conn, "operator prefers replies", "fact", None, 8).unwrap();
+        assert_eq!(hits, vec!["fact_live".to_string()]);
+    }
+
+    #[test]
+    fn free_text_with_fts5_operators_does_not_error() {
+        let conn = test_conn();
+        seed_doctrine(&conn);
+        // Every one of these is FTS5 grammar in raw form; a naive MATCH
+        // would return `Err` and the lane would silently go dark.
+        for q in [
+            "memory - decay",
+            "\"unbalanced",
+            "decay NEAR memory",
+            "state:idle",
+            "decay*",
+            "memory AND OR NOT",
+        ] {
+            let r = search_conn(&conn, q, "doctrine", None, 8);
+            assert!(r.is_ok(), "query {q:?} must not error: {r:?}");
+        }
+    }
+
+    #[test]
+    fn limit_is_respected() {
+        let conn = test_conn();
+        for i in 0..10 {
+            insert(
+                &conn,
+                &format!("doc_{i}"),
+                "doctrine",
+                "",
+                "retrieval retrieval retrieval",
+                3,
+            );
+        }
+        let hits = search_conn(&conn, "retrieval", "doctrine", None, 4).unwrap();
+        assert_eq!(hits.len(), 4);
+        assert!(search_conn(&conn, "retrieval", "doctrine", None, 0)
+            .unwrap()
+            .is_empty());
+    }
+}

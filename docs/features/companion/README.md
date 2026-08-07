@@ -367,6 +367,23 @@ Companion's awareness of the user's desktop activity ships in phases. The decisi
 
 Manual re-ingest uses `companion_reingest_doctrine`. It is idempotent: unchanged chunks are skipped by content hash, and the frontend receives inserted/updated/unchanged/deleted counts.
 
+## How recall picks what Athena sees each turn
+
+Three lanes feed the per-turn memory bundle (`companion/brain/retrieval.rs`):
+
+| Lane | Needs | What it contributes |
+| --- | --- | --- |
+| **Keyword (BM25)** over `companion_fts` (`brain/keyword.rs`) | nothing — runs in every build | Doctrine chunks, older episodes from this conversation, facts and procedurals that match the question's terms |
+| **Vector (KNN)** over `companion_embedding` | the `ml` feature + a configured embedder | Semantically related nodes, unioned on top of the keyword lane |
+| **Always-include tiers** | nothing | Top facts + procedurals by importance, active goals, open backlog — deliberately query-independent, so Athena's picture of who you are doesn't depend on phrasing |
+
+Two properties are load-bearing:
+
+- **Recall varies with the question.** Ask about two different topics and you get two different bundles. Previously the shipped build (which has no `ml` feature) returned the same most-recent episodes and the same top facts on every turn, and the Reference/doctrine section was *always empty* — the 400+ indexed doctrine chunks were never consulted. The keyword lane is what makes doctrine reachable without an embedder.
+- **An off-topic question gets no filler.** Both lanes can return *empty* rather than padding the prompt with the least-irrelevant rows: the vector lane has a distance floor, the keyword lane drops stopword-only queries and matches nothing when no term hits.
+
+The episode window is a **budget, not a per-lane quota** — query-relevant older turns first, then a recency tail sized to fill whatever is left, so a lane that finds nothing can't shrink the window.
+
 ## Identity layer (`identity.md`, F1 — direction 7)
 
 `~/.personas/companion-brain/identity.md` is the evolving profile of the user (and Athena's self-model), read into **every** system prompt by `prompt.rs`. It grows by **anchored diffs**, never a whole-file rewrite: the engine in `src-tauri/src/companion/brain/identity.rs` parses the doc into sections (`# heading / ## heading` path) and applies `AppendBullet` / `ReplaceBullet` / `RemoveBullet` against one bullet under a named section, leaving the rest untouched.
