@@ -9,40 +9,9 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import type { DevicePairingRequest } from "@/lib/bindings/DevicePairingRequest";
 import type { PairingRole } from "@/lib/bindings/PairingRole";
+import type { OwnedDevice } from "@/lib/bindings/OwnedDevice";
 
-export type { DevicePairingRequest, PairingRole };
-
-/**
- * A peer registered as one of the user's own devices.
- *
- * NOTE (still blocked on a cargo run): the committed ts-rs binding
- * `src/lib/bindings/OwnedDevice.ts` is STALE — it predates the pairing work and
- * is missing `isHome`, `pairedAt` and `publicKey`, all three of which the Rust
- * struct declares today (`src-tauri/core/src/models/owned_device.rs`) and the
- * repo selects and maps
- * (`src-tauri/db/src/repos/resources/owned_devices.rs::map_owned_device`).
- * Refreshing it requires `cargo test --manifest-path src-tauri/Cargo.toml
- * export_bindings`, which this frontend package deliberately does not run, and
- * no fresher copy exists anywhere in the tree (the stray generated `bindings/`
- * dir at the repo root carries the same pre-pairing shape). So the accurate
- * shape stays declared here. Delete this type and switch every importer to
- * `@/lib/bindings/OwnedDevice` in the same change that re-runs export_bindings.
- */
-export interface OwnedDevice {
-  /** The peer's stable identity (base58 peer_id), matching `discovered_peers`. */
-  peerId: string;
-  /** Shared anchor marking this peer as belonging to the same user as us. */
-  deviceGroupId: string;
-  displayName: string;
-  addedAt: string;
-  lastSyncedAt: string | null;
-  /** Exactly one owned device may be home — enforced by a partial unique index. */
-  isHome: boolean;
-  /** Set when the device completed the signed pairing ceremony. */
-  pairedAt: string | null;
-  /** The peer's Ed25519 public key as proven during the handshake. */
-  publicKey: string | null;
-}
+export type { DevicePairingRequest, PairingRole, OwnedDevice };
 
 // -- Pairing ceremony -------------------------------------------------------
 
