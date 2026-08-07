@@ -2758,7 +2758,12 @@
     "orb_quick_input_close": "빠른 메시지 닫기",
     "orb_quick_input_last_reply_label": "아테나의 마지막 답변",
     "orb_quick_input_open": "빠른 메시지 보내기",
-    "orb_quick_input_placeholder": "아테나에게 메시지…"
+    "orb_quick_input_placeholder": "아테나에게 메시지…",
+    "memory_rebuild_search": "검색 인덱스 재구축",
+    "memory_rebuild_search_done": "기억 {count}건이 다시 검색 가능해졌습니다.",
+    "memory_rebuild_search_none": "모든 기억이 이미 인덱싱되어 있습니다.",
+    "memory_rebuild_search_running": "재구축 중…",
+    "memory_rebuild_search_unavailable": "이 빌드에는 임베딩 모델이 없어 시맨틱 검색을 재구축할 수 없습니다."
   },
   "artist_gallery": {
     "loading_viewer": "뷰어 로딩 중…",

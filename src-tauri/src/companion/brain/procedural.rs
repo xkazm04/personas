@@ -151,14 +151,6 @@ pub fn write_rule(pool: &UserDbPool, input: &ProceduralInput<'_>) -> Result<Stri
             params![id, src],
         )?;
     }
-    tx.execute(
-        "INSERT INTO companion_fts (node_id, body, tags) VALUES (?1, ?2, ?3)",
-        params![
-            id,
-            format!("{}\n\n{}", input.trigger, input.behavior),
-            format!("kind:procedural scope:{scope_s}")
-        ],
-    )?;
     if let Some(prior) = input.supersedes_id {
         tx.execute(
             "UPDATE companion_node SET importance = 0, updated_at = ?1 WHERE id = ?2",
@@ -286,7 +278,6 @@ pub fn delete_rule(pool: &UserDbPool, id: &str) -> Result<(), AppError> {
         "DELETE FROM companion_procedural WHERE id = ?1",
         params![id],
     )?;
-    tx.execute("DELETE FROM companion_fts WHERE node_id = ?1", params![id])?;
     tx.execute("DELETE FROM companion_node WHERE id = ?1", params![id])?;
     let _ = tx.execute(
         "DELETE FROM companion_embedding WHERE node_id = ?1",

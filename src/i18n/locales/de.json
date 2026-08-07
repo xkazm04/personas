@@ -15244,7 +15244,12 @@
       "orb_quick_input_close": "Schnellnachricht schließen",
       "orb_quick_input_last_reply_label": "Athenas letzte Antwort",
       "orb_quick_input_open": "Schnellnachricht senden",
-      "orb_quick_input_placeholder": "Nachricht an Athena…"
+      "orb_quick_input_placeholder": "Nachricht an Athena…",
+      "memory_rebuild_search": "Suchindex neu aufbauen",
+      "memory_rebuild_search_done": "{count} Erinnerungen sind wieder durchsuchbar.",
+      "memory_rebuild_search_none": "Jede Erinnerung ist bereits indiziert.",
+      "memory_rebuild_search_running": "Wird neu aufgebaut…",
+      "memory_rebuild_search_unavailable": "Dieser Build hat kein Embedding-Modell, daher kann die semantische Suche nicht neu aufgebaut werden."
     },
     "artist_gallery": {
       "loading_viewer": "Viewer wird geladen…",

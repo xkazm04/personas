@@ -15244,7 +15244,12 @@
       "orb_quick_input_close": "إغلاق الرسالة السريعة",
       "orb_quick_input_last_reply_label": "آخر رد من أثينا",
       "orb_quick_input_open": "إرسال رسالة سريعة",
-      "orb_quick_input_placeholder": "راسل أثينا…"
+      "orb_quick_input_placeholder": "راسل أثينا…",
+      "memory_rebuild_search": "إعادة بناء فهرس البحث",
+      "memory_rebuild_search_done": "{count} ذاكرة قابلة للبحث مرة أخرى.",
+      "memory_rebuild_search_none": "كل ذاكرة مفهرسة بالفعل.",
+      "memory_rebuild_search_running": "جارٍ إعادة البناء…",
+      "memory_rebuild_search_unavailable": "هذا الإصدار لا يحتوي على نموذج تضمين، لذا يتعذّر إعادة بناء البحث الدلالي."
     },
     "artist_gallery": {
       "loading_viewer": "جارٍ تحميل العارض…",

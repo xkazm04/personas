@@ -2,6 +2,16 @@
 
 export type ExportStats = { persona_count: number, tool_count: number, team_count: number, credential_count: number, memory_count: number, team_memory_count: number, test_suite_count: number, kpi_count: number, dev_project_count: number, workspace_knowledge_count: number, twin_count: number, 
 /**
+ * Size of Athena's `core` tier — identity file + portable prefs +
+ * conversation roster. The picker hides a tier whose count is 0, so these
+ * are "is there anything here", not just cosmetics.
+ */
+athena_core_count: number, 
+/**
+ * Size of Athena's `learned` tier — memory nodes plus design decisions.
+ */
+athena_learned_count: number, 
+/**
  * Pre-flight truncation forecast: which top-level caps this workspace
  * already exceeds, so the export modal can say what an export would drop
  * BEFORE the user runs it. The export commands themselves return only

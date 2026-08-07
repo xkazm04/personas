@@ -15244,7 +15244,12 @@
       "orb_quick_input_close": "关闭快速消息",
       "orb_quick_input_last_reply_label": "Athena 的最新回复",
       "orb_quick_input_open": "发送快速消息",
-      "orb_quick_input_placeholder": "给 Athena 发消息…"
+      "orb_quick_input_placeholder": "给 Athena 发消息…",
+      "memory_rebuild_search": "重建搜索索引",
+      "memory_rebuild_search_done": "{count} 条记忆已恢复可搜索。",
+      "memory_rebuild_search_none": "所有记忆都已索引。",
+      "memory_rebuild_search_running": "重建中…",
+      "memory_rebuild_search_unavailable": "此构建没有嵌入模型，因此无法重建语义搜索。"
     },
     "artist_gallery": {
       "loading_viewer": "加载查看器中…",

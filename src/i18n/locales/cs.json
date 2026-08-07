@@ -15244,7 +15244,12 @@
       "orb_quick_input_close": "Zavřít rychlou zprávu",
       "orb_quick_input_last_reply_label": "Poslední odpověď Athény",
       "orb_quick_input_open": "Odeslat rychlou zprávu",
-      "orb_quick_input_placeholder": "Napište Athéně…"
+      "orb_quick_input_placeholder": "Napište Athéně…",
+      "memory_rebuild_search": "Znovu sestavit index vyhledávání",
+      "memory_rebuild_search_done": "{count} vzpomínek je opět prohledatelných.",
+      "memory_rebuild_search_none": "Každá vzpomínka je již indexována.",
+      "memory_rebuild_search_running": "Přestavba…",
+      "memory_rebuild_search_unavailable": "Toto sestavení nemá model embeddingu, takže sémantické vyhledávání nelze znovu sestavit."
     },
     "artist_gallery": {
       "loading_viewer": "Načítání prohlížeče…",

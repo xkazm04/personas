@@ -2758,7 +2758,12 @@
     "orb_quick_input_close": "Fermer le message rapide",
     "orb_quick_input_last_reply_label": "Dernière réponse d'Athena",
     "orb_quick_input_open": "Envoyer un message rapide",
-    "orb_quick_input_placeholder": "Écrire à Athena…"
+    "orb_quick_input_placeholder": "Écrire à Athena…",
+    "memory_rebuild_search": "Reconstruire l'index de recherche",
+    "memory_rebuild_search_done": "{count} mémoires sont de nouveau consultables.",
+    "memory_rebuild_search_none": "Chaque mémoire est déjà indexée.",
+    "memory_rebuild_search_running": "Reconstruction…",
+    "memory_rebuild_search_unavailable": "Cette version n'a pas de modèle d'embedding, la recherche sémantique ne peut donc pas être reconstruite."
   },
   "artist_gallery": {
     "loading_viewer": "Chargement du visualiseur…",

@@ -15244,7 +15244,12 @@
       "orb_quick_input_close": "Закрыть быстрое сообщение",
       "orb_quick_input_last_reply_label": "Последний ответ Афины",
       "orb_quick_input_open": "Отправить быстрое сообщение",
-      "orb_quick_input_placeholder": "Сообщение Афине…"
+      "orb_quick_input_placeholder": "Сообщение Афине…",
+      "memory_rebuild_search": "Пересобрать поисковый индекс",
+      "memory_rebuild_search_done": "Для поиска снова доступно {count} воспоминаний.",
+      "memory_rebuild_search_none": "Каждое воспоминание уже проиндексировано.",
+      "memory_rebuild_search_running": "Пересборка…",
+      "memory_rebuild_search_unavailable": "В этой сборке нет модели встраивания, поэтому семантический поиск невозможно пересобрать."
     },
     "artist_gallery": {
       "loading_viewer": "Загрузка просмотрщика…",

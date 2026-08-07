@@ -94,12 +94,10 @@ pub fn append_episode(
         params![id, rel_path, hash, excerpt, now_str, session_id],
     )?;
 
-    // Mirror into FTS for keyword fallback retrieval (Phase 2 retrieval will
-    // also use this; harmless to populate eagerly now).
-    conn.execute(
-        "INSERT INTO companion_fts (node_id, body, tags) VALUES (?1, ?2, ?3)",
-        params![id, content, format!("session:{session_id} role:{role_str}")],
-    )?;
+    // (The `companion_fts` mirror that used to be written here is gone. Its
+    // comment claimed a "keyword fallback retrieval" lane; that lane was never
+    // built, and the table had no reader anywhere in the tree — so this write
+    // only produced a third plaintext copy of every transcript line.)
 
     Ok(id)
 }

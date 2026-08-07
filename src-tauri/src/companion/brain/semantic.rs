@@ -160,15 +160,6 @@ pub fn write_fact(pool: &UserDbPool, input: &FactInput<'_>) -> Result<String, Ap
         )?;
     }
 
-    tx.execute(
-        "INSERT INTO companion_fts (node_id, body, tags) VALUES (?1, ?2, ?3)",
-        params![
-            id,
-            input.value,
-            format!("kind:fact scope:{scope_s} key:{}", input.key)
-        ],
-    )?;
-
     // Mark the prior fact as superseded (importance -> 0) without deleting:
     // historical record is preserved, but it stops winning retrieval.
     if let Some(prior) = input.supersedes_id {
@@ -394,7 +385,6 @@ pub fn delete_fact(pool: &UserDbPool, id: &str) -> Result<(), AppError> {
         params![id],
     )?;
     tx.execute("DELETE FROM companion_fact WHERE id = ?1", params![id])?;
-    tx.execute("DELETE FROM companion_fts WHERE node_id = ?1", params![id])?;
     tx.execute("DELETE FROM companion_node WHERE id = ?1", params![id])?;
     // Best-effort embedding cleanup — vec0's table name is fixed; skip
     // if missing. The orphaned row is harmless (no node references it).

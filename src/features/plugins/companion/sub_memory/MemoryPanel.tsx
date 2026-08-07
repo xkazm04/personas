@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react';
-import { Loader2, RefreshCw, Sparkles, TrendingDown } from 'lucide-react';
+import { Loader2, RadioTower, RefreshCw, Sparkles, TrendingDown } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
 import {
   companionDecayUnusedFacts,
+  companionReembedMissing,
   companionRunReflection,
 } from '@/api/companion';
 import { BrainViewer } from '../BrainViewer';
@@ -28,10 +29,11 @@ type MemoryView = 'brain' | 'consolidation';
  * via the companion store, so flipping doesn't lose the user's place.
  */
 export default function MemoryPanel() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [view, setView] = useState<MemoryView>('brain');
   const [reflecting, setReflecting] = useState(false);
   const [decaying, setDecaying] = useState(false);
+  const [reembedding, setReembedding] = useState(false);
   const setBrainView = useCompanionStore((s) => s.setBrainView);
 
   const addToast = useToastStore((s) => s.addToast);
@@ -68,6 +70,34 @@ export default function MemoryPanel() {
       silentCatch('companion_decay_unused_facts')(err);
     } finally {
       setDecaying(false);
+    }
+  }, [addToast, t]);
+
+  // Memory only ever got a vector at the moment it was written, so anything
+  // that arrived another way — an imported brain, a write made while the
+  // embedder was down, a change of embedding model — was findable by recency
+  // and importance but never by meaning. This is the repair, and it is safe to
+  // run at any time: a second pass finds nothing left to do.
+  const rebuildSearchIndex = useCallback(async () => {
+    setReembedding(true);
+    try {
+      const r = await companionReembedMissing();
+      if (!r.available) {
+        addToast(t.plugins.companion.memory_rebuild_search_unavailable, 'warning');
+      } else if (r.embedded === 0) {
+        addToast(t.plugins.companion.memory_rebuild_search_none, 'success');
+      } else {
+        addToast(
+          tx(t.plugins.companion.memory_rebuild_search_done, { count: r.embedded }),
+          'success',
+        );
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      addToast(msg, 'error');
+      silentCatch('companion_reembed_missing')(err);
+    } finally {
+      setReembedding(false);
     }
   }, [addToast, t]);
 
@@ -130,6 +160,24 @@ export default function MemoryPanel() {
             )}
             <span className="hidden sm:inline">
               {t.plugins.companion.memory_decay_unused}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={rebuildSearchIndex}
+            disabled={reembedding}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-foreground/85 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+            title={t.plugins.companion.memory_rebuild_search}
+          >
+            {reembedding ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <RadioTower className="w-3.5 h-3.5" />
+            )}
+            <span className="hidden sm:inline">
+              {reembedding
+                ? t.plugins.companion.memory_rebuild_search_running
+                : t.plugins.companion.memory_rebuild_search}
             </span>
           </button>
         </div>

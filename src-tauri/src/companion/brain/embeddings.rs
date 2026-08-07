@@ -167,6 +167,193 @@ pub async fn embed_and_store(
     Ok(())
 }
 
+/// What a [`reembed_missing`] pass did.
+///
+/// `ml`-only, unlike the rest of this module's pairs: the non-`ml` caller never
+/// reaches the backfill at all — `companion_reembed_missing` short-circuits to
+/// `available: false` before it — so a non-`ml` twin would be a stub with no
+/// caller rather than a stub with a trivial one.
+#[cfg(feature = "ml")]
+#[derive(Debug, Default, Clone, Copy)]
+pub struct ReembedCounts {
+    /// Nodes that now have a vector recorded under the current model.
+    pub embedded: u32,
+    /// Nodes that needed one but could not get one — no readable body and no
+    /// excerpt to fall back on, or the embedder rejected the text.
+    pub skipped: u32,
+}
+
+/// How many nodes are processed between progress logs / connection releases.
+#[cfg(feature = "ml")]
+const REEMBED_BATCH: usize = 32;
+
+/// One node that needs a vector.
+///
+/// Compiled under both feature sets even though only the `ml` build acts on it,
+/// because [`reembed_candidates`] is the part of the backfill a test can reach
+/// without an ONNX model and it is worth keeping honest in both.
+#[derive(Debug, Clone)]
+#[cfg_attr(not(feature = "ml"), allow(dead_code))]
+pub struct ReembedCandidate {
+    pub id: String,
+    /// Relative to `brain_root()`. Doctrine nodes carry a `docs/…#anchor`
+    /// reference instead of a real file; those fall back to the excerpt.
+    pub file_path: String,
+    pub body_excerpt: Option<String>,
+}
+
+/// Which nodes have no vector, or a vector recorded under a different model.
+///
+/// Compiled under both feature sets and free of any embedder dependency, so
+/// the selection rule — the part with actual room to be wrong — is unit
+/// testable without an ONNX model.
+///
+/// A NULL `embedding_model` with a vector present is deliberately LEFT ALONE:
+/// `retrieval::filter_by_model` grandfathers an unstamped node as
+/// current-model, so re-embedding it would be churn rather than repair.
+/// A missing `companion_embedding` table (no `ml` build has ever run here)
+/// reads as "nothing is vectored", which is exactly right.
+pub fn reembed_candidates(
+    pool: &UserDbPool,
+    current_model: &str,
+) -> Result<Vec<ReembedCandidate>, AppError> {
+    let conn = pool.get()?;
+
+    let vectored: std::collections::HashSet<String> = match conn
+        .prepare("SELECT node_id FROM companion_embedding")
+    {
+        Ok(mut stmt) => match stmt.query_map([], |r| r.get::<_, String>(0)) {
+            Ok(rows) => rows.filter_map(Result::ok).collect(),
+            Err(_) => std::collections::HashSet::new(),
+        },
+        Err(_) => std::collections::HashSet::new(),
+    };
+
+    let mut stmt = conn.prepare(
+        "SELECT id, file_path, body_excerpt, embedding_model FROM companion_node \
+         ORDER BY importance DESC, updated_at DESC",
+    )?;
+    let rows = stmt.query_map([], |r| {
+        Ok((
+            r.get::<_, String>(0)?,
+            r.get::<_, String>(1)?,
+            r.get::<_, Option<String>>(2)?,
+            r.get::<_, Option<String>>(3)?,
+        ))
+    })?;
+
+    let mut out = Vec::new();
+    for row in rows {
+        let (id, file_path, body_excerpt, stamped) = row?;
+        let stale_model = stamped.as_deref().is_some_and(|m| m != current_model);
+        if stale_model || !vectored.contains(&id) {
+            out.push(ReembedCandidate {
+                id,
+                file_path,
+                body_excerpt,
+            });
+        }
+    }
+    Ok(out)
+}
+
+/// Backfill `companion_embedding` for every node that has no vector, or whose
+/// vector was written under a *different* embedding model.
+///
+/// This closes a real hole rather than adding a nicety. `embed_and_store` is
+/// only ever called at write time, and doctrine is the single kind that
+/// self-heals ([`super::doctrine`]'s `has_vec_entry` backfill). Everything
+/// else — every fact, procedural and episode — gets exactly one chance at a
+/// vector, at the instant it is written. So:
+///
+///   * memory that arrives by any route other than a live write (a portability
+///     import, a hand-restored brain directory, a write that happened while the
+///     embedder was poisoned) has text and no vector, permanently; and
+///   * [`apply_model_guard`] *drops* recall hits whose stamped
+///     `embedding_model` differs from the loaded one and logs "re-embed the
+///     brain to restore them" — an instruction nothing in the codebase could
+///     carry out until this function existed.
+///
+/// Either way recall silently degrades to the recency and importance lanes and
+/// never recovers. This is the repair.
+///
+/// The text embedded per node is the best available: the markdown body at
+/// `brain_root()/<file_path>` when that reads as UTF-8, else `body_excerpt`.
+/// Doctrine nodes always take the excerpt path — their `file_path` is a
+/// `docs/…#anchor` reference, not a file on disk.
+///
+/// Any existing vector row is deleted before the new one is inserted, because
+/// `embed_and_store` does a plain INSERT; without the delete a re-run would
+/// stack duplicate vectors for the same node. That also makes this idempotent:
+/// a second run finds nothing to do and reports `embedded: 0`.
+#[cfg(feature = "ml")]
+pub async fn reembed_missing(
+    pool: &UserDbPool,
+    embedder: &Arc<EmbeddingManager>,
+) -> Result<ReembedCounts, AppError> {
+    ensure_vec_table(pool)?;
+    let current_model = embedder.model_name().to_string();
+    let candidates = reembed_candidates(pool, &current_model)?;
+
+    if candidates.is_empty() {
+        return Ok(ReembedCounts::default());
+    }
+    let total = candidates.len();
+    tracing::info!(total, model = %current_model, "companion re-embed: starting backfill");
+
+    let root = crate::companion::disk::brain_root().ok();
+    let mut counts = ReembedCounts::default();
+
+    for (i, cand) in candidates.into_iter().enumerate() {
+        let ReembedCandidate {
+            id,
+            file_path,
+            body_excerpt,
+        } = cand;
+        let text = root
+            .as_ref()
+            .map(|r| r.join(&file_path))
+            .and_then(|p| std::fs::read_to_string(p).ok())
+            .or(body_excerpt)
+            .unwrap_or_default();
+        if text.trim().is_empty() {
+            counts.skipped += 1;
+            continue;
+        }
+        {
+            let conn = pool.get()?;
+            // Plain INSERT downstream — clear the old row or we stack vectors.
+            let _ = conn.execute(
+                "DELETE FROM companion_embedding WHERE node_id = ?1",
+                params![id],
+            );
+        }
+        match embed_and_store(pool, embedder, &id, &text).await {
+            Ok(()) => counts.embedded += 1,
+            Err(e) => {
+                counts.skipped += 1;
+                tracing::debug!(node_id = %id, error = %e, "companion re-embed: node skipped");
+            }
+        }
+        if (i + 1) % REEMBED_BATCH == 0 {
+            tracing::info!(
+                done = i + 1,
+                total,
+                embedded = counts.embedded,
+                skipped = counts.skipped,
+                "companion re-embed: progress"
+            );
+        }
+    }
+
+    tracing::info!(
+        embedded = counts.embedded,
+        skipped = counts.skipped,
+        "companion re-embed: done"
+    );
+    Ok(counts)
+}
+
 /// Cosine search over `companion_embedding`. Returns (node_id, distance)
 /// ordered by ascending distance (smaller = closer).
 #[cfg(feature = "ml")]
@@ -254,6 +441,101 @@ pub async fn search_similar_kind(
     _k: usize,
 ) -> Result<Vec<(String, f32)>, AppError> {
     Ok(Vec::new())
+}
+
+#[cfg(test)]
+mod reembed_selection_tests {
+    //! The selection rule behind `companion_reembed_missing`, tested without an
+    //! ONNX model — deliberately, because the embedder is the one part of that
+    //! command a test cannot have and the *choice of what to re-embed* is the
+    //! part that can actually be wrong.
+    //!
+    //! `companion_embedding` is a `vec0` virtual table in production, but this
+    //! code only ever runs `SELECT node_id FROM companion_embedding` against
+    //! it, so a plain table stands in exactly.
+    use rusqlite::params;
+
+    const MODEL: &str = "AllMiniLML6V2Q";
+
+    fn seed(pool: &crate::db::UserDbPool, rows: &[(&str, Option<&str>)]) {
+        let conn = pool.get().unwrap();
+        for (id, model) in rows {
+            conn.execute(
+                "INSERT INTO companion_node (id, kind, file_path, content_hash, embedding_model) \
+                 VALUES (?1, 'fact', ?2, 'sha256:x', ?3)",
+                params![id, format!("semantic/user/{id}.md"), model],
+            )
+            .unwrap();
+        }
+    }
+
+    #[test]
+    fn every_node_is_a_candidate_when_nothing_has_been_vectored() {
+        let pool = crate::db::init_test_user_db().unwrap();
+        seed(&pool, &[("a", None), ("b", None), ("c", None)]);
+        // No companion_embedding table at all — the state a machine is in
+        // before any ml build has ever run, and the state an import leaves
+        // memory in. Must read as "nothing is vectored", not as an error.
+        let out = super::reembed_candidates(&pool, MODEL).expect("selection");
+        assert_eq!(out.len(), 3);
+    }
+
+    #[test]
+    fn picks_only_the_unvectored_and_the_foreign_model() {
+        let pool = crate::db::init_test_user_db().unwrap();
+        seed(
+            &pool,
+            &[
+                ("vectored_current", Some(MODEL)),
+                ("vectored_foreign", Some("BGESmallENV15")),
+                ("vectored_legacy_null", None),
+                ("never_vectored", Some(MODEL)),
+            ],
+        );
+        {
+            let conn = pool.get().unwrap();
+            conn.execute_batch("CREATE TABLE companion_embedding (node_id TEXT);")
+                .unwrap();
+            for id in ["vectored_current", "vectored_foreign", "vectored_legacy_null"] {
+                conn.execute(
+                    "INSERT INTO companion_embedding (node_id) VALUES (?1)",
+                    params![id],
+                )
+                .unwrap();
+            }
+        }
+
+        let mut ids: Vec<String> = super::reembed_candidates(&pool, MODEL)
+            .expect("selection")
+            .into_iter()
+            .map(|c| c.id)
+            .collect();
+        ids.sort();
+        assert_eq!(
+            ids,
+            vec!["never_vectored".to_string(), "vectored_foreign".to_string()],
+            "a node with a current-model vector is left alone, and so is a legacy NULL stamp \
+             (filter_by_model grandfathers those); only the missing and the foreign are re-embedded"
+        );
+    }
+
+    #[test]
+    fn a_fully_vectored_brain_selects_nothing() {
+        let pool = crate::db::init_test_user_db().unwrap();
+        seed(&pool, &[("a", Some(MODEL)), ("b", Some(MODEL))]);
+        {
+            let conn = pool.get().unwrap();
+            conn.execute_batch(
+                "CREATE TABLE companion_embedding (node_id TEXT);
+                 INSERT INTO companion_embedding (node_id) VALUES ('a'), ('b');",
+            )
+            .unwrap();
+        }
+        assert!(
+            super::reembed_candidates(&pool, MODEL).unwrap().is_empty(),
+            "the second run of a backfill must find nothing to do"
+        );
+    }
 }
 
 #[cfg(all(test, feature = "ml"))]

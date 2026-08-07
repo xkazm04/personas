@@ -2758,7 +2758,12 @@
     "orb_quick_input_close": "দ্রুত বার্তা বন্ধ করুন",
     "orb_quick_input_last_reply_label": "অ্যাথেনার সর্বশেষ উত্তর",
     "orb_quick_input_open": "একটি দ্রুত বার্তা পাঠান",
-    "orb_quick_input_placeholder": "অ্যাথেনাকে বার্তা পাঠান…"
+    "orb_quick_input_placeholder": "অ্যাথেনাকে বার্তা পাঠান…",
+    "memory_rebuild_search": "অনুসন্ধান ইনডেক্স পুনর্নির্মাণ",
+    "memory_rebuild_search_done": "{count}টি স্মৃতি আবার অনুসন্ধানযোগ্য।",
+    "memory_rebuild_search_none": "প্রতিটি স্মৃতি ইতিমধ্যে ইন্ডেক্স করা আছে।",
+    "memory_rebuild_search_running": "পুনর্নির্মাণ হচ্ছে…",
+    "memory_rebuild_search_unavailable": "এই বিল্ডে কোনো এম্বেডিং মডেল নেই, তাই সিম্যান্টিক সার্চ পুনর্নির্মাণ করা যাবে না।"
   },
   "artist_gallery": {
     "loading_viewer": "ভিউয়ার লোড হচ্ছে…",

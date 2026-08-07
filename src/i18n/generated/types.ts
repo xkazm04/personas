@@ -15195,6 +15195,11 @@ export type Translations = {
       memory_run_consolidation: string;
       memory_generate_reflection: string;
       memory_decay_unused: string;
+      memory_rebuild_search: string;
+      memory_rebuild_search_running: string;
+      memory_rebuild_search_done: string;
+      memory_rebuild_search_none: string;
+      memory_rebuild_search_unavailable: string;
       memory_low_importance: string;
       memory_show_all: string;
       memory_bulk_actions_title: string;

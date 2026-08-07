@@ -15244,7 +15244,12 @@
       "orb_quick_input_close": "Cerrar mensaje rápido",
       "orb_quick_input_last_reply_label": "Última respuesta de Athena",
       "orb_quick_input_open": "Enviar un mensaje rápido",
-      "orb_quick_input_placeholder": "Escribe a Athena…"
+      "orb_quick_input_placeholder": "Escribe a Athena…",
+      "memory_rebuild_search": "Reconstruir índice de búsqueda",
+      "memory_rebuild_search_done": "{count} memorias vuelven a ser buscables.",
+      "memory_rebuild_search_none": "Cada memoria ya está indexada.",
+      "memory_rebuild_search_running": "Reconstruyendo…",
+      "memory_rebuild_search_unavailable": "Esta compilación no tiene modelo de incrustación, así que la búsqueda semántica no se puede reconstruir."
     },
     "artist_gallery": {
       "loading_viewer": "Cargando visor…",

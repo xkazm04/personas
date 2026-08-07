@@ -18,7 +18,7 @@ use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::dev_tools as dev_tools_repo;
 use crate::engine::persona_icon::export_safe_icon;
 use crate::db::repos::core::{
-    memories as memory_repo, personas as persona_repo,
+    memories as memory_repo, personas as persona_repo, settings as settings_repo,
 };
 use crate::db::repos::execution::test_suites as suite_repo;
 use crate::db::repos::resources::{
@@ -90,6 +90,111 @@ const MAX_TWIN_CHANNELS: usize = 50;
 const MAX_KB_DOCUMENTS: usize = 500;
 const MAX_KB_CHUNKS: usize = 10_000;
 
+// Athena (companion brain) caps. There is exactly one Athena per install, so
+// unlike the twin caps these are absolute ceilings rather than per-entity ones.
+// Every one of them truncates through `push_truncation_warning`.
+const MAX_ATHENA_FACTS: usize = 2000;
+const MAX_ATHENA_PROCEDURALS: usize = 1000;
+const MAX_ATHENA_GOALS: usize = 500;
+const MAX_ATHENA_BACKLOG: usize = 500;
+const MAX_ATHENA_RITUALS: usize = 200;
+const MAX_ATHENA_DECISIONS: usize = 2000;
+/// Conversation-roster cap. The roster is titles and flags only — no
+/// transcripts, no `claude_session_id` — so the rows are tiny, but an
+/// unbounded list is still an unbounded list.
+const MAX_ATHENA_SESSIONS: usize = 500;
+/// Ceiling on ONE memory's markdown body. A fact or ritual note past a quarter
+/// of a megabyte is a pasted log, not a memory; it is dropped by name rather
+/// than truncated mid-sentence, because half a memory is worse than none.
+const MAX_ATHENA_MD_FILE_BYTES: usize = 256 * 1024;
+/// Ceiling on `identity.md`. Same reasoning; this one file is the single most
+/// load-bearing document in the brain, so an oversize one is reported loudly.
+const MAX_IDENTITY_BYTES: usize = 256 * 1024;
+
+/// The node kinds that make up the `learned` tier. Deliberately does NOT
+/// include `doctrine` (regenerated from `include_str!` on every boot),
+/// `episode` (raw transcript), `reflection`, `cockpit` or `dashboard`.
+const ATHENA_LEARNED_KINDS: [&str; 5] = ["fact", "procedural", "goal", "backlog", "ritual"];
+
+/// The three `app_settings` keys that describe how the operator wants Athena to
+/// behave, as opposed to what this machine happens to be doing. This list is a
+/// SECURITY BOUNDARY, not a convenience: the import writes settings straight
+/// into `app_settings`, so anything not named here must never be accepted from
+/// a bundle. Enforced twice — in `validate_athena` and again at write time.
+const ATHENA_PORTABLE_PREF_KEYS: [&str; 3] = [
+    "companion_autonomous_mode",
+    "companion_fleet_boldness",
+    "companion_profile_synthesis",
+];
+
+// ----------------------------------------------------------------------------
+// What Athena's section deliberately does NOT carry.
+//
+// Named here so the exclusion is a declared contract rather than an emergent
+// property of which SELECTs happen to exist, and asserted by
+// `athena_bundle_excludes_every_forbidden_name`. Four reasons, in order of how
+// much they matter:
+//
+//  1. REGENERATED ON THE TARGET. Doctrine (~349 of 362 nodes) is rebuilt from
+//     `include_str!` at boot, and `prune_orphans` deletes any doctrine node
+//     outside the current allowlist — so imported doctrine would be deleted
+//     anyway. `constitution.md` is a shipped template.
+//  2. MACHINE-LOCAL. `claude_session_id` is a `--resume` pointer into a CLI
+//     process that does not exist on the target; `companion_known_project`
+//     holds absolute paths; `companion_embedding` holds vectors from this
+//     machine's embedding model.
+//  3. NOT MEMORY. Telemetry, budgets, live scratch queues, wake logs — state
+//     about a running installation, meaningless once moved.
+//  4. RAW TRANSCRIPT. Episodes and `companion_turn_sidecar` are the
+//     conversation itself. What Athena LEARNED from a conversation travels;
+//     the conversation does not.
+// ----------------------------------------------------------------------------
+
+/// Table and column names that must never appear as a field name anywhere in
+/// the Athena section.
+#[cfg(test)]
+const ATHENA_FORBIDDEN_NAMES: [&str; 23] = [
+    // 2 — machine-local
+    "claude_session_id",
+    "companion_known_project",
+    "companion_embedding",
+    "companion_edge",
+    "athena_audit",
+    // 3 — telemetry + live scratch
+    "companion_turn",
+    "companion_turn_sidecar",
+    "companion_ux_signal",
+    "companion_persona_baseline",
+    "companion_proactive_budget",
+    "companion_attention_budget",
+    "athena_wake_log",
+    "companion_approval",
+    "companion_proactive_message",
+    "companion_dev_op",
+    "companion_dev_feedback",
+    "companion_background_job",
+    "companion_night_plan",
+    "companion_night_event",
+    "companion_daily_goal",
+    "companion_active_connector",
+    "companion_plugin_toggle",
+    "companion_fts",
+];
+
+/// Node kinds and on-disk files that must never appear as a `kind` or
+/// `file_path` value anywhere in the Athena section.
+#[cfg(test)]
+const ATHENA_FORBIDDEN_CONTENT: [&str; 8] = [
+    "doctrine",
+    "episode",
+    "reflection",
+    "cockpit",
+    "dashboard",
+    "constitution",
+    "episodes-archive-",
+    "identity.bak-",
+];
+
 /// Hard ceiling on a single exported skill file. Skills are markdown +
 /// small reference files; anything bigger is a binary asset or generated
 /// artifact that has no business travelling in a portability bundle.
@@ -131,10 +236,20 @@ pub struct PortabilityBundle {
     pub workspace_knowledge: Vec<WorkspaceKnowledgeExport>,
     /// Digital twins (profile + tone/communication/memory/fact/contact/
     /// reflection/channel graph + the TEXT tier of a bound knowledge base).
-    /// Additive + serde-default, same precedent as `kpis` / `dev_projects` —
-    /// no `format_version` bump.
+    ///
+    /// EMPTY whenever `encrypted_twins` is populated — the two are alternatives,
+    /// never both. A twin is a model of a real person's voice; it does not
+    /// travel in the clear.
     #[serde(default)]
     pub twins: Vec<TwinExport>,
+    /// Athena's own memory. A singleton section, not a list — there is exactly
+    /// one Athena per installation.
+    ///
+    /// `None` whenever `encrypted_athena` is populated; same either/or rule as
+    /// `twins`, and for a stronger reason — `identity.md` is a dossier on the
+    /// operator written by the assistant that watches them work.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub athena: Option<AthenaMemoryExport>,
     /// What the export DROPPED, in the exporter's own words. Every cap in this
     /// module truncates rather than failing; before this field existed those
     /// truncations were completely silent on both ends. The importer replays
@@ -144,6 +259,16 @@ pub struct PortabilityBundle {
     pub export_warnings: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encrypted_credentials: Option<CredentialExportEnvelope>,
+    /// AES-256-GCM envelope holding the JSON of `twins`. Present exactly when
+    /// the bundle carries twins; `twins` is then empty. Same passphrase and the
+    /// same PBKDF2 parameters as `encrypted_credentials`, but an independent
+    /// salt/nonce and its own format marker, so each section decrypts on its
+    /// own and a section pasted into the wrong slot fails loudly.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_twins: Option<CredentialExportEnvelope>,
+    /// AES-256-GCM envelope holding the JSON of `athena`. Same contract.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_athena: Option<CredentialExportEnvelope>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -161,7 +286,71 @@ pub enum ExportScope {
         workspace_ids: Vec<String>,
         #[serde(default)]
         twin_ids: Vec<String>,
+        /// Which tiers of Athena's memory to carry: `"core"` and/or
+        /// `"learned"`. Athena is a singleton, so she is picked by tier rather
+        /// than by id — an empty list means none of her travels.
+        #[serde(default)]
+        athena_tiers: Vec<String>,
     },
+}
+
+/// Which tiers of Athena's memory an export is carrying.
+///
+/// `core` is who she is: `identity.md`, the three portable behaviour prefs, and
+/// the conversation roster. `learned` is what she worked out: facts,
+/// procedurals, goals, backlog, rituals, design decisions — the markdown bodies
+/// plus their sidecar rows.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct AthenaTiers {
+    pub core: bool,
+    pub learned: bool,
+}
+
+impl AthenaTiers {
+    const CORE: &'static str = "core";
+    const LEARNED: &'static str = "learned";
+
+    fn none() -> Self {
+        Self::default()
+    }
+
+    fn both() -> Self {
+        Self {
+            core: true,
+            learned: true,
+        }
+    }
+
+    fn any(self) -> bool {
+        self.core || self.learned
+    }
+
+    /// Parse the wire values, rejecting anything unrecognised. A typo must not
+    /// degrade into "exported nothing" — the user asked for a tier and would
+    /// have no way to tell it never arrived.
+    fn parse(tiers: &[String]) -> Result<Self, AppError> {
+        let mut out = Self::none();
+        for t in tiers {
+            match t.as_str() {
+                Self::CORE => out.core = true,
+                Self::LEARNED => out.learned = true,
+                other => {
+                    return Err(AppError::Validation(format!(
+                        "athena_tiers: unknown tier '{other}' (expected 'core' or 'learned')"
+                    )))
+                }
+            }
+        }
+        Ok(out)
+    }
+
+    /// A Full-scope export carries everything, Athena included.
+    fn from_scope(scope: &ExportScope) -> Result<Self, AppError> {
+        match scope {
+            ExportScope::Full => Ok(Self::both()),
+            ExportScope::Selective { athena_tiers, .. } => Self::parse(athena_tiers),
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -1050,6 +1239,204 @@ pub struct KbChunkExport {
 }
 
 // ============================================================================
+// Athena memory export types
+// ============================================================================
+
+/// Athena's memory, in two tiers.
+///
+/// The companion brain treats **markdown on disk as the source of truth** and
+/// `companion_node` + its sidecar tables as a rebuildable index over it (see
+/// the `COMPANION_SCHEMA` doc comment). This export honours that: every node
+/// carries its markdown `body`, and the import writes the file before it writes
+/// the row. A bundle that carried only rows would move an index over documents
+/// that do not exist on the target.
+///
+/// What is deliberately absent is as much of the design as what is present —
+/// see `ATHENA_FORBIDDEN_NAMES` / `ATHENA_FORBIDDEN_CONTENT` for the full list
+/// and the reasoning.
+#[derive(Debug, Default, Serialize, Deserialize)]
+pub struct AthenaMemoryExport {
+    // ---- core tier ----
+    /// Contents of `~/.personas/companion-brain/identity.md` — Athena's model
+    /// of the operator. `constitution.md` is NOT here: it is a shipped template
+    /// the target already has, and its `.bak-*` siblings are local history.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity_md: Option<String>,
+    /// The portable slice of `app_settings` (see `ATHENA_PORTABLE_PREF_KEYS`).
+    #[serde(default)]
+    pub prefs: Vec<AthenaPrefExport>,
+    /// The conversation roster: titles, pins, origin, status. Never
+    /// `claude_session_id` — that is a `--resume` handle into a CLI process on
+    /// the exporting machine and is meaningless, at best, anywhere else.
+    #[serde(default)]
+    pub sessions: Vec<AthenaSessionExport>,
+
+    // ---- learned tier ----
+    /// One row per memory: the `companion_node` index row plus the markdown
+    /// body it indexes. Restricted to `ATHENA_LEARNED_KINDS`.
+    #[serde(default)]
+    pub nodes: Vec<AthenaNodeExport>,
+    #[serde(default)]
+    pub facts: Vec<AthenaFactExport>,
+    #[serde(default)]
+    pub procedurals: Vec<AthenaProceduralExport>,
+    #[serde(default)]
+    pub goals: Vec<AthenaGoalExport>,
+    #[serde(default)]
+    pub backlog: Vec<AthenaBacklogExport>,
+    #[serde(default)]
+    pub rituals: Vec<AthenaRitualExport>,
+    /// `companion_design_decision` — the only learned table with no
+    /// `companion_node` row and no markdown file behind it.
+    #[serde(default)]
+    pub decisions: Vec<AthenaDecisionExport>,
+    /// `(fact_id, episode_id)` pairs. The episodes themselves do NOT travel, so
+    /// these ids land dangling on purpose: `semantic::load_sources` and
+    /// `procedural::load_sources` read the provenance table directly with no
+    /// join, so a dangling id is returned verbatim and never errors. Keeping
+    /// them preserves "this belief came from three separate conversations",
+    /// which is the part that survives losing the conversations.
+    #[serde(default)]
+    pub provenance: Vec<AthenaProvenanceExport>,
+}
+
+impl AthenaMemoryExport {
+    fn is_empty(&self) -> bool {
+        self.identity_md.is_none()
+            && self.prefs.is_empty()
+            && self.sessions.is_empty()
+            && self.nodes.is_empty()
+            && self.decisions.is_empty()
+    }
+
+}
+
+/// One `app_settings` row. Only keys in `ATHENA_PORTABLE_PREF_KEYS` are ever
+/// produced here, and only those are ever accepted on import.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AthenaPrefExport {
+    pub key: String,
+    pub value: String,
+}
+
+/// One conversation thread, stripped to what means anything elsewhere.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AthenaSessionExport {
+    pub id: String,
+    pub title: Option<String>,
+    pub pinned: i64,
+    pub origin: String,
+    pub status: String,
+}
+
+/// A `companion_node` row plus the markdown it indexes.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AthenaNodeExport {
+    pub id: String,
+    pub kind: String,
+    /// ALWAYS relative to `brain_root()`. The column is relative by convention
+    /// everywhere in the brain, but the exporter re-checks and refuses to emit
+    /// an absolute path: it would name a directory on the exporting machine and
+    /// the importer would happily write a file there.
+    pub file_path: String,
+    pub content_hash: String,
+    pub importance: i64,
+    pub body_excerpt: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+    /// Only `kind='episode'` rows ever set this, and episodes do not travel —
+    /// so it is `None` in practice. Carried anyway so the column does not
+    /// silently start getting dropped if that ever changes.
+    pub session_id: Option<String>,
+    /// The markdown file body. `embedding_model` / `embedding_dims` are NOT
+    /// exported: they describe a vector written by the exporting machine's
+    /// model, and the target re-embeds with its own.
+    pub body: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AthenaFactExport {
+    pub id: String,
+    pub scope: String,
+    pub fact_key: String,
+    pub confidence: f64,
+    pub supersedes_id: Option<String>,
+    pub contradicts_id: Option<String>,
+    pub last_seen_at: String,
+    pub last_decayed_at: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AthenaProceduralExport {
+    pub id: String,
+    pub scope: String,
+    pub trigger_pattern: String,
+    pub confidence: f64,
+    pub supersedes_id: Option<String>,
+    pub last_used_at: String,
+    pub last_decayed_at: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AthenaGoalExport {
+    pub id: String,
+    pub title: String,
+    pub status: String,
+    pub priority: i64,
+    pub target_date: Option<String>,
+    pub sources_json: String,
+    pub completed_at: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AthenaBacklogExport {
+    pub id: String,
+    pub summary: String,
+    pub kind: String,
+    pub status: String,
+    /// The episode she made the promise in. Dangles after import for the same
+    /// reason `provenance` does, and for the same reason it is kept.
+    pub source_episode_id: Option<String>,
+    pub reminded_count: i64,
+    pub created_at: String,
+    pub resolved_at: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AthenaRitualExport {
+    pub id: String,
+    pub kind: String,
+    pub description: String,
+    pub schedule_json: String,
+    pub active: i64,
+    pub sources_json: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AthenaDecisionExport {
+    pub id: String,
+    pub session_id: String,
+    pub persona_context: Option<String>,
+    pub label: String,
+    pub choice: String,
+    pub rationale: String,
+    pub decision_timestamp: Option<String>,
+    pub created_at: String,
+}
+
+/// `companion_provenance`. Note that `fact_id` is overloaded by the schema: it
+/// holds `fact_*` ids AND `proc_*` ids, one table for both tiers.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AthenaProvenanceExport {
+    pub fact_id: String,
+    pub episode_id: String,
+}
+
+// ============================================================================
 // Import result types
 // ============================================================================
 
@@ -1083,6 +1470,24 @@ pub struct PortabilityImportResult {
     pub twins_skipped: u32,
     #[serde(default)]
     pub twin_kb_chunks_imported: u32,
+    // Athena counters (WP2). There is exactly one Athena, so her section merges
+    // additively instead of going through the conflict channel — the numbers
+    // below are the whole story of what happened to her.
+    /// Memories that landed: `companion_node` rows plus design decisions.
+    /// Items that matched something already in the brain are NOT counted —
+    /// they were skipped, not merged.
+    #[serde(default)]
+    pub athena_memory_imported: u32,
+    /// True when an `identity.md` already existed and was replaced (a
+    /// timestamped backup was written next to it first). False when the bundle
+    /// carried no identity, or when there was nothing to replace.
+    #[serde(default)]
+    pub athena_identity_replaced: bool,
+    /// How many imported nodes were handed to the background re-embed. A bundle
+    /// carries text and never vectors, so these have no semantic index until
+    /// `companion_reembed_missing` runs.
+    #[serde(default)]
+    pub reembed_queued: u32,
     /// Non-empty when conflicts were detected on pass 1 — the frontend shows a
     /// resolution UI and re-invokes with `resolutions_json`, whose keys
     /// are `"<kind>:<bundle_id>"` (see [`ImportConflict`]).
@@ -1162,6 +1567,14 @@ pub struct ExportStats {
     pub dev_project_count: u32,
     pub workspace_knowledge_count: u32,
     pub twin_count: u32,
+    /// Size of Athena's `core` tier — identity file + portable prefs +
+    /// conversation roster. The picker hides a tier whose count is 0, so these
+    /// are "is there anything here", not just cosmetics.
+    #[serde(default)]
+    pub athena_core_count: u32,
+    /// Size of Athena's `learned` tier — memory nodes plus design decisions.
+    #[serde(default)]
+    pub athena_learned_count: u32,
     /// Pre-flight truncation forecast: which top-level caps this workspace
     /// already exceeds, so the export modal can say what an export would drop
     /// BEFORE the user runs it. The export commands themselves return only
@@ -1180,12 +1593,19 @@ pub struct ExportStats {
 #[tauri::command]
 pub async fn get_export_stats(state: State<'_, Arc<AppState>>) -> Result<ExportStats, AppError> {
     require_auth_sync(&state)?;
-    compute_export_stats(&state.db)
+    compute_export_stats(&state.db, Some(&state.user_db))
 }
 
 /// Pool-level body of [`get_export_stats`] — split out so unit tests can
 /// exercise the counters without constructing a Tauri `State`.
-fn compute_export_stats(pool: &DbPool) -> Result<ExportStats, AppError> {
+///
+/// `user_db` is the second database file. Athena's brain lives there, not in
+/// the app database the rest of these counters read, so `None` simply reports
+/// her tiers as empty rather than failing.
+fn compute_export_stats(
+    pool: &DbPool,
+    user_db: Option<&UserDbPool>,
+) -> Result<ExportStats, AppError> {
     let personas = persona_repo::get_all(pool)?;
     let tools = tool_repo::get_all_definitions(pool)?;
     let teams = team_repo::get_all(pool)?;
@@ -1217,6 +1637,11 @@ fn compute_export_stats(pool: &DbPool) -> Result<ExportStats, AppError> {
     let workspace_knowledge_count =
         scalar_count("SELECT COUNT(*) FROM workspace_knowledge").unwrap_or(0);
     let twin_count = scalar_count("SELECT COUNT(*) FROM twin_profiles").unwrap_or(0);
+
+    // Athena's two tiers. Counted, never read: this is the modal's preview, so
+    // it must not open a single markdown file. The picker hides a tier whose
+    // count is 0, which is why "identity.md exists" is worth one point.
+    let (athena_core_count, athena_learned_count) = athena_tier_counts(pool, user_db);
 
     // Pre-flight cap forecast. Only the workspace-wide top-level caps can be
     // checked from scalar counts; per-entity caps (a single twin's 5k-message
@@ -1270,8 +1695,59 @@ fn compute_export_stats(pool: &DbPool) -> Result<ExportStats, AppError> {
         dev_project_count,
         workspace_knowledge_count,
         twin_count,
+        athena_core_count,
+        athena_learned_count,
         warnings,
     })
+}
+
+/// `(core, learned)` sizes for the export preview. Never fails: a machine with
+/// no companion schema (very old database, or a unit test with no user pool)
+/// simply reports `(0, 0)` and the picker hides both rows.
+fn athena_tier_counts(pool: &DbPool, user_db: Option<&UserDbPool>) -> (u32, u32) {
+    let mut core = 0u32;
+    // identity.md on disk — one point, because "she has an identity" is the
+    // difference between an offerable tier and a hidden one.
+    if crate::companion::disk::brain_root()
+        .map(|r| r.join("identity.md").is_file())
+        .unwrap_or(false)
+    {
+        core += 1;
+    }
+    for key in ATHENA_PORTABLE_PREF_KEYS {
+        if matches!(settings_repo::get(pool, key), Ok(Some(_))) {
+            core += 1;
+        }
+    }
+
+    let Some(user_db) = user_db else {
+        return (core, 0);
+    };
+    let Ok(conn) = user_db.get() else {
+        return (core, 0);
+    };
+    let count = |sql: &str| -> u32 {
+        conn.query_row(sql, [], |r| r.get::<_, i64>(0))
+            .unwrap_or(0)
+            .max(0) as u32
+    };
+    core += count("SELECT COUNT(*) FROM companion_session");
+    let kinds = athena_kind_list();
+    let learned = count(&format!(
+        "SELECT COUNT(*) FROM companion_node WHERE kind IN ({kinds})"
+    )) + count("SELECT COUNT(*) FROM companion_design_decision");
+    (core, learned)
+}
+
+/// `'fact','procedural',…` — the learned kinds as a SQL literal list. Built
+/// from the const so the query and the exporter can never disagree, and safe to
+/// interpolate because every element is a compile-time literal.
+fn athena_kind_list() -> String {
+    ATHENA_LEARNED_KINDS
+        .iter()
+        .map(|k| format!("'{k}'"))
+        .collect::<Vec<_>>()
+        .join(",")
 }
 
 /// Record a cap-truncation in the export's warning channel. Every `.take()` /
@@ -1300,9 +1776,25 @@ fn is_exportable_kpi(status: &str) -> bool {
     status == "active" || status == "paused"
 }
 
+/// The minimum passphrase length every encrypted section in this module
+/// agrees on. Below it, a passphrase counts as absent.
+const MIN_PASSPHRASE_LEN: usize = 8;
+
+fn usable_passphrase(passphrase: Option<&str>) -> Option<&str> {
+    passphrase.filter(|p| p.len() >= MIN_PASSPHRASE_LEN)
+}
+
 /// Full export: export everything into a compressed JSON archive via save dialog.
-/// When `passphrase` is provided (>= 8 chars), credential secrets are encrypted
-/// and embedded in the bundle.
+/// When `passphrase` is provided (>= 8 chars), credential secrets — and the two
+/// always-encrypted sections, twins and Athena's memory — are encrypted and
+/// embedded in the bundle.
+///
+/// **Without a passphrase, a full export carries neither twins nor Athena.**
+/// That mirrors what this command already did with credential secrets: the
+/// shells travel, the secrets do not. A twin is a model of a real person's
+/// voice and `identity.md` is a dossier on the operator; neither belongs in a
+/// plaintext zip. The omission is recorded in `export_warnings` rather than
+/// being silent.
 #[tauri::command]
 #[requires(privileged)]
 pub async fn export_full(
@@ -1312,6 +1804,7 @@ pub async fn export_full(
     passphrase: Option<String>,
 ) -> Result<bool, AppError> {
     let pool = &state.db;
+    let pp = usable_passphrase(passphrase.as_deref());
     // Full export carries the entire workspace, KPI setup included.
     let mut bundle = build_export_bundle(
         pool,
@@ -1319,15 +1812,15 @@ pub async fn export_full(
         ExportScope::Full,
         include_memories.unwrap_or(true),
         true,
+        SensitiveSections::from_passphrase(pp),
     )?;
 
-    if let Some(ref pp) = passphrase {
-        if pp.len() >= 8 {
-            let envelope = build_encrypted_credentials(pool, pp, None)?;
-            bundle.encrypted_credentials = Some(envelope);
-            bundle.format_version = 3;
-        }
+    if let Some(pp) = pp {
+        let envelope = build_encrypted_credentials(pool, pp, None)?;
+        bundle.encrypted_credentials = Some(envelope);
+        bundle.format_version = 3;
     }
+    seal_sensitive_sections(&mut bundle, pp)?;
 
     save_bundle_to_file(&app, &bundle, "personas_full_export").await
 }
@@ -1346,16 +1839,19 @@ pub async fn export_selective(
     project_ids: Vec<String>,
     workspace_ids: Vec<String>,
     twin_ids: Vec<String>,
+    athena_tiers: Vec<String>,
     include_memories: Option<bool>,
     include_kpis: Option<bool>,
     passphrase: Option<String>,
 ) -> Result<bool, AppError> {
     // When passphrase is provided (credential secrets involved), upgrade to privileged
-    if passphrase.as_ref().is_some_and(|pp| pp.len() >= 8) {
+    let pp = usable_passphrase(passphrase.as_deref());
+    if pp.is_some() {
         require_privileged(&state, "export_selective").await?;
     } else {
         require_auth(&state).await?;
     }
+    require_passphrase_for_selection(&twin_ids, &athena_tiers, pp)?;
 
     let pool = &state.db;
     let scope = ExportScope::Selective {
@@ -1365,6 +1861,7 @@ pub async fn export_selective(
         project_ids: project_ids.clone(),
         workspace_ids: workspace_ids.clone(),
         twin_ids: twin_ids.clone(),
+        athena_tiers: athena_tiers.clone(),
     };
     let mut bundle = build_export_bundle(
         pool,
@@ -1372,22 +1869,60 @@ pub async fn export_selective(
         scope,
         include_memories.unwrap_or(true),
         include_kpis.unwrap_or(true),
+        SensitiveSections::from_passphrase(pp),
     )?;
 
-    if let Some(ref pp) = passphrase {
-        if pp.len() >= 8 {
-            let filter_ids = if credential_ids.is_empty() {
-                None
-            } else {
-                Some(&credential_ids)
-            };
-            let envelope = build_encrypted_credentials(pool, pp, filter_ids)?;
-            bundle.encrypted_credentials = Some(envelope);
-            bundle.format_version = 3;
-        }
+    if let Some(pp) = pp {
+        let filter_ids = if credential_ids.is_empty() {
+            None
+        } else {
+            Some(&credential_ids)
+        };
+        let envelope = build_encrypted_credentials(pool, pp, filter_ids)?;
+        bundle.encrypted_credentials = Some(envelope);
+        bundle.format_version = 3;
     }
+    seal_sensitive_sections(&mut bundle, pp)?;
 
     save_bundle_to_file(&app, &bundle, "personas_selective_export").await
+}
+
+/// Refuse an export that ASKED for twins or Athena but supplied no passphrase.
+///
+/// The distinction against the Full-scope path matters: a full export that
+/// quietly leaves them out is the same trade this command already makes for
+/// credential secrets, and it is recorded in `export_warnings`. But a user who
+/// ticked "Athena — learned" and got a file without it has been lied to, and
+/// nothing in a `-> Result<bool>` would ever tell them. So that case fails.
+///
+/// The frontend gates this too (`passphraseMissing` in `useExportPicker`), but
+/// the frontend is not the boundary — anything that can invoke can skip it.
+fn require_passphrase_for_selection(
+    twin_ids: &[String],
+    athena_tiers: &[String],
+    passphrase: Option<&str>,
+) -> Result<(), AppError> {
+    // Parse unconditionally: a typo'd tier must fail the same way whether or
+    // not a passphrase was supplied, and it must not be masked by (or mask)
+    // the passphrase error.
+    let tiers = AthenaTiers::parse(athena_tiers)?;
+    if passphrase.is_some() {
+        return Ok(());
+    }
+    if twin_ids.is_empty() && !tiers.any() {
+        return Ok(());
+    }
+    let mut what = Vec::new();
+    if !twin_ids.is_empty() {
+        what.push("digital twins");
+    }
+    if tiers.any() {
+        what.push("Athena's memory");
+    }
+    Err(AppError::Validation(format!(
+        "This export includes {}, which always travel encrypted. Enter a passphrase of at least {MIN_PASSPHRASE_LEN} characters, or deselect them.",
+        what.join(" and ")
+    )))
 }
 
 /// Import a previously exported portability bundle.
@@ -1450,6 +1985,7 @@ pub async fn import_portability_bundle(
         resolutions_json.as_deref(),
     )?;
     spawn_pending_kb_reindex(&app, &state, &result);
+    spawn_pending_reembed(&state, &result);
     Ok(Some(result))
 }
 
@@ -1491,6 +2027,42 @@ fn spawn_pending_kb_reindex(
             "Imported knowledge base(s) left unindexed — this build has no embedder (ml feature off)"
         );
     }
+}
+
+/// Kick the background vector backfill for memory an import just landed.
+///
+/// A bundle carries Athena's text and never her vectors — the exporting
+/// machine's embedding model is not necessarily this one's, and a vector
+/// recorded under the wrong model is worse than no vector at all (the recall
+/// model guard drops it). So the imported nodes arrive searchable by recency
+/// and importance but not by meaning until this runs.
+///
+/// Fire-and-forget, same posture as `spawn_pending_kb_reindex`: the counts are
+/// already reported to the user as `reembed_queued`, and a build without the
+/// `ml` feature reports `available: false` instead of failing.
+fn spawn_pending_reembed(state: &State<'_, Arc<AppState>>, result: &PortabilityImportResult) {
+    if result.reembed_queued == 0 {
+        return;
+    }
+    let state = state.inner().clone();
+    let queued = result.reembed_queued;
+    tauri::async_runtime::spawn(async move {
+        match crate::commands::companion::brain::reembed_missing_internal(&state).await {
+            Ok(r) if !r.available => tracing::info!(
+                queued,
+                "Imported Athena memory left unvectored — this build has no embedder (ml feature off)"
+            ),
+            Ok(r) => tracing::info!(
+                queued,
+                embedded = r.embedded,
+                skipped = r.skipped,
+                "Imported Athena memory re-embedded"
+            ),
+            Err(e) => {
+                tracing::warn!(queued, error = %e, "Imported Athena memory could not be re-embedded")
+            }
+        }
+    });
 }
 
 /// Parse a competitive workflow file (n8n, Zapier, Make) and return a preview
@@ -1561,16 +2133,19 @@ pub async fn export_selective_to_path(
     project_ids: Vec<String>,
     workspace_ids: Vec<String>,
     twin_ids: Vec<String>,
+    athena_tiers: Vec<String>,
     include_memories: Option<bool>,
     include_kpis: Option<bool>,
     passphrase: Option<String>,
     file_path: String,
 ) -> Result<bool, AppError> {
-    if passphrase.as_ref().is_some_and(|pp| pp.len() >= 8) {
+    let pp = usable_passphrase(passphrase.as_deref());
+    if pp.is_some() {
         require_privileged(&state, "export_selective_to_path").await?;
     } else {
         require_auth(&state).await?;
     }
+    require_passphrase_for_selection(&twin_ids, &athena_tiers, pp)?;
 
     let pool = &state.db;
     let scope = ExportScope::Selective {
@@ -1580,6 +2155,7 @@ pub async fn export_selective_to_path(
         project_ids: project_ids.clone(),
         workspace_ids: workspace_ids.clone(),
         twin_ids: twin_ids.clone(),
+        athena_tiers: athena_tiers.clone(),
     };
     let mut bundle = build_export_bundle(
         pool,
@@ -1587,20 +2163,20 @@ pub async fn export_selective_to_path(
         scope,
         include_memories.unwrap_or(true),
         include_kpis.unwrap_or(true),
+        SensitiveSections::from_passphrase(pp),
     )?;
 
-    if let Some(ref pp) = passphrase {
-        if pp.len() >= 8 {
-            let filter_ids = if credential_ids.is_empty() {
-                None
-            } else {
-                Some(&credential_ids)
-            };
-            let envelope = build_encrypted_credentials(pool, pp, filter_ids)?;
-            bundle.encrypted_credentials = Some(envelope);
-            bundle.format_version = 3;
-        }
+    if let Some(pp) = pp {
+        let filter_ids = if credential_ids.is_empty() {
+            None
+        } else {
+            Some(&credential_ids)
+        };
+        let envelope = build_encrypted_credentials(pool, pp, filter_ids)?;
+        bundle.encrypted_credentials = Some(envelope);
+        bundle.format_version = 3;
     }
+    seal_sensitive_sections(&mut bundle, pp)?;
 
     let json =
         serde_json::to_string_pretty(&bundle).map_err(|e| AppError::Internal(e.to_string()))?;
@@ -1631,6 +2207,7 @@ pub async fn import_portability_bundle_from_path(
         resolutions_json.as_deref(),
     )?;
     spawn_pending_kb_reindex(&app, &state, &result);
+    spawn_pending_reembed(&state, &result);
     Ok(Some(result))
 }
 
@@ -1653,7 +2230,7 @@ fn run_bundle_import(
             .map_err(|e| AppError::Internal(format!("Failed to read file: {e}")))?
     };
 
-    let bundle: PortabilityBundle = serde_json::from_str(&content)
+    let mut bundle: PortabilityBundle = serde_json::from_str(&content)
         .map_err(|e| AppError::Validation(format!("Invalid export file: {e}")))?;
 
     if bundle.format_version != 2 && bundle.format_version != 3 {
@@ -1663,6 +2240,14 @@ fn run_bundle_import(
         )));
     }
 
+    // Decrypt the always-encrypted sections BEFORE validation, so
+    // `validate_bundle` sees the real twin / Athena content rather than an
+    // opaque blob. A missing or wrong passphrase leaves the sections empty and
+    // records why, matching how embedded credentials already behave: an import
+    // the user can only half-complete still completes the half it can.
+    let mut unseal_warnings = Vec::new();
+    unseal_sensitive_sections(&mut bundle, passphrase, &mut unseal_warnings);
+
     validate_bundle(&bundle)?;
 
     let resolutions: HashMap<String, String> = resolutions_json
@@ -1671,6 +2256,9 @@ fn run_bundle_import(
     let is_resolution_pass = !resolutions.is_empty();
 
     let mut result = import_bundle(pool, user_db, &bundle, &resolutions)?;
+    if !is_resolution_pass {
+        result.warnings.extend(unseal_warnings);
+    }
 
     // Returned conflicts need the file path back so the frontend can re-invoke
     // the resolution pass against the same bundle without a second dialog.
@@ -1736,12 +2324,33 @@ fn portable_team_memory_tags(tags: &Option<String>) -> Option<String> {
     Some(raw.to_string())
 }
 
+/// Whether this export is in a position to carry the two always-encrypted
+/// sections. They are COLLECTED only when a passphrase exists to seal them —
+/// reading a whole brain off disk and then discarding it would be pure waste,
+/// and worse, would leave the plaintext sitting in memory for no reason.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SensitiveSections {
+    Include,
+    Omit,
+}
+
+impl SensitiveSections {
+    fn from_passphrase(passphrase: Option<&str>) -> Self {
+        if passphrase.is_some() {
+            Self::Include
+        } else {
+            Self::Omit
+        }
+    }
+}
+
 fn build_export_bundle(
     pool: &DbPool,
     user_db: Option<&UserDbPool>,
     scope: ExportScope,
     include_memories: bool,
     include_kpis: bool,
+    sensitive: SensitiveSections,
 ) -> Result<PortabilityBundle, AppError> {
     // Everything this export DROPS gets recorded here and travels with the
     // bundle, so the machine that receives it can tell what is missing.
@@ -2108,7 +2717,27 @@ fn build_export_bundle(
         &bundled_project_ids,
         &mut export_warnings,
     )?;
-    let twin_exports = collect_twin_exports(pool, user_db, twin_filter, &mut export_warnings)?;
+    // Twins and Athena are the two always-encrypted sections. Without a
+    // passphrase they are not collected at all; the omission is recorded so the
+    // person who opens the bundle learns why it is thinner than they expected.
+    let athena_tiers = AthenaTiers::from_scope(&scope)?;
+    let (twin_exports, athena_export) = match sensitive {
+        SensitiveSections::Include => (
+            collect_twin_exports(pool, user_db, twin_filter, &mut export_warnings)?,
+            collect_athena_export(pool, user_db, athena_tiers, &mut export_warnings)?,
+        ),
+        SensitiveSections::Omit => {
+            let wants_twins = !twin_filter.is_some_and(|ids| ids.is_empty());
+            if wants_twins || athena_tiers.any() {
+                export_warnings.push(
+                    "Digital twins and Athena's memory were left out: they travel encrypted only, \
+                     and this export was written without a passphrase."
+                        .into(),
+                );
+            }
+            (Vec::new(), None)
+        }
+    };
 
     Ok(PortabilityBundle {
         format_version: 2,
@@ -2123,8 +2752,11 @@ fn build_export_bundle(
         dev_projects: dev_project_exports,
         workspace_knowledge: workspace_exports,
         twins: twin_exports,
+        athena: athena_export,
         export_warnings,
         encrypted_credentials: None,
+        encrypted_twins: None,
+        encrypted_athena: None,
     })
 }
 
@@ -3774,6 +4406,506 @@ fn collect_twin_knowledge_base(
     }))
 }
 
+// ============================================================================
+// Athena memory export collection
+// ============================================================================
+
+/// Does this database have the companion schema at all? Very old installs (and
+/// unit tests that only apply the knowledge-base schema) do not, and that is
+/// "no Athena", not an error — same posture `collect_twin_exports` takes toward
+/// a missing `twin_profiles`.
+fn has_companion_schema(conn: &rusqlite::Connection) -> bool {
+    conn.query_row(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='companion_node'",
+        [],
+        |_| Ok(()),
+    )
+    .is_ok()
+}
+
+/// Normalise a `companion_node.file_path` to a path relative to `brain_root`.
+///
+/// The column is relative by convention at every write site, but "by
+/// convention" is not a guarantee and this value crosses machines: an absolute
+/// path in a bundle names a directory on the exporting machine, and the
+/// importer would create it. So an absolute path is accepted only when it sits
+/// under this machine's brain root (in which case it is de-anchored), and
+/// rejected otherwise.
+fn relative_brain_path(file_path: &str, root: &std::path::Path) -> Option<String> {
+    let p = std::path::Path::new(file_path);
+    if !p.is_absolute() {
+        // Reject traversal too — `../../x` re-anchored on the target would
+        // write outside the brain.
+        if p.components()
+            .any(|c| matches!(c, std::path::Component::ParentDir))
+        {
+            return None;
+        }
+        return Some(file_path.replace('\\', "/"));
+    }
+    p.strip_prefix(root)
+        .ok()
+        .map(|rel| rel.to_string_lossy().replace('\\', "/"))
+}
+
+/// Collect Athena's memory for the requested tiers.
+///
+/// Returns `Ok(None)` when nothing was asked for, or when this machine has no
+/// companion brain to read — never an error for either. Every drop (an
+/// unreadable markdown body, an oversize file, a cap) is reported through
+/// `export_warnings`, because a memory silently missing from a bundle is
+/// indistinguishable from a memory that never existed.
+fn collect_athena_export(
+    pool: &DbPool,
+    user_db: Option<&UserDbPool>,
+    tiers: AthenaTiers,
+    export_warnings: &mut Vec<String>,
+) -> Result<Option<AthenaMemoryExport>, AppError> {
+    if !tiers.any() {
+        return Ok(None);
+    }
+    let root = match crate::companion::disk::brain_root() {
+        Ok(r) => r,
+        Err(e) => {
+            export_warnings.push(format!(
+                "Athena: her brain directory could not be resolved ({e}); her memory was not exported."
+            ));
+            return Ok(None);
+        }
+    };
+
+    let mut out = AthenaMemoryExport::default();
+
+    if tiers.core {
+        collect_athena_core_disk_and_prefs(pool, &root, &mut out, export_warnings);
+    }
+
+    let Some(user_db) = user_db else {
+        // Identity + prefs still made it; everything else lives in the other
+        // database. Say so rather than reporting a suspiciously small brain.
+        if tiers.learned || tiers.core {
+            export_warnings.push(
+                "Athena: the brain database was not available in this context; only her identity file and preferences were exported."
+                    .into(),
+            );
+        }
+        return Ok(if out.is_empty() { None } else { Some(out) });
+    };
+    let conn = user_db.get()?;
+    if !has_companion_schema(&conn) {
+        return Ok(if out.is_empty() { None } else { Some(out) });
+    }
+
+    if tiers.core {
+        collect_athena_sessions(&conn, &mut out, export_warnings)?;
+    }
+    if tiers.learned {
+        collect_athena_learned(&conn, &root, &mut out, export_warnings)?;
+    }
+
+    Ok(if out.is_empty() { None } else { Some(out) })
+}
+
+/// `identity.md` + the three portable prefs. Neither needs the brain database:
+/// identity is a file, prefs live in the SYSTEM database (`personas.db`) while
+/// every `companion_*` table lives in the USER one. The two pools are the same
+/// Rust type, so this split is a thing to hold in your head, not something the
+/// compiler will catch.
+fn collect_athena_core_disk_and_prefs(
+    pool: &DbPool,
+    root: &std::path::Path,
+    out: &mut AthenaMemoryExport,
+    export_warnings: &mut Vec<String>,
+) {
+    let identity_path = root.join("identity.md");
+    if identity_path.is_file() {
+        match std::fs::read_to_string(&identity_path) {
+            Ok(body) if body.len() > MAX_IDENTITY_BYTES => export_warnings.push(format!(
+                "Athena: identity.md is {} bytes, over the {MAX_IDENTITY_BYTES}-byte cap; it was not exported.",
+                body.len()
+            )),
+            Ok(body) => out.identity_md = Some(body),
+            Err(e) => export_warnings.push(format!(
+                "Athena: identity.md could not be read ({e}); it was not exported."
+            )),
+        }
+    }
+
+    for key in ATHENA_PORTABLE_PREF_KEYS {
+        if let Ok(Some(value)) = settings_repo::get(pool, key) {
+            out.prefs.push(AthenaPrefExport {
+                key: key.to_string(),
+                value,
+            });
+        }
+    }
+}
+
+/// The conversation roster. `claude_session_id` is named in the SELECT's
+/// absence on purpose: it is a `--resume` handle into a CLI process on the
+/// exporting machine, so carrying it would at best resume nothing and at worst
+/// attach a foreign conversation.
+fn collect_athena_sessions(
+    conn: &rusqlite::Connection,
+    out: &mut AthenaMemoryExport,
+    export_warnings: &mut Vec<String>,
+) -> Result<(), AppError> {
+    let total: usize = conn
+        .query_row("SELECT COUNT(*) FROM companion_session", [], |r| {
+            r.get::<_, i64>(0)
+        })
+        .unwrap_or(0)
+        .max(0) as usize;
+    let mut stmt = conn
+        .prepare(
+            "SELECT id, title, pinned, origin, status FROM companion_session \
+             ORDER BY pinned DESC, last_active_at DESC",
+        )
+        .map_err(AppError::Database)?;
+    let rows = stmt
+        .query_map([], |r| {
+            Ok(AthenaSessionExport {
+                id: r.get(0)?,
+                title: r.get(1)?,
+                pinned: r.get(2)?,
+                origin: r.get(3)?,
+                status: r.get(4)?,
+            })
+        })
+        .map_err(AppError::Database)?;
+    for row in rows {
+        out.sessions.push(row.map_err(AppError::Database)?);
+        if out.sessions.len() >= MAX_ATHENA_SESSIONS {
+            break;
+        }
+    }
+    push_truncation_warning(
+        export_warnings,
+        "conversations",
+        out.sessions.len(),
+        total,
+        "Athena",
+    );
+    Ok(())
+}
+
+/// Per-kind cap for a learned node kind.
+fn athena_cap_for(kind: &str) -> usize {
+    match kind {
+        "fact" => MAX_ATHENA_FACTS,
+        "procedural" => MAX_ATHENA_PROCEDURALS,
+        "goal" => MAX_ATHENA_GOALS,
+        "backlog" => MAX_ATHENA_BACKLOG,
+        "ritual" => MAX_ATHENA_RITUALS,
+        _ => 0,
+    }
+}
+
+/// Nodes + markdown + every sidecar table.
+///
+/// The nodes are gathered FIRST and everything else is filtered to the ids that
+/// survived, so a node dropped for an unreadable body cannot leave a widowed
+/// `companion_fact` row behind. Order matters here in a way it does not for the
+/// flatter sections of this bundle.
+fn collect_athena_learned(
+    conn: &rusqlite::Connection,
+    root: &std::path::Path,
+    out: &mut AthenaMemoryExport,
+    export_warnings: &mut Vec<String>,
+) -> Result<(), AppError> {
+    let kinds = athena_kind_list();
+
+    // Per-kind totals for the truncation forecast, before any filtering.
+    let mut totals: HashMap<String, usize> = HashMap::new();
+    {
+        let mut stmt = conn
+            .prepare(&format!(
+                "SELECT kind, COUNT(*) FROM companion_node WHERE kind IN ({kinds}) GROUP BY kind"
+            ))
+            .map_err(AppError::Database)?;
+        let rows = stmt
+            .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))
+            .map_err(AppError::Database)?;
+        for row in rows {
+            let (kind, n) = row.map_err(AppError::Database)?;
+            totals.insert(kind, n.max(0) as usize);
+        }
+    }
+
+    // Highest-importance first, so a capped export keeps what matters most
+    // rather than whatever happens to be oldest.
+    let mut stmt = conn
+        .prepare(&format!(
+            "SELECT id, kind, file_path, content_hash, importance, body_excerpt, created_at, \
+                    updated_at, session_id \
+             FROM companion_node WHERE kind IN ({kinds}) \
+             ORDER BY kind, importance DESC, updated_at DESC"
+        ))
+        .map_err(AppError::Database)?;
+    type NodeRow = (
+        String,
+        String,
+        String,
+        String,
+        i64,
+        Option<String>,
+        String,
+        String,
+        Option<String>,
+    );
+    let rows = stmt
+        .query_map([], |r| {
+            Ok((
+                r.get(0)?,
+                r.get(1)?,
+                r.get(2)?,
+                r.get(3)?,
+                r.get(4)?,
+                r.get(5)?,
+                r.get(6)?,
+                r.get(7)?,
+                r.get(8)?,
+            ))
+        })
+        .map_err(AppError::Database)?;
+
+    let mut kept_per_kind: HashMap<String, usize> = HashMap::new();
+    // Nodes dropped for a bad body, per kind. Subtracted from the cap forecast
+    // below so a memory is never reported twice — once by name and again as an
+    // anonymous cap casualty.
+    let mut dropped_per_kind: HashMap<String, usize> = HashMap::new();
+    for row in rows {
+        let (id, kind, file_path, content_hash, importance, body_excerpt, created_at, updated_at, session_id): NodeRow =
+            row.map_err(AppError::Database)?;
+        let cap = athena_cap_for(&kind);
+        let kept = kept_per_kind.entry(kind.clone()).or_insert(0);
+        if *kept >= cap {
+            continue;
+        }
+        let Some(rel_path) = relative_brain_path(&file_path, root) else {
+            export_warnings.push(format!(
+                "Athena: {kind} '{id}' points outside her brain directory ('{file_path}'); not exported."
+            ));
+            *dropped_per_kind.entry(kind).or_insert(0) += 1;
+            continue;
+        };
+        let abs = root.join(&rel_path);
+        let body = match std::fs::read_to_string(&abs) {
+            Ok(b) if b.len() > MAX_ATHENA_MD_FILE_BYTES => {
+                export_warnings.push(format!(
+                    "Athena: {kind} '{id}' is {} bytes, over the {MAX_ATHENA_MD_FILE_BYTES}-byte per-memory cap; not exported.",
+                    b.len()
+                ));
+                *dropped_per_kind.entry(kind).or_insert(0) += 1;
+                continue;
+            }
+            Ok(b) => b,
+            Err(e) => {
+                // The markdown IS the memory; the row is only an index over it.
+                // Exporting the row alone would move a pointer to nothing.
+                export_warnings.push(format!(
+                    "Athena: {kind} '{id}' has no readable body at '{rel_path}' ({e}); not exported."
+                ));
+                *dropped_per_kind.entry(kind).or_insert(0) += 1;
+                continue;
+            }
+        };
+        *kept += 1;
+        out.nodes.push(AthenaNodeExport {
+            id,
+            kind,
+            file_path: rel_path,
+            content_hash,
+            importance,
+            body_excerpt,
+            created_at,
+            updated_at,
+            session_id,
+            body,
+        });
+    }
+    drop(stmt);
+
+    for kind in ATHENA_LEARNED_KINDS {
+        let total = totals.get(kind).copied().unwrap_or(0);
+        let dropped = dropped_per_kind.get(kind).copied().unwrap_or(0);
+        push_truncation_warning(
+            export_warnings,
+            kind,
+            kept_per_kind.get(kind).copied().unwrap_or(0),
+            total.saturating_sub(dropped),
+            "Athena",
+        );
+    }
+
+    let kept_ids: std::collections::HashSet<String> =
+        out.nodes.iter().map(|n| n.id.clone()).collect();
+
+    collect_athena_sidecars(conn, &kept_ids, out)?;
+
+    // Design decisions have no node and no file — the one learned table that is
+    // pure DB. Capped on its own.
+    let total_decisions: usize = conn
+        .query_row("SELECT COUNT(*) FROM companion_design_decision", [], |r| {
+            r.get::<_, i64>(0)
+        })
+        .unwrap_or(0)
+        .max(0) as usize;
+    let mut stmt = conn
+        .prepare(
+            "SELECT id, session_id, persona_context, label, choice, rationale, \
+                    decision_timestamp, created_at \
+             FROM companion_design_decision ORDER BY created_at DESC",
+        )
+        .map_err(AppError::Database)?;
+    let rows = stmt
+        .query_map([], |r| {
+            Ok(AthenaDecisionExport {
+                id: r.get(0)?,
+                session_id: r.get(1)?,
+                persona_context: r.get(2)?,
+                label: r.get(3)?,
+                choice: r.get(4)?,
+                rationale: r.get(5)?,
+                decision_timestamp: r.get(6)?,
+                created_at: r.get(7)?,
+            })
+        })
+        .map_err(AppError::Database)?;
+    for row in rows {
+        out.decisions.push(row.map_err(AppError::Database)?);
+        if out.decisions.len() >= MAX_ATHENA_DECISIONS {
+            break;
+        }
+    }
+    push_truncation_warning(
+        export_warnings,
+        "design decisions",
+        out.decisions.len(),
+        total_decisions,
+        "Athena",
+    );
+
+    Ok(())
+}
+
+/// Every sidecar table, filtered to the nodes that actually made it.
+fn collect_athena_sidecars(
+    conn: &rusqlite::Connection,
+    kept_ids: &std::collections::HashSet<String>,
+    out: &mut AthenaMemoryExport,
+) -> Result<(), AppError> {
+    /// `$key` names the field that has to be in `kept_ids` for the row to
+    /// travel — always the owning node's id, spelled `fact_id` in the
+    /// provenance table.
+    macro_rules! sweep {
+        ($sql:expr, $target:expr, $key:ident, $map:expr) => {{
+            let mut stmt = conn.prepare($sql).map_err(AppError::Database)?;
+            let rows = stmt.query_map([], $map).map_err(AppError::Database)?;
+            for row in rows {
+                let row = row.map_err(AppError::Database)?;
+                if kept_ids.contains(row.$key.as_str()) {
+                    $target.push(row);
+                }
+            }
+        }};
+    }
+
+    sweep!(
+        "SELECT id, scope, fact_key, confidence, supersedes_id, contradicts_id, last_seen_at, \
+                last_decayed_at FROM companion_fact",
+        out.facts,
+        id,
+        |r: &rusqlite::Row<'_>| Ok(AthenaFactExport {
+            id: r.get(0)?,
+            scope: r.get(1)?,
+            fact_key: r.get(2)?,
+            confidence: r.get(3)?,
+            supersedes_id: r.get(4)?,
+            contradicts_id: r.get(5)?,
+            last_seen_at: r.get(6)?,
+            last_decayed_at: r.get(7)?,
+        })
+    );
+    sweep!(
+        "SELECT id, scope, trigger_pattern, confidence, supersedes_id, last_used_at, \
+                last_decayed_at FROM companion_procedural",
+        out.procedurals,
+        id,
+        |r: &rusqlite::Row<'_>| Ok(AthenaProceduralExport {
+            id: r.get(0)?,
+            scope: r.get(1)?,
+            trigger_pattern: r.get(2)?,
+            confidence: r.get(3)?,
+            supersedes_id: r.get(4)?,
+            last_used_at: r.get(5)?,
+            last_decayed_at: r.get(6)?,
+        })
+    );
+    sweep!(
+        "SELECT id, title, status, priority, target_date, sources_json, completed_at, \
+                created_at, updated_at FROM companion_goal",
+        out.goals,
+        id,
+        |r: &rusqlite::Row<'_>| Ok(AthenaGoalExport {
+            id: r.get(0)?,
+            title: r.get(1)?,
+            status: r.get(2)?,
+            priority: r.get(3)?,
+            target_date: r.get(4)?,
+            sources_json: r.get(5)?,
+            completed_at: r.get(6)?,
+            created_at: r.get(7)?,
+            updated_at: r.get(8)?,
+        })
+    );
+    sweep!(
+        "SELECT id, summary, kind, status, source_episode_id, reminded_count, created_at, \
+                resolved_at FROM companion_backlog_item",
+        out.backlog,
+        id,
+        |r: &rusqlite::Row<'_>| Ok(AthenaBacklogExport {
+            id: r.get(0)?,
+            summary: r.get(1)?,
+            kind: r.get(2)?,
+            status: r.get(3)?,
+            source_episode_id: r.get(4)?,
+            reminded_count: r.get(5)?,
+            created_at: r.get(6)?,
+            resolved_at: r.get(7)?,
+        })
+    );
+    sweep!(
+        "SELECT id, kind, description, schedule_json, active, sources_json, created_at, \
+                updated_at FROM companion_ritual",
+        out.rituals,
+        id,
+        |r: &rusqlite::Row<'_>| Ok(AthenaRitualExport {
+            id: r.get(0)?,
+            kind: r.get(1)?,
+            description: r.get(2)?,
+            schedule_json: r.get(3)?,
+            active: r.get(4)?,
+            sources_json: r.get(5)?,
+            created_at: r.get(6)?,
+            updated_at: r.get(7)?,
+        })
+    );
+    // `fact_id` is overloaded — it holds proc_* ids too — so filtering on the
+    // kept-node set covers both tiers with one sweep.
+    sweep!(
+        "SELECT fact_id, episode_id FROM companion_provenance",
+        out.provenance,
+        fact_id,
+        |r: &rusqlite::Row<'_>| Ok(AthenaProvenanceExport {
+            fact_id: r.get(0)?,
+            episode_id: r.get(1)?,
+        })
+    );
+
+    Ok(())
+}
+
 async fn save_bundle_to_file(
     app: &AppHandle,
     bundle: &PortabilityBundle,
@@ -3878,6 +5010,7 @@ fn validate_bundle(bundle: &PortabilityBundle) -> Result<(), AppError> {
     validation::require_max_count("dev_projects", &bundle.dev_projects, MAX_DEV_PROJECTS)?;
     validation::require_max_count("twins", &bundle.twins, MAX_TWINS)?;
     validate_twins(bundle)?;
+    validate_athena(bundle)?;
     for (i, w) in bundle.workspace_knowledge.iter().enumerate() {
         validation::require_max_count(
             &format!("workspace_knowledge[{i}].knowledge"),
@@ -4526,6 +5659,262 @@ fn validate_twins(bundle: &PortabilityBundle) -> Result<(), AppError> {
     Ok(())
 }
 
+/// Per-field validation of Athena's section.
+///
+/// Two things here are load-bearing rather than defensive.
+///
+/// **Pref keys are a whitelist.** The import writes straight into
+/// `app_settings`; without this check a crafted bundle could set any setting in
+/// the app. `apply_athena_prefs` re-checks, because a security boundary
+/// enforced in exactly one place is a security boundary one refactor from
+/// disappearing.
+///
+/// **Enum values are checked against the parsers that will read them.**
+/// `FactScope::parse`, `ProceduralScope::parse`, `BacklogKind::parse` and
+/// `RitualKind::parse` all hard-error on an unknown string, so a row with a
+/// bogus scope would import cleanly and then break `list_facts` at read time —
+/// a failure with no visible connection to the import that caused it.
+fn validate_athena(bundle: &PortabilityBundle) -> Result<(), AppError> {
+    const FACT_SCOPES: [&str; 3] = ["user", "project", "world"];
+    const PROCEDURAL_SCOPES: [&str; 4] = ["chat", "action", "memory", "build"];
+    const GOAL_STATUSES: [&str; 4] = ["active", "paused", "completed", "abandoned"];
+    const BACKLOG_KINDS: [&str; 2] = ["self_promise", "capability_gap"];
+    const BACKLOG_STATUSES: [&str; 3] = ["pending", "done", "dropped"];
+    const RITUAL_KINDS: [&str; 3] = ["quiet_hours", "cadence", "focus_window"];
+
+    let Some(a) = bundle.athena.as_ref() else {
+        return Ok(());
+    };
+
+    fn one_of(field: &str, value: &str, allowed: &[&str]) -> Result<(), AppError> {
+        if allowed.contains(&value) {
+            Ok(())
+        } else {
+            Err(AppError::Validation(format!(
+                "{field}: '{value}' is not one of ({})",
+                allowed.join("|")
+            )))
+        }
+    }
+
+    validation::require_max_count("athena.facts", &a.facts, MAX_ATHENA_FACTS)?;
+    validation::require_max_count("athena.procedurals", &a.procedurals, MAX_ATHENA_PROCEDURALS)?;
+    validation::require_max_count("athena.goals", &a.goals, MAX_ATHENA_GOALS)?;
+    validation::require_max_count("athena.backlog", &a.backlog, MAX_ATHENA_BACKLOG)?;
+    validation::require_max_count("athena.rituals", &a.rituals, MAX_ATHENA_RITUALS)?;
+    validation::require_max_count("athena.decisions", &a.decisions, MAX_ATHENA_DECISIONS)?;
+    validation::require_max_count("athena.sessions", &a.sessions, MAX_ATHENA_SESSIONS)?;
+    // One node per learned row, so the node cap is the sum of the sidecar caps.
+    validation::require_max_count(
+        "athena.nodes",
+        &a.nodes,
+        MAX_ATHENA_FACTS
+            + MAX_ATHENA_PROCEDURALS
+            + MAX_ATHENA_GOALS
+            + MAX_ATHENA_BACKLOG
+            + MAX_ATHENA_RITUALS,
+    )?;
+    // Provenance is many-to-one against nodes; bound it against the same
+    // ceiling rather than leaving the one unbounded array in the section.
+    validation::require_max_count(
+        "athena.provenance",
+        &a.provenance,
+        (MAX_ATHENA_FACTS + MAX_ATHENA_PROCEDURALS) * 8,
+    )?;
+
+    if let Some(identity) = a.identity_md.as_deref() {
+        validation::require_max_len("athena.identity_md", identity, MAX_IDENTITY_BYTES)?;
+    }
+
+    for (i, p) in a.prefs.iter().enumerate() {
+        if !ATHENA_PORTABLE_PREF_KEYS.contains(&p.key.as_str()) {
+            return Err(AppError::Validation(format!(
+                "athena.pref[{i}]: '{}' is not a portable Athena preference. Only ({}) may be carried in a bundle.",
+                p.key,
+                ATHENA_PORTABLE_PREF_KEYS.join("|")
+            )));
+        }
+        validation::require_max_len(&format!("athena.pref[{i}].value"), &p.value, MAX_CONFIG_LEN)?;
+    }
+
+    for (i, s) in a.sessions.iter().enumerate() {
+        let p = format!("athena.session[{i}]");
+        validation::require_non_empty(&format!("{p}.id"), &s.id)?;
+        validation::require_max_len(&format!("{p}.id"), &s.id, MAX_SHORT_FIELD_LEN)?;
+        validation::require_optional_max_len(&format!("{p}.title"), &s.title, MAX_NAME_LEN)?;
+        validation::require_max_len(&format!("{p}.origin"), &s.origin, MAX_SHORT_FIELD_LEN)?;
+        validation::require_max_len(&format!("{p}.status"), &s.status, MAX_SHORT_FIELD_LEN)?;
+    }
+
+    for (i, n) in a.nodes.iter().enumerate() {
+        let p = format!("athena.node[{i}]");
+        validation::require_non_empty(&format!("{p}.id"), &n.id)?;
+        validation::require_max_len(&format!("{p}.id"), &n.id, MAX_SHORT_FIELD_LEN)?;
+        one_of(&format!("{p}.kind"), &n.kind, &ATHENA_LEARNED_KINDS)?;
+        validation::require_non_empty(&format!("{p}.file_path"), &n.file_path)?;
+        validation::require_max_len(&format!("{p}.file_path"), &n.file_path, MAX_DESCRIPTION_LEN)?;
+        // The import re-anchors this onto THIS machine's brain root, so an
+        // absolute path or a traversal would write outside it.
+        if std::path::Path::new(&n.file_path).is_absolute() || n.file_path.contains("..") {
+            return Err(AppError::Validation(format!(
+                "{p}.file_path: '{}' must be relative to the brain directory",
+                n.file_path
+            )));
+        }
+        validation::require_max_len(
+            &format!("{p}.content_hash"),
+            &n.content_hash,
+            MAX_SHORT_FIELD_LEN,
+        )?;
+        validation::require_max_len(&format!("{p}.body"), &n.body, MAX_ATHENA_MD_FILE_BYTES)?;
+        validation::require_optional_max_len(
+            &format!("{p}.body_excerpt"),
+            &n.body_excerpt,
+            MAX_MEMORY_CONTENT_LEN,
+        )?;
+        if !(0..=5).contains(&n.importance) {
+            return Err(AppError::Validation(format!(
+                "{p}.importance: {} is outside 0..=5",
+                n.importance
+            )));
+        }
+    }
+
+    for (i, f) in a.facts.iter().enumerate() {
+        let p = format!("athena.fact[{i}]");
+        validation::require_max_len(&format!("{p}.id"), &f.id, MAX_SHORT_FIELD_LEN)?;
+        one_of(&format!("{p}.scope"), &f.scope, &FACT_SCOPES)?;
+        validation::require_non_empty(&format!("{p}.fact_key"), &f.fact_key)?;
+        validation::require_max_len(&format!("{p}.fact_key"), &f.fact_key, MAX_NAME_LEN)?;
+        validation::require_optional_max_len(
+            &format!("{p}.supersedes_id"),
+            &f.supersedes_id,
+            MAX_SHORT_FIELD_LEN,
+        )?;
+        validation::require_optional_max_len(
+            &format!("{p}.contradicts_id"),
+            &f.contradicts_id,
+            MAX_SHORT_FIELD_LEN,
+        )?;
+        if !(0.0..=1.0).contains(&f.confidence) {
+            return Err(AppError::Validation(format!(
+                "{p}.confidence: {} is outside 0.0..=1.0",
+                f.confidence
+            )));
+        }
+    }
+
+    for (i, r) in a.procedurals.iter().enumerate() {
+        let p = format!("athena.procedural[{i}]");
+        validation::require_max_len(&format!("{p}.id"), &r.id, MAX_SHORT_FIELD_LEN)?;
+        one_of(&format!("{p}.scope"), &r.scope, &PROCEDURAL_SCOPES)?;
+        validation::require_non_empty(&format!("{p}.trigger_pattern"), &r.trigger_pattern)?;
+        validation::require_max_len(
+            &format!("{p}.trigger_pattern"),
+            &r.trigger_pattern,
+            MAX_MEMORY_CONTENT_LEN,
+        )?;
+        validation::require_optional_max_len(
+            &format!("{p}.supersedes_id"),
+            &r.supersedes_id,
+            MAX_SHORT_FIELD_LEN,
+        )?;
+        if !(0.0..=1.0).contains(&r.confidence) {
+            return Err(AppError::Validation(format!(
+                "{p}.confidence: {} is outside 0.0..=1.0",
+                r.confidence
+            )));
+        }
+    }
+
+    for (i, g) in a.goals.iter().enumerate() {
+        let p = format!("athena.goal[{i}]");
+        validation::require_max_len(&format!("{p}.id"), &g.id, MAX_SHORT_FIELD_LEN)?;
+        validation::require_non_empty(&format!("{p}.title"), &g.title)?;
+        validation::require_max_len(&format!("{p}.title"), &g.title, MAX_MEMORY_CONTENT_LEN)?;
+        one_of(&format!("{p}.status"), &g.status, &GOAL_STATUSES)?;
+        validation::require_max_len(
+            &format!("{p}.sources_json"),
+            &g.sources_json,
+            MAX_CONFIG_LEN,
+        )?;
+        validation::require_optional_max_len(
+            &format!("{p}.target_date"),
+            &g.target_date,
+            MAX_SHORT_FIELD_LEN,
+        )?;
+    }
+
+    for (i, b) in a.backlog.iter().enumerate() {
+        let p = format!("athena.backlog[{i}]");
+        validation::require_max_len(&format!("{p}.id"), &b.id, MAX_SHORT_FIELD_LEN)?;
+        validation::require_non_empty(&format!("{p}.summary"), &b.summary)?;
+        validation::require_max_len(&format!("{p}.summary"), &b.summary, MAX_MEMORY_CONTENT_LEN)?;
+        one_of(&format!("{p}.kind"), &b.kind, &BACKLOG_KINDS)?;
+        one_of(&format!("{p}.status"), &b.status, &BACKLOG_STATUSES)?;
+        validation::require_optional_max_len(
+            &format!("{p}.source_episode_id"),
+            &b.source_episode_id,
+            MAX_SHORT_FIELD_LEN,
+        )?;
+    }
+
+    for (i, r) in a.rituals.iter().enumerate() {
+        let p = format!("athena.ritual[{i}]");
+        validation::require_max_len(&format!("{p}.id"), &r.id, MAX_SHORT_FIELD_LEN)?;
+        one_of(&format!("{p}.kind"), &r.kind, &RITUAL_KINDS)?;
+        validation::require_non_empty(&format!("{p}.description"), &r.description)?;
+        validation::require_max_len(
+            &format!("{p}.description"),
+            &r.description,
+            MAX_MEMORY_CONTENT_LEN,
+        )?;
+        validation::require_max_len(
+            &format!("{p}.schedule_json"),
+            &r.schedule_json,
+            MAX_CONFIG_LEN,
+        )?;
+        validation::require_max_len(
+            &format!("{p}.sources_json"),
+            &r.sources_json,
+            MAX_CONFIG_LEN,
+        )?;
+    }
+
+    for (i, d) in a.decisions.iter().enumerate() {
+        let p = format!("athena.decision[{i}]");
+        validation::require_max_len(&format!("{p}.id"), &d.id, MAX_SHORT_FIELD_LEN)?;
+        validation::require_max_len(&format!("{p}.session_id"), &d.session_id, MAX_SHORT_FIELD_LEN)?;
+        validation::require_optional_max_len(
+            &format!("{p}.persona_context"),
+            &d.persona_context,
+            MAX_NAME_LEN,
+        )?;
+        validation::require_non_empty(&format!("{p}.label"), &d.label)?;
+        validation::require_max_len(&format!("{p}.label"), &d.label, MAX_MEMORY_CONTENT_LEN)?;
+        validation::require_max_len(&format!("{p}.choice"), &d.choice, MAX_MEMORY_CONTENT_LEN)?;
+        validation::require_max_len(
+            &format!("{p}.rationale"),
+            &d.rationale,
+            MAX_MEMORY_CONTENT_LEN,
+        )?;
+    }
+
+    for (i, pr) in a.provenance.iter().enumerate() {
+        let p = format!("athena.provenance[{i}]");
+        validation::require_non_empty(&format!("{p}.fact_id"), &pr.fact_id)?;
+        validation::require_max_len(&format!("{p}.fact_id"), &pr.fact_id, MAX_SHORT_FIELD_LEN)?;
+        validation::require_non_empty(&format!("{p}.episode_id"), &pr.episode_id)?;
+        validation::require_max_len(
+            &format!("{p}.episode_id"),
+            &pr.episode_id,
+            MAX_SHORT_FIELD_LEN,
+        )?;
+    }
+
+    Ok(())
+}
+
 /// `resolutions` is the flat conflict-resolution map keyed `"<kind>:<id>"`
 /// (see [`ImportConflict`]). `user_db` is the separate user database that
 /// hosts knowledge bases; `None` (unit tests, or a caller without one) simply
@@ -4555,6 +5944,9 @@ fn import_bundle(
         twins_imported: 0,
         twins_skipped: 0,
         twin_kb_chunks_imported: 0,
+        athena_memory_imported: 0,
+        athena_identity_replaced: false,
+        reembed_queued: 0,
         import_conflicts: Vec::new(),
         bundle_file_path: None,
         warnings: Vec::new(),
@@ -5300,6 +6692,22 @@ fn import_bundle(
                 "Twin '{}': knowledge base '{}' could not be imported ({e}); the twin was imported without it.",
                 tw.name, kb.name
             )),
+        }
+    }
+
+    // Phase 13 (post-commit, other database + filesystem): Athena's memory.
+    //
+    // There is exactly one Athena, so this is a MERGE, not a conflict list —
+    // asking a user to resolve four hundred individual facts would be a worse
+    // product than any merge rule. Everything about it lands outside the
+    // transaction above: the brain tables live in the user database and the
+    // memories themselves are markdown files, neither of which the app-DB
+    // transaction covers. Same reasoning as the skills and knowledge-base
+    // phases; the ordering rule is the same too, so a rolled-back import can
+    // never leave a file or a foreign-database row behind.
+    if !is_resolution_pass {
+        if let Some(athena) = bundle.athena.as_ref() {
+            import_athena_memory(pool, user_db, athena, &now, &mut result);
         }
     }
 
@@ -6817,6 +8225,544 @@ fn import_twin_knowledge_base(
     })
 }
 
+// ============================================================================
+// Athena memory import (post-commit; merge, never a conflict list)
+// ============================================================================
+
+/// Merge a bundle's Athena section into this machine's brain.
+///
+/// **Merge, not replace.** A workspace has many personas and one Athena, so
+/// there is no "which one wins" question to put in front of the user — an
+/// incoming memory either says something the brain does not already hold, in
+/// which case it lands, or it duplicates something it does, in which case it is
+/// dropped whole. Deliberately NOT merged field-by-field: silently raising a
+/// local fact's confidence because a bundle claimed a higher one would edit the
+/// operator's own brain behind their back.
+///
+/// Never returns `Err`. Every failure is a warning on the result, because by
+/// the time this runs the app-database transaction has already committed and
+/// there is nothing left to roll back — an error here would report a failed
+/// import that in fact half-succeeded.
+fn import_athena_memory(
+    pool: &DbPool,
+    user_db: Option<&UserDbPool>,
+    athena: &AthenaMemoryExport,
+    now: &str,
+    result: &mut PortabilityImportResult,
+) {
+    // Core, part 1 — prefs live in the SYSTEM database and need no brain.
+    apply_athena_prefs(pool, athena, result);
+
+    // Core, part 2 — identity.md is a file, likewise.
+    apply_athena_identity(athena, result);
+
+    let Some(user_db) = user_db else {
+        if !athena.nodes.is_empty() || !athena.decisions.is_empty() {
+            result.warnings.push(
+                "Athena: her memory could not be imported — the brain database is not available in this context."
+                    .into(),
+            );
+        }
+        return;
+    };
+    {
+        let Ok(conn) = user_db.get() else {
+            result
+                .warnings
+                .push("Athena: her brain database could not be opened; her memory was not imported.".into());
+            return;
+        };
+        if !has_companion_schema(&conn) {
+            result.warnings.push(
+                "Athena: this installation has no companion brain yet; her memory was not imported. Open the companion once and re-import."
+                    .into(),
+            );
+            return;
+        }
+    }
+
+    if let Err(e) = import_athena_sessions(user_db, athena, result) {
+        result
+            .warnings
+            .push(format!("Athena: her conversation list could not be imported ({e})."));
+    }
+    if let Err(e) = import_athena_learned(user_db, athena, now, result) {
+        result
+            .warnings
+            .push(format!("Athena: her memory could not be imported ({e})."));
+    }
+}
+
+/// Write the portable prefs into `app_settings`.
+///
+/// The whitelist check is repeated here on purpose — `validate_athena` runs it
+/// first, but this is the function that actually writes to `app_settings`, and
+/// a boundary that exists in only one place is one refactor from not existing.
+fn apply_athena_prefs(
+    pool: &DbPool,
+    athena: &AthenaMemoryExport,
+    result: &mut PortabilityImportResult,
+) {
+    for pref in &athena.prefs {
+        if !ATHENA_PORTABLE_PREF_KEYS.contains(&pref.key.as_str()) {
+            result.warnings.push(format!(
+                "Athena: preference '{}' is not portable and was ignored.",
+                pref.key
+            ));
+            continue;
+        }
+        if let Err(e) = settings_repo::set(pool, &pref.key, &pref.value) {
+            result.warnings.push(format!(
+                "Athena: preference '{}' could not be applied ({e}).",
+                pref.key
+            ));
+        }
+    }
+}
+
+/// Replace `identity.md`, backing up whatever was there first.
+///
+/// Goes through `identity::write_full` rather than writing the file directly:
+/// that is the function the rest of the app already trusts to make a
+/// timestamped backup before it overwrites, and an import is the single most
+/// destructive thing that can happen to this file.
+fn apply_athena_identity(athena: &AthenaMemoryExport, result: &mut PortabilityImportResult) {
+    let Some(identity) = athena.identity_md.as_deref() else {
+        return;
+    };
+    match crate::companion::brain::identity::write_full(identity) {
+        Ok(backup) if backup.is_empty() => {
+            // Nothing was there — a first write, not a replacement.
+            result
+                .warnings
+                .push("Athena: identity.md was written (this machine had none).".into());
+        }
+        Ok(backup) => {
+            result.athena_identity_replaced = true;
+            result.warnings.push(format!(
+                "Athena: identity.md was replaced. The previous one is saved next to it as '{backup}'."
+            ));
+        }
+        Err(e) => result
+            .warnings
+            .push(format!("Athena: identity.md could not be written ({e}).")),
+    }
+}
+
+/// Add conversation threads that are not already here, by id.
+///
+/// The transcripts do not travel, so these land empty — titles, pins and
+/// origin only. That is said out loud in a warning rather than left for the
+/// user to discover by opening one.
+fn import_athena_sessions(
+    user_db: &UserDbPool,
+    athena: &AthenaMemoryExport,
+    result: &mut PortabilityImportResult,
+) -> Result<(), AppError> {
+    if athena.sessions.is_empty() {
+        return Ok(());
+    }
+    let mut conn = user_db.get()?;
+    let tx = conn.transaction().map_err(AppError::Database)?;
+    let mut added = 0u32;
+    for s in &athena.sessions {
+        // `claude_session_id` is left NULL: the bundle never carried one, and
+        // a resume pointer from another machine would attach the wrong CLI
+        // process to this thread.
+        let n = tx
+            .execute(
+                "INSERT OR IGNORE INTO companion_session \
+                    (id, claude_session_id, constitution_version, last_active_at, created_at, \
+                     title, status, last_read_at, pinned, origin) \
+                 VALUES (?1, NULL, 1, datetime('now'), datetime('now'), ?2, ?3, NULL, ?4, ?5)",
+                rusqlite::params![s.id, s.title, s.status, s.pinned, s.origin],
+            )
+            .map_err(AppError::Database)?;
+        added += n as u32;
+    }
+    tx.commit().map_err(AppError::Database)?;
+    if added > 0 {
+        result.warnings.push(format!(
+            "Athena: {added} conversation(s) were added to her list. They arrive empty — the messages themselves do not travel in a bundle."
+        ));
+    }
+    Ok(())
+}
+
+/// Dedup identity for one incoming memory — what makes two of them "the same".
+///
+/// Content-shaped rather than id-shaped, because a re-import of the same bundle
+/// onto a brain that has since regenerated its ids must still be a no-op, and
+/// because the same fact learned twice on two machines really is one fact.
+fn athena_dedup_key(athena: &AthenaMemoryExport, node_id: &str, kind: &str) -> Option<String> {
+    match kind {
+        "fact" => athena
+            .facts
+            .iter()
+            .find(|f| f.id == node_id)
+            .map(|f| format!("{}\u{1}{}", f.scope, f.fact_key)),
+        "procedural" => athena
+            .procedurals
+            .iter()
+            .find(|p| p.id == node_id)
+            .map(|p| p.trigger_pattern.clone()),
+        "goal" => athena
+            .goals
+            .iter()
+            .find(|g| g.id == node_id)
+            .map(|g| g.title.clone()),
+        "backlog" => athena
+            .backlog
+            .iter()
+            .find(|b| b.id == node_id)
+            .map(|b| b.summary.clone()),
+        "ritual" => athena
+            .rituals
+            .iter()
+            .find(|r| r.id == node_id)
+            .map(|r| format!("{}\u{1}{}", r.kind, r.description)),
+        _ => None,
+    }
+}
+
+/// The dedup keys already present in this brain, per kind.
+fn existing_athena_keys(
+    conn: &rusqlite::Connection,
+) -> Result<HashMap<&'static str, std::collections::HashSet<String>>, AppError> {
+    let mut out: HashMap<&'static str, std::collections::HashSet<String>> = HashMap::new();
+    let mut collect = |kind: &'static str, sql: &str| -> Result<(), AppError> {
+        let mut stmt = conn.prepare(sql).map_err(AppError::Database)?;
+        let rows = stmt
+            .query_map([], |r| r.get::<_, String>(0))
+            .map_err(AppError::Database)?;
+        let set = out.entry(kind).or_default();
+        for row in rows {
+            set.insert(row.map_err(AppError::Database)?);
+        }
+        Ok(())
+    };
+    collect(
+        "fact",
+        "SELECT scope || char(1) || fact_key FROM companion_fact",
+    )?;
+    collect(
+        "procedural",
+        "SELECT trigger_pattern FROM companion_procedural",
+    )?;
+    collect("goal", "SELECT title FROM companion_goal")?;
+    collect("backlog", "SELECT summary FROM companion_backlog_item")?;
+    collect(
+        "ritual",
+        "SELECT kind || char(1) || description FROM companion_ritual",
+    )?;
+    Ok(out)
+}
+
+/// The learned tier: markdown to disk, then rows, then a queued re-embed.
+///
+/// The order is the brain's own contract — the markdown is the source of truth
+/// and `companion_node` is an index over it, so writing rows first would leave
+/// an index pointing at files that do not exist yet. A node whose file cannot
+/// be written is dropped rather than indexed.
+fn import_athena_learned(
+    user_db: &UserDbPool,
+    athena: &AthenaMemoryExport,
+    now: &str,
+    result: &mut PortabilityImportResult,
+) -> Result<(), AppError> {
+    if athena.nodes.is_empty() && athena.decisions.is_empty() {
+        return Ok(());
+    }
+    let root = crate::companion::disk::brain_root()?;
+
+    let (existing_keys, existing_ids) = {
+        let conn = user_db.get()?;
+        let keys = existing_athena_keys(&conn)?;
+        let mut ids = std::collections::HashSet::new();
+        let mut stmt = conn
+            .prepare("SELECT id FROM companion_node")
+            .map_err(AppError::Database)?;
+        let rows = stmt
+            .query_map([], |r| r.get::<_, String>(0))
+            .map_err(AppError::Database)?;
+        for row in rows {
+            ids.insert(row.map_err(AppError::Database)?);
+        }
+        (keys, ids)
+    };
+
+    // Pass 1: decide what lands, mint replacement ids for the (vanishingly
+    // rare) case where an incoming id is already taken by a DIFFERENT memory,
+    // and write the markdown.
+    let mut taken_ids = existing_ids;
+    let mut id_map: HashMap<&str, String> = HashMap::new();
+    let mut planned: Vec<(&AthenaNodeExport, String, String)> = Vec::new(); // (node, new id, new rel path)
+    let mut skipped_duplicates = 0u32;
+
+    for node in &athena.nodes {
+        let seen = athena_dedup_key(athena, &node.id, &node.kind);
+        let Some(key) = seen else {
+            result.warnings.push(format!(
+                "Athena: {} '{}' arrived without its detail row and was skipped.",
+                node.kind, node.id
+            ));
+            continue;
+        };
+        if existing_keys
+            .get(node.kind.as_str())
+            .is_some_and(|s| s.contains(&key))
+        {
+            skipped_duplicates += 1;
+            continue;
+        }
+
+        let new_id = if taken_ids.contains(&node.id) {
+            let fresh = format!(
+                "{}_{}",
+                node.id.split('_').next().unwrap_or("mem"),
+                &uuid::Uuid::new_v4().simple().to_string()[..8]
+            );
+            result.warnings.push(format!(
+                "Athena: {} '{}' collided with an existing id and landed as '{fresh}'.",
+                node.kind, node.id
+            ));
+            fresh
+        } else {
+            node.id.clone()
+        };
+        // The node id is embedded in its filename; keep the two in step.
+        let rel_path = if new_id == node.id {
+            node.file_path.clone()
+        } else {
+            node.file_path.replace(&node.id, &new_id)
+        };
+
+        let abs = root.join(&rel_path);
+        if let Some(parent) = abs.parent() {
+            if let Err(e) = std::fs::create_dir_all(parent) {
+                result.warnings.push(format!(
+                    "Athena: {} '{}' could not be saved ({e}); skipped.",
+                    node.kind, node.id
+                ));
+                continue;
+            }
+        }
+        if let Err(e) = std::fs::write(&abs, &node.body) {
+            result.warnings.push(format!(
+                "Athena: {} '{}' could not be saved ({e}); skipped.",
+                node.kind, node.id
+            ));
+            continue;
+        }
+
+        taken_ids.insert(new_id.clone());
+        id_map.insert(node.id.as_str(), new_id.clone());
+        planned.push((node, new_id, rel_path));
+    }
+
+    // Pass 2: the index rows, in one transaction over the brain database.
+    let mut conn = user_db.get()?;
+    let tx = conn.transaction().map_err(AppError::Database)?;
+    let remap = |id: &Option<String>| -> Option<String> {
+        // A superseded fact that did not travel leaves a dangling pointer;
+        // NULL is the honest value for "the thing this replaced is not here".
+        id.as_deref().and_then(|i| id_map.get(i).cloned())
+    };
+
+    let mut nodes_written = 0u32;
+    for (node, new_id, rel_path) in &planned {
+        tx.execute(
+            "INSERT INTO companion_node \
+                (id, kind, file_path, content_hash, importance, embedding_model, embedding_dims, \
+                 body_excerpt, created_at, updated_at, session_id) \
+             VALUES (?1,?2,?3,?4,?5,NULL,NULL,?6,?7,?8,?9)",
+            rusqlite::params![
+                new_id,
+                node.kind,
+                rel_path,
+                node.content_hash,
+                node.importance,
+                node.body_excerpt,
+                node.created_at,
+                node.updated_at,
+                node.session_id,
+            ],
+        )
+        .map_err(AppError::Database)?;
+        nodes_written += 1;
+
+        match node.kind.as_str() {
+            "fact" => {
+                if let Some(f) = athena.facts.iter().find(|f| f.id == node.id) {
+                    tx.execute(
+                        "INSERT INTO companion_fact \
+                            (id, scope, fact_key, confidence, supersedes_id, contradicts_id, \
+                             last_seen_at, last_decayed_at) \
+                         VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
+                        rusqlite::params![
+                            new_id,
+                            f.scope,
+                            f.fact_key,
+                            f.confidence,
+                            remap(&f.supersedes_id),
+                            remap(&f.contradicts_id),
+                            f.last_seen_at,
+                            f.last_decayed_at,
+                        ],
+                    )
+                    .map_err(AppError::Database)?;
+                }
+            }
+            "procedural" => {
+                if let Some(p) = athena.procedurals.iter().find(|p| p.id == node.id) {
+                    tx.execute(
+                        "INSERT INTO companion_procedural \
+                            (id, scope, trigger_pattern, confidence, supersedes_id, last_used_at, \
+                             last_decayed_at) \
+                         VALUES (?1,?2,?3,?4,?5,?6,?7)",
+                        rusqlite::params![
+                            new_id,
+                            p.scope,
+                            p.trigger_pattern,
+                            p.confidence,
+                            remap(&p.supersedes_id),
+                            p.last_used_at,
+                            p.last_decayed_at,
+                        ],
+                    )
+                    .map_err(AppError::Database)?;
+                }
+            }
+            "goal" => {
+                if let Some(g) = athena.goals.iter().find(|g| g.id == node.id) {
+                    tx.execute(
+                        "INSERT INTO companion_goal \
+                            (id, title, status, priority, target_date, sources_json, completed_at, \
+                             created_at, updated_at) \
+                         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)",
+                        rusqlite::params![
+                            new_id,
+                            g.title,
+                            g.status,
+                            g.priority,
+                            g.target_date,
+                            g.sources_json,
+                            g.completed_at,
+                            g.created_at,
+                            g.updated_at,
+                        ],
+                    )
+                    .map_err(AppError::Database)?;
+                }
+            }
+            "backlog" => {
+                if let Some(b) = athena.backlog.iter().find(|b| b.id == node.id) {
+                    tx.execute(
+                        "INSERT INTO companion_backlog_item \
+                            (id, summary, kind, status, source_episode_id, reminded_count, \
+                             created_at, resolved_at) \
+                         VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
+                        rusqlite::params![
+                            new_id,
+                            b.summary,
+                            b.kind,
+                            b.status,
+                            b.source_episode_id,
+                            b.reminded_count,
+                            b.created_at,
+                            b.resolved_at,
+                        ],
+                    )
+                    .map_err(AppError::Database)?;
+                }
+            }
+            "ritual" => {
+                if let Some(r) = athena.rituals.iter().find(|r| r.id == node.id) {
+                    tx.execute(
+                        "INSERT INTO companion_ritual \
+                            (id, kind, description, schedule_json, active, sources_json, \
+                             created_at, updated_at) \
+                         VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
+                        rusqlite::params![
+                            new_id,
+                            r.kind,
+                            r.description,
+                            r.schedule_json,
+                            r.active,
+                            r.sources_json,
+                            r.created_at,
+                            r.updated_at,
+                        ],
+                    )
+                    .map_err(AppError::Database)?;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    // Provenance. The episode ids dangle by design — the conversations do not
+    // travel — and both `semantic::load_sources` and `procedural::load_sources`
+    // read this table with no join, so a dangling id comes back verbatim and
+    // never errors. What survives is "she believes this for three separate
+    // reasons", which is the part worth carrying.
+    let mut dangling = 0u32;
+    for pr in &athena.provenance {
+        let Some(fact_id) = id_map.get(pr.fact_id.as_str()) else {
+            continue;
+        };
+        tx.execute(
+            "INSERT OR IGNORE INTO companion_provenance (fact_id, episode_id) VALUES (?1, ?2)",
+            rusqlite::params![fact_id, pr.episode_id],
+        )
+        .map_err(AppError::Database)?;
+        dangling += 1;
+    }
+
+    // Design decisions dedup on id — they have no content key, and unlike a
+    // fact there is no natural "same decision, said twice".
+    let mut decisions_written = 0u32;
+    for d in &athena.decisions {
+        let n = tx
+            .execute(
+                "INSERT OR IGNORE INTO companion_design_decision \
+                    (id, session_id, persona_context, label, choice, rationale, \
+                     decision_timestamp, created_at) \
+                 VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
+                rusqlite::params![
+                    d.id,
+                    d.session_id,
+                    d.persona_context,
+                    d.label,
+                    d.choice,
+                    d.rationale,
+                    d.decision_timestamp,
+                    d.created_at,
+                ],
+            )
+            .map_err(AppError::Database)?;
+        decisions_written += n as u32;
+    }
+
+    tx.commit().map_err(AppError::Database)?;
+    let _ = now;
+
+    result.athena_memory_imported += nodes_written + decisions_written;
+    // Only nodes carry vectors; decisions are never embedded.
+    result.reembed_queued += nodes_written;
+    if skipped_duplicates > 0 {
+        result.warnings.push(format!(
+            "Athena: {skipped_duplicates} memory item(s) were already in her brain and were left alone."
+        ));
+    }
+    if dangling > 0 {
+        result.warnings.push(format!(
+            "Athena: {dangling} provenance link(s) point at conversations that do not travel in a bundle. The memories keep their sourcing; the conversations themselves are not here."
+        ));
+    }
+    Ok(())
+}
+
 /// What [`import_twin_knowledge_base`] landed.
 struct ImportedKb {
     /// Id of the newly created knowledge base — queued for a background
@@ -7200,6 +9146,201 @@ fn parse_make_preview(v: &serde_json::Value) -> Result<Vec<CompetitiveImportPrev
 // Unified credential encryption helpers (shared by export_full / export_selective)
 // ============================================================================
 
+/// Format marker for the `encrypted_twins` envelope.
+const TWINS_EXPORT_FORMAT: &str = "personas_twins_v1";
+/// Format marker for the `encrypted_athena` envelope.
+const ATHENA_EXPORT_FORMAT: &str = "personas_athena_v1";
+
+/// Encrypt any serializable section into a `CredentialExportEnvelope`.
+///
+/// Same AES-256-GCM + PBKDF2-HMAC-SHA256 machinery the credential envelope has
+/// shipped with — this is a factoring-out, not new cryptography. Each call
+/// draws a fresh salt and nonce, so two sections sealed with the same
+/// passphrase share no key material and either can be decrypted alone. The
+/// `format` marker is what makes a section pasted into the wrong slot fail
+/// loudly instead of decrypting into a confusing serde error.
+fn encrypt_section<T: Serialize>(
+    value: &T,
+    passphrase: &str,
+    format: &str,
+) -> Result<CredentialExportEnvelope, AppError> {
+    let plaintext = serde_json::to_vec(value)
+        .map_err(|e| AppError::Internal(format!("Serialization failed: {e}")))?;
+
+    use aes_gcm::aead::rand_core::RngCore;
+    let mut salt = [0u8; 16];
+    let mut nonce_bytes = [0u8; 12];
+    OsRng.fill_bytes(&mut salt);
+    OsRng.fill_bytes(&mut nonce_bytes);
+
+    let key = derive_key(passphrase, &salt);
+    let cipher = Aes256Gcm::new_from_slice(&key)
+        .map_err(|e| AppError::Internal(format!("Cipher init failed: {e}")))?;
+    let nonce = Nonce::from_slice(&nonce_bytes);
+    let ciphertext = cipher
+        .encrypt(nonce, plaintext.as_ref())
+        .map_err(|e| AppError::Internal(format!("Encryption failed: {e}")))?;
+
+    Ok(CredentialExportEnvelope {
+        format: format.into(),
+        salt: B64.encode(salt),
+        nonce: B64.encode(nonce_bytes),
+        ciphertext: B64.encode(ciphertext),
+    })
+}
+
+/// Inverse of [`encrypt_section`]. A wrong passphrase surfaces as a decryption
+/// failure, never as a partial read.
+fn decrypt_section<T: serde::de::DeserializeOwned>(
+    envelope: &CredentialExportEnvelope,
+    passphrase: &str,
+    format: &str,
+) -> Result<T, AppError> {
+    if envelope.format != format {
+        return Err(AppError::Validation(format!(
+            "Unexpected encrypted section format: {} (expected {format})",
+            envelope.format
+        )));
+    }
+    let salt = B64
+        .decode(&envelope.salt)
+        .map_err(|e| AppError::Validation(format!("Invalid salt: {e}")))?;
+    let nonce_bytes = B64
+        .decode(&envelope.nonce)
+        .map_err(|e| AppError::Validation(format!("Invalid nonce: {e}")))?;
+    let ciphertext = B64
+        .decode(&envelope.ciphertext)
+        .map_err(|e| AppError::Validation(format!("Invalid ciphertext: {e}")))?;
+
+    let key = derive_key(passphrase, &salt);
+    let cipher = Aes256Gcm::new_from_slice(&key)
+        .map_err(|e| AppError::Internal(format!("Cipher init failed: {e}")))?;
+    let nonce = Nonce::from_slice(&nonce_bytes);
+    let plaintext = cipher
+        .decrypt(nonce, ciphertext.as_ref())
+        .map_err(|_| AppError::Validation("Wrong passphrase or corrupted data".into()))?;
+
+    serde_json::from_slice(&plaintext)
+        .map_err(|e| AppError::Validation(format!("Decrypted section is not valid JSON: {e}")))
+}
+
+/// Move `twins` and `athena` into their encrypted envelopes, leaving the
+/// plaintext fields empty.
+///
+/// Wave-1 decision: **both sections always travel encrypted.** A twin is a
+/// model of a real person's voice and Athena's `identity.md` is a dossier on
+/// the operator; a zip that anyone can open is the wrong container for either.
+/// The passphrase is the same one that seals credential secrets, so the user
+/// types it once.
+///
+/// By the time this runs a passphrase-less export has already declined to
+/// collect the sections (see `SensitiveSections`), so the error branch is a
+/// backstop against a future caller that forgets — cheaper than discovering the
+/// omission in a shipped plaintext bundle.
+fn seal_sensitive_sections(
+    bundle: &mut PortabilityBundle,
+    passphrase: Option<&str>,
+) -> Result<(), AppError> {
+    let has_twins = !bundle.twins.is_empty();
+    let has_athena = bundle.athena.as_ref().is_some_and(|a| !a.is_empty());
+    if !has_twins && !has_athena {
+        return Ok(());
+    }
+    let Some(pp) = usable_passphrase(passphrase) else {
+        return Err(AppError::Validation(format!(
+            "Digital twins and Athena's memory travel encrypted only. Enter a passphrase of at least {MIN_PASSPHRASE_LEN} characters."
+        )));
+    };
+
+    if has_twins {
+        bundle.encrypted_twins = Some(encrypt_section(
+            &bundle.twins,
+            pp,
+            TWINS_EXPORT_FORMAT,
+        )?);
+        bundle.twins = Vec::new();
+    }
+    if has_athena {
+        bundle.encrypted_athena = Some(encrypt_section(
+            &bundle.athena,
+            pp,
+            ATHENA_EXPORT_FORMAT,
+        )?);
+        bundle.athena = None;
+    }
+    // Same rule the credential envelope already established: an encrypted
+    // payload means format 3.
+    bundle.format_version = 3;
+    Ok(())
+}
+
+/// Inverse of [`seal_sensitive_sections`], run before validation so the rest of
+/// the importer never has to know the sections were ever encrypted.
+///
+/// A missing or wrong passphrase is a WARNING, not a failure. That follows the
+/// shipped credential behaviour, and the alternative is worse: refusing the
+/// whole file would mean a user who wants the personas out of a bundle cannot
+/// have them because they lost the passphrase for a twin they did not want.
+fn unseal_sensitive_sections(
+    bundle: &mut PortabilityBundle,
+    passphrase: Option<&str>,
+    warnings: &mut Vec<String>,
+) {
+    let pp = passphrase.filter(|p| !p.is_empty());
+
+    // Each section is decrypted into a local first so the immutable borrow of
+    // the envelope ends before the plaintext field is assigned.
+    let twins = match (bundle.encrypted_twins.as_ref(), pp) {
+        (None, _) => None,
+        (Some(_), None) => {
+            warnings.push(
+                "This bundle contains encrypted digital twins. No passphrase was given, so they were not imported."
+                    .into(),
+            );
+            None
+        }
+        (Some(env), Some(pp)) => {
+            match decrypt_section::<Vec<TwinExport>>(env, pp, TWINS_EXPORT_FORMAT) {
+                Ok(twins) => Some(twins),
+                Err(e) => {
+                    warnings.push(format!(
+                        "Encrypted digital twins could not be decrypted ({e}); they were not imported."
+                    ));
+                    None
+                }
+            }
+        }
+    };
+    if let Some(twins) = twins {
+        bundle.twins = twins;
+    }
+
+    let athena = match (bundle.encrypted_athena.as_ref(), pp) {
+        (None, _) => None,
+        (Some(_), None) => {
+            warnings.push(
+                "This bundle contains Athena's encrypted memory. No passphrase was given, so it was not imported."
+                    .into(),
+            );
+            None
+        }
+        (Some(env), Some(pp)) => {
+            match decrypt_section::<AthenaMemoryExport>(env, pp, ATHENA_EXPORT_FORMAT) {
+                Ok(athena) => Some(athena),
+                Err(e) => {
+                    warnings.push(format!(
+                        "Athena's encrypted memory could not be decrypted ({e}); it was not imported."
+                    ));
+                    None
+                }
+            }
+        }
+    };
+    if athena.is_some() {
+        bundle.athena = athena;
+    }
+}
+
 /// Build an encrypted `CredentialExportEnvelope` for embedding in a portability bundle.
 /// When `filter_ids` is Some, only credentials matching those IDs are included.
 /// When None, all credentials are included.
@@ -7247,31 +9388,7 @@ fn build_encrypted_credentials(
         credentials: entries,
     };
 
-    let plaintext = serde_json::to_vec(&bundle)
-        .map_err(|e| AppError::Internal(format!("Serialization failed: {e}")))?;
-
-    // Generate random salt and nonce
-    use aes_gcm::aead::rand_core::RngCore;
-    let mut salt = [0u8; 16];
-    let mut nonce_bytes = [0u8; 12];
-    OsRng.fill_bytes(&mut salt);
-    OsRng.fill_bytes(&mut nonce_bytes);
-
-    let key = derive_key(passphrase, &salt);
-    let cipher = Aes256Gcm::new_from_slice(&key)
-        .map_err(|e| AppError::Internal(format!("Cipher init failed: {e}")))?;
-    let nonce = Nonce::from_slice(&nonce_bytes);
-
-    let ciphertext = cipher
-        .encrypt(nonce, plaintext.as_ref())
-        .map_err(|e| AppError::Internal(format!("Encryption failed: {e}")))?;
-
-    Ok(CredentialExportEnvelope {
-        format: CREDENTIAL_EXPORT_FORMAT.into(),
-        salt: B64.encode(salt),
-        nonce: B64.encode(nonce_bytes),
-        ciphertext: B64.encode(ciphertext),
-    })
+    encrypt_section(&bundle, passphrase, CREDENTIAL_EXPORT_FORMAT)
 }
 
 /// Decrypt embedded credentials from a portability bundle and write the fields
@@ -7821,8 +9938,11 @@ mod tests {
             dev_projects: Vec::new(),
             workspace_knowledge: Vec::new(),
             twins: Vec::new(),
+            athena: None,
             export_warnings: Vec::new(),
             encrypted_credentials: None,
+            encrypted_twins: None,
+            encrypted_athena: None,
         }
     }
 
@@ -8139,7 +10259,7 @@ mod tests {
         seed_dev_project(&pool, "p1", &tmp.path().to_string_lossy());
         seed_dev_project_graph(&pool, "p1");
 
-        let bundle = build_export_bundle(&pool, None, ExportScope::Full, true, true).unwrap();
+        let bundle = build_export_bundle(&pool, None, ExportScope::Full, true, true, SensitiveSections::Include).unwrap();
         assert_eq!(bundle.dev_projects.len(), 1);
         let p = &bundle.dev_projects[0];
         assert_eq!(p.id, "p1");
@@ -8218,8 +10338,9 @@ mod tests {
             project_ids: vec!["p1".into()],
             workspace_ids: Vec::new(),
             twin_ids: Vec::new(),
+            athena_tiers: Vec::new(),
         };
-        let bundle = build_export_bundle(&pool, None, scope, true, true).unwrap();
+        let bundle = build_export_bundle(&pool, None, scope, true, true, SensitiveSections::Include).unwrap();
         assert_eq!(bundle.dev_projects.len(), 1);
         assert_eq!(bundle.dev_projects[0].id, "p1");
         // Empty workspace selection means none travel.
@@ -8232,8 +10353,9 @@ mod tests {
             project_ids: Vec::new(),
             workspace_ids: vec!["w1".into()],
             twin_ids: Vec::new(),
+            athena_tiers: Vec::new(),
         };
-        let bundle = build_export_bundle(&pool, None, scope, true, true).unwrap();
+        let bundle = build_export_bundle(&pool, None, scope, true, true, SensitiveSections::Include).unwrap();
         assert!(bundle.dev_projects.is_empty());
         assert_eq!(bundle.workspace_knowledge.len(), 1);
         assert_eq!(bundle.workspace_knowledge[0].id, "w1");
@@ -8264,8 +10386,9 @@ mod tests {
             project_ids: vec!["p1".into()],
             workspace_ids: vec!["w1".into()],
             twin_ids: Vec::new(),
+            athena_tiers: Vec::new(),
         };
-        let bundle = build_export_bundle(&pool, None, scope, true, true).unwrap();
+        let bundle = build_export_bundle(&pool, None, scope, true, true, SensitiveSections::Include).unwrap();
         assert_eq!(bundle.workspace_knowledge.len(), 1);
         let w = &bundle.workspace_knowledge[0];
         assert_eq!(w.knowledge.len(), 3);
@@ -8293,7 +10416,7 @@ mod tests {
         seed_dev_project(&pool, "p2", "/tmp/portability-sp2");
         seed_workspace_with_knowledge(&pool, "w1");
 
-        let stats = compute_export_stats(&pool).unwrap();
+        let stats = compute_export_stats(&pool, None).unwrap();
         assert_eq!(stats.dev_project_count, 2);
         assert_eq!(stats.workspace_knowledge_count, 3);
     }
@@ -8378,6 +10501,9 @@ mod tests {
             twins_imported: 0,
             twins_skipped: 0,
             twin_kb_chunks_imported: 0,
+            athena_memory_imported: 0,
+            athena_identity_replaced: false,
+            reembed_queued: 0,
             import_conflicts: Vec::new(),
             bundle_file_path: None,
             warnings: Vec::new(),
@@ -8401,7 +10527,7 @@ mod tests {
             )
             .unwrap();
         }
-        build_export_bundle(&source, None, ExportScope::Full, true, true).unwrap()
+        build_export_bundle(&source, None, ExportScope::Full, true, true, SensitiveSections::Include).unwrap()
     }
 
     #[test]
@@ -9000,7 +11126,7 @@ mod tests {
     }
 
     fn twin_bundle(pool: &DbPool, user_db: Option<&UserDbPool>) -> PortabilityBundle {
-        build_export_bundle(pool, user_db, ExportScope::Full, true, true).unwrap()
+        build_export_bundle(pool, user_db, ExportScope::Full, true, true, SensitiveSections::Include).unwrap()
     }
 
     /// AC1 — every exported column survives a round trip, `summary` and
@@ -9371,7 +11497,7 @@ mod tests {
             let conn = pool.get().unwrap();
             conn.execute("UPDATE twin_profiles SET is_active = 0", []).unwrap();
         }
-        let stats = compute_export_stats(&pool).unwrap();
+        let stats = compute_export_stats(&pool, None).unwrap();
         assert_eq!(stats.twin_count as usize, MAX_TWINS + 2);
         assert!(stats
             .warnings
@@ -9394,8 +11520,9 @@ mod tests {
             project_ids: Vec::new(),
             workspace_ids: Vec::new(),
             twin_ids: vec!["t2".into()],
+            athena_tiers: Vec::new(),
         };
-        let bundle = build_export_bundle(&pool, None, scope, true, true).unwrap();
+        let bundle = build_export_bundle(&pool, None, scope, true, true, SensitiveSections::Include).unwrap();
         assert_eq!(bundle.twins.len(), 1);
         assert_eq!(bundle.twins[0].name, "Personal Twin");
 
@@ -9406,8 +11533,9 @@ mod tests {
             project_ids: Vec::new(),
             workspace_ids: Vec::new(),
             twin_ids: Vec::new(),
+            athena_tiers: Vec::new(),
         };
-        let bundle = build_export_bundle(&pool, None, scope, true, true).unwrap();
+        let bundle = build_export_bundle(&pool, None, scope, true, true, SensitiveSections::Include).unwrap();
         assert!(bundle.twins.is_empty());
     }
 
@@ -9662,5 +11790,915 @@ mod tests {
             .warnings
             .iter()
             .any(|w| w.contains("unknown resolution 'nonsense'")));
+    }
+
+    // ========================================================================
+    // Athena memory (WP2)
+    // ========================================================================
+
+    /// A throwaway brain directory. `brain_root()` honours `PERSONAS_HOME`, so
+    /// pointing it at a temp dir gives every Athena test a real filesystem to
+    /// write markdown into without touching the developer's own brain.
+    ///
+    /// The guard restores the previous value on drop AND serialises every
+    /// Athena test through one mutex: `PERSONAS_HOME` is process-global, and
+    /// two tests running in parallel would each see the other's brain.
+    struct BrainHome {
+        dir: std::path::PathBuf,
+        prev: Option<String>,
+        _lock: std::sync::MutexGuard<'static, ()>,
+    }
+
+    static BRAIN_HOME_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    impl BrainHome {
+        fn new() -> Self {
+            let lock = BRAIN_HOME_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+            let dir = std::env::temp_dir().join(format!("personas_brain_{}", uuid::Uuid::new_v4()));
+            std::fs::create_dir_all(dir.join("companion-brain")).unwrap();
+            let prev = std::env::var("PERSONAS_HOME").ok();
+            std::env::set_var("PERSONAS_HOME", &dir);
+            Self {
+                dir,
+                prev,
+                _lock: lock,
+            }
+        }
+
+        fn root(&self) -> std::path::PathBuf {
+            self.dir.join("companion-brain")
+        }
+
+        fn write(&self, rel: &str, body: &str) {
+            let p = self.root().join(rel);
+            std::fs::create_dir_all(p.parent().unwrap()).unwrap();
+            std::fs::write(p, body).unwrap();
+        }
+    }
+
+    impl Drop for BrainHome {
+        fn drop(&mut self) {
+            match self.prev.take() {
+                Some(v) => std::env::set_var("PERSONAS_HOME", v),
+                None => std::env::remove_var("PERSONAS_HOME"),
+            }
+        }
+    }
+
+    /// Re-point `PERSONAS_HOME` at a fresh directory so an import writes onto a
+    /// machine that is not the one the bundle came from. Takes no lock — the
+    /// caller already holds it through its own [`BrainHome`].
+    struct BrainHomeSwap {
+        dir: std::path::PathBuf,
+        prev: Option<String>,
+    }
+
+    impl BrainHomeSwap {
+        fn to_fresh() -> Self {
+            let dir = std::env::temp_dir().join(format!("personas_brain_{}", uuid::Uuid::new_v4()));
+            std::fs::create_dir_all(dir.join("companion-brain")).unwrap();
+            let prev = std::env::var("PERSONAS_HOME").ok();
+            std::env::set_var("PERSONAS_HOME", &dir);
+            Self { dir, prev }
+        }
+
+        fn root(&self) -> std::path::PathBuf {
+            self.dir.join("companion-brain")
+        }
+    }
+
+    impl Drop for BrainHomeSwap {
+        fn drop(&mut self) {
+            match self.prev.take() {
+                Some(v) => std::env::set_var("PERSONAS_HOME", v),
+                None => std::env::remove_var("PERSONAS_HOME"),
+            }
+        }
+    }
+
+    fn seed_node(user_db: &UserDbPool, id: &str, kind: &str, rel_path: &str, importance: i64) {
+        let conn = user_db.get().unwrap();
+        conn.execute(
+            "INSERT INTO companion_node \
+                (id, kind, file_path, content_hash, importance, embedding_model, embedding_dims, \
+                 body_excerpt, created_at, updated_at) \
+             VALUES (?1,?2,?3,'sha256:abc',?4,'AllMiniLML6V2Q',384,?5,\
+                     '2026-01-01T00:00:00Z','2026-01-02T00:00:00Z')",
+            rusqlite::params![id, kind, rel_path, importance, format!("excerpt of {id}")],
+        )
+        .unwrap();
+    }
+
+    /// A brain with one of every learned kind, plus every excluded neighbour a
+    /// real brain would have sitting next to them. Each excluded row carries a
+    /// distinctive sentinel so a leak is visible rather than inferred.
+    fn seed_athena_brain(home: &BrainHome, user_db: &UserDbPool) {
+        let conn = user_db.get().unwrap();
+
+        // --- core ---
+        home.write("identity.md", "# Michal\n\n- Ships on Fridays\n");
+        home.write("constitution.md", "SECRET-CONSTITUTION-BODY\n");
+        home.write(
+            "constitution.bak-20260101T000000.md",
+            "SECRET-OLD-CONSTITUTION\n",
+        );
+        home.write("cockpit.md", "SECRET-COCKPIT\n");
+        home.write("dashboard.md", "SECRET-DASHBOARD\n");
+        home.write("reflections/2026-01-01_ref_1.md", "SECRET-REFLECTION\n");
+        home.write("episodes-archive-20260101T000000/old.md", "SECRET-ARCHIVE\n");
+
+        conn.execute(
+            "INSERT INTO companion_session (id, claude_session_id, title, status, pinned, origin) \
+             VALUES ('default','SECRET-RESUME-POINTER','Q3 planning','active',1,'user')",
+            [],
+        )
+        .unwrap();
+
+        // --- learned: facts, one superseding the other ---
+        home.write("semantic/user/fact_old_editor.md", "Michal used vim.\n");
+        home.write("semantic/user/fact_new_editor.md", "Michal uses Zed.\n");
+        seed_node(
+            user_db,
+            "fact_old",
+            "fact",
+            "semantic/user/fact_old_editor.md",
+            0,
+        );
+        seed_node(
+            user_db,
+            "fact_new",
+            "fact",
+            "semantic/user/fact_new_editor.md",
+            5,
+        );
+        conn.execute(
+            "INSERT INTO companion_fact \
+                (id, scope, fact_key, confidence, supersedes_id, contradicts_id, last_seen_at, \
+                 last_decayed_at) \
+             VALUES ('fact_old','user','preferred_editor',0.6,NULL,NULL,\
+                     '2026-01-01T00:00:00Z',NULL)",
+            [],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO companion_fact \
+                (id, scope, fact_key, confidence, supersedes_id, contradicts_id, last_seen_at, \
+                 last_decayed_at) \
+             VALUES ('fact_new','user','editor_2026',0.93,'fact_old',NULL,\
+                     '2026-02-01T00:00:00Z','2026-03-01T00:00:00Z')",
+            [],
+        )
+        .unwrap();
+        for ep in ["ep_gone_1", "ep_gone_2"] {
+            conn.execute(
+                "INSERT INTO companion_provenance (fact_id, episode_id) VALUES ('fact_new', ?1)",
+                rusqlite::params![ep],
+            )
+            .unwrap();
+        }
+
+        // --- learned: procedural ---
+        home.write("procedurals/chat/proc_brevity.md", "Answer in one line.\n");
+        seed_node(
+            user_db,
+            "proc_1",
+            "procedural",
+            "procedurals/chat/proc_brevity.md",
+            4,
+        );
+        conn.execute(
+            "INSERT INTO companion_procedural \
+                (id, scope, trigger_pattern, confidence, supersedes_id, last_used_at, \
+                 last_decayed_at) \
+             VALUES ('proc_1','chat','when he asks a yes/no question',0.77,NULL,\
+                     '2026-02-02T00:00:00Z',NULL)",
+            [],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO companion_provenance (fact_id, episode_id) VALUES ('proc_1','ep_gone_3')",
+            [],
+        )
+        .unwrap();
+
+        // --- learned: goal / backlog / ritual ---
+        home.write("goals/goal_ship.md", "Ship the thing.\n");
+        seed_node(user_db, "goal_1", "goal", "goals/goal_ship.md", 4);
+        conn.execute(
+            "INSERT INTO companion_goal \
+                (id, title, status, priority, target_date, sources_json, completed_at, \
+                 created_at, updated_at) \
+             VALUES ('goal_1','Ship v1','active',4,'2026-06-01','[\"ep_gone_1\"]',NULL,\
+                     '2026-01-01T00:00:00Z','2026-01-02T00:00:00Z')",
+            [],
+        )
+        .unwrap();
+
+        home.write(
+            "backlog/self_promise/blog_1.md",
+            "I said I would check the logs.\n",
+        );
+        seed_node(
+            user_db,
+            "blog_1",
+            "backlog",
+            "backlog/self_promise/blog_1.md",
+            3,
+        );
+        conn.execute(
+            "INSERT INTO companion_backlog_item \
+                (id, summary, kind, status, source_episode_id, reminded_count, created_at, \
+                 resolved_at) \
+             VALUES ('blog_1','Check the deploy logs','self_promise','pending','ep_gone_1',2,\
+                     '2026-01-01T00:00:00Z',NULL)",
+            [],
+        )
+        .unwrap();
+
+        home.write("rituals/quiet_hours/ritual_1.md", "No pings after 20:00.\n");
+        seed_node(
+            user_db,
+            "ritual_1",
+            "ritual",
+            "rituals/quiet_hours/ritual_1.md",
+            2,
+        );
+        conn.execute(
+            "INSERT INTO companion_ritual \
+                (id, kind, description, schedule_json, active, sources_json, created_at, \
+                 updated_at) \
+             VALUES ('ritual_1','quiet_hours','No pings after 20:00','{\"from\":\"20:00\"}',1,\
+                     '[]','2026-01-01T00:00:00Z','2026-01-02T00:00:00Z')",
+            [],
+        )
+        .unwrap();
+
+        // --- learned: design decision (no node, no file) ---
+        conn.execute(
+            "INSERT INTO companion_design_decision \
+                (id, session_id, persona_context, label, choice, rationale, decision_timestamp, \
+                 created_at) \
+             VALUES ('dec_1','default','Research Analyst','Model','Sonnet',\
+                     'Cheaper for summarisation','2026-01-05T00:00:00Z','2026-01-05T00:00:00Z')",
+            [],
+        )
+        .unwrap();
+
+        // --- everything that must NOT travel ---
+        home.write("episodes/2026/01/01/ep_1_user.md", "SECRET-EPISODE-BODY\n");
+        seed_node(
+            user_db,
+            "ep_1",
+            "episode",
+            "episodes/2026/01/01/ep_1_user.md",
+            3,
+        );
+        seed_node(
+            user_db,
+            "doc_1",
+            "doctrine",
+            "features/personas/01-data-model.md#capabilities",
+            3,
+        );
+        seed_node(
+            user_db,
+            "ref_1",
+            "reflection",
+            "reflections/2026-01-01_ref_1.md",
+            2,
+        );
+        seed_node(user_db, "cockpit", "cockpit", "cockpit.md", 3);
+        seed_node(user_db, "dashboard", "dashboard", "dashboard.md", 3);
+        conn.execute(
+            "INSERT INTO companion_known_project (id, name, path) \
+             VALUES ('kp_1','x','C:\\SECRET-ABSOLUTE-PATH')",
+            [],
+        )
+        .unwrap();
+    }
+
+    fn seed_athena_prefs(pool: &DbPool) {
+        for (k, v) in [
+            ("companion_autonomous_mode", "true"),
+            ("companion_fleet_boldness", "bold"),
+            ("companion_profile_synthesis", "false"),
+            // Not portable — must be refused by the whitelist, never carried.
+            ("companion_profile_synthesis_last", "SECRET-LOCAL-TIMESTAMP"),
+        ] {
+            settings_repo::set(pool, k, v).unwrap();
+        }
+    }
+
+    fn athena_bundle(pool: &DbPool, user_db: &UserDbPool) -> PortabilityBundle {
+        build_export_bundle(
+            pool,
+            Some(user_db),
+            ExportScope::Full,
+            true,
+            true,
+            SensitiveSections::Include,
+        )
+        .unwrap()
+    }
+
+    /// AC1 — both tiers survive a round trip, sidecar fields included.
+    #[test]
+    fn athena_round_trips_both_tiers_with_every_sidecar_field() {
+        let home = BrainHome::new();
+        let source = init_test_db().unwrap();
+        let source_user = crate::db::init_test_user_db().unwrap();
+        seed_athena_prefs(&source);
+        seed_athena_brain(&home, &source_user);
+
+        let bundle = athena_bundle(&source, &source_user);
+        let a = bundle.athena.as_ref().expect("Athena section travels");
+
+        // Core.
+        assert!(a
+            .identity_md
+            .as_deref()
+            .unwrap()
+            .contains("Ships on Fridays"));
+        assert_eq!(a.prefs.len(), 3, "only the three portable prefs");
+        assert_eq!(a.sessions.len(), 1);
+        assert_eq!(a.sessions[0].title.as_deref(), Some("Q3 planning"));
+
+        // Learned: five nodes, one per kind, and nothing else.
+        assert_eq!(
+            a.nodes.len(),
+            6,
+            "two facts (one superseded) plus one each of the other kinds — and no              doctrine, episode, reflection, cockpit or dashboard"
+        );
+        let mut kinds: Vec<&str> = a.nodes.iter().map(|n| n.kind.as_str()).collect();
+        kinds.sort();
+        assert_eq!(
+            kinds,
+            vec!["backlog", "fact", "fact", "goal", "procedural", "ritual"]
+        );
+        // Bodies, not just index rows.
+        let fact_node = a.nodes.iter().find(|n| n.id == "fact_new").unwrap();
+        assert_eq!(fact_node.body, "Michal uses Zed.\n");
+        assert_eq!(fact_node.importance, 5);
+
+        assert_eq!(a.facts.len(), 2, "the superseded fact is still a fact");
+        assert_eq!(a.decisions.len(), 1);
+        assert_eq!(a.provenance.len(), 3, "two for fact_new, one for proc_1");
+
+        // Now import onto a clean machine with its own brain directory.
+        let target = init_test_db().unwrap();
+        let target_user = crate::db::init_test_user_db().unwrap();
+        let target_home = BrainHomeSwap::to_fresh();
+        let result = import_bundle(&target, Some(&target_user), &bundle, &HashMap::new()).unwrap();
+
+        assert_eq!(
+            result.athena_memory_imported, 7,
+            "six nodes plus one design decision"
+        );
+        assert_eq!(result.reembed_queued, 6, "decisions are never embedded");
+
+        let conn = target_user.get().unwrap();
+        let (conf, sup, contra, decayed): (f64, Option<String>, Option<String>, Option<String>) =
+            conn.query_row(
+                "SELECT confidence, supersedes_id, contradicts_id, last_decayed_at \
+                 FROM companion_fact WHERE id = 'fact_new'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+            )
+            .unwrap();
+        assert!((conf - 0.93).abs() < 1e-9, "confidence survives");
+        assert_eq!(sup.as_deref(), Some("fact_old"), "supersedes_id remaps");
+        assert_eq!(contra, None);
+        assert_eq!(decayed.as_deref(), Some("2026-03-01T00:00:00Z"));
+
+        let importance: i64 = conn
+            .query_row(
+                "SELECT importance FROM companion_node WHERE id = 'fact_new'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(importance, 5, "importance survives");
+
+        let (label, rationale): (String, String) = conn
+            .query_row(
+                "SELECT label, rationale FROM companion_design_decision WHERE id = 'dec_1'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(label, "Model");
+        assert_eq!(rationale, "Cheaper for summarisation");
+
+        // Procedural sidecar too — confidence is the field most likely to be
+        // quietly dropped by a column-order mistake.
+        let (scope, trigger, pconf): (String, String, f64) = conn
+            .query_row(
+                "SELECT scope, trigger_pattern, confidence FROM companion_procedural \
+                 WHERE id = 'proc_1'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .unwrap();
+        assert_eq!(scope, "chat");
+        assert_eq!(trigger, "when he asks a yes/no question");
+        assert!((pconf - 0.77).abs() < 1e-9);
+
+        // The markdown landed on THIS machine's brain root, re-anchored.
+        let body =
+            std::fs::read_to_string(target_home.root().join("semantic/user/fact_new_editor.md"))
+                .expect("markdown written before the row");
+        assert_eq!(body, "Michal uses Zed.\n");
+
+        // Prefs applied to the target's app database; the non-portable one not.
+        assert_eq!(
+            settings_repo::get(&target, "companion_fleet_boldness").unwrap(),
+            Some("bold".to_string())
+        );
+        assert_eq!(
+            settings_repo::get(&target, "companion_profile_synthesis_last").unwrap(),
+            None,
+            "a non-portable pref must never be written by an import"
+        );
+        drop(target_home);
+        drop(home);
+    }
+
+    /// AC2 — importing the same bundle twice adds nothing the second time.
+    /// Dedup is by CONTENT, not id, so this holds even after ids are reissued.
+    #[test]
+    fn athena_second_import_creates_no_duplicates() {
+        let home = BrainHome::new();
+        let source = init_test_db().unwrap();
+        let source_user = crate::db::init_test_user_db().unwrap();
+        seed_athena_prefs(&source);
+        seed_athena_brain(&home, &source_user);
+        let bundle = athena_bundle(&source, &source_user);
+
+        let target = init_test_db().unwrap();
+        let target_user = crate::db::init_test_user_db().unwrap();
+        let target_home = BrainHomeSwap::to_fresh();
+
+        let first = import_bundle(&target, Some(&target_user), &bundle, &HashMap::new()).unwrap();
+        assert_eq!(first.athena_memory_imported, 7);
+
+        let second = import_bundle(&target, Some(&target_user), &bundle, &HashMap::new()).unwrap();
+        assert_eq!(
+            second.athena_memory_imported, 0,
+            "second import of the same bundle adds nothing"
+        );
+        assert_eq!(second.reembed_queued, 0);
+        assert!(second
+            .warnings
+            .iter()
+            .any(|w| w.contains("already in her brain")));
+
+        let conn = target_user.get().unwrap();
+        for (table, expected) in [
+            ("companion_fact", 2),
+            ("companion_procedural", 1),
+            ("companion_goal", 1),
+            ("companion_backlog_item", 1),
+            ("companion_ritual", 1),
+            ("companion_design_decision", 1),
+            ("companion_node", 6),
+        ] {
+            let n: i64 = conn
+                .query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |r| r.get(0))
+                .unwrap();
+            assert_eq!(n, expected, "{table} must not gain a duplicate");
+        }
+        drop(target_home);
+        drop(home);
+    }
+
+    /// AC3 — identity.md is backed up before it is replaced.
+    #[test]
+    fn athena_import_backs_up_identity_before_replacing_it() {
+        let home = BrainHome::new();
+        let source = init_test_db().unwrap();
+        let source_user = crate::db::init_test_user_db().unwrap();
+        seed_athena_brain(&home, &source_user);
+        let bundle = athena_bundle(&source, &source_user);
+
+        let target = init_test_db().unwrap();
+        let target_user = crate::db::init_test_user_db().unwrap();
+        let target_home = BrainHomeSwap::to_fresh();
+        // The target already knows someone. That file must not just vanish.
+        std::fs::write(
+            target_home.root().join("identity.md"),
+            "# Someone else\n\n- Prior beliefs\n",
+        )
+        .unwrap();
+
+        let result = import_bundle(&target, Some(&target_user), &bundle, &HashMap::new()).unwrap();
+        assert!(result.athena_identity_replaced);
+
+        let replaced = std::fs::read_to_string(target_home.root().join("identity.md")).unwrap();
+        assert!(replaced.contains("Ships on Fridays"));
+
+        let backups: Vec<String> = std::fs::read_dir(target_home.root())
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .map(|e| e.file_name().to_string_lossy().to_string())
+            .filter(|n| n.starts_with("identity.bak-"))
+            .collect();
+        assert_eq!(backups.len(), 1, "exactly one backup, named by identity.rs");
+        let prior = std::fs::read_to_string(target_home.root().join(&backups[0])).unwrap();
+        assert!(
+            prior.contains("Prior beliefs"),
+            "the backup holds what was there before, not the incoming file"
+        );
+        drop(target_home);
+        drop(home);
+    }
+
+    /// AC4 — nothing excluded reaches the bundle. Asserted three ways: by
+    /// field NAME (no excluded table leaks in as a key), by VALUE (no excluded
+    /// node kind or on-disk file appears), and by SENTINEL (each excluded row
+    /// was seeded with a distinctive string that must be absent).
+    #[test]
+    fn athena_bundle_excludes_every_forbidden_name() {
+        let home = BrainHome::new();
+        let source = init_test_db().unwrap();
+        let source_user = crate::db::init_test_user_db().unwrap();
+        seed_athena_prefs(&source);
+        seed_athena_brain(&home, &source_user);
+
+        let bundle = athena_bundle(&source, &source_user);
+        let athena = bundle.athena.as_ref().expect("section present");
+        let value = serde_json::to_value(athena).unwrap();
+
+        // 1. By name — no excluded table or column appears as a JSON key.
+        fn keys(v: &serde_json::Value, out: &mut Vec<String>) {
+            match v {
+                serde_json::Value::Object(m) => {
+                    for (k, child) in m {
+                        out.push(k.clone());
+                        keys(child, out);
+                    }
+                }
+                serde_json::Value::Array(items) => items.iter().for_each(|c| keys(c, out)),
+                _ => {}
+            }
+        }
+        let mut all_keys = Vec::new();
+        keys(&value, &mut all_keys);
+        for forbidden in ATHENA_FORBIDDEN_NAMES {
+            assert!(
+                !all_keys.iter().any(|k| k.contains(forbidden)),
+                "bundle must not carry a `{forbidden}` field"
+            );
+        }
+
+        // 2. By value — no excluded node kind or on-disk file.
+        for n in &athena.nodes {
+            for forbidden in ATHENA_FORBIDDEN_CONTENT {
+                assert_ne!(n.kind, forbidden, "node kind `{forbidden}` must not travel");
+                assert!(
+                    !n.file_path.contains(forbidden),
+                    "file `{forbidden}` must not travel (saw {})",
+                    n.file_path
+                );
+            }
+        }
+
+        // 3. By sentinel — every excluded row was seeded with a marker.
+        let json = serde_json::to_string(&bundle).unwrap();
+        for sentinel in [
+            "SECRET-RESUME-POINTER", // companion_session.claude_session_id
+            "SECRET-EPISODE-BODY",   // an episode's markdown
+            "SECRET-CONSTITUTION-BODY",
+            "SECRET-OLD-CONSTITUTION",
+            "SECRET-COCKPIT",
+            "SECRET-DASHBOARD",
+            "SECRET-REFLECTION",
+            "SECRET-ARCHIVE",
+            "SECRET-ABSOLUTE-PATH",   // companion_known_project
+            "SECRET-LOCAL-TIMESTAMP", // a non-portable app_setting
+        ] {
+            assert!(!json.contains(sentinel), "bundle leaked {sentinel}");
+        }
+        drop(home);
+    }
+
+    /// AC5 — provenance whose episode never travelled degrades to a plain
+    /// dangling id: `load_sources` reads `companion_provenance` with no join,
+    /// so the readers return it verbatim instead of erroring. Asserted through
+    /// the public readers, on state an import actually produced, rather than
+    /// by reading the SQL and trusting it.
+    #[test]
+    fn load_sources_tolerates_provenance_whose_episode_is_absent() {
+        let home = BrainHome::new();
+        let source = init_test_db().unwrap();
+        let source_user = crate::db::init_test_user_db().unwrap();
+        seed_athena_brain(&home, &source_user);
+        let bundle = athena_bundle(&source, &source_user);
+
+        let target = init_test_db().unwrap();
+        let target_user = crate::db::init_test_user_db().unwrap();
+        let target_home = BrainHomeSwap::to_fresh();
+        import_bundle(&target, Some(&target_user), &bundle, &HashMap::new()).unwrap();
+
+        // The episodes are definitely not here.
+        {
+            let conn = target_user.get().unwrap();
+            let episodes: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM companion_node WHERE kind = 'episode'",
+                    [],
+                    |r| r.get(0),
+                )
+                .unwrap();
+            assert_eq!(episodes, 0);
+        }
+
+        let facts = crate::companion::brain::semantic::list_facts(&target_user, None, true, 50)
+            .expect("list_facts must not error on dangling provenance");
+        let imported = facts.iter().find(|f| f.id == "fact_new").expect("fact");
+        assert_eq!(
+            imported.sources,
+            vec!["ep_gone_1".to_string(), "ep_gone_2".to_string()],
+            "the sourcing survives even though the conversations did not"
+        );
+
+        let rules = crate::companion::brain::procedural::list_rules(&target_user, None, true, 50)
+            .expect("list_rules must not error on dangling provenance");
+        let rule = rules.iter().find(|r| r.id == "proc_1").expect("rule");
+        assert_eq!(rule.sources, vec!["ep_gone_3".to_string()]);
+
+        // And a memory with NO provenance at all reads as an empty list.
+        {
+            let conn = target_user.get().unwrap();
+            conn.execute("DELETE FROM companion_provenance", []).unwrap();
+        }
+        let facts = crate::companion::brain::semantic::list_facts(&target_user, None, true, 50)
+            .expect("no provenance is still not an error");
+        assert!(facts.iter().all(|f| f.sources.is_empty()));
+        drop(target_home);
+        drop(home);
+    }
+
+    /// AC8 — both sections round-trip through their envelopes, the plaintext
+    /// fields are empty on the wire, and `format_version` says 3.
+    #[test]
+    fn twins_and_athena_round_trip_encrypted_and_bump_the_format_version() {
+        let home = BrainHome::new();
+        let source = init_test_db().unwrap();
+        let source_user = crate::db::init_test_user_db().unwrap();
+        seed_twin(&source, "t1", "Founder Twin", None);
+        seed_athena_brain(&home, &source_user);
+
+        let mut bundle = athena_bundle(&source, &source_user);
+        assert_eq!(bundle.format_version, 2, "an unsealed bundle is still v2");
+        seal_sensitive_sections(&mut bundle, Some("correct horse battery")).unwrap();
+
+        assert_eq!(bundle.format_version, 3);
+        assert!(bundle.twins.is_empty(), "plaintext twins cleared");
+        assert!(bundle.athena.is_none(), "plaintext athena cleared");
+        assert!(bundle.encrypted_twins.is_some());
+        assert!(bundle.encrypted_athena.is_some());
+
+        // Nothing recognisable on the wire.
+        let json = serde_json::to_string(&bundle).unwrap();
+        for sentinel in ["Founder Twin", "Ships on Fridays", "Michal uses Zed"] {
+            assert!(!json.contains(sentinel), "sealed bundle leaked {sentinel}");
+        }
+
+        // Wrong passphrase: a warning and empty sections, never a half-read.
+        let mut wrong: PortabilityBundle = serde_json::from_str(&json).unwrap();
+        let mut warnings = Vec::new();
+        unseal_sensitive_sections(&mut wrong, Some("not the passphrase"), &mut warnings);
+        assert!(wrong.twins.is_empty() && wrong.athena.is_none());
+        assert_eq!(warnings.len(), 2, "one warning per undecryptable section");
+
+        // No passphrase at all: same shape, different reason.
+        let mut none: PortabilityBundle = serde_json::from_str(&json).unwrap();
+        let mut warnings = Vec::new();
+        unseal_sensitive_sections(&mut none, None, &mut warnings);
+        assert_eq!(warnings.len(), 2);
+        assert!(warnings.iter().all(|w| w.contains("No passphrase")));
+
+        // Right passphrase: everything comes back, and each section decrypts
+        // independently of the other.
+        let mut good: PortabilityBundle = serde_json::from_str(&json).unwrap();
+        let mut warnings = Vec::new();
+        unseal_sensitive_sections(&mut good, Some("correct horse battery"), &mut warnings);
+        assert!(warnings.is_empty());
+        assert_eq!(good.twins.len(), 1);
+        assert_eq!(good.twins[0].name, "Founder Twin");
+        assert_eq!(good.athena.as_ref().unwrap().nodes.len(), 6);
+        // And what came back is what validation will see.
+        validate_bundle(&good).expect("decrypted bundle validates");
+        drop(home);
+    }
+
+    /// AC8 — the backend refuses an EXPLICIT selection it cannot encrypt. The
+    /// frontend gates this too, but the frontend is not the boundary.
+    #[test]
+    fn export_refuses_a_selected_sensitive_scope_without_a_passphrase() {
+        assert!(require_passphrase_for_selection(&[], &[], None).is_ok());
+        assert!(
+            require_passphrase_for_selection(&["t1".into()], &[], None).is_err(),
+            "selected twins with no passphrase must fail"
+        );
+        assert!(
+            require_passphrase_for_selection(&[], &["learned".into()], None).is_err(),
+            "a selected Athena tier with no passphrase must fail"
+        );
+        assert!(require_passphrase_for_selection(
+            &["t1".into()],
+            &["core".into()],
+            Some("longenough")
+        )
+        .is_ok());
+        // An unknown tier is its own error, not masked by the passphrase one.
+        let err =
+            require_passphrase_for_selection(&[], &["lerned".into()], Some("longenough")).unwrap_err();
+        assert!(format!("{err}").contains("unknown tier"));
+    }
+
+    /// A Full-scope export with no passphrase carries neither section — the
+    /// same trade this command already makes with credential secrets — and
+    /// says so rather than leaving the receiver to guess.
+    #[test]
+    fn full_export_without_a_passphrase_omits_both_sensitive_sections() {
+        let home = BrainHome::new();
+        let source = init_test_db().unwrap();
+        let source_user = crate::db::init_test_user_db().unwrap();
+        seed_twin(&source, "t1", "Founder Twin", None);
+        seed_athena_brain(&home, &source_user);
+
+        let bundle = build_export_bundle(
+            &source,
+            Some(&source_user),
+            ExportScope::Full,
+            true,
+            true,
+            SensitiveSections::Omit,
+        )
+        .unwrap();
+        assert!(bundle.twins.is_empty());
+        assert!(bundle.athena.is_none());
+        assert!(bundle
+            .export_warnings
+            .iter()
+            .any(|w| w.contains("without a passphrase")));
+        // Sealing a bundle with nothing sensitive in it is a no-op, not an error.
+        let mut bundle = bundle;
+        seal_sensitive_sections(&mut bundle, None).expect("nothing to seal");
+        assert_eq!(bundle.format_version, 2);
+        drop(home);
+    }
+
+    /// The export preview drives which tiers the picker offers, so an empty
+    /// tier has to read as 0 rather than as "some".
+    #[test]
+    fn export_stats_report_both_athena_tiers() {
+        let home = BrainHome::new();
+        let pool = init_test_db().unwrap();
+        let user = crate::db::init_test_user_db().unwrap();
+
+        let empty = compute_export_stats(&pool, Some(&user)).unwrap();
+        assert_eq!(empty.athena_core_count, 0);
+        assert_eq!(empty.athena_learned_count, 0);
+
+        seed_athena_prefs(&pool);
+        seed_athena_brain(&home, &user);
+        let stats = compute_export_stats(&pool, Some(&user)).unwrap();
+        // identity.md + 3 portable prefs + 1 conversation.
+        assert_eq!(stats.athena_core_count, 5);
+        // 6 learned nodes + 1 design decision; doctrine / episode / reflection /
+        // cockpit / dashboard are not learned memory.
+        assert_eq!(stats.athena_learned_count, 7);
+        drop(home);
+    }
+
+    /// Selective scope picks Athena by tier, not by id.
+    #[test]
+    fn athena_tiers_select_only_what_was_asked_for() {
+        let home = BrainHome::new();
+        let pool = init_test_db().unwrap();
+        let user = crate::db::init_test_user_db().unwrap();
+        seed_athena_prefs(&pool);
+        seed_athena_brain(&home, &user);
+
+        let scope_for = |tiers: Vec<String>| ExportScope::Selective {
+            persona_ids: Vec::new(),
+            team_ids: Vec::new(),
+            credential_ids: Vec::new(),
+            project_ids: Vec::new(),
+            workspace_ids: Vec::new(),
+            twin_ids: Vec::new(),
+            athena_tiers: tiers,
+        };
+
+        let core_only = build_export_bundle(
+            &pool,
+            Some(&user),
+            scope_for(vec!["core".into()]),
+            true,
+            true,
+            SensitiveSections::Include,
+        )
+        .unwrap();
+        let a = core_only.athena.as_ref().unwrap();
+        assert!(a.identity_md.is_some() && !a.sessions.is_empty());
+        assert!(a.nodes.is_empty() && a.decisions.is_empty());
+
+        let learned_only = build_export_bundle(
+            &pool,
+            Some(&user),
+            scope_for(vec!["learned".into()]),
+            true,
+            true,
+            SensitiveSections::Include,
+        )
+        .unwrap();
+        let a = learned_only.athena.as_ref().unwrap();
+        assert!(a.identity_md.is_none() && a.sessions.is_empty() && a.prefs.is_empty());
+        assert_eq!(a.nodes.len(), 6);
+
+        let neither = build_export_bundle(
+            &pool,
+            Some(&user),
+            scope_for(Vec::new()),
+            true,
+            true,
+            SensitiveSections::Include,
+        )
+        .unwrap();
+        assert!(neither.athena.is_none());
+        drop(home);
+    }
+
+    /// Validation is the import boundary, so the rules that matter most there
+    /// get their own test: an unknown enum (which would import fine and then
+    /// break `list_facts` at read time), a non-portable pref key (which would
+    /// let a bundle write arbitrary app settings), and a traversal path.
+    #[test]
+    fn validate_athena_rejects_bad_enums_foreign_pref_keys_and_traversal() {
+        let home = BrainHome::new();
+        let pool = init_test_db().unwrap();
+        let user = crate::db::init_test_user_db().unwrap();
+        seed_athena_prefs(&pool);
+        seed_athena_brain(&home, &user);
+
+        let good = athena_bundle(&pool, &user);
+        validate_bundle(&good).expect("a real bundle validates");
+
+        let mut bad = athena_bundle(&pool, &user);
+        bad.athena.as_mut().unwrap().facts[0].scope = "elsewhere".into();
+        assert!(validate_bundle(&bad).is_err(), "unknown fact scope refused");
+
+        let mut bad = athena_bundle(&pool, &user);
+        bad.athena.as_mut().unwrap().prefs.push(AthenaPrefExport {
+            key: "anthropic_api_key".into(),
+            value: "sk-leak".into(),
+        });
+        let err = validate_bundle(&bad).unwrap_err();
+        assert!(
+            format!("{err}").contains("not a portable Athena preference"),
+            "app_settings is not an open write surface for a bundle"
+        );
+
+        let mut bad = athena_bundle(&pool, &user);
+        bad.athena.as_mut().unwrap().nodes[0].file_path = "../../../etc/passwd".into();
+        assert!(
+            validate_bundle(&bad).is_err(),
+            "a traversal path would escape the brain directory on import"
+        );
+        drop(home);
+    }
+
+    /// A memory whose markdown is gone is dropped WITH its sidecar, by name.
+    /// Half a memory — an index row pointing at a file that does not exist —
+    /// is worse than none.
+    #[test]
+    fn athena_drops_a_node_whose_body_cannot_be_read_and_says_so() {
+        let home = BrainHome::new();
+        let pool = init_test_db().unwrap();
+        let user = crate::db::init_test_user_db().unwrap();
+        seed_athena_brain(&home, &user);
+        // Delete one memory's markdown behind the index's back.
+        std::fs::remove_file(home.root().join("semantic/user/fact_new_editor.md")).unwrap();
+
+        let mut warnings = Vec::new();
+        let a = collect_athena_export(&pool, Some(&user), AthenaTiers::both(), &mut warnings)
+            .unwrap()
+            .unwrap();
+
+        assert!(a.nodes.iter().all(|n| n.id != "fact_new"));
+        assert!(
+            a.facts.iter().all(|f| f.id != "fact_new"),
+            "the sidecar row must not survive its node"
+        );
+        assert!(
+            a.provenance.iter().all(|p| p.fact_id != "fact_new"),
+            "nor its provenance"
+        );
+        assert!(warnings
+            .iter()
+            .any(|w| w.contains("fact_new") && w.contains("no readable body")));
+        drop(home);
     }
 }
