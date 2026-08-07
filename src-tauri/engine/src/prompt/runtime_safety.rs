@@ -78,7 +78,7 @@ pub(super) fn is_invisible_runtime_char(c: char) -> bool {
 /// at prompt-assembly time -- see `assemble_prompt`.
 ///
 /// Applies:
-/// 1. Length truncation (MAX_RUNTIME_VAR_LENGTH)
+/// 1. Length truncation (MAX_RUNTIME_VAR_LENGTH) — **announced**, see step 9
 /// 2. Invisible/zero-width character stripping
 /// 3. Non-BMP Unicode stripping (homoglyph defence)
 /// 4. Section delimiter stripping (---SECTION:xxx---)
@@ -86,9 +86,18 @@ pub(super) fn is_invisible_runtime_char(c: char) -> bool {
 /// 6. Dangerous XML/HTML tag removal
 /// 7. Contextual escaping for prompt structure (headings, code fences, delimiters)
 /// 8. Recursive {{variable}} pattern neutralization
+/// 9. Truncation marker (only when step 1 actually cut something)
 pub(super) fn sanitize_runtime_variable(value: &str) -> String {
-    // 1. Truncate at UTF-8 boundary
-    let truncated = personas_core::utils::text::truncate_on_char_boundary(value, MAX_RUNTIME_VAR_LENGTH);
+    // 1. Truncate at UTF-8 boundary.
+    //
+    // The cut used to be silent: `truncate_on_char_boundary` returns a bare
+    // slice, so a 50KB value became 2000 bytes with nothing — no ellipsis, no
+    // log — telling the model that the rest existed. It would then reason over
+    // a half-sentence as if it were the whole input. Step 9 appends the marker;
+    // `variables::replace_variables` logs the key that was cut.
+    let truncated =
+        personas_core::utils::text::truncate_on_char_boundary(value, MAX_RUNTIME_VAR_LENGTH);
+    let truncated_from = (truncated.len() < value.len()).then(|| value.chars().count());
 
     // 2. Strip invisible/zero-width characters
     let clean: String = truncated
@@ -152,6 +161,28 @@ pub(super) fn sanitize_runtime_variable(value: &str) -> String {
     // 8. Neutralize {{...}} patterns to prevent recursive substitution
     let re_var = regex::Regex::new(r"\{\{(\w+)\}\}").unwrap();
     clean = re_var.replace_all(&clean, "{ {$1} }").to_string();
+
+    // 9. Announce the cut. Same shape as the codebase's other honest
+    //    truncations (`prompt::advisory`, `runner`'s omitted-memories note).
+    //    Appended AFTER sanitisation so the marker is prompt-author text the
+    //    escaping passes cannot mangle, and so the retained CONTENT still
+    //    respects MAX_RUNTIME_VAR_LENGTH.
+    //
+    //    It points at `## Input Data` deliberately. That section dumps the
+    //    whole `input_data` JSON with no cap, so the same value really is
+    //    present in full further down the prompt — the two limits are not in
+    //    conflict, they are two different jobs: this cap bounds how much
+    //    untrusted text gets spliced into TRUSTED prompt structure at a
+    //    `{{var}}` site (an injection-surface control), while `## Input Data`
+    //    is XML-boundary-isolated untrusted data and is deliberately complete
+    //    so nothing the persona was given is lost. Telling the model where the
+    //    rest is turns the divergence from a contradiction into a pointer.
+    if let Some(total_chars) = truncated_from {
+        clean.push_str(&format!(
+            "... [truncated to {MAX_RUNTIME_VAR_LENGTH} bytes here; {total_chars} chars total — \
+             the complete value is in the `## Input Data` section below]"
+        ));
+    }
 
     clean
 }
