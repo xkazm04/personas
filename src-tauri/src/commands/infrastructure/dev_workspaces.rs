@@ -351,5 +351,7 @@ pub fn dev_tools_workspace_run_miners(
     require_auth_sync(&state)?;
     let mut candidates = repo::mine_shared_findings(&state.db, &workspace_id)?;
     candidates.extend(repo::mine_shared_skills(&state.db, &workspace_id)?);
+    // Miner C — skill-methodic LESSONS.md entries (docs/skill-standard.md).
+    candidates.extend(super::skill_lessons::mine_skill_lessons(&state.db, &workspace_id)?);
     repo::ingest_candidates(&state.db, &workspace_id, &candidates, "miner", None)
 }

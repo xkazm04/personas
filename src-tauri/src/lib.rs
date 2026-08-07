@@ -2741,9 +2741,15 @@ pub fn run() {
             commands::infrastructure::skill_files::skill_files_install,
             commands::infrastructure::skill_files::skill_files_install_system,
             commands::infrastructure::skill_files::skill_files_install_preview,
+            commands::infrastructure::skill_files::skill_files_stamp_provenance,
             // Skill usage telemetry (Brainiac-adoption P1)
             commands::infrastructure::skill_usage::skill_usage_scan,
             commands::infrastructure::skill_usage::skill_usage_overview,
+            // Skill standard (versioning + lessons + offline registry —
+            // docs/skill-standard.md)
+            commands::infrastructure::skill_usage::skill_version_timeline,
+            commands::infrastructure::skill_lessons::skill_lessons_list,
+            commands::infrastructure::skill_registry_export::dev_tools_export_skill_registry,
             // Doc-rot telemetry (Brainiac-adoption P2)
             commands::infrastructure::doc_rot::doc_rot_scan,
             commands::infrastructure::doc_rot::doc_rot_overview,
