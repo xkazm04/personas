@@ -20,6 +20,7 @@ import { NearbyDevicesPanel } from './NearbyDevicesPanel';
 import { PairedDevicesPanel } from './PairedDevicesPanel';
 import { PairingCodeDialog } from './PairingCodeDialog';
 import { PairingRefusalNotice } from './PairingRefusalNotice';
+import { RemoteJobsPanel } from './RemoteJobsPanel';
 
 export default function DeviceLinkPage() {
   const { t, tx } = useTranslation();
@@ -101,6 +102,8 @@ export default function DeviceLinkPage() {
             onClearHome={(peerId) => handleSetHome(peerId, false)}
             onForget={handleForget}
           />
+
+          <RemoteJobsPanel />
 
           <NearbyDevicesPanel
             peers={link.linkablePeers}

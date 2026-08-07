@@ -15,14 +15,18 @@ export type { DevicePairingRequest, PairingRole };
 /**
  * A peer registered as one of the user's own devices.
  *
- * NOTE (worktree limitation): the committed ts-rs binding
+ * NOTE (still blocked on a cargo run): the committed ts-rs binding
  * `src/lib/bindings/OwnedDevice.ts` is STALE — it predates the pairing work and
  * is missing `isHome`, `pairedAt` and `publicKey`, all three of which the Rust
- * `owned_devices` repo selects and maps today
+ * struct declares today (`src-tauri/core/src/models/owned_device.rs`) and the
+ * repo selects and maps
  * (`src-tauri/db/src/repos/resources/owned_devices.rs::map_owned_device`).
- * Regenerating bindings is out of scope for this frontend package, so the
- * accurate shape is declared here. Delete this type and import the binding once
- * `cargo test export_bindings` has been re-run.
+ * Refreshing it requires `cargo test --manifest-path src-tauri/Cargo.toml
+ * export_bindings`, which this frontend package deliberately does not run, and
+ * no fresher copy exists anywhere in the tree (the stray generated `bindings/`
+ * dir at the repo root carries the same pre-pairing shape). So the accurate
+ * shape stays declared here. Delete this type and switch every importer to
+ * `@/lib/bindings/OwnedDevice` in the same change that re-runs export_bindings.
  */
 export interface OwnedDevice {
   /** The peer's stable identity (base58 peer_id), matching `discovered_peers`. */
