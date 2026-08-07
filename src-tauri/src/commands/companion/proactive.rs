@@ -55,39 +55,26 @@ pub async fn companion_evaluate_proactive_now(
     extra.extend(proactive::incident_triggers::incident_blocker_nudges(&state.db));
     // Fleet triggers only fire with autonomous mode on (see collect_all).
     let autonomous = crate::commands::companion::chat::autonomous_mode_enabled(&state.db);
-    let mut new_msgs =
-        proactive::evaluate_with_extra_candidates(&state.user_db, extra, autonomous)?;
-    // Athena's `schedule_proactive` commitments flow through the same
-    // emit + status transition as trigger-driven nudges, but their
-    // candidate set comes from a time-based sweep instead of
-    // [`proactive::triggers::collect_all`]. Run the sweep here so the
-    // existing scheduler cadence (manual `evaluate_proactive_now` calls,
-    // background tick, etc.) services both kinds with one entry point.
-    let due_scheduled = proactive::deliver_due_scheduled(&state.user_db)?;
-    new_msgs.extend(due_scheduled);
-    for m in &new_msgs {
-        if let Err(e) = proactive::mark_delivered(&state.user_db, &m.id) {
-            tracing::warn!(id = %m.id, error = %e, "proactive: mark_delivered failed");
-        }
+    // Noticing. Inserts `queued` rows; spends no budget and delivers nothing.
+    // A failure here must not block the release below — rows queued by an
+    // earlier pass are still owed a delivery.
+    if let Err(e) = proactive::evaluate_with_extra_candidates(&state.user_db, extra, autonomous) {
+        tracing::warn!(error = %e, "proactive: trigger evaluation failed (still releasing)");
     }
-    if !new_msgs.is_empty() {
-        // Emit so the panel can pop the "Athena reached out" card. We
-        // re-fetch from the DB so the payload reflects the post-mark
-        // status (delivered, not queued).
+    // Delivering. One sweep covers both lanes — trigger-driven rows AND
+    // Athena's `schedule_proactive` commitments — and returns them already
+    // marked `delivered`.
+    let released = proactive::release_pending(&state.user_db)?;
+    if !released.is_empty() {
+        // Emit so the panel can pop the "Athena reached out" card.
         let payload = ProactiveDelivery {
-            messages: new_msgs
-                .iter()
-                .map(|m| ProactiveMessage {
-                    status: "delivered".into(),
-                    ..m.clone()
-                })
-                .collect(),
+            messages: released.clone(),
         };
         if let Err(e) = app.emit(PROACTIVE_EVENT, payload) {
             tracing::warn!(error = %e, "proactive: event emit failed");
         }
     }
-    Ok(new_msgs.len())
+    Ok(released.len())
 }
 
 #[tauri::command]

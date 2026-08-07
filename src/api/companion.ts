@@ -1468,9 +1468,13 @@ export interface ProactiveMessage {
   resolvedAt: string | null;
   /**
    * ISO8601 UTC. Non-null on rows Athena scheduled via `schedule_proactive`
-   * — the deliver-due sweep holds them in `queued` until this timestamp
-   * is reached. Null for trigger-driven nudges (delivered as soon as
-   * their guards pass).
+   * — the release sweep (`proactive::release_pending`, run on every
+   * scheduler tick) holds them in `queued` until this timestamp is reached.
+   * Null for trigger-driven nudges, which become deliverable immediately.
+   *
+   * Either way a `queued` row always resolves: it is delivered once a budget
+   * slot frees up, or aged to `expired` if it waits too long (1 day for
+   * trigger-driven rows, 7 days past due for scheduled commitments).
    */
   scheduledFor: string | null;
 }

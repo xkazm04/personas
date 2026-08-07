@@ -155,9 +155,10 @@ parameters until resolved. Surface:
   focus windows); `write_backlog_item` / `resolve_backlog_item`
   (commitments + capability gaps Athena has spotted in herself).
 - **Future commitments** — `schedule_proactive` (Athena commits to a
-  future check-in with `{ message, when_iso }`; the deliver-due sweep
-  in `proactive::deliver_due_scheduled` releases it through the same
-  `companion://proactive` channel as trigger-driven nudges).
+  future check-in with `{ message, when_iso }`; the release sweep in
+  `proactive::release_pending` — run on every 5-minute scheduler tick —
+  delivers it through the same `companion://proactive` channel as
+  trigger-driven nudges).
 - **Fleet integration (Phase J — Claude Code workers)** — each moves a
   real subprocess, so all approval-gated:
   - `fleet_send_input` — write text (optional `press_enter`) to one
@@ -322,12 +323,38 @@ hit):
   state. Surfaces as the cross-session wrap-up.
 - **`athena_scheduled`** — Athena's own `schedule_proactive`
   commitments held in `queued` until `scheduled_for` arrives, then
-  released via `deliver_due_scheduled`.
+  released by the same `release_pending` sweep as everything else.
 
-Gating: **quiet_hours** blocks all delivery during active windows;
-**daily budget cap** defaults to 3 nudges/day (direct-source triggers
-bypass); **dedupe window** allows one nudge per `(trigger_kind,
-trigger_ref)` until resolved.
+### Delivery lifecycle — noticing vs delivering
+
+Evaluating triggers and delivering nudges are **two separate steps**, and
+every tick runs both:
+
+1. **Notice** (`evaluate_with_extra_candidates`) — trigger candidates are
+   deduped against any unresolved row for the same `(trigger_kind,
+   trigger_ref)` and inserted as `queued`. This spends no budget, so an
+   observation made on a busy day is never simply lost.
+2. **Deliver** (`release_pending`) — the one path from `queued` to
+   `delivered`. It sweeps the lifecycle, then walks every deliverable
+   `queued` row oldest-first (trigger-driven and `athena_scheduled`
+   alike), claims a budget unit per row, marks it `delivered`, and hands
+   the result to the caller to emit.
+
+A `queued` row therefore always resolves one way or the other:
+
+| Waiting for | Aged to `expired` after | Why |
+| --- | --- | --- |
+| A delivery slot (trigger-driven) | 1 day | A nudge describes *now*. Rather than replaying day-old text, the row is retired — which unblocks its dedupe, so the trigger restates the case with fresh data on the next pass, or stays silent if the condition resolved itself. |
+| Its `scheduled_for` moment (`athena_scheduled`) | 7 days past due | An explicit commitment has no re-fire path, so it gets far more grace — but a months-late "I'll check back in 10 minutes" is still noise. |
+| The user (`delivered`, never engaged/dismissed) | 7 days | Unblocks the dedupe and makes the row prune-eligible. |
+
+Gating: **quiet_hours** blocks delivery during active windows (noticing
+continues; the rows release when the window closes); the **daily budget**
+is a global ceiling of 12 plus a per-trigger-kind cap (2 for `dev_goal*`,
+4–8 for chattier kinds, uncapped for `athena_scheduled`), so one noisy leg
+can't crowd out the others; a kind at its cap only defers *its own* rows,
+never the kinds behind it. **Dedupe** allows one nudge per
+`(trigger_kind, trigger_ref)` until that row resolves.
 
 Each delivery emits a `companion://proactive` Tauri event. If voice is
 enabled, the panel speaks the nudge body immediately (arrival-TTS) —

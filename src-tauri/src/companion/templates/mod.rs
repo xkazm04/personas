@@ -38,8 +38,8 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// to chain turns and dispatch parallel subagents.
 ///
 /// v8: `schedule_proactive` op — Athena can commit to a future check-in.
-/// User approves the (message, when_iso) pair; the deliver-due sweep in
-/// `proactive::deliver_due_scheduled` releases it when the time arrives,
+/// User approves the (message, when_iso) pair; the release sweep in
+/// `proactive::release_pending` delivers it when the time arrives,
 /// flowing through the same `companion://proactive` event channel as
 /// trigger-driven nudges. Approval-gated because it puts a future
 /// obligation on the user's attention (unlike connector calls, which

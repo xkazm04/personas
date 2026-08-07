@@ -744,9 +744,9 @@ pub(crate) fn execute_backlog_apply_triage(
 }
 
 /// Athena's `schedule_proactive` approval — persist a future-dated row in
-/// `companion_proactive_message`. The deliver-due sweep
-/// (`proactive::deliver_due_scheduled`, called from
-/// `companion_evaluate_proactive_now`) releases it when the time arrives.
+/// `companion_proactive_message`. The release sweep
+/// (`proactive::release_pending`, run on every scheduler tick) delivers it
+/// when the time arrives.
 pub(crate) fn execute_schedule_proactive(
     state: &State<'_, Arc<AppState>>,
     params: &serde_json::Value,

@@ -595,45 +595,40 @@ async fn run_proactive_tick(
     // Fleet triggers only fire when Athena's autonomy is on (see collect_all) —
     // with it off, she leaves the fleet to the user instead of re-checking it.
     let autonomous = crate::commands::companion::chat::autonomous_mode_enabled(&app_state.db);
-    let new_msgs = proactive_engine::evaluate_with_extra_candidates(pool, extra, autonomous)?;
-    if new_msgs.is_empty() {
-        return Ok(());
+    // Noticing and delivering are separate steps, and the tick ALWAYS does
+    // both. An evaluator failure — or a pass that produces no new candidates —
+    // must not skip the release: rows queued by earlier passes (and Athena's
+    // scheduled check-ins) are still owed a delivery. The old early-return on
+    // an empty candidate set is precisely why a queued row could sit for
+    // seven weeks.
+    if let Err(e) = proactive_engine::evaluate_with_extra_candidates(pool, extra, autonomous) {
+        tracing::warn!(error = %e, "proactive: trigger evaluation failed (still releasing)");
     }
-    run_proactive_tick_finalize(pool, app, new_msgs).await
+    run_proactive_tick_release(pool, app)
 }
 
 #[cfg(not(feature = "desktop"))]
 async fn run_proactive_tick(pool: &UserDbPool, app: &AppHandle) -> Result<(), AppError> {
     // Non-desktop has no Fleet; pass autonomous=false so the fleet triggers
     // (gated in collect_all) are skipped — they'd read an empty registry anyway.
-    let new_msgs = proactive_engine::evaluate(pool, false)?;
-    if new_msgs.is_empty() {
-        return Ok(());
+    if let Err(e) = proactive_engine::evaluate(pool, false) {
+        tracing::warn!(error = %e, "proactive: trigger evaluation failed (still releasing)");
     }
-    run_proactive_tick_finalize(pool, app, new_msgs).await
+    run_proactive_tick_release(pool, app)
 }
 
-async fn run_proactive_tick_finalize(
-    pool: &UserDbPool,
-    app: &AppHandle,
-    new_msgs: Vec<crate::companion::proactive::ProactiveMessage>,
-) -> Result<(), AppError> {
-    if new_msgs.is_empty() {
+/// Release whatever is deliverable right now — newly queued candidates,
+/// leftovers from earlier ticks, and due `athena_scheduled` check-ins — then
+/// announce them. `release_pending` has already claimed the
+/// `queued → delivered` transition for every row it returns, so this only
+/// emits.
+fn run_proactive_tick_release(pool: &UserDbPool, app: &AppHandle) -> Result<(), AppError> {
+    let released = proactive_engine::release_pending(pool)?;
+    if released.is_empty() {
         return Ok(());
     }
-    for m in &new_msgs {
-        if let Err(e) = proactive_engine::mark_delivered(pool, &m.id) {
-            tracing::warn!(id = %m.id, error = %e, "proactive: mark_delivered failed");
-        }
-    }
     let payload = crate::commands::companion::proactive::ProactiveDelivery {
-        messages: new_msgs
-            .into_iter()
-            .map(|m| crate::companion::proactive::ProactiveMessage {
-                status: "delivered".into(),
-                ..m
-            })
-            .collect(),
+        messages: released,
     };
     if let Err(e) = app.emit(
         crate::commands::companion::proactive::PROACTIVE_EVENT,
