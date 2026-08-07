@@ -2758,7 +2758,12 @@
     "orb_quick_input_close": "Đóng tin nhắn nhanh",
     "orb_quick_input_last_reply_label": "Phản hồi gần nhất của Athena",
     "orb_quick_input_open": "Gửi tin nhắn nhanh",
-    "orb_quick_input_placeholder": "Nhắn tin cho Athena…"
+    "orb_quick_input_placeholder": "Nhắn tin cho Athena…",
+    "memory_rebuild_search": "Dựng lại chỉ mục tìm kiếm",
+    "memory_rebuild_search_done": "{count} bộ nhớ có thể tìm kiếm trở lại.",
+    "memory_rebuild_search_none": "Mọi bộ nhớ đều đã được lập chỉ mục.",
+    "memory_rebuild_search_running": "Đang dựng lại…",
+    "memory_rebuild_search_unavailable": "Bản dựng này không có mô hình nhúng, nên không thể dựng lại tìm kiếm ngữ nghĩa."
   },
   "artist_gallery": {
     "loading_viewer": "Đang tải trình xem…",

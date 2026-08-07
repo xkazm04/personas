@@ -2222,10 +2222,10 @@ pub fn clear_claude_session_id(pool: &UserDbPool, session_id: &str) -> Result<()
 ///
 /// Scope (deliberate):
 ///   - SQL: deletes episode rows from `companion_node`, plus their
-///     companion_fts and companion_embedding entries. **Doctrine, identity,
-///     and any other node kinds are preserved** — earlier versions of this
-///     function blindly truncated all FTS / vec0 rows, which silently
-///     wiped doctrine and forced a full re-ingest on the next start.
+///     companion_embedding entries. **Doctrine, identity, and any other node
+///     kinds are preserved** — earlier versions of this function blindly
+///     truncated all vec0 rows, which silently wiped doctrine and forced a
+///     full re-ingest on the next start.
 ///   - Disk: renames `<brain>/episodes/` to `<brain>/episodes-archive-<ts>/`
 ///     so the markdown source-of-truth isn't actually destroyed (no-data-
 ///     loss principle), but the next turn sees an empty episodes dir.
@@ -2269,10 +2269,6 @@ pub fn wipe_transcript(
             .map(|s| s as &dyn rusqlite::ToSql)
             .collect();
 
-        let _ = conn.execute(
-            &format!("DELETE FROM companion_fts WHERE node_id IN ({placeholders})"),
-            p.as_slice(),
-        );
         // vec0 table is created lazily; this is best-effort.
         let _ = conn.execute(
             &format!("DELETE FROM companion_embedding WHERE node_id IN ({placeholders})"),

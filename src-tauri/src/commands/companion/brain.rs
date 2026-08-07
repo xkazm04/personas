@@ -16,6 +16,7 @@ use std::sync::Arc;
 use rusqlite::params;
 use serde::Serialize;
 use tauri::State;
+use ts_rs::TS;
 
 use crate::companion::brain::backlog;
 use crate::companion::brain::decisions;
@@ -415,7 +416,6 @@ fn delete_episode(state: &State<'_, Arc<AppState>>, id: &str) -> Result<(), AppE
         }
     }
 
-    let _ = conn.execute("DELETE FROM companion_fts WHERE node_id = ?1", params![id]);
     let _ = conn.execute(
         "DELETE FROM companion_embedding WHERE node_id = ?1",
         params![id],
@@ -1113,6 +1113,78 @@ fn get_design_decision(
         meta,
         deletable: false,
     })
+}
+
+// ============================================================================
+// Vector backfill
+// ============================================================================
+
+/// Outcome of one [`companion_reembed_missing`] pass.
+#[derive(Debug, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ReembedResult {
+    /// Nodes that now hold a vector under the currently loaded model.
+    pub embedded: u32,
+    /// Nodes that needed one and could not get one (no readable body, no
+    /// excerpt, or the embedder refused the text).
+    pub skipped: u32,
+    /// `false` when this build has no embedder (the `ml` feature is off) or
+    /// the embedding manager failed to initialise. The call is a clean no-op
+    /// in that case — never an error, so the UI can render an honest
+    /// "unavailable on this build" instead of a failure toast.
+    pub available: bool,
+}
+
+/// Re-embed every brain node that has no vector or whose vector was recorded
+/// under a different embedding model.
+///
+/// Semantic recall only ever indexed memory at write time, so anything that
+/// arrived another way — a portability import, a restored brain directory, a
+/// write made while the embedder was unavailable — carried text and no vector
+/// forever. On top of that, a change of embedding model made
+/// `apply_model_guard` discard the old vectors from every recall while telling
+/// the log to "re-embed the brain", which nothing could do. This command is
+/// that missing repair, and it is safe to run at any time: it clears each
+/// node's prior vector before writing the new one, so a second run finds
+/// nothing left to do.
+#[tauri::command]
+pub async fn companion_reembed_missing(
+    state: State<'_, Arc<AppState>>,
+) -> Result<ReembedResult, AppError> {
+    ipc_auth::require_auth(&state).await?;
+    reembed_missing_internal(&state).await
+}
+
+/// Body of [`companion_reembed_missing`], split out so the portability import
+/// can fire the same backfill in the background without going through IPC.
+pub async fn reembed_missing_internal(state: &Arc<AppState>) -> Result<ReembedResult, AppError> {
+    #[cfg(feature = "ml")]
+    {
+        let Some(embedder) = state.embedding_manager.as_ref() else {
+            return Ok(ReembedResult {
+                embedded: 0,
+                skipped: 0,
+                available: false,
+            });
+        };
+        let counts =
+            crate::companion::brain::embeddings::reembed_missing(&state.user_db, embedder).await?;
+        Ok(ReembedResult {
+            embedded: counts.embedded,
+            skipped: counts.skipped,
+            available: true,
+        })
+    }
+    #[cfg(not(feature = "ml"))]
+    {
+        let _ = state;
+        Ok(ReembedResult {
+            embedded: 0,
+            skipped: 0,
+            available: false,
+        })
+    }
 }
 
 fn slugify(s: &str) -> String {

@@ -711,6 +711,20 @@ pub async fn kb_reindex(
     kb_id: String,
 ) -> Result<String, AppError> {
     require_auth(&state).await?;
+    reindex_kb_internal(app, state.inner().clone(), kb_id).await
+}
+
+/// Body of [`kb_reindex`] without the IPC auth gate, callable from other
+/// backend code that already holds an `Arc<AppState>` rather than a Tauri
+/// `State`. The portability importer uses it: a bundle carries a knowledge
+/// base's TEXT only, so the freshly imported KB has no vectors until this
+/// runs.
+pub async fn reindex_kb_internal(
+    app: tauri::AppHandle,
+    state: Arc<AppState>,
+    kb_id: String,
+) -> Result<String, AppError> {
+    let state = &state;
 
     let kb = kb_ingest::get_kb(&state.user_db, &kb_id)?;
 

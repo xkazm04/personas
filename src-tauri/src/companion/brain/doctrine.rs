@@ -517,14 +517,6 @@ async fn upsert_chunk(
                      WHERE id = ?4",
                     params![chunk.content_hash, excerpt, now, id],
                 )?;
-                conn.execute(
-                    "UPDATE companion_fts SET body = ?1, tags = ?2 WHERE node_id = ?3",
-                    params![
-                        chunk.content,
-                        format!("doctrine path:{}", chunk.file_path),
-                        id
-                    ],
-                )?;
                 // Drop old vector row; we'll insert fresh below.
                 conn.execute(
                     "DELETE FROM companion_embedding WHERE node_id = ?1",
@@ -554,14 +546,6 @@ async fn upsert_chunk(
                         embedder.dimensions() as i64,
                         excerpt,
                         now
-                    ],
-                )?;
-                conn.execute(
-                    "INSERT INTO companion_fts (node_id, body, tags) VALUES (?1, ?2, ?3)",
-                    params![
-                        id,
-                        chunk.content,
-                        format!("doctrine path:{}", chunk.file_path)
                     ],
                 )?;
             }
@@ -604,7 +588,6 @@ fn prune_orphans(pool: &UserDbPool, seen: &[String]) -> Result<usize, AppError> 
     for (id, file_path) in rows {
         if !seen_set.contains(file_path.as_str()) {
             conn.execute("DELETE FROM companion_node WHERE id = ?1", params![id])?;
-            conn.execute("DELETE FROM companion_fts WHERE node_id = ?1", params![id])?;
             conn.execute(
                 "DELETE FROM companion_embedding WHERE node_id = ?1",
                 params![id],

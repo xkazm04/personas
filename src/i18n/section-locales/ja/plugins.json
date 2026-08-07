@@ -2758,7 +2758,12 @@
     "orb_quick_input_close": "クイックメッセージを閉じる",
     "orb_quick_input_last_reply_label": "アテナの最新の返信",
     "orb_quick_input_open": "クイックメッセージを送信",
-    "orb_quick_input_placeholder": "アテナにメッセージ…"
+    "orb_quick_input_placeholder": "アテナにメッセージ…",
+    "memory_rebuild_search": "検索インデックスを再構築",
+    "memory_rebuild_search_done": "{count} 件の記憶が再び検索可能になりました。",
+    "memory_rebuild_search_none": "すべての記憶はインデックス済みです。",
+    "memory_rebuild_search_running": "再構築中…",
+    "memory_rebuild_search_unavailable": "このビルドには埋め込みモデルがないため、セマンティック検索を再構築できません。"
   },
   "artist_gallery": {
     "loading_viewer": "ビューアを読み込み中…",

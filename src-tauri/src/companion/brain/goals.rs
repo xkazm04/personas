@@ -106,10 +106,6 @@ pub fn write_goal(pool: &UserDbPool, input: &GoalInput<'_>) -> Result<String, Ap
          VALUES (?1, ?2, 'active', ?3, ?4, ?5, ?6, ?6)",
         params![id, input.title, priority, input.target_date, sources_json, now],
     )?;
-    tx.execute(
-        "INSERT INTO companion_fts (node_id, body, tags) VALUES (?1, ?2, 'kind:goal status:active')",
-        params![id, format!("{}\n\n{}", input.title, input.description)],
-    )?;
     tx.commit()?;
     Ok(id)
 }
@@ -229,7 +225,6 @@ pub fn delete_goal(pool: &UserDbPool, id: &str) -> Result<(), AppError> {
         .optional()?;
     let tx = conn.unchecked_transaction()?;
     tx.execute("DELETE FROM companion_goal WHERE id = ?1", params![id])?;
-    tx.execute("DELETE FROM companion_fts WHERE node_id = ?1", params![id])?;
     tx.execute("DELETE FROM companion_node WHERE id = ?1", params![id])?;
     tx.commit()?;
     if let Some(rel) = rel {

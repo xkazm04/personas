@@ -62,8 +62,13 @@ pub fn record_fleet_event(
 }
 
 /// Render the fleet event as searchable markdown. The first line carries
-/// the structured marker tokens so BM25 / FTS can find this episode by
-/// any of {session id, claude session id, state, project label}.
+/// structured marker tokens — {session id, claude session id, state, project
+/// label} — so the episode can be found by any of them.
+///
+/// Those tokens reach recall through the episode BODY: it is what gets
+/// embedded, and what the on-disk markdown holds. This comment used to say
+/// "BM25 / FTS", which was never true — the `companion_fts` mirror those
+/// writes fed had no reader anywhere in the tree and has since been dropped.
 fn format_episode_body(event: &FleetEpisodeInput<'_>) -> String {
     let marker_state = match &event.kind {
         FleetEventKind::Spawned { .. } => "spawned".to_string(),

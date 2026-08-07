@@ -552,6 +552,12 @@ pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
             // than accidental. See companion::prompt::PromptBlockSizes.
             "ALTER TABLE companion_turn ADD COLUMN prompt_blocks_json TEXT;",
             "ALTER TABLE companion_turn ADD COLUMN total_prompt_chars INTEGER;",
+            // Retire `companion_fts`. It was never read — no SELECT, no MATCH,
+            // anywhere — so all it ever did was store a second plaintext copy
+            // of every memory body (transcripts included). Dropping it is pure
+            // subtraction. Idempotent: this is the boot path, never an import
+            // transaction, and IF EXISTS makes a re-run a no-op.
+            "DROP TABLE IF EXISTS companion_fts;",
         ] {
             let _ = conn.execute_batch(stmt);
         }
@@ -783,7 +789,14 @@ CREATE TABLE IF NOT EXISTS companion_fact (
 CREATE INDEX IF NOT EXISTS idx_companion_fact_scope ON companion_fact(scope, fact_key);
 CREATE INDEX IF NOT EXISTS idx_companion_fact_super ON companion_fact(supersedes_id);
 
-CREATE VIRTUAL TABLE IF NOT EXISTS companion_fts USING fts5(node_id UNINDEXED, body, tags);
+-- `companion_fts` used to live here. It was write-only for its entire life:
+-- five INSERT sites, one UPDATE, seven DELETEs, and NOT ONE `SELECT` or
+-- `MATCH` anywhere in the tree. The "keyword fallback retrieval" lane its
+-- comments promised was never built, so all it did was keep a second
+-- plaintext copy of every memory body (including transcripts) on disk.
+-- Dropped by the `DROP TABLE IF EXISTS companion_fts` in `init_user_db`.
+-- If a keyword lane is ever wanted, build it against `companion_node`
+-- rather than resurrecting a mirror nothing reads.
 
 CREATE TABLE IF NOT EXISTS companion_approval (
     id               TEXT PRIMARY KEY,
@@ -1682,6 +1695,49 @@ pub fn init_test_db() -> Result<DbPool, AppError> {
     seed_builtin_connectors(&conn)?;
     seed_builtin_shared_events(&conn)?;
     drop(conn);
+    Ok(pool)
+}
+
+/// Throwaway USER database (the `personas_data.db` counterpart of
+/// [`init_test_db`]) for tests that exercise code spanning BOTH pools — the
+/// portability importer reads twins out of the app database but their
+/// knowledge bases out of this one.
+///
+/// Applies [`KNOWLEDGE_BASE_SCHEMA`] **and** [`COMPANION_SCHEMA`] plus the
+/// post-CREATE ALTERs `init_user_db` performs, so a test pool is shaped like a
+/// real `personas_data.db`. (It used to be knowledge-base only, on the grounds
+/// that nothing needing this pool also needed the brain — Athena's memory
+/// section of the portability bundle needs both, and a fixture whose columns
+/// differ from production is a test that proves the wrong thing.)
+#[cfg(any(test, feature = "test-support"))]
+pub fn init_test_user_db() -> Result<UserDbPool, AppError> {
+    use std::time::Duration;
+
+    let tmp = std::env::temp_dir().join(format!("personas_user_test_{}.db", uuid::Uuid::new_v4()));
+    let manager = SqliteConnectionManager::file(&tmp);
+    let pool = Pool::builder()
+        .max_size(2)
+        .connection_timeout(Duration::from_secs(5))
+        .connection_customizer(Box::new(SqlitePragmaCustomizer))
+        .build(manager)?;
+    {
+        let conn = pool.get()?;
+        conn.execute_batch(KNOWLEDGE_BASE_SCHEMA)?;
+        conn.execute_batch(COMPANION_SCHEMA)?;
+        // The columns `init_user_db` adds after the CREATE. Same
+        // failure-ignoring contract: "duplicate column name" is the success
+        // path on a re-run.
+        for stmt in &[
+            "ALTER TABLE companion_session ADD COLUMN title TEXT;",
+            "ALTER TABLE companion_session ADD COLUMN status TEXT NOT NULL DEFAULT 'active';",
+            "ALTER TABLE companion_session ADD COLUMN last_read_at TEXT;",
+            "ALTER TABLE companion_session ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0;",
+            "ALTER TABLE companion_session ADD COLUMN origin TEXT NOT NULL DEFAULT 'user';",
+            "ALTER TABLE companion_node ADD COLUMN session_id TEXT;",
+        ] {
+            let _ = conn.execute_batch(stmt);
+        }
+    }
     Ok(pool)
 }
 

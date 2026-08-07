@@ -2758,7 +2758,12 @@
     "orb_quick_input_close": "त्वरित संदेश बंद करें",
     "orb_quick_input_last_reply_label": "एथेना का अंतिम उत्तर",
     "orb_quick_input_open": "त्वरित संदेश भेजें",
-    "orb_quick_input_placeholder": "एथेना को संदेश भेजें…"
+    "orb_quick_input_placeholder": "एथेना को संदेश भेजें…",
+    "memory_rebuild_search": "खोज इंडेक्स फिर से बनाएँ",
+    "memory_rebuild_search_done": "{count} स्मृतियाँ फिर से खोजी जा सकती हैं।",
+    "memory_rebuild_search_none": "हर स्मृति पहले से ही इंडेक्स की हुई है।",
+    "memory_rebuild_search_running": "पुनर्निर्माण हो रहा है…",
+    "memory_rebuild_search_unavailable": "इस बिल्ड में कोई एम्बेडिंग मॉडल नहीं है, इसलिए सिमेंटिक सर्च को फिर से नहीं बनाया जा सकता।"
   },
   "artist_gallery": {
     "loading_viewer": "viewer लोड हो रहा है…",
