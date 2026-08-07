@@ -3486,6 +3486,13 @@ pub fn run() {
             commands::network::pairing::pair_cancel,
             #[cfg(feature = "p2p")]
             commands::network::pairing::list_pending_device_pairings,
+            // Network -- Remote jobs (one paired device runs the other's instruction)
+            #[cfg(feature = "p2p")]
+            commands::network::remote_jobs::list_remote_jobs,
+            #[cfg(feature = "p2p")]
+            commands::network::remote_jobs::list_remote_job_notes,
+            #[cfg(feature = "p2p")]
+            commands::network::remote_jobs::send_remote_instruction,
             // Network -- Exposure Manifest (Invisible Apps Phase 1)
             #[cfg(feature = "p2p")]
             commands::network::exposure::list_exposed_resources,

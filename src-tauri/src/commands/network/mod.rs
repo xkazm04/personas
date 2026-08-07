@@ -12,3 +12,5 @@ pub mod identity;
 pub mod owned_devices;
 #[cfg(feature = "p2p")]
 pub mod pairing;
+#[cfg(feature = "p2p")]
+pub mod remote_jobs;
