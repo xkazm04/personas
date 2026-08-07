@@ -2076,8 +2076,9 @@ const bridge: TestBridge = {
    *  shape so the smoke test can assert on counts and warnings.
    *  `projectResolutionsJson` drives the pass-2 conflict resolution (JSON map
    *  `"<kind>:<bundleId>"` → replace|skip|duplicate, covering dev projects and
-   *  twins). Both the legacy and generalised argument names are sent so this
-   *  works against either Rust signature; Tauri ignores undeclared keys. */
+   *  twins). The parameter keeps its original name because `/bridge-exec`
+   *  dispatches by parameter-name reflection and `e2e_portability.py` passes it
+   *  under that name; the Rust argument it feeds is `resolutions_json`. */
   async importPortabilityFromPath(
     passphrase: string | null,
     filePath: string,
@@ -2086,7 +2087,7 @@ const bridge: TestBridge = {
     try {
       const result = await invoke<Record<string, unknown> | null>(
         'import_portability_bundle_from_path',
-        { passphrase, filePath, projectResolutionsJson, resolutionsJson: projectResolutionsJson },
+        { passphrase, filePath, resolutionsJson: projectResolutionsJson },
       );
       return { success: true, result };
     } catch (e: unknown) {

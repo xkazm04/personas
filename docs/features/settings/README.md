@@ -54,27 +54,90 @@ The card shows the current installed version (via `getVersion()`) and a relative
 
 ## Data portability
 
-The **Data** tab (`sub_portability/`, backed by `core/data_portability.rs`) exports the workspace to a portable ZIP archive (`manifest.json` inside a `.zip`) and imports it back. Imported entities are always created as **new, disabled** rows with an `(imported)` name suffix — import never overwrites existing data.
+The **Data** tab (`sub_portability/`, backed by `core/data_portability.rs`) exports the workspace to a portable ZIP archive (`manifest.json` inside a `.zip`) and imports it back.
 
-The **Export Workspace** button opens a near-full-width selection modal (the "manifest" layout) built to handpick across a large workspace: a left **scope rail** (Personas / Teams / Credentials / Dev projects / Knowledge with live selected/total counts), a search-first, filterable middle list (filter personas by team membership / enabled / starred; "Select N shown" bulk-selects the current filter), and a right **manifest cart** that tallies exactly what ships, its encryption state, and the export CTA. You pick what to include across five categories:
+**How import treats what is already here.** The default is additive and non-destructive: most entities land as **new, disabled** rows with an `(imported)` name suffix, so a bundle can never quietly overwrite work on the importing machine. Three scopes are exceptions, and each is an explicit user choice or a deliberate merge rather than a silent overwrite:
+
+- **Dev projects and twins** go through the [two-pass conflict flow](#importing-a-bundle-that-collides-two-pass-conflict-resolution). **Replace** is one of the offered resolutions, and it does modify the existing row.
+- **Athena's memory** merges additively with dedup rather than replacing (see [Athena's memory](#athenas-memory-core-self-and-learned-memory)). Her `identity.md` is the single file that is genuinely replaced, and a timestamped backup is written next to it first.
+- **Workspace knowledge** entries that already exist are skipped as duplicates, never overwritten.
+
+Nothing else in the bundle can touch an existing row.
+
+The **Export Workspace** button opens a near-full-width selection modal (the "manifest" layout) built to handpick across a large workspace: a left **scope rail** (Personas / Teams / Credentials / Dev projects / Knowledge / Twins / Athena memory with live selected/total counts), a search-first, filterable middle list (filter personas by team membership / enabled / starred; "Select N shown" bulk-selects the current filter), and a right **manifest cart** that tallies exactly what ships, its encryption state, and the export CTA. You pick what to include across seven categories:
 
 - **Personas** — agents plus their triggers, event subscriptions, tool links, test suites, and (unless opted out) memories. Each row surfaces model profile, trust score, and team membership.
 - **Teams** — team canvases plus members, connections, and (unless opted out) team memories (the `team_memories` / `sub_teamMemory` store). On import, team memories are recreated under the new team id as manually-curated entries; run-specific provenance (`run_id` / `member_id` / `persona_id`) is intentionally dropped because it references rows that don't travel with the bundle. Each team row badges its member count plus the KPI count of its project (and any off-track KPIs).
 - **Credentials** — non-secret metadata by default. Secrets are only embedded when you set an export passphrase, which AES-256-GCM-encrypts them into the bundle (format version 3).
 - **Dev projects** — a Dev Tools project travels as its row plus the full planning graph (goals, contexts, ideas, tasks, use cases, competitions, pipelines, standards, milestones, project KPIs, memories) and the project's on-disk `.claude/skills/` library. What deliberately does **not** travel: telemetry and scan-cache tables (`dev_llm_spend`, `dev_auto_runs`, `dev_scans`, context fingerprint hashes, harvest coverage, …), the four credential-id columns (unresolvable soft refs into the source vault), and global (non-project) skills.
 - **Knowledge** — workspace knowledge library entries. On import, entries already present are skipped as duplicates and counted separately.
+- **Twins** (one row per digital twin, so a twin can be carried to another device). The profile, tones, training corpus, memory inbox, distilled facts, reflections, contacts, channel bindings, and the bound knowledge base as text all travel; full contents and exclusions are documented in [`plugins/twin.md`](../plugins/twin.md#carrying-a-twin-to-another-device). This is an **encrypted scope**, so see [Passphrase](#passphrase-which-scopes-require-one) below.
+- **Athena memory** (two rows rather than a list, because Athena is a singleton): **Core self** and **Learned memory**. See [Athena's memory](#athenas-memory-core-self-and-learned-memory) below and [`companion/README.md`](../companion/README.md#carrying-athenas-memory-to-another-device). Also an **encrypted scope**.
 
-An **Include memories** toggle (on by default) controls whether persona and team memories ride along. Turning it off exports agents and teams without their accumulated memories — useful for sharing a clean template. The **Workspace Overview** stat cards (including **Team Memories** and **KPIs** counts) preview what's in the workspace before exporting.
+All seven scopes are always listed in the rail; an empty one simply reads `0 of 0`. Inside the Athena scope, a tier whose count is `0` is omitted from the row list, so a machine that has never run Athena offers nothing to tick.
+
+An **Include memories** toggle (on by default) controls whether persona and team memories ride along. Turning it off exports agents and teams without their accumulated memories, which is useful for sharing a clean template. The **Workspace Overview** stat cards (including **Team Memories**, **KPIs**, **Twins**, **Athena Core Self**, and **Athena Learned Memory** counts) preview what's in the workspace before exporting.
+
+### Passphrase: which scopes require one
+
+The passphrase field does two different jobs, which is worth separating:
+
+- For **Credentials** it is *optional*. Without it the bundle carries non-secret credential metadata only; with it, secrets are AES-256-GCM-encrypted into the archive.
+- For **Twins** and **Athena memory** it is *mandatory*. These two scopes travel encrypted or not at all. Both carry a lock glyph in the scope rail (labelled "Encrypted scope" for assistive tech), and neither is preselected when the modal opens: auto-selecting them would turn the one-click "Export All" into a blocked button on any machine that owns a twin.
+
+The minimum length is **8 characters**, the same threshold the backend enforces.
+
+Two outcomes follow from that, and they are deliberately different:
+
+- **You explicitly ticked a twin or an Athena tier and gave no passphrase → the export is refused**, with a message naming what you selected and offering the two ways out (enter a passphrase, or deselect them). Quietly dropping something you ticked is not reportable through the export's boolean return, so it hard-fails instead.
+- **You ran a full-workspace export with no passphrase → the export succeeds, and the two encrypted scopes are simply left out**, with a warning saying so. This mirrors how a full export already treats credential secrets. Refusing here would hard-error every full export on any machine that has ever run Athena.
+
+### Truncation is reported, not silent
+
+Every collection in the bundle has a size cap, and exceeding one used to drop rows with no trace. Truncation now surfaces through two channels:
+
+- **Before you export.** The **Workspace Overview** card renders a pre-flight forecast directly under its stat badges, naming which workspace-level caps you already exceed, so you learn what an export would drop *before* running it. The forecast also distinguishes caps that truncate on export from caps that are only enforced at import, since the latter mean a workspace can produce a bundle its own importer would refuse.
+- **After you import.** The bundle carries the actual per-collection truncation records it made, and the import result replays them into its warnings list, so the person on the receiving machine sees exactly what did not arrive.
+
+The wording is uniform: `"<context>: kept <n> of <total> <what>; <n> dropped (export cap)."`
 
 ### KPI setup travels with teams
 
 An **Include KPI setup** toggle (on by default, all-or-none) brings each selected team's **KPIs** (Teams › KPIs) along with the export. KPIs are project-scoped, so the modal resolves the projects of the selected teams server-side and bundles their `active`/`paused` KPIs (the live setup — `proposed` review-queue items and `archived` retirees are excluded), each with a capped, newest-first slice of its measurement history (~100 points). Because neither projects nor a team's project survive the bundle, **imported KPIs land in a single, deduped, dormant `Imported` project** — created on first KPI import and reused on subsequent ones (deduped by name). Imported KPIs are always created **`paused`** (their measure config is tied to the source environment and must be reviewed before measuring); their tier, calibration lines (`warn_at` / `crit_at`), and last-known value are preserved. The KPI section of the bundle is `serde`-default, so older bundles without it still import cleanly.
 
-### Importing dev projects — two-pass conflict resolution
+### Importing a bundle that collides: two-pass conflict resolution
 
-Importing a bundle that carries dev projects runs in up to two passes. Pass 1 imports everything that doesn't collide; if a bundled project matches an existing one (by `root_path`, falling back to a case-insensitive name match), the import returns the conflicts instead of guessing, and the Data tab shows an inline **resolution panel**: one row per conflict with the project name, its folder path, what it matched on, and a per-project choice of **Skip** (default — nothing local changes), **Duplicate** (import as a new project alongside the existing one), or **Replace** (the existing project's id survives; its planning graph is replaced by the bundle's — telemetry rows are untouched). Confirming re-invokes the import against the same bundle file with the chosen resolutions; cancelling simply leaves the conflicted projects unimported. The result card sums both passes and reports projects imported/skipped, knowledge imported/deduped, and skill files written/deferred.
+Two scopes can collide with something already on the importing machine: **dev projects** and **twins**. Both go through the same two-pass flow rather than each getting its own mechanism.
+
+Pass 1 imports everything that does not collide. Anything that does is returned as a conflict instead of being guessed at, and the Data tab shows an inline **resolution panel**: one row per conflict, labelled with what kind of thing it is (**Dev project** or **Twin**), its name, a disambiguating detail where one exists, what it matched on, and a per-row choice of **Skip** (the default, under which nothing local changes), **Duplicate**, or **Replace**. Confirming re-invokes the import against the same bundle file with the chosen resolutions; cancelling leaves the conflicted items unimported.
+
+What each resolution means depends on the kind:
+
+| | matched on | **Skip** | **Duplicate** | **Replace** |
+| --- | --- | --- | --- | --- |
+| **Dev project** | folder path (`root_path`), falling back to a case-insensitive name match | nothing local changes | imported as a new project alongside the existing one | the existing project's id survives; its planning graph is replaced by the bundle's, and telemetry rows are untouched |
+| **Twin** | name, case-insensitively | nothing local changes | lands as a wholly new twin, name suffixed `(imported)` and inactive | the existing twin's id survives (so its slug, active flag, and Obsidian subpath are untouched); the profile fields are updated and every child table is cleared and rewritten from the bundle |
+
+A twin is matched on **name, never slug**. The slug is machine-derived from the name at creation time, so a slug collision means nothing.
+
+The result card sums both passes and reports twins imported/skipped, twin knowledge chunks imported, projects imported/skipped, knowledge imported/deduped, skill files written/deferred, Athena memory items imported, whether Athena's identity was replaced, and how many items were queued for re-embedding.
 
 Project skills are written back to `<root_path>/.claude/skills/` after the DB import commits. If the project folder doesn't exist on the importing machine, the skills are **deferred** (counted and surfaced as a warning — fix the path in Project Manager and re-import); an existing local skill with different content is only overwritten under the **Replace** resolution.
+
+### Athena's memory: Core self and Learned memory
+
+Athena is a singleton, so her scope is picked by **tier** rather than by row:
+
+- **Core self.** Her `identity.md` (the evolving profile of you and her self-model), a small whitelist of portable preferences, and the **conversation roster**: thread titles, pins, origin, and status. The resume pointer that ties a thread to a local CLI session is machine-local and deliberately does not travel.
+- **Learned memory.** Facts, procedurals, goals, backlog items, rituals, and design decisions, each as its markdown body plus its sidecar row.
+
+**Conversation history does not travel.** Athena carries what she learned, not what was said. **Doctrine does not travel either**: almost all of it is compiled from documentation shipped inside the binary and regenerates by itself on first boot of the target machine, so shipping it would be dead weight that also went stale. A test asserts every exclusion by name, so a future section cannot quietly widen the payload.
+
+Import **merges** rather than replaces. Items are deduped by content, not by id, so a device that already has memory of its own loses nothing and a re-import is not a way to double it; items that matched something already in the brain are reported as skipped rather than counted as imported. The single exception is `identity.md`, which is genuinely replaced. A timestamped backup is written next to it first, and the import result says explicitly whether a replacement happened.
+
+The bundle carries text and never vectors, so freshly imported memories have no semantic index until they are re-embedded. That runs automatically in the background after an Athena import, and can also be run on demand from **Companion → Memory → Rebuild search index** (see [`companion/README.md`](../companion/README.md#rebuild-search-index)).
+
+Only a fixed whitelist of preference keys can be imported, checked both when the bundle is validated and again when it is applied, so a crafted bundle cannot reach in and set an arbitrary app setting.
 
 Credential-only export/import (password-protected `.cred.enc` files) lives in a separate **Credential Vault** section of the same tab and is independent of the workspace bundle.
 

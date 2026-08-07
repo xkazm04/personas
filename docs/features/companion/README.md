@@ -134,6 +134,43 @@ Companion's awareness of the user's desktop activity ships in phases. The decisi
 
 Manual re-ingest uses `companion_reingest_doctrine`. It is idempotent: unchanged chunks are skipped by content hash, and the frontend receives inserted/updated/unchanged/deleted counts.
 
+## Rebuild search index
+
+The **Memory** tab's action bar carries a **Rebuild search index** button, next to Run consolidation, Generate reflection, and Decay unused facts. It re-embeds every memory that has no vector at all, or whose vector was written under a different embedding model. It is safe to run at any time: a second pass finds nothing left to do, and it reports back one of three things (how many memories became searchable again, that everything was already indexed, or that this build ships without an embedding model and so cannot rebuild). On a large brain it can take a while.
+
+It exists for a standing reason, not only for imports. Semantic recall only ever indexed a memory **at the moment it was written**, so anything that arrived any other way had text and no vector, permanently: a portability import, a brain directory restored from a backup, a write made while the embedder was down. Separately, recall applies a model guard that **drops hits whose vectors were recorded under a different embedding model** and logs an instruction to re-embed the brain. Until this action existed nothing in the app could carry that instruction out, so switching embedding models silently narrowed what Athena could find. Doctrine was the one lane that self-healed, because it re-ingests on boot.
+
+Backend: `companion_reembed_missing` (`src-tauri/src/companion/brain/embeddings.rs`), wrapped by `companionReembedMissing()` in `src/api/companion.ts`. Builds without the `ml` feature return `available: false`, which is a clean no-op rather than an error.
+
+## Carrying Athena's memory to another device
+
+Athena's memory is portable. **Settings → Data → Export Workspace** carries an **Athena memory** scope, and because she is a singleton rather than a list it is picked by **tier** rather than by row. The bundle format, the passphrase rules, and the import result are documented in [`settings/README.md`](../settings/README.md#athenas-memory-core-self-and-learned-memory).
+
+**Core self** carries her `identity.md`, a small whitelist of portable preferences, and the conversation roster: thread titles, pins, origin, and status. The `claude_session_id` that lets a thread resume its local CLI session is a machine-local pointer and never travels.
+
+**Learned memory** carries facts, procedurals, goals, backlog items, rituals, and design decisions, each as its markdown body plus the sidecar row behind it. Each memory's file path travels relative to the brain root rather than as an absolute path, so it lands correctly under a different home directory.
+
+Both tiers are **encrypted scopes**: they export only under a passphrase of at least 8 characters, and they are not preselected when the export modal opens.
+
+### What deliberately does not travel
+
+- **Conversation history.** Athena carries what she learned, not what was said. Episodes, turns, and turn sidecars stay on the machine that recorded them.
+- **Doctrine.** Almost every doctrine node is compiled from documentation shipped inside the binary and is rebuilt on the target's first boot, so shipping it would be dead weight that also went stale.
+- **`constitution.md`**, for the same reason.
+- **Reflections, cockpit and dashboard state, archived episodes, identity backups**, and the machine-local telemetry tables (known projects, embeddings, edges, audit, wake log, budgets, approvals, background jobs, night plans, daily goals, plugin toggles).
+
+A test asserts every one of those exclusions **by name**, both as a forbidden JSON key and as a forbidden node kind or file path, and additionally seeds sentinel strings and asserts they are absent from the serialized bundle. A future section cannot quietly widen the payload.
+
+### What import does
+
+Import **merges additively with dedup**; it does not replace. Dedup is by content rather than by id (a fact by its scope and key, a procedural by its trigger pattern, a goal by its title, a backlog item by its summary, a ritual by its kind and description), so a device that already has memory of its own loses nothing and a re-import is not a way to double it. Items that matched something already in the brain are counted as skipped, not as imported, and reported that way.
+
+`identity.md` is the single exception: it is genuinely replaced, and the existing file is backed up next to it first through the same timestamped `identity.bak-<timestamp>-<uuid>.md` path that Athena's own `update_identity` op uses. The import result reports whether a replacement actually happened.
+
+Imported preferences are constrained by a fixed whitelist, checked both when the bundle is validated and again when it is applied, so a crafted bundle cannot set an arbitrary app setting.
+
+Because the bundle carries text and never vectors, everything imported starts unsearchable. A re-embed is fired in the background as soon as an Athena import lands, and the import result reports how many items were queued for it. If that background pass does not finish (the app is closed, the build has no embedder), **Rebuild search index** above is the manual path.
+
 ## Identity layer (`identity.md`, F1 — direction 7)
 
 `~/.personas/companion-brain/identity.md` is the evolving profile of the user (and Athena's self-model), read into **every** system prompt by `prompt.rs`. It grows by **anchored diffs**, never a whole-file rewrite: the engine in `src-tauri/src/companion/brain/identity.rs` parses the doc into sections (`# heading / ## heading` path) and applies `AppendBullet` / `ReplaceBullet` / `RemoveBullet` against one bullet under a named section, leaving the rest untouched.

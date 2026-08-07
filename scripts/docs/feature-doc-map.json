@@ -309,6 +309,8 @@
         "src-tauri/src/commands/infrastructure/byom.rs",
         "src-tauri/src/commands/infrastructure/tier_usage.rs",
         "src-tauri/src/commands/credentials/external_api_keys.rs",
+        "src-tauri/src/commands/core/data_portability.rs",
+        "src-tauri/src/commands/core/import_export.rs",
         "src-tauri/src/engine/management_api.rs"
       ],
       "onboardingFlows": [
