@@ -2,6 +2,11 @@
 
 ## Active
 
+### skill-standard-trace — skill version standard + dual reflection + .personas/skill-registry.json + new Trace tab — session fable-5
+- Started: 2026-08-07. Status: started (plan approved; working in worktree `.claude/worktrees/skill-standard-trace`).
+- Scope: `src-tauri/src/commands/infrastructure/{skill_files.rs,skill_usage.rs,skill_registry_export.rs(new)}`, `src-tauri/db/src/migrations/incremental.rs` (one new migration), `src-tauri/db/src/repos/dev_workspaces.rs` (lessons miner + invokes extraction), `src/features/teams/sub_factory/passport/{improve/skillTasks.ts,skillPlacement.ts,reflectionBlock.ts(new)}`, `src/features/teams/sub_factory/passport/improve/skillsWorkbenchData.ts` (provenance stamp call), NEW `src/features/plugins/dev-tools/sub_skills/trace/**`, `src/features/plugins/dev-tools/sub_skills/SkillsManagerPage.tsx` (tab entry), `src/api/devTools/devTools.ts` (additive wrappers), `src/lib/bindings/` (regen), `src/i18n/locales/*.json` (additive `plugins.dev_tools.trace_*`/`skills_tab_trace` keys), `docs/skill-standard.md` (new), `docs/features/plugins/dev tools/dev-tools.md`, `CHANGELOG.md`.
+- **NOTE FOR OTHER SESSIONS:** all edits happen in the worktree; only the merge commits land on master. i18n edits are additive keys only. Does not touch companion/mastermind/events/typography files held by other sessions.
+
 ### typo-label-readability — global `typo-label` redesign (drop UPPERCASE/wide tracking) + prose sites moved to `typo-caption` — session opus-5[1m] — **COMPLETE**, commit `193d4aeab`
 - Started/completed: 2026-08-07. Gates: tsc clean · eslint 0 errors on 143 touched files · vitest dev-tools+shared 311/311 · check:themes AA · vite build clean. NOT visually verified in a running app (no live instance was up).
 - Scope: `src/styles/typography.css` (the `.typo-label` recipe + the ar/CJK script overrides that existed only to undo its uppercase), `.claude/Design.md` (token table row + language-awareness note), `CHANGELOG.md`, and 143 `src/features/**` .tsx files — mechanical removal of 567 now-live `uppercase`/`tracking-*` utilities from class regions containing `typo-label`, plus 9 prose sites switched to `typo-caption`.
