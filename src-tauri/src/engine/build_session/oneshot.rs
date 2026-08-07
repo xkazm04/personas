@@ -1019,14 +1019,18 @@ mod tests {
     /// to `active` — scheduler armed, webhook live — with zero calls made.
     #[test]
     fn cli_native_claim_holds_promotion() {
+        // A real external service, with a live endpoint and the user's
+        // credential behind it, that the model declared it did not need to
+        // call. Promoting this arms a scheduler and a webhook against Gmail
+        // on the strength of a boolean.
         let mut tally = ToolTestTally::default();
         let result = tally
             .record_planned_entry(&json!({
-                "tool_name": "web_search",
-                "connector": null,
+                "tool_name": "gmail",
+                "connector": "gmail",
                 "curl": "",
                 "cli_native": true,
-                "description": "Uses Claude CLI built-in web search — auto-verified",
+                "description": "Uses built-in capabilities — auto-verified",
             }))
             .expect("a cli_native entry is decided without a call");
 
@@ -1047,7 +1051,7 @@ mod tests {
             "the hold must say what is wrong, got: {reason}"
         );
         assert!(
-            reason.contains("web_search"),
+            reason.contains("gmail"),
             "the hold must name the tool so the user can act on it, got: {reason}"
         );
     }
@@ -1246,6 +1250,53 @@ mod tests {
         );
     }
 
+    /// `web_search` / `web_fetch` promote DELIBERATELY, and this test exists so
+    /// the next reader sees that rather than assuming an oversight.
+    ///
+    /// They are Claude CLI built-ins — no external service, no credential,
+    /// nothing a curl could exercise — so holding them would be a false HOLD,
+    /// the exact mirror of the false green this gate closes, firing on the
+    /// canonical case `build_test_prompt` itself names. A gate that stops
+    /// honest builds gets muted, and then it protects nothing.
+    ///
+    /// What carries them is `PLATFORM_BUILTIN_TOOLS`, which is CODE: the model
+    /// cannot add to it, the same discipline that stopped `personas_gmail`.
+    /// The `cli_native` boolean does not carry them, and never carries anything
+    /// the backend does not already recognise — see `cli_native_claim_holds_promotion`.
+    #[test]
+    fn claude_cli_builtins_promote_but_the_boolean_alone_never_does() {
+        let mut tally = ToolTestTally::default();
+        for name in ["web_search", "web_fetch"] {
+            let r = tally
+                .record_planned_entry(&json!({
+                    "tool_name": name,
+                    "curl": "",
+                    "cli_native": true,
+                    "description": "Uses Claude CLI built-in capabilities",
+                }))
+                .expect("decided without a call");
+            assert_eq!(r.status, "passed", "{name} is a code-authored built-in");
+            tally.results.push(json!({ "status": "passed" }));
+        }
+        assert_eq!(tally.unverified, 0);
+        assert_eq!(
+            evaluate_promote_gate(&tally.into_report()),
+            PromoteGate::Pass
+        );
+
+        // …while the identical claim on a name the backend does NOT recognise
+        // still holds. The allow-list is a list, not an amnesty.
+        let mut other = ToolTestTally::default();
+        other.record_planned_entry(&json!({
+            "tool_name": "web_scrape_pro", "curl": "", "cli_native": true,
+        }));
+        other.results.push(json!({ "status": "unverified" }));
+        assert!(matches!(
+            evaluate_promote_gate(&other.into_report()),
+            PromoteGate::Held { .. }
+        ));
+    }
+
     // ── The hold must be loud ────────────────────────────────────────────
 
     #[test]
@@ -1254,7 +1305,7 @@ mod tests {
         // companion-chat episode. `short_failure_label` cuts at 280 chars, so
         // a reason that needs more than that loses the actionable half.
         let mut tally = ToolTestTally::default();
-        for name in ["web_search", "web_fetch", "summarise", "translate", "rank"] {
+        for name in ["gmail", "notion", "airtable", "stripe", "linear"] {
             tally.record_planned_entry(&json!({
                 "tool_name": name, "curl": "", "cli_native": true,
             }));

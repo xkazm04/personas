@@ -56,6 +56,24 @@ pub(super) const STATUS_UNVERIFIED: &str = "unverified";
 /// Tool names this backend recognises as in-process platform capabilities.
 /// Nothing external is called, no user credential is involved, so counting
 /// these as a pass is a code-authored claim rather than a model-authored one.
+///
+/// Why these and not `cli_native` generally — the distinction is the whole
+/// point of this file, and it is an easy one to lose:
+///
+///   * This list is CODE. A model cannot add to it, exactly as it can no
+///     longer mint `personas_gmail` into a platform connector. Membership is
+///     evidence because we put it there knowing what is behind the name.
+///   * `cli_native: true` is a boolean the model writes about its own work,
+///     and it can assert it of ANYTHING — including a real external connector
+///     with a live endpoint and the user's credential behind it, which it
+///     simply never called. That is the false green this direction removes.
+///
+/// `web_search` / `web_fetch` are on the list for the same reason
+/// `personas_database` is: genuinely built into the Claude CLI, no external
+/// service, no credential to resolve, nothing a curl could exercise. Holding
+/// them would be a false HOLD — the exact mirror of the false green — and it
+/// would fire on the canonical case the test prompt itself names below. A
+/// gate that stops honest builds gets muted, and then it protects nothing.
 pub(super) const PLATFORM_BUILTIN_TOOLS: &[&str] = &[
     "personas_database",
     "database",
@@ -67,6 +85,8 @@ pub(super) const PLATFORM_BUILTIN_TOOLS: &[&str] = &[
     "personas_vector_db",
     "file_read",
     "file_write",
+    "web_search",
+    "web_fetch",
 ];
 
 /// Connector names that are platform-internal and never bind a user
@@ -1192,12 +1212,12 @@ Generic tools (http_request, web_search, file_read, …) are conduits — they d
 For each connector in the list above whose category is an external service (not a platform builtin), compose a minimal safe curl. Set `tool_name` to the connector name (same as `connector`), or to the persona tool that drives the call when that's clearer. ALWAYS set `connector` to the connector's `name` so the UI can surface "Alpha Vantage" instead of "http_request".
 
 ### 2. CLI-native tools (Claude built-ins, no external API)
-`web_search`, `web_fetch`, text summarization, reasoning, etc. are powered by Claude CLI. Mark these with `"cli_native": true` and `"curl": ""`.
+Text summarization, reasoning and similar capabilities are powered by the Claude CLI with no endpoint to hit. Mark these with `"cli_native": true` and `"curl": ""`.
 
-`cli_native` is NOT a shortcut and is NOT a pass. It records that nothing was called, and the backend counts the entry as **unverified**, which HOLDS the build from being promoted automatically. Use it only when the capability genuinely has no endpoint to hit. If the tool talks to an external service, emit a real curl in §1 instead — a `cli_native` claim on something that has an API is a false green and will block the build rather than help it.
+`cli_native` is NOT a shortcut and is NOT a pass. It records that nothing was called, and for any name the backend does not itself recognise as a built-in (§3) the entry is counted as **unverified**, which HOLDS the build from being promoted automatically. If the tool talks to an external service, emit a real curl in §1 instead — a `cli_native` claim on something that has an API is a false green and will block the build rather than help it.
 
-### 3. Built-in platform connectors (always available)
-`personas_database` / `database` / `database_query` / `db_query` / `db_write` / `personas_messages` / `messaging` / `personas_vector_db` / `file_read` / `file_write` are in-process platform capabilities with no external service behind them. Set `tool_name` (or `connector`) to EXACTLY one of those names and leave `curl` empty; the backend recognises them by name. Do not invent `personas_*` names for third-party services — only the names listed here are platform built-ins.
+### 3. Built-in platform capabilities (recognised by name, always available)
+`personas_database` / `database` / `database_query` / `db_query` / `db_write` / `personas_messages` / `messaging` / `personas_vector_db` / `file_read` / `file_write` / `web_search` / `web_fetch` are in-process capabilities with no external service and no user credential behind them. Set `tool_name` (or `connector`) to EXACTLY one of those names and leave `curl` empty; the backend recognises them by name and does not need a `cli_native` claim to accept them. Do not invent `personas_*` names for third-party services — only the names listed here are built-ins.
 
 ### 4. Non-testable (write-only or no endpoint)
 Tools that only mutate state — emit an entry with empty curl, NO `cli_native` field, and a description explaining the skip. These are recorded as skipped and do not block the build.
@@ -1395,9 +1415,46 @@ mod tests {
 
     #[test]
     fn cli_native_on_a_non_builtin_is_an_unverified_claim() {
+        // A real external service with a live endpoint and the user's
+        // credential behind it, which the model simply declared it did not
+        // need to call. This is the false green the direction removes.
         assert_eq!(
             classify_test_entry(&json!({
-                "tool_name": "web_search", "curl": "", "cli_native": true
+                "tool_name": "gmail", "connector": "gmail", "curl": "", "cli_native": true
+            })),
+            EntryClass::ClaimedCliNative
+        );
+    }
+
+    /// `web_search` / `web_fetch` are on `PLATFORM_BUILTIN_TOOLS` DELIBERATELY,
+    /// not incidentally. They are Claude CLI built-ins: no external service, no
+    /// credential to resolve, nothing a curl could exercise. Holding them would
+    /// be a false HOLD — the mirror of the false green — on the case the test
+    /// prompt itself names, and a gate that stops honest builds gets muted.
+    ///
+    /// The safety property survives because this list is CODE: the model cannot
+    /// add to it, for the same reason `personas_gmail` can no longer mint itself
+    /// a pass. What it must never become is a general amnesty for `cli_native`.
+    #[test]
+    fn claude_cli_builtins_are_on_the_allow_list_on_purpose() {
+        for name in ["web_search", "web_fetch"] {
+            assert!(
+                PLATFORM_BUILTIN_TOOLS.contains(&name),
+                "{name} must stay a code-authored built-in"
+            );
+            assert_eq!(
+                classify_test_entry(&json!({
+                    "tool_name": name, "curl": "", "cli_native": true
+                })),
+                EntryClass::PlatformBuiltin,
+                "{name} is recognised by this backend, so the model's claim is not what carries it"
+            );
+        }
+        // The allow-list is not a general amnesty: an unrecognised name with
+        // the same `cli_native` claim still holds.
+        assert_eq!(
+            classify_test_entry(&json!({
+                "tool_name": "web_scrape_pro", "curl": "", "cli_native": true
             })),
             EntryClass::ClaimedCliNative
         );

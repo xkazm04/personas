@@ -151,6 +151,18 @@ exposes one `pub(super)` symbol: `build_template_context`.
   no-parseable-plan fallback's fuzzy credential-name match becomes. It holds
   automatic promotion (`oneshot::evaluate_promote_gate`) without routing to
   the fix-pass loop, which cannot correct "we never called it".
+- **The line is who authored the claim, not whether a call happened.**
+  `PLATFORM_BUILTIN_TOOLS` — which includes `web_search` / `web_fetch`
+  alongside `personas_database` and friends — passes without a call because
+  it is CODE: a model cannot add to it, and we know there is no external
+  service or credential behind any name on it. `cli_native: true` is a
+  boolean the model writes about its own work and can assert of ANYTHING,
+  including a live external connector it never touched, so it carries
+  nothing the backend does not already recognise. Adding a name to the
+  allow-list is a deliberate, reviewable act; do not let it drift into a
+  general amnesty for `cli_native`. Holding a genuine built-in would be a
+  false HOLD — the mirror of the false green — and a gate that stops honest
+  builds gets muted.
   `evaluate_promote_gate` also fails CLOSED on a malformed report: both
   `tools_failed` and `tools_unverified` must be present whole numbers, and
   the declared counts must not undercount what `results` actually lists. Any
