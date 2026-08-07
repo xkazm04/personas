@@ -2,6 +2,11 @@
 
 ## Active
 
+### typo-label-readability — global  redesign (drop UPPERCASE/wide tracking) + prose sites moved to  — session opus-5[1m] — **COMPLETE**, commit - Started/completed: 2026-08-07. Gates: tsc clean · eslint 0 errors on 143 touched files · vitest dev-tools+shared 311/311 · check:themes AA · vite build clean. NOT visually verified in a running app (no live instance up).
+- Scope:  (.typo-label recipe + the ar/CJK script overrides that existed only to undo the uppercase),  (token table row + language-awareness note), , and 143  .tsx files — mechanical removal of 567 now-live / utilities from class regions containing typo-label, plus 9 prose sites switched to typo-caption.
+- **NOTE FOR OTHER SESSIONS:** touches ONLY className strings that already contained  — no logic, no i18n keys, no Rust, no bindings. Every added diff line contains . Staged file-by-file from an empty index (verified 146 = exactly the files added). If your in-flight file shows a one-line className change from this commit, it is that sweep.
+- **Gotcha worth reusing:** a whitespace-tidy regex that reached past the class-string delimiters glued JSX attributes together () across 97 files. Confine any class-list cleanup to the region INSIDE the quotes;  of the affected paths was safe here only because every added line was provably this session's.
+
 
 ### athena-longevity-l1c — Wave 4 (L1c): sleep-pressure trigger + dev force button — session fable-5 xhigh — **COMPLETE — and the L1 LIVE GATE PASSED**
 - **LIVE GATE (2026-08-08 ~14:00): cycle #1 `cyc_293a1cd4f68e` ran on REAL pressure, no force.** Gauge read 102,655/40,000 across 196 episodes → admitted → completed in 60s: 59 episodes/29,409 chars (cap engaged, truncated=true, oldest-first), 9 facts + 6 procedurals written with 21 provenance rows + tags_json, 16 facts decayed, report on disk + node + FTS. Residue gauge after: 72,811 with boundary at consumed_through and the 6h floor blocking with both numbers in the reason. Spend rollup shows `maintenance` 2 turns **$0.44** (vs $3.05 for ONE chat turn the day before — the L2 motivation in one line).
