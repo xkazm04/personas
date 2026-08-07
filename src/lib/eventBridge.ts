@@ -775,6 +775,46 @@ const registry: EventRegistration[] = [
     },
   },
 
+  // -- Remote job row changed (push from the p2p transport) ----------------
+  //
+  // The payload is the WHOLE updated row, so this replaces one entry rather
+  // than invalidating the list — that is what keeps Settings → Devices live
+  // without a poll. Ordering is not guaranteed by Tauri, so the merge (and the
+  // stale-push guard) lives in `upsertRemoteJob`, not here.
+  {
+    event: EventName.REMOTE_JOB_UPDATED,
+    setup: async () => {
+      const unlisten = await typedListen(
+        EventName.REMOTE_JOB_UPDATED,
+        (payload) => {
+          if (!payload || typeof payload.id !== 'string') return;
+          useSystemStore.getState().applyRemoteJobUpdate(payload);
+        },
+      );
+      return [unlisten];
+    },
+  },
+
+  // -- Remote job turn started/finished on THIS device ----------------------
+  //
+  // The answering turn runs with `suppress_chat`, so nothing else tells the
+  // operator that Athena is doing a paired device's errand. Folded into the
+  // ambient notice machine; deliberately NOT a toast, a chat entry or a modal
+  // (ambient awareness without stealing focus).
+  {
+    event: EventName.REMOTE_JOB_TURN,
+    setup: async () => {
+      const unlisten = await typedListen(
+        EventName.REMOTE_JOB_TURN,
+        (payload) => {
+          if (!payload || typeof payload.jobId !== 'string') return;
+          useSystemStore.getState().applyRemoteJobTurn(payload);
+        },
+      );
+      return [unlisten];
+    },
+  },
+
   // -- Persona health changed (push-based from backend) ---------------------
   {
     event: EventName.PERSONA_HEALTH_CHANGED,
