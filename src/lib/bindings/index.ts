@@ -213,6 +213,8 @@ export type { CredentialUsageStats } from "./CredentialUsageStats";
 export type { CronAgent } from "./CronAgent";
 export type { CronPreview } from "./CronPreview";
 export type { CrossProjectRelation } from "./CrossProjectRelation";
+export type { CyclePhase } from "./CyclePhase";
+export type { CycleSummary } from "./CycleSummary";
 export type { DailyNoteRef } from "./DailyNoteRef";
 export type { DashboardCostAnomaly } from "./DashboardCostAnomaly";
 export type { DashboardDailyPoint } from "./DashboardDailyPoint";

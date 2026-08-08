@@ -9,6 +9,7 @@ pub mod backlog;
 pub mod briefing;
 pub mod cockpit;
 pub mod consolidation;
+pub mod cycle_report;
 pub mod daily_goals;
 pub mod dashboard;
 pub mod decisions;

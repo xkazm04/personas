@@ -879,6 +879,40 @@ CREATE TABLE IF NOT EXISTS companion_consolidation (
 CREATE INDEX IF NOT EXISTS idx_companion_consolidation_status
     ON companion_consolidation(status, triggered_at DESC);
 
+-- Sleep cycles: one row per reconciliation pass over the brain (phase L1 of
+-- docs/plans/athena-longevity.md). Distinct from companion_consolidation,
+-- which is the older *manual, proposal-only* fact-diff pass: a cycle is the
+-- scheduled multi-phase run (compress / reconcile / identity / critique) and
+-- its `phases_json` is the audit trail of what each phase did.
+--
+-- The narrative report is a `companion_node` row (kind='cycle_report') with
+-- markdown on disk under `cycles/`, mirrored into companion_fts so the
+-- keyword lane can retrieve it — same four-way write every other memory tier
+-- performs. This table is the structured index over those reports.
+--
+-- No incremental ALTER pairs this: the table is new, and COMPANION_SCHEMA is
+-- re-executed on every boot, so CREATE IF NOT EXISTS reaches existing
+-- databases as well as fresh ones.
+CREATE TABLE IF NOT EXISTS companion_cycle (
+    id           TEXT PRIMARY KEY,
+    started_at   TEXT NOT NULL DEFAULT (datetime('now')),
+    finished_at  TEXT,
+    -- running | completed | failed. A cycle that never finishes STAYS
+    -- 'running' — there is no sweeper that rewrites it to failed, because a
+    -- crashed cycle and a still-working one are genuinely different and the
+    -- ledger must not guess which happened.
+    status       TEXT NOT NULL DEFAULT 'running',
+    -- JSON array of {phase, status, detail, at} — appended one entry per
+    -- phase as the cycle walks.
+    phases_json  TEXT NOT NULL DEFAULT '[]',
+    -- JSON object of whatever the cycle counted (facts_added, episodes_read,
+    -- cost_usd, …) plus `error` on a failed cycle. Versionless; consumers
+    -- tolerate gaps, same contract as companion_turn.outcome_json.
+    stats_json   TEXT NOT NULL DEFAULT '{}'
+);
+CREATE INDEX IF NOT EXISTS idx_companion_cycle_started
+    ON companion_cycle(started_at DESC);
+
 CREATE TABLE IF NOT EXISTS companion_consolidation_item (
     id                TEXT PRIMARY KEY,
     consolidation_id  TEXT NOT NULL,

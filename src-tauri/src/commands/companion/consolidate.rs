@@ -17,7 +17,7 @@ use std::sync::Arc;
 use serde::Serialize;
 use tauri::State;
 
-use crate::companion::brain::{cockpit, consolidation, dashboard, reflection};
+use crate::companion::brain::{cockpit, consolidation, cycle_report, dashboard, reflection};
 use crate::companion::jobs::{self, curation_run};
 use crate::error::AppError;
 use crate::ipc_auth;
@@ -74,6 +74,21 @@ pub fn companion_list_consolidation_runs(
 ) -> Result<Vec<consolidation::ConsolidationSummary>, AppError> {
     ipc_auth::require_auth_sync(&state)?;
     consolidation::list_runs(&state.user_db, limit.unwrap_or(20))
+}
+
+/// Recent sleep cycles, newest first — the journal the Memory page v2 renders
+/// and the audit trail for everything a cycle changed.
+///
+/// Read-only substrate for phase L1 (`docs/plans/athena-longevity.md`); no
+/// scheduler runs cycles yet, so on today's builds this returns an empty list
+/// until something calls `cycle_report::begin_cycle`.
+#[tauri::command]
+pub fn companion_list_cycle_reports(
+    state: State<'_, Arc<AppState>>,
+    limit: Option<u32>,
+) -> Result<Vec<cycle_report::CycleSummary>, AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    cycle_report::list_recent(&state.user_db, limit.unwrap_or(20))
 }
 
 #[tauri::command]
