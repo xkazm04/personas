@@ -301,6 +301,16 @@ whose premise their evidence contradicts.
   `companion::` 522/522. **Phase-gate residue:** churn hashes populate only from the next tracked
   chat turn forward, so L2 sizing waits for real turns to accumulate — which building L1 first
   naturally provides.
-- **Wave 2 · L1a** — launched 2026-08-08: meter the oneshot legs (`origin='maintenance'`) +
-  taxonomy registry + sync-staging schema. The cycle engine (L1b) forks after L1a merges and
-  review.
+- **Wave 2 · L1a** — **SHIPPED 2026-08-08**, merged ff: `c7249280c` oneshot legs metered
+  (`origin='maintenance'`, leg in `trigger_kind`, shared row/failure helpers, classifier pins all
+  nine oneshot failure literals, night_plan's usage-less hand-rolled row removed as a
+  double-count) · `ac6b8d983` taxonomy registry (9 active seeds; `proposed` is a real gate;
+  idempotent in both directions) + `companion_sync_inbox` (first-consumer ownership via IS NULL
+  guard). Gate: tsc · `companion::` 536/536 · desktop check at baseline · **desktop,ml check** —
+  which caught that r4's `84a2ee870` had shipped 3×E0382 in the ml recall arm, breaking the
+  production `desktop-full` build on master; Director-fixed in `3bc5722f9` and the ml check joins
+  the standing gates. Residue: no maintenance leg has live-run yet; `recall_synthesis` leg can
+  only fire on ml builds.
+- **Wave 3 · L1b** — launched 2026-08-08, branch `longevity/l1b`: the sleep cycle engine —
+  compress + reconcile as metered oneshot legs, staging consumption, tags_json on companion_node,
+  night-shift scheduling + manual trigger command.

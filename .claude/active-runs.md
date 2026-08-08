@@ -2,11 +2,15 @@
 
 ## Active
 
-### athena-longevity-l1a — Wave 2 (L1a): oneshot metering + taxonomy/staging schema — session fable-5 xhigh — **builder in flight**
-- Started: 2026-08-08. One-branch wave `longevity/l1a` in the MAIN checkout — HEAD sits there until merge; coordinate here before parallel work.
-- Scope: `src-tauri/src/companion/brain/{oneshot.rs,taxonomy.rs(new),sync_staging.rs(new),mod.rs,consolidation.rs,reflection.rs,briefing.rs}` · `src-tauri/src/companion/{night_shift/**,tours.rs,turn_ledger.rs,athena_reaction.rs}` · `src-tauri/db/src/lib.rs` · bindings.
-- Plan: `docs/plans/athena-longevity.md` (Wave log). L1b (the cycle engine) forks only after this merges + review.
+### athena-longevity-l1b — Wave 3 (L1b): the sleep cycle engine — session fable-5 xhigh — **builder in flight**
+- Started: 2026-08-08. One-branch wave `longevity/l1b` in the MAIN checkout — HEAD sits there until merge.
+- Scope: `src-tauri/src/companion/brain/{sleep_cycle.rs(new),mod.rs,semantic.rs,procedural.rs,episodic.rs,taxonomy.rs,sync_staging.rs,cycle_report.rs,consolidation.rs}` · `src-tauri/src/companion/night_shift/**` · `src-tauri/src/commands/companion/**` · `src-tauri/db/src/lib.rs` · `src-tauri/src/lib.rs` · bindings + commandNames.
+- Plan: `docs/plans/athena-longevity.md` Wave log.
 
+### athena-longevity-l1a — Wave 2 (L1a): oneshot metering + taxonomy/staging schema — session fable-5 xhigh — **COMPLETE, merged ff**
+- Started/completed: 2026-08-08. Commits: `c7249280c` meter the oneshot legs (7 legs → `companion_turn` origin='maintenance', leg in `trigger_kind`; shared `record_cli_leg`/`record_failed_leg`; classifier pins oneshot's 9 failure literals; removed night_plan's usage-less hand-rolled row that would have double-counted) · `ac6b8d983` taxonomy registry (9 seeds, both-direction-idempotent) + sync staging inbox (IS-NULL first-consumer ownership) · `3bc5722f9` Director fix: r4's `84a2ee870` broke the ml arm of recall (3×E0382) — desktop-full/production build was broken on master; found by the builder running the ml check unasked.
+- Gate: tsc clean · `companion::` 536/536 · `cargo check --features desktop` at 213-warning baseline · `cargo check --features desktop,ml` NOW GREEN and **added to standing wave gates**.
+- Not live-verified: first real `maintenance` rows appear on the next consolidation/briefing/night-plan run.
 ### athena-longevity-l0 — Athena longevity Wave 1 (L0 instruments) — session fable-5 xhigh — **COMPLETE, merged fast-forward**
 - Started/completed: 2026-08-08. Commits on master: `996376f10` per-block prompt churn instrument · `028466e06` unified spend rollup · `6ab035653` cycle_report substrate · `d2070899c` ts-rs export CWD fix + 26-file binding-drift closure (the round-4 🔴 carry-over, closed).
 - Gate: tsc clean · i18n strict 18,941×14 at 0/0 · Vitest 709/709 targeted · `companion::` 522/522 · `cargo check --features desktop` clean at 213-warning baseline.
