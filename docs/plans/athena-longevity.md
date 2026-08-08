@@ -170,6 +170,21 @@ evidence** (precedent: `e732c4e65` split trusted framing from untrusted evidence
 - **Output:** one `cycle_report` node per cycle — *what I learned / what I forgot / what I changed
   / what I propose.* The journal entry Memory v2 renders, and the audit trail for everything above.
 
+**Sleep pressure — the trigger (operator decision, 2026-08-08).** Cycles are fired by
+accumulated conversation volume, not by the clock — irregular, usage-shaped, like sleep pressure.
+Measured baseline (790-message export, `logs/athena-conversations/`, machine rows excluded):
+heavy days 48,325 / 51,735 / 60,808 / 63,550 / 100,389 conversation chars; light days
+1,464–11,154; avg over 9 active days ≈ 38.4k. Constants (rebalance later from cycle stats):
+**PRESSURE_THRESHOLD = 40,000 chars** since the last completed cycle's consumed-through boundary
+(a heavy day cycles same-day; 2–3 light days accumulate into one) · **floor 6h** between cycles ·
+**staleness 72h** — fire anyway if ≥2,000 new chars are waiting · below 2,000, never (nothing to
+compress). Cycles record `consumed_through` (newest episode actually fed to compress) so a
+truncated cycle drains its residue oldest-first on the next admission instead of orphaning it.
+The night-plan approval gate is REMOVED for the sleep cycle — it guards autonomy-answering, not
+memory maintenance; cost at these caps is ≈$0.10–0.15/cycle. A **dev-gated chat-header button**
+force-runs a cycle (bypasses pressure + floor, never single-flight) so the operator can enforce
+milestone cycles and gather data for the next waves.
+
 **Approval posture (v0):** auto-apply A and B within budgets; **gate C (identity), forgetting
 demotions, and taxonomy expansion** through a proposal inbox (generalized `ConsolidationReview`).
 Relax per-dimension as trust accrues — the gate posture is itself a setting, not an architecture.
@@ -311,6 +326,9 @@ whose premise their evidence contradicts.
   production `desktop-full` build on master; Director-fixed in `3bc5722f9` and the ml check joins
   the standing gates. Residue: no maintenance leg has live-run yet; `recall_synthesis` leg can
   only fire on ml builds.
+- **Wave 4 · L1c** — launched 2026-08-08, branch `longevity/l1c`: sleep-pressure admission
+  (40k/6h/72h, consumed_through boundary), force trigger, `companion_get_sleep_pressure`,
+  dev-gated chat-header force button.
 - **Wave 3 · L1b** — **SHIPPED 2026-08-08**, merged ff: `5c1332199` the cycle engine (compress +
   reconcile; CycleLlm seam so every parse/cap/write decision is testable; nonce-fenced untrusted
   evidence; tags into `companion_node.tags_json` + `tag:` FTS tokens; `demote_superseded` and
