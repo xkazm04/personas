@@ -176,10 +176,18 @@ pub async fn retrieve(
     // here). Doctrine rides its own kind-scoped lane below; goals/rituals/
     // backlog don't ride the vector lane at all.
     let (near_hits, dropped_far) = filter_by_distance_floor(&hits, MAX_VECTOR_DISTANCE);
+    // Clones, not moves: the same exclusion sets are needed again below as the
+    // keyword lanes' dedupe guards (each holds ≤ a few dozen ids). Moving them
+    // in here was an E0382 that only the `ml` arm ever compiled far enough to
+    // hit — caught 2026-08-08, after shipping.
     let mut lanes = [
-        Lane::new("episode", VECTOR_EPISODE_TOPK, recent_ids),
-        Lane::new("fact", VECTOR_FACT_TOPK, fact_ids_in_recall),
-        Lane::new("procedural", VECTOR_PROCEDURAL_TOPK, procedural_ids_in_recall),
+        Lane::new("episode", VECTOR_EPISODE_TOPK, recent_ids.clone()),
+        Lane::new("fact", VECTOR_FACT_TOPK, fact_ids_in_recall.clone()),
+        Lane::new(
+            "procedural",
+            VECTOR_PROCEDURAL_TOPK,
+            procedural_ids_in_recall.clone(),
+        ),
     ];
     rank_into_lanes(&near_hits, &kinds, &mut lanes);
     let [episode_lane, fact_lane, procedural_lane] = lanes;
