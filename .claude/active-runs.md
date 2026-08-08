@@ -2,6 +2,11 @@
 
 ## Active
 
+### athena-longevity-l1a — Wave 2 (L1a): oneshot metering + taxonomy/staging schema — session fable-5 xhigh — **builder in flight**
+- Started: 2026-08-08. One-branch wave `longevity/l1a` in the MAIN checkout — HEAD sits there until merge; coordinate here before parallel work.
+- Scope: `src-tauri/src/companion/brain/{oneshot.rs,taxonomy.rs(new),sync_staging.rs(new),mod.rs,consolidation.rs,reflection.rs,briefing.rs}` · `src-tauri/src/companion/{night_shift/**,tours.rs,turn_ledger.rs,athena_reaction.rs}` · `src-tauri/db/src/lib.rs` · bindings.
+- Plan: `docs/plans/athena-longevity.md` (Wave log). L1b (the cycle engine) forks only after this merges + review.
+
 ### athena-longevity-l0 — Athena longevity Wave 1 (L0 instruments) — session fable-5 xhigh — **COMPLETE, merged fast-forward**
 - Started/completed: 2026-08-08. Commits on master: `996376f10` per-block prompt churn instrument · `028466e06` unified spend rollup · `6ab035653` cycle_report substrate · `d2070899c` ts-rs export CWD fix + 26-file binding-drift closure (the round-4 🔴 carry-over, closed).
 - Gate: tsc clean · i18n strict 18,941×14 at 0/0 · Vitest 709/709 targeted · `companion::` 522/522 · `cargo check --features desktop` clean at 213-warning baseline.
