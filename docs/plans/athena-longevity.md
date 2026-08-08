@@ -332,8 +332,15 @@ whose premise their evidence contradicts.
   captures only 45% of real volume, ratio swinging 0.42–0.90/day, and would have silently
   redefined the 40k threshold to ~90k**) · `7c44cb632` dev force button (backend-authoritative
   dev gate; verbatim skip-reason toasts; lazy pressure tooltip). Gate: companion:: 565/565 ×6
-  runs · Vitest 447/447 · both cargo checks · i18n 0/0. L1 is now feature-complete INCLUDING its
-  trigger; everything remains test-verified only — the live gate is the next act.
+  runs · Vitest 447/447 · both cargo checks · i18n 0/0. L1 is feature-complete including its trigger.
+- **L1 LIVE GATE — PASSED 2026-08-08.** Cycle #1 admitted on real pressure (102,655/40,000, 196
+  episodes), no force: 60s, 9 facts + 6 procedurals (21 provenance rows, tags keyword-reachable),
+  16 decayed, honest truncation (59/196 read, oldest-first, residue 72,811 with the boundary at
+  consumed_through, floor blocking with numbers in the reason). Maintenance legs metered: **$0.44
+  for the whole cycle vs $3.05 for a single chat turn the day before.** Finding: the test suite
+  had leaked 39 orphan cycle reports into the real brain (`brain_root()` is ambient env while test
+  DBs are injected) — cleaned, root-cause fix queued (injectable brain root / guarded
+  PERSONAS_HOME); report template nits: "when when", "1 long bodies".
 - **Wave 3 · L1b** — **SHIPPED 2026-08-08**, merged ff: `5c1332199` the cycle engine (compress +
   reconcile; CycleLlm seam so every parse/cap/write decision is testable; nonce-fenced untrusted
   evidence; tags into `companion_node.tags_json` + `tag:` FTS tokens; `demote_superseded` and
