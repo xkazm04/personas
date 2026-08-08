@@ -20,6 +20,40 @@
 //!   ([`sync_staging`]), then judge supersedes and contradictions across the
 //!   active fact set, then run the lifecycle pass.
 //!
+//! ## What fires a cycle: sleep pressure, not the clock
+//!
+//! L1b fired on a 20-hour timer inside an approved night-plan window. Both are
+//! gone (L1c). A cycle is triggered by **accumulated conversation volume** —
+//! [`PRESSURE_THRESHOLD_CHARS`] of new non-machine conversation since the last
+//! completed cycle's [`consumed_through`](CycleStats::consumed_through)
+//! boundary — because that is the thing a cycle actually costs money to
+//! process. Measured on a 790-message export: heavy days run 48k–100k
+//! conversation chars, light days 1.5k–11k, so a heavy day cycles same-day and
+//! two or three light ones accumulate into one. The clock survives only as a
+//! **floor** ([`MIN_INTERVAL_HOURS`], so a burst cannot cycle twice in an hour)
+//! and as a **staleness** release ([`STALENESS_HOURS`], so a slow week still
+//! gets compressed) — neither is the trigger.
+//!
+//! The night-plan approval gate was removed with it: that gate guards
+//! *autonomy-answering*, and memory maintenance is not that.
+//!
+//! ### One boundary, one predicate, one read
+//!
+//! Pressure and the compress window are not two measurements that agree — they
+//! are the *same* measurement. [`measure`] resolves the boundary once, fetches
+//! the window once, and sums its bodies; on admission that exact `Vec<Episode>`
+//! travels inside the [`AdmittedCycle`] into compress. There is no second query
+//! that could drift from the first.
+//!
+//! ### Draining forward
+//!
+//! Because the caps below can truncate a heavy window, compress consumes
+//! **oldest-first** and records `consumed_through` = the `created_at` of the
+//! newest episode it actually read. The next cycle's boundary is that value
+//! (exclusive), so a truncated day's residue is the *next* cycle's oldest
+//! material rather than orphaned material no cycle ever reaches. L1b took the
+//! newest N of an over-long window, which had exactly that orphaning bug.
+//!
 //! ## v0 is deliberately conservative
 //!
 //! Three rules, each of which makes the cycle do *less* than it could:
@@ -79,11 +113,41 @@ use crate::error::AppError;
 
 // ── Bounds ─────────────────────────────────────────────────────────────────
 
-/// Minimum hours between COMPLETED cycles. Keyed on completion, never on the
-/// existence of a `running` row: a crashed cycle stays `running` forever by
-/// `cycle_report`'s design, and an interval that respected it would let one
-/// dead process suppress every future cycle in silence.
-const MIN_INTERVAL_HOURS: i64 = 20;
+/// **The trigger.** Characters of new non-machine conversation, accumulated
+/// since the last completed cycle's `consumed_through` boundary, that admit a
+/// cycle.
+///
+/// 40,000 comes from measurement, not taste: over a 790-message export the
+/// operator's heavy days ran 48,325 / 51,735 / 60,808 / 63,550 / 100,389
+/// conversation chars and his light days 1,464–11,154, averaging ≈38.4k across
+/// nine active days. At this threshold a heavy day cycles the same day and two
+/// or three light days accumulate into one — cadence shaped by usage, which is
+/// the whole point. Expect to rebalance it from real cycle stats.
+pub const PRESSURE_THRESHOLD_CHARS: usize = 40_000;
+
+/// Minimum hours between COMPLETED cycles. A **floor, not the trigger** — it
+/// exists so a single very heavy afternoon cannot cycle twice, and it is the
+/// only clock left in the admission's fast path.
+///
+/// Keyed on completion, never on the existence of a `running` row: a crashed
+/// cycle stays `running` forever by `cycle_report`'s design, and a floor that
+/// respected it would let one dead process suppress every future cycle in
+/// silence.
+pub const MIN_INTERVAL_HOURS: i64 = 6;
+
+/// Hours after which a cycle fires even under [`PRESSURE_THRESHOLD_CHARS`],
+/// provided at least [`MIN_STALENESS_CHARS`] are waiting.
+///
+/// The release valve for a quiet week: pressure alone would let a slow stretch
+/// sit uncompressed indefinitely, and memory that is never reconciled is the
+/// failure this whole project exists to end.
+pub const STALENESS_HOURS: i64 = 72;
+
+/// Below this many new characters a cycle NEVER admits — not on pressure, not
+/// on staleness. Two thousand characters is a handful of turns; compressing it
+/// would spend a real LLM call to distil nothing, and write a report saying so.
+/// Only [`force`](trigger) crosses this line.
+pub const MIN_STALENESS_CHARS: usize = 2_000;
 
 /// How far back the FIRST cycle ever reads, having no predecessor to start
 /// from. A week is the same slice `consolidation`'s 80-episode window
@@ -212,18 +276,28 @@ impl Drop for CycleGuard {
 }
 
 /// An admitted cycle: the single-flight lock, the row that has already been
-/// opened, and the window this pass is responsible for.
+/// opened, and **the episodes this pass is responsible for**.
 ///
 /// It exists so the manual trigger can answer with a real cycle id *before* the
-/// work starts — admission is synchronous and cheap, the phases are neither.
-/// Carrying the guard inside means the lock is held from admission to the end of
-/// the spawned task, with no window where a second caller could slip in.
+/// work starts — admission is synchronous, the phases are not. Carrying the
+/// guard inside means the lock is held from admission to the end of the spawned
+/// task, with no window where a second caller could slip in.
+///
+/// It carries the episodes rather than the boundary because admission already
+/// read them to weigh the pressure. Re-querying in compress would mean two
+/// reads that are *supposed* to agree — and a boundary that drifts between the
+/// gauge and the work is precisely the bug class this module keeps finding.
 #[derive(Debug)]
 pub struct AdmittedCycle {
     _guard: CycleGuard,
     cycle_id: String,
-    /// RFC3339 lower bound on `created_at` for this cycle's compress input.
-    window_start: String,
+    /// The exclusive `created_at` boundary this window was measured from.
+    boundary: String,
+    /// The window, oldest-first, already hydrated. Fetch-capped; `available`
+    /// is the honest denominator.
+    episodes: Vec<episodic::Episode>,
+    /// TRUE count of conversation episodes past the boundary.
+    available: usize,
 }
 
 impl AdmittedCycle {
@@ -239,53 +313,237 @@ pub enum CycleAdmission {
     Skipped(String),
 }
 
-/// Take the single-flight lock, check the minimum interval, and open a cycle
-/// row. Cheap and synchronous — safe to call from a scheduler tick.
+/// The state of the sleep-pressure gauge at one instant — everything both the
+/// admission decision and the UI readout are derived from, computed once.
 ///
-/// On `Skipped` the lock is already released (the guard drops on the early
-/// return), so a skip costs nothing and blocks nothing.
-pub fn admit(pool: &UserDbPool) -> Result<CycleAdmission, AppError> {
+/// Not `Serialize`: [`SleepPressure`] is the wire shape. This is the internal
+/// reading, and it owns the episodes so an admitted cycle can take them.
+struct Reading {
+    /// Exclusive RFC3339 `created_at` boundary this window starts after.
+    boundary: String,
+    episodes: Vec<episodic::Episode>,
+    /// TRUE count past the boundary (a COUNT, not the fetch length).
+    available: usize,
+    /// Sum of body chars over the fetched window.
+    pressure_chars: usize,
+    last: Option<cycle_report::LastCompleted>,
+    /// Whole hours since the last completed cycle finished; `None` when no
+    /// cycle has ever completed or its timestamp is unparseable.
+    hours_since: Option<i64>,
+    /// `false` only when a completed cycle finished inside [`MIN_INTERVAL_HOURS`].
+    floor_satisfied: bool,
+}
+
+/// What the pressure gauge says about admitting right now.
+enum Verdict {
+    Admit(String),
+    Skip(String),
+}
+
+impl Verdict {
+    fn reason(&self) -> &str {
+        match self {
+            Verdict::Admit(r) | Verdict::Skip(r) => r,
+        }
+    }
+    fn is_admit(&self) -> bool {
+        matches!(self, Verdict::Admit(_))
+    }
+}
+
+/// Resolve where this cycle's window starts: the last completed cycle's
+/// `consumed_through`, else its `started_at`, else a week back.
+///
+/// **The single boundary function.** Pressure and the compress window both come
+/// from here, through one call in [`measure`], so they cannot disagree.
+///
+/// The three tiers are a migration path, not a preference. `consumed_through`
+/// is the truthful answer — the newest episode the previous cycle actually fed
+/// to compress — and it is what makes a truncated window drain forward instead
+/// of orphaning its residue. Cycles written before L1c have no such key, so
+/// they fall back to `started_at` (the L1b behaviour: re-read anything that
+/// arrived while that cycle was thinking rather than skipping it). With no
+/// completed cycle at all, a week is the same slice `consolidation`'s
+/// 80-episode window approximates, and it bounds the one cycle that would
+/// otherwise face the whole archive.
+fn boundary_for(last: Option<&cycle_report::LastCompleted>) -> String {
+    match last {
+        Some(l) => consumed_through_of(&l.stats_json).unwrap_or_else(|| l.started_at.clone()),
+        None => (Utc::now() - ChronoDuration::days(FIRST_CYCLE_LOOKBACK_DAYS)).to_rfc3339(),
+    }
+}
+
+/// `consumed_through` out of a cycle's `stats_json`, if it carries one.
+fn consumed_through_of(stats_json: &str) -> Option<String> {
+    serde_json::from_str::<Value>(stats_json)
+        .ok()?
+        .get("consumed_through")?
+        .as_str()
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+}
+
+/// Read the gauge: resolve the boundary, fetch the window past it once, and sum
+/// its conversation volume.
+///
+/// **Pressure is summed over hydrated episode BODIES, deliberately, and not out
+/// of SQL.** The obvious cheap implementation — `SUM(LENGTH(body_excerpt))` on
+/// `companion_node` — is wrong by roughly a factor of two: `body_excerpt` is
+/// capped at `retrieval::EPISODE_EXCERPT_CAP` (500 chars), and measured against
+/// the same 790-message export that [`PRESSURE_THRESHOLD_CHARS`] was calibrated
+/// on, a 500-cap captures **45%** of real conversation volume — with the ratio
+/// swinging 0.42–0.90 day to day, so it is not even a stable scale factor. A
+/// gauge on that column would silently redefine the threshold to ~90,000 real
+/// chars and would drift against the operator's own measured baseline. The
+/// hydrated read costs a file read per episode whose body outgrew the excerpt;
+/// that is the price of the number meaning what it says.
+///
+/// Costs one indexed COUNT plus one bounded window fetch. Cheap enough for the
+/// manual trigger and a UI hover; the night-shift tick fires every 30s and
+/// throttles itself before calling in (see `night_shift::maybe_run_sleep_cycle`).
+fn measure(pool: &UserDbPool) -> Result<Reading, AppError> {
+    let last = cycle_report::last_completed(pool)?;
+
+    let hours_since = last.as_ref().and_then(|l| match parse_ts(&l.finished_at) {
+        Some(fin) => Some(
+            Utc::now()
+                .signed_duration_since(fin)
+                .num_hours()
+                .max(0),
+        ),
+        // An unparseable timestamp must not wedge cycles forever. Treat the
+        // floor as satisfied and say so — a noisy log beats a memory that
+        // silently stops reconciling because one row is malformed.
+        None => {
+            tracing::warn!(
+                finished_at = %l.finished_at,
+                "sleep_cycle: unparseable finished_at on the last completed cycle; \
+                 treating the interval floor as satisfied"
+            );
+            None
+        }
+    });
+    let floor_satisfied = hours_since.is_none_or(|h| h >= MIN_INTERVAL_HOURS);
+
+    let boundary = boundary_for(last.as_ref());
+    let available = episodic::count_conversation_after(pool, &boundary)?;
+    let episodes = episodic::list_conversation_after(pool, &boundary, EPISODE_FETCH_LIMIT)?;
+    let pressure_chars = episodes.iter().map(|e| e.content.chars().count()).sum();
+
+    Ok(Reading {
+        boundary,
+        episodes,
+        available,
+        pressure_chars,
+        last,
+        hours_since,
+        floor_satisfied,
+    })
+}
+
+/// The admission decision, stated in numbers the operator can act on.
+///
+/// Every branch names the figures it decided on, because this string is what a
+/// toast shows him when he presses the button and nothing happens. "Not due yet"
+/// is an answer that teaches nobody anything.
+fn verdict(r: &Reading, force: bool) -> Verdict {
+    let waiting = format!(
+        "{} of {} chars",
+        thousands(r.pressure_chars),
+        thousands(PRESSURE_THRESHOLD_CHARS)
+    );
+
+    if force {
+        return Verdict::Admit(format!(
+            "forced: running regardless of pressure ({waiting}) and the {MIN_INTERVAL_HOURS}h floor"
+        ));
+    }
+
+    if !r.floor_satisfied {
+        let h = r.hours_since.unwrap_or(0);
+        return Verdict::Skip(format!(
+            "the last cycle completed {h}h ago and the {MIN_INTERVAL_HOURS}h floor has not \
+             elapsed; pressure {waiting}"
+        ));
+    }
+
+    // Nothing to compress. Checked before both release paths — a staleness that
+    // fired on an empty window would spend a real LLM call to distil nothing.
+    if r.pressure_chars < MIN_STALENESS_CHARS {
+        return Verdict::Skip(format!(
+            "only {} chars of new conversation are waiting, under the {} minimum; there is \
+             nothing worth compressing",
+            thousands(r.pressure_chars),
+            thousands(MIN_STALENESS_CHARS)
+        ));
+    }
+
+    if r.pressure_chars >= PRESSURE_THRESHOLD_CHARS {
+        return Verdict::Admit(format!(
+            "sleep pressure reached: {waiting} across {} episodes",
+            r.available
+        ));
+    }
+
+    // Staleness. `None` means no cycle has EVER completed, which is at least as
+    // overdue as 72h — the first cycle on a new brain should not have to wait
+    // for a heavy day before the heartbeat proves it beats.
+    match r.hours_since {
+        None => Verdict::Admit(format!(
+            "no cycle has ever completed and {} chars are waiting; running under threshold \
+             ({waiting})",
+            thousands(r.pressure_chars)
+        )),
+        Some(h) if h >= STALENESS_HOURS => Verdict::Admit(format!(
+            "{h}h since the last cycle (staleness fires at {STALENESS_HOURS}h) with {} chars \
+             waiting; running under threshold ({waiting})",
+            thousands(r.pressure_chars)
+        )),
+        Some(h) => Verdict::Skip(format!(
+            "pressure {waiting}; the {MIN_INTERVAL_HOURS}h floor is satisfied ({h}h since the \
+             last cycle) and staleness fires at {STALENESS_HOURS}h"
+        )),
+    }
+}
+
+/// Take the single-flight lock, weigh the sleep pressure, and open a cycle row.
+///
+/// Synchronous — safe to call from a scheduler tick, though that caller
+/// throttles itself because the measurement is a window fetch rather than a
+/// single row. On `Skipped` the lock is already released (the guard drops on the
+/// early return), so a skip costs nothing and blocks nothing.
+///
+/// `force` bypasses pressure, the floor and staleness. It does **not** bypass
+/// the single-flight guard, and cannot: the guard is taken first, and a `force`
+/// that could run a second cycle concurrently would have two passes writing
+/// facts from overlapping windows.
+pub fn admit(pool: &UserDbPool, force: bool) -> Result<CycleAdmission, AppError> {
     let Some(guard) = CycleGuard::acquire() else {
         return Ok(CycleAdmission::Skipped(
             "a sleep cycle is already running in this process".into(),
         ));
     };
 
-    let last = cycle_report::last_completed(pool)?;
-    if let Some((_, finished_at)) = last.as_ref() {
-        match parse_ts(finished_at) {
-            Some(fin) => {
-                let elapsed = Utc::now().signed_duration_since(fin);
-                if elapsed < ChronoDuration::hours(MIN_INTERVAL_HOURS) {
-                    return Ok(CycleAdmission::Skipped(format!(
-                        "the last cycle completed {}h ago; the minimum interval is {MIN_INTERVAL_HOURS}h",
-                        elapsed.num_hours().max(0)
-                    )));
-                }
-            }
-            // An unparseable timestamp must not wedge cycles forever. Allow the
-            // run and say so — a noisy log beats a memory that silently stops
-            // reconciling because one row is malformed.
-            None => tracing::warn!(
-                finished_at = %finished_at,
-                "sleep_cycle: unparseable finished_at on the last completed cycle; running anyway"
-            ),
-        }
+    let reading = measure(pool)?;
+    let verdict = verdict(&reading, force);
+    if !verdict.is_admit() {
+        return Ok(CycleAdmission::Skipped(verdict.reason().to_string()));
     }
 
-    // The window starts where the last completed cycle STARTED, not where it
-    // finished, so episodes written while that cycle was thinking are read by
-    // this one instead of falling between the two.
-    let window_start = match last {
-        Some((started_at, _)) => started_at,
-        None => (Utc::now() - ChronoDuration::days(FIRST_CYCLE_LOOKBACK_DAYS)).to_rfc3339(),
-    };
-
     let cycle_id = cycle_report::begin_cycle(pool)?;
+    tracing::info!(
+        cycle_id = %cycle_id,
+        pressure_chars = reading.pressure_chars,
+        episodes = reading.available,
+        reason = verdict.reason(),
+        "sleep_cycle: admitted"
+    );
     Ok(CycleAdmission::Admitted(AdmittedCycle {
         _guard: guard,
         cycle_id,
-        window_start,
+        boundary: reading.boundary,
+        episodes: reading.episodes,
+        available: reading.available,
     }))
 }
 
@@ -296,14 +554,123 @@ pub fn admit(pool: &UserDbPool) -> Result<CycleAdmission, AppError> {
 /// work begins: the verdict is computed on the caller's thread — including the
 /// real cycle id, which already exists by then — and the caller owns the spawn.
 /// It also makes the decision testable without a runtime.
-pub fn trigger(pool: &UserDbPool) -> Result<(SleepCycleTrigger, Option<AdmittedCycle>), AppError> {
-    Ok(match admit(pool)? {
+pub fn trigger(
+    pool: &UserDbPool,
+    force: bool,
+) -> Result<(SleepCycleTrigger, Option<AdmittedCycle>), AppError> {
+    Ok(match admit(pool, force)? {
         CycleAdmission::Skipped(reason) => (SleepCycleTrigger::skipped(reason), None),
         CycleAdmission::Admitted(a) => (
             SleepCycleTrigger::started(a.cycle_id().to_string()),
             Some(a),
         ),
     })
+}
+
+// ── The gauge, as a wire shape ─────────────────────────────────────────────
+
+/// What the last completed cycle was, for the gauge.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct SleepPressureLastCycle {
+    pub id: String,
+    pub finished_at: String,
+    /// Whole hours since it finished. `null` when its timestamp is unparseable.
+    pub hours_ago: Option<i32>,
+    /// True when a cap left episodes of that cycle's window unread — the
+    /// residue this cycle's boundary is now positioned to drain.
+    pub truncated: bool,
+}
+
+/// How overdue a cycle is on the clock, when there is a clock to measure from.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct SleepPressureStaleness {
+    pub hours_since: i32,
+    pub fires_at_hours: i32,
+}
+
+/// The sleep-pressure gauge — what `companion_get_sleep_pressure` answers.
+///
+/// Deliberately the SAME computation the admission runs, not a parallel
+/// estimate: [`sleep_pressure`] calls [`measure`] and [`verdict`], so
+/// `would_admit` is a prediction only in the sense that time may pass before
+/// the next call. A read-only gauge that could disagree with the gate it
+/// describes would be worse than no gauge.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct SleepPressure {
+    /// New conversation chars accumulated since `boundary`.
+    pub pressure_chars: usize,
+    pub threshold_chars: usize,
+    /// Conversation episodes past `boundary` (a true COUNT).
+    pub episodes_waiting: usize,
+    /// The exclusive `created_at` boundary the measurement starts after.
+    pub boundary: String,
+    pub floor_satisfied: bool,
+    pub floor_hours: i32,
+    pub min_chars: usize,
+    pub staleness: Option<SleepPressureStaleness>,
+    pub last_cycle: Option<SleepPressureLastCycle>,
+    pub would_admit: bool,
+    /// The verdict in the operator's words — the same string a skip toast shows.
+    pub would_admit_reason: String,
+}
+
+/// Read the gauge without touching anything.
+///
+/// Never takes the single-flight lock, so asking cannot block or perturb a
+/// cycle. `would_admit` therefore excludes the "already running" case by
+/// construction — that one is only knowable at the moment of admission, and the
+/// trigger reports it honestly when it happens.
+pub fn sleep_pressure(pool: &UserDbPool) -> Result<SleepPressure, AppError> {
+    let r = measure(pool)?;
+    let v = verdict(&r, false);
+    Ok(SleepPressure {
+        pressure_chars: r.pressure_chars,
+        threshold_chars: PRESSURE_THRESHOLD_CHARS,
+        episodes_waiting: r.available,
+        boundary: r.boundary.clone(),
+        floor_satisfied: r.floor_satisfied,
+        // Hours are `i32` on the wire, not `i64`: ts-rs renders `i64` as
+        // TypeScript `bigint`, but Tauri's JSON transport delivers a plain
+        // `number` — a type that lies about its own runtime value is worse than
+        // a narrower one, and 2 billion hours is 245,000 years.
+        floor_hours: MIN_INTERVAL_HOURS as i32,
+        min_chars: MIN_STALENESS_CHARS,
+        staleness: r.hours_since.map(|hours_since| SleepPressureStaleness {
+            hours_since: hours_since as i32,
+            fires_at_hours: STALENESS_HOURS as i32,
+        }),
+        last_cycle: r.last.as_ref().map(|l| SleepPressureLastCycle {
+            id: l.id.clone(),
+            finished_at: l.finished_at.clone(),
+            hours_ago: r.hours_since.map(|h| h as i32),
+            truncated: serde_json::from_str::<Value>(&l.stats_json)
+                .ok()
+                .and_then(|v| v.get("truncated").and_then(|t| t.as_bool()))
+                .unwrap_or(false),
+        }),
+        would_admit: v.is_admit(),
+        would_admit_reason: v.reason().to_string(),
+    })
+}
+
+/// `42310` → `42,310`. The gauge's numbers are read by a human in a toast, and
+/// six unseparated digits are the difference between a figure and a smear.
+fn thousands(n: usize) -> String {
+    let s = n.to_string();
+    let mut out = String::with_capacity(s.len() + s.len() / 3);
+    for (i, ch) in s.chars().enumerate() {
+        if i > 0 && (s.len() - i) % 3 == 0 {
+            out.push(',');
+        }
+        out.push(ch);
+    }
+    out
 }
 
 /// Run one sleep cycle end to end, or report why it did not.
@@ -315,8 +682,8 @@ pub fn trigger(pool: &UserDbPool) -> Result<(SleepCycleTrigger, Option<AdmittedC
 /// rather than spawning a task per tick that would only skip. This stays as the
 /// obvious entry point for a caller that wants neither — a job, a CLI, a test.
 #[allow(dead_code)]
-pub async fn run_sleep_cycle(pool: &UserDbPool) -> Result<CycleOutcome, AppError> {
-    match admit(pool)? {
+pub async fn run_sleep_cycle(pool: &UserDbPool, force: bool) -> Result<CycleOutcome, AppError> {
+    match admit(pool, force)? {
         CycleAdmission::Skipped(reason) => Ok(CycleOutcome::Skipped { reason }),
         CycleAdmission::Admitted(admitted) => run_admitted(pool, admitted).await,
     }
@@ -375,6 +742,19 @@ struct CycleStats {
     chars_in: usize,
     /// True when a cap dropped episodes or excerpted a body.
     truncated: bool,
+    /// Exclusive `created_at` boundary this cycle's window started AFTER —
+    /// the previous completed cycle's `consumed_through`.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    window_start: String,
+    /// **The hand-off.** `created_at` of the newest episode this cycle actually
+    /// fed to compress; the next cycle's window starts strictly after it and
+    /// its pressure is measured from it.
+    ///
+    /// Absent on a cycle that read nothing (the boundary must not move) and on
+    /// every pre-L1c cycle, which is why [`boundary_for`] keeps a `started_at`
+    /// fallback.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    consumed_through: Option<String>,
     facts_applied: usize,
     facts_dropped: usize,
     facts_dropped_over_cap: usize,
@@ -423,21 +803,20 @@ struct CycleNotes {
 async fn run_admitted_with(
     pool: &UserDbPool,
     llm: &dyn CycleLlm,
-    admitted: AdmittedCycle,
+    mut admitted: AdmittedCycle,
 ) -> Result<CycleOutcome, AppError> {
     let cycle_id = admitted.cycle_id.clone();
     let mut stats = CycleStats::default();
     let mut notes = CycleNotes::default();
 
-    let result = run_phases(
-        pool,
-        llm,
-        &cycle_id,
-        &admitted.window_start,
-        &mut stats,
-        &mut notes,
-    )
-    .await;
+    // `take` rather than destructure: `admitted` owns the single-flight guard
+    // and must stay alive until this function returns.
+    let window = Window {
+        boundary: admitted.boundary.clone(),
+        episodes: std::mem::take(&mut admitted.episodes),
+        available: admitted.available,
+    };
+    let result = run_phases(pool, llm, &cycle_id, window, &mut stats, &mut notes).await;
 
     let status = match &result {
         Ok(()) => cycle_report::STATUS_COMPLETED,
@@ -470,15 +849,28 @@ async fn run_admitted_with(
     })
 }
 
+/// The slice of episodic memory one cycle is responsible for, measured at
+/// admission and carried into compress unchanged.
+struct Window {
+    /// The exclusive boundary it was measured after. Reported so a cycle's
+    /// stats say where it picked up, not just where it stopped.
+    boundary: String,
+    /// Oldest-first, fetch-capped.
+    episodes: Vec<episodic::Episode>,
+    /// TRUE count past the boundary — the honest denominator, which can exceed
+    /// `episodes.len()` because the fetch is itself capped.
+    available: usize,
+}
+
 async fn run_phases(
     pool: &UserDbPool,
     llm: &dyn CycleLlm,
     cycle_id: &str,
-    window_start: &str,
+    window: Window,
     stats: &mut CycleStats,
     notes: &mut CycleNotes,
 ) -> Result<(), AppError> {
-    match phase_compress(pool, llm, cycle_id, window_start, stats, notes).await {
+    match phase_compress(pool, llm, cycle_id, window, stats, notes).await {
         Ok(detail) => {
             cycle_report::record_phase(pool, cycle_id, PHASE_COMPRESS, "completed", &detail)?
         }
@@ -516,21 +908,31 @@ async fn phase_compress(
     pool: &UserDbPool,
     llm: &dyn CycleLlm,
     cycle_id: &str,
-    window_start: &str,
+    window: Window,
     stats: &mut CycleStats,
     notes: &mut CycleNotes,
 ) -> Result<String, AppError> {
+    // The window was read once, at admission, to weigh the pressure that let
+    // this cycle in. It is not re-queried here: two reads that are supposed to
+    // agree are two reads that can drift.
+    //
     // The true window size comes from a COUNT, not from the length of the
     // fetch: the fetch is itself capped, so using it would report "read 120 of
     // 480" on a window of 1,000 — understating the loss exactly when the number
     // matters most.
-    stats.episodes_available = episodic::count_conversation_since(pool, window_start)?;
-    let available = episodic::list_conversation_since(pool, window_start, EPISODE_FETCH_LIMIT)?;
+    stats.window_start = window.boundary;
+    stats.episodes_available = window.available;
 
-    let input = bound_input(available, stats.episodes_available);
+    let input = bound_input(window.episodes, stats.episodes_available);
     stats.episodes_in = input.episodes.len();
     stats.chars_in = input.chars;
     stats.truncated = input.truncated;
+    // THE hand-off to the next cycle: the `created_at` of the newest episode
+    // this pass actually fed to compress. Recorded on failed cycles too, but
+    // only ever *read* off a completed one (`cycle_report::last_completed`
+    // filters on status) — so a cycle that broke half-way hands nothing
+    // forward, and its window is genuinely retried rather than skipped.
+    stats.consumed_through = input.consumed_through.clone();
     if let Some(note) = input.note.clone() {
         notes.truncation = Some(note);
     }
@@ -581,15 +983,28 @@ struct BoundedInput {
     episodes: Vec<episodic::Episode>,
     chars: usize,
     truncated: bool,
+    /// `created_at` of the newest episode kept — the boundary the next cycle
+    /// starts after. `None` only when nothing was kept, in which case the
+    /// boundary must not move.
+    consumed_through: Option<String>,
     note: Option<String>,
 }
 
-/// Apply the two caps to the window, newest-material-first.
+/// Apply the two caps to the window, **oldest-material-first**.
 ///
-/// Walks backwards from the newest episode so that when the budget runs out it
-/// is the oldest material that is dropped — a cycle that read last week and
-/// missed last night would be worse than useless. The result is re-reversed to
-/// oldest-first, which is the order a conversation reads in.
+/// Walks forward from the oldest episode, so when the budget runs out it is the
+/// NEWEST material that is left — and because the cycle records
+/// `consumed_through` at exactly the point it stopped, that material is the
+/// first thing the next cycle reads. A truncated heavy day therefore drains
+/// across successive cycles instead of being orphaned.
+///
+/// L1b walked backwards from the newest, reasoning that a cycle which read last
+/// week and missed last night is worse than useless. That was true of a
+/// *time-triggered* cycle whose window restarted at the previous cycle's clock
+/// time, because the skipped middle was never revisited by anyone. Under the
+/// pressure model the boundary moves only as far as the reading got, so
+/// oldest-first loses nothing — it defers — and it is the only order under
+/// which "no gap, no overlap" can hold.
 ///
 /// `window_total` is the TRUE number of episodes in the window, which may
 /// exceed `available.len()` because the fetch is itself capped. The truncation
@@ -601,7 +1016,7 @@ fn bound_input(available: Vec<episodic::Episode>, window_total: usize) -> Bounde
     let mut chars = 0usize;
     let mut kept: Vec<episodic::Episode> = Vec::new();
 
-    for mut ep in available.into_iter().rev() {
+    for mut ep in available.into_iter() {
         if kept.len() >= MAX_EPISODES_IN as usize {
             break;
         }
@@ -617,16 +1032,16 @@ fn bound_input(available: Vec<episodic::Episode>, window_total: usize) -> Bounde
         chars += len;
         kept.push(ep);
     }
-    kept.reverse();
 
+    let consumed_through = kept.last().map(|e| e.created_at.clone());
     let dropped = total_available.saturating_sub(kept.len());
     let truncated = dropped > 0 || excerpted > 0;
     let note = truncated.then(|| {
         format!(
             "Input was capped: {dropped} of {total_available} episodes in the window were left \
              unread and {excerpted} long bodies were excerpted (caps: {MAX_EPISODES_IN} episodes, \
-             {MAX_CHARS_IN} chars, {MAX_EPISODE_CHARS} chars per episode). The unread ones stay in \
-             the archive and are not lost — but this cycle did not see them."
+             {MAX_CHARS_IN} chars, {MAX_EPISODE_CHARS} chars per episode). The unread ones are the \
+             NEWEST ones, and they are what the next cycle starts on — deferred, not lost."
         )
     });
 
@@ -634,6 +1049,7 @@ fn bound_input(available: Vec<episodic::Episode>, window_total: usize) -> Bounde
         episodes: kept,
         chars,
         truncated,
+        consumed_through,
         note,
     }
 }
@@ -1785,7 +2201,11 @@ mod tests {
 
     /// Run a cycle with canned replies, from admission through the report.
     async fn run(pool: &UserDbPool, llm: &dyn CycleLlm) -> CycleOutcome {
-        match admit(pool).expect("admit") {
+        run_forced(pool, llm, false).await
+    }
+
+    async fn run_forced(pool: &UserDbPool, llm: &dyn CycleLlm, force: bool) -> CycleOutcome {
+        match admit(pool, force).expect("admit") {
             CycleAdmission::Skipped(reason) => CycleOutcome::Skipped { reason },
             CycleAdmission::Admitted(a) => run_admitted_with(pool, llm, a)
                 .await
@@ -1793,23 +2213,67 @@ mod tests {
         }
     }
 
+    /// Longest episode body that `retrieval::excerpt_holds_full_body` will
+    /// serve straight out of SQL (`len + 4 <= EPISODE_EXCERPT_CAP`).
+    ///
+    /// **Staying under this is a test-isolation requirement, not a style
+    /// choice.** A longer body forces `episodic::hydrate_row` to read the
+    /// markdown back off disk — and `PERSONAS_HOME` is a process-global that
+    /// `stt::whisper`, `stt::downloader` and `tts::kokoro` tests set and clear
+    /// with no shared lock, so a concurrent one can point `brain_root()`
+    /// somewhere else for the length of a read. That race predates this module,
+    /// but under sleep pressure it stopped being harmless: admission now
+    /// *measures* the window, so a lost hydration reads as "no conversation
+    /// waiting" and the cycle correctly-but-wrongly skips. Seeds that fit the
+    /// excerpt never touch the filesystem and cannot lose that race.
+    const SQL_SERVED_BODY: usize = 480;
+
+    /// A turn of realistic length, padded to just under [`SQL_SERVED_BODY`].
+    ///
+    /// Under the pressure model a two-line corpus is CORRECTLY refused —
+    /// spending a real model call to distil 130 characters is exactly what
+    /// `MIN_STALENESS_CHARS` exists to prevent. Every test that wants a cycle to
+    /// run must therefore present a corpus worth compressing.
+    fn turn(head: &str) -> String {
+        let mut s = head.to_string();
+        while s.len() < SQL_SERVED_BODY {
+            s.push_str(" and the reasoning behind it is worth keeping.");
+        }
+        s.truncate(SQL_SERVED_BODY);
+        s
+    }
+
+    /// Two meaningful turns plus enough follow-up to clear the 2,000-char
+    /// minimum. Tests index `[0]` / `[..1]` for the worktree turn.
     fn seed_episodes(pool: &UserDbPool) -> Vec<String> {
-        vec![
+        let mut ids = vec![
             episodic::append_episode(
                 pool,
                 "default",
                 episodic::EpisodeRole::User,
-                "Always use a git worktree for multi-file work; a parallel stash swept my files once.",
+                &turn("Always use a git worktree for multi-file work; a parallel stash swept my files once."),
             )
             .unwrap(),
             episodic::append_episode(
                 pool,
                 "default",
                 episodic::EpisodeRole::Assistant,
-                "Understood — worktree per multi-file task from now on.",
+                &turn("Understood — worktree per multi-file task from now on."),
             )
             .unwrap(),
-        ]
+        ];
+        for i in 0..4 {
+            ids.push(
+                episodic::append_episode(
+                    pool,
+                    "default",
+                    episodic::EpisodeRole::User,
+                    &turn(&format!("Follow-up {i} on the same working agreement.")),
+                )
+                .unwrap(),
+            );
+        }
+        ids
     }
 
     fn cycle_status(pool: &UserDbPool, id: &str) -> String {
@@ -2298,7 +2762,210 @@ mod tests {
         assert!(report.contains("I have not touched them"));
     }
 
-    // ── Direction 2 · the interval gate ──────────────────────────────────
+    // ── L1c acceptance 1 · pressure is the trigger ───────────────────────
+
+    /// Roughly `chars` characters of new conversation, as however many episodes
+    /// it takes to stay under [`SQL_SERVED_BODY`] — see that constant for why
+    /// no test seed may exceed it.
+    fn seed_chars(pool: &UserDbPool, chars: usize) {
+        let mut left = chars;
+        while left > 0 {
+            let n = left.min(SQL_SERVED_BODY);
+            episodic::append_episode(
+                pool,
+                "default",
+                episodic::EpisodeRole::User,
+                &"x".repeat(n),
+            )
+            .unwrap();
+            left -= n;
+        }
+    }
+
+    /// Backdate the completed cycle so the floor is out of the way, and put its
+    /// `consumed_through` at `boundary` so the next window is well defined.
+    fn backdate_cycle(pool: &UserDbPool, cycle_id: &str, hours_ago: i64) {
+        let then = (Utc::now() - ChronoDuration::hours(hours_ago)).to_rfc3339();
+        pool.get()
+            .unwrap()
+            .execute(
+                "UPDATE companion_cycle SET started_at = ?1, finished_at = ?1 WHERE id = ?2",
+                params![then, cycle_id],
+            )
+            .unwrap();
+    }
+
+    /// Below the threshold with the floor satisfied, a cycle does NOT run — and
+    /// the skip says the actual numbers, because the operator reads this string
+    /// in a toast. "Not due yet" would teach him nothing.
+    #[tokio::test]
+    async fn pressure_under_threshold_skips_with_the_numbers_and_over_it_admits() {
+        let _home = BrainHome::new("pressure");
+        let pool = crate::db::init_test_user_db().unwrap();
+
+        // A completed cycle 8h back: floor satisfied, staleness not reached.
+        let first = cycle_report::begin_cycle(&pool).unwrap();
+        cycle_report::finish_cycle(
+            &pool,
+            &first,
+            cycle_report::STATUS_COMPLETED,
+            r#"{"consumed_through":"2000-01-01T00:00:00+00:00"}"#,
+            "seed",
+        )
+        .unwrap();
+        backdate_cycle(&pool, &first, 8);
+
+        seed_chars(&pool, 12_431);
+
+        // The gauge and the gate are the SAME computation, so the gauge is the
+        // right way to say what the gate saw.
+        let gauge = sleep_pressure(&pool).unwrap();
+        assert!(
+            (12_400..12_500).contains(&gauge.pressure_chars),
+            "pressure is the sum of episode BODIES; got {}",
+            gauge.pressure_chars
+        );
+        assert!(gauge.episodes_waiting > 0);
+        assert!(!gauge.would_admit);
+        assert_eq!(gauge.threshold_chars, PRESSURE_THRESHOLD_CHARS);
+        assert!(gauge.floor_satisfied);
+
+        let CycleAdmission::Skipped(reason) = admit(&pool, false).unwrap() else {
+            panic!("12.4k chars is under the 40,000 threshold — it must not admit");
+        };
+        assert_eq!(
+            reason, gauge.would_admit_reason,
+            "the gauge must predict the gate's own words, not paraphrase them"
+        );
+        assert!(
+            reason.contains(&thousands(gauge.pressure_chars)) && reason.contains("40,000"),
+            "the skip must state both numbers: {reason}"
+        );
+        assert!(
+            reason.contains("floor is satisfied") && reason.contains("72h"),
+            "…and which gates were and were not the blocker: {reason}"
+        );
+
+        // Push it over the line and the same call admits.
+        seed_chars(&pool, PRESSURE_THRESHOLD_CHARS);
+        let CycleAdmission::Admitted(a) = admit(&pool, false).unwrap() else {
+            panic!("over the threshold a cycle must be admitted");
+        };
+        assert!(a.cycle_id().starts_with("cyc_"));
+    }
+
+    /// The 6h floor is a hard gate: it blocks even a window far over the
+    /// pressure threshold, so one very heavy afternoon cannot cycle twice.
+    #[tokio::test]
+    async fn the_interval_floor_blocks_even_at_high_pressure() {
+        let _home = BrainHome::new("floor");
+        let pool = crate::db::init_test_user_db().unwrap();
+
+        let first = cycle_report::begin_cycle(&pool).unwrap();
+        cycle_report::finish_cycle(
+            &pool,
+            &first,
+            cycle_report::STATUS_COMPLETED,
+            r#"{"consumed_through":"2000-01-01T00:00:00+00:00"}"#,
+            "seed",
+        )
+        .unwrap();
+        backdate_cycle(&pool, &first, 1);
+
+        seed_chars(&pool, PRESSURE_THRESHOLD_CHARS * 2);
+
+        let CycleAdmission::Skipped(reason) = admit(&pool, false).unwrap() else {
+            panic!("the floor must block regardless of pressure");
+        };
+        assert!(reason.contains("floor has not elapsed"), "got: {reason}");
+        assert!(reason.contains("1h ago"), "…and how long ago: {reason}");
+
+        // Past the floor, the same over-threshold window admits.
+        backdate_cycle(&pool, &first, MIN_INTERVAL_HOURS + 1);
+        assert!(matches!(
+            admit(&pool, false).unwrap(),
+            CycleAdmission::Admitted(_)
+        ));
+    }
+
+    /// Staleness releases a quiet week — but only above the 2,000-char minimum.
+    /// Below it nothing admits, ever: a cycle that spent a real LLM call to
+    /// distil a handful of turns would write a report saying it found nothing.
+    #[tokio::test]
+    async fn staleness_releases_a_quiet_week_but_never_an_empty_one() {
+        let _home = BrainHome::new("staleness");
+        let pool = crate::db::init_test_user_db().unwrap();
+
+        let first = cycle_report::begin_cycle(&pool).unwrap();
+        cycle_report::finish_cycle(
+            &pool,
+            &first,
+            cycle_report::STATUS_COMPLETED,
+            r#"{"consumed_through":"2000-01-01T00:00:00+00:00"}"#,
+            "seed",
+        )
+        .unwrap();
+        backdate_cycle(&pool, &first, STALENESS_HOURS + 1);
+
+        // 73h stale, but under the 2,000-char minimum: still nothing to do.
+        seed_chars(&pool, MIN_STALENESS_CHARS - 500);
+        let CycleAdmission::Skipped(reason) = admit(&pool, false).unwrap() else {
+            panic!("under the minimum, staleness must NOT release a cycle");
+        };
+        assert!(
+            reason.contains("nothing worth compressing"),
+            "got: {reason}"
+        );
+        assert!(reason.contains("2,000"), "…naming the minimum: {reason}");
+
+        // Cross the minimum and the same staleness now fires, under threshold.
+        seed_chars(&pool, 600);
+        let CycleAdmission::Admitted(_) = admit(&pool, false).unwrap() else {
+            panic!("at 73h with >2,000 chars waiting, staleness must release a cycle");
+        };
+    }
+
+    /// Force bypasses pressure, the floor and staleness — and bypasses the
+    /// single-flight guard NOT AT ALL. Two concurrent cycles would write facts
+    /// from overlapping windows, so that is the one gate nothing crosses.
+    #[tokio::test]
+    async fn force_bypasses_every_gate_except_single_flight() {
+        let _home = BrainHome::new("force");
+        let pool = crate::db::init_test_user_db().unwrap();
+
+        // Worst case for admission: a cycle finished seconds ago (floor blocks)
+        // and there is almost nothing waiting (minimum blocks).
+        let first = cycle_report::begin_cycle(&pool).unwrap();
+        cycle_report::finish_cycle(
+            &pool,
+            &first,
+            cycle_report::STATUS_COMPLETED,
+            "{}",
+            "seed",
+        )
+        .unwrap();
+        seed_chars(&pool, 40);
+
+        assert!(
+            matches!(admit(&pool, false).unwrap(), CycleAdmission::Skipped(_)),
+            "unforced, this state must skip — otherwise the test proves nothing"
+        );
+
+        let CycleAdmission::Admitted(held) = admit(&pool, true).unwrap() else {
+            panic!("force must admit despite the floor and the minimum");
+        };
+
+        // …and while it holds the lock, a SECOND force is refused.
+        match admit(&pool, true).unwrap() {
+            CycleAdmission::Skipped(reason) => {
+                assert!(reason.contains("already running"), "got: {reason}");
+            }
+            CycleAdmission::Admitted(_) => {
+                panic!("force must never be able to run two cycles at once")
+            }
+        }
+        drop(held);
+    }
 
     /// A cycle that completed an hour ago blocks the next one, and says why.
     /// Skipping is an outcome, not an error — the scheduler calls this on every
@@ -2314,36 +2981,160 @@ mod tests {
         };
         assert_eq!(status, cycle_report::STATUS_COMPLETED);
 
-        // Backdate it to one hour ago — inside the 20h floor.
-        let hour_ago = (Utc::now() - ChronoDuration::hours(1)).to_rfc3339();
-        pool.get()
-            .unwrap()
-            .execute(
-                "UPDATE companion_cycle SET started_at = ?1, finished_at = ?1 WHERE id = ?2",
-                params![hour_ago, cycle_id],
-            )
-            .unwrap();
-
-        match run_sleep_cycle(&pool).await.unwrap() {
+        // Backdate it to one hour ago — inside the 6h floor.
+        backdate_cycle(&pool, &cycle_id, 1);
+        match run_sleep_cycle(&pool, false).await.unwrap() {
             CycleOutcome::Skipped { reason } => {
-                assert!(reason.contains("minimum interval"), "got: {reason}");
+                assert!(reason.contains("floor has not elapsed"), "got: {reason}");
             }
             other => panic!("expected a skip, got {other:?}"),
         }
 
-        // …and past the floor it runs again.
-        let long_ago = (Utc::now() - ChronoDuration::hours(MIN_INTERVAL_HOURS + 1)).to_rfc3339();
-        pool.get()
-            .unwrap()
-            .execute(
-                "UPDATE companion_cycle SET finished_at = ?1 WHERE id = ?2",
-                params![long_ago, cycle_id],
-            )
-            .unwrap();
+        // Past the floor with nothing new, it STILL does not run — the clock is
+        // no longer the trigger, so an elapsed floor on an empty window buys
+        // nothing. This is the assertion that fails if the floor is ever
+        // mistaken for the trigger again.
+        backdate_cycle(&pool, &cycle_id, MIN_INTERVAL_HOURS + 1);
+        match run_sleep_cycle(&pool, false).await.unwrap() {
+            CycleOutcome::Skipped { reason } => {
+                assert!(reason.contains("nothing worth compressing"), "got: {reason}");
+            }
+            other => panic!("an elapsed floor is not a reason to cycle, got {other:?}"),
+        }
+
+        // Give it real material and it runs.
+        seed_chars(&pool, PRESSURE_THRESHOLD_CHARS);
         assert!(matches!(
             run(&pool, &Canned::empty()).await,
             CycleOutcome::Ran { .. }
         ));
+    }
+
+    /// **The boundary property, end to end.** Two cycles over a corpus larger
+    /// than one cycle's cap: the first reads the OLDEST material and stops, the
+    /// second starts exactly where the first stopped, and between them they see
+    /// every episode exactly once — no gap, no overlap.
+    ///
+    /// This is the assertion that fails if `consumed_through` stops being
+    /// recorded, if compress reverts to newest-first (the residue would be
+    /// orphaned), or if the pressure measurement and the compress window ever
+    /// stop sharing a boundary.
+    #[tokio::test]
+    async fn a_truncated_cycle_drains_forward_with_no_gap_and_no_overlap() {
+        let _home = BrainHome::new("drain");
+        let pool = crate::db::init_test_user_db().unwrap();
+
+        // 160 episodes × ~481 chars ≈ 77,000 chars. MAX_CHARS_IN is 30,000, so
+        // ONE cycle provably cannot read them all, and what it leaves behind is
+        // still over PRESSURE_THRESHOLD_CHARS — the residue admits the second
+        // cycle on its own merits, with no clock involved.
+        const N: usize = 160;
+        for i in 0..N {
+            episodic::append_episode(
+                &pool,
+                "default",
+                episodic::EpisodeRole::User,
+                &turn(&format!("episode {i:03} —")),
+            )
+            .unwrap();
+        }
+        // Ground truth, in the order the corpus must be drained.
+        let ordered =
+            episodic::list_conversation_after(&pool, "1970-01-01T00:00:00+00:00", 500).unwrap();
+        assert_eq!(ordered.len(), N);
+
+        // ── cycle 1 ──────────────────────────────────────────────────────
+        let CycleOutcome::Ran { cycle_id: c1, .. } = run(&pool, &Canned::empty()).await else {
+            panic!("77k chars of new conversation must admit");
+        };
+        let s1 = cycle_stats(&pool, &c1);
+        assert_eq!(s1["truncated"], true, "the caps must bite: {s1}");
+        assert_eq!(s1["episodes_available"], N as u64);
+        let read1 = s1["episodes_in"].as_u64().unwrap() as usize;
+        assert!(read1 > 0 && read1 < N, "a partial read, got {read1}");
+
+        // It stopped at the read1-th OLDEST episode — not at the newest, which
+        // is what newest-first truncation would have recorded and what would
+        // have orphaned everything in between.
+        let boundary = s1["consumed_through"]
+            .as_str()
+            .expect("a cycle that read episodes MUST record consumed_through")
+            .to_string();
+        assert_eq!(
+            boundary, ordered[read1 - 1].created_at,
+            "cycle 1 must consume oldest-first and stop where it ran out of budget"
+        );
+        assert_ne!(
+            boundary,
+            ordered[N - 1].created_at,
+            "a truncated cycle must NOT claim to have consumed through the newest episode"
+        );
+
+        // ── cycle 2 ──────────────────────────────────────────────────────
+        // Clear the 6h floor. The residue is what admits it, not the clock.
+        backdate_cycle(&pool, &c1, MIN_INTERVAL_HOURS + 1);
+
+        // The gauge now measures ONLY the residue — the proof that the pressure
+        // read and the compress window share one boundary function.
+        let gauge = sleep_pressure(&pool).unwrap();
+        assert_eq!(gauge.boundary, boundary);
+        assert_eq!(
+            gauge.episodes_waiting,
+            N - read1,
+            "pressure must be measured from consumed_through, not from scratch"
+        );
+        assert!(gauge.would_admit, "the residue alone is over threshold");
+        assert!(gauge.last_cycle.as_ref().unwrap().truncated);
+
+        let CycleOutcome::Ran { cycle_id: c2, .. } = run(&pool, &Canned::empty()).await else {
+            panic!("the residue must admit a second cycle");
+        };
+        let s2 = cycle_stats(&pool, &c2);
+        assert_eq!(
+            s2["window_start"].as_str().unwrap(),
+            boundary,
+            "cycle 2 must start exactly where cycle 1 stopped"
+        );
+        assert_eq!(
+            s2["episodes_available"].as_u64().unwrap() as usize,
+            N - read1,
+            "cycle 2's window is exactly what cycle 1 left — no gap, no overlap"
+        );
+        let read2 = s2["episodes_in"].as_u64().unwrap() as usize;
+        assert_eq!(
+            s2["consumed_through"].as_str().unwrap(),
+            ordered[read1 + read2 - 1].created_at,
+            "and it drained the NEXT contiguous slice, not a re-read of the first"
+        );
+    }
+
+    /// The gauge and the compress input count the SAME characters.
+    ///
+    /// On an untruncated window `stats.chars_in` must equal the pressure that
+    /// admitted the cycle, exactly — they are one measurement handed forward,
+    /// not two that happen to agree. This is the assertion that fails the moment
+    /// someone reintroduces a second query for either side.
+    #[tokio::test]
+    async fn the_gauge_and_the_compress_input_count_the_same_characters() {
+        let _home = BrainHome::new("sameread");
+        let pool = crate::db::init_test_user_db().unwrap();
+        seed_episodes(&pool);
+
+        let gauge = sleep_pressure(&pool).unwrap();
+        let CycleOutcome::Ran { cycle_id, .. } = run(&pool, &Canned::empty()).await else {
+            panic!("expected a run");
+        };
+        let stats = cycle_stats(&pool, &cycle_id);
+        assert_eq!(stats["truncated"], false, "this window must fit: {stats}");
+        assert_eq!(
+            stats["chars_in"].as_u64().unwrap() as usize,
+            gauge.pressure_chars,
+            "the chars the gauge weighed and the chars compress read are one number"
+        );
+        assert_eq!(
+            stats["episodes_in"].as_u64().unwrap() as usize,
+            gauge.episodes_waiting
+        );
     }
 
     /// A cycle that CRASHED stays `running` forever by the ledger's honesty
@@ -2376,15 +3167,16 @@ mod tests {
     async fn admission_opens_the_cycle_and_holds_the_single_flight_lock() {
         let _home = BrainHome::new("admit");
         let pool = crate::db::init_test_user_db().unwrap();
+        seed_episodes(&pool);
 
-        let CycleAdmission::Admitted(first) = admit(&pool).unwrap() else {
+        let CycleAdmission::Admitted(first) = admit(&pool, false).unwrap() else {
             panic!("the first admission must succeed");
         };
         let id = first.cycle_id().to_string();
         assert!(id.starts_with("cyc_"));
         assert_eq!(cycle_status(&pool, &id), cycle_report::STATUS_RUNNING);
 
-        match admit(&pool).unwrap() {
+        match admit(&pool, false).unwrap() {
             CycleAdmission::Skipped(reason) => assert!(reason.contains("already running")),
             _ => panic!("a second concurrent admission must be refused"),
         }
@@ -2392,7 +3184,7 @@ mod tests {
         // Releasing the guard re-opens the door.
         drop(first);
         assert!(matches!(
-            admit(&pool).unwrap(),
+            admit(&pool, false).unwrap(),
             CycleAdmission::Admitted(_)
         ));
     }
@@ -2405,8 +3197,9 @@ mod tests {
     async fn the_manual_trigger_answers_with_a_real_cycle_id_or_an_honest_skip() {
         let _home = BrainHome::new("trigger");
         let pool = crate::db::init_test_user_db().unwrap();
+        seed_episodes(&pool);
 
-        let (answer, admitted) = trigger(&pool).unwrap();
+        let (answer, admitted) = trigger(&pool, false).unwrap();
         assert_eq!(answer.status, "started");
         assert!(answer.skipped_reason.is_none());
         let id = answer.cycle_id.clone().expect("a started trigger names its cycle");
@@ -2422,7 +3215,7 @@ mod tests {
         );
 
         // A second press while the first is in flight is refused, in the shape.
-        let (busy, none) = trigger(&pool).unwrap();
+        let (busy, none) = trigger(&pool, false).unwrap();
         assert_eq!(busy.status, "skipped");
         assert!(busy.cycle_id.is_none());
         assert!(busy.skipped_reason.unwrap().contains("already running"));
@@ -2440,42 +3233,72 @@ mod tests {
             }
         );
 
-        // …and now the interval, not the lock, is what refuses the next press.
-        let (later, _) = trigger(&pool).unwrap();
+        // …and now the floor, not the lock, is what refuses the next press.
+        let (later, _) = trigger(&pool, false).unwrap();
         assert_eq!(later.status, "skipped");
-        assert!(later.skipped_reason.unwrap().contains("minimum interval"));
+        assert!(later
+            .skipped_reason
+            .unwrap()
+            .contains("floor has not elapsed"));
+
+        // …but `force` gets through it, which is the whole point of the
+        // dev-gated button: the operator can enforce a milestone cycle.
+        let (forced, admitted) = trigger(&pool, true).unwrap();
+        assert_eq!(forced.status, "started");
+        assert!(forced.cycle_id.is_some());
+        run_admitted_with(&pool, &Canned::empty(), admitted.unwrap())
+            .await
+            .unwrap();
     }
 
     // ── unit-level guards ────────────────────────────────────────────────
 
     /// The window caps bite on episode count, on total characters, and on a
-    /// single oversized body — and the result stays oldest-first.
+    /// single oversized body — and what survives is the OLDEST material, with
+    /// `consumed_through` marking exactly where the read stopped.
+    ///
+    /// L1b kept the newest instead, on the reasoning that a cycle which read
+    /// last week and missed last night is useless. That was right for a
+    /// time-triggered window and wrong for a boundary-handoff one: keeping the
+    /// newest leaves the middle unreachable by any future cycle. Under the
+    /// pressure model the deferred material is simply next cycle's oldest.
     #[test]
-    fn the_input_caps_keep_the_newest_material_and_report_the_loss() {
+    fn the_input_caps_drain_the_oldest_material_first_and_report_the_loss() {
         let ep = |i: usize, body: &str| episodic::Episode {
             id: format!("ep_{i:04}"),
             session_id: "default".into(),
             role: "user".into(),
             content: body.to_string(),
             file_path: String::new(),
-            created_at: format!("2026-08-0{}T00:00:00+00:00", i % 9 + 1),
+            created_at: format!("2026-08-08T00:{:02}:00+00:00", i % 60),
         };
 
         let many: Vec<_> = (0..200).map(|i| ep(i, "short")).collect();
         let bound = bound_input(many, 200);
         assert_eq!(bound.episodes.len(), MAX_EPISODES_IN as usize);
         assert_eq!(
-            bound.episodes.last().unwrap().id, "ep_0199",
-            "the newest episode must survive"
+            bound.episodes[0].id, "ep_0000",
+            "the OLDEST episode must be the one that gets read"
+        );
+        assert_eq!(
+            bound.episodes.last().unwrap().id,
+            format!("ep_{:04}", MAX_EPISODES_IN - 1),
+            "…and the read stops at the cap, leaving the newest for next time"
         );
         assert!(bound.episodes[0].id < bound.episodes[1].id, "oldest-first");
+        assert_eq!(
+            bound.consumed_through.as_deref(),
+            Some(bound.episodes.last().unwrap().created_at.as_str()),
+            "consumed_through is the newest episode actually read"
+        );
         assert!(bound.truncated);
-        assert!(bound.note.unwrap().contains("were left unread"));
+        assert!(bound.note.unwrap().contains("deferred, not lost"));
 
         let fat: Vec<_> = (0..40).map(|i| ep(i, &"x".repeat(1_000))).collect();
         let bound = bound_input(fat, 40);
         assert!(bound.chars <= MAX_CHARS_IN);
         assert!(bound.truncated);
+        assert_eq!(bound.episodes[0].id, "ep_0000");
 
         let huge = vec![ep(0, &"y".repeat(50_000))];
         let bound = bound_input(huge, 1);
@@ -2486,6 +3309,10 @@ mod tests {
         let none = bound_input(Vec::new(), 0);
         assert!(none.episodes.is_empty());
         assert!(!none.truncated, "an empty window is not a truncated one");
+        assert!(
+            none.consumed_through.is_none(),
+            "a cycle that read nothing must not move the boundary"
+        );
 
         // The denominator is the TRUE window size, not what the fetch returned:
         // 480 rows pulled out of a 1,000-episode window must report 880 unread,
@@ -2550,6 +3377,49 @@ mod tests {
         }];
         let r = build_reconcile_prompt(&facts);
         assert!(r.find("RULES — non-negotiable").unwrap() < r.find("<untrusted_facts_").unwrap());
+    }
+
+    /// The boundary's three tiers, in order. The `started_at` fallback is what
+    /// keeps every pre-L1c cycle in the ledger from resetting the window to a
+    /// week ago the first time L1c reads one.
+    #[test]
+    fn the_boundary_prefers_consumed_through_then_started_at_then_a_week() {
+        let with = cycle_report::LastCompleted {
+            id: "cyc_1".into(),
+            started_at: "2026-08-01T00:00:00+00:00".into(),
+            finished_at: "2026-08-01T00:10:00+00:00".into(),
+            stats_json: r#"{"consumed_through":"2026-08-03T09:00:00+00:00"}"#.into(),
+        };
+        assert_eq!(boundary_for(Some(&with)), "2026-08-03T09:00:00+00:00");
+
+        // A pre-L1c cycle (no key), and a cycle that read nothing (the key is
+        // omitted rather than empty) both fall back to where it started.
+        let without = cycle_report::LastCompleted {
+            stats_json: r#"{"episodes_in":0}"#.into(),
+            ..with.clone()
+        };
+        assert_eq!(boundary_for(Some(&without)), "2026-08-01T00:00:00+00:00");
+        let unparseable = cycle_report::LastCompleted {
+            stats_json: "not json".into(),
+            ..with.clone()
+        };
+        assert_eq!(boundary_for(Some(&unparseable)), "2026-08-01T00:00:00+00:00");
+
+        // No cycle has ever completed: a bounded first look-back, not the archive.
+        let fresh = boundary_for(None);
+        let parsed = parse_ts(&fresh).expect("the fallback is a real timestamp");
+        let days = Utc::now().signed_duration_since(parsed).num_days();
+        assert_eq!(days, FIRST_CYCLE_LOOKBACK_DAYS);
+    }
+
+    /// Six unseparated digits in a toast are a smear, not a figure.
+    #[test]
+    fn pressure_figures_are_grouped_for_a_human_reader() {
+        assert_eq!(thousands(0), "0");
+        assert_eq!(thousands(999), "999");
+        assert_eq!(thousands(1_000), "1,000");
+        assert_eq!(thousands(42_310), "42,310");
+        assert_eq!(thousands(PRESSURE_THRESHOLD_CHARS), "40,000");
     }
 
     #[test]

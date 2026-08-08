@@ -2,9 +2,16 @@
 //! the human is asleep.
 //!
 //! Watchdogs are armed by the MCP handlers at request time. They are inert
-//! unless a night window is OPEN (an approved plan — see
-//! [`super::night_window_active`]): outside the window the request simply
-//! waits for the human / the 10-minute TTL, exactly as before.
+//! unless a night window is OPEN (an approved plan — each watchdog checks
+//! [`super::active_plan`] itself): outside the window the request simply waits
+//! for the human / the 10-minute TTL, exactly as before.
+//!
+//! This is the ONLY place the approved-plan gate is enforced. It used to have a
+//! `night_window_active` wrapper beside it, but the wrapper's one caller was
+//! the sleep cycle — memory maintenance, which is not autonomy-answering and
+//! stopped consulting it in L1c — so the wrapper was removed rather than left
+//! dead. The gate itself is unchanged: no approved plan ⇒ no night-shift
+//! autonomy.
 //!
 //! - `request_guidance`: after T minutes unresolved, Athena answers from the
 //!   project's dev memories + her decision precedent via a one-shot CLI call

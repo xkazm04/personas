@@ -212,28 +212,32 @@ pub fn list_recent_conversation(
     hydrate_rows(session_id, rows)
 }
 
-/// How many conversation episodes exist at or after `since`, across every
-/// conversation. Same predicate as [`list_conversation_since`], no `LIMIT`.
+/// How many conversation episodes exist STRICTLY AFTER `after`, across every
+/// conversation. Same predicate as [`list_conversation_after`], no `LIMIT`.
 ///
 /// The sleep cycle reports "read N of M episodes in the window", and M has to be
 /// the TRUE count: taking it from the length of a capped fetch would make the
 /// number shrink to the cap exactly when there was most to say about what went
 /// unread, which is the one moment the figure matters.
-pub fn count_conversation_since(pool: &UserDbPool, since: &str) -> Result<usize, AppError> {
+///
+/// **Exclusive**, like its sibling — see [`list_conversation_after`] for why the
+/// boundary cannot be inclusive once cycles hand one to each other.
+pub fn count_conversation_after(pool: &UserDbPool, after: &str) -> Result<usize, AppError> {
     let conn = pool.get()?;
     let sql = format!(
         "SELECT COUNT(*) FROM companion_node
          WHERE kind = 'episode'
-           AND created_at >= ?1
+           AND created_at > ?1
            AND body_excerpt IS NOT NULL{}",
         machine_marker_exclusion_sql()
     );
-    let n: i64 = conn.query_row(&sql, params![since], |r| r.get(0))?;
+    let n: i64 = conn.query_row(&sql, params![after], |r| r.get(0))?;
     Ok(n.max(0) as usize)
 }
 
-/// Conversation episodes created at or after `since` (RFC3339), across **every**
-/// conversation, oldest-first — the sleep cycle's compress input.
+/// Conversation episodes created STRICTLY AFTER `after` (RFC3339), across
+/// **every** conversation, oldest-first — the sleep cycle's compress input and
+/// the corpus its sleep-pressure gauge measures.
 ///
 /// Third member of the [`list_recent_conversation`] family and deliberately
 /// built on the same two pieces: [`machine_marker_exclusion_sql`] (so a
@@ -248,31 +252,34 @@ pub fn count_conversation_since(pool: &UserDbPool, since: &str) -> Result<usize,
 /// keeps its own `session_id`, so provenance still says which thread it came
 /// from.
 ///
-/// `limit` caps the newest end of the window: when more episodes have accrued
-/// than the cycle will read, the caller gets the most recent `limit` of them,
-/// still ordered oldest-first.
-pub fn list_conversation_since(
+/// **The boundary is EXCLUSIVE, and `limit` takes the OLDEST rows.** Both
+/// changed in L1c and both are load-bearing for the same property: a cycle
+/// records the `created_at` of the newest episode it actually fed to compress
+/// (`consumed_through`) and the next cycle starts there. Inclusive would
+/// re-compress that episode on every cycle forever; newest-first would make an
+/// over-long window read the newest N and *orphan* everything older, so a heavy
+/// day that overflowed the caps could never be drained. Oldest-first plus an
+/// exclusive hand-off means successive cycles walk the corpus forward with no
+/// gap and no overlap.
+pub fn list_conversation_after(
     pool: &UserDbPool,
-    since: &str,
+    after: &str,
     limit: u32,
 ) -> Result<Vec<Episode>, AppError> {
     let conn = pool.get()?;
-    // Newest-first with the limit applied, then reversed below — taking the
-    // most recent N of an over-long window rather than the oldest N, which
-    // would compress last week and ignore last night.
     let sql = format!(
         "SELECT id, file_path, body_excerpt, created_at, COALESCE(session_id, '')
          FROM companion_node
          WHERE kind = 'episode'
-           AND created_at >= ?1
+           AND created_at > ?1
            AND body_excerpt IS NOT NULL{}
-         ORDER BY created_at DESC, id DESC
+         ORDER BY created_at ASC, id ASC
          LIMIT ?2",
         machine_marker_exclusion_sql()
     );
     let mut stmt = conn.prepare(&sql)?;
     let rows = stmt
-        .query_map(params![since, limit], |row| {
+        .query_map(params![after, limit], |row| {
             Ok((
                 (
                     row.get::<_, String>(0)?,
@@ -287,12 +294,12 @@ pub fn list_conversation_since(
     drop(stmt);
 
     let root = disk::brain_root()?;
-    let mut out: Vec<Episode> = rows
+    // Already oldest-first out of SQL — no reverse. The order a narrative reads
+    // in, and the order a backlog must be drained in.
+    Ok(rows
         .into_iter()
         .filter_map(|(row, session_id)| hydrate_row(&root, &session_id, row))
-        .collect();
-    out.reverse(); // oldest-first, the order a narrative reads in
-    Ok(out)
+        .collect())
 }
 
 /// Keyset page of episodes STRICTLY OLDER than the `(created_at, id)`

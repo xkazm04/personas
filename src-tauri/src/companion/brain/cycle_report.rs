@@ -279,32 +279,52 @@ pub fn list_recent(pool: &UserDbPool, limit: u32) -> Result<Vec<CycleSummary>, A
     Ok(rows.collect::<Result<Vec<_>, _>>()?)
 }
 
-/// `(started_at, finished_at)` of the most recent cycle that reached
-/// [`STATUS_COMPLETED`], or `None` when no cycle has ever completed.
+/// The most recent cycle that reached [`STATUS_COMPLETED`].
 ///
-/// Two callers in the sleep cycle, and both depend on the `completed` filter
-/// specifically. The **min-interval** gate keys on `finished_at` because a
-/// crashed cycle stays `running` forever by this ledger's honesty contract — an
-/// interval that counted `running` rows would let one dead process suppress
-/// every future cycle, silently, for as long as the row sits there. The
-/// **compress window** keys on `started_at`, so the next cycle re-reads
-/// anything that arrived while the last one was thinking rather than skipping
-/// over it.
+/// Everything the sleep cycle's admission needs about its predecessor, in one
+/// read: the id and `finished_at` for the gauge, `started_at` as the pre-L1c
+/// window fallback, and `stats_json` because that is where a cycle records
+/// `consumed_through` — the `created_at` of the newest episode it actually fed
+/// to compress, which is the boundary the NEXT cycle starts from.
+#[derive(Debug, Clone)]
+pub struct LastCompleted {
+    pub id: String,
+    pub started_at: String,
+    pub finished_at: String,
+    pub stats_json: String,
+}
+
+/// The most recent completed cycle, or `None` when none ever has.
+///
+/// The `completed` filter is load-bearing, and for two different reasons. The
+/// **min-interval floor** keys on `finished_at` because a crashed cycle stays
+/// `running` forever by this ledger's honesty contract — a floor that counted
+/// `running` rows would let one dead process suppress every future cycle,
+/// silently, for as long as the row sits there. The **compress window** keys on
+/// this row's `consumed_through` (falling back to `started_at`), so the next
+/// cycle picks up exactly where the last one stopped reading.
 ///
 /// `finished_at` is `COALESCE`d to `started_at` for the pathological row that
 /// is `completed` with a NULL finish — closing over a NULL here would make the
-/// interval gate compare against nothing.
-pub fn last_completed(pool: &UserDbPool) -> Result<Option<(String, String)>, AppError> {
+/// floor compare against nothing.
+pub fn last_completed(pool: &UserDbPool) -> Result<Option<LastCompleted>, AppError> {
     let conn = pool.get()?;
     let row = conn
         .query_row(
-            "SELECT started_at, COALESCE(finished_at, started_at)
+            "SELECT id, started_at, COALESCE(finished_at, started_at), COALESCE(stats_json, '')
              FROM companion_cycle
              WHERE status = ?1
              ORDER BY started_at DESC, rowid DESC
              LIMIT 1",
             params![STATUS_COMPLETED],
-            |r| Ok((r.get(0)?, r.get(1)?)),
+            |r| {
+                Ok(LastCompleted {
+                    id: r.get(0)?,
+                    started_at: r.get(1)?,
+                    finished_at: r.get(2)?,
+                    stats_json: r.get(3)?,
+                })
+            },
         )
         .optional()?;
     Ok(row)

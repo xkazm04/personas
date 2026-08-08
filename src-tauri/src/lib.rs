@@ -2907,6 +2907,7 @@ pub fn run() {
             commands::companion::consolidate::companion_list_consolidation_runs,
             commands::companion::consolidate::companion_list_cycle_reports,
             commands::companion::consolidate::companion_run_sleep_cycle,
+            commands::companion::consolidate::companion_get_sleep_pressure,
             commands::companion::consolidate::companion_get_consolidation_items,
             commands::companion::consolidate::companion_apply_consolidation_item,
             commands::companion::consolidate::companion_reject_consolidation_item,

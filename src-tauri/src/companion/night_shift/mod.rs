@@ -37,6 +37,9 @@ pub mod planner;
 pub mod review;
 pub mod unattended;
 
+use std::sync::Mutex;
+use std::time::{Duration, Instant};
+
 use chrono::{Duration as ChronoDuration, Local, TimeZone, Timelike, Utc};
 use rusqlite::{params, OptionalExtension};
 use serde::Serialize;
@@ -152,13 +155,6 @@ pub fn active_plan(pool: &UserDbPool) -> Result<Option<NightPlan>, AppError> {
         )
         .optional()?;
     Ok(row)
-}
-
-/// True while an approved night plan's window is open — the ONLY condition
-/// under which the unattended-guidance policy may answer for the user. No
-/// approved plan ⇒ no night-shift autonomy (requests wait for a human / TTL).
-pub fn night_window_active(pool: &UserDbPool) -> bool {
-    matches!(active_plan(pool), Ok(Some(_)))
 }
 
 pub fn set_plan_status(pool: &UserDbPool, id: &str, status: &str) -> Result<(), AppError> {
@@ -356,9 +352,41 @@ pub fn tick(user_db: &UserDbPool, sys_db: &DbPool, app: &tauri::AppHandle) {
     }
 }
 
-/// While the night window is open, run Athena's memory sleep cycle
-/// (`brain::sleep_cycle`) — compress the day's conversation into long-term
-/// memory, reconcile it, report what it would forget.
+/// How often this tick is allowed to weigh sleep pressure.
+///
+/// The scheduler ticks every 30 seconds. Admission is no longer a single
+/// indexed read — under the pressure model it fetches and sums the conversation
+/// window (`sleep_cycle::measure`) — so measuring on every tick would re-read
+/// the same episodes 120 times an hour to answer "not yet" 119 of them. Ten
+/// minutes is far below the 6h floor, so throttling costs no responsiveness:
+/// the worst case is that a cycle starts up to ten minutes after the pressure
+/// crossed the line, on a job that takes minutes and runs at most every 6h.
+const PRESSURE_CHECK_INTERVAL: Duration = Duration::from_secs(10 * 60);
+
+/// When the last pressure measurement ran. In-process and best-effort — a
+/// restart simply measures once more, which is harmless.
+static LAST_PRESSURE_CHECK: Mutex<Option<Instant>> = Mutex::new(None);
+
+/// True at most once per [`PRESSURE_CHECK_INTERVAL`].
+fn pressure_check_due() -> bool {
+    let now = Instant::now();
+    let mut slot = match LAST_PRESSURE_CHECK.lock() {
+        Ok(g) => g,
+        // A poisoned lock must not silently stop the heartbeat forever.
+        Err(e) => e.into_inner(),
+    };
+    match *slot {
+        Some(prev) if now.duration_since(prev) < PRESSURE_CHECK_INTERVAL => false,
+        _ => {
+            *slot = Some(now);
+            true
+        }
+    }
+}
+
+/// Run Athena's memory sleep cycle (`brain::sleep_cycle`) when enough new
+/// conversation has accumulated — compress it into long-term memory, reconcile
+/// it, report what it would forget.
 ///
 /// **This is the heartbeat the memory model never had.** Every maintenance
 /// capability under `brain/` was reachable only from a button
@@ -367,22 +395,27 @@ pub fn tick(user_db: &UserDbPool, sys_db: &DbPool, app: &tauri::AppHandle) {
 /// infrastructure, which is the whole reason phase L1 fits in one wave —
 /// `docs/plans/athena-longevity.md`, "the heartbeat already exists".
 ///
-/// Gated on the same night window as the rest of night shift, so memory
-/// maintenance runs when the machine is idle and the operator is asleep, and
-/// so a user who has not enabled night shift gets no unattended LLM spend.
+/// **No longer gated on `night_window_active`** (L1c). That gate means "the
+/// operator approved a night plan", and it guards *autonomy-answering* — Athena
+/// acting on the fleet unattended. Memory maintenance is not that: it reads the
+/// conversation she already had and writes to her own index. Requiring a plan
+/// approval for it meant a user who never approved one got no memory
+/// consolidation at all, ever, while the heartbeat looked shipped. The
+/// night-shift `enabled` flag in `tick` still gates the whole family, so the
+/// spend consent is still explicit; what changed is that it no longer needs a
+/// second, unrelated approval on top.
 ///
-/// Admission is synchronous and cheap (one indexed read plus an in-process
-/// flag), and only a successful one spawns. That ordering is deliberate: this
-/// tick fires far more often than once every 20 hours, and calling the
-/// one-shot `run_sleep_cycle` inside a spawn instead would create a task per
-/// tick that exists only to discover it must skip. The single-flight guard
-/// travels inside the admission, so it is held from here until the spawned task
-/// ends — a double-spawn is impossible rather than merely harmless.
+/// Admission is synchronous and only a successful one spawns. That ordering is
+/// deliberate: calling the one-shot `run_sleep_cycle` inside a spawn instead
+/// would create a task per tick that exists only to discover it must skip. The
+/// single-flight guard travels inside the admission, so it is held from here
+/// until the spawned task ends — a double-spawn is impossible rather than
+/// merely harmless.
 fn maybe_run_sleep_cycle(user_db: &UserDbPool) -> Result<(), AppError> {
-    if !night_window_active(user_db) {
+    if !pressure_check_due() {
         return Ok(());
     }
-    match sleep_cycle::admit(user_db)? {
+    match sleep_cycle::admit(user_db, false)? {
         sleep_cycle::CycleAdmission::Admitted(admitted) => {
             let cycle_id = admitted.cycle_id().to_string();
             let pool = user_db.clone();

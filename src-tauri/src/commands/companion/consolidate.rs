@@ -78,7 +78,7 @@ pub fn companion_list_consolidation_runs(
     consolidation::list_runs(&state.user_db, limit.unwrap_or(20))
 }
 
-/// Run a sleep cycle now, without waiting for tonight's night window.
+/// Run a sleep cycle now, without waiting for the pressure to build.
 ///
 /// **Fire-and-forget.** A cycle is minutes of headless LLM work; blocking an
 /// IPC call on it would hold a webview promise open for the duration and lose
@@ -90,14 +90,22 @@ pub fn companion_list_consolidation_runs(
 ///
 /// The answer is a shape, not a sentence: `status` is `started` or `skipped`,
 /// with the cycle id or the reason beside it. Callers branch on the field.
-/// Skipping is a normal outcome (another cycle in flight, or the 20-hour
-/// minimum interval), never an error.
+/// Skipping is a normal outcome (another cycle in flight, or not enough new
+/// conversation to be worth compressing), never an error — and the reason
+/// carries the actual numbers, because it is shown to a human in a toast.
+///
+/// `force` (default false, so pre-L1c callers keep working unchanged) bypasses
+/// sleep pressure, the interval floor and staleness. It does NOT bypass the
+/// single-flight guard — nothing does. The dev-gated button in the Athena chat
+/// header is the caller that sets it, so the operator can enforce a milestone
+/// cycle and gather data for the next waves.
 #[tauri::command]
 pub fn companion_run_sleep_cycle(
     state: State<'_, Arc<AppState>>,
+    force: Option<bool>,
 ) -> Result<sleep_cycle::SleepCycleTrigger, AppError> {
     ipc_auth::require_auth_sync(&state)?;
-    let (answer, admitted) = sleep_cycle::trigger(&state.user_db)?;
+    let (answer, admitted) = sleep_cycle::trigger(&state.user_db, force.unwrap_or(false))?;
     if let Some(admitted) = admitted {
         let pool = state.user_db.clone();
         tauri::async_runtime::spawn(async move {
@@ -112,6 +120,21 @@ pub fn companion_run_sleep_cycle(
         });
     }
     Ok(answer)
+}
+
+/// The sleep-pressure gauge: how much new conversation is waiting, whether a
+/// cycle would start right now, and why.
+///
+/// Read-only and lock-free — asking never perturbs a running cycle. It is the
+/// same [`sleep_cycle::measure`] + verdict the admission runs, not a parallel
+/// estimate, so the number in the tooltip and the number in the gate cannot
+/// disagree.
+#[tauri::command]
+pub fn companion_get_sleep_pressure(
+    state: State<'_, Arc<AppState>>,
+) -> Result<sleep_cycle::SleepPressure, AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    sleep_cycle::sleep_pressure(&state.user_db)
 }
 
 /// Recent sleep cycles, newest first — the journal the Memory page v2 renders
