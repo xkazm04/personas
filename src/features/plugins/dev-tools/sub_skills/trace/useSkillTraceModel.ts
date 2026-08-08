@@ -1,20 +1,30 @@
-// Level-1 data spine — leaner sibling of useSkillsRegistry (no coverage, no
-// session polling: Trace observes activity + versions, it doesn't adopt or
-// dispatch). Fetch: library + usage overview + per-project installed lists,
-// folded through the pure builder in traceModel.ts.
+// Level-1 data spine — leaner sibling of useSkillsRegistry (no coverage
+// polling: Trace observes activity + versions, it doesn't adopt or dispatch).
+// Usage merges TWO sources so the tab has data before any transcript scan:
+// the DB overview (skill_usage_overview — durable, transcript-mined) and the
+// Fleet session log (the Analytics tab's source: sessions whose first arg
+// parses as `/skill …`, mapped to workspace projects by cwd). A bounded
+// transcript scan is kicked opportunistically on mount so the durable source
+// backfills itself (same posture as skillsManagerData's outbox sweep).
 import { useEffect, useMemo, useState } from 'react';
 
 import {
-  getSkillUsageOverview, listSkills, listSkillsGlobal, type SkillEntry,
+  getSkillUsageOverview, listSkills, listSkillsGlobal, scanSkillUsage, type SkillEntry,
 } from '@/api/devTools/devTools';
+import { listSessions } from '@/api/fleet/fleet';
 import { mapWithConcurrency } from '@/lib/concurrency';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 
 import { presetVisual } from '../../constants/presetSkills';
 import { useWorkspaces, workspaceOf } from '../../sub_workspaces/workspaceStore';
-import { buildTraceMatrix, traceKey } from './traceModel';
+import { parseSkillArg } from '../analytics/useSkillsAnalytics';
+import { buildTraceMatrix, mergeFleetRuns, traceKey, type FleetSkillRun } from './traceModel';
 import type { TraceCell, TraceModel, TraceProject, TraceSkillRow } from './traceTypes';
+
+function normPath(p: string): string {
+  return p.replace(/\\/g, '/').toLowerCase().replace(/\/+$/, '');
+}
 
 interface Fetched {
   loading: boolean;
@@ -44,13 +54,32 @@ const EMPTY_CELL: TraceCell = {
 };
 
 export function useSkillTraceModel(activeProjectId: string | null, refreshTick = 0): TraceModel {
-  const { workspaces } = useWorkspaces();
+  const { workspaces, activeId } = useWorkspaces();
   const allProjects = useSystemStore((s) => s.projects);
 
-  const workspace = useMemo(
-    () => (activeProjectId ? workspaceOf(workspaces, activeProjectId) : null) ?? workspaces[0] ?? null,
-    [workspaces, activeProjectId],
-  );
+  // Resolution order: the active project's workspace (page-consistent) → the
+  // user's SELECTED workspace (store activeId) → first. The middle rung is
+  // load-bearing: an active project with no workspace_id used to strand the
+  // tab on workspaces[0], which can be an empty workspace while the selected
+  // one is full ("0 projects, 0 skills" with a populated switcher).
+  const workspace = useMemo(() => {
+    const byProject = activeProjectId ? workspaceOf(workspaces, activeProjectId) : null;
+    if (byProject) return byProject;
+    const selected = activeId ? workspaces.find((w) => w.id === activeId) : undefined;
+    return selected ?? workspaces[0] ?? null;
+  }, [workspaces, activeId, activeProjectId]);
+
+  // One bounded transcript-mining pass per mount — backfills the durable
+  // usage source (manual terminal runs included); the effect below re-runs
+  // when it lands. Best-effort: a failed scan still leaves the Fleet source.
+  const [scanTick, setScanTick] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    scanSkillUsage()
+      .catch(silentCatch('trace usage scan'))
+      .finally(() => { if (alive) setScanTick((t) => t + 1); });
+    return () => { alive = false; };
+  }, []);
   const wsProjects: TraceProject[] = useMemo(
     () => (workspace?.projectIds ?? [])
       .map((id) => allProjects.find((p) => p.id === id))
@@ -66,9 +95,10 @@ export function useSkillTraceModel(activeProjectId: string | null, refreshTick =
     let alive = true;
     setF((prev) => (prev.names.length > 0 ? prev : { ...prev, loading: true }));
     void (async () => {
-      const [globalSkills, usageRows] = await Promise.all([
+      const [globalSkills, usageRows, snap] = await Promise.all([
         listSkillsGlobal().catch((e) => { silentCatch('trace global')(e); return [] as SkillEntry[]; }),
         getSkillUsageOverview().catch((e) => { silentCatch('trace usage')(e); return []; }),
+        listSessions().catch((e) => { silentCatch('trace sessions')(e); return { sessions: [] as never[] }; }),
       ]);
       const per = await mapWithConcurrency(wsProjects, 6, async (p) => ({
         pid: p.id,
@@ -83,16 +113,34 @@ export function useSkillTraceModel(activeProjectId: string | null, refreshTick =
       }
 
       const wsIds = new Set(wsProjects.map((p) => p.id));
-      const usageByKey = new Map<string, { invokes30d: number; lastInvokedAt: number | null }>();
+      const dbUsage = new Map<string, { invokes30d: number; lastInvokedAt: number | null }>();
       const usedNames = new Set<string>();
       for (const u of usageRows) {
         if (u.scope !== 'project' || !u.project_id || !wsIds.has(u.project_id)) continue;
-        usageByKey.set(traceKey(u.project_id, u.name), {
+        dbUsage.set(traceKey(u.project_id, u.name), {
           invokes30d: u.invokes_30d,
           lastInvokedAt: u.last_invoked_at ? Date.parse(u.last_invoked_at.replace(' ', 'T') + 'Z') || Date.parse(u.last_invoked_at) : null,
         });
         if (u.invokes_30d > 0) usedNames.add(u.name);
       }
+
+      // Fleet session log — the Analytics tab's run source, mapped to
+      // workspace projects by cwd. Covers the window before/between scans.
+      const projectIdByRoot = new Map(wsProjects.map((p) => [normPath(p.rootPath), p.id]));
+      const fleetRuns: FleetSkillRun[] = [];
+      for (const sess of (snap as { sessions: Array<{ args: string[]; cwd: string; createdAtMs: string | number; lastActivityMs: string | number }> }).sessions) {
+        const parsed = parseSkillArg(sess.args);
+        const pid = projectIdByRoot.get(normPath(sess.cwd));
+        if (!parsed || !pid) continue;
+        fleetRuns.push({
+          skill: parsed.skill,
+          projectId: pid,
+          startedAt: Number(sess.createdAtMs),
+          lastActivityAt: Number(sess.lastActivityMs) || Number(sess.createdAtMs),
+        });
+      }
+      const { merged: usageByKey, usedNames: fleetNames } = mergeFleetRuns(dbUsage, fleetRuns, Date.now());
+      for (const n of fleetNames) usedNames.add(n);
 
       // Skill axis: installed anywhere in the workspace ∪ recently used —
       // Trace is about activity, not the full unadopted catalogue.
@@ -108,7 +156,7 @@ export function useSkillTraceModel(activeProjectId: string | null, refreshTick =
     })();
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workspace?.id, wsProjects.length, refreshTick]);
+  }, [workspace?.id, wsProjects.length, refreshTick, scanTick]);
 
   const matrix = useMemo(
     () => buildTraceMatrix(f.names, {

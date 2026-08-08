@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { SkillLessonRow, SkillRevisionRow } from '@/api/devTools/devTools';
 
 import {
-  buildSkillTree, buildTraceMatrix, driftOf, HEAT_HALF_LIFE_DAYS, heatTier, parseVersion, rawHeat, traceKey,
+  buildSkillTree, buildTraceMatrix, driftOf, HEAT_HALF_LIFE_DAYS, heatTier, mergeFleetRuns, parseVersion, rawHeat, traceKey,
 } from '../traceModel';
 import type { TraceProject } from '../traceTypes';
 
@@ -102,6 +102,40 @@ describe('buildTraceMatrix', () => {
     expect(cells[0].heat).toBe(0);
     expect(cells[0].tier).toBe('cold'); // adopted but unused
     expect(cells[1].tier).toBe('absent');
+  });
+});
+
+describe('mergeFleetRuns', () => {
+  const run = (skill: string, projectId: string, startedAt: number) => ({
+    skill, projectId, startedAt, lastActivityAt: startedAt + 60_000,
+  });
+
+  it('takes max per key instead of summing (transcript miner counts the same runs)', () => {
+    const db = new Map([[traceKey('p1', 'scan'), { invokes30d: 5, lastInvokedAt: NOW - DAY }]]);
+    const { merged, usedNames } = mergeFleetRuns(db, [
+      run('scan', 'p1', NOW - 2 * DAY),
+      run('scan', 'p1', NOW - 3 * DAY),
+    ], NOW);
+    // DB already counted 5 ≥ 2 fleet runs → keep 5; timestamp takes the max.
+    expect(merged.get(traceKey('p1', 'scan'))).toEqual({ invokes30d: 5, lastInvokedAt: NOW - DAY });
+    expect(usedNames.has('scan')).toBe(true);
+  });
+
+  it('fills keys the DB has never seen and drops runs outside 30 days', () => {
+    const { merged } = mergeFleetRuns(new Map(), [
+      run('sweep', 'p2', NOW - DAY),
+      run('sweep', 'p2', NOW - 2 * DAY),
+      run('sweep', 'p2', NOW - 40 * DAY), // outside the window
+    ], NOW);
+    const cell = merged.get(traceKey('p2', 'sweep'))!;
+    expect(cell.invokes30d).toBe(2);
+    expect(cell.lastInvokedAt).toBe(NOW - DAY + 60_000);
+  });
+
+  it('leaves untouched DB keys intact', () => {
+    const db = new Map([[traceKey('p1', 'other'), { invokes30d: 1, lastInvokedAt: NOW }]]);
+    const { merged } = mergeFleetRuns(db, [], NOW);
+    expect(merged.get(traceKey('p1', 'other'))).toEqual({ invokes30d: 1, lastInvokedAt: NOW });
   });
 });
 
