@@ -326,9 +326,14 @@ whose premise their evidence contradicts.
   production `desktop-full` build on master; Director-fixed in `3bc5722f9` and the ml check joins
   the standing gates. Residue: no maintenance leg has live-run yet; `recall_synthesis` leg can
   only fire on ml builds.
-- **Wave 4 · L1c** — launched 2026-08-08, branch `longevity/l1c`: sleep-pressure admission
-  (40k/6h/72h, consumed_through boundary), force trigger, `companion_get_sleep_pressure`,
-  dev-gated chat-header force button.
+- **Wave 4 · L1c** — **SHIPPED 2026-08-08**, merged ff: `8b61b24da` sleep pressure (boundary and
+  window resolved once in `measure()`; compress flipped to oldest-first so truncated heavy days
+  drain forward; **pressure sums hydrated bodies — a SQL SUM over the 500-capped `body_excerpt`
+  captures only 45% of real volume, ratio swinging 0.42–0.90/day, and would have silently
+  redefined the 40k threshold to ~90k**) · `7c44cb632` dev force button (backend-authoritative
+  dev gate; verbatim skip-reason toasts; lazy pressure tooltip). Gate: companion:: 565/565 ×6
+  runs · Vitest 447/447 · both cargo checks · i18n 0/0. L1 is now feature-complete INCLUDING its
+  trigger; everything remains test-verified only — the live gate is the next act.
 - **Wave 3 · L1b** — **SHIPPED 2026-08-08**, merged ff: `5c1332199` the cycle engine (compress +
   reconcile; CycleLlm seam so every parse/cap/write decision is testable; nonce-fenced untrusted
   evidence; tags into `companion_node.tags_json` + `tag:` FTS tokens; `demote_superseded` and

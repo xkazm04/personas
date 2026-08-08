@@ -2,11 +2,10 @@
 
 ## Active
 
-### athena-longevity-l1c — Wave 4 (L1c): sleep-pressure trigger + dev force button — session fable-5 xhigh — **builder in flight**
-- Started: 2026-08-08. One-branch wave `longevity/l1c` in the MAIN checkout — HEAD sits there until merge.
-- Scope: `src-tauri/src/companion/brain/{sleep_cycle.rs,cycle_report.rs,episodic.rs}` · `src-tauri/src/companion/night_shift/mod.rs` · `src-tauri/src/commands/companion/consolidate.rs` · `src-tauri/src/lib.rs` · `src/features/plugins/companion/chat/AthenaChatHeader.tsx` (+ small helpers) · `src/api/companion.ts` · `src/i18n/locales/*` (builder-owned, single builder) · bindings + commandNames.
-- After merge: Director kills the stale dev instance and launches `tauri:dev:test` for the L1 LIVE phase gate (operator-authorized).
-
+### athena-longevity-l1c — Wave 4 (L1c): sleep-pressure trigger + dev force button — session fable-5 xhigh — **COMPLETE, merged ff; live gate NEXT**
+- Started/completed: 2026-08-08. Commits: `8b61b24da` sleep pressure (40k/6h floor/72h staleness/2k min; `measure()` resolves boundary+window ONCE so gauge and compress cannot drift; compress flipped newest→oldest-first; **pressure sums hydrated bodies — `body_excerpt` is 500-capped and captures only 45% of real volume**, documented at the call site; dead `night_window_active` wrapper removed) · `7c44cb632` dev-gated chat-header force button (gate = `devModeAvailable` from `cfg!(debug_assertions)`, backend-authoritative; skip reasons toasted verbatim; lazy gauge tooltip).
+- Gate: `companion::` **565/565** (6 runs, 0 flakes) · Vitest companion 447/447 · both cargo checks (213 baseline) · tsc · i18n strict 18,948×14 at 0/0 · doctor 0 fail.
+- Known hazard (pre-existing): stt/tts tests race on process-global `PERSONAS_HOME` — next disk-dependent brain test will hit it; builder documented the workaround in the test module.
 ### athena-longevity-l1b — Wave 3 (L1b): the sleep cycle engine — session fable-5 xhigh — **COMPLETE, merged ff**
 - Started/completed: 2026-08-08. Commits: `5c1332199` compress + reconcile (2,485-line `brain/sleep_cycle.rs` incl. 17 tests; CycleLlm seam with MeteredLegs prod impl; nonce-fenced untrusted-evidence prompts; tags via post-write `apply_tags` into `companion_node.tags_json` + `tag:` FTS tokens; extracted `semantic::demote_superseded` + `consolidation::low_value_prune_candidates` so report-only and enforcing paths cannot drift) · `49aeff3bf` scheduling + `companion_run_sleep_cycle` (admit-synchronously-spawn-on-success; single-flight held from admission to task end).
 - Gate: tsc · `companion::` **554/554** · desktop check at 213 baseline · desktop,ml check green · doctor 0 fail.
