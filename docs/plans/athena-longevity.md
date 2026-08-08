@@ -87,10 +87,20 @@ kept the table (the deletion's premise was invalidated; dropping fails silently,
 loudly; guard test added in `373e91f2b`). **Unaddressed and correct objection:** it is a second
 plaintext copy of every transcript, outside the encrypted-section work. → decision D3 below.
 
-## 7. Two spend ledgers
+## 7. Spend ledgers — CORRECTED by the Wave-1 audit (2026-08-08)
 
-`companion_turn` (tracked turns) vs `dev_llm_spend` (untracked `cli_text`, no user-db handle).
-Monthly cost = the union; nothing unions them today.
+This section originally claimed the untracked `cli_text` legs meter into `dev_llm_spend`.
+**Wrong** — the Wave-1 builder audited every writer of that table: six tiers of sources, all
+persona/engine work, none Athena (full audit with write sites in `observability.rs`'s module
+comment). All *metered* Athena spend is in `companion_turn`. The unified rollup shipped
+(`028466e06`) with an honestly-empty dev-spend allowlist rather than a flattering sum.
+
+**The real gap:** `brain/oneshot.rs` — consolidation, reflection, recall synthesis, briefing,
+night-shift planner + unattended, tours — collects only assistant-text deltas and never parses the
+terminal `result` event, so that spend reaches **neither ledger**. It is exactly the machinery the
+sleep cycle runs on: **L1's own cost is unmeasurable until this is metered.** Queued as L1a's
+first direction; ledger decision made by the Director: it meters into `companion_turn` with
+`origin='maintenance'`, so the shipped rollup picks it up with zero further work.
 
 ---
 
@@ -282,5 +292,15 @@ builders return `DECISION NEEDED` rather than guessing, and hold the licence to 
 whose premise their evidence contradicts.
 
 **Wave log**
-- **Wave 1 · L0** — launched 2026-08-08 on branch `longevity/2026-08-08`, single Opus builder,
-  three directions: prompt-churn instrument · unified spend rollup · cycle_report substrate.
+- **Wave 1 · L0** — **SHIPPED 2026-08-08**, single Opus builder, merged ff: `996376f10` churn
+  instrument (hash column additive; a block appearing midwindow is a baseline, not a change;
+  pre-instrument history is silence, not stability) · `028466e06` spend rollup (builder corrected
+  the brief — see Part I §7) · `6ab035653` cycle_report substrate (four-way write incl. the FTS
+  mirror; real-schema lifecycle test) · `d2070899c` ts-rs export CWD fix + 26-file binding-drift
+  closure (the round-4 🔴 carry-over, closed). Gate: tsc · i18n 0/0 across 14 · Vitest 709/709 ·
+  `companion::` 522/522. **Phase-gate residue:** churn hashes populate only from the next tracked
+  chat turn forward, so L2 sizing waits for real turns to accumulate — which building L1 first
+  naturally provides.
+- **Wave 2 · L1a** — launched 2026-08-08: meter the oneshot legs (`origin='maintenance'`) +
+  taxonomy registry + sync-staging schema. The cycle engine (L1b) forks after L1a merges and
+  review.
