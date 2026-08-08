@@ -3,19 +3,19 @@
 /**
  * Recorder state as the Grid button renders it.
  */
-export type FleetDebugLogStatus = {
+export type FleetDebugLogStatus = { 
 /**
  * True while events are being written.
  */
-active: boolean,
+active: boolean, 
 /**
  * Absolute path of the current (or most recently finished) log file.
  */
-path: string | null,
+path: string | null, 
 /**
  * Events written so far in this recording.
  */
-events: number,
+events: number, 
 /**
  * Epoch ms the recording started; `None` when it never has.
  */

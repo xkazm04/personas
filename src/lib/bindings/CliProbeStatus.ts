@@ -4,23 +4,23 @@
  * One row of "what does this machine's provider-CLI situation look like?".
  * Purely diagnostic: the readiness resolver reads the same cache directly.
  */
-export type CliProbeStatus = {
+export type CliProbeStatus = { 
 /**
  * The connector name (`vercel`, `github`, …).
  */
-connector: string,
+connector: string, 
 /**
  * The command the user runs to authenticate (`vercel login`, …).
  */
-loginCommand: string,
+loginCommand: string, 
 /**
  * Whether the provider CLI is installed on this machine.
  */
-binaryPresent: boolean,
+binaryPresent: boolean, 
 /**
  * Whether it reported an authenticated session.
  */
-authed: boolean,
+authed: boolean, 
 /**
  * RFC3339 timestamp of the probe this verdict came from.
  */

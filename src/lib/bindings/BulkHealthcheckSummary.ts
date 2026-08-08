@@ -4,4 +4,20 @@ import type { CredentialHealthcheckOutcome } from "./CredentialHealthcheckOutcom
 /**
  * Summary of a bulk / daily credential healthcheck sweep.
  */
-export type BulkHealthcheckSummary = { total: number, passed: number, failed: number, unverifiable: number, results: Array<CredentialHealthcheckOutcome>, completedAt: string, };
+export type BulkHealthcheckSummary = { total: number, 
+/**
+ * Count of credentials whose probe actually ran and passed
+ * (`state == Verified`). Does NOT include `unverifiable` — a connector
+ * with no live probe was previously folded into this count via the
+ * legacy `success` boolean (which `HealthcheckResult::unverifiable`
+ * sets to `true`), so "N passed, 0 failed" read as "every credential
+ * verified working" even when some were never probed at all.
+ */
+passed: number, failed: number, 
+/**
+ * Count of credentials with no live probe available at all
+ * (`state == Unverifiable`) — neither passed nor failed. Kept as its
+ * own bucket so the UI can render a neutral, non-green/non-red badge
+ * instead of silently crediting these as verified.
+ */
+unverifiable: number, results: Array<CredentialHealthcheckOutcome>, completedAt: string, };

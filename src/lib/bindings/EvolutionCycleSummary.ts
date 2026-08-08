@@ -4,26 +4,26 @@ import type { RunBudgetState } from "./RunBudgetState";
 /**
  * Summary of an evolution cycle result.
  */
-export type EvolutionCycleSummary = { cycleId: string, personaId: string, generation: number, variantsTested: number, winnerFitness: number | null, incumbentFitness: number | null,
+export type EvolutionCycleSummary = { cycleId: string, personaId: string, generation: number, variantsTested: number, winnerFitness: number | null, incumbentFitness: number | null, 
 /**
  * Always `false` at cycle end in Darwin Mode v1 — promotion is
  * proposal-gated. Flips true only when a human approves the proposal.
  */
-promoted: boolean, promotedPersonaId: string | null,
+promoted: boolean, promotedPersonaId: string | null, 
 /**
  * Id of the promotion proposal FILED by this cycle (winner beat incumbent
  * by the threshold). `None` when no challenger cleared the bar.
  */
-proposalId: string | null,
+proposalId: string | null, 
 /**
  * `"measured"` on Darwin cycles — incumbent/winner fitness came from
  * replay measurement, not historical prediction.
  */
-fitnessSource: string | null,
+fitnessSource: string | null, 
 /**
  * How many of the replay scenarios were rebuilt from REAL workload inputs.
  */
-workloadReplays: number,
+workloadReplays: number, 
 /**
  * Whether all status updates succeeded during the cycle.
  * `false` means the frontend may have shown stale status at some point.

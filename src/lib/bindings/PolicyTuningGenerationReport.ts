@@ -6,16 +6,16 @@ import type { PolicyProposal } from "./PolicyProposal";
  * Result of one generation pass — created proposals plus the honest
  * "declined to propose" cells the UI must surface verbatim.
  */
-export type PolicyTuningGenerationReport = { created: Array<PolicyProposal>,
+export type PolicyTuningGenerationReport = { created: Array<PolicyProposal>, 
 /**
  * Candidates skipped because an equal pending/declined proposal already
  * exists (answered questions are not re-asked).
  */
-skippedExisting: number,
+skippedExisting: number, 
 /**
  * Cells the generator declined to propose on, with machine reasons.
  */
-declined: Array<DeclinedCell>,
+declined: Array<DeclinedCell>, 
 /**
  * The floors that applied (so UI copy always states the real numbers).
  */

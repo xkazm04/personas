@@ -13,4 +13,9 @@ rootPath: string | null,
  * The composed task description, so the fleet arm can seed a session with
  * the exact same text the runner would have executed.
  */
-prompt: string, };
+prompt: string, 
+/**
+ * The fleet session spawned for this idea (fleet target only; `None` for
+ * runner dispatches or when the spawn was skipped/failed — see `skipped`).
+ */
+sessionId: string | null, };

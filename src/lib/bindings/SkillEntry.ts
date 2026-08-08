@@ -33,4 +33,26 @@ syncState: string,
  * `"global"` (the user-global library) or `"project"`. `None` for
  * local-only skills.
  */
-sourceKind: string | null, };
+sourceKind: string | null, 
+/**
+ * Canonical category from the frontmatter `category:` field — one of
+ * "Development" / "Testing" / "Maintenance" / "Data" / "Other" (the share
+ * LLM assigns it when generalizing into the library). `None` when the
+ * frontmatter has no recognizable category; the UI groups those under
+ * "Other".
+ */
+category: string | null, 
+/**
+ * Memory binding from the frontmatter `memory:` field — `"project"`
+ * (ledger via outbox), `"vault"` (Obsidian-first, still mirrors through
+ * the outbox) or `"none"`. `None` = undeclared → dispatches carry no
+ * MEMORY BLOCK (opt-in; docs/plans/skill-memory-unification.md §3.4).
+ */
+memory: string | null, 
+/**
+ * Frontmatter `contexts: tracked` — the skill declares its method walks
+ * the context map and anchors its memory to contexts (drives the Skills
+ * Management UI's coverage rows; evidence via skill-attributed nodes is
+ * the runtime complement).
+ */
+contextTracked: boolean, };

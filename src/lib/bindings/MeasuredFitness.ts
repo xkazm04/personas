@@ -5,41 +5,41 @@
  * the existing `fitness_json` field, plus provenance and raw aggregates so the
  * evidence is inspectable without re-deriving it.
  */
-export type MeasuredFitness = {
+export type MeasuredFitness = { 
 /**
  * Weighted overall fitness (0.0--1.0) — same scale/weights as the
  * inherited prediction it replaces, so rankings stay comparable.
  */
-overall: number,
+overall: number, 
 /**
  * Speed component (0.0--1.0, inverted duration, 60s ceiling).
  */
-speed: number,
+speed: number, 
 /**
  * Quality component (0.0--1.0): assertion pass-rate when assertions
  * exist, else the LLM-eval composite, else the success fraction.
  */
-quality: number,
+quality: number, 
 /**
  * Cost component (0.0--1.0, inverted cost, $1.00 ceiling).
  */
-cost: number,
+cost: number, 
 /**
  * Always `"measured"` — the provenance marker.
  */
-fitnessSource: string,
+fitnessSource: string, 
 /**
  * How many replays produced these numbers.
  */
-samples: number,
+samples: number, 
 /**
  * Total assertions evaluated across all replays (0 = none configured).
  */
-assertionTotal: number, assertionPassed: number,
+assertionTotal: number, assertionPassed: number, 
 /**
  * Which signal fed `quality`: `assertions` | `eval` | `success_rate`.
  */
-qualityBasis: string, avgCostUsd: number, avgDurationMs: number,
+qualityBasis: string, avgCostUsd: number, avgDurationMs: number, 
 /**
  * Replays that errored (still counted in the denominator).
  */

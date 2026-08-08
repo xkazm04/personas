@@ -200,7 +200,20 @@ if (process.platform === 'win32') {
 
 let failed = 0;
 for (const exe of executables) {
-  const run = spawnSync(exe, harnessArgs, { stdio: 'inherit' });
+  const run = spawnSync(exe, harnessArgs, {
+    stdio: 'inherit',
+    // ts-rs reads TS_RS_EXPORT_DIR at test-exe runtime. Under `cargo test` the
+    // cwd is the crate dir so the relative default resolves correctly, but this
+    // script spawns the exe directly from the repo root — without an explicit
+    // ABSOLUTE export dir, ts-rs fell back to ./bindings under the cwd and
+    // silently dumped every export into the gitignored repo-root bindings/
+    // (419 stale files by 2026-08-08, while src/lib/bindings/ drifted 26 files
+    // behind the Rust structs). Absolute path = cwd-independent.
+    env: {
+      ...process.env,
+      TS_RS_EXPORT_DIR: join(REPO_ROOT, 'src', 'lib', 'bindings'),
+    },
+  });
   if (run.status !== 0) {
     failed++;
     if (run.status === 127 || run.status === 0xc0000139) {

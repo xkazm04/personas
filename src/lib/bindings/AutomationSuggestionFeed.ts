@@ -2,6 +2,14 @@
 import type { AutomationSuggestion } from "./AutomationSuggestion";
 
 /**
- * The suggestions feed plus the miner's honesty context.
+ * The suggestions feed plus the miner's honesty context: whether mining is
+ * even enabled (autopilot `suggest`+ on some project) and the thresholds,
+ * so the empty state can say exactly WHY there is nothing to show instead
+ * of a generic shrug.
  */
-export type AutomationSuggestionFeed = { suggestions: Array<AutomationSuggestion>, minerEnabled: boolean, minCoOccurrences: number, windowSeconds: number, lookbackDays: number, };
+export type AutomationSuggestionFeed = { suggestions: Array<AutomationSuggestion>, 
+/**
+ * False = no project grants `Capability::AutomationSuggestion`; the
+ * miner is a no-op and the UI should say so, not "no signal yet".
+ */
+minerEnabled: boolean, minCoOccurrences: number, windowSeconds: number, lookbackDays: number, };

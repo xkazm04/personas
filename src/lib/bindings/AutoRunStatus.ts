@@ -8,12 +8,12 @@
  * means this is the most recent finished run. `run_id: None` = the project
  * has never had an auto-run.
  */
-export type AutoRunStatus = { runId: string | null, projectId: string | null,
+export type AutoRunStatus = { runId: string | null, projectId: string | null, 
 /**
  * `running` | `completed` | `cancelled` | `failed`, or `None` when there
  * is no run to report.
  */
-status: string | null, snapshotSize: number, completed: number, failed: number, skipped: number, iterations: number, terminationReason: string | null, startedAt: string | null, finishedAt: string | null,
+status: string | null, snapshotSize: number, completed: number, failed: number, skipped: number, iterations: number, terminationReason: string | null, startedAt: string | null, finishedAt: string | null, 
 /**
  * True when the in-memory scheduler still reports this run as running.
  */
