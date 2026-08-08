@@ -16,15 +16,11 @@
 //! seeding is idempotent and cannot overwrite a status someone has since
 //! changed.
 
-// Substrate shipped ahead of its caller: `brain::sleep_cycle` reads the
-// vocabulary through `list_active` (compress prompt + unknown-tag filter) and
-// stages expansion through `propose`. That engine lands the commit before this
-// note is read, but stays unreachable until the scheduler commit wires it, and
-// an unreachable caller does not make a callee live — so this allow survives
-// exactly one more commit. `activate` and `get` keep targeted allows past that
-// point: they are the operator's half of the gate, and the approval inbox that
-// presses them is a later phase.
-#![allow(dead_code)]
+// The file-wide `#![allow(dead_code)]` came off when L1b landed, as promised:
+// `brain::sleep_cycle` reads the vocabulary through `list_active` (compress
+// prompt + unknown-tag filter) and stages expansion through `propose`.
+// `activate` and `get` keep targeted allows — they are the operator's half of
+// the gate, and the approval inbox that presses them is a later phase.
 
 use rusqlite::{params, OptionalExtension};
 

@@ -212,6 +212,26 @@ pub fn list_recent_conversation(
     hydrate_rows(session_id, rows)
 }
 
+/// How many conversation episodes exist at or after `since`, across every
+/// conversation. Same predicate as [`list_conversation_since`], no `LIMIT`.
+///
+/// The sleep cycle reports "read N of M episodes in the window", and M has to be
+/// the TRUE count: taking it from the length of a capped fetch would make the
+/// number shrink to the cap exactly when there was most to say about what went
+/// unread, which is the one moment the figure matters.
+pub fn count_conversation_since(pool: &UserDbPool, since: &str) -> Result<usize, AppError> {
+    let conn = pool.get()?;
+    let sql = format!(
+        "SELECT COUNT(*) FROM companion_node
+         WHERE kind = 'episode'
+           AND created_at >= ?1
+           AND body_excerpt IS NOT NULL{}",
+        machine_marker_exclusion_sql()
+    );
+    let n: i64 = conn.query_row(&sql, params![since], |r| r.get(0))?;
+    Ok(n.max(0) as usize)
+}
+
 /// Conversation episodes created at or after `since` (RFC3339), across **every**
 /// conversation, oldest-first — the sleep cycle's compress input.
 ///

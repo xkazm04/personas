@@ -31,14 +31,12 @@
 //! convergence in L3 works the same way: sync the inputs, let each device
 //! re-derive, never diff prose.
 
-// Substrate shipped ahead of its caller. `brain::sleep_cycle`'s reconcile phase
-// is the reader (`list_unprocessed` → apply → `mark_processed`, dispatching on
-// the three `KIND_*` constants); it lands the commit before this note is read,
-// and stays unreachable until the scheduler commit wires it, so this allow
-// survives exactly one more commit. [`insert_delta`] keeps a targeted allow
-// past that point — the LS transport that writes it is a later wave, and this
-// table having no writer yet is precisely the state the module shipped in.
-#![allow(dead_code)]
+// Half of this module's file-wide `#![allow(dead_code)]` came off with L1b:
+// `brain::sleep_cycle`'s reconcile phase is the real reader
+// (`list_unprocessed` → apply → `mark_processed`) and it dispatches on the
+// three `KIND_*` constants. Only [`insert_delta`] keeps a targeted allow — the
+// LS transport that writes it is a later wave, and this table having no writer
+// yet is precisely the state the module was shipped in.
 
 use rusqlite::params;
 

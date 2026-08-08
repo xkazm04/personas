@@ -60,15 +60,6 @@
 //! while this process is still alive. (A `running` row after a *crash* is
 //! deliberate and stays: see `cycle_report`'s honesty contract.)
 
-// The engine, landing one commit ahead of the two things that call it: the
-// night-shift tick and the `companion_run_sleep_cycle` command, both in the
-// SECOND commit of this same wave. Without this, an unreachable module makes
-// its own 66 items dead AND drags `cycle_report` / `taxonomy` / `sync_staging`
-// back into dead-code with it — 88 warnings over the repo's baseline for the
-// length of one commit. Scoped to this file and removed by that commit; if it
-// is still here, nothing runs the sleep cycle.
-#![allow(dead_code)]
-
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::Duration;
@@ -92,7 +83,7 @@ use crate::error::AppError;
 /// existence of a `running` row: a crashed cycle stays `running` forever by
 /// `cycle_report`'s design, and an interval that respected it would let one
 /// dead process suppress every future cycle in silence.
-pub const MIN_INTERVAL_HOURS: i64 = 20;
+const MIN_INTERVAL_HOURS: i64 = 20;
 
 /// How far back the FIRST cycle ever reads, having no predecessor to start
 /// from. A week is the same slice `consolidation`'s 80-episode window
@@ -102,6 +93,12 @@ const FIRST_CYCLE_LOOKBACK_DAYS: i64 = 7;
 
 /// Hard cap on episodes fed to compress.
 const MAX_EPISODES_IN: u32 = 120;
+/// Rows pulled from the window before the caps are applied. Wider than
+/// [`MAX_EPISODES_IN`] so the character cap has short episodes to fall back on
+/// when the newest ones are long, but still bounded — the true window size is
+/// reported from a separate COUNT, so this limit never has to double as the
+/// honest denominator.
+const EPISODE_FETCH_LIMIT: u32 = MAX_EPISODES_IN * 4;
 /// Hard cap on total episode characters fed to compress.
 const MAX_CHARS_IN: usize = 30_000;
 /// Per-episode excerpt cap, so one pasted wall of text cannot eat the whole
@@ -292,7 +289,32 @@ pub fn admit(pool: &UserDbPool) -> Result<CycleAdmission, AppError> {
     }))
 }
 
+/// Decide whether a cycle starts and describe the verdict, handing the
+/// admission back for the caller to run in the background.
+///
+/// Split this way because a fire-and-forget trigger has to answer *before* the
+/// work begins: the verdict is computed on the caller's thread — including the
+/// real cycle id, which already exists by then — and the caller owns the spawn.
+/// It also makes the decision testable without a runtime.
+pub fn trigger(pool: &UserDbPool) -> Result<(SleepCycleTrigger, Option<AdmittedCycle>), AppError> {
+    Ok(match admit(pool)? {
+        CycleAdmission::Skipped(reason) => (SleepCycleTrigger::skipped(reason), None),
+        CycleAdmission::Admitted(a) => (
+            SleepCycleTrigger::started(a.cycle_id().to_string()),
+            Some(a),
+        ),
+    })
+}
+
 /// Run one sleep cycle end to end, or report why it did not.
+///
+/// The one-call form. Both shipped callers take the two-step
+/// [`admit`] → [`run_admitted`] path instead, because each needs the cycle id
+/// before the phases start: the manual trigger answers with it, and the
+/// night-shift tick gates its spawn on the (synchronous, cheap) admission
+/// rather than spawning a task per tick that would only skip. This stays as the
+/// obvious entry point for a caller that wants neither — a job, a CLI, a test.
+#[allow(dead_code)]
 pub async fn run_sleep_cycle(pool: &UserDbPool) -> Result<CycleOutcome, AppError> {
     match admit(pool)? {
         CycleAdmission::Skipped(reason) => Ok(CycleOutcome::Skipped { reason }),
@@ -498,10 +520,14 @@ async fn phase_compress(
     stats: &mut CycleStats,
     notes: &mut CycleNotes,
 ) -> Result<String, AppError> {
-    let available = episodic::list_conversation_since(pool, window_start, MAX_EPISODES_IN * 4)?;
-    stats.episodes_available = available.len();
+    // The true window size comes from a COUNT, not from the length of the
+    // fetch: the fetch is itself capped, so using it would report "read 120 of
+    // 480" on a window of 1,000 — understating the loss exactly when the number
+    // matters most.
+    stats.episodes_available = episodic::count_conversation_since(pool, window_start)?;
+    let available = episodic::list_conversation_since(pool, window_start, EPISODE_FETCH_LIMIT)?;
 
-    let input = bound_input(available);
+    let input = bound_input(available, stats.episodes_available);
     stats.episodes_in = input.episodes.len();
     stats.chars_in = input.chars;
     stats.truncated = input.truncated;
@@ -564,8 +590,13 @@ struct BoundedInput {
 /// is the oldest material that is dropped — a cycle that read last week and
 /// missed last night would be worse than useless. The result is re-reversed to
 /// oldest-first, which is the order a conversation reads in.
-fn bound_input(available: Vec<episodic::Episode>) -> BoundedInput {
-    let total_available = available.len();
+///
+/// `window_total` is the TRUE number of episodes in the window, which may
+/// exceed `available.len()` because the fetch is itself capped. The truncation
+/// note is written against that number, not against what happened to be
+/// fetched.
+fn bound_input(available: Vec<episodic::Episode>, window_total: usize) -> BoundedInput {
+    let total_available = window_total.max(available.len());
     let mut excerpted = 0usize;
     let mut chars = 0usize;
     let mut kept: Vec<episodic::Episode> = Vec::new();
@@ -2366,6 +2397,55 @@ mod tests {
         ));
     }
 
+    /// What `companion_run_sleep_cycle` returns, without a Tauri `State`: the
+    /// verdict is computed before any work starts, so the operator gets a real
+    /// cycle id — one that already names a `running` row he can watch — rather
+    /// than a promise that resolves in five minutes.
+    #[tokio::test]
+    async fn the_manual_trigger_answers_with_a_real_cycle_id_or_an_honest_skip() {
+        let _home = BrainHome::new("trigger");
+        let pool = crate::db::init_test_user_db().unwrap();
+
+        let (answer, admitted) = trigger(&pool).unwrap();
+        assert_eq!(answer.status, "started");
+        assert!(answer.skipped_reason.is_none());
+        let id = answer.cycle_id.clone().expect("a started trigger names its cycle");
+        assert_eq!(
+            id,
+            admitted.as_ref().unwrap().cycle_id(),
+            "the answer and the handed-back admission are the same cycle"
+        );
+        assert_eq!(
+            cycle_status(&pool, &id),
+            cycle_report::STATUS_RUNNING,
+            "the row exists and is running the moment the caller is answered"
+        );
+
+        // A second press while the first is in flight is refused, in the shape.
+        let (busy, none) = trigger(&pool).unwrap();
+        assert_eq!(busy.status, "skipped");
+        assert!(busy.cycle_id.is_none());
+        assert!(busy.skipped_reason.unwrap().contains("already running"));
+        assert!(none.is_none(), "a skip hands back nothing to run");
+
+        // The caller owns the spawn; running it here closes the cycle out.
+        let outcome = run_admitted_with(&pool, &Canned::empty(), admitted.unwrap())
+            .await
+            .unwrap();
+        assert_eq!(
+            outcome,
+            CycleOutcome::Ran {
+                cycle_id: id.clone(),
+                status: cycle_report::STATUS_COMPLETED.into()
+            }
+        );
+
+        // …and now the interval, not the lock, is what refuses the next press.
+        let (later, _) = trigger(&pool).unwrap();
+        assert_eq!(later.status, "skipped");
+        assert!(later.skipped_reason.unwrap().contains("minimum interval"));
+    }
+
     // ── unit-level guards ────────────────────────────────────────────────
 
     /// The window caps bite on episode count, on total characters, and on a
@@ -2382,7 +2462,7 @@ mod tests {
         };
 
         let many: Vec<_> = (0..200).map(|i| ep(i, "short")).collect();
-        let bound = bound_input(many);
+        let bound = bound_input(many, 200);
         assert_eq!(bound.episodes.len(), MAX_EPISODES_IN as usize);
         assert_eq!(
             bound.episodes.last().unwrap().id, "ep_0199",
@@ -2393,19 +2473,31 @@ mod tests {
         assert!(bound.note.unwrap().contains("were left unread"));
 
         let fat: Vec<_> = (0..40).map(|i| ep(i, &"x".repeat(1_000))).collect();
-        let bound = bound_input(fat);
+        let bound = bound_input(fat, 40);
         assert!(bound.chars <= MAX_CHARS_IN);
         assert!(bound.truncated);
 
         let huge = vec![ep(0, &"y".repeat(50_000))];
-        let bound = bound_input(huge);
+        let bound = bound_input(huge, 1);
         assert_eq!(bound.episodes.len(), 1, "one giant episode is kept, excerpted");
         assert!(bound.episodes[0].content.contains("[excerpted]"));
         assert!(bound.chars < MAX_CHARS_IN);
 
-        let none = bound_input(Vec::new());
+        let none = bound_input(Vec::new(), 0);
         assert!(none.episodes.is_empty());
         assert!(!none.truncated, "an empty window is not a truncated one");
+
+        // The denominator is the TRUE window size, not what the fetch returned:
+        // 480 rows pulled out of a 1,000-episode window must report 880 unread,
+        // not 360. This is the assertion that fails if the COUNT is ever
+        // shortcut back to `available.len()`.
+        let fetched: Vec<_> = (0..480).map(|i| ep(i, "short")).collect();
+        let bound = bound_input(fetched, 1_000);
+        assert!(bound
+            .note
+            .as_ref()
+            .unwrap()
+            .contains("880 of 1000 episodes"));
     }
 
     /// Both prompts must state their rules OUTSIDE the fence and must open the

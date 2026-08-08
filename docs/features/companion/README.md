@@ -426,11 +426,36 @@ The same conversation-only window feeds **consolidation** and **reflection**. Di
 
 ### Cycle reports (substrate)
 
-A **cycle** is one scheduled reconciliation pass over the brain — compress / reconcile / identity / critique (phase L1 of [`docs/plans/athena-longevity.md`](../../plans/athena-longevity.md)). `brain/cycle_report.rs` is the journal and audit spine that pass writes into; it ships ahead of the cycle logic so the L1 wave carries judgement, not plumbing. **It contains no scheduler and no night-shift wiring** — `begin_cycle` / `record_phase` / `finish_cycle` / `list_recent` / `get`, and nothing calls them yet.
+A **cycle** is one scheduled reconciliation pass over the brain — compress / reconcile / identity / critique (phase L1 of [`docs/plans/athena-longevity.md`](../../plans/athena-longevity.md)). `brain/cycle_report.rs` is the journal and audit spine that pass writes into. It is storage and retrieval only — `begin_cycle` / `record_phase` / `finish_cycle` / `list_recent` / `get` — with no scheduler of its own; the pass that calls it is **the sleep cycle**, below.
 
 Two things get written for two readers. `companion_cycle` is the structured row (status, phase log, stats JSON) a dashboard filters. The narrative is a `companion_node` of `kind='cycle_report'`, with markdown on disk under `cycles/<date>-<id>.md` as the source of truth, a `body_excerpt` in the node index, and a **`companion_fts` mirror row**. That mirror is a contract rather than an optimization: `brain::keyword` reads `companion_fts` with BM25 and it is the only retrieval lane that compiles on the shipped non-`ml` build, so a node kind that skips it is stored, looks fine, and never comes back from a search.
 
 Status is honest in both directions. A cycle that never reaches `finish_cycle` **stays `running` forever** — nothing sweeps it, because "the process died" and "the cycle is still working" are different facts and this ledger must not guess between them. A cycle that failed is finished *as* `failed`, with the reason in `stats_json.error` and its report still written: the record of a bad night is worth as much as a good one. Read surface: `companion_list_cycle_reports(limit)`.
+
+### The sleep cycle — memory maintenance that runs on its own
+
+Every maintenance capability under `brain/` used to be reachable only from a button, and the Memory tab's own doc comment said so: *"these are manual maintenance passes; nothing here runs on a schedule."* `companion_consolidation` held **0 rows in 77 days**. `brain/sleep_cycle.rs` is the pass that walks those organs unattended.
+
+**When it runs.** From the night-shift tick, while the night window is open — so it happens on an idle machine, and a user who has not enabled night shift gets no unattended LLM spend. At most one cycle per **20 hours**, keyed on the last *completed* cycle (a crashed cycle stays `running` forever, and an interval that counted those would let one dead process suppress every future cycle in silence). A single-flight guard makes concurrent cycles impossible. **Manual trigger:** `companion_run_sleep_cycle` — fire-and-forget, answering `{status: "started", cycleId}` or `{status: "skipped", skippedReason}` immediately; progress is read back through `companion_list_cycle_reports`.
+
+**Phase A · compress.** Conversation episodes since the last completed cycle (first cycle ever: 7 days), machine correlator records excluded, capped at 120 episodes / 30,000 chars. One headless leg (`cycle_compress`) proposes facts and procedurals, each citing the episode ids it came from and tagged from the active `companion_taxonomy` vocabulary. Applied through the ordinary writers (`semantic::write_fact`, `procedural::write_rule`), so provenance, supersede demotion and the FTS mirror behave exactly as for a hand-reviewed fact. Caps: **12 facts, 6 procedurals per cycle.**
+
+**Phase B · reconcile.** Three steps. It drains the cross-device staging inbox (`companion_sync_inbox`) through the same validation path; it runs one leg (`cycle_reconcile`) that proposes supersedes and contradictions across the active fact set; then it decays unused facts and computes the size-cap prune list.
+
+**What v0 deliberately does not do.**
+
+- **Forgetting is report-only.** The cycle lists what the per-scope size cap would demote and touches none of it. The list comes from the same query the enforcing prune uses (`consolidation::low_value_prune_candidates`), so "what it said it would forget" cannot drift from "what a prune would forget". The only rows a cycle retires are the **≤8 supersedes** it explicitly judged, and those are demotions (`importance → 0`), never deletions.
+- **Taxonomy expansion is propose-only.** A new classification lands `proposed` and classifies nothing until someone activates it — a cycle cannot widen its own vocabulary. A tag it tries to use that is not active is dropped from the item and counted; the item itself still lands.
+- **Nothing is hidden.** Every cap that bit, every dropped candidate, every rejected id and every truncated input is counted into `stats_json` and narrated in the report.
+
+**Classification tags** land in `companion_node.tags_json` and are mirrored into `companion_fts.tags` as `tag:<name>` tokens, so a tagged memory is reachable by keyword search — a tag that lived only in a column would classify nothing findable on the non-`ml` build.
+
+**Untrusted evidence.** Transcripts and cross-device payloads are data, not instruction: both prompts state every rule *outside* a nonce-tagged `<untrusted_…>` boundary and put the content inside it. Containment is only half — every id the model returns (provenance, `supersedes_id`, supersede winner/loser) is checked against the database first, so a hallucinated id costs a source or a verdict instead of retiring an arbitrary memory.
+
+**Cost.** Both legs run through `brain/oneshot.rs`, so each writes a `companion_turn` row with `origin='maintenance'` and the leg name in `trigger_kind` — a night of sleep is visible in the spend rollup rather than free-looking.
+
+**The report** is the point of the whole pass: a short narrative per cycle — what I learned, what arrived from the other device, what I retired, what I propose (tags, contradictions, prune candidates), and what I did not see. It is a `cycle_report` node like any other, on disk and in the keyword lane.
+
 ## Rebuild search index
 
 The **Memory** tab's action bar carries a **Rebuild search index** button, next to Run consolidation, Generate reflection, and Decay unused facts. It re-embeds every memory that has no vector at all, or whose vector was written under a different embedding model. It is safe to run at any time: a second pass finds nothing left to do, and it reports back one of three things (how many memories became searchable again, that everything was already indexed, or that this build ships without an embedding model and so cannot rebuild). On a large brain it can take a while.

@@ -17,7 +17,9 @@ use std::sync::Arc;
 use serde::Serialize;
 use tauri::State;
 
-use crate::companion::brain::{cockpit, consolidation, cycle_report, dashboard, reflection};
+use crate::companion::brain::{
+    cockpit, consolidation, cycle_report, dashboard, reflection, sleep_cycle,
+};
 use crate::companion::jobs::{self, curation_run};
 use crate::error::AppError;
 use crate::ipc_auth;
@@ -76,12 +78,44 @@ pub fn companion_list_consolidation_runs(
     consolidation::list_runs(&state.user_db, limit.unwrap_or(20))
 }
 
+/// Run a sleep cycle now, without waiting for tonight's night window.
+///
+/// **Fire-and-forget.** A cycle is minutes of headless LLM work; blocking an
+/// IPC call on it would hold a webview promise open for the duration and lose
+/// the result to any reload. So this admits the cycle — which opens the
+/// `companion_cycle` row and takes the single-flight lock synchronously — and
+/// returns immediately with the id. Progress and outcome are read back through
+/// `companion_list_cycle_reports`, the same journal the scheduled cycles land
+/// in; there is no second, trigger-only status surface to drift from it.
+///
+/// The answer is a shape, not a sentence: `status` is `started` or `skipped`,
+/// with the cycle id or the reason beside it. Callers branch on the field.
+/// Skipping is a normal outcome (another cycle in flight, or the 20-hour
+/// minimum interval), never an error.
+#[tauri::command]
+pub fn companion_run_sleep_cycle(
+    state: State<'_, Arc<AppState>>,
+) -> Result<sleep_cycle::SleepCycleTrigger, AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    let (answer, admitted) = sleep_cycle::trigger(&state.user_db)?;
+    if let Some(admitted) = admitted {
+        let pool = state.user_db.clone();
+        tauri::async_runtime::spawn(async move {
+            // A cycle records its own failure as a `failed` row with the reason
+            // in stats; reaching this arm means even that write did not land.
+            if let Err(e) = sleep_cycle::run_admitted(&pool, admitted).await {
+                tracing::warn!(
+                    error = %e,
+                    "companion: manually triggered sleep cycle could not be closed out"
+                );
+            }
+        });
+    }
+    Ok(answer)
+}
+
 /// Recent sleep cycles, newest first — the journal the Memory page v2 renders
 /// and the audit trail for everything a cycle changed.
-///
-/// Read-only substrate for phase L1 (`docs/plans/athena-longevity.md`); no
-/// scheduler runs cycles yet, so on today's builds this returns an empty list
-/// until something calls `cycle_report::begin_cycle`.
 #[tauri::command]
 pub fn companion_list_cycle_reports(
     state: State<'_, Arc<AppState>>,

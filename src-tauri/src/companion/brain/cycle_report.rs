@@ -36,16 +36,13 @@
 //! reason inside `stats_json.error` — a failure is a completed observation,
 //! not an absence of one.
 
-// Substrate shipped ahead of its caller. `list_recent` has one (the
-// `companion_list_cycle_reports` command); `begin_cycle` / `record_phase` /
-// `finish_cycle` / `last_completed` / `get` and the status constants are called
-// by the L1b sleep cycle. That engine (`brain::sleep_cycle`) lands in the
-// commit before this note is read — but it is itself unreachable until the
-// scheduler commit wires it, and an unreachable caller does not make a callee
-// live. So the allow survives exactly one more commit, and the scheduler commit
-// removes it; if it is still here after that, the cycle is not using its own
-// audit spine.
-#![allow(dead_code)]
+// The file-wide `#![allow(dead_code)]` this module shipped with is GONE, as its
+// own comment promised: `brain::sleep_cycle` calls `begin_cycle`,
+// `record_phase`, `finish_cycle` and `last_completed` (plus the status
+// constants), and the night-shift tick and `companion_run_sleep_cycle` reach it.
+// Only `get` keeps a targeted allow — the difference between "one accessor has
+// no product caller yet" and "nothing uses its own audit spine" is exactly what
+// the original note was asking to be told.
 
 use std::fs;
 

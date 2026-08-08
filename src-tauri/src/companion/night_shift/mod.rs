@@ -41,6 +41,7 @@ use chrono::{Duration as ChronoDuration, Local, TimeZone, Timelike, Utc};
 use rusqlite::{params, OptionalExtension};
 use serde::Serialize;
 
+use crate::companion::brain::sleep_cycle;
 use crate::db::repos::core::settings;
 use crate::db::settings_keys as keys;
 use crate::db::{DbPool, UserDbPool};
@@ -347,9 +348,66 @@ pub fn tick(user_db: &UserDbPool, sys_db: &DbPool, app: &tauri::AppHandle) {
     if let Err(e) = review_sweep(user_db) {
         tracing::warn!(error = %e, "night_shift: review sweep failed");
     }
+    if let Err(e) = maybe_run_sleep_cycle(user_db) {
+        tracing::warn!(error = %e, "night_shift: sleep-cycle admission failed");
+    }
     if let Err(e) = maybe_emit_morning_report(user_db, app) {
         tracing::warn!(error = %e, "night_shift: morning report failed");
     }
+}
+
+/// While the night window is open, run Athena's memory sleep cycle
+/// (`brain::sleep_cycle`) — compress the day's conversation into long-term
+/// memory, reconcile it, report what it would forget.
+///
+/// **This is the heartbeat the memory model never had.** Every maintenance
+/// capability under `brain/` was reachable only from a button
+/// (`companion_consolidation`: 0 rows in 77 days), so the corpus only ever
+/// grew. The sleep cycle is a new job family for THIS scheduler rather than new
+/// infrastructure, which is the whole reason phase L1 fits in one wave —
+/// `docs/plans/athena-longevity.md`, "the heartbeat already exists".
+///
+/// Gated on the same night window as the rest of night shift, so memory
+/// maintenance runs when the machine is idle and the operator is asleep, and
+/// so a user who has not enabled night shift gets no unattended LLM spend.
+///
+/// Admission is synchronous and cheap (one indexed read plus an in-process
+/// flag), and only a successful one spawns. That ordering is deliberate: this
+/// tick fires far more often than once every 20 hours, and calling the
+/// one-shot `run_sleep_cycle` inside a spawn instead would create a task per
+/// tick that exists only to discover it must skip. The single-flight guard
+/// travels inside the admission, so it is held from here until the spawned task
+/// ends — a double-spawn is impossible rather than merely harmless.
+fn maybe_run_sleep_cycle(user_db: &UserDbPool) -> Result<(), AppError> {
+    if !night_window_active(user_db) {
+        return Ok(());
+    }
+    match sleep_cycle::admit(user_db)? {
+        sleep_cycle::CycleAdmission::Admitted(admitted) => {
+            let cycle_id = admitted.cycle_id().to_string();
+            let pool = user_db.clone();
+            tracing::info!(cycle_id = %cycle_id, "night_shift: sleep cycle starting");
+            tauri::async_runtime::spawn(async move {
+                match sleep_cycle::run_admitted(&pool, admitted).await {
+                    Ok(outcome) => {
+                        tracing::info!(?outcome, "night_shift: sleep cycle finished")
+                    }
+                    // The cycle itself records its own failure as a `failed`
+                    // row; reaching here means even THAT could not be written.
+                    Err(e) => tracing::warn!(
+                        error = %e, cycle_id = %cycle_id,
+                        "night_shift: sleep cycle could not be closed out"
+                    ),
+                }
+            });
+        }
+        // The overwhelmingly common branch — the interval has not elapsed.
+        // Debug, not warn: "not yet" is the correct answer on almost every tick.
+        sleep_cycle::CycleAdmission::Skipped(reason) => {
+            tracing::debug!(reason, "night_shift: sleep cycle not due");
+        }
+    }
+    Ok(())
 }
 
 /// A proposed plan the user never approved goes stale rather than lingering
