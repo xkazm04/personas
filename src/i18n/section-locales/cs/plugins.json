@@ -2805,7 +2805,14 @@
     "memory_rebuild_search_none": "Každá vzpomínka je již indexována.",
     "stt_compare_latency": "{ms} ms",
     "stt_compare_working": "Přepisuje",
-    "stt_install_button": "Nainstalovat"
+    "stt_install_button": "Nainstalovat",
+    "sleep_cycle_failed": "Spánkový cyklus se nepodařilo spustit",
+    "sleep_cycle_force": "Vynutit spánkový cyklus paměti",
+    "sleep_cycle_hours_ago": "poslední cyklus před {hours} h",
+    "sleep_cycle_never": "nikdy neproběhl",
+    "sleep_cycle_pressure_tip": "Spánkový tlak: {chars} / {threshold} znaků · {last}",
+    "sleep_cycle_skipped": "Žádný cyklus nezačal: {reason}",
+    "sleep_cycle_started": "Spánkový cyklus {id} spuštěn. Sleduj ho v Paměti."
   },
   "artist_gallery": {
     "loading_viewer": "Načítání prohlížeče…",

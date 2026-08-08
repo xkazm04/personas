@@ -15598,6 +15598,13 @@ export type Translations = {
       dev_dump_log: string;
       dev_dump_log_saved: string;
       dev_dump_log_failed: string;
+      sleep_cycle_force: string;
+      sleep_cycle_started: string;
+      sleep_cycle_skipped: string;
+      sleep_cycle_failed: string;
+      sleep_cycle_never: string;
+      sleep_cycle_hours_ago: string;
+      sleep_cycle_pressure_tip: string;
       daily_goals_label: string;
       daily_goals_streak_hint: string;
       daily_goals_set_button: string;

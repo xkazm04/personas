@@ -15425,7 +15425,14 @@
       "memory_rebuild_search_none": "Каждое воспоминание уже проиндексировано.",
       "stt_compare_latency": "{ms} мс",
       "stt_compare_working": "Расшифровка",
-      "stt_install_button": "Установить движок"
+      "stt_install_button": "Установить движок",
+      "sleep_cycle_failed": "Не удалось запустить цикл сна",
+      "sleep_cycle_force": "Запустить цикл сна памяти сейчас",
+      "sleep_cycle_hours_ago": "последний цикл {hours} ч назад",
+      "sleep_cycle_never": "ни разу не выполнялся",
+      "sleep_cycle_pressure_tip": "Давление сна: {chars} / {threshold} символов · {last}",
+      "sleep_cycle_skipped": "Цикл не запущен: {reason}",
+      "sleep_cycle_started": "Цикл сна {id} запущен. Следите за ним в разделе «Память»."
     },
     "artist_gallery": {
       "loading_viewer": "Загрузка просмотрщика…",

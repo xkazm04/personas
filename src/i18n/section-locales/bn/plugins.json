@@ -2805,7 +2805,14 @@
     "memory_rebuild_search_none": "প্রতিটি স্মৃতি ইতিমধ্যে ইন্ডেক্স করা আছে।",
     "stt_compare_latency": "{ms} মিসে",
     "stt_compare_working": "ট্রান্সক্রাইব হচ্ছে",
-    "stt_install_button": "ইঞ্জিন ইনস্টল করুন"
+    "stt_install_button": "ইঞ্জিন ইনস্টল করুন",
+    "sleep_cycle_failed": "স্লিপ সাইকেল শুরু করা যায়নি",
+    "sleep_cycle_force": "মেমরি স্লিপ সাইকেল এখনই চালান",
+    "sleep_cycle_hours_ago": "শেষ সাইকেল {hours} ঘণ্টা আগে",
+    "sleep_cycle_never": "কখনও চলেনি",
+    "sleep_cycle_pressure_tip": "স্লিপ প্রেশার: {chars} / {threshold} অক্ষর · {last}",
+    "sleep_cycle_skipped": "কোনো সাইকেল শুরু হয়নি: {reason}",
+    "sleep_cycle_started": "স্লিপ সাইকেল {id} শুরু হয়েছে। মেমরিতে দেখুন।"
   },
   "artist_gallery": {
     "loading_viewer": "ভিউয়ার লোড হচ্ছে…",

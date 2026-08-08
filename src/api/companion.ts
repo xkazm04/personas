@@ -9,8 +9,10 @@ import type { AthenaSpendRow } from '@/lib/bindings/AthenaSpendRow';
 import type { ConversationRow } from '@/lib/bindings/ConversationRow';
 import type { CompanionTurnSidecar } from '@/lib/bindings/CompanionTurnSidecar';
 import type { ReembedResult } from '@/lib/bindings/ReembedResult';
+import type { SleepCycleTrigger } from '@/lib/bindings/SleepCycleTrigger';
+import type { SleepPressure } from '@/lib/bindings/SleepPressure';
 
-export type { CompanionTurnSidecar, ReembedResult };
+export type { CompanionTurnSidecar, ReembedResult, SleepCycleTrigger, SleepPressure };
 
 /**
  * Initialize the companion-brain disk layout (idempotent).
@@ -2040,6 +2042,32 @@ export async function companionExportConversationLog(
   markdown: string,
 ): Promise<string> {
   return invoke<string>('companion_export_conversation_log', { fileStem, markdown });
+}
+
+// ── Sleep cycle (Athena's memory maintenance pass) ──────────────────────
+
+/**
+ * Start a sleep cycle now. **Fire-and-forget** — a cycle is minutes of
+ * headless model work, so this answers the moment the cycle row exists:
+ * `{status: 'started', cycleId}` or `{status: 'skipped', skippedReason}`.
+ * Progress is read back through the cycle-report journal.
+ *
+ * `force` bypasses sleep pressure, the 6h floor and the 72h staleness
+ * release — but never the single-flight guard, so a force while a cycle is
+ * in flight still answers `skipped`. Omit it for the ordinary path.
+ */
+export async function companionRunSleepCycle(force?: boolean): Promise<SleepCycleTrigger> {
+  return invoke<SleepCycleTrigger>('companion_run_sleep_cycle', { force });
+}
+
+/**
+ * The sleep-pressure gauge: how much new conversation is waiting, and
+ * whether a cycle would start right now. Read-only and lock-free — asking
+ * never perturbs a running cycle — and it is the same computation the
+ * admission gate runs, not a parallel estimate.
+ */
+export async function companionGetSleepPressure(): Promise<SleepPressure> {
+  return invoke<SleepPressure>('companion_get_sleep_pressure');
 }
 
 // ── Daily goals (dev-only gamification ritual) ─────────────────────────

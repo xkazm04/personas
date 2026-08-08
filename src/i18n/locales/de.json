@@ -15425,7 +15425,14 @@
       "memory_rebuild_search_none": "Jede Erinnerung ist bereits indiziert.",
       "stt_compare_latency": "{ms} ms",
       "stt_compare_working": "Transkribieren",
-      "stt_install_button": "Engine installieren"
+      "stt_install_button": "Engine installieren",
+      "sleep_cycle_failed": "Schlafzyklus konnte nicht gestartet werden",
+      "sleep_cycle_force": "Speicher-Schlafzyklus jetzt erzwingen",
+      "sleep_cycle_hours_ago": "letzter Zyklus vor {hours} Std.",
+      "sleep_cycle_never": "nie ausgeführt",
+      "sleep_cycle_pressure_tip": "Schlafdruck: {chars} / {threshold} Zeichen · {last}",
+      "sleep_cycle_skipped": "Kein Zyklus gestartet: {reason}",
+      "sleep_cycle_started": "Schlafzyklus {id} gestartet. Verfolge ihn unter Speicher."
     },
     "artist_gallery": {
       "loading_viewer": "Viewer wird geladen…",

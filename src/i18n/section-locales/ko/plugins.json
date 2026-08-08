@@ -2805,7 +2805,14 @@
     "memory_rebuild_search_none": "모든 기억이 이미 인덱싱되어 있습니다.",
     "stt_compare_latency": "{ms} ms",
     "stt_compare_working": "변환 중",
-    "stt_install_button": "엔진 설치"
+    "stt_install_button": "엔진 설치",
+    "sleep_cycle_failed": "수면 주기를 시작하지 못했습니다",
+    "sleep_cycle_force": "메모리 수면 주기를 지금 강제 실행",
+    "sleep_cycle_hours_ago": "마지막 주기 {hours}시간 전",
+    "sleep_cycle_never": "실행된 적 없음",
+    "sleep_cycle_pressure_tip": "수면 압력: {chars} / {threshold}자 · {last}",
+    "sleep_cycle_skipped": "주기가 시작되지 않음: {reason}",
+    "sleep_cycle_started": "수면 주기 {id}을(를) 시작했습니다. 메모리에서 확인하세요."
   },
   "artist_gallery": {
     "loading_viewer": "뷰어 로딩 중…",

@@ -13,6 +13,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { ConversationSwitcher } from '../ConversationSwitcher';
 import { DevConversationLogButton } from '../DevConversationLogButton';
 import { useCompanionStore } from '../companionStore';
+import { AthenaChatSleepButton } from './AthenaChatSleepButton';
 import { resetConversation, setAutonomousMode, setDevMode } from './athenaChatActions';
 
 export type ToolStrip = 'cadence' | 'boldness' | 'goals';
@@ -140,6 +141,7 @@ export function AthenaChatHeader({
           />
         )}
         {devModeAvailable && <DevConversationLogButton />}
+        {devModeAvailable && <AthenaChatSleepButton />}
         <Divider />
         <IconToggle
           icon={RotateCcw}

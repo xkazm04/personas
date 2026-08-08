@@ -2805,7 +2805,14 @@
     "memory_rebuild_search_none": "Cada memoria ya está indexada.",
     "stt_compare_latency": "{ms} ms",
     "stt_compare_working": "Transcribiendo",
-    "stt_install_button": "Instalar motor"
+    "stt_install_button": "Instalar motor",
+    "sleep_cycle_failed": "No se pudo iniciar el ciclo de sueño",
+    "sleep_cycle_force": "Forzar ahora un ciclo de sueño de la memoria",
+    "sleep_cycle_hours_ago": "último ciclo hace {hours} h",
+    "sleep_cycle_never": "nunca ejecutado",
+    "sleep_cycle_pressure_tip": "Presión de sueño: {chars} / {threshold} caracteres · {last}",
+    "sleep_cycle_skipped": "No se inició ningún ciclo: {reason}",
+    "sleep_cycle_started": "Ciclo de sueño {id} iniciado. Síguelo en Memoria."
   },
   "artist_gallery": {
     "loading_viewer": "Cargando visor…",

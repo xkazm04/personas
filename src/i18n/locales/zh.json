@@ -15425,7 +15425,14 @@
       "memory_rebuild_search_none": "所有记忆都已索引。",
       "stt_compare_latency": "{ms} 毫秒",
       "stt_compare_working": "转录中",
-      "stt_install_button": "安装引擎"
+      "stt_install_button": "安装引擎",
+      "sleep_cycle_failed": "无法启动睡眠周期",
+      "sleep_cycle_force": "立即强制运行记忆睡眠周期",
+      "sleep_cycle_hours_ago": "上次周期在 {hours} 小时前",
+      "sleep_cycle_never": "从未运行",
+      "sleep_cycle_pressure_tip": "睡眠压力：{chars} / {threshold} 字符 · {last}",
+      "sleep_cycle_skipped": "未启动周期：{reason}",
+      "sleep_cycle_started": "睡眠周期 {id} 已启动。可在“记忆”中查看。"
     },
     "artist_gallery": {
       "loading_viewer": "加载查看器中…",

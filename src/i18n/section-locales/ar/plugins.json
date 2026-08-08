@@ -2805,7 +2805,14 @@
     "memory_rebuild_search_none": "كل ذاكرة مفهرسة بالفعل.",
     "stt_compare_latency": "{ms} ms",
     "stt_compare_working": "جارٍ النسخ",
-    "stt_install_button": "تثبيت المحرك"
+    "stt_install_button": "تثبيت المحرك",
+    "sleep_cycle_failed": "تعذّر بدء دورة النوم",
+    "sleep_cycle_force": "فرض تشغيل دورة نوم الذاكرة الآن",
+    "sleep_cycle_hours_ago": "آخر دورة قبل {hours} ساعة",
+    "sleep_cycle_never": "لم تُشغَّل قط",
+    "sleep_cycle_pressure_tip": "ضغط النوم: {chars} / {threshold} حرف · {last}",
+    "sleep_cycle_skipped": "لم تبدأ أي دورة: {reason}",
+    "sleep_cycle_started": "بدأت دورة النوم {id}. تابعها في الذاكرة."
   },
   "artist_gallery": {
     "loading_viewer": "جارٍ تحميل العارض…",

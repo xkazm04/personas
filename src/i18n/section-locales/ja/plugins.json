@@ -2805,7 +2805,14 @@
     "memory_rebuild_search_none": "すべての記憶はインデックス済みです。",
     "stt_compare_latency": "{ms} ms",
     "stt_compare_working": "文字起こし中",
-    "stt_install_button": "エンジンをインストール"
+    "stt_install_button": "エンジンをインストール",
+    "sleep_cycle_failed": "スリープサイクルを開始できませんでした",
+    "sleep_cycle_force": "メモリのスリープサイクルを今すぐ実行",
+    "sleep_cycle_hours_ago": "前回のサイクルは {hours} 時間前",
+    "sleep_cycle_never": "未実行",
+    "sleep_cycle_pressure_tip": "スリープ圧: {chars} / {threshold} 文字 · {last}",
+    "sleep_cycle_skipped": "サイクルは開始されませんでした: {reason}",
+    "sleep_cycle_started": "スリープサイクル {id} を開始しました。メモリで確認できます。"
   },
   "artist_gallery": {
     "loading_viewer": "ビューアを読み込み中…",

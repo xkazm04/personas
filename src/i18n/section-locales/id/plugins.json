@@ -2805,7 +2805,14 @@
     "memory_rebuild_search_none": "Setiap memori sudah terindeks.",
     "stt_compare_latency": "{ms} ms",
     "stt_compare_working": "Mentranskripsi",
-    "stt_install_button": "Instal Mesin"
+    "stt_install_button": "Instal Mesin",
+    "sleep_cycle_failed": "Tidak dapat memulai siklus tidur",
+    "sleep_cycle_force": "Paksa jalankan siklus tidur memori sekarang",
+    "sleep_cycle_hours_ago": "siklus terakhir {hours} jam lalu",
+    "sleep_cycle_never": "belum pernah dijalankan",
+    "sleep_cycle_pressure_tip": "Tekanan tidur: {chars} / {threshold} karakter · {last}",
+    "sleep_cycle_skipped": "Tidak ada siklus yang dimulai: {reason}",
+    "sleep_cycle_started": "Siklus tidur {id} dimulai. Pantau di Memori."
   },
   "artist_gallery": {
     "loading_viewer": "Memuat penampil…",

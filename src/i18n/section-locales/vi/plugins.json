@@ -2805,7 +2805,14 @@
     "memory_rebuild_search_none": "Mọi bộ nhớ đều đã được lập chỉ mục.",
     "stt_compare_latency": "{ms} ms",
     "stt_compare_working": "Đang phiên âm",
-    "stt_install_button": "Cài đặt"
+    "stt_install_button": "Cài đặt",
+    "sleep_cycle_failed": "Không thể bắt đầu chu kỳ ngủ",
+    "sleep_cycle_force": "Chạy ngay chu kỳ ngủ của bộ nhớ",
+    "sleep_cycle_hours_ago": "chu kỳ gần nhất {hours} giờ trước",
+    "sleep_cycle_never": "chưa từng chạy",
+    "sleep_cycle_pressure_tip": "Áp lực ngủ: {chars} / {threshold} ký tự · {last}",
+    "sleep_cycle_skipped": "Không có chu kỳ nào bắt đầu: {reason}",
+    "sleep_cycle_started": "Đã bắt đầu chu kỳ ngủ {id}. Theo dõi trong Bộ nhớ."
   },
   "artist_gallery": {
     "loading_viewer": "Đang tải trình xem…",
