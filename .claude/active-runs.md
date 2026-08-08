@@ -2,11 +2,11 @@
 
 ## Active
 
-### athena-longevity-l1b — Wave 3 (L1b): the sleep cycle engine — session fable-5 xhigh — **builder in flight**
-- Started: 2026-08-08. One-branch wave `longevity/l1b` in the MAIN checkout — HEAD sits there until merge.
-- Scope: `src-tauri/src/companion/brain/{sleep_cycle.rs(new),mod.rs,semantic.rs,procedural.rs,episodic.rs,taxonomy.rs,sync_staging.rs,cycle_report.rs,consolidation.rs}` · `src-tauri/src/companion/night_shift/**` · `src-tauri/src/commands/companion/**` · `src-tauri/db/src/lib.rs` · `src-tauri/src/lib.rs` · bindings + commandNames.
-- Plan: `docs/plans/athena-longevity.md` Wave log.
-
+### athena-longevity-l1b — Wave 3 (L1b): the sleep cycle engine — session fable-5 xhigh — **COMPLETE, merged ff**
+- Started/completed: 2026-08-08. Commits: `5c1332199` compress + reconcile (2,485-line `brain/sleep_cycle.rs` incl. 17 tests; CycleLlm seam with MeteredLegs prod impl; nonce-fenced untrusted-evidence prompts; tags via post-write `apply_tags` into `companion_node.tags_json` + `tag:` FTS tokens; extracted `semantic::demote_superseded` + `consolidation::low_value_prune_candidates` so report-only and enforcing paths cannot drift) · `49aeff3bf` scheduling + `companion_run_sleep_cycle` (admit-synchronously-spawn-on-success; single-flight held from admission to task end).
+- Gate: tsc · `companion::` **554/554** · desktop check at 213 baseline · desktop,ml check green · doctor 0 fail.
+- **Open Director/operator decision:** the tick gates on `night_window_active` = an APPROVED night plan — no plan approval, no automatic cycle. Manual command is the escape hatch; widening to enabled+clock-window is a one-line admission change awaiting the operator's spend-consent call.
+- **Phase gate pending: cycle #1 has never live-run.** Fire `companion_run_sleep_cycle` via the :17320 bridge on the next dev instance carrying this build.
 ### athena-longevity-l1a — Wave 2 (L1a): oneshot metering + taxonomy/staging schema — session fable-5 xhigh — **COMPLETE, merged ff**
 - Started/completed: 2026-08-08. Commits: `c7249280c` meter the oneshot legs (7 legs → `companion_turn` origin='maintenance', leg in `trigger_kind`; shared `record_cli_leg`/`record_failed_leg`; classifier pins oneshot's 9 failure literals; removed night_plan's usage-less hand-rolled row that would have double-counted) · `ac6b8d983` taxonomy registry (9 seeds, both-direction-idempotent) + sync staging inbox (IS-NULL first-consumer ownership) · `3bc5722f9` Director fix: r4's `84a2ee870` broke the ml arm of recall (3×E0382) — desktop-full/production build was broken on master; found by the builder running the ml check unasked.
 - Gate: tsc clean · `companion::` 536/536 · `cargo check --features desktop` at 213-warning baseline · `cargo check --features desktop,ml` NOW GREEN and **added to standing wave gates**.

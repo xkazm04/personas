@@ -311,6 +311,13 @@ whose premise their evidence contradicts.
   production `desktop-full` build on master; Director-fixed in `3bc5722f9` and the ml check joins
   the standing gates. Residue: no maintenance leg has live-run yet; `recall_synthesis` leg can
   only fire on ml builds.
-- **Wave 3 · L1b** — launched 2026-08-08, branch `longevity/l1b`: the sleep cycle engine —
-  compress + reconcile as metered oneshot legs, staging consumption, tags_json on companion_node,
-  night-shift scheduling + manual trigger command.
+- **Wave 3 · L1b** — **SHIPPED 2026-08-08**, merged ff: `5c1332199` the cycle engine (compress +
+  reconcile; CycleLlm seam so every parse/cap/write decision is testable; nonce-fenced untrusted
+  evidence; tags into `companion_node.tags_json` + `tag:` FTS tokens; `demote_superseded` and
+  `low_value_prune_candidates` extracted so the report-only path and the enforcing path share one
+  implementation; two brief corrections — procedural scopes are chat|action|memory|build, and
+  staged facts get `sync:<device>:<delta-id>` provenance since local episode ids cannot validate
+  them) · `49aeff3bf` scheduling + manual trigger (admit-sync-spawn-on-success; honest
+  `{status, cycleId, skippedReason}`). Gate: tsc · companion:: 554/554 · both cargo checks ·
+  doctor. **L1 is code-complete. Phase gate = cycle #1 LIVE, still pending** — and an operator
+  decision: automatic cycles currently require an approved night plan (no approval → manual only).
