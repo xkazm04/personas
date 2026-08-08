@@ -5,6 +5,35 @@
 //! deltas, and returns the assembled text (or a JSON envelope parsed by
 //! the caller) — no `--resume`, no system-prompt file, no UI streaming.
 //!
+//! ## Every leg through here is metered (L1a)
+//!
+//! Until 2026-08-08 this module drained stdout for assistant-text deltas and
+//! **threw the terminal `result` event away**, so the seven legs below reached
+//! neither spend ledger: not `companion_turn` (no user-db handle here) and not
+//! `dev_llm_spend` (nothing wrote it). Their cost was invisible in both, which
+//! mattered because this is exactly the machinery the L1 sleep cycle runs on —
+//! the cycle's own price could not be measured
+//! (`docs/plans/athena-longevity.md`, Part I §7).
+//!
+//! So [`call_claude_text`] now takes a `UserDbPool` and writes one
+//! `companion_turn` row per invocation with `origin='maintenance'` and the
+//! [`leg`] name in `trigger_kind`. There is deliberately **no unmetered public
+//! entry point**: a future leg cannot be added without a pool, which is the
+//! structural version of the rule rather than a comment asking for it.
+//!
+//! One row per invocation, success or failure. A leg whose CLI ran fine but
+//! whose *reply* failed to parse (`extract_json_span`, an empty reflection)
+//! still has exactly one row, flagged however the CLI itself reported: the row
+//! records the CLI leg that was paid for, and the caller's parse verdict is a
+//! separate concern — the same split `cli_text_tracked` has always had.
+//!
+//! The row shape and the failure taxonomy are NOT re-implemented here. They
+//! come from `turn_ledger::{record_cli_leg, record_failed_leg}`, shared with
+//! `athena_reaction`'s headless decision legs, and the `result`-event parser is
+//! `turn_ledger::CliUsage::from_line` — the same one the tracked path feeds
+//! every stdout line to. Two parsers or two row shapes would drift, and both
+//! feed one `companion_get_health` number.
+//!
 //! ## Why this module exists
 //!
 //! Three call sites (`consolidation::call_claude_oneshot`,
@@ -38,25 +67,105 @@ use tokio::process::Command;
 use tokio::time::timeout;
 
 use crate::companion::session::base_cli_invocation;
+use crate::companion::turn_ledger::{self, CliUsage};
+use crate::db::UserDbPool;
 use crate::error::AppError;
 
-/// Spawn a one-shot `claude -p -` call, pipe `prompt` as stdin, collect
-/// the streamed assistant-text deltas, and return the assembled text.
+/// The maintenance legs that run through this module, as the low-cardinality
+/// tokens written to `companion_turn.trigger_kind`.
 ///
-/// `label` is a short human-readable tag (e.g. `"consolidation"`,
-/// `"reflection"`, `"recall synthesis"`) folded into error messages so
-/// failures are traceable back to the caller without each call site
-/// hand-rolling its own error strings.
+/// One token per leg, used for BOTH the ledger label and the error-message tag
+/// — so `GROUP BY origin, trigger_kind` and a `tracing` line can never name the
+/// same leg two different ways. Snake_case because these are query keys, not
+/// prose.
+pub mod leg {
+    pub const CONSOLIDATION: &str = "consolidation";
+    pub const REFLECTION: &str = "reflection";
+    /// Its one call site (`recall_synthesis::call_claude_oneshot`) is
+    /// `ml`-gated and the shipping build has no `ml`, so on that build this
+    /// really is unused — like the rest of that module, which carries the same
+    /// dead-code warnings today. Named here anyway so the leg has a token the
+    /// moment the vector lane compiles, rather than a string invented later
+    /// that fails to match this one.
+    #[cfg_attr(not(feature = "ml"), allow(dead_code))]
+    pub const RECALL_SYNTHESIS: &str = "recall_synthesis";
+    pub const BRIEFING: &str = "briefing";
+    pub const NIGHT_PLANNER: &str = "night_planner";
+    pub const NIGHT_UNATTENDED: &str = "night_unattended";
+    pub const TOURS: &str = "tours";
+}
+
+/// Spawn a one-shot `claude -p -` call, pipe `prompt` as stdin, collect
+/// the streamed assistant-text deltas, **record the spend**, and return the
+/// assembled text.
+///
+/// `leg` is one of the [`leg`] constants: it tags the ledger row
+/// (`companion_turn.trigger_kind`, with `origin='maintenance'`) and is folded
+/// into error messages so failures are traceable back to the caller.
+///
+/// Metering is best-effort and never changes the call's result — an insert
+/// failure is a `tracing::warn!` inside the ledger, and a leg whose CLI emitted
+/// no `result` event records a row with NULL usage. What must not happen is a
+/// leg with no row at all; that was the state this replaced.
 ///
 /// No `--resume`, no system-prompt file (callers put everything in the
 /// user prompt for total control), no stream events to the UI — this is
 /// a backend computation, not a chat turn.
 pub async fn call_claude_text(
+    pool: &UserDbPool,
+    prompt: &str,
+    model: &str,
+    leg: &str,
+    call_timeout: Duration,
+) -> Result<String, AppError> {
+    match run_oneshot(prompt, model, leg, call_timeout).await {
+        Ok(run) => {
+            // `timed_out` is always false on this path: unlike
+            // `athena_reaction::cli_text_inner` (whose 180s cap returns `Ok`
+            // with a partial blob), a timeout here `?`-returns below, so it
+            // arrives as an `Err` and is classified as `timeout` by
+            // `record_failed_leg`. There is no clean-looking timed-out row to
+            // guard against.
+            turn_ledger::record_cli_leg(
+                pool,
+                turn_ledger::ORIGIN_MAINTENANCE,
+                leg,
+                model,
+                run.usage,
+                false,
+            );
+            Ok(run.text)
+        }
+        Err(e) => {
+            turn_ledger::record_failed_leg(
+                pool,
+                turn_ledger::ORIGIN_MAINTENANCE,
+                leg,
+                model,
+                &e,
+            );
+            Err(e)
+        }
+    }
+}
+
+/// What one maintenance leg produced: the assembled assistant text plus the
+/// terminal `result` event's usage (`None` when the CLI emitted none, which is
+/// what a crashed or very old CLI looks like).
+struct OneshotRun {
+    text: String,
+    usage: Option<CliUsage>,
+}
+
+/// Spawn + drain. Split from [`call_claude_text`] so the ledger write has
+/// exactly one success path and one failure path to wrap, rather than being
+/// threaded through every `?` in the body.
+async fn run_oneshot(
     prompt: &str,
     model: &str,
     label: &str,
     call_timeout: Duration,
-) -> Result<String, AppError> {
+) -> Result<OneshotRun, AppError> {
     let cwd = dirs::home_dir().unwrap_or_else(std::env::temp_dir);
     let (cmd_program, mut argv) = base_cli_invocation();
     argv.extend([
@@ -127,6 +236,7 @@ pub async fn call_claude_text(
 
     // Reuse the streaming JSON parser to extract assistant text deltas.
     let mut assistant_text = String::new();
+    let mut usage: Option<CliUsage> = None;
     let mut reader = BufReader::new(stdout).lines();
 
     let collect = async {
@@ -137,6 +247,13 @@ pub async fn call_claude_text(
         {
             if let Some(delta) = extract_assistant_text(&line) {
                 assistant_text.push_str(&delta);
+            }
+            // The terminal `result` event carries this leg's real cost / token
+            // usage / duration. Draining stdout without reading it is what made
+            // every maintenance leg free-looking for 77 days. Same parser the
+            // tracked headless path feeds — one implementation, no drift.
+            if let Some(u) = CliUsage::from_line(&line) {
+                usage = Some(u);
             }
         }
         Ok::<(), AppError>(())
@@ -165,7 +282,10 @@ pub async fn call_claude_text(
         )));
     }
 
-    Ok(assistant_text)
+    Ok(OneshotRun {
+        text: assistant_text,
+        usage,
+    })
 }
 
 /// Strip stream-json wrapping and pull text deltas. Matches the

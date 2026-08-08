@@ -360,9 +360,10 @@ pub async fn compose_tour(
 ) -> Result<ComposedTourRecord, AppError> {
     let prompt = compose_prompt(topic, summary);
     let text = oneshot::call_claude_text(
+        pool,
         &prompt,
         crate::companion::model_routing::MAIN.model,
-        "compose_tour",
+        oneshot::leg::TOURS,
         COMPOSE_TIMEOUT,
     )
     .await?;

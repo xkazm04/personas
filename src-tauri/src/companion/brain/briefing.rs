@@ -25,8 +25,9 @@ use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
-use crate::companion::brain::oneshot::{call_claude_text, extract_json_span, preview};
+use crate::companion::brain::oneshot::{self, call_claude_text, extract_json_span, preview};
 use crate::companion::model_routing;
+use crate::db::UserDbPool;
 use crate::error::AppError;
 
 /// One-shot compose budget. The briefing is latency-sensitive (session
@@ -157,7 +158,7 @@ pub fn delta_is_trivial(d: &SessionDelta) -> bool {
 /// caller's cue to fall back to the deterministic client-side briefing.
 /// The gate is enforced here too: composing a trivial delta is an error,
 /// never a model call.
-pub async fn compose_briefing(delta: &SessionDelta) -> Result<String, AppError> {
+pub async fn compose_briefing(pool: &UserDbPool, delta: &SessionDelta) -> Result<String, AppError> {
     if delta_is_trivial(delta) {
         return Err(AppError::Internal(
             "briefing delta gate: nothing happened — refusing to compose".into(),
@@ -167,9 +168,10 @@ pub async fn compose_briefing(delta: &SessionDelta) -> Result<String, AppError> 
     // Structured JSON authoring with no op grammar — the ASIDE tier
     // (awareness-heavy, latency-friendly) is the right cost point.
     let text = call_claude_text(
+        pool,
         &prompt,
         model_routing::ASIDE.model,
-        "briefing",
+        oneshot::leg::BRIEFING,
         BRIEFING_TIMEOUT,
     )
     .await?;

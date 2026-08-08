@@ -24,7 +24,7 @@ use rusqlite::{params, OptionalExtension};
 use serde::{Deserialize, Serialize};
 
 use crate::companion::brain::oneshot::{
-    call_claude_text, extract_json_span, preview,
+    self, call_claude_text, extract_json_span, preview,
 };
 use crate::companion::brain::util;
 use crate::companion::brain::{episodic, semantic};
@@ -187,7 +187,7 @@ pub async fn run_consolidation(
 
     let prompt = build_consolidation_prompt(&episodes, &existing_facts, instructions);
 
-    let envelope_result = call_claude_oneshot(&prompt).await;
+    let envelope_result = call_claude_oneshot(pool, &prompt).await;
 
     let envelope = match envelope_result {
         Ok(e) => e,
@@ -942,11 +942,15 @@ fn build_consolidation_prompt(
 /// [`oneshot::call_claude_text`](crate::companion::brain::oneshot::call_claude_text);
 /// this wrapper owns only the consolidation-specific model choice and
 /// typed envelope parsing.
-async fn call_claude_oneshot(prompt: &str) -> Result<ProposalEnvelope, AppError> {
+async fn call_claude_oneshot(
+    pool: &UserDbPool,
+    prompt: &str,
+) -> Result<ProposalEnvelope, AppError> {
     let text = call_claude_text(
+        pool,
         prompt,
         "claude-opus-4-8",
-        "consolidation",
+        oneshot::leg::CONSOLIDATION,
         CONSOLIDATION_TIMEOUT,
     )
     .await?;

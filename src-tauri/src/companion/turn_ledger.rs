@@ -35,6 +35,23 @@ use serde_json::Value;
 use crate::db::UserDbPool;
 use crate::error::AppError;
 
+/// `origin` for the cheap headless *decision* legs — channel reactions,
+/// execution/message triage, review resolution, profile synthesis. They run
+/// through `athena_reaction::cli_text_tracked`.
+pub const ORIGIN_HEADLESS: &str = "headless";
+
+/// `origin` for Athena's *maintenance* legs — the `brain::oneshot` family
+/// (consolidation, reflection, recall synthesis, briefing, the night-shift
+/// planner and its unattended guidance, tour composition).
+///
+/// Separate from [`ORIGIN_HEADLESS`] on purpose: these are the machinery the
+/// L1 sleep cycle runs on, and the whole longevity project is about being able
+/// to price that cycle. Folding them into `headless` would have hidden the
+/// cycle's cost inside a bucket already dominated by 1,600 triage legs. The
+/// spend rollup (`commands::companion::observability::spend_rollup_rows`)
+/// groups by `origin`, so a new value surfaces there with no rollup change.
+pub const ORIGIN_MAINTENANCE: &str = "maintenance";
+
 /// Usage extracted from the CLI's terminal `result` stream-json event.
 ///
 /// All fields are optional: older CLIs (or a turn that errored before the
@@ -177,6 +194,109 @@ pub fn failed_turn_record(
         failed: true,
         error_reason: Some(reason.to_string()),
     }
+}
+
+/// Record one **completed** CLI leg. The success counterpart of
+/// [`failed_turn_record`], and the same argument for existing exactly once:
+/// the headless decision legs (`athena_reaction::cli_text_tracked`,
+/// `cli_decision_with_model`) and the maintenance legs
+/// (`brain::oneshot::call_claude_text`) feed one ledger and one health number,
+/// so they must not assemble two subtly different rows.
+///
+/// `timed_out` is the caller's statement that the child was killed before it
+/// finished. It is not redundant with `usage`: a killed child usually emits no
+/// `result` event at all, so without this a timeout would book as a clean leg
+/// carrying whatever cost it burned.
+///
+/// Returns the new row's id (the triage legs attach verdict counts to it via
+/// [`update_outcome`]), or `None` if the best-effort insert failed.
+pub fn record_cli_leg(
+    pool: &UserDbPool,
+    origin: &str,
+    trigger_kind: &str,
+    model: &str,
+    usage: Option<CliUsage>,
+    timed_out: bool,
+) -> Option<String> {
+    record_turn(
+        pool,
+        &TurnRecord {
+            origin: origin.to_string(),
+            trigger_kind: Some(trigger_kind.to_string()),
+            model: Some(model.to_string()),
+            usage: flag_timeout(usage, timed_out),
+            error_reason: timeout_reason(timed_out),
+            ..Default::default()
+        },
+    )
+}
+
+/// A CLI leg that errored before producing anything is a failed turn — record
+/// it, exactly once, with the same taxonomy every other origin uses.
+///
+/// Until this existed (as `athena_reaction::record_headless_failure`), every
+/// `?` in the tracked wrappers returned before their `record_turn` call, so
+/// the ~94% of `companion_turn` rows that are headless were structurally
+/// incapable of reporting a failure. It is shared with the maintenance legs
+/// for the same reason `failed_turn_record` has one construction site: a
+/// second copy would drift, and both feed `companion_get_health`.
+///
+/// Cost is always `None`, and that is a fact about the call rather than a
+/// shortcut — the surviving `Err` exits on both paths (CLI not found, spawn
+/// failure, a missing pipe, a non-zero exit) fire before or instead of a
+/// `result` event, so there is no usage block in existence to capture. A
+/// failed leg with unknown cost is still a recorded failed leg.
+pub fn record_failed_leg(
+    pool: &UserDbPool,
+    origin: &str,
+    trigger_kind: &str,
+    model: &str,
+    e: &AppError,
+) {
+    let reason = crate::companion::session::classify_failure(e);
+    tracing::warn!(
+        origin,
+        trigger_kind,
+        model,
+        reason,
+        error = %e,
+        "companion: CLI leg failed — recording ledger row"
+    );
+    record_turn(
+        pool,
+        &failed_turn_record(
+            origin,
+            Some(trigger_kind.to_string()),
+            Some(model.to_string()),
+            reason,
+            &e.to_string(),
+            None,
+        ),
+    );
+}
+
+/// Mark a timed-out leg's usage as errored.
+///
+/// `athena_reaction`'s 180s cap returns `Ok` with a partial blob, so without
+/// this a timeout books as a clean decision carrying whatever cost it burned —
+/// the failure mode most likely to be common, and the one an error-shaped
+/// check cannot see. Synthesises a usage block when the CLI never emitted a
+/// `result` event, which is the normal shape for a killed child: the row must
+/// exist even when the cost does not.
+fn flag_timeout(usage: Option<CliUsage>, timed_out: bool) -> Option<CliUsage> {
+    if !timed_out {
+        return usage;
+    }
+    let mut u = usage.unwrap_or_default();
+    u.is_error = true;
+    Some(u)
+}
+
+/// The `error_reason` token for a timed-out leg. `None` leaves a healthy row's
+/// reason NULL, and leaves a CLI-reported error (`result.is_error`) unlabelled
+/// rather than mislabelling it as a timeout it was not.
+fn timeout_reason(timed_out: bool) -> Option<String> {
+    timed_out.then(|| "timeout".to_string())
 }
 
 /// Record a turn and return its generated id. Best-effort: an insert failure
@@ -555,6 +675,133 @@ mod tests {
         .expect("insert");
         let flagged: i64 = conn_scalar(&pool, "SELECT is_error FROM companion_turn LIMIT 1");
         assert_eq!(flagged, 1);
+    }
+
+    /// A maintenance leg that completed writes ONE row, tagged
+    /// `origin='maintenance'` with the leg name in `trigger_kind`, carrying
+    /// whatever the CLI's terminal `result` event reported.
+    ///
+    /// The leg name lives in `trigger_kind` rather than a new column because
+    /// that column is already defined as "the headless leg label" and the
+    /// usage dashboard already groups by `(origin, trigger_kind)` — a new
+    /// column would have needed a reader before it meant anything.
+    #[test]
+    fn a_completed_maintenance_leg_is_one_row_tagged_with_its_leg_name() {
+        let pool = test_pool("ledger_maintenance_ok");
+        let id = record_cli_leg(
+            &pool,
+            ORIGIN_MAINTENANCE,
+            "consolidation",
+            "claude-opus-4-8",
+            Some(CliUsage {
+                cost_usd: Some(0.062),
+                input_tokens: Some(4100),
+                ..Default::default()
+            }),
+            false,
+        )
+        .expect("the leg must be recorded");
+
+        let conn = pool.get().unwrap();
+        let rows: i64 = conn
+            .query_row("SELECT COUNT(*) FROM companion_turn", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(rows, 1, "exactly one row per leg invocation");
+
+        let (origin, kind, cost, is_error, reason): (
+            String,
+            String,
+            Option<f64>,
+            i64,
+            Option<String>,
+        ) = conn
+            .query_row(
+                "SELECT origin, trigger_kind, cost_usd, is_error, error_reason
+                 FROM companion_turn WHERE id = ?1",
+                [&id],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?)),
+            )
+            .unwrap();
+        assert_eq!(origin, ORIGIN_MAINTENANCE);
+        assert_eq!(kind, "consolidation", "the leg name must be queryable");
+        assert_eq!(cost, Some(0.062), "the cost the CLI reported is captured");
+        assert_eq!(is_error, 0);
+        assert_eq!(reason, None, "a healthy leg leaves the reason NULL");
+    }
+
+    /// …and a leg that FAILED still writes its row, with `is_error = 1` and a
+    /// low-cardinality reason. A maintenance leg that crashed and left no trace
+    /// is the exact shape of dishonesty the round-4 failure ledger removed from
+    /// the chat and headless paths; the sleep cycle must not reintroduce it.
+    #[test]
+    fn a_failed_maintenance_leg_still_writes_its_row_with_a_reason() {
+        let pool = test_pool("ledger_maintenance_failed");
+        record_failed_leg(
+            &pool,
+            ORIGIN_MAINTENANCE,
+            "night_planner",
+            "claude-sonnet-4-8",
+            // The literal `brain::oneshot` produces for a non-zero exit.
+            &AppError::Internal("claude night_planner exited 1: overloaded".into()),
+        );
+
+        let conn = pool.get().unwrap();
+        let (origin, kind, is_error, reason): (String, String, i64, String) = conn
+            .query_row(
+                "SELECT origin, trigger_kind, is_error, error_reason
+                 FROM companion_turn LIMIT 1",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+            )
+            .unwrap();
+        assert_eq!(origin, ORIGIN_MAINTENANCE);
+        assert_eq!(kind, "night_planner");
+        assert_eq!(is_error, 1);
+        assert_eq!(
+            reason, "cli_nonzero_exit",
+            "oneshot's own wording must classify, not degrade to `other`"
+        );
+    }
+
+    /// `athena_reaction`'s 180s cap returns `Ok` with a partial blob, so a
+    /// timeout is invisible to an error-shaped check. It must still land as a
+    /// failure — otherwise the likeliest headless failure books as a clean
+    /// decision. (Moved here with `flag_timeout` when the maintenance legs
+    /// started sharing it.)
+    #[test]
+    fn a_timed_out_leg_is_flagged_even_though_it_returned_ok() {
+        // No result event — the child was killed before it could emit one.
+        let u = flag_timeout(None, true).expect("a timeout synthesises a usage block");
+        assert!(u.is_error);
+        assert_eq!(timeout_reason(true).as_deref(), Some("timeout"));
+
+        // A timeout that DID capture cost keeps it.
+        let partial = CliUsage {
+            cost_usd: Some(0.004),
+            ..Default::default()
+        };
+        let u = flag_timeout(Some(partial), true).unwrap();
+        assert!(u.is_error);
+        assert_eq!(u.cost_usd, Some(0.004), "the spend survives the timeout");
+    }
+
+    /// A healthy leg is untouched: no error bit, no reason. Backpressure and
+    /// success must not be inflated into failures — the number has to be
+    /// honest in both directions.
+    #[test]
+    fn a_healthy_leg_is_not_flagged() {
+        assert!(flag_timeout(None, false).is_none());
+        assert!(timeout_reason(false).is_none());
+
+        // A CLI-reported error passes through unlabelled rather than being
+        // mislabelled as a timeout it was not.
+        let reported = CliUsage {
+            is_error: true,
+            ..Default::default()
+        };
+        let u = flag_timeout(Some(reported), false).unwrap();
+        assert!(u.is_error, "the CLI's own error bit still flags the row");
+        assert!(timeout_reason(false).is_none());
     }
 
     fn conn_scalar(pool: &UserDbPool, sql: &str) -> i64 {

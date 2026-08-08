@@ -76,11 +76,15 @@ pub fn build_prompt(
 }
 
 /// Run the plan call and parse the reply.
-pub async fn compose_plan(prompt: &str) -> Result<DraftPlan, AppError> {
+pub async fn compose_plan(
+    pool: &crate::db::UserDbPool,
+    prompt: &str,
+) -> Result<DraftPlan, AppError> {
     let text = call_claude_text(
+        pool,
         prompt,
         model_routing::ASIDE.model,
-        "night plan",
+        crate::companion::brain::oneshot::leg::NIGHT_PLANNER,
         PLAN_TIMEOUT,
     )
     .await?;

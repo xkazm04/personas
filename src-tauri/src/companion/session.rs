@@ -526,7 +526,14 @@ pub(crate) fn classify_failure(e: &AppError) -> &'static str {
         // of them to `other` is worse than no taxonomy — it looks precise while
         // hiding the most actionable cause.
         "spawn_failed"
-    } else if m.contains("exited with status") {
+    } else if m.contains("exited with status")   // run_cli
+        || m.contains("exited")                  // brain::oneshot: "claude {leg} exited {code}: {stderr}"
+    {
+        // Third phrasing of the same failure, third module. `brain::oneshot`
+        // says "claude consolidation exited 1: …" — which matches NONE of the
+        // patterns below either, so before this it degraded to `other` and the
+        // ledger could not tell a crashed maintenance leg from a failed DB
+        // write. Pinned by `classifies_the_oneshot_leg_failure_exits`.
         "cli_nonzero_exit"
     } else if m.contains("produced no assistant text") {
         "empty_reply"
@@ -535,8 +542,11 @@ pub(crate) fn classify_failure(e: &AppError) -> &'static str {
         || m.contains("stdin")
         || m.contains("wait claude")
     {
-        // Covers "read claude stdout: …", "claude stdout missing" (run_cli) and
-        // "Missing stdout pipe" (athena_reaction).
+        // Covers "read claude stdout: …", "claude stdout missing" (run_cli),
+        // "Missing stdout pipe" (athena_reaction) and oneshot's
+        // "read stdout (leg): …" / "write stdin (leg): …" / "await claude
+        // (leg): …" (the last matches on the "wait claude" substring inside
+        // "await claude" — deliberate, and pinned by the oneshot test).
         "cli_io"
     } else {
         // DB writes, prompt assembly, embedding — the `?` exits in the turn
@@ -2860,6 +2870,39 @@ mod tests {
             // Everything else: the `?` exits — DB writes, prompt assembly,
             // embedding. Rare, but equally invisible before.
             ("failed to open database", "other"),
+        ];
+        for (msg, expected) in cases {
+            assert_eq!(
+                classify_failure(&AppError::Internal((*msg).into())),
+                *expected,
+                "message: {msg}"
+            );
+        }
+    }
+
+    /// The literal messages `brain::oneshot::call_claude_text` produces — the
+    /// THIRD module wording these failures, and the one whose legs now write
+    /// `origin='maintenance'` rows.
+    ///
+    /// This test earned its keep on its first run: oneshot says
+    /// `"claude {leg} exited {code}: {stderr}"`, which matched neither
+    /// `"exited with status"` (run_cli's phrasing) nor any of the IO patterns,
+    /// so every crashed maintenance leg was classifying as `other` — precisely
+    /// the silent degradation the headless case caught last round. Reword any
+    /// message in `oneshot.rs` and this fails loudly instead.
+    #[test]
+    fn classifies_the_oneshot_leg_failure_exits() {
+        let cases: &[(&str, &str)] = &[
+            ("spawn claude (consolidation): program not found", "spawn_failed"),
+            ("write stdin (reflection): pipe closed", "cli_io"),
+            ("claude stdout missing (briefing)", "cli_io"),
+            ("claude stderr missing (tours)", "cli_io"),
+            ("read stdout (night_planner): broken pipe", "cli_io"),
+            ("await claude (night_unattended): no child process", "cli_io"),
+            ("recall_synthesis timed out after 180s", "timeout"),
+            ("claude consolidation exited 1: model overloaded", "cli_nonzero_exit"),
+            // Exit code unavailable (killed by signal) — the "?" branch.
+            ("claude briefing exited ?: ", "cli_nonzero_exit"),
         ];
         for (msg, expected) in cases {
             assert_eq!(

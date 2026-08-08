@@ -10,7 +10,6 @@
 use crate::companion::brain::{backlog, goals};
 use crate::companion::night_shift::{self, planner};
 use crate::companion::session::DEFAULT_SESSION_ID;
-use crate::companion::turn_ledger::{self, TurnRecord};
 use crate::db::UserDbPool;
 use crate::error::AppError;
 
@@ -90,18 +89,14 @@ pub async fn run(
 
     progress.report("Composing tonight's plan…");
     let prompt = planner::build_prompt(&goals_block, &backlog_block, &projects_block, max_sessions);
-    let draft = planner::compose_plan(&prompt).await?;
-
-    // Attribution for the spend, even though oneshot carries no usage data.
-    turn_ledger::record_turn(
-        pool,
-        &TurnRecord {
-            origin: "headless".into(),
-            trigger_kind: Some(KIND.into()),
-            model: Some(crate::companion::model_routing::ASIDE.model.to_string()),
-            ..Default::default()
-        },
-    );
+    // The ledger row is written INSIDE the leg now (`origin='maintenance'`,
+    // `trigger_kind='night_planner'`, with the real cost from the CLI's
+    // terminal `result` event). This used to be followed by a hand-written
+    // `origin='headless'` row carrying no usage at all — attribution without a
+    // number, because oneshot did not parse `result`. Keeping it would double
+    // count every night plan, once truthfully and once as a costless headless
+    // turn. See `brain::oneshot` and docs/plans/athena-longevity.md (L1a).
+    let draft = planner::compose_plan(pool, &prompt).await?;
 
     // The bounded pre-check — refuses out-of-allowlist / oversized work here,
     // before any card exists.

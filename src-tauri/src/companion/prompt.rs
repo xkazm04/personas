@@ -217,7 +217,7 @@ pub async fn build_system_prompt(
     // embedding-backed, and whether recall synthesis can run at all.
     let recall = recall_for(user_db, embedder, session_id, query).await;
     let briefing: Option<Briefing> =
-        synthesize_if_enabled(&recall, query, recall_synthesis_enabled).await;
+        synthesize_if_enabled(user_db, &recall, query, recall_synthesis_enabled).await;
 
     let onboarding_md = onboarding_addendum_if_needed(&identity, &recall.episodes);
     // PROGRESS narration is always-on (visual timeline); the TTS grammar
@@ -315,9 +315,14 @@ async fn recall_for(
 /// parse, non-zero exit) falls through to raw chunks so synthesis never
 /// breaks a chat turn. ml-feature gated — non-ml builds never synthesize.
 #[cfg(feature = "ml")]
-async fn synthesize_if_enabled(recall: &Recall, query: &str, enabled: bool) -> Option<Briefing> {
+async fn synthesize_if_enabled(
+    user_db: &UserDbPool,
+    recall: &Recall,
+    query: &str,
+    enabled: bool,
+) -> Option<Briefing> {
     if enabled && recall_synthesis::estimate_recall_tokens(recall) > SYNTHESIS_TOKEN_THRESHOLD {
-        match recall_synthesis::synthesize_recall(recall, query).await {
+        match recall_synthesis::synthesize_recall(user_db, recall, query).await {
             Ok(b) => {
                 tracing::info!(
                     summary_chars = b.summary.len(),
@@ -342,6 +347,7 @@ async fn synthesize_if_enabled(recall: &Recall, query: &str, enabled: bool) -> O
 
 #[cfg(not(feature = "ml"))]
 async fn synthesize_if_enabled(
+    _user_db: &UserDbPool,
     _recall: &Recall,
     _query: &str,
     _enabled: bool,

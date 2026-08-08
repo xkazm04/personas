@@ -457,16 +457,13 @@ pub(crate) async fn cli_decision_with_model(
         }
     };
     let cost = run.usage.as_ref().and_then(|u| u.cost_usd);
-    let _ = crate::companion::turn_ledger::record_turn(
+    let _ = crate::companion::turn_ledger::record_cli_leg(
         user_db,
-        &crate::companion::turn_ledger::TurnRecord {
-            origin: "headless".to_string(),
-            trigger_kind: Some(trigger_kind.to_string()),
-            model: Some(model.to_string()),
-            usage: flag_timeout(run.usage, run.timed_out),
-            error_reason: timeout_reason(run.timed_out),
-            ..Default::default()
-        },
+        crate::companion::turn_ledger::ORIGIN_HEADLESS,
+        trigger_kind,
+        model,
+        run.usage,
+        run.timed_out,
     );
     Ok((run.text, cost))
 }
@@ -490,87 +487,36 @@ pub(crate) async fn cli_text_tracked(
             return Err(e);
         }
     };
-    let turn_id = crate::companion::turn_ledger::record_turn(
+    let turn_id = crate::companion::turn_ledger::record_cli_leg(
         user_db,
-        &crate::companion::turn_ledger::TurnRecord {
-            origin: "headless".to_string(),
-            trigger_kind: Some(trigger_kind.to_string()),
-            model: Some(micro.model.to_string()),
-            usage: flag_timeout(run.usage, run.timed_out),
-            error_reason: timeout_reason(run.timed_out),
-            ..Default::default()
-        },
+        crate::companion::turn_ledger::ORIGIN_HEADLESS,
+        trigger_kind,
+        micro.model,
+        run.usage,
+        run.timed_out,
     );
     Ok((run.text, turn_id))
 }
 
-/// A headless leg that errored before producing anything is a failed turn —
-/// record it, exactly once, with the same taxonomy every other origin uses.
+/// A headless leg that errored before producing anything is a failed turn.
 ///
-/// Until this existed, every `?` in the tracked wrappers returned before their
-/// `record_turn` call, so the ~94% of `companion_turn` rows that are `headless`
-/// were structurally incapable of reporting a failure. Recording only the chat
-/// path would have moved `companion_get_health` from "a perfect error rate by
-/// construction" to "a near-perfect error rate by construction" — the same
-/// falsehood with a smaller coefficient.
-///
-/// Cost is always `None` here, and that is a fact about the call rather than a
-/// shortcut: `cli_text_inner`'s surviving `Err` exits (CLI not found, spawn
-/// failure, missing stdout pipe) all fire *before* the child can emit a
-/// `result` event, so there is no usage block in existence to capture. A failed
-/// leg with unknown cost is still a recorded failed leg.
+/// The row shape, the taxonomy lookup and the warn! live in
+/// [`turn_ledger::record_failed_leg`](crate::companion::turn_ledger::record_failed_leg),
+/// shared with the maintenance legs in `brain::oneshot` — two copies would
+/// drift and both feed the same `companion_get_health` number.
 fn record_headless_failure(
     user_db: &crate::db::UserDbPool,
     trigger_kind: &str,
     model: &str,
     e: &AppError,
 ) {
-    let reason = crate::companion::session::classify_failure(e);
-    tracing::warn!(
+    crate::companion::turn_ledger::record_failed_leg(
+        user_db,
+        crate::companion::turn_ledger::ORIGIN_HEADLESS,
         trigger_kind,
         model,
-        reason,
-        error = %e,
-        "companion: headless leg failed — recording ledger row"
+        e,
     );
-    crate::companion::turn_ledger::record_turn(
-        user_db,
-        &crate::companion::turn_ledger::failed_turn_record(
-            "headless",
-            Some(trigger_kind.to_string()),
-            Some(model.to_string()),
-            reason,
-            &e.to_string(),
-            None,
-        ),
-    );
-}
-
-/// Mark a timed-out leg's usage as errored.
-///
-/// The 180s cap returns `Ok` with a partial blob, so without this a timeout
-/// books as a clean decision carrying whatever cost it burned — the failure
-/// mode most likely to be common, and the one an error-shaped check cannot
-/// see. Synthesises a usage block when the CLI never emitted a `result` event,
-/// which is the normal shape for a killed child: the row must exist even when
-/// the cost does not.
-fn flag_timeout(
-    usage: Option<crate::companion::turn_ledger::CliUsage>,
-    timed_out: bool,
-) -> Option<crate::companion::turn_ledger::CliUsage> {
-    if !timed_out {
-        return usage;
-    }
-    let mut u = usage.unwrap_or_default();
-    u.is_error = true;
-    Some(u)
-}
-
-/// The `error_reason` token for a timed-out leg. `None` leaves a healthy row's
-/// reason NULL, and leaves a CLI-reported error (`result.is_error`) unlabelled
-/// rather than mislabelling it as a timeout it was not.
-fn timeout_reason(timed_out: bool) -> Option<String> {
-    timed_out.then(|| "timeout".to_string())
 }
 
 /// What one headless CLI leg produced.
@@ -1750,42 +1696,8 @@ later corrected: {"athena_channel":{"react":true,"message":"final","rationale":"
         assert_eq!(cost, None, "unknown cost stays NULL rather than blocking the row");
     }
 
-    /// The 180s cap returns `Ok` with a partial blob, so a timeout is invisible
-    /// to an error-shaped check. It must still land as a failure — otherwise
-    /// the likeliest headless failure books as a clean decision.
-    #[test]
-    fn a_timed_out_leg_is_flagged_even_though_it_returned_ok() {
-        // No result event — the child was killed before it could emit one.
-        let u = flag_timeout(None, true).expect("a timeout synthesises a usage block");
-        assert!(u.is_error);
-        assert_eq!(timeout_reason(true).as_deref(), Some("timeout"));
-
-        // A timeout that DID capture cost keeps it.
-        let partial = crate::companion::turn_ledger::CliUsage {
-            cost_usd: Some(0.004),
-            ..Default::default()
-        };
-        let u = flag_timeout(Some(partial), true).unwrap();
-        assert!(u.is_error);
-        assert_eq!(u.cost_usd, Some(0.004), "the spend survives the timeout");
-    }
-
-    /// A healthy leg is untouched: no error bit, no reason. Backpressure and
-    /// success must not be inflated into failures — the number has to be
-    /// honest in both directions.
-    #[test]
-    fn a_healthy_leg_is_not_flagged() {
-        assert!(flag_timeout(None, false).is_none());
-        assert!(timeout_reason(false).is_none());
-
-        // A CLI-reported error passes through unlabelled rather than being
-        // mislabelled as a timeout it was not.
-        let reported = crate::companion::turn_ledger::CliUsage {
-            is_error: true,
-            ..Default::default()
-        };
-        let u = flag_timeout(Some(reported), false).unwrap();
-        assert!(u.is_error, "the CLI's own error bit still flags the row");
-        assert!(timeout_reason(false).is_none());
-    }
+    // `a_timed_out_leg_is_flagged_even_though_it_returned_ok` and
+    // `a_healthy_leg_is_not_flagged` moved to `turn_ledger`'s test module
+    // alongside `flag_timeout` / `timeout_reason` themselves, which the
+    // maintenance legs now share with this module.
 }

@@ -133,9 +133,10 @@ async fn answer_guidance(
     );
 
     let answer = call_claude_text(
+        &state.user_db,
         &prompt,
         model_routing::ASIDE.model,
-        "night guidance",
+        crate::companion::brain::oneshot::leg::NIGHT_UNATTENDED,
         ANSWER_TIMEOUT,
     )
     .await?;

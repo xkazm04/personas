@@ -53,7 +53,7 @@ pub async fn companion_compose_briefing(
     if briefing::delta_is_trivial(&delta) {
         return Ok(None);
     }
-    match briefing::compose_briefing(&delta).await {
+    match briefing::compose_briefing(&state.user_db, &delta).await {
         Ok(spec_json) => Ok(Some(BriefingSpec {
             spec_json,
             composed_by: "athena".into(),

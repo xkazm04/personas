@@ -441,13 +441,19 @@ pub fn companion_prompt_block_stats(
 // explicit `ledger` tag stay because they cost nothing and the moment an
 // Athena path does meter into `dev_llm_spend`, it is one entry away.
 //
-// KNOWN GAP, deliberately not closed here: `brain/oneshot.rs` (consolidation,
-// reflection, recall synthesis, briefing, night-shift planner + unattended,
-// tours) spawns its own `claude -p` and collects only assistant-text deltas —
-// it never parses the terminal `result` event, so it writes to NEITHER ledger.
-// That spend is invisible in both, and it is exactly the machinery L1's sleep
-// cycle runs on. Metering it needs a pool threaded through seven call sites
-// plus a decision about which ledger owns it — an L1 call, not an L0 one.
+// GAP CLOSED IN L1a (2026-08-08). `brain/oneshot.rs` — consolidation,
+// reflection, recall synthesis, briefing, night-shift planner + unattended
+// guidance, tours — used to spawn its own `claude -p`, collect only
+// assistant-text deltas, and never parse the terminal `result` event, so its
+// spend reached NEITHER ledger. It now parses `result` and writes
+// `companion_turn` with `origin='maintenance'` and the leg name in
+// `trigger_kind` (the pool is threaded through all seven call sites).
+//
+// Nothing below changed to accommodate it, and that was the point of choosing
+// `companion_turn` over `dev_llm_spend`: this rollup groups by `origin`, so a
+// new origin appears on its own. `maintenance_legs_reach_the_shipped_rollup_
+// without_touching_it` is the proof, and it runs against the shipped
+// (empty) `ATHENA_DEV_SPEND_SOURCES` so it cannot pass by fixture accident.
 
 /// `dev_llm_spend.source` values attributable to Athena.
 ///
@@ -704,6 +710,45 @@ mod spend_rollup_tests {
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].turn_count, 2.0, "the failed turn must be counted");
         assert!((rows[0].cost_usd - 1.0).abs() < 1e-9);
+    }
+
+    /// The L1a maintenance legs (`brain::oneshot` — consolidation, reflection,
+    /// briefing, night planner/guidance, tours) meter into `companion_turn`
+    /// with `origin='maintenance'`, and this rollup groups by `origin`. So they
+    /// surface here with **no change to any line of rollup code** — which is
+    /// exactly why the Director chose `companion_turn` over `dev_llm_spend`
+    /// (that lane would have needed an `ATHENA_DEV_SPEND_SOURCES` entry, a
+    /// second write path, and a second definition of what a "turn" is).
+    ///
+    /// This test is the proof of that claim rather than an assertion of it: it
+    /// runs against the SHIPPED `ATHENA_DEV_SPEND_SOURCES`, so if a future
+    /// change ever makes `maintenance` conditional, it fails here.
+    #[test]
+    fn maintenance_legs_reach_the_shipped_rollup_without_touching_it() {
+        let user = user_db();
+        let app = app_db();
+        let today = "-0 days";
+        turn(&user, "t1", "chat", Some(1.50), &sql_now(today));
+        turn(&user, "m1", "maintenance", Some(0.062), &sql_now(today));
+        turn(&user, "m2", "maintenance", Some(0.041), &sql_now(today));
+        // A failed leg: recorded, cost unknown. It must count, not vanish.
+        turn(&user, "m3", "maintenance", None, &sql_now(today));
+
+        let rows = spend_rollup_rows(&user, &app, 30, ATHENA_DEV_SPEND_SOURCES).unwrap();
+
+        let maint = rows
+            .iter()
+            .find(|r| r.origin == "maintenance")
+            .expect("the sleep cycle's own spend must be visible in the rollup");
+        assert_eq!(maint.ledger, "turn");
+        assert_eq!(maint.turn_count, 3.0, "the failed leg is still a leg");
+        assert!((maint.cost_usd - 0.103).abs() < 1e-9);
+
+        // And it stays a SEPARATE line from the headless/chat buckets — the
+        // whole reason for a distinct origin is that the cycle's cost must be
+        // readable on its own, not blended into 1,600 triage legs.
+        let chat = rows.iter().find(|r| r.origin == "chat").expect("chat row");
+        assert!((chat.cost_usd - 1.50).abs() < 1e-9);
     }
 
     /// The window is a real filter, not decoration.

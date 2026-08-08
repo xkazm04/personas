@@ -43,9 +43,11 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "ml")]
-use crate::companion::brain::oneshot::call_claude_text;
+use crate::companion::brain::oneshot::{self, call_claude_text};
 use crate::companion::brain::oneshot::{extract_json_span, preview};
 use crate::companion::brain::retrieval::Recall;
+#[cfg(feature = "ml")]
+use crate::db::UserDbPool;
 use crate::error::AppError;
 
 /// Token estimate above which synthesis is preferred over raw injection.
@@ -130,9 +132,13 @@ pub fn estimate_recall_tokens(r: &Recall) -> usize {
 /// to raw recall — synthesis is an optimization, not a correctness
 /// requirement.
 #[cfg(feature = "ml")]
-pub async fn synthesize_recall(recall: &Recall, query: &str) -> Result<Briefing, AppError> {
+pub async fn synthesize_recall(
+    pool: &UserDbPool,
+    recall: &Recall,
+    query: &str,
+) -> Result<Briefing, AppError> {
     let prompt = build_synthesis_prompt(recall, query);
-    call_claude_oneshot(&prompt).await
+    call_claude_oneshot(pool, &prompt).await
 }
 
 /// Render a briefing as a system-prompt section. Replaces the raw
@@ -266,11 +272,12 @@ fn build_synthesis_prompt(recall: &Recall, query: &str) -> String {
 /// above the budget threshold) and a poor synthesis worse than raw
 /// chunks. If costs are a concern, swap to sonnet here.
 #[cfg(feature = "ml")]
-async fn call_claude_oneshot(prompt: &str) -> Result<Briefing, AppError> {
+async fn call_claude_oneshot(pool: &UserDbPool, prompt: &str) -> Result<Briefing, AppError> {
     let text = call_claude_text(
+        pool,
         prompt,
         "claude-opus-4-8",
-        "recall synthesis",
+        oneshot::leg::RECALL_SYNTHESIS,
         SYNTHESIS_TIMEOUT,
     )
     .await?;

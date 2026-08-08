@@ -18,7 +18,7 @@ use chrono::Utc;
 use rusqlite::params;
 
 use crate::companion::brain::episodic;
-use crate::companion::brain::oneshot::call_claude_text;
+use crate::companion::brain::oneshot::{self, call_claude_text};
 use crate::companion::brain::util;
 use crate::companion::disk;
 use crate::companion::session::DEFAULT_SESSION_ID;
@@ -48,7 +48,7 @@ pub async fn run_reflection(
     }
 
     let prompt = build_reflection_prompt(&episodes, instructions);
-    let reflection_text = call_claude_oneshot(&prompt).await?;
+    let reflection_text = call_claude_oneshot(pool, &prompt).await?;
 
     let id = format!("ref_{}", short_uuid());
     let now = Utc::now();
@@ -184,11 +184,12 @@ fn build_reflection_prompt(episodes: &[episodic::Episode], instructions: Option<
 /// this wrapper owns only the reflection-specific model choice and the
 /// empty-output guard (reflection returns free-form prose, not JSON, so
 /// there's no envelope to parse).
-async fn call_claude_oneshot(prompt: &str) -> Result<String, AppError> {
+async fn call_claude_oneshot(pool: &UserDbPool, prompt: &str) -> Result<String, AppError> {
     let text = call_claude_text(
+        pool,
         prompt,
         "claude-opus-4-8",
-        "reflection",
+        oneshot::leg::REFLECTION,
         REFLECTION_TIMEOUT,
     )
     .await?;
