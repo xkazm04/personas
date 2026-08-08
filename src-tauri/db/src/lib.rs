@@ -913,6 +913,91 @@ CREATE TABLE IF NOT EXISTS companion_cycle (
 CREATE INDEX IF NOT EXISTS idx_companion_cycle_started
     ON companion_cycle(started_at DESC);
 
+-- Classification-tag registry for tier-3 long-term memory (phase L1 of
+-- docs/plans/athena-longevity.md). Facts, procedurals and preferences are
+-- tagged from THIS table rather than from a hard-coded enum, because the
+-- design's central bet is that **schema evolution is rows, never DDL**:
+-- Athena's critique phase may propose a new classification, the operator gates
+-- it, and expansion stays data — additive, reviewable and reversible. A tag
+-- proposed by a cycle carries that cycle's id in `origin`, so every expansion
+-- traces back to the pass that argued for it.
+--
+-- `status` is the gate: 'proposed' is inert (it classifies nothing until
+-- someone activates it), 'active' is in use. The seeds below ship 'active'
+-- because they are the vocabulary the first cycle needs to say anything at all.
+--
+-- No incremental ALTER pairs this: the table is new, and COMPANION_SCHEMA is
+-- re-executed on every boot, so CREATE IF NOT EXISTS reaches existing
+-- databases as well as fresh ones (same reasoning as companion_cycle above).
+CREATE TABLE IF NOT EXISTS companion_taxonomy (
+    id          TEXT PRIMARY KEY,
+    tag         TEXT NOT NULL UNIQUE,
+    definition  TEXT NOT NULL,
+    -- 'seed' | a companion_cycle.id — who introduced this tag.
+    origin      TEXT NOT NULL,
+    -- 'active' | 'proposed'
+    status      TEXT NOT NULL,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_companion_taxonomy_status
+    ON companion_taxonomy(status, tag);
+
+-- The seed vocabulary. `INSERT OR IGNORE` keyed on the UNIQUE `tag` (and a
+-- deterministic id) makes this idempotent across every boot: re-running cannot
+-- duplicate a tag, and — importantly — cannot resurrect the *status* of a tag
+-- a cycle or the operator has since changed, because the row already exists and
+-- the insert is skipped entirely. Deleting a seed row does re-seed it on the
+-- next boot; demote by status instead of deleting, which is the same
+-- forgetting-is-demotion rule the rest of the memory model follows.
+INSERT OR IGNORE INTO companion_taxonomy (id, tag, definition, origin, status) VALUES
+    ('tax_seed_preference',  'preference',  'How the operator wants things done or communicated.',        'seed', 'active'),
+    ('tax_seed_style',       'style',       'Tone, format or verbosity of communication.',                 'seed', 'active'),
+    ('tax_seed_constraint',  'constraint',  'A hard limit or rule to respect.',                            'seed', 'active'),
+    ('tax_seed_decision',    'decision',    'A choice that was made, with its why.',                       'seed', 'active'),
+    ('tax_seed_workflow',    'workflow',    'A repeatable way of doing something.',                        'seed', 'active'),
+    ('tax_seed_tool',        'tool',        'A capability, service or integration, and how to use it.',    'seed', 'active'),
+    ('tax_seed_contact',     'contact',     'A person, team or agent, and their role.',                    'seed', 'active'),
+    ('tax_seed_incident',    'incident',    'Something that went wrong and what it taught.',               'seed', 'active'),
+    ('tax_seed_environment', 'environment', 'A fact about a machine, repo or system.',                     'seed', 'active');
+
+-- Staging inbox for cross-device memory sync (phase LS of
+-- docs/plans/athena-longevity.md). Both paired machines are homes — the
+-- operator works on each — so project-abstract memory (user/world-scope facts,
+-- user-scope procedurals, preferences, taxonomy rows) syncs while episodes,
+-- project-scope facts, doctrine, goals and cycle reports stay local.
+--
+-- THE CONTRACT, and the reason this is a table rather than a direct write:
+--
+--   * LS **writes** here. An arriving delta lands in staging, tagged with the
+--     device it came from — never anywhere else.
+--   * The sleep cycle's **reconcile phase is the ONLY consumer.** It reads
+--     unprocessed rows, treats them as semi-trusted evidence, and puts them
+--     through the same supersede / contradict / dedupe machinery and the same
+--     proposal gate as locally-derived memory.
+--   * **Sync never force-writes long-term memory.** There is deliberately no
+--     path from an inbound delta to a fact row that does not pass through a
+--     cycle's judgement. Conflict resolution IS the sleep cycle; this table is
+--     what makes that possible instead of aspirational.
+--
+-- `processed_cycle_id` (NULL = unprocessed) gives idempotency and echo
+-- prevention for free: a redelivered delta is visible as already-consumed, and
+-- the row records WHICH cycle consumed it, so a bad reconcile is auditable
+-- rather than merely regrettable. Rows are never deleted on processing — the
+-- distillate that crossed the wire is the evidence for what the cycle then did.
+CREATE TABLE IF NOT EXISTS companion_sync_inbox (
+    id                  TEXT PRIMARY KEY,
+    -- Which paired device produced this delta.
+    origin_device       TEXT NOT NULL,
+    -- 'fact' | 'procedural' | 'taxonomy'
+    item_kind           TEXT NOT NULL,
+    payload_json        TEXT NOT NULL,
+    received_at         TEXT NOT NULL DEFAULT (datetime('now')),
+    -- companion_cycle.id that reconciled this row; NULL = still unprocessed.
+    processed_cycle_id  TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_companion_sync_inbox_unprocessed
+    ON companion_sync_inbox(processed_cycle_id, received_at);
+
 CREATE TABLE IF NOT EXISTS companion_consolidation_item (
     id                TEXT PRIMARY KEY,
     consolidation_id  TEXT NOT NULL,
@@ -1777,6 +1862,19 @@ pub fn init_test_db() -> Result<DbPool, AppError> {
 /// that nothing needing this pool also needed the brain — Athena's memory
 /// section of the portability bundle needs both, and a fixture whose columns
 /// differ from production is a test that proves the wrong thing.)
+/// The companion schema text itself, so a test can prove that **re-executing**
+/// it is idempotent.
+///
+/// That is not a hypothetical property: `init_user_db` runs `COMPANION_SCHEMA`
+/// on every single app launch, and the block now contains `INSERT OR IGNORE`
+/// seed rows as well as `CREATE TABLE IF NOT EXISTS`. A seed block that
+/// duplicated on re-execution would grow the taxonomy by nine rows per launch
+/// and nothing else in the tree would notice.
+#[cfg(any(test, feature = "test-support"))]
+pub fn companion_schema_for_test() -> &'static str {
+    COMPANION_SCHEMA
+}
+
 #[cfg(any(test, feature = "test-support"))]
 pub fn init_test_user_db() -> Result<UserDbPool, AppError> {
     use std::time::Duration;
