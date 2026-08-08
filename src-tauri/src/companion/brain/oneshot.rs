@@ -93,6 +93,14 @@ pub mod leg {
     pub const NIGHT_PLANNER: &str = "night_planner";
     pub const NIGHT_UNATTENDED: &str = "night_unattended";
     pub const TOURS: &str = "tours";
+    /// Phase A of the sleep cycle: conversation → candidate facts/procedurals.
+    /// The cycle's dominant cost, and the reason L1a metered this module at all
+    /// — `GROUP BY trigger_kind` over `origin='maintenance'` is what makes "what
+    /// does a night of sleep cost" an answerable question.
+    pub const CYCLE_COMPRESS: &str = "cycle_compress";
+    /// Phase B of the sleep cycle: supersede / contradiction judgement over the
+    /// active fact set.
+    pub const CYCLE_RECONCILE: &str = "cycle_reconcile";
 }
 
 /// Spawn a one-shot `claude -p -` call, pipe `prompt` as stdin, collect

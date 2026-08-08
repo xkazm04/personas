@@ -565,6 +565,23 @@ pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
             // until failed turns started being recorded at all — see
             // companion::session::FailedTurnCtx.
             "ALTER TABLE companion_turn ADD COLUMN error_reason TEXT;",
+            // Classification tags applied to a memory row by the sleep cycle,
+            // as a JSON array of `companion_taxonomy.tag` values
+            // (`["preference","style"]`). NULL on every row written before L1b
+            // and on every row no cycle has classified — an untagged memory is
+            // the norm, not a defect.
+            //
+            // An ALTER rather than a column in COMPANION_SCHEMA because
+            // `companion_node` is an EXISTING table: `CREATE TABLE IF NOT
+            // EXISTS` would silently skip the new column on every install that
+            // already has the table, which is all of them. Same additive
+            // precedent as `prompt_block_hashes_json` above.
+            //
+            // The tags are ALSO mirrored into `companion_fts.tags` as `tag:<t>`
+            // tokens by `brain::sleep_cycle::apply_tags`, because the keyword
+            // lane is the only retrieval lane the shipping build has — a tag
+            // that lives solely in this column classifies nothing findable.
+            "ALTER TABLE companion_node ADD COLUMN tags_json TEXT;",
         ] {
             let _ = conn.execute_batch(stmt);
         }
@@ -1900,6 +1917,11 @@ pub fn init_test_user_db() -> Result<UserDbPool, AppError> {
             "ALTER TABLE companion_session ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0;",
             "ALTER TABLE companion_session ADD COLUMN origin TEXT NOT NULL DEFAULT 'user';",
             "ALTER TABLE companion_node ADD COLUMN session_id TEXT;",
+            // The sleep cycle's classification tags. Mirrors `init_user_db`'s
+            // batch: a test pool missing this column would let every
+            // tags-through-the-writers assertion pass against a fixture that
+            // does not match production.
+            "ALTER TABLE companion_node ADD COLUMN tags_json TEXT;",
         ] {
             let _ = conn.execute_batch(stmt);
         }

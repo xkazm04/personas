@@ -31,10 +31,13 @@
 //! convergence in L3 works the same way: sync the inputs, let each device
 //! re-derive, never diff prose.
 
-// Substrate shipped ahead of its caller: L1b's reconcile phase is the reader
-// and the LS transport is the writer, neither of which exists yet. Shipping the
-// schema + API now is what lets LS bolt on with no schema work and keeps L1b on
-// cycle judgement. Scoped to this file; it comes off when LS lands.
+// Substrate shipped ahead of its caller. `brain::sleep_cycle`'s reconcile phase
+// is the reader (`list_unprocessed` → apply → `mark_processed`, dispatching on
+// the three `KIND_*` constants); it lands the commit before this note is read,
+// and stays unreachable until the scheduler commit wires it, so this allow
+// survives exactly one more commit. [`insert_delta`] keeps a targeted allow
+// past that point — the LS transport that writes it is a later wave, and this
+// table having no writer yet is precisely the state the module shipped in.
 #![allow(dead_code)]
 
 use rusqlite::params;
@@ -67,6 +70,12 @@ pub struct SyncDelta {
 }
 
 /// Stage one inbound delta. The ONLY write path into the sync lane.
+///
+/// No product caller yet: the LS transport (`memory_sync_delta` job kind on the
+/// existing device pairing) is a later wave. L1b consumes what this writes and
+/// is tested against it, which is the order the design intends — the reconcile
+/// side must exist before anything is allowed to arrive.
+#[allow(dead_code)]
 pub fn insert_delta(
     pool: &UserDbPool,
     origin_device: &str,

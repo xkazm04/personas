@@ -38,11 +38,13 @@
 
 // Substrate shipped ahead of its caller. `list_recent` has one (the
 // `companion_list_cycle_reports` command); `begin_cycle` / `record_phase` /
-// `finish_cycle` / `get` and the status constants are called by the L1 sleep
-// cycle, which is the next wave. The alternative — withholding the module
-// until L1 — is what made L1 a two-job wave in the first place. This allow is
-// scoped to this file and comes off the moment the cycle lands; if it is still
-// here after L1, the cycle is not using its own audit spine.
+// `finish_cycle` / `last_completed` / `get` and the status constants are called
+// by the L1b sleep cycle. That engine (`brain::sleep_cycle`) lands in the
+// commit before this note is read — but it is itself unreachable until the
+// scheduler commit wires it, and an unreachable caller does not make a callee
+// live. So the allow survives exactly one more commit, and the scheduler commit
+// removes it; if it is still here after that, the cycle is not using its own
+// audit spine.
 #![allow(dead_code)]
 
 use std::fs;
@@ -280,7 +282,44 @@ pub fn list_recent(pool: &UserDbPool, limit: u32) -> Result<Vec<CycleSummary>, A
     Ok(rows.collect::<Result<Vec<_>, _>>()?)
 }
 
+/// `(started_at, finished_at)` of the most recent cycle that reached
+/// [`STATUS_COMPLETED`], or `None` when no cycle has ever completed.
+///
+/// Two callers in the sleep cycle, and both depend on the `completed` filter
+/// specifically. The **min-interval** gate keys on `finished_at` because a
+/// crashed cycle stays `running` forever by this ledger's honesty contract — an
+/// interval that counted `running` rows would let one dead process suppress
+/// every future cycle, silently, for as long as the row sits there. The
+/// **compress window** keys on `started_at`, so the next cycle re-reads
+/// anything that arrived while the last one was thinking rather than skipping
+/// over it.
+///
+/// `finished_at` is `COALESCE`d to `started_at` for the pathological row that
+/// is `completed` with a NULL finish — closing over a NULL here would make the
+/// interval gate compare against nothing.
+pub fn last_completed(pool: &UserDbPool) -> Result<Option<(String, String)>, AppError> {
+    let conn = pool.get()?;
+    let row = conn
+        .query_row(
+            "SELECT started_at, COALESCE(finished_at, started_at)
+             FROM companion_cycle
+             WHERE status = ?1
+             ORDER BY started_at DESC, rowid DESC
+             LIMIT 1",
+            params![STATUS_COMPLETED],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .optional()?;
+    Ok(row)
+}
+
 /// One cycle by id, or `None`.
+///
+/// No product caller yet: the journal reads through [`list_recent`] and the
+/// cycle itself holds its own id. Kept (and exercised by this module's tests)
+/// because the Memory-page-v2 detail view is the next consumer and re-deriving
+/// this query at that call site is how a second `phases_json` parser appears.
+#[allow(dead_code)]
 pub fn get(pool: &UserDbPool, cycle_id: &str) -> Result<Option<CycleSummary>, AppError> {
     let conn = pool.get()?;
     let row = conn

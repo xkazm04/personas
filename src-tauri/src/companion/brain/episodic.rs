@@ -212,6 +212,69 @@ pub fn list_recent_conversation(
     hydrate_rows(session_id, rows)
 }
 
+/// Conversation episodes created at or after `since` (RFC3339), across **every**
+/// conversation, oldest-first — the sleep cycle's compress input.
+///
+/// Third member of the [`list_recent_conversation`] family and deliberately
+/// built on the same two pieces: [`machine_marker_exclusion_sql`] (so a
+/// correlator row can never reach the compress prompt) and the shared row
+/// hydration (so an excerpt that provably holds the whole body is served from
+/// SQL rather than from disk).
+///
+/// Cross-session on purpose, unlike its two siblings. Recall reasons inside one
+/// thread — a turn from another conversation must not bleed in — but a sleep
+/// cycle distils what Athena learned *as a whole*, and long-term memory is
+/// global (only `kind='episode'` rows carry `session_id` at all). Each row
+/// keeps its own `session_id`, so provenance still says which thread it came
+/// from.
+///
+/// `limit` caps the newest end of the window: when more episodes have accrued
+/// than the cycle will read, the caller gets the most recent `limit` of them,
+/// still ordered oldest-first.
+pub fn list_conversation_since(
+    pool: &UserDbPool,
+    since: &str,
+    limit: u32,
+) -> Result<Vec<Episode>, AppError> {
+    let conn = pool.get()?;
+    // Newest-first with the limit applied, then reversed below — taking the
+    // most recent N of an over-long window rather than the oldest N, which
+    // would compress last week and ignore last night.
+    let sql = format!(
+        "SELECT id, file_path, body_excerpt, created_at, COALESCE(session_id, '')
+         FROM companion_node
+         WHERE kind = 'episode'
+           AND created_at >= ?1
+           AND body_excerpt IS NOT NULL{}
+         ORDER BY created_at DESC, id DESC
+         LIMIT ?2",
+        machine_marker_exclusion_sql()
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt
+        .query_map(params![since, limit], |row| {
+            Ok((
+                (
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, String>(3)?,
+                ),
+                row.get::<_, String>(4)?,
+            ))
+        })?
+        .collect::<rusqlite::Result<Vec<_>>>()?;
+    drop(stmt);
+
+    let root = disk::brain_root()?;
+    let mut out: Vec<Episode> = rows
+        .into_iter()
+        .filter_map(|(row, session_id)| hydrate_row(&root, &session_id, row))
+        .collect();
+    out.reverse(); // oldest-first, the order a narrative reads in
+    Ok(out)
+}
+
 /// Keyset page of episodes STRICTLY OLDER than the `(created_at, id)`
 /// cursor, oldest-first — the "load earlier messages" read behind the
 /// transcript's scroll-to-top pagination.
@@ -338,42 +401,49 @@ fn query_rows_before(
 /// genuinely long bodies (or rows whose path doesn't carry the role).
 fn hydrate_rows(session_id: &str, rows: Vec<EpisodeRow>) -> Result<Vec<Episode>, AppError> {
     let root = disk::brain_root()?;
-    let mut out = Vec::with_capacity(rows.len());
-    for (id, rel_path, excerpt, created_at) in rows {
-        if crate::retrieval::excerpt_holds_full_body(
-            &excerpt,
-            crate::retrieval::EPISODE_EXCERPT_CAP,
-        ) {
-            if let Some(role) = crate::retrieval::role_from_episode_path(&rel_path) {
-                out.push(Episode {
-                    id,
-                    session_id: session_id.to_string(),
-                    role: role.to_string(),
-                    content: crate::retrieval::episode_body_from_excerpt(&excerpt),
-                    file_path: rel_path,
-                    created_at,
-                });
-                continue;
-            }
-        }
-        let full = match fs::read_to_string(root.join(&rel_path)) {
-            Ok(s) => s,
-            Err(_) => continue, // file missing on disk — skip, don't fail the whole list
-        };
-        let (role, content) = parse_episode_body(&full);
-        out.push(Episode {
-            id,
-            session_id: session_id.to_string(),
-            role,
-            content,
-            file_path: rel_path,
-            created_at,
-        });
-    }
+    let mut out: Vec<Episode> = rows
+        .into_iter()
+        .filter_map(|row| hydrate_row(&root, session_id, row))
+        .collect();
 
     // Reverse so callers get oldest-first.
     out.reverse();
     Ok(out)
+}
+
+/// Turn one index row into an `Episode`, or `None` when its markdown has
+/// vanished from disk (skip the row rather than failing the whole list).
+///
+/// Extracted from [`hydrate_rows`] so [`list_conversation_since`] — which
+/// carries a per-row `session_id` instead of one for the whole page — shares
+/// the excerpt-vs-disk decision instead of forking it.
+fn hydrate_row(
+    root: &std::path::Path,
+    session_id: &str,
+    (id, rel_path, excerpt, created_at): EpisodeRow,
+) -> Option<Episode> {
+    if crate::retrieval::excerpt_holds_full_body(&excerpt, crate::retrieval::EPISODE_EXCERPT_CAP) {
+        if let Some(role) = crate::retrieval::role_from_episode_path(&rel_path) {
+            return Some(Episode {
+                id,
+                session_id: session_id.to_string(),
+                role: role.to_string(),
+                content: crate::retrieval::episode_body_from_excerpt(&excerpt),
+                file_path: rel_path,
+                created_at,
+            });
+        }
+    }
+    let full = fs::read_to_string(root.join(&rel_path)).ok()?;
+    let (role, content) = parse_episode_body(&full);
+    Some(Episode {
+        id,
+        session_id: session_id.to_string(),
+        role,
+        content,
+        file_path: rel_path,
+        created_at,
+    })
 }
 
 // ── helpers ─────────────────────────────────────────────────────────────

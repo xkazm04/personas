@@ -16,13 +16,14 @@
 //! seeding is idempotent and cannot overwrite a status someone has since
 //! changed.
 
-// Substrate shipped ahead of its caller: the compress/reconcile phases of the
-// L1b sleep cycle are the consumers, and the LS sync lane replicates the
-// registry between paired devices. Shipping the schema + API now is what keeps
-// L1b focused on cycle judgement instead of plumbing (the lesson from L1
-// nearly being a two-job wave). This allow is scoped to this file and comes off
-// when L1b lands; if it is still here after L1b, the cycle is not using its own
-// tag registry.
+// Substrate shipped ahead of its caller: `brain::sleep_cycle` reads the
+// vocabulary through `list_active` (compress prompt + unknown-tag filter) and
+// stages expansion through `propose`. That engine lands the commit before this
+// note is read, but stays unreachable until the scheduler commit wires it, and
+// an unreachable caller does not make a callee live — so this allow survives
+// exactly one more commit. `activate` and `get` keep targeted allows past that
+// point: they are the operator's half of the gate, and the approval inbox that
+// presses them is a later phase.
 #![allow(dead_code)]
 
 use rusqlite::{params, OptionalExtension};
@@ -108,6 +109,11 @@ pub fn propose(
 
 /// Gate a proposed tag into use. Returns `false` when no such tag exists (an
 /// already-active tag re-activates harmlessly and returns `true`).
+///
+/// The operator's half of the gate. No product caller yet by design — L1b
+/// proposes and never activates, so that a cycle cannot widen its own
+/// vocabulary; the approval inbox that presses this is a later phase.
+#[allow(dead_code)]
 pub fn activate(pool: &UserDbPool, tag: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
     let n = conn.execute(
@@ -123,6 +129,11 @@ pub fn activate(pool: &UserDbPool, tag: &str) -> Result<bool, AppError> {
 /// Read one tag by name, whatever its status. Mostly for tests and for a
 /// reconcile phase checking whether an inbound sync delta names something it
 /// already knows.
+///
+/// L1b's reconcile does not need it: `propose` is already idempotent in both
+/// directions (`Ok(None)` means "already known"), so a pre-flight existence
+/// check would be a second round trip that decides nothing.
+#[allow(dead_code)]
 pub fn get(pool: &UserDbPool, tag: &str) -> Result<Option<TaxonomyTag>, AppError> {
     let conn = pool.get()?;
     let row = conn

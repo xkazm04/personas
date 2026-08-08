@@ -172,14 +172,40 @@ pub fn write_fact(pool: &UserDbPool, input: &FactInput<'_>) -> Result<String, Ap
     // Mark the prior fact as superseded (importance -> 0) without deleting:
     // historical record is preserved, but it stops winning retrieval.
     if let Some(prior) = input.supersedes_id {
-        tx.execute(
-            "UPDATE companion_node SET importance = 0, updated_at = ?1 WHERE id = ?2",
-            params![now, prior],
-        )?;
+        demote_superseded(&tx, prior, &now)?;
     }
 
     tx.commit()?;
     Ok(id)
+}
+
+/// Retire a memory row: `importance → 0`, never `DELETE`.
+///
+/// The single implementation of "forgetting is demotion". A demoted row keeps
+/// its markdown, its `companion_node` row and its provenance chain; what it
+/// loses is retrieval eligibility, because every read — `list_facts`,
+/// `list_rules`, and `keyword::search_kind`'s `importance > 0` predicate —
+/// filters on exactly this.
+///
+/// Two callers, and that is the reason it exists as a function: [`write_fact`]
+/// demotes the prior fact when a new one supersedes it, and the sleep cycle's
+/// reconcile phase demotes the loser of a supersede it judged between two facts
+/// that BOTH already exist (`brain::sleep_cycle`). A second hand-written
+/// `UPDATE … importance = 0` would be a second forgetting semantics, and the
+/// one thing this memory model cannot afford is two of those.
+///
+/// Takes a `&Connection` so it works inside a `Transaction` (which derefs to
+/// one) as well as on a pooled connection. Returns rows changed — 0 means the
+/// id matched nothing, which the caller may treat as a dropped candidate.
+pub fn demote_superseded(
+    conn: &rusqlite::Connection,
+    prior_id: &str,
+    now: &str,
+) -> Result<usize, AppError> {
+    Ok(conn.execute(
+        "UPDATE companion_node SET importance = 0, updated_at = ?1 WHERE id = ?2",
+        params![now, prior_id],
+    )?)
 }
 
 /// Same as `write_fact`, but also embeds the value into vec0 so retrieval

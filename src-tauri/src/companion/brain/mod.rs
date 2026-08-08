@@ -30,6 +30,7 @@ pub mod reflection;
 pub mod retrieval;
 pub mod rituals;
 pub mod semantic;
+pub mod sleep_cycle;
 pub mod sync_staging;
 pub mod taxonomy;
 pub mod util;

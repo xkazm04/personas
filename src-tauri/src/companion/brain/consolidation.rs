@@ -620,16 +620,33 @@ pub fn maybe_run_lifecycle_sweep(pool: &UserDbPool) {
     }
 }
 
-/// Demote facts above the per-scope cap (importance → 0). Lowest-value
-/// first: order by importance ASC, then last_seen_at ASC. Markdown and
-/// SQL rows stay; only retrieval-eligibility flips. Idempotent — re-running
-/// when the brain is under-cap is a no-op. Returns the number of facts
-/// demoted. The pair `decay_unused_facts` + `prune_low_value_facts` is
-/// the lifecycle pass: time-decay first, size-cap second.
-pub fn prune_low_value_facts(pool: &UserDbPool) -> Result<i64, AppError> {
-    let now = Utc::now().to_rfc3339();
+/// One fact the size-cap policy would forget, and why it is on the list.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PruneCandidate {
+    pub id: String,
+    pub scope: String,
+    pub key: String,
+    pub importance: i32,
+    pub last_seen_at: String,
+}
+
+/// The facts [`prune_low_value_facts`] WOULD demote right now, per scope,
+/// lowest-value first (importance ASC, then last_seen_at ASC). Reads only.
+///
+/// This is the single definition of the size-cap criteria, and it exists
+/// because two callers need the same answer for opposite reasons: the
+/// enforcing pass below demotes exactly this list, and the sleep cycle's
+/// reconcile phase *reports* it without touching anything (forgetting is
+/// report-only until the approval inbox lands — `docs/plans/athena-longevity.md`
+/// Part II, approval posture). Had the cycle re-expressed the criteria, "what
+/// we said we'd forget" and "what we forgot" would be free to drift, and the
+/// report would be describing a policy that no longer exists.
+///
+/// Empty on a brain under the cap, which is the normal state.
+pub fn low_value_prune_candidates(pool: &UserDbPool) -> Result<Vec<PruneCandidate>, AppError> {
     let conn = pool.get()?;
-    let mut total_demoted = 0i64;
+    let cap = MAX_FACTS_PER_SCOPE as i64;
+    let mut out = Vec::new();
 
     for scope in ["user", "project", "world"] {
         let active_count: i64 = conn.query_row(
@@ -639,24 +656,55 @@ pub fn prune_low_value_facts(pool: &UserDbPool) -> Result<i64, AppError> {
             params![scope],
             |r| r.get(0),
         )?;
-        let cap = MAX_FACTS_PER_SCOPE as i64;
         if active_count <= cap {
             continue;
         }
         let to_demote = active_count - cap;
-        let updated = conn.execute(
-            "UPDATE companion_node
-             SET importance = 0, updated_at = ?1
-             WHERE id IN (
-                 SELECT n.id FROM companion_node n
-                 JOIN companion_fact f ON f.id = n.id
-                 WHERE n.kind = 'fact' AND n.importance > 0 AND f.scope = ?2
-                 ORDER BY n.importance ASC, f.last_seen_at ASC
-                 LIMIT ?3
-             )",
-            params![now, scope, to_demote],
+        let mut stmt = conn.prepare(
+            "SELECT n.id, f.scope, f.fact_key, n.importance, f.last_seen_at
+             FROM companion_node n
+             JOIN companion_fact f ON f.id = n.id
+             WHERE n.kind = 'fact' AND n.importance > 0 AND f.scope = ?1
+             ORDER BY n.importance ASC, f.last_seen_at ASC
+             LIMIT ?2",
         )?;
-        total_demoted += updated as i64;
+        let rows = stmt
+            .query_map(params![scope, to_demote], |r| {
+                Ok(PruneCandidate {
+                    id: r.get(0)?,
+                    scope: r.get(1)?,
+                    key: r.get(2)?,
+                    importance: r.get(3)?,
+                    last_seen_at: r.get(4)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        out.extend(rows);
+    }
+    Ok(out)
+}
+
+/// Demote facts above the per-scope cap (importance → 0). Lowest-value
+/// first: order by importance ASC, then last_seen_at ASC. Markdown and
+/// SQL rows stay; only retrieval-eligibility flips. Idempotent — re-running
+/// when the brain is under-cap is a no-op. Returns the number of facts
+/// demoted. The pair `decay_unused_facts` + `prune_low_value_facts` is
+/// the lifecycle pass: time-decay first, size-cap second.
+///
+/// The *selection* lives in [`low_value_prune_candidates`]; this function is
+/// only the act of demoting them, through the shared
+/// [`semantic::demote_superseded`] statement so a size-cap demotion and a
+/// supersede demotion are literally the same write.
+pub fn prune_low_value_facts(pool: &UserDbPool) -> Result<i64, AppError> {
+    let candidates = low_value_prune_candidates(pool)?;
+    if candidates.is_empty() {
+        return Ok(0);
+    }
+    let now = Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+    let mut total_demoted = 0i64;
+    for c in &candidates {
+        total_demoted += semantic::demote_superseded(&conn, &c.id, &now)? as i64;
     }
 
     if total_demoted > 0 {
