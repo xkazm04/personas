@@ -10,7 +10,10 @@ import { ArrowLeft, Wand2 } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { DRIFT_RING } from './driftTokens';
 import { LessonsPanel } from './LessonsPanel';
+import { SkillTreeBlueprint } from './SkillTreeBlueprint';
+import { SkillTreeOrbit } from './SkillTreeOrbit';
 import { layoutTree, CORE_X, CORE_Y, TREE_H, TREE_W } from './treeGeometry';
 import type { DriftState, SkillTreeModel } from './traceTypes';
 import { VersionTimelinePanel } from './VersionTimelinePanel';
@@ -21,15 +24,7 @@ export interface SkillTreeViewProps {
   onOpenInfo: (skill: string) => void;
 }
 
-const DRIFT_RING: Record<DriftState, string> = {
-  in_sync: 'stroke-status-success',
-  behind: 'stroke-status-warning',
-  ahead: 'stroke-primary',
-  customized: 'stroke-status-info',
-  unversioned: 'stroke-foreground/50',
-};
-
-export function SkillTreeView({ model, onBack, onOpenInfo }: SkillTreeViewProps) {
+export function SkillTreeViewBaseline({ model, onBack, onOpenInfo }: SkillTreeViewProps) {
   const { t, tx } = useTranslation();
   const [openLesson, setOpenLesson] = useState<string | null>(null);
   const geo = layoutTree(model.branches);
@@ -171,6 +166,44 @@ export function SkillTreeView({ model, onBack, onOpenInfo }: SkillTreeViewProps)
           workspaceLessons={model.workspaceLessons}
           loading={model.loading}
         />
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Throwaway variant switcher (prototype skill). Deleted at consolidation.
+// Hardcoded labels are deliberate — the switcher never ships.
+// ---------------------------------------------------------------------------
+const TREE_VARIANTS = [
+  { id: 'baseline', label: 'Fan', hint: 'radial branches, upward arc' },
+  { id: 'orbit', label: 'Orbit', hint: 'recency rings around the library' },
+  { id: 'blueprint', label: 'Blueprint', hint: 'bus + wired module cards' },
+] as const;
+type TreeVariant = (typeof TREE_VARIANTS)[number]['id'];
+
+export function SkillTreeView(props: SkillTreeViewProps) {
+  const [variant, setVariant] = useState<TreeVariant>('baseline');
+  return (
+    <div className="flex flex-col min-h-0 h-full gap-2">
+      <div className="flex items-center gap-1 shrink-0">
+        {TREE_VARIANTS.map((v) => (
+          <button
+            key={v.id}
+            type="button"
+            data-testid={`tree-variant-${v.id}`}
+            onClick={() => setVariant(v.id)}
+            className={`px-2 py-1 rounded-interactive typo-caption transition-colors ${variant === v.id ? 'bg-primary/15 text-primary' : 'bg-secondary/50 text-foreground hover:bg-secondary'}`}
+            title={v.hint}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
+      <div className="flex-1 min-h-0">
+        {variant === 'orbit' ? <SkillTreeOrbit {...props} />
+          : variant === 'blueprint' ? <SkillTreeBlueprint {...props} />
+          : <SkillTreeViewBaseline {...props} />}
       </div>
     </div>
   );

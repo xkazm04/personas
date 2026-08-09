@@ -2,14 +2,22 @@
 // (hottest first — the ranking IS the story), one ember dot per workspace
 // project. Fresh visual direction, deliberately not the Registry tab's
 // contribution field. Click a cell or row → the skill tree (Level 2).
+//
+// PROTOTYPE MODE (throwaway): `TraceOverview` is temporarily a variant
+// switcher over Baseline / Beacon Board / Ledger. Consolidation deletes the
+// switcher and the losing variants (prototype skill, Phase 5).
+import { useState } from 'react';
+
 import { Flame, Info } from 'lucide-react';
 
 import { IllustratedEmptyState } from '@/features/shared/components/display/IllustratedEmptyState';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { TraceBeaconBoard } from './TraceBeaconBoard';
 import { TraceEmberCell } from './TraceEmberCell';
 import { TraceGhosts } from './TraceGhosts';
+import { TraceLedger } from './TraceLedger';
 import type { HeatTier, TraceModel } from './traceTypes';
 
 export interface TraceOverviewProps {
@@ -26,7 +34,7 @@ const TIER_SWATCH: Record<HeatTier, string> = {
   absent: 'bg-foreground/15',
 };
 
-export function TraceOverview({ model, onSelectSkill, onOpenInfo }: TraceOverviewProps) {
+export function TraceOverviewBaseline({ model, onSelectSkill, onOpenInfo }: TraceOverviewProps) {
   const { t, tx } = useTranslation();
   const showGhost = model.loading && model.skills.length === 0;
   const settledEmpty = !model.loading && model.skills.length === 0;
@@ -130,6 +138,44 @@ export function TraceOverview({ model, onSelectSkill, onOpenInfo }: TraceOvervie
             </span>
           </Tooltip>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Throwaway variant switcher (prototype skill). Deleted at consolidation.
+// Hardcoded labels are deliberate — the switcher never ships.
+// ---------------------------------------------------------------------------
+const OVERVIEW_VARIANTS = [
+  { id: 'baseline', label: 'Ember Matrix', hint: 'cross-project heat scan' },
+  { id: 'beacons', label: 'Beacon Board', hint: 'one tile per skill' },
+  { id: 'ledger', label: 'Ledger', hint: 'audited register rows' },
+] as const;
+type OverviewVariant = (typeof OVERVIEW_VARIANTS)[number]['id'];
+
+export function TraceOverview(props: TraceOverviewProps) {
+  const [variant, setVariant] = useState<OverviewVariant>('baseline');
+  return (
+    <div className="flex flex-col min-h-0 h-full gap-2">
+      <div className="flex items-center gap-1 shrink-0">
+        {OVERVIEW_VARIANTS.map((v) => (
+          <button
+            key={v.id}
+            type="button"
+            data-testid={`trace-variant-${v.id}`}
+            onClick={() => setVariant(v.id)}
+            className={`px-2 py-1 rounded-interactive typo-caption transition-colors ${variant === v.id ? 'bg-primary/15 text-primary' : 'bg-secondary/50 text-foreground hover:bg-secondary'}`}
+            title={v.hint}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
+      <div className="flex-1 min-h-0">
+        {variant === 'beacons' ? <TraceBeaconBoard {...props} />
+          : variant === 'ledger' ? <TraceLedger {...props} />
+          : <TraceOverviewBaseline {...props} />}
       </div>
     </div>
   );
