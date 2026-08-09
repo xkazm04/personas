@@ -4666,6 +4666,39 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+    // The AI-compose measurement door writes `source = 'ai-compose'` — a value
+    // the source CHECK never allowed. Both writers (`kpi_compose::
+    // apply_composed_measure` and the Factory measurement-setup modal) were
+    // therefore rejected by SQLite, and the background one swallowed the error
+    // with `let _ =`: an AI-composed reading has never reached the series.
+    // Widen the CHECK so it can.
+    //
+    // MUST live here and not in `ensure_composite_fires_table` (which owns the
+    // file's tail): that phase runs BEFORE this one and is where the table is
+    // created, so a rebuild placed there would race its own CREATE.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_kpi_measurements.source_ai_compose",
+            description: "allow source='ai-compose' on KPI measurements (table rebuild)",
+            already_applied: |conn| {
+                if !has_table(conn, "dev_kpi_measurements")? {
+                    return Ok(true);
+                }
+                if !has_column(conn, "dev_kpi_measurements", "source")? {
+                    return Ok(true);
+                }
+                let sql: String = conn.query_row(
+                    "SELECT COALESCE(sql, '') FROM sqlite_master
+                     WHERE type='table' AND name='dev_kpi_measurements'",
+                    [],
+                    |r| r.get(0),
+                )?;
+                Ok(sql.contains("'ai-compose'"))
+            },
+            apply: widen_kpi_measurement_source_with_ai_compose,
+        },
+    )?;
 
     Ok(())
 }
@@ -7752,6 +7785,81 @@ fn research_lab_align_columns(conn: &Connection) {
     );
 }
 
+/// Widen `dev_kpi_measurements.source` with `'ai-compose'`.
+///
+/// SQLite cannot alter a CHECK in place, so the table is rebuilt. Unlike the
+/// `dev_kpi_measurements_env_sim` rebuild above — which hand-wrote the column
+/// list because it was also ADDING a column — this one recreates the table from
+/// its OWN stored DDL (the `rebuild_executions_table_with_incomplete_status`
+/// discipline). That matters here: a hand-written column list silently DROPS
+/// any column a later migration added, and this step runs at the end of the
+/// chain where the shape is no longer knowable from this file alone.
+fn widen_kpi_measurement_source_with_ai_compose(conn: &Connection) -> Result<(), AppError> {
+    // `dev_kpis` is the parent of this table's only FK, and nothing references
+    // it back — but a `DROP TABLE` with foreign_keys=ON still runs an implicit
+    // delete, so the swap follows the same guarded procedure as every other
+    // rebuild in this file.
+    let _fk_guard = crate::FkDisabledGuard::new(conn).map_err(AppError::Database)?;
+
+    let create_sql: String = conn.query_row(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='dev_kpi_measurements'",
+        [],
+        |r| r.get(0),
+    )?;
+
+    // `'simulation'` is the last entry of the source CHECK list and appears
+    // exactly once in the DDL. If it doesn't, the table is not the shape this
+    // step was written against — bail rather than build a table that silently
+    // keeps the old constraint (or, worse, mangles a different clause).
+    if create_sql.matches("'simulation'").count() != 1 {
+        return Err(AppError::Validation(
+            "dev_kpi_measurements source CHECK is not in the expected shape — refusing to rebuild"
+                .into(),
+        ));
+    }
+    let widened = create_sql.replacen("'simulation'", "'simulation','ai-compose'", 1);
+    // Re-point the CREATE at a staging name. The token `dev_kpi_measurements`
+    // occurs once (the table name); the FK clause references `dev_kpis`, which
+    // does not contain it. A prior rename leaves the name quoted, which stays
+    // valid SQL after the substitution.
+    let staged = widened.replacen(
+        "dev_kpi_measurements",
+        "dev_kpi_measurements_ai_compose_new",
+        1,
+    );
+
+    // Index/trigger DDL to replay after the rename — dropping the table drops
+    // them with it. Auto-indexes have a NULL `sql` and are recreated implicitly.
+    let aux_sql: Vec<String> = {
+        let mut stmt = conn.prepare(
+            "SELECT sql FROM sqlite_master
+             WHERE tbl_name='dev_kpi_measurements'
+               AND type IN ('index','trigger')
+               AND sql IS NOT NULL",
+        )?;
+        let rows = stmt.query_map([], |r| r.get::<_, String>(0))?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?
+    };
+
+    let mut batch = String::new();
+    batch.push_str("DROP TABLE IF EXISTS dev_kpi_measurements_ai_compose_new;\n");
+    batch.push_str(&staged);
+    batch.push_str(";\n");
+    batch.push_str(
+        "INSERT INTO dev_kpi_measurements_ai_compose_new SELECT * FROM dev_kpi_measurements;\n",
+    );
+    batch.push_str("DROP TABLE dev_kpi_measurements;\n");
+    batch.push_str(
+        "ALTER TABLE dev_kpi_measurements_ai_compose_new RENAME TO dev_kpi_measurements;\n",
+    );
+    for s in &aux_sql {
+        batch.push_str(s);
+        batch.push_str(";\n");
+    }
+    ddl_step(conn, &batch)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -8019,6 +8127,124 @@ mod tests {
             ddl.contains("'incomplete'"),
             "persona_executions status CHECK does not allow 'incomplete'"
         );
+    }
+
+    /// `source='ai-compose'` is what the Factory measurement-setup compose run
+    /// writes. Until the CHECK was widened SQLite rejected every one of them,
+    /// and the background writer swallowed the error — so the assertion that
+    /// matters is that the value is now *accepted*, on a fresh install and on a
+    /// legacy database that still carries the narrow CHECK.
+    #[test]
+    fn ai_compose_is_an_accepted_measurement_source() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        conn.execute_batch(
+            "INSERT INTO dev_projects (id, name, root_path) VALUES ('p1','P','/tmp/ai-compose');
+             INSERT INTO dev_kpis (id, project_id, name, category, measure_kind, unit, direction)
+                VALUES ('k1','p1','Coverage','technical','codebase','%','up');",
+        )
+        .unwrap();
+
+        conn.execute(
+            "INSERT INTO dev_kpi_measurements (id, kpi_id, value, source, env, evidence)
+             VALUES ('m1','k1',61.5,'ai-compose','production','{\"cmd\":\"npx vitest run\"}')",
+            [],
+        )
+        .expect("an AI-composed reading must be storable");
+
+        // The widening is additive, never a hole: an invented source is still
+        // refused, so the column keeps meaning something.
+        assert!(
+            conn.execute(
+                "INSERT INTO dev_kpi_measurements (id, kpi_id, value, source)
+                 VALUES ('m2','k1',1.0,'vibes')",
+                [],
+            )
+            .is_err(),
+            "the CHECK must still reject a source nothing writes",
+        );
+    }
+
+    /// The rebuild copies from the table's OWN stored DDL, so a column added by
+    /// a later migration must survive it — a hand-written column list would
+    /// silently drop the data. Simulates a legacy DB by narrowing the CHECK back
+    /// down and adding a column the rebuild code has never heard of.
+    #[test]
+    fn widening_the_measurement_source_preserves_rows_and_later_columns() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        conn.execute_batch(
+            "INSERT INTO dev_projects (id, name, root_path) VALUES ('p1','P','/tmp/widen');
+             INSERT INTO dev_kpis (id, project_id, name, category, measure_kind, unit, direction)
+                VALUES ('k1','p1','Coverage','technical','codebase','%','up');",
+        )
+        .unwrap();
+
+        // Rewind to the pre-widening shape, plus a "future" column.
+        conn.execute_batch(
+            "PRAGMA foreign_keys = OFF;
+             DROP TABLE dev_kpi_measurements;
+             CREATE TABLE dev_kpi_measurements (
+                id          TEXT PRIMARY KEY,
+                kpi_id      TEXT NOT NULL REFERENCES dev_kpis(id) ON DELETE CASCADE,
+                value       REAL NOT NULL,
+                measured_at TEXT NOT NULL DEFAULT (datetime('now')),
+                source      TEXT NOT NULL DEFAULT 'manual'
+                            CHECK(source IN ('evaluator','manual','scan','health_snapshot','simulation')),
+                env         TEXT NOT NULL DEFAULT 'production'
+                            CHECK(env IN ('local','test','production')),
+                evidence    TEXT,
+                note        TEXT
+             );
+             ALTER TABLE dev_kpi_measurements ADD COLUMN confidence REAL;
+             CREATE INDEX idx_dev_kpi_measurements_kpi
+                ON dev_kpi_measurements(kpi_id, measured_at DESC);
+             INSERT INTO dev_kpi_measurements (id, kpi_id, value, source, evidence, confidence)
+                VALUES ('old','k1',40.0,'evaluator','{\"cmd\":\"legacy\"}',0.75);
+             PRAGMA foreign_keys = ON;",
+        )
+        .unwrap();
+        assert!(conn
+            .execute(
+                "INSERT INTO dev_kpi_measurements (id, kpi_id, value, source)
+                 VALUES ('pre','k1',1.0,'ai-compose')",
+                [],
+            )
+            .is_err());
+
+        run_incremental(&conn).unwrap();
+
+        let (value, evidence, confidence): (f64, Option<String>, Option<f64>) = conn
+            .query_row(
+                "SELECT value, evidence, confidence FROM dev_kpi_measurements WHERE id = 'old'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .expect("the legacy row survived the rebuild");
+        assert_eq!(value, 40.0);
+        assert_eq!(evidence.as_deref(), Some("{\"cmd\":\"legacy\"}"));
+        assert_eq!(
+            confidence,
+            Some(0.75),
+            "a column the rebuild code never knew about must ride along with its data",
+        );
+        assert!(
+            has_index(&conn, "idx_dev_kpi_measurements_kpi").unwrap(),
+            "the index is replayed after the rename",
+        );
+        conn.execute(
+            "INSERT INTO dev_kpi_measurements (id, kpi_id, value, source, env, evidence)
+             VALUES ('m1','k1',61.5,'ai-compose','production','{}')",
+            [],
+        )
+        .expect("the widened CHECK now accepts the composed source");
+
+        // Replay must be a no-op, not a second rebuild.
+        run_incremental(&conn).unwrap();
+        let rows: i64 = conn
+            .query_row("SELECT COUNT(*) FROM dev_kpi_measurements", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(rows, 2, "re-running the migration must not duplicate or drop rows");
     }
 
     /// The retired DB skills system ("System A") must be absent from a fresh

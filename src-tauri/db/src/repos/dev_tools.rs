@@ -6731,6 +6731,75 @@ pub fn record_kpi_simulation_measurement(
     })
 }
 
+/// Record an AI-COMPOSED measurement — the reading a Factory "measurement
+/// setup" compose run produced by ACTUALLY RUNNING the command it had just
+/// written.
+///
+/// Its own door, for the same reason `record_kpi_simulation_measurement` has
+/// one: the class of a value is a property of the WRITER, not of a string the
+/// caller happens to pass. Two invariants the generic recorder cannot enforce:
+///
+///  * `evidence` is REQUIRED. An evidence-free composed value is exactly the
+///    row `ingest_kpi_sim` refuses; the compose run always holds the cmd/parse/
+///    output that produced the number, so there is no honest case for dropping
+///    it on the floor.
+///  * `env` is written EXPLICITLY. The column defaults to `'production'`, so a
+///    composed reading used to claim production by omission instead of by
+///    decision. The command really did run against the project's working tree,
+///    so `'production'` is the right answer — it is now stated rather than
+///    inherited.
+///
+/// Unlike the simulation door this DOES roll `current_value` /
+/// `last_measured_at` forward: it is a real measurement of the real repo, the
+/// same act the evaluator performs.
+pub fn record_kpi_compose_measurement(
+    pool: &DbPool,
+    kpi_id: &str,
+    value: f64,
+    evidence: &str,
+    note: Option<&str>,
+) -> Result<DevKpiMeasurement, AppError> {
+    if !value.is_finite() {
+        return Err(AppError::Validation(
+            "AI-composed measurement value is not a finite number".into(),
+        ));
+    }
+    if evidence.trim().is_empty() {
+        return Err(AppError::Validation(
+            "An AI-composed measurement must carry evidence — a value without provenance is refused"
+                .into(),
+        ));
+    }
+    timed_query!(
+        "dev_kpi_measurements",
+        "dev_kpis::record_kpi_compose_measurement",
+        {
+            let id = uuid::Uuid::new_v4().to_string();
+            let conn = pool.get()?;
+            conn.execute(
+                "INSERT INTO dev_kpi_measurements (id, kpi_id, value, source, env, evidence, note)
+                 VALUES (?1,?2,?3,'ai-compose','production',?4,?5)",
+                params![id, kpi_id, value, evidence, note],
+            )?;
+            let n = conn.execute(
+                "UPDATE dev_kpis SET current_value = ?1, last_measured_at = datetime('now'),
+                     updated_at = datetime('now')
+                 WHERE id = ?2",
+                params![value, kpi_id],
+            )?;
+            if n == 0 {
+                return Err(AppError::NotFound(format!("KPI {kpi_id} not found")));
+            }
+            conn.query_row(
+                "SELECT * FROM dev_kpi_measurements WHERE id = ?1",
+                params![id],
+                row_to_kpi_measurement,
+            )
+            .map_err(AppError::Database)
+        }
+    )
+}
+
 // ============================================================================
 // KPI connector bindings (P6 — swappable tool under a type-bound KPI)
 // ============================================================================
