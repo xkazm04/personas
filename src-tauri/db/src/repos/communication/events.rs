@@ -904,6 +904,96 @@ pub fn dead_letter_from_processing(
     )
 }
 
+// ============================================================================
+// Stuck-`processing` reaper
+// ============================================================================
+
+/// What the reaper did to one stranded row.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StuckReapOutcome {
+    /// Returned to `pending` so a later tick redelivers it.
+    Redelivered,
+    /// Retries exhausted — parked in the DLQ instead of looping forever.
+    DeadLettered,
+}
+
+/// Ids of every event currently claimed (`status = 'processing'`), oldest
+/// first.
+///
+/// [`claim_pending`] atomically flips `pending -> processing` so a tick cannot
+/// double-claim, but nothing ever returns a claimed row that the tick failed to
+/// finish. Retention exempts `processing` as in-flight and the terminal status
+/// writes in `engine/background.rs` are best-effort (`let _ =`), so a crash
+/// between claim and terminal write strands the event forever: never
+/// delivered, never retried, never pruned, absent from both the pending and
+/// dead-letter counts the UI shows.
+///
+/// The caller decides which of these are genuinely stranded — see
+/// `background.rs` `partition_stuck_candidates`, which requires a row to be
+/// observed here on two consecutive passes. A single snapshot cannot tell a
+/// stranded row from one a healthy tick is processing right now, and the row
+/// carries no claim timestamp to lean on (`claim_pending` sets only `status`).
+pub fn list_processing_ids(pool: &DbPool, limit: i64) -> Result<Vec<String>, AppError> {
+    timed_query!("persona_events", "persona_events::list_processing_ids", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare_cached(
+            "SELECT id FROM persona_events
+             WHERE status = 'processing'
+             ORDER BY created_at ASC, id ASC
+             LIMIT ?1",
+        )?;
+        let rows = stmt.query_map(params![limit], |row| row.get::<_, String>(0))?;
+        Ok(rows.flatten().collect())
+    })
+}
+
+/// Return one stranded `processing` row to `pending`, or dead-letter it when
+/// its retries are exhausted.
+///
+/// The whole decision is ONE atomic UPDATE guarded on `status = 'processing'`,
+/// so a terminal write from the tick that actually owns the row always wins the
+/// race and the reaper reports `None`. `retry_count` is incremented on every
+/// reap, which is what stops a permanently-poisoned event from cycling
+/// pending -> processing -> pending forever.
+///
+/// `reclaimed_reason` / `exhausted_reason` are machine tokens (see
+/// `engine/background.rs` `EventGateReason`), never prose.
+pub fn reap_stuck_processing(
+    pool: &DbPool,
+    id: &str,
+    max_retries: i32,
+    reclaimed_reason: &str,
+    exhausted_reason: &str,
+) -> Result<Option<StuckReapOutcome>, AppError> {
+    timed_query!("persona_events", "persona_events::reap_stuck_processing", {
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let mut stmt = conn.prepare_cached(
+            "UPDATE persona_events
+             SET retry_count = retry_count + 1,
+                 status = CASE WHEN retry_count + 1 >= ?1 THEN 'dead_letter' ELSE 'pending' END,
+                 error_message = CASE WHEN retry_count + 1 >= ?1 THEN ?2 ELSE ?3 END,
+                 processed_at = CASE WHEN retry_count + 1 >= ?1 THEN ?4 ELSE NULL END
+             WHERE id = ?5 AND status = 'processing'
+             RETURNING status",
+        )?;
+        let status: Option<String> = stmt
+            .query_row(
+                params![max_retries, exhausted_reason, reclaimed_reason, now, id],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?;
+
+        Ok(status.map(|s| {
+            if s == "dead_letter" {
+                StuckReapOutcome::DeadLettered
+            } else {
+                StuckReapOutcome::Redelivered
+            }
+        }))
+    })
+}
+
 /// Increment retry_count and reset status to 'pending' for a dead-lettered event.
 /// Returns `RetryExhausted` if retry_count has already reached `MAX_MANUAL_RETRIES`.
 ///
@@ -2972,6 +3062,147 @@ mod tests {
         assert_eq!(row.status, PersonaEventStatus::DeadLetter);
         assert_eq!(row.error_message.as_deref(), Some("handoff_target_disabled"));
         assert!(row.processed_at.is_some());
+    }
+
+    // ------------------------------------------------------------------
+    // Stuck-`processing` reaper
+    //
+    // A tick that dies between `claim_pending` and its terminal status write
+    // leaves the event in `processing` forever: never delivered, never
+    // retried, exempt from retention, invisible to the pending and
+    // dead-letter counts. These cover the two ways out.
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn list_processing_ids_sees_only_claimed_rows() {
+        let pool = init_test_db().unwrap();
+        let stranded = publish_and_claim(&pool, "stranded");
+        publish(
+            &pool,
+            CreatePersonaEventInput {
+                event_type: "untouched".into(),
+                source_type: "test".into(),
+                project_id: None,
+                source_id: None,
+                target_persona_id: None,
+                payload: None,
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        let processing = list_processing_ids(&pool, 100).unwrap();
+        assert_eq!(processing, vec![stranded.id.clone()]);
+
+        // Once it reaches a terminal status it drops out of the scan.
+        update_status(&pool, &stranded.id, PersonaEventStatus::Delivered, None).unwrap();
+        assert!(list_processing_ids(&pool, 100).unwrap().is_empty());
+    }
+
+    #[test]
+    fn reap_stuck_processing_redelivers_a_strand() {
+        let pool = init_test_db().unwrap();
+        let evt = publish_and_claim(&pool, "crashed_mid_tick");
+
+        let outcome = reap_stuck_processing(
+            &pool,
+            &evt.id,
+            DEFAULT_MAX_RETRIES,
+            "stuck_reclaimed",
+            "stuck_retry_exhausted",
+        )
+        .unwrap();
+        assert_eq!(outcome, Some(StuckReapOutcome::Redelivered));
+
+        let row = get_by_id(&pool, &evt.id).unwrap();
+        assert_eq!(row.status, PersonaEventStatus::Pending);
+        assert_eq!(row.retry_count, 1);
+        assert_eq!(row.error_message.as_deref(), Some("stuck_reclaimed"));
+        assert!(
+            row.processed_at.is_none(),
+            "a redelivered event is not processed yet"
+        );
+
+        // …and it is genuinely back in the queue: the next tick can claim it.
+        let reclaimed = claim_pending(&pool, 10).unwrap();
+        assert!(reclaimed.iter().any(|e| e.id == evt.id));
+    }
+
+    #[test]
+    fn reap_stuck_processing_dead_letters_an_exhausted_strand() {
+        let pool = init_test_db().unwrap();
+        let evt = publish_and_claim(&pool, "poisoned");
+
+        // Burn the retry budget: each reap increments retry_count, so the last
+        // one flips to dead_letter instead of cycling pending -> processing
+        // -> pending forever.
+        for attempt in 1..DEFAULT_MAX_RETRIES {
+            let outcome = reap_stuck_processing(
+                &pool,
+                &evt.id,
+                DEFAULT_MAX_RETRIES,
+                "stuck_reclaimed",
+                "stuck_retry_exhausted",
+            )
+            .unwrap();
+            assert_eq!(
+                outcome,
+                Some(StuckReapOutcome::Redelivered),
+                "attempt {attempt} should still redeliver"
+            );
+            // Re-strand it, as a crashing tick would.
+            claim_pending(&pool, 10).unwrap();
+        }
+
+        let outcome = reap_stuck_processing(
+            &pool,
+            &evt.id,
+            DEFAULT_MAX_RETRIES,
+            "stuck_reclaimed",
+            "stuck_retry_exhausted",
+        )
+        .unwrap();
+        assert_eq!(outcome, Some(StuckReapOutcome::DeadLettered));
+
+        let row = get_by_id(&pool, &evt.id).unwrap();
+        assert_eq!(row.status, PersonaEventStatus::DeadLetter);
+        assert_eq!(row.retry_count, DEFAULT_MAX_RETRIES);
+        assert_eq!(row.error_message.as_deref(), Some("stuck_retry_exhausted"));
+        assert!(row.processed_at.is_some());
+
+        // It is out of the queue for good — no further claim can pick it up.
+        assert!(!claim_pending(&pool, 10)
+            .unwrap()
+            .iter()
+            .any(|e| e.id == evt.id));
+        assert!(get_dead_letter_events(&pool, Some(10))
+            .unwrap()
+            .iter()
+            .any(|e| e.id == evt.id));
+    }
+
+    #[test]
+    fn reap_stuck_processing_loses_the_race_to_the_owning_tick() {
+        // The guard that makes this safe to run alongside a live tick: if the
+        // tick wrote its terminal status first, the reap is a no-op.
+        let pool = init_test_db().unwrap();
+        let evt = publish_and_claim(&pool, "finished_first");
+        update_status(&pool, &evt.id, PersonaEventStatus::Delivered, None).unwrap();
+
+        let outcome = reap_stuck_processing(
+            &pool,
+            &evt.id,
+            DEFAULT_MAX_RETRIES,
+            "stuck_reclaimed",
+            "stuck_retry_exhausted",
+        )
+        .unwrap();
+        assert_eq!(outcome, None);
+
+        let row = get_by_id(&pool, &evt.id).unwrap();
+        assert_eq!(row.status, PersonaEventStatus::Delivered);
+        assert_eq!(row.retry_count, 0, "a lost race must not burn a retry");
+        assert!(row.error_message.is_none());
     }
 
     #[test]

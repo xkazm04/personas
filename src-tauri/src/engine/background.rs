@@ -109,6 +109,17 @@ pub struct SchedulerState {
     /// Chain trace continuity breaks: payload parse failures that caused a
     /// chain_trace_id to be lost, resulting in orphaned trace roots.
     trace_continuity_breaks: AtomicU64,
+    /// Events the stuck-`processing` reaper returned to the queue (redelivered
+    /// or dead-lettered). Cumulative since scheduler start.
+    events_reaped: AtomicU64,
+    /// Unix millis of the last stuck-event reap pass; 0 = never run.
+    stuck_reap_last_ms: AtomicU64,
+    /// Event ids observed in `processing` on the PREVIOUS reap pass. A row must
+    /// appear on two consecutive passes before it is considered stranded — a
+    /// single snapshot cannot tell a stranded row from one a healthy tick (or
+    /// the headless daemon, a separate process on the same DB) is processing
+    /// right now, and `claim_pending` records no claim timestamp to lean on.
+    stuck_reap_seen: std::sync::Mutex<std::collections::HashSet<String>>,
     /// Per-subscription health tracking (latency, tick counts, errors).
     subscription_health: std::sync::Mutex<HashMap<String, SubscriptionHealth>>,
     /// Retained JoinHandles for spawned subscription tasks. Prevents silent
@@ -152,6 +163,9 @@ impl SchedulerState {
             queue_rejections: AtomicU64::new(0),
             subscriptions_crashed: AtomicU64::new(0),
             trace_continuity_breaks: AtomicU64::new(0),
+            events_reaped: AtomicU64::new(0),
+            stuck_reap_last_ms: AtomicU64::new(0),
+            stuck_reap_seen: std::sync::Mutex::new(std::collections::HashSet::new()),
             subscription_health: std::sync::Mutex::new(HashMap::new()),
             subscription_handles: std::sync::Mutex::new(Vec::new()),
             generation: AtomicU64::new(0),
@@ -219,6 +233,7 @@ impl SchedulerState {
             queue_rejections: self.queue_rejections.load(Ordering::Relaxed),
             subscriptions_crashed: self.subscriptions_crashed.load(Ordering::Relaxed),
             trace_continuity_breaks: self.trace_continuity_breaks.load(Ordering::Relaxed),
+            events_reaped: self.events_reaped.load(Ordering::Relaxed),
             subscription_health: self.subscription_health(),
         }
     }
@@ -411,6 +426,10 @@ pub struct SchedulerStats {
     pub queue_rejections: u64,
     pub subscriptions_crashed: u64,
     pub trace_continuity_breaks: u64,
+    /// Events the stuck-`processing` reaper returned to the queue or
+    /// dead-lettered since scheduler start. Normally 0 — a non-zero value means
+    /// ticks are dying between claiming an event and writing its outcome.
+    pub events_reaped: u64,
     pub subscription_health: Vec<SubscriptionHealth>,
 }
 
@@ -944,6 +963,13 @@ pub(crate) enum EventGateReason {
     /// The trigger is in `dry_run` mode — a run WAS launched, but as a
     /// simulation with outbound side-effects suppressed.
     DryRun,
+    /// A row stranded in `processing` was reclaimed by the reaper and returned
+    /// to `pending` for redelivery.
+    StuckReclaimed,
+    /// A row stranded in `processing` was reclaimed by the reaper but had
+    /// already exhausted its retries, so it went to the dead-letter queue
+    /// rather than looping forever.
+    StuckRetryExhausted,
 }
 
 impl EventGateReason {
@@ -957,6 +983,8 @@ impl EventGateReason {
             Self::CrossTeamBlocked => "cross_team_blocked",
             Self::CascadeGuard => "cascade_guard",
             Self::DryRun => "dry_run",
+            Self::StuckReclaimed => "stuck_reclaimed",
+            Self::StuckRetryExhausted => "stuck_retry_exhausted",
         }
     }
 }
@@ -993,6 +1021,138 @@ impl EventGateLedger {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Stuck-`processing` reaper
+// ---------------------------------------------------------------------------
+
+/// How often the stuck-event reaper takes a snapshot of the `processing` set.
+///
+/// A row must appear in TWO consecutive snapshots to be reaped, so this is also
+/// the minimum time a row must sit in `processing` before it is touched. Five
+/// minutes is far above every cadence that legitimately holds a claim: the
+/// event bus ticks at 2s active / 10s idle (`subscription.rs`) and the headless
+/// daemon claims on a 5s tick, and a tick's own dispatch work is bounded by
+/// non-blocking `start_execution` calls. Do not shorten this without a claim
+/// timestamp to lean on — a too-short window re-dispatches events a healthy
+/// tick is still processing.
+pub(crate) const STUCK_EVENT_REAP_INTERVAL: Duration = Duration::from_secs(300);
+
+/// Upper bound on how many `processing` rows one pass inspects. Generous — a
+/// healthy install has zero — but bounded so a pathological table cannot make
+/// the pass unbounded.
+const STUCK_EVENT_REAP_SCAN_LIMIT: i64 = 500;
+
+/// Split the currently-`processing` ids into "reap these" and "watch these".
+///
+/// A row is reaped only when it was ALSO present on the previous pass, i.e. it
+/// has held its claim for at least [`STUCK_EVENT_REAP_INTERVAL`]. Returns
+/// `(to_reap, next_seen)`; `next_seen` is the full current set, so a row that
+/// survives one pass is eligible on the next.
+pub(crate) fn partition_stuck_candidates(
+    current: &[String],
+    previously_seen: &std::collections::HashSet<String>,
+) -> (Vec<String>, std::collections::HashSet<String>) {
+    let to_reap: Vec<String> = current
+        .iter()
+        .filter(|id| previously_seen.contains(*id))
+        .cloned()
+        .collect();
+    let next_seen = current.iter().cloned().collect();
+    (to_reap, next_seen)
+}
+
+/// Return events stranded in `processing` to the queue.
+///
+/// `claim_pending` flips `pending -> processing` atomically so a tick cannot
+/// double-claim, but nothing ever returned a claimed row the tick failed to
+/// finish: retention exempts `processing` as in-flight and the terminal writes
+/// below are best-effort, so a crash (or a failed status UPDATE) between claim
+/// and terminal write left the event invisible forever.
+///
+/// This is INSURANCE, not a realised loss — the operator's live DB has zero
+/// `processing` rows. It is deliberately conservative: two consecutive
+/// sightings before touching anything, one atomic guarded UPDATE per row so the
+/// owning tick always wins a race, and `retry_count` incremented on every reap
+/// so a poisoned event dead-letters instead of cycling forever.
+///
+/// Runs from the event-bus tick (engine boot onwards, then every
+/// [`STUCK_EVENT_REAP_INTERVAL`]) rather than a fresh `tokio::spawn`, layering
+/// on the existing `EventBusSubscription` loop.
+pub(crate) fn reap_stuck_processing_events(scheduler: &SchedulerState, pool: &DbPool) {
+    let now_ms = chrono::Utc::now().timestamp_millis().max(0) as u64;
+    let last_ms = scheduler.stuck_reap_last_ms.load(Ordering::Relaxed);
+    let interval_ms = STUCK_EVENT_REAP_INTERVAL.as_millis() as u64;
+    // last_ms == 0 → never run; take the boot snapshot immediately.
+    if last_ms != 0 && now_ms.saturating_sub(last_ms) < interval_ms {
+        return;
+    }
+    scheduler.stuck_reap_last_ms.store(now_ms, Ordering::Relaxed);
+
+    let current = match event_repo::list_processing_ids(pool, STUCK_EVENT_REAP_SCAN_LIMIT) {
+        Ok(ids) => ids,
+        Err(e) => {
+            tracing::error!("Stuck-event reaper: failed to list processing events: {}", e);
+            return;
+        }
+    };
+
+    let (to_reap, next_seen) = {
+        let mut seen = scheduler
+            .stuck_reap_seen
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let (to_reap, next_seen) = partition_stuck_candidates(&current, &seen);
+        *seen = next_seen.clone();
+        (to_reap, next_seen)
+    };
+
+    if to_reap.is_empty() {
+        if !next_seen.is_empty() {
+            tracing::debug!(
+                watching = next_seen.len(),
+                "Stuck-event reaper: events still claimed; eligible next pass if unchanged"
+            );
+        }
+        return;
+    }
+
+    let mut redelivered = 0u64;
+    let mut dead_lettered = 0u64;
+    let mut raced = 0u64;
+    for id in &to_reap {
+        match event_repo::reap_stuck_processing(
+            pool,
+            id,
+            event_repo::DEFAULT_MAX_RETRIES,
+            EventGateReason::StuckReclaimed.token(),
+            EventGateReason::StuckRetryExhausted.token(),
+        ) {
+            Ok(Some(event_repo::StuckReapOutcome::Redelivered)) => redelivered += 1,
+            Ok(Some(event_repo::StuckReapOutcome::DeadLettered)) => dead_lettered += 1,
+            // The owning tick finished between the snapshot and the write —
+            // exactly the race the `WHERE status = 'processing'` guard exists
+            // for. Not an error.
+            Ok(None) => raced += 1,
+            Err(e) => tracing::error!(event_id = %id, "Stuck-event reaper: reap failed: {}", e),
+        }
+    }
+
+    let reaped = redelivered + dead_lettered;
+    if reaped > 0 {
+        scheduler.events_reaped.fetch_add(reaped, Ordering::Relaxed);
+        // WARN, not INFO: a non-zero count means ticks are dying between
+        // claiming an event and writing its outcome. Surfaced on
+        // `SchedulerStats.events_reaped` too, so it is never silent.
+        tracing::warn!(
+            redelivered,
+            dead_lettered,
+            raced,
+            "Stuck-event reaper: reclaimed {} event(s) stranded in 'processing'",
+            reaped
+        );
+    }
+}
+
 /// One tick of the event bus: fetch pending events, match to subscriptions,
 /// and dispatch executions.
 ///
@@ -1010,6 +1170,13 @@ pub(crate) async fn event_bus_tick(
     // for cron-grained system ops like the weekly context-scan. See
     // `engine/system_ops.rs`.
     super::system_ops::run_due_schedule_automations(app, pool);
+
+    // 0. Return events stranded in `processing` to the queue. Self-throttled to
+    //    STUCK_EVENT_REAP_INTERVAL, and runs BEFORE the early-return below so a
+    //    strand is still reaped on an otherwise idle bus. Hosted here rather
+    //    than in a fresh task so it inherits the EventBusSubscription's
+    //    leadership gate and panic boundary.
+    reap_stuck_processing_events(scheduler, pool);
 
     // 1. Atomically claim pending events (SET status='processing' WHERE status='pending')
     //    This prevents duplicate processing when ticks overlap.
@@ -3854,7 +4021,7 @@ mod tests {
     // `db/repos/communication/events.rs`, which pin the same literal strings.
     // ========================================================================
 
-    const ALL_GATE_REASONS: [EventGateReason; 7] = [
+    const ALL_GATE_REASONS: [EventGateReason; 9] = [
         EventGateReason::NoSubscriber,
         EventGateReason::ApprovalHeld,
         EventGateReason::PersonaDisabled,
@@ -3862,6 +4029,8 @@ mod tests {
         EventGateReason::CrossTeamBlocked,
         EventGateReason::CascadeGuard,
         EventGateReason::DryRun,
+        EventGateReason::StuckReclaimed,
+        EventGateReason::StuckRetryExhausted,
     ];
 
     #[test]
@@ -3901,6 +4070,11 @@ mod tests {
         );
         assert_eq!(EventGateReason::CascadeGuard.token(), "cascade_guard");
         assert_eq!(EventGateReason::DryRun.token(), "dry_run");
+        assert_eq!(EventGateReason::StuckReclaimed.token(), "stuck_reclaimed");
+        assert_eq!(
+            EventGateReason::StuckRetryExhausted.token(),
+            "stuck_retry_exhausted"
+        );
     }
 
     #[test]
@@ -3927,5 +4101,58 @@ mod tests {
             ledger.into_reason().as_deref(),
             Some("persona_disabled,cascade_guard")
         );
+    }
+
+    // ========================================================================
+    // Stuck-`processing` reaper — candidate selection
+    //
+    // The two-consecutive-sightings rule is the whole safety story: it is what
+    // separates a stranded row from one a healthy tick (or the headless daemon
+    // in another process) is holding right now. Row-level reap behaviour is
+    // covered by the DB tests in `db/repos/communication/events.rs`.
+    // ========================================================================
+
+    fn seen(ids: &[&str]) -> std::collections::HashSet<String> {
+        ids.iter().map(|s| (*s).to_string()).collect()
+    }
+
+    fn ids(list: &[&str]) -> Vec<String> {
+        list.iter().map(|s| (*s).to_string()).collect()
+    }
+
+    #[test]
+    fn stuck_reaper_never_reaps_on_the_first_sighting() {
+        // Boot / first pass: nothing has been observed before, so nothing is
+        // touched — a full backlog claimed seconds ago must not be re-queued.
+        let (to_reap, next_seen) =
+            partition_stuck_candidates(&ids(&["a", "b"]), &std::collections::HashSet::new());
+        assert!(to_reap.is_empty());
+        assert_eq!(next_seen, seen(&["a", "b"]));
+    }
+
+    #[test]
+    fn stuck_reaper_reaps_only_ids_that_survived_a_whole_interval() {
+        // "a" was already claimed last pass and still is → stranded.
+        // "c" was just claimed → watched, not reaped.
+        let (to_reap, next_seen) =
+            partition_stuck_candidates(&ids(&["a", "c"]), &seen(&["a", "b"]));
+        assert_eq!(to_reap, ids(&["a"]));
+        assert_eq!(next_seen, seen(&["a", "c"]));
+    }
+
+    #[test]
+    fn stuck_reaper_forgets_rows_a_healthy_tick_finished() {
+        // Everything the previous pass saw has moved to a terminal status, so
+        // the watch list empties instead of accumulating forever.
+        let (to_reap, next_seen) = partition_stuck_candidates(&[], &seen(&["a", "b"]));
+        assert!(to_reap.is_empty());
+        assert!(next_seen.is_empty());
+    }
+
+    #[test]
+    fn stuck_reaper_interval_is_far_above_every_claiming_cadence() {
+        // Event bus: 2s active / 10s idle. Headless daemon: 5s. A threshold
+        // near those would re-dispatch events a healthy tick still owns.
+        assert!(STUCK_EVENT_REAP_INTERVAL >= Duration::from_secs(60));
     }
 }
