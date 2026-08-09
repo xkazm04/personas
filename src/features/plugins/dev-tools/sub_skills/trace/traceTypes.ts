@@ -27,6 +27,9 @@ export interface TraceCell {
 export interface TraceSkillRow {
   name: string;
   visual: { icon: LucideIcon; color: string; label: string } | null;
+  /** Frontmatter `contexts: tracked` on the library copy — drives the row
+   *  icon (context-specific vs context-agnostic method). */
+  contextTracked: boolean;
   libraryVersion: string | null;
   /** Sum of cell heat across projects — the row ranking key. */
   totalHeat: number;
@@ -68,6 +71,8 @@ export interface TreeBranch {
 export interface SkillTreeModel {
   skillName: string;
   visual: { icon: LucideIcon; color: string; label: string } | null;
+  /** `contexts: tracked` on the library copy (icon semantics, mirrors L1). */
+  contextTracked: boolean;
   libraryVersion: string | null;
   totalInvokes: number;
   /** Sorted weight desc. */

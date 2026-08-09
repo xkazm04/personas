@@ -29,6 +29,7 @@ function normPath(p: string): string {
 interface Fetched {
   loading: boolean;
   libraryVersionByName: Map<string, string | null>;
+  trackedByName: Map<string, boolean>;
   installedByProject: Map<string, Map<string, { version: string | null; syncState: string }>>;
   usageByKey: Map<string, { invokes30d: number; lastInvokedAt: number | null }>;
   /** All names installed anywhere or used recently — the skill axis. */
@@ -38,6 +39,7 @@ interface Fetched {
 const EMPTY: Fetched = {
   loading: true,
   libraryVersionByName: new Map(),
+  trackedByName: new Map(),
   installedByProject: new Map(),
   usageByKey: new Map(),
   names: [],
@@ -117,6 +119,7 @@ export function useSkillTraceModel(activeProjectId: string | null, refreshTick =
       if (!alive) return;
 
       const libraryVersionByName = new Map(globalSkills.map((s) => [s.name, s.version]));
+      const trackedByName = new Map(globalSkills.map((s) => [s.name, s.contextTracked]));
       const installedByProject = new Map<string, Map<string, { version: string | null; syncState: string }>>();
       for (const r of per) {
         installedByProject.set(r.pid, new Map(r.installed.map((s) => [s.name, { version: s.version, syncState: s.syncState }])));
@@ -160,7 +163,7 @@ export function useSkillTraceModel(activeProjectId: string | null, refreshTick =
         ...PRESET_SKILLS.keys(),
       ])];
 
-      const next: Fetched = { loading: false, libraryVersionByName, installedByProject, usageByKey, names };
+      const next: Fetched = { loading: false, libraryVersionByName, trackedByName, installedByProject, usageByKey, names };
       cachedWorkspaceId = workspace?.id ?? null;
       cachedFetched = next;
       setF(next);
@@ -187,6 +190,9 @@ export function useSkillTraceModel(activeProjectId: string | null, refreshTick =
         return {
           name,
           visual: visual ? { icon: visual.icon, color: visual.color, label: visual.label } : null,
+          // Preset-only rows (not materialized in the library) are all
+          // group-1 context-aware skills, so default true for them.
+          contextTracked: f.trackedByName.get(name) ?? true,
           libraryVersion: f.libraryVersionByName.get(name) ?? null,
           ...roll,
         };

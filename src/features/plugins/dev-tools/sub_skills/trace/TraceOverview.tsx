@@ -6,7 +6,7 @@
 // row or cell → the skill tree (Level 2).
 import { useMemo } from 'react';
 
-import { Flame, Info } from 'lucide-react';
+import { Globe, Info, Network } from 'lucide-react';
 
 import { IllustratedEmptyState } from '@/features/shared/components/display/IllustratedEmptyState';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
@@ -66,7 +66,9 @@ export function TraceOverview({ model, onSelectSkill, onOpenInfo }: TraceOvervie
                 <tr><td colSpan={model.projects.length + 2} className="p-3"><TraceGhosts columns={model.projects.length} /></td></tr>
               ) : (
                 model.skills.map((s, rowIdx) => {
-                  const Icon = s.visual?.icon ?? Flame;
+                  // Icon encodes the METHOD's scope, not the skill's brand:
+                  // context-tracked (walks the context map) vs agnostic.
+                  const Icon = s.contextTracked ? Network : Globe;
                   return (
                     <RevealItem
                       key={s.name}
@@ -79,8 +81,13 @@ export function TraceOverview({ model, onSelectSkill, onOpenInfo }: TraceOvervie
                     >
                       <td className="px-3 py-1 border-b border-border/40">
                         <div className="flex items-center gap-2 min-w-48">
-                          <button type="button" onClick={() => onSelectSkill(s.name)} className="flex items-center gap-2 min-w-0 hover:text-primary transition-colors">
-                            <Icon size={14} style={s.visual ? { color: s.visual.color } : undefined} className="shrink-0" />
+                          <button
+                            type="button"
+                            onClick={() => onSelectSkill(s.name)}
+                            className="flex items-center gap-2 min-w-0 hover:text-primary transition-colors"
+                            title={s.contextTracked ? t.plugins.dev_tools.skills_info_context_tracked : undefined}
+                          >
+                            <Icon size={16} style={s.visual ? { color: s.visual.color } : undefined} className="shrink-0" />
                             <span className="typo-body truncate">{s.name}</span>
                           </button>
                           <button
