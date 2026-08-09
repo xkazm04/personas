@@ -32,6 +32,7 @@ use crate::AppState;
 /// One `input_schema` field that will NOT become an editable persona parameter.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, ts_rs::TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct SkippedParameterField {
     /// The field's `name` in the recipe's `input_schema`.
     pub key: String,
@@ -47,6 +48,7 @@ pub struct SkippedParameterField {
 /// is a setting the recipe advertises that the persona will not expose.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, ts_rs::TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct RecipeParameterCoverage {
     pub recipe_id: String,
     /// Total named `input_schema` fields, deduped by key.

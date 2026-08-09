@@ -45,7 +45,7 @@ export function coverageGap(
   if (!coverage || coverage.skipped.length === 0) return null;
   const types: string[] = [];
   for (const field of coverage.skipped) {
-    if (!types.includes(field.declared_type)) types.push(field.declared_type);
+    if (!types.includes(field.declaredType)) types.push(field.declaredType);
   }
   return {
     missing: coverage.skipped.length,

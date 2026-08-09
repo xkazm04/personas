@@ -8,12 +8,12 @@
  * the recipe?) and baking one in would hide it. `terminal` is the honest
  * denominator — queued and running rows are not outcomes yet.
  */
-export type RecipeOutcomeTally = { recipe_id: string, 
+export type RecipeOutcomeTally = { recipeId: string, 
 /**
  * `None` when the recipe row has since been deleted. The runs stay
  * attributed regardless — provenance is a fact about the past.
  */
-recipe_name: string | null, 
+recipeName: string | null, 
 /**
  * Every execution stamped with this recipe, any status.
  */
@@ -26,4 +26,4 @@ terminal: bigint, completed: bigint, failed: bigint,
  * Runs whose persona self-assessed that it actually delivered its job.
  * A stricter and more meaningful bar than `completed`.
  */
-value_delivered: bigint, last_run_at: string | null, };
+valueDelivered: bigint, lastRunAt: string | null, };

@@ -15,4 +15,4 @@ label: string,
 /**
  * The declared `type` token that has no persona ParamType mapping.
  */
-declared_type: string, };
+declaredType: string, };

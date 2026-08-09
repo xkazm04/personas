@@ -7,7 +7,7 @@ import type { SkippedParameterField } from "./SkippedParameterField";
  * `declared == derived` means every promised knob exists. Any `skipped` entry
  * is a setting the recipe advertises that the persona will not expose.
  */
-export type RecipeParameterCoverage = { recipe_id: string, 
+export type RecipeParameterCoverage = { recipeId: string, 
 /**
  * Total named `input_schema` fields, deduped by key.
  */

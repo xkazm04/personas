@@ -36,6 +36,7 @@ const MAX_LIMIT: i64 = 500;
 /// denominator — queued and running rows are not outcomes yet.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, ts_rs::TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct RecipeOutcomeTally {
     pub recipe_id: String,
     /// `None` when the recipe row has since been deleted. The runs stay
