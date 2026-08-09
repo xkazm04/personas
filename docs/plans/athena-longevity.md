@@ -259,6 +259,19 @@ syncs.**
   applies to payloads.
 - **Delta tracking:** per-peer watermark (last acked cycle); items carry origin device +
   `updated_at`.
+- **Rejected alternative — Claude Code native cross-session messaging (evaluated 2026-08-09).**
+  The CLI's `ListAgents`/`SendMessage` peer messaging (v2.1.224+, shipped 2026-08-07) was
+  evaluated as an LS transport and rejected on three verified grounds: cross-machine messages
+  route **through Anthropic's servers** via Remote Control (LS forbids third-party clouds for
+  memory), the channel is **plain text only** (LS carries structured distillate), and the feature
+  is **absent on native Windows** — both home devices' platform
+  (docs: code.claude.com/docs/en/cross-session-messaging, "Claude Code doesn't offer
+  cross-session messaging on native Windows"). Same-machine inbox sockets are also unavailable
+  here for the same reason. `remote_jobs` stays the transport. Note for perspective: personas
+  already exceeds this feature app-side — typed lifecycle hooks (`fleet/hook_install.rs` →
+  `/fleet/hooks/*`), approval-gated + autopilot session writes (`fleet_send_input`,
+  `approval_autopilot.rs`), and a device link that can *initiate* where native messaging is
+  reply-constrained. Reconsider-trigger tracked in the vault's `descoped-reopenable.md`.
 - **Dependencies:** L1 (cycle + staging — L1 must design the staging table and origin-device
   columns forward-compatibly); full identity convergence arrives with L3.
 

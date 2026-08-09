@@ -2,6 +2,7 @@
 
 ## Active
 
+
 ### athena-longevity-l1c — Wave 4 (L1c): sleep-pressure trigger + dev force button — session fable-5 xhigh — **COMPLETE — and the L1 LIVE GATE PASSED**
 - **LIVE GATE (2026-08-08 ~14:00): cycle #1 `cyc_293a1cd4f68e` ran on REAL pressure, no force.** Gauge read 102,655/40,000 across 196 episodes → admitted → completed in 60s: 59 episodes/29,409 chars (cap engaged, truncated=true, oldest-first), 9 facts + 6 procedurals written with 21 provenance rows + tags_json, 16 facts decayed, report on disk + node + FTS. Residue gauge after: 72,811 with boundary at consumed_through and the 6h floor blocking with both numbers in the reason. Spend rollup shows `maintenance` 2 turns **$0.44** (vs $3.05 for ONE chat turn the day before — the L2 motivation in one line).
 - **Live-gate finding:** the test suite had written **39 orphan cycle reports into the OPERATOR'S REAL brain** (`~/.personas/companion-brain/cycles/`) — test DBs are injected but `disk::brain_root()` is ambient env. Orphans deleted (DB cross-checked: 1 real cycle). Root-cause fix queued: brain-root must be injectable or PERSONAS_HOME test-guarded (same root cause as the known stt/tts race). Cosmetic: report renders "when when …" for procedurals and "1 long bodies".
@@ -235,6 +236,11 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+- **[2026-08-09 15:35] /research — claude-cross-session-messaging**
+  - **Source:** https://www.youtube.com/watch?v=oqp6D-ugtX4 (Claude Code session-to-session messaging)
+  - **Paths:** Obsidian Research/Lessons notes · possibly src-tauri/src/companion/{fleet_bridge.rs,remote_jobs.rs} + docs/plans/athena-longevity.md (evaluation notes) — code findings TBD in Phase 6
+  - **Status:** completed (commit: pending same call)
 
 ### spark-athena-device-link — /spark: Athena-to-Athena remote jobs over the finished p2p link — session fable-5 — **COMPLETE**, merged `c2fe3e545`
 - Started/completed 2026-08-06/07. 27 commits on `worktree-spark-athena-device-link`, merged --no-ff; worktree removed, branch deleted, node_modules junction unlinked FIRST (436 entries intact).

@@ -778,3 +778,24 @@ Building a test persona always follows this sequence. 13+ scripts already use it
 - **What templates and credentials already exist** → `codebase-catalogs.md`
 - **Recent commits / who changed what** → `git log` / `git blame`
 - **Per-feature implementation details** → read source under the `file_paths` listed in `codebase-context.md`
+
+## Athena's fleet ACT surface (added 2026-08-09, /research cross-session-messaging run)
+
+When evaluating any "let Athena talk to / steer / answer a running CLI session" idea, the act
+surface ALREADY EXISTS and lives in three places - grep the codebase vocabulary, not generic
+terms ("nudge", "message", "write" all miss it):
+
+- Ops allowlist: src-tauri/src/companion/dispatcher.rs ALLOWED_ACTIONS - fleet_send_input,
+  fleet_broadcast, fleet_kill, fleet_spawn, fleet_dispatch, fleet_intervene, fleet_redirect_op,
+  fleet_wake, fleet_resume. All approval-gated proposals.
+- Executors: src-tauri/src/commands/companion/approvals/approval_exec_fleet.rs -
+  execute_fleet_send_input resolves both fleet-session and claude_session ids, and converts a
+  DOZED target into wake -> re-ask (playbook proven live 2026-07-24).
+- Autonomy lane: approvals/approval_autopilot.rs - fleet_send_input/fleet_intervene auto-fire
+  under a boldness x class x confidence gate, scoped to sessions Athena spawned herself.
+
+Inbound direction (session -> app) is typed lifecycle hooks, not messages:
+src-tauri/src/commands/fleet/hook_install.rs installs SessionStart/Notification/Stop/PostToolUse/
+SessionEnd hooks POSTing to /fleet/hooks/*; fleet/classify.rs treats a Stop hook as the confident
+DONE signal. Claude Code's native cross-session messaging (2026-08) is ABSENT on native Windows
+and cloud-routed across machines - personas' app-side channel is strictly richer.
