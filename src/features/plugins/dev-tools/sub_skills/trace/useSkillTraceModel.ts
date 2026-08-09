@@ -16,7 +16,7 @@ import { mapWithConcurrency } from '@/lib/concurrency';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 
-import { presetVisual } from '../../constants/presetSkills';
+import { PRESET_SKILLS, presetVisual } from '../../constants/presetSkills';
 import { useWorkspaces, workspaceOf } from '../../sub_workspaces/workspaceStore';
 import { parseSkillArg } from '../analytics/useSkillsAnalytics';
 import { buildTraceMatrix, mergeFleetRuns, traceKey, type FleetSkillRun } from './traceModel';
@@ -119,14 +119,12 @@ export function useSkillTraceModel(activeProjectId: string | null, refreshTick =
 
       const wsIds = new Set(wsProjects.map((p) => p.id));
       const dbUsage = new Map<string, { invokes30d: number; lastInvokedAt: number | null }>();
-      const usedNames = new Set<string>();
       for (const u of usageRows) {
         if (u.scope !== 'project' || !u.project_id || !wsIds.has(u.project_id)) continue;
         dbUsage.set(traceKey(u.project_id, u.name), {
           invokes30d: u.invokes_30d,
           lastInvokedAt: u.last_invoked_at ? Date.parse(u.last_invoked_at.replace(' ', 'T') + 'Z') || Date.parse(u.last_invoked_at) : null,
         });
-        if (u.invokes_30d > 0) usedNames.add(u.name);
       }
 
       // Fleet session log — the Analytics tab's run source, mapped to
@@ -144,14 +142,17 @@ export function useSkillTraceModel(activeProjectId: string | null, refreshTick =
           lastActivityAt: Number(sess.lastActivityMs) || Number(sess.createdAtMs),
         });
       }
-      const { merged: usageByKey, usedNames: fleetNames } = mergeFleetRuns(dbUsage, fleetRuns, Date.now());
-      for (const n of fleetNames) usedNames.add(n);
+      const { merged: usageByKey } = mergeFleetRuns(dbUsage, fleetRuns, Date.now());
 
-      // Skill axis: installed anywhere in the workspace ∪ recently used —
-      // Trace is about activity, not the full unadopted catalogue.
+      // Skill axis: WORKSPACE-LEVEL skills only — the library
+      // (~/.claude/skills) plus the app-owned presets (same catalogue rule
+      // as the Registry tab). NOT the union of every project-local skill: a
+      // repo-private skill is not workspace doctrine, and a row here implies
+      // "this method is shared". Project-local activity on non-library
+      // skills is deliberately invisible until the skill is shared up.
       const names = [...new Set([
-        ...[...installedByProject.values()].flatMap((m) => [...m.keys()]),
-        ...usedNames,
+        ...globalSkills.map((s) => s.name),
+        ...PRESET_SKILLS.keys(),
       ])];
 
       const next: Fetched = { loading: false, libraryVersionByName, installedByProject, usageByKey, names };

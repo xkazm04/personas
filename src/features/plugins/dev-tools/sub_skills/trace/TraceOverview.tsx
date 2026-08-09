@@ -70,9 +70,6 @@ export function TraceOverview({ model, onSelectSkill, onOpenInfo }: TraceOvervie
                         >
                           <Icon size={14} style={s.visual ? { color: s.visual.color } : undefined} className="shrink-0" />
                           <span className="typo-body truncate">{s.name}</span>
-                          <span className="typo-caption text-foreground shrink-0">
-                            v{s.libraryVersion ?? '1.0'}
-                          </span>
                         </button>
                         {/* row heat bar — the ranking, made visible */}
                         <div className="flex-1 min-w-8 h-1 rounded-full bg-secondary overflow-hidden">
@@ -81,6 +78,10 @@ export function TraceOverview({ model, onSelectSkill, onOpenInfo }: TraceOvervie
                             style={{ width: `${Math.min(100, Math.round((s.totalHeat / Math.max(1, model.projects.length)) * 100))}%` }}
                           />
                         </div>
+                        {/* version — its own aligned column, not part of the name */}
+                        <span className="typo-caption text-foreground tabular-nums shrink-0 w-10 text-right px-1 rounded-interactive bg-secondary/60">
+                          v{s.libraryVersion ?? '1.0'}
+                        </span>
                         <button
                           type="button"
                           onClick={() => onOpenInfo(s.name)}
