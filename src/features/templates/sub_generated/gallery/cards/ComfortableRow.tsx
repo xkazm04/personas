@@ -10,7 +10,8 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { highlightMatch } from '@/lib/ui/highlightMatch';
-import { deriveConnectorReadiness } from '../../shared/ConnectorReadiness';
+import { resolveConnectorStatuses } from '../../shared/useConnectorReadiness';
+import type { ConnectorReadinessMap } from '../../shared/useConnectorReadiness';
 import { RowActionMenu } from './RowActionMenu';
 import { ArchCategoryIcons } from './ArchCategoryIcons';
 import { TemplateCategoryPills } from './TemplateCategoryPills';
@@ -25,8 +26,9 @@ interface ComfortableRowProps {
   isExpanded: boolean;
   searchQuery: string;
   isAiResult: boolean;
-  installedConnectorNames: Set<string>;
   credentialServiceTypes: Set<string>;
+  /** Authoritative per-connector verdicts, resolved once for the whole gallery. */
+  connectorReadiness: ConnectorReadinessMap;
   modals: ModalStackActions<TemplateModal>;
   // Takes (id, currentIsExpanded) so parents can pass a stable reference
   // without per-row closures. The row itself constructs the call inside
@@ -51,8 +53,8 @@ function ComfortableRowImpl({
   isExpanded,
   searchQuery,
   isAiResult,
-  installedConnectorNames,
   credentialServiceTypes,
+  connectorReadiness,
   modals,
   onToggleExpand,
   onViewFlows,
@@ -76,10 +78,14 @@ function ComfortableRowImpl({
     onToggleExpand(review.id, isExpanded);
   }, [onToggleExpand, review.id, isExpanded]);
 
-  const readinessStatuses = designResult?.suggested_connectors
-    ? deriveConnectorReadiness(designResult.suggested_connectors, installedConnectorNames, credentialServiceTypes)
-    : [];
+  const readinessStatuses = resolveConnectorStatuses(
+    [...connectors, ...(designResult?.suggested_connectors ?? [])],
+    connectorReadiness,
+  );
 
+  // `every` over the authoritative verdicts: an `unknown` (resolver has not
+  // answered yet) is NOT ready, so the adopt affordance never promises a
+  // template the run gate would block.
   const allConnectorsReady = isExpanded && connectors.length > 0 && connectors.every((c) => {
     const status = readinessStatuses.find((s) => s.connector_name === c);
     return status?.health === 'ready';

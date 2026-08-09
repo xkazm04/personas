@@ -5,7 +5,8 @@ import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
 import { deriveArchCategories } from '../../shared/architecturalCategories';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import type { AgentIR, ConnectorReadinessStatus, ProtocolCapability } from '@/lib/types/designTypes';
+import type { AgentIR, ProtocolCapability } from '@/lib/types/designTypes';
+import type { ResolvedConnectorReadiness } from '../../shared/useConnectorReadiness';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { LucideIcon } from 'lucide-react';
 
@@ -13,7 +14,7 @@ interface ExpandedRowContentProps {
   review: PersonaDesignReview;
   designResult: AgentIR | null;
   allConnectorsReady: boolean;
-  readinessStatuses: ConnectorReadinessStatus[];
+  readinessStatuses: ResolvedConnectorReadiness[];
   credentialServiceTypes: Set<string>;
   onAdopt: () => void;
   onTryIt: () => void;

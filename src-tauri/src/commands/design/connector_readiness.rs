@@ -1187,6 +1187,100 @@ pub async fn connector_cli_probe_refresh(
     }
 }
 
+// -- Batch readiness for browsing surfaces -----------------------------------
+
+/// The authoritative verdict for ONE connector, in the shape a browsing
+/// surface (the template gallery, compare view, card preview) renders.
+///
+/// This exists because the gallery used to compute its own readiness in
+/// TypeScript as `installed && has_credential`, which disagrees with this
+/// module BY CONSTRUCTION: a `ZeroConfig` connector has no credential and
+/// read as not-ready, and a `Credential` connector with a stored-but-
+/// unbindable credential read as ready. The card said "ready", adoption
+/// succeeded, and then the run gate (`persona_live_blockers`) blocked it.
+/// One resolver, one verdict.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ConnectorReadinessEntry {
+    /// The connector name as it was requested (trimmed).
+    pub connector: String,
+    /// `true` iff the resolver returned `Readiness::Ready`.
+    pub ready: bool,
+    /// What kind of setup it needs. `None` when ready. Language-agnostic —
+    /// the UI maps the token to a localized remediation line.
+    pub kind: Option<SetupKind>,
+}
+
+/// De-duplicate a requested connector list case-insensitively, dropping blanks
+/// and preserving first-seen order. The resolver treats names case-
+/// insensitively, so asking twice for `Notion` and `notion` is one question.
+fn dedupe_connector_names<I, S>(names: I) -> Vec<String>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<str>,
+{
+    let mut out: Vec<String> = Vec::new();
+    for raw in names {
+        let n = raw.as_ref().trim();
+        if n.is_empty() {
+            continue;
+        }
+        if !out.iter().any(|e| e.eq_ignore_ascii_case(n)) {
+            out.push(n.to_string());
+        }
+    }
+    out
+}
+
+/// Resolve a batch of connector names through the authoritative resolver.
+/// Pure over the `Connection` so unit tests can exercise it without Tauri.
+pub fn connector_readiness_entries<I, S>(
+    conn: &Connection,
+    names: I,
+) -> Vec<ConnectorReadinessEntry>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<str>,
+{
+    dedupe_connector_names(names)
+        .into_iter()
+        .map(|name| match connector_readiness(conn, &name) {
+            Readiness::Ready => ConnectorReadinessEntry {
+                connector: name,
+                ready: true,
+                kind: None,
+            },
+            Readiness::NeedsSetup { kind, .. } => ConnectorReadinessEntry {
+                connector: name,
+                ready: false,
+                kind: Some(kind),
+            },
+        })
+        .collect()
+}
+
+/// Batch-resolve connector readiness for a browsing surface.
+///
+/// ONE call per data change — the gallery renders many cards over a shared
+/// connector vocabulary, so per-card IPC would be an N+1 against a resolver
+/// that can spawn (cached, bounded) provider-CLI probes. `async` keeps that
+/// probe work off the webview's main thread, matching
+/// `connector_cli_probe_status`.
+///
+/// Names are de-duplicated case-insensitively; blanks are dropped. The result
+/// is NOT positionally aligned with the request — callers look entries up by
+/// name.
+#[tauri::command]
+pub async fn connector_readiness_batch(
+    state: tauri::State<'_, std::sync::Arc<crate::AppState>>,
+    connectors: Vec<String>,
+) -> Result<Vec<ConnectorReadinessEntry>, AppError> {
+    crate::ipc_auth::require_auth_sync(&state)?;
+    let conn = state.db.get()?;
+    Ok(connector_readiness_entries(&conn, connectors))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1366,6 +1460,88 @@ mod tests {
         // local_drive (zero-config) + web_search (native) are ready; notion +
         // codebase are not.
         assert_eq!(missing.len(), 2);
+    }
+
+    // --- Batch entries (the browsing-surface projection) ---
+
+    fn entry<'a>(
+        entries: &'a [ConnectorReadinessEntry],
+        name: &str,
+    ) -> &'a ConnectorReadinessEntry {
+        entries
+            .iter()
+            .find(|e| e.connector.eq_ignore_ascii_case(name))
+            .unwrap_or_else(|| panic!("no entry for `{name}` in {entries:?}"))
+    }
+
+    /// The two cases the retired TS heuristic (`installed && has_credential`)
+    /// provably got WRONG, both directions, in one pass:
+    ///   - zero-config + native + aggregate connectors have no credential, so
+    ///     the heuristic called them not-ready → the gallery hid working
+    ///     templates behind a "Setup needed" badge.
+    ///   - a credential row with no usable field is "installed && has
+    ///     credential" to the heuristic → the card said Ready and the run gate
+    ///     then blocked the persona.
+    #[test]
+    fn batch_entries_fix_both_directions_of_the_retired_heuristic() {
+        let conn = test_db();
+        // Zero-config: builtin + always_active, no credential anywhere.
+        def(&conn, "local_drive", r#"{"is_builtin":true,"always_active":true}"#);
+        // Aggregate: `codebases` (plural) resolves ready with zero projects,
+        // unlike the singular `codebase` global probe.
+        def(
+            &conn,
+            "codebases",
+            r#"{"is_builtin":true,"always_active":true,"connection_mode":"desktop_bridge"}"#,
+        );
+        // Credential connector with a credential ROW but no usable field —
+        // the heuristic's false "ready".
+        def(&conn, "notion", r#"{"auth_type":"api_key"}"#);
+        cred(&conn, "notion-empty", "notion");
+
+        let entries = connector_readiness_entries(
+            &conn,
+            ["local_drive", "codebases", "web_search", "notion"],
+        );
+        assert_eq!(entries.len(), 4);
+
+        // Heuristic said not-ready (no credential); the resolver says ready.
+        assert!(entry(&entries, "local_drive").ready, "zero-config must be ready");
+        assert!(entry(&entries, "codebases").ready, "aggregate must be ready");
+        assert!(
+            entry(&entries, "web_search").ready,
+            "native capability must be ready without a definition row"
+        );
+        assert!(entry(&entries, "local_drive").kind.is_none());
+
+        // Heuristic said ready (a credential row exists); the resolver says no.
+        let notion = entry(&entries, "notion");
+        assert!(!notion.ready, "shell credential must not read as ready");
+        assert_eq!(notion.kind, Some(SetupKind::VaultCredential));
+    }
+
+    #[test]
+    fn batch_entries_dedupe_case_insensitively_and_drop_blanks() {
+        let conn = test_db();
+        def(&conn, "local_drive", r#"{"is_builtin":true,"always_active":true}"#);
+        let entries =
+            connector_readiness_entries(&conn, ["local_drive", "Local_Drive", "  ", "\t"]);
+        assert_eq!(entries.len(), 1, "one question per connector: {entries:?}");
+        assert_eq!(entries[0].connector, "local_drive");
+    }
+
+    #[test]
+    fn batch_entries_carry_the_routing_kind_for_each_not_ready_class() {
+        let conn = test_db();
+        def(&conn, "notion", r#"{"auth_type":"api_key"}"#);
+        def(
+            &conn,
+            "codebase",
+            r#"{"is_builtin":true,"always_active":true,"connection_mode":"desktop_bridge"}"#,
+        );
+        let entries = connector_readiness_entries(&conn, ["notion", "codebase"]);
+        assert_eq!(entry(&entries, "notion").kind, Some(SetupKind::VaultCredential));
+        assert_eq!(entry(&entries, "codebase").kind, Some(SetupKind::DevProject));
     }
 
     // --- Phase 1: credential-link resolution ---

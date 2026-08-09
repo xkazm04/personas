@@ -11,6 +11,7 @@ import type { Density } from '../search/filters/DensityToggle';
 import type { TemplateModal } from './reviewParseCache';
 import type { ModalStackActions } from '../modals/useModalStack';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
+import type { ConnectorReadinessMap } from '../../shared/useConnectorReadiness';
 
 /**
  * Rows in the first viewport that play the one-shot entrance cascade when a
@@ -26,8 +27,9 @@ interface TemplateVirtualListProps {
   expandedRow: string | null;
   searchQuery: string;
   isAiResult: boolean;
-  installedConnectorNames: Set<string>;
   credentialServiceTypes: Set<string>;
+  /** Authoritative per-connector verdicts, resolved once for the whole gallery. */
+  connectorReadiness: ConnectorReadinessMap;
   modals: ModalStackActions<TemplateModal>;
   onToggleExpand: (id: string, isExpanded: boolean) => void;
   onViewFlows: (review: PersonaDesignReview) => void;
@@ -56,8 +58,8 @@ export function TemplateVirtualList({
   expandedRow,
   searchQuery,
   isAiResult,
-  installedConnectorNames,
   credentialServiceTypes,
+  connectorReadiness,
   modals,
   onToggleExpand,
   onViewFlows,
@@ -180,8 +182,8 @@ export function TemplateVirtualList({
                       isExpanded={isExpanded}
                       searchQuery={searchQuery}
                       isAiResult={isAiResult}
-                      installedConnectorNames={installedConnectorNames}
                       credentialServiceTypes={credentialServiceTypes}
+                      connectorReadiness={connectorReadiness}
                       modals={modals}
                       onToggleExpand={onToggleExpand}
                       onViewFlows={onViewFlows}

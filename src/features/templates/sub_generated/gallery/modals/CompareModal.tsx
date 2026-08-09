@@ -56,10 +56,18 @@ export function CompareModal({ isOpen, onClose, columns, onAdopt, onTryIt }: Com
           <div className="flex flex-wrap gap-1.5">
             {col.connectors.map((c) => {
               const meta = getConnectorMeta(c.name);
+              // Three states, not two: `null` means the authoritative resolver
+              // has not answered yet, and must not be painted as "not ready".
+              const readyClass =
+                c.ready === true ? '' : c.ready === false ? 'opacity-30 grayscale' : 'opacity-60';
               return (
-                <Tooltip key={c.name} content={meta.label} placement="bottom">
+                <Tooltip
+                  key={c.name}
+                  content={c.ready === null ? `${meta.label} — ${t.common.field_checking_availability}` : meta.label}
+                  placement="bottom"
+                >
                   <div
-                    className={`w-7 h-7 rounded-card flex items-center justify-center transition-opacity ${c.ready ? '' : 'opacity-30 grayscale'}`}
+                    className={`w-7 h-7 rounded-card flex items-center justify-center transition-opacity ${readyClass}`}
                     style={{ backgroundColor: `${meta.color}18` }}
                   >
                     <ConnectorIcon meta={meta} size="w-4 h-4" />

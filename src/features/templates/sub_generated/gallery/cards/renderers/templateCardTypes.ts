@@ -12,4 +12,6 @@ export interface TemplateCardProps {
   onTryIt: () => void;
   installedConnectorNames: Set<string>;
   credentialServiceTypes: Set<string>;
+  /** Authoritative per-connector verdicts, resolved once for the whole gallery. */
+  connectorReadiness: import('../../../shared/useConnectorReadiness').ConnectorReadinessMap;
 }

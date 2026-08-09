@@ -19,6 +19,7 @@ export const TemplateCard = memo(function TemplateCard({
   onTryIt,
   installedConnectorNames,
   credentialServiceTypes,
+  connectorReadiness,
 }: TemplateCardProps) {
   const { motion: MOTION, prefersReducedMotion } = useTemplateMotion();
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -54,7 +55,13 @@ export const TemplateCard = memo(function TemplateCard({
     setupMeta,
     setupMinutes,
     personaGoal,
-  } = useTemplateCardData(review, installedConnectorNames, credentialServiceTypes, hasInteracted);
+  } = useTemplateCardData(
+    review,
+    installedConnectorNames,
+    credentialServiceTypes,
+    connectorReadiness,
+    hasInteracted,
+  );
 
   return (
     <div
