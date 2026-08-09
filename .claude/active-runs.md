@@ -240,7 +240,7 @@
 - **[2026-08-09 15:35] /research — claude-cross-session-messaging**
   - **Source:** https://www.youtube.com/watch?v=oqp6D-ugtX4 (Claude Code session-to-session messaging)
   - **Paths:** Obsidian Research/Lessons notes · possibly src-tauri/src/companion/{fleet_bridge.rs,remote_jobs.rs} + docs/plans/athena-longevity.md (evaluation notes) — code findings TBD in Phase 6
-  - **Status:** completed (commit: pending same call)
+  - **Status:** completed (commit: 8c890c26b)
 
 ### spark-athena-device-link — /spark: Athena-to-Athena remote jobs over the finished p2p link — session fable-5 — **COMPLETE**, merged `c2fe3e545`
 - Started/completed 2026-08-06/07. 27 commits on `worktree-spark-athena-device-link`, merged --no-ff; worktree removed, branch deleted, node_modules junction unlinked FIRST (436 entries intact).
