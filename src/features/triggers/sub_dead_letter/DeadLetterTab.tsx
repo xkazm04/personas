@@ -29,6 +29,7 @@ import type { BulkDeadLetterFailure } from '@/lib/bindings/BulkDeadLetterFailure
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState, { NoResults } from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
+import { EventReasonNote } from '../lib/EventReasonView';
 import { silentCatch } from '@/lib/silentCatch';
 
 /**
@@ -87,7 +88,8 @@ function jaccard(a: Set<string>, b: Set<string>): number {
 interface ErrorGroup {
   /** Stable id derived from the first event in the group. */
   key: string;
-  /** Representative error message (the first observed). */
+  /** Representative reason column (the first observed) — a gate-token list or
+   *  free-form failure text. Empty string when the group's rows carry none. */
   representative: string;
   events: PersonaEvent[];
 }
@@ -112,7 +114,7 @@ function clusterByErrorPattern(events: PersonaEvent[]): ErrorGroup[] {
     if (!placed) {
       groups.push({
         key: evt.id,
-        representative: msg || '(no error message)',
+        representative: msg,
         tokens,
         events: [evt],
       });
@@ -701,11 +703,9 @@ export function DeadLetterTab() {
                       </div>
                     </div>
 
-                    {evt.error_message && (
-                      <div className="typo-code text-red-300/80 bg-red-500/10 rounded px-2.5 py-1.5 font-mono break-all">
-                        {evt.error_message}
-                      </div>
-                    )}
+                    {/* Gate tokens resolve to labels; genuine failure text is
+                        shown verbatim; a NULL reason reads as unknown. */}
+                    <EventReasonNote event={evt} />
 
                     {evt.payload && (
                       <LazyPayload payload={evt.payload} summaryLabel={t.triggers.dead_letter_payload} />
@@ -751,9 +751,9 @@ export function DeadLetterTab() {
                             )}
                           </span>
                         </div>
-                        <div className="typo-code text-red-300/80 break-all line-clamp-2">
-                          {group.representative}
-                        </div>
+                        <EventReasonNote
+                          event={{ status: 'dead_letter', error_message: group.representative || null }}
+                        />
                       </div>
                     </button>
                     <div className="flex items-center gap-1.5 shrink-0">

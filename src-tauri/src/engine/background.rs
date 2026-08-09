@@ -906,6 +906,93 @@ pub fn stop_loops(scheduler: &SchedulerState) {
 // Called by the ReactiveSubscription implementations in subscription.rs.
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Event skip-reason ledger
+// ---------------------------------------------------------------------------
+
+/// Why the bus reached a decision that did NOT start a real execution for an
+/// event.
+///
+/// Every one of these gates used to `continue` silently, so the terminal row
+/// carried a NULL `error_message` and the product could not say why a trigger
+/// did not fire. Each variant's [`token`](EventGateReason::token) is written
+/// into `persona_events.error_message` and resolved for display by the
+/// frontend through `tokenLabel(t, 'event_reason', ...)`. The tokens are
+/// language-agnostic identifiers — never emit prose from Rust.
+///
+/// `error_message` is shared with genuine execution failures; the two uses stay
+/// distinguishable by status (failures land on `failed` / `dead_letter` via
+/// [`event_repo::increment_retry_or_dead_letter`], gate tokens land on
+/// `skipped` / `delivered`, plus the one `dead_letter` cascade-stall case which
+/// writes a token rather than prose).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum EventGateReason {
+    /// No subscription or event_listener matched the event at all.
+    NoSubscriber,
+    /// A webhook fire on an `approval`-mode trigger, queued into
+    /// `pending_trigger_fires` instead of dispatching.
+    ApprovalHeld,
+    /// A matched persona has the Active/Off toggle set to Off.
+    PersonaDisabled,
+    /// A handoff EXPLICITLY targeted at a persona that is disabled — the
+    /// cascade stalls here, so this one also dead-letters the event.
+    HandoffTargetDisabled,
+    /// A wildcard (`*`) source filter matched across a team boundary.
+    CrossTeamBlocked,
+    /// The persona/capability already has a running execution.
+    CascadeGuard,
+    /// The trigger is in `dry_run` mode — a run WAS launched, but as a
+    /// simulation with outbound side-effects suppressed.
+    DryRun,
+}
+
+impl EventGateReason {
+    /// The machine token persisted in `persona_events.error_message`.
+    pub(crate) const fn token(self) -> &'static str {
+        match self {
+            Self::NoSubscriber => "no_subscriber",
+            Self::ApprovalHeld => "approval_held",
+            Self::PersonaDisabled => "persona_disabled",
+            Self::HandoffTargetDisabled => "handoff_target_disabled",
+            Self::CrossTeamBlocked => "cross_team_blocked",
+            Self::CascadeGuard => "cascade_guard",
+            Self::DryRun => "dry_run",
+        }
+    }
+}
+
+/// Ordered, de-duplicated set of gate reasons observed while dispatching ONE
+/// event. An event can fan out to several matches and hit a different gate on
+/// each, so the ledger records all of them in first-seen order.
+#[derive(Debug, Default)]
+pub(crate) struct EventGateLedger(Vec<EventGateReason>);
+
+impl EventGateLedger {
+    pub(crate) fn record(&mut self, reason: EventGateReason) {
+        if !self.0.contains(&reason) {
+            self.0.push(reason);
+        }
+    }
+
+    /// Comma-joined token list for `persona_events.error_message`.
+    ///
+    /// `None` when nothing was gated — an event that dispatched cleanly must
+    /// keep a NULL reason so the UI can tell "nothing to explain" apart from
+    /// "reason unknown" and never fabricates one.
+    pub(crate) fn into_reason(self) -> Option<String> {
+        if self.0.is_empty() {
+            return None;
+        }
+        Some(
+            self.0
+                .iter()
+                .map(|r| r.token())
+                .collect::<Vec<_>>()
+                .join(","),
+        )
+    }
+}
+
 /// One tick of the event bus: fetch pending events, match to subscriptions,
 /// and dispatch executions.
 ///
@@ -1042,7 +1129,17 @@ pub(crate) async fn event_bus_tick(
             // dead / misrouted trigger look like it was successfully handled.
             // It's still counted in events_processed (it was processed), just
             // not as a delivery.
-            let _ = event_repo::update_status(pool, &event.id, PersonaEventStatus::Skipped, None);
+            //
+            // The reason column carries the `no_subscriber` token so the Live
+            // Stream / Dead Letter tabs can say WHY nothing ran — a bare
+            // `skipped` with a NULL reason is exactly the state 22 rows in the
+            // operator's live DB were stuck in.
+            let _ = event_repo::update_status(
+                pool,
+                &event.id,
+                PersonaEventStatus::Skipped,
+                Some(EventGateReason::NoSubscriber.token().to_string()),
+            );
             scheduler.events_processed.fetch_add(1, Ordering::Relaxed);
             emit_event_to_frontend(app, event, PersonaEventStatus::Skipped);
         } else {
@@ -1106,6 +1203,11 @@ pub(crate) async fn event_bus_tick(
     for (idx, matches) in &event_matches {
         let event = &events[*idx];
         let mut any_failed = false;
+        // Why this event did (or did not) produce runs. Written into
+        // `persona_events.error_message` as machine tokens at the terminal
+        // status write below, so every silent `continue` in this loop leaves a
+        // readable trace instead of a NULL reason.
+        let mut gates = EventGateLedger::default();
 
         // Destructive-action gate for WEBHOOK-fired triggers (UAT F-MAJOR-11:
         // the approval/dry_run gate only covered scheduler triggers, leaving
@@ -1141,6 +1243,25 @@ pub(crate) async fn event_bus_tick(
                             "Failed to hold webhook fire for approval: {}", e
                         ),
                     }
+                    // The held event must reach a TERMINAL status here. This
+                    // branch used to `continue` straight out of the dispatch
+                    // loop without any status write, stranding the row in
+                    // `processing` forever: never delivered, never retried,
+                    // exempt from retention (`events.rs` cleanup skips
+                    // in-flight rows) and invisible to both the pending and
+                    // dead-letter counts. Approval republishes a NEW event
+                    // (`resolve_pending_trigger_fire`), so `skipped` with an
+                    // `approval_held` reason is the honest terminal state for
+                    // the original.
+                    gates.record(EventGateReason::ApprovalHeld);
+                    let _ = event_repo::update_status(
+                        pool,
+                        &event.id,
+                        PersonaEventStatus::Skipped,
+                        gates.into_reason(),
+                    );
+                    emit_event_to_frontend(app, event, PersonaEventStatus::Skipped);
+                    scheduler.events_processed.fetch_add(1, Ordering::Relaxed);
                     continue;
                 }
             }
@@ -1178,6 +1299,7 @@ pub(crate) async fn event_bus_tick(
                 // turned that agent off on purpose) and stays a quiet info log.
                 if event.target_persona_id.as_deref() == Some(persona.id.as_str()) {
                     dropped_disabled_target = true;
+                    gates.record(EventGateReason::HandoffTargetDisabled);
                     tracing::warn!(
                         persona_id = %persona.id,
                         persona_name = %persona.name,
@@ -1185,6 +1307,7 @@ pub(crate) async fn event_bus_tick(
                         "Event bus: DROPPED handoff — target persona is disabled; cascade stalls here (enable it to resume)"
                     );
                 } else {
+                    gates.record(EventGateReason::PersonaDisabled);
                     tracing::info!(
                         persona_id = %persona.id,
                         persona_name = %persona.name,
@@ -1213,6 +1336,7 @@ pub(crate) async fn event_bus_tick(
                     persona.home_team_id.as_deref(),
                     src_home,
                 ) {
+                    gates.record(EventGateReason::CrossTeamBlocked);
                     tracing::info!(
                         persona_id = %persona.id,
                         persona_name = %persona.name,
@@ -1237,6 +1361,7 @@ pub(crate) async fn event_bus_tick(
                 None => exec_repo::get_running_count_for_persona(pool, &persona.id).unwrap_or(0),
             };
             if running_count > 0 {
+                gates.record(EventGateReason::CascadeGuard);
                 tracing::info!(
                     persona_id = %persona.id,
                     persona_name = %persona.name,
@@ -1295,6 +1420,7 @@ pub(crate) async fn event_bus_tick(
                 }
             };
             if dry_run {
+                gates.record(EventGateReason::DryRun);
                 tracing::info!(
                     persona_id = %persona.id,
                     execution_id = %exec.id,
@@ -1402,6 +1528,11 @@ pub(crate) async fn event_bus_tick(
             scheduler.events_delivered.fetch_add(1, Ordering::Relaxed);
         }
 
+        // Machine tokens for every gate this event hit, or `None` when it
+        // dispatched cleanly. Computed once — the branches below are mutually
+        // exclusive and each consumes it at most once.
+        let gate_reason = gates.into_reason();
+
         if any_failed {
             // Use DLQ pattern: increment retry count, move to dead_letter after max retries
             let max_retries = event_repo::DEFAULT_MAX_RETRIES;
@@ -1438,18 +1569,35 @@ pub(crate) async fn event_bus_tick(
             // looking healthy; retrying is pointless until the user re-enables the
             // persona, so DeadLetter (manual replay) is correct, not Failed
             // (auto-retry churn). (UAT F-TEAM-STALL-INVISIBLE.)
-            let note = "handoff dropped: target persona disabled — cascade stalled here \
-                        (enable the persona and replay to resume)"
-                .to_string();
+            //
+            // This used to go through `update_status`, which validates against
+            // `PersonaEventStatus::can_transition_to` — and that table has NO
+            // `Processing -> DeadLetter` edge. So the write ALWAYS failed
+            // validation, was swallowed by `let _ =`, and the row stayed
+            // `processing` forever while the frontend was told "dead_letter".
+            // `dead_letter_from_processing` is the guarded write for exactly
+            // this transition. The prose note is replaced by the
+            // `handoff_target_disabled` machine token (resolved for display by
+            // the frontend) so the DLQ reason is language-agnostic like every
+            // other status token.
+            match event_repo::dead_letter_from_processing(pool, &event.id, gate_reason) {
+                Ok(true) => emit_event_to_frontend(app, event, PersonaEventStatus::DeadLetter),
+                Ok(false) => tracing::warn!(
+                    event_id = %event.id,
+                    "Event bus: stalled-handoff dead-letter skipped — event no longer 'processing'"
+                ),
+                Err(e) => tracing::error!(
+                    event_id = %event.id,
+                    "Event bus: failed to dead-letter stalled handoff: {}", e
+                ),
+            }
+        } else {
             let _ = event_repo::update_status(
                 pool,
                 &event.id,
-                PersonaEventStatus::DeadLetter,
-                Some(note),
+                PersonaEventStatus::Delivered,
+                gate_reason,
             );
-            emit_event_to_frontend(app, event, PersonaEventStatus::DeadLetter);
-        } else {
-            let _ = event_repo::update_status(pool, &event.id, PersonaEventStatus::Delivered, None);
             emit_event_to_frontend(app, event, PersonaEventStatus::Delivered);
         }
         scheduler.events_processed.fetch_add(1, Ordering::Relaxed);
@@ -3696,5 +3844,88 @@ mod tests {
         state.store_subscription_handles(Vec::new());
         let handles = state.subscription_handles.lock().unwrap();
         assert!(handles.is_empty());
+    }
+
+    // ========================================================================
+    // Event skip-reason ledger
+    //
+    // The gate→token mapping is the wire contract with the frontend
+    // (`tokenLabel(t, 'event_reason', …)`) and with the DB-level tests in
+    // `db/repos/communication/events.rs`, which pin the same literal strings.
+    // ========================================================================
+
+    const ALL_GATE_REASONS: [EventGateReason; 7] = [
+        EventGateReason::NoSubscriber,
+        EventGateReason::ApprovalHeld,
+        EventGateReason::PersonaDisabled,
+        EventGateReason::HandoffTargetDisabled,
+        EventGateReason::CrossTeamBlocked,
+        EventGateReason::CascadeGuard,
+        EventGateReason::DryRun,
+    ];
+
+    #[test]
+    fn gate_reason_tokens_are_distinct_and_machine_shaped() {
+        let mut seen = std::collections::HashSet::new();
+        for reason in ALL_GATE_REASONS {
+            let token = reason.token();
+            assert!(
+                seen.insert(token),
+                "duplicate gate token {token} — the UI cannot tell the gates apart"
+            );
+            assert!(
+                token
+                    .chars()
+                    .all(|c| c.is_ascii_lowercase() || c == '_'),
+                "{token} must be a language-agnostic identifier, not prose"
+            );
+            assert!(
+                !token.contains(','),
+                "{token} must not contain the ledger separator"
+            );
+        }
+    }
+
+    #[test]
+    fn gate_reason_tokens_match_the_frontend_contract() {
+        assert_eq!(EventGateReason::NoSubscriber.token(), "no_subscriber");
+        assert_eq!(EventGateReason::ApprovalHeld.token(), "approval_held");
+        assert_eq!(EventGateReason::PersonaDisabled.token(), "persona_disabled");
+        assert_eq!(
+            EventGateReason::HandoffTargetDisabled.token(),
+            "handoff_target_disabled"
+        );
+        assert_eq!(
+            EventGateReason::CrossTeamBlocked.token(),
+            "cross_team_blocked"
+        );
+        assert_eq!(EventGateReason::CascadeGuard.token(), "cascade_guard");
+        assert_eq!(EventGateReason::DryRun.token(), "dry_run");
+    }
+
+    #[test]
+    fn gate_ledger_empty_writes_no_reason() {
+        // A clean dispatch must leave the reason column NULL — never "" —
+        // so the UI can tell "nothing to explain" from "reason unknown".
+        assert_eq!(EventGateLedger::default().into_reason(), None);
+    }
+
+    #[test]
+    fn gate_ledger_records_single_gate() {
+        let mut ledger = EventGateLedger::default();
+        ledger.record(EventGateReason::CascadeGuard);
+        assert_eq!(ledger.into_reason().as_deref(), Some("cascade_guard"));
+    }
+
+    #[test]
+    fn gate_ledger_dedupes_and_preserves_first_seen_order() {
+        let mut ledger = EventGateLedger::default();
+        ledger.record(EventGateReason::PersonaDisabled);
+        ledger.record(EventGateReason::CascadeGuard);
+        ledger.record(EventGateReason::PersonaDisabled);
+        assert_eq!(
+            ledger.into_reason().as_deref(),
+            Some("persona_disabled,cascade_guard")
+        );
     }
 }

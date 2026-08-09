@@ -12,6 +12,7 @@ import type { PersonaEvent } from '@/lib/types/types';
 import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
 import { EventDetailModal } from './EventDetailModal';
 import { EventTypeChip } from './EventTypeChip';
+import { EventReasonChip } from '../lib/EventReasonView';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { silentCatch } from '@/lib/silentCatch';
@@ -310,6 +311,15 @@ export function LiveStreamTab() {
           </span>
         );
       },
+    },
+    {
+      // WHY nothing ran (or ran as a simulation). The bus records a machine
+      // token per gate it hit; a row that ended without delivering and has no
+      // token reads as "unknown" rather than silently blank.
+      key: 'reason',
+      label: t.triggers.event_reason_label,
+      width: '1.1fr',
+      render: (event) => <EventReasonChip event={event} />,
     },
     {
       key: 'created',

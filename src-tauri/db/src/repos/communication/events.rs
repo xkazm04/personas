@@ -868,6 +868,42 @@ pub fn move_to_dead_letter(
     })
 }
 
+/// Dead-letter an event the bus already CLAIMED (status `processing`).
+///
+/// [`move_to_dead_letter`] deliberately requires `status = 'failed'`, mirroring
+/// `PersonaEventStatus::can_transition_to`, which has no `Processing ->
+/// DeadLetter` edge. That edge is genuinely needed by the dispatch path: a
+/// handoff explicitly targeted at a DISABLED persona is a stalled cascade that
+/// must land in the DLQ, but the event is `processing` at that point, so the
+/// `update_status` call the bus used silently failed validation and left the
+/// row stranded in `processing` forever (never delivered, never retried, exempt
+/// from retention). This is the narrow, guarded write for that case.
+///
+/// `reason` is a machine token (see `engine/background.rs` `EventGateReason`),
+/// never user-facing prose. Returns `false` when the row was not in
+/// `processing` (already terminal — a concurrent writer won).
+pub fn dead_letter_from_processing(
+    pool: &DbPool,
+    id: &str,
+    reason: Option<String>,
+) -> Result<bool, AppError> {
+    timed_query!(
+        "persona_events",
+        "persona_events::dead_letter_from_processing",
+        {
+            let conn = pool.get()?;
+            let now = chrono::Utc::now().to_rfc3339();
+            let rows = conn.execute(
+                "UPDATE persona_events
+                 SET status = 'dead_letter', error_message = ?1, processed_at = ?2
+                 WHERE id = ?3 AND status = 'processing'",
+                params![reason, now, id],
+            )?;
+            Ok(rows > 0)
+        }
+    )
+}
+
 /// Increment retry_count and reset status to 'pending' for a dead-lettered event.
 /// Returns `RetryExhausted` if retry_count has already reached `MAX_MANUAL_RETRIES`.
 ///
@@ -2792,5 +2828,173 @@ mod tests {
             .query_row("SELECT COUNT(*) FROM persona_events", [], |row| row.get(0))
             .unwrap();
         assert_eq!(remaining, 2, "live + webhook events should survive");
+    }
+
+    // ------------------------------------------------------------------
+    // Skip-reason ledger (event_reason tokens)
+    //
+    // The bus writes a machine token into `error_message` for every gate that
+    // drops a match (`engine/background.rs` `EventGateReason`). These tests
+    // pin the wire format — the literal token strings — and assert each one
+    // actually lands on the row after the claim→terminal-status round trip a
+    // real tick performs.
+    // ------------------------------------------------------------------
+
+    /// Publish an event and claim it, mirroring the bus's `claim_pending`
+    /// step so the row under test is genuinely in `processing`.
+    fn publish_and_claim(pool: &DbPool, event_type: &str) -> PersonaEvent {
+        publish(
+            pool,
+            CreatePersonaEventInput {
+                event_type: event_type.into(),
+                source_type: "test".into(),
+                project_id: None,
+                source_id: None,
+                target_persona_id: None,
+                payload: None,
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+        let claimed = claim_pending(pool, 10).unwrap();
+        let evt = claimed
+            .into_iter()
+            .find(|e| e.event_type == event_type)
+            .expect("event should be claimed");
+        assert_eq!(evt.status, PersonaEventStatus::Processing);
+        evt
+    }
+
+    fn assert_reason_lands(status: PersonaEventStatus, token: &str) {
+        let pool = init_test_db().unwrap();
+        let evt = publish_and_claim(&pool, "gate_test");
+        update_status(&pool, &evt.id, status.clone(), Some(token.to_string())).unwrap();
+
+        let row = get_by_id(&pool, &evt.id).unwrap();
+        assert_eq!(row.status, status, "terminal status for token {token}");
+        assert_eq!(
+            row.error_message.as_deref(),
+            Some(token),
+            "reason token should land on the row"
+        );
+    }
+
+    #[test]
+    fn skip_reason_no_subscriber_lands_on_row() {
+        assert_reason_lands(PersonaEventStatus::Skipped, "no_subscriber");
+    }
+
+    #[test]
+    fn skip_reason_approval_held_lands_on_row() {
+        assert_reason_lands(PersonaEventStatus::Skipped, "approval_held");
+    }
+
+    #[test]
+    fn skip_reason_persona_disabled_lands_on_row() {
+        // Gates that drop a match inside the fan-out leave the event
+        // `delivered` (the bus does not change WHICH events are skipped) —
+        // the token is what explains the empty delivery.
+        assert_reason_lands(PersonaEventStatus::Delivered, "persona_disabled");
+    }
+
+    #[test]
+    fn skip_reason_cross_team_blocked_lands_on_row() {
+        assert_reason_lands(PersonaEventStatus::Delivered, "cross_team_blocked");
+    }
+
+    #[test]
+    fn skip_reason_cascade_guard_lands_on_row() {
+        assert_reason_lands(PersonaEventStatus::Delivered, "cascade_guard");
+    }
+
+    #[test]
+    fn skip_reason_dry_run_lands_on_row() {
+        assert_reason_lands(PersonaEventStatus::Delivered, "dry_run");
+    }
+
+    #[test]
+    fn skip_reason_multiple_gates_are_comma_joined() {
+        let pool = init_test_db().unwrap();
+        let evt = publish_and_claim(&pool, "multi_gate");
+        update_status(
+            &pool,
+            &evt.id,
+            PersonaEventStatus::Delivered,
+            Some("persona_disabled,cascade_guard".to_string()),
+        )
+        .unwrap();
+        let row = get_by_id(&pool, &evt.id).unwrap();
+        assert_eq!(
+            row.error_message.as_deref(),
+            Some("persona_disabled,cascade_guard")
+        );
+    }
+
+    #[test]
+    fn clean_dispatch_leaves_reason_null() {
+        // An event that dispatched with no gate hit must keep a NULL reason so
+        // the UI can tell "nothing to explain" from "reason unknown".
+        let pool = init_test_db().unwrap();
+        let evt = publish_and_claim(&pool, "clean_dispatch");
+        update_status(&pool, &evt.id, PersonaEventStatus::Delivered, None).unwrap();
+        let row = get_by_id(&pool, &evt.id).unwrap();
+        assert!(row.error_message.is_none());
+    }
+
+    #[test]
+    fn handoff_target_disabled_dead_letters_from_processing() {
+        // Regression: `update_status(.., DeadLetter, ..)` on a `processing` row
+        // is rejected by `can_transition_to` (no Processing -> DeadLetter edge),
+        // so the stalled-cascade write silently failed and stranded the row.
+        let pool = init_test_db().unwrap();
+        let evt = publish_and_claim(&pool, "stalled_handoff");
+
+        let via_update_status = update_status(
+            &pool,
+            &evt.id,
+            PersonaEventStatus::DeadLetter,
+            Some("handoff_target_disabled".to_string()),
+        );
+        assert!(
+            via_update_status.is_err(),
+            "processing -> dead_letter must stay illegal through update_status"
+        );
+
+        let moved = dead_letter_from_processing(
+            &pool,
+            &evt.id,
+            Some("handoff_target_disabled".to_string()),
+        )
+        .unwrap();
+        assert!(moved);
+
+        let row = get_by_id(&pool, &evt.id).unwrap();
+        assert_eq!(row.status, PersonaEventStatus::DeadLetter);
+        assert_eq!(row.error_message.as_deref(), Some("handoff_target_disabled"));
+        assert!(row.processed_at.is_some());
+    }
+
+    #[test]
+    fn dead_letter_from_processing_ignores_non_processing_rows() {
+        let pool = init_test_db().unwrap();
+        let evt = publish(
+            &pool,
+            CreatePersonaEventInput {
+                event_type: "still_pending".into(),
+                source_type: "test".into(),
+                project_id: None,
+                source_id: None,
+                target_persona_id: None,
+                payload: None,
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        let moved = dead_letter_from_processing(&pool, &evt.id, Some("x".into())).unwrap();
+        assert!(!moved, "a pending row must not be dead-lettered by this path");
+        let row = get_by_id(&pool, &evt.id).unwrap();
+        assert_eq!(row.status, PersonaEventStatus::Pending);
+        assert!(row.error_message.is_none());
     }
 }
