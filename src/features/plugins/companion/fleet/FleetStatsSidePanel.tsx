@@ -7,6 +7,8 @@ import { FleetShipIcon } from '@/features/plugins/fleet/FleetShipIcon';
 import { FLEET_STATE_META, fleetStateCounts, laneOfState, FLEET_LANE_ORDER } from '@/features/plugins/fleet/fleetStateMeta';
 import { useNowTick, formatAgo } from '@/features/plugins/fleet/relativeAgo';
 import { CompanionSidePanel } from '../CompanionSidePanel';
+import { useOperativeMemoryStore } from '../orchestration/operativeMemoryStore';
+import { parseDigest } from '../orchestration/parseDigest';
 
 /**
  * Live Fleet stats content for the companion chat's inner side-panel slot
@@ -39,6 +41,12 @@ export function FleetStatsSidePanel() {
   const setPluginTab = useSystemStore((s) => s.setPluginTab);
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
   const now = useNowTick();
+  // Athena's own in-flight operations (dev_improve runs, dispatched
+  // orchestration) — surfaced alongside fleet sessions so the panel reflects
+  // ALL of Athena's work, not just terminals. Reuses the same digest +
+  // parser the Live-ops strip reads; empty string → no rows.
+  const opsDigest = useOperativeMemoryStore((s) => s.digest);
+  const liveOps = useMemo(() => parseDigest(opsDigest), [opsDigest]);
 
   const counts = useMemo(() => fleetStateCounts(sessions), [sessions]);
   const chips = useMemo(
@@ -137,6 +145,45 @@ export function FleetStatsSidePanel() {
             );
           })}
         </ul>
+      )}
+
+      {liveOps.length > 0 && (
+        <div
+          className="mt-1.5 pt-1.5 border-t border-secondary/40"
+          data-testid="companion-side-panel-live-ops"
+        >
+          <div className="px-1 pb-1 typo-caption text-foreground">
+            {t.plugins.companion.slash_label_live_ops}
+          </div>
+          <ul className="space-y-1">
+            {liveOps.map((op) => (
+              <li
+                key={op.id8}
+                data-testid={`companion-side-panel-op-${op.id8}`}
+                className="rounded-input bg-secondary/20 px-1.5 py-1"
+              >
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span
+                    className="h-1.5 w-1.5 rounded-full flex-shrink-0 bg-primary"
+                    aria-hidden="true"
+                  />
+                  <span
+                    className="flex-1 min-w-0 truncate typo-caption text-foreground"
+                    title={op.intent}
+                  >
+                    {op.intent}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-1 pl-3">
+                  <span className="truncate text-[10px] text-foreground">{op.status}</span>
+                  <span className="shrink-0 text-[10px] text-foreground tabular-nums">
+                    {op.duration}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       <button
