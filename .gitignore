@@ -10,6 +10,8 @@ dist/
 
 # Rust build artifacts (any target/ dir, including nested)
 **/target/
+# Alternate cargo target used for clippy-only runs (keeps the main target/ warm)
+src-tauri/target-clippy/
 src-tauri/src-tauri/
 # Dedicated cargo target for isolated e2e/tours runs — lets the harness build
 # while a dev app instance holds target/debug/personas-desktop.exe locked
@@ -19,6 +21,8 @@ src-tauri/src-tauri/
 # progress nodes here; the app ingests and deletes the file. The .personas/
 # dir itself IS committed (it marks the repo as Personas-managed).
 .personas/memory-outbox.jsonl
+.personas/memory-outbox.full-*.jsonl
+.personas/backlog-digest.json
 
 # Local SQLite databases (per-machine app state — never committed)
 *.sqlite3
