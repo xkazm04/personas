@@ -300,8 +300,16 @@ pub struct BuildSession {
     /// NULL on legacy rows + until the first transition.
     pub phase_timings_json: Option<String>,
     /// Summed `total_cost_usd` across the build CLI's stream-json `result`
-    /// messages (the resolution turns; test/fix-pass cost is a follow-up). NULL
-    /// until the first result carrying cost is seen.
+    /// messages (the resolution turns). NULL until the first result carrying
+    /// cost is seen.
+    ///
+    /// This is the per-SESSION cumulative column and `run_build_bench.py` reads
+    /// it directly, so it stays. It is NOT the whole picture: every leg now
+    /// also books an append-only row into `dev_llm_spend` (the ledger the spend
+    /// dashboard aggregates), tagged in `trigger_kind` as `build_resolution` /
+    /// `build_tool_test` / `build_test_summary` / `build_fix_pass`. The
+    /// test/fix-pass legs used to be unmetered entirely; that is no longer a
+    /// follow-up.
     pub total_cost_usd: Option<f64>,
     pub input_tokens: Option<i64>,
     pub output_tokens: Option<i64>,
