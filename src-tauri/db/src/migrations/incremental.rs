@@ -4622,6 +4622,51 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+
+    // -- Recipe outcome attribution ------------------------------------------
+    // With 299 seeded recipes the product could not answer "which of these do
+    // people actually run, and do they succeed?" An adopted capability carries
+    // `source_recipe_id` in `personas.design_context.useCases[]`, but that
+    // provenance was never joined to a run: nothing on the execution path
+    // recorded which recipe produced an output, `dev_llm_spend` has only a
+    // coarse `source:"recipe"` tag written by the dead playground path, and
+    // `recipe_suggestion_events` measures composer chip impressions rather
+    // than outcomes.
+    //
+    // Denormalized onto the execution row rather than resolved by a live join,
+    // because `design_context` is mutable: detaching a capability deletes the
+    // use case, which would silently rewrite the history of every run it ever
+    // produced. A run's provenance is a fact about the past and must not move.
+    //
+    // Both columns are NULL when no recipe is behind the run. Historical rows
+    // stay NULL — they genuinely lack the information and there is no honest
+    // backfill for them.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_executions_recipe_provenance",
+            description: "Add source_recipe_id/source_recipe_version to persona_executions",
+            already_applied: |conn| {
+                // Guarded on the table as well as the column: several tables
+                // exist only in the app binary, and an ALTER against a missing
+                // table would abort the whole migration run.
+                Ok(!has_table(conn, "persona_executions")?
+                    || has_column(conn, "persona_executions", "source_recipe_id")?)
+            },
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE persona_executions ADD COLUMN source_recipe_id TEXT;\n\
+                     ALTER TABLE persona_executions ADD COLUMN source_recipe_version TEXT;\n\
+                     CREATE INDEX IF NOT EXISTS idx_pe_source_recipe\n\
+                         ON persona_executions(source_recipe_id, status)\n\
+                         WHERE source_recipe_id IS NOT NULL;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

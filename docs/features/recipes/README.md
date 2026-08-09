@@ -231,6 +231,7 @@ Registered Tauri commands, annotated by whether any live UI can reach them.
 | Promotion | `promote_use_case_to_recipe` | **Yes** — `UseCaseDetailExpanded` "Save as recipe" |
 | Parameter sync | `sync_capability_parameters` (persona params family) | **Yes** — `useAdoption` adopt + remove |
 | Parameter coverage | `get_recipe_parameter_coverage` | **Yes** — `useAdoption` adopt (post-adopt gap notice) |
+| Outcome attribution | `get_recipe_outcome_tallies` | Backend only — registered, no UI surface yet |
 | CRUD (write) | `create_recipe`, `update_recipe`, `delete_recipe` | **No** — only `features/recipes/sub_editor`, `sub_manager` |
 | Persona links | `link_recipe_to_persona`, `unlink_recipe_from_persona`, `get_persona_recipes` | **No** — only `features/recipes/sub_list/LinkedRecipesSection` |
 | Execution | `execute_recipe`, `start_recipe_execution`, `cancel_recipe_execution` | **No** — only `features/recipes/sub_playground` |
@@ -285,15 +286,43 @@ wholesale or leave it be.
 by `CommandPanelComposer.tsx:113`, read only by the orphaned `RecipeManager`.
 See the composer section above.
 
-## Recipe outcome attribution — not yet wired
+## Recipe outcome attribution
 
-Adopted capabilities carry `source_recipe_id` provenance in
-`design_context.useCases[]`, but that provenance is never joined to a run.
-Nothing on the execution path records which recipe produced an output;
-`dev_llm_spend` has only a coarse `source: "recipe"` tag written by the dead
-playground path; and `recipe_suggestion_events` measures composer chip
-impressions, not outcomes. So with 299 seeded recipes the product cannot answer
-"which of these do people actually run, and do they succeed?" Backlogged.
+`persona_executions` carries `source_recipe_id` + `source_recipe_version`,
+stamped at insert time in
+`db/src/repos/execution/executions.rs::resolve_recipe_provenance`. The stamp is
+**read** from the persona's existing `design_context.useCases[]` provenance
+(`source_recipe_id` written by catalog adopt, `source_recipe_version` pinned by
+the promote/Foundry path) — there is no new adoption-time write path, and the
+dead `persona_recipe_links` table is not involved.
+
+Provenance is **denormalized onto the execution row, not joined live**, because
+`design_context` is mutable: detaching a capability deletes the use case, and a
+live join would silently rewrite the history of every run it produced. A run's
+provenance is a fact about the past.
+
+- `create_with_idempotency` resolves and stamps; a run with no use case, no
+  matching use case, or a use case never adopted from a recipe stamps **NULL**,
+  never a sentinel.
+- `create_retry` inherits the original run's stamp rather than re-resolving, so
+  a retry stays attributed even if the capability was detached meanwhile.
+- Executions predating the migration stay NULL. There is no honest backfill —
+  they genuinely lack the information.
+
+`get_recipe_outcome_tallies` (`commands/recipes/recipe_outcomes.rs`) is the one
+read over it: per recipe, `runs` / `terminal` / `completed` / `failed` /
+`value_delivered` / `last_run_at`, ordered by run count. Raw counts rather than
+a pre-computed rate, because what belongs in the "success rate" denominator is a
+product judgement; `terminal` is the honest one, since queued and running rows
+are not outcomes yet. `value_delivered` (from `business_outcome`) is the
+stricter bar: a run can complete and still deliver nothing.
+
+Migration `persona_executions_recipe_provenance` is additive and guarded on both
+`has_table` and `has_column`, so replaying it is a no-op.
+
+Note that `recipe_suggestion_events` measures something different (composer chip
+impressions and clicks), and `dev_llm_spend`'s coarse `source: "recipe"` tag
+comes from the dead playground execution path. Neither is an outcome signal.
 
 ## Relationship to templates and personas
 
