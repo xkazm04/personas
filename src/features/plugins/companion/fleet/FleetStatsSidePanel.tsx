@@ -1,6 +1,9 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, ListChecks, Clock } from 'lucide-react';
+import { tasksPage } from '@/api/devTools/devTools';
+import { listCronAgents } from '@/api/pipeline/triggers';
+import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { FleetShipIcon } from '@/features/plugins/fleet/FleetShipIcon';
@@ -47,6 +50,34 @@ export function FleetStatsSidePanel() {
   // parser the Live-ops strip reads; empty string → no rows.
   const opsDigest = useOperativeMemoryStore((s) => s.digest);
   const liveOps = useMemo(() => parseDigest(opsDigest), [opsDigest]);
+
+  // Dev Runner active-task count + armed-schedule count — the other two lanes
+  // of "what Athena has running". Polled lightly (mount + every 20s) off the
+  // existing L0 counts endpoint and the cron-agent list; failures stay silent
+  // so the panel degrades to fleet + live-ops rather than erroring.
+  const [runnerActive, setRunnerActive] = useState(0);
+  const [scheduleCount, setScheduleCount] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    const load = () => {
+      tasksPage(undefined, ['running', 'queued'], 1)
+        .then((p) => {
+          if (alive) setRunnerActive((p.counts.running ?? 0) + (p.counts.queued ?? 0));
+        })
+        .catch(silentCatch('companion_side_panel_runner_count'));
+      listCronAgents()
+        .then((agents) => {
+          if (alive) setScheduleCount(agents.length);
+        })
+        .catch(silentCatch('companion_side_panel_schedule_count'));
+    };
+    load();
+    const id = setInterval(load, 20_000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, []);
 
   const counts = useMemo(() => fleetStateCounts(sessions), [sessions]);
   const chips = useMemo(
@@ -183,6 +214,34 @@ export function FleetStatsSidePanel() {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {(runnerActive > 0 || scheduleCount > 0) && (
+        <div
+          className="mt-1.5 pt-1.5 border-t border-secondary/40 flex items-center gap-3 px-1"
+          data-testid="companion-side-panel-runner-schedules"
+        >
+          {runnerActive > 0 && (
+            <span
+              className="inline-flex items-center gap-1 typo-caption text-foreground tabular-nums"
+              title={t.sidebar.task_runner}
+              data-testid="companion-side-panel-runner-count"
+            >
+              <ListChecks className="w-3 h-3" aria-hidden="true" />
+              {runnerActive}
+            </span>
+          )}
+          {scheduleCount > 0 && (
+            <span
+              className="inline-flex items-center gap-1 typo-caption text-foreground tabular-nums"
+              title={t.sidebar.schedules}
+              data-testid="companion-side-panel-schedule-count"
+            >
+              <Clock className="w-3 h-3" aria-hidden="true" />
+              {scheduleCount}
+            </span>
+          )}
         </div>
       )}
 
