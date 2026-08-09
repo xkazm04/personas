@@ -230,11 +230,28 @@ The Rust side recomputes the same FNV hash on each submitted
 valid, isKnownTemplate}`. This isn't called on every load — it runs
 once at startup as a sanity check and logs mismatches to Sentry.
 
-The authoritative security gate is `check_template_integrity` in
-`template_adopt.rs` which runs on every adoption call (before
-`create_adoption_session`). It cross-references the incoming
-`design_result_json` against the compiled-in manifest — any mismatch
-blocks the adoption.
+There is **no per-adoption integrity re-check**. There used to be a
+`check_template_integrity` in `template_adopt.rs`, and this document
+used to call it "the authoritative security gate" — it was neither
+authoritative nor a gate. It ran only on the one-shot
+`instant_adopt_template_inner` path (never on `create_adoption_session`,
+which is what the interactive wizard calls), and even there it could not
+fire: the manifest is keyed by relative *file path* and hashes the
+*entire template file*, while callers pass a bare label plus
+payload-only `design_result` JSON, so `is_known_template` was false for
+100% of adoptions. It was removed in 2026-08.
+
+**The gate is the catalog load described above.** `loadAndVerify()`
+skips any template whose hash is missing from or disagrees with
+`TEMPLATE_CHECKSUMS` (`skipped.push({reason: 'checksum_mismatch'})` →
+`continue`). A rejected template never enters the catalog, is never
+seeded into `persona_design_reviews`, and therefore cannot reach *any*
+adoption path — one gate, upstream of every consumer. The Rust
+`verify_template_integrity_batch` checks the same (path, whole-file)
+pairs correctly, but its only caller logs the verdict and drops nothing:
+it is a **detector, not a gate**. See
+[06-integrity-and-security.md](./06-integrity-and-security.md) for the
+enforcement table and threat model.
 
 ## Seeding into the DB
 

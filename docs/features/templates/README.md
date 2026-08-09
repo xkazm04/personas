@@ -114,6 +114,16 @@ src-tauri/src/db/repos/communication/reviews.rs   (persona_design_reviews DAO)
   `DensityToggle` and the `ExploreVariantA` role-cards surface were removed).
 - **Coverage filter — All / Ready / Partial / Drafts** (`gallery/search/filters/FilterChips.tsx`
   + `gallery/cards/useGalleryActions.ts`): Ready = 100% connector readiness, Partial = some.
+  **Readiness comes from the authoritative Rust resolver** (2026-08). Until then the gallery used
+  a TS heuristic, `deriveConnectorReadiness`, that was just `installed && has_credential` — so it
+  disagreed by construction with the resolver that actually gates a run: a **zero-config** connector
+  read as *not* ready, and a connector with a stored-but-unusable credential read as *ready*. The
+  heuristic is deleted. `connector_readiness_batch` now exposes
+  `commands/design/connector_readiness.rs` (zero-config / native / aggregate connectors, CLI probes
+  — the same code path behind `commands/execution/executions.rs`'s run gate and `personas.setup_status`),
+  consumed through `sub_generated/shared/useConnectorReadiness.ts`. One batch call per gallery data
+  change, keyed on the sorted connector vocabulary — not one call per card. `unknown` is a
+  first-class state: while a fetch is in flight the badge says unknown rather than guessing "ready".
   **Drafts** isolates unpublished (`is_published: false`) templates and is **dev-build-only**:
   the catalog skips drafts in production (`templateCatalog.ts` — `import.meta.env.DEV` gate), so
   they never leak into All/Ready/Partial, trending, or home; in dev they seed with a `_draft`
