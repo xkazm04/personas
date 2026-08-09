@@ -4,6 +4,7 @@
 
 
 
+
 ### typo-label-readability — global `typo-label` redesign (drop UPPERCASE/wide tracking) + prose sites moved to `typo-caption` — session opus-5[1m] — **COMPLETE**, commit `193d4aeab`
 - Started/completed: 2026-08-07. Gates: tsc clean · eslint 0 errors on 143 touched files · vitest dev-tools+shared 311/311 · check:themes AA · vite build clean. NOT visually verified in a running app (no live instance was up).
 - Scope: `src/styles/typography.css` (the `.typo-label` recipe + the ar/CJK script overrides that existed only to undo its uppercase), `.claude/Design.md` (token table row + language-awareness note), `CHANGELOG.md`, and 143 `src/features/**` .tsx files — mechanical removal of 567 now-live `uppercase`/`tracking-*` utilities from class regions containing `typo-label`, plus 9 prose sites switched to `typo-caption`.
@@ -245,6 +246,9 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### skills-cold-load-perf — Skills page cold-load smoothing — session fable-5 — **completed (commit: 23632434a)**
+- 2026-08-09. Four tabs → lazy chunks behind RouteChunkSkeleton (only the active surface's code + data hooks load); Overview/Registry/Analytics lists mount via useProgressiveReveal; Registry fetch phased (adopted-state paint → telemetry merge); Analytics token rollups 30-wide burst → concurrency 3; Trace's scan deferred 1.5s past first paint; backend `mine_file` batches inserts + watermark in one transaction per transcript file (was one fsync PER EVENT — the first-scan freeze). Gates: tsc/eslint(0 err)/vitest 19/19/cargo check. NOT live-verified — the running release binary predates this commit; needs a dev run or rebuild.
 
 - **[2026-08-09 15:35] /research — claude-cross-session-messaging**
   - **Source:** https://www.youtube.com/watch?v=oqp6D-ugtX4 (Claude Code session-to-session messaging)
