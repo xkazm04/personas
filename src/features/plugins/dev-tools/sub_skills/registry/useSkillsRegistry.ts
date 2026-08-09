@@ -59,12 +59,15 @@ export function useSkillsRegistry(activeProjectId: string | null, refreshTick = 
     [workspaces, activeProjectId],
   );
 
-  const wsProjects = useMemo(
-    () => (workspace?.projectIds ?? [])
+  const wsProjects = useMemo(() => {
+    const members = (workspace?.projectIds ?? [])
       .map((id) => allProjects.find((p) => p.id === id))
-      .filter((p): p is NonNullable<typeof p> => Boolean(p)),
-    [workspace, allProjects],
-  );
+      .filter((p): p is NonNullable<typeof p> => Boolean(p));
+    // Membership fallback (mirrors useSkillTraceModel): workspace_id is an
+    // optional assignment many DBs never write; an empty workspace over a
+    // repo-ful app degrades to every active project instead of a dead matrix.
+    return members.length > 0 ? members : allProjects.filter((p) => p.status === 'active');
+  }, [workspace, allProjects]);
 
   const projectRootById = useMemo(
     () => new Map(wsProjects.map((p) => [normPath(p.root_path), p.id])),

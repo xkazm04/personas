@@ -80,13 +80,18 @@ export function useSkillTraceModel(activeProjectId: string | null, refreshTick =
       .finally(() => { if (alive) setScanTick((t) => t + 1); });
     return () => { alive = false; };
   }, []);
-  const wsProjects: TraceProject[] = useMemo(
-    () => (workspace?.projectIds ?? [])
+  const wsProjects: TraceProject[] = useMemo(() => {
+    const members = (workspace?.projectIds ?? [])
       .map((id) => allProjects.find((p) => p.id === id))
-      .filter((p): p is NonNullable<typeof p> => Boolean(p))
-      .map((p) => ({ id: p.id, name: p.name, rootPath: p.root_path })),
-    [workspace, allProjects],
-  );
+      .filter((p): p is NonNullable<typeof p> => Boolean(p));
+    // Membership fallback: `dev_projects.workspace_id` is an optional
+    // assignment many real DBs never write (this operator's has one workspace
+    // and zero assignments). A workspace with no members must not render a
+    // dead tab over a repo-ful app — degrade to every active project, which
+    // is what the workspace means to a single-workspace operator.
+    const source = members.length > 0 ? members : allProjects.filter((p) => p.status === 'active');
+    return source.map((p) => ({ id: p.id, name: p.name, rootPath: p.root_path }));
+  }, [workspace, allProjects]);
 
   const warm = workspace?.id != null && workspace.id === cachedWorkspaceId && cachedFetched != null;
   const [f, setF] = useState<Fetched>(warm ? (cachedFetched as Fetched) : EMPTY);
