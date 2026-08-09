@@ -2,6 +2,20 @@
 
 ## Active
 
+### perfect-auto-loop-2026-08-09 — `/perfect` autonomous loop: propose+build across never-covered contexts, auto-accept S/M — session opus-5[1m] — **WAVES 1 + 2 MERGED (17 directions), ROUND 3 IN FLIGHT**
+- Started 2026-08-09. Operator directive: run /perfect in a loop, AUTO-ACCEPT every S/M direction (no user gate), park L+ in a backlog, continue until contexts are covered or tokens run out.
+- **Wave 1 merged ff (9/9)** — branch `perfect/2026-08-09`, deleted. `bb75eb0cb` recipe docs · `6ab1ea60e` recipe param coverage · `186ab2ce6` recipe outcome attribution · `59db14f6f` gallery readiness unfork · `38b1833ad` 🔒 integrity-gate deletion · `f07803a41` design-review count · `ff4446481` event skip reasons · `41a1555c2` stuck-event reaper · `c2a33a232` approval mode reachable. Director: `dade3f780` Class C · `446ee24e4` camelCase ratchet · `13bf0b76d` doc-sync · `cdae45f7c` orphan-chain cleanup.
+- **Wave 2 merged ff (8/8)** — branch `perfect/2026-08-09-w2`, deleted. `cbbe14141` build spend → ledger · `504d633cc` CLI hang timeout · `3f82532c8` adoption-answer server validation · `0b7c991b4` KPI compose path · `a428ce947` KPI staleness · `760d9f556` goal-status CHECK · `76a5ded8e` channel-post semantic role · `b6bafbef2` team-delete channel sweep. Director: `9fd7799ec` prompt-half of the channel gate · `79bf49293` Class C · `b54eb8188` core doc comments · `64403ea1d` doc-sync.
+- Gates on master after each merge: tsc clean · Vitest **3833/3833** · `cargo check --features desktop` 0 errors at the **213-warning baseline, unchanged** · `check:i18n:strict` 19,014 × 14 at 0/0 · 371 binding exports.
+- **🔒 HUMAN SECURITY REVIEW OWED on `38b1833ad`** — it deletes `check_template_integrity`, documented as "the authoritative security gate". It was inert on 100% of adoptions (manifest keyed by file path + whole-file hash; callers pass a bare label + payload-only JSON). Verified before deleting: `templateCatalog.ts:162-171` genuinely `continue`s on `checksum_mismatch`, so a tampered template is never seeded and cannot reach any adoption path. The docs' threat model was FALSE and is corrected — patching the JS bundle IS currently sufficient.
+- **⚠️ LIVE BEHAVIOUR CHANGE:** Athena's `update_dev_goal` op now REJECTS an out-of-canon status (readable error via `accept_goal_status`) where it previously persisted garbage silently.
+- **⚠️ DATA BUG FOUND, NOT FIXED:** 10 shipped templates pre-fill an adoption default that is not in their own `options` (a de-branding pass rewrote defaults but not option lists). Backlogged — fixing needs BOTH checksum manifests regenerated or the edited templates get skipped at catalog load.
+- **NOTE FOR OTHER SESSIONS:** `node scripts/build/run-rust-tests.mjs` is **not concurrency-safe** across sessions sharing one cargo target dir — `mt.exe` manifest-patch collides on the shared test exe and two concurrent `cargo test` runs hit `LNK1104`. Retrying works. Also: `git commit --only <path>` takes WHOLE FILES, so a shared append-only registry (`lib.rs`, `CHANGELOG.md`) carries a sibling's in-flight line; `6ab1ea60e` registers a command two commits before its implementation lands, so **that range is not bisectable** (HEAD is correct).
+- Round 3 in flight: scouts on `src/i18n/**`, `src-tauri/db/src/**`, and the IPC bridge (`src/api/**` + `invokeWithTimeout`).
+- Vault: `C:/Users/kazda/Documents/obsidian/personas/Perfect/`.
+
+
+
 
 
 
