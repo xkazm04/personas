@@ -223,6 +223,17 @@ unnoticed. Fixing or removing the handoff is backlogged.
 Registered Tauri commands, annotated by whether any live UI can reach them.
 "Dead" here means the only caller sits in a tree with no mounted consumer.
 
+> **Two different reachability metrics exist and they disagree by design — check
+> which one a claim is using before acting on it.** By *call-site presence*
+> (does the command name appear anywhere in `src/`?) only **4 of 32** recipe
+> commands are unreachable: `adopt_recipe_for_persona`,
+> `derive_recipes_from_template`, `get_recipe_outcome_tallies`,
+> `list_recipe_suggestion_events`. By *mount reachability* — the metric this
+> table uses, and the one that matters to a user — most of the write, execution
+> and versioning families are dead, because their only callers live inside the
+> orphaned `src/features/recipes/**` tree. A grep for the command name will tell
+> you the first number and quietly mislead you about the second.
+
 | Family | Commands | Reachable from UI? |
 | --- | --- | --- |
 | Read | `list_recipes`, `get_recipe` | **Yes** — catalog, composer chip, `CompositionXray`, `useHydratedDesignResult` |
