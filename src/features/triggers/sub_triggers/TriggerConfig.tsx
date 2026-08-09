@@ -7,6 +7,7 @@ import { Button } from '@/features/shared/components/buttons';
 import type { PersonaTrigger } from '@/lib/types/types';
 import { TriggerAddForm } from './TriggerAddForm';
 import { TriggerListItem } from './TriggerListItem';
+import { PendingTriggerApprovals } from './PendingTriggerApprovals';
 import { useTriggerOperations } from '@/features/triggers/hooks/useTriggerOperations';
 import { useRenderTriggerError } from '@/features/triggers/lib/triggerError';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -95,6 +96,12 @@ export function TriggerConfig() {
           </Button>
         </div>
       )}
+
+      {/* Fires this agent's approval-mode triggers are holding. Renders
+          nothing when there are none, so it costs no chrome in the common
+          case — but a held fire is otherwise invisible from the one screen
+          where the mode that creates it is set. */}
+      <PendingTriggerApprovals personaId={personaId} />
 
       {/* Trigger List */}
       <div className="space-y-2">

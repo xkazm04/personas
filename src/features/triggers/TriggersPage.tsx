@@ -16,6 +16,8 @@ import { TestTab } from './sub_test/TestTab';
 import { SmeeRelayTab } from './sub_smee_relay/SmeeRelayTab';
 import { CloudWebhooksTab } from './sub_cloud_webhooks/CloudWebhooksTab';
 import { DeadLetterTab } from './sub_dead_letter/DeadLetterTab';
+import { PendingTriggerApprovals } from './sub_triggers/PendingTriggerApprovals';
+import { PendingApprovalsBadge } from './sub_triggers/PendingApprovalsBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -97,9 +99,8 @@ export function TriggersPage() {
   // Triggers only. This page deliberately does NOT fetch `getTriggerHealthMap()`:
   // it used to, rolled the map up into one healthy/degraded/failing word, and
   // stored it in state nothing ever read — a per-`personas`-change IPC call whose
-  // result was discarded. Trigger health is already surfaced, at higher fidelity,
-  // one level down: `sub_triggers/TriggerList` fetches the same map and renders a
-  // per-trigger `HealthDot`. Reuse that rather than reviving the rollup here.
+  // result was discarded. If a health rollup is ever wanted here, fetch the map
+  // and render per-trigger detail rather than reviving the single-word summary.
   useEffect(() => {
     let stale = false;
     async function load() {
@@ -124,10 +125,24 @@ export function TriggersPage() {
         iconColor={header.iconColor}
         title={header.title}
         subtitle={header.subtitle}
-        actions={header.renderActions?.()}
+        actions={
+          <div className="flex items-center gap-2">
+            {/* Held fires are a decision the user owes; the badge makes them
+                discoverable from every tab, not only the one the panel is on.
+                Collapses to nothing at zero. */}
+            <PendingApprovalsBadge />
+            {header.renderActions?.()}
+          </div>
+        }
       >
         {tabHeaderExtra}
       </ContentHeader>
+
+      {/* Workspace-wide approval queue, above the tab content so it is visible
+          whichever tab is open. Renders nothing when empty. */}
+      <div className="px-4 pt-3 empty:hidden">
+        <PendingTriggerApprovals />
+      </div>
 
       <div key={eventBusTab} className="animate-fade-slide-in flex-1 flex flex-col min-h-0 overflow-hidden">
         {eventBusTab === "studio" && <LazyWrap><TriggerStudioCanvas /></LazyWrap>}
