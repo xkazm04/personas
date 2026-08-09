@@ -31,47 +31,45 @@ fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
 
 use super::n8n_transform::{extract_first_json_object, run_claude_prompt_text_inner};
 
-// -- Template integrity helper -----------------------------------
-
-/// Verify template content against the embedded checksum manifest.
-/// Returns `Err(AppError::Validation)` if the template is unknown in release
-/// builds, or if the template is known but its content does not match the
-/// expected hash (possible tampering).
-fn check_template_integrity(template_name: &str, content_json: &str) -> Result<(), AppError> {
-    let integrity = crate::engine::template_checksums::verify_template(template_name, content_json);
-    // NOTE: the checksum manifest is keyed by full file path and hashes the
-    // entire template file, but every real caller passes a bare name/label plus
-    // payload-only JSON — so verify_template returns is_known_template=false for
-    // 100% of adoptions. The previous release-build hard reject therefore bricked
-    // the ENTIRE Presets feature + Dev Clone on shipped binaries (while passing
-    // in dev, where this branch is compiled out). Until the manifest key/content
-    // contract is reconciled with the call contract (follow-up), do NOT block
-    // adoption on "unknown" — log it. The known-but-tampered branch below still
-    // rejects once a template genuinely resolves in the manifest.
-    #[cfg(not(debug_assertions))]
-    if !integrity.is_known_template {
-        tracing::warn!(
-            template = %template_name,
-            actual = %integrity.actual_hash,
-            "template integrity: unknown template (manifest key/content contract mismatch) — allowing adoption; integrity check is inert pending manifest reconciliation"
-        );
-    }
-
-    if integrity.is_known_template && !integrity.valid {
-        tracing::warn!(
-            template = %template_name,
-            expected = ?integrity.expected_hash,
-            actual = %integrity.actual_hash,
-            "SECURITY: Template integrity check failed during adoption — content may have been tampered with"
-        );
-        return Err(AppError::Validation(
-            "Template integrity verification failed: content does not match the expected checksum. \
-             The template may have been tampered with."
-                .into(),
-        ));
-    }
-    Ok(())
-}
+// -- Template integrity: where it actually happens ---------------
+//
+// There used to be a `check_template_integrity` here, called at the top of
+// `instant_adopt_template_inner` and documented as the authoritative security
+// gate for adoption. It was inert, and it was inert for a structural reason
+// that could not be fixed at this call site:
+//
+//   - `CHECKSUM_MANIFEST` (engine::template_checksums) is keyed by the
+//     template's relative FILE PATH (`development/dev-clone.json`) and hashes
+//     the ENTIRE template file. Every real caller passes a bare label or id
+//     ("Dev Clone") plus the payload-only `design_result` JSON. So
+//     `is_known_template` was false for 100% of adoptions — and normalising
+//     just the KEY would not have helped, because the hashed CONTENT is a
+//     different document from the one the manifest was generated over.
+//   - Consequently the "known but tampered → reject" branch was unreachable,
+//     and the release build only `tracing::warn!`ed and allowed. (An earlier
+//     revision hard-rejected on "unknown", which bricked Presets + Dev Clone
+//     on shipped binaries while passing in dev, where that branch is compiled
+//     out.)
+//
+// A control that looks like security and is inert is worse than none, because
+// the docs told the reader it was protecting them. It has been removed rather
+// than left as decoration.
+//
+// Integrity for built-in templates is enforced at CATALOG LOAD, one layer up:
+// `src/lib/personas/templates/templateCatalog.ts` hashes each template's
+// canonical JSON and SKIPS any entry whose hash is missing from or disagrees
+// with `TEMPLATE_CHECKSUMS`. A tampered template therefore never enters the
+// catalog, never gets seeded into `persona_design_reviews`, and so can never
+// reach adoption at all. `verify_template_integrity_batch` (below) is the
+// compiled-in second opinion on the same (path, whole-file) pairs — it works
+// because it is given the shape the manifest was generated from, but its
+// caller only reports; it is a detector, not a gate.
+//
+// Reconciling a payload-keyed manifest so a per-adoption re-check could be
+// meaningful is a codegen change (`scripts/generate-template-checksums.mjs`
+// plus both generated manifests) and is NOT a drop-in: the whole-file hashes
+// are exactly what makes the catalog-load gate work. See
+// `docs/features/templates/06-integrity-and-security.md`.
 
 // -- Adopt job extra state ---------------------------------------
 
@@ -213,12 +211,12 @@ pub fn instant_adopt_template(
 /// behavior is unchanged.
 ///
 /// Why a separate channel instead of mutating the design JSON before
-/// calling this? `check_template_integrity` runs FIRST on
-/// `design_result_json` and would reject any pre-mutation tampering.
+/// calling this? The design payload is what the catalog-load integrity
+/// gate verified before it was seeded, so rewriting those bytes on the
+/// way in would put the persona out of step with the verified template.
 /// Threading overrides through the existing
 /// `populate_persona_parameters_from_design(... answers)` arg lands
-/// the user's customization without touching the integrity-checked
-/// bytes.
+/// the user's customization without touching them.
 pub fn instant_adopt_template_inner(
     state: &Arc<AppState>,
     template_name: String,
@@ -237,17 +235,11 @@ pub fn instant_adopt_template_inner(
     }
     validate_json_field("design_result_json", &design_result_json)?;
 
-    // Backend integrity check (currently ADVISORY — see check_template_integrity).
-    // This does NOT yet catch tampered templates: the embedded CHECKSUM_MANIFEST is
-    // keyed by full relative FILE PATH and hashes the ENTIRE template file, while
-    // every real caller passes a bare template id + payload-only JSON. So no shipped
-    // template resolves in the manifest (is_known_template == false for 100% of
-    // adoptions) and the "known-but-tampered" reject branch is unreachable. Today
-    // this only logs a warning for unknown templates; it allows adoption either way.
-    // Real enforcement requires a payload-keyed manifest regen (codegen) so the hash
-    // is computed over the SAME payload JSON the callers pass — see the note on
-    // check_template_integrity for the precise reconciliation needed.
-    check_template_integrity(&template_name, &design_result_json)?;
+    // NO per-adoption checksum re-check here — see the module note above.
+    // Built-in template integrity is enforced at catalog load
+    // (`templateCatalog.ts`), which drops a tampered template before it can
+    // ever be seeded and therefore before it can ever be adopted. The check
+    // that used to sit on this line could not fire and has been removed.
 
     let mut design: serde_json::Value = serde_json::from_str(&design_result_json)
         .map_err(|e| AppError::Validation(format!("Invalid design result JSON: {e}")))?;
@@ -2106,11 +2098,19 @@ pub async fn adjust_adoption_draft(
     })
 }
 
-// -- Template integrity verification (backend trust boundary) --------
+// -- Template integrity verification (reporting) ---------------------
+//
+// These read the compiled-in manifest and REPORT. They do not gate anything:
+// the only caller (`templateCatalog.ts`) logs the batch verdict and keeps
+// every template regardless. Calling this the "backend trust boundary" — as
+// this section used to — overstated it; the boundary is the catalog-load
+// checksum check on the TS side, which actually drops a mismatched template.
+// `verify_template_integrity` (singular) and `get_template_manifest_count`
+// below are additionally NOT registered in `lib.rs`, so they are unreachable
+// over IPC today.
 
-/// Verify a single template's content integrity against the embedded Rust manifest.
-/// This provides defense-in-depth: even if the frontend bundle is tampered with,
-/// the native binary's embedded checksums remain authoritative.
+/// Verify a single template's content integrity against the embedded Rust
+/// manifest, and return the verdict. Reports only — nothing acts on it.
 #[tauri::command]
 pub fn verify_template_integrity(
     state: State<'_, Arc<AppState>>,
@@ -2132,8 +2132,10 @@ pub struct TemplateVerifyEntry {
 }
 
 /// Verify a batch of templates against the embedded Rust manifest.
-/// Called during catalog initialization to validate all built-in templates
-/// at the backend trust boundary.
+/// Called during catalog initialization. The (path, whole-file) pairs it
+/// receives match how the manifest was generated, so the verdict is
+/// meaningful — but its caller only logs it, so this detects tampering
+/// rather than preventing it.
 #[tauri::command]
 pub fn verify_template_integrity_batch(
     state: State<'_, Arc<AppState>>,
