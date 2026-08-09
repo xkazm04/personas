@@ -61,8 +61,26 @@ export function AthenaChatBody({
   const chatCardsAnchorRef = useRef<HTMLDivElement>(null);
   const handleJumpSummary = useCallback((target: TurnSummaryJumpTarget) => {
     if (target === 'approvals' || target === 'chatCards') {
+      // The turn summary counts what a turn dispatched, but by click time the
+      // approval may already be resolved (empty `approvals`) or now render as a
+      // durable chat card. Route to whichever section actually has content so
+      // the jump never lands on a blank region; if neither has anything, do
+      // nothing rather than scroll the user to an empty window.
+      const store = useCompanionStore.getState();
+      const approvalsHas = store.approvals.length > 0;
+      const cardsHas = store.chatCards.length > 0;
       const el =
-        target === 'approvals' ? approvalsAnchorRef.current : chatCardsAnchorRef.current;
+        target === 'approvals'
+          ? approvalsHas
+            ? approvalsAnchorRef.current
+            : cardsHas
+              ? chatCardsAnchorRef.current
+              : null
+          : cardsHas
+            ? chatCardsAnchorRef.current
+            : approvalsHas
+              ? approvalsAnchorRef.current
+              : null;
       el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
