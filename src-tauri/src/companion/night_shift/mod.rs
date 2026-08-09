@@ -332,6 +332,19 @@ pub fn next_local_hour_utc(hour: u32) -> String {
 /// One night-shift tick, called from the proactive scheduler. Best-effort:
 /// every leg logs-and-continues so one failure can't stall the others.
 pub fn tick(user_db: &UserDbPool, sys_db: &DbPool, app: &tauri::AppHandle) {
+    // The sleep cycle runs BEFORE the night-shift enable gate, deliberately.
+    // It is memory maintenance, not autonomy — the operator's 2026-08-08
+    // ruling decoupled it from night-shift consent, and its spend is governed
+    // by its own pressure model (threshold/floor/staleness in
+    // `brain::sleep_cycle`), not by this flag. L1c removed the
+    // `night_window_active` gate inside the admission but left the call BELOW
+    // the `enabled()` early return one level up, so on the default-off
+    // night-shift setting the heartbeat never beat: 110k chars of pressure
+    // accumulated live on 2026-08-09 with zero automatic cycles. The fix that
+    // lands on an unreachable path ships nothing — again.
+    if let Err(e) = maybe_run_sleep_cycle(user_db) {
+        tracing::warn!(error = %e, "night_shift: sleep-cycle admission failed");
+    }
     if !enabled(sys_db) {
         return;
     }
@@ -343,9 +356,6 @@ pub fn tick(user_db: &UserDbPool, sys_db: &DbPool, app: &tauri::AppHandle) {
     }
     if let Err(e) = review_sweep(user_db) {
         tracing::warn!(error = %e, "night_shift: review sweep failed");
-    }
-    if let Err(e) = maybe_run_sleep_cycle(user_db) {
-        tracing::warn!(error = %e, "night_shift: sleep-cycle admission failed");
     }
     if let Err(e) = maybe_emit_morning_report(user_db, app) {
         tracing::warn!(error = %e, "night_shift: morning report failed");
