@@ -111,7 +111,7 @@ function RowBody({ record, meta, chevron }: { record: DecisionRecord; meta?: Rea
         )}
         {record.facts?.map((f) => (
           <span key={f.label} className="inline-flex items-baseline gap-1" title={f.title}>
-            <span className="typo-label text-muted-foreground uppercase tracking-wide">{f.label}</span>
+            <span className="typo-label text-muted-foreground">{f.label}</span>
             <span className="typo-caption text-foreground tabular-nums">{f.value}</span>
           </span>
         ))}

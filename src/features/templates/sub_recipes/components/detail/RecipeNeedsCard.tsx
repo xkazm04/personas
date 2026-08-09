@@ -15,7 +15,7 @@ export function RecipeNeedsCard({ recipe }: RecipeNeedsCardProps) {
 
   return (
     <section className="rounded-card border border-card-border bg-secondary/30 p-4 shadow-elevation-1">
-      <h4 className="typo-label uppercase tracking-wider text-foreground mb-3">
+      <h4 className="typo-label text-foreground mb-3">
         {t.recipes_catalog.what_it_needs_heading}
       </h4>
 
@@ -76,7 +76,7 @@ export function RecipeNeedsCard({ recipe }: RecipeNeedsCardProps) {
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="typo-caption font-mono font-medium text-foreground">{p.name}</span>
                     {p.type && (
-                      <span className="typo-label uppercase tracking-wider text-foreground">{p.type}</span>
+                      <span className="typo-label text-foreground">{p.type}</span>
                     )}
                     {p.defaultValue && (
                       <span className="typo-label font-mono px-1 py-0.5 rounded border border-card-border/50 bg-secondary/30 text-foreground">
@@ -110,9 +110,9 @@ export function RecipeNeedsCard({ recipe }: RecipeNeedsCardProps) {
                   <div className="flex items-center gap-1.5">
                     <span className="typo-caption font-medium text-foreground">{b.label}</span>
                     {b.required && (
-                      <span className="typo-label uppercase tracking-wider text-status-warning/85">{t.common.required}</span>
+                      <span className="typo-label text-status-warning/85">{t.common.required}</span>
                     )}
-                    <span className="typo-label uppercase tracking-wider text-foreground">
+                    <span className="typo-label text-foreground">
                       {bindingKindLabel(b.kind.type, t)}
                     </span>
                   </div>

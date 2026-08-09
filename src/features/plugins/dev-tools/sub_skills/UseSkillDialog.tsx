@@ -109,7 +109,7 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
         <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10 bg-primary/[0.04]">
           <Wand2 className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
           <span id="use-skill-title" className="typo-title truncate">{skill.name}</span>
-          <span className="ml-auto typo-label text-foreground/40 uppercase tracking-[0.1em] flex-shrink-0">{d.skills_kind_use}</span>
+          <span className="ml-auto typo-label text-foreground/40 flex-shrink-0">{d.skills_kind_use}</span>
         </div>
 
         <div className="px-5 py-4 space-y-4">
@@ -119,7 +119,7 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
           {/* The hint only makes sense for single-LENS presets the sweep
               subsumes — not for non-scan presets like i18n-translate. */}
           {skill.name.startsWith(PRESET_SKILL_PREFIX) && skill.name !== SWEEP_SKILL_NAME && (
-            <p className="typo-label text-foreground/45">{d.skills_use_sweep_hint}</p>
+            <p className="typo-caption">{d.skills_use_sweep_hint}</p>
           )}
 
           <Row label={d.skills_use_run_via}>

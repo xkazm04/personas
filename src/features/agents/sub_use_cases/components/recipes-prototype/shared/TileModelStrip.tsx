@@ -102,7 +102,7 @@ export function TileModelStrip({ personaId, uc, personaDefaultModelProfile }: Ti
       {({ close, focusIndex }) => (
         <div className="py-1 max-h-56 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
           {/* Persona Default group */}
-          <div className="px-3 pt-1.5 pb-1 typo-label uppercase tracking-wider text-foreground">
+          <div className="px-3 pt-1.5 pb-1 typo-label text-foreground">
             {t.agents.use_cases.model_persona_default_group}
           </div>
           <button
@@ -124,7 +124,7 @@ export function TileModelStrip({ personaId, uc, personaDefaultModelProfile }: Ti
 
           <div className="my-1 border-t border-card-border/60" />
 
-          <div className="px-3 pt-1.5 pb-1 typo-label uppercase tracking-wider text-status-warning/70">
+          <div className="px-3 pt-1.5 pb-1 typo-label text-status-warning/70">
             {t.agents.use_cases.model_override_group}
           </div>
           {OVERRIDE_OPTIONS.map((opt, i) => {

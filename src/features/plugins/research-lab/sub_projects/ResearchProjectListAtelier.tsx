@@ -320,7 +320,7 @@ function PhaseTrack({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <span className="typo-label uppercase tracking-[0.2em] text-foreground">{t.research_lab.phase}</span>
+        <span className="typo-label text-foreground">{t.research_lab.phase}</span>
         <span className="typo-caption text-foreground/85">
           {projectStatusLabel(t, status)}
         </span>
@@ -366,7 +366,7 @@ export function AtelierBand({
             <span className="typo-section-title text-foreground truncate">
               {title}
             </span>
-            <span className="typo-label uppercase tracking-[0.2em] text-foreground truncate">
+            <span className="typo-label text-foreground truncate">
               {subtitle}
             </span>
           </div>
@@ -403,7 +403,7 @@ function DomainRail({
 
   return (
     <aside className="hidden lg:flex w-56 flex-shrink-0 flex-col border-r border-border/40 px-3 py-6 gap-1 overflow-y-auto">
-      <p className="typo-label uppercase tracking-[0.2em] text-foreground px-2 mb-2">
+      <p className="typo-label text-foreground px-2 mb-2">
         {t.research_lab.domains}
       </p>
       <RailItem label={t.research_lab.all_projects} count={totalProjects} selected={selected === null} onClick={() => onSelect(null)} />
@@ -454,7 +454,7 @@ function ChronologyThread({
   const visible = projects.slice(0, 10);
   return (
     <aside className="hidden xl:flex w-72 flex-shrink-0 flex-col border-l border-border/40 px-4 py-6 gap-3 overflow-y-auto">
-      <p className="typo-label uppercase tracking-[0.2em] text-foreground mb-1">
+      <p className="typo-label text-foreground mb-1">
         {t.research_lab.recent}
       </p>
       <div className="relative space-y-2">

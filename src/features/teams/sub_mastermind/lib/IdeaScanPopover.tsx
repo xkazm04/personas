@@ -128,7 +128,7 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
         {/* ── Context scope ─────────────────────────────────────────────── */}
         <section>
           <div className="flex items-baseline gap-2 mb-1">
-            <span className="typo-label text-foreground/50 uppercase tracking-wider">{ds.scan_config_scope_label}</span>
+            <span className="typo-label text-foreground/50">{ds.scan_config_scope_label}</span>
             {contextIds.size > 0 && (
               <button
                 type="button"
@@ -174,7 +174,7 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
 
         {/* ── Target findings (granularity) ─────────────────────────────── */}
         <section>
-          <span className="block typo-label text-foreground/50 uppercase tracking-wider mb-1">{ds.scan_config_granularity_label}</span>
+          <span className="block typo-label text-foreground/50 mb-1">{ds.scan_config_granularity_label}</span>
           <div className="flex flex-wrap gap-1">
             {TARGETS.map((n) => (
               <button
@@ -195,7 +195,7 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
         {/* ── Agent combination ─────────────────────────────────────────── */}
         <section>
           <div className="flex items-baseline gap-2 mb-1">
-            <span className="typo-label text-foreground/50 uppercase tracking-wider">{ds.history_col_agents}</span>
+            <span className="typo-label text-foreground/50">{ds.history_col_agents}</span>
             <span className="typo-caption text-foreground/45 tabular-nums">
               {tx(ds.scan_config_selected_count, { count: agentKeys.size })}
             </span>

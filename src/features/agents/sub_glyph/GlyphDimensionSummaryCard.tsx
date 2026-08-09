@@ -43,7 +43,7 @@ export function GlyphDimensionSummaryCard({
         >
           <Icon className="w-3.5 h-3.5" style={{ color: "#fff" }} />
         </span>
-        <span className="typo-label font-bold uppercase tracking-[0.18em] text-foreground flex-1">
+        <span className="typo-label font-bold text-foreground flex-1">
           {label[activeDim]}
         </span>
         <button

@@ -496,7 +496,7 @@ function SetupGuide() {
   const { t } = useTranslation();
   return (
     <div className="rounded-modal border border-border/20 bg-secondary/5 p-5 space-y-3">
-      <h4 className="typo-label font-semibold uppercase tracking-wider text-foreground">
+      <h4 className="typo-label font-semibold text-foreground">
         {t.triggers.how_it_works}
       </h4>
       <div className="space-y-2 typo-body text-foreground">

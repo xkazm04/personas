@@ -122,7 +122,7 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
     <div className="w-full max-w-[420px] flex flex-col gap-1.5 mt-2">
       <div className="flex items-center gap-1.5 px-1">
         <Layers className="w-3.5 h-3.5 text-foreground" />
-        <span className="typo-label uppercase tracking-[0.18em] text-foreground">
+        <span className="typo-label text-foreground">
           {activeCount === 1
             ? t.agents.glyph_cap_count_one
             : tx(t.agents.glyph_cap_count_other, { count: activeCount })}

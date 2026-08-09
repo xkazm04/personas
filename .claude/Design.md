@@ -58,7 +58,7 @@ raw Tailwind text-size combos (`custom/no-raw-text-classes` warns).
 | `typo-body` | 0.875rem (text-sm) | 400 | 1.65 | Paragraphs, descriptions |
 | `typo-body-lg` | 1rem (text-base) | 400 | 1.7 | Prominent descriptions |
 | `typo-caption` | 0.875rem | 400 | 1.5 | Secondary text; **normal weight on purpose** — same size as `typo-title`, so weight must not compete with it (2026-08-06, was 500). Color = 70% foreground via `@layer base` so explicit `text-*` utilities still win |
-| `typo-label` | 0.75rem (text-xs) | 700 | 1 | UPPERCASE, `0.15em` tracking; badges, dividers |
+| `typo-label` | 0.75rem (text-xs) | 600 | 1.4 | Sentence case, `0.01em` tracking; the small strong tier — badges, chips, dividers, column headers. **Not for sentences** (2026-08-07, was 700/UPPERCASE/`0.15em`/lh 1): anything ~6+ words or that wraps is secondary prose and belongs on `typo-caption`. `uppercase` works as an opt-in utility again now that the token sets no `text-transform`, but house style is sentence case |
 | `typo-data` | 0.875rem | 500 | 1.4 | Numbers/metrics; tabular + lining nums |
 | `typo-data-lg` | 1.5rem (text-2xl) | 700 | 1.2 | Hero metrics, big counters |
 | `typo-code` | 0.75rem | 400 | 1.5 | `--font-mono`; slashed zero, ligatures off |
@@ -75,8 +75,9 @@ typography.css and globals.css). `[data-density="compact|cozy"]` also adjusts
 
 **Language awareness.** `[data-lang]` on `<html>` selects the font stack
 (`Noto Sans SC/JP/KR/Arabic/Devanagari/Bengali` fall back to `--font-sans` =
-Inter). CJK/Devanagari/Arabic get taller line-heights; CJK `typo-label` drops
-the uppercase transform. Don't fight these overrides in components.
+Inter). CJK/Devanagari/Arabic get taller line-heights; Arabic and CJK
+`typo-label` drop letter-spacing entirely. Don't fight these overrides in
+components.
 
 > **⚠ Unlayered-tokens gotcha:** most `.typo-*` rules are *unlayered* CSS, which
 > beats Tailwind's layered utilities in the cascade. A utility patch like

@@ -181,7 +181,7 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
         <section>
           <div className="flex items-center gap-2 mb-2">
             <Users className="w-3.5 h-3.5 text-foreground" />
-            <h3 className="typo-label uppercase tracking-wider text-foreground">
+            <h3 className="typo-label text-foreground">
               {t.plugins.dev_projects.team_preview_members}
             </h3>
             {members && (
@@ -332,7 +332,7 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
         <section>
           <div className="flex items-center gap-2 mb-2">
             <Activity className="w-3.5 h-3.5 text-foreground" />
-            <h3 className="typo-label uppercase tracking-wider text-foreground">
+            <h3 className="typo-label text-foreground">
               {t.plugins.dev_projects.team_preview_recent_runs}
             </h3>
             {runs && (

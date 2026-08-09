@@ -172,7 +172,7 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
     <div className="h-full flex flex-col gap-4 overflow-y-auto pr-1">
       <div className="flex items-center gap-2 flex-shrink-0">
         <Settings className="w-4 h-4 text-foreground" />
-        <h3 className="typo-label uppercase tracking-wider text-foreground">{ts.workspace_settings}</h3>
+        <h3 className="typo-label text-foreground">{ts.workspace_settings}</h3>
       </div>
       <p className="typo-caption text-foreground -mt-2">{ts.workspace_hint}</p>
 
@@ -180,7 +180,7 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
       <div className="rounded-card border border-primary/10 bg-secondary/10 p-3 space-y-3">
         <div className="flex items-center gap-2">
           <Layers className="w-3.5 h-3.5 text-indigo-300/80" />
-          <span className="typo-label uppercase tracking-wider text-foreground">{ts.identity_section}</span>
+          <span className="typo-label text-foreground">{ts.identity_section}</span>
         </div>
         {/* The icon field is deliberately gone. It was a free-text input whose
             value was looked up in a named-icon map and, on a miss, rendered as
@@ -289,7 +289,7 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
       <div className="mt-2 pt-4 border-t border-red-500/15 flex flex-col gap-2 flex-shrink-0">
         <div className="flex items-center gap-2">
           <Trash2 className="w-4 h-4 text-red-400/80" />
-          <h3 className="typo-label uppercase tracking-wider text-red-300">{ts.disband_heading}</h3>
+          <h3 className="typo-label text-red-300">{ts.disband_heading}</h3>
         </div>
         <p className="typo-caption font-normal text-foreground">{ts.disband_hint}</p>
         <div className="flex items-center gap-2 mt-1">

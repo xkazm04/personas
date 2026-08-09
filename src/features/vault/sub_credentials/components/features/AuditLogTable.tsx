@@ -86,9 +86,9 @@ export function AuditLogTable({ auditLog }: { auditLog: CredentialAuditEntry[] }
         <table className="w-full typo-body">
           <thead>
             <tr className="border-b border-primary/10 bg-secondary/10">
-              <th className="text-left px-3 py-1.5 typo-label font-medium text-foreground uppercase tracking-wider">{t.vault.features.intelligence.operation}</th>
-              <th className="text-left px-3 py-1.5 typo-label font-medium text-foreground uppercase tracking-wider">{t.vault.features.intelligence.detail}</th>
-              <th className="text-right px-3 py-1.5 typo-label font-medium text-foreground uppercase tracking-wider">{t.vault.features.intelligence.time}</th>
+              <th className="text-left px-3 py-1.5 typo-label font-medium text-foreground">{t.vault.features.intelligence.operation}</th>
+              <th className="text-left px-3 py-1.5 typo-label font-medium text-foreground">{t.vault.features.intelligence.detail}</th>
+              <th className="text-right px-3 py-1.5 typo-label font-medium text-foreground">{t.vault.features.intelligence.time}</th>
             </tr>
           </thead>
           <tbody>

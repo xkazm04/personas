@@ -446,7 +446,7 @@ export default function ProjectManagerPage() {
 
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <h3 className="typo-label font-semibold text-primary uppercase tracking-wider">
+            <h3 className="typo-label font-semibold text-primary">
               {t.plugins.dev_projects.all_projects}({projects.length})
             </h3>
             {/* Bulk-action bar — inline, only when a row is selected. */}

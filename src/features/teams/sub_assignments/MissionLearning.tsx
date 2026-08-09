@@ -66,7 +66,7 @@ export function MissionLearning({ assignmentId, teamId }: {
     <div className="mt-4 rounded-card border border-primary/10 bg-secondary/10 px-4 py-3 space-y-3" data-testid="mission-learning">
       <div className="flex items-center gap-2">
         <GraduationCap className="w-3.5 h-3.5 text-violet-300/80" />
-        <h4 className="typo-label uppercase tracking-wider text-foreground">{ts.learning_heading}</h4>
+        <h4 className="typo-label text-foreground">{ts.learning_heading}</h4>
       </div>
 
       {!outcome ? (
@@ -93,7 +93,7 @@ export function MissionLearning({ assignmentId, teamId }: {
           {/* Per-step trust deltas — what this mission taught the matcher. */}
           {trustSteps.length > 0 && (
             <div className="space-y-1.5">
-              <p className="typo-label uppercase tracking-wider text-foreground">{ts.learning_trust_heading}</p>
+              <p className="typo-label text-foreground">{ts.learning_trust_heading}</p>
               {trustSteps.map((s) => (
                 <TrustDeltaRow key={s.stepId} step={s} personaIndex={personaIndex} />
               ))}
@@ -104,7 +104,7 @@ export function MissionLearning({ assignmentId, teamId }: {
 
       {/* Team lessons — retrieved from the same ledger the matcher reads. */}
       <div className="space-y-1.5">
-        <p className="flex items-center gap-1.5 typo-label uppercase tracking-wider text-foreground">
+        <p className="flex items-center gap-1.5 typo-label text-foreground">
           <BookOpen className="w-3 h-3" /> {ts.learning_lessons_heading}
         </p>
         {lessons.length === 0 ? (

@@ -603,7 +603,7 @@ export default function FleetGridPage() {
                   >
                     <div className="flex items-center gap-1.5 px-2 mb-1">
                       <GroupIcon className={`w-3 h-3 ${g.accent} ${g.id === 'running' ? 'animate-spin' : ''}`} />
-                      <span className="typo-label uppercase tracking-wider text-foreground">
+                      <span className="typo-label text-foreground">
                         {t.plugins.fleet[g.labelKey]}
                       </span>
                       <span

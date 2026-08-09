@@ -36,7 +36,7 @@ export function RemoteJobDetail({ job, notes, notesLoading, notesError }: Remote
       </p>
 
       <section aria-label={st.job_notes_title}>
-        <h4 className="typo-label uppercase tracking-wider font-medium text-primary flex items-center gap-1.5">
+        <h4 className="typo-label font-medium text-primary flex items-center gap-1.5">
           <ScrollText className="w-3.5 h-3.5" aria-hidden />
           {st.job_notes_title}
         </h4>
@@ -81,7 +81,7 @@ export function RemoteJobDetail({ job, notes, notesLoading, notesError }: Remote
       </section>
 
       <section aria-label={job.refusalReason ? st.job_refusal_title : st.job_summary_title}>
-        <h4 className="typo-label uppercase tracking-wider font-medium text-primary">
+        <h4 className="typo-label font-medium text-primary">
           {job.refusalReason ? st.job_refusal_title : st.job_summary_title}
         </h4>
         {job.refusalReason ? (

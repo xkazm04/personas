@@ -32,6 +32,7 @@ import { RegistryTab } from './registry/RegistryTab';
 import { SkillInfoModal } from './SkillInfoModal';
 import { SkillsOverviewPanel } from './SkillsOverviewPanel';
 import { useSkillsManagerRows } from './skillsManagerRows';
+import { TraceTab } from './trace/TraceTab';
 
 // Row models moved to `skillsManagerRows` (the hook that builds them) and are
 // re-exported here so existing `from '../SkillsManagerPage'` type imports keep
@@ -59,7 +60,7 @@ export default function SkillsManagerPage() {
 
 function SkillsManagerInner({ activeId }: { activeId: string | null }) {
   const { t } = useTranslation();
-  const [pageTab, setPageTab] = useState<'overview' | 'analytics' | 'registry'>('overview');
+  const [pageTab, setPageTab] = useState<'overview' | 'analytics' | 'registry' | 'trace'>('overview');
   // Registry + Analytics share the page's info-modal slot; Overview owns its own
   // (it lives inside SkillsOverviewPanel, which the canvas modal mounts too).
   const [infoSkill, setInfoSkill] = useState<string | null>(null);
@@ -77,9 +78,10 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
             { id: 'overview', label: t.plugins.dev_tools.skills_tab_overview },
             { id: 'analytics', label: t.plugins.dev_tools.skills_tab_analytics },
             { id: 'registry', label: 'Registry' },
+            { id: 'trace', label: t.plugins.dev_tools.skills_tab_trace },
           ]}
           activeTab={pageTab}
-          onTabChange={(v) => setPageTab(v as 'overview' | 'analytics' | 'registry')}
+          onTabChange={(v) => setPageTab(v as 'overview' | 'analytics' | 'registry' | 'trace')}
           variant="segment"
           size="sm"
           fullWidth={false}
@@ -88,7 +90,9 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
       </DevToolsPageHeader>
 
       <div className="flex-1 min-h-0 px-4 pb-4 pt-3">
-        {pageTab === 'registry' ? (
+        {pageTab === 'trace' ? (
+          <TraceTab activeProjectId={activeId} onOpenInfo={setInfoSkill} />
+        ) : pageTab === 'registry' ? (
           <RegistryTab activeProjectId={activeId} onOpenInfo={setInfoSkill} />
         ) : pageTab === 'analytics' && activeId ? (
           <AnalyticsHost projectId={activeId} onOpenInfo={setInfoSkill} />

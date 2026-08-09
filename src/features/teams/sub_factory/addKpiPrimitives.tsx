@@ -37,7 +37,7 @@ export function num(s: string): number | undefined {
 /** Theme-toned field label (differentiates labels from the inputs). */
 export function Label({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {
   return (
-    <label htmlFor={htmlFor} className="block typo-label text-primary/80 mb-1 tracking-wide">
+    <label htmlFor={htmlFor} className="block typo-label text-primary/80 mb-1">
       {children}
     </label>
   );
@@ -65,7 +65,7 @@ export function MeasurementFields({
   const isManual = measured === 'manual';
   return (
     <div className="rounded-card border border-primary/15 bg-secondary/10 p-4">
-      <p className="typo-label text-primary/80 mb-3 tracking-wide">How it&apos;s measured</p>
+      <p className="typo-label text-primary/80 mb-3">How it&apos;s measured</p>
       <div className="grid grid-cols-3 gap-4">
         <div>
           <Label>Measured</Label>

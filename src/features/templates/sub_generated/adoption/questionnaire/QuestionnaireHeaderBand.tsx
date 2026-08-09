@@ -66,7 +66,7 @@ export function QuestionnaireHeaderBand({
             <span className="typo-body-lg font-semibold text-foreground truncate">
               {templateName ?? t.templates.adopt_modal.untitled_agent}
             </span>
-            <span className="typo-label uppercase tracking-[0.2em] text-foreground">
+            <span className="typo-label text-foreground">
               {t.templates.adopt_modal.configure_your_persona}
             </span>
           </div>

@@ -19,7 +19,7 @@ export function RecipeHowItRuns({ recipe }: RecipeHowItRunsProps) {
 
   return (
     <section className="rounded-card border border-card-border bg-secondary/30 p-4 shadow-elevation-1">
-      <h4 className="typo-label uppercase tracking-wider text-foreground mb-3">
+      <h4 className="typo-label text-foreground mb-3">
         {t.recipes_catalog.what_it_does_heading}
       </h4>
 

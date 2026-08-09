@@ -4172,6 +4172,36 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Skill semantic versioning (docs/skill-standard.md). The declared
+    // `version:` frontmatter ("major.minor") joins the hash-based identity:
+    // registry rows carry the current declared version, revision rows the
+    // version at each hash change. NULL = the skill predates the standard
+    // (unversioned; consumers treat it as an implicit 1.0). Existing revision
+    // rows stay NULL — history is not fabricated. MUST stay INSIDE
+    // `run_incremental`.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "skill_semantic_version",
+            description: "Declared major.minor skill version on registry + revision rows",
+            already_applied: |conn| {
+                // Missing table (test binaries drop some tables) counts as
+                // applied — ALTER on a missing table would hard-fail.
+                Ok(!has_table(conn, "skill_registry")?
+                    || has_column(conn, "skill_registry", "version")?)
+            },
+            apply: |conn| {
+                if has_table(conn, "skill_registry")? {
+                    ddl_step(conn, "ALTER TABLE skill_registry ADD COLUMN version TEXT;")?;
+                }
+                if has_table(conn, "skill_revisions")? {
+                    ddl_step(conn, "ALTER TABLE skill_revisions ADD COLUMN version TEXT;")?;
+                }
+                Ok(())
+            },
+        },
+    )?;
+
     // Doc-rot content signal. The git rule (coupled sources newer than the
     // doc) cannot express "this doc names a file that no longer exists" — and
     // that case used to be INVISIBLE: a doc whose references had all been

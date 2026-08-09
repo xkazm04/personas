@@ -196,7 +196,7 @@ export function PersonaHero({
 
         <div className="relative flex items-center gap-6">
           <div className="flex-1 min-w-0">
-            <span className="typo-label uppercase tracking-[0.22em] text-foreground">
+            <span className="typo-label text-foreground">
               {t.agents.use_cases.persona_label}
             </span>
             <h2 className="typo-section-title text-foreground mt-0.5 truncate font-semibold">
@@ -209,7 +209,7 @@ export function PersonaHero({
               <span className="typo-data text-foreground font-mono text-xl">
                 {stats.total}
               </span>
-              <span className="typo-label uppercase tracking-wider text-foreground">
+              <span className="typo-label text-foreground">
                 {t.agents.use_cases.capabilities_label}
               </span>
             </span>
@@ -242,7 +242,7 @@ export function PersonaHero({
         <div className="md:hidden mt-3 flex items-center gap-3 flex-wrap">
           <span className="inline-flex items-baseline gap-1.5">
             <span className="typo-data text-foreground font-mono text-lg">{stats.total}</span>
-            <span className="typo-label uppercase tracking-wider text-foreground">
+            <span className="typo-label text-foreground">
               {t.agents.use_cases.capabilities_label}
             </span>
           </span>

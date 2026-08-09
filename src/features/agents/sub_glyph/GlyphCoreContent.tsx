@@ -144,7 +144,7 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
         >
           <Sparkles className="w-9 h-9 text-primary/85 group-hover:text-primary transition-colors" />
         </motion.div>
-        <span className="typo-label uppercase tracking-[0.22em] text-foreground group-hover:text-foreground transition-colors">
+        <span className="typo-label text-foreground group-hover:text-foreground transition-colors">
           <DebtText k="auto_click_to_begin_a3efa65a" />
         </span>
         <span className="typo-caption text-foreground max-w-[220px] leading-snug">
@@ -190,7 +190,7 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
         className="flex flex-col items-center gap-2 w-full px-6 pointer-events-auto"
       >
         <Loader2 className="w-6 h-6 text-primary/70 animate-spin" />
-        <span className="typo-label uppercase tracking-[0.2em] text-foreground"><DebtText k="auto_running_tests_7ec9eede" /></span>
+        <span className="typo-label text-foreground"><DebtText k="auto_running_tests_7ec9eede" /></span>
         {testOutputLines && testOutputLines.length > 0 && (
           <div className="mt-1 w-full max-h-20 overflow-y-auto typo-caption font-mono text-foreground text-left">
             {testOutputLines.slice(-4).map((l, i) => (
@@ -251,7 +251,7 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
         initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
         className="flex flex-col items-center gap-2 pointer-events-auto"
       >
-        <span className="typo-label uppercase tracking-[0.2em] text-foreground"><DebtText k="auto_draft_ready_96b5a4f6" /></span>
+        <span className="typo-label text-foreground"><DebtText k="auto_draft_ready_96b5a4f6" /></span>
         <span className="typo-heading-sm text-foreground">{completenessPct}<DebtText k="auto_complete_dfdcd775" /></span>
         <div className="flex items-center gap-1.5 flex-wrap justify-center">
           <button

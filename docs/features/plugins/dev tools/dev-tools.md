@@ -242,8 +242,32 @@ running** in that project (`useSkillsRegistry` derives the running set from live
 sessions by matching `cwd` ↔ `root_path`). Data is a bounded per-project fan-out
 (`mapWithConcurrency`) over `listSkills` / `memorySkillCoverage` / `memoryCoverage`.
 
+**Trace** (`sub_skills/trace/`) — the skill-standard traceability surface
+(docs/skill-standard.md), two levels, visually independent of Registry:
+
+1. **Ember matrix** (`TraceOverview`) — skills ranked by recency-weighted heat
+   (`rawHeat = sqrt(invokes30d) × 0.5^(days/7)`, normalized against the matrix
+   max) × workspace projects. Cells are ember dots: radius ∝ √invokes, opacity
+   ∝ heat, in the skill's accent colour; a dashed hollow ring = adopted but
+   cold (the drift-risk signal), a faint dot = not installed. Row heads carry
+   the library `version:` chip and a heat bar; a five-tier legend closes the
+   surface. Click a cell or row → the skill tree.
+2. **Skill tree** (`SkillTreeView`) — the workspace library as the core node
+   (its declared version), one bezier branch per adopted project fanning
+   across the upper arc, stroke width/intensity ∝ usage share. Each project
+   node wears a **drift ring**: in-sync (green) / behind library (warning) /
+   ahead (primary) / customized (info; same version, hash diverged) /
+   unversioned (dashed). LESSONS.md entries sprout on the branch (redesign
+   proposals in warning tone) and repeat in a readable panel next to the
+   **version timeline** — the first UI reader of `skill_revisions`
+   (`skill_version_timeline`), showing every method change with its declared
+   version. Data: `useSkillTraceModel` (lean fan-out: library + usage overview
+   + per-project skill lists) and `useSkillTreeModel` (timeline + lessons only,
+   branches derived from the loaded matrix); both keep module-scoped warm
+   caches. Pure math lives in `traceModel.ts` / `treeGeometry.ts` (vitest).
+
 **Skill info modal** (`SkillInfoModal`) — clicking a **skill name** anywhere (Overview /
-Analytics / Registry) opens a shared metadata modal: an understandable summary (the standard
+Analytics / Registry / Trace) opens a shared metadata modal: an understandable summary (the standard
 `description` = what + when), **how to invoke** (command + argument variations, copy-on-click),
 and metadata chips (memory binding, context-tracked, `argument-hint`). Preset scan skills are
 described from the in-memory catalogue; custom skills are parsed from their `SKILL.md`

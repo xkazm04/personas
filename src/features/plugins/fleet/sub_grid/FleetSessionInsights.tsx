@@ -102,7 +102,7 @@ export function FleetSessionInsights({ claudeSessionId }: Props) {
     <div className="h-full overflow-y-auto p-4 text-foreground" data-testid="fleet-insights">
       {/* Header + refresh (transcripts grow live). */}
       <div className="flex items-center gap-2 mb-3">
-        <span className="typo-label uppercase tracking-wider">{f.insights_title}</span>
+        <span className="typo-label">{f.insights_title}</span>
         <Button
           variant="ghost"
           size="icon-sm"
@@ -203,7 +203,7 @@ function TokenCell({ label, value }: { label: string; value: number }) {
 function Section({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
     <div className="mb-3">
-      <div className="flex items-center gap-1.5 mb-1.5 typo-label uppercase tracking-wider opacity-80">
+      <div className="flex items-center gap-1.5 mb-1.5 typo-label opacity-80">
         {icon}{title}
       </div>
       {children}

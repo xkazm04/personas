@@ -36,7 +36,7 @@ export function UseCaseLeftPanel({ petalStates, activeDim, summaryEntries, onSel
   return (
     <div className="flex flex-col gap-3">
       <div className="flex w-full items-center justify-between px-0.5">
-        <span className="typo-label uppercase tracking-[0.2em] text-foreground">
+        <span className="typo-label text-foreground">
           {t.agents.use_cases.petals_label}
         </span>
         <span className="typo-caption tabular-nums">

@@ -29,7 +29,7 @@ export function OutputPreviews({
 
   return (
     <div className="space-y-2">
-      <h5 className="typo-label font-medium text-foreground uppercase tracking-wider">{t.agents.model_config.output_previews}</h5>
+      <h5 className="typo-label font-medium text-foreground">{t.agents.model_config.output_previews}</h5>
       {scenarios.length > 1 && (
         <div className="flex flex-wrap gap-1">
           {scenarios.map((s) => (

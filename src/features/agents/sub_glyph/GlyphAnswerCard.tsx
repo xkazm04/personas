@@ -73,7 +73,7 @@ export function GlyphAnswerCard({ question, onAnswer, onClose, variant = "sigil"
         >
           <HelpCircle className="w-4 h-4 text-foreground" />
         </span>
-        <span className="typo-label font-bold uppercase tracking-[0.18em] text-foreground flex-1">
+        <span className="typo-label font-bold text-foreground flex-1">
           {dim ? DIM_LABEL[dim] : question.cellKey.replace(/-/g, " ")}
         </span>
         <button

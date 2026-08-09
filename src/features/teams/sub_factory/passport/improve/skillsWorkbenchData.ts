@@ -9,7 +9,7 @@
 // same "pick a skill → act" gesture, so the panes stay identical.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { listSkills, type SkillEntry } from '@/api/devTools/devTools';
+import { listSkills, stampSkillProvenance, type SkillEntry } from '@/api/devTools/devTools';
 import { spawnExternalConsole, spawnSession, writeDispatchBrief } from '@/api/fleet/fleet';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
@@ -186,6 +186,16 @@ export function useSkillsWorkbench(slug: string): SkillsWorkbench | null {
     try {
       const taskId = await engine.deployNow(slug, adoptTaskTitle(items), adoptTaskPrompt(items, sourceRootOf), SKILL_TASK_MODEL);
       useImproveActivityStore.getState().start(`${slug}:skills`, taskId, 'deploy');
+      // The LLM adopt lane writes skill files without the provenance sidecar
+      // (unlike skill_files_install), which left such skills `local_only`
+      // forever. Stamp it once the cell's terminal event clears the activity —
+      // one-shot subscription; stamping is best-effort (false when dirs are
+      // missing, e.g. the task failed before writing).
+      const unsubscribe = useImproveActivityStore.subscribe((s) => {
+        if (s.byCell[`${slug}:skills`]) return;
+        unsubscribe();
+        stampSkillProvenance(name, slug, src.source).catch(silentCatch('skillsWorkbench stamp provenance'));
+      });
       addToast(`Claude is adopting “${name}” into ${raw.project.name}, customized for its codebase`, 'success');
     } catch (e) {
       addToast('Couldn’t start the skill task', 'error');

@@ -42,7 +42,7 @@ export function StandardsStep({ config, onChange, mainBranch, testEnvBranch }: S
       <div>
         <div className="flex items-center gap-2 mb-2.5">
           <ShieldCheck className="w-3.5 h-3.5 text-amber-400/80 flex-shrink-0" />
-          <span className="typo-label text-primary uppercase tracking-wider">{dp.standards_precommit_heading}</span>
+          <span className="typo-label text-primary">{dp.standards_precommit_heading}</span>
           <div className="flex-1 h-px bg-primary/10" />
         </div>
         <div className="rounded-input border border-primary/10 divide-y divide-primary/5">
@@ -56,7 +56,7 @@ export function StandardsStep({ config, onChange, mainBranch, testEnvBranch }: S
       <div>
         <div className="flex items-center gap-2 mb-2.5">
           <GitMerge className="w-3.5 h-3.5 text-amber-400/80 flex-shrink-0" />
-          <span className="typo-label text-primary uppercase tracking-wider">{dp.standards_branching_heading}</span>
+          <span className="typo-label text-primary">{dp.standards_branching_heading}</span>
           <div className="flex-1 h-px bg-primary/10" />
         </div>
 

@@ -209,7 +209,7 @@ export function PeerDetailDrawer({
 
           {/* Peer info */}
           <div className="space-y-2">
-            <h4 className="typo-label font-semibold text-foreground uppercase tracking-wider">{st.peer_info}</h4>
+            <h4 className="typo-label font-semibold text-foreground">{st.peer_info}</h4>
             <div className="rounded-card border border-border bg-secondary/10 p-3 space-y-2 typo-body">
               <div className="flex justify-between">
                 <span className="text-foreground">{st.trust_label}</span>
@@ -253,7 +253,7 @@ export function PeerDetailDrawer({
               )}
 
               <div className="flex items-center justify-between">
-                <h4 className="typo-label font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <h4 className="typo-label font-semibold text-foreground flex items-center gap-1.5">
                   <Package className="w-3.5 h-3.5" />
                   {st.shared_resources}
                   {(syncProgress || manifest.length > 0) && (

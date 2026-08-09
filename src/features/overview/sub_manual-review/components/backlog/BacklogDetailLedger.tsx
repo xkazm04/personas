@@ -31,7 +31,7 @@ export interface BacklogNav {
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5 py-2 min-w-0">
-      <span className="typo-label text-muted-foreground uppercase tracking-wide">{label}</span>
+      <span className="typo-label text-muted-foreground">{label}</span>
       <span className="typo-body text-foreground break-words">{children}</span>
     </div>
   );
@@ -138,7 +138,7 @@ export function BacklogDetailLedger({
             </div>
             {idea.reasoning.trim() && (
               <div className="flex flex-col gap-1.5 max-w-[68ch]">
-                <span className="typo-label text-muted-foreground uppercase tracking-wide">
+                <span className="typo-label text-muted-foreground">
                   {r.backlog_detail_reasoning}
                 </span>
                 <MarkdownRenderer
@@ -149,7 +149,7 @@ export function BacklogDetailLedger({
             )}
             {evidence && (
               <div className="flex flex-col gap-1.5 max-w-[68ch]">
-                <span className="typo-label text-muted-foreground uppercase tracking-wide">
+                <span className="typo-label text-muted-foreground">
                   {r.backlog_detail_evidence}
                 </span>
                 <pre className="typo-caption text-foreground/70 bg-secondary/30 rounded-card p-3 whitespace-pre-wrap break-words">

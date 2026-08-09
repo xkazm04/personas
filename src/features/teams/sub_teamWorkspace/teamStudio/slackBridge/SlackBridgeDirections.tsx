@@ -46,7 +46,7 @@ export function SlackBridgeDirections({
 
   return (
     <div className={`space-y-3 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
-      <span className="typo-label uppercase tracking-wider text-foreground/85">
+      <span className="typo-label text-foreground/85">
         {ts.slack_bridge_directions_heading}
       </span>
       <ToggleRow

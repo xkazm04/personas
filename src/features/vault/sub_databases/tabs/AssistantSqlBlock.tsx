@@ -32,7 +32,7 @@ export function AssistantSqlBlock({
 
       <div className="rounded-modal border border-primary/10 overflow-hidden">
         <div className="flex items-center justify-between px-3 py-1.5 bg-secondary/40 border-b border-primary/10">
-          <span className="typo-label font-medium text-foreground uppercase tracking-wide">
+          <span className="typo-label font-medium text-foreground">
             {tx(db.generated_label, { language: language === 'sql' ? 'SQL' : language })}
           </span>
           <div className="flex items-center gap-1">

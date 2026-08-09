@@ -172,7 +172,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
             {hasDecisions && isPending && (
               <div className="mt-3 rounded-modal border border-primary/10 bg-secondary/20 overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 bg-secondary/10">
-                  <span className="typo-label font-semibold text-foreground uppercase tracking-wider">{t.overview.review.decisions_label} ({decisions.length})</span>
+                  <span className="typo-label font-semibold text-foreground">{t.overview.review.decisions_label} ({decisions.length})</span>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => { const all: Record<string, 'accepted'> = {}; decisions.forEach((d) => { all[d.id] = 'accepted'; }); setDecisionStates(all); }}

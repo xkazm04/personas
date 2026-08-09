@@ -114,7 +114,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
               {/* Improvement #3: Themed section label */}
               <div className="flex items-center justify-between px-5 py-2.5 border-b border-primary/8 flex-shrink-0 bg-secondary/5">
-                <span className="typo-label font-semibold uppercase tracking-wider text-foreground">
+                <span className="typo-label font-semibold text-foreground">
                   {t.triggers.event_data_section_label}
                 </span>
                 {/* Improvement #10: Copy button with improved hover/animation */}
@@ -160,7 +160,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
             <div className="flex-shrink-0 border-t border-red-500/15 bg-red-500/3">
               <div className="flex items-center gap-2 px-5 py-2.5 border-b border-red-500/10">
                 <AlertCircle className="w-3.5 h-3.5 text-red-400" />
-                <span className="typo-label font-semibold uppercase tracking-wider text-red-400/70">
+                <span className="typo-label font-semibold text-red-400/70">
                   {t.triggers.error_section_label}
                 </span>
               </div>

@@ -41,7 +41,7 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-1.5">
-        <span className={`typo-label font-semibold text-foreground uppercase tracking-wider ${compact ? 'mr-1' : 'mr-2'}`}>
+        <span className={`typo-label font-semibold text-foreground ${compact ? 'mr-1' : 'mr-2'}`}>
           Rate
         </span>
         {RATING_OPTIONS.map((opt) => {

@@ -17,7 +17,7 @@ export function PolaritySlider({
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
-        <span className="typo-label uppercase tracking-[0.15em] text-foreground/85">{label}</span>
+        <span className="typo-label text-foreground/85">{label}</span>
         <span className="typo-caption font-mono" style={{ color }}>{pct}</span>
       </div>
       <div className="relative h-6 flex items-center">

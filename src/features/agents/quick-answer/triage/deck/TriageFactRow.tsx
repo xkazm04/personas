@@ -64,7 +64,7 @@ export const TriageFactRow = memo(function TriageFactRow({
           const reading = toneReading(t, fact.tone);
           return (
             <div key={fact.id} className="flex min-w-0 items-baseline gap-1.5">
-              <dt className="typo-label shrink-0 uppercase tracking-wide text-muted-foreground">
+              <dt className="typo-label shrink-0 text-muted-foreground">
                 {fact.label}
               </dt>
               <dd

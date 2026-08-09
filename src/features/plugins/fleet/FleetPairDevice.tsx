@@ -138,7 +138,7 @@ export function FleetPairDevice() {
           {pair ? (
             <>
               <div>
-                <p className="typo-label uppercase tracking-wider text-foreground mb-0.5">
+                <p className="typo-label text-foreground mb-0.5">
                   {t.plugins.fleet.pair_url_label}
                 </p>
                 <div className="flex items-center gap-2 min-w-0">
@@ -177,7 +177,7 @@ export function FleetPairDevice() {
 
       {/* Paired devices */}
       <div className="mt-4 border-t border-primary/10 pt-3">
-        <p className="typo-label uppercase tracking-wider text-foreground mb-1.5">
+        <p className="typo-label text-foreground mb-1.5">
           {t.plugins.fleet.pair_devices_title}
         </p>
         {devices.length === 0 ? (

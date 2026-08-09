@@ -24,7 +24,7 @@ interface PersonaCrestProps {
  * tile sigils read as sub-units rather than peer-of-persona crests.
  *
  * Typography mirrors the project Design.md tokens (typo-section-title for
- * the name, typo-label uppercase for the meta strip).
+* the name, typo-label for the meta strip).
  */
 export function PersonaCrest({ personaName, useCases, variant = 'compact', rightSlot }: PersonaCrestProps) {
   const { t, tx } = useTranslation();
@@ -46,12 +46,12 @@ export function PersonaCrest({ personaName, useCases, variant = 'compact', right
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2">
-          <span className="typo-label uppercase tracking-wider text-foreground shrink-0">{t.agents.use_cases.persona_label}</span>
+          <span className="typo-label text-foreground shrink-0">{t.agents.use_cases.persona_label}</span>
           <span className="typo-section-title text-foreground truncate">{personaName}</span>
         </div>
         <div className="flex items-center gap-3 mt-1 flex-wrap">
           <span className="typo-data font-mono text-foreground">{totalCount}</span>
-          <span className="typo-label uppercase tracking-wider text-foreground">{t.agents.use_cases.capabilities_label}</span>
+          <span className="typo-label text-foreground">{t.agents.use_cases.capabilities_label}</span>
           <span className="typo-caption text-status-success">{tx(t.agents.use_cases.capabilities_active, { count: activeCount })}</span>
           {attentionCount > 0 && (
             <span className="typo-caption text-status-warning">{tx(t.agents.use_cases.capabilities_attention, { count: attentionCount })}</span>

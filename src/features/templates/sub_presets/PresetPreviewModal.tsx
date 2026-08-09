@@ -116,7 +116,7 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
             adoption switches to status badges. */}
         <section>
           <div className="flex items-center gap-2 mb-2">
-            <h3 className="typo-label uppercase tracking-wider text-foreground">
+            <h3 className="typo-label text-foreground">
               {t.templates.presets.preview_members_heading}
             </h3>
             <span className="typo-label text-foreground">

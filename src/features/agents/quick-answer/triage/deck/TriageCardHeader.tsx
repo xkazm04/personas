@@ -44,7 +44,7 @@ function AlertBanner({ alert }: { alert: TriageAlert }) {
     >
       <span className={`w-1 shrink-0 self-stretch ${TONE_FILL[alert.tone]}`} aria-hidden />
       <div className="min-w-0 flex-1 py-2.5 pr-3">
-        <p className={`flex items-center gap-1.5 typo-label uppercase tracking-wide ${TONE_TEXT[alert.tone]}`}>
+        <p className={`flex items-center gap-1.5 typo-label ${TONE_TEXT[alert.tone]}`}>
           {Icon ? <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden /> : null}
           {alert.label}
         </p>
@@ -72,7 +72,7 @@ function SourceStamp({ source }: { source: TriageItem['source'] }) {
       <span className="min-w-0 text-right">
         <span className="typo-title block truncate text-foreground">{source.label}</span>
         {source.sublabel ? (
-          <span className="typo-label block truncate uppercase tracking-wide text-muted-foreground">
+          <span className="typo-label block truncate text-muted-foreground">
             {source.sublabel}
           </span>
         ) : null}

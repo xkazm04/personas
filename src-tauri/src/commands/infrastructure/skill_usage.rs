@@ -90,6 +90,21 @@ pub struct SkillUsageRow {
     pub last_invoked_at: Option<String>,
     /// Age-guarded: older than the window AND zero invokes inside it.
     pub dormant: bool,
+    /// Declared `version:` frontmatter at last reconcile ("major.minor");
+    /// None = unversioned (pre-standard skill, implicit 1.0).
+    pub version: Option<String>,
+}
+
+/// One row of a skill's revision timeline — the first consumer of the
+/// `skill_revisions` history the reconcile pass has been minting since P1.
+/// `version` is the declared frontmatter version at that revision; NULL rows
+/// predate the version standard.
+#[derive(Debug, Serialize)]
+pub struct SkillRevisionRow {
+    pub rev: i64,
+    pub content_hash: Option<String>,
+    pub changed_at: String,
+    pub version: Option<String>,
 }
 
 // ============================================================================
@@ -158,36 +173,43 @@ fn reconcile_scope(
                 let id = uuid::Uuid::new_v4().to_string();
                 conn.execute(
                     "INSERT INTO skill_registry
-                       (id, name, scope, project_id, content_hash, description, first_seen_at)
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, COALESCE(?7, datetime('now')))",
-                    rusqlite::params![id, e.name, scope, project_id, hash, desc, first_seen],
+                       (id, name, scope, project_id, content_hash, description, version, first_seen_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, COALESCE(?8, datetime('now')))",
+                    rusqlite::params![id, e.name, scope, project_id, hash, desc, e.version, first_seen],
                 )?;
                 conn.execute(
-                    "INSERT INTO skill_revisions (skill_id, rev, content_hash) VALUES (?1, 1, ?2)",
-                    rusqlite::params![id, hash],
+                    "INSERT INTO skill_revisions (skill_id, rev, content_hash, version) VALUES (?1, 1, ?2, ?3)",
+                    rusqlite::params![id, hash, e.version],
                 )?;
                 summary.registry_new += 1;
             }
             Some((id, old_hash)) => {
-                // Re-seen: clear missing marker; on hash change, record a revision.
+                // Re-seen: clear missing marker; on hash change, record a revision
+                // carrying the declared version at that revision (a version bump
+                // edits SKILL.md, so it always lands here — the version timeline
+                // is a free read off skill_revisions).
                 if old_hash != hash {
                     conn.execute(
                         "UPDATE skill_registry
-                         SET content_hash = ?2, description = ?3,
+                         SET content_hash = ?2, description = ?3, version = ?4,
                              last_changed_at = datetime('now'), missing_since = NULL
                          WHERE id = ?1",
-                        rusqlite::params![id, hash, desc],
+                        rusqlite::params![id, hash, desc, e.version],
                     )?;
                     conn.execute(
-                        "INSERT INTO skill_revisions (skill_id, rev, content_hash)
-                         VALUES (?1, (SELECT COALESCE(MAX(rev),0)+1 FROM skill_revisions WHERE skill_id = ?1), ?2)",
-                        rusqlite::params![id, hash],
+                        "INSERT INTO skill_revisions (skill_id, rev, content_hash, version)
+                         VALUES (?1, (SELECT COALESCE(MAX(rev),0)+1 FROM skill_revisions WHERE skill_id = ?1), ?2, ?3)",
+                        rusqlite::params![id, hash, e.version],
                     )?;
                     summary.registry_changed += 1;
                 } else {
+                    // Hash-identical rescan: still converge the declared version
+                    // (heals rows minted before the version column existed).
                     conn.execute(
-                        "UPDATE skill_registry SET missing_since = NULL, description = ?2 WHERE id = ?1",
-                        rusqlite::params![id, desc],
+                        "UPDATE skill_registry
+                         SET missing_since = NULL, description = ?2, version = ?3
+                         WHERE id = ?1",
+                        rusqlite::params![id, desc, e.version],
                     )?;
                 }
                 // Converge first_seen_at DOWN to the filesystem's knowledge —
@@ -584,7 +606,8 @@ pub fn skill_usage_overview(
                     (SELECT MAX(e.occurred_at) FROM skill_usage_events e
                       WHERE e.skill_name = r.name
                         AND (r.scope = 'global' OR e.project_id = r.project_id)) AS last_invoked_at,
-                    (r.first_seen_at < datetime('now', ?1)) AS aged
+                    (r.first_seen_at < datetime('now', ?1)) AS aged,
+                    r.version
              FROM skill_registry r
              ORDER BY r.scope, r.name",
         )
@@ -608,8 +631,51 @@ pub fn skill_usage_overview(
                 missing_since,
                 invokes_30d,
                 last_invoked_at: r.get(10)?,
+                version: r.get(12)?,
             })
         })
+        .map_err(|e| AppError::Internal(format!("query failed: {e}")))?;
+
+    Ok(rows.flatten().collect())
+}
+
+/// A skill's revision timeline, oldest first — feeds the Trace tab's version
+/// rail. `scope`/`project_id` address one registry row exactly (same identity
+/// key as the reconcile); a missing row returns an empty vec, not an error.
+#[tauri::command]
+pub fn skill_version_timeline(
+    state: State<'_, Arc<AppState>>,
+    skill_name: String,
+    scope: String,
+    project_id: Option<String>,
+) -> Result<Vec<SkillRevisionRow>, AppError> {
+    require_auth_sync(&state)?;
+    let conn = state
+        .db
+        .get()
+        .map_err(|e| AppError::Internal(format!("db connection failed: {e}")))?;
+
+    let mut stmt = conn
+        .prepare(
+            "SELECT v.rev, v.content_hash, v.changed_at, v.version
+             FROM skill_revisions v
+             JOIN skill_registry r ON r.id = v.skill_id
+             WHERE r.name = ?1 AND r.scope = ?2 AND COALESCE(r.project_id,'') = ?3
+             ORDER BY v.rev",
+        )
+        .map_err(|e| AppError::Internal(format!("prepare failed: {e}")))?;
+    let rows = stmt
+        .query_map(
+            rusqlite::params![skill_name, scope, project_id.as_deref().unwrap_or("")],
+            |r| {
+                Ok(SkillRevisionRow {
+                    rev: r.get(0)?,
+                    content_hash: r.get(1)?,
+                    changed_at: r.get(2)?,
+                    version: r.get(3)?,
+                })
+            },
+        )
         .map_err(|e| AppError::Internal(format!("query failed: {e}")))?;
 
     Ok(rows.flatten().collect())

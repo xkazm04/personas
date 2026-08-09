@@ -2231,6 +2231,15 @@ fn write_harness_docs(
             format!("[Warn] Failed to write backlog digest: {e}."),
         );
     }
+    // Offline skill registry for the reflection contract's sync ritual —
+    // same best-effort contract (docs/skill-standard.md).
+    if let Err(e) = super::skill_registry_export::write_skill_registry(pool, project_id, root_path) {
+        CONTEXT_GEN_JOBS.emit_line(
+            app,
+            scan_id,
+            format!("[Warn] Failed to write skill registry: {e}."),
+        );
+    }
     // Granularity report — the observable guard against micro-context drift
     // (the 2026-08 map converged at 769 contexts averaging 5 files because the
     // old prompt asked for 5-15). Band: 10-30 files per context.

@@ -9,10 +9,11 @@
 // (workspace rollouts, per-dimension guided runs, …). The copy is deterministic
 // (`skill_files_install`: SKILL.md + reference files, provenance-stamped) — no
 // LLM, no token cost, and the workbench later reads it as installed.
-import { installSkill, installSystemSkill, listSkills } from '@/api/devTools/devTools';
+import { exportSkillRegistry, installSkill, installSystemSkill, listSkills } from '@/api/devTools/devTools';
 import { silentCatch } from '@/lib/silentCatch';
 
 import { composeMemoryBlock } from './memoryBlock';
+import { composeReflectionBlock } from './reflectionBlock';
 import { dispatchRowToFleet } from './passportFleet';
 
 export interface DispatchSkillToRepoOpts {
@@ -64,5 +65,16 @@ export async function dispatchSkillToRepo(opts: DispatchSkillToRepoOpts): Promis
   } catch (e) {
     silentCatch('dispatchSkillToRepo memory block')(e);
   }
+  // Skill standard: every dispatched skill carries the dual-reflection
+  // contract (docs/skill-standard.md) — after the MEMORY BLOCK so lane 1 can
+  // reference it. Refresh the repo's offline skill registry first so the
+  // reflection's sync ritual reads current sibling/library versions;
+  // best-effort like the memory block, never blocks the dispatch.
+  try {
+    await exportSkillRegistry(opts.targetProjectId);
+  } catch (e) {
+    silentCatch('dispatchSkillToRepo skill registry export')(e);
+  }
+  prompt = `${prompt}\n\n${composeReflectionBlock()}`;
   return dispatchRowToFleet(opts.dispatchKey, opts.targetRoot, prompt);
 }

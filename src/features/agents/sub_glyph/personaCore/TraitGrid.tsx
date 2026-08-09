@@ -17,7 +17,7 @@ export function AxisTraitGrid({ core }: { core: PersonaCore }) {
         const AxisIcon = axis.icon;
         return (
           <div key={axis.id} className="flex flex-col gap-1.5">
-            <span className="inline-flex items-center gap-1.5 typo-label uppercase tracking-[0.15em]" style={{ color: axis.color }}>
+            <span className="inline-flex items-center gap-1.5 typo-label" style={{ color: axis.color }}>
               <AxisIcon className="w-3.5 h-3.5" /> {axis.short}
             </span>
             <div className="grid grid-cols-1 gap-1.5">

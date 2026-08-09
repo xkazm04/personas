@@ -39,7 +39,7 @@ export function LabHistoryTable<TRun extends { id: string; status: string; creat
   if (runs.length === 0) {
     return (
       <div className="space-y-3">
-        <h4 className="flex items-center gap-2.5 typo-label font-semibold text-foreground uppercase tracking-wider">
+        <h4 className="flex items-center gap-2.5 typo-label font-semibold text-foreground">
           <Clock className="w-3 h-3" />
           {title}
         </h4>
@@ -50,7 +50,7 @@ export function LabHistoryTable<TRun extends { id: string; status: string; creat
 
   return (
     <div className="space-y-2">
-      <h4 className="flex items-center gap-2.5 typo-label font-semibold text-foreground uppercase tracking-wider">
+      <h4 className="flex items-center gap-2.5 typo-label font-semibold text-foreground">
         <Clock className="w-3 h-3" />
         {title}
         <span className="text-foreground font-normal normal-case">({runs.length})</span>
@@ -61,12 +61,12 @@ export function LabHistoryTable<TRun extends { id: string; status: string; creat
           <thead>
             <tr className="border-b border-primary/10 bg-secondary/20">
               {columns.map((col) => (
-                <th key={col.key} className={`text-left px-3 py-2 typo-label font-medium text-foreground uppercase tracking-wider ${col.className ?? ''}`}>
+                <th key={col.key} className={`text-left px-3 py-2 typo-label font-medium text-foreground ${col.className ?? ''}`}>
                   {col.label}
                 </th>
               ))}
-              <th className="text-left px-3 py-2 typo-label font-medium text-foreground uppercase tracking-wider w-[140px]">{t.common.status}</th>
-              <th className="text-left px-3 py-2 typo-label font-medium text-foreground uppercase tracking-wider w-[150px]">{t.agents.lab.col_time}</th>
+              <th className="text-left px-3 py-2 typo-label font-medium text-foreground w-[140px]">{t.common.status}</th>
+              <th className="text-left px-3 py-2 typo-label font-medium text-foreground w-[150px]">{t.agents.lab.col_time}</th>
               <th className="w-10" />
             </tr>
           </thead>

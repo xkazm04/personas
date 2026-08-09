@@ -215,7 +215,7 @@ export function UseCaseDetailExpanded({
         <div className="mb-3 mx-1 px-3 py-2 rounded-card border border-status-warning/30 bg-status-warning/10 inline-flex items-start gap-2 flex-shrink-0">
           <AlertTriangle className="w-4 h-4 text-status-warning mt-0.5 shrink-0" />
           <div className="flex-1 min-w-0">
-            <div className="typo-label uppercase tracking-wider text-status-warning">{t.agents.use_cases.needs_attention_label}</div>
+            <div className="typo-label text-status-warning">{t.agents.use_cases.needs_attention_label}</div>
             <div className="typo-caption text-foreground/85 mt-0.5">{uc.attentionReason}</div>
           </div>
         </div>
@@ -229,7 +229,7 @@ export function UseCaseDetailExpanded({
             <motion.div className="relative" layoutId={`sigil-${uc.id}`} transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}>
               <MiniSigil uc={uc} size={228} isActive petalStyle="wedge" />
             </motion.div>
-            <div className="typo-label uppercase tracking-wider text-foreground mt-3">
+            <div className="typo-label text-foreground mt-3">
               {tx(t.agents.use_cases.dimensions_of_eight, { count: uc.dimensions.length })}
             </div>
             <div className="flex flex-wrap gap-1 justify-center mt-2 max-w-[200px]">
@@ -388,7 +388,7 @@ function DimCard({ dim, title, body, icon: Icon, active, tone, activeColor }: Di
         >
           <Icon className="w-3 h-3" style={{ color: active ? color : '#94a3b8' }} />
         </span>
-        <span className="typo-label uppercase tracking-wider text-foreground">{title}</span>
+        <span className="typo-label text-foreground">{title}</span>
       </div>
       <div className="typo-caption text-foreground/85 leading-snug">{body}</div>
     </div>
@@ -436,9 +436,9 @@ function ToggleDimCard({ dim, title, icon: Icon, state, loading, onClick, bodyOn
         >
           <Icon className="w-3 h-3" style={{ color: on ? color : '#94a3b8' }} />
         </span>
-        <span className="typo-label uppercase tracking-wider text-foreground">{title}</span>
+        <span className="typo-label text-foreground">{title}</span>
         <span
-          className={`ml-auto typo-label uppercase tracking-wider px-1.5 py-0.5 rounded border ${
+          className={`ml-auto typo-label px-1.5 py-0.5 rounded border ${
             on
               ? 'bg-status-success/15 border-status-success/35 text-status-success/95'
               : 'bg-secondary/60 border-card-border text-foreground'
@@ -508,9 +508,9 @@ function ReviewDimCard({ state, loading, onClick, reviewsDefault }: ReviewDimCar
         >
           <UserCheck className="w-3 h-3" style={{ color: isOn ? color : '#94a3b8' }} />
         </span>
-        <span className="typo-label uppercase tracking-wider text-foreground">{t.agents.use_cases.dim_review_title}</span>
+        <span className="typo-label text-foreground">{t.agents.use_cases.dim_review_title}</span>
         <span
-          className={`ml-auto inline-flex items-center gap-1 typo-label uppercase tracking-wider px-1.5 py-0.5 rounded border ${s.pill} ${
+          className={`ml-auto inline-flex items-center gap-1 typo-label px-1.5 py-0.5 rounded border ${s.pill} ${
             loading ? 'opacity-50' : ''
           }`}
         >

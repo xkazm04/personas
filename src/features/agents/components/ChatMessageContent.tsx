@@ -80,7 +80,7 @@ function CodeBlock({
     <div className="relative group/code my-3">
       {language && (
         <div className="flex items-center justify-between px-3 py-1.5 rounded-t-card border border-b-0 border-primary/12 bg-secondary/40">
-          <span className="typo-label text-foreground uppercase tracking-wide">
+          <span className="typo-label text-foreground">
             {language}
           </span>
           <div className="flex items-center gap-1">

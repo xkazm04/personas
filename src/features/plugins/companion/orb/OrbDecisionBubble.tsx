@@ -267,7 +267,7 @@ export function OrbDecisionBubble() {
               data-testid="athena-decision-recommendation"
               className="mt-2.5 rounded-input border border-primary/20 bg-primary/5 px-3 py-2.5"
             >
-              <p className="typo-caption tracking-wide font-semibold text-primary">
+              <p className="typo-label font-medium text-primary">
                 {t.plugins.companion.decision_recommend_prefix}
               </p>
               <MarkdownRenderer content={decision.recommendation} className="mt-1 typo-body text-foreground/90 leading-relaxed" />

@@ -85,7 +85,7 @@ export function DecisionDrawer({ item, onClose }: DecisionDrawerProps) {
         {item.kind === 'approval' && (
           <div className="px-5 pb-3">
             <label className="block">
-              <span className="typo-label uppercase tracking-wider text-foreground block mb-1.5">
+              <span className="typo-label text-foreground block mb-1.5">
                 <DebtText k="auto_notes_optional_4d56ca9b" />
               </span>
               <textarea

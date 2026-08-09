@@ -1549,6 +1549,9 @@ export interface SkillEntry {
   /** Frontmatter `contexts: tracked` — the skill declares it walks the context
    *  map and anchors its memory per context (coverage rows in the Skills UI). */
   contextTracked: boolean;
+  /** Declared `version:` frontmatter ("major.minor"), or null = unversioned
+   *  (pre-standard skill; render as an implicit "1.0"). */
+  version: string | null;
 }
 
 export interface SkillFileContent {
@@ -1652,6 +1655,8 @@ export interface SkillUsageRow {
   last_invoked_at: string | null;
   /** Age-guarded: present ≥30d AND zero invokes in the window. */
   dormant: boolean;
+  /** Declared `version:` at last reconcile ("major.minor"), or null. */
+  version: string | null;
 }
 
 /** Incremental transcript-mining sweep + registry reconcile. Idempotent;
@@ -1667,6 +1672,71 @@ export const scanSkillUsage = () =>
 
 export const getSkillUsageOverview = () =>
   safeInvoke<SkillUsageRow[]>([], "skill_usage_overview", {});
+
+// -- skill standard: versioning + lessons + offline registry ------------------
+// (docs/skill-standard.md — Trace tab + reflection contract surfaces)
+
+/** One revision of a skill's timeline. Mirrors Rust `SkillRevisionRow`
+ *  (snake_case). `version` is the declared frontmatter version at that
+ *  revision; null rows predate the version standard. */
+export interface SkillRevisionRow {
+  rev: number;
+  content_hash: string | null;
+  changed_at: string;
+  version: string | null;
+}
+
+/** A skill's revision timeline, oldest first. Missing registry row → []. */
+export const skillVersionTimeline = (
+  skillName: string,
+  scope: 'global' | 'project',
+  projectId?: string | null,
+) =>
+  safeInvoke<SkillRevisionRow[]>([], "skill_version_timeline", {
+    skillName,
+    scope,
+    projectId: projectId ?? null,
+  });
+
+/** One parsed LESSONS.md entry + where it was found. Mirrors Rust
+ *  `SkillLessonRow` (snake_case). */
+export interface SkillLessonRow {
+  skill: string;
+  scope: 'global' | 'project';
+  project_id: string | null;
+  project_name: string | null;
+  /** Version the lesson's run used (entry header), or null. */
+  version: string | null;
+  date: string | null;
+  /** Bullets joined with newlines. */
+  lesson: string;
+  is_redesign: boolean;
+}
+
+/** Parsed lessons across the library + every project's installed copies.
+ *  `skillName` omitted lists all skills (bounded backend-side). */
+export const listSkillLessons = (skillName?: string | null) =>
+  safeInvoke<SkillLessonRow[]>([], "skill_lessons_list", { skillName: skillName ?? null });
+
+/** Write/refresh `.personas/skill-registry.json` in the project's repo — the
+ *  offline sibling/library-version snapshot the reflection contract's sync
+ *  ritual reads. Called before skill dispatches. Returns the skill count. */
+export const exportSkillRegistry = (projectId: string) =>
+  safeInvoke<number>(0, "dev_tools_export_skill_registry", { projectId });
+
+/** Stamp the provenance sidecar on an already-installed skill — closes the
+ *  LLM adopt lane's gap (Dev-runner writes carry no sidecar, reading as
+ *  local_only forever). Best-effort: false = source/target missing. */
+export const stampSkillProvenance = (
+  skillName: string,
+  targetProjectId: string,
+  sourceProjectId?: string | null,
+) =>
+  safeInvoke<boolean>(false, "skill_files_stamp_provenance", {
+    skillName,
+    targetProjectId,
+    sourceProjectId: sourceProjectId ?? null,
+  });
 
 // -- doc-rot telemetry (Brainiac-adoption P2) ---------------------------------
 

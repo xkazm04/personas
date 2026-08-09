@@ -35,7 +35,7 @@ function PillarMeter({ pillar, label, hint }: { pillar: Pillar; label: string; h
   return (
     <Tooltip content={hint}>
       <div className="flex flex-col gap-1 min-w-0">
-        <span className="typo-label text-muted-foreground uppercase tracking-wide truncate">
+        <span className="typo-label text-muted-foreground truncate">
           {label}
         </span>
         <div className="flex items-baseline gap-1.5">
@@ -117,7 +117,7 @@ export function WorkspacePulse({
       <div className="flex items-center gap-4 flex-wrap">
         <div className="flex items-center gap-1.5 shrink-0">
           <Activity className="w-3.5 h-3.5 text-primary" aria-hidden />
-          <span className="typo-label text-foreground uppercase tracking-wide">
+          <span className="typo-label text-foreground">
             {w.pulse_title}
           </span>
         </div>
@@ -135,7 +135,7 @@ export function WorkspacePulse({
 
         <div className="flex items-center gap-3 shrink-0 border-l border-primary/10 pl-4">
           <div className="flex flex-col gap-0.5">
-            <span className="typo-label text-muted-foreground uppercase tracking-wide">
+            <span className="typo-label text-muted-foreground">
               {tx(w.pulse_window, { days: digest.days })}
             </span>
             <div className="flex items-baseline gap-3 flex-wrap">
@@ -186,7 +186,7 @@ export function WorkspacePulse({
         <div className="mt-3 pt-3 border-t border-primary/10 flex flex-col gap-3">
           {sections.map((s) => (
             <div key={s.key} className="flex flex-col gap-1">
-              <span className="typo-label text-muted-foreground uppercase tracking-wide">
+              <span className="typo-label text-muted-foreground">
                 {s.label} · {s.rows.length}
               </span>
               {s.rows.slice(0, 8).map((r) => (

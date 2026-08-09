@@ -89,7 +89,7 @@ export function DriftNotificationCard({ event, onDismiss }: { event: DesignDrift
         <div className="min-w-0 flex-1 space-y-0.5">
           <div className="flex items-center gap-1.5">
             <span className={`typo-heading font-semibold ${meta.textClass}`}>{event.title}</span>
-            <span className={`typo-label px-1 py-0.5 rounded ${meta.bgClass} ${meta.textClass} font-medium uppercase tracking-wider`}>{meta.label}</span>
+            <span className={`typo-label px-1 py-0.5 rounded ${meta.bgClass} ${meta.textClass} font-medium `}>{meta.label}</span>
           </div>
           <p className="typo-body text-foreground line-clamp-2">{event.description}</p>
           <div className="flex items-center gap-1 pt-0.5">

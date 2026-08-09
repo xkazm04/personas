@@ -35,7 +35,7 @@ export function PresetProcessBlueprint({ preset, a, customizing }: PresetVariant
       {/* Left — member sidebar (one uniform-width column) */}
       <aside className="flex-shrink-0 w-[300px] flex flex-col border-r border-primary/10 bg-secondary/10">
         <div className="flex-shrink-0 px-3 pt-3 pb-1.5 flex items-center justify-between gap-2">
-          <span className="px-1 typo-label uppercase tracking-wider text-foreground inline-flex items-center gap-1.5">
+          <span className="px-1 typo-label text-foreground inline-flex items-center gap-1.5">
             <Users className="w-3.5 h-3.5" />
             {t.templates.presets.preview_members_heading}
           </span>
@@ -109,7 +109,7 @@ export function PresetProcessBlueprint({ preset, a, customizing }: PresetVariant
       <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-5">
         <div className="flex items-center gap-2">
           <Workflow className="w-4 h-4" style={{ color: teamColor }} />
-          <h3 className="typo-label uppercase tracking-wider text-foreground">
+          <h3 className="typo-label text-foreground">
             {t.pipeline.preset_blueprint_heading}
           </h3>
           {preview && (

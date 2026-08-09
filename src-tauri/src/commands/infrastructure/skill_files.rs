@@ -25,6 +25,15 @@ use crate::AppState;
 /// so it's excluded from the skill's reference-file listing and content hash.
 const PROVENANCE_FILE: &str = ".personas-skill-meta.json";
 
+/// Excluded from the content hash (and the reference-file listing) like the
+/// provenance sidecar: lessons are per-copy run history, not method content.
+/// Including them would mark every copy "diverged" from its source the moment
+/// any project appends a lesson, drowning the real method-drift signal the
+/// hash exists to carry. The intentional-change signal lives in SKILL.md's
+/// `version:` frontmatter, which IS hashed. Matched case-insensitively;
+/// `copy_dir_recursive` still copies it, so lessons travel on install.
+const LESSONS_FILE: &str = "LESSONS.md";
+
 /// Per-skill sync-state tokens surfaced in [`SkillEntry::sync_state`]. Kept in
 /// lockstep with the frontend token map in `SkillLibraryRow`.
 const SYNC_IN_SYNC: &str = "in_sync";
@@ -74,6 +83,12 @@ pub struct SkillEntry {
     /// Management UI's coverage rows; evidence via skill-attributed nodes is
     /// the runtime complement).
     pub context_tracked: bool,
+    /// Frontmatter `version:` — "major.minor" (e.g. "1.0", "2.3"). Minor =
+    /// prompt refinement from a skill reflection; major = methodic redesign
+    /// (docs/skill-standard.md). `None` = unversioned (pre-standard skill;
+    /// the UI renders it as an implicit "1.0"). Malformed values normalize
+    /// to `None` like the other closed-set frontmatter fields.
+    pub version: Option<String>,
 }
 
 /// On-disk provenance sidecar ([`PROVENANCE_FILE`]). Internal — not exported to
@@ -342,7 +357,10 @@ fn collect_skill_files(dir: &Path) -> BTreeMap<String, u64> {
             if path.is_dir() {
                 walk(base, &path, out);
             } else {
-                if path.file_name().and_then(|n| n.to_str()) == Some(PROVENANCE_FILE) {
+                let fname = path.file_name().and_then(|n| n.to_str());
+                if fname == Some(PROVENANCE_FILE)
+                    || fname.is_some_and(|n| n.eq_ignore_ascii_case(LESSONS_FILE))
+                {
                     continue;
                 }
                 let rel = path
@@ -457,6 +475,7 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
                     .as_deref()
                     .map(extract_skill_context_tracked)
                     .unwrap_or(false);
+                let version = content.as_deref().and_then(extract_skill_version);
                 entries.push(SkillEntry {
                     name,
                     path: path.to_string_lossy().to_string(),
@@ -470,6 +489,7 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
                     category,
                     memory,
                     context_tracked,
+                    version,
                 });
             }
             continue;
@@ -491,18 +511,22 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
         let description = skill_md_path
             .as_ref()
             .and_then(|p| read_first_line_description(p));
-        let (category, memory, context_tracked) = skill_md_path
+        let (category, memory, context_tracked, version) = skill_md_path
             .as_ref()
             .map(|p| read_skill_meta(p))
-            .unwrap_or((None, None, false));
+            .unwrap_or((None, None, false, None));
 
-        // Count reference files (everything except SKILL.md and the internal
-        // provenance sidecar, which is engine-managed, not user content).
+        // Count reference files (everything except SKILL.md, the internal
+        // provenance sidecar and the lessons log — the latter two are
+        // engine/reflection-managed, not method content).
         let mut ref_files = Vec::new();
         if let Ok(sub_entries) = std::fs::read_dir(&path) {
             for sub in sub_entries.flatten() {
                 let fname = sub.file_name().to_string_lossy().to_string();
-                if fname.to_lowercase() != "skill.md" && fname != PROVENANCE_FILE {
+                if fname.to_lowercase() != "skill.md"
+                    && fname != PROVENANCE_FILE
+                    && !fname.eq_ignore_ascii_case(LESSONS_FILE)
+                {
                     ref_files.push(fname);
                 }
             }
@@ -521,6 +545,7 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
             category,
             memory,
             context_tracked,
+            version,
         });
     }
 
@@ -590,16 +615,51 @@ fn extract_skill_context_tracked(content: &str) -> bool {
         .unwrap_or(false)
 }
 
-/// Category + memory binding + context declaration over a SKILL.md path
-/// (one read, all fields).
-fn read_skill_meta(skill_md_path: &Path) -> (Option<String>, Option<String>, bool) {
+/// Frontmatter `version:` normalized to canonical "major.minor" — both
+/// segments must be non-empty and all-digit (`2.1` ✓, `v2`, `1.0.3`, `two.1`
+/// → None). Note `extract_frontmatter_value` matches `version:` at line start
+/// inside the frontmatter block only; keys like `min-version:` cannot
+/// false-match (strip_prefix on the trimmed line), though an indented
+/// `version:` inside a nested YAML block would — acceptable with the shape
+/// check.
+fn extract_skill_version(content: &str) -> Option<String> {
+    let v = extract_frontmatter_value(content, "version")?;
+    let mut parts = v.splitn(2, '.');
+    let is_num = |s: &str| !s.is_empty() && s.len() <= 4 && s.bytes().all(|b| b.is_ascii_digit());
+    match (parts.next(), parts.next()) {
+        (Some(maj), Some(min)) if is_num(maj) && is_num(min) => Some(format!("{maj}.{min}")),
+        _ => None,
+    }
+}
+
+/// Parse a canonical "major.minor" version into comparable numbers. `None` or
+/// unparseable → `(1, 0)` — the implicit version of a pre-standard skill.
+/// Exercised by unit tests; reserved for backend drift verdicts (today the
+/// frontend ports the same semantics in `trace/traceModel.ts::driftOf`).
+#[cfg_attr(not(test), allow(dead_code))]
+pub(crate) fn parse_skill_version(v: Option<&str>) -> (u32, u32) {
+    let Some(v) = v else { return (1, 0) };
+    let mut parts = v.splitn(2, '.');
+    match (
+        parts.next().and_then(|s| s.parse::<u32>().ok()),
+        parts.next().and_then(|s| s.parse::<u32>().ok()),
+    ) {
+        (Some(maj), Some(min)) => (maj, min),
+        _ => (1, 0),
+    }
+}
+
+/// Category + memory binding + context declaration + version over a SKILL.md
+/// path (one read, all fields).
+fn read_skill_meta(skill_md_path: &Path) -> (Option<String>, Option<String>, bool, Option<String>) {
     match std::fs::read_to_string(skill_md_path) {
         Ok(content) => (
             extract_skill_category(&content),
             extract_skill_memory(&content),
             extract_skill_context_tracked(&content),
+            extract_skill_version(&content),
         ),
-        Err(_) => (None, None, false),
+        Err(_) => (None, None, false, None),
     }
 }
 
@@ -730,6 +790,7 @@ pub fn skill_files_install(
             None => ("global", None),
         };
         write_provenance(&target_dir, &src_dir, source_kind, source_pid);
+        refresh_skill_registry_file(&state, &target_project_id);
         Ok(SkillInstallResult {
             installed: true,
             target_path: target_dir.to_string_lossy().into_owned(),
@@ -809,12 +870,68 @@ pub fn skill_files_install_system(
     }
     let file_count = copy_dir_recursive(&src_dir, &target_dir)?;
     write_provenance(&target_dir, &src_dir, "system", None);
+    refresh_skill_registry_file(&state, &target_project_id);
     Ok(SkillInstallResult {
         installed: true,
         target_path: target_dir.to_string_lossy().into_owned(),
         file_count,
         reason: None,
     })
+}
+
+/// Best-effort refresh of the target repo's `.personas/skill-registry.json`
+/// after an install changed what's on disk (docs/skill-standard.md). Never
+/// fails the install — the context scan and the pre-dispatch export are the
+/// other refresh points.
+fn refresh_skill_registry_file(state: &State<'_, Arc<AppState>>, project_id: &str) {
+    let root = crate::db::repos::dev_tools::get_project_by_id(&state.db, project_id)
+        .map(|p| p.root_path);
+    if let Ok(root) = root {
+        if let Err(e) =
+            super::skill_registry_export::write_skill_registry(&state.db, project_id, &root)
+        {
+            tracing::warn!(error = %e, project = %project_id, "skill_files: registry file refresh failed");
+        }
+    }
+}
+
+/// Stamp (or re-stamp) the provenance sidecar on an ALREADY-INSTALLED skill —
+/// the closing patch for the LLM adopt/share lane, which writes skill files
+/// through a Dev-runner task rather than `skill_files_install` and therefore
+/// never wrote the sidecar, leaving LLM-adopted skills stuck at `local_only`
+/// (docs/plans/workspace-knowledge-center.md P4 seam). Called by the frontend
+/// on the adopt task's success event. Best-effort by design: returns `false`
+/// (not an error) when the source or target directory is missing, mirroring
+/// `write_provenance`'s own degrade-to-local-only posture. The stamped copy
+/// will typically classify `diverged` (the LLM customized it) — that is
+/// honest; version compare distinguishes "customized" from "stale".
+#[tauri::command]
+pub fn skill_files_stamp_provenance(
+    state: State<'_, Arc<AppState>>,
+    skill_name: String,
+    target_project_id: String,
+    source_project_id: Option<String>,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    validate_skill_name(&skill_name)?;
+
+    let source_dir = match source_project_id.as_deref() {
+        Some(pid) => project_skills_dir(&state, pid)?,
+        None => {
+            global_skills_dir().ok_or_else(|| AppError::Internal("no home directory".into()))?
+        }
+    };
+    let src_dir = source_dir.join(&skill_name);
+    let target_dir = project_skills_dir(&state, &target_project_id)?.join(&skill_name);
+    if !src_dir.is_dir() || !target_dir.is_dir() {
+        return Ok(false);
+    }
+    let (source_kind, source_pid) = match source_project_id.as_deref() {
+        Some(pid) => ("project", Some(pid)),
+        None => ("global", None),
+    };
+    write_provenance(&target_dir, &src_dir, source_kind, source_pid);
+    Ok(true)
 }
 
 /// Preview what a (re-)install of `skill_name` into `target_project_id` would
@@ -1096,6 +1213,58 @@ mod tests {
         // Editing real content DOES change it.
         write_skill(&dir, "---\nname: x\n---\n# X changed\n");
         assert_ne!(h1, hash_skill_dir(&dir).unwrap());
+    }
+
+    #[test]
+    fn extract_skill_version_normalizes_and_rejects() {
+        assert_eq!(
+            extract_skill_version("---\nname: x\nversion: 2.1\n---\nBody").as_deref(),
+            Some("2.1")
+        );
+        assert_eq!(
+            extract_skill_version("---\nversion: \"10.42\"\n---\n").as_deref(),
+            Some("10.42")
+        );
+        // Malformed shapes all normalize to None.
+        for bad in ["v2", "1", "1.0.3", "two.one", "1.", ".5", "12345.0", ""] {
+            let md = format!("---\nversion: {bad}\n---\n");
+            assert_eq!(extract_skill_version(&md), None, "should reject {bad:?}");
+        }
+        // Missing key / no frontmatter.
+        assert_eq!(extract_skill_version("---\nname: x\n---\n"), None);
+        assert_eq!(extract_skill_version("version: 1.0\n"), None);
+    }
+
+    #[test]
+    fn parse_skill_version_defaults_to_one_zero() {
+        assert_eq!(parse_skill_version(Some("2.3")), (2, 3));
+        assert_eq!(parse_skill_version(Some("10.0")), (10, 0));
+        assert_eq!(parse_skill_version(None), (1, 0));
+        assert_eq!(parse_skill_version(Some("garbage")), (1, 0));
+        // Ordering works with plain tuple comparison.
+        assert!(parse_skill_version(Some("2.0")) > parse_skill_version(Some("1.9")));
+        assert!(parse_skill_version(Some("1.10")) > parse_skill_version(Some("1.9")));
+    }
+
+    #[test]
+    fn hash_skill_dir_excludes_lessons_file() {
+        let tmp = tempfile::tempdir().unwrap();
+        let a = tmp.path().join("a");
+        let b = tmp.path().join("b");
+        write_skill(&a, "---\nname: x\nversion: 1.0\n---\n# X\n");
+        write_skill(&b, "---\nname: x\nversion: 1.0\n---\n# X\n");
+        // Dirs differing ONLY in LESSONS.md (any casing) hash equal.
+        std::fs::write(a.join("LESSONS.md"), "# Lessons — x\n\n## 1.0 — 2026-08-07 — personas\n- note\n").unwrap();
+        std::fs::write(b.join("lessons.md"), "different lessons entirely\n").unwrap();
+        assert_eq!(hash_skill_dir(&a), hash_skill_dir(&b), "LESSONS.md excluded from hash");
+        // And a lessons append never flips sync_state.
+        let source = tmp.path().join("src");
+        let target = tmp.path().join("dst");
+        write_skill(&source, "---\nname: x\n---\n# X\n");
+        copy_dir_recursive(&source, &target).unwrap();
+        write_provenance(&target, &source, "global", None);
+        std::fs::write(target.join("LESSONS.md"), "## 1.0 — 2026-08-07 — personas\n- lesson\n").unwrap();
+        assert_eq!(classify_sync_state(&target).0, SYNC_IN_SYNC);
     }
 
     #[test]

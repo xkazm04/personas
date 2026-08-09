@@ -118,13 +118,13 @@ export function AssignmentReplay({ steps, personaIndex, onExit }: {
 
         {step.description && (
           <div>
-            <p className="typo-label uppercase tracking-wider text-foreground mb-1">{ts.replay_requirement}</p>
+            <p className="typo-label text-foreground mb-1">{ts.replay_requirement}</p>
             <p className="typo-body text-foreground/85 whitespace-pre-wrap">{step.description}</p>
           </div>
         )}
 
         <div>
-          <p className="typo-label uppercase tracking-wider text-foreground mb-1">{ts.replay_output}</p>
+          <p className="typo-label text-foreground mb-1">{ts.replay_output}</p>
           {step.errorMessage ? (
             <p className="flex items-start gap-1.5 typo-body text-red-300/90 whitespace-pre-wrap">
               <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /> {step.errorMessage}

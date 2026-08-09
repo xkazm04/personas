@@ -190,7 +190,7 @@ export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, o
             {/* Root Cause Suggestions */}
             {data.rootCauseSuggestions.length > 0 && (
               <section>
-                <h3 className="typo-label font-semibold text-foreground uppercase tracking-wider mb-2">
+                <h3 className="typo-label font-semibold text-foreground mb-2">
                   {t.overview.anomaly_drilldown_extra.likely_root_causes}
                 </h3>
                 <div className="space-y-2">
@@ -203,7 +203,7 @@ export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, o
 
             {/* Correlated Events Timeline */}
             <section>
-              <h3 className="typo-label font-semibold text-foreground uppercase tracking-wider mb-2">
+              <h3 className="typo-label font-semibold text-foreground mb-2">
                 <DebtText k="auto_correlated_events_4a6b6c7a" />{data.correlatedEvents.length})
               </h3>
               {sortedEvents.length === 0 ? (

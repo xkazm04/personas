@@ -535,7 +535,7 @@ function ListView({
             <Fragment key={entry.path}>
               {showGroupHeader && bucket && (
                 <div className="sticky top-[33px] z-[5] flex items-center justify-between gap-2 px-4 py-1.5 bg-gradient-to-r from-cyan-500/10 via-cyan-500/5 to-transparent border-y border-cyan-500/15 backdrop-blur-sm">
-                  <span className="typo-label tracking-wider uppercase text-cyan-200">
+                  <span className="typo-label text-cyan-200">
                     {kindGroupLabel(t, bucket)}
                   </span>
                   <span className="typo-caption text-cyan-200 tabular-nums">

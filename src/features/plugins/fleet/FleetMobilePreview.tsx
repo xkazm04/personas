@@ -65,7 +65,7 @@ export function FleetMobilePreview() {
           <div className="absolute left-1/2 top-2 h-1.5 w-16 -translate-x-1/2 rounded-full bg-primary/25" aria-hidden="true" />
           {/* Screen */}
           <div className="mt-5 rounded-[1.6rem] bg-background/90 px-4 py-4 min-h-[300px]" aria-hidden="true">
-            <p className="typo-label uppercase tracking-wider text-foreground mb-0.5">Personas</p>
+            <p className="typo-label text-foreground mb-0.5">Personas</p>
             <p className="text-[17px] font-semibold text-foreground">Fleet</p>
             <p className="text-[13px] text-foreground mb-3">{sessionCount}</p>
 
@@ -88,7 +88,7 @@ export function FleetMobilePreview() {
 
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <Hourglass className="w-3 h-3 text-violet-400" />
-                  <span className="typo-label uppercase tracking-wider text-foreground">
+                  <span className="typo-label text-foreground">
                     {waitingItems.length === 1
                       ? tx(t.plugins.fleet.needs_input_one, { count: waitingItems.length })
                       : tx(t.plugins.fleet.needs_input_other, { count: waitingItems.length })}

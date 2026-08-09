@@ -102,7 +102,7 @@ function FacetRow({
 function FacetGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="pb-2">
-      <p className="hud-title px-2 pb-1 typo-label uppercase tracking-wider text-foreground opacity-45">{title}</p>
+      <p className="hud-title px-2 pb-1 typo-label text-foreground opacity-45">{title}</p>
       <div className="space-y-0.5">{children}</div>
     </div>
   );
