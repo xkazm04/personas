@@ -1,9 +1,10 @@
 // VARIANT — Sectors. An orrery: faint concentric ring guides, each area OWNS
-// an angular wedge sized by how much it knows, keystones sit on the inner
-// ring, clusters fan across two outer shells inside their wedge. The wedge is
-// the mental model — "frontend lives in that slice of the sky" — and a tinted
-// sector arc lights up on hover so the territory reads before any label does.
-// Scales by adding shells inside a wedge, never by widening the sky.
+// an angular wedge sized by how much it knows, hex keystones on the inner
+// ring. Round 2 made it a DRILL-DOWN: the overview is rings + keystones +
+// territory tints only, and clicking a keystone (or its wedge) flies the
+// camera into that slice of the sky while its clusters fan across the outer
+// shells. The wedge stays the mental model — "frontend lives there" — and the
+// tint brightens to mark the focused territory.
 import { Fragment, useMemo } from 'react';
 
 import { areaGraphTheme } from './graphTheme';
@@ -40,12 +41,14 @@ export default function PatternGraphSectors({
   k,
   workspaceName,
   hoverArea,
+  focusArea,
   selectedTopic,
   onHoverArea,
+  onFocusArea,
   onSelectCluster,
 }: GraphVariantProps) {
-  const clusterLod = lod(k, 0.5, 0.9);
-  const countLod = lod(k, 1.2, 1.7);
+  const zoomVis = lod(k, 1.0, 1.45);
+  const countLod = lod(k, 1.3, 1.8);
 
   // Wedge widths ∝ cluster count, floored so an empty area keeps a visible
   // sliver of territory instead of vanishing from the map.
@@ -73,12 +76,19 @@ export default function PatternGraphSectors({
         const wedge = wedges[i] ?? { start: 0, end: 0.1, mid: 0.05 };
         const theme = areaGraphTheme(area.area);
         const empty = area.count === 0;
-        const dim = hoverArea !== null && hoverArea !== area.area;
-        const hot = hoverArea === area.area;
+        const focused = focusArea === area.area;
+        const hot = hoverArea === area.area || focused;
+        const dim = focusArea ? !focused : hoverArea !== null && hoverArea !== area.area;
+        const vis = focused ? 1 : focusArea ? 0 : zoomVis;
         const kx = Math.cos(wedge.mid) * RING_KEYSTONE;
         const ky = Math.sin(wedge.mid) * RING_KEYSTONE;
         const aR = nodeRadius(area.count, 17, 2, 34);
         const Icon = theme.icon;
+        const flyTarget = {
+          x: Math.cos(wedge.mid) * 295,
+          y: Math.sin(wedge.mid) * 295,
+          k: 1.3,
+        };
 
         // Clusters flow across shell 0 then shell 1, evenly inside the wedge
         // with edge padding so neighbours never kiss across the gap.
@@ -96,67 +106,83 @@ export default function PatternGraphSectors({
         });
 
         return (
-          <g key={area.area} opacity={dim ? 0.2 : 1} className="transition-opacity duration-200">
-            {/* Sector territory tint. */}
+          <g key={area.area} opacity={dim ? 0.2 : 1} className="transition-opacity duration-300">
+            {/* Sector territory tint — also a drill-down door. */}
             <path
               d={arcPath(130, RING_OUTER, wedge.start, wedge.end)}
               fill={theme.deep}
               fillOpacity={hot ? 0.1 : empty ? 0.015 : 0.045}
               stroke="none"
-              className="transition-[fill-opacity] duration-200"
+              className="cursor-pointer transition-[fill-opacity] duration-200"
               onPointerEnter={() => onHoverArea(area.area)}
               onPointerLeave={() => onHoverArea(null)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onFocusArea(area.area, flyTarget);
+              }}
             />
 
-            {placed.map(({ cl, x, y }) => {
+            {placed.map(({ cl, x, y }, j) => {
               const cR = nodeRadius(cl.count, 6.5, 2.6, 20);
               const isSel = selectedTopic === cl.topic;
               return (
                 <Fragment key={cl.topic}>
-                  <line x1={kx} y1={ky} x2={x} y2={y} stroke={theme.hex} strokeOpacity={0.18} strokeWidth={1} />
                   <g
-                    transform={`translate(${x},${y})`}
-                    className="cursor-pointer"
-                    onPointerEnter={() => onHoverArea(area.area)}
-                    onPointerLeave={() => onHoverArea(null)}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectCluster(cl);
+                    style={{
+                      opacity: vis,
+                      transition: 'opacity 240ms ease',
+                      transitionDelay: focused ? `${Math.min(j * 22, 330)}ms` : '0ms',
+                      pointerEvents: vis < 0.4 ? 'none' : 'auto',
                     }}
                   >
-                    {isSel && <circle r={cR + 5} fill="none" stroke={theme.hex} strokeWidth={1.5} />}
-                    {cl.pending > 0 && (
-                      <circle r={cR + 2.5} fill="none" stroke={theme.hex} strokeOpacity={0.4} strokeWidth={1} strokeDasharray="3 3" />
-                    )}
-                    <circle r={cR} fill={theme.deep} fillOpacity={0.28} stroke={theme.hex} strokeWidth={1.25} />
-                    <NodeLabel
-                      k={k}
-                      dy={cR + 13}
-                      text={cl.cluster}
-                      sub={countLod > 0.02 ? `${cl.count}` : undefined}
-                      fill={theme.hex}
-                      opacity={clusterLod}
-                      size={11}
-                    />
+                    <line x1={kx} y1={ky} x2={x} y2={y} stroke={theme.hex} strokeOpacity={0.18} strokeWidth={1} />
+                    <g
+                      transform={`translate(${x},${y})`}
+                      className="cursor-pointer"
+                      onPointerEnter={() => onHoverArea(area.area)}
+                      onPointerLeave={() => onHoverArea(null)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectCluster(cl);
+                      }}
+                    >
+                      {isSel && <circle r={cR + 5} fill="none" stroke={theme.hex} strokeWidth={1.5} />}
+                      {cl.pending > 0 && (
+                        <circle r={cR + 2.5} fill="none" stroke={theme.hex} strokeOpacity={0.4} strokeWidth={1} strokeDasharray="3 3" />
+                      )}
+                      <circle r={cR} fill={theme.deep} fillOpacity={0.28} stroke={theme.hex} strokeWidth={1.25} />
+                      <NodeLabel
+                        k={k}
+                        dy={cR + 13}
+                        text={cl.cluster}
+                        sub={countLod > 0.02 ? `${cl.count}` : undefined}
+                        fill={theme.hex}
+                        size={11}
+                      />
+                    </g>
                   </g>
                 </Fragment>
               );
             })}
 
-            {/* Keystone — hexagonal, the PoE notable. */}
+            {/* Keystone — hexagonal, the PoE notable, the drill-down door. */}
             <g
               transform={`translate(${kx},${ky})`}
               className="cursor-pointer"
               onPointerEnter={() => onHoverArea(area.area)}
               onPointerLeave={() => onHoverArea(null)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onFocusArea(area.area, flyTarget);
+              }}
             >
               <polygon
                 points={hexPoints(aR)}
                 fill={theme.deep}
-                fillOpacity={empty ? 0.06 : 0.2}
+                fillOpacity={empty ? 0.06 : focused ? 0.32 : 0.2}
                 stroke={theme.hex}
                 strokeOpacity={empty ? 0.3 : 0.9}
-                strokeWidth={1.75}
+                strokeWidth={focused ? 2.5 : 1.75}
               />
               <Icon x={-8} y={-8} width={16} height={16} color={theme.hex} opacity={empty ? 0.4 : 0.95} pointerEvents="none" />
               <NodeLabel

@@ -28,10 +28,13 @@ export interface GraphCanvas {
     onPointerDown: (e: React.PointerEvent) => void;
     onPointerMove: (e: React.PointerEvent) => void;
     onPointerUp: (e: React.PointerEvent) => void;
-    onDoubleClick: () => void;
   };
   zoomBy: (factor: number) => void;
   reset: () => void;
+  /** Animated camera move that lands world point (wx,wy) at the viewport
+   *  centre at zoom k — the Google-Maps "lean in" the drill-down rides on.
+   *  Any manual pan/wheel cancels it (the user always wins the camera). */
+  flyTo: (wx: number, wy: number, k: number, ms?: number) => void;
   /** World → container-pixel projection, for HTML overlays (hover cards). */
   project: (wx: number, wy: number) => { x: number; y: number };
 }
@@ -46,6 +49,18 @@ export function useGraphCanvas(opts?: { initialK?: number }): GraphCanvas {
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, k: initialK });
   const [isPanning, setIsPanning] = useState(false);
   const drag = useRef<{ px: number; py: number; moved: boolean } | null>(null);
+
+  // Mirror + animation handle for flyTo: the rAF loop needs the live camera
+  // without re-subscribing, and any manual gesture must cancel the flight.
+  const cameraRef = useRef(camera);
+  cameraRef.current = camera;
+  const flight = useRef<number | null>(null);
+  const cancelFlight = useCallback(() => {
+    if (flight.current !== null) {
+      cancelAnimationFrame(flight.current);
+      flight.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     if (!el) return;
@@ -64,6 +79,7 @@ export function useGraphCanvas(opts?: { initialK?: number }): GraphCanvas {
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      cancelFlight();
       const rect = el.getBoundingClientRect();
       const cx = e.clientX - rect.left - rect.width / 2;
       const cy = e.clientY - rect.top - rect.height / 2;
@@ -76,13 +92,14 @@ export function useGraphCanvas(opts?: { initialK?: number }): GraphCanvas {
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
-  }, [el]);
+  }, [el, cancelFlight]);
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if (e.button !== 0) return;
+    cancelFlight();
     (e.currentTarget as Element).setPointerCapture(e.pointerId);
     drag.current = { px: e.clientX, py: e.clientY, moved: false };
-  }, []);
+  }, [cancelFlight]);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     const d = drag.current;
@@ -103,16 +120,44 @@ export function useGraphCanvas(opts?: { initialK?: number }): GraphCanvas {
     setIsPanning(false);
   }, []);
 
-  const reset = useCallback(() => setCamera({ x: 0, y: 0, k: initialK }), [initialK]);
+  const flyTo = useCallback(
+    (wx: number, wy: number, k: number, ms = 520) => {
+      cancelFlight();
+      const from = { ...cameraRef.current };
+      const kk = Math.min(MAX_K, Math.max(MIN_K, k));
+      // Centring world point (wx,wy) means x = -wx·k (transform origin is the
+      // viewport centre).
+      const to = { x: -wx * kk, y: -wy * kk, k: kk };
+      const t0 = performance.now();
+      const step = (t: number) => {
+        const p = Math.min(1, (t - t0) / ms);
+        const e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; // easeInOutCubic
+        setCamera({
+          x: from.x + (to.x - from.x) * e,
+          y: from.y + (to.y - from.y) * e,
+          k: from.k + (to.k - from.k) * e,
+        });
+        flight.current = p < 1 ? requestAnimationFrame(step) : null;
+      };
+      flight.current = requestAnimationFrame(step);
+    },
+    [cancelFlight],
+  );
+
+  const reset = useCallback(() => flyTo(0, 0, initialK, 460), [flyTo, initialK]);
 
   const zoomBy = useCallback((factor: number) => {
+    cancelFlight();
     setCamera((c) => {
       const k = Math.min(MAX_K, Math.max(MIN_K, c.k * factor));
       const s = k / c.k;
       // Button zoom anchors at the viewport centre.
       return { k, x: c.x * s, y: c.y * s };
     });
-  }, []);
+  }, [cancelFlight]);
+
+  // Never leave a flight running after unmount.
+  useEffect(() => cancelFlight, [cancelFlight]);
 
   const project = useCallback(
     (wx: number, wy: number) => ({
@@ -128,12 +173,13 @@ export function useGraphCanvas(opts?: { initialK?: number }): GraphCanvas {
       size,
       camera,
       isPanning,
-      handlers: { onPointerDown, onPointerMove, onPointerUp, onDoubleClick: reset },
+      handlers: { onPointerDown, onPointerMove, onPointerUp },
       zoomBy,
       reset,
+      flyTo,
       project,
     }),
-    [size, camera, isPanning, onPointerDown, onPointerMove, onPointerUp, reset, zoomBy, project],
+    [size, camera, isPanning, onPointerDown, onPointerMove, onPointerUp, reset, zoomBy, flyTo, project],
   );
 }
 
