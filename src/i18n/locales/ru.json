@@ -11763,7 +11763,11 @@
     "webhook_missing_secret_message": "У этого webhook-триггера отсутствует секрет подписи.",
     "webhook_missing_secret_suggestion": "Повторно нажмите «Promote» — конвейер автоматически генерирует webhook_secret при отправке. Если проблема сохраняется, перезапустите сборку.",
     "decision_conflict_message": "Это уже решил кто-то другой — перезагружаем.",
-    "decision_conflict_suggestion": "Список обновляется с учётом последнего решения. Проверьте его и решите снова, если не согласны."
+    "decision_conflict_suggestion": "Список обновляется с учётом последнего решения. Проверьте его и решите снова, если не согласны.",
+    "adoption_answers_rejected_message": "Некоторые ответы анкеты отсутствуют или недопустимы.",
+    "adoption_answers_rejected_suggestion": "Откройте вопросы настройки заново, заполните указанные и продолжите.",
+    "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
+    "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
   },
   "empty_states": {
     "credentials_title": "Вашим агентам нужны учётные данные для работы",

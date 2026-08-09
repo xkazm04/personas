@@ -134,5 +134,9 @@
   "webhook_missing_secret_message": "Tomuto webhook triggeru chybí podpisový secret.",
   "webhook_missing_secret_suggestion": "Znovu spusťte Promote — pipeline při odeslání automaticky vygeneruje webhook_secret. Pokud problém přetrvává, restartujte build.",
   "decision_conflict_message": "Toto už rozhodl někdo jiný — načítá se znovu.",
-  "decision_conflict_suggestion": "Seznam se obnovuje s nejnovějším verdiktem. Zkontrolujte ho a rozhodněte znovu, pokud nesouhlasíte."
+  "decision_conflict_suggestion": "Seznam se obnovuje s nejnovějším verdiktem. Zkontrolujte ho a rozhodněte znovu, pokud nesouhlasíte.",
+  "adoption_answers_rejected_message": "Některé odpovědi v dotazníku chybí nebo nejsou platné.",
+  "adoption_answers_rejected_suggestion": "Otevřete znovu úvodní otázky, doplňte uvedené položky a pokračujte.",
+  "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
+  "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
 }

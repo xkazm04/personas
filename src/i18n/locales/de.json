@@ -11763,7 +11763,11 @@
     "webhook_missing_secret_message": "Diesem Webhook-Trigger fehlt sein Signatur-Geheimnis.",
     "webhook_missing_secret_suggestion": "Führen Sie Promote erneut aus — die Pipeline generiert beim Absenden automatisch ein webhook_secret. Falls das Problem weiterhin besteht, starten Sie den Build neu.",
     "decision_conflict_message": "Jemand anderes hat dies bereits entschieden — wird neu geladen.",
-    "decision_conflict_suggestion": "Die Liste wird mit dem neuesten Ergebnis aktualisiert. Prüfen Sie es und entscheiden Sie erneut, falls Sie anderer Meinung sind."
+    "decision_conflict_suggestion": "Die Liste wird mit dem neuesten Ergebnis aktualisiert. Prüfen Sie es und entscheiden Sie erneut, falls Sie anderer Meinung sind.",
+    "adoption_answers_rejected_message": "Einige Antworten im Fragebogen fehlen oder sind ungültig.",
+    "adoption_answers_rejected_suggestion": "Öffnen Sie die Einrichtungsfragen erneut, ergänzen Sie die genannten Punkte und fahren Sie fort.",
+    "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
+    "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
   },
   "empty_states": {
     "credentials_title": "Ihre Agenten benötigen Zugangsdaten",

@@ -11763,7 +11763,11 @@
     "webhook_missing_secret_message": "이 webhook 트리거에 서명용 secret이 없습니다.",
     "webhook_missing_secret_suggestion": "Promote를 다시 실행하세요 — 파이프라인이 제출 시 webhook_secret을 자동으로 생성합니다. 문제가 계속되면 빌드를 다시 시작하세요.",
     "decision_conflict_message": "다른 사람이 이미 결정했습니다 — 다시 불러오는 중입니다.",
-    "decision_conflict_suggestion": "최신 결정 내용으로 목록을 새로 고치고 있습니다. 확인 후 동의하지 않으면 다시 결정하세요."
+    "decision_conflict_suggestion": "최신 결정 내용으로 목록을 새로 고치고 있습니다. 확인 후 동의하지 않으면 다시 결정하세요.",
+    "adoption_answers_rejected_message": "설문지 답변 중 일부가 누락되었거나 유효하지 않습니다.",
+    "adoption_answers_rejected_suggestion": "설정 질문을 다시 열어 표시된 항목을 채운 뒤 계속하세요.",
+    "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
+    "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
   },
   "empty_states": {
     "credentials_title": "에이전트에 자격 증명이 필요합니다",

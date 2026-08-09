@@ -11993,7 +11993,11 @@
     "authorization_required_message": "This tool needs your authorization before it can run.",
     "authorization_required_suggestion": "Open the authorization page to grant consent, then try again.",
     "external_service_message": "The external service couldn't complete the request.",
-    "external_service_suggestion": "Check the service status and your connection, then try again."
+    "external_service_suggestion": "Check the service status and your connection, then try again.",
+    "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
+    "adoption_answers_rejected_message": "Some questionnaire answers are missing or not valid.",
+    "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in.",
+    "adoption_answers_rejected_suggestion": "Reopen the setup questions and complete the ones named, then continue."
   },
   "empty_states": {
     "credentials_title": "Your agents need credentials to run",

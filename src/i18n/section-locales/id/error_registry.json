@@ -134,5 +134,9 @@
   "webhook_missing_secret_message": "Trigger webhook ini kehilangan signing secret-nya.",
   "webhook_missing_secret_suggestion": "Jalankan ulang Promote — pipeline otomatis membuat webhook_secret saat submit. Jika masih berlanjut, mulai ulang build.",
   "decision_conflict_message": "Orang lain sudah memutuskan ini — memuat ulang.",
-  "decision_conflict_suggestion": "Daftar sedang disegarkan dengan keputusan terbaru. Tinjau lalu putuskan lagi jika Anda tidak setuju."
+  "decision_conflict_suggestion": "Daftar sedang disegarkan dengan keputusan terbaru. Tinjau lalu putuskan lagi jika Anda tidak setuju.",
+  "adoption_answers_rejected_message": "Beberapa jawaban kuesioner belum diisi atau tidak valid.",
+  "adoption_answers_rejected_suggestion": "Buka kembali pertanyaan penyiapan, lengkapi yang disebutkan, lalu lanjutkan.",
+  "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
+  "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
 }

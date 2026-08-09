@@ -134,5 +134,9 @@
   "webhook_missing_secret_message": "Ce déclencheur webhook n'a pas de secret de signature.",
   "webhook_missing_secret_suggestion": "Relancez Promote — le pipeline génère automatiquement un webhook_secret lors de la soumission. Si le problème persiste, redémarrez le build.",
   "decision_conflict_message": "Quelqu'un d'autre a déjà tranché — rechargement en cours.",
-  "decision_conflict_suggestion": "La liste se met à jour avec le dernier verdict. Consultez-le et décidez à nouveau si vous n'êtes pas d'accord."
+  "decision_conflict_suggestion": "La liste se met à jour avec le dernier verdict. Consultez-le et décidez à nouveau si vous n'êtes pas d'accord.",
+  "adoption_answers_rejected_message": "Certaines réponses du questionnaire sont manquantes ou invalides.",
+  "adoption_answers_rejected_suggestion": "Rouvrez les questions de configuration, complétez celles qui sont indiquées, puis continuez.",
+  "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
+  "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
 }

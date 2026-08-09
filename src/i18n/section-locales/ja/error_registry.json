@@ -134,5 +134,9 @@
   "webhook_missing_secret_message": "このwebhookトリガーには署名用シークレットがありません。",
   "webhook_missing_secret_suggestion": "「Promote」を再実行してください。送信時にパイプラインがwebhook_secretを自動生成します。解決しない場合はビルドを再起動してください。",
   "decision_conflict_message": "この判断はすでに他の人が下しています — 再読み込みしています。",
-  "decision_conflict_suggestion": "最新の判断でリストを更新しています。内容を確認し、同意できない場合はもう一度判断してください。"
+  "decision_conflict_suggestion": "最新の判断でリストを更新しています。内容を確認し、同意できない場合はもう一度判断してください。",
+  "adoption_answers_rejected_message": "アンケートの回答に不足または無効なものがあります。",
+  "adoption_answers_rejected_suggestion": "セットアップの質問を開き直し、指摘された項目を入力してから続行してください。",
+  "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
+  "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
 }

@@ -134,5 +134,9 @@
   "webhook_missing_secret_message": "इस वेबहुक ट्रिगर में इसका साइनिंग सीक्रेट गायब है।",
   "webhook_missing_secret_suggestion": "Promote को फिर से चलाएँ — सबमिट करने पर पाइपलाइन अपने आप एक webhook_secret जनरेट करती है। यदि यह बना रहे, तो बिल्ड को फिर से शुरू करें।",
   "decision_conflict_message": "यह फ़ैसला पहले ही किसी और ने कर दिया है — फिर से लोड हो रहा है।",
-  "decision_conflict_suggestion": "सूची नवीनतम फ़ैसले के साथ रीफ़्रेश हो रही है। उसे देखें और असहमत हों तो दोबारा फ़ैसला करें।"
+  "decision_conflict_suggestion": "सूची नवीनतम फ़ैसले के साथ रीफ़्रेश हो रही है। उसे देखें और असहमत हों तो दोबारा फ़ैसला करें।",
+  "adoption_answers_rejected_message": "प्रश्नावली के कुछ उत्तर अनुपलब्ध हैं या मान्य नहीं हैं।",
+  "adoption_answers_rejected_suggestion": "सेटअप प्रश्न फिर से खोलें, बताए गए उत्तर पूरे करें, फिर आगे बढ़ें।",
+  "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
+  "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
 }

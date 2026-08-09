@@ -12000,6 +12000,10 @@ export type Translations = {
     authorization_required_suggestion: string;
     external_service_message: string;
     external_service_suggestion: string;
+    _comment_adoption_answers_rejected_message: string;
+    adoption_answers_rejected_message: string;
+    _comment_adoption_answers_rejected_suggestion: string;
+    adoption_answers_rejected_suggestion: string;
   };
   empty_states: {
     credentials_title: string;

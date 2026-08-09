@@ -11763,7 +11763,11 @@
     "webhook_missing_secret_message": "يفتقد محفّز webhook هذا إلى سر التوقيع (signing secret) الخاص به.",
     "webhook_missing_secret_suggestion": "أعد تشغيل Promote — يقوم خط الأنابيب تلقائيًا بتوليد webhook_secret عند الإرسال. إذا استمرت المشكلة، أعد تشغيل البناء.",
     "decision_conflict_message": "قرّر شخص آخر هذا بالفعل — جارٍ إعادة التحميل.",
-    "decision_conflict_suggestion": "يتم تحديث القائمة بأحدث قرار. راجِعه وقرّر مرة أخرى إذا كنت غير موافق."
+    "decision_conflict_suggestion": "يتم تحديث القائمة بأحدث قرار. راجِعه وقرّر مرة أخرى إذا كنت غير موافق.",
+    "adoption_answers_rejected_message": "بعض إجابات الاستبيان مفقودة أو غير صالحة.",
+    "adoption_answers_rejected_suggestion": "أعد فتح أسئلة الإعداد، وأكمل العناصر المذكورة، ثم تابع.",
+    "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
+    "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
   },
   "empty_states": {
     "credentials_title": "وكلاؤك يحتاجون بيانات اعتماد للعمل",

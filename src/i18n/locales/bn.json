@@ -11763,7 +11763,11 @@
     "webhook_missing_secret_message": "এই webhook ট্রিগারে সাইনিং সিক্রেট নেই।",
     "webhook_missing_secret_suggestion": "Promote আবার চালান — সাবমিট করার সময় পাইপলাইন স্বয়ংক্রিয়ভাবে একটি webhook_secret তৈরি করে। সমস্যা থেকে গেলে, বিল্ড পুনরায় শুরু করুন।",
     "decision_conflict_message": "অন্য কেউ ইতিমধ্যেই এটি সিদ্ধান্ত নিয়েছেন — রিলোড করা হচ্ছে।",
-    "decision_conflict_suggestion": "সর্বশেষ সিদ্ধান্ত অনুযায়ী তালিকাটি রিফ্রেশ হচ্ছে। দেখে নিন এবং একমত না হলে আবার সিদ্ধান্ত নিন।"
+    "decision_conflict_suggestion": "সর্বশেষ সিদ্ধান্ত অনুযায়ী তালিকাটি রিফ্রেশ হচ্ছে। দেখে নিন এবং একমত না হলে আবার সিদ্ধান্ত নিন।",
+    "adoption_answers_rejected_message": "প্রশ্নমালার কিছু উত্তর অনুপস্থিত বা বৈধ নয়।",
+    "adoption_answers_rejected_suggestion": "সেটআপ প্রশ্নগুলো আবার খুলুন, উল্লিখিত উত্তরগুলো পূরণ করুন, তারপর এগিয়ে যান।",
+    "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
+    "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
   },
   "empty_states": {
     "credentials_title": "এজেন্ট চালাতে শংসাপত্র দরকার",
