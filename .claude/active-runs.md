@@ -2,6 +2,12 @@
 
 ## Active
 
+### prototype-pattern-graph — /prototype: PoE-style topic graph for Overview->Patterns — session fable-5
+- Started: 2026-08-09. Status: started. Three directional graph variants (Nexus starburst / Sector orrery / Nebula field) of the topic taxonomy (areas->clusters, patterns themselves NOT nodes yet) behind a throwaway switcher, plus a Library|Graph view toggle in the KnowledgeLibrary header. Aim: replace the ledger/table if the design nails typography/node/zoom balance at 100->1000-node scale.
+- Paths: src/features/overview/sub_patterns/KnowledgeLibrary.tsx (header toggle only), src/features/overview/sub_patterns/graph/** (all new), .claude/active-runs.md.
+- MAIN CHECKOUT, not a worktree — user live-reviews in the running dev server (precedent: prototype-practice-detail entry below). Per-file staging, atomic per-round commits. i18n extraction deferred to consolidation per /prototype Phase 5.
+
+
 
 
 ### typo-label-readability — global `typo-label` redesign (drop UPPERCASE/wide tracking) + prose sites moved to `typo-caption` — session opus-5[1m] — **COMPLETE**, commit `193d4aeab`

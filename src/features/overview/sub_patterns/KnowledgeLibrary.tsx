@@ -5,7 +5,7 @@
 // harvesting shipped — a library that shows practices nobody harvested is
 // worse than an empty one.)
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Share2 } from 'lucide-react';
+import { Network, Plus, Share2, TableProperties } from 'lucide-react';
 
 import Button from '@/features/shared/components/buttons/Button';
 import {
@@ -25,6 +25,7 @@ import { PracticeDetailModal } from './PracticeDetailModal';
 import { PracticeRolloutModal } from './PracticeRolloutModal';
 import { ExtractionMenu } from './ExtractionMenu';
 import KnowledgeTree from './KnowledgeTree';
+import PatternGraphHost from './graph/PatternGraphHost';
 import { nextQueueIndex, viewFromRow, type KnowledgeItemView } from './libraryModel';
 import { WorkspacePulse } from './WorkspacePulse';
 import type { Workspace } from '@/features/plugins/dev-tools/sub_workspaces/workspaceStore';
@@ -43,6 +44,9 @@ export default function KnowledgeLibrary({
   const { t, tx } = useTranslation();
   const w = t.plugins.dev_tools.workspaces;
 
+  // Library | Graph view. Prototype round: the graph tab hosts three
+  // directional variants; labels stay raw until consolidation (Phase 5 i18n).
+  const [view, setView] = useState<'library' | 'graph'>('library');
   const [creating, setCreating] = useState(false);
   const [projecting, setProjecting] = useState(false);
   const [rollout, setRollout] = useState<WorkspaceKnowledge | null>(null);
@@ -146,7 +150,33 @@ export default function KnowledgeLibrary({
   return (
     <div className="flex flex-col min-h-0 h-full gap-3">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="typo-section-title text-foreground">{w.library_title}</h2>
+        <div className="flex items-center gap-3 min-w-0">
+          <h2 className="typo-section-title text-foreground">{w.library_title}</h2>
+          {/* View toggle — the graph is auditioning to replace the table. */}
+          <div className="flex items-center rounded-interactive border border-border/60 bg-secondary/50 p-0.5">
+            {(
+              [
+                { id: 'library', icon: TableProperties, label: 'Library' },
+                { id: 'graph', icon: Network, label: 'Graph' },
+              ] as const
+            ).map(({ id, icon: ViewIcon, label }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setView(id)}
+                aria-pressed={view === id}
+                className={`typo-label flex items-center gap-1.5 rounded-interactive px-2.5 py-1 transition-colors ${
+                  view === id
+                    ? 'bg-background text-foreground shadow-elevation-1'
+                    : 'text-foreground/60 hover:text-foreground'
+                }`}
+              >
+                <ViewIcon className="w-3.5 h-3.5" />
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="flex items-center gap-2">
           <ExtractionMenu
             workspace={workspace}
@@ -176,25 +206,36 @@ export default function KnowledgeLibrary({
         </div>
       </div>
 
-      <WorkspacePulse
-        items={items}
-        adoptions={adoptions}
-        // A digest entry is a single jump, not a review pass — open it alone.
-        onOpenPractice={(item) => openDetail(item, [item])}
-      />
+      {view === 'library' && (
+        <WorkspacePulse
+          items={items}
+          adoptions={adoptions}
+          // A digest entry is a single jump, not a review pass — open it alone.
+          onOpenPractice={(item) => openDetail(item, [item])}
+        />
+      )}
 
       <div className="flex-1 min-h-0">
-        <KnowledgeTree
-          items={items}
-          projectById={projectById}
-          // Review before distribute: a row opens its DETAIL, and rollout is
-          // reached from inside that modal (adopted practices only). Wiring
-          // this straight to the rollout surface skipped the review step
-          // entirely and offered to distribute practices still sitting at
-          // `observed`.
-          onRowClick={openDetail}
-          onBulkDecide={bulkDecide}
-        />
+        {view === 'graph' ? (
+          <PatternGraphHost
+            items={items}
+            workspaceName={workspace.name}
+            // A graph node's item is a single jump, not a review pass.
+            onOpenItem={(item) => openDetail(item, [item])}
+          />
+        ) : (
+          <KnowledgeTree
+            items={items}
+            projectById={projectById}
+            // Review before distribute: a row opens its DETAIL, and rollout is
+            // reached from inside that modal (adopted practices only). Wiring
+            // this straight to the rollout surface skipped the review step
+            // entirely and offered to distribute practices still sitting at
+            // `observed`.
+            onRowClick={openDetail}
+            onBulkDecide={bulkDecide}
+          />
+        )}
       </div>
 
       {detailRow && (
