@@ -704,6 +704,7 @@ pub fn create_goal(
             .unwrap_or(-1);
         let order_index = max_order + 1;
 
+        let status = accept_goal_status(status)?;
         conn.execute(
             "INSERT INTO dev_goals (id, project_id, parent_goal_id, context_id, order_index, title, description, status, target_date, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)",
@@ -711,6 +712,26 @@ pub fn create_goal(
         )?;
 
         get_goal_by_id(pool, &id)
+    })
+}
+
+/// Fold a caller-supplied `dev_goals.status` onto the canonical set, or refuse
+/// it with a message that names the alternatives.
+///
+/// `dev_goals.status` carries a CHECK, which is the backstop that makes a
+/// mis-laned goal impossible. This is the door in front of it, for two reasons:
+/// the legacy aliases (`in_progress`, `running`, `completed`, …) that the UI has
+/// always folded keep working instead of becoming a hard error, and a genuinely
+/// unknown value comes back as "Unknown goal status …, expected one of …"
+/// rather than SQLite's `CHECK constraint failed: status IN (...)`. The Athena
+/// `update_dev_goal` op feeds this an LLM-authored string; it deserves an error
+/// it can act on.
+fn accept_goal_status(raw: &str) -> Result<&'static str, AppError> {
+    canonical_goal_status(raw).ok_or_else(|| {
+        AppError::Validation(format!(
+            "Unknown goal status {raw:?} — expected one of: {}",
+            CANONICAL_GOAL_STATUSES.join(", "),
+        ))
     })
 }
 
@@ -734,6 +755,12 @@ pub fn update_goal(
 ) -> Result<DevGoal, AppError> {
     timed_query!("dev_goals", "dev_goals::update_goal", {
         get_goal_by_id(pool, id)?;
+        // Same door as `create_goal`: legacy aliases fold, unknown values are
+        // refused here with a readable message instead of at the column CHECK.
+        let status = match status {
+            Some(raw) => Some(accept_goal_status(raw)?),
+            None => None,
+        };
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
 
@@ -1169,6 +1196,33 @@ pub fn normalize_goal_status(raw: &str) -> &'static str {
         "awaiting_acceptance" | "awaiting-acceptance" | "pending_acceptance" => "awaiting_acceptance",
         "done" | "completed" | "complete" | "skipped" => "done",
         _ => "open",
+    }
+}
+
+/// The canonical `dev_goals.status` set — the values the column's CHECK
+/// constraint admits, and the ones `goalStatus.ts` declares as `GoalStatus`.
+pub const CANONICAL_GOAL_STATUSES: [&str; 5] =
+    ["open", "in-progress", "awaiting_acceptance", "blocked", "done"];
+
+/// STRICT counterpart to [`normalize_goal_status`]: the same alias table with
+/// the catch-all removed, so an unrecognised value comes back as `None` instead
+/// of quietly becoming `open`.
+///
+/// The runtime normalizer's fallback is right for rendering (never throw at the
+/// user) and wrong for a migration, which has to be able to tell "this is the
+/// legacy spelling of in-progress" from "nobody knows what this is". A wrong
+/// status is a bug to see, not to bury, so the caller reports what this
+/// returns `None` for.
+pub fn canonical_goal_status(raw: &str) -> Option<&'static str> {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "in-progress" | "in_progress" | "running" | "active" | "matching" => Some("in-progress"),
+        "blocked" | "review" | "awaiting_review" => Some("blocked"),
+        "awaiting_acceptance" | "awaiting-acceptance" | "pending_acceptance" => {
+            Some("awaiting_acceptance")
+        }
+        "done" | "completed" | "complete" | "skipped" => Some("done"),
+        "open" | "pending" | "todo" | "queued" => Some("open"),
+        _ => None,
     }
 }
 
@@ -6280,6 +6334,109 @@ mod goal_status_tests {
         assert!(goal_status_is_ongoing("open"));
         assert!(goal_status_is_ongoing("in_progress"));
         assert!(goal_status_is_ongoing("blocked"));
+    }
+
+    /// The strict mapper is the runtime normalizer minus its catch-all — the
+    /// two must never disagree on a value they both recognise, or the DB
+    /// migration and the UI would fold the same legacy row differently.
+    #[test]
+    fn the_strict_mapper_agrees_with_the_runtime_normalizer_and_only_drops_the_fallback() {
+        for raw in [
+            "in-progress", "in_progress", "running", "active", "matching", "blocked", "review",
+            "awaiting_review", "awaiting_acceptance", "awaiting-acceptance", "pending_acceptance",
+            "done", "completed", "complete", "skipped", "open", "pending", "todo", "queued",
+            "  In_Progress ",
+        ] {
+            assert_eq!(
+                super::canonical_goal_status(raw),
+                Some(normalize_goal_status(raw)),
+                "{raw} folds differently in the strict mapper than at runtime",
+            );
+        }
+        // The whole difference: what the normalizer swallows, this reports.
+        for unknown in ["weird", "", "escalated-to-legal", "in progress"] {
+            assert_eq!(super::canonical_goal_status(unknown), None, "{unknown}");
+            assert_eq!(normalize_goal_status(unknown), "open", "{unknown}");
+        }
+    }
+
+    /// The repo door in front of the column CHECK: aliases still fold (so no
+    /// existing writer regresses into a hard error), and a value nothing maps
+    /// is refused with a message that names the alternatives rather than
+    /// SQLite's bare "CHECK constraint failed".
+    #[test]
+    fn goal_writers_fold_aliases_and_refuse_what_nothing_maps() {
+        let pool = crate::init_test_db().unwrap();
+        let project =
+            super::create_project(&pool, "P", "/tmp/goal-door", None, None, None, None, None)
+                .unwrap();
+
+        let g = super::create_goal(&pool, &project.id, "G", None, None, Some("running"), None, None)
+            .unwrap();
+        assert_eq!(g.status, "in-progress", "a legacy alias is folded, not rejected");
+
+        let updated = super::update_goal(
+            &pool,
+            &g.id,
+            None,
+            None,
+            Some("completed"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        assert_eq!(updated.status, "done");
+
+        let err = super::create_goal(
+            &pool,
+            &project.id,
+            "Bad",
+            None,
+            None,
+            Some("escalated-to-legal"),
+            None,
+            None,
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(
+            err.contains("escalated-to-legal") && err.contains("awaiting_acceptance"),
+            "the refusal must name the offending value AND the canonical set: {err}",
+        );
+        assert!(super::update_goal(
+            &pool,
+            &g.id,
+            None,
+            None,
+            Some("whatever"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .is_err());
+    }
+
+    /// The constrained set is exactly `GoalStatus` in `goalStatus.ts`, and
+    /// every member survives its own normalizer unchanged (a canonical value
+    /// that folded to something else would make the CHECK unsatisfiable).
+    #[test]
+    fn the_canonical_set_is_closed_under_normalization() {
+        assert_eq!(
+            super::CANONICAL_GOAL_STATUSES,
+            ["open", "in-progress", "awaiting_acceptance", "blocked", "done"],
+            "keep in sync with GoalStatus in src/features/teams/sub_goals/goalStatus.ts",
+        );
+        for s in super::CANONICAL_GOAL_STATUSES {
+            assert_eq!(normalize_goal_status(s), s, "{s} is not a fixed point");
+            assert_eq!(super::canonical_goal_status(s), Some(s), "{s}");
+        }
     }
 
     #[test]
