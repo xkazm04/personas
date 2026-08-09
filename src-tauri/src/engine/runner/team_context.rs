@@ -76,12 +76,21 @@ pub fn build_team_alignment_block(
     team_id: &str,
 ) -> Option<String> {
     // --- 1. Roster + each member's headline capability (one join query) ---
-    // (id, name, role, design_context, description)
+    // (id, name, semantic role, design_context, description)
+    //
+    // `ptm.role` is the pipeline-position enum, CHECK-constrained to
+    // orchestrator/worker/reviewer/router — it can never hold a semantic label
+    // like "engineer". The semantic role is stashed in `ptm.config` as
+    // `{"preset_role":"…"}` by `team_preset_adopter`, so we select config too
+    // and recover through `member_semantic_role`, exactly as
+    // `persona_team_semantic_role` in the assignment orchestrator does.
+    // Reading the raw `role` here is what made `render_channel_post_capability`
+    // below unreachable for every team.
     let roster_rows: Vec<(String, String, String, Option<String>, Option<String>)> = {
         let conn = pool.get().ok()?;
         let mut stmt = conn
             .prepare(
-                "SELECT p.id, p.name, ptm.role, p.design_context, p.description
+                "SELECT p.id, p.name, ptm.role, p.design_context, p.description, ptm.config
                  FROM persona_team_members ptm
                  JOIN personas p ON p.id = ptm.persona_id
                  WHERE ptm.team_id = ?1
@@ -90,10 +99,15 @@ pub fn build_team_alignment_block(
             .ok()?;
         let rows = stmt
             .query_map(params![team_id], |r| {
+                let role: String = r.get::<_, String>(2)?;
+                let config: Option<String> = r.get::<_, Option<String>>(5)?;
                 Ok((
                     r.get::<_, String>(0)?,
                     r.get::<_, String>(1)?,
-                    r.get::<_, String>(2)?,
+                    crate::engine::team_preset_adopter::member_semantic_role(
+                        config.as_deref(),
+                        &role,
+                    ),
                     r.get::<_, Option<String>>(3)?,
                     r.get::<_, Option<String>>(4)?,
                 ))
@@ -643,6 +657,96 @@ mod tests {
             title: title.into(),
             desc: desc.into(),
         }
+    }
+
+    /// Pins the derivation, not the renderer. `render_channel_post_capability`
+    /// was always correct for the string "engineer" — the bug was that
+    /// "engineer" could never reach it, because the roster query read
+    /// `ptm.role`, a column CHECK-constrained to
+    /// orchestrator/worker/reviewer/router. So a preset-adopted engineer was
+    /// never taught the CHANNEL_POST protocol and the orchestrator's gate had
+    /// nothing to admit. This test fails against the pre-fix query.
+    #[test]
+    fn channel_post_capability_reaches_a_preset_adopted_engineer() {
+        use crate::db::init_test_db;
+        let pool = init_test_db().expect("init test db");
+
+        let conn = pool.get().expect("conn");
+        conn.execute(
+            "INSERT INTO personas (id, name, description, system_prompt, created_at, updated_at)
+             VALUES ('p-eng', 'Eng', 'builds things', 'You build.', datetime('now'), datetime('now'))",
+            [],
+        )
+        .expect("persona");
+        conn.execute(
+            "INSERT INTO persona_teams (id, name, created_at, updated_at)
+             VALUES ('t-1', 'Squad', datetime('now'), datetime('now'))",
+            [],
+        )
+        .expect("team");
+        // Exactly what team_preset_adopter writes: pipeline role clamped to
+        // 'worker', semantic label stashed in config.
+        conn.execute(
+            "INSERT INTO persona_team_members (id, team_id, persona_id, role, config, created_at)
+             VALUES ('m-1', 't-1', 'p-eng', 'worker', '{\"preset_role\":\"engineer\"}', datetime('now'))",
+            [],
+        )
+        .expect("member");
+        drop(conn);
+
+        let persona =
+            crate::db::repos::core::personas::get_by_id(&pool, "p-eng").expect("load persona");
+
+        let block = build_team_alignment_block(&pool, &persona, "Squad", "t-1")
+            .expect("alignment block renders");
+
+        assert!(
+            block.contains("CHANNEL_POST:"),
+            "a preset-adopted engineer must be taught the CHANNEL_POST protocol; \
+             reading the raw pipeline role instead of the semantic role is what \
+             made this unreachable for every team. Block was:\n{block}"
+        );
+
+        // The other half of the contract: recovering the semantic role must not
+        // hand the capability to everyone. A hand-built member with no
+        // preset_role falls back to its pipeline role and stays silent.
+        let conn = pool.get().expect("conn");
+        conn.execute(
+            "INSERT INTO personas (id, name, description, system_prompt, created_at, updated_at)
+             VALUES ('p-plain', 'Plain', 'does things', 'You do.', datetime('now'), datetime('now'))",
+            [],
+        )
+        .expect("persona");
+        conn.execute(
+            "INSERT INTO persona_teams (id, name, created_at, updated_at)
+             VALUES ('t-2', 'Handmade', datetime('now'), datetime('now'))",
+            [],
+        )
+        .expect("team");
+        conn.execute(
+            "INSERT INTO persona_team_members (id, team_id, persona_id, role, config, created_at)
+             VALUES ('m-2', 't-2', 'p-plain', 'worker', NULL, datetime('now'))",
+            [],
+        )
+        .expect("member");
+        drop(conn);
+
+        let plain = crate::db::repos::core::personas::get_by_id(&pool, "p-plain")
+            .expect("load plain persona");
+        // None is the expected answer here, and is itself the sharpest proof of
+        // the fix: both teams are a single member with no teammates and no
+        // goals, so the block is empty for BOTH unless something else fills it.
+        // The engineer's team renders only because the channel capability was
+        // appended. The plain worker's does not render at all.
+        let plain_block = build_team_alignment_block(&pool, &plain, "Handmade", "t-2");
+        assert!(
+            plain_block
+                .as_deref()
+                .map_or(true, |b| !b.contains("CHANNEL_POST:")),
+            "a hand-built worker with no preset_role must NOT gain the channel \
+             capability - recovering the semantic role must not become a blanket \
+             grant. Block was:\n{plain_block:?}"
+        );
     }
 
     #[test]
