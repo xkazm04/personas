@@ -703,6 +703,49 @@ fn tick_once(app: &AppHandle) {
     doze_pass(app, now, cutoff_ms);
     auto_hibernate_pass(app);
     live_slot_pass(app);
+    auto_forget_pass(app);
+}
+
+/// Auto-maintenance (Mechanism 1): forget Athena-owned sessions that have
+/// finished or gone dead, so the fleet sidebar self-cleans without a manual
+/// kill. Scoped hard for safety:
+///   • only sessions Athena spawned (`is_athena_owned`),
+///   • only the terminal / rest states `Finished` / `Stale` / `Exited`
+///     (never `Running`/`AwaitingInput`/`Idle`/`Spawning`, and never
+///     `Hibernated`, which is a deliberate resumable sleep the operator owns),
+///   • and `forget_dead` is a second gate — it removes only sessions with no
+///     live PTY, so a `Stale` session that revived to `Running` between the
+///     snapshot and the act (regaining a live child) is left untouched.
+/// On removal the durable `fleet_sessions` row is pruned too (`note_removed`)
+/// so a forgotten session does not resurrect on the next rehydrate.
+fn auto_forget_pass(app: &AppHandle) {
+    // Pass A — snapshot candidate ids under the lock; no IO while it is held.
+    let candidates: Vec<String> = {
+        let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.values()
+            .filter(|s| {
+                matches!(
+                    s.state,
+                    FleetSessionState::Finished
+                        | FleetSessionState::Stale
+                        | FleetSessionState::Exited
+                )
+            })
+            .map(|s| s.id.clone())
+            .collect()
+    };
+    // Pass B — act per candidate outside the lock. Both `is_athena_owned` and
+    // `forget_dead` re-take the lock briefly and re-validate current truth, so
+    // a session that moved on between the passes is skipped, not clobbered.
+    for sid in candidates {
+        if !registry().is_athena_owned(&sid) {
+            continue;
+        }
+        if registry().forget_dead(&sid) {
+            super::persist::note_removed(app, &sid);
+            super::pty::emit_registry_changed(app, "removed", &sid);
+        }
+    }
 }
 
 /// Per-session mechanical retry state for the Claude server/usage-limit lane.
