@@ -3,6 +3,8 @@
 // fresh /prototype-ready baselines in TraceOverview / SkillTreeView.
 import { useState } from 'react';
 
+import { motion } from 'framer-motion';
+
 import { IllustratedEmptyState } from '@/features/shared/components/display/IllustratedEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -46,16 +48,25 @@ export function TraceTab({ activeProjectId, onOpenInfo }: TraceTabProps) {
           {tx(t.plugins.dev_tools.trace_summary, { projects: model.projects.length })}
         </span>
       </div>
-      {selectedSkill ? (
-        <TreeHost
-          skillName={selectedSkill}
-          trace={model}
-          onBack={() => setSelectedSkill(null)}
-          onOpenInfo={onOpenInfo}
-        />
-      ) : (
-        <TraceOverview model={model} onSelectSkill={setSelectedSkill} onOpenInfo={onOpenInfo} />
-      )}
+      {/* one-shot crossfade on level change (matrix ⇄ tree) */}
+      <motion.div
+        key={selectedSkill ?? 'overview'}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.18, ease: 'easeOut' }}
+        className="flex-1 min-h-0 flex flex-col"
+      >
+        {selectedSkill ? (
+          <TreeHost
+            skillName={selectedSkill}
+            trace={model}
+            onBack={() => setSelectedSkill(null)}
+            onOpenInfo={onOpenInfo}
+          />
+        ) : (
+          <TraceOverview model={model} onSelectSkill={setSelectedSkill} onOpenInfo={onOpenInfo} />
+        )}
+      </motion.div>
     </div>
   );
 }

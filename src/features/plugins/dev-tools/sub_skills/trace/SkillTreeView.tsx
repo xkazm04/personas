@@ -1,21 +1,21 @@
-// Level 2 — the skill tree: workspace library core at center, one bezier
-// branch per adopted project fanning across the upper arc, stroke ∝ usage,
-// drift ring per project node, lessons as sprouts on the branch. Entrance
-// animation is one-shot pathLength draw + transform fades (never raw cx/cy/r,
-// no infinite repeats — prototype-skill austerity rules).
-import { useState } from 'react';
+// Level 2 — the Fan, "Drafted" finish (prototype winner, 2026-08-09): the
+// library as a title-block stamp, one hairline bezier per adopted project
+// with the 30-day run count lettered mid-branch, and project CHIPS carrying
+// name · version · lesson count with a drift-coloured edge. Geometry stays
+// in treeGeometry.ts (pure, tested); entrances are one-shot draws + springs,
+// nothing loops.
+import { useMemo, useState } from 'react';
 
 import { motion } from 'framer-motion';
 import { ArrowLeft, Wand2 } from 'lucide-react';
 
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { DRIFT_RING } from './driftTokens';
+import { DRIFT_FILL, DRIFT_ORDER } from './driftTokens';
 import { LessonsPanel } from './LessonsPanel';
-import { SkillTreeFanDrafted } from './SkillTreeFanDrafted';
-import { SkillTreeFanLumen } from './SkillTreeFanLumen';
-import { layoutTree, CORE_X, CORE_Y, TREE_H, TREE_W } from './treeGeometry';
-import type { DriftState, SkillTreeModel } from './traceTypes';
+import { layoutTree, pointOnCubic, CORE_X, CORE_Y, TREE_H, TREE_W } from './treeGeometry';
+import type { SkillTreeModel } from './traceTypes';
 import { VersionTimelinePanel } from './VersionTimelinePanel';
 
 export interface SkillTreeViewProps {
@@ -24,22 +24,30 @@ export interface SkillTreeViewProps {
   onOpenInfo: (skill: string) => void;
 }
 
-export function SkillTreeViewBaseline({ model, onBack, onOpenInfo }: SkillTreeViewProps) {
+const CHIP_W = 104;
+const CHIP_H = 34;
+
+export function SkillTreeView({ model, onBack, onOpenInfo }: SkillTreeViewProps) {
   const { t, tx } = useTranslation();
-  const [openLesson, setOpenLesson] = useState<string | null>(null);
-  const geo = layoutTree(model.branches);
+  const [hovered, setHovered] = useState<string | null>(null);
   const Icon = model.visual?.icon ?? Wand2;
   const accent = model.visual?.color ?? undefined;
 
+  // Geometry + mid-branch label anchors — pure math, recomputed only when
+  // the branch set changes (not on hover/panel re-renders).
+  const scene = useMemo(() => {
+    const geo = layoutTree(model.branches);
+    return geo.map((g, i) => {
+      const [p0, c1, c2, p3] = g.controls;
+      return { g, b: model.branches[i], mid: pointOnCubic(p0, c1, c2, p3, 0.52) };
+    });
+  }, [model.branches]);
+
   return (
     <div className="flex flex-col min-h-0 h-full overflow-auto">
-      {/* title band — always-rendered chrome */}
+      {/* title band */}
       <div className="flex items-center gap-3 pb-1">
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground transition-colors"
-        >
+        <button type="button" onClick={onBack} className="inline-flex items-center gap-1.5 typo-caption text-foreground hover:text-primary transition-colors">
           <ArrowLeft size={13} />
           {t.plugins.dev_tools.trace_back}
         </button>
@@ -48,84 +56,84 @@ export function SkillTreeViewBaseline({ model, onBack, onOpenInfo }: SkillTreeVi
           <span className="typo-title">{model.skillName}</span>
         </button>
         <span className="typo-caption text-foreground">
-          {tx(t.plugins.dev_tools.trace_tree_stats, {
-            projects: model.branches.length,
-            invokes: model.totalInvokes,
-          })}
+          {tx(t.plugins.dev_tools.trace_tree_stats, { projects: model.branches.length, invokes: model.totalInvokes })}
         </span>
       </div>
 
       <svg viewBox={`0 0 ${TREE_W} ${TREE_H}`} className="w-full max-h-[52vh]" role="img" aria-label={model.skillName}>
-        {/* branches */}
-        {geo.map((g, i) => {
-          const b = model.branches[i];
+        {scene.map(({ g, b, mid }, i) => {
           if (!b) return null;
+          const dim = hovered !== null && hovered !== b.project.id;
           return (
-            <g key={b.project.id}>
+            <g
+              key={b.project.id}
+              onMouseEnter={() => setHovered(b.project.id)}
+              onMouseLeave={() => setHovered(null)}
+              className="transition-opacity duration-200"
+              opacity={dim ? 0.35 : 1}
+            >
+              <title>
+                {`${b.project.name} · v${b.installedVersion ?? '1.0'} · ${tx(t.plugins.dev_tools.trace_cell_invokes, { count: b.invokes30d })}`}
+              </title>
               <motion.path
                 d={g.path}
                 fill="none"
                 strokeLinecap="round"
-                strokeWidth={g.strokeWidth}
-                strokeDasharray={b.invokes30d === 0 ? '4 6' : undefined}
-                style={{ stroke: accent ?? 'currentColor', strokeOpacity: 0.25 + 0.6 * b.weight }}
+                strokeWidth={1.25 + 2.5 * Math.sqrt(Math.max(0, Math.min(1, b.weight)))}
+                strokeDasharray={b.invokes30d === 0 ? '3 5' : undefined}
+                className="stroke-foreground/45"
                 initial={{ pathLength: 0 }}
                 animate={{ pathLength: 1 }}
-                transition={{ duration: 0.5, delay: i * 0.05, ease: 'easeOut' }}
+                transition={{ duration: 0.4, delay: i * 0.04, ease: 'easeOut' }}
               />
-              {/* lesson sprouts */}
-              {g.lessonPoints.map((pt, j) => (
-                <motion.g
-                  key={j}
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.4 + i * 0.05 + j * 0.08 }}
-                  style={{ transformOrigin: `${pt.x}px ${pt.y}px` }}
-                >
-                  <circle
-                    cx={pt.x} cy={pt.y} r={5}
-                    className={b.lessons[j]?.is_redesign ? 'fill-status-warning cursor-pointer' : 'fill-status-success cursor-pointer'}
-                    onClick={() => setOpenLesson(openLesson === `${b.project.id}:${j}` ? null : `${b.project.id}:${j}`)}
-                  />
+              {/* mid-branch measurement: the 30d run count, lettered */}
+              {b.invokes30d > 0 && (
+                <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 + i * 0.04 }}>
+                  <rect x={mid.x - 14} y={mid.y - 9} width={28} height={16} rx={3} className="fill-background stroke-border" strokeWidth={0.75} />
+                  <text x={mid.x} y={mid.y + 3} textAnchor="middle" fontSize={10} className="fill-foreground tabular-nums">
+                    {b.invokes30d}×
+                  </text>
                 </motion.g>
-              ))}
-              {b.lessons.length > 3 && (
-                <text x={g.lessonPoints[2]?.x ?? g.node.x} y={(g.lessonPoints[2]?.y ?? g.node.y) - 10} className="fill-foreground/70 typo-caption">
-                  +{b.lessons.length - 3}
-                </text>
               )}
-              {/* project node */}
+              {/* project chip */}
               <motion.g
-                initial={{ opacity: 0, scale: 0.6 }}
+                initial={{ opacity: 0, scale: 0.7 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.25 + i * 0.05 }}
+                transition={{ delay: 0.2 + i * 0.04, type: 'spring', stiffness: 220, damping: 20 }}
                 style={{ transformOrigin: `${g.node.x}px ${g.node.y}px` }}
               >
-                <circle
-                  cx={g.node.x} cy={g.node.y} r={21}
-                  className={`fill-secondary ${DRIFT_RING[b.drift]}`}
-                  strokeWidth={2.5}
-                  strokeDasharray={b.drift === 'unversioned' ? '3 3' : undefined}
-                />
-                <text x={g.node.x} y={g.node.y - 28} textAnchor="middle" className="fill-foreground typo-caption">
-                  {b.project.name.slice(0, 14)}
+                <rect x={g.node.x - CHIP_W / 2} y={g.node.y - CHIP_H / 2} width={CHIP_W} height={CHIP_H} rx={6}
+                  className="fill-secondary stroke-border" strokeWidth={1} />
+                <rect x={g.node.x - CHIP_W / 2} y={g.node.y - CHIP_H / 2} width={4} height={CHIP_H} rx={2}
+                  className={DRIFT_FILL[b.drift]} />
+                <text x={g.node.x + 3} y={g.node.y - 3} textAnchor="middle" fontSize={11} className="fill-foreground">
+                  {b.project.name.slice(0, 13)}
                 </text>
-                <text x={g.node.x} y={g.node.y + 4} textAnchor="middle" className="fill-foreground/70" fontSize={11}>
-                  v{b.installedVersion ?? '1.0'}
+                <text x={g.node.x + 3} y={g.node.y + 11} textAnchor="middle" fontSize={9.5} className="fill-foreground/80 tabular-nums">
+                  v{b.installedVersion ?? '1.0'}{b.lessons.length > 0 ? ` · ${b.lessons.length}✎` : ''}
                 </text>
               </motion.g>
+              {/* freshest-run clock under the chip, hover-revealed */}
+              {hovered === b.project.id && b.lastInvokedAt != null && (
+                <foreignObject x={g.node.x - CHIP_W / 2} y={g.node.y + CHIP_H / 2 + 2} width={CHIP_W} height={18}>
+                  <div className="text-center typo-caption text-foreground">
+                    <RelativeTime timestamp={b.lastInvokedAt} showTooltip={false} />
+                  </div>
+                </foreignObject>
+              )}
             </g>
           );
         })}
 
-        {/* workspace/library core */}
-        <motion.g initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} style={{ transformOrigin: `${CORE_X}px ${CORE_Y}px` }}>
-          <circle cx={CORE_X} cy={CORE_Y} r={34} className="fill-secondary stroke-border" strokeWidth={1.5} />
-          <circle cx={CORE_X} cy={CORE_Y} r={40} fill="none" style={{ stroke: accent ?? 'currentColor', strokeOpacity: 0.35 }} strokeWidth={1} strokeDasharray="2 4" />
-          <text x={CORE_X} y={CORE_Y - 2} textAnchor="middle" className="fill-foreground" fontSize={12}>
+        {/* title-block core stamp — drawn last so branch roots tuck under it */}
+        <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <rect x={CORE_X - 62} y={CORE_Y - 24} width={124} height={48} rx={6}
+            className="fill-secondary" strokeWidth={1.5} style={{ stroke: accent ?? 'currentColor' }} />
+          <line x1={CORE_X - 62} y1={CORE_Y} x2={CORE_X + 62} y2={CORE_Y} className="stroke-border" strokeWidth={0.75} />
+          <text x={CORE_X} y={CORE_Y - 8} textAnchor="middle" fontSize={11} className="fill-foreground">
             {t.plugins.dev_tools.trace_core_library}
           </text>
-          <text x={CORE_X} y={CORE_Y + 14} textAnchor="middle" className="fill-foreground/70" fontSize={11}>
+          <text x={CORE_X} y={CORE_Y + 15} textAnchor="middle" fontSize={11} className="fill-foreground tabular-nums">
             v{model.libraryVersion ?? '1.0'}
           </text>
         </motion.g>
@@ -133,77 +141,19 @@ export function SkillTreeViewBaseline({ model, onBack, onOpenInfo }: SkillTreeVi
 
       {/* drift legend */}
       <div className="flex items-center gap-4 pb-2">
-        {(Object.keys(DRIFT_RING) as DriftState[]).map((d) => (
+        {DRIFT_ORDER.map((d) => (
           <span key={d} className="inline-flex items-center gap-1.5 typo-caption text-foreground">
             <svg width={10} height={10} aria-hidden>
-              <circle cx={5} cy={5} r={4} fill="none" strokeWidth={2} className={DRIFT_RING[d]} strokeDasharray={d === 'unversioned' ? '2 2' : undefined} />
+              <rect x={2} y={0} width={4} height={10} rx={2} className={DRIFT_FILL[d]} />
             </svg>
             {t.plugins.dev_tools[`trace_drift_${d}` as const]}
           </span>
         ))}
       </div>
 
-      {/* opened sprout detail */}
-      {openLesson && (() => {
-        const [pid, idx] = openLesson.split(':');
-        const l = model.branches.find((b) => b.project.id === pid)?.lessons[Number(idx)];
-        if (!l) return null;
-        return (
-          <div className="mb-2 px-3 py-2 rounded-card bg-secondary/60 border border-border/50">
-            <div className="typo-caption text-foreground">
-              {l.project_name ?? ''} · {l.date ?? ''} · v{l.version ?? '1.0'}
-              {l.is_redesign ? ` · ${t.plugins.dev_tools.trace_redesign_flag}` : ''}
-            </div>
-            <div className="typo-body whitespace-pre-line">{l.lesson}</div>
-          </div>
-        );
-      })()}
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <VersionTimelinePanel timeline={model.timeline} loading={model.loading} />
-        <LessonsPanel
-          branches={model.branches}
-          workspaceLessons={model.workspaceLessons}
-          loading={model.loading}
-        />
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Throwaway variant switcher (prototype skill). Deleted at consolidation.
-// Hardcoded labels are deliberate — the switcher never ships.
-// ---------------------------------------------------------------------------
-const TREE_VARIANTS = [
-  { id: 'baseline', label: 'Fan', hint: 'the round-1 winner, as shipped' },
-  { id: 'drafted', label: 'Drafted', hint: 'technical finish: chips, hairlines, lettered counts' },
-  { id: 'lumen', label: 'Lumen', hint: 'light finish: under-glow branches, radiant core' },
-] as const;
-type TreeVariant = (typeof TREE_VARIANTS)[number]['id'];
-
-export function SkillTreeView(props: SkillTreeViewProps) {
-  const [variant, setVariant] = useState<TreeVariant>('baseline');
-  return (
-    <div className="flex flex-col min-h-0 h-full gap-2">
-      <div className="flex items-center gap-1 shrink-0">
-        {TREE_VARIANTS.map((v) => (
-          <button
-            key={v.id}
-            type="button"
-            data-testid={`tree-variant-${v.id}`}
-            onClick={() => setVariant(v.id)}
-            className={`px-2 py-1 rounded-interactive typo-caption transition-colors ${variant === v.id ? 'bg-primary/15 text-primary' : 'bg-secondary/50 text-foreground hover:bg-secondary'}`}
-            title={v.hint}
-          >
-            {v.label}
-          </button>
-        ))}
-      </div>
-      <div className="flex-1 min-h-0">
-        {variant === 'drafted' ? <SkillTreeFanDrafted {...props} />
-          : variant === 'lumen' ? <SkillTreeFanLumen {...props} />
-          : <SkillTreeViewBaseline {...props} />}
+        <LessonsPanel branches={model.branches} workspaceLessons={model.workspaceLessons} loading={model.loading} />
       </div>
     </div>
   );

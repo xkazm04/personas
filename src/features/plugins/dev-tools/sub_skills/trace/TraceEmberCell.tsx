@@ -3,6 +3,8 @@
 // adopted-but-cold, faint dot for absent. Skill accent arrives via prop and is
 // applied through inline style (design tokens carry the chrome; the accent is
 // data, not theme).
+import { memo } from 'react';
+
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -22,7 +24,12 @@ export interface TraceEmberCellProps {
   onClick: () => void;
 }
 
-export function TraceEmberCell({ cell, accent, onClick }: TraceEmberCellProps) {
+/** Memoized leaf — the matrix renders skills × projects of these and only a
+ *  model refresh changes their inputs (onClick identity churn aside, the
+ *  cell/accent props are stable per fetch). */
+export const TraceEmberCell = memo(TraceEmberCellImpl);
+
+function TraceEmberCellImpl({ cell, accent, onClick }: TraceEmberCellProps) {
   const { t, tx } = useTranslation();
   const c = BOX / 2;
 
