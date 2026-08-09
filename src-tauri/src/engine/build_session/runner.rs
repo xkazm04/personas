@@ -27,8 +27,8 @@ use crate::ActiveProcessRegistry;
 use super::super::cli_process::{read_line_limited, CliProcessDriver};
 use super::super::types::CliArgs;
 use super::events::{
-    cleanup_session, dual_emit, emit_error, emit_session_status, record_build_usage, update_phase,
-    update_phase_with_error,
+    cleanup_session, dual_emit, emit_error, emit_session_status, record_build_spend,
+    record_build_usage, update_phase, update_phase_with_error, SPEND_RESOLUTION,
 };
 use super::gates::{
     ensure_capability_in_coverage_with_context, find_first_unopen_gate,
@@ -507,7 +507,10 @@ pub(super) async fn run_session(
 
     // Build telemetry (Phase 0): sum CLI cost/tokens across resolution turns.
     // Written to the session row after each turn so build-bench reads cumulative
-    // build cost. (One-shot test/fix-pass cost in oneshot.rs is a follow-up.)
+    // build cost. The per-turn `result` envelope is ALSO booked into
+    // `dev_llm_spend` (see `events::record_build_spend`) so build spend appears
+    // on the standing LLM-spend dashboard; the one-shot test / test-summary /
+    // fix-pass legs book there too, each under its own `trigger_kind`.
     let mut acc_cost_usd: f64 = 0.0;
     let mut acc_input_tokens: i64 = 0;
     let mut acc_output_tokens: i64 = 0;
@@ -668,6 +671,22 @@ pub(super) async fn run_session(
                                     acc_cost_usd += u.cost_usd;
                                     acc_input_tokens += u.input_tokens;
                                     acc_output_tokens += u.output_tokens;
+
+                                    // …and book THIS turn (never the running
+                                    // accumulator) into the central ledger the
+                                    // LLM-spend dashboard reads. Gated behind
+                                    // the extract above so the hot streaming
+                                    // loop pays no extra JSON parse: with
+                                    // --include-partial-messages the vast
+                                    // majority of lines are deltas, and only a
+                                    // `result` envelope ever reaches here.
+                                    record_build_spend(
+                                        &pool,
+                                        Some(&persona_id),
+                                        SPEND_RESOLUTION,
+                                        None,
+                                        &line,
+                                    );
                                 }
 
                                 // Mid-turn: surface behavior_core the instant it completes.

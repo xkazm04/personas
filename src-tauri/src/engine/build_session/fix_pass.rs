@@ -40,8 +40,13 @@ use tokio::process::Command;
 /// session as Failed instead of blocking forever.
 const FIX_PASS_CLI_TIMEOUT: Duration = Duration::from_secs(300);
 
+/// Model driving the correction. Named so the same string reaches the CLI
+/// `--model` flag and the `dev_llm_spend` ledger row for this leg.
+const FIX_PASS_MODEL: &str = "claude-sonnet-4-6";
+
 use crate::db::models::UpdateBuildSession;
 use crate::db::repos::core::build_sessions as build_session_repo;
+use crate::db::DbPool;
 use crate::error::AppError;
 use crate::AppState;
 
@@ -84,7 +89,8 @@ pub(super) async fn run_fix_pass(
         "fix_pass: spawning Claude CLI for autonomous correction"
     );
 
-    let response_text = invoke_claude_print(&prompt).await?;
+    let response_text =
+        invoke_claude_print(&prompt, &state.db, Some(session.persona_id.as_str())).await?;
 
     let corrected_ir_str =
         extract_agent_ir_json(&response_text, &current_ir_str).ok_or_else(|| {
@@ -169,15 +175,30 @@ fn build_fix_prompt(intent: &str, current_ir: &str, failure_summary: &str, attem
 /// because the fix pass is a one-shot Q→A: there's no need to subscribe
 /// to incremental events on the Rust side, and the simpler IO loop
 /// avoids re-implementing a stream-json parser here.
-async fn invoke_claude_print(prompt: &str) -> Result<String, AppError> {
+///
+/// `--output-format json` wraps that same one-shot answer in a single
+/// `result` envelope carrying the turn's cost + token usage alongside the
+/// text. That is the ONLY way this leg can be metered — with bare `--print`
+/// the CLI reports no usage at all, which is why the whole one-shot
+/// test/fix-pass path was invisible to the LLM-spend dashboard while running
+/// up to `MAX_TEST_RETRIES` real correction calls. Parsing stays defensive:
+/// anything that is not a recognizable envelope falls back to treating the
+/// raw stdout as the response, exactly as before.
+async fn invoke_claude_print(
+    prompt: &str,
+    pool: &DbPool,
+    persona_id: Option<&str>,
+) -> Result<String, AppError> {
     let (cmd_program, mut argv) = crate::companion::session::base_cli_invocation();
     argv.extend([
         "-p".into(),
         "-".into(),
+        "--output-format".into(),
+        "json".into(),
         "--dangerously-skip-permissions".into(),
         "--exclude-dynamic-system-prompt-sections".into(),
         "--model".into(),
-        "claude-sonnet-4-6".into(),
+        FIX_PASS_MODEL.into(),
     ]);
 
     let cwd = dirs::home_dir().unwrap_or_else(std::env::temp_dir);
@@ -284,6 +305,23 @@ async fn invoke_claude_print(prompt: &str) -> Result<String, AppError> {
         .await
         .map_err(|e| AppError::Internal(format!("fix_pass: stderr reader task panicked: {e}")))?;
 
+    let stdout_text = stdout_buf.lock().await.clone();
+    let (response_text, envelope) = split_result_envelope(&stdout_text);
+
+    // Book BEFORE the exit-status check: a leg that ran the model and then
+    // exited non-zero still cost money. `record_build_spend` no-ops when the
+    // stdout was not a complete `result` envelope, so a truncated/partial blob
+    // is never posted as a $0 (free) row.
+    if let Some(env) = &envelope {
+        super::events::record_build_spend(
+            pool,
+            persona_id,
+            super::events::SPEND_FIX_PASS,
+            Some(FIX_PASS_MODEL),
+            env,
+        );
+    }
+
     if !status.success() {
         let stderr_text = stderr_buf.lock().await.clone();
         return Err(AppError::Internal(format!(
@@ -293,8 +331,36 @@ async fn invoke_claude_print(prompt: &str) -> Result<String, AppError> {
         )));
     }
 
-    let stdout_text = stdout_buf.lock().await.clone();
-    Ok(stdout_text)
+    Ok(response_text)
+}
+
+/// Split `claude -p --output-format json` stdout into `(assistant text, raw
+/// envelope)`.
+///
+/// Returns `(stdout unchanged, None)` for anything that is not a recognizable
+/// single `result` envelope — a bare `--print` response, a partial blob from a
+/// killed child, a future CLI format change. That fallback is what keeps this
+/// change safe: the fix-pass extraction path behaves exactly as it did before
+/// whenever the envelope is not there.
+fn split_result_envelope(stdout_text: &str) -> (String, Option<String>) {
+    let trimmed = stdout_text.trim();
+    if !trimmed.starts_with('{') {
+        return (stdout_text.to_string(), None);
+    }
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(trimmed) else {
+        return (stdout_text.to_string(), None);
+    };
+    if value.get("type").and_then(serde_json::Value::as_str) != Some("result") {
+        return (stdout_text.to_string(), None);
+    }
+    let text = value
+        .get("result")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or_default();
+    // An envelope with no `result` string (error subtypes) still books its
+    // cost; the caller's own extraction then fails loudly on empty text
+    // rather than silently on a JSON blob it can't read.
+    (text.to_string(), Some(trimmed.to_string()))
 }
 
 /// Pull the `agent_ir` JSON object out of a Claude `--print` response.
@@ -576,5 +642,48 @@ The corrected IR is:
 {"agent_ir":{"name":"Prior","description":"broken","system_prompt":"old"}}
 ```"#;
         assert!(extract_agent_ir_json(response, PRIOR_IR).is_none());
+    }
+
+    // -- `--output-format json` envelope splitting (build-cost-in-the-ledger) --
+
+    #[test]
+    fn envelope_yields_text_and_a_bookable_blob() {
+        let stdout = r#"{"type":"result","subtype":"success","is_error":false,"total_cost_usd":0.19,"num_turns":1,"result":"```json\n{\"agent_ir\":{\"name\":\"Fixed\"}}\n```","usage":{"input_tokens":900,"output_tokens":300}}"#;
+        let (text, envelope) = split_result_envelope(stdout);
+        assert!(
+            text.contains("\"agent_ir\""),
+            "assistant text must be unwrapped so extract_agent_ir_json still works"
+        );
+        let envelope = envelope.expect("a result envelope must be bookable");
+        let entry = super::super::events::build_spend_entry(
+            Some("persona-1"),
+            super::super::events::SPEND_FIX_PASS,
+            Some(FIX_PASS_MODEL),
+            &envelope,
+        )
+        .expect("the envelope must produce a ledger row");
+        assert_eq!(entry.trigger_kind, super::super::events::SPEND_FIX_PASS);
+        assert_eq!(entry.cost_usd, Some(0.19));
+        // …and the unwrapped text is still extractable end-to-end.
+        assert!(extract_agent_ir_json(&text, PRIOR_IR).is_some());
+    }
+
+    #[test]
+    fn bare_print_output_falls_back_unchanged_and_books_nothing() {
+        let stdout = "```json\n{\"agent_ir\":{\"name\":\"Fixed\"}}\n```";
+        let (text, envelope) = split_result_envelope(stdout);
+        assert_eq!(text, stdout);
+        assert!(envelope.is_none());
+    }
+
+    #[test]
+    fn partial_envelope_books_nothing() {
+        let stdout = r#"{"type":"result","subtype":"success","total_cost_usd":0.19"#;
+        let (text, envelope) = split_result_envelope(stdout);
+        assert_eq!(text, stdout, "unparseable stdout is handed back verbatim");
+        assert!(
+            envelope.is_none(),
+            "a truncated envelope must not be booked as a free leg"
+        );
     }
 }
