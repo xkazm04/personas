@@ -1,6 +1,9 @@
 ---
 name: promote
 description: Promote a specific, already-existing pattern in this repo into the Personas workspace knowledge library — the grounded CLI equivalent of the "New practice" button in Dev Tools → Workspaces → Knowledge Library. Unlike /practice-harvest (a broad ≤15-item sweep the agent chooses), /promote is targeted at ONE pattern the operator names, reads the real code, and writes the evidence. Emits the same `practice-harvest/runs/<id>/result.json` the app ingests through its one governed door — never touches the database. Invoke with `/promote <what to promote> [--file <path[:line]>] [--kind <kind>] [--topic <area/cluster>]`.
+category: Maintenance
+memory: none
+version: 1.0
 ---
 
 # Promote — self-insert a pattern into the knowledge library
@@ -187,3 +190,19 @@ import and one human verdict.
 - Items land `observed`. You are proposing, not adopting — say so.
 - If it fails the three questions in step 2, or classifies as `mechanical`,
   **decline and explain**. A library that can't refuse becomes a junk drawer.
+
+---
+
+## Skill Reflection
+
+After the run’s real work is done, reflect twice — autonomously, without asking the user. Be honest about volume: most runs produce NOTHING for lane 2. An empty reflection is a valid result; a forced lesson is pollution. Calibration: nothing (common) / one line (sometimes) / a lesson entry (occasionally) / a redesign proposal (rare).
+
+Lane 1 — PROJECT learnings (what the next session in THIS repo needs): write via the MEMORY BLOCK contract if this prompt carries one, else append node lines to `.personas/memory-outbox.jsonl` per that contract. Project-specific insight only.
+
+Lane 2 — METHOD learnings (what would improve THIS SKILL for every project):
+1. If nothing generalizes beyond this repo, stop here.
+2. Append an entry to `LESSONS.md` in this skill’s directory: `## <version-used> — <YYYY-MM-DD> — <project-name>` followed by `- ` bullets (create the file with a `# Lessons — <skill>` heading if absent). Record the version the run USED, not a bump target. Wrap a bullet in a `### Redesign proposal` sub-block when it argues for a methodic redesign you are NOT applying now.
+3. Version bump — ONLY when you also edit SKILL.md to apply the improvement in the same change: minor (1.2 → 1.3) for a prompt/step refinement, major (1.x → 2.0) for a methodic redesign. Update the `version:` frontmatter field (add `version: 1.1` if the file had none — absent means 1.0). Never bump without an applied edit; never edit the method without a bump.
+4. Sync ritual (only when you bumped): (a) commit the skill directory as a STANDALONE commit on the current branch — message `skill(<name>): v<new> — <one-line reason>` — containing nothing but this skill’s files; (b) copy the updated skill directory to `~/.claude/skills/<name>/` (overwrite) so sibling projects can adopt it. EXCEPTION: read `.personas/skill-registry.json` first — if the library already carries a HIGHER version than yours, do not overwrite it; keep your lesson in LESSONS.md and note the version conflict in the entry.
+
+Sibling awareness: `.personas/skill-registry.json` (repo root, when present) lists this skill’s installed version, the workspace library version, and which sibling projects run it at which version with recent usage. Use it to judge whether a lesson is worth a bump (heavily-used siblings raise the bar for majors) and to notice you are BEHIND (library newer than yours → prefer recording the lesson over editing a stale method).
