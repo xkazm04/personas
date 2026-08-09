@@ -14,10 +14,10 @@ import { IllustratedEmptyState } from '@/features/shared/components/display/Illu
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { TraceBeaconBoard } from './TraceBeaconBoard';
 import { TraceEmberCell } from './TraceEmberCell';
 import { TraceGhosts } from './TraceGhosts';
-import { TraceLedger } from './TraceLedger';
+import { TraceMatrixAurora } from './TraceMatrixAurora';
+import { TraceMatrixRuled } from './TraceMatrixRuled';
 import type { HeatTier, TraceModel } from './traceTypes';
 
 export interface TraceOverviewProps {
@@ -148,9 +148,9 @@ export function TraceOverviewBaseline({ model, onSelectSkill, onOpenInfo }: Trac
 // Hardcoded labels are deliberate — the switcher never ships.
 // ---------------------------------------------------------------------------
 const OVERVIEW_VARIANTS = [
-  { id: 'baseline', label: 'Ember Matrix', hint: 'cross-project heat scan' },
-  { id: 'beacons', label: 'Beacon Board', hint: 'one tile per skill' },
-  { id: 'ledger', label: 'Ledger', hint: 'audited register rows' },
+  { id: 'baseline', label: 'Ember Matrix', hint: 'the round-1 winner, as shipped' },
+  { id: 'ruled', label: 'Ruled', hint: 'drafting-table finish: frame, rules, totals' },
+  { id: 'aurora', label: 'Aurora', hint: 'atmospheric finish: glow + accent trails' },
 ] as const;
 type OverviewVariant = (typeof OVERVIEW_VARIANTS)[number]['id'];
 
@@ -173,8 +173,8 @@ export function TraceOverview(props: TraceOverviewProps) {
         ))}
       </div>
       <div className="flex-1 min-h-0">
-        {variant === 'beacons' ? <TraceBeaconBoard {...props} />
-          : variant === 'ledger' ? <TraceLedger {...props} />
+        {variant === 'ruled' ? <TraceMatrixRuled {...props} />
+          : variant === 'aurora' ? <TraceMatrixAurora {...props} />
           : <TraceOverviewBaseline {...props} />}
       </div>
     </div>

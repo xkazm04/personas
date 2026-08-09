@@ -12,8 +12,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { DRIFT_RING } from './driftTokens';
 import { LessonsPanel } from './LessonsPanel';
-import { SkillTreeBlueprint } from './SkillTreeBlueprint';
-import { SkillTreeOrbit } from './SkillTreeOrbit';
+import { SkillTreeFanDrafted } from './SkillTreeFanDrafted';
+import { SkillTreeFanLumen } from './SkillTreeFanLumen';
 import { layoutTree, CORE_X, CORE_Y, TREE_H, TREE_W } from './treeGeometry';
 import type { DriftState, SkillTreeModel } from './traceTypes';
 import { VersionTimelinePanel } from './VersionTimelinePanel';
@@ -176,9 +176,9 @@ export function SkillTreeViewBaseline({ model, onBack, onOpenInfo }: SkillTreeVi
 // Hardcoded labels are deliberate — the switcher never ships.
 // ---------------------------------------------------------------------------
 const TREE_VARIANTS = [
-  { id: 'baseline', label: 'Fan', hint: 'radial branches, upward arc' },
-  { id: 'orbit', label: 'Orbit', hint: 'recency rings around the library' },
-  { id: 'blueprint', label: 'Blueprint', hint: 'bus + wired module cards' },
+  { id: 'baseline', label: 'Fan', hint: 'the round-1 winner, as shipped' },
+  { id: 'drafted', label: 'Drafted', hint: 'technical finish: chips, hairlines, lettered counts' },
+  { id: 'lumen', label: 'Lumen', hint: 'light finish: under-glow branches, radiant core' },
 ] as const;
 type TreeVariant = (typeof TREE_VARIANTS)[number]['id'];
 
@@ -201,8 +201,8 @@ export function SkillTreeView(props: SkillTreeViewProps) {
         ))}
       </div>
       <div className="flex-1 min-h-0">
-        {variant === 'orbit' ? <SkillTreeOrbit {...props} />
-          : variant === 'blueprint' ? <SkillTreeBlueprint {...props} />
+        {variant === 'drafted' ? <SkillTreeFanDrafted {...props} />
+          : variant === 'lumen' ? <SkillTreeFanLumen {...props} />
           : <SkillTreeViewBaseline {...props} />}
       </div>
     </div>
