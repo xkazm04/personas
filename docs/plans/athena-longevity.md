@@ -339,6 +339,16 @@ whose premise their evidence contradicts.
   production `desktop-full` build on master; Director-fixed in `3bc5722f9` and the ml check joins
   the standing gates. Residue: no maintenance leg has live-run yet; `recall_synthesis` leg can
   only fire on ml builds.
+- **Hotfix `299f3227d` (2026-08-09) + FIRST AUTONOMOUS CYCLE.** The tick's `enabled()` early
+  return (night shift is opt-in, default OFF, never enabled by this operator) sat ABOVE the
+  sleep-cycle call — the pressure trigger was dead code on the machine it was built for, caught
+  live: 110k chars accumulated, zero automatic cycles. The Director's own L1b brief specified the
+  coupling; the live gate missed it because the command path bypasses the tick. Admission now runs
+  before the gate. Within minutes of the fix rebuilding, **cycle #2 `cyc_8f633f27e5dc` fired
+  autonomously** — 36s, 53 eps/29,958 chars, 9 facts + 4 procedurals, consumed_through advanced
+  Aug 5→Aug 6, residue 83,256 with the floor correctly blocking. Maintenance total: 4 turns,
+  $0.84. Standing lesson for every wave: *the phase gate must exercise the SCHEDULED path, not
+  only the command path.*
 - **Wave 4 · L1c** — **SHIPPED 2026-08-08**, merged ff: `8b61b24da` sleep pressure (boundary and
   window resolved once in `measure()`; compress flipped to oldest-first so truncated heavy days
   drain forward; **pressure sums hydrated bodies — a SQL SUM over the 500-capped `body_excerpt`
