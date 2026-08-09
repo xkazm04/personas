@@ -78,39 +78,61 @@ export function useSkillsRegistry(activeProjectId: string | null, refreshTick = 
     let alive = true;
     setF((prev) => ({ ...prev, loading: true }));
     void (async () => {
-      const [globalSkills, usageRows, snap] = await Promise.all([
-        listSkillsGlobal().catch((e) => { silentCatch('registry global')(e); return [] as SkillEntry[]; }),
-        getSkillUsageOverview().catch((e) => { silentCatch('registry usage')(e); return []; }),
-        listSessions().catch((e) => { silentCatch('registry sessions')(e); return { sessions: [] as never[] }; }),
-      ]);
-
-      const per = await mapWithConcurrency(wsProjects, 6, async (p) => {
-        const [installed, cov, mc] = await Promise.all([
-          listSkills(p.id).catch((e) => { silentCatch('registry listSkills')(e); return [] as SkillEntry[]; }),
-          memorySkillCoverage(p.id).catch((e) => { silentCatch('registry coverage')(e); return [] as SkillCoverageRow[]; }),
-          memoryCoverage(p.id).catch((e) => { silentCatch('registry contexts')(e); return { contexts: 0 } as { contexts: number }; }),
-        ]);
-        return { pid: p.id, installed, cov, contexts: mc.contexts };
-      });
+      // -- PHASE 1: the matrix's shape — library rows + adopted state. Two
+      // cheap fetch groups, published immediately so the grid paints with
+      // adopt/dispatch affordances while telemetry is still in flight.
+      const globalSkills = await listSkillsGlobal().catch((e) => { silentCatch('registry global')(e); return [] as SkillEntry[]; });
+      const perInstalled = await mapWithConcurrency(wsProjects, 6, async (p) => ({
+        pid: p.id,
+        installed: await listSkills(p.id).catch((e) => { silentCatch('registry listSkills')(e); return [] as SkillEntry[]; }),
+      }));
       if (!alive) return;
 
       const installedByProject = new Map<string, Set<string>>();
-      const covByKey = new Map<string, SkillCoverageRow>();
-      const ctxByProject = new Map<string, number>();
       const customCategory = new Map<string, string>();
       const descByName = new Map<string, string>();
-      for (const r of per) {
+      for (const r of perInstalled) {
         installedByProject.set(r.pid, new Set(r.installed.map((s) => s.name)));
         for (const s of r.installed) {
           if (s.category) customCategory.set(s.name, s.category);
           if (s.description) descByName.set(s.name, s.description);
         }
-        for (const c of r.cov) covByKey.set(cellKey(r.pid, c.skill), c);
-        ctxByProject.set(r.pid, r.contexts);
       }
       for (const s of globalSkills) {
         if (s.category) customCategory.set(s.name, s.category);
         if (s.description) descByName.set(s.name, s.description);
+      }
+      const libraryNames = [...new Set([
+        ...globalSkills.map((s) => s.name),
+        ...PRESET_SKILLS.keys(),
+      ])];
+
+      const phase1: Fetched = {
+        loading: false, libraryNames, customCategory, descByName, installedByProject,
+        covByKey: new Map(), ctxByProject: new Map(), usageByKey: new Map(), runningSet: new Set(),
+      };
+      setF(phase1);
+
+      // -- PHASE 2: telemetry enrichment (coverage %, 30d invokes, live-run
+      // locks). Merged over the painted grid when it lands.
+      const [usageRows, snap] = await Promise.all([
+        getSkillUsageOverview().catch((e) => { silentCatch('registry usage')(e); return []; }),
+        listSessions().catch((e) => { silentCatch('registry sessions')(e); return { sessions: [] as never[] }; }),
+      ]);
+      const perCov = await mapWithConcurrency(wsProjects, 4, async (p) => {
+        const [cov, mc] = await Promise.all([
+          memorySkillCoverage(p.id).catch((e) => { silentCatch('registry coverage')(e); return [] as SkillCoverageRow[]; }),
+          memoryCoverage(p.id).catch((e) => { silentCatch('registry contexts')(e); return { contexts: 0 } as { contexts: number }; }),
+        ]);
+        return { pid: p.id, cov, contexts: mc.contexts };
+      });
+      if (!alive) return;
+
+      const covByKey = new Map<string, SkillCoverageRow>();
+      const ctxByProject = new Map<string, number>();
+      for (const r of perCov) {
+        for (const c of r.cov) covByKey.set(cellKey(r.pid, c.skill), c);
+        ctxByProject.set(r.pid, r.contexts);
       }
 
       const usageByKey = new Map<string, number>();
@@ -126,12 +148,7 @@ export function useSkillsRegistry(activeProjectId: string | null, refreshTick = 
         if (parsed && pid) runningSet.add(cellKey(parsed.skill, pid));
       }
 
-      const libraryNames = [...new Set([
-        ...globalSkills.map((s) => s.name),
-        ...PRESET_SKILLS.keys(),
-      ])];
-
-      setF({ loading: false, libraryNames, customCategory, descByName, installedByProject, covByKey, ctxByProject, usageByKey, runningSet });
+      setF({ ...phase1, covByKey, ctxByProject, usageByKey, runningSet });
     })();
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -443,6 +443,14 @@ fn mine_file(
         }
     }
 
+    // One transaction per file: the first-ever scan mines hundreds of events,
+    // and per-INSERT autocommit meant one fsync each — a multi-second write
+    // storm holding the pooled connection while the UI's reads queued behind
+    // it (the Skills page cold-load freeze). Batched, the same work is one
+    // commit; the watermark update rides in it so events and offset stay
+    // atomic.
+    let tx = conn.unchecked_transaction()?;
+
     for ev in &events {
         // datetime(?) normalizes the ISO timestamp deterministically, so the
         // dedup index holds across truncation-triggered re-parses. An
@@ -483,6 +491,7 @@ fn mine_file(
          ON CONFLICT(file_path) DO UPDATE SET byte_offset = ?2, updated_at = datetime('now')",
         rusqlite::params![key, offset as i64],
     )?;
+    tx.commit()?;
 
     Ok(consumed)
 }

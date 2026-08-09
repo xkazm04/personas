@@ -71,14 +71,19 @@ export function useSkillTraceModel(activeProjectId: string | null, refreshTick =
 
   // One bounded transcript-mining pass per mount — backfills the durable
   // usage source (manual terminal runs included); the effect below re-runs
-  // when it lands. Best-effort: a failed scan still leaves the Fleet source.
+  // when it lands. DEFERRED to idle (~1.5s after mount): the scan writes to
+  // the DB and must not contend with the cold-load read burst — the Fleet
+  // session source already gives the matrix its heat for the first paint.
   const [scanTick, setScanTick] = useState(0);
   useEffect(() => {
     let alive = true;
-    scanSkillUsage()
-      .catch(silentCatch('trace usage scan'))
-      .finally(() => { if (alive) setScanTick((t) => t + 1); });
-    return () => { alive = false; };
+    const timer = window.setTimeout(() => {
+      if (!alive) return;
+      scanSkillUsage()
+        .catch(silentCatch('trace usage scan'))
+        .finally(() => { if (alive) setScanTick((t) => t + 1); });
+    }, 1500);
+    return () => { alive = false; window.clearTimeout(timer); };
   }, []);
   const wsProjects: TraceProject[] = useMemo(() => {
     const members = (workspace?.projectIds ?? [])

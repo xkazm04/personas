@@ -12,9 +12,10 @@
 // row/handler assembly lives in `useSkillsManagerRows`, so the Mastermind
 // canvas's Skills modal mounts the very same components instead of maintaining
 // a parallel skills UI.
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { ImproveProvider } from '@/features/teams/sub_factory/passport/improve/ImproveContext';
 import { useImproveEngine } from '@/features/teams/sub_factory/passport/improve/useImproveEngine';
 import { usePassportData } from '@/features/teams/sub_factory/passport/usePassportData';
@@ -27,12 +28,15 @@ import { Wand2 } from 'lucide-react';
 import { DevToolsPageHeader } from '../DevToolsPageHeader';
 
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
-import { SkillsAnalyticsTab } from './analytics/SkillsAnalyticsTab';
-import { RegistryTab } from './registry/RegistryTab';
 import { SkillInfoModal } from './SkillInfoModal';
-import { SkillsOverviewPanel } from './SkillsOverviewPanel';
 import { useSkillsManagerRows } from './skillsManagerRows';
-import { TraceTab } from './trace/TraceTab';
+
+// Each tab is its own lazy chunk: cold load parses only the active surface's
+// code, and the inactive tabs' data hooks never mount (loading-pattern v2 §1).
+const SkillsOverviewPanel = lazy(() => import('./SkillsOverviewPanel').then((m) => ({ default: m.SkillsOverviewPanel })));
+const SkillsAnalyticsTab = lazy(() => import('./analytics/SkillsAnalyticsTab').then((m) => ({ default: m.SkillsAnalyticsTab })));
+const RegistryTab = lazy(() => import('./registry/RegistryTab').then((m) => ({ default: m.RegistryTab })));
+const TraceTab = lazy(() => import('./trace/TraceTab').then((m) => ({ default: m.TraceTab })));
 
 // Row models moved to `skillsManagerRows` (the hook that builds them) and are
 // re-exported here so existing `from '../SkillsManagerPage'` type imports keep
@@ -90,15 +94,17 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
       </DevToolsPageHeader>
 
       <div className="flex-1 min-h-0 px-4 pb-4 pt-3">
-        {pageTab === 'trace' ? (
-          <TraceTab activeProjectId={activeId} onOpenInfo={setInfoSkill} />
-        ) : pageTab === 'registry' ? (
-          <RegistryTab activeProjectId={activeId} onOpenInfo={setInfoSkill} />
-        ) : pageTab === 'analytics' && activeId ? (
-          <AnalyticsHost projectId={activeId} onOpenInfo={setInfoSkill} />
-        ) : (
-          <SkillsOverviewPanel projectId={activeId} />
-        )}
+        <Suspense fallback={<RouteChunkSkeleton />}>
+          {pageTab === 'trace' ? (
+            <TraceTab activeProjectId={activeId} onOpenInfo={setInfoSkill} />
+          ) : pageTab === 'registry' ? (
+            <RegistryTab activeProjectId={activeId} onOpenInfo={setInfoSkill} />
+          ) : pageTab === 'analytics' && activeId ? (
+            <AnalyticsHost projectId={activeId} onOpenInfo={setInfoSkill} />
+          ) : (
+            <SkillsOverviewPanel projectId={activeId} />
+          )}
+        </Suspense>
       </div>
 
       {infoSkill && (
