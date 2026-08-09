@@ -80,6 +80,37 @@ pub fn list_design_reviews(
     repo::get_reviews(&state.db, test_run_id.as_deref(), limit)
 }
 
+/// How many design reviews exist — the TRUE row count, not the length of a
+/// page.
+///
+/// `list_design_reviews` defaults to `LIMIT 50` when the caller passes no
+/// limit, so any UI that used `reviews.length` as a total silently displayed
+/// "50" for a catalog of 124+ seeded templates plus team presets. A count is
+/// the right instrument for a count: one indexed aggregate instead of paging
+/// the whole table into the webview to measure it.
+///
+/// `test_run_id` mirrors `list_design_reviews` so the two always agree about
+/// which population is being described.
+#[tauri::command]
+pub fn count_design_reviews(
+    state: State<'_, Arc<AppState>>,
+    test_run_id: Option<String>,
+) -> Result<i64, AppError> {
+    require_auth_sync(&state)?;
+    let conn = state.db.get()?;
+    let count = match test_run_id.as_deref() {
+        Some(run_id) => conn.query_row(
+            "SELECT COUNT(*) FROM persona_design_reviews WHERE test_run_id = ?1",
+            [run_id],
+            |row| row.get::<_, i64>(0),
+        )?,
+        None => conn.query_row("SELECT COUNT(*) FROM persona_design_reviews", [], |row| {
+            row.get::<_, i64>(0)
+        })?,
+    };
+    Ok(count)
+}
+
 #[tauri::command]
 pub fn get_design_review(
     state: State<'_, Arc<AppState>>,
