@@ -10,7 +10,7 @@
  * nothing that could miss an event while it waits.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useChatScroll } from '../useChatScroll';
 import { useTranscriptPages } from '../useTranscriptPages';
 import { useShowEarlierOnScroll } from './athenaChatEarlier';
@@ -37,6 +37,28 @@ export function useAthenaChatView(engine: AthenaChatEngine): AthenaChatView {
   // scroll effect would cost a render and buy nothing.
   const { scrollRef, atBottom, scrollToBottom, maybeAutoScroll } = useChatScroll();
   useEffect(maybeAutoScroll, [messages, streaming, maybeAutoScroll]);
+
+  // Open-at-latest: on the first render of a conversation (window opened, or
+  // switched conversations), jump straight to the newest message AFTER layout
+  // settles. `maybeAutoScroll` alone can fire while the restored transcript is
+  // still laying out (scrollHeight not yet final), which parks the panel at the
+  // FIRST message instead of the last — the "opens scrolled to the top" bug.
+  // Keyed per conversation so a switch re-lands at the bottom; the double rAF
+  // waits for the transcript to paint before measuring scrollHeight.
+  const initialScrolledFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!initialized) return;
+    if (initialScrolledFor.current === activeConversationId) return;
+    initialScrolledFor.current = activeConversationId;
+    let inner = 0;
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => scrollToBottom('auto'));
+    });
+    return () => {
+      cancelAnimationFrame(outer);
+      if (inner) cancelAnimationFrame(inner);
+    };
+  }, [initialized, activeConversationId, scrollToBottom]);
 
   const transcriptWindow = useTranscriptWindow(messages, activeConversationId);
   const { showEarlierAnchored } = useShowEarlierOnScroll({
