@@ -314,9 +314,22 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         // (the last via the 2026-05-02-fk-hygiene-cascade ADR), and
         // PRAGMA foreign_keys = ON is the global default (db/mod.rs), so
         // deleting the team row cascades to all three automatically.
-        // team_memories.team_id has NO foreign key, so it is the only child
-        // table that still needs an explicit DELETE.
+        // TWO child tables carry a bare `team_id TEXT NOT NULL` with NO foreign
+        // key, so nothing cascades them and each needs an explicit DELETE here:
+        //   - team_memories
+        //   - team_channel_messages  (added later, and missed by this cleanup
+        //     until 2026-08-09 — every message and directive for a deleted team
+        //     was stranded in the DB forever, unreachable from any UI and
+        //     counted by no retention sweep)
+        // Both run inside the same transaction as the team row's own delete, so
+        // a partial failure can never leave the team gone and its history
+        // behind. If you add another table keyed by team_id without an FK, add
+        // it to this list.
         tx.execute("DELETE FROM team_memories WHERE team_id = ?1", params![id])?;
+        tx.execute(
+            "DELETE FROM team_channel_messages WHERE team_id = ?1",
+            params![id],
+        )?;
         let rows = tx.execute("DELETE FROM persona_teams WHERE id = ?1", params![id])?;
         tx.commit().map_err(AppError::Database)?;
         Ok(rows > 0)
@@ -860,6 +873,83 @@ mod tests {
 
     fn create_test_persona(pool: &DbPool, name: &str) -> crate::models::Persona {
         test_fixtures::create_test_persona(pool, name, "You are a test agent.")
+    }
+
+    fn mk_team(pool: &DbPool, name: &str) -> PersonaTeam {
+        create(
+            pool,
+            CreateTeamInput {
+                name: name.into(),
+                project_id: None,
+                parent_team_id: None,
+                description: None,
+                canvas_data: None,
+                team_config: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+            },
+        )
+        .unwrap()
+    }
+
+    fn channel_message_count(pool: &DbPool, team_id: &str) -> i64 {
+        let conn = pool.get().unwrap();
+        conn.query_row(
+            "SELECT COUNT(*) FROM team_channel_messages WHERE team_id = ?1",
+            params![team_id],
+            |r| r.get(0),
+        )
+        .unwrap()
+    }
+
+    /// team-delete-orphans-channel: `team_channel_messages.team_id` has no
+    /// foreign key (same as `team_memories`), so nothing cascades it. Deleting a
+    /// team must sweep its channel history in the SAME transaction, or every
+    /// message and directive for that team is stranded in the DB forever —
+    /// unreachable from any UI and counted by no retention sweep.
+    #[test]
+    fn delete_team_sweeps_its_channel_messages() {
+        let pool = init_test_db().unwrap();
+        let doomed = mk_team(&pool, "Doomed Squad");
+        let bystander = mk_team(&pool, "Bystander Squad");
+
+        let post = |team_id: &str, body: &str| {
+            crate::repos::resources::team_channel::create(
+                &pool,
+                crate::models::CreateChannelMessageInput {
+                    team_id: team_id.to_string(),
+                    author_kind: "user".into(),
+                    author_id: None,
+                    body: body.into(),
+                    addressed_to: None,
+                    reply_to: None,
+                    assignment_id: None,
+                    consumer: Some("inject".into()),
+                },
+            )
+            .unwrap()
+        };
+
+        post(&doomed.id, "Ship the migration by Friday.");
+        post(&doomed.id, "Acknowledged — starting on the schema.");
+        post(&bystander.id, "Unrelated directive for another team.");
+
+        assert_eq!(channel_message_count(&pool, &doomed.id), 2);
+        assert_eq!(channel_message_count(&pool, &bystander.id), 1);
+
+        assert!(delete(&pool, &doomed.id).unwrap());
+
+        assert_eq!(
+            channel_message_count(&pool, &doomed.id),
+            0,
+            "deleting a team must leave zero orphaned channel messages behind",
+        );
+        assert_eq!(
+            channel_message_count(&pool, &bystander.id),
+            1,
+            "the sweep must be scoped to the deleted team only",
+        );
     }
 
     #[test]
