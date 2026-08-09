@@ -10,7 +10,12 @@
 //!
 //! Candidate rules (all enforced in SQL + the off-track check):
 //! 1. KPI is `active` with a fresh measurement (within 2× its cadence — a
-//!    derivation from stale data would steer blind).
+//!    derivation from stale data would steer blind). Falling PAST that window
+//!    is not silent any more: `db::repos::dev_tools::attention_queue` reports
+//!    the KPI as `kpi_gone_dark` (or `kpi_never_measured`), because "this KPI
+//!    stopped generating goals" is otherwise indistinguishable from "this KPI
+//!    has nothing to say". That queue mirrors the cadence window below in
+//!    `kpi_freshness_window_days` — change one, change both.
 //! 2. No OPEN goal already carries this `kpi_id` (one derived goal per KPI).
 //! 3. Post-completion cooldown: if the most recent derived goal for this KPI
 //!    completed AFTER the last measurement, the needle hasn't been re-read

@@ -1543,14 +1543,41 @@ pub fn portfolio_summary(pool: &DbPool) -> Result<PortfolioSummary, AppError> {
     })
 }
 
-/// Cross-project "needs you" queue over all three record types.
+/// How long a KPI's last measurement may age before goal derivation refuses to
+/// use it, in days — 2× its cadence, with manual/unknown cadences treated as
+/// weekly.
 ///
-/// Seven kinds, ranked. The four GOAL kinds keep the ranks they always had —
+/// This is a MIRROR of the `CASE k.cadence` window in
+/// `engine/kpi_derivation.rs::find_derivation_candidates` (app crate; this one
+/// is in `personas-db`, which cannot depend on it). Keep the two in sync: this
+/// function exists only to report the consequence of that rule, so if it drifts
+/// the attention queue starts claiming derivation stopped when it has not, or
+/// stays quiet when it has.
+fn kpi_freshness_window_days(cadence: &str) -> i64 {
+    match cadence {
+        "daily" => 2,
+        // weekly → 14; `manual` and any cadence not yet wired into the
+        // derivation CASE fall through to the same 14-day arm it uses.
+        _ => 14,
+    }
+}
+
+/// Cross-project "needs you" queue over all three record types, plus the KPIs
+/// that feed them.
+///
+/// Nine kinds, ranked. The four GOAL kinds keep the ranks they always had —
 /// awaiting_review team steps (0) → overdue goals (1) → stalled goals (2) →
-/// unstaffed goals (3) — and the three record-widening kinds are appended:
-/// undispatched ideas (4) → stuck running tasks (5) → stale queued tasks (6).
-/// Appended rather than interleaved so the existing ordering contract holds;
-/// within a rank the list sorts by age, worst first.
+/// unstaffed goals (3) — the three record-widening kinds follow: undispatched
+/// ideas (4) → stuck running tasks (5) → stale queued tasks (6), and the two
+/// KPI-supply kinds are appended last: `kpi_gone_dark` (7) → `kpi_never_measured`
+/// (8). Appended rather than interleaved so the existing ordering contract
+/// holds; within a rank the list sorts by age, worst first.
+///
+/// The two KPI kinds deliberately carry NO roll-up counter on `AttentionQueue`
+/// (unlike the seven above): that struct lives in `personas-core` and the count
+/// is derivable from `items` by `kind`. If a summary surface needs them, add
+/// `kpi_gone_dark` / `kpi_never_measured` fields there and fill them here the
+/// same way the others are filled.
 ///
 /// Every cutoff comes from `thresholds` (pass `AttentionThresholds::default()`
 /// for the shipped numbers) instead of the single hard-coded 7-day window that
@@ -1932,6 +1959,141 @@ pub fn attention_queue(
                 assignment_id: None,
                 step_id: None,
                 age_hours: Some(hours),
+                rank,
+            });
+        }
+    }
+
+    // 8) KPIs whose measurement has gone dark + 9) active KPIs never measured.
+    //
+    // Not "this number is old" — the CONSEQUENCE. `kpi_derivation::
+    // find_derivation_candidates` refuses to derive a goal from a KPI measured
+    // longer ago than 2x its cadence, so past that window the KPI silently
+    // stops producing work. A codebase command that started failing and a
+    // connector binding that rotted both land here, and both read to the user
+    // as "this KPI just isn't generating goals any more" with nothing to click.
+    //
+    // Cadence-relative (`kpi_freshness_window_days`), not one global cutoff: a
+    // daily KPI and a quarterly one do not share a threshold, and the window
+    // used here is the same one the derivation gate enforces.
+    //
+    // Two distinct kinds because they are two different user problems: a KPI
+    // that WAS reporting and went dark is a broken measurement to repair; one
+    // that was never measured at all was never wired up in the first place.
+    //
+    // Scoped to keep the signal worth reading:
+    //   * `status = 'active'` only. A paused or archived KPI is silent on
+    //     purpose and a `proposed` one has not been adopted yet; lighting the
+    //     queue up for either is exactly the noise that makes a queue ignored.
+    //   * projects with a team only (`p.team_id IS NOT NULL`) — the same join
+    //     `find_derivation_candidates` makes. Derivation never ran for a
+    //     team-less project, so "derivation has stopped" would not be TRUE of
+    //     one, and this row's whole value is that its claim is true.
+    //   * a never-measured KPI is not reported until it is older than its own
+    //     window, so activating a KPI does not immediately accuse it.
+    {
+        struct LiveKpi {
+            id: String,
+            name: String,
+            status: String,
+            cadence: String,
+            last_measured_at: Option<String>,
+            created_at: String,
+            project_id: String,
+            project_name: String,
+        }
+        let mut stmt = conn.prepare(
+            "SELECT k.id, k.name, k.status, k.cadence, k.last_measured_at, k.created_at,
+                    p.id AS project_id, p.name AS project_name
+             FROM dev_kpis k
+             JOIN dev_projects p ON p.id = k.project_id AND p.team_id IS NOT NULL
+             WHERE k.status = 'active'",
+        )?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok(LiveKpi {
+                    id: row.get("id")?,
+                    name: row.get("name")?,
+                    status: row.get("status")?,
+                    cadence: row.get("cadence")?,
+                    last_measured_at: row.get("last_measured_at")?,
+                    created_at: row.get("created_at")?,
+                    project_id: row.get("project_id")?,
+                    project_name: row.get("project_name")?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
+        for k in rows {
+            let window = chrono::Duration::days(kpi_freshness_window_days(&k.cadence));
+            let cutoff = now - window;
+            let window_days = window.num_days();
+
+            let (kind, rank, since_raw) = match k.last_measured_at.as_deref() {
+                // Measured once and then went quiet past its own window.
+                Some(stamp) => {
+                    let Some(measured) = parse_stamp(stamp) else {
+                        tracing::warn!(
+                            kpi_id = %k.id,
+                            last_measured_at = %stamp,
+                            "attention_queue: unparseable KPI last_measured_at — cannot judge staleness",
+                        );
+                        continue;
+                    };
+                    if measured >= cutoff {
+                        continue;
+                    }
+                    ("kpi_gone_dark", 7, measured)
+                }
+                // Never measured — reported only once it has had its own window
+                // to produce a first reading.
+                None => {
+                    let Some(created) = parse_stamp(&k.created_at) else {
+                        tracing::warn!(
+                            kpi_id = %k.id,
+                            created_at = %k.created_at,
+                            "attention_queue: unparseable KPI created_at — cannot judge staleness",
+                        );
+                        continue;
+                    };
+                    if created >= cutoff {
+                        continue;
+                    }
+                    ("kpi_never_measured", 8, created)
+                }
+            };
+
+            let elapsed = now - since_raw;
+            let days = elapsed.num_days();
+            let detail = if rank == 7 {
+                format!(
+                    "no reading in {days}d (cadence {}, derivation needs one every {window_days}d) — goal derivation has stopped for it",
+                    k.cadence
+                )
+            } else {
+                format!(
+                    "active {days}d, never measured — no goal can be derived from it yet"
+                )
+            };
+            items.push(AttentionItem {
+                kind: kind.into(),
+                entity_kind: "kpi".into(),
+                entity_id: k.id,
+                entity_title: k.name,
+                // A KPI is upstream of goals, not attached to one: naming any
+                // single derived goal here would misdirect the click.
+                goal_id: None,
+                goal_title: None,
+                project_id: Some(k.project_id),
+                project_name: Some(k.project_name),
+                status: k.status,
+                // A KPI has no progress; 0 would read as "measured, at zero",
+                // which is a completely different (and much worse) claim.
+                progress: None,
+                detail,
+                assignment_id: None,
+                step_id: None,
+                age_hours: Some(elapsed.num_hours().max(0) as u32),
                 rank,
             });
         }
@@ -8711,6 +8873,151 @@ mod attention_queue_tests {
         assert!(q.items.is_empty());
         assert_eq!(q.undispatched_ideas + q.stuck_tasks + q.stale_queued_tasks, 0);
         assert_eq!(q.thresholds.task_running_hours, 4);
+    }
+
+    // ------------------------------------------------------- KPI supply ----
+
+    /// A KPI whose measurement stops reporting takes goal derivation down with
+    /// it, and nothing used to say so. These pin the four states apart.
+    fn kpi(
+        pool: &DbPool,
+        project: &str,
+        name: &str,
+        cadence: &str,
+        status: &str,
+    ) -> crate::models::DevKpi {
+        create_kpi(
+            pool, project, name, None, None, "technical", "codebase", "{}", "%", "up", None, None,
+            None, cadence, Some(status), "user", None, None, None, None, None,
+        )
+        .unwrap()
+    }
+
+    fn measured(pool: &DbPool, kpi_id: &str, days_ago: i64) {
+        set(
+            pool,
+            "UPDATE dev_kpis SET current_value = 50.0, last_measured_at = ?1 WHERE id = ?2",
+            &[&ago(days_ago, 0), &kpi_id],
+        );
+    }
+
+    #[test]
+    fn a_kpi_that_went_dark_is_reported_and_says_derivation_has_stopped() {
+        let pool = crate::init_test_db().unwrap();
+        let p = create_project(&pool, "P", "/tmp/kpi-dark", None, None, None, None, Some("team-1"))
+            .unwrap();
+
+        // Weekly window is 14d: 3d ago is fresh, 30d ago is dark.
+        let fresh = kpi(&pool, &p.id, "fresh weekly", "weekly", "active");
+        measured(&pool, &fresh.id, 3);
+        let dark = kpi(&pool, &p.id, "dark weekly", "weekly", "active");
+        measured(&pool, &dark.id, 30);
+
+        let q = attention_queue(&pool, AttentionThresholds::default()).unwrap();
+        let reported = kinds(&q, "kpi_gone_dark");
+        assert_eq!(reported.len(), 1, "only the KPI past its own window is reported");
+        assert_eq!(reported[0].entity_id, dark.id);
+        assert_eq!(reported[0].entity_kind, "kpi");
+        assert_eq!(reported[0].rank, 7);
+        assert_eq!(
+            reported[0].project_name.as_deref(),
+            Some("P"),
+            "the row must name the project so the queue can route it",
+        );
+        assert!(
+            reported[0].progress.is_none(),
+            "a KPI has no progress; 0 would read as 'measured, at zero'",
+        );
+        assert!(
+            reported[0].detail.contains("derivation"),
+            "the signal must say WHY it matters, not just that the number is old: {}",
+            reported[0].detail,
+        );
+        assert!(reported[0].age_hours.unwrap() >= 29 * 24);
+    }
+
+    #[test]
+    fn the_staleness_window_follows_the_kpis_own_cadence() {
+        let pool = crate::init_test_db().unwrap();
+        let p =
+            create_project(&pool, "P", "/tmp/kpi-cadence", None, None, None, None, Some("team-1"))
+                .unwrap();
+
+        // 5 days without a reading: past a DAILY KPI's 2-day window, well
+        // inside a WEEKLY one's 14-day window. One global cutoff cannot say
+        // both, which is the whole point.
+        let daily = kpi(&pool, &p.id, "daily", "daily", "active");
+        measured(&pool, &daily.id, 5);
+        let weekly = kpi(&pool, &p.id, "weekly", "weekly", "active");
+        measured(&pool, &weekly.id, 5);
+
+        let q = attention_queue(&pool, AttentionThresholds::default()).unwrap();
+        let ids: Vec<&str> = kinds(&q, "kpi_gone_dark")
+            .iter()
+            .map(|i| i.entity_id.as_str())
+            .collect();
+        assert_eq!(ids, vec![daily.id.as_str()]);
+    }
+
+    #[test]
+    fn never_measured_is_a_different_signal_from_gone_dark() {
+        let pool = crate::init_test_db().unwrap();
+        let p =
+            create_project(&pool, "P", "/tmp/kpi-never", None, None, None, None, Some("team-1"))
+                .unwrap();
+
+        let never = kpi(&pool, &p.id, "never wired up", "weekly", "active");
+        set(
+            &pool,
+            "UPDATE dev_kpis SET created_at = ?1 WHERE id = ?2",
+            &[&ago(30, 0), &never.id],
+        );
+        // Activated moments ago and not yet measured: not an accusation, just
+        // a KPI that has not had its window.
+        let brand_new = kpi(&pool, &p.id, "just activated", "weekly", "active");
+
+        let q = attention_queue(&pool, AttentionThresholds::default()).unwrap();
+        let reported = kinds(&q, "kpi_never_measured");
+        assert_eq!(reported.len(), 1);
+        assert_eq!(reported[0].entity_id, never.id);
+        assert_eq!(reported[0].rank, 8, "a different rank from gone-dark");
+        assert!(reported[0].detail.contains("never measured"));
+        assert!(
+            kinds(&q, "kpi_gone_dark").is_empty(),
+            "a KPI with no reading at all has not 'gone dark' — it never started",
+        );
+        assert!(
+            !q.items.iter().any(|i| i.entity_id == brand_new.id),
+            "a freshly activated KPI is not yet overdue for its first reading",
+        );
+    }
+
+    #[test]
+    fn kpis_that_are_silent_on_purpose_or_unowned_stay_out_of_the_queue() {
+        let pool = crate::init_test_db().unwrap();
+        let owned =
+            create_project(&pool, "Owned", "/tmp/kpi-owned", None, None, None, None, Some("team-1"))
+                .unwrap();
+        let teamless =
+            create_project(&pool, "Teamless", "/tmp/kpi-teamless", None, None, None, None, None)
+                .unwrap();
+
+        for status in ["paused", "archived", "proposed"] {
+            let k = kpi(&pool, &owned.id, status, "weekly", status);
+            measured(&pool, &k.id, 60);
+        }
+        // Active + ancient, but nobody derives goals for a team-less project,
+        // so claiming derivation stopped would be false.
+        let orphan = kpi(&pool, &teamless.id, "orphan", "weekly", "active");
+        measured(&pool, &orphan.id, 60);
+
+        let q = attention_queue(&pool, AttentionThresholds::default()).unwrap();
+        assert!(
+            !q.items.iter().any(|i| i.entity_kind == "kpi"),
+            "paused/archived/proposed KPIs are silent on purpose, and a team-less \
+             project never derived anything to stop: {:?}",
+            q.items.iter().map(|i| &i.entity_title).collect::<Vec<_>>(),
+        );
     }
 
     // ---------------------------------------------------------------- C1 ----
