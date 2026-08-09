@@ -209,6 +209,10 @@ pub fn spawn_ticker(app: AppHandle) {
             // idempotent + no-ops until AppState (the DB pool) is managed, so
             // an early tick simply retries on the next one.
             super::persist::rehydrate(&app);
+            // Mechanism 2 — recover mid-task orphans BEFORE tick_once, so the
+            // auto-forget pass can't sweep a rehydrated session that was still
+            // working when the app restarted. One-shot; no-ops thereafter.
+            super::persist::recover_after_restart(&app);
             tick_once(&app);
         }
     });

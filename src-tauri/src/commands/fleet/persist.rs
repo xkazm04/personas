@@ -238,6 +238,66 @@ pub fn rehydrate(app: &AppHandle) -> usize {
     restored
 }
 
+/// One-shot guard for [`recover_after_restart`].
+static RECOVERED: AtomicBool = AtomicBool::new(false);
+
+/// Mechanism 2 — boot recovery. A session that was mid-task
+/// (`Running`/`AwaitingInput`) at the last shutdown comes back from
+/// [`rehydrate`] with that state but NO live PTY: the app lost the handle on
+/// restart even though the `claude` process usually survives as an orphan.
+/// Left as-is it reads as a false-`Running`/silent tile and — worse — the
+/// ticker would soon mark it `Stale` and the auto-forget pass would sweep it,
+/// silently stranding real work.
+///
+/// This pass runs ONCE, right after the first successful rehydrate and BEFORE
+/// `tick_once`, and force-parks each Athena-owned mid-task orphan to
+/// `AwaitingInput` with a recovery reason ([`park_recovered`]). That both
+/// surfaces it for reconnection (`fleet_resume`/`fleet_wake`) and shields it
+/// from auto-forget. Finished/dead rows are deliberately ignored here — the
+/// ticker's auto-forget pass cleans those.
+///
+/// It intentionally does NOT auto-kill-and-resume the orphan process at boot:
+/// `fleet_resume_orphan` kills before resuming, and matching a process to a
+/// session by cwd is ambiguous when several share a directory — too risky to
+/// fire unattended. Reconnection stays an operator/Athena-driven action.
+pub fn recover_after_restart(app: &AppHandle) {
+    use super::registry::registry;
+    if RECOVERED.load(Ordering::SeqCst) {
+        return;
+    }
+    // Snapshot Athena-owned mid-task orphan ids under the lock; act outside it.
+    let strays: Vec<String> = {
+        let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+        // Nothing to inspect yet (rehydrate no-ops until the DB pool is
+        // managed) — don't burn the one-shot; retry on the next tick.
+        if map.is_empty() {
+            return;
+        }
+        map.values()
+            .filter(|s| {
+                s.child_pid.is_none()
+                    && matches!(
+                        s.state,
+                        FleetSessionState::Running | FleetSessionState::AwaitingInput
+                    )
+            })
+            .map(|s| s.id.clone())
+            .collect()
+    };
+    RECOVERED.store(true, Ordering::SeqCst);
+    for sid in strays {
+        if !registry().is_athena_owned(&sid) {
+            continue;
+        }
+        if registry().park_recovered(
+            &sid,
+            "Recovered after an app restart — its live connection was lost. Resume to reconnect, or close it.",
+        ) {
+            super::pty::emit_registry_changed(app, "updated", &sid);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
