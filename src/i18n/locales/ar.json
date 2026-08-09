@@ -10410,7 +10410,13 @@
       "run_now": "اعتمد وشغّل",
       "subtitle_one": "تشغيل مجدوَل واحد ({count}) في الانتظار حتى تعتمده.",
       "subtitle_other": "{count} تشغيلات مجدوَلة في الانتظار حتى تعتمدها.",
-      "title": "في انتظار موافقتك"
+      "title": "في انتظار موافقتك",
+      "badge_one": "{count} تشغيل في الانتظار",
+      "badge_other": "{count} تشغيل في الانتظار",
+      "badge_title": "عمليات تشغيل المشغّلات المحتجزة بانتظار موافقتك",
+      "_comment_badge_one": "Header badge, singular. {count} is a number. 'fire' = one held trigger firing, not flame.",
+      "_comment_badge_other": "Header badge, plural. {count} is a number. 'fires' = held trigger firings, not flames.",
+      "_comment_badge_title": "Tooltip on the header badge."
     },
     "unattended": {
       "approval": "اطلب موافقتي",
@@ -10459,7 +10465,13 @@
       "watching_only": "المراقَبة فقط"
     },
     "overdue_label": "متأخر",
-    "relay_delete_failed": "فشل حذف الترحيل — يرجى المحاولة مرة أخرى"
+    "relay_delete_failed": "فشل حذف الترحيل — يرجى المحاولة مرة أخرى",
+    "event_reason_label": "السبب",
+    "event_reason_unknown": "غير معروف",
+    "event_reason_unknown_hint": "سُجِّل قبل تتبّع الأسباب، لذا لا يُعرف سبب انتهاء هذا الحدث دون تشغيل.",
+    "_comment_event_reason_label": "Column header in the trigger Live Stream / Dead Letter tables: why this event did not start a run.",
+    "_comment_event_reason_unknown": "Shown for events recorded before reasons were tracked. Must NOT read like a fabricated reason.",
+    "_comment_event_reason_unknown_hint": "Tooltip explaining the Unknown reason - honesty about missing history, not an error."
   },
   "settings": {
     "account": {
@@ -12232,7 +12244,13 @@
     "update_badge_detail_tooltip": "تم الاعتماد على الإصدار v{from}؛ الكتالوج الآن في الإصدار v{to}. أزل وأعد الاعتماد للتحديث.",
     "update_badge_tooltip": "تتوفر نسخة أحدث من هذه القدرة — أزل وأعد الاعتماد للتحديث",
     "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-    "tags_heading": "الوسوم"
+    "tags_heading": "الوسوم",
+    "adopted_params_failed_toast": "تم اعتماد \"{title}\"، لكن تعذّر إنشاء إعداداته",
+    "adopted_params_partial_toast": "تم اعتماد \"{title}\"، لكن تعذّر إنشاء {missing} من أصل {declared} من الإعدادات ({types})",
+    "removed_params_failed_toast": "تمت إزالة \"{title}\"، لكن تعذّر تنظيف إعداداته",
+    "_comment_adopted_params_failed_toast": "Warning toast when adoption succeeded but the parameter sync call failed outright, so the capability has no editable settings at all.",
+    "_comment_adopted_params_partial_toast": "Warning toast after adopting a capability whose input_schema declared setting types the persona parameter system cannot express. {missing}/{declared} are counts; {types} is a comma-joined list of RAW TYPE TOKENS (source_definition, connector_ref, list[string]) - do NOT translate the tokens themselves.",
+    "_comment_removed_params_failed_toast": "Warning toast when removal succeeded but the parameter re-sync failed, so the detached capability's lines are still in the prompt."
   },
   "recipes": {
     "no_match": "لا توجد وصفات مطابقة",
@@ -12563,6 +12581,18 @@
       "refused": "مرفوضة",
       "pending": "قيد الانتظار",
       "running": "قيد التشغيل"
+    },
+    "event_reason": {
+      "approval_held": "في انتظار الموافقة",
+      "cascade_guard": "قيد التشغيل بالفعل",
+      "cross_team_blocked": "محظور بين الفرق",
+      "dry_run": "تشغيل تجريبي (محاكاة)",
+      "handoff_target_disabled": "وجهة التسليم متوقفة",
+      "no_subscriber": "لا يوجد مشترك مطابق",
+      "persona_disabled": "الوكيل متوقف",
+      "stuck_reclaimed": "تمت الاستعادة وإعادة الإدراج في الطابور",
+      "stuck_retry_exhausted": "تمت الاستعادة، ونفدت المحاولات",
+      "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
     }
   },
   "project_overview": {

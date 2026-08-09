@@ -772,7 +772,13 @@
     "run_now": "批准并运行",
     "subtitle_one": "有 {count} 个计划运行正等待你的批准。",
     "subtitle_other": "有 {count} 个计划运行正等待你的批准。",
-    "title": "等待你的批准"
+    "title": "等待你的批准",
+    "badge_one": "{count} 次触发等待中",
+    "badge_other": "{count} 次触发等待中",
+    "badge_title": "等待你审批的触发器触发",
+    "_comment_badge_one": "Header badge, singular. {count} is a number. 'fire' = one held trigger firing, not flame.",
+    "_comment_badge_other": "Header badge, plural. {count} is a number. 'fires' = held trigger firings, not flames.",
+    "_comment_badge_title": "Tooltip on the header badge."
   },
   "unattended": {
     "approval": "需要我的批准",
@@ -821,5 +827,11 @@
     "watching_only": "仅关注"
   },
   "overdue_label": "已逾期",
-  "relay_delete_failed": "删除中继失败 — 请重试"
+  "relay_delete_failed": "删除中继失败 — 请重试",
+  "event_reason_label": "原因",
+  "event_reason_unknown": "未知",
+  "event_reason_unknown_hint": "该记录创建于开始追踪原因之前，因此无法得知此事件为何未触发运行。",
+  "_comment_event_reason_label": "Column header in the trigger Live Stream / Dead Letter tables: why this event did not start a run.",
+  "_comment_event_reason_unknown": "Shown for events recorded before reasons were tracked. Must NOT read like a fabricated reason.",
+  "_comment_event_reason_unknown_hint": "Tooltip explaining the Unknown reason - honesty about missing history, not an error."
 }

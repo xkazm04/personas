@@ -10410,7 +10410,13 @@
       "run_now": "Одобрить и запустить",
       "subtitle_one": "{count} запланированный запуск ожидает вашего одобрения.",
       "subtitle_other": "{count} запланированных запуска ожидают вашего одобрения.",
-      "title": "Ожидает вашего одобрения"
+      "title": "Ожидает вашего одобрения",
+      "badge_one": "{count} срабатывание ожидает",
+      "badge_other": "{count} срабатываний ожидают",
+      "badge_title": "Срабатывания триггеров, ожидающие вашего подтверждения",
+      "_comment_badge_one": "Header badge, singular. {count} is a number. 'fire' = one held trigger firing, not flame.",
+      "_comment_badge_other": "Header badge, plural. {count} is a number. 'fires' = held trigger firings, not flames.",
+      "_comment_badge_title": "Tooltip on the header badge."
     },
     "unattended": {
       "approval": "Требовать моего одобрения",
@@ -10459,7 +10465,13 @@
       "watching_only": "Только отслеживаемые"
     },
     "overdue_label": "Просрочено",
-    "relay_delete_failed": "Не удалось удалить ретранслятор — попробуйте снова"
+    "relay_delete_failed": "Не удалось удалить ретранслятор — попробуйте снова",
+    "event_reason_label": "Причина",
+    "event_reason_unknown": "Неизвестно",
+    "event_reason_unknown_hint": "Запись создана до того, как причины начали отслеживаться, поэтому неизвестно, почему это событие завершилось без запуска.",
+    "_comment_event_reason_label": "Column header in the trigger Live Stream / Dead Letter tables: why this event did not start a run.",
+    "_comment_event_reason_unknown": "Shown for events recorded before reasons were tracked. Must NOT read like a fabricated reason.",
+    "_comment_event_reason_unknown_hint": "Tooltip explaining the Unknown reason - honesty about missing history, not an error."
   },
   "settings": {
     "account": {
@@ -12232,7 +12244,13 @@
     "update_badge_detail_tooltip": "Установлено в версии v{from}; в каталоге теперь v{to}. Чтобы обновить, удалите и установите заново.",
     "update_badge_tooltip": "Доступна новая версия этого навыка — удалите и установите заново, чтобы обновить",
     "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-    "tags_heading": "Теги"
+    "tags_heading": "Теги",
+    "adopted_params_failed_toast": "«{title}» добавлено, но не удалось создать настройки",
+    "adopted_params_partial_toast": "«{title}» добавлено, но не удалось создать {missing} из {declared} настроек ({types})",
+    "removed_params_failed_toast": "«{title}» удалено, но не удалось очистить настройки",
+    "_comment_adopted_params_failed_toast": "Warning toast when adoption succeeded but the parameter sync call failed outright, so the capability has no editable settings at all.",
+    "_comment_adopted_params_partial_toast": "Warning toast after adopting a capability whose input_schema declared setting types the persona parameter system cannot express. {missing}/{declared} are counts; {types} is a comma-joined list of RAW TYPE TOKENS (source_definition, connector_ref, list[string]) - do NOT translate the tokens themselves.",
+    "_comment_removed_params_failed_toast": "Warning toast when removal succeeded but the parameter re-sync failed, so the detached capability's lines are still in the prompt."
   },
   "recipes": {
     "no_match": "Подходящих рецептов нет",
@@ -12563,6 +12581,18 @@
       "refused": "Отклонено",
       "pending": "Ожидание",
       "running": "Выполняется"
+    },
+    "event_reason": {
+      "approval_held": "Ожидает подтверждения",
+      "cascade_guard": "Уже выполняется",
+      "cross_team_blocked": "Заблокировано между командами",
+      "dry_run": "Пробный запуск (симуляция)",
+      "handoff_target_disabled": "Цель передачи выключена",
+      "no_subscriber": "Нет подходящих подписчиков",
+      "persona_disabled": "Агент выключен",
+      "stuck_reclaimed": "Возвращено в очередь",
+      "stuck_retry_exhausted": "Возвращено, попытки исчерпаны",
+      "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
     }
   },
   "project_overview": {

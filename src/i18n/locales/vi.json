@@ -10410,7 +10410,13 @@
       "run_now": "Phê duyệt & chạy",
       "subtitle_one": "{count} lần chạy theo lịch đang chờ bạn phê duyệt.",
       "subtitle_other": "{count} lần chạy theo lịch đang chờ bạn phê duyệt.",
-      "title": "Đang chờ phê duyệt của bạn"
+      "title": "Đang chờ phê duyệt của bạn",
+      "badge_one": "{count} lượt kích hoạt đang chờ",
+      "badge_other": "{count} lượt kích hoạt đang chờ",
+      "badge_title": "Các lượt kích hoạt đang chờ bạn phê duyệt",
+      "_comment_badge_one": "Header badge, singular. {count} is a number. 'fire' = one held trigger firing, not flame.",
+      "_comment_badge_other": "Header badge, plural. {count} is a number. 'fires' = held trigger firings, not flames.",
+      "_comment_badge_title": "Tooltip on the header badge."
     },
     "unattended": {
       "approval": "Yêu cầu phê duyệt của tôi",
@@ -10459,7 +10465,13 @@
       "watching_only": "Chỉ theo dõi"
     },
     "overdue_label": "Quá hạn",
-    "relay_delete_failed": "Xóa relay thất bại — vui lòng thử lại"
+    "relay_delete_failed": "Xóa relay thất bại — vui lòng thử lại",
+    "event_reason_label": "Lý do",
+    "event_reason_unknown": "Không rõ",
+    "event_reason_unknown_hint": "Được ghi lại trước khi lý do được theo dõi, nên không rõ vì sao sự kiện này kết thúc mà không chạy.",
+    "_comment_event_reason_label": "Column header in the trigger Live Stream / Dead Letter tables: why this event did not start a run.",
+    "_comment_event_reason_unknown": "Shown for events recorded before reasons were tracked. Must NOT read like a fabricated reason.",
+    "_comment_event_reason_unknown_hint": "Tooltip explaining the Unknown reason - honesty about missing history, not an error."
   },
   "settings": {
     "account": {
@@ -12232,7 +12244,13 @@
     "update_badge_detail_tooltip": "Đã áp dụng ở phiên bản v{from}; danh mục hiện là v{to}. Xóa và áp dụng lại để cập nhật.",
     "update_badge_tooltip": "Đã có phiên bản mới hơn của tính năng này — xóa và áp dụng lại để cập nhật",
     "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-    "tags_heading": "Thẻ"
+    "tags_heading": "Thẻ",
+    "adopted_params_failed_toast": "Đã áp dụng \"{title}\", nhưng không thể tạo cài đặt của nó",
+    "adopted_params_partial_toast": "Đã áp dụng \"{title}\", nhưng không thể tạo {missing} trong số {declared} cài đặt ({types})",
+    "removed_params_failed_toast": "Đã gỡ \"{title}\", nhưng không thể dọn dẹp cài đặt của nó",
+    "_comment_adopted_params_failed_toast": "Warning toast when adoption succeeded but the parameter sync call failed outright, so the capability has no editable settings at all.",
+    "_comment_adopted_params_partial_toast": "Warning toast after adopting a capability whose input_schema declared setting types the persona parameter system cannot express. {missing}/{declared} are counts; {types} is a comma-joined list of RAW TYPE TOKENS (source_definition, connector_ref, list[string]) - do NOT translate the tokens themselves.",
+    "_comment_removed_params_failed_toast": "Warning toast when removal succeeded but the parameter re-sync failed, so the detached capability's lines are still in the prompt."
   },
   "recipes": {
     "no_match": "Không có công thức khớp",
@@ -12563,6 +12581,18 @@
       "refused": "Đã từ chối",
       "pending": "Đang chờ",
       "running": "Đang chạy"
+    },
+    "event_reason": {
+      "approval_held": "Đang chờ phê duyệt",
+      "cascade_guard": "Đang chạy rồi",
+      "cross_team_blocked": "Bị chặn giữa các nhóm",
+      "dry_run": "Chạy thử (mô phỏng)",
+      "handoff_target_disabled": "Đích bàn giao đang tắt",
+      "no_subscriber": "Không có người đăng ký nào khớp",
+      "persona_disabled": "Tác nhân đang tắt",
+      "stuck_reclaimed": "Đã thu hồi và xếp lại hàng đợi",
+      "stuck_retry_exhausted": "Đã thu hồi, hết lượt thử lại",
+      "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
     }
   },
   "project_overview": {

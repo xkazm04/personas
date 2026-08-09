@@ -10410,7 +10410,13 @@
       "run_now": "승인 후 실행",
       "subtitle_one": "예약된 실행 {count}개가 승인 대기 중입니다.",
       "subtitle_other": "예약된 실행 {count}개가 승인 대기 중입니다.",
-      "title": "승인 대기 중"
+      "title": "승인 대기 중",
+      "badge_one": "{count}건의 실행 대기 중",
+      "badge_other": "{count}건의 실행 대기 중",
+      "badge_title": "승인을 기다리는 트리거 실행",
+      "_comment_badge_one": "Header badge, singular. {count} is a number. 'fire' = one held trigger firing, not flame.",
+      "_comment_badge_other": "Header badge, plural. {count} is a number. 'fires' = held trigger firings, not flames.",
+      "_comment_badge_title": "Tooltip on the header badge."
     },
     "unattended": {
       "approval": "내 승인 필요",
@@ -10459,7 +10465,13 @@
       "watching_only": "관찰만"
     },
     "overdue_label": "기한 초과",
-    "relay_delete_failed": "릴레이 삭제 실패 — 다시 시도해 주세요"
+    "relay_delete_failed": "릴레이 삭제 실패 — 다시 시도해 주세요",
+    "event_reason_label": "사유",
+    "event_reason_unknown": "알 수 없음",
+    "event_reason_unknown_hint": "사유를 기록하기 전에 저장된 항목이라 이 이벤트가 실행 없이 종료된 이유를 알 수 없습니다.",
+    "_comment_event_reason_label": "Column header in the trigger Live Stream / Dead Letter tables: why this event did not start a run.",
+    "_comment_event_reason_unknown": "Shown for events recorded before reasons were tracked. Must NOT read like a fabricated reason.",
+    "_comment_event_reason_unknown_hint": "Tooltip explaining the Unknown reason - honesty about missing history, not an error."
   },
   "settings": {
     "account": {
@@ -12232,7 +12244,13 @@
     "update_badge_detail_tooltip": "v{from}에서 적용됨; 현재 카탈로그 버전은 v{to}입니다. 업데이트하려면 제거 후 다시 적용하세요.",
     "update_badge_tooltip": "이 기능의 최신 버전을 사용할 수 있습니다 — 업데이트하려면 제거 후 다시 적용하세요",
     "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-    "tags_heading": "태그"
+    "tags_heading": "태그",
+    "adopted_params_failed_toast": "\"{title}\"을(를) 도입했지만 설정을 만들지 못했습니다",
+    "adopted_params_partial_toast": "\"{title}\"을(를) 도입했지만 설정 {declared}개 중 {missing}개를 만들지 못했습니다({types})",
+    "removed_params_failed_toast": "\"{title}\"을(를) 제거했지만 설정을 정리하지 못했습니다",
+    "_comment_adopted_params_failed_toast": "Warning toast when adoption succeeded but the parameter sync call failed outright, so the capability has no editable settings at all.",
+    "_comment_adopted_params_partial_toast": "Warning toast after adopting a capability whose input_schema declared setting types the persona parameter system cannot express. {missing}/{declared} are counts; {types} is a comma-joined list of RAW TYPE TOKENS (source_definition, connector_ref, list[string]) - do NOT translate the tokens themselves.",
+    "_comment_removed_params_failed_toast": "Warning toast when removal succeeded but the parameter re-sync failed, so the detached capability's lines are still in the prompt."
   },
   "recipes": {
     "no_match": "일치하는 레시피가 없습니다",
@@ -12563,6 +12581,18 @@
       "refused": "거절됨",
       "pending": "대기 중",
       "running": "실행 중"
+    },
+    "event_reason": {
+      "approval_held": "승인 대기 중",
+      "cascade_guard": "이미 실행 중",
+      "cross_team_blocked": "팀 간 차단됨",
+      "dry_run": "시험 실행(시뮬레이션)",
+      "handoff_target_disabled": "인계 대상이 꺼져 있음",
+      "no_subscriber": "일치하는 구독자 없음",
+      "persona_disabled": "에이전트가 꺼져 있음",
+      "stuck_reclaimed": "회수하여 다시 대기열에 넣음",
+      "stuck_retry_exhausted": "회수했으나 재시도 횟수 소진",
+      "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
     }
   },
   "project_overview": {

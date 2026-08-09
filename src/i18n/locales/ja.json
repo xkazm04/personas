@@ -10410,7 +10410,13 @@
       "run_now": "承認して実行",
       "subtitle_one": "{count}件のスケジュール実行が承認待ちで保留中です。",
       "subtitle_other": "{count}件のスケジュール実行が承認待ちで保留中です。",
-      "title": "承認待ち"
+      "title": "承認待ち",
+      "badge_one": "{count} 件の起動が待機中",
+      "badge_other": "{count} 件の起動が待機中",
+      "badge_title": "承認待ちのトリガー起動",
+      "_comment_badge_one": "Header badge, singular. {count} is a number. 'fire' = one held trigger firing, not flame.",
+      "_comment_badge_other": "Header badge, plural. {count} is a number. 'fires' = held trigger firings, not flames.",
+      "_comment_badge_title": "Tooltip on the header badge."
     },
     "unattended": {
       "approval": "承認を要求する",
@@ -10459,7 +10465,13 @@
       "watching_only": "ウォッチ中のみ"
     },
     "overdue_label": "期限超過",
-    "relay_delete_failed": "リレーの削除に失敗しました — もう一度お試しください"
+    "relay_delete_failed": "リレーの削除に失敗しました — もう一度お試しください",
+    "event_reason_label": "理由",
+    "event_reason_unknown": "不明",
+    "event_reason_unknown_hint": "理由の記録が始まる前のデータのため、このイベントが実行されずに終了した理由は分かりません。",
+    "_comment_event_reason_label": "Column header in the trigger Live Stream / Dead Letter tables: why this event did not start a run.",
+    "_comment_event_reason_unknown": "Shown for events recorded before reasons were tracked. Must NOT read like a fabricated reason.",
+    "_comment_event_reason_unknown_hint": "Tooltip explaining the Unknown reason - honesty about missing history, not an error."
   },
   "settings": {
     "account": {
@@ -12232,7 +12244,13 @@
     "update_badge_detail_tooltip": "v{from}で導入済み。カタログは現在v{to}です。更新するには削除して再導入してください。",
     "update_badge_tooltip": "この機能の新しいバージョンが利用可能です — 削除して再導入すると更新されます",
     "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-    "tags_heading": "タグ"
+    "tags_heading": "タグ",
+    "adopted_params_failed_toast": "「{title}」を採用しましたが、設定を作成できませんでした",
+    "adopted_params_partial_toast": "「{title}」を採用しましたが、{declared} 件中 {missing} 件の設定を作成できませんでした（{types}）",
+    "removed_params_failed_toast": "「{title}」を削除しましたが、設定を整理できませんでした",
+    "_comment_adopted_params_failed_toast": "Warning toast when adoption succeeded but the parameter sync call failed outright, so the capability has no editable settings at all.",
+    "_comment_adopted_params_partial_toast": "Warning toast after adopting a capability whose input_schema declared setting types the persona parameter system cannot express. {missing}/{declared} are counts; {types} is a comma-joined list of RAW TYPE TOKENS (source_definition, connector_ref, list[string]) - do NOT translate the tokens themselves.",
+    "_comment_removed_params_failed_toast": "Warning toast when removal succeeded but the parameter re-sync failed, so the detached capability's lines are still in the prompt."
   },
   "recipes": {
     "no_match": "一致するレシピがありません",
@@ -12563,6 +12581,18 @@
       "refused": "拒否済み",
       "pending": "保留中",
       "running": "実行中"
+    },
+    "event_reason": {
+      "approval_held": "承認待ち",
+      "cascade_guard": "すでに実行中",
+      "cross_team_blocked": "チーム間でブロック",
+      "dry_run": "ドライラン（シミュレーション）",
+      "handoff_target_disabled": "引き継ぎ先がオフです",
+      "no_subscriber": "一致する購読者なし",
+      "persona_disabled": "エージェントがオフです",
+      "stuck_reclaimed": "再取得してキューに戻しました",
+      "stuck_retry_exhausted": "再取得しましたが、再試行の上限に達しました",
+      "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
     }
   },
   "project_overview": {

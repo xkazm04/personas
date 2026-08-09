@@ -231,5 +231,11 @@
   "update_badge_detail_tooltip": "Đã áp dụng ở phiên bản v{from}; danh mục hiện là v{to}. Xóa và áp dụng lại để cập nhật.",
   "update_badge_tooltip": "Đã có phiên bản mới hơn của tính năng này — xóa và áp dụng lại để cập nhật",
   "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-  "tags_heading": "Thẻ"
+  "tags_heading": "Thẻ",
+  "adopted_params_failed_toast": "Đã áp dụng \"{title}\", nhưng không thể tạo cài đặt của nó",
+  "adopted_params_partial_toast": "Đã áp dụng \"{title}\", nhưng không thể tạo {missing} trong số {declared} cài đặt ({types})",
+  "removed_params_failed_toast": "Đã gỡ \"{title}\", nhưng không thể dọn dẹp cài đặt của nó",
+  "_comment_adopted_params_failed_toast": "Warning toast when adoption succeeded but the parameter sync call failed outright, so the capability has no editable settings at all.",
+  "_comment_adopted_params_partial_toast": "Warning toast after adopting a capability whose input_schema declared setting types the persona parameter system cannot express. {missing}/{declared} are counts; {types} is a comma-joined list of RAW TYPE TOKENS (source_definition, connector_ref, list[string]) - do NOT translate the tokens themselves.",
+  "_comment_removed_params_failed_toast": "Warning toast when removal succeeded but the parameter re-sync failed, so the detached capability's lines are still in the prompt."
 }

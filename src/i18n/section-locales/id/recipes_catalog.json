@@ -231,5 +231,11 @@
   "update_badge_detail_tooltip": "Diadopsi pada v{from}; katalog sekarang v{to}. Hapus dan adopsi ulang untuk memperbarui.",
   "update_badge_tooltip": "Versi terbaru dari kemampuan ini tersedia — hapus dan adopsi ulang untuk memperbarui",
   "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-  "tags_heading": "Tag"
+  "tags_heading": "Tag",
+  "adopted_params_failed_toast": "\"{title}\" diadopsi, tetapi pengaturannya tidak dapat dibuat",
+  "adopted_params_partial_toast": "\"{title}\" diadopsi, tetapi {missing} dari {declared} pengaturan tidak dapat dibuat ({types})",
+  "removed_params_failed_toast": "\"{title}\" dihapus, tetapi pengaturannya tidak dapat dibersihkan",
+  "_comment_adopted_params_failed_toast": "Warning toast when adoption succeeded but the parameter sync call failed outright, so the capability has no editable settings at all.",
+  "_comment_adopted_params_partial_toast": "Warning toast after adopting a capability whose input_schema declared setting types the persona parameter system cannot express. {missing}/{declared} are counts; {types} is a comma-joined list of RAW TYPE TOKENS (source_definition, connector_ref, list[string]) - do NOT translate the tokens themselves.",
+  "_comment_removed_params_failed_toast": "Warning toast when removal succeeded but the parameter re-sync failed, so the detached capability's lines are still in the prompt."
 }

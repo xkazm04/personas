@@ -194,5 +194,17 @@
     "refused": "拒否済み",
     "pending": "保留中",
     "running": "実行中"
+  },
+  "event_reason": {
+    "approval_held": "承認待ち",
+    "cascade_guard": "すでに実行中",
+    "cross_team_blocked": "チーム間でブロック",
+    "dry_run": "ドライラン（シミュレーション）",
+    "handoff_target_disabled": "引き継ぎ先がオフです",
+    "no_subscriber": "一致する購読者なし",
+    "persona_disabled": "エージェントがオフです",
+    "stuck_reclaimed": "再取得してキューに戻しました",
+    "stuck_retry_exhausted": "再取得しましたが、再試行の上限に達しました",
+    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
   }
 }

@@ -231,5 +231,11 @@
   "update_badge_detail_tooltip": "Adopté en v{from} ; le catalogue est maintenant en v{to}. Supprimez puis réadoptez pour mettre à jour.",
   "update_badge_tooltip": "Une nouvelle version de cette capacité est disponible — supprimez puis réadoptez pour mettre à jour",
   "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-  "tags_heading": "Étiquettes"
+  "tags_heading": "Étiquettes",
+  "adopted_params_failed_toast": "« {title} » adopté, mais ses paramètres n’ont pas pu être créés",
+  "adopted_params_partial_toast": "« {title} » adopté, mais {missing} paramètres sur {declared} n’ont pas pu être créés ({types})",
+  "removed_params_failed_toast": "« {title} » retiré, mais ses paramètres n’ont pas pu être nettoyés",
+  "_comment_adopted_params_failed_toast": "Warning toast when adoption succeeded but the parameter sync call failed outright, so the capability has no editable settings at all.",
+  "_comment_adopted_params_partial_toast": "Warning toast after adopting a capability whose input_schema declared setting types the persona parameter system cannot express. {missing}/{declared} are counts; {types} is a comma-joined list of RAW TYPE TOKENS (source_definition, connector_ref, list[string]) - do NOT translate the tokens themselves.",
+  "_comment_removed_params_failed_toast": "Warning toast when removal succeeded but the parameter re-sync failed, so the detached capability's lines are still in the prompt."
 }

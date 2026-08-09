@@ -772,7 +772,13 @@
     "run_now": "Одобрить и запустить",
     "subtitle_one": "{count} запланированный запуск ожидает вашего одобрения.",
     "subtitle_other": "{count} запланированных запуска ожидают вашего одобрения.",
-    "title": "Ожидает вашего одобрения"
+    "title": "Ожидает вашего одобрения",
+    "badge_one": "{count} срабатывание ожидает",
+    "badge_other": "{count} срабатываний ожидают",
+    "badge_title": "Срабатывания триггеров, ожидающие вашего подтверждения",
+    "_comment_badge_one": "Header badge, singular. {count} is a number. 'fire' = one held trigger firing, not flame.",
+    "_comment_badge_other": "Header badge, plural. {count} is a number. 'fires' = held trigger firings, not flames.",
+    "_comment_badge_title": "Tooltip on the header badge."
   },
   "unattended": {
     "approval": "Требовать моего одобрения",
@@ -821,5 +827,11 @@
     "watching_only": "Только отслеживаемые"
   },
   "overdue_label": "Просрочено",
-  "relay_delete_failed": "Не удалось удалить ретранслятор — попробуйте снова"
+  "relay_delete_failed": "Не удалось удалить ретранслятор — попробуйте снова",
+  "event_reason_label": "Причина",
+  "event_reason_unknown": "Неизвестно",
+  "event_reason_unknown_hint": "Запись создана до того, как причины начали отслеживаться, поэтому неизвестно, почему это событие завершилось без запуска.",
+  "_comment_event_reason_label": "Column header in the trigger Live Stream / Dead Letter tables: why this event did not start a run.",
+  "_comment_event_reason_unknown": "Shown for events recorded before reasons were tracked. Must NOT read like a fabricated reason.",
+  "_comment_event_reason_unknown_hint": "Tooltip explaining the Unknown reason - honesty about missing history, not an error."
 }

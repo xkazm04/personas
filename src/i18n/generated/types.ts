@@ -10278,6 +10278,12 @@ export type Translations = {
       discard: string;
       approved: string;
       discarded: string;
+      _comment_badge_one: string;
+      badge_one: string;
+      _comment_badge_other: string;
+      badge_other: string;
+      _comment_badge_title: string;
+      badge_title: string;
     };
     copy_sample_curl: string;
     event_listener_label: string;
@@ -10683,6 +10689,12 @@ export type Translations = {
       sev_breaking: string;
       watching_only: string;
     };
+    _comment_event_reason_label: string;
+    event_reason_label: string;
+    _comment_event_reason_unknown: string;
+    event_reason_unknown: string;
+    _comment_event_reason_unknown_hint: string;
+    event_reason_unknown_hint: string;
   };
   remote_approval: {
     title: string;
@@ -12469,6 +12481,12 @@ export type Translations = {
     remove_confirm_title: string;
     remove_confirm_body: string;
     tags_heading: string;
+    _comment_adopted_params_partial_toast: string;
+    adopted_params_partial_toast: string;
+    _comment_adopted_params_failed_toast: string;
+    adopted_params_failed_toast: string;
+    _comment_removed_params_failed_toast: string;
+    removed_params_failed_toast: string;
   };
   explore: {
     agents: string;
@@ -12861,6 +12879,18 @@ export type Translations = {
       failed: string;
       refused: string;
       cancelled: string;
+    };
+    event_reason: {
+      _comment_section: string;
+      no_subscriber: string;
+      approval_held: string;
+      persona_disabled: string;
+      handoff_target_disabled: string;
+      cross_team_blocked: string;
+      cascade_guard: string;
+      dry_run: string;
+      stuck_reclaimed: string;
+      stuck_retry_exhausted: string;
     };
   };
   project_overview: {

@@ -194,5 +194,17 @@
     "refused": "Refusé",
     "pending": "En attente",
     "running": "En cours"
+  },
+  "event_reason": {
+    "approval_held": "En attente d’approbation",
+    "cascade_guard": "Déjà en cours",
+    "cross_team_blocked": "Bloqué entre équipes",
+    "dry_run": "Exécution à blanc (simulée)",
+    "handoff_target_disabled": "La cible du transfert est désactivée",
+    "no_subscriber": "Aucun abonné correspondant",
+    "persona_disabled": "L’agent est désactivé",
+    "stuck_reclaimed": "Repris et remis en file",
+    "stuck_retry_exhausted": "Repris, tentatives épuisées",
+    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
   }
 }

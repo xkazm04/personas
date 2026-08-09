@@ -10410,7 +10410,13 @@
       "run_now": "Schválit a spustit",
       "subtitle_one": "{count} naplánované spuštění čeká na vaše schválení.",
       "subtitle_other": "{count} naplánovaná spuštění čekají na vaše schválení.",
-      "title": "Čeká na vaše schválení"
+      "title": "Čeká na vaše schválení",
+      "badge_one": "{count} spuštění čeká",
+      "badge_other": "{count} spuštění čeká",
+      "badge_title": "Spuštění triggerů čekající na vaše schválení",
+      "_comment_badge_one": "Header badge, singular. {count} is a number. 'fire' = one held trigger firing, not flame.",
+      "_comment_badge_other": "Header badge, plural. {count} is a number. 'fires' = held trigger firings, not flames.",
+      "_comment_badge_title": "Tooltip on the header badge."
     },
     "unattended": {
       "approval": "Vyžadovat mé schválení",
@@ -10459,7 +10465,13 @@
       "watching_only": "Pouze sledované"
     },
     "overdue_label": "Po termínu",
-    "relay_delete_failed": "Relé se nepodařilo smazat — zkuste to prosím znovu"
+    "relay_delete_failed": "Relé se nepodařilo smazat — zkuste to prosím znovu",
+    "event_reason_label": "Důvod",
+    "event_reason_unknown": "Neznámý",
+    "event_reason_unknown_hint": "Záznam vznikl dříve, než se důvody sledovaly, takže není známo, proč tato událost skončila bez běhu.",
+    "_comment_event_reason_label": "Column header in the trigger Live Stream / Dead Letter tables: why this event did not start a run.",
+    "_comment_event_reason_unknown": "Shown for events recorded before reasons were tracked. Must NOT read like a fabricated reason.",
+    "_comment_event_reason_unknown_hint": "Tooltip explaining the Unknown reason - honesty about missing history, not an error."
   },
   "settings": {
     "account": {
@@ -12232,7 +12244,13 @@
     "update_badge_detail_tooltip": "Adoptováno ve verzi v{from}; katalog je nyní ve verzi v{to}. Pro aktualizaci odeberte a znovu adoptujte.",
     "update_badge_tooltip": "Je k dispozici novější verze této schopnosti — odeberte a znovu adoptujte pro aktualizaci",
     "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-    "tags_heading": "Štítky"
+    "tags_heading": "Štítky",
+    "adopted_params_failed_toast": "Kapacita „{title}“ byla přidána, ale její nastavení se nepodařilo vytvořit",
+    "adopted_params_partial_toast": "Kapacita „{title}“ byla přidána, ale {missing} z {declared} nastavení se nepodařilo vytvořit ({types})",
+    "removed_params_failed_toast": "Kapacita „{title}“ byla odebrána, ale její nastavení se nepodařilo uklidit",
+    "_comment_adopted_params_failed_toast": "Warning toast when adoption succeeded but the parameter sync call failed outright, so the capability has no editable settings at all.",
+    "_comment_adopted_params_partial_toast": "Warning toast after adopting a capability whose input_schema declared setting types the persona parameter system cannot express. {missing}/{declared} are counts; {types} is a comma-joined list of RAW TYPE TOKENS (source_definition, connector_ref, list[string]) - do NOT translate the tokens themselves.",
+    "_comment_removed_params_failed_toast": "Warning toast when removal succeeded but the parameter re-sync failed, so the detached capability's lines are still in the prompt."
   },
   "recipes": {
     "no_match": "Žádné odpovídající recepty",
@@ -12563,6 +12581,18 @@
       "refused": "Odmítnuto",
       "pending": "Čeká",
       "running": "Probíhá"
+    },
+    "event_reason": {
+      "approval_held": "Čeká na schválení",
+      "cascade_guard": "Už běží",
+      "cross_team_blocked": "Blokováno mezi týmy",
+      "dry_run": "Zkušební běh (simulace)",
+      "handoff_target_disabled": "Cíl předání je vypnutý",
+      "no_subscriber": "Neodpovídá žádný odběratel",
+      "persona_disabled": "Agent je vypnutý",
+      "stuck_reclaimed": "Znovu převzato a zařazeno",
+      "stuck_retry_exhausted": "Znovu převzato, pokusy vyčerpány",
+      "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
     }
   },
   "project_overview": {

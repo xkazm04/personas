@@ -194,5 +194,17 @@
     "refused": "প্রত্যাখ্যাত",
     "pending": "মুলতুবি",
     "running": "চলমান"
+  },
+  "event_reason": {
+    "approval_held": "অনুমোদনের অপেক্ষায়",
+    "cascade_guard": "ইতিমধ্যে চলছে",
+    "cross_team_blocked": "দলগুলোর মধ্যে অবরুদ্ধ",
+    "dry_run": "ড্রাই রান (সিমুলেটেড)",
+    "handoff_target_disabled": "হ্যান্ডঅফ লক্ষ্য বন্ধ আছে",
+    "no_subscriber": "কোনো সাবস্ক্রাইবার মেলেনি",
+    "persona_disabled": "এজেন্ট বন্ধ আছে",
+    "stuck_reclaimed": "পুনরুদ্ধার করে আবার সারিতে রাখা হয়েছে",
+    "stuck_retry_exhausted": "পুনরুদ্ধার করা হয়েছে, পুনঃচেষ্টা শেষ",
+    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
   }
 }

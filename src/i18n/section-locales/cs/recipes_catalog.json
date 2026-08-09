@@ -231,5 +231,11 @@
   "update_badge_detail_tooltip": "Adoptováno ve verzi v{from}; katalog je nyní ve verzi v{to}. Pro aktualizaci odeberte a znovu adoptujte.",
   "update_badge_tooltip": "Je k dispozici novější verze této schopnosti — odeberte a znovu adoptujte pro aktualizaci",
   "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-  "tags_heading": "Štítky"
+  "tags_heading": "Štítky",
+  "adopted_params_failed_toast": "Kapacita „{title}“ byla přidána, ale její nastavení se nepodařilo vytvořit",
+  "adopted_params_partial_toast": "Kapacita „{title}“ byla přidána, ale {missing} z {declared} nastavení se nepodařilo vytvořit ({types})",
+  "removed_params_failed_toast": "Kapacita „{title}“ byla odebrána, ale její nastavení se nepodařilo uklidit",
+  "_comment_adopted_params_failed_toast": "Warning toast when adoption succeeded but the parameter sync call failed outright, so the capability has no editable settings at all.",
+  "_comment_adopted_params_partial_toast": "Warning toast after adopting a capability whose input_schema declared setting types the persona parameter system cannot express. {missing}/{declared} are counts; {types} is a comma-joined list of RAW TYPE TOKENS (source_definition, connector_ref, list[string]) - do NOT translate the tokens themselves.",
+  "_comment_removed_params_failed_toast": "Warning toast when removal succeeded but the parameter re-sync failed, so the detached capability's lines are still in the prompt."
 }

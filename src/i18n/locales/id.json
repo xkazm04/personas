@@ -10410,7 +10410,13 @@
       "run_now": "Setujui & jalankan",
       "subtitle_one": "{count} jadwal berjalan ditahan hingga Anda menyetujuinya.",
       "subtitle_other": "{count} jadwal berjalan ditahan hingga Anda menyetujuinya.",
-      "title": "Menunggu persetujuan Anda"
+      "title": "Menunggu persetujuan Anda",
+      "badge_one": "{count} pemicu menunggu",
+      "badge_other": "{count} pemicu menunggu",
+      "badge_title": "Pemicu yang ditahan menunggu persetujuan Anda",
+      "_comment_badge_one": "Header badge, singular. {count} is a number. 'fire' = one held trigger firing, not flame.",
+      "_comment_badge_other": "Header badge, plural. {count} is a number. 'fires' = held trigger firings, not flames.",
+      "_comment_badge_title": "Tooltip on the header badge."
     },
     "unattended": {
       "approval": "Minta persetujuan saya",
@@ -10459,7 +10465,13 @@
       "watching_only": "Hanya memantau"
     },
     "overdue_label": "Terlambat",
-    "relay_delete_failed": "Gagal menghapus relai — silakan coba lagi"
+    "relay_delete_failed": "Gagal menghapus relai — silakan coba lagi",
+    "event_reason_label": "Alasan",
+    "event_reason_unknown": "Tidak diketahui",
+    "event_reason_unknown_hint": "Dicatat sebelum alasan dilacak, jadi tidak diketahui mengapa peristiwa ini berakhir tanpa dijalankan.",
+    "_comment_event_reason_label": "Column header in the trigger Live Stream / Dead Letter tables: why this event did not start a run.",
+    "_comment_event_reason_unknown": "Shown for events recorded before reasons were tracked. Must NOT read like a fabricated reason.",
+    "_comment_event_reason_unknown_hint": "Tooltip explaining the Unknown reason - honesty about missing history, not an error."
   },
   "settings": {
     "account": {
@@ -12232,7 +12244,13 @@
     "update_badge_detail_tooltip": "Diadopsi pada v{from}; katalog sekarang v{to}. Hapus dan adopsi ulang untuk memperbarui.",
     "update_badge_tooltip": "Versi terbaru dari kemampuan ini tersedia — hapus dan adopsi ulang untuk memperbarui",
     "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-    "tags_heading": "Tag"
+    "tags_heading": "Tag",
+    "adopted_params_failed_toast": "\"{title}\" diadopsi, tetapi pengaturannya tidak dapat dibuat",
+    "adopted_params_partial_toast": "\"{title}\" diadopsi, tetapi {missing} dari {declared} pengaturan tidak dapat dibuat ({types})",
+    "removed_params_failed_toast": "\"{title}\" dihapus, tetapi pengaturannya tidak dapat dibersihkan",
+    "_comment_adopted_params_failed_toast": "Warning toast when adoption succeeded but the parameter sync call failed outright, so the capability has no editable settings at all.",
+    "_comment_adopted_params_partial_toast": "Warning toast after adopting a capability whose input_schema declared setting types the persona parameter system cannot express. {missing}/{declared} are counts; {types} is a comma-joined list of RAW TYPE TOKENS (source_definition, connector_ref, list[string]) - do NOT translate the tokens themselves.",
+    "_comment_removed_params_failed_toast": "Warning toast when removal succeeded but the parameter re-sync failed, so the detached capability's lines are still in the prompt."
   },
   "recipes": {
     "no_match": "Tidak ada resep yang cocok",
@@ -12563,6 +12581,18 @@
       "refused": "Ditolak",
       "pending": "Menunggu",
       "running": "Berjalan"
+    },
+    "event_reason": {
+      "approval_held": "Menunggu persetujuan",
+      "cascade_guard": "Sudah berjalan",
+      "cross_team_blocked": "Diblokir antartim",
+      "dry_run": "Uji coba (simulasi)",
+      "handoff_target_disabled": "Tujuan serah terima nonaktif",
+      "no_subscriber": "Tidak ada pelanggan yang cocok",
+      "persona_disabled": "Agen nonaktif",
+      "stuck_reclaimed": "Diambil kembali dan diantrekan ulang",
+      "stuck_retry_exhausted": "Diambil kembali, percobaan ulang habis",
+      "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
     }
   },
   "project_overview": {
