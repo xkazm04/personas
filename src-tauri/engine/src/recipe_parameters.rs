@@ -33,12 +33,31 @@ pub struct DerivedParam {
     pub max: Option<f64>,
 }
 
+/// An `input_schema` field that declared a type the derivation cannot express
+/// as a persona parameter, so no editable knob exists for it. Carried out of
+/// the derivation instead of being dropped, so callers can tell the user which
+/// promised settings did not materialize.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SkippedParam {
+    /// The field's `name` in the recipe's `input_schema`.
+    pub key: String,
+    /// Human label, matching what the parameters editor would have shown.
+    pub label: String,
+    /// The declared `type` token with no persona ParamType mapping
+    /// (`source_definition`, `connector_ref`, `list[string]`, ...).
+    pub declared_type: String,
+}
+
 /// Derived params grouped by the capability that declared them (drives the
-/// per-capability prompt section).
+/// per-capability prompt section), plus the fields that were dropped.
 #[derive(Debug, Clone)]
 pub struct CapabilityParams {
     pub capability_title: String,
     pub params: Vec<DerivedParam>,
+    /// Declared fields with an unsupported type. Never affects the rendered
+    /// prompt section (only `params` does) — it exists purely so the gap can
+    /// be reported instead of vanishing into a `tracing::debug!`.
+    pub skipped: Vec<SkippedParam>,
 }
 
 /// Map an `input_schema` field `type` to a persona ParamType token, or `None`
@@ -63,12 +82,29 @@ fn humanize(name: &str) -> String {
 }
 
 /// Parse an `input_schema` array (`[{name,type,default,options,min,max,description}]`)
-/// into `DerivedParam`s, skipping unsupported field types. Shared by the typed
-/// (promote) and raw-JSON (instant_adopt / catalog sync) derive entrypoints.
-fn params_from_schema(schema: &[serde_json::Value]) -> Vec<DerivedParam> {
+/// into `DerivedParam`s, returning the fields whose type has no persona
+/// ParamType mapping alongside them rather than discarding those fields.
+///
+/// Public because it is the single source of truth for "which declared
+/// settings actually become knobs" — the coverage command reports off it, so
+/// the supported-type list never has to be mirrored (and drift) in TypeScript.
+/// Shared by the typed (promote) and raw-JSON (instant_adopt / catalog sync)
+/// derive entrypoints.
+pub fn params_from_schema(
+    schema: &[serde_json::Value],
+) -> (Vec<DerivedParam>, Vec<SkippedParam>) {
     let mut params = Vec::new();
+    let mut skipped = Vec::new();
     for f in schema {
-        let Some(name) = f.get("name").and_then(|v| v.as_str()) else {
+        // A blank name is as unusable as a missing one: it would mint a
+        // `{{param.}}` placeholder and a keyless parameters-editor row. Treat
+        // both the same — ignored entirely, reported as neither derived nor
+        // skipped, since there is no key to report. No seeded recipe has one.
+        let Some(name) = f
+            .get("name")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.trim().is_empty())
+        else {
             continue;
         };
         let raw_type = f.get("type").and_then(|v| v.as_str()).unwrap_or("string");
@@ -78,6 +114,11 @@ fn params_from_schema(schema: &[serde_json::Value]) -> Vec<DerivedParam> {
                 ty = raw_type,
                 "recipe_parameters: skipping unsupported input_schema type"
             );
+            skipped.push(SkippedParam {
+                key: name.to_string(),
+                label: humanize(name),
+                declared_type: raw_type.to_string(),
+            });
             continue;
         };
         params.push(DerivedParam {
@@ -98,11 +139,15 @@ fn params_from_schema(schema: &[serde_json::Value]) -> Vec<DerivedParam> {
             max: f.get("max").and_then(|v| v.as_f64()),
         });
     }
-    params
+    (params, skipped)
 }
 
 /// Derive tunable params from every typed use case's `input_schema`, grouped by
 /// capability. Used on the promote path where use cases are `AgentIrUseCase`.
+///
+/// A capability that declared only unsupported fields is still emitted (with an
+/// empty `params`) so the skip is visible to callers; it contributes nothing to
+/// the rendered prompt section, which keys off `params` alone.
 pub fn derive_capability_params(use_cases: &[AgentIrUseCase]) -> Vec<CapabilityParams> {
     let mut out = Vec::new();
     for uc in use_cases {
@@ -112,11 +157,12 @@ pub fn derive_capability_params(use_cases: &[AgentIrUseCase]) -> Vec<CapabilityP
         let Some(schema) = d.input_schema.as_ref().and_then(|v| v.as_array()) else {
             continue;
         };
-        let params = params_from_schema(schema);
-        if !params.is_empty() {
+        let (params, skipped) = params_from_schema(schema);
+        if !params.is_empty() || !skipped.is_empty() {
             out.push(CapabilityParams {
                 capability_title: d.title.clone().unwrap_or_else(|| "Capability".to_string()),
                 params,
+                skipped,
             });
         }
     }
@@ -135,8 +181,8 @@ pub fn derive_capability_params_from_values(
         let Some(schema) = uc.get("input_schema").and_then(|v| v.as_array()) else {
             continue;
         };
-        let params = params_from_schema(schema);
-        if !params.is_empty() {
+        let (params, skipped) = params_from_schema(schema);
+        if !params.is_empty() || !skipped.is_empty() {
             let title = uc
                 .get("title")
                 .or_else(|| uc.get("name"))
@@ -146,10 +192,38 @@ pub fn derive_capability_params_from_values(
             out.push(CapabilityParams {
                 capability_title: title,
                 params,
+                skipped,
             });
         }
     }
     out
+}
+
+/// Roll a derived capability set up into a coverage summary: how many
+/// `input_schema` fields were declared in total, how many became editable
+/// knobs, and which were dropped (deduped by key, declaration order preserved).
+///
+/// `declared` counts named fields only — a schema entry without a `name` is
+/// malformed and is neither derived nor reported. Keys are deduped across
+/// capabilities on the same first-wins rule as [`to_parameter_values`], so
+/// `derived` matches the number of knobs the persona actually gains.
+pub fn coverage(caps: &[CapabilityParams]) -> (usize, usize, Vec<SkippedParam>) {
+    let mut seen = std::collections::HashSet::new();
+    let mut skipped = Vec::new();
+    let mut derived = 0usize;
+    for cap in caps {
+        for p in &cap.params {
+            if seen.insert(p.key.clone()) {
+                derived += 1;
+            }
+        }
+        for s in &cap.skipped {
+            if seen.insert(s.key.clone()) {
+                skipped.push(s.clone());
+            }
+        }
+    }
+    (derived + skipped.len(), derived, skipped)
 }
 
 /// Coerce an input_schema default into a runtime-clean parameter `value`:
@@ -379,6 +453,77 @@ mod tests {
     }
 
     #[test]
+    fn skipped_fields_are_reported_not_discarded() {
+        let cases = vec![uc(
+            "Contract Intake",
+            json!([
+                {"name": "timeout_hours", "type": "number", "default": 48},
+                {"name": "sources", "type": "source_definition"},
+                {"name": "repo", "type": "connector_ref", "connector": "codebase"},
+                {"name": "watch_paths", "type": "list[string]"},
+                {"name": "", "type": "number"},
+            ]),
+        )];
+        let caps = derive_capability_params(&cases);
+        assert_eq!(caps.len(), 1);
+        // The three unsupported types survive the derivation, in declaration order.
+        let skipped: Vec<_> = caps[0]
+            .skipped
+            .iter()
+            .map(|s| (s.key.as_str(), s.declared_type.as_str()))
+            .collect();
+        assert_eq!(
+            skipped,
+            vec![
+                ("sources", "source_definition"),
+                ("repo", "connector_ref"),
+                ("watch_paths", "list[string]"),
+            ]
+        );
+        // Labels are humanized the same way derived params are.
+        assert_eq!(caps[0].skipped[2].label, "Watch paths");
+        // 4 named fields declared, 1 became a knob, 3 dropped. The unnamed
+        // entry is malformed and counts toward neither.
+        let (declared, derived, skips) = coverage(&caps);
+        assert_eq!((declared, derived, skips.len()), (4, 1, 3));
+    }
+
+    #[test]
+    fn capability_with_only_unsupported_fields_is_still_reported() {
+        // The gap must be visible even when NOTHING derived — that is the
+        // worst case for the user (a capability with no knobs at all).
+        let caps = derive_capability_params_from_values(&[json!({
+            "title": "Repo Watcher",
+            "input_schema": [{"name": "repo", "type": "connector_ref"}]
+        })]);
+        assert_eq!(caps.len(), 1, "must not be dropped just because params is empty");
+        assert!(caps[0].params.is_empty());
+        assert_eq!(caps[0].skipped.len(), 1);
+        // ...but it must not perturb the prompt section or the wire params.
+        assert!(render_parameters_section(&caps).is_none());
+        assert!(to_parameter_values(&caps).is_empty());
+        assert_eq!(apply_to_instructions("Base.", &caps), "Base.");
+    }
+
+    #[test]
+    fn coverage_dedupes_shared_keys_across_capabilities() {
+        let caps = derive_capability_params_from_values(&[
+            json!({"title": "A", "input_schema": [
+                {"name": "shared", "type": "string"},
+                {"name": "src", "type": "source_definition"}
+            ]}),
+            json!({"title": "B", "input_schema": [
+                {"name": "shared", "type": "string"},
+                {"name": "src", "type": "source_definition"}
+            ]}),
+        ]);
+        let (declared, derived, skipped) = coverage(&caps);
+        // One shared knob, one shared skip — not two of each.
+        assert_eq!((declared, derived, skipped.len()), (2, 1, 1));
+        assert_eq!(derived, to_parameter_values(&caps).len());
+    }
+
+    #[test]
     fn wire_objects_coerce_values() {
         let caps = vec![CapabilityParams {
             capability_title: "C".into(),
@@ -387,6 +532,7 @@ mod tests {
                 DerivedParam { key: "b".into(), label: "B".into(), param_type: "string".into(), default: serde_json::Value::Null, description: Some("d".into()), options: None, min: None, max: None },
                 DerivedParam { key: "c".into(), label: "C".into(), param_type: "string".into(), default: json!(["x", "y"]), description: None, options: None, min: None, max: None },
             ],
+            skipped: Vec::new(),
         }];
         let vals = to_parameter_values(&caps);
         assert_eq!(vals.len(), 3);
@@ -402,8 +548,8 @@ mod tests {
     #[test]
     fn dedupes_keys_first_wins() {
         let caps = vec![
-            CapabilityParams { capability_title: "C1".into(), params: vec![DerivedParam { key: "shared".into(), label: "First".into(), param_type: "string".into(), default: json!("one"), description: None, options: None, min: None, max: None }] },
-            CapabilityParams { capability_title: "C2".into(), params: vec![DerivedParam { key: "shared".into(), label: "Second".into(), param_type: "string".into(), default: json!("two"), description: None, options: None, min: None, max: None }] },
+            CapabilityParams { capability_title: "C1".into(), params: vec![DerivedParam { key: "shared".into(), label: "First".into(), param_type: "string".into(), default: json!("one"), description: None, options: None, min: None, max: None }], skipped: Vec::new() },
+            CapabilityParams { capability_title: "C2".into(), params: vec![DerivedParam { key: "shared".into(), label: "Second".into(), param_type: "string".into(), default: json!("two"), description: None, options: None, min: None, max: None }], skipped: Vec::new() },
         ];
         let vals = to_parameter_values(&caps);
         assert_eq!(vals.len(), 1);

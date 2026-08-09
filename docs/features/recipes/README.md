@@ -131,11 +131,29 @@ and stay editable without a rebuild.
 
 `map_param_type` returns `None` for `source_definition`, `connector_ref` and
 `list[string]`. Those fields are **skipped** rather than mis-typed — a recipe
-declaring one gets no editable knob for it, and today the only record of the
-skip is a `tracing::debug!` line. The recipe author gets no signal, and neither
-does the user who goes looking for the setting the catalog promised. Making the
-gap visible, and implementing the three missing types, are separate backlogged
-items.
+declaring one gets no editable knob for it. Across the seeded catalog that is
+22 of 594 declared fields (5 `source_definition`, 16 `connector_ref`, 1
+`list[string]`). Implementing the three types is separate, backlogged work.
+
+The **gap is reported, not swallowed**. `params_from_schema` returns the
+skipped fields alongside the derived params (`CapabilityParams.skipped`), and
+`get_recipe_parameter_coverage` (`commands/recipes/recipe_parameter_coverage.rs`)
+reports `{ declared, derived, skipped[] }` for a recipe. The catalog adoption
+flow calls it right after a successful adopt and, when `skipped` is non-empty,
+shows a warning toast naming how many settings could not be created and which
+declared types caused it. A clean adopt still shows the plain success toast —
+the warning is scoped to a genuine gap.
+
+The supported-type list lives only in Rust, so the frontend cannot drift from
+what actually runs.
+
+A field whose `name` is missing **or blank** is ignored entirely: it would mint
+a `{{param.}}` placeholder and a keyless parameters-editor row, and there is no
+key to report it under. No seeded recipe has one.
+
+A `syncCapabilityParameters` failure during adopt no longer passes silently
+either — adoption still succeeds (the capability is already written), but the
+toast says so instead of claiming a clean result.
 
 ### The three parameterizing paths
 
@@ -212,6 +230,7 @@ Registered Tauri commands, annotated by whether any live UI can reach them.
 | Suggestion telemetry | `log_recipe_suggestion_event`, `get_recipe_suggestion_stats` | **Yes** — composer chip |
 | Promotion | `promote_use_case_to_recipe` | **Yes** — `UseCaseDetailExpanded` "Save as recipe" |
 | Parameter sync | `sync_capability_parameters` (persona params family) | **Yes** — `useAdoption` adopt + remove |
+| Parameter coverage | `get_recipe_parameter_coverage` | **Yes** — `useAdoption` adopt (post-adopt gap notice) |
 | CRUD (write) | `create_recipe`, `update_recipe`, `delete_recipe` | **No** — only `features/recipes/sub_editor`, `sub_manager` |
 | Persona links | `link_recipe_to_persona`, `unlink_recipe_from_persona`, `get_persona_recipes` | **No** — only `features/recipes/sub_list/LinkedRecipesSection` |
 | Execution | `execute_recipe`, `start_recipe_execution`, `cancel_recipe_execution` | **No** — only `features/recipes/sub_playground` |

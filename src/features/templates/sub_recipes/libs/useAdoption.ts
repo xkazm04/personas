@@ -2,12 +2,13 @@ import { useCallback, useState } from 'react';
 import { mutateUseCases } from '@/hooks/design/core/useDesignContextMutator';
 import { useAgentStore } from '@/stores/agentStore';
 import { useToastStore } from '@/stores/toastStore';
-import { toastCatch, silentCatch } from '@/lib/silentCatch';
+import { toastCatch, silentCatch, silentCatchNull } from '@/lib/silentCatch';
 import { syncCapabilityParameters } from '@/api/agents/personaParameters';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { DesignUseCase, NotificationChannel } from '@/lib/types/frontendTypes';
 import type { Recipe, BindingValue } from '../types';
 import { substituteDeep } from './substituteBindings';
+import { coverageGap, getRecipeParameterCoverage } from './parameterCoverage';
 
 interface AdoptionResult {
   /** ID of the newly-created use case in the persona's design_context. */
@@ -74,14 +75,50 @@ export function useAdoption() {
         // Reconcile persona.parameters + the injected `## Capability Parameters`
         // section from the recipe's input_schema (Gap 2). Idempotent and
         // best-effort — a parameterization failure must not fail the adopt.
-        await syncCapabilityParameters(personaId).catch(
-          silentCatch('useAdoption:adopt:syncParams'),
-        );
+        // But it must not be INVISIBLE either: this used to be a bare
+        // silentCatch, so adoption reported success while the capability
+        // landed with no knobs at all and no signal anywhere.
+        let paramSyncFailed = false;
+        await syncCapabilityParameters(personaId).catch((err) => {
+          paramSyncFailed = true;
+          silentCatch('useAdoption:adopt:syncParams')(err);
+        });
         await fetchDetail(personaId);
-        useToastStore.getState().addToast(
-          tx(t.recipes_catalog.adopted_toast, { title: newUseCase.title }),
-          'success',
-        );
+
+        // Even on success, some declared settings may not have become knobs:
+        // three input_schema types are unimplemented and get dropped. That is
+        // EXPECTED and partial, so it warns rather than erroring — the toast is
+        // scoped to a real gap, never fired for a clean adopt.
+        const gap = paramSyncFailed
+          ? null
+          : coverageGap(
+              await getRecipeParameterCoverage(recipe.id).catch(
+                silentCatchNull('useAdoption:adopt:coverage'),
+              ),
+            );
+
+        const { addToast } = useToastStore.getState();
+        if (paramSyncFailed) {
+          addToast(
+            tx(t.recipes_catalog.adopted_params_failed_toast, { title: newUseCase.title }),
+            'warning',
+          );
+        } else if (gap) {
+          addToast(
+            tx(t.recipes_catalog.adopted_params_partial_toast, {
+              title: newUseCase.title,
+              missing: gap.missing,
+              declared: gap.declared,
+              types: gap.types.join(', '),
+            }),
+            'warning',
+          );
+        } else {
+          addToast(
+            tx(t.recipes_catalog.adopted_toast, { title: newUseCase.title }),
+            'success',
+          );
+        }
         return { useCaseId: newUseCase.id };
       } catch (err) {
         toastCatch('useAdoption:adopt')(err);
@@ -106,13 +143,19 @@ export function useAdoption() {
         if (!removedAny) return false; // nothing to detach — stale UI, no-op
         // Re-sync so the removed capability's parameter lines drop out of the
         // injected section (its params stay, inert, per the documented contract).
-        await syncCapabilityParameters(personaId).catch(
-          silentCatch('useAdoption:remove:syncParams'),
-        );
+        // A failure here leaves the detached capability's lines in the prompt,
+        // which the user cannot see and would not otherwise be told about.
+        let paramSyncFailed = false;
+        await syncCapabilityParameters(personaId).catch((err) => {
+          paramSyncFailed = true;
+          silentCatch('useAdoption:remove:syncParams')(err);
+        });
         await fetchDetail(personaId);
         useToastStore.getState().addToast(
-          tx(t.recipes_catalog.removed_toast, { title: recipe.name }),
-          'success',
+          paramSyncFailed
+            ? tx(t.recipes_catalog.removed_params_failed_toast, { title: recipe.name })
+            : tx(t.recipes_catalog.removed_toast, { title: recipe.name }),
+          paramSyncFailed ? 'warning' : 'success',
         );
         return true;
       } catch (err) {
