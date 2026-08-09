@@ -1348,20 +1348,43 @@ fn team_assignment_team_id(pool: &Arc<DbPool>, assignment_id: &str) -> Option<St
     .ok()
 }
 
-/// A persona's role within a team (`persona_team_members.role`).
-fn persona_team_role(pool: &Arc<DbPool>, team_id: &str, persona_id: &str) -> Option<String> {
+/// A persona's SEMANTIC role within a team.
+///
+/// NOT the `persona_team_members.role` column: that column is
+/// CHECK-constrained to the execution runner's pipeline enum
+/// (`orchestrator` / `worker` / `reviewer` / `router`) and carries the member's
+/// position in the pipeline, not what it does. The semantic label
+/// (`engineer`, `qa`, `architect`, …) is stashed alongside it in `config` as
+/// `{"preset_role":"…"}` by `team_preset_adopter`, which is where
+/// `member_semantic_role` recovers it from. Members with nothing stashed fall
+/// back to the raw pipeline role — so a hand-built team behaves exactly as it
+/// did before this recovery existed.
+fn persona_team_semantic_role(
+    pool: &Arc<DbPool>,
+    team_id: &str,
+    persona_id: &str,
+) -> Option<String> {
     let conn = pool.get().ok()?;
-    conn.query_row(
-        "SELECT role FROM persona_team_members WHERE team_id = ?1 AND persona_id = ?2",
-        rusqlite::params![team_id, persona_id],
-        |r| r.get(0),
-    )
-    .ok()
+    let (role, config): (String, Option<String>) = conn
+        .query_row(
+            "SELECT role, config FROM persona_team_members WHERE team_id = ?1 AND persona_id = ?2",
+            rusqlite::params![team_id, persona_id],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .ok()?;
+    Some(crate::engine::team_preset_adopter::member_semantic_role(
+        config.as_deref(),
+        &role,
+    ))
 }
 
 /// C1 first wave: only these roles may post to the channel (the ones whose
 /// acknowledgments / questions carry the most coordination signal). Decided
 /// in docs/architecture/team-channel-orchestration.md §8.
+///
+/// These are SEMANTIC roles, matched against `persona_team_semantic_role` —
+/// never against `persona_team_members.role`, whose CHECK constraint admits
+/// only the pipeline enum and so can never equal any value in this list.
 const CHANNEL_POST_ROLES: &[&str] = &["engineer", "qa", "architect"];
 const CHANNEL_POST_MAX_CHARS: usize = 400;
 
@@ -1388,7 +1411,7 @@ fn maybe_post_channel_message(
     let Some(team_id) = team_assignment_team_id(pool, &step.assignment_id) else {
         return;
     };
-    let role = persona_team_role(pool, &team_id, persona_id).unwrap_or_default();
+    let role = persona_team_semantic_role(pool, &team_id, persona_id).unwrap_or_default();
     if !CHANNEL_POST_ROLES.contains(&role.as_str()) {
         return;
     }
@@ -1752,6 +1775,162 @@ fn record_assignment_goal_signal(
             assignment_id,
             error = %e,
             "Failed to record team→goal signal",
+        );
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::init_test_db;
+    use crate::db::models::{
+        CreatePersonaInput, CreateTeamAssignmentInput, CreateTeamAssignmentStepInput,
+        CreateTeamInput,
+    };
+    use crate::db::repos::resources::team_channel;
+
+    fn mk_persona(pool: &DbPool, name: &str) -> String {
+        persona_repo::create(
+            pool,
+            CreatePersonaInput {
+                name: name.into(),
+                system_prompt: "You are a test agent.".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .expect("create test persona")
+        .id
+    }
+
+    fn mk_step_input(title: &str, persona_id: &str) -> CreateTeamAssignmentStepInput {
+        CreateTeamAssignmentStepInput {
+            title: title.into(),
+            description: None,
+            assigned_persona_id: Some(persona_id.to_string()),
+            assigned_use_case_id: None,
+            depends_on_indices: None,
+        }
+    }
+
+    /// channel-post-role-gate: the gate must key off the member's SEMANTIC role
+    /// (stashed in `persona_team_members.config` as `{"preset_role":…}` by the
+    /// preset adopter), NOT the `role` column — which is CHECK-constrained to
+    /// the pipeline enum (orchestrator/worker/reviewer/router) and can therefore
+    /// never hold any of `CHANNEL_POST_ROLES`.
+    ///
+    /// A member with no semantic role recorded keeps today's behaviour: silent.
+    #[test]
+    fn channel_post_gate_reads_semantic_role_not_pipeline_role() {
+        let pool = Arc::new(init_test_db().expect("init test db"));
+
+        let team = team_repo::create(
+            &pool,
+            CreateTeamInput {
+                name: "Channel Gate Squad".into(),
+                project_id: None,
+                parent_team_id: None,
+                description: None,
+                canvas_data: None,
+                team_config: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+            },
+        )
+        .expect("create team");
+
+        let engineer = mk_persona(&pool, "Gated Engineer");
+        let plain = mk_persona(&pool, "Plain Worker");
+
+        // Preset-adopted member: pipeline role is the neutral `worker` (the only
+        // thing the CHECK admits), semantic role lives in config.
+        team_repo::add_member(
+            &pool,
+            &team.id,
+            &engineer,
+            Some("worker".into()),
+            None,
+            None,
+            Some(r#"{"preset_role":"engineer"}"#.to_string()),
+        )
+        .expect("add gated member");
+
+        // Hand-built member: no semantic role anywhere.
+        team_repo::add_member(&pool, &team.id, &plain, Some("worker".into()), None, None, None)
+            .expect("add plain member");
+
+        let assignment = assignment_repo::create(
+            &pool,
+            CreateTeamAssignmentInput {
+                team_id: team.id.clone(),
+                title: "Ship the gate".into(),
+                goal: "Prove the channel gate can open".into(),
+                match_strategy: None,
+                max_parallel_steps: None,
+                source: None,
+                companion_op_id: None,
+                goal_id: None,
+                steps: vec![
+                    mk_step_input("Implement", &engineer),
+                    mk_step_input("Assist", &plain),
+                ],
+            },
+        )
+        .expect("create assignment");
+        let steps = assignment_repo::list_steps(&pool, &assignment.id).expect("list steps");
+        assert_eq!(steps.len(), 2);
+
+        // 1. Gated semantic role → the post lands.
+        maybe_post_channel_message(
+            &pool,
+            &steps[0],
+            &engineer,
+            Some("Work summary line.\nCHANNEL_POST: schema is locked, QA is unblocked\nmore prose"),
+        );
+        let posted = team_channel::list_for_team(&pool, &team.id, 50, None).expect("list channel");
+        assert_eq!(
+            posted.len(),
+            1,
+            "a member whose SEMANTIC role is gated-in must post to the channel",
+        );
+        assert_eq!(posted[0].body, "schema is locked, QA is unblocked");
+        assert_eq!(posted[0].author_kind, "persona");
+        assert_eq!(posted[0].author_id.as_deref(), Some(engineer.as_str()));
+        assert_eq!(posted[0].consumer, "display");
+        assert_eq!(
+            posted[0].assignment_id.as_deref(),
+            Some(assignment.id.as_str()),
+        );
+
+        // 2. No semantic role recorded → unchanged behaviour, still silent.
+        maybe_post_channel_message(
+            &pool,
+            &steps[1],
+            &plain,
+            Some("CHANNEL_POST: a plain worker should never reach the channel"),
+        );
+        let after = team_channel::list_for_team(&pool, &team.id, 50, None).expect("list channel");
+        assert_eq!(
+            after.len(),
+            1,
+            "a member with no semantic role must not start posting",
         );
     }
 }
