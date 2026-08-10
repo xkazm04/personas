@@ -1338,7 +1338,10 @@
       "graph_adopted_count": "{count} принято",
       "graph_more": "+{count} ещё",
       "graph_back": "Назад к обзору",
-      "graph_aria": "Граф тем"
+      "graph_aria": "Граф тем",
+      "graph_open_detail": "Открыть подробности",
+      "graph_coverage_label": "Покрытие",
+      "col_ftype": "Форма"
     },
     "skills_adopt": "Внедрить",
     "skills_adopt_hint": "Внедрить в {name} — Claude адаптирует под репозиторий",

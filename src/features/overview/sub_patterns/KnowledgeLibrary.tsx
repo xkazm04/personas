@@ -231,6 +231,7 @@ export default function KnowledgeLibrary({
             workspaceName={workspace.name}
             adoptions={adoptions}
             selectedProjectId={graphProjectId}
+            projectCount={memberProjects.length}
             // A graph node's item is a single jump, not a review pass.
             onOpenItem={(item) => openDetail(item, [item])}
           />

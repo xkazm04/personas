@@ -13958,7 +13958,10 @@
         "graph_adopted_count": "{count} přijato",
         "graph_more": "+{count} dalších",
         "graph_back": "Zpět na přehled",
-        "graph_aria": "Graf témat"
+        "graph_aria": "Graf témat",
+        "graph_open_detail": "Otevřít detail",
+        "graph_coverage_label": "Pokrytí",
+        "col_ftype": "Tvar"
       },
       "skills_adopt": "Převzít",
       "skills_adopt_hint": "Převzít do {name} — Claude ji přizpůsobí repozitáři",

@@ -13958,7 +13958,10 @@
         "graph_adopted_count": "{count} übernommen",
         "graph_more": "+{count} weitere",
         "graph_back": "Zurück zur Übersicht",
-        "graph_aria": "Themen-Graph"
+        "graph_aria": "Themen-Graph",
+        "graph_open_detail": "Details öffnen",
+        "graph_coverage_label": "Abdeckung",
+        "col_ftype": "Form"
       },
       "skills_adopt": "Übernehmen",
       "skills_adopt_hint": "In {name} übernehmen — Claude passt sie an das Repository an",

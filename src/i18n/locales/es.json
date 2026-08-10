@@ -13958,7 +13958,10 @@
         "graph_adopted_count": "{count} adoptadas",
         "graph_more": "+{count} más",
         "graph_back": "Volver a la vista general",
-        "graph_aria": "Grafo de temas"
+        "graph_aria": "Grafo de temas",
+        "graph_open_detail": "Abrir detalle",
+        "graph_coverage_label": "Cobertura",
+        "col_ftype": "Forma"
       },
       "skills_adopt": "Adoptar",
       "skills_adopt_hint": "Adoptar en {name} — Claude la adapta al repositorio",

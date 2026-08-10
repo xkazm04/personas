@@ -13958,7 +13958,10 @@
         "graph_adopted_count": "{count} 件採用済み",
         "graph_more": "他 {count} 件",
         "graph_back": "概要に戻る",
-        "graph_aria": "トピックグラフ"
+        "graph_aria": "トピックグラフ",
+        "graph_open_detail": "詳細を開く",
+        "graph_coverage_label": "カバレッジ",
+        "col_ftype": "形態"
       },
       "skills_adopt": "採用",
       "skills_adopt_hint": "{name} に採用 — Claude がリポジトリ向けにカスタマイズします",

@@ -13958,7 +13958,10 @@
         "graph_adopted_count": "{count} अपनाई गईं",
         "graph_more": "+{count} और",
         "graph_back": "अवलोकन पर वापस",
-        "graph_aria": "विषय ग्राफ़"
+        "graph_aria": "विषय ग्राफ़",
+        "graph_open_detail": "पूरा विवरण खोलें",
+        "graph_coverage_label": "कवरेज",
+        "col_ftype": "आकार"
       },
       "skills_adopt": "अपनाएँ",
       "skills_adopt_hint": "{name} में अपनाएँ — Claude इसे रिपॉज़िटरी के लिए अनुकूलित करता है",

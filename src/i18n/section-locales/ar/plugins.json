@@ -1338,7 +1338,10 @@
       "graph_adopted_count": "{count} معتمدة",
       "graph_more": "+{count} أخرى",
       "graph_back": "العودة إلى النظرة العامة",
-      "graph_aria": "مخطط المواضيع"
+      "graph_aria": "مخطط المواضيع",
+      "graph_open_detail": "فتح التفاصيل",
+      "graph_coverage_label": "التغطية",
+      "col_ftype": "الشكل"
     },
     "skills_adopt": "اعتماد",
     "skills_adopt_hint": "اعتمادها في {name} — يخصّصها Claude للمستودع",

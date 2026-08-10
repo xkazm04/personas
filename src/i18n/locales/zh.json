@@ -13958,7 +13958,10 @@
         "graph_adopted_count": "{count} 条已采纳",
         "graph_more": "还有 {count} 条",
         "graph_back": "返回总览",
-        "graph_aria": "主题图谱"
+        "graph_aria": "主题图谱",
+        "graph_open_detail": "打开详情",
+        "graph_coverage_label": "覆盖率",
+        "col_ftype": "形态"
       },
       "skills_adopt": "采用",
       "skills_adopt_hint": "采用到 {name} — Claude 会为该仓库定制它",

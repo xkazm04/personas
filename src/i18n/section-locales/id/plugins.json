@@ -1338,7 +1338,10 @@
       "graph_adopted_count": "{count} diadopsi",
       "graph_more": "+{count} lagi",
       "graph_back": "Kembali ke ikhtisar",
-      "graph_aria": "Grafik topik"
+      "graph_aria": "Grafik topik",
+      "graph_open_detail": "Buka detail",
+      "graph_coverage_label": "Cakupan",
+      "col_ftype": "Bentuk"
     },
     "skills_adopt": "Adopsi",
     "skills_adopt_hint": "Adopsi ke {name} — Claude menyesuaikannya untuk repo",

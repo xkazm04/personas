@@ -28,13 +28,42 @@ export interface GraphVariantProps {
   /** Project lens: topics with an ADOPTED cell for the selected project keep
    *  their colour; everything else goes grey. `null` = whole workspace. */
   appliedTopics: ReadonlySet<string> | null;
+  /** Completion traceability, 0..1 per `area/cluster` topic — the resolved
+   *  share of the adoption matrix (adopted or skipped-as-inapplicable).
+   *  `null` = nothing to trace against; no rings are drawn. */
+  topicCoverage: ReadonlyMap<string, number> | null;
+  /** Same, aggregated per area (drawn on the keystones). */
+  areaCoverage: ReadonlyMap<string, number> | null;
   onHoverArea: (area: string | null) => void;
   onFocusArea: (area: string, target: FlyTarget) => void;
-  onSelectCluster: (node: ClusterNode, target: FlyTarget) => void;
+  onSelectCluster: (node: ClusterNode) => void;
 }
 
 /** Theme-aware grey for the project lens's "not applied here" state. */
 const LENS_GREY = 'var(--muted-foreground)';
+
+/** Progress ring on a node's border — the completion-traceability readout.
+ *  A faint full track plus an arc from 12 o'clock, both counter-rotated to
+ *  nothing (SVG dasharray on a circle), sized just outside the node body. */
+function CoverageRing({ r, pct, hex }: { r: number; pct: number; hex: string }) {
+  const C = 2 * Math.PI * r;
+  return (
+    <g transform="rotate(-90)" pointerEvents="none">
+      <circle r={r} fill="none" stroke={hex} strokeOpacity={0.15} strokeWidth={2} />
+      {pct > 0 && (
+        <circle
+          r={r}
+          fill="none"
+          stroke={hex}
+          strokeOpacity={0.9}
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeDasharray={`${Math.max(pct, 0.02) * C} ${C}`}
+        />
+      )}
+    </g>
+  );
+}
 
 const AREA_R = 330;
 const CLUSTER_R1 = 96;
@@ -48,6 +77,8 @@ export default function PatternGraphNexus({
   focusArea,
   selectedTopic,
   appliedTopics,
+  topicCoverage,
+  areaCoverage,
   onHoverArea,
   onFocusArea,
   onSelectCluster,
@@ -131,20 +162,20 @@ export default function PatternGraphNexus({
                         onPointerLeave={() => onHoverArea(null)}
                         onClick={(e) => {
                           e.stopPropagation();
-                          // Centre the clicked node and land at count-detail
-                          // zoom — the level where the next tier of information
-                          // (per-node counts, and later the pattern nodes) is
-                          // readable.
-                          onSelectCluster(cl, { x: cx, y: cy, k: 1.9 });
+                          // Leaf of the tree — opens the patterns modal.
+                          onSelectCluster(cl);
                         }}
                       >
                         {isSel && (
-                          <circle r={cR + 5} fill="none" stroke={clHex} strokeWidth={1.5} strokeOpacity={0.9} />
+                          <circle r={cR + 7} fill="none" stroke={clHex} strokeWidth={1.5} strokeOpacity={0.9} />
                         )}
                         {cl.pending > 0 && (
-                          <circle r={cR + 2.5} fill="none" stroke={clHex} strokeOpacity={0.4} strokeWidth={1} strokeDasharray="3 3" />
+                          <circle r={cR + 5.5} fill="none" stroke={clHex} strokeOpacity={0.4} strokeWidth={1} strokeDasharray="3 3" />
                         )}
                         <circle r={cR} fill={clDeep} fillOpacity={0.28} stroke={clHex} strokeWidth={1.25} />
+                        {topicCoverage && (
+                          <CoverageRing r={cR + 3} pct={topicCoverage.get(cl.topic) ?? 0} hex={clHex} />
+                        )}
                         <NodeLabel
                           k={k}
                           dy={cR + 14}
@@ -182,6 +213,9 @@ export default function PatternGraphNexus({
                 strokeOpacity={(empty ? 0.3 : 0.9) * areaMute}
                 strokeWidth={focused ? 2.5 : 1.75}
               />
+              {areaCoverage && !empty && (
+                <CoverageRing r={aR + 4.5} pct={areaCoverage.get(area.area) ?? 0} hex={areaHex} />
+              )}
               <Icon
                 x={-9}
                 y={-9}

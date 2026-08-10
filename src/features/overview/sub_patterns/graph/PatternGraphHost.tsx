@@ -12,7 +12,8 @@ import type { WorkspacePracticeAdoption } from '@/lib/bindings/WorkspacePractice
 import { areaTheme } from '../practiceAreaTheme';
 import type { KnowledgeItemView } from '../libraryModel';
 import { buildTopicGraph, type ClusterNode } from './graphModel';
-import { ClusterCard, ZoomRail } from './GraphChrome';
+import { ClusterPatternsModal } from './ClusterPatternsModal';
+import { ZoomRail } from './GraphChrome';
 import PatternGraphNexus, { type FlyTarget } from './PatternGraphNexus';
 import { useGraphCanvas } from './useGraphCanvas';
 
@@ -21,6 +22,7 @@ export default function PatternGraphHost({
   workspaceName,
   adoptions,
   selectedProjectId,
+  projectCount,
   onOpenItem,
 }: {
   items: readonly KnowledgeItemView[];
@@ -28,6 +30,8 @@ export default function PatternGraphHost({
   adoptions: readonly WorkspacePracticeAdoption[];
   /** Project lens; `null` = whole workspace, rendered as-is. */
   selectedProjectId: string | null;
+  /** Member-project count — the coverage denominator when no lens is set. */
+  projectCount: number;
   onOpenItem?: (item: KnowledgeItemView) => void;
 }) {
   const { t, tx } = useTranslation();
@@ -58,6 +62,47 @@ export default function PatternGraphHost({
     return topics as ReadonlySet<string>;
   }, [selectedProjectId, adoptions, items]);
 
+  // Completion traceability — the resolved share of the pattern×project
+  // adoption matrix. A cell counts as RESOLVED when it is `adopted` (accepted)
+  // or `na` (skipped as inapplicable to that project's stack); everything else
+  // (proposed / to_process / dispatched / diverged) is work still owed. The
+  // denominator is practices × member projects (× 1 under a project lens), so
+  // pending practices — which have no cells yet — honestly drag coverage down.
+  const coverage = useMemo(() => {
+    const resolvedByPractice = new Map<string, number>();
+    for (const a of adoptions) {
+      if (selectedProjectId && a.project_id !== selectedProjectId) continue;
+      if (a.state !== 'adopted' && a.state !== 'na') continue;
+      resolvedByPractice.set(a.practice_id, (resolvedByPractice.get(a.practice_id) ?? 0) + 1);
+    }
+    const denomPer = selectedProjectId ? 1 : projectCount;
+    const topic = new Map<string, number>();
+    const area = new Map<string, number>();
+    if (denomPer > 0) {
+      const acc = new Map<string, { res: number; tot: number }>();
+      const accArea = new Map<string, { res: number; tot: number }>();
+      for (const item of items) {
+        const [a = '', c = ''] = item.topic.split('/');
+        if (!a) continue;
+        const key = `${a}/${c || 'general'}`;
+        const res = Math.min(resolvedByPractice.get(item.id) ?? 0, denomPer);
+        const t0 = acc.get(key) ?? { res: 0, tot: 0 };
+        t0.res += res;
+        t0.tot += denomPer;
+        acc.set(key, t0);
+        const a0 = accArea.get(a) ?? { res: 0, tot: 0 };
+        a0.res += res;
+        a0.tot += denomPer;
+        accArea.set(a, a0);
+      }
+      for (const [k, v] of acc) topic.set(k, v.tot > 0 ? v.res / v.tot : 0);
+      for (const [k, v] of accArea) area.set(k, v.tot > 0 ? v.res / v.tot : 0);
+    }
+    const perPattern = (item: KnowledgeItemView): number | null =>
+      denomPer > 0 ? Math.min(resolvedByPractice.get(item.id) ?? 0, denomPer) / denomPer : null;
+    return { topic, area, perPattern, enabled: denomPer > 0 };
+  }, [adoptions, items, selectedProjectId, projectCount]);
+
   const flyHome = () => {
     setFocusArea(null);
     setSelected(null);
@@ -74,16 +119,13 @@ export default function PatternGraphHost({
     canvas.flyTo(target.x, target.y, target.k);
   };
 
-  // Cluster click: centre the node, fly to detail zoom, and keep its area
-  // focused so other branches' lower levels stay hidden.
-  const selectCluster = (node: ClusterNode, target: FlyTarget) => {
-    if (selected?.topic === node.topic) {
-      setSelected(null);
-      return;
-    }
+  // Leaf click: the cluster is the tree's last level while patterns stay off
+  // the canvas, so it opens the structured patterns modal directly (a camera
+  // flight under a full modal would never be seen). Its area stays focused so
+  // closing the modal leaves you inside the dimension you were exploring.
+  const selectCluster = (node: ClusterNode) => {
     setSelected(node);
     setFocusArea(node.area);
-    canvas.flyTo(target.x, target.y, target.k);
   };
 
   // Esc walks back out — selection first, then the focused dimension.
@@ -133,6 +175,8 @@ export default function PatternGraphHost({
                 focusArea={focusArea}
                 selectedTopic={selected?.topic ?? null}
                 appliedTopics={appliedTopics}
+                topicCoverage={coverage.enabled ? coverage.topic : null}
+                areaCoverage={coverage.enabled ? coverage.area : null}
                 onHoverArea={setHoverArea}
                 onFocusArea={focusOn}
                 onSelectCluster={selectCluster}
@@ -169,7 +213,12 @@ export default function PatternGraphHost({
         <ZoomRail k={k} zoomBy={canvas.zoomBy} reset={flyHome} />
 
         {selected && (
-          <ClusterCard node={selected} onOpenItem={onOpenItem} onClose={() => setSelected(null)} />
+          <ClusterPatternsModal
+            node={selected}
+            patternCoverage={coverage.perPattern}
+            onOpenItem={onOpenItem}
+            onClose={() => setSelected(null)}
+          />
         )}
 
         {graph.total === 0 && (

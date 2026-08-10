@@ -28,6 +28,7 @@ export interface GraphCanvas {
     onPointerDown: (e: React.PointerEvent) => void;
     onPointerMove: (e: React.PointerEvent) => void;
     onPointerUp: (e: React.PointerEvent) => void;
+    onClickCapture: (e: React.MouseEvent) => void;
   };
   zoomBy: (factor: number) => void;
   reset: () => void;
@@ -94,10 +95,17 @@ export function useGraphCanvas(opts?: { initialK?: number }): GraphCanvas {
     return () => el.removeEventListener('wheel', onWheel);
   }, [el, cancelFlight]);
 
+  // Click-vs-pan discipline. Pointer capture is taken ONLY once a real pan
+  // starts (past the slop): capturing on pointerdown retargets the whole
+  // pointer stream — including the eventual click — at the svg, so node
+  // clicks never fired and every tap read as "background". After a pan ends,
+  // the trailing click is suppressed so releasing a drag over a node doesn't
+  // select it.
+  const suppressClick = useRef(false);
+
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if (e.button !== 0) return;
     cancelFlight();
-    (e.currentTarget as Element).setPointerCapture(e.pointerId);
     drag.current = { px: e.clientX, py: e.clientY, moved: false };
   }, [cancelFlight]);
 
@@ -108,16 +116,28 @@ export function useGraphCanvas(opts?: { initialK?: number }): GraphCanvas {
     const dy = e.clientY - d.py;
     // A 3px slop keeps node clicks from registering as micro-pans.
     if (!d.moved && Math.abs(dx) + Math.abs(dy) < 3) return;
-    d.moved = true;
-    setIsPanning(true);
+    if (!d.moved) {
+      d.moved = true;
+      (e.currentTarget as Element).setPointerCapture(e.pointerId);
+      setIsPanning(true);
+    }
     d.px = e.clientX;
     d.py = e.clientY;
     setCamera((c) => ({ ...c, x: c.x + dx, y: c.y + dy }));
   }, []);
 
   const onPointerUp = useCallback(() => {
+    suppressClick.current = drag.current?.moved ?? false;
     drag.current = null;
     setIsPanning(false);
+  }, []);
+
+  const onClickCapture = useCallback((e: React.MouseEvent) => {
+    if (suppressClick.current) {
+      suppressClick.current = false;
+      e.stopPropagation();
+      e.preventDefault();
+    }
   }, []);
 
   const flyTo = useCallback(
@@ -173,13 +193,13 @@ export function useGraphCanvas(opts?: { initialK?: number }): GraphCanvas {
       size,
       camera,
       isPanning,
-      handlers: { onPointerDown, onPointerMove, onPointerUp },
+      handlers: { onPointerDown, onPointerMove, onPointerUp, onClickCapture },
       zoomBy,
       reset,
       flyTo,
       project,
     }),
-    [size, camera, isPanning, onPointerDown, onPointerMove, onPointerUp, reset, zoomBy, flyTo, project],
+    [size, camera, isPanning, onPointerDown, onPointerMove, onPointerUp, onClickCapture, reset, zoomBy, flyTo, project],
   );
 }
 

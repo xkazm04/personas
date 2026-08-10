@@ -1338,7 +1338,10 @@
       "graph_adopted_count": "{count} adoptées",
       "graph_more": "+{count} de plus",
       "graph_back": "Retour à la vue d’ensemble",
-      "graph_aria": "Graphe des sujets"
+      "graph_aria": "Graphe des sujets",
+      "graph_open_detail": "Ouvrir le détail",
+      "graph_coverage_label": "Couverture",
+      "col_ftype": "Forme"
     },
     "skills_adopt": "Adopter",
     "skills_adopt_hint": "Adopter dans {name} — Claude l’adapte au dépôt",

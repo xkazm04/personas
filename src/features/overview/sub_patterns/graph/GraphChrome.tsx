@@ -5,9 +5,6 @@ import { Minus, Plus, RotateCcw } from 'lucide-react';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
-import { areaTheme } from '../practiceAreaTheme';
-import type { ClusterNode } from './graphModel';
-import type { KnowledgeItemView } from '../libraryModel';
 import { labelScale } from './useGraphCanvas';
 
 export function ZoomRail({
@@ -39,78 +36,6 @@ export function ZoomRail({
           <RotateCcw className="w-3.5 h-3.5" />
         </button>
       </Tooltip>
-    </div>
-  );
-}
-
-/** Pinned card for the selected cluster — the concrete "what is actually in
- *  this node" answer: status split plus the newest practice titles. */
-export function ClusterCard({
-  node,
-  onOpenItem,
-  onClose,
-}: {
-  node: ClusterNode;
-  onOpenItem?: (item: KnowledgeItemView) => void;
-  onClose: () => void;
-}) {
-  const { t, tx } = useTranslation();
-  const w = t.plugins.dev_tools.workspaces;
-  const theme = areaTheme(node.topic);
-  return (
-    <div className="absolute left-3 bottom-3 z-10 w-80 max-w-[calc(100%-6rem)] rounded-card border border-border/70 bg-background/95 backdrop-blur-sm shadow-elevation-3 p-3 animate-fade-in">
-      <div className="flex items-start justify-between gap-2">
-        <span className={`typo-label inline-flex px-1.5 py-0.5 rounded-interactive ${theme.chip}`}>
-          {node.topic}
-        </span>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label={t.common.close}
-          className="typo-caption text-foreground/50 hover:text-foreground transition-colors"
-        >
-          ✕
-        </button>
-      </div>
-      <div className="mt-2 flex items-center gap-3 typo-caption text-foreground/70">
-        <span className="text-foreground typo-data-md tabular-nums">{node.count}</span>
-        <span>{w.graph_practices}</span>
-        {node.pending > 0 && (
-          <span className="text-status-warning tabular-nums">
-            {tx(w.graph_pending_count, { count: node.pending })}
-          </span>
-        )}
-        {node.adopted > 0 && (
-          <span className="text-status-success tabular-nums">
-            {tx(w.graph_adopted_count, { count: node.adopted })}
-          </span>
-        )}
-      </div>
-      <ul className="mt-2 flex flex-col gap-1">
-        {node.items.slice(0, 4).map((item) => (
-          <li key={item.id}>
-            <button
-              type="button"
-              onClick={() => onOpenItem?.(item)}
-              className="w-full text-left typo-caption text-foreground/85 hover:text-foreground truncate transition-colors"
-              title={item.title}
-            >
-              <span
-                className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle ${
-                  item.status === 'adopted' ? 'bg-status-success' : 'bg-status-warning'
-                }`}
-                aria-hidden
-              />
-              {item.title}
-            </button>
-          </li>
-        ))}
-        {node.items.length > 4 && (
-          <li className="typo-caption text-foreground/45">
-            {tx(w.graph_more, { count: node.items.length - 4 })}
-          </li>
-        )}
-      </ul>
     </div>
   );
 }

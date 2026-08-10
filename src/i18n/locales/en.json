@@ -14409,7 +14409,10 @@
         "graph_adopted_count": "{count} adopted",
         "graph_more": "+{count} more",
         "graph_back": "Back to overview",
-        "graph_aria": "Topic graph"
+        "graph_aria": "Topic graph",
+        "graph_open_detail": "Open full detail",
+        "graph_coverage_label": "Coverage",
+        "col_ftype": "Shape"
       },
       "skills_info_args": "args",
       "skills_info_context_tracked": "context-tracked",

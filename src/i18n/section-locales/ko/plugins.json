@@ -1338,7 +1338,10 @@
       "graph_adopted_count": "채택 {count}개",
       "graph_more": "+{count}개 더",
       "graph_back": "개요로 돌아가기",
-      "graph_aria": "주제 그래프"
+      "graph_aria": "주제 그래프",
+      "graph_open_detail": "상세 열기",
+      "graph_coverage_label": "커버리지",
+      "col_ftype": "형태"
     },
     "skills_adopt": "채택",
     "skills_adopt_hint": "{name}에 채택 — Claude가 저장소에 맞게 맞춤 설정합니다",
