@@ -55,6 +55,24 @@ fn has_table(conn: &Connection, table: &str) -> Result<bool, AppError> {
     Ok(count > 0)
 }
 
+/// Report — rather than discard — a `DROP COLUMN group_id` that SQLite refused.
+///
+/// The call sites are already `has_column`-guarded, so "no such column" cannot
+/// happen and every error reaching here is real. On `persona_memories` and
+/// `dev_projects` the column is dead weight (no Rust field reads or writes it),
+/// so a failure is not worth aborting a launch over — but it must not be
+/// invisible either, which is what `let _ = ddl_step(…)` made it.
+fn report_failed_group_id_drop(table: &str, result: Result<(), AppError>) {
+    if let Err(e) = result {
+        tracing::error!(
+            table = %table,
+            error = %e,
+            "retire_persona_groups: DROP COLUMN group_id failed — the dead column stays \
+             (an index, trigger or view most likely still names it)",
+        );
+    }
+}
+
 fn has_index(conn: &Connection, index: &str) -> Result<bool, AppError> {
     let count = conn.query_row(
         "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name = ?1",
@@ -2070,7 +2088,16 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     }
 
     // Add warnings column to automation_runs for surfacing auth fallbacks & method defaults.
-    let _ = ddl_step(conn, "ALTER TABLE automation_runs ADD COLUMN warnings TEXT;");
+    //
+    // Guarded, not `let _ =`. Discarding the Result absorbed the "duplicate
+    // column name" this step expects on re-run — but it absorbed EVERY other
+    // error with it, so a genuinely failed write was indistinguishable from a
+    // no-op. `has_column` makes the duplicate impossible, which means anything
+    // that still errors here is real and propagates. (`automation_runs` comes
+    // from the base SCHEMA, so the table is always present at this point.)
+    if !has_column(conn, "automation_runs", "warnings")? {
+        ddl_step(conn, "ALTER TABLE automation_runs ADD COLUMN warnings TEXT;")?;
+    }
 
     // Migrate legacy string-matched interrupted sessions to first-class 'interrupted' status.
     let migrated = conn
@@ -3387,12 +3414,24 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
                 let _ = ddl_step(conn, "DROP INDEX IF EXISTS idx_dev_projects_group_id;");
 
                 // No-FK columns: safe native DROP COLUMN. has_column guard makes
-                // it a no-op on fresh DBs and on re-run.
+                // it a no-op on fresh DBs and on re-run — so "no such column"
+                // is already impossible and the discarded Result could only ever
+                // have been hiding a real failure. SQLite refuses DROP COLUMN
+                // while any index/trigger/view still names the column; on these
+                // two tables the consequence is a leftover dead column, which is
+                // not worth aborting a launch over. So: report, don't swallow,
+                // don't brick.
                 if has_column(conn, "persona_memories", "group_id")? {
-                    let _ = ddl_step(conn, "ALTER TABLE persona_memories DROP COLUMN group_id;");
+                    report_failed_group_id_drop(
+                        "persona_memories",
+                        ddl_step(conn, "ALTER TABLE persona_memories DROP COLUMN group_id;"),
+                    );
                 }
                 if has_column(conn, "dev_projects", "group_id")? {
-                    let _ = ddl_step(conn, "ALTER TABLE dev_projects DROP COLUMN group_id;");
+                    report_failed_group_id_drop(
+                        "dev_projects",
+                        ddl_step(conn, "ALTER TABLE dev_projects DROP COLUMN group_id;"),
+                    );
                 }
 
                 // Drop the personas.group_id FK column outright. NULLing it is
@@ -3403,8 +3442,25 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
                 // removes the dangling FK (mirrors persona_memories/dev_projects
                 // above; the index was already dropped). Guarded + idempotent.
                 if has_column(conn, "personas", "group_id")? {
-                    let _ = ddl_step(conn, "UPDATE personas SET group_id = NULL;");
-                    let _ = ddl_step(conn, "ALTER TABLE personas DROP COLUMN group_id;");
+                    ddl_step(conn, "UPDATE personas SET group_id = NULL;")?;
+                    if let Err(e) = ddl_step(conn, "ALTER TABLE personas DROP COLUMN group_id;") {
+                        // Do NOT fall through to the DROP TABLE below. SQLite
+                        // refuses DROP COLUMN while any index/trigger/view still
+                        // names the column, and with the FK column left in place
+                        // dropping `persona_groups` makes EVERY `INSERT INTO
+                        // personas` fail with "no such table: persona_groups" —
+                        // precisely the breakage the comment above describes.
+                        // Discarding this Result made that outcome both silent
+                        // and reachable. Keep both objects, log loudly, retry on
+                        // the next launch (this step re-runs every boot).
+                        tracing::error!(
+                            error = %e,
+                            "retire_persona_groups: could not drop personas.group_id — keeping \
+                             persona_groups so persona creation keeps working; will retry on \
+                             the next launch",
+                        );
+                        return Ok(());
+                    }
                 }
                 let _ = ddl_step(conn, "DROP TABLE IF EXISTS persona_groups;");
                 Ok(())
@@ -5159,14 +5215,25 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     )?;
 
     // -- Twin plugin: knowledge_base_id on profiles (P2) ---------------------
-    let _ = ddl_step(conn, "ALTER TABLE twin_profiles ADD COLUMN knowledge_base_id TEXT;"); // ignore "duplicate column" on re-run
+    // `has_column` rather than a discarded Result: the guard removes the
+    // "duplicate column" re-run error this used to absorb, so a real failure is
+    // no longer indistinguishable from a successful no-op. `twin_profiles` is
+    // created a few steps above in this same function, so it always exists here.
+    if !has_column(conn, "twin_profiles", "knowledge_base_id")? {
+        ddl_step(conn, "ALTER TABLE twin_profiles ADD COLUMN knowledge_base_id TEXT;")?;
+    }
 
     // -- Twin plugin: persistent training directives (D5 — self-sharpening) --
     // Free-text "training style guide" per twin. The Training Studio seeds its
     // Directions box from this and can save edits back; every question/answer
     // generation prepends it so the studio learns the user's taste instead of
     // restating it each session.
-    let _ = ddl_step(conn, "ALTER TABLE twin_profiles ADD COLUMN training_directives TEXT;"); // ignore "duplicate column" on re-run
+    if !has_column(conn, "twin_profiles", "training_directives")? {
+        ddl_step(
+            conn,
+            "ALTER TABLE twin_profiles ADD COLUMN training_directives TEXT;",
+        )?;
+    }
 
     // -- Twin plugin: pending memories inbox (P2) ----------------------------
     // Human-approval gate for memories. record_interaction writes here; the
@@ -8206,6 +8273,90 @@ mod tests {
             1,
             "persona_executions CHECK was re-widened on replay — rebuild migration is not idempotent"
         );
+    }
+
+    /// A guarded `ALTER TABLE … ADD COLUMN` that genuinely cannot succeed must
+    /// SURFACE. Six sites in this file used `let _ = ddl_step(…)` to absorb the
+    /// "duplicate column name" they expect on re-run — and absorbed every other
+    /// error with it, so a migration that never wrote anything reported success.
+    ///
+    /// Simulates a database where the statement cannot possibly work (its table
+    /// is gone). Under the discarded Result this returned `Ok(())`.
+    #[test]
+    fn a_genuinely_failed_guarded_alter_is_no_longer_swallowed() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        // `cloud_webhook_watermarks` is created by the very next step after the
+        // guarded ALTER and by nothing else in the tree, so its absence pins
+        // WHERE the chain stopped. Without that marker the assertion is empty:
+        // with the Result discarded the chain sails past the ALTER and only
+        // trips ~200 lines later on `CREATE INDEX … ON automation_runs`, which
+        // raises the same "no such table" from a completely different cause.
+        conn.execute_batch(
+            "DROP TABLE automation_runs;
+             DROP TABLE cloud_webhook_watermarks;",
+        )
+        .unwrap();
+
+        let err = run_incremental(&conn)
+            .expect_err("an ALTER that cannot succeed must surface, not be swallowed");
+        assert!(
+            err.to_string().contains("automation_runs"),
+            "the surfaced error must name the failing table, got: {err}",
+        );
+        assert!(
+            !has_table(&conn, "cloud_webhook_watermarks").unwrap(),
+            "the chain ran PAST the failed ALTER — the error was still being swallowed",
+        );
+    }
+
+    /// `retire_persona_groups` drops `personas.group_id` and then drops the
+    /// `persona_groups` table it references. SQLite refuses `DROP COLUMN` while
+    /// any index/trigger/view still names the column — and the discarded Result
+    /// meant the migration marched on to `DROP TABLE persona_groups` anyway,
+    /// leaving `personas` with a REFERENCES clause pointing at nothing. With
+    /// `foreign_keys = ON` (every pooled connection) that makes EVERY
+    /// `INSERT INTO personas` fail with `no such table: persona_groups`.
+    ///
+    /// Rebuilds that exact legacy shape, including a COMPOSITE index the
+    /// migration's hand-written `DROP INDEX` list has never heard of.
+    #[test]
+    fn a_blocked_group_id_drop_no_longer_takes_persona_groups_with_it() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        conn.execute_batch(
+            // The ORIGINAL pre-workspace shape: the chain's own earlier step
+            // ("Added workspace fields to persona_groups") adds description +
+            // the four default_* columns that `groups_to_teams_data_migration`
+            // then reads, so seeding them here would collide with it.
+            "CREATE TABLE persona_groups (
+                id         TEXT PRIMARY KEY,
+                name       TEXT NOT NULL,
+                color      TEXT,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+             );
+             ALTER TABLE persona_memories ADD COLUMN group_id TEXT;
+             ALTER TABLE personas ADD COLUMN group_id TEXT REFERENCES persona_groups(id);
+             CREATE INDEX idx_personas_group_and_name ON personas(group_id, name);",
+        )
+        .unwrap();
+
+        // A blocked DROP COLUMN is not worth bricking a launch over…
+        run_incremental(&conn)
+            .expect("a blocked DROP COLUMN must not abort the whole migration chain");
+
+        // …but the parent table must not be dropped out from under the FK.
+        assert!(
+            has_table(&conn, "persona_groups").unwrap(),
+            "persona_groups was dropped while personas.group_id still references it",
+        );
+        conn.execute(
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at) \
+             VALUES ('p1', 'n', 'sp', datetime('now'), datetime('now'))",
+            [],
+        )
+        .expect("persona creation must still work after the migration");
     }
 
     /// Pins that a fresh database actually receives the artifacts of the
