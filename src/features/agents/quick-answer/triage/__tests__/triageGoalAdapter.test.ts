@@ -102,9 +102,11 @@ describe('goalToTriage — a completed goal as a card', () => {
     expect(item.payload?.seenStatus).toBeUndefined();
   });
 
-  it('names the completion timestamp `raised`, which is what renders it as an age', () => {
-    // `TriageFactRow`'s TIME_FACTS is `{'raised','lockedAt'}`. Any other id
-    // prints the raw ISO string into the ledger.
+  it('names the completion timestamp `raised`, the shared id for "when it arrived"', () => {
+    // Every adapter in `triageAdapters` uses `raised` for that fact, so a
+    // consumer can recognise a timestamp without knowing which queue it came
+    // from. It was also what the (now removed) docked ledger keyed its
+    // relative-time rendering on.
     const raised = factById(goalToTriage(pendingGoal(), ['goal-1'], copy).facts, 'raised');
     expect(raised.value).toBe('2026-02-02T00:00:00.000Z');
     expect(raised.label).toBe('Raised');
