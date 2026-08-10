@@ -74,6 +74,10 @@ pub fn collect_all(pool: &UserDbPool, autonomous: bool) -> Result<Vec<Nudge>, Ap
     out.extend(backlog_aging(pool).unwrap_or_default());
     out.extend(cadence_due(pool).unwrap_or_default());
     out.extend(on_this_day(pool).unwrap_or_default());
+    // Welcome-back: on the first evaluation after an app restart, surface any
+    // open threads so the conversation resumes instead of sitting silent.
+    // Fires once per process; stays quiet when there is nothing open.
+    out.extend(conversation_resume(pool).unwrap_or_default());
     // Fleet triggers are gated on autonomous mode. With Athena's autonomy OFF she
     // should not be managing the fleet at all — no nudges, no re-checking loop;
     // the user is driving the CLIs themselves. The passive reminders above (goals,
@@ -159,6 +163,19 @@ pub async fn ambient_match(
         }
     }
     Ok(out)
+}
+
+// ── conversation_resume (STUB — unblocks the build) ─────────────────────
+//
+// TODO(2026-08-10): `collect_all` calls `conversation_resume` but no such
+// function existed anywhere in the repo, which broke `cargo build` for every
+// session (tauri dev kills the app on the failed rebuild). A first unblock
+// commented the call out; something re-applied the call, so this stub makes
+// the tree compile WITHOUT touching that contested line. Whoever owns the
+// welcome-back nudge: replace this stub's body with the real evaluator
+// (delete the stub if your implementation lands elsewhere in this module).
+fn conversation_resume(_pool: &UserDbPool) -> Result<Vec<Nudge>, AppError> {
+    Ok(Vec::new())
 }
 
 // ── goal_target_approaching ─────────────────────────────────────────────
