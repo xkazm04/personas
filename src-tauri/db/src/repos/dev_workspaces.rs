@@ -154,6 +154,11 @@ pub struct KnowledgeCandidate {
     /// Miner idempotency key; the dedup gate keys off this.
     pub dedup_key: Option<String>,
     pub confidence: Option<f64>,
+    /// Pattern id this candidate REFINES (fabric F4 contribution loop). On
+    /// ingest an `extends` edge is created child->parent; on adoption the
+    /// child inherits the parent's topic when it has none of its own. The
+    /// item itself still lands `observed` — sessions propose, humans adopt.
+    pub extends: Option<String>,
 }
 
 /// Result of an ingest run — inserted count + a per-row reason for every
@@ -842,6 +847,34 @@ pub fn decide_knowledge_cas(
         }
 
         if new_status == "adopted" {
+            // F4: an adopted EXTENSION joins its parent's cluster when it has
+            // no real home of its own (no topic, or quarantined `unsorted/*`).
+            // Only the topic is inherited — playbook membership stays a
+            // curator suggestion in the rail, never an automatic join.
+            let needs_home = item
+                .topic
+                .as_deref()
+                .map(|t| t.is_empty() || t.starts_with("unsorted"))
+                .unwrap_or(true);
+            if needs_home {
+                let parent_topic: Option<String> = tx
+                    .query_row(
+                        "SELECT k.topic FROM workspace_pattern_edges e
+                         JOIN workspace_knowledge k ON k.id = e.to_id
+                         WHERE e.from_id = ?1 AND e.rel = 'extends'
+                         LIMIT 1",
+                        params![id],
+                        |r| r.get(0),
+                    )
+                    .unwrap_or(None);
+                if let Some(t) = parent_topic {
+                    tx.execute(
+                        "UPDATE workspace_knowledge SET topic = ?1 WHERE id = ?2",
+                        params![t, id],
+                    )?;
+                }
+            }
+
             let members: Vec<(String, Option<String>)> = {
                 let mut stmt = tx.prepare(
                     "SELECT id, tech_stack FROM dev_projects WHERE workspace_id = ?1",
@@ -1674,11 +1707,147 @@ pub fn ingest_candidates(
                 ],
             )?;
             summary.inserted += 1;
+
+            // F4 contribution loop: an `extends` reference becomes a typed
+            // edge child->parent. A dangling target never blocks the item —
+            // the practice is real even when its lineage claim is stale — but
+            // the skipped edge is REPORTED, never silently dropped.
+            if let Some(parent) = c.extends.as_deref() {
+                let parent_ok: bool = tx
+                    .query_row(
+                        "SELECT 1 FROM workspace_knowledge WHERE id = ?1 AND workspace_id = ?2",
+                        params![parent, workspace_id],
+                        |_| Ok(true),
+                    )
+                    .unwrap_or(false);
+                if parent_ok && parent != id {
+                    tx.execute(
+                        "INSERT OR IGNORE INTO workspace_pattern_edges
+                             (from_id, to_id, rel, note, created_at)
+                         VALUES (?1, ?2, 'extends', 'proposed via harvest', ?3)",
+                        params![id, parent, now],
+                    )?;
+                } else {
+                    summary.skipped.push(format!(
+                        "#{i} '{}': extends target {parent} not found — item kept, edge skipped",
+                        c.title
+                    ));
+                }
+            }
         }
 
         tx.commit()?;
         Ok(summary)
     })
+}
+
+#[cfg(test)]
+mod extends_loop_tests {
+    use super::*;
+
+    fn pool() -> DbPool {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static COUNTER: AtomicU64 = AtomicU64::new(0);
+        let id = COUNTER.fetch_add(1, Ordering::Relaxed);
+        let uri = format!("file:ws_extends_testdb_{id}?mode=memory&cache=shared");
+        let manager = r2d2_sqlite::SqliteConnectionManager::file(&uri);
+        let pool = r2d2::Pool::builder().max_size(4).build(manager).expect("pool");
+        {
+            let conn = pool.get().expect("conn");
+            conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
+            crate::migrations::run(&conn).expect("migrations");
+            crate::migrations::run_incremental(&conn).expect("incremental");
+        }
+        pool
+    }
+
+    fn candidate(title: &str, extends: Option<&str>) -> KnowledgeCandidate {
+        KnowledgeCandidate {
+            harvest_scope: None,
+            kind: "pattern".into(),
+            title: title.into(),
+            statement: "A statement.".into(),
+            detail_md: None,
+            topic: None,
+            abstraction: None,
+            ftype: None,
+            durability: None,
+            governing_id: None,
+            evidence_count: None,
+            applicability: None,
+            origin_project_id: None,
+            dedup_key: Some(format!("t:{title}")),
+            confidence: None,
+            extends: extends.map(str::to_string),
+        }
+    }
+
+    #[test]
+    fn extends_creates_a_child_to_parent_edge_and_dangling_is_reported() {
+        let pool = pool();
+        let ws = create_workspace(&pool, "WS", None, None, false).unwrap();
+        // Parent enters the library first.
+        let s1 = ingest_candidates(&pool, &ws.id, &[candidate("Parent", None)], "test", None).unwrap();
+        assert_eq!(s1.inserted, 1);
+        let parent_id: String = pool
+            .get().unwrap()
+            .query_row(
+                "SELECT id FROM workspace_knowledge WHERE title = 'Parent'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+
+        // Child extends it; a second child extends a ghost.
+        let s2 = ingest_candidates(
+            &pool,
+            &ws.id,
+            &[candidate("Child", Some(&parent_id)), candidate("Ghost child", Some("nope"))],
+            "test",
+            None,
+        )
+        .unwrap();
+        assert_eq!(s2.inserted, 2, "a dangling extends never blocks the item");
+        assert!(
+            s2.skipped.iter().any(|m| m.contains("extends target nope not found")),
+            "the skipped edge is reported: {:?}",
+            s2.skipped
+        );
+
+        let edges = list_pattern_edges(&pool, &ws.id).unwrap();
+        assert_eq!(edges.len(), 1);
+        // Direction: CHILD extends PARENT — from is the refinement, to is canon.
+        assert_eq!(edges[0].to_id, parent_id);
+        assert_eq!(edges[0].rel, "extends");
+    }
+
+    #[test]
+    fn adopting_an_extension_inherits_the_parents_topic_when_it_has_none() {
+        let pool = pool();
+        let ws = create_workspace(&pool, "WS", None, None, false).unwrap();
+        ingest_candidates(&pool, &ws.id, &[candidate("Parent", None)], "test", None).unwrap();
+        let parent_id: String = pool.get().unwrap()
+            .query_row("SELECT id FROM workspace_knowledge WHERE title = 'Parent'", [], |r| r.get(0))
+            .unwrap();
+        // Give the parent a real home.
+        pool.get().unwrap()
+            .execute(
+                "UPDATE workspace_knowledge SET topic = 'data/migrations/tables' WHERE id = ?1",
+                params![parent_id],
+            )
+            .unwrap();
+        ingest_candidates(&pool, &ws.id, &[candidate("Child", Some(&parent_id))], "test", None).unwrap();
+        let child_id: String = pool.get().unwrap()
+            .query_row("SELECT id FROM workspace_knowledge WHERE title = 'Child'", [], |r| r.get(0))
+            .unwrap();
+        // Child landed with a quarantined topic (no topic given -> unsorted/*).
+        let adopted = decide_knowledge(&pool, &child_id, "adopt", None).unwrap();
+        assert_eq!(
+            adopted.topic.as_deref(),
+            Some("data/migrations/tables"),
+            "an adopted extension joins its parent's cluster when it has no home of its own"
+        );
+    }
 }
 
 // ============================================================================
@@ -1819,6 +1988,7 @@ fn cluster_shared_findings(findings: &[MinedFinding]) -> Vec<KnowledgeCandidate>
                 origin_project_id: None,
                 dedup_key: Some(format!("miner:findings:{identity}")),
                 confidence: Some(confidence),
+                extends: None,
             },
         ));
     }
@@ -1967,6 +2137,7 @@ fn cluster_skill_adoption(
             origin_project_id: None,
             dedup_key: Some(format!("miner:skill-adopt:{name}")),
             confidence: Some(0.6),
+            extends: None,
         });
     }
     out

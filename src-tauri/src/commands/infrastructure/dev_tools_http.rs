@@ -416,6 +416,7 @@ async fn patterns_propose(
         // behind. The propose door's project scope IS the origin (same rule as
         // workspace_harvest / skill_lessons; cross-project code passes None).
         origin_project_id: b.project_id.clone(),
+        extends: b.extends.clone(),
     };
     let summary = ws_repo::ingest_candidates(&pool, &ws, &[candidate], "cli-consult", None)
         .map_err(err)?;
@@ -432,8 +433,11 @@ async fn patterns_propose(
         None
     };
     if let (Some(new_id), Some(parent)) = (created.as_deref(), b.extends.as_deref()) {
-        // Direction: the established pattern is EXTENDED BY the proposal.
-        ws_repo::set_pattern_edge(&pool, parent, new_id, "extends", Some("proposed via consult"))
+        // Direction: the PROPOSAL extends the established pattern (child ->
+        // parent), matching the harvest door and the modal's edge labels —
+        // the child renders "extends <parent>", the parent "extended by".
+        // (F2 had this reversed; fixed in F4 before any real data existed.)
+        ws_repo::set_pattern_edge(&pool, new_id, parent, "extends", Some("proposed via consult"))
             .map_err(err)?;
     }
     Ok(Json(serde_json::json!({

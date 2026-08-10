@@ -93,8 +93,31 @@ pub fn project_workspace_practices(
     pool: &DbPool,
     workspace_id: &str,
 ) -> Result<Vec<ProjectionResult>, AppError> {
+    project_practices_impl(pool, workspace_id, None)
+}
+
+/// Project into ONE member repo — the "born subscribed" half of fabric F4:
+/// called when a project joins a workspace, so a new app carries the bundle,
+/// the briefs and the consult skill from its first session, without anyone
+/// remembering to press the button.
+pub fn project_practices_for_project(
+    pool: &DbPool,
+    workspace_id: &str,
+    project_id: &str,
+) -> Result<Vec<ProjectionResult>, AppError> {
+    project_practices_impl(pool, workspace_id, Some(project_id))
+}
+
+fn project_practices_impl(
+    pool: &DbPool,
+    workspace_id: &str,
+    only_project: Option<&str>,
+) -> Result<Vec<ProjectionResult>, AppError> {
     let ws = repo::get_workspace_by_id(pool, workspace_id)?;
-    let members = repo::list_workspace_projects(pool, workspace_id)?;
+    let mut members = repo::list_workspace_projects(pool, workspace_id)?;
+    if let Some(pid) = only_project {
+        members.retain(|p| p.id == pid);
+    }
     let adopted: Vec<WorkspaceKnowledge> = repo::list_knowledge(pool, workspace_id, Some("adopted"))?;
     let adoption = repo::list_adoption(pool, workspace_id)?;
     let playbooks = repo::list_playbooks(pool, workspace_id)?;

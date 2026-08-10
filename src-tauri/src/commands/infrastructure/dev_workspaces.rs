@@ -90,7 +90,7 @@ pub fn dev_tools_workspace_assign_project(
     // is work this repo now owes. The backfill is the right shape here — it
     // walks exactly the `to_process` cells and is dedup-gated, so a re-join
     // never stacks a second idea.
-    if workspace_id.is_some() {
+    if let Some(ws) = workspace_id.as_deref() {
         match repo::backfill_practice_ideas(&state.db) {
             Ok(n) if n > 0 => tracing::info!(
                 project_id = %project_id,
@@ -99,6 +99,26 @@ pub fn dev_tools_workspace_assign_project(
             ),
             Err(e) => tracing::warn!(project_id = %project_id, error = %e, "practice materialization failed after workspace join"),
             _ => {}
+        }
+        // Fabric F4 "born subscribed": a joining repo gets the pattern bundle
+        // (router + briefs + consult skill + CLAUDE.md import) immediately,
+        // not on the next manual "Project to repos" click. Best-effort — an
+        // unwritable repo warns and never fails the assignment.
+        match crate::engine::workspace_projection::project_practices_for_project(
+            &state.db,
+            ws,
+            &project_id,
+        ) {
+            Ok(results) => {
+                for r in results {
+                    if let Some(reason) = r.skipped {
+                        tracing::warn!(project_id = %project_id, %reason, "join-time projection skipped");
+                    } else {
+                        tracing::info!(project_id = %project_id, practices = r.practices, playbooks = r.playbooks, "join-time pattern bundle projected");
+                    }
+                }
+            }
+            Err(e) => tracing::warn!(project_id = %project_id, error = %e, "join-time projection failed"),
         }
     }
     Ok(project)

@@ -100,6 +100,10 @@ struct HarvestItem {
     applicability: Option<serde_json::Value>,
     dedup_key: Option<String>,
     confidence: Option<f64>,
+    /// Pattern id this item REFINES (fabric F4 contribution loop) — becomes a
+    /// child->parent `extends` edge at ingest; the item still lands observed.
+    #[serde(default)]
+    extends: Option<String>,
 }
 
 // ── prepare ─────────────────────────────────────────────────────────────────
@@ -457,6 +461,7 @@ fn ingest_one_run(
                 origin_project_id: Some(project_id.to_string()),
                 dedup_key,
                 confidence: it.confidence,
+                extends: it.extends,
             }
         })
         .collect();
