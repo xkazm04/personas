@@ -3,6 +3,11 @@
 ## Active
 
 
+### athena-triage-funnel — /athena: idea-triage funnel built + first live run over 58 pending ideas — session fable-5 — **COMPLETE**
+- 2026-08-10. Personas commits: `7349c6e06` design doc + /idea-run skill · `0b8967995` dev_tools_triage_verdicts_ingest (verdicts result.json → backlog_apply_triage approval, byte-identical payload reuse) · `79c593b54` skill sharpening from pilot friction. Full run report: `.personas/triage-verdicts/runs/triage-2026-08-10-a/rollup.md`.
+- Run outcome: 58 pending → 26 accept / 24 reject / 7 reroute / 1 needs-info (operator-approved split); 25 idea-run dispatches → **20 implemented (25 commits across 6 managed repos, NOT pushed), 4 analysis-declined w/ evidence, 1 blocked on foreign dirty files** (12a642ba, re-wave when auto-invoicer tree cleans). 8 verdict approval cards pending operator clicks (4 accepts need flip-to-reject per stage-2 evidence: 0059fa0c, 1dbe0e0d, dc6fca5d, 5e76592e).
+- Lessons in the rollup: staleness dominates June-scan tickets; symbol-grep validation defeated by wrapper indirection/fixtures; stage 2 upgrades tickets (entity-id hygiene → cross-tenant fix). Grant Writing's 4 commits sit on `chore/decommission-datahub`, not main.
+
 ### athena-cli-consolidation — /athena terminal session: gather working tree → master → push — session fable-5 — **COMPLETE**
 - 2026-08-10: operator called end of worktree-based development ("continue on master"). Commits: `d17b43d00` chat opens at latest message (ready-gate threaded into useAthenaChatView/useChatScroll; NOTE: pre-staged TriageFactRow.tsx deletion rode in here one commit early) · `1ace2f0f7` gathered in-flight triage deck work (CardEdgeRails replaces TriageFactRow) · `cf0251f6c` conversation_resume stub keeps cargo build green (owner of the welcome-back nudge: replace the stub body in `proactive/triggers.rs`).
 - Gate: tsc clean · 299 vitest (triage+companion) green · eslint via pre-commit. Not live-app verified.
