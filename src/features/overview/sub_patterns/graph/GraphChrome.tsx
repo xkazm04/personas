@@ -1,11 +1,10 @@
-// Shared chrome for the topic-graph variants: zoom rail, the node info card,
-// and the SVG label primitive all three skies use. Variants differ in
-// geometry; everything a variant is NOT about lives here so a tweak lands
-// once. (Prototype round — user-facing strings extracted to i18n at
-// consolidation per /prototype Phase 5.)
+// Shared chrome for the topic graph: zoom rail, the node info card, and the
+// SVG label primitive. Everything the sky's geometry is NOT about lives here
+// so a tweak lands once.
 import { Minus, Plus, RotateCcw } from 'lucide-react';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useTranslation } from '@/i18n/useTranslation';
 import { areaTheme } from '../practiceAreaTheme';
 import type { ClusterNode } from './graphModel';
 import type { KnowledgeItemView } from '../libraryModel';
@@ -20,21 +19,23 @@ export function ZoomRail({
   zoomBy: (f: number) => void;
   reset: () => void;
 }) {
+  const { t } = useTranslation();
+  const w = t.plugins.dev_tools.workspaces;
   const btn =
     'flex items-center justify-center w-7 h-7 rounded-interactive border border-border/60 bg-secondary/80 text-foreground/80 hover:text-foreground hover:bg-secondary transition-colors';
   return (
     <div className="absolute bottom-3 right-3 z-10 flex flex-col items-center gap-1.5">
-      <button type="button" aria-label="Zoom in" className={btn} onClick={() => zoomBy(1.35)}>
+      <button type="button" aria-label={w.graph_zoom_in} className={btn} onClick={() => zoomBy(1.35)}>
         <Plus className="w-3.5 h-3.5" />
       </button>
       <span className="typo-caption text-foreground/50 tabular-nums select-none">
         {Math.round(k * 100)}%
       </span>
-      <button type="button" aria-label="Zoom out" className={btn} onClick={() => zoomBy(1 / 1.35)}>
+      <button type="button" aria-label={w.graph_zoom_out} className={btn} onClick={() => zoomBy(1 / 1.35)}>
         <Minus className="w-3.5 h-3.5" />
       </button>
-      <Tooltip content="Reset view">
-        <button type="button" aria-label="Reset view" className={btn} onClick={reset}>
+      <Tooltip content={w.graph_reset}>
+        <button type="button" aria-label={w.graph_reset} className={btn} onClick={reset}>
           <RotateCcw className="w-3.5 h-3.5" />
         </button>
       </Tooltip>
@@ -53,6 +54,8 @@ export function ClusterCard({
   onOpenItem?: (item: KnowledgeItemView) => void;
   onClose: () => void;
 }) {
+  const { t, tx } = useTranslation();
+  const w = t.plugins.dev_tools.workspaces;
   const theme = areaTheme(node.topic);
   return (
     <div className="absolute left-3 bottom-3 z-10 w-80 max-w-[calc(100%-6rem)] rounded-card border border-border/70 bg-background/95 backdrop-blur-sm shadow-elevation-3 p-3 animate-fade-in">
@@ -63,7 +66,7 @@ export function ClusterCard({
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close"
+          aria-label={t.common.close}
           className="typo-caption text-foreground/50 hover:text-foreground transition-colors"
         >
           ✕
@@ -71,12 +74,16 @@ export function ClusterCard({
       </div>
       <div className="mt-2 flex items-center gap-3 typo-caption text-foreground/70">
         <span className="text-foreground typo-data-md tabular-nums">{node.count}</span>
-        <span>practices</span>
+        <span>{w.graph_practices}</span>
         {node.pending > 0 && (
-          <span className="text-status-warning tabular-nums">{node.pending} pending</span>
+          <span className="text-status-warning tabular-nums">
+            {tx(w.graph_pending_count, { count: node.pending })}
+          </span>
         )}
         {node.adopted > 0 && (
-          <span className="text-status-success tabular-nums">{node.adopted} adopted</span>
+          <span className="text-status-success tabular-nums">
+            {tx(w.graph_adopted_count, { count: node.adopted })}
+          </span>
         )}
       </div>
       <ul className="mt-2 flex flex-col gap-1">
@@ -99,7 +106,9 @@ export function ClusterCard({
           </li>
         ))}
         {node.items.length > 4 && (
-          <li className="typo-caption text-foreground/45">+{node.items.length - 4} more</li>
+          <li className="typo-caption text-foreground/45">
+            {tx(w.graph_more, { count: node.items.length - 4 })}
+          </li>
         )}
       </ul>
     </div>
@@ -107,7 +116,12 @@ export function ClusterCard({
 }
 
 /** Counter-scaled SVG label: geometry zooms, type barely does. Anchor the
- *  parent `<g>` at the node position; this handles the rest. */
+ *  parent `<g>` at the node position; this handles the rest.
+ *
+ *  `pinned` (core + L1 titles) uses the Mastermind idiom — full 1/k
+ *  counter-scale, clamped — so those names hold a constant, readable screen
+ *  size at every zoom. Unpinned (cluster) labels keep the soft k^-0.62 curve
+ *  so detail type still recedes a little as you fly out. */
 export function NodeLabel({
   k,
   dy,
@@ -118,6 +132,7 @@ export function NodeLabel({
   size = 12,
   weight = 500,
   anchor = 'middle',
+  pinned = false,
 }: {
   k: number;
   dy: number;
@@ -128,9 +143,10 @@ export function NodeLabel({
   size?: number;
   weight?: number;
   anchor?: 'middle' | 'start';
+  pinned?: boolean;
 }) {
   if (opacity <= 0.02) return null;
-  const s = labelScale(k);
+  const s = pinned ? Math.min(2.6, Math.max(0.8, 1 / k)) : labelScale(k);
   return (
     <g transform={`scale(${s})`} opacity={opacity} pointerEvents="none">
       <text

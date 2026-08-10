@@ -26,6 +26,7 @@ import { PracticeRolloutModal } from './PracticeRolloutModal';
 import { ExtractionMenu } from './ExtractionMenu';
 import KnowledgeTree from './KnowledgeTree';
 import PatternGraphHost from './graph/PatternGraphHost';
+import { ProjectFilter } from './graph/ProjectFilter';
 import { nextQueueIndex, viewFromRow, type KnowledgeItemView } from './libraryModel';
 import { WorkspacePulse } from './WorkspacePulse';
 import type { Workspace } from '@/features/plugins/dev-tools/sub_workspaces/workspaceStore';
@@ -44,9 +45,10 @@ export default function KnowledgeLibrary({
   const { t, tx } = useTranslation();
   const w = t.plugins.dev_tools.workspaces;
 
-  // Library | Graph view. Prototype round: the graph tab hosts three
-  // directional variants; labels stay raw until consolidation (Phase 5 i18n).
+  // Library | Graph view — the graph (Nexus) is auditioning to replace the
+  // table and got its own project lens: null = whole workspace as-is.
   const [view, setView] = useState<'library' | 'graph'>('library');
+  const [graphProjectId, setGraphProjectId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [projecting, setProjecting] = useState(false);
   const [rollout, setRollout] = useState<WorkspaceKnowledge | null>(null);
@@ -156,8 +158,8 @@ export default function KnowledgeLibrary({
           <div className="flex items-center rounded-interactive border border-border/60 bg-secondary/50 p-0.5">
             {(
               [
-                { id: 'library', icon: TableProperties, label: 'Library' },
-                { id: 'graph', icon: Network, label: 'Graph' },
+                { id: 'library', icon: TableProperties, label: w.graph_view_library },
+                { id: 'graph', icon: Network, label: w.graph_view_graph },
               ] as const
             ).map(({ id, icon: ViewIcon, label }) => (
               <button
@@ -178,6 +180,13 @@ export default function KnowledgeLibrary({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {view === 'graph' && (
+            <ProjectFilter
+              projects={memberProjects}
+              selectedId={graphProjectId}
+              onSelect={setGraphProjectId}
+            />
+          )}
           <ExtractionMenu
             workspace={workspace}
             memberProjects={memberProjects}
@@ -220,6 +229,8 @@ export default function KnowledgeLibrary({
           <PatternGraphHost
             items={items}
             workspaceName={workspace.name}
+            adoptions={adoptions}
+            selectedProjectId={graphProjectId}
             // A graph node's item is a single jump, not a review pass.
             onOpenItem={(item) => openDetail(item, [item])}
           />

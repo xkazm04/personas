@@ -25,10 +25,16 @@ export interface GraphVariantProps {
   hoverArea: string | null;
   focusArea: string | null;
   selectedTopic: string | null;
+  /** Project lens: topics with an ADOPTED cell for the selected project keep
+   *  their colour; everything else goes grey. `null` = whole workspace. */
+  appliedTopics: ReadonlySet<string> | null;
   onHoverArea: (area: string | null) => void;
   onFocusArea: (area: string, target: FlyTarget) => void;
-  onSelectCluster: (node: ClusterNode) => void;
+  onSelectCluster: (node: ClusterNode, target: FlyTarget) => void;
 }
+
+/** Theme-aware grey for the project lens's "not applied here" state. */
+const LENS_GREY = 'var(--muted-foreground)';
 
 const AREA_R = 330;
 const CLUSTER_R1 = 96;
@@ -41,6 +47,7 @@ export default function PatternGraphNexus({
   hoverArea,
   focusArea,
   selectedTopic,
+  appliedTopics,
   onHoverArea,
   onFocusArea,
   onSelectCluster,
@@ -64,6 +71,13 @@ export default function PatternGraphNexus({
         const vis = focused ? 1 : focusArea ? 0 : zoomVis;
         const aR = nodeRadius(area.count, 20, 2.2, 40);
         const Icon = theme.icon;
+        // Project lens: an area keeps its colour if ANY of its clusters is
+        // adopted by the selected project.
+        const lensOn = appliedTopics !== null;
+        const areaApplied = !lensOn || area.clusters.some((c) => appliedTopics.has(c.topic));
+        const areaHex = areaApplied ? theme.hex : LENS_GREY;
+        const areaDeep = areaApplied ? theme.deep : LENS_GREY;
+        const areaMute = areaApplied ? 1 : 0.45;
 
         return (
           <g key={area.area} opacity={dim ? 0.22 : 1} className="transition-opacity duration-300">
@@ -73,8 +87,8 @@ export default function PatternGraphNexus({
               y1={Math.sin(angle) * 56}
               x2={ax - Math.cos(angle) * aR}
               y2={ay - Math.sin(angle) * aR}
-              stroke={theme.hex}
-              strokeOpacity={empty ? 0.12 : 0.3}
+              stroke={areaHex}
+              strokeOpacity={(empty ? 0.12 : 0.3) * areaMute}
               strokeWidth={empty ? 1 : 1.5 + Math.min(area.count / 18, 2.5)}
             />
 
@@ -95,17 +109,21 @@ export default function PatternGraphNexus({
                 const cy = ay + Math.sin(ca) * shell;
                 const cR = nodeRadius(cl.count, 7, 2.6, 22);
                 const isSel = selectedTopic === cl.topic;
+                const clApplied = !lensOn || appliedTopics.has(cl.topic);
+                const clHex = clApplied ? theme.hex : LENS_GREY;
+                const clDeep = clApplied ? theme.deep : LENS_GREY;
+                const clMute = clApplied ? 1 : 0.45;
                 return (
                   <Fragment key={cl.topic}>
                     <g
                       style={{
-                        opacity: vis,
+                        opacity: vis * clMute,
                         transition: 'opacity 240ms ease',
                         transitionDelay: focused ? `${Math.min(j * 22, 330)}ms` : '0ms',
                         pointerEvents: vis < 0.4 ? 'none' : 'auto',
                       }}
                     >
-                      <line x1={ax} y1={ay} x2={cx} y2={cy} stroke={theme.hex} strokeOpacity={0.22} strokeWidth={1} />
+                      <line x1={ax} y1={ay} x2={cx} y2={cy} stroke={clHex} strokeOpacity={0.22} strokeWidth={1} />
                       <g
                         transform={`translate(${cx},${cy})`}
                         className="cursor-pointer"
@@ -113,22 +131,26 @@ export default function PatternGraphNexus({
                         onPointerLeave={() => onHoverArea(null)}
                         onClick={(e) => {
                           e.stopPropagation();
-                          onSelectCluster(cl);
+                          // Centre the clicked node and land at count-detail
+                          // zoom — the level where the next tier of information
+                          // (per-node counts, and later the pattern nodes) is
+                          // readable.
+                          onSelectCluster(cl, { x: cx, y: cy, k: 1.9 });
                         }}
                       >
                         {isSel && (
-                          <circle r={cR + 5} fill="none" stroke={theme.hex} strokeWidth={1.5} strokeOpacity={0.9} />
+                          <circle r={cR + 5} fill="none" stroke={clHex} strokeWidth={1.5} strokeOpacity={0.9} />
                         )}
                         {cl.pending > 0 && (
-                          <circle r={cR + 2.5} fill="none" stroke={theme.hex} strokeOpacity={0.4} strokeWidth={1} strokeDasharray="3 3" />
+                          <circle r={cR + 2.5} fill="none" stroke={clHex} strokeOpacity={0.4} strokeWidth={1} strokeDasharray="3 3" />
                         )}
-                        <circle r={cR} fill={theme.deep} fillOpacity={0.28} stroke={theme.hex} strokeWidth={1.25} />
+                        <circle r={cR} fill={clDeep} fillOpacity={0.28} stroke={clHex} strokeWidth={1.25} />
                         <NodeLabel
                           k={k}
                           dy={cR + 14}
                           text={cl.cluster}
                           sub={countLod > 0.02 ? `${cl.count}` : undefined}
-                          fill={theme.hex}
+                          fill={clHex}
                           size={11}
                         />
                       </g>
@@ -145,22 +167,19 @@ export default function PatternGraphNexus({
               onPointerLeave={() => onHoverArea(null)}
               onClick={(e) => {
                 e.stopPropagation();
-                // Land between keystone and the outer shell so the whole fan
-                // fits; the host toggles back out if already focused.
-                onFocusArea(area.area, {
-                  x: ax + Math.cos(angle) * 70,
-                  y: ay + Math.sin(angle) * 70,
-                  k: 1.5,
-                });
+                // Centre the clicked keystone; k=1.5 is where the cluster fan
+                // (next level) is fully readable. Host toggles back out if
+                // already focused.
+                onFocusArea(area.area, { x: ax, y: ay, k: 1.5 });
               }}
             >
-              <circle r={aR + 6} fill={theme.deep} fillOpacity={empty ? 0.03 : 0.08} />
+              <circle r={aR + 6} fill={areaDeep} fillOpacity={(empty ? 0.03 : 0.08) * areaMute} />
               <circle
                 r={aR}
-                fill={theme.deep}
-                fillOpacity={empty ? 0.06 : focused ? 0.32 : 0.2}
-                stroke={theme.hex}
-                strokeOpacity={empty ? 0.3 : 0.9}
+                fill={areaDeep}
+                fillOpacity={(empty ? 0.06 : focused ? 0.32 : 0.2) * areaMute}
+                stroke={areaHex}
+                strokeOpacity={(empty ? 0.3 : 0.9) * areaMute}
                 strokeWidth={focused ? 2.5 : 1.75}
               />
               <Icon
@@ -168,8 +187,8 @@ export default function PatternGraphNexus({
                 y={-9}
                 width={18}
                 height={18}
-                color={theme.hex}
-                opacity={empty ? 0.4 : 0.95}
+                color={areaHex}
+                opacity={(empty ? 0.4 : 0.95) * areaMute}
                 pointerEvents="none"
               />
               <NodeLabel
@@ -177,26 +196,31 @@ export default function PatternGraphNexus({
                 dy={aR + 18}
                 text={area.area}
                 sub={empty ? undefined : `${area.count}${area.pending > 0 ? ` · ${area.pending} pending` : ''}`}
-                fill={theme.hex}
-                opacity={empty ? 0.45 : 1}
+                fill={areaHex}
+                opacity={(empty ? 0.45 : 1) * areaMute}
                 size={13}
                 weight={600}
+                pinned
               />
             </g>
           </g>
         );
       })}
 
-      {/* Central crest. */}
+      {/* Central crest. The title rides the same pinned counter-scale as the
+          keystone labels (Mastermind idiom) so it reads at every zoom; the
+          rings stay geometric. */}
       <g pointerEvents="none">
         <circle r={52} fill="var(--secondary)" fillOpacity={0.75} stroke="var(--border)" strokeWidth={1.5} />
         <circle r={44} fill="none" stroke="var(--primary)" strokeOpacity={0.35} strokeWidth={1} />
-        <text textAnchor="middle" y={-2} fill="var(--foreground)" fontSize={13} fontWeight={600} className="select-none">
-          {workspaceName.length > 14 ? `${workspaceName.slice(0, 13)}…` : workspaceName}
-        </text>
-        <text textAnchor="middle" y={16} fill="var(--foreground)" opacity={0.55} fontSize={11} className="select-none tabular-nums">
-          {graph.total}
-        </text>
+        <g transform={`scale(${Math.min(2.6, Math.max(0.8, 1 / k))})`}>
+          <text textAnchor="middle" y={-2} fill="var(--foreground)" fontSize={13} fontWeight={600} className="select-none">
+            {workspaceName.length > 14 ? `${workspaceName.slice(0, 13)}…` : workspaceName}
+          </text>
+          <text textAnchor="middle" y={16} fill="var(--foreground)" opacity={0.55} fontSize={11} className="select-none tabular-nums">
+            {graph.total}
+          </text>
+        </g>
       </g>
     </g>
   );

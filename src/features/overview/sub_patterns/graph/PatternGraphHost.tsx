@@ -1,45 +1,62 @@
-// Topic-graph host — owns the camera, the DRILL-DOWN focus (Google-Maps /
-// Mastermind-canvas navigation: overview = crest + areas; click a keystone to
-// fly into that dimension; breadcrumb / Esc / double-click flies home), the
-// selection, and the PROTOTYPE-ONLY variant switcher (two finalists; Nebula
-// was descoped in round 2). Variants are pure geometry: same props in,
-// different sky out — including where the camera should land per area.
+// Topic-graph host — Nexus won the /prototype rounds (hub-and-spoke reads
+// best and scales to nested levels); the variant switcher and the losing
+// skies are gone. Owns the camera, the drill-down focus (overview = crest +
+// areas; click flies INTO the clicked node, Google-Maps style; breadcrumb /
+// Esc / double-click fly home), the selection, and the project lens (adopted
+// topics keep colour, everything else greys out).
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronRight, X } from 'lucide-react';
 
-import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { useTranslation } from '@/i18n/useTranslation';
+import type { WorkspacePracticeAdoption } from '@/lib/bindings/WorkspacePracticeAdoption';
 import { areaTheme } from '../practiceAreaTheme';
 import type { KnowledgeItemView } from '../libraryModel';
 import { buildTopicGraph, type ClusterNode } from './graphModel';
 import { ClusterCard, ZoomRail } from './GraphChrome';
 import PatternGraphNexus, { type FlyTarget } from './PatternGraphNexus';
-import PatternGraphSectors from './PatternGraphSectors';
 import { useGraphCanvas } from './useGraphCanvas';
-
-type GraphVariant = 'nexus' | 'sectors';
-
-// Throwaway labels — prototype chrome, never ships.
-const VARIANTS: { id: GraphVariant; label: string }[] = [
-  { id: 'nexus', label: 'Nexus' },
-  { id: 'sectors', label: 'Sectors' },
-];
 
 export default function PatternGraphHost({
   items,
   workspaceName,
+  adoptions,
+  selectedProjectId,
   onOpenItem,
 }: {
   items: readonly KnowledgeItemView[];
   workspaceName: string;
+  adoptions: readonly WorkspacePracticeAdoption[];
+  /** Project lens; `null` = whole workspace, rendered as-is. */
+  selectedProjectId: string | null;
   onOpenItem?: (item: KnowledgeItemView) => void;
 }) {
-  const [variant, setVariant] = useState<GraphVariant>('nexus');
+  const { t, tx } = useTranslation();
+  const w = t.plugins.dev_tools.workspaces;
   const [hoverArea, setHoverArea] = useState<string | null>(null);
   const [focusArea, setFocusArea] = useState<string | null>(null);
   const [selected, setSelected] = useState<ClusterNode | null>(null);
   const canvas = useGraphCanvas({ initialK: 0.8 });
 
   const graph = useMemo(() => buildTopicGraph(items), [items]);
+
+  // Project lens: the set of topics with at least one practice ADOPTED (in
+  // any capacity the matrix records as landed) by the selected project.
+  const appliedTopics = useMemo(() => {
+    if (!selectedProjectId) return null;
+    const adoptedPractices = new Set(
+      adoptions
+        .filter((a) => a.project_id === selectedProjectId && a.state === 'adopted')
+        .map((a) => a.practice_id),
+    );
+    const topics = new Set<string>();
+    for (const item of items) {
+      if (adoptedPractices.has(item.id)) {
+        const [area = '', cluster = ''] = item.topic.split('/');
+        if (area) topics.add(`${area}/${cluster || 'general'}`);
+      }
+    }
+    return topics as ReadonlySet<string>;
+  }, [selectedProjectId, adoptions, items]);
 
   const flyHome = () => {
     setFocusArea(null);
@@ -57,6 +74,18 @@ export default function PatternGraphHost({
     canvas.flyTo(target.x, target.y, target.k);
   };
 
+  // Cluster click: centre the node, fly to detail zoom, and keep its area
+  // focused so other branches' lower levels stay hidden.
+  const selectCluster = (node: ClusterNode, target: FlyTarget) => {
+    if (selected?.topic === node.topic) {
+      setSelected(null);
+      return;
+    }
+    setSelected(node);
+    setFocusArea(node.area);
+    canvas.flyTo(target.x, target.y, target.k);
+  };
+
   // Esc walks back out — selection first, then the focused dimension.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -69,28 +98,14 @@ export default function PatternGraphHost({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, focusArea]);
 
-  const Variant = variant === 'nexus' ? PatternGraphNexus : PatternGraphSectors;
   const { width, height } = canvas.size;
   const { x, y, k } = canvas.camera;
 
   return (
     <div className="flex flex-col min-h-0 h-full gap-2">
-      <div className="flex items-center justify-between gap-3 flex-shrink-0">
-        <SegmentedTabs<GraphVariant>
-          tabs={VARIANTS.map((v) => ({ id: v.id, label: v.label }))}
-          activeTab={variant}
-          onTabChange={(v) => {
-            setVariant(v);
-            setFocusArea(null);
-            setSelected(null);
-            canvas.reset();
-          }}
-          ariaLabel="Graph variant (prototype)"
-          fullWidth={false}
-          size="sm"
-        />
+      <div className="flex items-center justify-end gap-3 flex-shrink-0">
         <span className="typo-caption text-foreground/50 tabular-nums">
-          {graph.total} practices · {graph.pending} pending
+          {tx(w.graph_stats, { total: graph.total, pending: graph.pending })}
         </span>
       </div>
 
@@ -107,19 +122,20 @@ export default function PatternGraphHost({
             onClick={() => setSelected(null)}
             onDoubleClick={flyHome}
             role="img"
-            aria-label="Topic graph"
+            aria-label={w.graph_aria}
           >
             <g transform={`translate(${width / 2 + x},${height / 2 + y}) scale(${k})`}>
-              <Variant
+              <PatternGraphNexus
                 graph={graph}
                 k={k}
                 workspaceName={workspaceName}
                 hoverArea={hoverArea}
                 focusArea={focusArea}
                 selectedTopic={selected?.topic ?? null}
+                appliedTopics={appliedTopics}
                 onHoverArea={setHoverArea}
                 onFocusArea={focusOn}
-                onSelectCluster={(node) => setSelected((cur) => (cur?.topic === node.topic ? null : node))}
+                onSelectCluster={selectCluster}
               />
             </g>
           </svg>
@@ -142,7 +158,7 @@ export default function PatternGraphHost({
             <button
               type="button"
               onClick={flyHome}
-              aria-label="Back to overview"
+              aria-label={w.graph_back}
               className="ml-0.5 text-foreground/50 hover:text-foreground transition-colors"
             >
               <X className="w-3 h-3" />
@@ -159,7 +175,7 @@ export default function PatternGraphHost({
         {graph.total === 0 && (
           <div className="absolute inset-x-0 top-4 flex justify-center pointer-events-none">
             <span className="typo-caption text-foreground/50 bg-background/80 rounded-interactive px-2.5 py-1">
-              No practices yet — areas light up as the library grows.
+              {w.graph_empty}
             </span>
           </div>
         )}
