@@ -7814,6 +7814,31 @@ fn research_lab_align_columns(conn: &Connection) {
         "CREATE INDEX IF NOT EXISTS idx_wpp_practice
             ON workspace_playbook_patterns(practice_id);",
     );
+
+    // -- Pattern fabric: consult telemetry -----------------------------------
+    // Every `/patterns/consult` call from a CLI session, with what it matched.
+    // The library's blind spot is not which playbooks exist — it is which
+    // SITUATIONS sessions actually arrive with and find nothing for. An empty
+    // `matched_slugs` array is the whole point of the table: it is the curation
+    // backlog, written by real usage instead of guessed at in the rail. Kept as
+    // an append-only log rather than a counter so an unmatched intent survives
+    // verbatim; aggregation happens at read time.
+    let _ = ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS workspace_consult_log (
+            id            TEXT PRIMARY KEY,
+            workspace_id  TEXT NOT NULL REFERENCES dev_workspaces(id) ON DELETE CASCADE,
+            project_id    TEXT,
+            intent        TEXT NOT NULL,
+            matched_slugs TEXT NOT NULL,
+            created_at    TEXT NOT NULL
+        );",
+    );
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_workspace_consult_log_ws
+            ON workspace_consult_log(workspace_id, created_at);",
+    );
 }
 
 #[cfg(test)]

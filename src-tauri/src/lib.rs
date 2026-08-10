@@ -3182,6 +3182,7 @@ pub fn run() {
             commands::infrastructure::dev_workspaces::dev_tools_playbook_set_status,
             commands::infrastructure::dev_workspaces::dev_tools_playbook_delete,
             commands::infrastructure::dev_workspaces::dev_tools_playbook_set_patterns,
+            commands::infrastructure::dev_workspaces::dev_tools_consult_stats,
             commands::infrastructure::dev_workspaces::dev_tools_workspace_adoption_set,
             commands::infrastructure::dev_workspaces::dev_tools_workspace_run_miners,
             commands::infrastructure::dev_workspaces::dev_tools_workspace_backfill_practice_ideas,

@@ -14004,7 +14004,15 @@
         "graph_sort_newest": "Mới nhất",
         "graph_sort_evidence": "Bằng chứng",
         "graph_sort_title": "Tiêu đề",
-        "graph_page_of": "{page} / {pages}"
+        "graph_page_of": "{page} / {pages}",
+        "graph_search_placeholder": "Tìm lĩnh vực, chủ đề, mẫu…",
+        "graph_search_aria": "Tìm trong tấm dệt mẫu",
+        "playbook_stale_count": "{count} lỗi thời",
+        "playbook_prune": "Dọn {count} lỗi thời",
+        "playbook_replacement_hint": "→ {title}",
+        "playbook_consults": "{count} lần",
+        "playbook_consults_label": "Lượt khớp tư vấn",
+        "playbook_unmatched_title": "Ý định chưa khớp"
       },
       "skills_adopt": "Áp dụng",
       "skills_adopt_hint": "Áp dụng vào {name} — Claude tùy chỉnh cho kho mã",

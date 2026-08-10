@@ -9,11 +9,14 @@ import { BookOpen, ChevronRight, X } from 'lucide-react';
 
 import {
   deletePlaybook,
+  getConsultStats,
   listPatternEdges,
   listPlaybookPatterns,
   listPlaybooks,
   listPracticeContextRollup,
+  setPlaybookPatterns,
   setPlaybookStatus,
+  type ConsultStats,
 } from '@/api/devTools/workspaces';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { PracticeContextRollup } from '@/lib/bindings/PracticeContextRollup';
@@ -24,12 +27,22 @@ import type { WorkspacePracticeAdoption } from '@/lib/bindings/WorkspacePractice
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { areaTheme } from '../practiceAreaTheme';
 import type { KnowledgeItemView } from '../libraryModel';
-import { buildEdgeViews, buildTopicGraph, type ClusterNode, type FacetNode } from './graphModel';
+import {
+  buildEdgeViews,
+  buildFabricIndex,
+  buildTopicGraph,
+  foldTopicCoverage,
+  topicCoverageKeys,
+  type ClusterNode,
+  type FabricMatch,
+  type FacetNode,
+} from './graphModel';
 import { ClusterPatternsModal } from './ClusterPatternsModal';
 import { CreatePlaybookModal } from './CreatePlaybookModal';
+import { FabricSearch } from './FabricSearch';
 import { PlaybooksPanel } from './PlaybooksPanel';
 import { ZoomRail } from './GraphChrome';
-import PatternGraphNexus, { type FlyTarget } from './PatternGraphNexus';
+import PatternGraphNexus, { computeNexusLayout, type FlyTarget } from './PatternGraphNexus';
 import { useGraphCanvas } from './useGraphCanvas';
 
 export default function PatternGraphHost({
@@ -72,10 +85,13 @@ export default function PatternGraphHost({
     );
     const topics = new Set<string>();
     for (const item of items) {
-      if (adoptedPractices.has(item.id)) {
-        const [area = '', cluster = ''] = item.topic.split('/');
-        if (area) topics.add(`${area}/${cluster || 'general'}`);
-      }
+      if (!adoptedPractices.has(item.id)) continue;
+      // Both grains: the facet node greys/keeps colour on its own key, the
+      // cluster keeps colour when ANY facet under it is applied.
+      const keys = topicCoverageKeys(item.topic);
+      if (!keys) continue;
+      topics.add(keys.cluster);
+      topics.add(keys.full);
     }
     return topics as ReadonlySet<string>;
   }, [selectedProjectId, adoptions, items]);
@@ -115,10 +131,11 @@ export default function PatternGraphHost({
     return () => { live = false; };
   }, [workspaceId, items]);
 
-  const edgeViews = useMemo(
-    () => buildEdgeViews(edges.map((e) => ({ fromId: e.fromId, toId: e.toId, rel: e.rel, note: e.note })), items),
-    [edges, items],
+  const edgeLikes = useMemo(
+    () => edges.map((e) => ({ fromId: e.fromId, toId: e.toId, rel: e.rel, note: e.note })),
+    [edges],
   );
+  const edgeViews = useMemo(() => buildEdgeViews(edgeLikes, items), [edgeLikes, items]);
 
   // Playbooks (fabric S3) + the cross-modal selection basket the curator UI
   // builds them from. Missing commands degrade to an empty rail.
@@ -148,6 +165,20 @@ export default function PatternGraphHost({
     return () => { live = false; };
   }, [workspaceId, playbooksGen]);
 
+  // Consult telemetry (how often the CLI reached each playbook, and what it
+  // could not match). A binary without the command degrades to no counts.
+  const [consultStats, setConsultStats] = useState<ConsultStats | null>(null);
+  useEffect(() => {
+    let live = true;
+    getConsultStats(workspaceId)
+      .then((s) => { if (live) setConsultStats(s); })
+      .catch((err) => {
+        silentCatch('patterns:consultStats')(err);
+        if (live) setConsultStats(null);
+      });
+    return () => { live = false; };
+  }, [workspaceId, playbooksGen]);
+
   const itemById = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
 
   const toggleBasket = (item: KnowledgeItemView) => {
@@ -162,26 +193,14 @@ export default function PatternGraphHost({
   const contextCoverage = useMemo(() => {
     if (!rollup || rollup.length === 0) return null;
     const byPractice = new Map(rollup.map((r) => [r.practiceId, r]));
-    const topic = new Map<string, { adopted: number; applicable: number }>();
-    const area = new Map<string, { adopted: number; applicable: number }>();
-    for (const item of items) {
+    // Keyed at FULL topic depth (facet nodes carry their own ring); the fold
+    // also credits each practice to its cluster and area, so a cluster ring is
+    // the aggregate over its facets plus any items directly under it.
+    const { topic, area } = foldTopicCoverage(items, (item) => {
       const r = byPractice.get(item.id);
-      if (!r || r.applicable === 0) continue;
-      const [a = '', c = ''] = item.topic.split('/');
-      if (!a) continue;
-      const key = `${a}/${c || 'general'}`;
-      const t0 = topic.get(key) ?? { adopted: 0, applicable: 0 };
-      t0.adopted += r.adopted;
-      t0.applicable += r.applicable;
-      topic.set(key, t0);
-      const a0 = area.get(a) ?? { adopted: 0, applicable: 0 };
-      a0.adopted += r.adopted;
-      a0.applicable += r.applicable;
-      area.set(a, a0);
-    }
-    const ratio = (m: Map<string, { adopted: number; applicable: number }>) =>
-      new Map([...m.entries()].map(([k, v]) => [k, v.adopted / v.applicable]));
-    return { topic: ratio(topic), area: ratio(area), byPractice };
+      return r && r.applicable > 0 ? { num: r.adopted, den: r.applicable } : null;
+    });
+    return { topic, area, byPractice };
   }, [rollup, items]);
 
   // Fallback: resolved share of the pattern×project adoption matrix. A cell
@@ -198,28 +217,13 @@ export default function PatternGraphHost({
       resolvedByPractice.set(a.practice_id, (resolvedByPractice.get(a.practice_id) ?? 0) + 1);
     }
     const denomPer = selectedProjectId ? 1 : projectCount;
-    const topic = new Map<string, number>();
-    const area = new Map<string, number>();
-    if (denomPer > 0) {
-      const acc = new Map<string, { res: number; tot: number }>();
-      const accArea = new Map<string, { res: number; tot: number }>();
-      for (const item of items) {
-        const [a = '', c = ''] = item.topic.split('/');
-        if (!a) continue;
-        const key = `${a}/${c || 'general'}`;
-        const res = Math.min(resolvedByPractice.get(item.id) ?? 0, denomPer);
-        const t0 = acc.get(key) ?? { res: 0, tot: 0 };
-        t0.res += res;
-        t0.tot += denomPer;
-        acc.set(key, t0);
-        const a0 = accArea.get(a) ?? { res: 0, tot: 0 };
-        a0.res += res;
-        a0.tot += denomPer;
-        accArea.set(a, a0);
-      }
-      for (const [k, v] of acc) topic.set(k, v.tot > 0 ? v.res / v.tot : 0);
-      for (const [k, v] of accArea) area.set(k, v.tot > 0 ? v.res / v.tot : 0);
-    }
+    const { topic, area } =
+      denomPer > 0
+        ? foldTopicCoverage(items, (item) => ({
+            num: Math.min(resolvedByPractice.get(item.id) ?? 0, denomPer),
+            den: denomPer,
+          }))
+        : { topic: new Map<string, number>(), area: new Map<string, number>() };
     const perPattern = (item: KnowledgeItemView): number | null =>
       denomPer > 0 ? Math.min(resolvedByPractice.get(item.id) ?? 0, denomPer) / denomPer : null;
     return { topic, area, perPattern, enabled: denomPer > 0 };
@@ -313,6 +317,56 @@ export default function PatternGraphHost({
     setFocusArea(node.area);
   };
 
+  // -- omnibox ---------------------------------------------------------------
+  // Search navigates DIRECTLY: the click handlers above are toggles (clicking
+  // the focused area flies home), which is right for the canvas and wrong for
+  // a chosen search result — picking "ui" must always land on ui.
+  const fabricIndex = useMemo(() => buildFabricIndex(graph), [graph]);
+  const layout = useMemo(() => computeNexusLayout(graph), [graph]);
+
+  const goArea = (area: string) => {
+    setFocusArea(area);
+    setFocusCluster(null);
+    setSelected(null);
+    const p = layout.areaPos.get(area);
+    if (p) canvas.flyTo(p.x, p.y, 1.5);
+  };
+
+  const goCluster = (node: ClusterNode, drill: boolean) => {
+    setFocusArea(node.area);
+    setFocusCluster(drill ? node.topic : null);
+    setSelected(null);
+    const p = layout.clusterPos.get(node.topic);
+    if (p) canvas.flyTo(p.x, p.y, drill ? 2.3 : 1.9);
+  };
+
+  const onSearchSelect = (m: FabricMatch) => {
+    if (m.kind === 'area') {
+      goArea(m.node.area);
+      return;
+    }
+    if (m.kind === 'cluster') {
+      // A cluster with facets drills open; a true leaf opens its stack.
+      goCluster(m.cluster, m.cluster.facets.length > 0);
+      if (m.cluster.facets.length === 0) selectCluster(m.cluster);
+      return;
+    }
+    if (m.kind === 'facet') {
+      goCluster(m.cluster, true);
+      selectFacet(m.facet);
+      return;
+    }
+    // A pattern opens the stack that actually contains it — its facet when it
+    // has a third-level topic, its cluster otherwise.
+    if (m.facet) {
+      goCluster(m.cluster, true);
+      selectFacet(m.facet);
+    } else {
+      goCluster(m.cluster, false);
+      selectCluster(m.cluster);
+    }
+  };
+
   // Esc walks back out — selection first, then the focused dimension.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -332,6 +386,8 @@ export default function PatternGraphHost({
   return (
     <div className="flex flex-col min-h-0 h-full gap-2">
       <div className="flex items-center justify-between gap-3 flex-shrink-0">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+        <FabricSearch index={fabricIndex} onSelect={onSearchSelect} />
         <button
           type="button"
           onClick={() => setShowPlaybooks((v) => !v)}
@@ -351,7 +407,8 @@ export default function PatternGraphHost({
             </span>
           )}
         </button>
-        <span className="typo-caption text-foreground/50 tabular-nums">
+        </div>
+        <span className="typo-caption text-foreground/50 tabular-nums flex-shrink-0">
           {tx(w.graph_stats, { total: graph.total, pending: graph.pending })}
         </span>
       </div>
@@ -439,6 +496,8 @@ export default function PatternGraphHost({
             playbooks={playbooks}
             members={playbookMembers}
             itemById={itemById}
+            edges={edgeLikes}
+            consultStats={consultStats}
             basketCount={basket.size}
             onCreateFromBasket={() => setCreatingPlaybook(true)}
             onSetStatus={(id, status) => {
@@ -450,6 +509,11 @@ export default function PatternGraphHost({
               deletePlaybook(id)
                 .then(() => setPlaybooksGen((g) => g + 1))
                 .catch(toastCatch('workspaces:playbookDelete'));
+            }}
+            onPrune={(id, survivors) => {
+              setPlaybookPatterns(id, survivors)
+                .then(() => setPlaybooksGen((g) => g + 1))
+                .catch(toastCatch('workspaces:playbookPrune'));
             }}
             onOpenItem={onOpenItem}
             onClose={() => setShowPlaybooks(false)}

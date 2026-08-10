@@ -317,16 +317,24 @@ export default function PatternGraphNexus({
                               const fx = p.x;
                               const fy = p.y;
                               const fR = nodeRadius(f.count, 5, 2.2, 13);
+                              // Facets are measured at their OWN depth (the
+                              // coverage maps are keyed by full topic path), so
+                              // the level a curator drills to finally carries a
+                              // readout instead of a bare circle.
+                              const fApplied = !lensOn || appliedTopics.has(f.topic);
+                              const fHex = fApplied ? theme.hex : LENS_GREY;
+                              const fDeep = fApplied ? theme.deep : LENS_GREY;
+                              const fMute = fApplied ? 1 : 0.45;
                             return (
                               <g
                                 key={f.topic}
                                 style={{
-                                  opacity: 1,
+                                  opacity: fMute,
                                   transition: 'opacity 200ms ease',
                                   transitionDelay: `${Math.min(fi * 24, 260)}ms`,
                                 }}
                               >
-                                <line x1={0} y1={0} x2={fx} y2={fy} stroke={clHex} strokeOpacity={0.3} strokeWidth={0.8} />
+                                <line x1={0} y1={0} x2={fx} y2={fy} stroke={fHex} strokeOpacity={0.3} strokeWidth={0.8} />
                                 <g
                                   transform={`translate(${fx},${fy})`}
                                   className="cursor-pointer"
@@ -336,10 +344,13 @@ export default function PatternGraphNexus({
                                   }}
                                 >
                                   {f.pending > 0 && (
-                                    <circle r={fR + 2} fill="none" stroke={clHex} strokeOpacity={0.4} strokeWidth={0.8} strokeDasharray="2 2" />
+                                    <circle r={fR + 6} fill="none" stroke={fHex} strokeOpacity={0.4} strokeWidth={0.8} strokeDasharray="2 2" />
                                   )}
-                                  <circle r={fR} fill={clDeep} fillOpacity={0.35} stroke={clHex} strokeWidth={1} />
-                                  <NodeLabel k={k} dy={fR + 11} text={f.facet} sub={`${f.count}`} fill={clHex} size={9} />
+                                  <circle r={fR} fill={fDeep} fillOpacity={0.35} stroke={fHex} strokeWidth={1} />
+                                  {topicCoverage && (
+                                    <CoverageRing r={fR + 3.5} pct={topicCoverage.get(f.topic) ?? 0} hex={fHex} width={1.5} />
+                                  )}
+                                  <NodeLabel k={k} dy={fR + 13} text={f.facet} sub={`${f.count}`} fill={fHex} size={9} />
                                 </g>
                               </g>
                             );
@@ -432,18 +443,29 @@ export default function PatternGraphNexus({
 /** Progress ring on a node's border — the completion-traceability readout.
  *  A faint full track plus an arc from 12 o'clock, sized just outside the
  *  node body. */
-function CoverageRing({ r, pct, hex }: { r: number; pct: number; hex: string }) {
+function CoverageRing({
+  r,
+  pct,
+  hex,
+  width = 2,
+}: {
+  r: number;
+  pct: number;
+  hex: string;
+  /** Thinner on facet nodes, which are half a cluster's radius. */
+  width?: number;
+}) {
   const C = 2 * Math.PI * r;
   return (
     <g transform="rotate(-90)" pointerEvents="none">
-      <circle r={r} fill="none" stroke={hex} strokeOpacity={0.15} strokeWidth={2} />
+      <circle r={r} fill="none" stroke={hex} strokeOpacity={0.15} strokeWidth={width} />
       {pct > 0 && (
         <circle
           r={r}
           fill="none"
           stroke={hex}
           strokeOpacity={0.9}
-          strokeWidth={2}
+          strokeWidth={width}
           strokeLinecap="round"
           strokeDasharray={`${Math.max(pct, 0.02) * C} ${C}`}
         />

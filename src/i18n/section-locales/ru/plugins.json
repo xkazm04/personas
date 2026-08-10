@@ -1384,7 +1384,15 @@
       "graph_sort_newest": "Новые",
       "graph_sort_evidence": "Доказательства",
       "graph_sort_title": "Название",
-      "graph_page_of": "{page} / {pages}"
+      "graph_page_of": "{page} / {pages}",
+      "graph_search_placeholder": "Поиск областей, тем, паттернов…",
+      "graph_search_aria": "Поиск по ткани паттернов",
+      "playbook_stale_count": "{count} устаревших",
+      "playbook_prune": "Убрать {count} устаревших",
+      "playbook_replacement_hint": "→ {title}",
+      "playbook_consults": "{count}×",
+      "playbook_consults_label": "Совпадения консультаций",
+      "playbook_unmatched_title": "Запросы без совпадений"
     },
     "skills_adopt": "Внедрить",
     "skills_adopt_hint": "Внедрить в {name} — Claude адаптирует под репозиторий",

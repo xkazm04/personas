@@ -21,6 +21,16 @@
 //! full dedup gating. Brainiac's project-axis lesson is honored in the prompt:
 //! the bar is deliberately conservative because applications legitimately
 //! differ — a divergence is only real when the *problem* is shared.
+//!
+//! ## Why the pattern×context verify ingest is NOT here
+//!
+//! W2 of `docs/concepts/pattern-context-trace.md` turns file citations into
+//! per-context `adopted`/`violating` cells. A `DIVERGENCE` proposal cannot feed
+//! it: it carries no file references at all, it is cross-project by
+//! construction (`origin_project_id: None`, so there is no single context map
+//! to resolve against), and it PROPOSES a new practice rather than ruling on an
+//! existing one. W2 therefore lives in `workspace_verify.rs` — the lane that
+//! stands inside one member repo and is already contracted to cite `file:line`.
 
 use std::panic::AssertUnwindSafe;
 use std::sync::{Arc, Mutex};

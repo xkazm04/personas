@@ -14004,7 +14004,15 @@
         "graph_sort_newest": "最新",
         "graph_sort_evidence": "证据",
         "graph_sort_title": "标题",
-        "graph_page_of": "{page} / {pages}"
+        "graph_page_of": "{page} / {pages}",
+        "graph_search_placeholder": "搜索领域、主题、模式…",
+        "graph_search_aria": "搜索模式网络",
+        "playbook_stale_count": "{count} 条失效",
+        "playbook_prune": "清理 {count} 条失效",
+        "playbook_replacement_hint": "→ {title}",
+        "playbook_consults": "{count} 次",
+        "playbook_consults_label": "咨询命中",
+        "playbook_unmatched_title": "未命中的意图"
       },
       "skills_adopt": "采用",
       "skills_adopt_hint": "采用到 {name} — Claude 会为该仓库定制它",

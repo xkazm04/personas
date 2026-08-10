@@ -14004,7 +14004,15 @@
         "graph_sort_newest": "Recientes",
         "graph_sort_evidence": "Evidencia",
         "graph_sort_title": "Título",
-        "graph_page_of": "{page} / {pages}"
+        "graph_page_of": "{page} / {pages}",
+        "graph_search_placeholder": "Buscar áreas, temas, patrones…",
+        "graph_search_aria": "Buscar en el tejido de patrones",
+        "playbook_stale_count": "{count} obsoletos",
+        "playbook_prune": "Podar {count} obsoletos",
+        "playbook_replacement_hint": "→ {title}",
+        "playbook_consults": "{count}×",
+        "playbook_consults_label": "Coincidencias de consulta",
+        "playbook_unmatched_title": "Intenciones sin coincidencia"
       },
       "skills_adopt": "Adoptar",
       "skills_adopt_hint": "Adoptar en {name} — Claude la adapta al repositorio",

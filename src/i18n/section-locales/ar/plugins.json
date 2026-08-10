@@ -1384,7 +1384,15 @@
       "graph_sort_newest": "الأحدث",
       "graph_sort_evidence": "الأدلة",
       "graph_sort_title": "العنوان",
-      "graph_page_of": "{page} / {pages}"
+      "graph_page_of": "{page} / {pages}",
+      "graph_search_placeholder": "ابحث في المجالات والمواضيع والأنماط…",
+      "graph_search_aria": "البحث في نسيج الأنماط",
+      "playbook_stale_count": "{count} بائدة",
+      "playbook_prune": "إزالة {count} بائدة",
+      "playbook_replacement_hint": "← {title}",
+      "playbook_consults": "{count}×",
+      "playbook_consults_label": "مطابقات الاستشارة",
+      "playbook_unmatched_title": "نوايا بلا مطابقة"
     },
     "skills_adopt": "اعتماد",
     "skills_adopt_hint": "اعتمادها في {name} — يخصّصها Claude للمستودع",

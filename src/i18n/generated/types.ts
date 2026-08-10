@@ -14462,6 +14462,14 @@ export type Translations = {
         graph_sort_evidence: string;
         graph_sort_title: string;
         graph_page_of: string;
+        graph_search_placeholder: string;
+        graph_search_aria: string;
+        playbook_stale_count: string;
+        playbook_prune: string;
+        playbook_replacement_hint: string;
+        playbook_consults: string;
+        playbook_consults_label: string;
+        playbook_unmatched_title: string;
       };
       skills_info_args: string;
       skills_info_context_tracked: string;
