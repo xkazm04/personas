@@ -55,6 +55,7 @@ use crate::commands::infrastructure::kpi_sim::{
 use crate::commands::infrastructure::use_case_scan::{launch_use_case_scan, use_case_scan_status_json};
 use crate::db::models::{DevContext, DevContextGroup, DevKpi, DevProject, DevUseCase};
 use crate::db::repos::dev_tools as repo;
+use crate::db::repos::dev_workspaces as ws_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
 use crate::AppState;
@@ -93,6 +94,10 @@ pub fn router(app: AppHandle) -> Router {
         .route("/use-case-decision", post(use_case_decision))
         .route("/kpi-sim/prepare", post(kpi_sim_prepare))
         .route("/kpi-sim/ingest", post(kpi_sim_ingest))
+        .route("/patterns/index", get(patterns_index))
+        .route("/patterns/consult", get(patterns_consult))
+        .route("/patterns/propose", post(patterns_propose))
+        .route("/patterns/{id}", get(pattern_get))
         .with_state(DevToolsHttp { app })
 }
 
@@ -112,6 +117,316 @@ fn db(s: &DevToolsHttp) -> DbPool {
 }
 fn err(e: AppError) -> (StatusCode, String) {
     (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+}
+
+
+// ============================================================================
+// Pattern fabric — the CLI consult layer (pattern-fabric F2)
+// ============================================================================
+//
+// The library's live read surface for terminal sessions: a compact index, an
+// intent-matched consult (playbook briefs annotated with the calling repo's
+// own adherence, so "reuse your own exemplars first" is answerable), a full
+// pattern card, and a propose door that reuses the harvest ingest — sessions
+// propose, humans adopt, and the fabric adds NO second write path.
+
+#[derive(Deserialize)]
+struct PatternsScope {
+    workspace_id: Option<String>,
+    project_id: Option<String>,
+    intent: Option<String>,
+}
+
+/// Resolve the workspace (and optionally the project) a patterns call is
+/// about. `project_id` alone is enough — the repo a CLI session sits in knows
+/// its project id long before it knows the workspace's.
+fn resolve_scope(
+    pool: &DbPool,
+    q: &PatternsScope,
+) -> Result<(String, Option<DevProject>), AppError> {
+    if let Some(pid) = q.project_id.as_deref() {
+        let project = repo::get_project_by_id(pool, pid)?;
+        let ws = project.workspace_id.clone().ok_or_else(|| {
+            AppError::Validation(format!(
+                "Project {} is not assigned to a workspace",
+                project.name
+            ))
+        })?;
+        return Ok((ws, Some(project)));
+    }
+    if let Some(ws) = q.workspace_id.as_deref() {
+        return Ok((ws.to_string(), None));
+    }
+    Err(AppError::Validation(
+        "Pass workspace_id or project_id".into(),
+    ))
+}
+
+/// Match an intent against a playbook's trigger phrases + title. A phrase
+/// scores when ALL its meaningful words appear in the intent (or the phrase
+/// appears verbatim); the title contributes single-word hits. Dumb on
+/// purpose — deterministic and explainable beats clever here; embedding
+/// re-ranking is a fabric-doc extension, never the spine.
+fn match_score(intent: &str, triggers_json: &str, title: &str) -> u32 {
+    let intent_lc = intent.to_lowercase();
+    let intent_words: std::collections::HashSet<&str> = intent_lc
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|w| w.len() > 2)
+        .collect();
+    let triggers: Vec<String> = serde_json::from_str(triggers_json).unwrap_or_default();
+    let mut score = 0u32;
+    for phrase in &triggers {
+        let p = phrase.to_lowercase();
+        if intent_lc.contains(&p) {
+            score += 3;
+            continue;
+        }
+        let words: Vec<&str> = p
+            .split(|c: char| !c.is_alphanumeric())
+            .filter(|w| w.len() > 2)
+            .collect();
+        if !words.is_empty() && words.iter().all(|w| intent_words.contains(w)) {
+            score += 2;
+        }
+    }
+    let title_lc = title.to_lowercase();
+    score
+        + title_lc
+            .split(|c: char| !c.is_alphanumeric())
+            .filter(|w| w.len() > 2 && intent_words.contains(w))
+            .count() as u32
+}
+
+async fn patterns_index(
+    State(s): State<DevToolsHttp>,
+    Query(q): Query<PatternsScope>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let pool = db(&s);
+    let (ws, project) = resolve_scope(&pool, &q).map_err(err)?;
+    let playbooks = ws_repo::list_playbooks(&pool, &ws).map_err(err)?;
+    let members = ws_repo::list_playbook_patterns(&pool, &ws).map_err(err)?;
+    let adopted = ws_repo::list_knowledge(&pool, &ws, Some("adopted")).map_err(err)?;
+    let mut topics: std::collections::BTreeMap<String, u32> = Default::default();
+    for k in &adopted {
+        if let Some(t) = k.topic.as_deref() {
+            *topics.entry(t.to_string()).or_default() += 1;
+        }
+    }
+    Ok(Json(serde_json::json!({
+        "workspace_id": ws,
+        "project_id": project.map(|p| p.id),
+        "playbooks": playbooks.iter().map(|p| serde_json::json!({
+            "slug": p.slug, "title": p.title, "status": p.status,
+            "triggers": serde_json::from_str::<Value>(&p.triggers).unwrap_or(Value::Null),
+            "members": members.iter().filter(|m| m.playbook_id == p.id).count(),
+        })).collect::<Vec<_>>(),
+        "patterns": adopted.iter().map(|k| serde_json::json!({
+            "id": k.id, "title": k.title, "topic": k.topic,
+        })).collect::<Vec<_>>(),
+        "topics": topics,
+    })))
+}
+
+async fn patterns_consult(
+    State(s): State<DevToolsHttp>,
+    Query(q): Query<PatternsScope>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let pool = db(&s);
+    let (ws, project) = resolve_scope(&pool, &q).map_err(err)?;
+    let intent = q
+        .intent
+        .clone()
+        .filter(|i| !i.trim().is_empty())
+        .ok_or_else(|| err(AppError::Validation("Pass intent=<what you are about to do>".into())))?;
+
+    let playbooks = ws_repo::list_playbooks(&pool, &ws).map_err(err)?;
+    let members = ws_repo::list_playbook_patterns(&pool, &ws).map_err(err)?;
+    let adopted = ws_repo::list_knowledge(&pool, &ws, Some("adopted")).map_err(err)?;
+    let by_id: std::collections::HashMap<&str, &crate::db::models::WorkspaceKnowledge> =
+        adopted.iter().map(|k| (k.id.as_str(), k)).collect();
+
+    // Per-pattern adherence for the calling repo (context grain, P0 rollup) +
+    // its adoption-matrix state — the two axes the brief annotates.
+    let project_id = project.as_ref().map(|p| p.id.clone());
+    let rollup: std::collections::HashMap<String, Value> = if project_id.is_some() {
+        ws_repo::seed_practice_context_cells(&pool, &ws).map_err(err)?;
+        ws_repo::practice_context_rollup(&pool, &ws, project_id.as_deref())
+            .map_err(err)?
+            .into_iter()
+            .map(|r| {
+                (
+                    r.practice_id.clone(),
+                    serde_json::json!({
+                        "adopted": r.adopted, "violating": r.violating,
+                        "unverified": r.unverified, "applicable": r.applicable,
+                    }),
+                )
+            })
+            .collect()
+    } else {
+        Default::default()
+    };
+    let adoption = ws_repo::list_adoption(&pool, &ws).map_err(err)?;
+    let state_of = |practice_id: &str| -> Option<String> {
+        let pid = project_id.as_deref()?;
+        adoption
+            .iter()
+            .find(|a| a.practice_id == practice_id && a.project_id == pid)
+            .map(|a| a.state.clone())
+    };
+
+    // Active playbooks only; drafts are not consultable — activation in the
+    // rail is the curation gate. Near-miss drafts are reported so the caller
+    // can tell "no coverage" from "coverage awaiting activation".
+    let mut scored: Vec<(u32, &crate::db::models::WorkspacePlaybook)> = playbooks
+        .iter()
+        .filter(|p| p.status == "active")
+        .map(|p| (match_score(&intent, &p.triggers, &p.title), p))
+        .filter(|(score, _)| *score > 0)
+        .collect();
+    scored.sort_by(|a, b| b.0.cmp(&a.0));
+    let draft_hits: Vec<Value> = playbooks
+        .iter()
+        .filter(|p| p.status == "draft" && match_score(&intent, &p.triggers, &p.title) > 0)
+        .map(|p| serde_json::json!({ "slug": p.slug, "title": p.title }))
+        .collect();
+
+    let matched: Vec<Value> = scored
+        .iter()
+        .take(3)
+        .map(|(score, pb)| {
+            let phase = |ph: &str| -> Vec<Value> {
+                let mut mine: Vec<_> = members
+                    .iter()
+                    .filter(|m| m.playbook_id == pb.id && m.phase == ph)
+                    .collect();
+                mine.sort_by_key(|m| m.ordinal);
+                mine.iter()
+                    .filter_map(|m| by_id.get(m.practice_id.as_str()).map(|k| (m, k)))
+                    .map(|(m, k)| {
+                        serde_json::json!({
+                            "id": k.id, "title": k.title, "statement": k.statement,
+                            "topic": k.topic, "note": m.note,
+                            "state_here": state_of(&k.id),
+                            "adherence": rollup.get(&k.id),
+                        })
+                    })
+                    .collect()
+            };
+            serde_json::json!({
+                "slug": pb.slug, "title": pb.title, "summary": pb.summary,
+                "score": score,
+                "before": phase("before"), "during": phase("during"), "verify": phase("verify"),
+            })
+        })
+        .collect();
+
+    Ok(Json(serde_json::json!({
+        "workspace_id": ws,
+        "project_id": project_id,
+        "intent": intent,
+        "matched": matched,
+        "draft_matches_awaiting_activation": draft_hits,
+    })))
+}
+
+async fn pattern_get(
+    State(s): State<DevToolsHttp>,
+    Path(id): Path<String>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let pool = db(&s);
+    let k = ws_repo::get_knowledge_by_id(&pool, &id).map_err(|e| match e {
+        AppError::NotFound(m) => (StatusCode::NOT_FOUND, m),
+        other => err(other),
+    })?;
+    let edges = ws_repo::list_pattern_edges(&pool, &k.workspace_id).map_err(err)?;
+    let mine: Vec<Value> = edges
+        .iter()
+        .filter(|e| e.from_id == k.id || e.to_id == k.id)
+        .map(|e| {
+            serde_json::json!({
+                "from_id": e.from_id, "to_id": e.to_id, "rel": e.rel, "note": e.note,
+            })
+        })
+        .collect();
+    Ok(Json(serde_json::json!({ "pattern": k, "edges": mine })))
+}
+
+#[derive(Deserialize)]
+struct ProposeBody {
+    workspace_id: Option<String>,
+    project_id: Option<String>,
+    title: String,
+    statement: String,
+    kind: Option<String>,
+    topic: Option<String>,
+    ftype: Option<String>,
+    detail_md: Option<String>,
+    /// Pattern id this proposal refines — creates an `extends` edge once the
+    /// candidate lands (still `observed`; adoption stays human).
+    extends: Option<String>,
+}
+
+async fn patterns_propose(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<ProposeBody>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let pool = db(&s);
+    let scope = PatternsScope {
+        workspace_id: b.workspace_id.clone(),
+        project_id: b.project_id.clone(),
+        intent: None,
+    };
+    let (ws, _project) = resolve_scope(&pool, &scope).map_err(err)?;
+    // A caller-stable dedup key lets us find the row we just made without the
+    // ingest door having to leak internals.
+    let dedup_key = format!("consult-propose:{}", uuid::Uuid::new_v4());
+    let candidate = ws_repo::KnowledgeCandidate {
+        harvest_scope: None,
+        kind: b.kind.clone().unwrap_or_else(|| "pattern".into()),
+        title: b.title.clone(),
+        statement: b.statement.clone(),
+        detail_md: b.detail_md.clone(),
+        topic: b.topic.clone(),
+        abstraction: None,
+        ftype: b.ftype.clone(),
+        durability: None,
+        governing_id: None,
+        evidence_count: None,
+        applicability: None,
+        dedup_key: Some(dedup_key.clone()),
+        confidence: None,
+        // Build-unblock 2026-08-10: the struct gained this field mid-refactor
+        // in a parallel session; this initializer was the one call site left
+        // behind. The propose door's project scope IS the origin (same rule as
+        // workspace_harvest / skill_lessons; cross-project code passes None).
+        origin_project_id: b.project_id.clone(),
+    };
+    let summary = ws_repo::ingest_candidates(&pool, &ws, &[candidate], "cli-consult", None)
+        .map_err(err)?;
+    // Resolve the created row (skipped = dedup/validation refusal, surfaced).
+    let created = if summary.inserted > 0 {
+        let conn = pool.get().map_err(|e| err(AppError::from(e)))?;
+        conn.query_row(
+            "SELECT id FROM workspace_knowledge WHERE workspace_id = ?1 AND dedup_key = ?2",
+            rusqlite::params![ws, dedup_key],
+            |r| r.get::<_, String>(0),
+        )
+        .ok()
+    } else {
+        None
+    };
+    if let (Some(new_id), Some(parent)) = (created.as_deref(), b.extends.as_deref()) {
+        // Direction: the established pattern is EXTENDED BY the proposal.
+        ws_repo::set_pattern_edge(&pool, parent, new_id, "extends", Some("proposed via consult"))
+            .map_err(err)?;
+    }
+    Ok(Json(serde_json::json!({
+        "inserted": summary.inserted,
+        "skipped": summary.skipped,
+        "id": created,
+        "status": "observed",
+    })))
 }
 
 async fn list_projects(State(s): State<DevToolsHttp>) -> Result<Json<Vec<DevProject>>, (StatusCode, String)> {

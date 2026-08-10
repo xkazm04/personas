@@ -1,6 +1,6 @@
 # Pattern Fabric — the knowledge base as a development-time reference module
 
-Status: **design evaluation 2026-08-10, nothing built.** Extends
+Status: **F0+F1 shipped 2026-08-10 (edges, facet door, playbooks + curator UI, 8 seeded drafts); F2 shipped 2026-08-10 (consult routes, projection v2, patterns skill).** F3 (rewiring pass) and F4 (extends loop at scale, factory consumption) remain. Extends
 [`pattern-context-trace.md`](./pattern-context-trace.md) (the measurement
 half); this is the *structure and access* half. Target: the library stops
 being a review artifact and becomes the module a CLI development process

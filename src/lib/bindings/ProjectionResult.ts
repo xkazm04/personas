@@ -5,11 +5,15 @@
  */
 export type ProjectionResult = { project_id: string, project_name: string, 
 /**
- * Practices written into this repo's memory file.
+ * Practices written into this repo's bundle.
  */
 practices: number, 
 /**
- * True when CLAUDE.md gained the import line on this run (first time).
+ * Active playbooks projected as briefs.
+ */
+playbooks: number, 
+/**
+ * True when CLAUDE.md gained (or migrated) the import line on this run.
  */
 linked: boolean, 
 /**
