@@ -14004,7 +14004,15 @@
         "graph_sort_newest": "নতুনতম",
         "graph_sort_evidence": "প্রমাণ",
         "graph_sort_title": "শিরোনাম",
-        "graph_page_of": "{page} / {pages}"
+        "graph_page_of": "{page} / {pages}",
+        "graph_search_placeholder": "ক্ষেত্র, বিষয়, প্যাটার্ন খুঁজুন…",
+        "graph_search_aria": "প্যাটার্ন বুননে খুঁজুন",
+        "playbook_stale_count": "{count}টি বাসি",
+        "playbook_prune": "{count}টি বাসি ছাঁটুন",
+        "playbook_replacement_hint": "→ {title}",
+        "playbook_consults": "{count} বার",
+        "playbook_consults_label": "পরামর্শ মিল",
+        "playbook_unmatched_title": "মিলহীন অভিপ্রায়"
       },
       "skills_adopt": "গ্রহণ করুন",
       "skills_adopt_hint": "{name}-এ গ্রহণ করুন — Claude রিপোর জন্য এটি কাস্টমাইজ করে",

@@ -14004,7 +14004,15 @@
         "graph_sort_newest": "नवीनतम",
         "graph_sort_evidence": "प्रमाण",
         "graph_sort_title": "शीर्षक",
-        "graph_page_of": "{page} / {pages}"
+        "graph_page_of": "{page} / {pages}",
+        "graph_search_placeholder": "क्षेत्र, विषय, पैटर्न खोजें…",
+        "graph_search_aria": "पैटर्न ताने-बाने में खोजें",
+        "playbook_stale_count": "{count} बासी",
+        "playbook_prune": "{count} बासी हटाएं",
+        "playbook_replacement_hint": "→ {title}",
+        "playbook_consults": "{count}×",
+        "playbook_consults_label": "परामर्श मिलान",
+        "playbook_unmatched_title": "बिना मिलान के इरादे"
       },
       "skills_adopt": "अपनाएँ",
       "skills_adopt_hint": "{name} में अपनाएँ — Claude इसे रिपॉज़िटरी के लिए अनुकूलित करता है",

@@ -1384,7 +1384,15 @@
       "graph_sort_newest": "최신순",
       "graph_sort_evidence": "근거순",
       "graph_sort_title": "제목순",
-      "graph_page_of": "{page} / {pages}"
+      "graph_page_of": "{page} / {pages}",
+      "graph_search_placeholder": "영역·주제·패턴 검색…",
+      "graph_search_aria": "패턴 패브릭 검색",
+      "playbook_stale_count": "실효 {count}개",
+      "playbook_prune": "실효 {count}개 정리",
+      "playbook_replacement_hint": "→ {title}",
+      "playbook_consults": "{count}회",
+      "playbook_consults_label": "컨설트 일치",
+      "playbook_unmatched_title": "미일치 인텐트"
     },
     "skills_adopt": "채택",
     "skills_adopt_hint": "{name}에 채택 — Claude가 저장소에 맞게 맞춤 설정합니다",

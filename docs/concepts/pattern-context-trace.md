@@ -1,6 +1,6 @@
 # Pattern × Context Traceability
 
-Status: **designed 2026-08-10, not yet built.** Companion to the topic graph
+Status: **P0 shipped 2026-08-10 (cells, envelope seeding, rollup, rings); P1 shipped 2026-08-10 via /perfect wave (verify-lane file:line citations attribute to adopted/violating cells through dev_contexts.file_paths — see workspace_verify.rs).** P2 (rescan reconcile + staleness decay) and P3 (cross-project trace view) remain. Companion to the topic graph
 (Overview → Patterns → Graph) and the workspace adoption matrix.
 
 ## The problem, precisely

@@ -1384,7 +1384,15 @@
       "graph_sort_newest": "Récents",
       "graph_sort_evidence": "Preuves",
       "graph_sort_title": "Titre",
-      "graph_page_of": "{page} / {pages}"
+      "graph_page_of": "{page} / {pages}",
+      "graph_search_placeholder": "Rechercher domaines, sujets, motifs…",
+      "graph_search_aria": "Rechercher dans la trame de motifs",
+      "playbook_stale_count": "{count} obsolètes",
+      "playbook_prune": "Élaguer {count} obsolètes",
+      "playbook_replacement_hint": "→ {title}",
+      "playbook_consults": "{count}×",
+      "playbook_consults_label": "Correspondances de consultation",
+      "playbook_unmatched_title": "Intentions sans correspondance"
     },
     "skills_adopt": "Adopter",
     "skills_adopt_hint": "Adopter dans {name} — Claude l’adapte au dépôt",

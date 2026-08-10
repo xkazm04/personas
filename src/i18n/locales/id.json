@@ -14004,7 +14004,15 @@
         "graph_sort_newest": "Terbaru",
         "graph_sort_evidence": "Bukti",
         "graph_sort_title": "Judul",
-        "graph_page_of": "{page} / {pages}"
+        "graph_page_of": "{page} / {pages}",
+        "graph_search_placeholder": "Cari area, topik, pola…",
+        "graph_search_aria": "Telusuri jalinan pola",
+        "playbook_stale_count": "{count} usang",
+        "playbook_prune": "Pangkas {count} usang",
+        "playbook_replacement_hint": "→ {title}",
+        "playbook_consults": "{count}×",
+        "playbook_consults_label": "Kecocokan konsultasi",
+        "playbook_unmatched_title": "Niat tanpa kecocokan"
       },
       "skills_adopt": "Adopsi",
       "skills_adopt_hint": "Adopsi ke {name} — Claude menyesuaikannya untuk repo",

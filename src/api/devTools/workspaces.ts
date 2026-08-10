@@ -436,7 +436,7 @@ export async function getConsultStats(workspaceId: string): Promise<ConsultStats
   // against a command that is landing in the same wave. Drop the assertion once
   // the name is in the generated union.
   return invoke<ConsultStats>(
-    'dev_tools_consult_stats' as Parameters<typeof invoke>[0],
+    "dev_tools_consult_stats",
     { workspaceId },
   );
 }

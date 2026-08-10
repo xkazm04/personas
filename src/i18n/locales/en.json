@@ -14455,7 +14455,15 @@
         "graph_sort_newest": "Newest",
         "graph_sort_evidence": "Evidence",
         "graph_sort_title": "Title",
-        "graph_page_of": "{page} / {pages}"
+        "graph_page_of": "{page} / {pages}",
+        "graph_search_placeholder": "Search areas, topics, patterns…",
+        "graph_search_aria": "Search the pattern fabric",
+        "playbook_stale_count": "{count} stale",
+        "playbook_prune": "Prune {count} stale",
+        "playbook_replacement_hint": "→ {title}",
+        "playbook_consults": "{count}×",
+        "playbook_consults_label": "Consult matches",
+        "playbook_unmatched_title": "Unmatched intents"
       },
       "skills_info_args": "args",
       "skills_info_context_tracked": "context-tracked",

@@ -1384,7 +1384,15 @@
       "graph_sort_newest": "Neueste",
       "graph_sort_evidence": "Belege",
       "graph_sort_title": "Titel",
-      "graph_page_of": "{page} / {pages}"
+      "graph_page_of": "{page} / {pages}",
+      "graph_search_placeholder": "Bereiche, Themen, Muster suchen…",
+      "graph_search_aria": "Das Muster-Gewebe durchsuchen",
+      "playbook_stale_count": "{count} veraltet",
+      "playbook_prune": "{count} veraltete entfernen",
+      "playbook_replacement_hint": "→ {title}",
+      "playbook_consults": "{count}×",
+      "playbook_consults_label": "Konsultationstreffer",
+      "playbook_unmatched_title": "Unerfüllte Anfragen"
     },
     "skills_adopt": "Übernehmen",
     "skills_adopt_hint": "In {name} übernehmen — Claude passt sie an das Repository an",

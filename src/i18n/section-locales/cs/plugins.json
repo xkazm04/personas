@@ -1384,7 +1384,15 @@
       "graph_sort_newest": "Nejnovější",
       "graph_sort_evidence": "Důkazy",
       "graph_sort_title": "Název",
-      "graph_page_of": "{page} / {pages}"
+      "graph_page_of": "{page} / {pages}",
+      "graph_search_placeholder": "Hledat oblasti, témata, vzory…",
+      "graph_search_aria": "Prohledat tkanivo vzorů",
+      "playbook_stale_count": "{count} zastaralých",
+      "playbook_prune": "Odstranit {count} zastaralých",
+      "playbook_replacement_hint": "→ {title}",
+      "playbook_consults": "{count}×",
+      "playbook_consults_label": "Shody konzultací",
+      "playbook_unmatched_title": "Nenaplněné záměry"
     },
     "skills_adopt": "Převzít",
     "skills_adopt_hint": "Převzít do {name} — Claude ji přizpůsobí repozitáři",
