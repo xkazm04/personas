@@ -258,6 +258,7 @@ pub(crate) async fn execute_approval_action(
         // the read halves are the `describe_skill_fleet` / `describe_knowledge`
         // READ_OPS in the dispatcher.
         "skill_sync" => execute_skill_sync(&state, &params),
+        "run_pattern_harvest" => execute_run_pattern_harvest(&state, &app, &params),
         other => Err(AppError::Internal(format!(
             "approval `{approval_id}`: unknown action `{other}`"
         ))),

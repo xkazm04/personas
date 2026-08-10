@@ -409,6 +409,12 @@ const ALLOWED_ACTIONS: &[&str] = &[
     // never overwritten, publish must be a version bump). The read halves
     // (`describe_skill_fleet`, `describe_knowledge`) are READ_OPS above.
     "skill_sync",
+    // `run_pattern_harvest` dispatches per-territory Fleet harvest sessions
+    // into a workspace member repo (same snapshot writer, same governed
+    // ingest door as the Workspaces UI; results land `observed` for human
+    // review). Starts terminals, so it is containment-checked through
+    // `validate_fleet_cwd` like every other spawn.
+    "run_pattern_harvest",
 ];
 
 /// True when `action` has an [`ALLOWED_ACTIONS`] entry, i.e. a proposal

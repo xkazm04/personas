@@ -386,6 +386,11 @@ fn is_never_attached(
 /// Sessions with no transcript yet (unbound `Spawning`) fall back to the
 /// hook-driven `last_activity_ms` cutoff.
 fn tick_once(app: &AppHandle) {
+    // Companion harvest watcher — ingest finished `run_pattern_harvest`
+    // dispatches without the Workspaces UI open. No-op unless the companion
+    // executor registered a pending harvest; rides this ticker because the
+    // 30s cadence and the AppHandle are already here.
+    crate::commands::infrastructure::workspace_harvest::sweep_pending_harvest_ingests(app);
     let now = now_ms();
     let stale_secs = effective_secs("PERSONAS_FLEET_STALE_SECS", &STALE_OVERRIDE_SECS, STALE_AFTER_SECS);
     let cutoff_ms = stale_secs * 1000;

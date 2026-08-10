@@ -5,6 +5,12 @@
 // commands/infrastructure/workspace_harvest.rs are TWO HALVES OF ONE CONTRACT —
 // keep them byte-for-byte aligned.
 //
+// RUST TWIN (2026-08-10): Athena's `run_pattern_harvest` executor dispatches
+// the SAME contract backend-side via `build_harvest_prompt` in
+// commands/infrastructure/workspace_harvest.rs — a Rust port of this builder,
+// pinned to the deserializer by `harvest_prompt_tests`. A contract change
+// edits BOTH builders and the deserializer in one commit.
+//
 // SCOPED SINCE 2026-07-27. The first engine sent ONE agent at a whole
 // repository with a ~15-item cap and the instruction "prefer a small number of
 // high-signal practices over volume". On a large codebase that brief is

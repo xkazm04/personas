@@ -208,3 +208,214 @@ pub(crate) fn execute_skill_sync(
 fn ver(v: &Option<String>) -> &str {
     v.as_deref().unwrap_or("1.0")
 }
+
+// ── run_pattern_harvest ─────────────────────────────────────────────────
+
+/// Sessions one `run_pattern_harvest` may start. Deliberately below the
+/// fleet-dispatch cap of 8: harvest sessions are read-heavy and the canvas
+/// work proved parallel spawning stalls the machine — and a second wave can
+/// always follow once coverage says what is still owed.
+const HARVEST_MAX_SESSIONS: usize = 4;
+
+/// `run_pattern_harvest` — Athena's door into the practice-harvest pipeline
+/// (docs/plans/workspace-knowledge-center.md §7): prepare the grounding
+/// snapshot (same writer as the Workspaces UI), pick territories stale-first,
+/// dispatch one Fleet session per scope under one Operation, and register the
+/// (workspace, project) with the harvest watcher so results ingest through
+/// the ONE governed door when the sessions settle — no UI required, no second
+/// write path, items land `observed` for human review exactly as ever.
+///
+/// Params: `{project, scopes?: [scope_id, …], max_sessions?: 1..4}`. Without
+/// `scopes`, territories are chosen never-harvested-first, then oldest.
+pub(crate) fn execute_run_pattern_harvest(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    use crate::commands::infrastructure::workspace_harvest as harvest;
+
+    let project_q = params
+        .get("project")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| {
+            AppError::Validation("run_pattern_harvest: missing `project` (name or id)".into())
+        })?;
+    let conn = state.db.get()?;
+    let (project_id, workspace_id, root_path): (String, Option<String>, String) = conn
+        .query_row(
+            "SELECT id, workspace_id, root_path FROM dev_projects
+             WHERE id = ?1 OR name = ?1 COLLATE NOCASE
+             ORDER BY (id = ?1) DESC LIMIT 1",
+            rusqlite::params![project_q],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )
+        .map_err(|_| {
+            AppError::Validation(format!(
+                "run_pattern_harvest: unknown project `{project_q}` — use describe_knowledge \
+                 for the roster"
+            ))
+        })?;
+    let Some(workspace_id) = workspace_id else {
+        return Err(AppError::Validation(format!(
+            "run_pattern_harvest: `{project_q}` is not a member of any workspace — the \
+             knowledge library is workspace-scoped, so there is nowhere to harvest into"
+        )));
+    };
+    // Containment: harvest sessions run `claude` in this cwd. The project is
+    // registered by construction, but the fleet boundary check is THE
+    // boundary — go through it like every other spawn.
+    validate_fleet_cwd(app, &root_path)?;
+
+    let max_sessions = params
+        .get("max_sessions")
+        .and_then(|v| v.as_u64())
+        .map(|n| n as usize)
+        .unwrap_or(3)
+        .clamp(1, HARVEST_MAX_SESSIONS);
+    let explicit: Option<Vec<String>> = params.get("scopes").and_then(|v| v.as_array()).map(|a| {
+        a.iter()
+            .filter_map(|x| x.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string)
+            .collect()
+    });
+
+    // Prepare writes snapshot.json into the repo and returns the territory
+    // ledger (coverage-joined) this selection reads.
+    let core = harvest::prepare_harvest_core(state, &workspace_id, &project_id)?;
+
+    // Choose territories. Explicit ids are honored (unknown ones reported);
+    // otherwise stale-first: never harvested, then oldest `last_harvested_at`.
+    let mut skipped: Vec<String> = Vec::new();
+    let mut chosen: Vec<(String, String, i64)> = Vec::new(); // (id, label, files)
+    match explicit {
+        Some(ids) => {
+            for id in ids {
+                match core.scopes.iter().find(|(sid, ..)| *sid == id) {
+                    Some((sid, label, files, _)) => {
+                        chosen.push((sid.clone(), label.clone(), *files))
+                    }
+                    None => skipped.push(format!("`{id}`: not a territory of this repo")),
+                }
+            }
+        }
+        None => {
+            let mut ranked: Vec<&(String, String, i64, Option<String>)> =
+                core.scopes.iter().collect();
+            ranked.sort_by(|a, b| match (&a.3, &b.3) {
+                (None, None) => b.2.cmp(&a.2), // both never harvested → bigger first
+                (None, Some(_)) => std::cmp::Ordering::Less,
+                (Some(_), None) => std::cmp::Ordering::Greater,
+                (Some(x), Some(y)) => x.cmp(y), // oldest first
+            });
+            chosen = ranked
+                .into_iter()
+                .map(|(id, label, files, _)| (id.clone(), label.clone(), *files))
+                .collect();
+        }
+    }
+    // Skip territories already being harvested right now (live session under
+    // the same dedup key), then cap.
+    let sessions = crate::commands::fleet::registry::registry().list_dto();
+    chosen.retain(|(sid, label, _)| {
+        let key = harvest::harvest_dispatch_key(&workspace_id, &project_id, sid);
+        let live = sessions.iter().any(|s| {
+            s.name.as_deref().is_some_and(|n| n.contains(&key))
+                && matches!(
+                    s.state,
+                    crate::commands::fleet::types::FleetSessionState::Spawning
+                        | crate::commands::fleet::types::FleetSessionState::Running
+                        | crate::commands::fleet::types::FleetSessionState::AwaitingInput
+                )
+        });
+        if live {
+            skipped.push(format!("{label}: a harvest session is already working here"));
+        }
+        !live
+    });
+    chosen.truncate(max_sessions);
+    if chosen.is_empty() {
+        return Err(AppError::Validation(format!(
+            "run_pattern_harvest: no dispatchable territory.{}",
+            if skipped.is_empty() {
+                " The repo derived no scopes — is the root path readable?".to_string()
+            } else {
+                format!(" Skipped: {}", skipped.join("; "))
+            }
+        )));
+    }
+
+    // One Operation for the wave — the reconciler + live-ops strip see it the
+    // same way a fleet_dispatch is seen.
+    let intent = format!(
+        "[practice-harvest] {}: {} territor{} ({})",
+        core.project_name,
+        chosen.len(),
+        if chosen.len() == 1 { "y" } else { "ies" },
+        chosen.iter().map(|(_, l, _)| l.as_str()).collect::<Vec<_>>().join(", "),
+    );
+    let op_id = crate::companion::orchestration::operative_memory::memory()
+        .begin_dispatched_operation(intent.clone());
+
+    let sentinel = crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL;
+    let mut spawned: Vec<String> = Vec::new();
+    let mut failures: Vec<String> = Vec::new();
+    for (sid, label, files) in &chosen {
+        let prompt = harvest::build_harvest_prompt(
+            &core.workspace_name,
+            &core.project_name,
+            (sid, label, *files),
+        );
+        match crate::commands::fleet::pty::spawn_session(
+            app.clone(),
+            std::path::PathBuf::from(&root_path),
+            vec![prompt],
+            120,
+            32,
+        ) {
+            Ok(id) => {
+                let _ = crate::companion::orchestration::operative_memory::memory()
+                    .attach_session_to_operation(&op_id, &id, label, &root_path);
+                // The name must carry BOTH the Athena sentinel (ownership
+                // guards) and the dedup key (both harvest watchers find
+                // sessions by this substring).
+                let key = harvest::harvest_dispatch_key(&workspace_id, &project_id, sid);
+                let _ = crate::commands::fleet::registry::registry()
+                    .rename(&id, Some(format!("{sentinel} · {key}")));
+                spawned.push(label.clone());
+            }
+            Err(e) => failures.push(format!("{label}: spawn failed: {e}")),
+        }
+    }
+    if spawned.is_empty() {
+        return Err(AppError::Internal(format!(
+            "run_pattern_harvest: every spawn failed.\n{}",
+            failures.join("\n")
+        )));
+    }
+    // Register with the watcher — results ingest on the fleet ticker once the
+    // sessions settle, UI open or not.
+    harvest::note_pending_harvest(&workspace_id, &project_id);
+    crate::companion::orchestration::emit_digest_changed(app);
+
+    let mut msg = format!(
+        "Harvesting {} — {} session(s) dispatched: {}.",
+        core.project_name,
+        spawned.len(),
+        spawned.join(", "),
+    );
+    if !skipped.is_empty() {
+        msg.push_str(&format!("\nSkipped: {}", skipped.join("; ")));
+    }
+    if !failures.is_empty() {
+        msg.push_str(&format!("\nFailures: {}", failures.join("; ")));
+    }
+    msg.push_str(
+        "\nResults land as `observed` items in the knowledge review queue once the sessions \
+         finish — adoption stays a human decision.",
+    );
+    Ok(ExecuteResult::message(msg))
+}

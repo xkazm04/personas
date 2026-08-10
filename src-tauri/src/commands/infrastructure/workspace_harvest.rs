@@ -117,9 +117,31 @@ pub async fn dev_tools_workspace_harvest_prepare(
     project_id: String,
 ) -> Result<HarvestPrepared, AppError> {
     require_auth(&state).await?;
-    let ws = repo::get_workspace_by_id(&state.db, &workspace_id)?;
-    let project = dev_repo::get_project_by_id(&state.db, &project_id)?;
-    if project.workspace_id.as_deref() != Some(workspace_id.as_str()) {
+    prepare_harvest_core(&state, &workspace_id, &project_id).map(|c| c.prepared)
+}
+
+/// What the companion's `run_pattern_harvest` executor needs beyond the
+/// frontend's `HarvestPrepared`: the names for prompt-building and the
+/// territory list (with coverage) for stale-first scope selection.
+pub(crate) struct PreparedHarvestCore {
+    pub prepared: HarvestPrepared,
+    pub workspace_name: String,
+    pub project_name: String,
+    /// `(scope_id, label, file_count, last_harvested_at)` — coverage-joined.
+    pub scopes: Vec<(String, String, i64, Option<String>)>,
+}
+
+/// Auth-free core of [`dev_tools_workspace_harvest_prepare`], shared with the
+/// companion executor so both dispatch surfaces ground sessions through ONE
+/// snapshot writer.
+pub(crate) fn prepare_harvest_core(
+    state: &AppState,
+    workspace_id: &str,
+    project_id: &str,
+) -> Result<PreparedHarvestCore, AppError> {
+    let ws = repo::get_workspace_by_id(&state.db, workspace_id)?;
+    let project = dev_repo::get_project_by_id(&state.db, project_id)?;
+    if project.workspace_id.as_deref() != Some(workspace_id) {
         return Err(AppError::Validation(
             "Project is not a member of this workspace".into(),
         ));
@@ -263,9 +285,26 @@ pub async fn dev_tools_workspace_harvest_prepare(
     std::fs::write(&snapshot_path, snapshot_str)
         .map_err(|e| AppError::Validation(format!("Could not write snapshot: {e}")))?;
 
-    Ok(HarvestPrepared {
-        snapshot_path: snapshot_path.to_string_lossy().into_owned(),
-        root_path: project.root_path.clone(),
+    Ok(PreparedHarvestCore {
+        prepared: HarvestPrepared {
+            snapshot_path: snapshot_path.to_string_lossy().into_owned(),
+            root_path: project.root_path.clone(),
+        },
+        workspace_name: ws.name.clone(),
+        project_name: project.name.clone(),
+        scopes: scopes
+            .iter()
+            .map(|s| {
+                (
+                    s.id.clone(),
+                    s.label.clone(),
+                    s.file_count as i64,
+                    covered_at
+                        .get(s.id.as_str())
+                        .and_then(|c| c.last_harvested_at.clone()),
+                )
+            })
+            .collect(),
     })
 }
 
@@ -314,8 +353,21 @@ pub async fn dev_tools_workspace_knowledge_ingest(
     run_dir: Option<String>,
 ) -> Result<repo::IngestSummary, AppError> {
     require_auth(&state).await?;
-    let project = dev_repo::get_project_by_id(&state.db, &project_id)?;
-    if project.workspace_id.as_deref() != Some(workspace_id.as_str()) {
+    ingest_harvest_runs_core(&state, &workspace_id, &project_id, run_dir)
+}
+
+/// Auth-free core of [`dev_tools_workspace_knowledge_ingest`], shared with
+/// the companion's harvest watcher (`sweep_pending_harvest_ingests`) so a
+/// harvest Athena dispatched lands in the library without the Workspaces UI
+/// being open. Same door, same caps, same idempotency.
+pub(crate) fn ingest_harvest_runs_core(
+    state: &AppState,
+    workspace_id: &str,
+    project_id: &str,
+    run_dir: Option<String>,
+) -> Result<repo::IngestSummary, AppError> {
+    let project = dev_repo::get_project_by_id(&state.db, project_id)?;
+    if project.workspace_id.as_deref() != Some(workspace_id) {
         return Err(AppError::Validation(
             "Project is not a member of this workspace".into(),
         ));
@@ -360,7 +412,7 @@ pub async fn dev_tools_workspace_knowledge_ingest(
     let mut failures: Vec<String> = Vec::new();
     let single = dirs.len() == 1;
     for dir in dirs {
-        match ingest_one_run(&state, &workspace_id, &project_id, &dir) {
+        match ingest_one_run(state, workspace_id, project_id, &dir) {
             Ok(summary) => {
                 total.inserted += summary.inserted;
                 total.skipped.extend(summary.skipped);
@@ -396,7 +448,7 @@ pub async fn dev_tools_workspace_knowledge_ingest(
 /// Ingest exactly one run directory. Split out of the command so a fan-out
 /// batch can survive a single malformed run.
 fn ingest_one_run(
-    state: &State<'_, Arc<AppState>>,
+    state: &AppState,
     workspace_id: &str,
     project_id: &str,
     dir: &Path,
@@ -530,4 +582,257 @@ pub async fn dev_tools_workspace_harvest_coverage(
 ) -> Result<Vec<WorkspaceHarvestCoverage>, AppError> {
     require_auth(&state).await?;
     repo::list_harvest_coverage(&state.db, &project_id)
+}
+
+// ── companion dispatch (run_pattern_harvest) ────────────────────────────────
+//
+// The Athena-side twin of the frontend dispatcher (ExtractionMenu.tsx +
+// practiceHarvestPrompt.ts). TWO RENDERERS, ONE CONTRACT: the prompt below is
+// a Rust port of `buildHarvestPrompt` in
+// src/features/overview/sub_patterns/practiceHarvestPrompt.ts — each side is
+// pinned to the SAME deserializer (`HarvestResult`/`HarvestItem` above) by its
+// own test, so drift breaks a build instead of a harvest. If you change the
+// contract, change BOTH builders and the deserializer in one commit.
+
+/// Fleet dedup key for a per-scope harvest session — byte-identical to the TS
+/// `harvestDispatchKey`, because both the frontend auto-ingest hook and the
+/// backend watcher below find harvest sessions by this substring in the
+/// session name.
+pub(crate) fn harvest_dispatch_key(workspace_id: &str, project_id: &str, scope_id: &str) -> String {
+    format!("workspace-harvest:{workspace_id}:{project_id}:{scope_id}")
+}
+
+/// Rust port of `buildHarvestPrompt` (see the module comment above for the
+/// parity rules). `scope` is `(id, label, file_count)`.
+pub(crate) fn build_harvest_prompt(
+    workspace_name: &str,
+    project_name: &str,
+    scope: (&str, &str, i64),
+) -> String {
+    let (scope_id, scope_label, file_count) = scope;
+    let size = if file_count > 0 {
+        format!("\n  size:        ~{file_count} files")
+    } else {
+        String::new()
+    };
+    format!(
+        r#"You are harvesting reusable best practices from the "{project_name}" repository for the "{workspace_name}" workspace's shared knowledge library.
+
+GROUND TRUTH — read `practice-harvest/snapshot.json` at the repo root FIRST. It carries the workspace name, this project's stack + standards, the sibling projects (name + stack), `scopes` (every territory in this repo, with its paths, contexts and when each was last harvested), the titles of practices already in the library (do NOT re-propose these), and rejected dedup keys (do NOT re-propose these either). Everything you output must be grounded in THIS repository's real files.
+
+YOUR SCOPE — you are harvesting exactly ONE territory of this repo:
+
+  scope id:    {scope_id}
+  scope label: {scope_label}{size}
+
+Find this id in `scopes` in snapshot.json. It lists the `paths` you own and (when the repo has a context map) the named `contexts` inside them — that is your index into your own territory.
+
+- **Read inside your scope, broadly.** Open a real sample of its files across its different paths, not one file per path. You are the only session assigned to this territory; whatever you do not read, nobody reads.
+- **Do not harvest outside it.** Root configs, lint setup, CI, hooks and scripts belong to the `repo-global` scope and are another session's job. Unless your scope IS `repo-global`, an item sourced from them is out of bounds — this is the single most common way a harvest fakes coverage, because those files are the cheapest place to find something that looks like a "convention".
+- If your scope turns out to be genuinely thin, say so in report.md and return few items. Reporting an empty territory honestly is worth more than padding it.
+
+WHAT TO HARVEST — durable, reusable engineering practices worth sharing across the workspace, in these layers: design, code-quality, ui, performance, process. Inside your scope, mine what the code actually does: module and data boundaries, error and result handling, state and data-flow patterns, concurrency/cancellation/retry handling, API and IPC seams, persistence and migration patterns, test setup and fixtures, performance techniques, and the pitfalls the code visibly defends against (a guard, a workaround, or a comment explaining a past failure is prime material — those are the practices a sibling project would otherwise learn the hard way). A practice is worth harvesting only if a sibling project could plausibly adopt it.
+kind ∈ pattern | pitfall | decision | howto | fact.
+
+TOPIC — the library uses a CLOSED, precedence-ordered vocabulary, shipped to you as `taxonomy` in snapshot.json. Read it before you write any item.
+- A topic is EXACTLY two segments: `area/cluster`. Never one, never three.
+- `topic` answers WHERE the practice lives (which concern or subsystem it governs). `ftype` separately answers what SHAPE it is — do not encode shape in the topic.
+- Areas are PRECEDENCE-ORDERED. Walk the area list in the order given and take the FIRST that genuinely governs. `architecture` is near the end on purpose — use it only when no subsystem area applies.
+- Prefer a listed cluster. If none genuinely fits you MAY name a new one, but only under a listed area — never invent an area.
+- Your scope does NOT dictate your topic. Classify each item on its own merits.
+
+OUTPUT CONTRACT — write `practice-harvest/runs/<YYYY-MM-DD-HHmm>-<scope-id>/result.json` (and a short `report.md`). Put the scope id in the directory name so concurrent scope sessions never collide — replacing `:` with `-`, since a colon is not a legal path character on Windows. The `scope` FIELD below keeps the id verbatim; that is what stamps coverage. The app ingests result.json; you NEVER write any database. Exact shape:
+{{
+  "scope": "<your scope id, exactly as given above>",   // REQUIRED: stamps coverage
+  "items": [
+    {{
+      "kind": "pattern",                         // pattern|pitfall|decision|howto|fact
+      "title": "Short imperative claim",          // required
+      "statement": "The distilled practice a session should act on.", // required
+      "detail_md": "Evidence: real code/config from THIS repo (markdown). Optional but strongly preferred.",
+      "topic": "errors/degradation",               // REQUIRED: area/cluster from snapshot.json's taxonomy
+      "abstraction": "meso",                       // macro | meso | micro — prefer meso/macro design patterns over micro lint
+      "ftype": "error-strategy",                   // REQUIRED: one value from `ftypes` in snapshot.json — a CLOSED list. Never coin one.
+      "evidence_count": 4,                         // optional prevalence (how many sites)
+      "applicability": {{ "layers": ["code-quality"], "languages": ["TypeScript"], "frameworks": ["React"] }}, // optional object
+      "dedup_key": "harvest:<stable-slug>",        // optional; the app derives one from the title if omitted
+      "confidence": 0.7,                           // optional 0..1
+      "extends": "<pattern-id>"                    // optional: the EXISTING pattern this item refines (id from existing_practices in snapshot.json)
+    }}
+  ],
+  "coverage": {{                                    // REQUIRED
+    "files_read": 45,
+    "files_total": 359,
+    "estimated_pct": 13,
+    "unread_pockets": ["src/features/teams/sub_goals"],
+    "note": "Schedules and triggers read near-exhaustively; teams/ is the real gap."
+  }}
+}}
+
+FTYPE — `ftype` is a CLOSED vocabulary shipped as `ftypes` in snapshot.json. Pick the one that fits and never invent a value. If your instinct is "guard" / "guardrail" / "trap" / "anti-pattern", the answer is `error-strategy`. Do NOT send `durability` — it is not an author's call.
+
+HOW MANY ITEMS — there is no cap. Report every practice your territory genuinely supports; for a scope of a few hundred files that is usually somewhere between 5 and 25. Do not stop early because you have "enough", and do not pad with generic advice this repo does not actually practise.
+
+COVERAGE — result.json MUST carry a `coverage` block (shape above). `estimated_pct` decides whether this territory still owes a pass, and `unread_pockets` is handed to the NEXT session assigned here so it starts where you stopped. Estimate honestly — under-reporting costs nothing, over-reporting silently retires a territory nobody finished. If you genuinely cannot estimate, omit the field rather than guessing.
+
+REPORT — `report.md` is a REQUIRED deliverable: state honestly which paths inside your scope you actually read, which you did NOT get to, and anything you deliberately skipped and why.
+
+HARD RULES:
+- Only write files under `practice-harvest/runs/<id>/`. Touch nothing else in the repo.
+- Ground every item in real evidence from this repo — no generic advice that isn't actually practised here.
+- Stay inside your scope (see YOUR SCOPE above).
+- Skip anything whose title matches an existing_practice_title or whose dedup_key is in rejected_dedup_keys (from the snapshot).
+- Items land as "observed" for human review — you are proposing, not adopting.
+
+Check `.claude/skills/` for a `practice-harvest` skill and follow it if present; otherwise use the embedded procedure above — do NOT install anything."#
+    )
+}
+
+// ── pending-ingest watcher ──────────────────────────────────────────────────
+//
+// The frontend's `useHarvestAutoIngest` only runs while the Workspaces UI is
+// mounted; a harvest Athena dispatched must land WITHOUT the UI open. The
+// `run_pattern_harvest` executor registers its (workspace, project) here, and
+// the fleet stale ticker (30s) calls the sweep: once no session named with
+// that project's `workspace-harvest:` key is still working, every un-ingested
+// run is imported through the same idempotent door the UI uses — double
+// ingest with the frontend hook is safe by construction (the `ingested.json`
+// marker). In-memory by design: an app restart drops the watch, and the runs
+// are then picked up by the next harvest or the next UI visit, never lost.
+
+fn pending_harvest_ingests() -> &'static std::sync::Mutex<Vec<(String, String)>> {
+    static P: std::sync::OnceLock<std::sync::Mutex<Vec<(String, String)>>> =
+        std::sync::OnceLock::new();
+    P.get_or_init(|| std::sync::Mutex::new(Vec::new()))
+}
+
+/// Register a dispatched harvest for post-completion ingest.
+pub(crate) fn note_pending_harvest(workspace_id: &str, project_id: &str) {
+    let mut p = pending_harvest_ingests().lock().unwrap();
+    let key = (workspace_id.to_string(), project_id.to_string());
+    if !p.contains(&key) {
+        p.push(key);
+    }
+}
+
+/// Fleet states that mean a harvest session is still doing work — mirror of
+/// the frontend hook's ACTIVE set. Idle is FINISHED for an interactive CLI:
+/// a done session sits at the prompt forever; it does not exit.
+fn harvest_session_is_active(state: crate::commands::fleet::types::FleetSessionState) -> bool {
+    use crate::commands::fleet::types::FleetSessionState as S;
+    matches!(state, S::Spawning | S::Running | S::AwaitingInput)
+}
+
+/// Called from the fleet stale ticker. For each registered harvest whose
+/// sessions have all settled, ingest every un-ingested run and deregister.
+pub fn sweep_pending_harvest_ingests(app: &tauri::AppHandle) {
+    use tauri::Manager;
+    let snapshot: Vec<(String, String)> = {
+        let p = pending_harvest_ingests().lock().unwrap();
+        p.clone()
+    };
+    if snapshot.is_empty() {
+        return;
+    }
+    let Some(state) = app.try_state::<Arc<AppState>>() else {
+        return;
+    };
+    let sessions = crate::commands::fleet::registry::registry().list_dto();
+    for (ws_id, project_id) in snapshot {
+        let key_prefix = format!("workspace-harvest:{ws_id}:{project_id}:");
+        let still_working = sessions.iter().any(|s| {
+            s.name.as_deref().is_some_and(|n| n.contains(&key_prefix))
+                && harvest_session_is_active(s.state)
+        });
+        if still_working {
+            continue;
+        }
+        match ingest_harvest_runs_core(&state, &ws_id, &project_id, None) {
+            Ok(summary) => {
+                tracing::info!(
+                    workspace = %ws_id,
+                    project = %project_id,
+                    inserted = summary.inserted,
+                    skipped = summary.skipped.len(),
+                    "harvest watcher: ingested dispatched harvest runs"
+                );
+                let mut p = pending_harvest_ingests().lock().unwrap();
+                p.retain(|(w, pr)| !(w == &ws_id && pr == &project_id));
+            }
+            Err(e) => {
+                let msg = e.to_string();
+                // "No un-ingested run found" while nothing is working any
+                // more: either the frontend hook beat us to it (fine, the
+                // door is idempotent) or the sessions never produced a run.
+                // Deregister only when no session with the key EXISTS at all
+                // — while one still sits idle it may yet write its run on a
+                // later turn.
+                let any_session_left = sessions
+                    .iter()
+                    .any(|s| s.name.as_deref().is_some_and(|n| n.contains(&key_prefix)));
+                if msg.contains("No un-ingested harvest run") && !any_session_left {
+                    let mut p = pending_harvest_ingests().lock().unwrap();
+                    p.retain(|(w, pr)| !(w == &ws_id && pr == &project_id));
+                } else {
+                    tracing::debug!(
+                        workspace = %ws_id,
+                        project = %project_id,
+                        error = %msg,
+                        "harvest watcher: ingest not ready yet"
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod harvest_prompt_tests {
+    use super::*;
+
+    /// The Rust prompt's OUTPUT CONTRACT must name every field the
+    /// `HarvestItem`/`HarvestResult` deserializer reads — this is the pin
+    /// that keeps the two renderers (this one and practiceHarvestPrompt.ts)
+    /// from drifting away from the one contract.
+    #[test]
+    fn prompt_contract_names_every_deserializer_field() {
+        let p = build_harvest_prompt("ws", "proj", ("group:x", "Feature X", 120));
+        for field in [
+            "\"scope\"",
+            "\"items\"",
+            "\"kind\"",
+            "\"title\"",
+            "\"statement\"",
+            "\"detail_md\"",
+            "\"topic\"",
+            "\"abstraction\"",
+            "\"ftype\"",
+            "\"evidence_count\"",
+            "\"applicability\"",
+            "\"dedup_key\"",
+            "\"confidence\"",
+            "\"extends\"",
+            "\"coverage\"",
+            "\"files_read\"",
+            "\"files_total\"",
+            "\"estimated_pct\"",
+            "\"unread_pockets\"",
+        ] {
+            assert!(p.contains(field), "prompt lost contract field {field}");
+        }
+        assert!(p.contains("result.json"), "output filename gone");
+        assert!(p.contains("practice-harvest/runs/"), "run dir gone");
+        assert!(p.contains("scope id:    group:x"), "scope id not injected");
+        assert!(p.contains("~120 files"), "file count not injected");
+        // The proposing-not-adopting doctrine must survive any rewrite.
+        assert!(p.contains("proposing, not adopting"), "consent doctrine gone");
+    }
+
+    #[test]
+    fn dispatch_key_matches_the_ts_shape() {
+        assert_eq!(
+            harvest_dispatch_key("ws1", "p1", "group:exec"),
+            "workspace-harvest:ws1:p1:group:exec"
+        );
+    }
 }
