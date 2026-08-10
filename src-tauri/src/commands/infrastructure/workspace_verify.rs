@@ -77,6 +77,14 @@ struct VerifyExtra {
     /// Selected minus checked — verdicts the session claimed or should have
     /// produced that never landed. Surfaced rather than swallowed.
     lost: u32,
+    /// Context cells this run attributed from the verdicts' file citations
+    /// (pattern-context-trace.md W2).
+    cells_adopted: i32,
+    cells_violating: i32,
+    /// Cited files that resolved to no context in the project's map. Reported,
+    /// never dropped — a run that attributed 2 of 9 citations must not read
+    /// like one that attributed everything it had.
+    unattributed_files: u32,
 }
 
 static VERIFY_JOBS: BackgroundJobManager<VerifyExtra> = BackgroundJobManager::new(
@@ -107,6 +115,13 @@ struct Verdict {
     /// older session that omits the field behaves exactly as before.
     #[serde(default = "applies_by_default")]
     applies: bool,
+    /// Files where the practice IS followed — the citations that become
+    /// `adopted` context cells (docs/concepts/pattern-context-trace.md W2).
+    #[serde(default)]
+    applied_files: Vec<String>,
+    /// Files where it applies and is NOT followed → `violating` cells.
+    #[serde(default)]
+    absent_files: Vec<String>,
 }
 
 fn applies_by_default() -> bool {
@@ -168,8 +183,10 @@ METHOD: check the code, don't guess. Grep for the pattern's real call sites and 
 
 BE CONSERVATIVE ABOUT FAILING. A false "diverged" costs a human an investigation and erodes trust in the matrix. If you cannot find clear evidence either way, report holds = true with evidence saying the check was inconclusive — silence is safer than a false alarm.
 
+CITE THE FILES. `applied_files` are the repo-relative paths where the practice IS followed; `absent_files` are the paths where it applies and is NOT followed. These are attributed to the project's context map, so the app can report WHERE the practice reached rather than a single project-wide yes/no — a whole-project "adopted" reads as 100% when the truth is usually a handful of modules. Cite the specific files you actually opened, `path/to/file.ext` or `path/to/file.ext:120`, repo-relative. Both lists may be empty when you found nothing concrete; do not invent paths.
+
 OUTPUT CONTRACT — one line per practice, nothing else on that line:
-VERDICT: {{"n":<the number above>,"applies":true|false,"holds":true|false,"evidence":"what you found, with file:line"}}
+VERDICT: {{"n":<the number above>,"applies":true|false,"holds":true|false,"evidence":"what you found, with file:line","applied_files":["src/a.ts:12"],"absent_files":["src/b.ts"]}}
 
 **EMIT EACH VERDICT THE MOMENT YOU DECIDE IT — before you start looking at the next practice.** Do not gather all your findings and print them at the end. Verdicts are consumed as they stream, and a run that is cut short keeps every verdict it has already emitted; one that batches its output to the end loses all of them. (A 25-practice run did exactly that and returned nothing.)
 
@@ -255,12 +272,15 @@ pub async fn dev_tools_workspace_verify_adoptions(
     let priors = prior_state;
     let jid = job_id.clone();
     let pid = project_id.clone();
+    let wid = workspace_id.clone();
     let app_for_panic = app.clone();
     let jid_for_panic = jid.clone();
     tauri::async_runtime::spawn(async move {
         let work = AssertUnwindSafe(async move {
-            match run_verify(&app, &jid, &db, &pid, &ids, &titles, &priors, prompt, root, token)
-                .await
+            match run_verify(
+                &app, &jid, &db, &wid, &pid, &ids, &titles, &priors, prompt, root, token,
+            )
+            .await
             {
                 Ok((checked, diverged)) => {
                     VERIFY_JOBS.emit_line(
@@ -311,6 +331,9 @@ pub fn dev_tools_workspace_get_verify_status(
             "diverged": job.extra.diverged,
             "selected": job.extra.selected,
             "lost": job.extra.lost,
+            "cells_adopted": job.extra.cells_adopted,
+            "cells_violating": job.extra.cells_violating,
+            "unattributed_files": job.extra.unattributed_files,
         }))
     } else {
         Ok(json!({ "job_id": job_id, "status": "not_found" }))
@@ -332,6 +355,7 @@ async fn run_verify(
     app: &tauri::AppHandle,
     job_id: &str,
     db: &crate::db::DbPool,
+    workspace_id: &str,
     project_id: &str,
     ids: &[String],
     titles: &[String],
@@ -435,6 +459,9 @@ async fn run_verify(
     // adopted at the workspace level. Never auto-un-adopt.
     let mut checked = 0u32;
     let mut diverged = 0u32;
+    let mut cells_adopted = 0i32;
+    let mut cells_violating = 0i32;
+    let mut unattributed: Vec<String> = Vec::new();
     let mut seen: std::collections::HashSet<usize> = std::collections::HashSet::new();
     for v in &verdicts {
         if !seen.insert(v.n) {
@@ -458,6 +485,73 @@ async fn run_verify(
         if !v.holds {
             diverged += 1;
         }
+
+        // W2 — attribute the verdict's file citations to contexts
+        // (docs/concepts/pattern-context-trace.md). This is the ONLY lane
+        // allowed to write `adopted`/`violating` cells, precisely because it is
+        // the only one that cites evidence. Skipped when the practice does not
+        // apply to this repo at all: `applies=false` is a statement about the
+        // stack, not about any context's code.
+        if !v.applies {
+            continue;
+        }
+        // Prefer the structured lists; fall back to the paths the model wrote
+        // into its prose, which every verdict predating the new fields carries.
+        let (applied, absent) = if v.applied_files.is_empty() && v.absent_files.is_empty() {
+            let cited = v
+                .evidence
+                .as_deref()
+                .map(repo::extract_file_citations)
+                .unwrap_or_default();
+            if v.holds {
+                (cited, Vec::new())
+            } else {
+                (Vec::new(), cited)
+            }
+        } else {
+            (v.applied_files.clone(), v.absent_files.clone())
+        };
+        if applied.is_empty() && absent.is_empty() {
+            continue;
+        }
+        match repo::apply_verified_context_evidence(
+            db,
+            workspace_id,
+            project_id,
+            practice_id,
+            &applied,
+            &absent,
+        ) {
+            Ok(sum) => {
+                cells_adopted += sum.adopted_cells;
+                cells_violating += sum.violating_cells;
+                unattributed.extend(sum.unattributed);
+            }
+            Err(e) => {
+                // Attribution is a reporting refinement on top of a verdict
+                // that already landed — never fail the run over it.
+                tracing::warn!(error = %e, practice_id, "verify: context attribution failed");
+            }
+        }
+    }
+    if cells_adopted + cells_violating > 0 || !unattributed.is_empty() {
+        unattributed.sort();
+        unattributed.dedup();
+        VERIFY_JOBS.emit_line(
+            app,
+            job_id,
+            format!(
+                "[Attribution] {cells_adopted} contexts follow · {cells_violating} do not · {} cited files matched no context",
+                unattributed.len()
+            ),
+        );
+        if !unattributed.is_empty() {
+            VERIFY_JOBS.emit_line(
+                app,
+                job_id,
+                format!("[Unattributed] {}", unattributed.join(", ")),
+            );
+        }
     }
     // Reconcile what we were asked to do against what actually landed. A pass
     // that ruled on 1 of 8 must not read like a clean run: the whole point of
@@ -478,6 +572,9 @@ async fn run_verify(
         e.diverged = diverged;
         e.selected = selected;
         e.lost = lost;
+        e.cells_adopted = cells_adopted;
+        e.cells_violating = cells_violating;
+        e.unattributed_files = unattributed.len() as u32;
     });
     Ok((checked, diverged))
 }
