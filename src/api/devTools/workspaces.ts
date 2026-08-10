@@ -17,6 +17,8 @@ import type { BulkDecision } from "@/lib/bindings/BulkDecision";
 import type { WorkspaceHarvestCoverage } from "@/lib/bindings/WorkspaceHarvestCoverage";
 import type { PracticeContextRollup } from "@/lib/bindings/PracticeContextRollup";
 import type { WorkspacePatternEdge } from "@/lib/bindings/WorkspacePatternEdge";
+import type { WorkspacePlaybook } from "@/lib/bindings/WorkspacePlaybook";
+import type { WorkspacePlaybookPattern } from "@/lib/bindings/WorkspacePlaybookPattern";
 import type { WorkspacePracticeAdoption } from "@/lib/bindings/WorkspacePracticeAdoption";
 
 export type KnowledgeKind = "pattern" | "pitfall" | "decision" | "howto" | "fact";
@@ -213,6 +215,49 @@ export async function listPracticeContextRollup(
 /** Typed pattern connections (pattern-fabric S2). */
 export async function listPatternEdges(workspaceId: string): Promise<WorkspacePatternEdge[]> {
   return invoke<WorkspacePatternEdge[]>("dev_tools_pattern_edges_list", { workspaceId });
+}
+
+// -- playbooks (pattern-fabric S3) -------------------------------------------
+
+export async function listPlaybooks(workspaceId: string): Promise<WorkspacePlaybook[]> {
+  return invoke<WorkspacePlaybook[]>("dev_tools_playbooks_list", { workspaceId });
+}
+
+export async function listPlaybookPatterns(
+  workspaceId: string,
+): Promise<WorkspacePlaybookPattern[]> {
+  return invoke<WorkspacePlaybookPattern[]>("dev_tools_playbook_patterns_list", { workspaceId });
+}
+
+export async function createPlaybook(
+  workspaceId: string,
+  slug: string,
+  title: string,
+  triggers: string[],
+  summary: string,
+): Promise<WorkspacePlaybook> {
+  return invoke<WorkspacePlaybook>("dev_tools_playbook_create", {
+    workspaceId,
+    slug,
+    title,
+    triggers: JSON.stringify(triggers),
+    summary,
+  });
+}
+
+export async function setPlaybookStatus(id: string, status: string): Promise<WorkspacePlaybook> {
+  return invoke<WorkspacePlaybook>("dev_tools_playbook_set_status", { id, status });
+}
+
+export async function deletePlaybook(id: string): Promise<void> {
+  return invoke<void>("dev_tools_playbook_delete", { id });
+}
+
+export async function setPlaybookPatterns(
+  playbookId: string,
+  members: WorkspacePlaybookPattern[],
+): Promise<void> {
+  return invoke<void>("dev_tools_playbook_set_patterns", { playbookId, members });
 }
 
 export async function listWorkspaceAdoption(

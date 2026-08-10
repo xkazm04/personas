@@ -4,7 +4,7 @@
 // idiom (rounded-card border-2 object, labelled section blocks, pill badges
 // straddling the top edge) rather than re-invented — a pattern here and a
 // pattern under review should read as the same species.
-import { ArrowUpRight, Link2 } from 'lucide-react';
+import { ArrowUpRight, BookmarkCheck, BookmarkPlus, Link2 } from 'lucide-react';
 
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -57,12 +57,16 @@ function PatternCard({
   item,
   coverage,
   related,
+  inBasket,
+  onToggleBasket,
   onOpenRelated,
   onOpen,
 }: {
   item: KnowledgeItemView;
   coverage: PatternCoverage | null;
   related: readonly RelatedPattern[];
+  inBasket: boolean;
+  onToggleBasket?: (item: KnowledgeItemView) => void;
   onOpenRelated?: (otherId: string) => void;
   onOpen?: (item: KnowledgeItemView) => void;
 }) {
@@ -79,16 +83,34 @@ function PatternCard({
       >
         <div className="flex items-start justify-between gap-3">
           <h3 className="typo-body font-medium text-foreground">{item.title}</h3>
-          {onOpen && (
-            <button
-              type="button"
-              onClick={() => onOpen(item)}
-              className="typo-label flex items-center gap-1 text-primary hover:text-primary/80 whitespace-nowrap transition-colors"
-            >
-              {w.graph_open_detail}
-              <ArrowUpRight className="w-3.5 h-3.5" aria-hidden />
-            </button>
-          )}
+          <div className="flex items-center gap-2.5 flex-shrink-0">
+            {onToggleBasket && (
+              <button
+                type="button"
+                onClick={() => onToggleBasket(item)}
+                aria-pressed={inBasket}
+                aria-label={inBasket ? w.graph_basket_remove : w.graph_basket_add}
+                title={inBasket ? w.graph_basket_remove : w.graph_basket_add}
+                className={`transition-colors ${inBasket ? 'text-primary' : 'text-foreground/45 hover:text-foreground'}`}
+              >
+                {inBasket ? (
+                  <BookmarkCheck className="w-4 h-4" aria-hidden />
+                ) : (
+                  <BookmarkPlus className="w-4 h-4" aria-hidden />
+                )}
+              </button>
+            )}
+            {onOpen && (
+              <button
+                type="button"
+                onClick={() => onOpen(item)}
+                className="typo-label flex items-center gap-1 text-primary hover:text-primary/80 whitespace-nowrap transition-colors"
+              >
+                {w.graph_open_detail}
+                <ArrowUpRight className="w-3.5 h-3.5" aria-hidden />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* The statement — the distilled move a session should act on. */}
@@ -172,6 +194,8 @@ export function ClusterPatternsModal({
   node,
   patternCoverage,
   relatedFor,
+  basketIds,
+  onToggleBasket,
   onOpenRelated,
   onOpenItem,
   onClose,
@@ -181,6 +205,9 @@ export function ClusterPatternsModal({
   patternCoverage: (item: KnowledgeItemView) => PatternCoverage | null;
   /** Typed connections for one pattern (fabric S2); empty when none. */
   relatedFor: (item: KnowledgeItemView) => readonly RelatedPattern[];
+  /** Playbook-draft basket (fabric S3 curator flow). */
+  basketIds: ReadonlyMap<string, KnowledgeItemView>;
+  onToggleBasket?: (item: KnowledgeItemView) => void;
   onOpenRelated?: (otherId: string) => void;
   onOpenItem?: (item: KnowledgeItemView) => void;
   onClose: () => void;
@@ -219,6 +246,8 @@ export function ClusterPatternsModal({
               item={item}
               coverage={patternCoverage(item)}
               related={relatedFor(item)}
+              inBasket={basketIds.has(item.id)}
+              onToggleBasket={onToggleBasket}
               onOpenRelated={onOpenRelated}
               onOpen={onOpenItem}
             />

@@ -7777,6 +7777,43 @@ fn research_lab_align_columns(conn: &Connection) {
            AND EXISTS (SELECT 1 FROM workspace_knowledge g WHERE g.id = k.governing_id)
            AND NOT EXISTS (SELECT 1 FROM workspace_pattern_edges LIMIT 1);",
     );
+
+    // -- Pattern fabric F1: playbooks (the situation layer) ------------------
+    // (docs/concepts/pattern-fabric.md S3) A playbook is a curated,
+    // human-gated bundle of patterns keyed by a development SITUATION
+    // ("add a database table"), phased before/during/verify. It is the CLI's
+    // front door into the library — 20-40 per workspace, never a tree level.
+    let _ = ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS workspace_playbooks (
+            id           TEXT PRIMARY KEY,
+            workspace_id TEXT NOT NULL REFERENCES dev_workspaces(id) ON DELETE CASCADE,
+            slug         TEXT NOT NULL,
+            title        TEXT NOT NULL,
+            triggers     TEXT NOT NULL,
+            summary      TEXT NOT NULL,
+            status       TEXT NOT NULL CHECK (status IN ('draft','active','retired')),
+            created_at   TEXT NOT NULL,
+            updated_at   TEXT NOT NULL,
+            UNIQUE (workspace_id, slug)
+        );",
+    );
+    let _ = ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS workspace_playbook_patterns (
+            playbook_id  TEXT NOT NULL REFERENCES workspace_playbooks(id) ON DELETE CASCADE,
+            practice_id  TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
+            phase        TEXT NOT NULL CHECK (phase IN ('before','during','verify')),
+            ordinal      INTEGER NOT NULL DEFAULT 0,
+            note         TEXT,
+            PRIMARY KEY (playbook_id, practice_id)
+        );",
+    );
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_wpp_practice
+            ON workspace_playbook_patterns(practice_id);",
+    );
 }
 
 #[cfg(test)]

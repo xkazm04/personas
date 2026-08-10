@@ -5,18 +5,29 @@
 // Esc / double-click fly home), the selection, and the project lens (adopted
 // topics keep colour, everything else greys out).
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronRight, X } from 'lucide-react';
+import { BookOpen, ChevronRight, X } from 'lucide-react';
 
-import { listPatternEdges, listPracticeContextRollup } from '@/api/devTools/workspaces';
+import {
+  deletePlaybook,
+  listPatternEdges,
+  listPlaybookPatterns,
+  listPlaybooks,
+  listPracticeContextRollup,
+  setPlaybookStatus,
+} from '@/api/devTools/workspaces';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { PracticeContextRollup } from '@/lib/bindings/PracticeContextRollup';
 import type { WorkspacePatternEdge } from '@/lib/bindings/WorkspacePatternEdge';
+import type { WorkspacePlaybook } from '@/lib/bindings/WorkspacePlaybook';
+import type { WorkspacePlaybookPattern } from '@/lib/bindings/WorkspacePlaybookPattern';
 import type { WorkspacePracticeAdoption } from '@/lib/bindings/WorkspacePracticeAdoption';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { areaTheme } from '../practiceAreaTheme';
 import type { KnowledgeItemView } from '../libraryModel';
 import { buildEdgeViews, buildTopicGraph, type ClusterNode } from './graphModel';
 import { ClusterPatternsModal } from './ClusterPatternsModal';
+import { CreatePlaybookModal } from './CreatePlaybookModal';
+import { PlaybooksPanel } from './PlaybooksPanel';
 import { ZoomRail } from './GraphChrome';
 import PatternGraphNexus, { type FlyTarget } from './PatternGraphNexus';
 import { useGraphCanvas } from './useGraphCanvas';
@@ -107,6 +118,45 @@ export default function PatternGraphHost({
     () => buildEdgeViews(edges.map((e) => ({ fromId: e.fromId, toId: e.toId, rel: e.rel, note: e.note })), items),
     [edges, items],
   );
+
+  // Playbooks (fabric S3) + the cross-modal selection basket the curator UI
+  // builds them from. Missing commands degrade to an empty rail.
+  const [playbooks, setPlaybooks] = useState<WorkspacePlaybook[]>([]);
+  const [playbookMembers, setPlaybookMembers] = useState<WorkspacePlaybookPattern[]>([]);
+  const [playbooksGen, setPlaybooksGen] = useState(0);
+  const [showPlaybooks, setShowPlaybooks] = useState(false);
+  const [basket, setBasket] = useState<ReadonlyMap<string, KnowledgeItemView>>(new Map());
+  const [creatingPlaybook, setCreatingPlaybook] = useState(false);
+  useEffect(() => {
+    let live = true;
+    void playbooksGen;
+    Promise.all([listPlaybooks(workspaceId), listPlaybookPatterns(workspaceId)])
+      .then(([pbs, mems]) => {
+        if (live) {
+          setPlaybooks(pbs);
+          setPlaybookMembers(mems);
+        }
+      })
+      .catch((err) => {
+        silentCatch('patterns:playbooks')(err);
+        if (live) {
+          setPlaybooks([]);
+          setPlaybookMembers([]);
+        }
+      });
+    return () => { live = false; };
+  }, [workspaceId, playbooksGen]);
+
+  const itemById = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
+
+  const toggleBasket = (item: KnowledgeItemView) => {
+    setBasket((cur) => {
+      const next = new Map(cur);
+      if (next.has(item.id)) next.delete(item.id);
+      else next.set(item.id, item);
+      return next;
+    });
+  };
 
   const contextCoverage = useMemo(() => {
     if (!rollup || rollup.length === 0) return null;
@@ -248,7 +298,26 @@ export default function PatternGraphHost({
 
   return (
     <div className="flex flex-col min-h-0 h-full gap-2">
-      <div className="flex items-center justify-end gap-3 flex-shrink-0">
+      <div className="flex items-center justify-between gap-3 flex-shrink-0">
+        <button
+          type="button"
+          onClick={() => setShowPlaybooks((v) => !v)}
+          aria-pressed={showPlaybooks}
+          className={`typo-label flex items-center gap-1.5 rounded-interactive border px-2.5 py-1 transition-colors ${
+            showPlaybooks
+              ? 'border-primary/25 bg-primary/10 text-foreground'
+              : 'border-border/60 bg-secondary/50 text-foreground/70 hover:text-foreground'
+          }`}
+        >
+          <BookOpen className="w-3.5 h-3.5" aria-hidden />
+          {w.playbooks_title}
+          <span className="tabular-nums text-foreground/55">{playbooks.length}</span>
+          {basket.size > 0 && (
+            <span className="tabular-nums rounded-pill bg-primary/15 text-primary px-1.5">
+              +{basket.size}
+            </span>
+          )}
+        </button>
         <span className="typo-caption text-foreground/50 tabular-nums">
           {tx(w.graph_stats, { total: graph.total, pending: graph.pending })}
         </span>
@@ -316,17 +385,53 @@ export default function PatternGraphHost({
 
         <ZoomRail k={k} zoomBy={canvas.zoomBy} reset={flyHome} />
 
+        {showPlaybooks && (
+          <PlaybooksPanel
+            playbooks={playbooks}
+            members={playbookMembers}
+            itemById={itemById}
+            basketCount={basket.size}
+            onCreateFromBasket={() => setCreatingPlaybook(true)}
+            onSetStatus={(id, status) => {
+              setPlaybookStatus(id, status)
+                .then(() => setPlaybooksGen((g) => g + 1))
+                .catch(toastCatch('workspaces:playbookStatus'));
+            }}
+            onDelete={(id) => {
+              deletePlaybook(id)
+                .then(() => setPlaybooksGen((g) => g + 1))
+                .catch(toastCatch('workspaces:playbookDelete'));
+            }}
+            onOpenItem={onOpenItem}
+            onClose={() => setShowPlaybooks(false)}
+          />
+        )}
+
         {selected && (
           <ClusterPatternsModal
             node={selected}
             patternCoverage={patternCoverage}
             relatedFor={(item) => edgeViews.byPractice.get(item.id) ?? []}
+            basketIds={basket}
+            onToggleBasket={toggleBasket}
             onOpenRelated={(otherId) => {
               const target = items.find((i) => i.id === otherId);
               if (target) onOpenItem?.(target);
             }}
             onOpenItem={onOpenItem}
             onClose={() => setSelected(null)}
+          />
+        )}
+
+        {creatingPlaybook && (
+          <CreatePlaybookModal
+            workspaceId={workspaceId}
+            basket={[...basket.values()]}
+            onCreated={() => {
+              setBasket(new Map());
+              setPlaybooksGen((g) => g + 1);
+            }}
+            onClose={() => setCreatingPlaybook(false)}
           />
         )}
 

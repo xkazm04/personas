@@ -11,7 +11,7 @@ use tauri::State;
 
 use crate::db::models::{
     DevProject, DevWorkspace, PracticeContextRollup, WorkspaceImportItem, WorkspaceKnowledge,
-    WorkspacePatternEdge, WorkspacePracticeAdoption,
+    WorkspacePatternEdge, WorkspacePlaybook, WorkspacePlaybookPattern, WorkspacePracticeAdoption,
 };
 use crate::db::repos::dev_workspaces as repo;
 use crate::error::AppError;
@@ -279,6 +279,67 @@ pub fn dev_tools_workspace_adoption_list(
 ) -> Result<Vec<WorkspacePracticeAdoption>, AppError> {
     require_auth_sync(&state)?;
     repo::list_adoption(&state.db, &workspace_id)
+}
+
+/// Playbooks — the fabric's situation layer (pattern-fabric S3).
+#[tauri::command]
+pub fn dev_tools_playbooks_list(
+    state: State<'_, Arc<AppState>>,
+    workspace_id: String,
+) -> Result<Vec<WorkspacePlaybook>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_playbooks(&state.db, &workspace_id)
+}
+
+#[tauri::command]
+pub fn dev_tools_playbook_patterns_list(
+    state: State<'_, Arc<AppState>>,
+    workspace_id: String,
+) -> Result<Vec<WorkspacePlaybookPattern>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_playbook_patterns(&state.db, &workspace_id)
+}
+
+#[tauri::command]
+pub fn dev_tools_playbook_create(
+    state: State<'_, Arc<AppState>>,
+    workspace_id: String,
+    slug: String,
+    title: String,
+    triggers: String,
+    summary: String,
+) -> Result<WorkspacePlaybook, AppError> {
+    require_auth_sync(&state)?;
+    repo::create_playbook(&state.db, &workspace_id, &slug, &title, &triggers, &summary)
+}
+
+#[tauri::command]
+pub fn dev_tools_playbook_set_status(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    status: String,
+) -> Result<WorkspacePlaybook, AppError> {
+    require_auth_sync(&state)?;
+    repo::update_playbook_status(&state.db, &id, &status)
+}
+
+#[tauri::command]
+pub fn dev_tools_playbook_delete(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    repo::delete_playbook(&state.db, &id)
+}
+
+#[tauri::command]
+pub fn dev_tools_playbook_set_patterns(
+    state: State<'_, Arc<AppState>>,
+    playbook_id: String,
+    members: Vec<WorkspacePlaybookPattern>,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    repo::set_playbook_patterns(&state.db, &playbook_id, &members)
 }
 
 /// Typed pattern connections (pattern-fabric S2). Read surface for the graph

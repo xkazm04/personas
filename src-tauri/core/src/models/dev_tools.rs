@@ -279,6 +279,44 @@ pub struct PracticeContextRollup {
     pub applicable: i32,
 }
 
+/// A playbook — the pattern fabric's SITUATION layer (pattern-fabric S3,
+/// docs/concepts/pattern-fabric.md). A curated, human-gated bundle of
+/// patterns keyed by a development situation ("add a database table"),
+/// phased before/during/verify. The CLI consult layer's front door.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct WorkspacePlaybook {
+    pub id: String,
+    pub workspace_id: String,
+    /// Stable, citable key (`add-db-table`). Unique per workspace.
+    pub slug: String,
+    pub title: String,
+    /// JSON array of short intent phrases the consult matcher runs against.
+    pub triggers: String,
+    pub summary: String,
+    /// 'draft' | 'active' | 'retired' (DB CHECK). Seeded playbooks land as
+    /// `draft` — activation is the curator's call, like every adoption.
+    pub status: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+/// One pattern's membership in a playbook, with its phase and reading order.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct WorkspacePlaybookPattern {
+    pub playbook_id: String,
+    pub practice_id: String,
+    /// 'before' | 'during' | 'verify' (DB CHECK).
+    pub phase: String,
+    // i32 for the same reason PracticeContextRollup: i64 exports as TS bigint.
+    pub ordinal: i32,
+    /// One line: why this pattern, in this situation.
+    pub note: Option<String>,
+}
+
 /// A typed connection between two patterns (pattern-fabric S2,
 /// docs/concepts/pattern-fabric.md). `rel` is a CLOSED six-value vocabulary
 /// enforced by the DB CHECK: governs · composes_with · prerequisite ·
