@@ -402,6 +402,60 @@ export interface ClusterLink {
   count: number;
 }
 
+// -- playbook integrity ------------------------------------------------------
+
+/** A membership pointing at a pattern that is no longer canon. */
+export interface StaleMember {
+  practiceId: string;
+  /** The pattern's title if the row still exists at all (deprecated/rejected),
+   *  `null` when the row is gone entirely. */
+  title: string | null;
+  /** A pattern that SUPERSEDES the stale one, or its `governs` parent — the
+   *  curator's most likely replacement. Suggested, never auto-applied: which
+   *  phase a replacement belongs in is a judgement the fabric cannot make. */
+  replacementTitle: string | null;
+}
+
+/**
+ * Which of a playbook's memberships have gone stale.
+ *
+ * A playbook is a promise that following it applies current doctrine, so a
+ * member whose pattern was deprecated, rejected or deleted is worse than a
+ * missing one — it teaches something the workspace has since abandoned. Only
+ * `adopted` patterns count as live.
+ */
+export function playbookStaleMembers(
+  members: readonly { practiceId: string }[],
+  itemById: ReadonlyMap<string, KnowledgeItemView>,
+  edges: readonly PatternEdgeLike[],
+): StaleMember[] {
+  const out: StaleMember[] = [];
+  for (const m of members) {
+    const item = itemById.get(m.practiceId);
+    if (item && item.status === 'adopted') continue;
+    // `supersedes` is the explicit replacement; `governs` is the fallback
+    // ("the parent doctrine still stands").
+    let replacement: KnowledgeItemView | null = null;
+    for (const e of edges) {
+      if (e.toId !== m.practiceId) continue;
+      if (e.rel !== 'supersedes' && e.rel !== 'governs') continue;
+      const candidate = itemById.get(e.fromId);
+      if (!candidate || candidate.status !== 'adopted') continue;
+      if (e.rel === 'supersedes') {
+        replacement = candidate;
+        break;
+      }
+      replacement = replacement ?? candidate;
+    }
+    out.push({
+      practiceId: m.practiceId,
+      title: item?.title ?? null,
+      replacementTitle: replacement?.title ?? null,
+    });
+  }
+  return out;
+}
+
 export function buildEdgeViews(
   edges: readonly PatternEdgeLike[],
   items: readonly KnowledgeItemView[],

@@ -410,3 +410,33 @@ export async function verifyWorkspaceAdoptions(
 export async function getVerifyStatus(jobId: string): Promise<VerifyStatus> {
   return invoke<VerifyStatus>('dev_tools_workspace_get_verify_status', { jobId });
 }
+
+// -- consult telemetry -------------------------------------------------------
+
+/**
+ * How often the CLI consult layer actually reached each playbook, plus the
+ * intents it could NOT match.
+ *
+ * The unmatched list is the more valuable half: it is the fabric telling its
+ * curator which situation has no playbook yet, sourced from real requests
+ * rather than a guess. Typed locally rather than against `WorkspaceConsultStats`
+ * so this wrapper compiles before the Rust side lands its binding — the shape
+ * is the command's contract either way.
+ */
+export interface ConsultStats {
+  perPlaybook: { slug: string; matches: number }[];
+  unmatched: { intent: string; createdAt: string }[];
+}
+
+/** Degrades to a rejected promise on a binary that predates the command; every
+ *  caller is expected to `silentCatch` it into an empty rail. */
+export async function getConsultStats(workspaceId: string): Promise<ConsultStats> {
+  // The command name is asserted rather than imported: `commandNames.generated`
+  // is regenerated from the Rust command surface, and this wrapper is written
+  // against a command that is landing in the same wave. Drop the assertion once
+  // the name is in the generated union.
+  return invoke<ConsultStats>(
+    'dev_tools_consult_stats' as Parameters<typeof invoke>[0],
+    { workspaceId },
+  );
+}

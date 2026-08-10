@@ -9,11 +9,14 @@ import { BookOpen, ChevronRight, X } from 'lucide-react';
 
 import {
   deletePlaybook,
+  getConsultStats,
   listPatternEdges,
   listPlaybookPatterns,
   listPlaybooks,
   listPracticeContextRollup,
+  setPlaybookPatterns,
   setPlaybookStatus,
+  type ConsultStats,
 } from '@/api/devTools/workspaces';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { PracticeContextRollup } from '@/lib/bindings/PracticeContextRollup';
@@ -128,10 +131,11 @@ export default function PatternGraphHost({
     return () => { live = false; };
   }, [workspaceId, items]);
 
-  const edgeViews = useMemo(
-    () => buildEdgeViews(edges.map((e) => ({ fromId: e.fromId, toId: e.toId, rel: e.rel, note: e.note })), items),
-    [edges, items],
+  const edgeLikes = useMemo(
+    () => edges.map((e) => ({ fromId: e.fromId, toId: e.toId, rel: e.rel, note: e.note })),
+    [edges],
   );
+  const edgeViews = useMemo(() => buildEdgeViews(edgeLikes, items), [edgeLikes, items]);
 
   // Playbooks (fabric S3) + the cross-modal selection basket the curator UI
   // builds them from. Missing commands degrade to an empty rail.
@@ -157,6 +161,20 @@ export default function PatternGraphHost({
           setPlaybooks([]);
           setPlaybookMembers([]);
         }
+      });
+    return () => { live = false; };
+  }, [workspaceId, playbooksGen]);
+
+  // Consult telemetry (how often the CLI reached each playbook, and what it
+  // could not match). A binary without the command degrades to no counts.
+  const [consultStats, setConsultStats] = useState<ConsultStats | null>(null);
+  useEffect(() => {
+    let live = true;
+    getConsultStats(workspaceId)
+      .then((s) => { if (live) setConsultStats(s); })
+      .catch((err) => {
+        silentCatch('patterns:consultStats')(err);
+        if (live) setConsultStats(null);
       });
     return () => { live = false; };
   }, [workspaceId, playbooksGen]);
@@ -478,6 +496,8 @@ export default function PatternGraphHost({
             playbooks={playbooks}
             members={playbookMembers}
             itemById={itemById}
+            edges={edgeLikes}
+            consultStats={consultStats}
             basketCount={basket.size}
             onCreateFromBasket={() => setCreatingPlaybook(true)}
             onSetStatus={(id, status) => {
@@ -489,6 +509,11 @@ export default function PatternGraphHost({
               deletePlaybook(id)
                 .then(() => setPlaybooksGen((g) => g + 1))
                 .catch(toastCatch('workspaces:playbookDelete'));
+            }}
+            onPrune={(id, survivors) => {
+              setPlaybookPatterns(id, survivors)
+                .then(() => setPlaybooksGen((g) => g + 1))
+                .catch(toastCatch('workspaces:playbookPrune'));
             }}
             onOpenItem={onOpenItem}
             onClose={() => setShowPlaybooks(false)}
