@@ -33,6 +33,7 @@ import type { TasksPage } from "@/lib/bindings/TasksPage";
 import type { AutoRunStatus } from "@/lib/bindings/AutoRunStatus";
 import type { AthenaTriageBatch } from "@/lib/bindings/AthenaTriageBatch";
 import type { AppliedTriage } from "@/lib/bindings/AppliedTriage";
+import type { TriageVerdictsIngestSummary } from "@/lib/bindings/TriageVerdictsIngestSummary";
 import type { DispatchIdeasResult } from "@/lib/bindings/DispatchIdeasResult";
 
 // ---------------------------------------------------------------------------
@@ -1176,6 +1177,19 @@ export const applyTriageVerdicts = (
   approvalId: string,
   overrides: { ideaId: string; verdict: "accept" | "reject" | "skip"; reason?: string }[],
 ) => invoke<AppliedTriage>("dev_tools_apply_triage_verdicts", { approvalId, overrides });
+
+/**
+ * Ingest a CLI triage-verdicts run (`.personas/triage-verdicts/runs/<id>/result.json`)
+ * as a PENDING `backlog_apply_triage` approval — the same row shape
+ * {@link athenaTriageBatch} persists, confirmable through the Approvals card or
+ * the Backlog verdict card. All-or-nothing: any bad row refuses the whole run.
+ * `runDir` optional — defaults to the newest un-ingested run.
+ */
+export const triageVerdictsIngest = (projectId: string, runDir?: string) =>
+  invoke<TriageVerdictsIngestSummary>("dev_tools_triage_verdicts_ingest", {
+    projectId,
+    runDir,
+  });
 
 export const batchCreateTasks = (tasks: { title: string; description?: string; sourceIdeaId?: string; goalId?: string }[], projectId?: string) =>
   safeInvoke<DevTask[]>([], "dev_tools_batch_create_tasks", {

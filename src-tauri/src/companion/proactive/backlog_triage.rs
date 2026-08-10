@@ -50,7 +50,10 @@ const MEMORY_ROWS_PER_PROJECT: i64 = 12;
 
 const DESCRIPTION_MAX: usize = 400;
 const EVIDENCE_MAX: usize = 200;
-const REASON_MAX: usize = 140;
+/// Per-verdict reason cap. `pub` because the triage-verdicts ingest door
+/// (`commands::infrastructure::dev_tools::triage_ingest`) enforces the same
+/// cap on file-borne reasons.
+pub const REASON_MAX: usize = 140;
 
 /// One decided idea, as the approval row and the UI card consume it.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ts_rs::TS)]

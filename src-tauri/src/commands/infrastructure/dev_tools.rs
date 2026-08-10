@@ -11,6 +11,8 @@ pub mod portfolio;
 /// The `/ship-milestone` skill's one gated door back into the app.
 pub mod ship_ingest;
 mod triage;
+/// The CLI triage-verdicts run's one gated door back into the app.
+pub mod triage_ingest;
 pub mod workspace;
 
 // Re-export competition + dev-server commands so lib.rs invoke_handler
@@ -25,6 +27,7 @@ pub use goals::*;
 pub use milestones::*;
 pub use portfolio::*;
 pub use ship_ingest::*;
+pub use triage_ingest::*;
 
 use crate::db::models::{DevIdea, DevKpi, DevKpiMeasurement, DevPipeline, DevProject, DevScan, DevTask, DevUseCase, TriageRule};
 use crate::db::repos::dev_tools as repo;

@@ -159,7 +159,7 @@ pub async fn dev_tools_athena_triage_batch(
 
     let batch = run_backlog_triage_batch(&state.db, &state.user_db, &ideas, &project_name).await?;
 
-    let approval_id = insert_triage_approval(&state, &batch.summary, &batch.items)?;
+    let approval_id = insert_triage_approval(&state.user_db, &batch.summary, &batch.items)?;
 
     Ok(AthenaTriageBatch {
         approval_id,
@@ -169,24 +169,35 @@ pub async fn dev_tools_athena_triage_batch(
     })
 }
 
-/// Persist the batch as a pending `companion_approval` row, mirroring
-/// `dispatcher::insert_approval`'s payload shape exactly (`{action, params,
-/// rationale}`) so `companion_list_pending_approvals` and
-/// `companion_approve_action` can read it without a special case.
-fn insert_triage_approval(
-    state: &State<'_, Arc<AppState>>,
-    summary: &str,
-    items: &[BacklogVerdict],
-) -> Result<String, AppError> {
-    let id = format!("appr_{}", crate::companion::util::short_id(12));
-    let payload = serde_json::json!({
+/// The `{action, params, rationale}` payload [`insert_triage_approval`]
+/// persists — split out so the round-trip through [`parse_items`] is testable
+/// without a database.
+pub(crate) fn triage_approval_payload(summary: &str, items: &[BacklogVerdict]) -> String {
+    serde_json::json!({
         "action": BACKLOG_APPLY_TRIAGE,
         "params": { "items": items },
         "rationale": summary,
     })
-    .to_string();
+    .to_string()
+}
 
-    let conn = state.user_db.get()?;
+/// Persist the batch as a pending `companion_approval` row, mirroring
+/// `dispatcher::insert_approval`'s payload shape exactly (`{action, params,
+/// rationale}`) so `companion_list_pending_approvals` and
+/// `companion_approve_action` can read it without a special case.
+///
+/// `pub(crate)` with a bare pool (not `State`) so the triage-verdicts ingest
+/// door (`dev_tools_triage_verdicts_ingest`) persists the byte-identical row
+/// the live Athena batch does — one writer shape, two producers.
+pub(crate) fn insert_triage_approval(
+    user_db: &crate::db::UserDbPool,
+    summary: &str,
+    items: &[BacklogVerdict],
+) -> Result<String, AppError> {
+    let id = format!("appr_{}", crate::companion::util::short_id(12));
+    let payload = triage_approval_payload(summary, items);
+
+    let conn = user_db.get()?;
     conn.execute(
         "INSERT INTO companion_approval (id, session_id, kind, payload, status, human_review_id, created_at)
          VALUES (?1, ?2, 'op_execute', ?3, 'pending', NULL, datetime('now'))",
@@ -391,5 +402,39 @@ mod tests {
         let v = serde_json::json!({"items": [{"ideaId": "a", "verdict": "probably"}]});
         let items = parse_items(&v).expect("parses");
         assert_eq!(items[0].verdict, "reject", "an ambiguous token is not consent");
+    }
+
+    /// The payload `insert_triage_approval` writes must round-trip through
+    /// `parse_items` losslessly — this is the contract the triage-verdicts
+    /// ingest door relies on when it reuses the same writer.
+    #[test]
+    fn approval_payload_round_trips_through_parse_items() {
+        let items = vec![
+            BacklogVerdict {
+                idea_id: "a".into(),
+                title: "Add retry".into(),
+                verdict: "accept".into(),
+                reason: "clear win".into(),
+            },
+            BacklogVerdict {
+                idea_id: "b".into(),
+                title: "Improve things".into(),
+                verdict: "reject".into(),
+                reason: "no acceptance criteria".into(),
+            },
+        ];
+        let payload = triage_approval_payload("1 of 2 worth scheduling", &items);
+        let v: serde_json::Value = serde_json::from_str(&payload).expect("payload is JSON");
+        assert_eq!(v["action"], BACKLOG_APPLY_TRIAGE);
+        assert_eq!(v["rationale"], "1 of 2 worth scheduling");
+
+        let parsed = parse_items(&v["params"]).expect("parses");
+        assert_eq!(parsed.len(), items.len());
+        for (p, orig) in parsed.iter().zip(&items) {
+            assert_eq!(p.idea_id, orig.idea_id);
+            assert_eq!(p.title, orig.title);
+            assert_eq!(p.verdict, orig.verdict);
+            assert_eq!(p.reason, orig.reason);
+        }
     }
 }
