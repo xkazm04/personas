@@ -28,6 +28,8 @@ import {
   buildEdgeViews,
   buildFabricIndex,
   buildTopicGraph,
+  foldTopicCoverage,
+  topicCoverageKeys,
   type ClusterNode,
   type FabricMatch,
   type FacetNode,
@@ -80,10 +82,13 @@ export default function PatternGraphHost({
     );
     const topics = new Set<string>();
     for (const item of items) {
-      if (adoptedPractices.has(item.id)) {
-        const [area = '', cluster = ''] = item.topic.split('/');
-        if (area) topics.add(`${area}/${cluster || 'general'}`);
-      }
+      if (!adoptedPractices.has(item.id)) continue;
+      // Both grains: the facet node greys/keeps colour on its own key, the
+      // cluster keeps colour when ANY facet under it is applied.
+      const keys = topicCoverageKeys(item.topic);
+      if (!keys) continue;
+      topics.add(keys.cluster);
+      topics.add(keys.full);
     }
     return topics as ReadonlySet<string>;
   }, [selectedProjectId, adoptions, items]);
@@ -170,26 +175,14 @@ export default function PatternGraphHost({
   const contextCoverage = useMemo(() => {
     if (!rollup || rollup.length === 0) return null;
     const byPractice = new Map(rollup.map((r) => [r.practiceId, r]));
-    const topic = new Map<string, { adopted: number; applicable: number }>();
-    const area = new Map<string, { adopted: number; applicable: number }>();
-    for (const item of items) {
+    // Keyed at FULL topic depth (facet nodes carry their own ring); the fold
+    // also credits each practice to its cluster and area, so a cluster ring is
+    // the aggregate over its facets plus any items directly under it.
+    const { topic, area } = foldTopicCoverage(items, (item) => {
       const r = byPractice.get(item.id);
-      if (!r || r.applicable === 0) continue;
-      const [a = '', c = ''] = item.topic.split('/');
-      if (!a) continue;
-      const key = `${a}/${c || 'general'}`;
-      const t0 = topic.get(key) ?? { adopted: 0, applicable: 0 };
-      t0.adopted += r.adopted;
-      t0.applicable += r.applicable;
-      topic.set(key, t0);
-      const a0 = area.get(a) ?? { adopted: 0, applicable: 0 };
-      a0.adopted += r.adopted;
-      a0.applicable += r.applicable;
-      area.set(a, a0);
-    }
-    const ratio = (m: Map<string, { adopted: number; applicable: number }>) =>
-      new Map([...m.entries()].map(([k, v]) => [k, v.adopted / v.applicable]));
-    return { topic: ratio(topic), area: ratio(area), byPractice };
+      return r && r.applicable > 0 ? { num: r.adopted, den: r.applicable } : null;
+    });
+    return { topic, area, byPractice };
   }, [rollup, items]);
 
   // Fallback: resolved share of the pattern×project adoption matrix. A cell
@@ -206,28 +199,13 @@ export default function PatternGraphHost({
       resolvedByPractice.set(a.practice_id, (resolvedByPractice.get(a.practice_id) ?? 0) + 1);
     }
     const denomPer = selectedProjectId ? 1 : projectCount;
-    const topic = new Map<string, number>();
-    const area = new Map<string, number>();
-    if (denomPer > 0) {
-      const acc = new Map<string, { res: number; tot: number }>();
-      const accArea = new Map<string, { res: number; tot: number }>();
-      for (const item of items) {
-        const [a = '', c = ''] = item.topic.split('/');
-        if (!a) continue;
-        const key = `${a}/${c || 'general'}`;
-        const res = Math.min(resolvedByPractice.get(item.id) ?? 0, denomPer);
-        const t0 = acc.get(key) ?? { res: 0, tot: 0 };
-        t0.res += res;
-        t0.tot += denomPer;
-        acc.set(key, t0);
-        const a0 = accArea.get(a) ?? { res: 0, tot: 0 };
-        a0.res += res;
-        a0.tot += denomPer;
-        accArea.set(a, a0);
-      }
-      for (const [k, v] of acc) topic.set(k, v.tot > 0 ? v.res / v.tot : 0);
-      for (const [k, v] of accArea) area.set(k, v.tot > 0 ? v.res / v.tot : 0);
-    }
+    const { topic, area } =
+      denomPer > 0
+        ? foldTopicCoverage(items, (item) => ({
+            num: Math.min(resolvedByPractice.get(item.id) ?? 0, denomPer),
+            den: denomPer,
+          }))
+        : { topic: new Map<string, number>(), area: new Map<string, number>() };
     const perPattern = (item: KnowledgeItemView): number | null =>
       denomPer > 0 ? Math.min(resolvedByPractice.get(item.id) ?? 0, denomPer) / denomPer : null;
     return { topic, area, perPattern, enabled: denomPer > 0 };

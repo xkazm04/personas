@@ -150,6 +150,32 @@ export function topicClusterKey(topic: string): string | null {
   return area ? `${area}/${cluster || 'general'}` : null;
 }
 
+/** Every measurement key a practice contributes to.
+ *
+ *  Coverage used to be keyed at the cluster grain only, which made a facet
+ *  node a bare circle — the one level of the fabric with no readout, and the
+ *  level a curator is standing on when they ask "is THIS adopted?". Keying at
+ *  full depth gives the facet its own number; the cluster still gets the
+ *  contribution too, so a cluster ring reads as the AGGREGATE of its facets
+ *  plus whatever items sit directly under it (a mixed-depth cluster is normal
+ *  and must render both grains correctly).
+ *
+ *  For a 2-segment topic `full === cluster` — the caller can add twice safely
+ *  only if it checks, so the pair is returned explicitly. */
+export interface TopicCoverageKeys {
+  area: string;
+  cluster: string;
+  /** 3-segment key when the practice has a facet; the cluster key otherwise. */
+  full: string;
+}
+
+export function topicCoverageKeys(topic: string): TopicCoverageKeys | null {
+  const [area = '', cluster = '', facet = ''] = topic.split('/');
+  if (!area) return null;
+  const clusterKey = `${area}/${cluster || 'general'}`;
+  return { area, cluster: clusterKey, full: facet ? `${clusterKey}/${facet}` : clusterKey };
+}
+
 // -- fabric omnibox ----------------------------------------------------------
 //
 // The sky is navigable by flying, which is the right *exploration* verb and the
@@ -304,6 +330,48 @@ export function searchFabric(index: FabricIndex, query: string, limit = 12): Fab
       a.key.localeCompare(b.key),
   );
   return scored.slice(0, limit);
+}
+
+/** A practice's contribution to a coverage ratio (adopted/applicable, or
+ *  resolved-cells/total-cells — the fold does not care which). */
+export interface CoverageParts {
+  num: number;
+  den: number;
+}
+
+/**
+ * Fold per-practice coverage into ring values at every grain the canvas draws.
+ *
+ * Keys are FULL topic paths, so a facet node gets its own ratio; each practice
+ * also contributes to its cluster and its area, which makes the cluster ring
+ * the honest aggregate of its facets plus any items sitting directly under it.
+ * Practices whose `partsOf` returns null (or a zero denominator) contribute
+ * nothing anywhere — an unmeasurable practice must not dilute its neighbours.
+ */
+export function foldTopicCoverage(
+  items: readonly KnowledgeItemView[],
+  partsOf: (item: KnowledgeItemView) => CoverageParts | null,
+): { topic: Map<string, number>; area: Map<string, number> } {
+  const topicAcc = new Map<string, CoverageParts>();
+  const areaAcc = new Map<string, CoverageParts>();
+  const add = (m: Map<string, CoverageParts>, key: string, p: CoverageParts) => {
+    const cur = m.get(key) ?? { num: 0, den: 0 };
+    cur.num += p.num;
+    cur.den += p.den;
+    m.set(key, cur);
+  };
+  for (const item of items) {
+    const keys = topicCoverageKeys(item.topic);
+    if (!keys) continue;
+    const parts = partsOf(item);
+    if (!parts || parts.den <= 0) continue;
+    add(topicAcc, keys.cluster, parts);
+    if (keys.full !== keys.cluster) add(topicAcc, keys.full, parts);
+    add(areaAcc, keys.area, parts);
+  }
+  const ratio = (m: Map<string, CoverageParts>) =>
+    new Map([...m.entries()].map(([k, v]) => [k, v.den > 0 ? v.num / v.den : 0]));
+  return { topic: ratio(topicAcc), area: ratio(areaAcc) };
 }
 
 export interface PatternEdgeLike {
