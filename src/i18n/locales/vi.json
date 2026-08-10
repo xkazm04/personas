@@ -14012,7 +14012,10 @@
         "playbook_replacement_hint": "→ {title}",
         "playbook_consults": "{count} lần",
         "playbook_consults_label": "Lượt khớp tư vấn",
-        "playbook_unmatched_title": "Ý định chưa khớp"
+        "playbook_unmatched_title": "Ý định chưa khớp",
+        "playbook_suggested_title": "Đề xuất bổ sung",
+        "playbook_add": "Thêm",
+        "playbook_suggested_reason": "Mở rộng “{title}”"
       },
       "skills_adopt": "Áp dụng",
       "skills_adopt_hint": "Áp dụng vào {name} — Claude tùy chỉnh cho kho mã",

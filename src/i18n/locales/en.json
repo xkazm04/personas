@@ -14463,7 +14463,10 @@
         "playbook_replacement_hint": "→ {title}",
         "playbook_consults": "{count}×",
         "playbook_consults_label": "Consult matches",
-        "playbook_unmatched_title": "Unmatched intents"
+        "playbook_unmatched_title": "Unmatched intents",
+        "playbook_suggested_title": "Suggested additions",
+        "playbook_add": "Add",
+        "playbook_suggested_reason": "Extends “{title}”"
       },
       "skills_info_args": "args",
       "skills_info_context_tracked": "context-tracked",

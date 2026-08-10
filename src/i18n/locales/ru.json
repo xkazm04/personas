@@ -14012,7 +14012,10 @@
         "playbook_replacement_hint": "→ {title}",
         "playbook_consults": "{count}×",
         "playbook_consults_label": "Совпадения консультаций",
-        "playbook_unmatched_title": "Запросы без совпадений"
+        "playbook_unmatched_title": "Запросы без совпадений",
+        "playbook_suggested_title": "Предлагаемые дополнения",
+        "playbook_add": "Добавить",
+        "playbook_suggested_reason": "Расширяет «{title}»"
       },
       "skills_adopt": "Внедрить",
       "skills_adopt_hint": "Внедрить в {name} — Claude адаптирует под репозиторий",

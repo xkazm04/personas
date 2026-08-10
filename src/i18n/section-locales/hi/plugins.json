@@ -1392,7 +1392,10 @@
       "playbook_replacement_hint": "→ {title}",
       "playbook_consults": "{count}×",
       "playbook_consults_label": "परामर्श मिलान",
-      "playbook_unmatched_title": "बिना मिलान के इरादे"
+      "playbook_unmatched_title": "बिना मिलान के इरादे",
+      "playbook_suggested_title": "सुझाए गए जोड़",
+      "playbook_add": "जोड़ें",
+      "playbook_suggested_reason": "“{title}” का विस्तार"
     },
     "skills_adopt": "अपनाएँ",
     "skills_adopt_hint": "{name} में अपनाएँ — Claude इसे रिपॉज़िटरी के लिए अनुकूलित करता है",

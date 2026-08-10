@@ -1392,7 +1392,10 @@
       "playbook_replacement_hint": "→ {title}",
       "playbook_consults": "{count}×",
       "playbook_consults_label": "Coincidencias de consulta",
-      "playbook_unmatched_title": "Intenciones sin coincidencia"
+      "playbook_unmatched_title": "Intenciones sin coincidencia",
+      "playbook_suggested_title": "Adiciones sugeridas",
+      "playbook_add": "Añadir",
+      "playbook_suggested_reason": "Extiende «{title}»"
     },
     "skills_adopt": "Adoptar",
     "skills_adopt_hint": "Adoptar en {name} — Claude la adapta al repositorio",

@@ -14470,6 +14470,9 @@ export type Translations = {
         playbook_consults: string;
         playbook_consults_label: string;
         playbook_unmatched_title: string;
+        playbook_suggested_title: string;
+        playbook_add: string;
+        playbook_suggested_reason: string;
       };
       skills_info_args: string;
       skills_info_context_tracked: string;

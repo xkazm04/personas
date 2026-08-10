@@ -14012,7 +14012,10 @@
         "playbook_replacement_hint": "→ {title}",
         "playbook_consults": "{count} 次",
         "playbook_consults_label": "咨询命中",
-        "playbook_unmatched_title": "未命中的意图"
+        "playbook_unmatched_title": "未命中的意图",
+        "playbook_suggested_title": "建议加入",
+        "playbook_add": "加入",
+        "playbook_suggested_reason": "扩展“{title}”"
       },
       "skills_adopt": "采用",
       "skills_adopt_hint": "采用到 {name} — Claude 会为该仓库定制它",

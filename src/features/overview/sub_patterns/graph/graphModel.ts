@@ -405,6 +405,46 @@ export interface ClusterLink {
 // -- playbook integrity ------------------------------------------------------
 
 /** A membership pointing at a pattern that is no longer canon. */
+/** A candidate ADDITION to a playbook (fabric F4): an adopted pattern that
+ *  EXTENDS one of the playbook's members and is not itself a member yet. The
+ *  suggestion inherits the parent's phase and slots directly after it —
+ *  adding stays a curator click, never automatic. */
+export interface SuggestedAddition {
+  item: KnowledgeItemView;
+  /** The member it extends — the reason the suggestion exists. */
+  extendsTitle: string;
+  phase: string;
+  ordinal: number;
+}
+
+export function playbookSuggestedAdditions(
+  members: readonly { practiceId: string; phase: string; ordinal: number }[],
+  itemById: ReadonlyMap<string, KnowledgeItemView>,
+  edges: readonly PatternEdgeLike[],
+): SuggestedAddition[] {
+  const memberIds = new Set(members.map((m) => m.practiceId));
+  const out: SuggestedAddition[] = [];
+  const suggested = new Set<string>();
+  for (const m of members) {
+    const parent = itemById.get(m.practiceId);
+    if (!parent || parent.status !== 'adopted') continue;
+    for (const e of edges) {
+      if (e.rel !== 'extends' || e.toId !== m.practiceId) continue;
+      if (memberIds.has(e.fromId) || suggested.has(e.fromId)) continue;
+      const child = itemById.get(e.fromId);
+      if (!child || child.status !== 'adopted') continue;
+      suggested.add(child.id);
+      out.push({
+        item: child,
+        extendsTitle: parent.title,
+        phase: m.phase,
+        ordinal: m.ordinal + 1,
+      });
+    }
+  }
+  return out;
+}
+
 export interface StaleMember {
   practiceId: string;
   /** The pattern's title if the row still exists at all (deprecated/rejected),
@@ -495,7 +535,7 @@ export function buildEdgeViews(
     const ka = topicClusterKey(from.topic);
     const kb = topicClusterKey(to.topic);
     if (!ka || !kb || ka === kb) continue;
-    const key = ka < kb ? `${ka} ${kb}` : `${kb} ${ka}`;
+    const key = ka < kb ? `${ka}\u0000${kb}` : `${kb}\u0000${ka}`;
     const link = pairs.get(key) ?? { a: ka < kb ? ka : kb, b: ka < kb ? kb : ka, count: 0 };
     link.count += 1;
     pairs.set(key, link);

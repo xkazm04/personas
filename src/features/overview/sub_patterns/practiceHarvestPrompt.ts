@@ -85,7 +85,8 @@ const OUTPUT_CONTRACT = `OUTPUT CONTRACT — write \`practice-harvest/runs/<YYYY
       "evidence_count": 4,                         // optional prevalence (how many sites)
       "applicability": { "layers": ["code-quality"], "languages": ["TypeScript"], "frameworks": ["React"] }, // optional object
       "dedup_key": "harvest:<stable-slug>",        // optional; the app derives one from the title if omitted
-      "confidence": 0.7                            // optional 0..1
+      "confidence": 0.7,                           // optional 0..1
+      "extends": "<pattern-id>"                    // optional: the EXISTING pattern this item refines (id from existing_practices in snapshot.json). Use when your finding sharpens or specializes canon rather than proposing something new — it links your item to its parent and, on adoption, files it under the parent's topic.
     }
   ],
   "coverage": {                                    // REQUIRED — see COVERAGE below

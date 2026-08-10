@@ -14012,7 +14012,10 @@
         "playbook_replacement_hint": "→ {title}",
         "playbook_consults": "{count}×",
         "playbook_consults_label": "Konsultationstreffer",
-        "playbook_unmatched_title": "Unerfüllte Anfragen"
+        "playbook_unmatched_title": "Unerfüllte Anfragen",
+        "playbook_suggested_title": "Vorgeschlagene Ergänzungen",
+        "playbook_add": "Hinzufügen",
+        "playbook_suggested_reason": "Erweitert „{title}“"
       },
       "skills_adopt": "Übernehmen",
       "skills_adopt_hint": "In {name} übernehmen — Claude passt sie an das Repository an",

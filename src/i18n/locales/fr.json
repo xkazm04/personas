@@ -14012,7 +14012,10 @@
         "playbook_replacement_hint": "→ {title}",
         "playbook_consults": "{count}×",
         "playbook_consults_label": "Correspondances de consultation",
-        "playbook_unmatched_title": "Intentions sans correspondance"
+        "playbook_unmatched_title": "Intentions sans correspondance",
+        "playbook_suggested_title": "Ajouts suggérés",
+        "playbook_add": "Ajouter",
+        "playbook_suggested_reason": "Étend « {title} »"
       },
       "skills_adopt": "Adopter",
       "skills_adopt_hint": "Adopter dans {name} — Claude l’adapte au dépôt",

@@ -14,7 +14,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { ConsultStats } from '@/api/devTools/workspaces';
 import type { WorkspacePlaybook } from '@/lib/bindings/WorkspacePlaybook';
 import type { WorkspacePlaybookPattern } from '@/lib/bindings/WorkspacePlaybookPattern';
-import { playbookStaleMembers, type PatternEdgeLike } from './graphModel';
+import { playbookStaleMembers, playbookSuggestedAdditions, type PatternEdgeLike } from './graphModel';
 import { PlaybookRow } from './PlaybookRow';
 import type { KnowledgeItemView } from '../libraryModel';
 
@@ -71,6 +71,16 @@ export function PlaybooksPanel({
     const out = new Map<string, ReturnType<typeof playbookStaleMembers>>();
     for (const pb of playbooks) {
       out.set(pb.id, playbookStaleMembers(byPlaybook.get(pb.id) ?? [], itemById, edges));
+    }
+    return out;
+  }, [playbooks, byPlaybook, itemById, edges]);
+
+  // F4: adopted extensions of a playbook's members, offered as one-click
+  // additions (inheriting the parent's phase, slotted after it).
+  const suggestionsByPlaybook = useMemo(() => {
+    const out = new Map<string, ReturnType<typeof playbookSuggestedAdditions>>();
+    for (const pb of playbooks) {
+      out.set(pb.id, playbookSuggestedAdditions(byPlaybook.get(pb.id) ?? [], itemById, edges));
     }
     return out;
   }, [playbooks, byPlaybook, itemById, edges]);
@@ -135,6 +145,19 @@ export function PlaybooksPanel({
                   pb.id,
                   mine.filter((m) => !dead.has(m.practiceId)),
                 );
+              }}
+              suggestions={suggestionsByPlaybook.get(pb.id) ?? []}
+              onAddSuggestion={(sug) => {
+                onPrune(pb.id, [
+                  ...mine,
+                  {
+                    playbookId: pb.id,
+                    practiceId: sug.item.id,
+                    phase: sug.phase,
+                    ordinal: sug.ordinal,
+                    note: `extends ${sug.extendsTitle}`,
+                  },
+                ]);
               }}
               onOpenItem={onOpenItem}
             />

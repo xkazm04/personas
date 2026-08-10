@@ -512,6 +512,7 @@ async fn run_divergence(
                     crate::db::repos::dev_tools::normalize_idea_title(&p.title)
                 )),
                 confidence: p.confidence,
+                extends: None,
             }
         })
         .collect();

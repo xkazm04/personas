@@ -14012,7 +14012,10 @@
         "playbook_replacement_hint": "→ {title}",
         "playbook_consults": "{count}×",
         "playbook_consults_label": "Shody konzultací",
-        "playbook_unmatched_title": "Nenaplněné záměry"
+        "playbook_unmatched_title": "Nenaplněné záměry",
+        "playbook_suggested_title": "Navrhovaná doplnění",
+        "playbook_add": "Přidat",
+        "playbook_suggested_reason": "Rozšiřuje „{title}“"
       },
       "skills_adopt": "Převzít",
       "skills_adopt_hint": "Převzít do {name} — Claude ji přizpůsobí repozitáři",

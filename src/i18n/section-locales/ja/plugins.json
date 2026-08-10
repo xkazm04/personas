@@ -1392,7 +1392,10 @@
       "playbook_replacement_hint": "→ {title}",
       "playbook_consults": "{count} 回",
       "playbook_consults_label": "コンサルト一致",
-      "playbook_unmatched_title": "未一致のインテント"
+      "playbook_unmatched_title": "未一致のインテント",
+      "playbook_suggested_title": "追加候補",
+      "playbook_add": "追加",
+      "playbook_suggested_reason": "「{title}」を拡張"
     },
     "skills_adopt": "採用",
     "skills_adopt_hint": "{name} に採用 — Claude がリポジトリ向けにカスタマイズします",

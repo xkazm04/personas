@@ -2,12 +2,12 @@
 // integrity readout: a playbook whose members have been deprecated out from
 // under it silently teaches abandoned doctrine, so staleness is surfaced ON the
 // collapsed row (a badge you cannot miss) and repaired from the expanded one.
-import { AlertTriangle, ChevronDown, Play, Trash2 } from 'lucide-react';
+import { AlertTriangle, ChevronDown, Play, Plus, Trash2 } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 import type { WorkspacePlaybook } from '@/lib/bindings/WorkspacePlaybook';
 import type { WorkspacePlaybookPattern } from '@/lib/bindings/WorkspacePlaybookPattern';
-import type { StaleMember } from './graphModel';
+import type { StaleMember, SuggestedAddition } from './graphModel';
 import type { KnowledgeItemView } from '../libraryModel';
 
 const PHASES = ['before', 'during', 'verify'] as const;
@@ -29,6 +29,8 @@ export function PlaybookRow({
   onSetStatus,
   onRequestDelete,
   onPrune,
+  suggestions,
+  onAddSuggestion,
   onOpenItem,
 }: {
   playbook: WorkspacePlaybook;
@@ -42,6 +44,9 @@ export function PlaybookRow({
   onSetStatus: (status: string) => void;
   onRequestDelete: () => void;
   onPrune: () => void;
+  /** F4: adopted extensions of members, offered as one-click additions. */
+  suggestions: readonly SuggestedAddition[];
+  onAddSuggestion: (s: SuggestedAddition) => void;
   onOpenItem?: (item: KnowledgeItemView) => void;
 }) {
   const { t, tx } = useTranslation();
@@ -123,6 +128,34 @@ export function PlaybookRow({
               </div>
             );
           })}
+
+          {suggestions.length > 0 && (
+            <div className="mt-2">
+              <span className="typo-label text-primary">{w.playbook_suggested_title}</span>
+              <ul className="mt-1 flex flex-col gap-1">
+                {suggestions.map((sug) => (
+                  <li key={sug.item.id} className="flex items-center gap-1.5 min-w-0">
+                    <Plus className="w-3 h-3 text-primary/70 flex-shrink-0" aria-hidden />
+                    <button
+                      type="button"
+                      onClick={() => onOpenItem?.(sug.item)}
+                      title={tx(w.playbook_suggested_reason, { title: sug.extendsTitle })}
+                      className="text-left typo-caption text-foreground/85 hover:text-foreground truncate transition-colors"
+                    >
+                      {sug.item.title}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onAddSuggestion(sug)}
+                      className="typo-caption px-1.5 rounded-pill border border-primary/25 bg-primary/10 text-primary hover:bg-primary/15 flex-shrink-0 transition-colors"
+                    >
+                      {w.playbook_add}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {stale.length > 0 && (
             <button

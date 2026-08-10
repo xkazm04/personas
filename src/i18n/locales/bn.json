@@ -14012,7 +14012,10 @@
         "playbook_replacement_hint": "→ {title}",
         "playbook_consults": "{count} বার",
         "playbook_consults_label": "পরামর্শ মিল",
-        "playbook_unmatched_title": "মিলহীন অভিপ্রায়"
+        "playbook_unmatched_title": "মিলহীন অভিপ্রায়",
+        "playbook_suggested_title": "প্রস্তাবিত সংযোজন",
+        "playbook_add": "যোগ করুন",
+        "playbook_suggested_reason": "“{title}” সম্প্রসারণ"
       },
       "skills_adopt": "গ্রহণ করুন",
       "skills_adopt_hint": "{name}-এ গ্রহণ করুন — Claude রিপোর জন্য এটি কাস্টমাইজ করে",

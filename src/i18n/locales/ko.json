@@ -14012,7 +14012,10 @@
         "playbook_replacement_hint": "→ {title}",
         "playbook_consults": "{count}회",
         "playbook_consults_label": "컨설트 일치",
-        "playbook_unmatched_title": "미일치 인텐트"
+        "playbook_unmatched_title": "미일치 인텐트",
+        "playbook_suggested_title": "추가 제안",
+        "playbook_add": "추가",
+        "playbook_suggested_reason": "“{title}” 확장"
       },
       "skills_adopt": "채택",
       "skills_adopt_hint": "{name}에 채택 — Claude가 저장소에 맞게 맞춤 설정합니다",

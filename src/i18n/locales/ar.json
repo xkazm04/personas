@@ -14012,7 +14012,10 @@
         "playbook_replacement_hint": "← {title}",
         "playbook_consults": "{count}×",
         "playbook_consults_label": "مطابقات الاستشارة",
-        "playbook_unmatched_title": "نوايا بلا مطابقة"
+        "playbook_unmatched_title": "نوايا بلا مطابقة",
+        "playbook_suggested_title": "إضافات مقترحة",
+        "playbook_add": "إضافة",
+        "playbook_suggested_reason": "يوسّع «{title}»"
       },
       "skills_adopt": "اعتماد",
       "skills_adopt_hint": "اعتمادها في {name} — يخصّصها Claude للمستودع",

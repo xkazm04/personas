@@ -1,6 +1,6 @@
 # Pattern Fabric — the knowledge base as a development-time reference module
 
-Status: **F0+F1 shipped 2026-08-10 (edges, facet door, playbooks + curator UI, 8 seeded drafts); F2 shipped 2026-08-10 (consult routes, projection v2, patterns skill).** F3 (rewiring pass) and F4 (extends loop at scale, factory consumption) remain. Extends
+Status: **F0+F1 shipped 2026-08-10 (edges, facet door, playbooks + curator UI, 8 seeded drafts); F2 shipped 2026-08-10 (consult routes, projection v2, patterns skill).** F3 (rewiring, 432 revised / 23 pruned into the 3-level map) shipped 2026-08-10; F4 (extends contribution loop + born-subscribed projection on workspace join) shipped 2026-08-10. The fabric arc F0-F4 is complete; remaining growth is operational (verify runs filling rings, consult telemetry steering playbook lifecycle, facet vocabulary maturing). Extends
 [`pattern-context-trace.md`](./pattern-context-trace.md) (the measurement
 half); this is the *structure and access* half. Target: the library stops
 being a review artifact and becomes the module a CLI development process

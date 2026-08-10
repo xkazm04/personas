@@ -139,3 +139,7 @@ tree's clothes.
 - Stay inside your scope.
 - Skip items matching an `existing_practice_title` or a `rejected_dedup_key`.
 - Items land `observed` for human review — you are proposing, not adopting.
+
+
+## Extends (fabric F4)
+`extends: "<pattern-id>"` on an item links it to the existing pattern it refines (child->parent edge at ingest; topic inherited on adoption). Prefer extending canon over near-duplicating it.

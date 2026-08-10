@@ -1392,7 +1392,10 @@
       "playbook_replacement_hint": "→ {title}",
       "playbook_consults": "{count}×",
       "playbook_consults_label": "Kecocokan konsultasi",
-      "playbook_unmatched_title": "Niat tanpa kecocokan"
+      "playbook_unmatched_title": "Niat tanpa kecocokan",
+      "playbook_suggested_title": "Tambahan yang disarankan",
+      "playbook_add": "Tambah",
+      "playbook_suggested_reason": "Memperluas “{title}”"
     },
     "skills_adopt": "Adopsi",
     "skills_adopt_hint": "Adopsi ke {name} — Claude menyesuaikannya untuk repo",
