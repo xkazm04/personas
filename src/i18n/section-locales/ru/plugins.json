@@ -1378,7 +1378,13 @@
       "playbook_members_label": "Паттернов: {count}",
       "playbook_create_submit": "Создать черновик",
       "graph_basket_add": "Добавить в черновик плейбука",
-      "graph_basket_remove": "Убрать из черновика"
+      "graph_basket_remove": "Убрать из черновика",
+      "graph_filter_placeholder": "Фильтр паттернов…",
+      "graph_sort_label": "Сортировка",
+      "graph_sort_newest": "Новые",
+      "graph_sort_evidence": "Доказательства",
+      "graph_sort_title": "Название",
+      "graph_page_of": "{page} / {pages}"
     },
     "skills_adopt": "Внедрить",
     "skills_adopt_hint": "Внедрить в {name} — Claude адаптирует под репозиторий",

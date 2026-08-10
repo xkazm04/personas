@@ -13998,7 +13998,13 @@
         "playbook_members_label": "{count} mẫu",
         "playbook_create_submit": "Tạo bản nháp",
         "graph_basket_add": "Thêm vào nháp playbook",
-        "graph_basket_remove": "Bỏ khỏi nháp"
+        "graph_basket_remove": "Bỏ khỏi nháp",
+        "graph_filter_placeholder": "Lọc mẫu…",
+        "graph_sort_label": "Sắp xếp",
+        "graph_sort_newest": "Mới nhất",
+        "graph_sort_evidence": "Bằng chứng",
+        "graph_sort_title": "Tiêu đề",
+        "graph_page_of": "{page} / {pages}"
       },
       "skills_adopt": "Áp dụng",
       "skills_adopt_hint": "Áp dụng vào {name} — Claude tùy chỉnh cho kho mã",

@@ -1378,7 +1378,13 @@
       "playbook_members_label": "{count} motifs",
       "playbook_create_submit": "Créer le brouillon",
       "graph_basket_add": "Ajouter au brouillon de playbook",
-      "graph_basket_remove": "Retirer du brouillon"
+      "graph_basket_remove": "Retirer du brouillon",
+      "graph_filter_placeholder": "Filtrer les motifs…",
+      "graph_sort_label": "Trier",
+      "graph_sort_newest": "Récents",
+      "graph_sort_evidence": "Preuves",
+      "graph_sort_title": "Titre",
+      "graph_page_of": "{page} / {pages}"
     },
     "skills_adopt": "Adopter",
     "skills_adopt_hint": "Adopter dans {name} — Claude l’adapte au dépôt",

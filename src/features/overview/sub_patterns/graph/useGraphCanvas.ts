@@ -20,6 +20,11 @@ export interface Camera {
 export interface GraphCanvas {
   /** Attach to the scroll/gesture container (the div wrapping the svg). */
   containerRef: (el: HTMLDivElement | null) => void;
+  /** Attach to the svg itself — the wheel-zoom target. Overlays (modal,
+   *  rails) are DOM children of the CONTAINER, so a container-level wheel
+   *  listener would zoom the sky under a scrolling modal; the svg receives
+   *  only its own events. */
+  svgRef: (el: SVGSVGElement | null) => void;
   size: { width: number; height: number };
   camera: Camera;
   isPanning: boolean;
@@ -46,6 +51,7 @@ const MAX_K = 4;
 export function useGraphCanvas(opts?: { initialK?: number }): GraphCanvas {
   const initialK = opts?.initialK ?? 0.85;
   const [el, setEl] = useState<HTMLDivElement | null>(null);
+  const [svgEl, setSvgEl] = useState<SVGSVGElement | null>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, k: initialK });
   const [isPanning, setIsPanning] = useState(false);
@@ -75,13 +81,16 @@ export function useGraphCanvas(opts?: { initialK?: number }): GraphCanvas {
 
   // Wheel must be a native non-passive listener: React's synthetic onWheel is
   // passive by default, and a zoom that cannot preventDefault scrolls the
-  // Overview page underneath the canvas on every notch.
+  // Overview page underneath the canvas on every notch. It lives on the SVG,
+  // not the container — the cluster modal and the playbooks rail are DOM
+  // children of the container, and bubbling follows the DOM, so a container
+  // listener turned every scroll inside an overlay into a canvas zoom.
   useEffect(() => {
-    if (!el) return;
+    if (!svgEl) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       cancelFlight();
-      const rect = el.getBoundingClientRect();
+      const rect = svgEl.getBoundingClientRect();
       const cx = e.clientX - rect.left - rect.width / 2;
       const cy = e.clientY - rect.top - rect.height / 2;
       setCamera((c) => {
@@ -91,9 +100,9 @@ export function useGraphCanvas(opts?: { initialK?: number }): GraphCanvas {
         return { k, x: cx - (cx - c.x) * s, y: cy - (cy - c.y) * s };
       });
     };
-    el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
-  }, [el, cancelFlight]);
+    svgEl.addEventListener('wheel', onWheel, { passive: false });
+    return () => svgEl.removeEventListener('wheel', onWheel);
+  }, [svgEl, cancelFlight]);
 
   // Click-vs-pan discipline. Pointer capture is taken ONLY once a real pan
   // starts (past the slop): capturing on pointerdown retargets the whole
@@ -190,6 +199,7 @@ export function useGraphCanvas(opts?: { initialK?: number }): GraphCanvas {
   return useMemo(
     () => ({
       containerRef: setEl,
+      svgRef: setSvgEl,
       size,
       camera,
       isPanning,

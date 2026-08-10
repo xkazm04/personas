@@ -1378,7 +1378,13 @@
       "playbook_members_label": "{count} pola",
       "playbook_create_submit": "Buat draf",
       "graph_basket_add": "Tambahkan ke draf playbook",
-      "graph_basket_remove": "Keluarkan dari draf"
+      "graph_basket_remove": "Keluarkan dari draf",
+      "graph_filter_placeholder": "Saring pola…",
+      "graph_sort_label": "Urutkan",
+      "graph_sort_newest": "Terbaru",
+      "graph_sort_evidence": "Bukti",
+      "graph_sort_title": "Judul",
+      "graph_page_of": "{page} / {pages}"
     },
     "skills_adopt": "Adopsi",
     "skills_adopt_hint": "Adopsi ke {name} — Claude menyesuaikannya untuk repo",

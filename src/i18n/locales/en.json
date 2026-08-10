@@ -14449,7 +14449,13 @@
         "playbook_members_label": "{count} patterns",
         "playbook_create_submit": "Create draft",
         "graph_basket_add": "Add to playbook draft",
-        "graph_basket_remove": "Remove from draft"
+        "graph_basket_remove": "Remove from draft",
+        "graph_filter_placeholder": "Filter patterns…",
+        "graph_sort_label": "Sort",
+        "graph_sort_newest": "Newest",
+        "graph_sort_evidence": "Evidence",
+        "graph_sort_title": "Title",
+        "graph_page_of": "{page} / {pages}"
       },
       "skills_info_args": "args",
       "skills_info_context_tracked": "context-tracked",

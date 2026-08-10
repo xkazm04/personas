@@ -4,9 +4,12 @@
 // idiom (rounded-card border-2 object, labelled section blocks, pill badges
 // straddling the top edge) rather than re-invented — a pattern here and a
 // pattern under review should read as the same species.
-import { ArrowUpRight, BookmarkCheck, BookmarkPlus, Link2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ArrowUpRight, BookmarkCheck, BookmarkPlus, ChevronLeft, ChevronRight, Link2, Search } from 'lucide-react';
 
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
 import { areaTheme } from '../practiceAreaTheme';
@@ -149,11 +152,14 @@ function PatternCard({
         </div>
 
         {/* Typed connections (fabric S2) — the relations this pattern carries,
-            direction-aware, click-through to the other endpoint. */}
-        {related.length > 0 && (
+            direction-aware, click-through to the other endpoint. Incoming
+            `governs` ("governed by") is deliberately NOT rendered: with
+            truncated titles the chip read as noise, and the governing
+            principle already lists its mechanisms from its own card. */}
+        {related.filter((r) => !(r.rel === 'governs' && !r.outgoing)).length > 0 && (
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
             <Link2 className="w-3 h-3 text-foreground/40 flex-shrink-0" aria-hidden />
-            {related.slice(0, 6).map((r, i) => (
+            {related.filter((r) => !(r.rel === 'governs' && !r.outgoing)).slice(0, 6).map((r, i) => (
               <button
                 key={`${r.rel}-${r.otherId}-${i}`}
                 type="button"
@@ -165,9 +171,9 @@ function PatternCard({
                 <span className="truncate">{r.otherTitle}</span>
               </button>
             ))}
-            {related.length > 6 && (
+            {related.filter((r) => !(r.rel === 'governs' && !r.outgoing)).length > 6 && (
               <span className="typo-caption text-foreground/45">
-                {tx(w.graph_more, { count: related.length - 6 })}
+                {tx(w.graph_more, { count: related.filter((r) => !(r.rel === 'governs' && !r.outgoing)).length - 6 })}
               </span>
             )}
           </div>
@@ -216,6 +222,30 @@ export function ClusterPatternsModal({
   const w = t.plugins.dev_tools.workspaces;
   const theme = areaTheme(node.topic);
 
+  // The pattern STACK: a topic can hold dozens of patterns, so the modal is a
+  // browsable stack — filter, sort, paginate — not an endless scroll.
+  const PAGE = 8;
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<'newest' | 'evidence' | 'title'>('newest');
+  const [page, setPage] = useState(0);
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const filtered = q
+      ? node.items.filter(
+          (i) => i.title.toLowerCase().includes(q) || i.statement.toLowerCase().includes(q),
+        )
+      : [...node.items];
+    filtered.sort((a, b) => {
+      if (sort === 'evidence') return (b.evidenceCount ?? 0) - (a.evidenceCount ?? 0);
+      if (sort === 'title') return a.title.localeCompare(b.title);
+      return b.createdAt.localeCompare(a.createdAt);
+    });
+    return filtered;
+  }, [node.items, query, sort]);
+  const pages = Math.max(1, Math.ceil(shown.length / PAGE));
+  const pageClamped = Math.min(page, pages - 1);
+  const visible = shown.slice(pageClamped * PAGE, pageClamped * PAGE + PAGE);
+
   return (
     <BaseModal isOpen onClose={onClose} titleId="cluster-patterns" size="xl" staggerChildren={false}>
       <div className="flex flex-col min-h-0 max-h-[78vh]">
@@ -228,19 +258,39 @@ export function ClusterPatternsModal({
               {node.cluster}
             </h2>
           </div>
-          <div className="flex items-center gap-3 typo-caption text-foreground/70 flex-shrink-0">
-            <span className="text-foreground typo-data-md tabular-nums">{node.count}</span>
-            <span>{w.graph_practices}</span>
-            {node.pending > 0 && (
-              <span className="text-status-warning tabular-nums">
-                {tx(w.graph_pending_count, { count: node.pending })}
-              </span>
-            )}
-          </div>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-5 pt-1">
-          {node.items.map((item) => (
+        {node.items.length > 5 && (
+          <div className="flex items-center gap-2 px-5 pt-2.5 flex-shrink-0">
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground/40 pointer-events-none" aria-hidden />
+              <input
+                className={`${INPUT_FIELD} pl-8 h-8`}
+                value={query}
+                onChange={(e) => { setQuery(e.target.value); setPage(0); }}
+                placeholder={w.graph_filter_placeholder}
+                aria-label={w.graph_filter_placeholder}
+              />
+            </div>
+            <div className="w-32 flex-shrink-0">
+              <ThemedSelect
+                value={sort}
+                options={[
+                  { value: 'newest', label: w.graph_sort_newest },
+                  { value: 'evidence', label: w.graph_sort_evidence },
+                  { value: 'title', label: w.graph_sort_title },
+                ]}
+                onValueChange={(v) => { setSort(v as 'newest' | 'evidence' | 'title'); setPage(0); }}
+                filterable
+                hideSearch
+                aria-label={w.graph_sort_label}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-3 pt-1">
+          {visible.map((item) => (
             <PatternCard
               key={item.id}
               item={item}
@@ -253,6 +303,32 @@ export function ClusterPatternsModal({
             />
           ))}
         </div>
+
+        {pages > 1 && (
+          <div className="flex items-center justify-center gap-3 px-5 py-2 border-t border-border/60 flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={pageClamped === 0}
+              aria-label={w.detail_prev}
+              className="text-foreground/60 hover:text-foreground disabled:opacity-30 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="typo-caption text-foreground/70 tabular-nums">
+              {tx(w.graph_page_of, { page: pageClamped + 1, pages })}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(pages - 1, p + 1))}
+              disabled={pageClamped >= pages - 1}
+              aria-label={w.detail_next}
+              className="text-foreground/60 hover:text-foreground disabled:opacity-30 transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
     </BaseModal>
   );

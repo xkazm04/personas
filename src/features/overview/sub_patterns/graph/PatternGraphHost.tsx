@@ -24,7 +24,7 @@ import type { WorkspacePracticeAdoption } from '@/lib/bindings/WorkspacePractice
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { areaTheme } from '../practiceAreaTheme';
 import type { KnowledgeItemView } from '../libraryModel';
-import { buildEdgeViews, buildTopicGraph, type ClusterNode } from './graphModel';
+import { buildEdgeViews, buildTopicGraph, type ClusterNode, type FacetNode } from './graphModel';
 import { ClusterPatternsModal } from './ClusterPatternsModal';
 import { CreatePlaybookModal } from './CreatePlaybookModal';
 import { PlaybooksPanel } from './PlaybooksPanel';
@@ -55,6 +55,7 @@ export default function PatternGraphHost({
   const w = t.plugins.dev_tools.workspaces;
   const [hoverArea, setHoverArea] = useState<string | null>(null);
   const [focusArea, setFocusArea] = useState<string | null>(null);
+  const [focusCluster, setFocusCluster] = useState<string | null>(null);
   const [selected, setSelected] = useState<ClusterNode | null>(null);
   const canvas = useGraphCanvas({ initialK: 0.8 });
 
@@ -258,18 +259,49 @@ export default function PatternGraphHost({
 
   const flyHome = () => {
     setFocusArea(null);
+    setFocusCluster(null);
     setSelected(null);
     canvas.reset();
   };
 
   const focusOn = (area: string, target: FlyTarget) => {
-    if (focusArea === area) {
+    if (focusArea === area && !focusCluster) {
       flyHome();
       return;
     }
     setFocusArea(area);
+    setFocusCluster(null);
     setSelected(null);
     canvas.flyTo(target.x, target.y, target.k);
+  };
+
+  // Second drill: a cluster with third-level topics unfolds its ring.
+  const drillCluster = (node: ClusterNode, target: FlyTarget) => {
+    if (focusCluster === node.topic) {
+      // Toggle back out to the area level.
+      setFocusCluster(null);
+      canvas.flyTo(target.x, target.y, 1.5);
+      return;
+    }
+    setFocusArea(node.area);
+    setFocusCluster(node.topic);
+    setSelected(null);
+    canvas.flyTo(target.x, target.y, target.k);
+  };
+
+  // A third-level topic opens its pattern stack — same modal, facet-shaped
+  // node (a FacetNode is a leaf ClusterNode with the facet as its label).
+  const selectFacet = (f: FacetNode) => {
+    setSelected({
+      topic: f.topic,
+      area: f.area,
+      cluster: f.facet,
+      count: f.count,
+      pending: f.pending,
+      adopted: f.items.filter((i) => i.status === 'adopted').length,
+      items: f.items,
+      facets: [],
+    });
   };
 
   // Leaf click: the cluster is the tree's last level while patterns stay off
@@ -286,12 +318,13 @@ export default function PatternGraphHost({
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       if (selected) setSelected(null);
+      else if (focusCluster) setFocusCluster(null);
       else if (focusArea) flyHome();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected, focusArea]);
+  }, [selected, focusCluster, focusArea]);
 
   const { width, height } = canvas.size;
   const { x, y, k } = canvas.camera;
@@ -330,6 +363,7 @@ export default function PatternGraphHost({
       >
         {width > 0 && (
           <svg
+            ref={canvas.svgRef}
             width={width}
             height={height}
             {...canvas.handlers}
@@ -350,9 +384,12 @@ export default function PatternGraphHost({
                 topicCoverage={ringTopic}
                 areaCoverage={ringArea}
                 clusterLinks={edgeViews.clusterLinks}
+                focusCluster={focusCluster}
                 onHoverArea={setHoverArea}
                 onFocusArea={focusOn}
+                onFocusCluster={drillCluster}
                 onSelectCluster={selectCluster}
+                onSelectFacet={selectFacet}
               />
             </g>
           </svg>
@@ -372,6 +409,18 @@ export default function PatternGraphHost({
             <span className={`typo-label px-1.5 py-0.5 rounded-interactive ${areaTheme(focusArea).chip}`}>
               {focusArea}
             </span>
+            {focusCluster && (
+              <>
+                <ChevronRight className="w-3 h-3 text-foreground/40" aria-hidden />
+                <button
+                  type="button"
+                  onClick={() => setFocusCluster(null)}
+                  className={`typo-label px-1.5 py-0.5 rounded-interactive ${areaTheme(focusCluster).chip}`}
+                >
+                  {focusCluster.split('/')[1] ?? focusCluster}
+                </button>
+              </>
+            )}
             <button
               type="button"
               onClick={flyHome}
@@ -409,6 +458,7 @@ export default function PatternGraphHost({
 
         {selected && (
           <ClusterPatternsModal
+            key={selected.topic}
             node={selected}
             patternCoverage={patternCoverage}
             relatedFor={(item) => edgeViews.byPractice.get(item.id) ?? []}

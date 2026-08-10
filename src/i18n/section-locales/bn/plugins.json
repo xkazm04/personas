@@ -1378,7 +1378,13 @@
       "playbook_members_label": "{count}টি প্যাটার্ন",
       "playbook_create_submit": "খসড়া তৈরি করুন",
       "graph_basket_add": "প্লেবুক খসড়ায় যোগ করুন",
-      "graph_basket_remove": "খসড়া থেকে সরান"
+      "graph_basket_remove": "খসড়া থেকে সরান",
+      "graph_filter_placeholder": "প্যাটার্ন ফিল্টার…",
+      "graph_sort_label": "সাজান",
+      "graph_sort_newest": "নতুনতম",
+      "graph_sort_evidence": "প্রমাণ",
+      "graph_sort_title": "শিরোনাম",
+      "graph_page_of": "{page} / {pages}"
     },
     "skills_adopt": "গ্রহণ করুন",
     "skills_adopt_hint": "{name}-এ গ্রহণ করুন — Claude রিপোর জন্য এটি কাস্টমাইজ করে",

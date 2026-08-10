@@ -1378,7 +1378,13 @@
       "playbook_members_label": "{count} पैटर्न",
       "playbook_create_submit": "मसौदा बनाएं",
       "graph_basket_add": "प्लेबुक मसौदे में जोड़ें",
-      "graph_basket_remove": "मसौदे से हटाएं"
+      "graph_basket_remove": "मसौदे से हटाएं",
+      "graph_filter_placeholder": "पैटर्न फ़िल्टर करें…",
+      "graph_sort_label": "क्रमबद्ध करें",
+      "graph_sort_newest": "नवीनतम",
+      "graph_sort_evidence": "प्रमाण",
+      "graph_sort_title": "शीर्षक",
+      "graph_page_of": "{page} / {pages}"
     },
     "skills_adopt": "अपनाएँ",
     "skills_adopt_hint": "{name} में अपनाएँ — Claude इसे रिपॉज़िटरी के लिए अनुकूलित करता है",

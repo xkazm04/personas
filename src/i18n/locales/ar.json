@@ -13998,7 +13998,13 @@
         "playbook_members_label": "{count} نمطًا",
         "playbook_create_submit": "إنشاء مسودة",
         "graph_basket_add": "إضافة إلى مسودة الدليل",
-        "graph_basket_remove": "إزالة من المسودة"
+        "graph_basket_remove": "إزالة من المسودة",
+        "graph_filter_placeholder": "تصفية الأنماط…",
+        "graph_sort_label": "ترتيب",
+        "graph_sort_newest": "الأحدث",
+        "graph_sort_evidence": "الأدلة",
+        "graph_sort_title": "العنوان",
+        "graph_page_of": "{page} / {pages}"
       },
       "skills_adopt": "اعتماد",
       "skills_adopt_hint": "اعتمادها في {name} — يخصّصها Claude للمستودع",

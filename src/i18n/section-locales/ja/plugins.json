@@ -1378,7 +1378,13 @@
       "playbook_members_label": "{count} 件のパターン",
       "playbook_create_submit": "下書きを作成",
       "graph_basket_add": "プレイブック下書きに追加",
-      "graph_basket_remove": "下書きから外す"
+      "graph_basket_remove": "下書きから外す",
+      "graph_filter_placeholder": "パターンを絞り込む…",
+      "graph_sort_label": "並べ替え",
+      "graph_sort_newest": "新着順",
+      "graph_sort_evidence": "根拠順",
+      "graph_sort_title": "タイトル順",
+      "graph_page_of": "{page} / {pages}"
     },
     "skills_adopt": "採用",
     "skills_adopt_hint": "{name} に採用 — Claude がリポジトリ向けにカスタマイズします",

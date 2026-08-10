@@ -13998,7 +13998,13 @@
         "playbook_members_label": "{count} 个模式",
         "playbook_create_submit": "创建草稿",
         "graph_basket_add": "加入行动手册草稿",
-        "graph_basket_remove": "从草稿移除"
+        "graph_basket_remove": "从草稿移除",
+        "graph_filter_placeholder": "筛选模式…",
+        "graph_sort_label": "排序",
+        "graph_sort_newest": "最新",
+        "graph_sort_evidence": "证据",
+        "graph_sort_title": "标题",
+        "graph_page_of": "{page} / {pages}"
       },
       "skills_adopt": "采用",
       "skills_adopt_hint": "采用到 {name} — Claude 会为该仓库定制它",

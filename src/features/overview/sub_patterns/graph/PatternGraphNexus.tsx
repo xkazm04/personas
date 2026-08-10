@@ -11,6 +11,7 @@ import {
   nodeRadius,
   type ClusterLink,
   type ClusterNode,
+  type FacetNode,
   type TopicGraph,
 } from './graphModel';
 import { NodeLabel } from './GraphChrome';
@@ -42,9 +43,16 @@ export interface GraphVariantProps {
    *  inside a focused dimension — cross-branch curves at overview zoom are
    *  the hairball that kills every knowledge graph. */
   clusterLinks: readonly ClusterLink[];
+  /** Second drill level: the cluster whose third-level topics are unfolded. */
+  focusCluster: string | null;
   onHoverArea: (area: string | null) => void;
   onFocusArea: (area: string, target: FlyTarget) => void;
+  /** Cluster WITH facets — drill in (fly + unfold the topic ring). */
+  onFocusCluster: (node: ClusterNode, target: FlyTarget) => void;
+  /** Leaf without facets — open the pattern stack. */
   onSelectCluster: (node: ClusterNode) => void;
+  /** Third-level topic — open its pattern stack. */
+  onSelectFacet: (node: FacetNode) => void;
 }
 
 /** Theme-aware grey for the project lens's "not applied here" state. */
@@ -104,9 +112,12 @@ export default function PatternGraphNexus({
   topicCoverage,
   areaCoverage,
   clusterLinks,
+  focusCluster,
   onHoverArea,
   onFocusArea,
+  onFocusCluster,
   onSelectCluster,
+  onSelectFacet,
 }: GraphVariantProps) {
   const layout = useMemo(() => computeNexusLayout(graph), [graph]);
   // Free-zoom reveal: leaning past ~105% starts unfolding every area's
@@ -202,7 +213,10 @@ export default function PatternGraphNexus({
                 const clApplied = !lensOn || appliedTopics.has(cl.topic);
                 const clHex = clApplied ? theme.hex : LENS_GREY;
                 const clDeep = clApplied ? theme.deep : LENS_GREY;
-                const clMute = clApplied ? 1 : 0.45;
+                const clFocused = focusCluster === cl.topic;
+                // Under a second-level drill, sibling clusters recede.
+                const clMute =
+                  (clApplied ? 1 : 0.45) * (focusCluster && !clFocused ? 0.3 : 1);
                 return (
                   <Fragment key={cl.topic}>
                     <g
@@ -221,8 +235,14 @@ export default function PatternGraphNexus({
                         onPointerLeave={() => onHoverArea(null)}
                         onClick={(e) => {
                           e.stopPropagation();
-                          // Leaf of the tree — opens the patterns modal.
-                          onSelectCluster(cl);
+                          if (cl.facets.length > 0) {
+                            // A cluster with third-level topics drills once
+                            // more: centre it and unfold the topic ring.
+                            onFocusCluster(cl, { x: cp.x, y: cp.y, k: 2.3 });
+                          } else {
+                            // True leaf — open the pattern stack.
+                            onSelectCluster(cl);
+                          }
                         }}
                       >
                         {isSel && (
@@ -235,6 +255,55 @@ export default function PatternGraphNexus({
                         {topicCoverage && (
                           <CoverageRing r={cR + 3} pct={topicCoverage.get(cl.topic) ?? 0} hex={clHex} />
                         )}
+                        {/* Facet badge: a cluster that drills deeper says so. */}
+                        {cl.facets.length > 0 && !clFocused && (
+                          <text
+                            y={4}
+                            textAnchor="middle"
+                            fill={clHex}
+                            fontSize={10}
+                            fontWeight={600}
+                            pointerEvents="none"
+                            className="select-none tabular-nums"
+                          >
+                            {cl.facets.length}
+                          </text>
+                        )}
+                        {/* Third ring — the cluster's topics, unfolded on drill. */}
+                        {clFocused &&
+                          cl.facets.map((f, fi) => {
+                            const fa = (fi * 2 * Math.PI) / cl.facets.length - Math.PI / 2;
+                            const fr = 58 + (cl.facets.length > 8 ? 14 * (fi % 2) : 0);
+                            const fx = Math.cos(fa) * fr;
+                            const fy = Math.sin(fa) * fr;
+                            const fR = nodeRadius(f.count, 5, 2.2, 13);
+                            return (
+                              <g
+                                key={f.topic}
+                                style={{
+                                  opacity: 1,
+                                  transition: 'opacity 200ms ease',
+                                  transitionDelay: `${Math.min(fi * 24, 260)}ms`,
+                                }}
+                              >
+                                <line x1={0} y1={0} x2={fx} y2={fy} stroke={clHex} strokeOpacity={0.3} strokeWidth={0.8} />
+                                <g
+                                  transform={`translate(${fx},${fy})`}
+                                  className="cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onSelectFacet(f);
+                                  }}
+                                >
+                                  {f.pending > 0 && (
+                                    <circle r={fR + 2} fill="none" stroke={clHex} strokeOpacity={0.4} strokeWidth={0.8} strokeDasharray="2 2" />
+                                  )}
+                                  <circle r={fR} fill={clDeep} fillOpacity={0.35} stroke={clHex} strokeWidth={1} />
+                                  <NodeLabel k={k} dy={fR + 11} text={f.facet} sub={`${f.count}`} fill={clHex} size={9} />
+                                </g>
+                              </g>
+                            );
+                          })}
                         <NodeLabel
                           k={k}
                           dy={cR + 14}

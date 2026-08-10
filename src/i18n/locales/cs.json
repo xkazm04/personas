@@ -13998,7 +13998,13 @@
         "playbook_members_label": "{count} vzorů",
         "playbook_create_submit": "Vytvořit návrh",
         "graph_basket_add": "Přidat do návrhu playbooku",
-        "graph_basket_remove": "Odebrat z návrhu"
+        "graph_basket_remove": "Odebrat z návrhu",
+        "graph_filter_placeholder": "Filtrovat vzory…",
+        "graph_sort_label": "Řadit",
+        "graph_sort_newest": "Nejnovější",
+        "graph_sort_evidence": "Důkazy",
+        "graph_sort_title": "Název",
+        "graph_page_of": "{page} / {pages}"
       },
       "skills_adopt": "Převzít",
       "skills_adopt_hint": "Převzít do {name} — Claude ji přizpůsobí repozitáři",

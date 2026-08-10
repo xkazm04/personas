@@ -13998,7 +13998,13 @@
         "playbook_members_label": "{count} Muster",
         "playbook_create_submit": "Entwurf erstellen",
         "graph_basket_add": "Zum Playbook-Entwurf hinzufügen",
-        "graph_basket_remove": "Aus dem Entwurf entfernen"
+        "graph_basket_remove": "Aus dem Entwurf entfernen",
+        "graph_filter_placeholder": "Muster filtern…",
+        "graph_sort_label": "Sortieren",
+        "graph_sort_newest": "Neueste",
+        "graph_sort_evidence": "Belege",
+        "graph_sort_title": "Titel",
+        "graph_page_of": "{page} / {pages}"
       },
       "skills_adopt": "Übernehmen",
       "skills_adopt_hint": "In {name} übernehmen — Claude passt sie an das Repository an",

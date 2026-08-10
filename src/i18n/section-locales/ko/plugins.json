@@ -1378,7 +1378,13 @@
       "playbook_members_label": "패턴 {count}개",
       "playbook_create_submit": "초안 만들기",
       "graph_basket_add": "플레이북 초안에 추가",
-      "graph_basket_remove": "초안에서 제거"
+      "graph_basket_remove": "초안에서 제거",
+      "graph_filter_placeholder": "패턴 필터…",
+      "graph_sort_label": "정렬",
+      "graph_sort_newest": "최신순",
+      "graph_sort_evidence": "근거순",
+      "graph_sort_title": "제목순",
+      "graph_page_of": "{page} / {pages}"
     },
     "skills_adopt": "채택",
     "skills_adopt_hint": "{name}에 채택 — Claude가 저장소에 맞게 맞춤 설정합니다",

@@ -14456,6 +14456,12 @@ export type Translations = {
         playbook_create_submit: string;
         graph_basket_add: string;
         graph_basket_remove: string;
+        graph_filter_placeholder: string;
+        graph_sort_label: string;
+        graph_sort_newest: string;
+        graph_sort_evidence: string;
+        graph_sort_title: string;
+        graph_page_of: string;
       };
       skills_info_args: string;
       skills_info_context_tracked: string;
