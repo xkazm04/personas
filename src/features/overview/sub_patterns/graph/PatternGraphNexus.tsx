@@ -68,6 +68,39 @@ export interface NexusLayout {
   clusterPos: Map<string, { x: number; y: number; area: string }>;
 }
 
+/** Lay `count` children along a BRANCH: marching outward from `origin` in the
+ *  `dir` direction, in shells of growing capacity, inside a constant-width
+ *  lateral band. Children follow their branch's direction instead of
+ *  scattering radially — which is what keeps one area's nodes out of its
+ *  neighbours' sectors at every depth (the band does not widen with radius;
+ *  the cone angle narrows instead). */
+function branchLayout(
+  origin: { x: number; y: number },
+  dir: number,
+  count: number,
+  opts: { firstShell: number; shellGap: number; band: number; perShell: number },
+): { x: number; y: number }[] {
+  const out: { x: number; y: number }[] = [];
+  let placed = 0;
+  let shellIdx = 0;
+  while (placed < count) {
+    const inShell = Math.min(opts.perShell, count - placed);
+    const r = opts.firstShell + shellIdx * opts.shellGap;
+    // Constant lateral band: the angular spread SHRINKS as shells go deeper.
+    const halfAngle = Math.atan2(opts.band, r);
+    for (let i = 0; i < inShell; i += 1) {
+      const t = inShell > 1 ? i / (inShell - 1) - 0.5 : 0;
+      // Interleave odd shells half a slot so stacked shells don't align.
+      const stagger = shellIdx % 2 === 1 && inShell > 1 ? 0.5 / (inShell - 1) : 0;
+      const a = dir + (t + stagger) * 2 * halfAngle;
+      out.push({ x: origin.x + Math.cos(a) * r, y: origin.y + Math.sin(a) * r });
+    }
+    placed += inShell;
+    shellIdx += 1;
+  }
+  return out;
+}
+
 /** Pure geometry — the single source of node positions. */
 export function computeNexusLayout(graph: TopicGraph): NexusLayout {
   const n = Math.max(graph.areas.length, 1);
@@ -78,24 +111,19 @@ export function computeNexusLayout(graph: TopicGraph): NexusLayout {
     const ax = Math.cos(angle) * AREA_R;
     const ay = Math.sin(angle) * AREA_R;
     areaPos.set(area.area, { x: ax, y: ay, angle });
+    // Clusters continue the spoke OUTWARD from the keystone, in a band
+    // narrower than the area's sector at the first shell (sector at R330 for
+    // 15 areas ≈ ±69px of arc; the ±40px band leaves clear water between
+    // neighbouring branches at every shell).
+    const spots = branchLayout({ x: ax, y: ay }, angle, area.clusters.length, {
+      firstShell: CLUSTER_R1,
+      shellGap: CLUSTER_R2 - CLUSTER_R1,
+      band: 40,
+      perShell: 3,
+    });
     area.clusters.forEach((cl, j) => {
-      // Even indices fill the inner shell, odd the outer, each shell a
-      // symmetric fan facing outward from the crest; the shells interleave
-      // half a slot so big families don't self-overlap.
-      const inner = j % 2 === 0;
-      const shell = inner ? CLUSTER_R1 : CLUSTER_R2;
-      const shellLen = inner
-        ? Math.ceil(area.clusters.length / 2)
-        : Math.floor(area.clusters.length / 2);
-      const idx = Math.floor(j / 2);
-      const spread = Math.min(2.6, 0.55 * shellLen);
-      const t = shellLen > 1 ? idx / (shellLen - 1) - 0.5 : 0;
-      const ca = angle + t * spread + (inner ? 0 : spread * 0.09);
-      clusterPos.set(cl.topic, {
-        x: ax + Math.cos(ca) * shell,
-        y: ay + Math.sin(ca) * shell,
-        area: area.area,
-      });
+      const p = spots[j] ?? { x: ax, y: ay };
+      clusterPos.set(cl.topic, { x: p.x, y: p.y, area: area.area });
     });
   });
   return { areaPos, clusterPos };
@@ -269,14 +297,26 @@ export default function PatternGraphNexus({
                             {cl.facets.length}
                           </text>
                         )}
-                        {/* Third ring — the cluster's topics, unfolded on drill. */}
+                        {/* Third level — the cluster's topics, unfolded on
+                            drill. They CONTINUE THE BRANCH: laid outward along
+                            the keystone→cluster direction in the same banded
+                            cone as the clusters themselves, never radially
+                            around the parent (a full ring collides with the
+                            sibling clusters beside it). */}
                         {clFocused &&
-                          cl.facets.map((f, fi) => {
-                            const fa = (fi * 2 * Math.PI) / cl.facets.length - Math.PI / 2;
-                            const fr = 58 + (cl.facets.length > 8 ? 14 * (fi % 2) : 0);
-                            const fx = Math.cos(fa) * fr;
-                            const fy = Math.sin(fa) * fr;
-                            const fR = nodeRadius(f.count, 5, 2.2, 13);
+                          (() => {
+                            const outDir = Math.atan2(cp.y - ay, cp.x - ax);
+                            const spots = branchLayout({ x: 0, y: 0 }, outDir, cl.facets.length, {
+                              firstShell: 54,
+                              shellGap: 42,
+                              band: 30,
+                              perShell: 3,
+                            });
+                            return cl.facets.map((f, fi) => {
+                              const p = spots[fi] ?? { x: 0, y: 0 };
+                              const fx = p.x;
+                              const fy = p.y;
+                              const fR = nodeRadius(f.count, 5, 2.2, 13);
                             return (
                               <g
                                 key={f.topic}
@@ -303,7 +343,8 @@ export default function PatternGraphNexus({
                                 </g>
                               </g>
                             );
-                          })}
+                            });
+                          })()}
                         <NodeLabel
                           k={k}
                           dy={cR + 14}
