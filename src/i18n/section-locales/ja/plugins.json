@@ -2918,7 +2918,11 @@
     "sleep_cycle_never": "未実行",
     "sleep_cycle_pressure_tip": "スリープ圧: {chars} / {threshold} 文字 · {last}",
     "sleep_cycle_skipped": "サイクルは開始されませんでした: {reason}",
-    "sleep_cycle_started": "スリープサイクル {id} を開始しました。メモリで確認できます。"
+    "sleep_cycle_started": "スリープサイクル {id} を開始しました。メモリで確認できます。",
+    "action_label_apply_pattern": "リポジトリに採用済みパターンを適用",
+    "action_label_evaluate_pattern": "リポジトリのパターン遵守を検証",
+    "action_label_run_pattern_harvest": "リポジトリからプラクティスを収集",
+    "action_label_skill_sync": "スキルをプロジェクト間で同期"
   },
   "artist_gallery": {
     "loading_viewer": "ビューアを読み込み中…",

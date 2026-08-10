@@ -15538,7 +15538,11 @@
       "sleep_cycle_never": "chưa từng chạy",
       "sleep_cycle_pressure_tip": "Áp lực ngủ: {chars} / {threshold} ký tự · {last}",
       "sleep_cycle_skipped": "Không có chu kỳ nào bắt đầu: {reason}",
-      "sleep_cycle_started": "Đã bắt đầu chu kỳ ngủ {id}. Theo dõi trong Bộ nhớ."
+      "sleep_cycle_started": "Đã bắt đầu chu kỳ ngủ {id}. Theo dõi trong Bộ nhớ.",
+      "action_label_apply_pattern": "Áp dụng các mẫu đã duyệt vào một repo",
+      "action_label_evaluate_pattern": "Kiểm tra mức tuân thủ mẫu trong một repo",
+      "action_label_run_pattern_harvest": "Thu thập thực hành từ một repo",
+      "action_label_skill_sync": "Đồng bộ một skill giữa các dự án"
     },
     "artist_gallery": {
       "loading_viewer": "Đang tải trình xem…",

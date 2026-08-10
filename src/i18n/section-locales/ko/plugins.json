@@ -2918,7 +2918,11 @@
     "sleep_cycle_never": "실행된 적 없음",
     "sleep_cycle_pressure_tip": "수면 압력: {chars} / {threshold}자 · {last}",
     "sleep_cycle_skipped": "주기가 시작되지 않음: {reason}",
-    "sleep_cycle_started": "수면 주기 {id}을(를) 시작했습니다. 메모리에서 확인하세요."
+    "sleep_cycle_started": "수면 주기 {id}을(를) 시작했습니다. 메모리에서 확인하세요.",
+    "action_label_apply_pattern": "저장소에 채택된 패턴 적용",
+    "action_label_evaluate_pattern": "저장소의 패턴 준수 검증",
+    "action_label_run_pattern_harvest": "저장소에서 프랙티스 수집",
+    "action_label_skill_sync": "프로젝트 간 스킬 동기화"
   },
   "artist_gallery": {
     "loading_viewer": "뷰어 로딩 중…",

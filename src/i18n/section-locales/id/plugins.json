@@ -2918,7 +2918,11 @@
     "sleep_cycle_never": "belum pernah dijalankan",
     "sleep_cycle_pressure_tip": "Tekanan tidur: {chars} / {threshold} karakter · {last}",
     "sleep_cycle_skipped": "Tidak ada siklus yang dimulai: {reason}",
-    "sleep_cycle_started": "Siklus tidur {id} dimulai. Pantau di Memori."
+    "sleep_cycle_started": "Siklus tidur {id} dimulai. Pantau di Memori.",
+    "action_label_apply_pattern": "Terapkan pola yang diadopsi di sebuah repo",
+    "action_label_evaluate_pattern": "Verifikasi kepatuhan pola di sebuah repo",
+    "action_label_run_pattern_harvest": "Panen praktik dari sebuah repo",
+    "action_label_skill_sync": "Sinkronkan skill antar proyek"
   },
   "artist_gallery": {
     "loading_viewer": "Memuat penampil…",

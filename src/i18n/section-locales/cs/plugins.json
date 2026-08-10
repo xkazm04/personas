@@ -2918,7 +2918,11 @@
     "sleep_cycle_never": "nikdy neproběhl",
     "sleep_cycle_pressure_tip": "Spánkový tlak: {chars} / {threshold} znaků · {last}",
     "sleep_cycle_skipped": "Žádný cyklus nezačal: {reason}",
-    "sleep_cycle_started": "Spánkový cyklus {id} spuštěn. Sleduj ho v Paměti."
+    "sleep_cycle_started": "Spánkový cyklus {id} spuštěn. Sleduj ho v Paměti.",
+    "action_label_apply_pattern": "Aplikovat přijaté vzory v repozitáři",
+    "action_label_evaluate_pattern": "Ověřit dodržování vzorů v repozitáři",
+    "action_label_run_pattern_harvest": "Vytěžit praktiky z repozitáře",
+    "action_label_skill_sync": "Synchronizovat skill napříč projekty"
   },
   "artist_gallery": {
     "loading_viewer": "Načítání prohlížeče…",

@@ -15538,7 +15538,11 @@
       "sleep_cycle_never": "لم تُشغَّل قط",
       "sleep_cycle_pressure_tip": "ضغط النوم: {chars} / {threshold} حرف · {last}",
       "sleep_cycle_skipped": "لم تبدأ أي دورة: {reason}",
-      "sleep_cycle_started": "بدأت دورة النوم {id}. تابعها في الذاكرة."
+      "sleep_cycle_started": "بدأت دورة النوم {id}. تابعها في الذاكرة.",
+      "action_label_apply_pattern": "تطبيق الأنماط المعتمدة في مستودع",
+      "action_label_evaluate_pattern": "التحقق من الالتزام بالأنماط في مستودع",
+      "action_label_run_pattern_harvest": "استخلاص الممارسات من مستودع",
+      "action_label_skill_sync": "مزامنة مهارة عبر المشاريع"
     },
     "artist_gallery": {
       "loading_viewer": "جارٍ تحميل العارض…",

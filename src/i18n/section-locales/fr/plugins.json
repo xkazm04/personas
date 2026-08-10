@@ -2918,7 +2918,11 @@
     "sleep_cycle_never": "jamais exécuté",
     "sleep_cycle_pressure_tip": "Pression de sommeil : {chars} / {threshold} caractères · {last}",
     "sleep_cycle_skipped": "Aucun cycle démarré : {reason}",
-    "sleep_cycle_started": "Cycle de sommeil {id} démarré. Suivez-le dans Mémoire."
+    "sleep_cycle_started": "Cycle de sommeil {id} démarré. Suivez-le dans Mémoire.",
+    "action_label_apply_pattern": "Appliquer les patterns adoptés dans un dépôt",
+    "action_label_evaluate_pattern": "Vérifier le respect des patterns dans un dépôt",
+    "action_label_run_pattern_harvest": "Extraire les pratiques d'un dépôt",
+    "action_label_skill_sync": "Synchroniser une skill entre projets"
   },
   "artist_gallery": {
     "loading_viewer": "Chargement du visualiseur…",

@@ -812,6 +812,60 @@ Athena is wired into the [Mastermind canvas](../teams/README.md) at the same **r
 - The dispatcher validates what the frontend cannot: the kind is one the grammar speaks, any slug resolves against the **published scene** (demo islands refused by name), bands ∈ far/mid/near/close, numbers finite. Only validated fields are re-serialized, so an invented param never crosses the IPC boundary. The read kinds (`island.read`/`dim.read`) are refused with a pointer to `describe_canvas_project`, which answers synchronously without a frontend round-trip.
 - `session.rs` emits `companion://canvas-control` with `{ sessionId, action }`; the app-wide bridge (`useCanvasControlBridge`, mounted beside the panel bridge) routes to Teams → Mastermind, dispatches into the grammar queue (whose 2s pickup window carries the action across the route-in mount), and reports the settled `CanvasActionResult` back through **`companion_canvas_control_result`** — a System episode in the originating session, so Athena reads on her next turn where the camera actually landed (band, visible islands, clamps) or why it refused (`band_too_far`, `unknown_target`, `canvas_closed`). The same grammar is drivable without Athena via the dev-gated `window.__mmCanvas` bridge (`canvasTestBridge.ts`) for live testing on :17320.
 
+## Skills and the knowledge library — constitution v52 (`skill_sync`, `run_pattern_harvest`, `apply_pattern`, `evaluate_pattern`)
+
+Athena operates over the two cross-project knowledge surfaces the app already
+maintains — the **skill fleet** (docs/skill-standard.md) and the **workspace
+knowledge library / pattern fabric** (docs/concepts/pattern-fabric.md) — with
+read-before-act discipline:
+
+**Read (auto-fire READ_OPS, `companion/knowledge_ops.rs`):**
+- `describe_skill_fleet` — cross-project skill×version matrix from filesystem
+  truth (library `~/.claude/skills` vs each registered project's
+  `.claude/skills`), drift verdicts (behind / ahead / customized /
+  not-in-library; content divergence beats an equal version number), 30-day
+  usage, and recent `LESSONS.md` entries when queried for one skill.
+- `describe_knowledge` — the library digest per workspace: status counts,
+  adopted-by-area, playbooks (active slugs + drafts awaiting activation), the
+  pending review queue, and per-project harvest-coverage debt; a query returns
+  one pattern's card (statement, evidence clip, typed edges) or one playbook's
+  phased members.
+
+**Act (approval ops, `approval_exec_knowledge.rs`, shared executor table):**
+- `skill_sync {skill, action: adopt|sync|publish, source?, targets[]}` — pure
+  file ops between library and project copies. Adopt never overwrites; sync
+  never touches a CUSTOMIZED (diverged) copy; publish is guarded in
+  `skill_files::publish_skill_to_library` — the project copy's declared
+  `version:` must be AHEAD of the library's (a publish is a version bump by
+  definition). Every touched repo gets its `.personas/skill-registry.json`
+  refreshed. Running a skill is deliberately NOT this op — a fleet plan row's
+  `skill` field is that path.
+- `run_pattern_harvest {project, scopes?, max_sessions?}` — dispatches
+  per-territory harvest sessions (cap 4, `validate_fleet_cwd` containment,
+  one Operation) using the same snapshot writer and the same governed ingest
+  door as the Workspaces UI. The prompt engine is now **two renderers, one
+  contract**: `build_harvest_prompt` in `workspace_harvest.rs` is the Rust
+  twin of `practiceHarvestPrompt.ts`, each pinned to the
+  `HarvestResult`/`HarvestItem` deserializer by its own test. A
+  **pending-ingest watcher** on the fleet 30s ticker ingests finished runs
+  with no UI open (idempotent beside the frontend's `useHarvestAutoIngest` —
+  the `ingested.json` marker makes double-fire safe). Items land `observed`;
+  adoption stays the operator's click.
+- `apply_pattern {target_project, pattern_ids?|playbook, objective?}` — ONE
+  session implementing ADOPTED patterns (≤8) or an ACTIVE playbook's members
+  in a target repo: minimal faithful changes, repo-own gates, atomic commits.
+  Applying `observed` items is refused (Athena can never become the adopter),
+  and the session never writes adoption/adherence records — those move only
+  through the verify lane.
+- `evaluate_pattern {target_project}` — starts the existing
+  adoption-verification pass (`dev_tools_workspace_verify_adoptions`)
+  unchanged: headless session, verdicts flip matrix cells to `diverged` for a
+  human (surface, never auto-un-adopt), file citations become per-context
+  adherence evidence.
+
+The intended rhythm: harvest → human review/adopt → apply → evaluate. Athena
+drives the loop; every adoption decision inside it stays human.
+
 ## Another one of your devices — constitution v50 (`remote_instruct`)
 
 Two paired Personas installs on one LAN can hand each other work (pairing and the job transport are documented in [sharing](../sharing/README.md)). Athena is wired to both ends of it.

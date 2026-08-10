@@ -15766,6 +15766,10 @@ export type Translations = {
       voice_pocket_delete_title: string;
       voice_pocket_delete_body: string;
       action_label_backlog_apply_triage: string;
+      action_label_skill_sync: string;
+      action_label_run_pattern_harvest: string;
+      action_label_apply_pattern: string;
+      action_label_evaluate_pattern: string;
       decision_run_failed: string;
       athena_actions_title: string;
       athena_actions_clear: string;

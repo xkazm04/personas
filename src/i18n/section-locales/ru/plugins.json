@@ -2918,7 +2918,11 @@
     "sleep_cycle_never": "ни разу не выполнялся",
     "sleep_cycle_pressure_tip": "Давление сна: {chars} / {threshold} символов · {last}",
     "sleep_cycle_skipped": "Цикл не запущен: {reason}",
-    "sleep_cycle_started": "Цикл сна {id} запущен. Следите за ним в разделе «Память»."
+    "sleep_cycle_started": "Цикл сна {id} запущен. Следите за ним в разделе «Память».",
+    "action_label_apply_pattern": "Применить принятые паттерны в репозитории",
+    "action_label_evaluate_pattern": "Проверить соблюдение паттернов в репозитории",
+    "action_label_run_pattern_harvest": "Собрать практики из репозитория",
+    "action_label_skill_sync": "Синхронизировать навык между проектами"
   },
   "artist_gallery": {
     "loading_viewer": "Загрузка просмотрщика…",

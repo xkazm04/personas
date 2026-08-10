@@ -2918,7 +2918,11 @@
     "sleep_cycle_never": "nunca ejecutado",
     "sleep_cycle_pressure_tip": "Presión de sueño: {chars} / {threshold} caracteres · {last}",
     "sleep_cycle_skipped": "No se inició ningún ciclo: {reason}",
-    "sleep_cycle_started": "Ciclo de sueño {id} iniciado. Síguelo en Memoria."
+    "sleep_cycle_started": "Ciclo de sueño {id} iniciado. Síguelo en Memoria.",
+    "action_label_apply_pattern": "Aplicar patrones adoptados en un repositorio",
+    "action_label_evaluate_pattern": "Verificar el cumplimiento de patrones en un repositorio",
+    "action_label_run_pattern_harvest": "Extraer prácticas de un repositorio",
+    "action_label_skill_sync": "Sincronizar una skill entre proyectos"
   },
   "artist_gallery": {
     "loading_viewer": "Cargando visor…",

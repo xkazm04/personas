@@ -15538,7 +15538,11 @@
       "sleep_cycle_never": "从未运行",
       "sleep_cycle_pressure_tip": "睡眠压力：{chars} / {threshold} 字符 · {last}",
       "sleep_cycle_skipped": "未启动周期：{reason}",
-      "sleep_cycle_started": "睡眠周期 {id} 已启动。可在“记忆”中查看。"
+      "sleep_cycle_started": "睡眠周期 {id} 已启动。可在“记忆”中查看。",
+      "action_label_apply_pattern": "在仓库中应用已采纳的模式",
+      "action_label_evaluate_pattern": "验证仓库的模式遵循情况",
+      "action_label_run_pattern_harvest": "从仓库中收集实践",
+      "action_label_skill_sync": "跨项目同步技能"
     },
     "artist_gallery": {
       "loading_viewer": "加载查看器中…",

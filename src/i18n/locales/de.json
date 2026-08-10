@@ -15538,7 +15538,11 @@
       "sleep_cycle_never": "nie ausgeführt",
       "sleep_cycle_pressure_tip": "Schlafdruck: {chars} / {threshold} Zeichen · {last}",
       "sleep_cycle_skipped": "Kein Zyklus gestartet: {reason}",
-      "sleep_cycle_started": "Schlafzyklus {id} gestartet. Verfolge ihn unter Speicher."
+      "sleep_cycle_started": "Schlafzyklus {id} gestartet. Verfolge ihn unter Speicher.",
+      "action_label_apply_pattern": "Übernommene Muster in einem Repo anwenden",
+      "action_label_evaluate_pattern": "Muster-Einhaltung in einem Repo prüfen",
+      "action_label_run_pattern_harvest": "Praktiken aus einem Repo gewinnen",
+      "action_label_skill_sync": "Skill projektübergreifend synchronisieren"
     },
     "artist_gallery": {
       "loading_viewer": "Viewer wird geladen…",

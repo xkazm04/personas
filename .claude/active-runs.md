@@ -2,9 +2,10 @@
 
 ## Active
 
-### athena-skills-knowledge-ops — Athena ops over Skills + Knowledge Base (read digests, skill_sync, harvest/apply/evaluate orchestration) — session fable-5
-- Started 2026-08-10. Scope: `src-tauri/src/companion/dispatcher.rs`, `src-tauri/src/companion/templates/constitution.md`, `src-tauri/src/commands/companion/approvals/**`, `src-tauri/src/commands/infrastructure/{skill_files,skill_registry_export,workspace_harvest}.rs`, `src/features/plugins/companion/athenaLabels.ts`, `src/i18n/locales/*`, docs/features/companion.
-- Phase 0 also commits the pending fabric-F4 extends-loop work found uncommitted in the tree (5 files, operator-approved) and this session's earlier autonomous-approve + side-panel work.
+### athena-skills-knowledge-ops — Athena ops over Skills + Knowledge Base — session fable-5 — **COMPLETE**
+- 2026-08-10/11. Commits: `0caa83cce` fabric F4 committed on operator approval · `a10b6220a` autonomous-approve-everything (allowlist retired, shared executor table, companion://client-action) · `bb8a9f40c` side panel 4-lane redesign · `0b4dd5306` describe_skill_fleet + describe_knowledge READ_OPS · `67905dfe9` skill_sync (adopt/sync/publish, version-bump-guarded publish) · `ef4154f9c` run_pattern_harvest (Rust prompt twin + pending-ingest watcher on the fleet 30s ticker) · `1ccae0a48` apply_pattern + evaluate_pattern · final wiring commit = constitution v52 + labels + i18n×14 + docs.
+- Gates: cargo check lib+tests clean · targeted rust suites green (approvals 47, knowledge_ops 6, harvest 3, dispatcher knowledge 2, apply_prompt 1) · tsc clean · vitest companion 450/450 (one non-repro flake) · i18n strict 0/0.
+- NOT live-app verified: no running instance was driven; the ops have unit/dispatch coverage only. First live exercise = ask Athena "describe the skill fleet".
 
 
 ### athena-triage-funnel — /athena: idea-triage funnel built + first live run over 58 pending ideas — session fable-5 — **COMPLETE**
