@@ -103,11 +103,27 @@ export function TraceOverview({ model, onSelectSkill, onOpenInfo }: TraceOvervie
                       <td className="pr-2 py-1 border-b border-border/40 text-right">
                         <span className="typo-data tabular-nums">{s.libraryVersion ?? '1.0'}</span>
                       </td>
-                      {model.projects.map((p) => (
-                        <td key={p.id} className="text-center py-1 border-b border-border/40 border-l border-border/20">
-                          <TraceEmberCell cell={model.cell(s.name, p.id)} accent={s.visual?.color ?? null} onClick={() => onSelectSkill(s.name)} />
-                        </td>
-                      ))}
+                      {model.projects.map((p) => {
+                        const cell = model.cell(s.name, p.id);
+                        // Version drift, at the cell: when this project's copy
+                        // differs from the library, its own version sits next
+                        // to the ember in quiet gray — full opacity on hover
+                        // (operator-specified affordance).
+                        const mismatch = cell.adopted
+                          && (cell.installedVersion ?? '1.0') !== (s.libraryVersion ?? '1.0');
+                        return (
+                          <td key={p.id} className="text-center py-1 border-b border-border/40 border-l border-border/20">
+                            <span className="inline-flex items-center">
+                              <TraceEmberCell cell={cell} accent={s.visual?.color ?? null} onClick={() => onSelectSkill(s.name)} />
+                              {mismatch && (
+                                <span className="typo-label tabular-nums text-foreground opacity-40 hover:opacity-100 transition-opacity -ml-0.5">
+                                  {cell.installedVersion ?? '1.0'}
+                                </span>
+                              )}
+                            </span>
+                          </td>
+                        );
+                      })}
                     </RevealItem>
                   );
                 })
