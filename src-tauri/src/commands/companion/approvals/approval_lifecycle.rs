@@ -253,6 +253,11 @@ pub(crate) async fn execute_approval_action(
         // Night Shift v1 — the ONLY dispatch path for a night plan (no plan
         // runs unapproved; see approval_exec_night.rs).
         "night_shift_execute_plan" => execute_night_shift_execute_plan(&state, &app, &params),
+        // Skills + Knowledge ops (approval_exec_knowledge.rs). `skill_sync`
+        // is pure file ops between the workspace library and project copies;
+        // the read halves are the `describe_skill_fleet` / `describe_knowledge`
+        // READ_OPS in the dispatcher.
+        "skill_sync" => execute_skill_sync(&state, &params),
         other => Err(AppError::Internal(format!(
             "approval `{approval_id}`: unknown action `{other}`"
         ))),

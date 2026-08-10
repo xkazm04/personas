@@ -758,15 +758,35 @@ pub fn skill_files_install(
     overwrite: bool,
 ) -> Result<SkillInstallResult, AppError> {
     require_auth_sync(&state)?;
+    install_skill_copy(
+        &state,
+        &skill_name,
+        source_project_id.as_deref(),
+        &target_project_id,
+        overwrite,
+    )
+}
+
+/// Auth-free core of [`skill_files_install`], shared with the companion's
+/// `skill_sync` executor (`approval_exec_knowledge.rs`) — one copy path, one
+/// provenance stamp, one registry refresh, whichever consent surface asked.
+pub(crate) fn install_skill_copy(
+    state: &AppState,
+    skill_name: &str,
+    source_project_id: Option<&str>,
+    target_project_id: &str,
+    overwrite: bool,
+) -> Result<SkillInstallResult, AppError> {
+    let skill_name = skill_name.to_string();
     validate_skill_name(&skill_name)?;
 
-    let source_dir = match source_project_id.as_deref() {
-        Some(pid) => project_skills_dir(&state, pid)?,
+    let source_dir = match source_project_id {
+        Some(pid) => project_skills_dir(state, pid)?,
         None => {
             global_skills_dir().ok_or_else(|| AppError::Internal("no home directory".into()))?
         }
     };
-    let target_skills = project_skills_dir(&state, &target_project_id)?;
+    let target_skills = project_skills_dir(state, target_project_id)?;
 
     // A skill is either a directory or a single `<name>.md` file.
     let src_dir = source_dir.join(&skill_name);
@@ -785,12 +805,12 @@ pub fn skill_files_install(
         let file_count = copy_dir_recursive(&src_dir, &target_dir)?;
         // Stamp provenance so a later scan can detect drift. Source kind mirrors
         // where we read from: global library vs a registered project.
-        let (source_kind, source_pid) = match source_project_id.as_deref() {
+        let (source_kind, source_pid) = match source_project_id {
             Some(pid) => ("project", Some(pid)),
             None => ("global", None),
         };
         write_provenance(&target_dir, &src_dir, source_kind, source_pid);
-        refresh_skill_registry_file(&state, &target_project_id);
+        refresh_skill_registry_file(state, target_project_id);
         Ok(SkillInstallResult {
             installed: true,
             target_path: target_dir.to_string_lossy().into_owned(),
@@ -883,7 +903,7 @@ pub fn skill_files_install_system(
 /// after an install changed what's on disk (docs/skill-standard.md). Never
 /// fails the install — the context scan and the pre-dispatch export are the
 /// other refresh points.
-fn refresh_skill_registry_file(state: &State<'_, Arc<AppState>>, project_id: &str) {
+pub(crate) fn refresh_skill_registry_file(state: &AppState, project_id: &str) {
     let root = crate::db::repos::dev_tools::get_project_by_id(&state.db, project_id)
         .map(|p| p.root_path);
     if let Ok(root) = root {
@@ -893,6 +913,97 @@ fn refresh_skill_registry_file(state: &State<'_, Arc<AppState>>, project_id: &st
             tracing::warn!(error = %e, project = %project_id, "skill_files: registry file refresh failed");
         }
     }
+}
+
+/// Publish a project's copy of a skill INTO the user-global workspace library
+/// (`~/.claude/skills`) — the write half of the skill-standard's sync ritual
+/// (docs/skill-standard.md), called from the companion's `skill_sync`
+/// executor. Guarded: the source copy's declared `version:` must be AHEAD of
+/// the library's (a publish that isn't a version bump is either a no-op or an
+/// unreviewed overwrite — both refused; bump the version first, that is what
+/// "the improvement was actually applied" means in the standard). A skill the
+/// library never carried publishes freely — that is an add, not an overwrite.
+/// No provenance sidecar is written into the library: the library is a
+/// source, not an install.
+///
+/// Returns `(published_version, file_count)`.
+pub(crate) fn publish_skill_to_library(
+    state: &AppState,
+    skill_name: &str,
+    source_project_id: &str,
+) -> Result<(String, i32), AppError> {
+    validate_skill_name(skill_name)?;
+    let source_skills = project_skills_dir(state, source_project_id)?;
+    let library = global_skills_dir()
+        .ok_or_else(|| AppError::Internal("no home directory for the skill library".into()))?;
+
+    let src_dir = source_skills.join(skill_name);
+    let src_md = source_skills.join(format!("{skill_name}.md"));
+    let (src_version_raw, is_dir) = if src_dir.is_dir() {
+        (
+            std::fs::read_to_string(src_dir.join("SKILL.md"))
+                .ok()
+                .as_deref()
+                .and_then(extract_skill_version),
+            true,
+        )
+    } else if src_md.is_file() {
+        (
+            std::fs::read_to_string(&src_md)
+                .ok()
+                .as_deref()
+                .and_then(extract_skill_version),
+            false,
+        )
+    } else {
+        return Err(AppError::NotFound(format!(
+            "skill `{skill_name}` not found in the source project"
+        )));
+    };
+
+    let lib_dir = library.join(skill_name);
+    let lib_md = library.join(format!("{skill_name}.md"));
+    let lib_version_raw = if lib_dir.is_dir() {
+        Some(
+            std::fs::read_to_string(lib_dir.join("SKILL.md"))
+                .ok()
+                .as_deref()
+                .and_then(extract_skill_version),
+        )
+    } else if lib_md.is_file() {
+        Some(
+            std::fs::read_to_string(&lib_md)
+                .ok()
+                .as_deref()
+                .and_then(extract_skill_version),
+        )
+    } else {
+        None // not in the library at all — publishing is an add
+    };
+    if let Some(lib_version) = &lib_version_raw {
+        let src_v = parse_skill_version(src_version_raw.as_deref());
+        let lib_v = parse_skill_version(lib_version.as_deref());
+        if src_v <= lib_v {
+            return Err(AppError::Validation(format!(
+                "publish refused: the project copy of `{skill_name}` declares version {} but \
+                 the library already carries {}. A publish must be a version bump — apply the \
+                 improvement, bump `version:` in SKILL.md, then publish.",
+                src_version_raw.as_deref().unwrap_or("1.0 (unversioned)"),
+                lib_version.as_deref().unwrap_or("1.0 (unversioned)"),
+            )));
+        }
+    }
+
+    let file_count = if is_dir {
+        copy_dir_recursive(&src_dir, &lib_dir)?
+    } else {
+        std::fs::create_dir_all(&library)
+            .map_err(|e| AppError::Internal(format!("create library dir failed: {e}")))?;
+        std::fs::copy(&src_md, &lib_md)
+            .map_err(|e| AppError::Internal(format!("copy file failed: {e}")))?;
+        1
+    };
+    Ok((src_version_raw.unwrap_or_else(|| "1.0".into()), file_count))
 }
 
 /// Stamp (or re-stamp) the provenance sidecar on an ALREADY-INSTALLED skill —

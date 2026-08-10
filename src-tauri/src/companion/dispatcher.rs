@@ -402,6 +402,13 @@ const ALLOWED_ACTIONS: &[&str] = &[
     "canvas_dispatch",
     "canvas_group_dispatch",
     "canvas_run_idea_scan",
+    // Skills + Knowledge ops (2026-08-10) — Athena operating over the skill
+    // fleet and the workspace knowledge library. `skill_sync` moves ONE skill
+    // between the library and project copies (adopt/sync/publish; pure file
+    // ops, guarded in approval_exec_knowledge.rs — customized copies are
+    // never overwritten, publish must be a version bump). The read halves
+    // (`describe_skill_fleet`, `describe_knowledge`) are READ_OPS above.
+    "skill_sync",
 ];
 
 /// True when `action` has an [`ALLOWED_ACTIONS`] entry, i.e. a proposal

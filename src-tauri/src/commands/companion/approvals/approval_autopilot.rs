@@ -817,6 +817,8 @@ mod containment_posture_tests {
             "canvas_run_idea_scan",
             "backlog_apply_triage",
             "remote_instruct",
+            // Skills + Knowledge ops (2026-08-10).
+            "skill_sync",
         ] {
             assert!(
                 crate::companion::dispatcher::action_is_allowed(action),
