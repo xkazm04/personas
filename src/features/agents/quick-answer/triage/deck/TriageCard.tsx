@@ -25,6 +25,7 @@ import {
 import { animate, motion, useMotionTemplate, useMotionValue, useTransform } from 'framer-motion';
 
 import type { TriageItem } from '../triageTypes';
+import { KindChipRail, SourceStampRail } from './CardEdgeRails';
 import { MetricBadgeRow } from './MetricBadgeRow';
 import { TriageCardBody } from './TriageCardBody';
 
@@ -249,7 +250,14 @@ function TriageCardImpl({
           ) : null}
         </motion.div>
 
+        {/* The card's META, on its borders rather than in its body — three
+            rails that share the edge and never each other (see
+            `CardEdgeRails` for the width arithmetic that forced two edges).
+            All of it sits OUTSIDE the frame above, which is `overflow-hidden`,
+            and INSIDE the drag layer, so it flies with the card. */}
         <MetricBadgeRow facts={item.facts} />
+        <SourceStampRail source={item.source} />
+        <KindChipRail item={item} />
       </motion.div>
     </motion.div>
   );

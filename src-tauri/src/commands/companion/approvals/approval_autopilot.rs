@@ -18,6 +18,15 @@ use super::*;
 pub(crate) const AUTOAPPROVE_ALLOWLIST: &[&str] = &[
     "write_fact",
     "write_backlog_item",
+    // Goal 3 extension (2026-08-09) — goal writes are Michal-authored durable
+    // state, exactly like `write_fact` above: no provenance contract (per the
+    // constitution, "Michal *is* the source"), self-authored, low blast radius,
+    // fully reversible (`delete_goal` / `update_goal_status` un-does either).
+    // Unlike the fleet ops below, these carry no `confidence`/`decision_class`
+    // params and never drive a live screen, so no boldness-dial gate applies —
+    // membership on this flat list is the whole rule, same as `write_fact`.
+    "write_goal",
+    "update_goal_status",
     "enqueue_dev_job",
     "schedule_proactive",
     // C2 — Athena posting into a team channel. Low blast radius (an internal
@@ -331,6 +340,8 @@ pub async fn auto_resolve_if_allowed(
     let exec_result = match action.as_str() {
         "write_fact" => execute_write_fact(&state, &params).await,
         "write_backlog_item" => execute_write_backlog_item(&state, &params),
+        "write_goal" => execute_write_goal(&state, &params),
+        "update_goal_status" => execute_update_goal_status(&state, &params),
         "enqueue_dev_job" => execute_enqueue_dev_job(&state, app, &params),
         "schedule_proactive" => execute_schedule_proactive(&state, &params),
         "fleet_send_input" => execute_fleet_send_input(app, &params),
@@ -924,6 +935,35 @@ mod containment_posture_tests {
             assert!(
                 crate::companion::dispatcher::action_is_allowed(action),
                 "{action} needs an ALLOWED_ACTIONS entry or no approval row is ever created"
+            );
+        }
+    }
+
+    /// Goal 3 extension (2026-08-09): `write_goal` / `update_goal_status` must
+    /// auto-fire with no card under autonomous mode, and still render a normal
+    /// approval card under manual mode. Both halves are pinned through the two
+    /// mechanisms that actually produce them:
+    ///   - autonomous auto-fire ⇔ membership on `AUTOAPPROVE_ALLOWLIST` (the
+    ///     sole check `auto_resolve_if_allowed` makes for these two actions —
+    ///     no confidence/decision_class field exists on a goal write, so unlike
+    ///     `fleet_send_input`/`fleet_kill` there is no boldness-dial gate to
+    ///     clear on top of the list membership);
+    ///   - manual-mode carding ⇔ a dispatcher `ALLOWED_ACTIONS` entry exists
+    ///     (so the approval row is created at all) AND `auto_resolve_if_allowed`
+    ///     is only ever invoked from `session.rs` behind its own
+    ///     `if autonomous_mode` guard — with the mode off, that call never
+    ///     happens, so the row this dispatcher entry creates stays `pending`
+    ///     and renders as a card exactly like it did before this change.
+    #[test]
+    fn goal_writes_auto_approve_when_autonomous_and_still_card_otherwise() {
+        for action in ["write_goal", "update_goal_status"] {
+            assert!(
+                AUTOAPPROVE_ALLOWLIST.contains(&action),
+                "{action} must auto-fire under autonomous mode like the other memory writes"
+            );
+            assert!(
+                crate::companion::dispatcher::action_is_allowed(action),
+                "{action} needs an ALLOWED_ACTIONS entry or manual mode has no card to render"
             );
         }
     }

@@ -10,7 +10,8 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::models::{
-    DevProject, DevWorkspace, WorkspaceImportItem, WorkspaceKnowledge, WorkspacePracticeAdoption,
+    DevProject, DevWorkspace, PracticeContextRollup, WorkspaceImportItem, WorkspaceKnowledge,
+    WorkspacePracticeAdoption,
 };
 use crate::db::repos::dev_workspaces as repo;
 use crate::error::AppError;
@@ -278,6 +279,23 @@ pub fn dev_tools_workspace_adoption_list(
 ) -> Result<Vec<WorkspacePracticeAdoption>, AppError> {
     require_auth_sync(&state)?;
     repo::list_adoption(&state.db, &workspace_id)
+}
+
+/// Context-grain adherence rollup (docs/concepts/pattern-context-trace.md).
+///
+/// Seeds missing envelope cells first, so the rollup always reflects the
+/// current adopted set × the current context maps — the P0 lazy-seeding shape
+/// (adoption/rescan hooks come with the verify-ingest phase). Seeding is
+/// idempotent and never touches verified cells.
+#[tauri::command]
+pub fn dev_tools_practice_context_rollup(
+    state: State<'_, Arc<AppState>>,
+    workspace_id: String,
+    project_id: Option<String>,
+) -> Result<Vec<PracticeContextRollup>, AppError> {
+    require_auth_sync(&state)?;
+    repo::seed_practice_context_cells(&state.db, &workspace_id)?;
+    repo::practice_context_rollup(&state.db, &workspace_id, project_id.as_deref())
 }
 
 #[tauri::command]

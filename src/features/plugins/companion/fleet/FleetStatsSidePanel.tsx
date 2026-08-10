@@ -1,12 +1,17 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, ListChecks, Clock } from 'lucide-react';
+import { tasksPage } from '@/api/devTools/devTools';
+import { listCronAgents } from '@/api/pipeline/triggers';
+import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { FleetShipIcon } from '@/features/plugins/fleet/FleetShipIcon';
 import { FLEET_STATE_META, fleetStateCounts, laneOfState, FLEET_LANE_ORDER } from '@/features/plugins/fleet/fleetStateMeta';
 import { useNowTick, formatAgo } from '@/features/plugins/fleet/relativeAgo';
 import { CompanionSidePanel } from '../CompanionSidePanel';
+import { useOperativeMemoryStore } from '../orchestration/operativeMemoryStore';
+import { parseDigest } from '../orchestration/parseDigest';
 
 /**
  * Live Fleet stats content for the companion chat's inner side-panel slot
@@ -39,6 +44,40 @@ export function FleetStatsSidePanel() {
   const setPluginTab = useSystemStore((s) => s.setPluginTab);
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
   const now = useNowTick();
+  // Athena's own in-flight operations (dev_improve runs, dispatched
+  // orchestration) — surfaced alongside fleet sessions so the panel reflects
+  // ALL of Athena's work, not just terminals. Reuses the same digest +
+  // parser the Live-ops strip reads; empty string → no rows.
+  const opsDigest = useOperativeMemoryStore((s) => s.digest);
+  const liveOps = useMemo(() => parseDigest(opsDigest), [opsDigest]);
+
+  // Dev Runner active-task count + armed-schedule count — the other two lanes
+  // of "what Athena has running". Polled lightly (mount + every 20s) off the
+  // existing L0 counts endpoint and the cron-agent list; failures stay silent
+  // so the panel degrades to fleet + live-ops rather than erroring.
+  const [runnerActive, setRunnerActive] = useState(0);
+  const [scheduleCount, setScheduleCount] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    const load = () => {
+      tasksPage(undefined, ['running', 'queued'], 1)
+        .then((p) => {
+          if (alive) setRunnerActive((p.counts.running ?? 0) + (p.counts.queued ?? 0));
+        })
+        .catch(silentCatch('companion_side_panel_runner_count'));
+      listCronAgents()
+        .then((agents) => {
+          if (alive) setScheduleCount(agents.length);
+        })
+        .catch(silentCatch('companion_side_panel_schedule_count'));
+    };
+    load();
+    const id = setInterval(load, 20_000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, []);
 
   const counts = useMemo(() => fleetStateCounts(sessions), [sessions]);
   const chips = useMemo(
@@ -137,6 +176,73 @@ export function FleetStatsSidePanel() {
             );
           })}
         </ul>
+      )}
+
+      {liveOps.length > 0 && (
+        <div
+          className="mt-1.5 pt-1.5 border-t border-secondary/40"
+          data-testid="companion-side-panel-live-ops"
+        >
+          <div className="px-1 pb-1 typo-caption text-foreground">
+            {t.plugins.companion.slash_label_live_ops}
+          </div>
+          <ul className="space-y-1">
+            {liveOps.map((op) => (
+              <li
+                key={op.id8}
+                data-testid={`companion-side-panel-op-${op.id8}`}
+                className="rounded-input bg-secondary/20 px-1.5 py-1"
+              >
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span
+                    className="h-1.5 w-1.5 rounded-full flex-shrink-0 bg-primary"
+                    aria-hidden="true"
+                  />
+                  <span
+                    className="flex-1 min-w-0 truncate typo-caption text-foreground"
+                    title={op.intent}
+                  >
+                    {op.intent}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-1 pl-3">
+                  <span className="truncate text-[10px] text-foreground">{op.status}</span>
+                  <span className="shrink-0 text-[10px] text-foreground tabular-nums">
+                    {op.duration}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {(runnerActive > 0 || scheduleCount > 0) && (
+        <div
+          className="mt-1.5 pt-1.5 border-t border-secondary/40 flex items-center gap-3 px-1"
+          data-testid="companion-side-panel-runner-schedules"
+        >
+          {runnerActive > 0 && (
+            <span
+              className="inline-flex items-center gap-1 typo-caption text-foreground tabular-nums"
+              title={t.sidebar.task_runner}
+              data-testid="companion-side-panel-runner-count"
+            >
+              <ListChecks className="w-3 h-3" aria-hidden="true" />
+              {runnerActive}
+            </span>
+          )}
+          {scheduleCount > 0 && (
+            <span
+              className="inline-flex items-center gap-1 typo-caption text-foreground tabular-nums"
+              title={t.sidebar.schedules}
+              data-testid="companion-side-panel-schedule-count"
+            >
+              <Clock className="w-3 h-3" aria-hidden="true" />
+              {scheduleCount}
+            </span>
+          )}
+        </div>
       )}
 
       <button

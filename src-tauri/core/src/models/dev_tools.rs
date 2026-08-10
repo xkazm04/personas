@@ -254,6 +254,31 @@ pub struct WorkspacePracticeAdoption {
     pub updated_at: String,
 }
 
+/// Context-grain adherence rollup for one practice — the honest ratio behind
+/// the topic graph's coverage rings (docs/concepts/pattern-context-trace.md).
+///
+/// `applicable` excludes `na` cells by definition: "this context cannot follow
+/// that practice" must never read as 0% adherence. The ring is
+/// `adopted / applicable`; `adopted + violating` over `applicable` is how much
+/// of the surface has actually been verified at all.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct PracticeContextRollup {
+    pub practice_id: String,
+    /// Verified-following contexts (evidence-cited by the verify lane).
+    pub adopted: i32,
+    /// Verified-not-following contexts (the divergence queue, context-grain).
+    pub violating: i32,
+    /// Applicable contexts nobody has looked at yet.
+    pub unverified: i32,
+    /// adopted + violating + unverified (never includes `na`).
+    // i32, not i64: ts-rs maps i64 to TS `bigint`, which then leaks into UI
+    // arithmetic — the exact typed-contract seam the observability scan
+    // flagged. A context count fits i32 by many orders of magnitude.
+    pub applicable: i32,
+}
+
 /// Per-scope harvest coverage for one member repo — the answer to "how much of
 /// this codebase has the library actually read?".
 ///

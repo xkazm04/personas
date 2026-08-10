@@ -15,6 +15,7 @@ import type { WorkspaceImportItem } from "@/lib/bindings/WorkspaceImportItem";
 import type { WorkspaceKnowledge } from "@/lib/bindings/WorkspaceKnowledge";
 import type { BulkDecision } from "@/lib/bindings/BulkDecision";
 import type { WorkspaceHarvestCoverage } from "@/lib/bindings/WorkspaceHarvestCoverage";
+import type { PracticeContextRollup } from "@/lib/bindings/PracticeContextRollup";
 import type { WorkspacePracticeAdoption } from "@/lib/bindings/WorkspacePracticeAdoption";
 
 export type KnowledgeKind = "pattern" | "pitfall" | "decision" | "howto" | "fact";
@@ -194,6 +195,19 @@ export async function deleteWorkspaceKnowledge(id: string): Promise<boolean> {
 }
 
 // -- adoption matrix ---------------------------------------------------------
+
+/** Context-grain adherence rollup (docs/concepts/pattern-context-trace.md).
+ *  Seeds missing envelope cells server-side, so the numbers always reflect
+ *  the current adopted set × the current context maps. */
+export async function listPracticeContextRollup(
+  workspaceId: string,
+  projectId?: string | null,
+): Promise<PracticeContextRollup[]> {
+  return invoke<PracticeContextRollup[]>("dev_tools_practice_context_rollup", {
+    workspaceId,
+    projectId: projectId ?? null,
+  });
+}
 
 export async function listWorkspaceAdoption(
   workspaceId: string,

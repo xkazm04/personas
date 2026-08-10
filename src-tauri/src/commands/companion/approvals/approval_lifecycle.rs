@@ -163,7 +163,24 @@ pub async fn companion_approve_action(
         // DEV MODE — self-development loop. Deliberately NOT on the
         // autoapprove allowlist: every dev-mode operation is an explicit
         // user click (see dispatcher.rs ALLOWED_ACTIONS notes).
-        "dev_improve" => execute_dev_improve(&state, &app, &params),
+        "dev_improve" => {
+            // `git worktree add` inside this executor is a blocking full
+            // checkout; running it on the async dispatch thread froze the UI
+            // on click. Offload to a blocking thread so approve returns fast.
+            let app_bg = app.clone();
+            let state_bg = state.inner().clone();
+            let params_bg = params.clone();
+            match tauri::async_runtime::spawn_blocking(move || {
+                execute_dev_improve(&state_bg, &app_bg, &params_bg)
+            })
+            .await
+            {
+                Ok(r) => r,
+                Err(e) => Err(AppError::Internal(format!(
+                    "dev_improve: worktree task join failed: {e}"
+                ))),
+            }
+        }
         "dev_merge" => execute_dev_merge(&state, &params),
         // Phase C3 — Team assignment dispatch.
         "assign_team" => execute_assign_team(&state, &app, &params).await,

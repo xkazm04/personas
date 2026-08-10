@@ -18,7 +18,14 @@ const NEAR_BOTTOM_PX = 80;
  *   <div ref={scrollRef} className="overflow-y-auto">…</div>
  *   {!atBottom && <button onClick={() => scrollToBottom()}>↓</button>}
  */
-export function useChatScroll() {
+/**
+ * @param containerReady The scroll container is actually mounted. Callers that
+ * stage the container behind a mount gate (the companion panel renders a
+ * skeleton until `useChatMount` flips `ready`) must pass that gate here:
+ * the scroll-listener effect otherwise runs once against a null ref and never
+ * re-attaches, leaving `atBottom` frozen at its initial `true`.
+ */
+export function useChatScroll(containerReady: boolean = true) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [atBottom, setAtBottom] = useState(true);
   // Mirror of `atBottom` so `maybeAutoScroll` can stay a stable callback the
@@ -35,11 +42,12 @@ export function useChatScroll() {
   }, []);
 
   useEffect(() => {
+    if (!containerReady) return;
     const el = scrollRef.current;
     if (!el) return;
     el.addEventListener('scroll', recompute, { passive: true });
     return () => el.removeEventListener('scroll', recompute);
-  }, [recompute]);
+  }, [recompute, containerReady]);
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
     const el = scrollRef.current;

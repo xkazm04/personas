@@ -1289,6 +1289,31 @@ impl FleetRegistry {
         Some(prev)
     }
 
+    /// Boot recovery (Mechanism 2): a session rehydrated with a mid-task state
+    /// but no live PTY — the app lost the handle on restart even though the
+    /// `claude` process itself usually survives as an orphan — is force-parked
+    /// to `AwaitingInput` with `reason`, so it stands out for reconnection
+    /// (`fleet_resume`/`fleet_wake`) AND is not swept by the ticker's
+    /// auto-forget pass before the operator gets a chance at it. Unlike
+    /// `escalate_to_awaiting`, this also rescues a rehydrated `Running` row
+    /// (a false "running" with no child). Two guards keep it from stomping
+    /// fresher truth: a session that already has a live child (`child_pid`)
+    /// or is terminally `Exited` is left untouched. Returns true if parked.
+    pub fn park_recovered(&self, session_id: &str, reason: &str) -> bool {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else {
+            return false;
+        };
+        if session.child_pid.is_some() || matches!(session.state, FleetSessionState::Exited) {
+            return false;
+        }
+        session.athena_active_until_ms = 0;
+        session.state = FleetSessionState::AwaitingInput;
+        session.state_reason = Some(reason.to_string());
+        session.last_activity_ms = now_ms();
+        true
+    }
+
     /// Mechanical completion (fleet protocol `FLEET:DONE`): the session
     /// declared its assigned task complete in its end-of-turn recap. Parks the
     /// row in `Finished` with the declared summary as the reason — the

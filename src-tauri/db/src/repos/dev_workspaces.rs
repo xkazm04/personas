@@ -13,8 +13,8 @@ use std::collections::HashMap;
 use rusqlite::{params, OptionalExtension, Row};
 
 use crate::models::{
-    DevProject, DevWorkspace, WorkspaceHarvestCoverage, WorkspaceImportItem, WorkspaceKnowledge,
-    WorkspacePracticeAdoption,
+    DevProject, DevWorkspace, PracticeContextRollup, WorkspaceHarvestCoverage, WorkspaceImportItem,
+    WorkspaceKnowledge, WorkspacePracticeAdoption,
 };
 use crate::DbPool;
 use personas_core::error::AppError;
@@ -1969,6 +1969,226 @@ fn cluster_skill_adoption(
         });
     }
     out
+}
+
+// ============================================================================
+// Pattern × context traceability (docs/concepts/pattern-context-trace.md)
+// ============================================================================
+
+/// Mechanical envelope verdict for one (practice, context) pair.
+///
+/// This writer is deliberately only allowed two answers: `na` ("surely does
+/// not apply here") and `unverified` ("maybe — nobody has looked"). The 2026-07
+/// probe experiments measured a 3-of-7 false-positive rate for mechanical
+/// "yes" verdicts on known-good code, which is why `adopted`/`violating` are
+/// reserved for the evidence-citing verify lane. Fail OPEN throughout: when
+/// unsure, `unverified`, never `na`.
+pub fn envelope_context_state(
+    applicability: Option<&str>,
+    topic: Option<&str>,
+    context_tech_stack: Option<&str>,
+    context_category: Option<&str>,
+) -> &'static str {
+    // (a) The practice's own applicability envelope vs the CONTEXT's stack —
+    // but only when the context actually declares a stack; an empty stack is
+    // "unknown", and unknown must never resolve to na.
+    let ctx_stack_known = context_tech_stack.is_some_and(|s| !s.trim().is_empty());
+    if ctx_stack_known && !applicability_matches(applicability, context_tech_stack) {
+        return "na";
+    }
+    // (b) Coarse area × category disjoints — ONLY the pairs that are clearly
+    // impossible. A frontend/* practice has nothing to say inside a pure Rust
+    // command surface or a data-layer context. Everything else (lib, test,
+    // config, unknown) stays unverified: a `lib` folder can hold UI helpers.
+    let area = topic.unwrap_or("").split('/').next().unwrap_or("");
+    let category = context_category.unwrap_or("").trim();
+    if area == "frontend" && matches!(category, "api" | "data") {
+        return "na";
+    }
+    "unverified"
+}
+
+/// Seed missing (adopted practice × member context) cells and drop cells for
+/// practices that have left `adopted`. Idempotent; NEVER touches a verified
+/// cell — `adopted`/`violating` verdicts belong to the verify lane alone.
+pub fn seed_practice_context_cells(pool: &DbPool, workspace_id: &str) -> Result<u32, AppError> {
+    timed_query!("dev_workspaces", "dev_workspaces::seed_practice_context_cells", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let mut conn = pool.get()?;
+        let tx = conn.transaction()?;
+
+        // Cells for practices no longer adopted are noise in every denominator.
+        tx.execute(
+            "DELETE FROM workspace_practice_context_state
+             WHERE practice_id IN (
+                 SELECT id FROM workspace_knowledge
+                 WHERE workspace_id = ?1 AND status != 'adopted'
+             )",
+            params![workspace_id],
+        )?;
+
+        let practices: Vec<(String, Option<String>, Option<String>)> = {
+            let mut stmt = tx.prepare(
+                "SELECT id, applicability, topic FROM workspace_knowledge
+                 WHERE workspace_id = ?1 AND status = 'adopted'",
+            )?;
+            let rows = stmt
+                .query_map(params![workspace_id], |r| {
+                    Ok((r.get(0)?, r.get(1)?, r.get(2)?))
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            rows
+        };
+
+        // (context, project, name, tech_stack, category) for every member repo.
+        let contexts: Vec<(String, String, String, Option<String>, Option<String>)> = {
+            let mut stmt = tx.prepare(
+                "SELECT c.id, c.project_id, c.name, c.tech_stack, c.category
+                 FROM dev_contexts c
+                 JOIN dev_projects p ON p.id = c.project_id
+                 WHERE p.workspace_id = ?1",
+            )?;
+            let rows = stmt
+                .query_map(params![workspace_id], |r| {
+                    Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?))
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            rows
+        };
+
+        let mut inserted = 0u32;
+        {
+            let mut stmt = tx.prepare(
+                "INSERT OR IGNORE INTO workspace_practice_context_state
+                     (practice_id, project_id, context_id, context_name, state, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            )?;
+            for (pid, applicability, topic) in &practices {
+                for (cid, project_id, name, stack, category) in &contexts {
+                    let state = envelope_context_state(
+                        applicability.as_deref(),
+                        topic.as_deref(),
+                        stack.as_deref(),
+                        category.as_deref(),
+                    );
+                    inserted +=
+                        stmt.execute(params![pid, project_id, cid, name, state, now])? as u32;
+                }
+            }
+        }
+
+        tx.commit()?;
+        Ok(inserted)
+    })
+}
+
+/// Per-practice adherence rollup — the one number the graph's rings show.
+/// `applicable` excludes `na` by construction; a practice whose every cell is
+/// `na` simply reports `applicable = 0` and the UI draws no ring.
+pub fn practice_context_rollup(
+    pool: &DbPool,
+    workspace_id: &str,
+    project_id: Option<&str>,
+) -> Result<Vec<PracticeContextRollup>, AppError> {
+    timed_query!("dev_workspaces", "dev_workspaces::practice_context_rollup", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT s.practice_id,
+                    SUM(CASE WHEN s.state = 'adopted'    THEN 1 ELSE 0 END),
+                    SUM(CASE WHEN s.state = 'violating'  THEN 1 ELSE 0 END),
+                    SUM(CASE WHEN s.state = 'unverified' THEN 1 ELSE 0 END)
+             FROM workspace_practice_context_state s
+             JOIN workspace_knowledge k ON k.id = s.practice_id
+             WHERE k.workspace_id = ?1
+               AND (?2 IS NULL OR s.project_id = ?2)
+               AND s.state != 'na'
+             GROUP BY s.practice_id",
+        )?;
+        let rows = stmt
+            .query_map(params![workspace_id, project_id], |r| {
+                let adopted: i32 = r.get(1)?;
+                let violating: i32 = r.get(2)?;
+                let unverified: i32 = r.get(3)?;
+                Ok(PracticeContextRollup {
+                    practice_id: r.get(0)?,
+                    adopted,
+                    violating,
+                    unverified,
+                    applicable: adopted + violating + unverified,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    })
+}
+
+#[cfg(test)]
+mod context_trace_tests {
+    use super::*;
+
+    #[test]
+    fn envelope_may_only_say_maybe_or_surely_not() {
+        // No envelope, no topic, no context metadata → unverified (fail open).
+        assert_eq!(envelope_context_state(None, None, None, None), "unverified");
+        // Stack mismatch with a KNOWN context stack → na.
+        assert_eq!(
+            envelope_context_state(
+                Some("{\"frameworks\":[\"react\"]}"),
+                Some("frontend/state"),
+                Some("Rust, tokio"),
+                Some("lib"),
+            ),
+            "na"
+        );
+        // Same mismatch but the context declares NO stack → unknown must never
+        // resolve to na.
+        assert_eq!(
+            envelope_context_state(
+                Some("{\"frameworks\":[\"react\"]}"),
+                Some("frontend/state"),
+                None,
+                Some("lib"),
+            ),
+            "unverified"
+        );
+        assert_eq!(
+            envelope_context_state(
+                Some("{\"frameworks\":[\"react\"]}"),
+                Some("frontend/state"),
+                Some("   "),
+                Some("lib"),
+            ),
+            "unverified"
+        );
+        // Area × category: frontend practice in an api/data context → na …
+        assert_eq!(
+            envelope_context_state(None, Some("frontend/components"), None, Some("api")),
+            "na"
+        );
+        assert_eq!(
+            envelope_context_state(None, Some("frontend/forms"), None, Some("data")),
+            "na"
+        );
+        // … but lib/test/ui stay open — a lib folder can hold UI helpers.
+        assert_eq!(
+            envelope_context_state(None, Some("frontend/components"), None, Some("lib")),
+            "unverified"
+        );
+        assert_eq!(
+            envelope_context_state(None, Some("frontend/components"), None, Some("ui")),
+            "unverified"
+        );
+        // Non-frontend areas never hit the category rule.
+        assert_eq!(
+            envelope_context_state(None, Some("data/queries"), None, Some("ui")),
+            "unverified"
+        );
+        // Malformed applicability fails open even with a known stack.
+        assert_eq!(
+            envelope_context_state(Some("not json"), None, Some("Rust"), Some("api")),
+            "unverified"
+        );
+    }
 }
 
 #[cfg(test)]

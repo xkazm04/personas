@@ -3179,6 +3179,7 @@ pub fn run() {
             commands::infrastructure::dev_workspaces::dev_tools_workspace_knowledge_decide,
             commands::infrastructure::dev_workspaces::dev_tools_workspace_knowledge_delete,
             commands::infrastructure::dev_workspaces::dev_tools_workspace_adoption_list,
+            commands::infrastructure::dev_workspaces::dev_tools_practice_context_rollup,
             commands::infrastructure::dev_workspaces::dev_tools_workspace_adoption_set,
             commands::infrastructure::dev_workspaces::dev_tools_workspace_run_miners,
             commands::infrastructure::dev_workspaces::dev_tools_workspace_backfill_practice_ideas,

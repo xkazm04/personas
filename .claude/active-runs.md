@@ -19,6 +19,10 @@
 
 
 
+### prototype-pattern-graph — /prototype: PoE-style topic graph for Overview->Patterns — session fable-5
+- ROUNDS 3-4 SHIPPED: Nexus consolidated as winner (`f33221d05` — Sectors+switcher deleted, click-to-centre drill-down, ProjectFilter lens, pinned 1/k titles, 15 i18n keys x14), then `ea3e7e4b3` (pointer-capture click fix, ClusterPatternsModal in the TriageCard idiom, adoption-coverage rings from the pattern x project matrix, 3 more keys x14). Corpus adjudication: 5 Opus agents judged all 332 pending -> 264 adopted / 62 rejected applied with decide_knowledge_cas semantics + 1,848 adoption cells fanned; 6 operator-decided rows respected. Library: 455 adopted / 67 rejected / 1 deprecated, pending ZERO.
+- P0 pattern x context SHIPPED: `workspace_practice_context_state` migration (idempotent ddl_step tail), envelope seeding (na/unverified only — adopted/violating reserved for the verify lane), `dev_tools_practice_context_rollup` command (lazy-seeds then rolls up; registered in lib.rs, command names regenerated), `PracticeContextRollup` binding (i32 fields — i64 would export as TS bigint, the exact typed-contract leak the observability scan flagged; exported via `-p personas-core export_bindings`, plain export_bindings dies on the updater capability under no-features), host fetch w/ silentCatch degrade to matrix-grain, rings prefer context adherence per key, modal shows "N of M contexts verified". Gotcha: inserting a fn above `#[cfg(test)] mod tests` without including the attribute in the edit anchor orphans the attribute ONTO THE NEW FN — compiles in test builds, E0425 in lib builds.
+- NEXT: P1 verify-ingest attribution (file:line -> context via dev_contexts.file_paths), P2 rescan snapshot/reconcile + hash-driven staleness decay, P3 cross-project trace overview (docs/concepts/pattern-context-trace.md).
 ### typo-label-readability — global `typo-label` redesign (drop UPPERCASE/wide tracking) + prose sites moved to `typo-caption` — session opus-5[1m] — **COMPLETE**, commit `193d4aeab`
 - Started/completed: 2026-08-07. Gates: tsc clean · eslint 0 errors on 143 touched files · vitest dev-tools+shared 311/311 · check:themes AA · vite build clean. NOT visually verified in a running app (no live instance was up).
 - Scope: `src/styles/typography.css` (the `.typo-label` recipe + the ar/CJK script overrides that existed only to undo its uppercase), `.claude/Design.md` (token table row + language-awareness note), `CHANGELOG.md`, and 143 `src/features/**` .tsx files — mechanical removal of 567 now-live `uppercase`/`tracking-*` utilities from class regions containing `typo-label`, plus 9 prose sites switched to `typo-caption`.
@@ -263,6 +267,10 @@
 
 ### skills-cold-load-perf — Skills page cold-load smoothing — session fable-5 — **completed (commit: 23632434a)**
 - 2026-08-09. Four tabs → lazy chunks behind RouteChunkSkeleton (only the active surface's code + data hooks load); Overview/Registry/Analytics lists mount via useProgressiveReveal; Registry fetch phased (adopted-state paint → telemetry merge); Analytics token rollups 30-wide burst → concurrency 3; Trace's scan deferred 1.5s past first paint; backend `mine_file` batches inserts + watermark in one transaction per transcript file (was one fsync PER EVENT — the first-scan freeze). Gates: tsc/eslint(0 err)/vitest 19/19/cargo check. NOT live-verified — the running release binary predates this commit; needs a dev run or rebuild.
+
+### athena-terminal-channel — `/athena` skill: chat with Athena in Claude Code while the app is unstable — session fable-5 xhigh — **COMPLETE**
+- 2026-08-10. New `.claude/skills/athena/{SKILL.md,brain.py}` + companion README section. brain.py = zero-dep stdlib bridge (boot/recall/append/gauge/turn) with a parity contract against `brain/episodic.rs` — episodes byte-compatible (markdown + node + FTS, session `cli`), verified against a DB copy incl. the cycle-window predicate; the sleep cycle consolidates terminal turns because `list_conversation_after` is not session-scoped. Observed during testing: cycle #3 (`cyc_e6b9e861765c`) had already run autonomously.
+
 
 - **[2026-08-09 15:35] /research — claude-cross-session-messaging**
   - **Source:** https://www.youtube.com/watch?v=oqp6D-ugtX4 (Claude Code session-to-session messaging)

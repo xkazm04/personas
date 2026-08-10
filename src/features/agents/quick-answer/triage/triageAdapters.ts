@@ -1423,9 +1423,10 @@ export function goalToTriage(
   }
   if (row.team_name) facts.push({ id: 'team', label: copy.goalTeam, value: row.team_name });
   facts.push({ id: 'project', label: copy.project, value: row.project_name });
-  // `raised` is load-bearing, not a naming preference: `TriageFactRow` renders a
-  // relative time only for the ids in its `TIME_FACTS` set, and any other id
-  // prints the raw ISO string. "Finished 2h ago" is the only legible form.
+  // `raised` is the shared id for "when did this arrive", used by every adapter
+  // in this file so a timestamp is always recognisable as one. It carried a
+  // second meaning while the card had a docked ledger (`TriageFactRow`, since
+  // removed), which rendered exactly `raised`/`lockedAt` as relative times.
   if (row.completed_at) facts.push({ id: 'raised', label: copy.raised, value: row.completed_at });
 
   // Only when there is genuinely a batch: "Accept all 1 from this KPI" is the

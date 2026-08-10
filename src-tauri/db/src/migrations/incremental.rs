@@ -7881,6 +7881,42 @@ fn research_lab_align_columns(conn: &Connection) {
         "CREATE INDEX IF NOT EXISTS idx_dev_project_env_connectors_project
             ON dev_project_env_connectors(project_id);",
     );
+
+    // -- Pattern × context traceability --------------------------------------
+    // (docs/concepts/pattern-context-trace.md) The adoption matrix is
+    // project-grain and overstates reality: one `adopted` cell renders as if
+    // the whole project follows the practice. This table is the same matrix
+    // one level down — a cell per (practice × context) — so the graph can show
+    // the true adherence ratio. `adopted`/`violating` require cited evidence
+    // (the verify lane is the only writer); mechanical seeding may only say
+    // `unverified` or `na`. `context_name` is denormalized on purpose: full
+    // rescans DELETE and recreate contexts under fresh ids, and the name is
+    // the reconcile key that lets cells rejoin the new map (same ritual as
+    // ContextLinkSnapshot).
+    let _ = ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS workspace_practice_context_state (
+            practice_id  TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
+            project_id   TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+            context_id   TEXT NOT NULL REFERENCES dev_contexts(id) ON DELETE CASCADE,
+            context_name TEXT NOT NULL,
+            state        TEXT NOT NULL CHECK(state IN ('na','unverified','adopted','violating')),
+            evidence     TEXT,
+            verified_at  TEXT,
+            updated_at   TEXT NOT NULL,
+            PRIMARY KEY (practice_id, context_id)
+        );",
+    );
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_wpcs_project
+            ON workspace_practice_context_state(project_id, practice_id);",
+    );
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_wpcs_practice
+            ON workspace_practice_context_state(practice_id, state);",
+    );
 }
 
 /// Widen `dev_kpi_measurements.source` with `'ai-compose'`.

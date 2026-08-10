@@ -805,8 +805,11 @@ pub(crate) fn execute_schedule_proactive(
 /// prompt is assembled Rust-side with the context map's file paths —
 /// never model-recalled ones. Always click-approved (double policy: not
 /// on AUTOAPPROVE_ALLOWLIST, and gated on dev mode + debug build here).
+// Takes `&Arc<AppState>` (not `&State`) so the caller can clone the Arc and
+// run this whole executor via `spawn_blocking` — its `git worktree add` is a
+// blocking full-checkout that must not run on the async dispatch thread.
 pub(crate) fn execute_dev_improve(
-    state: &State<'_, Arc<AppState>>,
+    state: &Arc<AppState>,
     app: &tauri::AppHandle,
     params: &serde_json::Value,
 ) -> Result<ExecuteResult, AppError> {

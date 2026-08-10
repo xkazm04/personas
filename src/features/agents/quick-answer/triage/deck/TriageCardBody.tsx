@@ -5,20 +5,25 @@
 // The only branch is `answerSlot` — items that collect an answer replace the
 // prose with their input, because there is nothing to argue about a question.
 //
-// LAYOUT. The card is 46rem wide but prose is capped at a ~68ch measure,
-// because a 90-character line is exactly the width that makes people skim
-// instead of read. Three bands, each with a job:
+// LAYOUT. Two bands, each with a job:
 //
-//   1. `TriageCardHeader` — chips, the source stamp in the corner, the
-//      headline, and a rule under all of it so the prose starts against an edge.
+//   1. `TriageCardHeader` — the headline, alone on its row at the card's full
+//      width, with a rule under it so the prose starts against an edge. The
+//      chips and the source stamp are not in the card at all any more; they
+//      straddle its borders (`CardEdgeRails`).
 //   2. The scroller — the case being judged, as MARKDOWN. Scanners emit lists,
 //      backticks and bold; a card that prints those symbols verbatim is asking
 //      the reviewer to parse markdown in their head.
-//   3. `TriageFactRow` — the remaining facts on ONE line, docked outside the
-//      scroller so nothing a verdict depends on scrolls away under the decision.
 //
 // Score facts (effort/impact/risk/confidence) are deliberately NOT repeated
 // here — they already straddle the card's top edge as meters in MetricBadgeRow.
+//
+// EVERY HORIZONTAL INSET BELONGS TO `TriageCard`. The body used to hold three
+// of its own — a centred ~68ch measure, a scrollbar gutter, and `p-4` on each
+// block — which together cost the prose about a third of a 46rem card while the
+// reviewer scrolled markdown through the remainder. The card's `px-6` is the
+// only horizontal padding left; the blocks keep a small `px-3` because their
+// border would otherwise sit on their own text.
 import { memo, type ReactNode, type Ref } from 'react';
 
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
@@ -26,15 +31,10 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import type { TriageItem } from '../triageTypes';
 import { TriageCardHeader } from './TriageCardHeader';
-import { TriageFactRow } from './TriageFactRow';
-
-/** Prose measure. Centred, so a one-sentence body sits in the middle of the
- *  card rather than hugging its left edge. */
-const MEASURE = 'mx-auto w-full max-w-[68ch]';
 
 function Block({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <section className="rounded-card border border-primary/12 bg-secondary/25 p-4">
+    <section className="rounded-card border border-primary/12 bg-secondary/25 px-3 py-3">
       <h3 className="typo-label mb-2 text-primary">{label}</h3>
       {children}
     </section>
@@ -105,7 +105,7 @@ export function TriageCardBody({
 
   return (
     <>
-      <TriageCardHeader item={item} t={t} />
+      <TriageCardHeader item={item} />
 
       {/* Focusable, and named. A scroller with no `tabIndex` and no focusable
           descendant is unreachable by keyboard, which on this surface meant a
@@ -124,14 +124,11 @@ export function TriageCardBody({
         aria-label={t.monitor.triage_body_region}
         className="focus-ring mt-4 min-h-0 flex-1 overflow-y-auto"
       >
-        <div className={`${MEASURE} space-y-4 pr-1`}>
+        <div className="w-full space-y-4">
           {answerSlot ?? <CardBody item={item} />}
           <CardProse item={item} />
         </div>
       </div>
-
-      {/* Hidden while answering: a question card's job is the input. */}
-      {answerSlot ? null : <TriageFactRow facts={item.facts} />}
     </>
   );
 }
