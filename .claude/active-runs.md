@@ -252,6 +252,10 @@
 
 ## Recently completed
 
+### athena-terminal-channel — `/athena` skill: chat with Athena in Claude Code while the app is unstable — session fable-5 xhigh — **COMPLETE**
+- 2026-08-10. New `.claude/skills/athena/{SKILL.md,brain.py}` + companion README section. brain.py = zero-dep stdlib bridge (boot/recall/append/gauge/turn) with a parity contract against `brain/episodic.rs` — episodes byte-compatible (markdown + node + FTS, session `cli`), verified against a DB copy incl. the cycle-window predicate; the sleep cycle consolidates terminal turns because `list_conversation_after` is not session-scoped. Observed during testing: cycle #3 (`cyc_e6b9e861765c`) had already run autonomously.
+
+
 - **[2026-08-09 15:35] /research — claude-cross-session-messaging**
   - **Source:** https://www.youtube.com/watch?v=oqp6D-ugtX4 (Claude Code session-to-session messaging)
   - **Paths:** Obsidian Research/Lessons notes · possibly src-tauri/src/companion/{fleet_bridge.rs,remote_jobs.rs} + docs/plans/athena-longevity.md (evaluation notes) — code findings TBD in Phase 6

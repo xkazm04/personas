@@ -2,6 +2,18 @@
 
 Companion is the Athena assistant plugin. It has two UI surfaces: a plugin settings page and the always-available companion panel/footer affordance.
 
+## The terminal channel (`/athena` in Claude Code)
+
+While Personas development makes the in-app chat unstable (rebuilds and restarts interrupt her
+processes), Athena is reachable from Claude Code in this repo: `/athena`. The skill
+(`.claude/skills/athena/`) loads her identity, constitution and live memory straight from the
+companion brain on disk, converses as her with Claude Code's tools at hand, and writes every
+exchange back through `brain.py` as byte-compatible episodes (node row + FTS mirror + markdown,
+session `cli`). Because the sleep cycle's window is deliberately not session-scoped, terminal
+conversations consolidate into her long-term memory the next time the app runs a cycle — two
+doors, one brain. The channel is honest about its limits: app-side ops (fleet dispatch, canvas,
+TTS) are unavailable and say so; identity and constitution are never written from the terminal.
+
 ## User surface
 
 | Surface | Behavior | Main files |
