@@ -415,6 +415,17 @@ const ALLOWED_ACTIONS: &[&str] = &[
     // review). Starts terminals, so it is containment-checked through
     // `validate_fleet_cwd` like every other spawn.
     "run_pattern_harvest",
+    // `apply_pattern` dispatches ONE session that implements ADOPTED patterns
+    // (or an active playbook) in a target repo. The session changes code and
+    // commits; adoption/adherence records only move through the verify lane —
+    // applying observed proposals is refused so Athena can never become the
+    // adopter.
+    "apply_pattern",
+    // `evaluate_pattern` starts the EXISTING adoption-verification pass over a
+    // target project (headless session, verdicts + file citations through the
+    // verify lane's evidence door; surface-never-auto-un-adopt). Approval-
+    // gated because it spawns a reasoning session (cost).
+    "evaluate_pattern",
 ];
 
 /// True when `action` has an [`ALLOWED_ACTIONS`] entry, i.e. a proposal
@@ -4402,6 +4413,43 @@ OP: {{"op":"propose_action","action":"canvas_control","params":{{"action":{actio
         let out = describe_skill(None, "totally-made-up-skill");
         assert!(out.contains("No installed skill matches"), "{out}");
         assert!(out.contains("Do not invent a skill name"), "{out}");
+    }
+
+    #[test]
+    fn knowledge_action_ops_create_approval_rows() {
+        // The four skills/knowledge actions must be grammar-legal or Athena's
+        // proposals are silently dropped (the exact failure the build_oneshot
+        // comment on ALLOWED_ACTIONS documents).
+        for op in [
+            r###"{"op":"propose_action","action":"skill_sync","params":{"skill":"research","action":"sync","targets":["personas"]},"rationale":"r"}"###,
+            r###"{"op":"propose_action","action":"run_pattern_harvest","params":{"project":"personas"},"rationale":"r"}"###,
+            r###"{"op":"propose_action","action":"apply_pattern","params":{"target_project":"personas","pattern_ids":["wk_1"]},"rationale":"r"}"###,
+            r###"{"op":"propose_action","action":"evaluate_pattern","params":{"target_project":"personas"},"rationale":"r"}"###,
+        ] {
+            let out = dispatch_op(op);
+            assert_eq!(out.approvals.len(), 1, "op {op} — warnings: {:?}", out.warnings);
+        }
+    }
+
+    #[test]
+    fn knowledge_read_ops_answer_without_a_query() {
+        // Both digests are query-optional: an empty query is the overview, so
+        // it must not be rejected as "missing query".
+        for action in ["describe_skill_fleet", "describe_knowledge"] {
+            let op = format!(
+                r###"{{"op":"propose_action","action":"{action}","params":{{}}}}"###
+            );
+            let out = dispatch_op(&op);
+            assert!(
+                out.approvals.is_empty(),
+                "{action} is a read op, not an approval"
+            );
+            assert!(
+                !out.warnings.iter().any(|w| w.contains("missing `query`")),
+                "{action} must be query-optional — warnings: {:?}",
+                out.warnings
+            );
+        }
     }
 
     #[test]

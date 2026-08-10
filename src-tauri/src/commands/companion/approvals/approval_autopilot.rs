@@ -820,6 +820,8 @@ mod containment_posture_tests {
             // Skills + Knowledge ops (2026-08-10).
             "skill_sync",
             "run_pattern_harvest",
+            "apply_pattern",
+            "evaluate_pattern",
         ] {
             assert!(
                 crate::companion::dispatcher::action_is_allowed(action),

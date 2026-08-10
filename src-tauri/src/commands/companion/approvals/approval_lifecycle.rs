@@ -259,6 +259,8 @@ pub(crate) async fn execute_approval_action(
         // READ_OPS in the dispatcher.
         "skill_sync" => execute_skill_sync(&state, &params),
         "run_pattern_harvest" => execute_run_pattern_harvest(&state, &app, &params),
+        "apply_pattern" => execute_apply_pattern(&state, &app, &params),
+        "evaluate_pattern" => execute_evaluate_pattern(&state, &app, &params).await,
         other => Err(AppError::Internal(format!(
             "approval `{approval_id}`: unknown action `{other}`"
         ))),

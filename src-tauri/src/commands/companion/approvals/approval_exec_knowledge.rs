@@ -419,3 +419,312 @@ pub(crate) fn execute_run_pattern_harvest(
     );
     Ok(ExecuteResult::message(msg))
 }
+
+// ── apply_pattern ───────────────────────────────────────────────────────
+
+/// Adopted patterns one apply session may carry. More than this is not one
+/// session's brief, it is a migration — split it across waves.
+const APPLY_MAX_PATTERNS: usize = 8;
+
+/// Build the apply session's brief. Pure so the shape is testable: the
+/// consent doctrine (never write adoption records; commit atomically; honest
+/// report) must survive any rewrite.
+pub(crate) fn build_apply_prompt(
+    project_name: &str,
+    objective: Option<&str>,
+    patterns: &[(String, String, String, Option<String>)], // (id, title, statement, detail)
+) -> String {
+    let mut cards = String::new();
+    for (id, title, statement, detail) in patterns {
+        cards.push_str(&format!("\n### {title} (`{id}`)\n{statement}\n"));
+        if let Some(d) = detail {
+            let d = d.trim();
+            let clipped: String = d.chars().take(1200).collect();
+            cards.push_str(&clipped);
+            if d.chars().count() > 1200 {
+                cards.push('…');
+            }
+            cards.push('\n');
+        }
+    }
+    let objective_line = objective
+        .map(|o| format!("\nOPERATOR OBJECTIVE — {o}\n"))
+        .unwrap_or_default();
+    format!(
+        "You are implementing ADOPTED workspace practices in the \"{project_name}\" repository.\n\
+         {objective_line}\
+         \nTHE PRACTICES — each is canon this workspace already adopted; your job is to make \
+         this repo actually follow them where it currently does not:\n{cards}\n\
+         METHOD:\n\
+         - If `.claude/patterns/` exists in this repo, read its README router first — it \
+         carries the full library, this repo's adoption state and per-playbook briefs; prefer \
+         its exemplars over inventing your own shape.\n\
+         - For each practice: find where this repo violates or lacks it (search broadly, cite \
+         real files), apply the minimal faithful change, and run the repo's own gates \
+         (typecheck / lint / tests as the repo defines them) before moving on.\n\
+         - Commit atomically — one practice (or one coherent site) per commit, message naming \
+         the practice.\n\
+         - A practice this repo genuinely already follows, or that does not apply to this \
+         stack: SAY SO in your summary and touch nothing — an honest no-op beats a cosmetic \
+         change.\n\
+         \nHARD RULES:\n\
+         - You are changing code, not records: never write adoption/adherence/verification \
+         state anywhere — the verify lane measures adherence AFTER your work, from evidence.\n\
+         - Stay inside this repository.\n\
+         - End with a short summary: per practice — applied (where) / already-followed / \
+         not-applicable (why)."
+    )
+}
+
+/// `apply_pattern` — dispatch ONE Fleet session that implements adopted
+/// workspace patterns (or an active playbook's members) in a target project.
+/// The session changes code and commits; it never writes adoption or
+/// adherence records — those only move through the verify lane, from
+/// evidence. Params: `{target_project, pattern_ids?: [id…], playbook?: slug,
+/// objective?}` — at least one of `pattern_ids` / `playbook`.
+pub(crate) fn execute_apply_pattern(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let target_q = params
+        .get("target_project")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| {
+            AppError::Validation("apply_pattern: missing `target_project` (name or id)".into())
+        })?;
+    let conn = state.db.get()?;
+    let (project_id, workspace_id, root_path, project_name): (
+        String,
+        Option<String>,
+        String,
+        String,
+    ) = conn
+        .query_row(
+            "SELECT id, workspace_id, root_path, name FROM dev_projects
+             WHERE id = ?1 OR name = ?1 COLLATE NOCASE
+             ORDER BY (id = ?1) DESC LIMIT 1",
+            rusqlite::params![target_q],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+        )
+        .map_err(|_| {
+            AppError::Validation(format!("apply_pattern: unknown project `{target_q}`"))
+        })?;
+    let Some(workspace_id) = workspace_id else {
+        return Err(AppError::Validation(format!(
+            "apply_pattern: `{project_name}` is not in a workspace — there is no adopted \
+             library to apply from"
+        )));
+    };
+    validate_fleet_cwd(app, &root_path)?;
+
+    // Resolve the pattern set: explicit ids, or an ACTIVE playbook's members.
+    // Only ADOPTED knowledge is applicable — observed/proposed items are
+    // proposals under review, and applying them would make Athena the adopter.
+    let all = crate::db::repos::dev_workspaces::list_knowledge(&state.db, &workspace_id, None)?;
+    let mut wanted_ids: Vec<String> = Vec::new();
+    let mut label = String::new();
+    if let Some(slug) = params
+        .get("playbook")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        let playbooks = crate::db::repos::dev_workspaces::list_playbooks(&state.db, &workspace_id)?;
+        let pb = playbooks
+            .iter()
+            .find(|p| p.slug.eq_ignore_ascii_case(slug))
+            .ok_or_else(|| {
+                AppError::Validation(format!("apply_pattern: no playbook with slug `{slug}`"))
+            })?;
+        if pb.status != "active" {
+            return Err(AppError::Validation(format!(
+                "apply_pattern: playbook `{slug}` is `{}` — only ACTIVE playbooks are \
+                 applicable (activation is the curator's call, like every adoption)",
+                pb.status
+            )));
+        }
+        let members =
+            crate::db::repos::dev_workspaces::list_playbook_patterns(&state.db, &pb.id)?;
+        wanted_ids.extend(members.iter().map(|m| m.practice_id.clone()));
+        label = format!("playbook {slug}");
+    }
+    if let Some(ids) = params.get("pattern_ids").and_then(|v| v.as_array()) {
+        wanted_ids.extend(
+            ids.iter()
+                .filter_map(|x| x.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(str::to_string),
+        );
+    }
+    if wanted_ids.is_empty() {
+        return Err(AppError::Validation(
+            "apply_pattern: name `pattern_ids` and/or an active `playbook` — use \
+             describe_knowledge to find them"
+                .into(),
+        ));
+    }
+    wanted_ids.dedup();
+
+    let mut skipped: Vec<String> = Vec::new();
+    let mut patterns: Vec<(String, String, String, Option<String>)> = Vec::new();
+    for id in &wanted_ids {
+        match all.iter().find(|k| &k.id == id) {
+            None => skipped.push(format!("`{id}`: not in the library")),
+            Some(k) if k.status != "adopted" => {
+                skipped.push(format!(
+                    "`{}`: status is `{}` — only ADOPTED patterns are applied",
+                    k.title, k.status
+                ));
+            }
+            Some(k) => patterns.push((
+                k.id.clone(),
+                k.title.clone(),
+                k.statement.clone(),
+                k.detail_md.clone(),
+            )),
+        }
+    }
+    if patterns.is_empty() {
+        return Err(AppError::Validation(format!(
+            "apply_pattern: nothing applicable.{}",
+            if skipped.is_empty() { String::new() } else { format!(" {}", skipped.join("; ")) }
+        )));
+    }
+    if patterns.len() > APPLY_MAX_PATTERNS {
+        return Err(AppError::Validation(format!(
+            "apply_pattern: {} patterns is past the per-session cap of {APPLY_MAX_PATTERNS} — \
+             split the work across waves",
+            patterns.len()
+        )));
+    }
+    if label.is_empty() {
+        label = format!("{} pattern(s)", patterns.len());
+    }
+
+    let objective = params.get("objective").and_then(|v| v.as_str()).map(str::trim);
+    let prompt = build_apply_prompt(&project_name, objective, &patterns);
+
+    let intent = format!("[apply-pattern] {project_name}: {label}");
+    let op_id = crate::companion::orchestration::operative_memory::memory()
+        .begin_dispatched_operation(intent.clone());
+    let id = crate::commands::fleet::pty::spawn_session(
+        app.clone(),
+        std::path::PathBuf::from(&root_path),
+        vec![prompt],
+        120,
+        32,
+    )
+    .map_err(AppError::Internal)?;
+    let _ = crate::companion::orchestration::operative_memory::memory()
+        .attach_session_to_operation(&op_id, &id, "apply", &root_path);
+    let sentinel = crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL;
+    let _ = crate::commands::fleet::registry::registry()
+        .rename(&id, Some(format!("{sentinel} · apply:{project_id}")));
+    crate::companion::orchestration::emit_digest_changed(app);
+
+    let mut msg = format!(
+        "Applying {label} in {project_name} — session `{}` dispatched with {} adopted \
+         pattern(s): {}.",
+        &id[..id.len().min(8)],
+        patterns.len(),
+        patterns.iter().map(|(_, t, ..)| t.as_str()).collect::<Vec<_>>().join("; "),
+    );
+    if !skipped.is_empty() {
+        msg.push_str(&format!("\nSkipped: {}", skipped.join("; ")));
+    }
+    msg.push_str(
+        "\nThe session changes code and commits; adherence is only re-measured by the verify \
+         lane afterwards.",
+    );
+    Ok(ExecuteResult::message(msg))
+}
+
+#[cfg(test)]
+mod apply_prompt_tests {
+    use super::build_apply_prompt;
+
+    #[test]
+    fn apply_brief_carries_doctrine_and_patterns() {
+        let patterns = vec![(
+            "wk_1".to_string(),
+            "Wrap IPC in invokeWithTimeout".to_string(),
+            "Never call raw invoke.".to_string(),
+            Some("Evidence: …".to_string()),
+        )];
+        let p = build_apply_prompt("brainiac", Some("harden IPC"), &patterns);
+        assert!(p.contains("Wrap IPC in invokeWithTimeout"), "{p}");
+        assert!(p.contains("`wk_1`"), "{p}");
+        assert!(p.contains("OPERATOR OBJECTIVE — harden IPC"), "{p}");
+        // The two doctrine lines that must never be edited away.
+        assert!(p.contains("never write adoption/adherence/verification"), "{p}");
+        assert!(p.contains("Commit atomically"), "{p}");
+        // Repo-projected bundle is preferred over invention.
+        assert!(p.contains(".claude/patterns/"), "{p}");
+    }
+}
+
+// ── evaluate_pattern ────────────────────────────────────────────────────
+
+/// `evaluate_pattern` — run the adoption-verification pass over a target
+/// project: a headless session reads the repo and returns per-practice
+/// verdicts whose file citations become per-context adopted/violating cells
+/// through the verify lane's own evidence door
+/// (`apply_verified_context_evidence`). This wraps the EXISTING
+/// `dev_tools_workspace_verify_adoptions` pipeline unchanged — same model,
+/// same caps, same "surface, never auto-un-adopt" rule: a failed verdict
+/// flips a matrix cell to `diverged` for a human to read, it never changes
+/// workspace-level adoption. Params: `{target_project}`. The pass picks its
+/// own practice batch (actionable kinds first, never-verified before
+/// re-checks, capped) — a per-pattern subset is deliberately not exposed
+/// until the underlying lane grows one, so there is no second selection
+/// policy to drift.
+pub(crate) async fn execute_evaluate_pattern(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let target_q = params
+        .get("target_project")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| {
+            AppError::Validation("evaluate_pattern: missing `target_project` (name or id)".into())
+        })?;
+    let (project_id, workspace_id, project_name): (String, Option<String>, String) = {
+        let conn = state.db.get()?;
+        conn.query_row(
+            "SELECT id, workspace_id, name FROM dev_projects
+             WHERE id = ?1 OR name = ?1 COLLATE NOCASE
+             ORDER BY (id = ?1) DESC LIMIT 1",
+            rusqlite::params![target_q],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )
+        .map_err(|_| {
+            AppError::Validation(format!("evaluate_pattern: unknown project `{target_q}`"))
+        })?
+    };
+    let Some(workspace_id) = workspace_id else {
+        return Err(AppError::Validation(format!(
+            "evaluate_pattern: `{project_name}` is not in a workspace — there are no \
+             adoptions to verify"
+        )));
+    };
+    let job_id = crate::commands::infrastructure::workspace_verify::dev_tools_workspace_verify_adoptions(
+        app.clone(),
+        state.clone(),
+        workspace_id,
+        project_id,
+    )
+    .await?;
+    Ok(ExecuteResult::message(format!(
+        "Verification pass started for {project_name} (job `{job_id}`). A headless session is \
+         reading the repo against its applicable practices; verdicts land on the adoption \
+         matrix (drifted cells flip to `diverged` — surfaced for a human, never auto-un-adopted) \
+         and file citations become per-context adherence evidence."
+    )))
+}
