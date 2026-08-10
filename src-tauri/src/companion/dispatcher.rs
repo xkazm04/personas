@@ -437,13 +437,27 @@ const READ_OPS: &[&str] = &[
     // duplicate work gets started. Read-only; the enqueue side is
     // approval-gated (`enqueue_runner_task`).
     "list_runner_tasks",
+    // Skills + Knowledge ops (2026-08-10). The two cross-project surfaces
+    // Athena orchestrates over: which skill sits at which version in which
+    // repo (drift is what `skill_sync` acts on), and what the workspace
+    // knowledge library holds (adopted patterns / playbooks / harvest
+    // coverage debt — what `run_pattern_harvest` / `apply_pattern` act on).
+    // Handlers live in `companion::knowledge_ops`; both answer without a
+    // query (the digest) and take one for detail.
+    "describe_skill_fleet",
+    "describe_knowledge",
 ];
 
 /// Read ops whose `query` param is optional (they answer for everything when
 /// it is empty). Everything else is rejected without one, because a lookup
 /// with no target is a model that forgot what it was asking about.
-const READ_OPS_QUERY_OPTIONAL: &[&str] =
-    &["list_teams", "describe_canvas_freshness", "list_runner_tasks"];
+const READ_OPS_QUERY_OPTIONAL: &[&str] = &[
+    "list_teams",
+    "describe_canvas_freshness",
+    "list_runner_tasks",
+    "describe_skill_fleet",
+    "describe_knowledge",
+];
 
 /// Longest accepted lookup string. A name or a UUID; anything longer is a
 /// model pasting prose into the param.
@@ -2349,6 +2363,12 @@ pub fn dispatch_with_sys(
                                 crate::companion::canvas::describe_canvas_freshness(db, query)
                             }
                             "list_runner_tasks" => list_runner_tasks(db, query),
+                            "describe_skill_fleet" => {
+                                crate::companion::knowledge_ops::describe_skill_fleet(db, query)
+                            }
+                            "describe_knowledge" => {
+                                crate::companion::knowledge_ops::describe_knowledge(db, query)
+                            }
                             _ => list_teams(db, query),
                         },
                         None => format!(
