@@ -388,18 +388,51 @@ pub fn open_pool_at(db_path: &Path) -> Result<DbPool, AppError> {
     Ok(pool)
 }
 
-fn ensure_executions_fts(conn: &rusqlite::Connection) -> Result<(), AppError> {
+/// `(executions, indexed)` when the FTS index and `persona_executions` disagree
+/// and the index needs rebuilding; `None` when they agree — or when the index
+/// size cannot be read, in which case we log and leave the index alone rather
+/// than rebuild blindly on every launch.
+///
+/// The document count comes from the `%_docsize` shadow table, NOT from
+/// `SELECT COUNT(*) FROM executions_fts`. `executions_fts` is an
+/// **external-content** FTS5 table (`content='persona_executions'`), so a full
+/// scan of it is answered from the content table and reports the execution
+/// count no matter what the index actually holds. The original guard compared
+/// that number against the execution count — it could never differ, so the
+/// backfill below had never run on any launch since it was written, and any
+/// execution the sync triggers missed stayed permanently unsearchable. Covered
+/// by `executions_fts_tests::ensure_executions_fts_backfills_rows_the_index_never_saw`.
+///
+/// The comparison is `!=`, not `<`: an index carrying entries for executions
+/// that no longer exist returns phantom search hits, which is the same bug
+/// wearing the other sign.
+fn executions_fts_drift(conn: &rusqlite::Connection) -> Option<(i64, i64)> {
     let execution_count: i64 = conn
         .query_row("SELECT COUNT(*) FROM persona_executions", [], |r| r.get(0))
         .unwrap_or(0);
-    let fts_count: i64 = conn
-        .query_row("SELECT COUNT(*) FROM executions_fts", [], |r| r.get(0))
-        .unwrap_or(0);
-    if execution_count > 0 && fts_count < execution_count {
+    let indexed_count: i64 = match conn.query_row(
+        "SELECT COUNT(*) FROM executions_fts_docsize",
+        [],
+        |r| r.get(0),
+    ) {
+        Ok(count) => count,
+        Err(e) => {
+            tracing::warn!(
+                error = %e,
+                "executions_fts index size is unreadable — skipping the FTS drift check",
+            );
+            return None;
+        }
+    };
+    (indexed_count != execution_count).then_some((execution_count, indexed_count))
+}
+
+fn ensure_executions_fts(conn: &rusqlite::Connection) -> Result<(), AppError> {
+    if let Some((execution_count, indexed_count)) = executions_fts_drift(conn) {
         tracing::info!(
             executions = execution_count,
-            fts_rows = fts_count,
-            "Backfilling executions_fts"
+            indexed = indexed_count,
+            "Rebuilding executions_fts — the search index and persona_executions disagree",
         );
         conn.execute_batch("INSERT INTO executions_fts(executions_fts) VALUES('rebuild');")?;
     }
@@ -2134,5 +2167,205 @@ mod boot_tests {
         }
 
         let _ = std::fs::remove_dir_all(&data_dir);
+    }
+}
+
+/// [`ensure_executions_fts`] runs on every production boot and, until now, had
+/// no test anywhere in the crate — `init_test_db` never calls it, so the
+/// backfill it exists for had never actually been executed by a test.
+///
+/// NOTE (out of scope, recorded so it is not lost): `init_test_db` also differs
+/// from `init_db` by never setting `journal_mode = WAL` and never registering
+/// the CDC/journal connection customizer. Those are separate fidelity gaps
+/// between the test fixture and the real boot path.
+#[cfg(test)]
+mod executions_fts_tests {
+    use super::*;
+
+    fn insert_persona(conn: &rusqlite::Connection) {
+        conn.execute(
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at) \
+             VALUES ('p1', 'p', 'sp', datetime('now'), datetime('now'))",
+            [],
+        )
+        .expect("insert persona");
+    }
+
+    fn insert_execution(conn: &rusqlite::Connection, id: &str, input: &str) {
+        conn.execute(
+            "INSERT INTO persona_executions (id, persona_id, status, input_data, created_at) \
+             VALUES (?1, 'p1', 'completed', ?2, datetime('now'))",
+            params![id, input],
+        )
+        .expect("insert execution");
+    }
+
+    /// Put the database in the ONLY state `ensure_executions_fts` exists to
+    /// repair: rows in the content table, nothing in the index. That is what a
+    /// database that predates the `executions_fts` migration looks like, and a
+    /// test reaches it by dropping the sync triggers before inserting.
+    fn seed_unindexed_executions(conn: &rusqlite::Connection, rows: &[(&str, &str)]) {
+        conn.execute_batch(
+            "DROP TRIGGER IF EXISTS executions_fts_ai;
+             DROP TRIGGER IF EXISTS executions_fts_ad;
+             DROP TRIGGER IF EXISTS executions_fts_au;",
+        )
+        .expect("drop the fts sync triggers");
+        insert_persona(conn);
+        for (id, input) in rows {
+            insert_execution(conn, id, input);
+        }
+    }
+
+    /// Search the way the app does — through the index, not through a COUNT
+    /// that an external-content FTS5 table may satisfy from its content table.
+    fn matches(conn: &rusqlite::Connection, term: &str) -> i64 {
+        conn.query_row(
+            "SELECT COUNT(*) FROM executions_fts WHERE executions_fts MATCH ?1",
+            params![term],
+            |r| r.get(0),
+        )
+        .expect("fts match query")
+    }
+
+    #[test]
+    fn ensure_executions_fts_is_a_noop_on_a_fresh_database() {
+        let pool = init_test_db().expect("init_test_db");
+        let conn = pool.get().expect("pool.get");
+
+        ensure_executions_fts(&conn).expect("fresh database with zero executions");
+        assert_eq!(matches(&conn, "anything"), 0);
+
+        // Boot runs it on every launch, so a fresh DB must tolerate repeats.
+        ensure_executions_fts(&conn).expect("second call on a fresh database");
+        assert_eq!(matches(&conn, "anything"), 0);
+    }
+
+    #[test]
+    fn ensure_executions_fts_backfills_rows_the_index_never_saw() {
+        let pool = init_test_db().expect("init_test_db");
+        let conn = pool.get().expect("pool.get");
+        seed_unindexed_executions(&conn, &[("e1", "deploy the widget"), ("e2", "widget teardown")]);
+
+        assert_eq!(
+            matches(&conn, "widget"),
+            0,
+            "precondition: the index must start out empty",
+        );
+        let reported_fts_rows: i64 = conn
+            .query_row("SELECT COUNT(*) FROM executions_fts", [], |r| r.get(0))
+            .unwrap();
+
+        ensure_executions_fts(&conn).expect("backfill");
+
+        assert_eq!(
+            matches(&conn, "widget"),
+            2,
+            "every pre-existing execution must be searchable after the backfill. \
+             `SELECT COUNT(*) FROM executions_fts` reported {reported_fts_rows} before the \
+             call — if that already equalled the execution count, the \
+             `fts_count < execution_count` guard skipped the rebuild and the backfill is \
+             unreachable in production",
+        );
+    }
+
+    #[test]
+    fn ensure_executions_fts_re_run_does_not_duplicate_index_entries() {
+        let pool = init_test_db().expect("init_test_db");
+        let conn = pool.get().expect("pool.get");
+        seed_unindexed_executions(&conn, &[("e1", "deploy the widget"), ("e2", "widget teardown")]);
+
+        ensure_executions_fts(&conn).expect("first backfill");
+        let after_first = matches(&conn, "widget");
+        assert_eq!(after_first, 2, "precondition: the backfill indexed both rows");
+
+        // The real boot path calls this on every launch.
+        ensure_executions_fts(&conn).expect("second call");
+        ensure_executions_fts(&conn).expect("third call");
+
+        assert_eq!(
+            matches(&conn, "widget"),
+            after_first,
+            "re-running the backfill must not duplicate index entries",
+        );
+        assert!(
+            executions_fts_drift(&conn).is_none(),
+            "a rebuilt index must read as in-sync, or every launch rebuilds it again",
+        );
+        let hits: Vec<i64> = {
+            let mut stmt = conn
+                .prepare(
+                    "SELECT rowid FROM executions_fts WHERE executions_fts MATCH 'widget' \
+                     ORDER BY rowid",
+                )
+                .unwrap();
+            let rows = stmt.query_map([], |r| r.get(0)).unwrap();
+            rows.collect::<Result<Vec<_>, _>>().unwrap()
+        };
+        let mut deduped = hits.clone();
+        deduped.dedup();
+        assert_eq!(hits, deduped, "the index returned the same rowid twice");
+    }
+
+    /// A healthy database must NOT read as drifted, or `init_db` re-tokenizes
+    /// the entire execution history on every single launch. Includes an
+    /// execution whose indexed columns are all NULL — FTS5 still owes it a
+    /// `%_docsize` row, and if it did not, the drift check would be permanently
+    /// true on any database that has ever queued an execution.
+    #[test]
+    fn a_trigger_synced_database_does_not_read_as_drifted() {
+        let pool = init_test_db().expect("init_test_db");
+        let conn = pool.get().expect("pool.get");
+        insert_persona(&conn);
+        insert_execution(&conn, "e1", "deploy the widget");
+        conn.execute(
+            "INSERT INTO persona_executions (id, persona_id, status, created_at) \
+             VALUES ('e2', 'p1', 'queued', datetime('now'))",
+            [],
+        )
+        .expect("insert an execution with no indexable text at all");
+
+        assert!(
+            executions_fts_drift(&conn).is_none(),
+            "the sync triggers keep the index current; a healthy DB must not be rebuilt \
+             on every launch (drift = {:?})",
+            executions_fts_drift(&conn),
+        );
+        ensure_executions_fts(&conn).expect("no-op on a healthy database");
+        assert_eq!(matches(&conn, "widget"), 1);
+    }
+
+    /// The mirror of a missing backfill: entries for executions that no longer
+    /// exist. `SELECT COUNT(*) FROM executions_fts` could never see this either,
+    /// and the old `<` comparison would have ignored it even if it could —
+    /// leaving execution search returning hits for rows the user deleted.
+    #[test]
+    fn ensure_executions_fts_clears_index_entries_for_deleted_executions() {
+        let pool = init_test_db().expect("init_test_db");
+        let conn = pool.get().expect("pool.get");
+        insert_persona(&conn);
+        insert_execution(&conn, "e1", "deploy the widget");
+        insert_execution(&conn, "e2", "widget teardown");
+        assert_eq!(matches(&conn, "widget"), 2, "precondition: both indexed");
+
+        // Delete one WITHOUT the delete trigger, stranding its index entry.
+        conn.execute_batch(
+            "DROP TRIGGER IF EXISTS executions_fts_ad;
+             DELETE FROM persona_executions WHERE id = 'e2';",
+        )
+        .expect("strand an index entry");
+        assert_eq!(
+            matches(&conn, "widget"),
+            2,
+            "precondition: the index still returns the deleted execution",
+        );
+
+        ensure_executions_fts(&conn).expect("repair");
+
+        assert_eq!(
+            matches(&conn, "widget"),
+            1,
+            "search must stop returning executions that no longer exist",
+        );
     }
 }
