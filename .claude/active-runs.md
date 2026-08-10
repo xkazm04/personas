@@ -3,13 +3,8 @@
 ## Active
 
 ### prototype-pattern-graph — /prototype: PoE-style topic graph for Overview->Patterns — session fable-5
-- Started: 2026-08-09. Status: started. Three directional graph variants (Nexus starburst / Sector orrery / Nebula field) of the topic taxonomy (areas->clusters, patterns themselves NOT nodes yet) behind a throwaway switcher, plus a Library|Graph view toggle in the KnowledgeLibrary header. Aim: replace the ledger/table if the design nails typography/node/zoom balance at 100->1000-node scale.
-- Paths: src/features/overview/sub_patterns/KnowledgeLibrary.tsx (header toggle only), src/features/overview/sub_patterns/graph/** (all new), .claude/active-runs.md.
-- MAIN CHECKOUT, not a worktree — user live-reviews in the running dev server (precedent: prototype-practice-detail entry below). Per-file staging, atomic per-round commits. i18n extraction deferred to consolidation per /prototype Phase 5.
-
-
-
-
+- ROUNDS 3-4 SHIPPED: Nexus consolidated as winner (`f33221d05` — Sectors+switcher deleted, click-to-centre drill-down, ProjectFilter lens, pinned 1/k titles, 15 i18n keys x14), then `ea3e7e4b3` (pointer-capture click fix, ClusterPatternsModal in the TriageCard idiom, adoption-coverage rings from the pattern x project matrix, 3 more keys x14). Corpus adjudication: 5 Opus agents judged all 332 pending -> 264 adopted / 62 rejected applied with decide_knowledge_cas semantics + 1,848 adoption cells fanned; 6 operator-decided rows respected. Library: 455 adopted / 67 rejected / 1 deprecated, pending ZERO.
+- NEXT (designed, not built): pattern x context linkage — docs/concepts/pattern-context-trace.md (context-grain adherence cells, evidence-attributed verify ingest, name-keyed rescan reconcile, staleness decay; rings switch to true adherence ratio).
 ### typo-label-readability — global `typo-label` redesign (drop UPPERCASE/wide tracking) + prose sites moved to `typo-caption` — session opus-5[1m] — **COMPLETE**, commit `193d4aeab`
 - Started/completed: 2026-08-07. Gates: tsc clean · eslint 0 errors on 143 touched files · vitest dev-tools+shared 311/311 · check:themes AA · vite build clean. NOT visually verified in a running app (no live instance was up).
 - Scope: `src/styles/typography.css` (the `.typo-label` recipe + the ar/CJK script overrides that existed only to undo its uppercase), `.claude/Design.md` (token table row + language-awareness note), `CHANGELOG.md`, and 143 `src/features/**` .tsx files — mechanical removal of 567 now-live `uppercase`/`tracking-*` utilities from class regions containing `typo-label`, plus 9 prose sites switched to `typo-caption`.
