@@ -24,12 +24,20 @@ import type { WorkspacePracticeAdoption } from '@/lib/bindings/WorkspacePractice
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { areaTheme } from '../practiceAreaTheme';
 import type { KnowledgeItemView } from '../libraryModel';
-import { buildEdgeViews, buildTopicGraph, type ClusterNode, type FacetNode } from './graphModel';
+import {
+  buildEdgeViews,
+  buildFabricIndex,
+  buildTopicGraph,
+  type ClusterNode,
+  type FabricMatch,
+  type FacetNode,
+} from './graphModel';
 import { ClusterPatternsModal } from './ClusterPatternsModal';
 import { CreatePlaybookModal } from './CreatePlaybookModal';
+import { FabricSearch } from './FabricSearch';
 import { PlaybooksPanel } from './PlaybooksPanel';
 import { ZoomRail } from './GraphChrome';
-import PatternGraphNexus, { type FlyTarget } from './PatternGraphNexus';
+import PatternGraphNexus, { computeNexusLayout, type FlyTarget } from './PatternGraphNexus';
 import { useGraphCanvas } from './useGraphCanvas';
 
 export default function PatternGraphHost({
@@ -313,6 +321,56 @@ export default function PatternGraphHost({
     setFocusArea(node.area);
   };
 
+  // -- omnibox ---------------------------------------------------------------
+  // Search navigates DIRECTLY: the click handlers above are toggles (clicking
+  // the focused area flies home), which is right for the canvas and wrong for
+  // a chosen search result — picking "ui" must always land on ui.
+  const fabricIndex = useMemo(() => buildFabricIndex(graph), [graph]);
+  const layout = useMemo(() => computeNexusLayout(graph), [graph]);
+
+  const goArea = (area: string) => {
+    setFocusArea(area);
+    setFocusCluster(null);
+    setSelected(null);
+    const p = layout.areaPos.get(area);
+    if (p) canvas.flyTo(p.x, p.y, 1.5);
+  };
+
+  const goCluster = (node: ClusterNode, drill: boolean) => {
+    setFocusArea(node.area);
+    setFocusCluster(drill ? node.topic : null);
+    setSelected(null);
+    const p = layout.clusterPos.get(node.topic);
+    if (p) canvas.flyTo(p.x, p.y, drill ? 2.3 : 1.9);
+  };
+
+  const onSearchSelect = (m: FabricMatch) => {
+    if (m.kind === 'area') {
+      goArea(m.node.area);
+      return;
+    }
+    if (m.kind === 'cluster') {
+      // A cluster with facets drills open; a true leaf opens its stack.
+      goCluster(m.cluster, m.cluster.facets.length > 0);
+      if (m.cluster.facets.length === 0) selectCluster(m.cluster);
+      return;
+    }
+    if (m.kind === 'facet') {
+      goCluster(m.cluster, true);
+      selectFacet(m.facet);
+      return;
+    }
+    // A pattern opens the stack that actually contains it — its facet when it
+    // has a third-level topic, its cluster otherwise.
+    if (m.facet) {
+      goCluster(m.cluster, true);
+      selectFacet(m.facet);
+    } else {
+      goCluster(m.cluster, false);
+      selectCluster(m.cluster);
+    }
+  };
+
   // Esc walks back out — selection first, then the focused dimension.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -332,6 +390,8 @@ export default function PatternGraphHost({
   return (
     <div className="flex flex-col min-h-0 h-full gap-2">
       <div className="flex items-center justify-between gap-3 flex-shrink-0">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+        <FabricSearch index={fabricIndex} onSelect={onSearchSelect} />
         <button
           type="button"
           onClick={() => setShowPlaybooks((v) => !v)}
@@ -351,7 +411,8 @@ export default function PatternGraphHost({
             </span>
           )}
         </button>
-        <span className="typo-caption text-foreground/50 tabular-nums">
+        </div>
+        <span className="typo-caption text-foreground/50 tabular-nums flex-shrink-0">
           {tx(w.graph_stats, { total: graph.total, pending: graph.pending })}
         </span>
       </div>
