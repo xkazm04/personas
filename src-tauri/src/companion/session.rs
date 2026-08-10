@@ -237,6 +237,16 @@ pub const STREAM_EVENT: &str = "companion://stream";
 /// per turn that produced any new approvals.
 pub const APPROVALS_EVENT: &str = "companion://approvals";
 
+/// Tauri event channel for a `ClientAction` produced by an approval that
+/// resolved WITHOUT a card — i.e. autonomous-mode auto-fire. On the manual
+/// path the frontend gets the client action back as part of the
+/// `companion_approve_action` return value and dispatches it inline; with no
+/// card there is no return value to ride on, so the same payload is emitted
+/// here and `useAthenaChatNavigation` applies it identically. Without this an
+/// auto-fired `prefill_persona_create` / `open_test_env` would silently do
+/// nothing on screen.
+pub const CLIENT_ACTION_EVENT: &str = "companion://client-action";
+
 /// Tauri event channel for direct sidebar navigations triggered by
 /// Athena's `open_route` op. Fires once per navigation. Frontend
 /// listens and calls `setSidebarSection(route)` without collapsing
@@ -1269,14 +1279,14 @@ async fn send_turn_inner(
         ledger.disarm();
     }
 
-    // Goal 3 — conservative autoapprove. When autonomous mode is on,
-    // walk this turn's new approvals and resolve the ones on the
-    // conservative allowlist (memory writes, scan jobs, future
-    // self-nudges) immediately, the same way a user click would. Anything
-    // else (external writes, DB mutations, agent creation, team work)
-    // stays pending for a deliberate human click. Runs BEFORE the
-    // APPROVALS_EVENT emit so the frontend's refetch sees the
-    // already-resolved state and doesn't render a card that's about to
+    // Autonomous autoapprove. When autonomous mode is on, walk this turn's new
+    // approvals and resolve them immediately, the same way a user click would —
+    // the mode IS the standing consent, so there is no per-action allowlist any
+    // more (2026-08-10; see `approval_autopilot`). The only proposals still left
+    // pending are the ones their own rule defers: a fleet action below the
+    // boldness × class × confidence bar, and a `remote_instruct` the device rule
+    // refuses. Runs BEFORE the APPROVALS_EVENT emit so the frontend's refetch
+    // sees the already-resolved state and doesn't render a card that's about to
     // disappear.
     if autonomous_mode && !dispatched.approvals.is_empty() {
         for approval in &dispatched.approvals {
@@ -1290,7 +1300,7 @@ async fn send_turn_inner(
                     action = %approval.action,
                     "autonomous-mode autoapprove: resolved"
                 ),
-                Ok(false) => {} // not on allowlist — stays pending, normal user click
+                Ok(false) => {} // its own rule deferred it — stays pending, normal user click
                 Err(e) => tracing::warn!(
                     approval_id = %approval.id,
                     action = %approval.action,

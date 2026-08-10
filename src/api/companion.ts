@@ -1168,6 +1168,18 @@ export async function companionRejectAction(
 export const COMPANION_APPROVALS_EVENT = 'companion://approvals';
 
 /**
+ * A `ClientAction` from an approval that resolved WITHOUT a card — i.e. the
+ * autonomous-mode auto-fire path. On the manual path the follow-up rides home
+ * on `companionApproveAction`'s return value and `ApprovalCard` dispatches it;
+ * with no card there is no return value, so the backend emits the identical
+ * payload here instead. Handled by `useAthenaChatNavigation` through the same
+ * `applyClientAction` the card uses — otherwise an auto-fired
+ * `prefill_persona_create` / `open_test_env` would succeed silently and nothing
+ * would move on screen.
+ */
+export const COMPANION_CLIENT_ACTION_EVENT = 'companion://client-action';
+
+/**
  * Phase F: emitted when Athena's `open_lab` op fires. Bypasses
  * approvals like NAVIGATE_EVENT. Payload selects which persona's lab
  * to open and which mode (`arena`, `ab`, `versions`, etc.).

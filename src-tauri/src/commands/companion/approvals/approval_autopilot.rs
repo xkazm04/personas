@@ -6,127 +6,57 @@
 #[allow(unused_imports)]
 use super::*;
 
-// ── Goal 3: conservative autoapprove ────────────────────────────────────
+// ── Autonomous mode: autoapprove ────────────────────────────────────────
 
-/// Action kinds that auto-resolve when autonomous mode is on. Conservative
-/// by design — only low-blast-radius, reversible actions land here:
-/// memory writes (scoped), background scan jobs, future self-nudges.
-/// External writes (`use_connector` writes — Gmail send, Discord post),
-/// DB mutations (`execute_mutation`), agent creation (`build_oneshot` /
-/// `prefill_persona_create`), team work (`assign_team`) ALWAYS stay
-/// gated — autonomous mode does not override the user's click on those.
-pub(crate) const AUTOAPPROVE_ALLOWLIST: &[&str] = &[
-    "write_fact",
-    "write_backlog_item",
-    // Goal 3 extension (2026-08-09) — goal writes are Michal-authored durable
-    // state, exactly like `write_fact` above: no provenance contract (per the
-    // constitution, "Michal *is* the source"), self-authored, low blast radius,
-    // fully reversible (`delete_goal` / `update_goal_status` un-does either).
-    // Unlike the fleet ops below, these carry no `confidence`/`decision_class`
-    // params and never drive a live screen, so no boldness-dial gate applies —
-    // membership on this flat list is the whole rule, same as `write_fact`.
-    "write_goal",
-    "update_goal_status",
-    "enqueue_dev_job",
-    "schedule_proactive",
-    // C2 — Athena posting into a team channel. Low blast radius (an internal
-    // message, not an external write or a team dispatch), so it's free under
-    // autonomous mode per the team-channel decision; gated otherwise.
-    "post_team_message",
-    // Deliberate higher-blast-radius exception (opted in via autonomous mode):
-    // Athena driving a Fleet session by typing into its terminal. This is the
-    // "Ask Athena → she writes directly" loop. Under autonomous mode it only
-    // auto-fires for sessions Athena spawned HERSELF — enforced below in
-    // `auto_resolve_if_allowed` via the `ATHENA_SESSION_NAME_SENTINEL`
-    // visible-name guard, so a hallucinated or stale `session_id` (or a
-    // user-owned session that drifted into AwaitingInput) can't make
-    // autonomous Athena type `{text}\r` into the user's OWN live terminal.
-    // A target that fails the guard is left pending for a deliberate user
-    // click instead of auto-firing; writes are also gated by the autonomous-
-    // mode toggle in the first place.
-    "fleet_send_input",
-    // Phase 3b — autonomous stuck-session recovery. `fleet_intervene` types a
-    // one-line unblock into a session that's stalled after a failure. Same
-    // boldness × class × confidence gate as `fleet_send_input` (below), plus a
-    // hard structural backstop the send-input path lacks: the operative-memory
-    // cap of ONE intervention per session (`record_intervention`) refuses a
-    // second auto-fire on the same session even if the confidence gate misjudges
-    // — so a stuck session can be nudged at most once without a human.
-    "fleet_intervene",
-    // Phase 4 — autonomous session recovery. `fleet_wake` revives a hibernated
-    // session; `fleet_resume` adopts an orphaned CLI process. Same boldness ×
-    // class × confidence gate as the send-input path, but no screen re-check
-    // (the target is asleep/gone, so there's no live prompt to drift). Both fail
-    // closed: the underlying command `Err`s on a non-resumable id / missing
-    // transcript, so a hallucinated target revives nothing.
-    "fleet_wake",
-    "fleet_resume",
-    // Autonomous fleet hygiene: close a session Athena spawned herself that is
-    // NOT actively working. Without this, every `fleet_kill` she proposes parks
-    // as a consult and done/dead sessions pile up burning resources (or, for
-    // rehydrated tombstones, cluttering the sidebar forever). Guarded HARD in
-    // `auto_resolve_if_allowed`: auto-fire requires `is_athena_owned` (the
-    // spawn-time name sentinel — never a user's own terminal) AND the session
-    // resting in `Finished`/`Idle`/`Stale`/`Hibernated` (the last two cover
-    // dead tombstones rehydrated after a restart, which restore as Stale) — a
-    // working (Running/Spawning) or user-attention (AwaitingInput) session is
-    // never auto-killed. Anything failing the guard stays a pending approval
-    // card for a deliberate click.
-    "fleet_kill",
-    // WP2 (2026-08-04) — CONTAINMENT CHANGE, operator's explicit call, risk
-    // accepted. `fleet_spawn` and `fleet_dispatch` START NEW TERMINALS. Stated
-    // plainly: with the boldness dial on `Bold` (the DEFAULT, and full-auto
-    // since 2026-07-24), a single request typed into the chat — OR SPOKEN OUT
-    // LOUD, since voice reaches the same `send()` path — can put up to 8 real
-    // `claude --dangerously-skip-permissions` processes on the user's machine
-    // with no click in between. That is the intended behaviour, not an
-    // oversight: an assistant that cannot start work is not a conductor.
-    //
-    // Two things keep it bounded, and neither may be weakened:
-    //   1. `validate_fleet_cwd` — every spawn is confined to a REGISTERED DEV
-    //      PROJECT directory. It is the boundary; nothing above it is.
-    //   2. The editable in-chat plan card (`show_fleet_plan` →
-    //      `AthenaFleetPlanCard` → `companion_dispatch_fleet_plan`) is the
-    //      CORRECTION PATH: for anything but a trivial one-liner Athena should
-    //      propose a plan the user can edit and confirm, rather than emitting a
-    //      bare `fleet_spawn`/`fleet_dispatch` that auto-fires.
-    // Cautious/Balanced still gate these behind the confidence matrix.
-    "fleet_spawn",
-    "fleet_dispatch",
-    // WP2 (2026-08-04) — the canvas actions ride the SAME boldness dial as the
-    // two above, because they ARE the two above: `canvas_dispatch` and
-    // `canvas_group_dispatch` resolve canvas slugs to registered project roots
-    // and then call `execute_fleet_spawn` / `execute_fleet_dispatch`
-    // unchanged, through the same `validate_fleet_plan` containment check.
-    // Listing them here rather than gating them separately is the point: one
-    // dial, one containment boundary, no second policy to drift.
-    // `canvas_group_dispatch` additionally caps at the same 8 and spawns
-    // sequentially (the canvas is explicit that parallel spawning stalls the
-    // machine).
-    "canvas_dispatch",
-    "canvas_group_dispatch",
-    // An idea scan starts no terminal: it queues a background agent run whose
-    // output is a reviewable backlog of PROPOSALS, and the scanner already
-    // refuses to stack past `IDEA_BACKLOG_CAP`. Lower blast radius than the
-    // memory writes at the top of this list.
-    "canvas_run_idea_scan",
-    // DELIBERATELY NOT LISTED: `backlog_apply_triage`.
-    //
-    // A batch triage decides up to 30 backlog items at once, and the reject arm
-    // writes a `constraint` memory per item — a durable instruction to future
-    // scans and future task prompts NOT to re-surface that work. Auto-firing it
-    // would let one unreviewed micro-tier turn quietly delete a month of
-    // proposals AND teach the whole loop to never propose them again. Athena's
-    // verdicts are a proposal by design: the whole point of "Send to Athena" is
-    // that a human reads the accept/reject column and can flip any row before
-    // applying. Autonomous mode does not override that click.
-];
-
-/// If `approval.action` is on the conservative autoapprove allowlist,
-/// resolve it immediately (executes the action + transitions status the
-/// same way `companion_approve_action` does on a user click). Returns
-/// `Ok(true)` when the approval was auto-resolved (success OR failure),
-/// `Ok(false)` when it was left pending for the user.
+/// Historical note (2026-08-10 — operator's explicit call, risk accepted).
+///
+/// This module used to carry `AUTOAPPROVE_ALLOWLIST`, a flat set of action
+/// names that were allowed to auto-resolve under autonomous mode; everything
+/// else parked as an approval card waiting for a click. That list is GONE.
+///
+/// The reasoning: autonomous mode IS the standing consent. A mode whose whole
+/// promise is "act without asking me" that then files a card for two thirds of
+/// what Athena proposes is not autonomous — it is a slower manual mode with
+/// extra steps, and the operator ends up clicking a queue of cards for actions
+/// he already blanket-authorised by flipping the toggle. So under autonomous
+/// mode EVERY proposed action now fires. With the mode off, nothing here runs
+/// at all (`session.rs` only calls into this path behind `if autonomous_mode`),
+/// so the manual card flow is completely unchanged.
+///
+/// What still bounds an auto-fire — none of it may be weakened:
+///   1. **The dispatcher's `ALLOWED_ACTIONS`** — an op Athena has no grammar
+///      for never becomes an approval row in the first place. That, not this
+///      module, is the capability boundary.
+///   2. **`validate_fleet_cwd`** — every spawned process is confined to a
+///      REGISTERED DEV PROJECT directory.
+///   3. **The boldness dial** (`fleet_action_auto_fires`) plus the screen
+///      re-check and the Athena-owned/resting guard on `fleet_kill` — kept
+///      below verbatim. These gate actions that type into a LIVE terminal the
+///      operator may be using, which is a different question from consent.
+///   4. **Per-executor gates** — `dev_improve` still requires dev mode + a
+///      debug build, `remote_instruct` still enforces its home-device rule
+///      (its own arm below), write-capability connector calls still run the
+///      connector's own checks.
+///   5. **The editable in-chat plan card** (`show_fleet_plan`) remains the
+///      correction path for anything beyond a one-liner.
+///
+/// Two consequences worth stating plainly rather than discovering later:
+/// `backlog_apply_triage` can now apply up to 30 backlog verdicts (including
+/// the reject arm's durable `constraint` memories) without a click, and
+/// `use_connector` write capabilities (send an email, post a message) become
+/// externally-visible actions with no human in between. Both were previously
+/// held back on purpose. Turning autonomous mode OFF is the way to get those
+/// clicks back.
+///
+/// ---
+///
+/// Resolve `approval` immediately — executes the action and transitions status
+/// exactly the way `companion_approve_action` does on a user click, through the
+/// same shared executor table (`execute_approval_action`). Returns `Ok(true)`
+/// when the approval was auto-resolved (success OR failure), `Ok(false)` when
+/// it was deliberately left pending for the user — which now happens only for
+/// the fleet gates and the `remote_instruct` device rule below, never because
+/// of an action's name.
 ///
 /// Caller contract: only call this when autonomous mode is on (the
 /// reviewer / autonomous chain already gated on the toggle; this helper
@@ -139,17 +69,12 @@ pub async fn auto_resolve_if_allowed(
     app: &tauri::AppHandle,
     approval: &crate::companion::dispatcher::CreatedApproval,
 ) -> Result<bool, AppError> {
-    // `remote_instruct` (WP3) is the one action whose auto-fire decision is
-    // CONDITIONAL — on the autonomous-mode row and on whether the target is the
-    // home device. `AUTOAPPROVE_ALLOWLIST` is a flat name set with no such form,
-    // so this action gets its own arm and returns before the allowlist is ever
-    // consulted. It must stay OFF that list (pinned by a test below) or the
-    // generic path could resolve it with none of the rule applied.
+    // `remote_instruct` (WP3) carries a rule the generic path cannot express:
+    // it may only reach the HOME device, and refuses otherwise. Its own arm runs
+    // that rule and returns before the generic path is reached. (The executor
+    // re-checks it too, so the manual click path is bound by the same rule.)
     if approval.action == "remote_instruct" {
         return auto_resolve_remote_instruct(app, approval).await;
-    }
-    if !AUTOAPPROVE_ALLOWLIST.contains(&approval.action.as_str()) {
-        return Ok(false);
     }
     // Athena-owned PTY guard — RELAXED (user policy, 2026-06-25). Previously a
     // `fleet_send_input` auto-fire was scoped to sessions Athena spawned herself,
@@ -319,67 +244,44 @@ pub async fn auto_resolve_if_allowed(
     }
     // Same atomic pending→running transition the manual path uses.
     let (action, params) = load_pending(&state, &approval.id)?;
-    // Belt-and-suspenders: re-check the loaded action matches the
-    // allowlist. CreatedApproval.action and the persisted payload are
-    // written together so this is unreachable in practice; if it ever
-    // diverges (manual DB tampering), finalize as approved_failed
-    // rather than leaving the row stuck in 'running'.
-    if !AUTOAPPROVE_ALLOWLIST.contains(&action.as_str()) {
-        finalize_approval(&state, &approval.id, APPROVAL_STATUS_APPROVED_FAILED)?;
-        // `Ok(false)` means "left pending for the user" per the caller
-        // contract; this path just finalized the row as approved_failed,
-        // i.e. it DID auto-resolve (to a failure) — return `Ok(true)` so a
-        // caller doesn't surface this terminal row as a still-pending orb
-        // consult.
-        return Ok(true);
-    }
+    // ONE executor table, shared with the manual click path — autonomous mode
+    // decides WHETHER a human approves, never WHAT an action is allowed to do.
     // (Owner re-check removed with the propose-time guard above — autonomous +
     // high-confidence may now drive a user's own CLI. `execute_fleet_send_input`
     // still fails closed if the target session id doesn't resolve to a live PTY
-    // writer, so a hallucinated/stale id writes nothing.)
-    let exec_result = match action.as_str() {
-        "write_fact" => execute_write_fact(&state, &params).await,
-        "write_backlog_item" => execute_write_backlog_item(&state, &params),
-        "write_goal" => execute_write_goal(&state, &params),
-        "update_goal_status" => execute_update_goal_status(&state, &params),
-        "enqueue_dev_job" => execute_enqueue_dev_job(&state, app, &params),
-        "schedule_proactive" => execute_schedule_proactive(&state, &params),
-        "fleet_send_input" => execute_fleet_send_input(app, &params),
-        "fleet_intervene" => execute_fleet_intervene(app, &params),
-        "fleet_kill" => execute_fleet_kill(app, &params),
-        "fleet_wake" => execute_fleet_wake(app, &params).await,
-        "fleet_resume" => execute_fleet_resume(app, &params).await,
-        // WP2 — see the containment note on AUTOAPPROVE_ALLOWLIST. Both
-        // executors run `validate_fleet_cwd` on every cwd before any process
-        // starts, so an auto-fire still cannot leave the registered projects.
-        "fleet_spawn" => execute_fleet_spawn(app, &params),
-        "fleet_dispatch" => execute_fleet_dispatch(app, &params),
-        // WP2 — canvas actions. The two dispatch arms end in the same two
-        // executors above and write their own single ledger row through
-        // `record_fleet_plan_decision`; they are NOT `fleet_`-prefixed, so the
-        // generic ledger stamp below skips them and the audit trail stays one
-        // row per dispatch rather than two.
-        "canvas_dispatch" => execute_canvas_dispatch(&state, app, &params),
-        "canvas_group_dispatch" => execute_canvas_group_dispatch(&state, app, &params),
-        "canvas_run_idea_scan" => execute_canvas_run_idea_scan(&state, app, &params).await,
-        _ => unreachable!("allowlist mismatch"),
-    };
+    // writer, so a hallucinated/stale id writes nothing. The fleet spawn/dispatch
+    // executors run `validate_fleet_cwd` on every cwd before any process starts,
+    // so an auto-fire still cannot leave the registered projects.)
+    let exec_result =
+        execute_approval_action(state.clone(), app.clone(), &approval.id, &action, &params).await;
     // The persisted episode is what renders in the companion chat, so it carries
     // the plain, humanized result on its own — no `[... conservative policy] <op>`
     // machine prefix, no raw op name. Developer detail (op name, error) goes to the
     // trace below, not to the user.
-    let (status_text, embedder_log) = match exec_result {
-        Ok(r) => (APPROVAL_STATUS_APPROVED, r.message),
+    let (status_text, embedder_log, client_action) = match exec_result {
+        Ok(r) => (APPROVAL_STATUS_APPROVED, r.message, r.client_action),
         Err(e) => {
             tracing::warn!(action = %action, error = %e, "companion: auto-approved action failed");
             (
                 APPROVAL_STATUS_APPROVED_FAILED,
                 format!("Sorry, I couldn't finish that automatically. ({e})"),
+                None,
             )
         }
     };
     finalize_approval(&state, &approval.id, status_text)?;
     log_action_episode(&state, &action, &embedder_log).await;
+
+    // With no card there is no `companion_approve_action` return value for the
+    // frontend to read the follow-up off, so a UI-side `ClientAction` (route
+    // switch, persona prefill, open a test env) would be silently dropped —
+    // the action would "succeed" and nothing would happen on screen. Emit it
+    // instead; `useAthenaChatNavigation` applies the identical dispatch.
+    if let Some(ca) = client_action.as_ref() {
+        if let Err(e) = app.emit(crate::companion::session::CLIENT_ACTION_EVENT, ca) {
+            tracing::warn!(error = %e, "companion: client-action event emit failed");
+        }
+    }
 
     // Phase 5a — stamp the durable decision ledger for fleet actions (audit + the
     // cross-restart auto-fire dedupe read by `orchestrate_session`). Guarded to
@@ -880,58 +782,42 @@ mod fleet_kill_gate_tests {
 
 #[cfg(test)]
 mod containment_posture_tests {
-    use super::AUTOAPPROVE_ALLOWLIST;
-
-    /// WP2's deliberate containment change, pinned so it can never be widened
-    /// or reverted silently. `fleet_spawn` / `fleet_dispatch` START TERMINALS —
-    /// under autonomous mode with the default `Bold` dial, a typed OR SPOKEN
-    /// request can put real `--dangerously-skip-permissions` sessions on the
-    /// machine with no click. The editable plan card is the correction path;
-    /// `validate_fleet_cwd` is the boundary.
+    /// 2026-08-10 — the autoapprove ALLOWLIST is gone: under autonomous mode
+    /// every proposed action fires. The boundary that survived it is the
+    /// dispatcher's `ALLOWED_ACTIONS` grammar — an op with no entry there never
+    /// becomes an approval row at all, so it can be neither carded nor
+    /// auto-fired. This test pins that the actions the autonomous loop leans on
+    /// still have that entry; without one they would silently do nothing on
+    /// BOTH consent paths, which is the failure mode a name-list test used to
+    /// catch by accident.
     #[test]
-    fn session_starting_fleet_actions_follow_the_boldness_dial() {
-        assert!(AUTOAPPROVE_ALLOWLIST.contains(&"fleet_spawn"));
-        assert!(AUTOAPPROVE_ALLOWLIST.contains(&"fleet_dispatch"));
-    }
-
-    /// WP3's cross-device op must NEVER appear on the flat allowlist. Its rule
-    /// is conditional (autonomous mode × home-device), and the generic path
-    /// applies neither condition — a name added here would auto-fire an
-    /// instruction to ANY paired device with the mode off, which is precisely
-    /// the case the rule refuses. The dedicated arm at the top of
-    /// `auto_resolve_if_allowed` is the only door.
-    #[test]
-    fn remote_instruct_is_not_on_the_generic_allowlist() {
-        assert!(!AUTOAPPROVE_ALLOWLIST.contains(&"remote_instruct"));
-        assert!(
-            crate::companion::dispatcher::action_is_allowed("remote_instruct"),
-            "remote_instruct needs an ALLOWED_ACTIONS entry or no approval row is ever created"
-        );
-    }
-
-    /// The counterweight: a batch that would rewrite durable memory still
-    /// requires a human click. Widening the fleet surface did not widen this.
-    #[test]
-    fn backlog_triage_still_requires_a_click() {
-        assert!(!AUTOAPPROVE_ALLOWLIST.contains(&"backlog_apply_triage"));
-    }
-
-    /// The canvas actions inherit the SAME dial rather than growing a second
-    /// policy: two of them ARE `fleet_spawn` / `fleet_dispatch` after slug
-    /// resolution, so gating them differently would mean two answers to one
-    /// question. Every canvas action must also have a dispatcher entry, or a
-    /// proposal would never become an approval row at all.
-    #[test]
-    fn canvas_actions_share_the_fleet_dial_and_have_dispatcher_entries() {
+    fn autonomously_used_actions_have_dispatcher_entries() {
         for action in [
+            "write_fact",
+            "write_backlog_item",
+            "write_goal",
+            "update_goal_status",
+            "enqueue_dev_job",
+            "schedule_proactive",
+            // NOTE: `post_team_message` is deliberately absent. It sat on the
+            // old autoapprove allowlist but has never had an ALLOWED_ACTIONS
+            // entry, so Athena has no grammar to propose it — the allowlist
+            // entry was dead. The op is reachable only through the direct
+            // `companion_post_team_message` command. Add it here if it ever
+            // gains a dispatcher entry.
+            "fleet_send_input",
+            "fleet_intervene",
+            "fleet_kill",
+            "fleet_wake",
+            "fleet_resume",
+            "fleet_spawn",
+            "fleet_dispatch",
             "canvas_dispatch",
             "canvas_group_dispatch",
             "canvas_run_idea_scan",
+            "backlog_apply_triage",
+            "remote_instruct",
         ] {
-            assert!(
-                AUTOAPPROVE_ALLOWLIST.contains(&action),
-                "{action} must follow the boldness dial like the fleet ops it wraps"
-            );
             assert!(
                 crate::companion::dispatcher::action_is_allowed(action),
                 "{action} needs an ALLOWED_ACTIONS entry or no approval row is ever created"
@@ -939,32 +825,16 @@ mod containment_posture_tests {
         }
     }
 
-    /// Goal 3 extension (2026-08-09): `write_goal` / `update_goal_status` must
-    /// auto-fire with no card under autonomous mode, and still render a normal
-    /// approval card under manual mode. Both halves are pinned through the two
-    /// mechanisms that actually produce them:
-    ///   - autonomous auto-fire ⇔ membership on `AUTOAPPROVE_ALLOWLIST` (the
-    ///     sole check `auto_resolve_if_allowed` makes for these two actions —
-    ///     no confidence/decision_class field exists on a goal write, so unlike
-    ///     `fleet_send_input`/`fleet_kill` there is no boldness-dial gate to
-    ///     clear on top of the list membership);
-    ///   - manual-mode carding ⇔ a dispatcher `ALLOWED_ACTIONS` entry exists
-    ///     (so the approval row is created at all) AND `auto_resolve_if_allowed`
-    ///     is only ever invoked from `session.rs` behind its own
-    ///     `if autonomous_mode` guard — with the mode off, that call never
-    ///     happens, so the row this dispatcher entry creates stays `pending`
-    ///     and renders as a card exactly like it did before this change.
+    /// `remote_instruct` keeps a rule the flat autonomous path cannot express —
+    /// with the mode OFF it may only reach the HOME device. It therefore stays
+    /// on its own arm at the top of `auto_resolve_if_allowed` rather than
+    /// falling through to the generic executor. The four cells of that rule are
+    /// pinned next to the gate itself (`approval_exec_devices::tests`); what
+    /// matters here is only that the arm exists before the generic path — see
+    /// the early return in `auto_resolve_if_allowed`.
     #[test]
-    fn goal_writes_auto_approve_when_autonomous_and_still_card_otherwise() {
-        for action in ["write_goal", "update_goal_status"] {
-            assert!(
-                AUTOAPPROVE_ALLOWLIST.contains(&action),
-                "{action} must auto-fire under autonomous mode like the other memory writes"
-            );
-            assert!(
-                crate::companion::dispatcher::action_is_allowed(action),
-                "{action} needs an ALLOWED_ACTIONS entry or manual mode has no card to render"
-            );
-        }
+    fn remote_instruct_has_its_own_arm() {
+        // A grammar entry is the precondition; the arm is the code above.
+        assert!(crate::companion::dispatcher::action_is_allowed("remote_instruct"));
     }
 }

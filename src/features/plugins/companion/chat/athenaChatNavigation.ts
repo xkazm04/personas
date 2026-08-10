@@ -10,14 +10,17 @@
 
 import { useCallback } from 'react';
 import {
+  COMPANION_CLIENT_ACTION_EVENT,
   COMPANION_COMPOSE_COCKPIT_EVENT,
   COMPANION_COMPOSE_DASHBOARD_EVENT,
   COMPANION_GUIDE_EVENT,
   COMPANION_NAVIGATE_EVENT,
   COMPANION_OPEN_LAB_EVENT,
+  type ClientAction,
   type CompanionGuideEvent,
   type OpenLabEvent,
 } from '@/api/companion';
+import { applyClientAction } from '../applyClientAction';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { getActiveTranslations } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -79,6 +82,20 @@ export function useAthenaChatNavigation(): void {
       if (flashAnchor) useCompanionStore.getState().flashHighlight(flashAnchor);
     }, []),
     'companion_navigate_listen',
+  );
+
+  // The card-less twin of `ApprovalCard`'s post-approve dispatch. Under
+  // autonomous mode an approval resolves server-side with no card, so its
+  // UI-side follow-up (route switch, persona prefill, open a test env) arrives
+  // here instead of on the approve call's return value. Same `applyClientAction`
+  // both ways — an auto-fired action must land the operator in the same place a
+  // clicked one would.
+  useTauriEvent<ClientAction>(
+    COMPANION_CLIENT_ACTION_EVENT,
+    useCallback((event) => {
+      if (event.payload?.type) applyClientAction(event.payload);
+    }, []),
+    'companion_client_action_listen',
   );
 
   // A `topic` launches a registry walkthrough; a `pointAt` rings one

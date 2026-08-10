@@ -79,7 +79,69 @@ pub async fn companion_approve_action(
 ) -> Result<ApprovalOutcome, AppError> {
     ipc_auth::require_auth(&state).await?;
     let (action, params) = load_pending(&state, &approval_id)?;
-    let exec_result = match action.as_str() {
+    let exec_result =
+        execute_approval_action(state.clone(), app.clone(), &approval_id, &action, &params).await;
+
+    // Both the outcome shown on the approval card (`message`) and the persisted
+    // chat episode (`embedder_log`) carry the plain, humanized result — no
+    // `[Athena action ...] <op>` machine prefix, no raw op name. Developer detail
+    // (op name, error) goes to the trace, not to the user.
+    let (status_text, message, client_action, embedder_log) = match exec_result {
+        Ok(r) => {
+            let m = r.message;
+            (APPROVAL_STATUS_APPROVED, m.clone(), r.client_action, m)
+        }
+        Err(e) => {
+            tracing::warn!(action = %action, error = %e, "companion: approved action failed");
+            let m = format!("Sorry, I couldn't finish that. ({e})");
+            (APPROVAL_STATUS_APPROVED_FAILED, m.clone(), None, m)
+        }
+    };
+
+    finalize_approval(&state, &approval_id, status_text)?;
+    log_action_episode(&state, &action, &embedder_log).await;
+
+    // The reported gap: after a manual Approve the action ran and a flat outcome
+    // line was appended, but Athena never reacted — the user had to send a NEW
+    // message to get any response. Spawn ONE brief system-initiated reaction turn
+    // so she responds automatically. Success only: a failed action keeps its
+    // inline error on the still-open card (the frontend doesn't resolve it), and
+    // the skip filter keeps fleet / navigation-only actions quiet.
+    //
+    // NOTE (auto-approve path): `auto_resolve_if_allowed` deliberately does NOT
+    // call this. That path is autonomous-mode-only and fires when Athena's own
+    // reasoning turn just proposed the action — her originating reply already
+    // spoke to the user, so a second "I saved that" turn would be redundant
+    // chatter, exactly what autonomous mode's restraint design avoids. The manual
+    // path is the genuine silence gap. Documented follow-up if that changes.
+    if status_text == APPROVAL_STATUS_APPROVED {
+        spawn_action_reaction(&app, &state, &action, &message, client_action.as_ref());
+    }
+
+    Ok(ApprovalOutcome {
+        id: approval_id,
+        status: status_text.into(),
+        message,
+        client_action,
+    })
+}
+
+/// Run ONE approval's action. The single executor table for both consent
+/// paths — the manual click above and the autonomous auto-fire in
+/// `approval_autopilot::auto_resolve_if_allowed`. Keeping one table is the
+/// point: autonomous mode changes *whether* a human clicks, never *what*
+/// an action does, so neither path can drift into a different capability set.
+///
+/// Returns the executor's `ExecuteResult` (message + optional client action);
+/// status transitions, episode logging and event emission belong to the caller.
+pub(crate) async fn execute_approval_action(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    approval_id: &str,
+    action: &str,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    match action {
         "run_persona" => execute_run_persona(&state, &app, &params).await,
         "resolve_human_review" => execute_resolve_human_review(&state, &app, &params).await,
         "update_identity" => execute_update_identity(&params),
@@ -160,16 +222,16 @@ pub async fn companion_approve_action(
         "fleet_redirect_op" => execute_fleet_redirect_op(&app, &params),
         "fleet_wake" => execute_fleet_wake(&app, &params).await,
         "fleet_resume" => execute_fleet_resume(&app, &params).await,
-        // DEV MODE — self-development loop. Deliberately NOT on the
-        // autoapprove allowlist: every dev-mode operation is an explicit
-        // user click (see dispatcher.rs ALLOWED_ACTIONS notes).
+        // DEV MODE — self-development loop. Gated on dev mode + a debug build
+        // inside the executor itself (see approval_exec_dev.rs), which is what
+        // bounds it on BOTH consent paths.
         "dev_improve" => {
             // `git worktree add` inside this executor is a blocking full
             // checkout; running it on the async dispatch thread froze the UI
             // on click. Offload to a blocking thread so approve returns fast.
             let app_bg = app.clone();
             let state_bg = state.inner().clone();
-            let params_bg = params.clone();
+            let params_bg = (*params).clone();
             match tauri::async_runtime::spawn_blocking(move || {
                 execute_dev_improve(&state_bg, &app_bg, &params_bg)
             })
@@ -194,50 +256,7 @@ pub async fn companion_approve_action(
         other => Err(AppError::Internal(format!(
             "approval `{approval_id}`: unknown action `{other}`"
         ))),
-    };
-
-    // Both the outcome shown on the approval card (`message`) and the persisted
-    // chat episode (`embedder_log`) carry the plain, humanized result — no
-    // `[Athena action ...] <op>` machine prefix, no raw op name. Developer detail
-    // (op name, error) goes to the trace, not to the user.
-    let (status_text, message, client_action, embedder_log) = match exec_result {
-        Ok(r) => {
-            let m = r.message;
-            (APPROVAL_STATUS_APPROVED, m.clone(), r.client_action, m)
-        }
-        Err(e) => {
-            tracing::warn!(action = %action, error = %e, "companion: approved action failed");
-            let m = format!("Sorry, I couldn't finish that. ({e})");
-            (APPROVAL_STATUS_APPROVED_FAILED, m.clone(), None, m)
-        }
-    };
-
-    finalize_approval(&state, &approval_id, status_text)?;
-    log_action_episode(&state, &action, &embedder_log).await;
-
-    // The reported gap: after a manual Approve the action ran and a flat outcome
-    // line was appended, but Athena never reacted — the user had to send a NEW
-    // message to get any response. Spawn ONE brief system-initiated reaction turn
-    // so she responds automatically. Success only: a failed action keeps its
-    // inline error on the still-open card (the frontend doesn't resolve it), and
-    // the skip filter keeps fleet / navigation-only actions quiet.
-    //
-    // NOTE (auto-approve path): `auto_resolve_if_allowed` deliberately does NOT
-    // call this. That path is autonomous-mode-only and fires when Athena's own
-    // reasoning turn just proposed the action — her originating reply already
-    // spoke to the user, so a second "I saved that" turn would be redundant
-    // chatter, exactly what autonomous mode's restraint design avoids. The manual
-    // path is the genuine silence gap. Documented follow-up if that changes.
-    if status_text == APPROVAL_STATUS_APPROVED {
-        spawn_action_reaction(&app, &state, &action, &message, client_action.as_ref());
     }
-
-    Ok(ApprovalOutcome {
-        id: approval_id,
-        status: status_text.into(),
-        message,
-        client_action,
-    })
 }
 
 #[tauri::command]
