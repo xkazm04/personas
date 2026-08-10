@@ -13,9 +13,9 @@ use std::collections::HashMap;
 use rusqlite::{params, OptionalExtension, Row};
 
 use crate::models::{
-    DevProject, DevWorkspace, PracticeContextRollup, WorkspaceHarvestCoverage, WorkspaceImportItem,
-    WorkspaceKnowledge, WorkspacePatternEdge, WorkspacePlaybook, WorkspacePlaybookPattern,
-    WorkspacePracticeAdoption,
+    DevProject, DevWorkspace, PlaybookConsultCount, PracticeContextRollup, UnmatchedIntent,
+    WorkspaceConsultStats, WorkspaceHarvestCoverage, WorkspaceImportItem, WorkspaceKnowledge,
+    WorkspacePatternEdge, WorkspacePlaybook, WorkspacePlaybookPattern, WorkspacePracticeAdoption,
 };
 use crate::DbPool;
 use personas_core::error::AppError;
@@ -2722,6 +2722,102 @@ pub fn set_playbook_patterns(
     })
 }
 
+// ============================================================================
+// Pattern fabric — consult telemetry
+// ============================================================================
+
+/// Record one `/patterns/consult` call. `matched_slugs` empty = the session
+/// asked for help and the library had none, which is the row worth having.
+///
+/// Callers treat this as best-effort: a telemetry write must never fail a
+/// consult (the session is mid-task and the answer is already computed).
+pub fn insert_consult_log(
+    pool: &DbPool,
+    workspace_id: &str,
+    project_id: Option<&str>,
+    intent: &str,
+    matched_slugs: &[String],
+) -> Result<(), AppError> {
+    timed_query!("dev_workspaces", "dev_workspaces::insert_consult_log", {
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO workspace_consult_log
+                 (id, workspace_id, project_id, intent, matched_slugs, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![
+                uuid::Uuid::new_v4().to_string(),
+                workspace_id,
+                project_id,
+                intent.trim(),
+                serde_json::to_string(matched_slugs).unwrap_or_else(|_| "[]".into()),
+                chrono::Utc::now().to_rfc3339(),
+            ],
+        )?;
+        Ok(())
+    })
+}
+
+/// Consult demand for one workspace: what got served, and what went unserved.
+///
+/// The 30-day window is on the served side only. A stale *hit* count is
+/// misleading (a playbook nobody has needed for a quarter is not hot), but a
+/// stale *miss* is still a real gap — so `unmatched` is time-unbounded and
+/// bounded by recency instead: the 10 most recent distinct intents.
+pub fn consult_stats(pool: &DbPool, workspace_id: &str) -> Result<WorkspaceConsultStats, AppError> {
+    timed_query!("dev_workspaces", "dev_workspaces::consult_stats", {
+        let conn = pool.get()?;
+        let cutoff = (chrono::Utc::now() - chrono::Duration::days(30)).to_rfc3339();
+
+        // Counting happens in Rust: the slugs live in a JSON array, and one
+        // consult legitimately serves several playbooks.
+        let mut counts: HashMap<String, i32> = HashMap::new();
+        {
+            let mut stmt = conn.prepare(
+                "SELECT matched_slugs FROM workspace_consult_log
+                 WHERE workspace_id = ?1 AND created_at >= ?2",
+            )?;
+            let rows = stmt
+                .query_map(params![workspace_id, cutoff], |r| r.get::<_, String>(0))?
+                .collect::<Result<Vec<_>, _>>()?;
+            for json in rows {
+                for slug in serde_json::from_str::<Vec<String>>(&json).unwrap_or_default() {
+                    *counts.entry(slug).or_insert(0) += 1;
+                }
+            }
+        }
+        let mut per_playbook: Vec<PlaybookConsultCount> = counts
+            .into_iter()
+            .map(|(slug, matches)| PlaybookConsultCount { slug, matches })
+            .collect();
+        // Most-consulted first; ties by slug so the order is stable.
+        per_playbook.sort_by(|a, b| b.matches.cmp(&a.matches).then_with(|| a.slug.cmp(&b.slug)));
+
+        let unmatched = {
+            let mut stmt = conn.prepare(
+                "SELECT intent, MAX(created_at) AS last_seen FROM workspace_consult_log
+                 WHERE workspace_id = ?1 AND (matched_slugs = '[]' OR matched_slugs = '')
+                 GROUP BY intent
+                 ORDER BY last_seen DESC
+                 LIMIT 10",
+            )?;
+            let rows = stmt
+                .query_map(params![workspace_id], |r| {
+                    Ok(UnmatchedIntent {
+                        intent: r.get(0)?,
+                        created_at: r.get(1)?,
+                    })
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            rows
+        };
+
+        Ok(WorkspaceConsultStats {
+            per_playbook,
+            unmatched,
+        })
+    })
+}
+
 fn get_playbook_by_id(pool: &DbPool, id: &str) -> Result<WorkspacePlaybook, AppError> {
     let conn = pool.get()?;
     conn.query_row(
@@ -2760,6 +2856,53 @@ mod playbook_tests {
         assert!(playbook_slug("///").is_err());
     }
 
+    #[test]
+    fn consult_stats_counts_hits_and_keeps_the_misses_verbatim() {
+        let pool = crate::init_test_db().unwrap();
+        pool.get()
+            .unwrap()
+            .execute_batch(
+                "INSERT INTO dev_workspaces (id, name, created_at, updated_at)
+                    VALUES ('ws1', 'WS', '2026-01-01', '2026-01-01');
+                 INSERT INTO dev_workspaces (id, name, created_at, updated_at)
+                    VALUES ('ws2', 'Other', '2026-01-01', '2026-01-01');",
+            )
+            .unwrap();
+
+        insert_consult_log(&pool, "ws1", Some("p1"), "add a db table", &["add-db-table".into()])
+            .unwrap();
+        insert_consult_log(
+            &pool,
+            "ws1",
+            None,
+            "add a migration",
+            &["add-db-table".into(), "ship-a-migration".into()],
+        )
+        .unwrap();
+        insert_consult_log(&pool, "ws1", None, "wire a websocket", &[]).unwrap();
+        insert_consult_log(&pool, "ws1", None, "wire a websocket", &[]).unwrap();
+        // Another workspace's traffic must not leak into this one's demand.
+        insert_consult_log(&pool, "ws2", None, "something else", &["elsewhere".into()]).unwrap();
+
+        let stats = consult_stats(&pool, "ws1").unwrap();
+        assert_eq!(
+            stats
+                .per_playbook
+                .iter()
+                .map(|p| (p.slug.as_str(), p.matches))
+                .collect::<Vec<_>>(),
+            vec![("add-db-table", 2), ("ship-a-migration", 1)],
+            "most-consulted first; one consult may serve several playbooks"
+        );
+        // The unserved intent survives verbatim, once, as the curation backlog.
+        assert_eq!(stats.unmatched.len(), 1);
+        assert_eq!(stats.unmatched[0].intent, "wire a websocket");
+        assert!(!stats.unmatched[0].created_at.is_empty());
+
+        // A workspace nobody has consulted reports nothing, not an error.
+        let empty = consult_stats(&pool, "ws-none").unwrap();
+        assert!(empty.per_playbook.is_empty() && empty.unmatched.is_empty());
+    }
 }
 
 #[cfg(test)]

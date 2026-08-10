@@ -10,8 +10,9 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::models::{
-    DevProject, DevWorkspace, PracticeContextRollup, WorkspaceImportItem, WorkspaceKnowledge,
-    WorkspacePatternEdge, WorkspacePlaybook, WorkspacePlaybookPattern, WorkspacePracticeAdoption,
+    DevProject, DevWorkspace, PracticeContextRollup, WorkspaceConsultStats, WorkspaceImportItem,
+    WorkspaceKnowledge, WorkspacePatternEdge, WorkspacePlaybook, WorkspacePlaybookPattern,
+    WorkspacePracticeAdoption,
 };
 use crate::db::repos::dev_workspaces as repo;
 use crate::error::AppError;
@@ -340,6 +341,21 @@ pub fn dev_tools_playbook_set_patterns(
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     repo::set_playbook_patterns(&state.db, &playbook_id, &members)
+}
+
+/// Consult demand — which playbooks CLI sessions actually reach for, and which
+/// situations they arrive with and find nothing for.
+///
+/// Read-only telemetry over `workspace_consult_log`, written best-effort by the
+/// `/patterns/consult` bridge route. The `unmatched` half is the curation
+/// backlog: gaps written by real usage rather than guessed at in the rail.
+#[tauri::command]
+pub fn dev_tools_consult_stats(
+    state: State<'_, Arc<AppState>>,
+    workspace_id: String,
+) -> Result<WorkspaceConsultStats, AppError> {
+    require_auth_sync(&state)?;
+    repo::consult_stats(&state.db, &workspace_id)
 }
 
 /// Typed pattern connections (pattern-fabric S2). Read surface for the graph

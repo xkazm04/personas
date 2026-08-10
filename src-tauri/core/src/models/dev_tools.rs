@@ -317,6 +317,43 @@ pub struct WorkspacePlaybookPattern {
     pub note: Option<String>,
 }
 
+/// Consult telemetry — which playbooks the CLI actually reaches for, and which
+/// situations it arrives with and finds NOTHING for.
+///
+/// The second half is the point. A library can only be curated against real
+/// demand, and the rail's own view (how many playbooks exist, how many patterns
+/// each carries) says nothing about whether a session that asked for help got
+/// any. `unmatched` is the curation backlog written by usage rather than guessed.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct WorkspaceConsultStats {
+    /// One row per playbook that matched at least once in the last 30 days,
+    /// most-consulted first.
+    pub per_playbook: Vec<PlaybookConsultCount>,
+    /// The 10 most recent DISTINCT intents that matched no active playbook.
+    pub unmatched: Vec<UnmatchedIntent>,
+}
+
+/// How often one playbook was served, over the last 30 days.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct PlaybookConsultCount {
+    pub slug: String,
+    // i32 for the same reason PracticeContextRollup: i64 exports as TS bigint.
+    pub matches: i32,
+}
+
+/// One consult that found no active playbook — a gap in the library, verbatim.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct UnmatchedIntent {
+    pub intent: String,
+    pub created_at: String,
+}
+
 /// A typed connection between two patterns (pattern-fabric S2,
 /// docs/concepts/pattern-fabric.md). `rel` is a CLOSED six-value vocabulary
 /// enforced by the DB CHECK: governs · composes_with · prerequisite ·

@@ -321,6 +321,21 @@ async fn patterns_consult(
         })
         .collect();
 
+    // Consult telemetry. Logged AFTER matching so the row carries what was
+    // actually served — and an empty `matched` is the row most worth having:
+    // it is a situation a session arrived with that the library has no
+    // playbook for. Best-effort by construction: the answer above is already
+    // computed and a session mid-task must never fail on a telemetry write.
+    let served: Vec<String> = matched
+        .iter()
+        .filter_map(|m| m.get("slug").and_then(Value::as_str).map(str::to_string))
+        .collect();
+    if let Err(e) =
+        ws_repo::insert_consult_log(&pool, &ws, project_id.as_deref(), &intent, &served)
+    {
+        tracing::warn!(error = %e, "patterns/consult: telemetry write failed");
+    }
+
     Ok(Json(serde_json::json!({
         "workspace_id": ws,
         "project_id": project_id,
