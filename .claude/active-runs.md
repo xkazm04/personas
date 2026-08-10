@@ -2,8 +2,6 @@
 
 ## Active
 
-### triage-verdicts-ingest — `dev_tools_triage_verdicts_ingest` result.json door (backlog_apply_triage reuse) — session fable-5 subagent — started 2026-08-10
-- Scope: NEW `src-tauri/src/commands/infrastructure/dev_tools/triage_ingest.rs` · `dev_tools.rs` (mod+re-export lines only) · `commands/companion/backlog_triage.rs` (insert_triage_approval signature refactor) · `companion/proactive/backlog_triage.rs` (REASON_MAX visibility only) · `lib.rs` (one invoke_handler line) · `src/api/devTools/devTools.ts` (one wrapper) · generated command names + one new binding.
 
 ### athena-cli-consolidation — /athena terminal session: gather working tree → master → push — session fable-5 — **COMPLETE**
 - 2026-08-10: operator called end of worktree-based development ("continue on master"). Commits: `d17b43d00` chat opens at latest message (ready-gate threaded into useAthenaChatView/useChatScroll; NOTE: pre-staged TriageFactRow.tsx deletion rode in here one commit early) · `1ace2f0f7` gathered in-flight triage deck work (CardEdgeRails replaces TriageFactRow) · `cf0251f6c` conversation_resume stub keeps cargo build green (owner of the welcome-back nudge: replace the stub body in `proactive/triggers.rs`).
@@ -259,7 +257,11 @@
 
 ## Recently completed
 
-### athena-terminal-channel — `/athena` skill: chat with Athena in Claude Code while the app is unstable — session fable-5 xhigh — **COMPLETE**
+### triage-verdicts-ingest — `dev_tools_triage_verdicts_ingest` result.json door — session fable-5 subagent — **COMPLETE**, commit `0b8967995`
+- 2026-08-10. New ingest door `commands/infrastructure/dev_tools/triage_ingest.rs` (ship_ingest-shaped: path-confined, 1 MiB cap, ingested.json idempotency, ALL-OR-NOTHING validation, exact accept|reject tokens) persisting a pending `backlog_apply_triage` approval via the refactored pool-based `insert_triage_approval` (shared with the live Athena batch). dev_ideas never touched; ALLOWED_ACTIONS/executors untouched.
+- Gates: cargo check --features desktop green at 213-warning baseline · triage_ingest 13/13 + backlog_triage 16/16 (via manifest-patched exe; bare cargo test hit the known 0xc0000139 loader trap) · tsc clean · binding exported by ts-rs test.
+- **NOTE:** commit `ea460c796` (concurrent patterns session) swept this run's lib.rs registration line, commandNames entry and ledger entry off the shared tree — master between `ea460c796` and `0b8967995` references the command without its implementation.
+ — `/athena` skill: chat with Athena in Claude Code while the app is unstable — session fable-5 xhigh — **COMPLETE**
 - 2026-08-10. New `.claude/skills/athena/{SKILL.md,brain.py}` + companion README section. brain.py = zero-dep stdlib bridge (boot/recall/append/gauge/turn) with a parity contract against `brain/episodic.rs` — episodes byte-compatible (markdown + node + FTS, session `cli`), verified against a DB copy incl. the cycle-window predicate; the sleep cycle consolidates terminal turns because `list_conversation_after` is not session-scoped. Observed during testing: cycle #3 (`cyc_e6b9e861765c`) had already run autonomously.
 
 
