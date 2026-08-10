@@ -2,6 +2,10 @@
 
 ## Active
 
+### athena-skills-knowledge-ops — Athena ops over Skills + Knowledge Base (read digests, skill_sync, harvest/apply/evaluate orchestration) — session fable-5
+- Started 2026-08-10. Scope: `src-tauri/src/companion/dispatcher.rs`, `src-tauri/src/companion/templates/constitution.md`, `src-tauri/src/commands/companion/approvals/**`, `src-tauri/src/commands/infrastructure/{skill_files,skill_registry_export,workspace_harvest}.rs`, `src/features/plugins/companion/athenaLabels.ts`, `src/i18n/locales/*`, docs/features/companion.
+- Phase 0 also commits the pending fabric-F4 extends-loop work found uncommitted in the tree (5 files, operator-approved) and this session's earlier autonomous-approve + side-panel work.
+
 
 ### athena-triage-funnel — /athena: idea-triage funnel built + first live run over 58 pending ideas — session fable-5 — **COMPLETE**
 - 2026-08-10. Personas commits: `7349c6e06` design doc + /idea-run skill · `0b8967995` dev_tools_triage_verdicts_ingest (verdicts result.json → backlog_apply_triage approval, byte-identical payload reuse) · `79c593b54` skill sharpening from pilot friction. Full run report: `.personas/triage-verdicts/runs/triage-2026-08-10-a/rollup.md`.

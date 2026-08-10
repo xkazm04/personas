@@ -302,6 +302,32 @@ outer toolbar rail. Three fixes worth remembering, all of them structural:
   time — glance at the terminal, hit Back (or Escape), keep talking. The
   "no sessions tracked" line is gone: the count above it already says zero.
 
+**Four lanes, one shape (`FleetStatsSidePanel`).** The panel answers a single
+question — what does Athena have running — from four sources, so they render
+identically: a `Title (N)` header, rows beneath it, a divider between sections.
+The lanes are **Fleet** (terminals, attention-first, chips for the state
+breakdown), **Live ops** (her own dispatched work, parsed from the operative-memory
+digest), **Run Desk** (dev-runner tasks in `running`/`queued`) and **Schedules**.
+
+- **A lane at zero keeps its header and says `(0)`.** The count IS the empty
+  state. The earlier build wrote a separate "0 sessions" sentence for the fleet
+  and hid the runner/schedule lanes entirely when empty, which made "nothing
+  running" and "this lane doesn't exist" indistinguishable.
+- **Schedules are Athena's, not the app's.** The panel used to count
+  `list_cron_agents` — the app-wide persona/trigger schedule registry, which has
+  nothing to do with her, so the number moved when the operator armed an
+  unrelated cron. Her schedules are the `schedule_proactive` commitments she
+  makes in conversation: `companion_proactive_message` rows written by
+  `proactive::insert_scheduled` with trigger kind `athena_scheduled`, carrying a
+  `scheduledFor` and still `queued`. Read via `companion_list_proactive_messages`
+  and filtered on exactly that. Due times render as a clock (with a date prefix
+  once it is no longer today) rather than a relative label — every row here is in
+  the future, and `RelativeTime`/`formatAgo` describe the past.
+- **Rows are buttons only where there is somewhere to go.** Fleet rows raise that
+  session's terminal; Run Desk rows open Dev Tools → Run Desk; live-ops and
+  schedule rows render as plain rows rather than advertising a click that does
+  nothing.
+
 ### Unread replies on the orb (`orb/OrbUnreadBubble`)
 
 The orb could already tell you that N replies landed while the chat was closed.
@@ -517,7 +543,7 @@ Because the bundle carries text and never vectors, everything imported starts un
 
 `~/.personas/companion-brain/identity.md` is the evolving profile of the user (and Athena's self-model), read into **every** system prompt by `prompt.rs`. It grows by **anchored diffs**, never a whole-file rewrite: the engine in `src-tauri/src/companion/brain/identity.rs` parses the doc into sections (`# heading / ## heading` path) and applies `AppendBullet` / `ReplaceBullet` / `RemoveBullet` against one bullet under a named section, leaving the rest untouched.
 
-- **Athena's writes** go through the `update_identity` op — **approval-gated and never auto-approved** (deliberately absent from `AUTOAPPROVE_ALLOWLIST`, like `update_dev_goal`). Two param modes: `diffs: [{section, op, anchor_text?, new_text?, rationale}]` (≤5, the preferred incremental path — each bullet should cite its source episode ids; structurally validated in `dispatcher.rs`, anchor-existence checked at execute time with partial-failure reporting) and `content: "..."` (a full rewrite, reserved for the intake first draft). `execute_update_identity` (`approvals.rs`) backs up the prior file (`identity.bak-<ts>.md`) before every write and bumps the `updated` frontmatter. Constitution **v37** teaches the op + the discipline (evidence-only, one focused diff, never journal).
+- **Athena's writes** go through the `update_identity` op — **approval-gated** in manual mode (it was one of the ops deliberately kept off the retired `AUTOAPPROVE_ALLOWLIST`, like `update_dev_goal`; since 2026-08-10 autonomous mode fires it like everything else — see “Approvals and navigation”). Two param modes: `diffs: [{section, op, anchor_text?, new_text?, rationale}]` (≤5, the preferred incremental path — each bullet should cite its source episode ids; structurally validated in `dispatcher.rs`, anchor-existence checked at execute time with partial-failure reporting) and `content: "..."` (a full rewrite, reserved for the intake first draft). `execute_update_identity` (`approvals.rs`) backs up the prior file (`identity.bak-<ts>.md`) before every write and bumps the `updated` frontmatter. Constitution **v37** teaches the op + the discipline (evidence-only, one focused diff, never journal).
 - **The user is editor-of-record.** The Memory-tab BrainViewer renders the identity DetailView with an **Edit** affordance (textarea over the raw markdown → `companion_save_identity`, full write + backup) — the user can rewrite it wholesale, bypassing the diff machinery by design.
 - **Intake interview (F2).** The full first-conversation interview runs automatically on a fresh install (`prompt.rs::onboarding_addendum_if_needed` detects placeholder identity + no episodes and injects an ONBOARDING MODE block that ends in an `update_identity` proposal). It's also **re-runnable anytime** — a "Get to know me" `WelcomeHero` chip + a `/intake` slash preset seed the request, and constitution **v38** teaches Athena to run the same short interview on demand (anchored `diffs` when identity already has content, `content` for a fresh draft).
 - **Behavioral synthesis (F3).** Athena also learns from what the user *does*. A weekly, gated (`companion_profile_synthesis`, default off), deterministic pass (`brain/profile_synthesis.rs`, run from the proactive tick) gathers **statistics only** — proactive engage/dismiss rates by kind, refine-chip variant counts, walkthrough completion, voice-vs-text ratio, approve/reject rates by op — from `companion_turn` (A1), `companion_proactive_message`, `companion_approval`, and a new `companion_ux_signal` table (lightweight frontend instrumentation: refine chips, walkthrough completion/abort, hands-free decision usage, recorded via `companion_record_ux_signal`). One cheap headless `cli_text` call proposes **≤3 evidence-cited `update_identity` diffs** (each citing the statistic that justified it; zero is the expected common case), which land as a normal approval card — same review path, no new UI. Numbers-only input + the approval gate keep it from over-reaching.
@@ -556,18 +582,44 @@ Athena runs **many conversations at once — one mind, many threads.** Each conv
 
 Athena actions can create pending approvals. The panel lists them through `companion_list_pending_approvals` and resolves them through `companion_approve_action` or `companion_reject_action`.
 
-**Not every approval comes from a chat turn.** `backlog_apply_triage` is created by the app, not by Athena's grammar: pressing **Send to Athena** on Approvals › Backlog runs one headless micro-tier turn (`companion/proactive/backlog_triage.rs`) over up to 30 selected `dev_ideas` and persists its per-item accept/reject verdicts as a pending approval whose params are the verdict list. Approving that card applies every verdict through the shared `apply_idea_verdict_by(..., "Athena")` core (`execute_backlog_apply_triage`); the Backlog's own verdict card takes a second door — `dev_tools_apply_triage_verdicts` — which layers per-item human overrides on first. It is **deliberately absent from `AUTOAPPROVE_ALLOWLIST`**: the reject arm writes a durable `constraint` memory per item, so an unreviewed batch could quietly teach the whole loop never to re-propose a month of work. Ideas (main DB) are written before the approval row (user DB) is closed, and verdict application is idempotent, so a crash between the two pools replays safely.
+**Autonomous mode approves everything (2026-08-10).** There used to be an
+`AUTOAPPROVE_ALLOWLIST` — a fixed set of action names allowed to auto-resolve
+under autonomous mode, with everything else parked as a card. That list is gone.
+Autonomous mode *is* the standing consent, so with it on **every** action Athena
+proposes fires immediately and no card is rendered; with it off, nothing changes
+and every proposal is a card exactly as before. The toggle is now the whole
+decision, which also means turning it off is how you get the clicks back.
+
+What still bounds an auto-fire: the dispatcher's `ALLOWED_ACTIONS` grammar (an op
+with no entry never becomes an approval row at all — that, not a name list, is the
+capability boundary); `validate_fleet_cwd` (every spawned process is confined to a
+registered dev-project directory); the **boldness dial** plus the screen re-check
+and the Athena-owned/resting guard on `fleet_kill`, which gate typing into a
+terminal you may be using; per-executor gates (`dev_improve` still needs dev mode
++ a debug build, `remote_instruct` still refuses a non-home device with the mode
+off); and the editable in-chat plan card as the correction path for fleet work.
+Both consent paths now run the **same executor table**
+(`approval_lifecycle::execute_approval_action`), so autonomous mode can only
+change *whether* a human clicks, never *what* an action does.
+
+Two consequences worth knowing before flipping it on: `backlog_apply_triage` can
+apply up to 30 backlog verdicts (including the reject arm's durable `constraint`
+memories) with no review, and `use_connector` write capabilities (send an email,
+post a message) become externally-visible actions with no human in between.
+
+**Not every approval comes from a chat turn.** `backlog_apply_triage` is created by the app, not by Athena's grammar: pressing **Send to Athena** on Approvals › Backlog runs one headless micro-tier turn (`companion/proactive/backlog_triage.rs`) over up to 30 selected `dev_ideas` and persists its per-item accept/reject verdicts as a pending approval whose params are the verdict list. Approving that card applies every verdict through the shared `apply_idea_verdict_by(..., "Athena")` core (`execute_backlog_apply_triage`); the Backlog's own verdict card takes a second door — `dev_tools_apply_triage_verdicts` — which layers per-item human overrides on first. It used to be **deliberately absent from `AUTOAPPROVE_ALLOWLIST`** because the reject arm writes a durable `constraint` memory per item, so an unreviewed batch can quietly teach the whole loop never to re-propose a month of work. With the allowlist retired it auto-fires like everything else **under autonomous mode**; leave that mode off if you want to read the accept/reject column before it applies. Ideas (main DB) are written before the approval row (user DB) is closed, and verdict application is idempotent, so a crash between the two pools replays safely.
 
 Events:
 
 - `companion://approvals`: newly created approval rows.
+- `companion://client-action`: the UI-side follow-up of an approval that resolved with no card (autonomous auto-fire).
 - `companion://navigate`: direct route switch requested by Athena. The route `monitor` is a pseudo-route — it opens the full-screen [Persona Monitor](../monitor.md) overlay instead of switching a sidebar section. Athena fires it (after a short spoken/written summary) when the user asks for a fleet overview.
 - `companion://stream`: streaming turn output from the backend. With `--include-partial-messages` (see "Stream deltas" below) it carries `stream_event` lines with `text_delta` chunks. The panel **consumes** these — to fire Athena's `PROGRESS:` beats live and flip the status line to "Composing reply…" — but does **not** render token-by-token prose (that was removed; the full reply lands in one piece when the turn finishes).
 - `companion://recall-preview`: per-turn rollup of what the brain pulled into the system prompt (counts + titles per memory kind).
 - `companion://turn-summary`: per-turn rollup of dispatcher side-effects keyed by assistant episode id (approvals / navigations / lab opens / dashboards / cockpits / chat cards / continuation flag).
 - `companion://job`: background-job status transitions (queued → running → terminal). In-flight emits may carry a transient `progressText` so a running job reports what it's doing.
 
-Approval outcomes may include a client-side action such as `{ type: "navigate", route }`. One such action, `{ type: "open_external_url", url }`, backs the **open test environment** capability: when you ask Athena to open/launch a dev project's test environment (test env / staging), she proposes an `open_test_env` action; on approval the backend resolves the project and returns its configured test-environment URL, which the frontend opens in the browser via the validated `open_external_url` command. The project must have a test-environment URL set in Dev Tools first, or the action errors with a hint to set it.
+Approval outcomes may include a client-side action such as `{ type: "navigate", route }`. On the manual path it rides home on the `companion_approve_action` return value; when an approval auto-fires under autonomous mode there is no card and no return value, so the backend emits the same payload on **`companion://client-action`** and `useAthenaChatNavigation` dispatches it through the identical `applyClientAction` helper — an auto-fired prefill or test-env open lands the operator in the same place a clicked one would. One such action, `{ type: "open_external_url", url }`, backs the **open test environment** capability: when you ask Athena to open/launch a dev project's test environment (test env / staging), she proposes an `open_test_env` action; on approval the backend resolves the project and returns its configured test-environment URL, which the frontend opens in the browser via the validated `open_external_url` command. The project must have a test-environment URL set in Dev Tools first, or the action errors with a hint to set it.
 
 ## Recall preview strip
 
@@ -698,7 +750,7 @@ Three blocks now ride in every system prompt, each a **name + real id + one line
 
 Teams were deliberately left **out** of the always-on index and given a lookup instead: `assign_team` needs a `team_id`, but a roster is not worth permanent prompt rent.
 
-**The Dev Runner is the second execution lane, and it now has a door.** Athena could dispatch Fleet sessions all day while a task for the same work sat queued on the Run Desk, because she could not see it. `list_runner_tasks` is the read half; **`enqueue_runner_task { title, description?, depth?, project… }`** is the write half, and it mirrors the fleet ops' grammar exactly: approval-gated (deliberately absent from `AUTOAPPROVE_ALLOWLIST`), containment through the same `resolve_dev_project` registry lookup every other dev op uses, bounded input, `depth` validated against `quick | campaign | deep_build`. It **only enqueues** — starting a task stays the operator's click on the Run Desk, because execution spends real money and the queue is the reviewable surface between a proposal and that spend.
+**The Dev Runner is the second execution lane, and it now has a door.** Athena could dispatch Fleet sessions all day while a task for the same work sat queued on the Run Desk, because she could not see it. `list_runner_tasks` is the read half; **`enqueue_runner_task { title, description?, depth?, project… }`** is the write half, and it mirrors the fleet ops' grammar exactly: approval-gated in manual mode (it was one of the ops kept off the retired `AUTOAPPROVE_ALLOWLIST`), containment through the same `resolve_dev_project` registry lookup every other dev op uses, bounded input, `depth` validated against `quick | campaign | deep_build`. It **only enqueues** — starting a task stays the operator's click on the Run Desk, because execution spends real money and the queue is the reviewable surface between a proposal and that spend.
 
 **`open_route` gained `mastermind`.** Like `monitor` it is a pseudo-route (it resolves to Teams → Mastermind rather than a sidebar section). It earns one because Athena can already read, annotate, compose on and steer that canvas but had no way to simply take you there — and because *arriving* is what makes the canvas publish its scene to the settings key that every one of those ops reads, so navigation doubles as the refresh for a stale or absent snapshot.
 
@@ -716,7 +768,7 @@ The old names-only "Recently active" line was **removed** from the observability
 Athena is wired into the project [Goals](../goals/README.md) surface at the **read + propose, writes-gated** authority level:
 
 - **Read** — `prompt.rs::format_project_goals(sys_db)` injects each dev project's active goals (id, progress, status, latest signal) into her system prompt (appended to the plugins block, in both the ml and non-ml builders), so she's aware of project direction and can reference a goal by id.
-- **Propose (gated)** — the `update_dev_goal { goal_id, status?, progress?, note? }` op (`ALLOWED_ACTIONS` + `execute_update_dev_goal` in `approvals.rs`, constitution **v27**) lets her propose a status/progress change. It is **approval-gated and deliberately NOT in `AUTOAPPROVE_ALLOWLIST`** — goal writes never auto-resolve, even in autonomous mode. On approval it writes an `athena_update` `dev_goal_signal`.
+- **Propose (gated)** — the `update_dev_goal { goal_id, status?, progress?, note? }` op (`ALLOWED_ACTIONS` + `execute_update_dev_goal` in `approvals.rs`, constitution **v27**) lets her propose a status/progress change. It is **approval-gated in manual mode**; it was deliberately kept off the retired `AUTOAPPROVE_ALLOWLIST`, so before 2026-08-10 it never auto-resolved even in autonomous mode. It does now — the mode is the consent. On approval it writes an `athena_update` `dev_goal_signal`.
 - **React (proactive)** — `proactive::triggers::dev_goal_nudges(sys_db)` emits budget+dedupe-gated nudges (`dev_goal_target`, `dev_goal_stalled`) when a project goal is target-approaching/overdue or stalled (in-progress/blocked, untouched ≥ 7 days). Because `dev_goals` live in the main app DB, it's passed as `extra` candidates to `evaluate_with_extra_candidates` from the manual `companion_evaluate_proactive_now` (`state.db`) and the desktop tick (`app.state()`). On engage, the prompt context lets her reason and propose the gated update.
 
 ## Project KPIs (outcome steering) — read + manage
@@ -724,7 +776,7 @@ Athena is wired into the project [Goals](../goals/README.md) surface at the **re
 KPIs are the [outcome layer above goals](../kpis.md): a KPI going off-track is what *derives* a goal. Athena manages that steering layer on the user's behalf, at the same **read + propose, writes-gated** authority as goals (constitution **v40**):
 
 - **Read** — `prompt.rs::format_project_kpis(sys_db)` injects each dev project's **active** KPIs (id, current/target + unit, tier, and an `on track` / `OFF TRACK` / `unmeasured` state) into her system prompt, appended to the plugins block in both builders. The off-track state is computed by the SAME rule the derivation loop obeys (`kpi_derivation::kpi_is_off_track`), so what she sees as `OFF TRACK` is exactly what will derive a goal — there's no second opinion to drift.
-- **Manage (gated)** — three ops in `ALLOWED_ACTIONS` + `approvals.rs`, all **approval-gated and NOT in `AUTOAPPROVE_ALLOWLIST`** (they change what the autonomous loop optimizes for, so the user signs off):
+- **Manage (gated)** — three ops in `ALLOWED_ACTIONS` + `approvals.rs`, all **approval-gated in manual mode** (they change what the autonomous loop optimizes for, so the user signs off; with autonomous mode on they auto-fire like everything else since the allowlist was retired):
   - **`calibrate_kpi { kpi_id, target_value?, target_date?, tier?, cadence?, status?, warn_at?, crit_at? }`** (`execute_calibrate_kpi`) — adjust the steering levers. Targets / tier / cadence / status route through `update_kpi`; the `warn_at` / `crit_at` lines route through `save_kpi_assessment` (the same path the Factory console writes). `crit_at` is the **hard "off track" line the derivation loop now honors** — moving it directly changes when this KPI derives a goal. Enum fields are validated so a hallucinated token can't poison steering.
   - **`evaluate_kpi { kpi_id }`** (`execute_evaluate_kpi`) — measure the KPI now (codebase / derived / connector), saving a fresh point to its history. Lets her un-stale a KPI before reasoning about whether to steer.
   - **`scan_kpis { project_name?, path? }`** (`execute_scan_kpis`) — launch a KPI proposal scan for a project (resolves id/name/path with a most-recent fallback, like `enqueue_dev_job`). Proposals land in the review queue; nothing goes active without the user's accept.
@@ -738,7 +790,7 @@ Athena is wired into the [Mastermind canvas](../teams/README.md) at the same **r
 
 - **Read (always-on digest)** — `prompt.rs::format_scene_digest(sys_db)` injects a **worst-first** block: one row per project with its state, `NEEDS YOU` marker, blockers, live fleet session count, and only the dimension cells that are NOT fine. Ordering is `attention → island state → alerting cells → blockers → total unhealthy cells`, slug ascending as a stable tiebreak — it is a triage surface, not a directory. Its own ~1200-token budget (independent of the three index blocks, so neither starves the other), enforced through the same `BoundedBlock` footer-reserve mechanism, and the footer carries the true project count plus which data families are currently `failed`/`stale`. No snapshot published means **no block at all**.
 - **Read on demand (auto-fire, no approval)** — `describe_canvas_project { query }` returns one island's full fifteen cells with their detail strings, monitoring, milestones and live counters; `describe_canvas_freshness { query? }` returns idea-scan age, ongoing goals and KPI standing for one project or (empty query) for all of them, worst-first. Both are `READ_OPS` dispatcher arms with no executor, bounded, and answer an unknown slug by naming real ones.
-- **Act (gated)** — three ops in `ALLOWED_ACTIONS` + `approval_exec_canvas.rs`, on `AUTOAPPROVE_ALLOWLIST` so they follow the **boldness dial** exactly like `fleet_spawn` / `fleet_dispatch`:
+- **Act (gated)** — three ops in `ALLOWED_ACTIONS` + `approval_exec_canvas.rs`, gated by the **boldness dial** exactly like `fleet_spawn` / `fleet_dispatch`:
   - **`canvas_dispatch { slug, task, skill? }`** — one CLI session in one project.
   - **`canvas_group_dispatch { slugs[], task, skill?, group? }`** — one instruction across several projects, **sequential by construction** (it routes to `execute_fleet_dispatch`, whose single `for` loop spawns one after another; the canvas is explicit that parallel spawning stalls the machine) and capped at the same **8**.
   - **`canvas_run_idea_scan { slug, scan_types?, target_count? }`** — routed to the same `run_scan_core` the Ideas cell calls, so the backlog-saturation guard and stale-idea archival apply unchanged.
@@ -772,7 +824,7 @@ Two paired Personas installs on one LAN can hand each other work (pairing and th
 | OFF | any other paired device | refused, naming the rule and the remedy |
 | ON | any paired device | fires immediately, no card |
 
-It is **not** an `AUTOAPPROVE_ALLOWLIST` entry — that list is a flat set of names with no conditional form — but a dedicated arm ahead of it in `auto_resolve_if_allowed`, with a test pinning the name off the list. The executor calls the same gate, so a card filed under one mode and clicked under another is judged when it fires, not when it was proposed. Failures stay actionable: an unpaired peer and an unreachable device surface their own typed messages ("not one of your paired devices", "…is not reachable right now").
+It never went through the generic autonomous path — its rule is conditional and that path has no conditional form — but through a dedicated arm ahead of it in `auto_resolve_if_allowed`, which survived the allowlist's retirement unchanged. The executor calls the same gate, so a card filed under one mode and clicked under another is judged when it fires, not when it was proposed. Failures stay actionable: an unpaired peer and an unreachable device surface their own typed messages ("not one of your paired devices", "…is not reachable right now").
 
 **Inbound — the arriving instruction becomes a real turn.** The device that was asked runs it through the ordinary turn machinery as `TurnOrigin::External`, tagged `[Automated request from <device> (paired device) — not the user]`, with Athena's **full op set**: her approval rows, autopilot allowlist, boldness matrix and structural backstops apply unchanged, because the sender already cleared the pairing gate and the request is the operator's own arriving over another keyboard. The turn runs with `suppress_chat`, so the answer travels back over the job's wire and onto the orb (`companion://remote-job-turn`, phases `started` / `completed` / `failed`) rather than into that machine's transcript.
 
@@ -1081,7 +1133,7 @@ Constitution bumped to **v48**. Test ids: `athena-ship-card`,
 
 ### Containment posture (2026-08-04, operator's explicit call)
 
-`fleet_spawn` and `fleet_dispatch` are now on `AUTOAPPROVE_ALLOWLIST`, so they
+`fleet_spawn` and `fleet_dispatch` auto-fire under autonomous mode, so they
 follow the boldness dial like the other fleet actions. Stated plainly: **with the
 default `Bold` dial in autonomous mode, a typed or spoken request can start real
 `claude --dangerously-skip-permissions` sessions with no click in between.** The
@@ -1202,7 +1254,7 @@ Failure is **per-engine**: a refused mic permission or a missing Whisper model f
   - **Live-sibling guard.** A dev session is a PTY child of this app, so the rebuild a merge triggers kills every other in-flight dev session mid-run, uncommitted work included. The merge now refuses while other `athena-dev*` sessions are live, naming them; `{"force": true}` is the explicit "take them down with it".
   - Node-tooling **lockfile drift** (`pnpm-lock.yaml`/`package-lock.json`/`yarn.lock`) is still restored to HEAD before the dirty-tree check.
 
-**Policy (hard):** neither op is on `AUTOAPPROVE_ALLOWLIST` — **dev-mode operations never auto-fire in any mode**; each dispatch and each merge is an explicit approval click. And **every dev op ends in a reflection**: on session exit, `reconcile_if_dispatched` routes dev ops to `spawn_dev_reflection` — a chat-visible `dev_improve_review` proactive turn carrying the op wrap-up + fresh git evidence (`git log --stat`, tree dirtiness) where Athena reviews what changed vs what was asked, flags risk, and recommends (or argues against) the merge.
+**Policy:** neither op was on the retired `AUTOAPPROVE_ALLOWLIST`, so dev-mode operations used to require an explicit approval click in every mode. Since 2026-08-10 autonomous mode fires them too; what still bounds them is the executor's own gate — `dev_improve` refuses unless dev mode is on AND this is a debug build. In manual mode each dispatch and each merge is still an explicit click. And **every dev op ends in a reflection**: on session exit, `reconcile_if_dispatched` routes dev ops to `spawn_dev_reflection` — a chat-visible `dev_improve_review` proactive turn carrying the op wrap-up + fresh git evidence (`git log --stat`, tree dirtiness) where Athena reviews what changed vs what was asked, flags risk, and recommends (or argues against) the merge.
 
 **Durability + the experiment ledger.** Every dispatch is a durable `companion_dev_op` row (user db; status `dispatched → completed | closed → merged`, `interrupted` for orphans). It survives the app restart that a backend merge inherently causes: the reflection reconciler, the `dev_merge` handshake, and **boot recovery** all read it. Boot recovery no longer just writes an op off: when an interrupted BACKEND op's worktree still holds uncommitted work (and dev mode is on), it stages those paths explicitly, commits them with a `[recovered] …` message that says plainly it was assembled by the recovery pass and not reviewed by the session, and flips the row back to `completed` so the **ordinary** `dev_merge` handshake picks it up — no bespoke recovery path. Ops with nothing to save still sweep to `interrupted`. Either way one proactive card describes exactly what survived on disk. The same table doubles as the **experiment harness** the panel surfaces while dev mode is on — a compact **dev-op ledger** strip (`DevOpLedger.tsx`, `companion_dev_op_ledger`) with the aggregate scoreboard (dispatch→commit rate, merges, rescues) and a **👍/👎 verdict chip** per run (`companion_dev_op_set_verdict` → `user_verdict`, gated on dev mode like the ledger read) — the signal that, over days of use, tells whether dev mode is earning its keep. The dispatch card prints the **full `op_id`** — `dev_merge` looks the op up by exact match, so the displayed id must round-trip into the merge handshake.
 
