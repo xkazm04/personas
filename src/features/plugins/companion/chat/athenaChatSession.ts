@@ -27,7 +27,19 @@ export interface AthenaChatView {
   showEarlier: () => void;
 }
 
-export function useAthenaChatView(engine: AthenaChatEngine): AthenaChatView {
+export function useAthenaChatView(
+  engine: AthenaChatEngine,
+  /**
+   * The staged mount gate from `useChatMount` — the scroll container exists
+   * only once this is true (a skeleton renders before it). Every effect below
+   * that touches `scrollRef` must key on it: the body mounts with the gate
+   * still shut, so a mount-time effect sees a null ref, silently no-ops, and —
+   * with no dep changing when the container finally appears — never retries.
+   * That was the "opens scrolled to the top" bug: the open-at-latest jump
+   * fired ~2 frames into the ~300ms skeleton window and hit nothing.
+   */
+  ready: boolean,
+): AthenaChatView {
   const { messages, streaming, initialized, activeConversationId } = engine;
 
   // Bottom-aware autoscroll: pin to the bottom on new content only while the
@@ -35,7 +47,7 @@ export function useAthenaChatView(engine: AthenaChatEngine): AthenaChatView {
   // and surface the jump-to-latest pill instead. Deliberately NOT keyed on
   // `streamingText` — the bubble no longer renders live tokens, so a per-frame
   // scroll effect would cost a render and buy nothing.
-  const { scrollRef, atBottom, scrollToBottom, maybeAutoScroll } = useChatScroll();
+  const { scrollRef, atBottom, scrollToBottom, maybeAutoScroll } = useChatScroll(ready);
   useEffect(maybeAutoScroll, [messages, streaming, maybeAutoScroll]);
 
   // Open-at-latest: on the first render of a conversation (window opened, or
@@ -43,11 +55,14 @@ export function useAthenaChatView(engine: AthenaChatEngine): AthenaChatView {
   // settles. `maybeAutoScroll` alone can fire while the restored transcript is
   // still laying out (scrollHeight not yet final), which parks the panel at the
   // FIRST message instead of the last — the "opens scrolled to the top" bug.
-  // Keyed per conversation so a switch re-lands at the bottom; the double rAF
-  // waits for the transcript to paint before measuring scrollHeight.
+  // Gated on `ready` so it runs only after the container exists (see above),
+  // and the "done" stamp is only written once it can actually scroll. Keyed
+  // per conversation so a switch re-lands at the bottom; the double rAF waits
+  // for the transcript to paint before measuring scrollHeight. 'auto' keeps
+  // the jump instant — the user must never watch it animate down from the top.
   const initialScrolledFor = useRef<string | null>(null);
   useEffect(() => {
-    if (!initialized) return;
+    if (!ready || !initialized) return;
     if (initialScrolledFor.current === activeConversationId) return;
     initialScrolledFor.current = activeConversationId;
     let inner = 0;
@@ -58,12 +73,15 @@ export function useAthenaChatView(engine: AthenaChatEngine): AthenaChatView {
       cancelAnimationFrame(outer);
       if (inner) cancelAnimationFrame(inner);
     };
-  }, [initialized, activeConversationId, scrollToBottom]);
+  }, [ready, initialized, activeConversationId, scrollToBottom]);
 
   const transcriptWindow = useTranscriptWindow(messages, activeConversationId);
+  // Both upward-history mechanisms bind scroll listeners on `scrollRef`, so
+  // their `enabled` flags carry the same `ready` gate — flipping it re-runs
+  // the attach effect against the now-real container.
   const { showEarlierAnchored } = useShowEarlierOnScroll({
     scrollRef,
-    enabled: !transcriptWindow.fullyExpanded,
+    enabled: ready && !transcriptWindow.fullyExpanded,
     showEarlier: transcriptWindow.showEarlier,
   });
   // Backend paging only takes over once every loaded message is on screen —
@@ -72,7 +90,7 @@ export function useAthenaChatView(engine: AthenaChatEngine): AthenaChatView {
     scrollRef,
     conversationId: activeConversationId,
     messages,
-    enabled: initialized && transcriptWindow.fullyExpanded,
+    enabled: ready && initialized && transcriptWindow.fullyExpanded,
   });
 
   return {

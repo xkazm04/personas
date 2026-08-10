@@ -53,7 +53,7 @@ export function AthenaChatBody({
   chromeReady: boolean;
 }) {
   const { t } = useTranslation();
-  const view = useAthenaChatView(engine);
+  const view = useAthenaChatView(engine, ready);
   const brainOpen = useCompanionStore((s) => s.brainView.open);
   const hasProactive = useCompanionStore((st) => st.proactive.length > 0);
 
