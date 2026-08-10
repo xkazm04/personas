@@ -8,6 +8,7 @@ import type { AlertRule } from '@/lib/bindings/AlertRule';
 import {
   ALERT_METRIC_OPTIONS,
   ALERT_SEVERITY_OPTIONS,
+  alertLabel,
   type AlertMetric,
   type AlertOperator,
   type AlertSeverity,
@@ -50,6 +51,10 @@ function RuleForm({
   onSubmit: (data: RuleFormData) => void;
   onCancel: () => void;
 }) {
+  // The option lists carry KEYS, not English values (see alertSlice) — resolve
+  // them here so the labels follow a language switch instead of freezing at
+  // module-init time.
+  const { t } = useTranslation();
   const [form, setForm] = useState<RuleFormData>(initial ?? DEFAULT_FORM);
   const metricInfo = ALERT_METRIC_OPTIONS.find(m => m.value === form.metric);
 
@@ -71,7 +76,7 @@ function RuleForm({
           className="px-2.5 py-1.5 typo-body rounded-card bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none"
         >
           {ALERT_METRIC_OPTIONS.map(m => (
-            <option key={m.value} value={m.value}>{m.label}</option>
+            <option key={m.value} value={m.value}>{alertLabel(t, m.labelKey)}</option>
           ))}
         </select>
 
@@ -110,7 +115,7 @@ function RuleForm({
           className="px-2.5 py-1.5 typo-body rounded-card bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none"
         >
           {ALERT_SEVERITY_OPTIONS.map(s => (
-            <option key={s.value} value={s.value}>{s.label}</option>
+            <option key={s.value} value={s.value}>{alertLabel(t, s.labelKey)}</option>
           ))}
         </select>
 
@@ -166,6 +171,7 @@ function RuleRow({
   onDelete: () => void;
   onEdit: () => void;
 }) {
+  const { t } = useTranslation();
   const metricInfo = ALERT_METRIC_OPTIONS.find(m => m.value === rule.metric);
   const sevInfo = ALERT_SEVERITY_OPTIONS.find(s => s.value === rule.severity);
   const scopeName = rule.persona_id ? personas.find(p => p.id === rule.persona_id)?.name ?? 'Unknown' : 'Global';
@@ -185,11 +191,11 @@ function RuleRow({
             className="px-1.5 py-0.5 rounded text-[10px] font-medium"
             style={{ backgroundColor: `${sevInfo?.color ?? '#888'}20`, color: sevInfo?.color ?? '#888' }}
           >
-            {sevInfo?.label ?? rule.severity}
+            {sevInfo ? alertLabel(t, sevInfo.labelKey) : rule.severity}
           </span>
         </div>
         <p className="typo-caption text-foreground mt-0.5">
-          {metricInfo?.label ?? rule.metric} {rule.operator} {rule.threshold}{metricInfo?.unit ?? ''} &middot; {scopeName}
+          {metricInfo ? alertLabel(t, metricInfo.labelKey) : rule.metric} {rule.operator} {rule.threshold}{metricInfo?.unit ?? ''} &middot; {scopeName}
         </p>
       </div>
       <button type="button" onClick={onEdit} className="p-1 text-foreground hover:text-muted-foreground transition-colors" title={"edit"}>

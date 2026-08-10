@@ -24,6 +24,7 @@ const preferStatusBadge = require("./eslint-rules/prefer-status-badge.cjs");
 const preferSectionCard = require("./eslint-rules/prefer-section-card.cjs");
 const noUnprefixedWideMinWidth = require("./eslint-rules/no-unprefixed-wide-min-width.cjs");
 const asyncCatchRequiresHelper = require("./eslint-rules/async-catch-requires-helper.cjs");
+const noModuleScopeEnValue = require("./eslint-rules/no-module-scope-en-value.cjs");
 
 export default tseslint.config(
   { ignores: ["dist", "src-tauri"] },
@@ -58,6 +59,7 @@ export default tseslint.config(
           "prefer-section-card": preferSectionCard,
           "no-unprefixed-wide-min-width": noUnprefixedWideMinWidth,
           "async-catch-requires-helper": asyncCatchRequiresHelper,
+          "no-module-scope-en-value": noModuleScopeEnValue,
         },
       },
     },
@@ -110,6 +112,13 @@ export default tseslint.config(
       "custom/prefer-section-card": "warn",
       "custom/no-unprefixed-wide-min-width": "warn",
       "custom/async-catch-requires-helper": "warn",
+      // A value read off the `en` shim at module scope is frozen English for
+      // every locale — module init runs before a language is ever chosen.
+      // `import { en }` itself stays legal; only member reads at init are
+      // flagged. Warn-level: ~53 known sites remain to triage, and some are
+      // deliberate (persisted values, log lines) and take an inline disable
+      // with a reason.
+      "custom/no-module-scope-en-value": "warn",
     },
   },
   // Shared design-system primitives may import Tauri IPC for nothing —
