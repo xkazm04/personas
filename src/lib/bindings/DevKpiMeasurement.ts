@@ -3,6 +3,11 @@
 export type DevKpiMeasurement = { id: string, kpi_id: string, value: number, measured_at: string, 
 /**
  * 'evaluator' | 'manual' | 'scan' | 'health_snapshot' | 'simulation'
+ * | 'ai-compose'
+ *
+ * `ai-compose` was widened into the CHECK in 2026-08. Before that the
+ * compose path wrote it anyway and SQLite rejected every insert, silently
+ * — no AI-composed reading had ever reached this table.
  */
 source: string, 
 /**

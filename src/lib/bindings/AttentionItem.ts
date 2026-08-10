@@ -5,20 +5,22 @@
  * that needs the user.
  *
  * `kind` ∈ `awaiting_review` | `overdue` | `stalled` | `unstaffed`
- *        | `undispatched_idea` | `stuck_task` | `stale_queued_task`.
+ *        | `undispatched_idea` | `stuck_task` | `stale_queued_task`
+ *        | `kpi_gone_dark` | `kpi_never_measured`.
  *
- * The first four are goal signals and keep their original `rank` values; the
- * three record-widening kinds are APPENDED at ranks 4-6 rather than
- * interleaved, so the pre-existing ordering contract is untouched. Within a
- * rank the queue sorts by age, worst first.
+ * The first four are goal signals and keep their original `rank` values; every
+ * later kind is APPENDED at the next free rank rather than interleaved, so the
+ * pre-existing ordering contract is untouched (record-widening at 4-6, the two
+ * KPI-freshness kinds at 7-8). Within a rank the queue sorts by age, worst
+ * first.
  */
 export type AttentionItem = { kind: string, 
 /**
- * Which record type this row is about: `goal` | `idea` | `task`.
+ * Which record type this row is about: `goal` | `idea` | `task` | `kpi`.
  */
 entityKind: string, 
 /**
- * Id of the record that needs attention — a goal, idea, or task id.
+ * Id of the record that needs attention — a goal, idea, task or KPI id.
  * Always the thing the UI should open.
  */
 entityId: string, entityTitle: string, 
