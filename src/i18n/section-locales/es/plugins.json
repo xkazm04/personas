@@ -1341,7 +1341,8 @@
       "graph_aria": "Grafo de temas",
       "graph_open_detail": "Abrir detalle",
       "graph_coverage_label": "Cobertura",
-      "col_ftype": "Forma"
+      "col_ftype": "Forma",
+      "graph_ctx_verified": "{verified} de {applicable} contextos verificados"
     },
     "skills_adopt": "Adoptar",
     "skills_adopt_hint": "Adoptar en {name} — Claude la adapta al repositorio",

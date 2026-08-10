@@ -14412,7 +14412,8 @@
         "graph_aria": "Topic graph",
         "graph_open_detail": "Open full detail",
         "graph_coverage_label": "Coverage",
-        "col_ftype": "Shape"
+        "col_ftype": "Shape",
+        "graph_ctx_verified": "{verified} of {applicable} contexts verified"
       },
       "skills_info_args": "args",
       "skills_info_context_tracked": "context-tracked",

@@ -1341,7 +1341,8 @@
       "graph_aria": "Grafik topik",
       "graph_open_detail": "Buka detail",
       "graph_coverage_label": "Cakupan",
-      "col_ftype": "Bentuk"
+      "col_ftype": "Bentuk",
+      "graph_ctx_verified": "{verified} dari {applicable} konteks terverifikasi"
     },
     "skills_adopt": "Adopsi",
     "skills_adopt_hint": "Adopsi ke {name} — Claude menyesuaikannya untuk repo",

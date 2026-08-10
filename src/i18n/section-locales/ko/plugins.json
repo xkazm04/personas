@@ -1341,7 +1341,8 @@
       "graph_aria": "주제 그래프",
       "graph_open_detail": "상세 열기",
       "graph_coverage_label": "커버리지",
-      "col_ftype": "형태"
+      "col_ftype": "형태",
+      "graph_ctx_verified": "{applicable}개 컨텍스트 중 {verified}개 검증됨"
     },
     "skills_adopt": "채택",
     "skills_adopt_hint": "{name}에 채택 — Claude가 저장소에 맞게 맞춤 설정합니다",

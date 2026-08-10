@@ -1341,7 +1341,8 @@
       "graph_aria": "Graphe des sujets",
       "graph_open_detail": "Ouvrir le détail",
       "graph_coverage_label": "Couverture",
-      "col_ftype": "Forme"
+      "col_ftype": "Forme",
+      "graph_ctx_verified": "{verified} contextes vérifiés sur {applicable}"
     },
     "skills_adopt": "Adopter",
     "skills_adopt_hint": "Adopter dans {name} — Claude l’adapte au dépôt",

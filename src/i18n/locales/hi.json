@@ -13961,7 +13961,8 @@
         "graph_aria": "विषय ग्राफ़",
         "graph_open_detail": "पूरा विवरण खोलें",
         "graph_coverage_label": "कवरेज",
-        "col_ftype": "आकार"
+        "col_ftype": "आकार",
+        "graph_ctx_verified": "{applicable} में से {verified} संदर्भ सत्यापित"
       },
       "skills_adopt": "अपनाएँ",
       "skills_adopt_hint": "{name} में अपनाएँ — Claude इसे रिपॉज़िटरी के लिए अनुकूलित करता है",

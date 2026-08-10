@@ -14419,6 +14419,7 @@ export type Translations = {
         graph_open_detail: string;
         graph_coverage_label: string;
         col_ftype: string;
+        graph_ctx_verified: string;
       };
       skills_info_args: string;
       skills_info_context_tracked: string;

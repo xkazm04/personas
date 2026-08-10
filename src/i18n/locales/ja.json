@@ -13961,7 +13961,8 @@
         "graph_aria": "トピックグラフ",
         "graph_open_detail": "詳細を開く",
         "graph_coverage_label": "カバレッジ",
-        "col_ftype": "形態"
+        "col_ftype": "形態",
+        "graph_ctx_verified": "{applicable} コンテキスト中 {verified} 件を検証済み"
       },
       "skills_adopt": "採用",
       "skills_adopt_hint": "{name} に採用 — Claude がリポジトリ向けにカスタマイズします",

@@ -228,6 +228,7 @@ export default function KnowledgeLibrary({
         {view === 'graph' ? (
           <PatternGraphHost
             items={items}
+            workspaceId={workspace.id}
             workspaceName={workspace.name}
             adoptions={adoptions}
             selectedProjectId={graphProjectId}

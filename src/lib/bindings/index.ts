@@ -652,6 +652,7 @@ export type { PortfolioBalance } from "./PortfolioBalance";
 export type { PortfolioHealthSummary } from "./PortfolioHealthSummary";
 export type { PortfolioProjectSummary } from "./PortfolioProjectSummary";
 export type { PortfolioSummary } from "./PortfolioSummary";
+export type { PracticeContextRollup } from "./PracticeContextRollup";
 export type { PresetAdoptionSchema } from "./PresetAdoptionSchema";
 export type { PresetMemberAdoptionSchema } from "./PresetMemberAdoptionSchema";
 export type { PresetPublishResult } from "./PresetPublishResult";

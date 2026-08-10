@@ -1341,7 +1341,8 @@
       "graph_aria": "Graf témat",
       "graph_open_detail": "Otevřít detail",
       "graph_coverage_label": "Pokrytí",
-      "col_ftype": "Tvar"
+      "col_ftype": "Tvar",
+      "graph_ctx_verified": "ověřeno {verified} z {applicable} kontextů"
     },
     "skills_adopt": "Převzít",
     "skills_adopt_hint": "Převzít do {name} — Claude ji přizpůsobí repozitáři",

@@ -13961,7 +13961,8 @@
         "graph_aria": "বিষয় গ্রাফ",
         "graph_open_detail": "বিস্তারিত খুলুন",
         "graph_coverage_label": "কভারেজ",
-        "col_ftype": "আকৃতি"
+        "col_ftype": "আকৃতি",
+        "graph_ctx_verified": "{applicable}টির মধ্যে {verified}টি কনটেক্সট যাচাইকৃত"
       },
       "skills_adopt": "গ্রহণ করুন",
       "skills_adopt_hint": "{name}-এ গ্রহণ করুন — Claude রিপোর জন্য এটি কাস্টমাইজ করে",

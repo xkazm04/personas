@@ -13961,7 +13961,8 @@
         "graph_aria": "主题图谱",
         "graph_open_detail": "打开详情",
         "graph_coverage_label": "覆盖率",
-        "col_ftype": "形态"
+        "col_ftype": "形态",
+        "graph_ctx_verified": "已验证 {applicable} 个上下文中的 {verified} 个"
       },
       "skills_adopt": "采用",
       "skills_adopt_hint": "采用到 {name} — Claude 会为该仓库定制它",

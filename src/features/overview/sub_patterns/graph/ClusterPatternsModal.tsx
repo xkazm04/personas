@@ -23,13 +23,21 @@ function FactPill({ label, value }: { label: string; value: string }) {
   );
 }
 
+export interface PatternCoverage {
+  /** Adherence 0..1 — context-grain when the rollup knows the practice,
+   *  matrix-grain resolved share otherwise. */
+  pct: number;
+  /** e.g. "3 of 35 contexts verified" — present only at context grain. */
+  detail?: string;
+}
+
 function PatternCard({
   item,
   coverage,
   onOpen,
 }: {
   item: KnowledgeItemView;
-  coverage: number | null;
+  coverage: PatternCoverage | null;
   onOpen?: (item: KnowledgeItemView) => void;
 }) {
   const { t } = useTranslation();
@@ -85,7 +93,9 @@ function PatternCard({
           )}
           {coverage !== null && (
             <span className="typo-caption text-muted-foreground tabular-nums">
-              <span className="typo-label">{w.graph_coverage_label}</span> {Math.round(coverage * 100)}%
+              <span className="typo-label">{w.graph_coverage_label}</span>{' '}
+              {Math.round(coverage.pct * 100)}%
+              {coverage.detail ? ` · ${coverage.detail}` : ''}
             </span>
           )}
         </div>
@@ -114,9 +124,8 @@ export function ClusterPatternsModal({
   onClose,
 }: {
   node: ClusterNode;
-  /** Per-pattern resolved share (adopted or skipped-as-inapplicable), 0..1;
-   *  null when there is nothing to trace against (no member projects). */
-  patternCoverage: (item: KnowledgeItemView) => number | null;
+  /** Per-pattern coverage; null when there is nothing to trace against. */
+  patternCoverage: (item: KnowledgeItemView) => PatternCoverage | null;
   onOpenItem?: (item: KnowledgeItemView) => void;
   onClose: () => void;
 }) {

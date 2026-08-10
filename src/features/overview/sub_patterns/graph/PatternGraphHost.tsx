@@ -7,8 +7,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronRight, X } from 'lucide-react';
 
+import { listPracticeContextRollup } from '@/api/devTools/workspaces';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { PracticeContextRollup } from '@/lib/bindings/PracticeContextRollup';
 import type { WorkspacePracticeAdoption } from '@/lib/bindings/WorkspacePracticeAdoption';
+import { silentCatch } from '@/lib/silentCatch';
 import { areaTheme } from '../practiceAreaTheme';
 import type { KnowledgeItemView } from '../libraryModel';
 import { buildTopicGraph, type ClusterNode } from './graphModel';
@@ -19,6 +22,7 @@ import { useGraphCanvas } from './useGraphCanvas';
 
 export default function PatternGraphHost({
   items,
+  workspaceId,
   workspaceName,
   adoptions,
   selectedProjectId,
@@ -26,6 +30,7 @@ export default function PatternGraphHost({
   onOpenItem,
 }: {
   items: readonly KnowledgeItemView[];
+  workspaceId: string;
   workspaceName: string;
   adoptions: readonly WorkspacePracticeAdoption[];
   /** Project lens; `null` = whole workspace, rendered as-is. */
@@ -62,12 +67,58 @@ export default function PatternGraphHost({
     return topics as ReadonlySet<string>;
   }, [selectedProjectId, adoptions, items]);
 
-  // Completion traceability — the resolved share of the pattern×project
-  // adoption matrix. A cell counts as RESOLVED when it is `adopted` (accepted)
-  // or `na` (skipped as inapplicable to that project's stack); everything else
-  // (proposed / to_process / dispatched / diverged) is work still owed. The
-  // denominator is practices × member projects (× 1 under a project lens), so
-  // pending practices — which have no cells yet — honestly drag coverage down.
+  // Context-grain adherence (docs/concepts/pattern-context-trace.md): one
+  // rollup row per practice — adopted/violating/unverified over APPLICABLE
+  // contexts. Where these rows exist they take over the rings from the
+  // project-grain matrix below, because one `adopted` matrix cell rendering
+  // as "the whole project follows this" is exactly the overstatement the
+  // context grain corrects. P0 reality check: seeding is envelope-only, so
+  // adherence reads LOW (mostly `unverified`) — that low number is the honest
+  // baseline, not a bug.
+  const [rollup, setRollup] = useState<PracticeContextRollup[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    listPracticeContextRollup(workspaceId, selectedProjectId)
+      .then((rows) => { if (live) setRollup(rows); })
+      // Missing rollup degrades to the matrix-grain rings; never interrupts.
+      .catch((err) => {
+        silentCatch('patterns:contextRollup')(err);
+        if (live) setRollup(null);
+      });
+    return () => { live = false; };
+  }, [workspaceId, selectedProjectId, items]);
+
+  const contextCoverage = useMemo(() => {
+    if (!rollup || rollup.length === 0) return null;
+    const byPractice = new Map(rollup.map((r) => [r.practiceId, r]));
+    const topic = new Map<string, { adopted: number; applicable: number }>();
+    const area = new Map<string, { adopted: number; applicable: number }>();
+    for (const item of items) {
+      const r = byPractice.get(item.id);
+      if (!r || r.applicable === 0) continue;
+      const [a = '', c = ''] = item.topic.split('/');
+      if (!a) continue;
+      const key = `${a}/${c || 'general'}`;
+      const t0 = topic.get(key) ?? { adopted: 0, applicable: 0 };
+      t0.adopted += r.adopted;
+      t0.applicable += r.applicable;
+      topic.set(key, t0);
+      const a0 = area.get(a) ?? { adopted: 0, applicable: 0 };
+      a0.adopted += r.adopted;
+      a0.applicable += r.applicable;
+      area.set(a, a0);
+    }
+    const ratio = (m: Map<string, { adopted: number; applicable: number }>) =>
+      new Map([...m.entries()].map(([k, v]) => [k, v.adopted / v.applicable]));
+    return { topic: ratio(topic), area: ratio(area), byPractice };
+  }, [rollup, items]);
+
+  // Fallback: resolved share of the pattern×project adoption matrix. A cell
+  // counts as RESOLVED when it is `adopted` (accepted) or `na` (skipped as
+  // inapplicable to that project's stack); everything else (proposed /
+  // to_process / dispatched / diverged) is work still owed. The denominator is
+  // practices × member projects (× 1 under a project lens), so pending
+  // practices — which have no cells yet — honestly drag coverage down.
   const coverage = useMemo(() => {
     const resolvedByPractice = new Map<string, number>();
     for (const a of adoptions) {
@@ -102,6 +153,38 @@ export default function PatternGraphHost({
       denomPer > 0 ? Math.min(resolvedByPractice.get(item.id) ?? 0, denomPer) / denomPer : null;
     return { topic, area, perPattern, enabled: denomPer > 0 };
   }, [adoptions, items, selectedProjectId, projectCount]);
+
+  // Ring inputs: context-grain adherence wins per key; the matrix share is the
+  // fallback for topics (and workspaces) with no context map behind them.
+  const ringTopic = useMemo(() => {
+    if (!contextCoverage && !coverage.enabled) return null;
+    const merged = new Map(coverage.enabled ? coverage.topic : []);
+    if (contextCoverage) for (const [k, v] of contextCoverage.topic) merged.set(k, v);
+    return merged as ReadonlyMap<string, number>;
+  }, [contextCoverage, coverage]);
+  const ringArea = useMemo(() => {
+    if (!contextCoverage && !coverage.enabled) return null;
+    const merged = new Map(coverage.enabled ? coverage.area : []);
+    if (contextCoverage) for (const [k, v] of contextCoverage.area) merged.set(k, v);
+    return merged as ReadonlyMap<string, number>;
+  }, [contextCoverage, coverage]);
+
+  // Modal readout: context adherence with its verified fraction when the
+  // rollup knows the practice; matrix share (no detail line) otherwise.
+  const patternCoverage = (item: KnowledgeItemView): { pct: number; detail?: string } | null => {
+    const r = contextCoverage?.byPractice.get(item.id);
+    if (r && r.applicable > 0) {
+      return {
+        pct: r.adopted / r.applicable,
+        detail: tx(w.graph_ctx_verified, {
+          verified: r.adopted + r.violating,
+          applicable: r.applicable,
+        }),
+      };
+    }
+    const pct = coverage.perPattern(item);
+    return pct === null ? null : { pct };
+  };
 
   const flyHome = () => {
     setFocusArea(null);
@@ -175,8 +258,8 @@ export default function PatternGraphHost({
                 focusArea={focusArea}
                 selectedTopic={selected?.topic ?? null}
                 appliedTopics={appliedTopics}
-                topicCoverage={coverage.enabled ? coverage.topic : null}
-                areaCoverage={coverage.enabled ? coverage.area : null}
+                topicCoverage={ringTopic}
+                areaCoverage={ringArea}
                 onHoverArea={setHoverArea}
                 onFocusArea={focusOn}
                 onSelectCluster={selectCluster}
@@ -215,7 +298,7 @@ export default function PatternGraphHost({
         {selected && (
           <ClusterPatternsModal
             node={selected}
-            patternCoverage={coverage.perPattern}
+            patternCoverage={patternCoverage}
             onOpenItem={onOpenItem}
             onClose={() => setSelected(null)}
           />

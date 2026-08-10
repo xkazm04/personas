@@ -1341,7 +1341,8 @@
       "graph_aria": "Граф тем",
       "graph_open_detail": "Открыть подробности",
       "graph_coverage_label": "Покрытие",
-      "col_ftype": "Форма"
+      "col_ftype": "Форма",
+      "graph_ctx_verified": "проверено {verified} из {applicable} контекстов"
     },
     "skills_adopt": "Внедрить",
     "skills_adopt_hint": "Внедрить в {name} — Claude адаптирует под репозиторий",

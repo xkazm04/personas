@@ -1341,7 +1341,8 @@
       "graph_aria": "Đồ thị chủ đề",
       "graph_open_detail": "Mở chi tiết",
       "graph_coverage_label": "Độ phủ",
-      "col_ftype": "Hình thái"
+      "col_ftype": "Hình thái",
+      "graph_ctx_verified": "đã xác minh {verified} trong {applicable} ngữ cảnh"
     },
     "skills_adopt": "Áp dụng",
     "skills_adopt_hint": "Áp dụng vào {name} — Claude tùy chỉnh cho kho mã",
