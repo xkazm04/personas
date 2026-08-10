@@ -1342,7 +1342,17 @@
       "graph_open_detail": "Details öffnen",
       "graph_coverage_label": "Abdeckung",
       "col_ftype": "Form",
-      "graph_ctx_verified": "{verified} von {applicable} Kontexten geprüft"
+      "graph_ctx_verified": "{verified} von {applicable} Kontexten geprüft",
+      "graph_rel_governs": "regelt",
+      "graph_rel_governed_by": "geregelt von",
+      "graph_rel_composes_with": "kombiniert mit",
+      "graph_rel_prerequisite_of": "Voraussetzung für",
+      "graph_rel_requires": "benötigt",
+      "graph_rel_conflicts_with": "im Konflikt mit",
+      "graph_rel_supersedes": "ersetzt",
+      "graph_rel_superseded_by": "ersetzt durch",
+      "graph_rel_extends": "erweitert",
+      "graph_rel_extended_by": "erweitert von"
     },
     "skills_adopt": "Übernehmen",
     "skills_adopt_hint": "In {name} übernehmen — Claude passt sie an das Repository an",

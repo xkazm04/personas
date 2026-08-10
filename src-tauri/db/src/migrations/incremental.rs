@@ -7741,6 +7741,42 @@ fn research_lab_align_columns(conn: &Connection) {
         "CREATE INDEX IF NOT EXISTS idx_wpcs_practice
             ON workspace_practice_context_state(practice_id, state);",
     );
+
+    // -- Pattern fabric F0: typed pattern edges ------------------------------
+    // (docs/concepts/pattern-fabric.md S2) Connections between patterns as
+    // first-class rows, with a CLOSED relation vocabulary — the same lesson
+    // as topic/ftype: an open rel column fragments in one harvest.
+    let _ = ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS workspace_pattern_edges (
+            from_id    TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
+            to_id      TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
+            rel        TEXT NOT NULL CHECK (rel IN
+                ('governs','composes_with','prerequisite','conflicts_with','supersedes','extends')),
+            note       TEXT,
+            created_at TEXT NOT NULL,
+            PRIMARY KEY (from_id, to_id, rel)
+        );",
+    );
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_wpe_to ON workspace_pattern_edges(to_id);",
+    );
+    // Backfill `governs` from the pre-existing governing_id column (principle
+    // -> mechanism). Gated on the table being EMPTY, not on a marker row: the
+    // backfill must run exactly once, and re-running it after a curator has
+    // deleted an edge would resurrect it. governing_id itself stays live as
+    // the roll-up doctrine's fast path; the edge is its graph-visible mirror.
+    let _ = ddl_step(
+        conn,
+        "INSERT OR IGNORE INTO workspace_pattern_edges
+             (from_id, to_id, rel, note, created_at)
+         SELECT k.governing_id, k.id, 'governs', NULL, datetime('now')
+         FROM workspace_knowledge k
+         WHERE k.governing_id IS NOT NULL
+           AND EXISTS (SELECT 1 FROM workspace_knowledge g WHERE g.id = k.governing_id)
+           AND NOT EXISTS (SELECT 1 FROM workspace_pattern_edges LIMIT 1);",
+    );
 }
 
 #[cfg(test)]

@@ -161,7 +161,16 @@ pub fn normalize_topic(raw: Option<&str>) -> String {
         return UNSORTED.to_string();
     }
     match parts.next() {
-        Some(cluster) => format!("{area}/{cluster}"),
+        // Optional third segment — the FACET (pattern-fabric S1,
+        // docs/concepts/pattern-fabric.md). Open *under* a closed area (any
+        // slug survives), because facets are earned bottom-up when a cluster
+        // outgrows ~10 patterns; the area stays the closed axis that keeps
+        // the sky stable. Anything past the third segment is dropped — depth
+        // is not a vocabulary.
+        Some(cluster) => match parts.next() {
+            Some(facet) => format!("{area}/{cluster}/{facet}"),
+            None => format!("{area}/{cluster}"),
+        },
         None => format!("{area}/{UNSORTED_LEAF}"),
     }
 }
@@ -356,6 +365,31 @@ mod tests {
     use super::*;
 
     #[test]
+    fn topic_accepts_an_open_facet_under_a_closed_area() {
+        // Two segments stay the canonical shape.
+        assert_eq!(normalize_topic(Some("data/migrations")), "data/migrations");
+        // Third segment (facet) survives, slugged like everything else.
+        assert_eq!(
+            normalize_topic(Some("data/migrations/table-rebuild")),
+            "data/migrations/table-rebuild"
+        );
+        assert_eq!(
+            normalize_topic(Some("Frontend/State/Subscription Scope")),
+            "frontend/state/subscription-scope"
+        );
+        // Depth is not a vocabulary: a fourth segment is dropped, not kept.
+        assert_eq!(
+            normalize_topic(Some("data/migrations/table-rebuild/extra")),
+            "data/migrations/table-rebuild"
+        );
+        // The closed axes still gate: an unknown AREA quarantines the whole
+        // path, facet or not.
+        assert_eq!(normalize_topic(Some("nonsense/x/y")), UNSORTED);
+        // Area aliasing still applies in front of the facet.
+        assert_eq!(normalize_topic(Some("ui/motion/reveals")), "frontend/motion/reveals");
+    }
+
+    #[test]
     fn ftype_closes_the_shape_axis() {
         // Exact hits and casing/spacing noise.
         assert_eq!(normalize_ftype(Some("error-strategy")).as_deref(), Some("error-strategy"));
@@ -431,8 +465,15 @@ mod tests {
         assert_eq!(normalize_topic(Some("data/store-boundary")), "data/store-boundary");
         assert_eq!(normalize_topic(Some("  Data / Store Boundary ")), "data/store-boundary");
         assert_eq!(normalize_topic(Some("data/store_boundary")), "data/store-boundary");
-        // depth capped at two — a third level guarantees singletons
-        assert_eq!(normalize_topic(Some("data/store-boundary/pooling")), "data/store-boundary");
+        // Depth cap moved from two to THREE on 2026-08-10 (pattern-fabric S1):
+        // a third segment is now a kept facet. The singleton worry the old cap
+        // encoded is handled socially instead — facets are earned when a
+        // cluster outgrows ~10 patterns, and the fourth segment still drops
+        // (see topic_accepts_an_open_facet_under_a_closed_area).
+        assert_eq!(
+            normalize_topic(Some("data/store-boundary/pooling")),
+            "data/store-boundary/pooling"
+        );
         // area with no cluster gets a visible shelf, not an invented leaf
         assert_eq!(normalize_topic(Some("data")), "data/unsorted");
         assert_eq!(normalize_topic(Some("data/")), "data/unsorted");

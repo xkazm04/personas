@@ -3173,6 +3173,9 @@ pub fn run() {
             commands::infrastructure::dev_workspaces::dev_tools_workspace_knowledge_delete,
             commands::infrastructure::dev_workspaces::dev_tools_workspace_adoption_list,
             commands::infrastructure::dev_workspaces::dev_tools_practice_context_rollup,
+            commands::infrastructure::dev_workspaces::dev_tools_pattern_edges_list,
+            commands::infrastructure::dev_workspaces::dev_tools_pattern_edge_set,
+            commands::infrastructure::dev_workspaces::dev_tools_pattern_edge_delete,
             commands::infrastructure::dev_workspaces::dev_tools_workspace_adoption_set,
             commands::infrastructure::dev_workspaces::dev_tools_workspace_run_miners,
             commands::infrastructure::dev_workspaces::dev_tools_workspace_backfill_practice_ideas,
@@ -3203,6 +3206,7 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_remove_milestone_item,
             // The /ship-milestone skill's one gated door back into the app.
             commands::infrastructure::dev_tools::dev_tools_ship_milestone_ingest,
+            commands::infrastructure::dev_tools::dev_tools_triage_verdicts_ingest,
             // Dev Tools -- L1 passport wall (one batched read for N covers)
             commands::infrastructure::dev_tools::dev_tools_project_wall_summary,
             // Dev Tools -- use cases (behavioral slice layer under contexts)

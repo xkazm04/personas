@@ -13962,7 +13962,17 @@
         "graph_open_detail": "상세 열기",
         "graph_coverage_label": "커버리지",
         "col_ftype": "형태",
-        "graph_ctx_verified": "{applicable}개 컨텍스트 중 {verified}개 검증됨"
+        "graph_ctx_verified": "{applicable}개 컨텍스트 중 {verified}개 검증됨",
+        "graph_rel_governs": "지배함",
+        "graph_rel_governed_by": "지배받음",
+        "graph_rel_composes_with": "함께 구성",
+        "graph_rel_prerequisite_of": "의 전제",
+        "graph_rel_requires": "필요로 함",
+        "graph_rel_conflicts_with": "충돌함",
+        "graph_rel_supersedes": "대체함",
+        "graph_rel_superseded_by": "대체됨",
+        "graph_rel_extends": "확장함",
+        "graph_rel_extended_by": "확장됨"
       },
       "skills_adopt": "채택",
       "skills_adopt_hint": "{name}에 채택 — Claude가 저장소에 맞게 맞춤 설정합니다",

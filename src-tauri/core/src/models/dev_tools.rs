@@ -279,6 +279,23 @@ pub struct PracticeContextRollup {
     pub applicable: i32,
 }
 
+/// A typed connection between two patterns (pattern-fabric S2,
+/// docs/concepts/pattern-fabric.md). `rel` is a CLOSED six-value vocabulary
+/// enforced by the DB CHECK: governs · composes_with · prerequisite ·
+/// conflicts_with · supersedes · extends. Direction reads left-to-right:
+/// `from governs to`, `from supersedes to`.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct WorkspacePatternEdge {
+    pub from_id: String,
+    pub to_id: String,
+    pub rel: String,
+    /// One line: why this connection exists. Optional.
+    pub note: Option<String>,
+    pub created_at: String,
+}
+
 /// Per-scope harvest coverage for one member repo — the answer to "how much of
 /// this codebase has the library actually read?".
 ///

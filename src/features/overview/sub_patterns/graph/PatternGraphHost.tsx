@@ -7,14 +7,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronRight, X } from 'lucide-react';
 
-import { listPracticeContextRollup } from '@/api/devTools/workspaces';
+import { listPatternEdges, listPracticeContextRollup } from '@/api/devTools/workspaces';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { PracticeContextRollup } from '@/lib/bindings/PracticeContextRollup';
+import type { WorkspacePatternEdge } from '@/lib/bindings/WorkspacePatternEdge';
 import type { WorkspacePracticeAdoption } from '@/lib/bindings/WorkspacePracticeAdoption';
 import { silentCatch } from '@/lib/silentCatch';
 import { areaTheme } from '../practiceAreaTheme';
 import type { KnowledgeItemView } from '../libraryModel';
-import { buildTopicGraph, type ClusterNode } from './graphModel';
+import { buildEdgeViews, buildTopicGraph, type ClusterNode } from './graphModel';
 import { ClusterPatternsModal } from './ClusterPatternsModal';
 import { ZoomRail } from './GraphChrome';
 import PatternGraphNexus, { type FlyTarget } from './PatternGraphNexus';
@@ -87,6 +88,25 @@ export default function PatternGraphHost({
       });
     return () => { live = false; };
   }, [workspaceId, selectedProjectId, items]);
+
+  // Pattern connections (fabric S2). Missing command (pre-rebuild binary)
+  // degrades to no links + no related rows — never interrupts.
+  const [edges, setEdges] = useState<WorkspacePatternEdge[]>([]);
+  useEffect(() => {
+    let live = true;
+    listPatternEdges(workspaceId)
+      .then((rows) => { if (live) setEdges(rows); })
+      .catch((err) => {
+        silentCatch('patterns:edges')(err);
+        if (live) setEdges([]);
+      });
+    return () => { live = false; };
+  }, [workspaceId, items]);
+
+  const edgeViews = useMemo(
+    () => buildEdgeViews(edges.map((e) => ({ fromId: e.fromId, toId: e.toId, rel: e.rel, note: e.note })), items),
+    [edges, items],
+  );
 
   const contextCoverage = useMemo(() => {
     if (!rollup || rollup.length === 0) return null;
@@ -260,6 +280,7 @@ export default function PatternGraphHost({
                 appliedTopics={appliedTopics}
                 topicCoverage={ringTopic}
                 areaCoverage={ringArea}
+                clusterLinks={edgeViews.clusterLinks}
                 onHoverArea={setHoverArea}
                 onFocusArea={focusOn}
                 onSelectCluster={selectCluster}
@@ -299,6 +320,11 @@ export default function PatternGraphHost({
           <ClusterPatternsModal
             node={selected}
             patternCoverage={patternCoverage}
+            relatedFor={(item) => edgeViews.byPractice.get(item.id) ?? []}
+            onOpenRelated={(otherId) => {
+              const target = items.find((i) => i.id === otherId);
+              if (target) onOpenItem?.(target);
+            }}
             onOpenItem={onOpenItem}
             onClose={() => setSelected(null)}
           />

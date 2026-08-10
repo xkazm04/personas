@@ -16,6 +16,7 @@ import type { WorkspaceKnowledge } from "@/lib/bindings/WorkspaceKnowledge";
 import type { BulkDecision } from "@/lib/bindings/BulkDecision";
 import type { WorkspaceHarvestCoverage } from "@/lib/bindings/WorkspaceHarvestCoverage";
 import type { PracticeContextRollup } from "@/lib/bindings/PracticeContextRollup";
+import type { WorkspacePatternEdge } from "@/lib/bindings/WorkspacePatternEdge";
 import type { WorkspacePracticeAdoption } from "@/lib/bindings/WorkspacePracticeAdoption";
 
 export type KnowledgeKind = "pattern" | "pitfall" | "decision" | "howto" | "fact";
@@ -207,6 +208,11 @@ export async function listPracticeContextRollup(
     workspaceId,
     projectId: projectId ?? null,
   });
+}
+
+/** Typed pattern connections (pattern-fabric S2). */
+export async function listPatternEdges(workspaceId: string): Promise<WorkspacePatternEdge[]> {
+  return invoke<WorkspacePatternEdge[]>("dev_tools_pattern_edges_list", { workspaceId });
 }
 
 export async function listWorkspaceAdoption(

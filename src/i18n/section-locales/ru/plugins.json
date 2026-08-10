@@ -1342,7 +1342,17 @@
       "graph_open_detail": "Открыть подробности",
       "graph_coverage_label": "Покрытие",
       "col_ftype": "Форма",
-      "graph_ctx_verified": "проверено {verified} из {applicable} контекстов"
+      "graph_ctx_verified": "проверено {verified} из {applicable} контекстов",
+      "graph_rel_governs": "управляет",
+      "graph_rel_governed_by": "управляется",
+      "graph_rel_composes_with": "сочетается с",
+      "graph_rel_prerequisite_of": "предпосылка для",
+      "graph_rel_requires": "требует",
+      "graph_rel_conflicts_with": "конфликтует с",
+      "graph_rel_supersedes": "заменяет",
+      "graph_rel_superseded_by": "заменён",
+      "graph_rel_extends": "расширяет",
+      "graph_rel_extended_by": "расширен"
     },
     "skills_adopt": "Внедрить",
     "skills_adopt_hint": "Внедрить в {name} — Claude адаптирует под репозиторий",

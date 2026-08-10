@@ -1,14 +1,18 @@
-// VARIANT — Nexus. The PoE core: one crest at the centre, fifteen spokes to
-// area keystones at fixed compass positions. Round 2 made it a DRILL-DOWN:
-// the overview shows only crest + keystones (first level of categorization),
-// and clicking a keystone flies the camera in Google-Maps style while that
-// area's clusters unfold in two orbital shells. Free wheel-zoom crosses the
-// same reveal threshold naturally, so both paths — click and lean-in — land
-// in the same detailed sky. Everything else stays dim until you fly back.
-import { Fragment } from 'react';
+// The topic graph — Nexus, the consolidated winner of the /prototype rounds.
+// One crest at the centre, fifteen spokes to area keystones at fixed compass
+// positions, clusters unfolding in two orbital shells on drill-down
+// (Google-Maps flight; free wheel-zoom crosses the same reveal threshold).
+// Geometry lives in `computeNexusLayout` so the pattern-edge links layer and
+// the node layer read the SAME positions instead of duplicating the math.
+import { Fragment, useMemo } from 'react';
 
 import { areaGraphTheme } from './graphTheme';
-import { nodeRadius, type ClusterNode, type TopicGraph } from './graphModel';
+import {
+  nodeRadius,
+  type ClusterLink,
+  type ClusterNode,
+  type TopicGraph,
+} from './graphModel';
 import { NodeLabel } from './GraphChrome';
 import { lod } from './useGraphCanvas';
 
@@ -34,6 +38,10 @@ export interface GraphVariantProps {
   topicCoverage: ReadonlyMap<string, number> | null;
   /** Same, aggregated per area (drawn on the keystones). */
   areaCoverage: ReadonlyMap<string, number> | null;
+  /** Aggregated cross-cluster pattern connections (fabric S2). Drawn ONLY
+   *  inside a focused dimension — cross-branch curves at overview zoom are
+   *  the hairball that kills every knowledge graph. */
+  clusterLinks: readonly ClusterLink[];
   onHoverArea: (area: string | null) => void;
   onFocusArea: (area: string, target: FlyTarget) => void;
   onSelectCluster: (node: ClusterNode) => void;
@@ -42,32 +50,48 @@ export interface GraphVariantProps {
 /** Theme-aware grey for the project lens's "not applied here" state. */
 const LENS_GREY = 'var(--muted-foreground)';
 
-/** Progress ring on a node's border — the completion-traceability readout.
- *  A faint full track plus an arc from 12 o'clock, both counter-rotated to
- *  nothing (SVG dasharray on a circle), sized just outside the node body. */
-function CoverageRing({ r, pct, hex }: { r: number; pct: number; hex: string }) {
-  const C = 2 * Math.PI * r;
-  return (
-    <g transform="rotate(-90)" pointerEvents="none">
-      <circle r={r} fill="none" stroke={hex} strokeOpacity={0.15} strokeWidth={2} />
-      {pct > 0 && (
-        <circle
-          r={r}
-          fill="none"
-          stroke={hex}
-          strokeOpacity={0.9}
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeDasharray={`${Math.max(pct, 0.02) * C} ${C}`}
-        />
-      )}
-    </g>
-  );
-}
-
 const AREA_R = 330;
 const CLUSTER_R1 = 96;
 const CLUSTER_R2 = 148;
+
+export interface NexusLayout {
+  areaPos: Map<string, { x: number; y: number; angle: number }>;
+  /** Keyed by the cluster node's topic (`area/cluster`). */
+  clusterPos: Map<string, { x: number; y: number; area: string }>;
+}
+
+/** Pure geometry — the single source of node positions. */
+export function computeNexusLayout(graph: TopicGraph): NexusLayout {
+  const n = Math.max(graph.areas.length, 1);
+  const areaPos = new Map<string, { x: number; y: number; angle: number }>();
+  const clusterPos = new Map<string, { x: number; y: number; area: string }>();
+  graph.areas.forEach((area, i) => {
+    const angle = -Math.PI / 2 + (i * 2 * Math.PI) / n;
+    const ax = Math.cos(angle) * AREA_R;
+    const ay = Math.sin(angle) * AREA_R;
+    areaPos.set(area.area, { x: ax, y: ay, angle });
+    area.clusters.forEach((cl, j) => {
+      // Even indices fill the inner shell, odd the outer, each shell a
+      // symmetric fan facing outward from the crest; the shells interleave
+      // half a slot so big families don't self-overlap.
+      const inner = j % 2 === 0;
+      const shell = inner ? CLUSTER_R1 : CLUSTER_R2;
+      const shellLen = inner
+        ? Math.ceil(area.clusters.length / 2)
+        : Math.floor(area.clusters.length / 2);
+      const idx = Math.floor(j / 2);
+      const spread = Math.min(2.6, 0.55 * shellLen);
+      const t = shellLen > 1 ? idx / (shellLen - 1) - 0.5 : 0;
+      const ca = angle + t * spread + (inner ? 0 : spread * 0.09);
+      clusterPos.set(cl.topic, {
+        x: ax + Math.cos(ca) * shell,
+        y: ay + Math.sin(ca) * shell,
+        area: area.area,
+      });
+    });
+  });
+  return { areaPos, clusterPos };
+}
 
 export default function PatternGraphNexus({
   graph,
@@ -79,22 +103,66 @@ export default function PatternGraphNexus({
   appliedTopics,
   topicCoverage,
   areaCoverage,
+  clusterLinks,
   onHoverArea,
   onFocusArea,
   onSelectCluster,
 }: GraphVariantProps) {
-  const n = graph.areas.length;
+  const layout = useMemo(() => computeNexusLayout(graph), [graph]);
   // Free-zoom reveal: leaning past ~105% starts unfolding every area's
   // clusters even without a click — the "scroll" half of the drill-down.
   const zoomVis = lod(k, 1.05, 1.5);
   const countLod = lod(k, 1.35, 1.9);
 
+  // Pattern-connection links, focused dimension only. A link whose far
+  // endpoint lives in another (hidden) branch is drawn to that area's
+  // KEYSTONE — "this family connects outward, over there" — instead of to an
+  // invisible node.
+  const focusLinks = useMemo(() => {
+    if (!focusArea) return [];
+    return clusterLinks
+      .map((l) => {
+        const pa = layout.clusterPos.get(l.a);
+        const pb = layout.clusterPos.get(l.b);
+        if (!pa || !pb) return null;
+        if (pa.area !== focusArea && pb.area !== focusArea) return null;
+        const local = pa.area === focusArea ? pa : pb;
+        const other = pa.area === focusArea ? pb : pa;
+        const far = other.area !== focusArea;
+        const end = far ? layout.areaPos.get(other.area) : other;
+        if (!end) return null;
+        return { x1: local.x, y1: local.y, x2: end.x, y2: end.y, far, count: l.count, area: local.area };
+      })
+      .filter((l): l is NonNullable<typeof l> => l !== null);
+  }, [clusterLinks, focusArea, layout]);
+
   return (
     <g>
-      {graph.areas.map((area, i) => {
-        const angle = -Math.PI / 2 + (i * 2 * Math.PI) / n;
-        const ax = Math.cos(angle) * AREA_R;
-        const ay = Math.sin(angle) * AREA_R;
+      {/* Links UNDER everything — geometry first, then the nodes own hover. */}
+      {focusLinks.map((l, i) => {
+        const theme = areaGraphTheme(l.area);
+        // Quadratic bow perpendicular to the chord: a relation, not a spoke.
+        const mx = (l.x1 + l.x2) / 2 - (l.y2 - l.y1) * 0.18;
+        const my = (l.y1 + l.y2) / 2 + (l.x2 - l.x1) * 0.18;
+        return (
+          <path
+            key={i}
+            d={`M ${l.x1} ${l.y1} Q ${mx} ${my} ${l.x2} ${l.y2}`}
+            fill="none"
+            stroke={theme.hex}
+            strokeOpacity={l.far ? 0.25 : 0.4}
+            strokeWidth={1 + Math.min(l.count, 4) * 0.5}
+            strokeDasharray={l.far ? '5 4' : undefined}
+            pointerEvents="none"
+            className="animate-fade-in"
+          />
+        );
+      })}
+
+      {graph.areas.map((area) => {
+        const pos = layout.areaPos.get(area.area);
+        if (!pos) return null;
+        const { x: ax, y: ay, angle } = pos;
         const theme = areaGraphTheme(area.area);
         const empty = area.count === 0;
         const focused = focusArea === area.area;
@@ -123,21 +191,12 @@ export default function PatternGraphNexus({
               strokeWidth={empty ? 1 : 1.5 + Math.min(area.count / 18, 2.5)}
             />
 
-            {/* Clusters unfold on focus (or free zoom): two alternating shells
-                fanned outward, staggered so the dimension opens like a hand. */}
+            {/* Clusters unfold on focus (or free zoom), staggered so the
+                dimension opens like a hand. */}
             {vis > 0.01 &&
               area.clusters.map((cl, j) => {
-                const inner = j % 2 === 0;
-                const shell = inner ? CLUSTER_R1 : CLUSTER_R2;
-                const shellLen = inner
-                  ? Math.ceil(area.clusters.length / 2)
-                  : Math.floor(area.clusters.length / 2);
-                const idx = Math.floor(j / 2);
-                const spread = Math.min(2.6, 0.55 * shellLen);
-                const t = shellLen > 1 ? idx / (shellLen - 1) - 0.5 : 0;
-                const ca = angle + t * spread + (inner ? 0 : spread * 0.09);
-                const cx = ax + Math.cos(ca) * shell;
-                const cy = ay + Math.sin(ca) * shell;
+                const cp = layout.clusterPos.get(cl.topic);
+                if (!cp) return null;
                 const cR = nodeRadius(cl.count, 7, 2.6, 22);
                 const isSel = selectedTopic === cl.topic;
                 const clApplied = !lensOn || appliedTopics.has(cl.topic);
@@ -154,9 +213,9 @@ export default function PatternGraphNexus({
                         pointerEvents: vis < 0.4 ? 'none' : 'auto',
                       }}
                     >
-                      <line x1={ax} y1={ay} x2={cx} y2={cy} stroke={clHex} strokeOpacity={0.22} strokeWidth={1} />
+                      <line x1={ax} y1={ay} x2={cp.x} y2={cp.y} stroke={clHex} strokeOpacity={0.22} strokeWidth={1} />
                       <g
-                        transform={`translate(${cx},${cy})`}
+                        transform={`translate(${cp.x},${cp.y})`}
                         className="cursor-pointer"
                         onPointerEnter={() => onHoverArea(area.area)}
                         onPointerLeave={() => onHoverArea(null)}
@@ -256,6 +315,29 @@ export default function PatternGraphNexus({
           </text>
         </g>
       </g>
+    </g>
+  );
+}
+
+/** Progress ring on a node's border — the completion-traceability readout.
+ *  A faint full track plus an arc from 12 o'clock, sized just outside the
+ *  node body. */
+function CoverageRing({ r, pct, hex }: { r: number; pct: number; hex: string }) {
+  const C = 2 * Math.PI * r;
+  return (
+    <g transform="rotate(-90)" pointerEvents="none">
+      <circle r={r} fill="none" stroke={hex} strokeOpacity={0.15} strokeWidth={2} />
+      {pct > 0 && (
+        <circle
+          r={r}
+          fill="none"
+          stroke={hex}
+          strokeOpacity={0.9}
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeDasharray={`${Math.max(pct, 0.02) * C} ${C}`}
+        />
+      )}
     </g>
   );
 }

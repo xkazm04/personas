@@ -1342,7 +1342,17 @@
       "graph_open_detail": "打开详情",
       "graph_coverage_label": "覆盖率",
       "col_ftype": "形态",
-      "graph_ctx_verified": "已验证 {applicable} 个上下文中的 {verified} 个"
+      "graph_ctx_verified": "已验证 {applicable} 个上下文中的 {verified} 个",
+      "graph_rel_governs": "统辖",
+      "graph_rel_governed_by": "受辖于",
+      "graph_rel_composes_with": "与之组合",
+      "graph_rel_prerequisite_of": "是前提",
+      "graph_rel_requires": "需要",
+      "graph_rel_conflicts_with": "冲突于",
+      "graph_rel_supersedes": "取代",
+      "graph_rel_superseded_by": "被取代于",
+      "graph_rel_extends": "扩展",
+      "graph_rel_extended_by": "被扩展于"
     },
     "skills_adopt": "采用",
     "skills_adopt_hint": "采用到 {name} — Claude 会为该仓库定制它",

@@ -1342,7 +1342,17 @@
       "graph_open_detail": "Otevřít detail",
       "graph_coverage_label": "Pokrytí",
       "col_ftype": "Tvar",
-      "graph_ctx_verified": "ověřeno {verified} z {applicable} kontextů"
+      "graph_ctx_verified": "ověřeno {verified} z {applicable} kontextů",
+      "graph_rel_governs": "řídí",
+      "graph_rel_governed_by": "řízeno",
+      "graph_rel_composes_with": "skládá se s",
+      "graph_rel_prerequisite_of": "předpoklad pro",
+      "graph_rel_requires": "vyžaduje",
+      "graph_rel_conflicts_with": "v konfliktu s",
+      "graph_rel_supersedes": "nahrazuje",
+      "graph_rel_superseded_by": "nahrazeno",
+      "graph_rel_extends": "rozšiřuje",
+      "graph_rel_extended_by": "rozšířeno o"
     },
     "skills_adopt": "Převzít",
     "skills_adopt_hint": "Převzít do {name} — Claude ji přizpůsobí repozitáři",

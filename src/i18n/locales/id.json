@@ -13962,7 +13962,17 @@
         "graph_open_detail": "Buka detail",
         "graph_coverage_label": "Cakupan",
         "col_ftype": "Bentuk",
-        "graph_ctx_verified": "{verified} dari {applicable} konteks terverifikasi"
+        "graph_ctx_verified": "{verified} dari {applicable} konteks terverifikasi",
+        "graph_rel_governs": "mengatur",
+        "graph_rel_governed_by": "diatur oleh",
+        "graph_rel_composes_with": "berpadu dengan",
+        "graph_rel_prerequisite_of": "prasyarat bagi",
+        "graph_rel_requires": "memerlukan",
+        "graph_rel_conflicts_with": "berkonflik dengan",
+        "graph_rel_supersedes": "menggantikan",
+        "graph_rel_superseded_by": "digantikan oleh",
+        "graph_rel_extends": "memperluas",
+        "graph_rel_extended_by": "diperluas oleh"
       },
       "skills_adopt": "Adopsi",
       "skills_adopt_hint": "Adopsi ke {name} — Claude menyesuaikannya untuk repo",

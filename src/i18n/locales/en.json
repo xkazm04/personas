@@ -14413,7 +14413,17 @@
         "graph_open_detail": "Open full detail",
         "graph_coverage_label": "Coverage",
         "col_ftype": "Shape",
-        "graph_ctx_verified": "{verified} of {applicable} contexts verified"
+        "graph_ctx_verified": "{verified} of {applicable} contexts verified",
+        "graph_rel_governs": "governs",
+        "graph_rel_governed_by": "governed by",
+        "graph_rel_composes_with": "composes with",
+        "graph_rel_prerequisite_of": "prerequisite of",
+        "graph_rel_requires": "requires",
+        "graph_rel_conflicts_with": "conflicts with",
+        "graph_rel_supersedes": "supersedes",
+        "graph_rel_superseded_by": "superseded by",
+        "graph_rel_extends": "extends",
+        "graph_rel_extended_by": "extended by"
       },
       "skills_info_args": "args",
       "skills_info_context_tracked": "context-tracked",

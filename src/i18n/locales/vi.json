@@ -13962,7 +13962,17 @@
         "graph_open_detail": "Mở chi tiết",
         "graph_coverage_label": "Độ phủ",
         "col_ftype": "Hình thái",
-        "graph_ctx_verified": "đã xác minh {verified} trong {applicable} ngữ cảnh"
+        "graph_ctx_verified": "đã xác minh {verified} trong {applicable} ngữ cảnh",
+        "graph_rel_governs": "chi phối",
+        "graph_rel_governed_by": "bị chi phối bởi",
+        "graph_rel_composes_with": "kết hợp với",
+        "graph_rel_prerequisite_of": "tiền đề của",
+        "graph_rel_requires": "cần",
+        "graph_rel_conflicts_with": "xung đột với",
+        "graph_rel_supersedes": "thay thế",
+        "graph_rel_superseded_by": "bị thay thế bởi",
+        "graph_rel_extends": "mở rộng",
+        "graph_rel_extended_by": "được mở rộng bởi"
       },
       "skills_adopt": "Áp dụng",
       "skills_adopt_hint": "Áp dụng vào {name} — Claude tùy chỉnh cho kho mã",

@@ -13962,7 +13962,17 @@
         "graph_open_detail": "বিস্তারিত খুলুন",
         "graph_coverage_label": "কভারেজ",
         "col_ftype": "আকৃতি",
-        "graph_ctx_verified": "{applicable}টির মধ্যে {verified}টি কনটেক্সট যাচাইকৃত"
+        "graph_ctx_verified": "{applicable}টির মধ্যে {verified}টি কনটেক্সট যাচাইকৃত",
+        "graph_rel_governs": "নিয়ন্ত্রণ করে",
+        "graph_rel_governed_by": "দ্বারা নিয়ন্ত্রিত",
+        "graph_rel_composes_with": "সাথে সংযুক্ত",
+        "graph_rel_prerequisite_of": "এর পূর্বশর্ত",
+        "graph_rel_requires": "প্রয়োজন",
+        "graph_rel_conflicts_with": "সাথে সাংঘর্ষিক",
+        "graph_rel_supersedes": "প্রতিস্থাপন করে",
+        "graph_rel_superseded_by": "দ্বারা প্রতিস্থাপিত",
+        "graph_rel_extends": "সম্প্রসারিত করে",
+        "graph_rel_extended_by": "দ্বারা সম্প্রসারিত"
       },
       "skills_adopt": "গ্রহণ করুন",
       "skills_adopt_hint": "{name}-এ গ্রহণ করুন — Claude রিপোর জন্য এটি কাস্টমাইজ করে",

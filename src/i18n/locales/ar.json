@@ -13962,7 +13962,17 @@
         "graph_open_detail": "فتح التفاصيل",
         "graph_coverage_label": "التغطية",
         "col_ftype": "الشكل",
-        "graph_ctx_verified": "تم التحقق من {verified} من أصل {applicable} سياقًا"
+        "graph_ctx_verified": "تم التحقق من {verified} من أصل {applicable} سياقًا",
+        "graph_rel_governs": "يحكم",
+        "graph_rel_governed_by": "محكوم بـ",
+        "graph_rel_composes_with": "يتركب مع",
+        "graph_rel_prerequisite_of": "شرط لـ",
+        "graph_rel_requires": "يتطلب",
+        "graph_rel_conflicts_with": "يتعارض مع",
+        "graph_rel_supersedes": "يحل محل",
+        "graph_rel_superseded_by": "حل محله",
+        "graph_rel_extends": "يوسّع",
+        "graph_rel_extended_by": "موسَّع بـ"
       },
       "skills_adopt": "اعتماد",
       "skills_adopt_hint": "اعتمادها في {name} — يخصّصها Claude للمستودع",

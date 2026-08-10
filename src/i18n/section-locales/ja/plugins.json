@@ -1342,7 +1342,17 @@
       "graph_open_detail": "詳細を開く",
       "graph_coverage_label": "カバレッジ",
       "col_ftype": "形態",
-      "graph_ctx_verified": "{applicable} コンテキスト中 {verified} 件を検証済み"
+      "graph_ctx_verified": "{applicable} コンテキスト中 {verified} 件を検証済み",
+      "graph_rel_governs": "統べる",
+      "graph_rel_governed_by": "統べられる",
+      "graph_rel_composes_with": "と組み合わせ",
+      "graph_rel_prerequisite_of": "の前提",
+      "graph_rel_requires": "を必要とする",
+      "graph_rel_conflicts_with": "と競合",
+      "graph_rel_supersedes": "を置き換える",
+      "graph_rel_superseded_by": "に置き換えられた",
+      "graph_rel_extends": "を拡張",
+      "graph_rel_extended_by": "に拡張された"
     },
     "skills_adopt": "採用",
     "skills_adopt_hint": "{name} に採用 — Claude がリポジトリ向けにカスタマイズします",

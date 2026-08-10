@@ -14420,6 +14420,16 @@ export type Translations = {
         graph_coverage_label: string;
         col_ftype: string;
         graph_ctx_verified: string;
+        graph_rel_governs: string;
+        graph_rel_governed_by: string;
+        graph_rel_composes_with: string;
+        graph_rel_prerequisite_of: string;
+        graph_rel_requires: string;
+        graph_rel_conflicts_with: string;
+        graph_rel_supersedes: string;
+        graph_rel_superseded_by: string;
+        graph_rel_extends: string;
+        graph_rel_extended_by: string;
       };
       skills_info_args: string;
       skills_info_context_tracked: string;

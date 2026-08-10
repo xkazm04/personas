@@ -1342,7 +1342,17 @@
       "graph_open_detail": "Abrir detalle",
       "graph_coverage_label": "Cobertura",
       "col_ftype": "Forma",
-      "graph_ctx_verified": "{verified} de {applicable} contextos verificados"
+      "graph_ctx_verified": "{verified} de {applicable} contextos verificados",
+      "graph_rel_governs": "gobierna",
+      "graph_rel_governed_by": "gobernado por",
+      "graph_rel_composes_with": "se compone con",
+      "graph_rel_prerequisite_of": "prerrequisito de",
+      "graph_rel_requires": "requiere",
+      "graph_rel_conflicts_with": "en conflicto con",
+      "graph_rel_supersedes": "reemplaza",
+      "graph_rel_superseded_by": "reemplazado por",
+      "graph_rel_extends": "extiende",
+      "graph_rel_extended_by": "extendido por"
     },
     "skills_adopt": "Adoptar",
     "skills_adopt_hint": "Adoptar en {name} — Claude la adapta al repositorio",

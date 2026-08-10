@@ -11,7 +11,7 @@ use tauri::State;
 
 use crate::db::models::{
     DevProject, DevWorkspace, PracticeContextRollup, WorkspaceImportItem, WorkspaceKnowledge,
-    WorkspacePracticeAdoption,
+    WorkspacePatternEdge, WorkspacePracticeAdoption,
 };
 use crate::db::repos::dev_workspaces as repo;
 use crate::error::AppError;
@@ -279,6 +279,40 @@ pub fn dev_tools_workspace_adoption_list(
 ) -> Result<Vec<WorkspacePracticeAdoption>, AppError> {
     require_auth_sync(&state)?;
     repo::list_adoption(&state.db, &workspace_id)
+}
+
+/// Typed pattern connections (pattern-fabric S2). Read surface for the graph
+/// and the pattern modal; write surface for the curator UI (F1).
+#[tauri::command]
+pub fn dev_tools_pattern_edges_list(
+    state: State<'_, Arc<AppState>>,
+    workspace_id: String,
+) -> Result<Vec<WorkspacePatternEdge>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_pattern_edges(&state.db, &workspace_id)
+}
+
+#[tauri::command]
+pub fn dev_tools_pattern_edge_set(
+    state: State<'_, Arc<AppState>>,
+    from_id: String,
+    to_id: String,
+    rel: String,
+    note: Option<String>,
+) -> Result<WorkspacePatternEdge, AppError> {
+    require_auth_sync(&state)?;
+    repo::set_pattern_edge(&state.db, &from_id, &to_id, &rel, note.as_deref())
+}
+
+#[tauri::command]
+pub fn dev_tools_pattern_edge_delete(
+    state: State<'_, Arc<AppState>>,
+    from_id: String,
+    to_id: String,
+    rel: String,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    repo::delete_pattern_edge(&state.db, &from_id, &to_id, &rel)
 }
 
 /// Context-grain adherence rollup (docs/concepts/pattern-context-trace.md).

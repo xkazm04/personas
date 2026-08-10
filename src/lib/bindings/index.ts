@@ -938,6 +938,7 @@ export type { WorkflowsOverview } from "./WorkflowsOverview";
 export type { WorkspaceImportItem } from "./WorkspaceImportItem";
 export type { WorkspaceKnowledge } from "./WorkspaceKnowledge";
 export type { WorkspaceMergeOutcome } from "./WorkspaceMergeOutcome";
+export type { WorkspacePatternEdge } from "./WorkspacePatternEdge";
 export type { WorkspacePracticeAdoption } from "./WorkspacePracticeAdoption";
 export type { ZapierStep } from "./ZapierStep";
 export type { ZapierWebhookResult } from "./ZapierWebhookResult";

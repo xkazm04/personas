@@ -13962,7 +13962,17 @@
         "graph_open_detail": "Ouvrir le détail",
         "graph_coverage_label": "Couverture",
         "col_ftype": "Forme",
-        "graph_ctx_verified": "{verified} contextes vérifiés sur {applicable}"
+        "graph_ctx_verified": "{verified} contextes vérifiés sur {applicable}",
+        "graph_rel_governs": "régit",
+        "graph_rel_governed_by": "régi par",
+        "graph_rel_composes_with": "se compose avec",
+        "graph_rel_prerequisite_of": "prérequis de",
+        "graph_rel_requires": "nécessite",
+        "graph_rel_conflicts_with": "en conflit avec",
+        "graph_rel_supersedes": "remplace",
+        "graph_rel_superseded_by": "remplacé par",
+        "graph_rel_extends": "étend",
+        "graph_rel_extended_by": "étendu par"
       },
       "skills_adopt": "Adopter",
       "skills_adopt_hint": "Adopter dans {name} — Claude l’adapte au dépôt",
