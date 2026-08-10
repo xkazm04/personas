@@ -52,19 +52,35 @@ export interface QueueProjectionInput {
   skips: SkipLedger;
   activeKinds: ReadonlySet<TriageKind>;
   /**
-   * The one item the reviewer JUMPED to from the queue rail, dealt next.
+   * WHERE IN THE QUEUE the reviewer is — the id of the card being dealt.
    *
-   * A pin, not a re-sort: everything behind it keeps the order it already had,
-   * so jumping ahead to the card you came here for does not reshuffle the queue
-   * you were working through. It is session-local and writes nothing — the
-   * projection drops it the moment that item is decided or filtered away.
+   * A CURSOR, not a pin. Jumping to row 18 used to lift that item out of the
+   * order and unshift it to the front, so the queue the reviewer was reading
+   * silently renumbered itself around their click: the card they picked became
+   * "1 of 40", and the deck then carried on from the front rather than from
+   * where they had gone. Now nothing moves. The item stays at 18, the deck
+   * deals it where it stands, and the next card is 19 — the queue continues
+   * FROM that position, wherever in the list it happens to be.
+   *
+   * Session-local and writes nothing. An id that no longer projects (decided,
+   * filtered away, skipped to exhaustion) simply falls back to the front, which
+   * is also how the deck wraps when the cursor walks off the end.
    */
-  focused?: string | null;
+  cursorId?: string | null;
 }
 
 export interface QueueProjection {
   /** What the deck deals: active kinds only, undecided first, skipped last. */
   items: TriageItem[];
+  /**
+   * Index into `items` of the card being decided — the deck's read head.
+   *
+   * Always in range: `0` when there is no cursor, when the cursor's item has
+   * left the queue, or when the queue is empty. Consumers index with it rather
+   * than assuming `items[0]`, which is what makes "jump without reordering"
+   * possible at all.
+   */
+  cursor: number;
   /** Every kind still awaiting a decision, BEFORE the kind filter — the chips. */
   allCounts: TriageCounts;
   /** Decided + still-pending. Never less than `resolved.size`. */
@@ -107,7 +123,7 @@ export function projectQueue({
   resolved,
   skips,
   activeKinds,
-  focused,
+  cursorId,
 }: QueueProjectionInput): QueueProjection {
   const pending = all.filter((i) => !resolved.has(i.id));
 
@@ -116,23 +132,19 @@ export function projectQueue({
   // been asked.
   const live = pending.filter((i) => skipCount(skips, i.id) < MAX_SKIP_PASSES);
 
-  // One pass that does three things the old code paid for inside the
-  // comparator: applies the kind filter, LIFTS the pinned card out (a partition,
-  // not a per-pair test — it was being re-checked against both operands of every
-  // one of the O(n log n) comparisons for a property true of at most one row),
-  // and reads each item's skip count ONCE instead of twice per comparison.
+  // One pass that does two things the old code paid for inside the comparator:
+  // applies the kind filter, and reads each item's skip count ONCE instead of
+  // twice per comparison.
   //
-  // The order is unchanged and still a consistent total order: the pin is a
-  // single element prepended, and what follows is the same strict weak ordering
-  // it always was.
+  // The reviewer's position is NOT part of this. It used to be — the comparator
+  // re-tested the focus pin against both operands of every one of the O(n log n)
+  // comparisons for a property true of at most one row, and then that row was
+  // hoisted to the front. Order and position are separate concerns: this
+  // function answers "what order is the queue in", and `cursor` below answers
+  // "where in it are we". Nothing a reviewer clicks can renumber the list.
   const rows: { item: TriageItem; skips: number }[] = [];
-  let pinned: TriageItem | null = null;
   for (const item of live) {
     if (!activeKinds.has(item.kind)) continue;
-    if (focused && item.id === focused) {
-      pinned = item;
-      continue;
-    }
     rows.push({ item, skips: skipCount(skips, item.id) });
   }
 
@@ -143,10 +155,17 @@ export function projectQueue({
   );
 
   const items = rows.map((r) => r.item);
-  if (pinned) items.unshift(pinned);
+
+  // `findIndex` over an id, not an index carried in state: reviews poll every
+  // 30s and cloud reviews every 15s, both replacing the queue wholesale, so a
+  // remembered NUMBER would quietly come to mean a different card. A missing id
+  // resolves to the front, which covers "decided", "filtered away" and "the
+  // cursor walked off the end" with one rule.
+  const at = cursorId ? items.findIndex((i) => i.id === cursorId) : -1;
 
   return {
     items,
+    cursor: at >= 0 ? at : 0,
     allCounts: countByKind(live),
     sessionTotal: resolved.size + pending.length,
     deferredCount: pending.length - live.length,

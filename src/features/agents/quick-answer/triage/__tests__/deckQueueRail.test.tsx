@@ -25,9 +25,39 @@ import { makeItem } from './triageFixtures';
 // This repo's test setup does not auto-cleanup.
 afterEach(cleanup);
 
-function renderRail(items = [makeItem('idea')], skips = new Map<string, number>()) {
-  return render(<DeckQueueRail items={items} skips={skips} onJump={() => {}} />);
+function renderRail(items = [makeItem('idea')], skips = new Map<string, number>(), cursor = 0) {
+  return render(
+    <DeckQueueRail items={items} cursor={cursor} skips={skips} onJump={() => {}} />,
+  );
 }
+
+describe('DeckQueueRail cursor', () => {
+  // A jump moves the read head, not the row (see `triageQueue#cursorId`), so
+  // "which row is being decided" is no longer "the first one".
+  const three = () => [
+    makeItem('idea', { sourceId: 'a', title: 'First' }),
+    makeItem('idea', { sourceId: 'b', title: 'Second' }),
+    makeItem('idea', { sourceId: 'c', title: 'Third' }),
+  ];
+
+  it('marks the row AT the cursor as current, not row 1', () => {
+    const { container } = renderRail(three(), new Map(), 1);
+    const current = container.querySelectorAll('[aria-current="true"]');
+    expect(current).toHaveLength(1);
+    expect(current[0]!.querySelector('[data-rail-name]')?.textContent).toBe('Second');
+  });
+
+  it('leaves every row its own position — a jump must not renumber the queue', () => {
+    const { container } = renderRail(three(), new Map(), 2);
+    const positions = [...container.querySelectorAll('button')].map(
+      (b) => b.firstElementChild?.textContent,
+    );
+    expect(positions).toEqual(['1', '2', '3']);
+    expect(
+      container.querySelector('[aria-current="true"] [data-rail-name]')?.textContent,
+    ).toBe('Third');
+  });
+});
 
 describe('DeckQueueRail rows', () => {
   it('shows the title and keeps the kind reachable without printing it', () => {

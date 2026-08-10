@@ -178,6 +178,7 @@ const SUMMARY = {
 function deckQueue(items: ReturnType<typeof makeItem>[]): UnifiedTriageQueue {
   return {
     items,
+    cursor: 0,
     allCounts: emptyCounts(),
     loading: false,
     failures: [],

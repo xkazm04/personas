@@ -27,6 +27,7 @@ function makeQueue(
   const undoLast = extra.undoLast ?? vi.fn().mockResolvedValue(undefined);
   const queue: UnifiedTriageQueue = {
     items,
+    cursor: 0,
     allCounts: emptyCounts(),
     loading: false,
     failures: [],

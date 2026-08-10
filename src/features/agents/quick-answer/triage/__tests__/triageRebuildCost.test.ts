@@ -9,7 +9,9 @@
  * Three costs, three `describe`s:
  *  • the comparator dereferenced the skip ledger twice and re-tested the focus
  *    pin on every one of the O(n log n) pairs, and collated two ISO timestamps
- *    through ICU while it was there;
+ *    through ICU while it was there. The pin has since gone entirely — a jump
+ *    moves a CURSOR, not a row — so what used to be the pin's tests now guard
+ *    that the reviewer's position cannot touch the order at all;
  *  • `adoptReach` re-parsed the same applicability JSON once per member project;
  *  • the session record was serialised three times on mount, writing back byte
  *    for byte what had just been read out of it.
@@ -83,31 +85,47 @@ describe('the sort is precomputed and still the same order', () => {
     expect(items.map((i) => i.id)).toEqual(legacyOrder(live, skips));
   });
 
-  it('reproduces the pin as a PARTITION, not a per-pair test', () => {
+  it('a jump moves the CURSOR and not the row — the queue does not renumber', () => {
+    // This replaced a pin. Clicking row 28 used to lift that item out of the
+    // order and unshift it to position 1, so the list the reviewer was reading
+    // renumbered itself around their own click, and the deck then carried on
+    // from the front rather than from where they had gone.
     const all = spread();
-    const focused = all[27]!.id;
     const skips = withSkip(NO_SKIPS, all[5]!.id);
+    const input = { all, resolved: new Set<string>(), skips, activeKinds: ALL_KINDS };
 
-    const { items } = projectQueue({
-      all,
-      resolved: new Set(),
-      skips,
-      activeKinds: ALL_KINDS,
-      focused,
-    });
+    const plain = projectQueue(input);
+    const target = plain.items[27]!.id;
+    const jumped = projectQueue({ ...input, cursorId: target });
 
-    expect(items[0]!.id).toBe(focused);
-    expect(items.map((i) => i.id)).toEqual(legacyOrder(all, skips, focused));
+    // Byte-for-byte the same order, and the same order the old comparator gave
+    // when nothing was focused.
+    expect(jumped.items.map((i) => i.id)).toEqual(plain.items.map((i) => i.id));
+    expect(jumped.items.map((i) => i.id)).toEqual(legacyOrder(all, skips));
+    // The position is the only thing that changed.
+    expect(plain.cursor).toBe(0);
+    expect(jumped.cursor).toBe(27);
+    expect(jumped.items[jumped.cursor]!.id).toBe(target);
   });
 
-  it('stays a consistent TOTAL ORDER — the pin must not reintroduce instability', () => {
-    // Whatever order the sources happen to arrive in, no adjacent pair in the
-    // dealt sequence may be faultable by the ordering itself. That is the
-    // property the pin partition could have broken, and it is shuffle-proof in
-    // a way "same input, same output" is not — this fixture has genuine ties in
-    // both fields, and tied elements keep their input order under a stable sort.
+  it('an unresolvable cursor falls back to the front — decided, filtered, or off the end', () => {
     const all = spread();
-    const focused = all[9]!.id;
+    const input = { all, resolved: new Set<string>(), skips: NO_SKIPS, activeKinds: ALL_KINDS };
+
+    // The card the cursor named has been decided since it was set.
+    const gone = projectQueue({ ...input, cursorId: 'no-such-item' });
+    expect(gone.cursor).toBe(0);
+    // ...and so has "no cursor at all", which is where a session starts.
+    expect(projectQueue({ ...input, cursorId: null }).cursor).toBe(0);
+    expect(projectQueue(input).cursor).toBe(0);
+  });
+
+  it('stays a consistent TOTAL ORDER whatever the sources hand over', () => {
+    // No adjacent pair in the dealt sequence may be faultable by the ordering
+    // itself. Shuffle-proof in a way "same input, same output" is not — this
+    // fixture has genuine ties in both fields, and tied elements keep their
+    // input order under a stable sort.
+    const all = spread();
     const skips = withSkip(NO_SKIPS, all[2]!.id);
     const project = (input: TriageItem[]) =>
       projectQueue({
@@ -115,7 +133,8 @@ describe('the sort is precomputed and still the same order', () => {
         resolved: new Set(),
         skips,
         activeKinds: ALL_KINDS,
-        focused,
+        // A cursor must be inert to the ORDER — passing one here is the point.
+        cursorId: all[9]!.id,
       }).items;
 
     const rank = (i: TriageItem) => skips.get(i.id) ?? 0;
@@ -124,16 +143,12 @@ describe('the sort is precomputed and still the same order', () => {
       const shuffled = [...all].sort((a, b) => ((a.weight * seed + b.weight) % 7) - 3);
       const items = project(shuffled);
 
-      // The pin is exactly one element, and it is first.
-      expect(items[0]!.id).toBe(focused);
-      expect(items.filter((i) => i.id === focused)).toHaveLength(1);
       expect(items).toHaveLength(all.length);
+      expect(items.filter((i) => i.id === all[9]!.id)).toHaveLength(1);
 
-      // Everything behind it is non-decreasing under the ordering.
-      const rest = items.slice(1);
-      for (let i = 1; i < rest.length; i += 1) {
-        const a = rest[i - 1]!;
-        const b = rest[i]!;
+      for (let i = 1; i < items.length; i += 1) {
+        const a = items[i - 1]!;
+        const b = items[i]!;
         const cmp =
           rank(a) - rank(b) || compareOrder(a.weight, a.createdAt, b.weight, b.createdAt);
         expect(cmp).toBeLessThanOrEqual(0);

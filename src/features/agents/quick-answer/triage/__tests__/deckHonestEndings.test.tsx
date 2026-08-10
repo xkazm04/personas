@@ -49,6 +49,7 @@ const NO_BACKLOG: TriageBacklog = {
 function makeQueue(over: Partial<UnifiedTriageQueue> = {}): UnifiedTriageQueue {
   return {
     items: [],
+    cursor: 0,
     allCounts: emptyCounts(),
     loading: false,
     failures: [],

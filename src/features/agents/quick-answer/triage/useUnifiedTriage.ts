@@ -227,6 +227,14 @@ export type TriageUndo =
 export interface UnifiedTriageQueue {
   /** Undecided first, skipped last, both in weight order. */
   items: TriageItem[];
+  /**
+   * Index of the card being decided. NOT always 0 — see `triageQueue#cursorId`.
+   *
+   * Read it wherever you would have written `items[0]`: the deck deals
+   * `items[cursor]`, stacks `items[cursor + 1..]` behind it for depth, and the
+   * rail marks `cursor` as current.
+   */
+  cursor: number;
   /** Tally of everything still awaiting a decision, before the kind filter —
    *  drives the filter chips. */
   allCounts: TriageCounts;
@@ -265,10 +273,11 @@ export interface UnifiedTriageQueue {
    */
   skips: SkipLedger;
   /**
-   * Deal a specific item next — what the queue rail's rows do.
+   * Move the deck's read head to this item — what the queue rail's rows do.
    *
-   * A pin on the projection, never a write and never a verdict: the item keeps
-   * its place in the ledger and every other card keeps the order it had.
+   * Moves the CURSOR, never the item: nothing is reordered, renumbered or
+   * written, and the deck carries on from that position rather than returning
+   * to the front. See `triageQueue#cursorId`.
    */
   focusItem: (id: string) => void;
   /**
@@ -405,12 +414,17 @@ export function useUnifiedTriage(
     () => restored.kinds ?? new Set(TRIAGE_KINDS),
   );
   /**
-   * The card the reviewer jumped to from the queue rail, if any.
+   * WHERE the reviewer is in the queue — the id of the card being dealt.
    *
-   * Deliberately NOT persisted with the session: a jump is "deal me this one
-   * next", which stops meaning anything the moment the deck is closed.
+   * An ID and never an index: the polls replace `items` wholesale every 15–30s,
+   * and a remembered number would come to mean a different card without anything
+   * announcing it. `null` means "the front", which is where a session starts and
+   * where the cursor lands again whenever the card it named leaves the queue.
+   *
+   * Deliberately NOT persisted with the session: a position is "I am working
+   * here right now", which stops meaning anything the moment the deck is closed.
    */
-  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const [cursorId, setCursorId] = useState<string | null>(null);
   /**
    * The journal, held as state so the summary recomputes when it is written.
    *
@@ -732,9 +746,45 @@ export function useUnifiedTriage(
   ]);
 
   const projection = useMemo(
-    () => projectQueue({ all, resolved, skips, activeKinds, focused: focusedId }),
-    [all, resolved, skips, activeKinds, focusedId],
+    () => projectQueue({ all, resolved, skips, activeKinds, cursorId }),
+    [all, resolved, skips, activeKinds, cursorId],
   );
+
+  /**
+   * The latest projection, for `advanceCursor` to read WITHOUT depending on it.
+   *
+   * `decide` is the root of the memo chain this whole surface rests on
+   * (`TriageCard`'s doc spells out what one unstable callback costs: three
+   * markdown re-renders per keystroke). Taking `projection` as a dependency
+   * would re-create `decide` on every poll, so the successor is read through a
+   * ref at call time instead — which is also when it is actually true.
+   */
+  const projectionRef = useRef(projection);
+  projectionRef.current = projection;
+
+  /**
+   * Hand the read head to whatever will occupy this card's slot next.
+   *
+   * The whole point of the cursor: a card decided at position 18 must leave the
+   * deck reading position 18, not send it back to the front. `items[cursor + 1]`
+   * is the card that slides up into the slot — the same one for a verdict (the
+   * row leaves) and for a skip (the row sorts to the tail).
+   *
+   * `undefined` at the end of the queue collapses to `null`, which the
+   * projection reads as "the front": clear the tail you jumped to, and the deck
+   * wraps to whatever is still waiting at the top.
+   *
+   * The equality guard matters. Only the card UNDER the cursor moves it; a
+   * verdict that lands on anything else (an undo replay, a stale in-flight
+   * commit) leaves the reviewer's position exactly where they put it.
+   */
+  const advanceCursor = useCallback((leavingId: string) => {
+    setCursorId((current) => {
+      if (current !== leavingId) return current;
+      const { items, cursor } = projectionRef.current;
+      return items[cursor + 1]?.id ?? null;
+    });
+  }, []);
 
   /**
    * When the card currently on top BECAME the card on top.
@@ -742,10 +792,10 @@ export function useUnifiedTriage(
    * Time-per-decision is the one number that tells a slow queue apart from a
    * slow reviewer, and it is measured here rather than in the deck because the
    * queue is what decides which card is presented — the deck just renders
-   * `items[0]`. A card that has been re-presented after a skip starts its clock
-   * again, which is right: it is being read again.
+   * `items[cursor]`. A card that has been re-presented after a skip starts its
+   * clock again, which is right: it is being read again.
    */
-  const topId = projection.items[0]?.id ?? null;
+  const topId = projection.items[projection.cursor]?.id ?? null;
   const topSinceRef = useRef<{ id: string | null; at: number }>({ id: null, at: Date.now() });
   if (topSinceRef.current.id !== topId) topSinceRef.current = { id: topId, at: Date.now() };
 
@@ -820,12 +870,12 @@ export function useUnifiedTriage(
   // one off. One assignment, no ordering to reason about.
   const showAllKinds = useCallback(() => setActiveKinds(new Set(TRIAGE_KINDS)), []);
 
-  const focusItem = useCallback((id: string) => setFocusedId(id), []);
+  const focusItem = useCallback((id: string) => setCursorId(id), []);
 
   const reload = useCallback(() => {
     setResolved(new Set());
     setSkips(new Map());
-    setFocusedId(null);
+    setCursorId(null);
     // "Show me the world again" ENDS the session: a reviewer who asks for a
     // clean slate must not get last hour's deferrals back with it. The journal
     // survives (it is the record of what happened, not working state) but the
@@ -968,6 +1018,12 @@ export function useUnifiedTriage(
     async (decision: TriageDecision) => {
       const { item } = decision;
 
+      // Move the read head BEFORE the card leaves, while the successor is still
+      // computable from the current order. Both branches below remove this card
+      // from the slot — a verdict drops it, a skip sorts it to the tail — and
+      // either way the deck must go on from here rather than from the front.
+      advanceCursor(item.id);
+
       // A deferral writes nothing, so it must not resolve anything either. It
       // IS journalled: "I looked at this and could not judge it" is the most
       // informative thing a reviewer does, and a session readout that counts
@@ -1023,16 +1079,29 @@ export function useUnifiedTriage(
           return;
         }
         // Put it back: a failed write must not look like a completed decision.
+        // And put the reviewer back ON it — the cursor moved on optimistically
+        // with the card, so without this the restored row reappears at its
+        // sorted place behind a read head that has already walked past it.
         setResolved((prev) => {
           const next = new Set(prev);
           next.delete(item.id);
           return next;
         });
+        setCursorId(item.id);
         arm(null);
         toastCatch('Could not record that decision')(error);
       }
     },
-    [ports, refreshSources, refreshPendingCounts, journal, arm, actLabel, sayConflict],
+    [
+      ports,
+      refreshSources,
+      refreshPendingCounts,
+      journal,
+      arm,
+      actLabel,
+      sayConflict,
+      advanceCursor,
+    ],
   );
 
   /**
@@ -1055,6 +1124,11 @@ export function useUnifiedTriage(
     if (slot.type === 'skip') {
       // A deferral wrote nothing, so taking it back cannot fail and cannot lose.
       setSkips((prev) => withoutSkip(prev, slot.itemId));
+      // An undo is "deal me that one again", so it takes the read head back with
+      // it. Without this the restored card returns to its sorted position — which
+      // for an un-skip is the middle of the queue — and is not re-presented at
+      // all until the cursor happens to reach it.
+      setCursorId(slot.itemId);
       markUndone(slot.itemId);
       setJournalEntries(readJournal());
       arm(null);
@@ -1069,6 +1143,8 @@ export function useUnifiedTriage(
         next.delete(itemId);
         return next;
       });
+      // Same as the skip branch: the card comes back, and so does the reviewer.
+      setCursorId(itemId);
       markUndone(itemId);
       setJournalEntries(readJournal());
       arm(null);
@@ -1114,6 +1190,7 @@ export function useUnifiedTriage(
   return useMemo(
     () => ({
       items: projection.items,
+      cursor: projection.cursor,
       allCounts: projection.allCounts,
       loading:
         interactions.loading ||

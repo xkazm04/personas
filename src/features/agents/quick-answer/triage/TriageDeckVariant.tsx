@@ -147,7 +147,10 @@ export function TriageDeckVariant({
     );
   }, [topId]);
 
-  const stack = queue.items.slice(0, STACK_DEPTH);
+  // Sliced FROM THE CURSOR: the card being decided plus the two behind it in
+  // reading order. Jumping to row 18 deals 18, 19 and 20 — the queue is not
+  // reordered and the reviewer does not get sent back to the front.
+  const stack = queue.items.slice(queue.cursor, queue.cursor + STACK_DEPTH);
   const showLoading = queue.loading && stack.length === 0;
   // "You filtered it away" and "you finished" are different endings.
   const filteredOut = TRIAGE_KINDS.some((k) => !queue.activeKinds.has(k) && queue.allCounts[k] > 0);
@@ -193,9 +196,15 @@ export function TriageDeckVariant({
       <div className="relative flex min-h-0 flex-1">
         {/* The queue, previewable but never decidable — see `DeckQueueRail`.
             It reads the DEALT order, so what it lists is exactly what the deck
-            will hand over next, and a click pins a row to the front without
-            touching the keyboard's contract with the top card. */}
-        <DeckQueueRail items={queue.items} skips={queue.skips} onJump={queue.focusItem} />
+            will hand over next, and a click moves the read head to that row
+            without reordering the list or touching the keyboard's contract
+            with the card being decided. */}
+        <DeckQueueRail
+          items={queue.items}
+          cursor={queue.cursor}
+          skips={queue.skips}
+          onJump={queue.focusItem}
+        />
 
         <div className="relative flex min-h-0 flex-1 items-center justify-center gap-6 px-6 py-8 xl:gap-12">
         <div

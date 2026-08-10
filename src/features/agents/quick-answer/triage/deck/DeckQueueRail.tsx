@@ -10,10 +10,12 @@
 //  • It is a LEDGER, not a worklist — order, kind and title, nothing decidable.
 //    No verdict is reachable from here, so it cannot become a second way to
 //    triage that drifts from the card's.
-//  • Clicking a row PINS that item to the front (`queue.focusItem`) rather than
-//    opening it in place. The deck still deals exactly one card, the keyboard
-//    still decides exactly the top card, and the order behind the pin is
-//    untouched — see `triageQueue#focused`.
+//  • Clicking a row MOVES THE READ HEAD to it (`queue.focusItem`). Nothing is
+//    reordered: the row keeps its number, the deck deals it where it stands,
+//    and the next card is the one below it — so a jump to 18 continues at 19
+//    rather than dumping the reviewer back at the front. It used to lift the
+//    row out and unshift it to position 1, which renumbered the very list the
+//    reviewer was reading, around their own click. See `triageQueue#cursorId`.
 //  • It hides below `lg`. On a narrow window the card is the whole point.
 import { memo, useEffect, useRef } from 'react';
 import { RotateCcw } from 'lucide-react';
@@ -140,11 +142,14 @@ function QueueRow({
  */
 export const DeckQueueRail = memo(function DeckQueueRail({
   items,
+  cursor,
   skips,
   onJump,
 }: {
-  /** The dealt order. `items[0]` is the card being decided. */
+  /** The dealt order, unaffected by where the reviewer is standing in it. */
   items: TriageItem[];
+  /** Index of the card being decided — anywhere in `items`, not necessarily 0. */
+  cursor: number;
   /** Times each item has been skipped this session — marks the re-offered tail. */
   skips: SkipLedger;
   onJump: (id: string) => void;
@@ -152,6 +157,20 @@ export const DeckQueueRail = memo(function DeckQueueRail({
   const { t } = useTranslation();
   const virtualize = items.length > VIRTUALIZE_ABOVE;
   const { parentRef, virtualizer } = useVirtualList(items, ROW_HEIGHT);
+
+  // A virtualized rail only mounts the rows near the viewport, so `QueueRow`'s
+  // own `scrollIntoView` cannot reach a current row that is not rendered — and
+  // the cursor is exactly the thing that now jumps (to the row clicked, and to
+  // the front again when it wraps off the end). Drive the scroller by INDEX
+  // instead; the row-level effect still handles the short, non-virtual list.
+  useEffect(() => {
+    if (!virtualize) return;
+    virtualizer.scrollToIndex(cursor, { align: 'auto' });
+    // `virtualizer` re-identifies on every measure pass; scrolling on that would
+    // fight the reviewer's own scrolling. The cursor moving is the only reason
+    // to move the viewport.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cursor, virtualize]);
 
   if (items.length === 0) return null;
 
@@ -184,7 +203,7 @@ export const DeckQueueRail = memo(function DeckQueueRail({
                   <QueueRow
                     item={item}
                     position={row.index + 1}
-                    current={row.index === 0}
+                    current={row.index === cursor}
                     deferred={(skips.get(item.id) ?? 0) > 0}
                     onJump={() => onJump(item.id)}
                   />
@@ -199,7 +218,7 @@ export const DeckQueueRail = memo(function DeckQueueRail({
                 <QueueRow
                   item={item}
                   position={i + 1}
-                  current={i === 0}
+                  current={i === cursor}
                   deferred={(skips.get(item.id) ?? 0) > 0}
                   onJump={() => onJump(item.id)}
                 />

@@ -151,7 +151,11 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
   const [capture, setCapture] = useState<ReasonCapture | null>(null);
   const [reasonDraft, setReasonDraft] = useState('');
 
-  const top = queue.items[0] ?? null;
+  // `items[cursor]`, not `items[0]`: the reviewer can be anywhere in the queue
+  // (a click on the rail moves the read head, never the row — see
+  // `triageQueue#cursorId`), and the keyboard's contract is with the card being
+  // DEALT, wherever that sits in the list.
+  const top = queue.items[queue.cursor] ?? null;
 
   const topRef = useRef<TriageItem | null>(top);
   topRef.current = top;

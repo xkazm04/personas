@@ -32,6 +32,7 @@ import { makeItem } from './triageFixtures';
 function makeQueue(items: TriageItem[], decide = vi.fn().mockResolvedValue(undefined)) {
   const queue: UnifiedTriageQueue = {
     items,
+    cursor: 0,
     allCounts: emptyCounts(),
     loading: false,
     failures: [],
