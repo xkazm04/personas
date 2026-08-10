@@ -70,8 +70,12 @@ Never report `implemented` with a red gate. Never skip hooks (`--no-verify` is b
 
 ## Output — result.json (the contract)
 
-Write `idea-run/result.json` under the run directory you were given (or
-`<repo_path>/idea-run/<idea-id-prefix>/result.json` if none):
+Write to the canonical location:
+`<repo_path>/.personas/triage-verdicts/runs/<run-id>/idea-run-<idea-id-prefix>/result.json`
+(use the run-id you were dispatched with; create the directories). Never write an
+`idea-run/` directory at repo root — it lands as untracked noise for other sessions.
+The result artifact is a LOCAL file the orchestrator reads from disk: never commit it,
+and never force-add ignored paths (`.personas/` is typically gitignored).
 
 ```json
 {
@@ -89,6 +93,13 @@ Write `idea-run/result.json` under the run directory you were given (or
 
 Rules: `evidence` is mandatory for every outcome (an analysis-decline without file:line
 citations is an opinion, not a verdict). `commits` empty unless outcome=implemented.
+`gates: []` is the CORRECT value for `analysis-declined` and `blocked` — no gates run,
+none were skipped. `seenStatus` is always the literal `"accepted"`: it echoes the gate's
+verdict that authorized this run, NOT the ideas-file row's `seen_status` field (which
+still reads `pending` from the pre-verdict dump). Watch for wrapper indirection when
+re-validating: a capability absent by symbol grep may arrive through a wrapper
+(`withMeteredRoute` → `withRouteLogging` was the pilot's catch) — and always check
+`git log` newer than the idea's `created_at` for the fix having already landed.
 The final text of your session is a 5-line human summary; the JSON is the machine record.
 
 ## Conduct
