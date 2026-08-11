@@ -63,6 +63,7 @@ export function useSkillTreeModel(skillName: string, trace: TraceModel): SkillTr
         const v = presetVisual(skillName);
         return v ? { icon: v.icon, color: v.color, label: v.label } : row?.visual ?? null;
       })(),
+      contextTracked: row?.contextTracked ?? true,
       libraryVersion: row?.libraryVersion ?? null,
       loading: trace.loading || f.loading,
       ...built,

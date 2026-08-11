@@ -16,6 +16,15 @@ Goals give **high-level direction** to both development and teams, and are the c
 
 All status handling funnels through `goalStatus.ts` — a `GoalStatus` type (`open | in-progress | awaiting_acceptance | blocked | done`), a tolerant `normalizeGoalStatus` (maps the hyphen/underscore/team-step/alias variants onto one set), predicates (`isComplete` / `isOngoing` / …), and `GOAL_STATUS_META` (icon + lane + chip + tint + map colours). `GoalStatusBadge` renders status everywhere from it. The Rust side mirrors this in `normalize_goal_status` so cross-project rollups bucket exactly like the UI. (v1 compared `in-progress` vs `in_progress` inconsistently and silently mis-laned in-progress goals — v2 makes that class of bug impossible.)
 
+**The set is now enforced at the database boundary too (2026-08).** `dev_goals.status` was a free TEXT column with no CHECK, so the canonical set existed only in TypeScript and correctness depended on every writer remembering to normalize — while Rust wrote the column directly and didn't. The migration `dev_goals.status_check` rebuilds the table with a CHECK over the canonical set, normalizing existing rows first through a **strict** `canonical_goal_status` (the runtime normalizer with its catch-all removed, so aliases fold and genuine unknowns stay separable rather than being swept into a default).
+
+Two consequences worth knowing:
+
+- **An unmappable legacy status is reported, not buried.** Each one gets a `status_unmappable` row in `dev_goal_signals` carrying the *original* value — visible on the goal itself, not only in a log — before being stored as `open`, which is what `normalizeGoalStatus` was already rendering it as. The migration cannot bail: it runs on every launch.
+- **A bad write now fails instead of persisting.** `accept_goal_status` sits in front of `create_goal` / `update_goal` so aliases still fold and an unknown value returns *Unknown goal status "x" — expected one of: …* rather than an opaque `CHECK constraint failed`. This matters most for **Athena's `update_dev_goal` op**, which authors a status string with an LLM: it previously persisted garbage silently and now returns a readable error. Anything downstream that assumed that write always succeeded should expect a rejection.
+
+The table rebuild derives its column list from the table's own stored DDL in `sqlite_master`, not a hand-written list — `dev_goals` has already grown `parent_goal_id` and `kpi_id` by ALTER, and a positional list would have dropped them.
+
 ## Surfaces
 
 ### Board (active project)

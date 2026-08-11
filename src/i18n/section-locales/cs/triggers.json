@@ -772,7 +772,13 @@
     "run_now": "Schválit a spustit",
     "subtitle_one": "{count} naplánované spuštění čeká na vaše schválení.",
     "subtitle_other": "{count} naplánovaná spuštění čekají na vaše schválení.",
-    "title": "Čeká na vaše schválení"
+    "title": "Čeká na vaše schválení",
+    "badge_one": "{count} spuštění čeká",
+    "badge_other": "{count} spuštění čeká",
+    "badge_title": "Spuštění triggerů čekající na vaše schválení",
+    "_comment_badge_one": "Header badge, singular. {count} is a number. 'fire' = one held trigger firing, not flame.",
+    "_comment_badge_other": "Header badge, plural. {count} is a number. 'fires' = held trigger firings, not flames.",
+    "_comment_badge_title": "Tooltip on the header badge."
   },
   "unattended": {
     "approval": "Vyžadovat mé schválení",
@@ -821,5 +827,11 @@
     "watching_only": "Pouze sledované"
   },
   "overdue_label": "Po termínu",
-  "relay_delete_failed": "Relé se nepodařilo smazat — zkuste to prosím znovu"
+  "relay_delete_failed": "Relé se nepodařilo smazat — zkuste to prosím znovu",
+  "event_reason_label": "Důvod",
+  "event_reason_unknown": "Neznámý",
+  "event_reason_unknown_hint": "Záznam vznikl dříve, než se důvody sledovaly, takže není známo, proč tato událost skončila bez běhu.",
+  "_comment_event_reason_label": "Column header in the trigger Live Stream / Dead Letter tables: why this event did not start a run.",
+  "_comment_event_reason_unknown": "Shown for events recorded before reasons were tracked. Must NOT read like a fabricated reason.",
+  "_comment_event_reason_unknown_hint": "Tooltip explaining the Unknown reason - honesty about missing history, not an error."
 }

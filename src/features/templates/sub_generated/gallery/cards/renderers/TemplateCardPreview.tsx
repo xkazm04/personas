@@ -1,10 +1,10 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { CircleDot, CheckCircle2, XCircle, FileText } from 'lucide-react';
+import { CircleDot, CheckCircle2, XCircle, HelpCircle, FileText } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { TRANSITION_NORMAL } from '@/lib/utils/animation/animationPresets';
 import { CARD_PADDING } from '@/lib/utils/designTokens';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
-import type { ConnectorReadinessStatus } from '@/lib/types/designTypes';
+import type { ResolvedConnectorReadiness } from '../../../shared/useConnectorReadiness';
 import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -14,7 +14,7 @@ interface TemplateCardPreviewProps {
   instruction: string;
   connectors: string[];
   displayFlows: UseCaseFlow[];
-  readinessStatuses: ConnectorReadinessStatus[];
+  readinessStatuses: ResolvedConnectorReadiness[];
   systemPromptPreview: string | null;
   previewOpen: boolean;
   prefersReducedMotion: boolean;
@@ -86,7 +86,9 @@ export function TemplateCardPreview({
                   {connectors.map((c) => {
                     const meta = getConnectorMeta(c);
                     const status = readinessStatuses.find((s) => s.connector_name === c);
-                    const isReady = status?.health === 'ready';
+                    // Three states: an unresolved verdict shows a neutral
+                    // "checking" mark, never a confident red X.
+                    const health = status?.health ?? 'unknown';
                     return (
                       <div key={c} className="flex items-center gap-2">
                         <div
@@ -98,10 +100,15 @@ export function TemplateCardPreview({
                         <span className="typo-body text-foreground flex-1 truncate">
                           {meta.label}
                         </span>
-                        {isReady ? (
+                        {health === 'ready' ? (
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400/70 flex-shrink-0" />
-                        ) : (
+                        ) : health === 'missing' ? (
                           <XCircle className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
+                        ) : (
+                          <HelpCircle
+                            className="w-3.5 h-3.5 text-status-neutral flex-shrink-0"
+                            aria-label={t.common.field_checking_availability}
+                          />
                         )}
                       </div>
                     );

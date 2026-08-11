@@ -191,6 +191,21 @@ const CHAINED_RE = /getActiveTranslations\s*\(\s*\)\.([a-z_][a-zA-Z0-9_]*(?:\.[a
 const SUBOBJ_DECL_RE =
   /(?:const|let|var)\s+(\w+)\s*=\s*(?:getActiveTranslations\s*\(\s*\)|\ben\b|\bt\b)\.([a-z_][a-zA-Z0-9_]*(?:\.[a-zA-Z0-9_]+)*)/g;
 
+// A SECOND string channel, parallel to `t` and invisible to every pattern
+// above: `debtText('key')` and `<DebtText k="key" />` (src/i18n/DebtText.tsx)
+// read the `debt` section directly by key. 113 files use it. Because nothing
+// here matched it, all 539 `debt` keys were reported dead — 81% of this
+// scanner's entire dead report — and both value-level gates
+// (check-untranslated.mjs, plan-gaps.mjs) skip scanner-flagged-dead keys, so
+// the section never entered a translation work list and sat 0% translated in
+// every locale while looking green.
+//
+// Both call forms are static string literals today (verified 2026-08-09: 85
+// debtText() calls, 260 <DebtText> elements, zero dynamic keys), so the key can
+// be extracted exactly rather than marking the whole section live.
+const DEBT_CALL_RE = /\bdebtText\s*\(\s*['"]([a-zA-Z0-9_]+)['"]/g;
+const DEBT_JSX_RE = /<\s*DebtText\b[^>]*?\bk\s*=\s*['"]([a-zA-Z0-9_]+)['"]/g;
+
 const usedPrefixes = new Set();
 
 for (const file of files) {
@@ -215,6 +230,11 @@ for (const file of files) {
   while ((m = CHAINED_RE.exec(src)) !== null) {
     if (topLevelSections.has(m[1].split('.')[0])) usedPrefixes.add(m[1]);
   }
+
+  DEBT_CALL_RE.lastIndex = 0;
+  while ((m = DEBT_CALL_RE.exec(src)) !== null) usedPrefixes.add(`debt.${m[1]}`);
+  DEBT_JSX_RE.lastIndex = 0;
+  while ((m = DEBT_JSX_RE.exec(src)) !== null) usedPrefixes.add(`debt.${m[1]}`);
 
   // Sub-object aliases, resolved to their absolute path.
   const subObj = new Map(); // aliasName -> base dotted path

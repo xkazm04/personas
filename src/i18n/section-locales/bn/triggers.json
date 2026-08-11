@@ -772,7 +772,13 @@
     "run_now": "অনুমোদন করুন ও চালান",
     "subtitle_one": "{count}টি নির্ধারিত রান আপনার অনুমোদনের জন্য আটকে আছে।",
     "subtitle_other": "{count}টি নির্ধারিত রান আপনার অনুমোদনের জন্য আটকে আছে।",
-    "title": "আপনার অনুমোদনের অপেক্ষায়"
+    "title": "আপনার অনুমোদনের অপেক্ষায়",
+    "badge_one": "{count}টি ফায়ার অপেক্ষমাণ",
+    "badge_other": "{count}টি ফায়ার অপেক্ষমাণ",
+    "badge_title": "আপনার অনুমোদনের জন্য আটকে থাকা ট্রিগার ফায়ার",
+    "_comment_badge_one": "Header badge, singular. {count} is a number. 'fire' = one held trigger firing, not flame.",
+    "_comment_badge_other": "Header badge, plural. {count} is a number. 'fires' = held trigger firings, not flames.",
+    "_comment_badge_title": "Tooltip on the header badge."
   },
   "unattended": {
     "approval": "আমার অনুমোদন প্রয়োজন",
@@ -821,5 +827,11 @@
     "watching_only": "শুধু ওয়াচ করা"
   },
   "overdue_label": "বকেয়া",
-  "relay_delete_failed": "রিলে মুছতে ব্যর্থ হয়েছে — অনুগ্রহ করে আবার চেষ্টা করুন"
+  "relay_delete_failed": "রিলে মুছতে ব্যর্থ হয়েছে — অনুগ্রহ করে আবার চেষ্টা করুন",
+  "event_reason_label": "কারণ",
+  "event_reason_unknown": "অজানা",
+  "event_reason_unknown_hint": "কারণ ট্র্যাক করা শুরুর আগে নথিভুক্ত, তাই এই ইভেন্টটি রান ছাড়াই কেন শেষ হয়েছে তা জানা নেই।",
+  "_comment_event_reason_label": "Column header in the trigger Live Stream / Dead Letter tables: why this event did not start a run.",
+  "_comment_event_reason_unknown": "Shown for events recorded before reasons were tracked. Must NOT read like a fabricated reason.",
+  "_comment_event_reason_unknown_hint": "Tooltip explaining the Unknown reason - honesty about missing history, not an error."
 }

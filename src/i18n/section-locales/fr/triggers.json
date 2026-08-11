@@ -772,7 +772,13 @@
     "run_now": "Approuver et exécuter",
     "subtitle_one": "{count} exécution planifiée est en attente de votre approbation.",
     "subtitle_other": "{count} exécutions planifiées sont en attente de votre approbation.",
-    "title": "En attente de votre approbation"
+    "title": "En attente de votre approbation",
+    "badge_one": "{count} déclenchement en attente",
+    "badge_other": "{count} déclenchements en attente",
+    "badge_title": "Déclenchements en attente de votre approbation",
+    "_comment_badge_one": "Header badge, singular. {count} is a number. 'fire' = one held trigger firing, not flame.",
+    "_comment_badge_other": "Header badge, plural. {count} is a number. 'fires' = held trigger firings, not flames.",
+    "_comment_badge_title": "Tooltip on the header badge."
   },
   "unattended": {
     "approval": "Exiger mon approbation",
@@ -821,5 +827,11 @@
     "watching_only": "Surveillé uniquement"
   },
   "overdue_label": "En retard",
-  "relay_delete_failed": "Échec de la suppression du relais — veuillez réessayer"
+  "relay_delete_failed": "Échec de la suppression du relais — veuillez réessayer",
+  "event_reason_label": "Motif",
+  "event_reason_unknown": "Inconnu",
+  "event_reason_unknown_hint": "Enregistré avant le suivi des motifs, la raison pour laquelle cet événement s’est terminé sans exécution est donc inconnue.",
+  "_comment_event_reason_label": "Column header in the trigger Live Stream / Dead Letter tables: why this event did not start a run.",
+  "_comment_event_reason_unknown": "Shown for events recorded before reasons were tracked. Must NOT read like a fabricated reason.",
+  "_comment_event_reason_unknown_hint": "Tooltip explaining the Unknown reason - honesty about missing history, not an error."
 }

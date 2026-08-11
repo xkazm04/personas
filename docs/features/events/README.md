@@ -181,6 +181,60 @@ Design: [`docs/plans/pumper-inbuilt-feasibility.md`](../../plans/pumper-inbuilt-
 
 - **Scheduler reliability events:** the scheduler emits two informational (never listener-matched, so they never spawn an execution) bus events, both registered in the vocabulary and given feed labels: `schedule.missed.offline` (scheduled slots discarded while the app was offline — carries `missed_count`) and `schedule.skipped.overlap` (a due fire skipped because a previous run from the same trigger was still active). See [execution → entry points](../execution/01-entry-points.md#schedule-cron) for the full schedule-reliability behaviour (missed-runs badge, overlap skip, lost-fire healing issues, invalid-timezone reason).
 
+### Why an event did not run (2026-08)
+
+Every event that reaches the bus and does *not* start an execution now records **why**, as a machine token in
+`persona_events.error_message` (an existing column — no migration). The dispatch loop accumulates tokens per event
+(`EventGateReason` / `EventGateLedger` in `engine/background.rs`) and writes them comma-joined at the terminal status
+write. Tokens are language-agnostic and resolved for display through `tokenLabel(t, 'event_reason', …)`; Rust never
+emits display English.
+
+| Token | Meaning |
+| --- | --- |
+| `no_subscriber` | Nothing matched the event |
+| `approval_held` | The trigger is in `approval` mode; the fire is queued in `pending_trigger_fires` |
+| `persona_disabled` | The matched persona's Active switch is off |
+| `handoff_target_disabled` | A targeted handoff's destination persona is off |
+| `cross_team_blocked` | A wildcard match was refused across a team boundary |
+| `cascade_guard` | That persona/use-case was already running |
+| `dry_run` | The trigger is in `dry_run` mode, so the fire was simulated |
+| `stuck_reclaimed` / `stuck_retry_exhausted` | Written by the stuck-event reaper below |
+
+The reason renders as a **Reason** column in the Live Stream tab and in the Dead Letter tab (list + grouped + detail
+modal). Rows written before this shipped have no reason and render honestly as **Unknown** with a tooltip saying so —
+never a fabricated reason.
+
+Two real defects were fixed while wiring this: the approval-hold branch previously `continue`d out of the dispatch
+loop **without writing any terminal status**, stranding the event in `processing` forever; and the stalled-handoff
+dead-letter went through `update_status`, whose `can_transition_to` table has **no `Processing → DeadLetter` edge**, so
+that write always failed validation, was swallowed by a `let _ =`, and stranded the row *while the UI was told
+"dead_letter"*. Terminal dead-lettering from `processing` now goes through a guarded `dead_letter_from_processing`.
+
+### Stuck-event reaper (2026-08)
+
+`claim_pending` flips events `pending → processing` atomically, but nothing used to return a row whose tick died
+mid-flight — and retention deliberately exempts `processing` as in-flight, so such a row was never delivered, never
+retried, never pruned, and absent from both the pending and dead-letter counts.
+
+A reaper now runs inside `event_bus_tick` (reusing that loop's leadership gate and panic boundary rather than spawning
+its own task). `persona_events` has **no claim timestamp**, and `created_at` is not a proxy — a backlog claimed at boot
+is hours "old" the instant it is claimed — so an age heuristic would be wrong, and would also yank in-flight rows
+belonging to the **headless daemon**, a separate process claiming from the same table. Instead a row must be seen in
+**two consecutive snapshots** of the processing set before it is reaped (so the first pass after boot observes only).
+Reaped rows return to `pending`, or dead-letter with `stuck_retry_exhausted` if retries are spent. Interval:
+`STUCK_EVENT_REAP_INTERVAL` (300s). Observable as the cumulative `SchedulerStats.events_reaped`, plus a `tracing::warn!`
+per non-empty pass split by redelivered / dead-lettered / raced.
+
+### Approval mode is now reachable end to end (2026-08)
+
+A trigger's `unattended_mode` (`auto` | `dry_run` | `approval`) is set from `UnattendedModeSection` in the trigger
+detail drawer. Until 2026-08 there was no way to *release* a fire the `approval` mode held: the approvals panel existed
+but its only importer was an orphaned `TriggerList.tsx` with zero importers of its own, so held fires accumulated in
+`pending_trigger_fires` with no UI. The panel is now mounted in two places — persona-scoped inside `TriggerConfig`, and
+workspace-wide above the tabs on the Events page — backed by a shared `usePendingTriggerFires` hook (20s poll), with
+rows showing trigger type and age and a header badge that collapses at zero. The orphaned `TriggerList.tsx` was
+deleted.
+
 ## Backend command surface
 
 | Family | Commands |

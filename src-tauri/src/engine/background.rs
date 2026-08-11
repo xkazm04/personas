@@ -109,6 +109,17 @@ pub struct SchedulerState {
     /// Chain trace continuity breaks: payload parse failures that caused a
     /// chain_trace_id to be lost, resulting in orphaned trace roots.
     trace_continuity_breaks: AtomicU64,
+    /// Events the stuck-`processing` reaper returned to the queue (redelivered
+    /// or dead-lettered). Cumulative since scheduler start.
+    events_reaped: AtomicU64,
+    /// Unix millis of the last stuck-event reap pass; 0 = never run.
+    stuck_reap_last_ms: AtomicU64,
+    /// Event ids observed in `processing` on the PREVIOUS reap pass. A row must
+    /// appear on two consecutive passes before it is considered stranded — a
+    /// single snapshot cannot tell a stranded row from one a healthy tick (or
+    /// the headless daemon, a separate process on the same DB) is processing
+    /// right now, and `claim_pending` records no claim timestamp to lean on.
+    stuck_reap_seen: std::sync::Mutex<std::collections::HashSet<String>>,
     /// Per-subscription health tracking (latency, tick counts, errors).
     subscription_health: std::sync::Mutex<HashMap<String, SubscriptionHealth>>,
     /// Retained JoinHandles for spawned subscription tasks. Prevents silent
@@ -152,6 +163,9 @@ impl SchedulerState {
             queue_rejections: AtomicU64::new(0),
             subscriptions_crashed: AtomicU64::new(0),
             trace_continuity_breaks: AtomicU64::new(0),
+            events_reaped: AtomicU64::new(0),
+            stuck_reap_last_ms: AtomicU64::new(0),
+            stuck_reap_seen: std::sync::Mutex::new(std::collections::HashSet::new()),
             subscription_health: std::sync::Mutex::new(HashMap::new()),
             subscription_handles: std::sync::Mutex::new(Vec::new()),
             generation: AtomicU64::new(0),
@@ -219,6 +233,7 @@ impl SchedulerState {
             queue_rejections: self.queue_rejections.load(Ordering::Relaxed),
             subscriptions_crashed: self.subscriptions_crashed.load(Ordering::Relaxed),
             trace_continuity_breaks: self.trace_continuity_breaks.load(Ordering::Relaxed),
+            events_reaped: self.events_reaped.load(Ordering::Relaxed),
             subscription_health: self.subscription_health(),
         }
     }
@@ -411,6 +426,10 @@ pub struct SchedulerStats {
     pub queue_rejections: u64,
     pub subscriptions_crashed: u64,
     pub trace_continuity_breaks: u64,
+    /// Events the stuck-`processing` reaper returned to the queue or
+    /// dead-lettered since scheduler start. Normally 0 — a non-zero value means
+    /// ticks are dying between claiming an event and writing its outcome.
+    pub events_reaped: u64,
     pub subscription_health: Vec<SubscriptionHealth>,
 }
 
@@ -906,6 +925,234 @@ pub fn stop_loops(scheduler: &SchedulerState) {
 // Called by the ReactiveSubscription implementations in subscription.rs.
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Event skip-reason ledger
+// ---------------------------------------------------------------------------
+
+/// Why the bus reached a decision that did NOT start a real execution for an
+/// event.
+///
+/// Every one of these gates used to `continue` silently, so the terminal row
+/// carried a NULL `error_message` and the product could not say why a trigger
+/// did not fire. Each variant's [`token`](EventGateReason::token) is written
+/// into `persona_events.error_message` and resolved for display by the
+/// frontend through `tokenLabel(t, 'event_reason', ...)`. The tokens are
+/// language-agnostic identifiers — never emit prose from Rust.
+///
+/// `error_message` is shared with genuine execution failures; the two uses stay
+/// distinguishable by status (failures land on `failed` / `dead_letter` via
+/// [`event_repo::increment_retry_or_dead_letter`], gate tokens land on
+/// `skipped` / `delivered`, plus the one `dead_letter` cascade-stall case which
+/// writes a token rather than prose).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum EventGateReason {
+    /// No subscription or event_listener matched the event at all.
+    NoSubscriber,
+    /// A webhook fire on an `approval`-mode trigger, queued into
+    /// `pending_trigger_fires` instead of dispatching.
+    ApprovalHeld,
+    /// A matched persona has the Active/Off toggle set to Off.
+    PersonaDisabled,
+    /// A handoff EXPLICITLY targeted at a persona that is disabled — the
+    /// cascade stalls here, so this one also dead-letters the event.
+    HandoffTargetDisabled,
+    /// A wildcard (`*`) source filter matched across a team boundary.
+    CrossTeamBlocked,
+    /// The persona/capability already has a running execution.
+    CascadeGuard,
+    /// The trigger is in `dry_run` mode — a run WAS launched, but as a
+    /// simulation with outbound side-effects suppressed.
+    DryRun,
+    /// A row stranded in `processing` was reclaimed by the reaper and returned
+    /// to `pending` for redelivery.
+    StuckReclaimed,
+    /// A row stranded in `processing` was reclaimed by the reaper but had
+    /// already exhausted its retries, so it went to the dead-letter queue
+    /// rather than looping forever.
+    StuckRetryExhausted,
+}
+
+impl EventGateReason {
+    /// The machine token persisted in `persona_events.error_message`.
+    pub(crate) const fn token(self) -> &'static str {
+        match self {
+            Self::NoSubscriber => "no_subscriber",
+            Self::ApprovalHeld => "approval_held",
+            Self::PersonaDisabled => "persona_disabled",
+            Self::HandoffTargetDisabled => "handoff_target_disabled",
+            Self::CrossTeamBlocked => "cross_team_blocked",
+            Self::CascadeGuard => "cascade_guard",
+            Self::DryRun => "dry_run",
+            Self::StuckReclaimed => "stuck_reclaimed",
+            Self::StuckRetryExhausted => "stuck_retry_exhausted",
+        }
+    }
+}
+
+/// Ordered, de-duplicated set of gate reasons observed while dispatching ONE
+/// event. An event can fan out to several matches and hit a different gate on
+/// each, so the ledger records all of them in first-seen order.
+#[derive(Debug, Default)]
+pub(crate) struct EventGateLedger(Vec<EventGateReason>);
+
+impl EventGateLedger {
+    pub(crate) fn record(&mut self, reason: EventGateReason) {
+        if !self.0.contains(&reason) {
+            self.0.push(reason);
+        }
+    }
+
+    /// Comma-joined token list for `persona_events.error_message`.
+    ///
+    /// `None` when nothing was gated — an event that dispatched cleanly must
+    /// keep a NULL reason so the UI can tell "nothing to explain" apart from
+    /// "reason unknown" and never fabricates one.
+    pub(crate) fn into_reason(self) -> Option<String> {
+        if self.0.is_empty() {
+            return None;
+        }
+        Some(
+            self.0
+                .iter()
+                .map(|r| r.token())
+                .collect::<Vec<_>>()
+                .join(","),
+        )
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Stuck-`processing` reaper
+// ---------------------------------------------------------------------------
+
+/// How often the stuck-event reaper takes a snapshot of the `processing` set.
+///
+/// A row must appear in TWO consecutive snapshots to be reaped, so this is also
+/// the minimum time a row must sit in `processing` before it is touched. Five
+/// minutes is far above every cadence that legitimately holds a claim: the
+/// event bus ticks at 2s active / 10s idle (`subscription.rs`) and the headless
+/// daemon claims on a 5s tick, and a tick's own dispatch work is bounded by
+/// non-blocking `start_execution` calls. Do not shorten this without a claim
+/// timestamp to lean on — a too-short window re-dispatches events a healthy
+/// tick is still processing.
+pub(crate) const STUCK_EVENT_REAP_INTERVAL: Duration = Duration::from_secs(300);
+
+/// Upper bound on how many `processing` rows one pass inspects. Generous — a
+/// healthy install has zero — but bounded so a pathological table cannot make
+/// the pass unbounded.
+const STUCK_EVENT_REAP_SCAN_LIMIT: i64 = 500;
+
+/// Split the currently-`processing` ids into "reap these" and "watch these".
+///
+/// A row is reaped only when it was ALSO present on the previous pass, i.e. it
+/// has held its claim for at least [`STUCK_EVENT_REAP_INTERVAL`]. Returns
+/// `(to_reap, next_seen)`; `next_seen` is the full current set, so a row that
+/// survives one pass is eligible on the next.
+pub(crate) fn partition_stuck_candidates(
+    current: &[String],
+    previously_seen: &std::collections::HashSet<String>,
+) -> (Vec<String>, std::collections::HashSet<String>) {
+    let to_reap: Vec<String> = current
+        .iter()
+        .filter(|id| previously_seen.contains(*id))
+        .cloned()
+        .collect();
+    let next_seen = current.iter().cloned().collect();
+    (to_reap, next_seen)
+}
+
+/// Return events stranded in `processing` to the queue.
+///
+/// `claim_pending` flips `pending -> processing` atomically so a tick cannot
+/// double-claim, but nothing ever returned a claimed row the tick failed to
+/// finish: retention exempts `processing` as in-flight and the terminal writes
+/// below are best-effort, so a crash (or a failed status UPDATE) between claim
+/// and terminal write left the event invisible forever.
+///
+/// This is INSURANCE, not a realised loss — the operator's live DB has zero
+/// `processing` rows. It is deliberately conservative: two consecutive
+/// sightings before touching anything, one atomic guarded UPDATE per row so the
+/// owning tick always wins a race, and `retry_count` incremented on every reap
+/// so a poisoned event dead-letters instead of cycling forever.
+///
+/// Runs from the event-bus tick (engine boot onwards, then every
+/// [`STUCK_EVENT_REAP_INTERVAL`]) rather than a fresh `tokio::spawn`, layering
+/// on the existing `EventBusSubscription` loop.
+pub(crate) fn reap_stuck_processing_events(scheduler: &SchedulerState, pool: &DbPool) {
+    let now_ms = chrono::Utc::now().timestamp_millis().max(0) as u64;
+    let last_ms = scheduler.stuck_reap_last_ms.load(Ordering::Relaxed);
+    let interval_ms = STUCK_EVENT_REAP_INTERVAL.as_millis() as u64;
+    // last_ms == 0 → never run; take the boot snapshot immediately.
+    if last_ms != 0 && now_ms.saturating_sub(last_ms) < interval_ms {
+        return;
+    }
+    scheduler.stuck_reap_last_ms.store(now_ms, Ordering::Relaxed);
+
+    let current = match event_repo::list_processing_ids(pool, STUCK_EVENT_REAP_SCAN_LIMIT) {
+        Ok(ids) => ids,
+        Err(e) => {
+            tracing::error!("Stuck-event reaper: failed to list processing events: {}", e);
+            return;
+        }
+    };
+
+    let (to_reap, next_seen) = {
+        let mut seen = scheduler
+            .stuck_reap_seen
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let (to_reap, next_seen) = partition_stuck_candidates(&current, &seen);
+        *seen = next_seen.clone();
+        (to_reap, next_seen)
+    };
+
+    if to_reap.is_empty() {
+        if !next_seen.is_empty() {
+            tracing::debug!(
+                watching = next_seen.len(),
+                "Stuck-event reaper: events still claimed; eligible next pass if unchanged"
+            );
+        }
+        return;
+    }
+
+    let mut redelivered = 0u64;
+    let mut dead_lettered = 0u64;
+    let mut raced = 0u64;
+    for id in &to_reap {
+        match event_repo::reap_stuck_processing(
+            pool,
+            id,
+            event_repo::DEFAULT_MAX_RETRIES,
+            EventGateReason::StuckReclaimed.token(),
+            EventGateReason::StuckRetryExhausted.token(),
+        ) {
+            Ok(Some(event_repo::StuckReapOutcome::Redelivered)) => redelivered += 1,
+            Ok(Some(event_repo::StuckReapOutcome::DeadLettered)) => dead_lettered += 1,
+            // The owning tick finished between the snapshot and the write —
+            // exactly the race the `WHERE status = 'processing'` guard exists
+            // for. Not an error.
+            Ok(None) => raced += 1,
+            Err(e) => tracing::error!(event_id = %id, "Stuck-event reaper: reap failed: {}", e),
+        }
+    }
+
+    let reaped = redelivered + dead_lettered;
+    if reaped > 0 {
+        scheduler.events_reaped.fetch_add(reaped, Ordering::Relaxed);
+        // WARN, not INFO: a non-zero count means ticks are dying between
+        // claiming an event and writing its outcome. Surfaced on
+        // `SchedulerStats.events_reaped` too, so it is never silent.
+        tracing::warn!(
+            redelivered,
+            dead_lettered,
+            raced,
+            "Stuck-event reaper: reclaimed {} event(s) stranded in 'processing'",
+            reaped
+        );
+    }
+}
+
 /// One tick of the event bus: fetch pending events, match to subscriptions,
 /// and dispatch executions.
 ///
@@ -923,6 +1170,13 @@ pub(crate) async fn event_bus_tick(
     // for cron-grained system ops like the weekly context-scan. See
     // `engine/system_ops.rs`.
     super::system_ops::run_due_schedule_automations(app, pool);
+
+    // 0. Return events stranded in `processing` to the queue. Self-throttled to
+    //    STUCK_EVENT_REAP_INTERVAL, and runs BEFORE the early-return below so a
+    //    strand is still reaped on an otherwise idle bus. Hosted here rather
+    //    than in a fresh task so it inherits the EventBusSubscription's
+    //    leadership gate and panic boundary.
+    reap_stuck_processing_events(scheduler, pool);
 
     // 1. Atomically claim pending events (SET status='processing' WHERE status='pending')
     //    This prevents duplicate processing when ticks overlap.
@@ -1042,7 +1296,17 @@ pub(crate) async fn event_bus_tick(
             // dead / misrouted trigger look like it was successfully handled.
             // It's still counted in events_processed (it was processed), just
             // not as a delivery.
-            let _ = event_repo::update_status(pool, &event.id, PersonaEventStatus::Skipped, None);
+            //
+            // The reason column carries the `no_subscriber` token so the Live
+            // Stream / Dead Letter tabs can say WHY nothing ran — a bare
+            // `skipped` with a NULL reason is exactly the state 22 rows in the
+            // operator's live DB were stuck in.
+            let _ = event_repo::update_status(
+                pool,
+                &event.id,
+                PersonaEventStatus::Skipped,
+                Some(EventGateReason::NoSubscriber.token().to_string()),
+            );
             scheduler.events_processed.fetch_add(1, Ordering::Relaxed);
             emit_event_to_frontend(app, event, PersonaEventStatus::Skipped);
         } else {
@@ -1106,6 +1370,11 @@ pub(crate) async fn event_bus_tick(
     for (idx, matches) in &event_matches {
         let event = &events[*idx];
         let mut any_failed = false;
+        // Why this event did (or did not) produce runs. Written into
+        // `persona_events.error_message` as machine tokens at the terminal
+        // status write below, so every silent `continue` in this loop leaves a
+        // readable trace instead of a NULL reason.
+        let mut gates = EventGateLedger::default();
 
         // Destructive-action gate for WEBHOOK-fired triggers (UAT F-MAJOR-11:
         // the approval/dry_run gate only covered scheduler triggers, leaving
@@ -1141,6 +1410,25 @@ pub(crate) async fn event_bus_tick(
                             "Failed to hold webhook fire for approval: {}", e
                         ),
                     }
+                    // The held event must reach a TERMINAL status here. This
+                    // branch used to `continue` straight out of the dispatch
+                    // loop without any status write, stranding the row in
+                    // `processing` forever: never delivered, never retried,
+                    // exempt from retention (`events.rs` cleanup skips
+                    // in-flight rows) and invisible to both the pending and
+                    // dead-letter counts. Approval republishes a NEW event
+                    // (`resolve_pending_trigger_fire`), so `skipped` with an
+                    // `approval_held` reason is the honest terminal state for
+                    // the original.
+                    gates.record(EventGateReason::ApprovalHeld);
+                    let _ = event_repo::update_status(
+                        pool,
+                        &event.id,
+                        PersonaEventStatus::Skipped,
+                        gates.into_reason(),
+                    );
+                    emit_event_to_frontend(app, event, PersonaEventStatus::Skipped);
+                    scheduler.events_processed.fetch_add(1, Ordering::Relaxed);
                     continue;
                 }
             }
@@ -1178,6 +1466,7 @@ pub(crate) async fn event_bus_tick(
                 // turned that agent off on purpose) and stays a quiet info log.
                 if event.target_persona_id.as_deref() == Some(persona.id.as_str()) {
                     dropped_disabled_target = true;
+                    gates.record(EventGateReason::HandoffTargetDisabled);
                     tracing::warn!(
                         persona_id = %persona.id,
                         persona_name = %persona.name,
@@ -1185,6 +1474,7 @@ pub(crate) async fn event_bus_tick(
                         "Event bus: DROPPED handoff — target persona is disabled; cascade stalls here (enable it to resume)"
                     );
                 } else {
+                    gates.record(EventGateReason::PersonaDisabled);
                     tracing::info!(
                         persona_id = %persona.id,
                         persona_name = %persona.name,
@@ -1213,6 +1503,7 @@ pub(crate) async fn event_bus_tick(
                     persona.home_team_id.as_deref(),
                     src_home,
                 ) {
+                    gates.record(EventGateReason::CrossTeamBlocked);
                     tracing::info!(
                         persona_id = %persona.id,
                         persona_name = %persona.name,
@@ -1237,6 +1528,7 @@ pub(crate) async fn event_bus_tick(
                 None => exec_repo::get_running_count_for_persona(pool, &persona.id).unwrap_or(0),
             };
             if running_count > 0 {
+                gates.record(EventGateReason::CascadeGuard);
                 tracing::info!(
                     persona_id = %persona.id,
                     persona_name = %persona.name,
@@ -1295,6 +1587,7 @@ pub(crate) async fn event_bus_tick(
                 }
             };
             if dry_run {
+                gates.record(EventGateReason::DryRun);
                 tracing::info!(
                     persona_id = %persona.id,
                     execution_id = %exec.id,
@@ -1402,6 +1695,11 @@ pub(crate) async fn event_bus_tick(
             scheduler.events_delivered.fetch_add(1, Ordering::Relaxed);
         }
 
+        // Machine tokens for every gate this event hit, or `None` when it
+        // dispatched cleanly. Computed once — the branches below are mutually
+        // exclusive and each consumes it at most once.
+        let gate_reason = gates.into_reason();
+
         if any_failed {
             // Use DLQ pattern: increment retry count, move to dead_letter after max retries
             let max_retries = event_repo::DEFAULT_MAX_RETRIES;
@@ -1438,18 +1736,35 @@ pub(crate) async fn event_bus_tick(
             // looking healthy; retrying is pointless until the user re-enables the
             // persona, so DeadLetter (manual replay) is correct, not Failed
             // (auto-retry churn). (UAT F-TEAM-STALL-INVISIBLE.)
-            let note = "handoff dropped: target persona disabled — cascade stalled here \
-                        (enable the persona and replay to resume)"
-                .to_string();
+            //
+            // This used to go through `update_status`, which validates against
+            // `PersonaEventStatus::can_transition_to` — and that table has NO
+            // `Processing -> DeadLetter` edge. So the write ALWAYS failed
+            // validation, was swallowed by `let _ =`, and the row stayed
+            // `processing` forever while the frontend was told "dead_letter".
+            // `dead_letter_from_processing` is the guarded write for exactly
+            // this transition. The prose note is replaced by the
+            // `handoff_target_disabled` machine token (resolved for display by
+            // the frontend) so the DLQ reason is language-agnostic like every
+            // other status token.
+            match event_repo::dead_letter_from_processing(pool, &event.id, gate_reason) {
+                Ok(true) => emit_event_to_frontend(app, event, PersonaEventStatus::DeadLetter),
+                Ok(false) => tracing::warn!(
+                    event_id = %event.id,
+                    "Event bus: stalled-handoff dead-letter skipped — event no longer 'processing'"
+                ),
+                Err(e) => tracing::error!(
+                    event_id = %event.id,
+                    "Event bus: failed to dead-letter stalled handoff: {}", e
+                ),
+            }
+        } else {
             let _ = event_repo::update_status(
                 pool,
                 &event.id,
-                PersonaEventStatus::DeadLetter,
-                Some(note),
+                PersonaEventStatus::Delivered,
+                gate_reason,
             );
-            emit_event_to_frontend(app, event, PersonaEventStatus::DeadLetter);
-        } else {
-            let _ = event_repo::update_status(pool, &event.id, PersonaEventStatus::Delivered, None);
             emit_event_to_frontend(app, event, PersonaEventStatus::Delivered);
         }
         scheduler.events_processed.fetch_add(1, Ordering::Relaxed);
@@ -3696,5 +4011,148 @@ mod tests {
         state.store_subscription_handles(Vec::new());
         let handles = state.subscription_handles.lock().unwrap();
         assert!(handles.is_empty());
+    }
+
+    // ========================================================================
+    // Event skip-reason ledger
+    //
+    // The gate→token mapping is the wire contract with the frontend
+    // (`tokenLabel(t, 'event_reason', …)`) and with the DB-level tests in
+    // `db/repos/communication/events.rs`, which pin the same literal strings.
+    // ========================================================================
+
+    const ALL_GATE_REASONS: [EventGateReason; 9] = [
+        EventGateReason::NoSubscriber,
+        EventGateReason::ApprovalHeld,
+        EventGateReason::PersonaDisabled,
+        EventGateReason::HandoffTargetDisabled,
+        EventGateReason::CrossTeamBlocked,
+        EventGateReason::CascadeGuard,
+        EventGateReason::DryRun,
+        EventGateReason::StuckReclaimed,
+        EventGateReason::StuckRetryExhausted,
+    ];
+
+    #[test]
+    fn gate_reason_tokens_are_distinct_and_machine_shaped() {
+        let mut seen = std::collections::HashSet::new();
+        for reason in ALL_GATE_REASONS {
+            let token = reason.token();
+            assert!(
+                seen.insert(token),
+                "duplicate gate token {token} — the UI cannot tell the gates apart"
+            );
+            assert!(
+                token
+                    .chars()
+                    .all(|c| c.is_ascii_lowercase() || c == '_'),
+                "{token} must be a language-agnostic identifier, not prose"
+            );
+            assert!(
+                !token.contains(','),
+                "{token} must not contain the ledger separator"
+            );
+        }
+    }
+
+    #[test]
+    fn gate_reason_tokens_match_the_frontend_contract() {
+        assert_eq!(EventGateReason::NoSubscriber.token(), "no_subscriber");
+        assert_eq!(EventGateReason::ApprovalHeld.token(), "approval_held");
+        assert_eq!(EventGateReason::PersonaDisabled.token(), "persona_disabled");
+        assert_eq!(
+            EventGateReason::HandoffTargetDisabled.token(),
+            "handoff_target_disabled"
+        );
+        assert_eq!(
+            EventGateReason::CrossTeamBlocked.token(),
+            "cross_team_blocked"
+        );
+        assert_eq!(EventGateReason::CascadeGuard.token(), "cascade_guard");
+        assert_eq!(EventGateReason::DryRun.token(), "dry_run");
+        assert_eq!(EventGateReason::StuckReclaimed.token(), "stuck_reclaimed");
+        assert_eq!(
+            EventGateReason::StuckRetryExhausted.token(),
+            "stuck_retry_exhausted"
+        );
+    }
+
+    #[test]
+    fn gate_ledger_empty_writes_no_reason() {
+        // A clean dispatch must leave the reason column NULL — never "" —
+        // so the UI can tell "nothing to explain" from "reason unknown".
+        assert_eq!(EventGateLedger::default().into_reason(), None);
+    }
+
+    #[test]
+    fn gate_ledger_records_single_gate() {
+        let mut ledger = EventGateLedger::default();
+        ledger.record(EventGateReason::CascadeGuard);
+        assert_eq!(ledger.into_reason().as_deref(), Some("cascade_guard"));
+    }
+
+    #[test]
+    fn gate_ledger_dedupes_and_preserves_first_seen_order() {
+        let mut ledger = EventGateLedger::default();
+        ledger.record(EventGateReason::PersonaDisabled);
+        ledger.record(EventGateReason::CascadeGuard);
+        ledger.record(EventGateReason::PersonaDisabled);
+        assert_eq!(
+            ledger.into_reason().as_deref(),
+            Some("persona_disabled,cascade_guard")
+        );
+    }
+
+    // ========================================================================
+    // Stuck-`processing` reaper — candidate selection
+    //
+    // The two-consecutive-sightings rule is the whole safety story: it is what
+    // separates a stranded row from one a healthy tick (or the headless daemon
+    // in another process) is holding right now. Row-level reap behaviour is
+    // covered by the DB tests in `db/repos/communication/events.rs`.
+    // ========================================================================
+
+    fn seen(ids: &[&str]) -> std::collections::HashSet<String> {
+        ids.iter().map(|s| (*s).to_string()).collect()
+    }
+
+    fn ids(list: &[&str]) -> Vec<String> {
+        list.iter().map(|s| (*s).to_string()).collect()
+    }
+
+    #[test]
+    fn stuck_reaper_never_reaps_on_the_first_sighting() {
+        // Boot / first pass: nothing has been observed before, so nothing is
+        // touched — a full backlog claimed seconds ago must not be re-queued.
+        let (to_reap, next_seen) =
+            partition_stuck_candidates(&ids(&["a", "b"]), &std::collections::HashSet::new());
+        assert!(to_reap.is_empty());
+        assert_eq!(next_seen, seen(&["a", "b"]));
+    }
+
+    #[test]
+    fn stuck_reaper_reaps_only_ids_that_survived_a_whole_interval() {
+        // "a" was already claimed last pass and still is → stranded.
+        // "c" was just claimed → watched, not reaped.
+        let (to_reap, next_seen) =
+            partition_stuck_candidates(&ids(&["a", "c"]), &seen(&["a", "b"]));
+        assert_eq!(to_reap, ids(&["a"]));
+        assert_eq!(next_seen, seen(&["a", "c"]));
+    }
+
+    #[test]
+    fn stuck_reaper_forgets_rows_a_healthy_tick_finished() {
+        // Everything the previous pass saw has moved to a terminal status, so
+        // the watch list empties instead of accumulating forever.
+        let (to_reap, next_seen) = partition_stuck_candidates(&[], &seen(&["a", "b"]));
+        assert!(to_reap.is_empty());
+        assert!(next_seen.is_empty());
+    }
+
+    #[test]
+    fn stuck_reaper_interval_is_far_above_every_claiming_cadence() {
+        // Event bus: 2s active / 10s idle. Headless daemon: 5s. A threshold
+        // near those would re-dispatch events a healthy tick still owns.
+        assert!(STUCK_EVENT_REAP_INTERVAL >= Duration::from_secs(60));
     }
 }

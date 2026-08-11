@@ -159,21 +159,67 @@ pub(crate) const LINE_READ_TIMEOUT: std::time::Duration = std::time::Duration::f
 // read_line_limited -- robust per-line reader with size + time guards
 // =============================================================================
 
+/// Outcome of one bounded line read.
+///
+/// The distinction between [`Eof`](LineRead::Eof) and
+/// [`Silence`](LineRead::Silence) is the whole point of this type. Both used to
+/// collapse into `Ok(None)`, so a read loop could not tell "the child closed
+/// its stdout, it is finishing" from "the child has said nothing for minutes
+/// and its pipe is still open" — and every caller treated the second case as
+/// the first, breaking out of the loop and then blocking forever on a `wait()`
+/// that would never return.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum LineRead {
+    /// A complete line (or a size/time-capped prefix carrying its marker
+    /// suffix). Data arrived, so the child is alive and talking.
+    Line(String),
+    /// The stream closed. The child has exited or is about to.
+    Eof,
+    /// Nothing arrived for the whole silence window AND the stream never
+    /// closed. The child is still holding its pipe open with nothing to say:
+    /// wedged, not finishing.
+    Silence,
+}
+
 /// Read the next line from a buffered reader with per-line size and time limits.
 ///
-/// Returns `Ok(Some(line))` for each line, `Ok(None)` at EOF.
-/// Lines exceeding `MAX_LINE_BYTES` are truncated with a `...[truncated]` suffix.
-/// If no newline arrives within `LINE_READ_TIMEOUT`, returns whatever has been
-/// accumulated so far (with a `...[timeout]` suffix if non-empty).
+/// Returns `Ok(Some(line))` for each line, `Ok(None)` at EOF **or** on a
+/// silence timeout. Kept for the callers that genuinely cannot act on the
+/// difference (they drain a short-lived one-shot CLI and then `finish()` it);
+/// anything that must not block forever should use [`read_line_within`], which
+/// reports [`LineRead::Silence`] separately.
 pub async fn read_line_limited<R: tokio::io::AsyncBufRead + Unpin>(
     reader: &mut R,
 ) -> std::io::Result<Option<String>> {
+    match read_line_within(reader, LINE_READ_TIMEOUT).await? {
+        LineRead::Line(line) => Ok(Some(line)),
+        LineRead::Eof | LineRead::Silence => Ok(None),
+    }
+}
+
+/// Read the next line, distinguishing EOF from silence and taking the silence
+/// window as a parameter.
+///
+/// The window applies to each `fill_buf`, not to the whole line: a line that
+/// dribbles in resets it on every chunk. So `Silence` means "not one byte for
+/// the full window", never "this line is taking a while". A partial line held
+/// when the window expires is still returned as a `Line` (with a
+/// `...[timeout]` marker) — data *did* arrive, and the caller's next read
+/// opens a fresh window that will report `Silence` if the child is truly
+/// wedged.
+///
+/// Lines exceeding `MAX_LINE_BYTES` are truncated with a `...[truncated]`
+/// suffix.
+pub async fn read_line_within<R: tokio::io::AsyncBufRead + Unpin>(
+    reader: &mut R,
+    silence_timeout: std::time::Duration,
+) -> std::io::Result<LineRead> {
     let mut line_buf = Vec::with_capacity(4096);
     let mut truncated = false;
 
     loop {
         // Apply watchdog timeout to each fill_buf call
-        let fill_result = tokio::time::timeout(LINE_READ_TIMEOUT, reader.fill_buf()).await;
+        let fill_result = tokio::time::timeout(silence_timeout, reader.fill_buf()).await;
 
         let available = match fill_result {
             Ok(Ok(buf)) => buf,
@@ -181,21 +227,24 @@ pub async fn read_line_limited<R: tokio::io::AsyncBufRead + Unpin>(
             Err(_) => {
                 // Watchdog timeout -- no newline within the time limit
                 if line_buf.is_empty() {
-                    // Nothing buffered and timed out -- treat as EOF
-                    return Ok(None);
+                    // Nothing buffered and nothing arrived: the stream is
+                    // OPEN and silent. Not EOF -- the child never closed it.
+                    return Ok(LineRead::Silence);
                 }
                 let mut s = String::from_utf8_lossy(&line_buf).into_owned();
                 s.push_str("...[timeout]");
-                return Ok(Some(s));
+                return Ok(LineRead::Line(s));
             }
         };
 
         if available.is_empty() {
             // EOF
             if line_buf.is_empty() {
-                return Ok(None);
+                return Ok(LineRead::Eof);
             }
-            return Ok(Some(String::from_utf8_lossy(&line_buf).into_owned()));
+            return Ok(LineRead::Line(
+                String::from_utf8_lossy(&line_buf).into_owned(),
+            ));
         }
 
         // Search for newline in the available buffer
@@ -234,7 +283,7 @@ pub async fn read_line_limited<R: tokio::io::AsyncBufRead + Unpin>(
             if truncated {
                 s.push_str("...[truncated]");
             }
-            return Ok(Some(s));
+            return Ok(LineRead::Line(s));
         }
     }
 }
@@ -786,5 +835,93 @@ mod tests {
                 "{key} leaked into the spawned child's environment"
             );
         }
+    }
+
+    // -- Silence vs EOF (cli-hang-timeout) ---------------------------------
+    //
+    // A wedged CLI and a finishing CLI used to look identical to the read
+    // loop. These pin the difference. `tokio::io::duplex` gives a real async
+    // stream whose write half we control: dropping it closes the pipe (EOF),
+    // holding it open with nothing written is silence.
+
+    const TEST_SILENCE: std::time::Duration = std::time::Duration::from_millis(200);
+
+    #[tokio::test]
+    async fn a_quiet_stream_that_then_closes_reads_as_eof_not_silence() {
+        let (client, server) = tokio::io::duplex(256);
+        tokio::spawn(async move {
+            // Silent for a while — but well inside the window — then the
+            // child exits and its pipe closes.
+            tokio::time::sleep(std::time::Duration::from_millis(40)).await;
+            drop(server);
+        });
+        let mut reader = BufReader::new(client);
+        assert_eq!(
+            read_line_within(&mut reader, TEST_SILENCE).await.unwrap(),
+            LineRead::Eof,
+            "a process that goes quiet and then exits must NOT look wedged"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_stream_that_never_speaks_and_never_closes_reads_as_silence() {
+        let (client, server) = tokio::io::duplex(256);
+        // Deliberately held open for the whole test: this is the wedged child.
+        let _pipe_stays_open = server;
+        let mut reader = BufReader::new(client);
+        assert_eq!(
+            read_line_within(&mut reader, TEST_SILENCE).await.unwrap(),
+            LineRead::Silence,
+            "an open, silent pipe is a wedged child, not EOF"
+        );
+    }
+
+    #[tokio::test]
+    async fn chunks_arriving_slowly_keep_resetting_the_window() {
+        let (client, server) = tokio::io::duplex(256);
+        tokio::spawn(async move {
+            let mut server = server;
+            // Each chunk lands inside the window; the total (5 x 120ms)
+            // exceeds it. A slow-but-healthy turn must survive.
+            for chunk in ["he", "ll", "o w", "orl", "d\n"] {
+                tokio::time::sleep(std::time::Duration::from_millis(120)).await;
+                let _ = server.write_all(chunk.as_bytes()).await;
+                let _ = server.flush().await;
+            }
+        });
+        let mut reader = BufReader::new(client);
+        assert_eq!(
+            read_line_within(&mut reader, TEST_SILENCE).await.unwrap(),
+            LineRead::Line("hello world".to_string()),
+        );
+    }
+
+    #[tokio::test]
+    async fn a_partial_line_at_the_window_still_returns_its_prefix() {
+        let (client, server) = tokio::io::duplex(256);
+        tokio::spawn(async move {
+            let mut server = server;
+            let _ = server.write_all(b"half a line, no newline").await;
+            let _ = server.flush().await;
+            // Then wedge: never finish the line, never close.
+            std::future::pending::<()>().await;
+        });
+        let mut reader = BufReader::new(client);
+        let out = read_line_within(&mut reader, TEST_SILENCE).await.unwrap();
+        match out {
+            LineRead::Line(s) => {
+                assert!(s.starts_with("half a line"), "prefix lost: {s}");
+                assert!(s.ends_with("...[timeout]"), "missing marker: {s}");
+            }
+            other => panic!("expected the buffered prefix back, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn read_line_limited_still_collapses_both_endings_for_legacy_callers() {
+        let (client, server) = tokio::io::duplex(256);
+        drop(server);
+        let mut reader = BufReader::new(client);
+        assert_eq!(read_line_limited(&mut reader).await.unwrap(), None);
     }
 }

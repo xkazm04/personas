@@ -14,6 +14,7 @@ import { useMemo, useState } from 'react';
 import { ArrowDownToLine, Play } from 'lucide-react';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useProgressiveReveal } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { cellStatus, coveragePct, type RegistrySkill, type SkillsRegistryProps } from './registryTypes';
@@ -37,15 +38,24 @@ export function RegistryHeatmap({ model, adopting, onAdopt, onUse, onOpenInfo }:
   const [hover, setHover] = useState<string | null>(null);
   const projectMode = mode === 'project';
 
+  // Stagger row MOUNTING: each row is `columns.length` tooltip-bearing cells,
+  // and a workspace of 20 skills × 10 projects big-banged 200+ interactive
+  // cells onto one frame. The reveal hands rows to the renderer across a
+  // short window instead (loading-pattern v2 §3).
+  const reveal = useProgressiveReveal(skills.length, {
+    initialCount: 10,
+    resetKey: `${mode}:${columns.length}`,
+  });
   const grouped = useMemo(() => {
+    const shown = skills.slice(0, reveal.count);
     const out: Array<{ cat: string; rows: RegistrySkill[] }> = [];
-    for (const s of skills) {
+    for (const s of shown) {
       const last = out[out.length - 1];
       if (last && last.cat === s.category) last.rows.push(s);
       else out.push({ cat: s.category, rows: [s] });
     }
     return out;
-  }, [skills]);
+  }, [skills, reveal.count]);
 
   const template = `minmax(11rem,1fr) repeat(${columns.length}, ${COL})`;
 

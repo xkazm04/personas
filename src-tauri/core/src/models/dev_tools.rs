@@ -698,6 +698,11 @@ pub struct DevKpiMeasurement {
     pub value: f64,
     pub measured_at: String,
     /// 'evaluator' | 'manual' | 'scan' | 'health_snapshot' | 'simulation'
+    /// | 'ai-compose'
+    ///
+    /// `ai-compose` was widened into the CHECK in 2026-08. Before that the
+    /// compose path wrote it anyway and SQLite rejected every insert, silently
+    /// — no AI-composed reading had ever reached this table.
     pub source: String,
     /// Observation environment: 'local' | 'test' | 'production'. Real
     /// (connector/manual/evaluator-in-prod) measurements default to
@@ -845,20 +850,22 @@ impl Default for AttentionThresholds {
 /// that needs the user.
 ///
 /// `kind` ∈ `awaiting_review` | `overdue` | `stalled` | `unstaffed`
-///        | `undispatched_idea` | `stuck_task` | `stale_queued_task`.
+///        | `undispatched_idea` | `stuck_task` | `stale_queued_task`
+///        | `kpi_gone_dark` | `kpi_never_measured`.
 ///
-/// The first four are goal signals and keep their original `rank` values; the
-/// three record-widening kinds are APPENDED at ranks 4-6 rather than
-/// interleaved, so the pre-existing ordering contract is untouched. Within a
-/// rank the queue sorts by age, worst first.
+/// The first four are goal signals and keep their original `rank` values; every
+/// later kind is APPENDED at the next free rank rather than interleaved, so the
+/// pre-existing ordering contract is untouched (record-widening at 4-6, the two
+/// KPI-freshness kinds at 7-8). Within a rank the queue sorts by age, worst
+/// first.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct AttentionItem {
     pub kind: String,
-    /// Which record type this row is about: `goal` | `idea` | `task`.
+    /// Which record type this row is about: `goal` | `idea` | `task` | `kpi`.
     pub entity_kind: String,
-    /// Id of the record that needs attention — a goal, idea, or task id.
+    /// Id of the record that needs attention — a goal, idea, task or KPI id.
     /// Always the thing the UI should open.
     pub entity_id: String,
     pub entity_title: String,

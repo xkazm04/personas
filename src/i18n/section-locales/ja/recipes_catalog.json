@@ -231,5 +231,11 @@
   "update_badge_detail_tooltip": "v{from}で導入済み。カタログは現在v{to}です。更新するには削除して再導入してください。",
   "update_badge_tooltip": "この機能の新しいバージョンが利用可能です — 削除して再導入すると更新されます",
   "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-  "tags_heading": "タグ"
+  "tags_heading": "タグ",
+  "adopted_params_failed_toast": "「{title}」を採用しましたが、設定を作成できませんでした",
+  "adopted_params_partial_toast": "「{title}」を採用しましたが、{declared} 件中 {missing} 件の設定を作成できませんでした（{types}）",
+  "removed_params_failed_toast": "「{title}」を削除しましたが、設定を整理できませんでした",
+  "_comment_adopted_params_failed_toast": "Warning toast when adoption succeeded but the parameter sync call failed outright, so the capability has no editable settings at all.",
+  "_comment_adopted_params_partial_toast": "Warning toast after adopting a capability whose input_schema declared setting types the persona parameter system cannot express. {missing}/{declared} are counts; {types} is a comma-joined list of RAW TYPE TOKENS (source_definition, connector_ref, list[string]) - do NOT translate the tokens themselves.",
+  "_comment_removed_params_failed_toast": "Warning toast when removal succeeded but the parameter re-sync failed, so the detached capability's lines are still in the prompt."
 }

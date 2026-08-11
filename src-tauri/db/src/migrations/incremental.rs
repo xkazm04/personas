@@ -55,6 +55,24 @@ fn has_table(conn: &Connection, table: &str) -> Result<bool, AppError> {
     Ok(count > 0)
 }
 
+/// Report — rather than discard — a `DROP COLUMN group_id` that SQLite refused.
+///
+/// The call sites are already `has_column`-guarded, so "no such column" cannot
+/// happen and every error reaching here is real. On `persona_memories` and
+/// `dev_projects` the column is dead weight (no Rust field reads or writes it),
+/// so a failure is not worth aborting a launch over — but it must not be
+/// invisible either, which is what `let _ = ddl_step(…)` made it.
+fn report_failed_group_id_drop(table: &str, result: Result<(), AppError>) {
+    if let Err(e) = result {
+        tracing::error!(
+            table = %table,
+            error = %e,
+            "retire_persona_groups: DROP COLUMN group_id failed — the dead column stays \
+             (an index, trigger or view most likely still names it)",
+        );
+    }
+}
+
 fn has_index(conn: &Connection, index: &str) -> Result<bool, AppError> {
     let count = conn.query_row(
         "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name = ?1",
@@ -2070,7 +2088,16 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     }
 
     // Add warnings column to automation_runs for surfacing auth fallbacks & method defaults.
-    let _ = ddl_step(conn, "ALTER TABLE automation_runs ADD COLUMN warnings TEXT;");
+    //
+    // Guarded, not `let _ =`. Discarding the Result absorbed the "duplicate
+    // column name" this step expects on re-run — but it absorbed EVERY other
+    // error with it, so a genuinely failed write was indistinguishable from a
+    // no-op. `has_column` makes the duplicate impossible, which means anything
+    // that still errors here is real and propagates. (`automation_runs` comes
+    // from the base SCHEMA, so the table is always present at this point.)
+    if !has_column(conn, "automation_runs", "warnings")? {
+        ddl_step(conn, "ALTER TABLE automation_runs ADD COLUMN warnings TEXT;")?;
+    }
 
     // Migrate legacy string-matched interrupted sessions to first-class 'interrupted' status.
     let migrated = conn
@@ -3387,12 +3414,24 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
                 let _ = ddl_step(conn, "DROP INDEX IF EXISTS idx_dev_projects_group_id;");
 
                 // No-FK columns: safe native DROP COLUMN. has_column guard makes
-                // it a no-op on fresh DBs and on re-run.
+                // it a no-op on fresh DBs and on re-run — so "no such column"
+                // is already impossible and the discarded Result could only ever
+                // have been hiding a real failure. SQLite refuses DROP COLUMN
+                // while any index/trigger/view still names the column; on these
+                // two tables the consequence is a leftover dead column, which is
+                // not worth aborting a launch over. So: report, don't swallow,
+                // don't brick.
                 if has_column(conn, "persona_memories", "group_id")? {
-                    let _ = ddl_step(conn, "ALTER TABLE persona_memories DROP COLUMN group_id;");
+                    report_failed_group_id_drop(
+                        "persona_memories",
+                        ddl_step(conn, "ALTER TABLE persona_memories DROP COLUMN group_id;"),
+                    );
                 }
                 if has_column(conn, "dev_projects", "group_id")? {
-                    let _ = ddl_step(conn, "ALTER TABLE dev_projects DROP COLUMN group_id;");
+                    report_failed_group_id_drop(
+                        "dev_projects",
+                        ddl_step(conn, "ALTER TABLE dev_projects DROP COLUMN group_id;"),
+                    );
                 }
 
                 // Drop the personas.group_id FK column outright. NULLing it is
@@ -3403,8 +3442,25 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
                 // removes the dangling FK (mirrors persona_memories/dev_projects
                 // above; the index was already dropped). Guarded + idempotent.
                 if has_column(conn, "personas", "group_id")? {
-                    let _ = ddl_step(conn, "UPDATE personas SET group_id = NULL;");
-                    let _ = ddl_step(conn, "ALTER TABLE personas DROP COLUMN group_id;");
+                    ddl_step(conn, "UPDATE personas SET group_id = NULL;")?;
+                    if let Err(e) = ddl_step(conn, "ALTER TABLE personas DROP COLUMN group_id;") {
+                        // Do NOT fall through to the DROP TABLE below. SQLite
+                        // refuses DROP COLUMN while any index/trigger/view still
+                        // names the column, and with the FK column left in place
+                        // dropping `persona_groups` makes EVERY `INSERT INTO
+                        // personas` fail with "no such table: persona_groups" —
+                        // precisely the breakage the comment above describes.
+                        // Discarding this Result made that outcome both silent
+                        // and reachable. Keep both objects, log loudly, retry on
+                        // the next launch (this step re-runs every boot).
+                        tracing::error!(
+                            error = %e,
+                            "retire_persona_groups: could not drop personas.group_id — keeping \
+                             persona_groups so persona creation keeps working; will retry on \
+                             the next launch",
+                        );
+                        return Ok(());
+                    }
                 }
                 let _ = ddl_step(conn, "DROP TABLE IF EXISTS persona_groups;");
                 Ok(())
@@ -4622,6 +4678,115 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+
+    // -- Recipe outcome attribution ------------------------------------------
+    // With 299 seeded recipes the product could not answer "which of these do
+    // people actually run, and do they succeed?" An adopted capability carries
+    // `source_recipe_id` in `personas.design_context.useCases[]`, but that
+    // provenance was never joined to a run: nothing on the execution path
+    // recorded which recipe produced an output, `dev_llm_spend` has only a
+    // coarse `source:"recipe"` tag written by the dead playground path, and
+    // `recipe_suggestion_events` measures composer chip impressions rather
+    // than outcomes.
+    //
+    // Denormalized onto the execution row rather than resolved by a live join,
+    // because `design_context` is mutable: detaching a capability deletes the
+    // use case, which would silently rewrite the history of every run it ever
+    // produced. A run's provenance is a fact about the past and must not move.
+    //
+    // Both columns are NULL when no recipe is behind the run. Historical rows
+    // stay NULL — they genuinely lack the information and there is no honest
+    // backfill for them.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_executions_recipe_provenance",
+            description: "Add source_recipe_id/source_recipe_version to persona_executions",
+            already_applied: |conn| {
+                // Guarded on the table as well as the column: several tables
+                // exist only in the app binary, and an ALTER against a missing
+                // table would abort the whole migration run.
+                Ok(!has_table(conn, "persona_executions")?
+                    || has_column(conn, "persona_executions", "source_recipe_id")?)
+            },
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE persona_executions ADD COLUMN source_recipe_id TEXT;\n\
+                     ALTER TABLE persona_executions ADD COLUMN source_recipe_version TEXT;\n\
+                     CREATE INDEX IF NOT EXISTS idx_pe_source_recipe\n\
+                         ON persona_executions(source_recipe_id, status)\n\
+                         WHERE source_recipe_id IS NOT NULL;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+    // The AI-compose measurement door writes `source = 'ai-compose'` — a value
+    // the source CHECK never allowed. Both writers (`kpi_compose::
+    // apply_composed_measure` and the Factory measurement-setup modal) were
+    // therefore rejected by SQLite, and the background one swallowed the error
+    // with `let _ =`: an AI-composed reading has never reached the series.
+    // Widen the CHECK so it can.
+    //
+    // MUST live here and not in `ensure_composite_fires_table` (which owns the
+    // file's tail): that phase runs BEFORE this one and is where the table is
+    // created, so a rebuild placed there would race its own CREATE.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_kpi_measurements.source_ai_compose",
+            description: "allow source='ai-compose' on KPI measurements (table rebuild)",
+            already_applied: |conn| {
+                if !has_table(conn, "dev_kpi_measurements")? {
+                    return Ok(true);
+                }
+                if !has_column(conn, "dev_kpi_measurements", "source")? {
+                    return Ok(true);
+                }
+                let sql: String = conn.query_row(
+                    "SELECT COALESCE(sql, '') FROM sqlite_master
+                     WHERE type='table' AND name='dev_kpi_measurements'",
+                    [],
+                    |r| r.get(0),
+                )?;
+                Ok(sql.contains("'ai-compose'"))
+            },
+            apply: widen_kpi_measurement_source_with_ai_compose,
+        },
+    )?;
+    // `dev_goals.status` was a free TEXT column. Its canonical states existed
+    // only in TypeScript, and correctness depended on every writer remembering
+    // to call `normalizeGoalStatus` — which has already failed once (v1 wrote
+    // 'in-progress' and matched 'in_progress', silently mis-laning every
+    // in-progress goal), and which Rust never called at all. Constrain it at
+    // the DB boundary, the way the module's own neighbours already are:
+    // `dev_kpi_measurements.source`, `.env` and `dev_kpis.status` all carry
+    // CHECKs.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_goals.status_check",
+            description: "constrain dev_goals.status to the canonical set (table rebuild)",
+            already_applied: |conn| {
+                if !has_table(conn, "dev_goals")? {
+                    return Ok(true);
+                }
+                if !has_column(conn, "dev_goals", "status")? {
+                    return Ok(true);
+                }
+                let sql: String = conn.query_row(
+                    "SELECT COALESCE(sql, '') FROM sqlite_master
+                     WHERE type='table' AND name='dev_goals'",
+                    [],
+                    |r| r.get(0),
+                )?;
+                Ok(sql.contains("CHECK(status IN"))
+            },
+            apply: constrain_goal_status_to_canonical_set,
+        },
+    )?;
+
     Ok(())
 }
 
@@ -5050,14 +5215,25 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     )?;
 
     // -- Twin plugin: knowledge_base_id on profiles (P2) ---------------------
-    let _ = ddl_step(conn, "ALTER TABLE twin_profiles ADD COLUMN knowledge_base_id TEXT;"); // ignore "duplicate column" on re-run
+    // `has_column` rather than a discarded Result: the guard removes the
+    // "duplicate column" re-run error this used to absorb, so a real failure is
+    // no longer indistinguishable from a successful no-op. `twin_profiles` is
+    // created a few steps above in this same function, so it always exists here.
+    if !has_column(conn, "twin_profiles", "knowledge_base_id")? {
+        ddl_step(conn, "ALTER TABLE twin_profiles ADD COLUMN knowledge_base_id TEXT;")?;
+    }
 
     // -- Twin plugin: persistent training directives (D5 — self-sharpening) --
     // Free-text "training style guide" per twin. The Training Studio seeds its
     // Directions box from this and can save edits back; every question/answer
     // generation prepends it so the studio learns the user's taste instead of
     // restating it each session.
-    let _ = ddl_step(conn, "ALTER TABLE twin_profiles ADD COLUMN training_directives TEXT;"); // ignore "duplicate column" on re-run
+    if !has_column(conn, "twin_profiles", "training_directives")? {
+        ddl_step(
+            conn,
+            "ALTER TABLE twin_profiles ADD COLUMN training_directives TEXT;",
+        )?;
+    }
 
     // -- Twin plugin: pending memories inbox (P2) ----------------------------
     // Human-approval gate for memories. record_interaction writes here; the
@@ -7841,6 +8017,236 @@ fn research_lab_align_columns(conn: &Connection) {
     );
 }
 
+/// Widen `dev_kpi_measurements.source` with `'ai-compose'`.
+///
+/// SQLite cannot alter a CHECK in place, so the table is rebuilt. Unlike the
+/// `dev_kpi_measurements_env_sim` rebuild above — which hand-wrote the column
+/// list because it was also ADDING a column — this one recreates the table from
+/// its OWN stored DDL (the `rebuild_executions_table_with_incomplete_status`
+/// discipline). That matters here: a hand-written column list silently DROPS
+/// any column a later migration added, and this step runs at the end of the
+/// chain where the shape is no longer knowable from this file alone.
+fn widen_kpi_measurement_source_with_ai_compose(conn: &Connection) -> Result<(), AppError> {
+    // `dev_kpis` is the parent of this table's only FK, and nothing references
+    // it back — but a `DROP TABLE` with foreign_keys=ON still runs an implicit
+    // delete, so the swap follows the same guarded procedure as every other
+    // rebuild in this file.
+    let _fk_guard = crate::FkDisabledGuard::new(conn).map_err(AppError::Database)?;
+
+    let create_sql: String = conn.query_row(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='dev_kpi_measurements'",
+        [],
+        |r| r.get(0),
+    )?;
+
+    // `'simulation'` is the last entry of the source CHECK list and appears
+    // exactly once in the DDL. If it doesn't, the table is not the shape this
+    // step was written against — bail rather than build a table that silently
+    // keeps the old constraint (or, worse, mangles a different clause).
+    if create_sql.matches("'simulation'").count() != 1 {
+        return Err(AppError::Validation(
+            "dev_kpi_measurements source CHECK is not in the expected shape — refusing to rebuild"
+                .into(),
+        ));
+    }
+    let widened = create_sql.replacen("'simulation'", "'simulation','ai-compose'", 1);
+    // Re-point the CREATE at a staging name. The token `dev_kpi_measurements`
+    // occurs once (the table name); the FK clause references `dev_kpis`, which
+    // does not contain it. A prior rename leaves the name quoted, which stays
+    // valid SQL after the substitution.
+    let staged = widened.replacen(
+        "dev_kpi_measurements",
+        "dev_kpi_measurements_ai_compose_new",
+        1,
+    );
+
+    // Index/trigger DDL to replay after the rename — dropping the table drops
+    // them with it. Auto-indexes have a NULL `sql` and are recreated implicitly.
+    let aux_sql: Vec<String> = {
+        let mut stmt = conn.prepare(
+            "SELECT sql FROM sqlite_master
+             WHERE tbl_name='dev_kpi_measurements'
+               AND type IN ('index','trigger')
+               AND sql IS NOT NULL",
+        )?;
+        let rows = stmt.query_map([], |r| r.get::<_, String>(0))?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?
+    };
+
+    let mut batch = String::new();
+    batch.push_str("DROP TABLE IF EXISTS dev_kpi_measurements_ai_compose_new;\n");
+    batch.push_str(&staged);
+    batch.push_str(";\n");
+    batch.push_str(
+        "INSERT INTO dev_kpi_measurements_ai_compose_new SELECT * FROM dev_kpi_measurements;\n",
+    );
+    batch.push_str("DROP TABLE dev_kpi_measurements;\n");
+    batch.push_str(
+        "ALTER TABLE dev_kpi_measurements_ai_compose_new RENAME TO dev_kpi_measurements;\n",
+    );
+    for s in &aux_sql {
+        batch.push_str(s);
+        batch.push_str(";\n");
+    }
+    ddl_step(conn, &batch)
+}
+
+/// Fold every `dev_goals.status` onto the canonical set, IN PLACE, and return
+/// the `(goal_id, original_value)` of every row nothing could map.
+///
+/// Mapping uses `repos::dev_tools::canonical_goal_status` — the strict twin of
+/// the runtime normalizer, with no catch-all — so the legacy spellings the UI
+/// has always folded (running/matching → in-progress, review/awaiting_review →
+/// blocked, completed/skipped → done, pending/todo/queued → open) migrate
+/// cleanly, and anything else is separable.
+///
+/// Unmappable rows are REPORTED, not buried: each gets a `dev_goal_signals` row
+/// carrying its original value — visible on the goal itself, not only in a log
+/// file — plus a `tracing::warn!`. Only then is it stored as `open`, which is
+/// what `normalizeGoalStatus` has been RENDERING it as all along; the migration
+/// makes storage agree with the display instead of inventing a third answer.
+/// Failing the migration is not on the table: it runs on every app launch, so a
+/// bail would brick the install over a bad string.
+fn normalize_goal_statuses_in_place(conn: &Connection) -> Result<Vec<(String, String)>, AppError> {
+    let rows: Vec<(String, String)> = {
+        let mut stmt = conn.prepare("SELECT id, status FROM dev_goals")?;
+        let mapped = stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?;
+        mapped.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?
+    };
+
+    let signals_table = has_table(conn, "dev_goal_signals")?;
+    let mut unmappable = Vec::new();
+    for (id, raw) in rows {
+        match crate::repos::dev_tools::canonical_goal_status(&raw) {
+            // Already canonical — leave the row alone.
+            Some(canonical) if canonical == raw => {}
+            Some(canonical) => {
+                conn.execute(
+                    "UPDATE dev_goals SET status = ?1 WHERE id = ?2",
+                    rusqlite::params![canonical, id],
+                )?;
+            }
+            None => {
+                tracing::warn!(
+                    goal_id = %id,
+                    original_status = %raw,
+                    "dev_goals.status: value is outside the canonical set and matches no known \
+                     alias. The UI has been rendering it as `open`; storage now says so too. The \
+                     original is preserved on the goal as a `status_unmappable` signal.",
+                );
+                if signals_table {
+                    // Best-effort: the signal is the user-visible half of the
+                    // report, but losing it must not cost the migration.
+                    let _ = conn.execute(
+                        "INSERT INTO dev_goal_signals (id, goal_id, signal_type, message)
+                         VALUES (?1, ?2, 'status_unmappable', ?3)",
+                        rusqlite::params![
+                            uuid::Uuid::new_v4().to_string(),
+                            id,
+                            format!(
+                                "Stored status {raw:?} matched no canonical goal status; migrated to \
+                                 \"open\" (which is how it was already being displayed)."
+                            ),
+                        ],
+                    );
+                }
+                conn.execute(
+                    "UPDATE dev_goals SET status = 'open' WHERE id = ?1",
+                    rusqlite::params![id],
+                )?;
+                unmappable.push((id, raw));
+            }
+        }
+    }
+    Ok(unmappable)
+}
+
+/// Constrain `dev_goals.status` to the canonical set.
+///
+/// SQLite cannot add a CHECK to an existing column in place, so this is the
+/// table-rebuild pattern — recreated from the table's OWN stored DDL (the
+/// `rebuild_executions_table_with_incomplete_status` discipline) rather than a
+/// hand-written column list, because `dev_goals` has already grown columns by
+/// ALTER (`parent_goal_id` in initial.rs, `kpi_id` here) and a positional
+/// rewrite would drop whatever the next one adds.
+fn constrain_goal_status_to_canonical_set(conn: &Connection) -> Result<(), AppError> {
+    // Every legacy value has to fit the constraint before the copy runs, or the
+    // rebuild fails on the first stale row and takes the launch down with it.
+    let unmappable = normalize_goal_statuses_in_place(conn)?;
+    if !unmappable.is_empty() {
+        tracing::error!(
+            count = unmappable.len(),
+            rows = ?unmappable,
+            "dev_goals.status: rows carried a status nothing maps. Each is now `open` and carries \
+             a `status_unmappable` goal signal with its original value — a writer somewhere is \
+             bypassing the canonical set.",
+        );
+    }
+
+    // Six tables reference `dev_goals` (including itself, via parent_goal_id),
+    // so a `DROP TABLE` with FK enforcement on would fire ON DELETE CASCADE /
+    // SET NULL across all of them. Same guard every rebuild in this file uses.
+    let _fk_guard = crate::FkDisabledGuard::new(conn).map_err(AppError::Database)?;
+
+    let create_sql: String = conn.query_row(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='dev_goals'",
+        [],
+        |r| r.get(0),
+    )?;
+
+    // `DEFAULT 'open'` occurs exactly once in the dev_goals DDL — the status
+    // column. If it doesn't, the table is not the shape this step was written
+    // against; bail rather than splice a CHECK onto the wrong column.
+    if create_sql.matches("DEFAULT 'open'").count() != 1 {
+        return Err(AppError::Validation(
+            "dev_goals.status is not in the expected shape — refusing to rebuild".into(),
+        ));
+    }
+    let check = format!(
+        "DEFAULT 'open' CHECK(status IN ({}))",
+        crate::repos::dev_tools::CANONICAL_GOAL_STATUSES
+            .iter()
+            .map(|s| format!("'{s}'"))
+            .collect::<Vec<_>>()
+            .join(","),
+    );
+    let constrained = create_sql.replacen("DEFAULT 'open'", &check, 1);
+    // Re-point ONLY the table name at the staging name (occurrence 1). The
+    // self-FK further down keeps saying `dev_goals`, which is what it must say
+    // once the rename lands — with foreign_keys OFF, SQLite does not rewrite
+    // REFERENCES clauses during a rename, so the clause has to be written as
+    // its final form up front.
+    let staged = constrained.replacen("dev_goals", "dev_goals_status_check_new", 1);
+
+    // Index DDL to replay after the rename — dropping the table drops it with
+    // them. `dev_goals` carries no triggers today; the query covers both.
+    let aux_sql: Vec<String> = {
+        let mut stmt = conn.prepare(
+            "SELECT sql FROM sqlite_master
+             WHERE tbl_name='dev_goals'
+               AND type IN ('index','trigger')
+               AND sql IS NOT NULL",
+        )?;
+        let rows = stmt.query_map([], |r| r.get::<_, String>(0))?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?
+    };
+
+    let mut batch = String::new();
+    batch.push_str("DROP TABLE IF EXISTS dev_goals_status_check_new;\n");
+    batch.push_str(&staged);
+    batch.push_str(";\n");
+    batch.push_str("INSERT INTO dev_goals_status_check_new SELECT * FROM dev_goals;\n");
+    batch.push_str("DROP TABLE dev_goals;\n");
+    batch.push_str("ALTER TABLE dev_goals_status_check_new RENAME TO dev_goals;\n");
+    for s in &aux_sql {
+        batch.push_str(s);
+        batch.push_str(";\n");
+    }
+    ddl_step(conn, &batch)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -8003,6 +8409,90 @@ mod tests {
         );
     }
 
+    /// A guarded `ALTER TABLE … ADD COLUMN` that genuinely cannot succeed must
+    /// SURFACE. Six sites in this file used `let _ = ddl_step(…)` to absorb the
+    /// "duplicate column name" they expect on re-run — and absorbed every other
+    /// error with it, so a migration that never wrote anything reported success.
+    ///
+    /// Simulates a database where the statement cannot possibly work (its table
+    /// is gone). Under the discarded Result this returned `Ok(())`.
+    #[test]
+    fn a_genuinely_failed_guarded_alter_is_no_longer_swallowed() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        // `cloud_webhook_watermarks` is created by the very next step after the
+        // guarded ALTER and by nothing else in the tree, so its absence pins
+        // WHERE the chain stopped. Without that marker the assertion is empty:
+        // with the Result discarded the chain sails past the ALTER and only
+        // trips ~200 lines later on `CREATE INDEX … ON automation_runs`, which
+        // raises the same "no such table" from a completely different cause.
+        conn.execute_batch(
+            "DROP TABLE automation_runs;
+             DROP TABLE cloud_webhook_watermarks;",
+        )
+        .unwrap();
+
+        let err = run_incremental(&conn)
+            .expect_err("an ALTER that cannot succeed must surface, not be swallowed");
+        assert!(
+            err.to_string().contains("automation_runs"),
+            "the surfaced error must name the failing table, got: {err}",
+        );
+        assert!(
+            !has_table(&conn, "cloud_webhook_watermarks").unwrap(),
+            "the chain ran PAST the failed ALTER — the error was still being swallowed",
+        );
+    }
+
+    /// `retire_persona_groups` drops `personas.group_id` and then drops the
+    /// `persona_groups` table it references. SQLite refuses `DROP COLUMN` while
+    /// any index/trigger/view still names the column — and the discarded Result
+    /// meant the migration marched on to `DROP TABLE persona_groups` anyway,
+    /// leaving `personas` with a REFERENCES clause pointing at nothing. With
+    /// `foreign_keys = ON` (every pooled connection) that makes EVERY
+    /// `INSERT INTO personas` fail with `no such table: persona_groups`.
+    ///
+    /// Rebuilds that exact legacy shape, including a COMPOSITE index the
+    /// migration's hand-written `DROP INDEX` list has never heard of.
+    #[test]
+    fn a_blocked_group_id_drop_no_longer_takes_persona_groups_with_it() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        conn.execute_batch(
+            // The ORIGINAL pre-workspace shape: the chain's own earlier step
+            // ("Added workspace fields to persona_groups") adds description +
+            // the four default_* columns that `groups_to_teams_data_migration`
+            // then reads, so seeding them here would collide with it.
+            "CREATE TABLE persona_groups (
+                id         TEXT PRIMARY KEY,
+                name       TEXT NOT NULL,
+                color      TEXT,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+             );
+             ALTER TABLE persona_memories ADD COLUMN group_id TEXT;
+             ALTER TABLE personas ADD COLUMN group_id TEXT REFERENCES persona_groups(id);
+             CREATE INDEX idx_personas_group_and_name ON personas(group_id, name);",
+        )
+        .unwrap();
+
+        // A blocked DROP COLUMN is not worth bricking a launch over…
+        run_incremental(&conn)
+            .expect("a blocked DROP COLUMN must not abort the whole migration chain");
+
+        // …but the parent table must not be dropped out from under the FK.
+        assert!(
+            has_table(&conn, "persona_groups").unwrap(),
+            "persona_groups was dropped while personas.group_id still references it",
+        );
+        conn.execute(
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at) \
+             VALUES ('p1', 'n', 'sp', datetime('now'), datetime('now'))",
+            [],
+        )
+        .expect("persona creation must still work after the migration");
+    }
+
     /// Pins that a fresh database actually receives the artifacts of the
     /// NEWEST migrations at the tail of `run_incremental`. If a late step is
     /// accidentally short-circuited (e.g. an early `return`, a mis-keyed
@@ -8107,6 +8597,337 @@ mod tests {
         assert!(
             ddl.contains("'incomplete'"),
             "persona_executions status CHECK does not allow 'incomplete'"
+        );
+    }
+
+    /// `source='ai-compose'` is what the Factory measurement-setup compose run
+    /// writes. Until the CHECK was widened SQLite rejected every one of them,
+    /// and the background writer swallowed the error — so the assertion that
+    /// matters is that the value is now *accepted*, on a fresh install and on a
+    /// legacy database that still carries the narrow CHECK.
+    #[test]
+    fn ai_compose_is_an_accepted_measurement_source() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        conn.execute_batch(
+            "INSERT INTO dev_projects (id, name, root_path) VALUES ('p1','P','/tmp/ai-compose');
+             INSERT INTO dev_kpis (id, project_id, name, category, measure_kind, unit, direction)
+                VALUES ('k1','p1','Coverage','technical','codebase','%','up');",
+        )
+        .unwrap();
+
+        conn.execute(
+            "INSERT INTO dev_kpi_measurements (id, kpi_id, value, source, env, evidence)
+             VALUES ('m1','k1',61.5,'ai-compose','production','{\"cmd\":\"npx vitest run\"}')",
+            [],
+        )
+        .expect("an AI-composed reading must be storable");
+
+        // The widening is additive, never a hole: an invented source is still
+        // refused, so the column keeps meaning something.
+        assert!(
+            conn.execute(
+                "INSERT INTO dev_kpi_measurements (id, kpi_id, value, source)
+                 VALUES ('m2','k1',1.0,'vibes')",
+                [],
+            )
+            .is_err(),
+            "the CHECK must still reject a source nothing writes",
+        );
+    }
+
+    /// The rebuild copies from the table's OWN stored DDL, so a column added by
+    /// a later migration must survive it — a hand-written column list would
+    /// silently drop the data. Simulates a legacy DB by narrowing the CHECK back
+    /// down and adding a column the rebuild code has never heard of.
+    #[test]
+    fn widening_the_measurement_source_preserves_rows_and_later_columns() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        conn.execute_batch(
+            "INSERT INTO dev_projects (id, name, root_path) VALUES ('p1','P','/tmp/widen');
+             INSERT INTO dev_kpis (id, project_id, name, category, measure_kind, unit, direction)
+                VALUES ('k1','p1','Coverage','technical','codebase','%','up');",
+        )
+        .unwrap();
+
+        // Rewind to the pre-widening shape, plus a "future" column.
+        conn.execute_batch(
+            "PRAGMA foreign_keys = OFF;
+             DROP TABLE dev_kpi_measurements;
+             CREATE TABLE dev_kpi_measurements (
+                id          TEXT PRIMARY KEY,
+                kpi_id      TEXT NOT NULL REFERENCES dev_kpis(id) ON DELETE CASCADE,
+                value       REAL NOT NULL,
+                measured_at TEXT NOT NULL DEFAULT (datetime('now')),
+                source      TEXT NOT NULL DEFAULT 'manual'
+                            CHECK(source IN ('evaluator','manual','scan','health_snapshot','simulation')),
+                env         TEXT NOT NULL DEFAULT 'production'
+                            CHECK(env IN ('local','test','production')),
+                evidence    TEXT,
+                note        TEXT
+             );
+             ALTER TABLE dev_kpi_measurements ADD COLUMN confidence REAL;
+             CREATE INDEX idx_dev_kpi_measurements_kpi
+                ON dev_kpi_measurements(kpi_id, measured_at DESC);
+             INSERT INTO dev_kpi_measurements (id, kpi_id, value, source, evidence, confidence)
+                VALUES ('old','k1',40.0,'evaluator','{\"cmd\":\"legacy\"}',0.75);
+             PRAGMA foreign_keys = ON;",
+        )
+        .unwrap();
+        assert!(conn
+            .execute(
+                "INSERT INTO dev_kpi_measurements (id, kpi_id, value, source)
+                 VALUES ('pre','k1',1.0,'ai-compose')",
+                [],
+            )
+            .is_err());
+
+        run_incremental(&conn).unwrap();
+
+        let (value, evidence, confidence): (f64, Option<String>, Option<f64>) = conn
+            .query_row(
+                "SELECT value, evidence, confidence FROM dev_kpi_measurements WHERE id = 'old'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .expect("the legacy row survived the rebuild");
+        assert_eq!(value, 40.0);
+        assert_eq!(evidence.as_deref(), Some("{\"cmd\":\"legacy\"}"));
+        assert_eq!(
+            confidence,
+            Some(0.75),
+            "a column the rebuild code never knew about must ride along with its data",
+        );
+        assert!(
+            has_index(&conn, "idx_dev_kpi_measurements_kpi").unwrap(),
+            "the index is replayed after the rename",
+        );
+        conn.execute(
+            "INSERT INTO dev_kpi_measurements (id, kpi_id, value, source, env, evidence)
+             VALUES ('m1','k1',61.5,'ai-compose','production','{}')",
+            [],
+        )
+        .expect("the widened CHECK now accepts the composed source");
+
+        // Replay must be a no-op, not a second rebuild.
+        run_incremental(&conn).unwrap();
+        let rows: i64 = conn
+            .query_row("SELECT COUNT(*) FROM dev_kpi_measurements", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(rows, 2, "re-running the migration must not duplicate or drop rows");
+    }
+
+    // ------------------------------------------------- dev_goals.status ----
+
+    /// Rewind `dev_goals` to the unconstrained TEXT column and seed it with the
+    /// given `(id, status)` rows, simulating a database written before the
+    /// CHECK existed.
+    fn legacy_goals_table(conn: &Connection, rows: &[(&str, &str)]) {
+        conn.execute_batch(
+            "PRAGMA foreign_keys = OFF;
+             INSERT INTO dev_projects (id, name, root_path) VALUES ('p1','P','/tmp/goal-status');
+             DROP TABLE dev_goals;
+             CREATE TABLE dev_goals (
+               id             TEXT PRIMARY KEY,
+               project_id     TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+               parent_goal_id TEXT REFERENCES dev_goals(id) ON DELETE SET NULL,
+               context_id     TEXT,
+               order_index    INTEGER NOT NULL DEFAULT 0,
+               title          TEXT NOT NULL,
+               description    TEXT,
+               status         TEXT NOT NULL DEFAULT 'open',
+               progress       INTEGER DEFAULT 0,
+               target_date    TEXT,
+               started_at     TEXT,
+               completed_at   TEXT,
+               created_at     TEXT NOT NULL DEFAULT (datetime('now')),
+               updated_at     TEXT NOT NULL DEFAULT (datetime('now'))
+             );
+             ALTER TABLE dev_goals ADD COLUMN kpi_id TEXT;
+             CREATE INDEX idx_dev_goals_project ON dev_goals(project_id);
+             CREATE INDEX idx_dev_goals_status  ON dev_goals(status);
+             CREATE INDEX idx_dev_goals_parent  ON dev_goals(parent_goal_id);
+             PRAGMA foreign_keys = ON;",
+        )
+        .unwrap();
+        for (i, (id, status)) in rows.iter().enumerate() {
+            conn.execute(
+                "INSERT INTO dev_goals (id, project_id, title, status, kpi_id)
+                 VALUES (?1, 'p1', ?2, ?3, ?4)",
+                rusqlite::params![id, format!("goal {i}"), status, format!("kpi-{i}")],
+            )
+            .unwrap();
+        }
+    }
+
+    fn status_of(conn: &Connection, id: &str) -> String {
+        conn.query_row(
+            "SELECT status FROM dev_goals WHERE id = ?1",
+            rusqlite::params![id],
+            |r| r.get(0),
+        )
+        .unwrap()
+    }
+
+    /// Every legacy spelling `normalizeGoalStatus` already folds must survive
+    /// the migration as its canonical form. A CHECK that rejected them would
+    /// brick the launch of any install that has one.
+    #[test]
+    fn legacy_goal_status_aliases_migrate_to_their_canonical_form() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        legacy_goals_table(
+            &conn,
+            &[
+                ("g-running", "running"),
+                ("g-matching", "matching"),
+                ("g-underscore", "in_progress"),
+                ("g-review", "review"),
+                ("g-awaiting-review", "awaiting_review"),
+                ("g-completed", "completed"),
+                ("g-skipped", "skipped"),
+                ("g-queued", "queued"),
+                ("g-open", "open"),
+                ("g-accept", "awaiting_acceptance"),
+            ],
+        );
+
+        run_incremental(&conn).unwrap();
+
+        for (id, expected) in [
+            ("g-running", "in-progress"),
+            ("g-matching", "in-progress"),
+            ("g-underscore", "in-progress"),
+            ("g-review", "blocked"),
+            ("g-awaiting-review", "blocked"),
+            ("g-completed", "done"),
+            ("g-skipped", "done"),
+            ("g-queued", "open"),
+            ("g-open", "open"),
+            ("g-accept", "awaiting_acceptance"),
+        ] {
+            assert_eq!(status_of(&conn, id), expected, "{id} migrated wrong");
+        }
+        // The rebuild preserved the ALTER-added column and the indexes.
+        let kpi_id: Option<String> = conn
+            .query_row(
+                "SELECT kpi_id FROM dev_goals WHERE id = 'g-running'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(kpi_id.as_deref(), Some("kpi-0"));
+        for idx in ["idx_dev_goals_project", "idx_dev_goals_status", "idx_dev_goals_parent"] {
+            assert!(has_index(&conn, idx).unwrap(), "{idx} was not replayed");
+        }
+    }
+
+    /// The point of the constraint: a writer that bypasses the canonical set is
+    /// stopped at the boundary instead of silently mis-laning a goal forever.
+    #[test]
+    fn a_non_canonical_goal_status_is_rejected_at_the_db_boundary() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        conn.execute(
+            "INSERT INTO dev_projects (id, name, root_path) VALUES ('p1','P','/tmp/goal-reject')",
+            [],
+        )
+        .unwrap();
+
+        for bad in ["in_progress", "running", "completed", "", "whatever"] {
+            let err = conn.execute(
+                "INSERT INTO dev_goals (id, project_id, title, status)
+                 VALUES ('bad','p1','t',?1)",
+                rusqlite::params![bad],
+            );
+            assert!(err.is_err(), "status {bad:?} must be refused by the CHECK");
+        }
+        for good in crate::repos::dev_tools::CANONICAL_GOAL_STATUSES {
+            conn.execute(
+                "INSERT INTO dev_goals (id, project_id, title, status)
+                 VALUES (?1,'p1','t',?2)",
+                rusqlite::params![format!("ok-{good}"), good],
+            )
+            .unwrap_or_else(|e| panic!("canonical status {good:?} must be accepted: {e}"));
+        }
+    }
+
+    /// A status nothing maps is REPORTED — a goal signal carrying the original
+    /// value, not a silent rewrite — and the migration still completes, because
+    /// it runs on every launch and must never brick one.
+    #[test]
+    fn an_unmappable_goal_status_is_reported_rather_than_quietly_defaulted() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        legacy_goals_table(&conn, &[("g-weird", "escalated-to-legal"), ("g-fine", "running")]);
+
+        run_incremental(&conn).unwrap();
+
+        assert_eq!(status_of(&conn, "g-weird"), "open");
+        let (kind, message): (String, String) = conn
+            .query_row(
+                "SELECT signal_type, message FROM dev_goal_signals WHERE goal_id = 'g-weird'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .expect("the unmappable value must leave a trace on the goal itself");
+        assert_eq!(kind, "status_unmappable");
+        assert!(
+            message.contains("escalated-to-legal"),
+            "the report must carry the ORIGINAL value, or it buried the bug: {message}",
+        );
+        // A mappable neighbour is untouched by the anomaly path.
+        assert_eq!(status_of(&conn, "g-fine"), "in-progress");
+        assert_eq!(
+            conn.query_row("SELECT COUNT(*) FROM dev_goal_signals", [], |r| r
+                .get::<_, i64>(0))
+                .unwrap(),
+            1,
+            "only the unmappable row is reported",
+        );
+    }
+
+    /// Re-running is a no-op: the guard reads the stored DDL, so a second and
+    /// third launch neither rebuild the table nor re-report anything.
+    #[test]
+    fn re_running_the_goal_status_migration_changes_nothing() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        legacy_goals_table(&conn, &[("g-weird", "escalated-to-legal"), ("g-run", "running")]);
+
+        run_incremental(&conn).unwrap();
+        let ddl_after_first: String = conn
+            .query_row(
+                "SELECT sql FROM sqlite_master WHERE type='table' AND name='dev_goals'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+
+        run_incremental(&conn).unwrap();
+        run_incremental(&conn).unwrap();
+
+        let ddl_after_third: String = conn
+            .query_row(
+                "SELECT sql FROM sqlite_master WHERE type='table' AND name='dev_goals'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(ddl_after_first, ddl_after_third, "the replay rebuilt the table again");
+        assert_eq!(
+            ddl_after_third.matches("CHECK(status IN").count(),
+            1,
+            "a replay must not stack a second CHECK onto the column",
+        );
+        assert_eq!(status_of(&conn, "g-run"), "in-progress");
+        assert_eq!(
+            conn.query_row("SELECT COUNT(*) FROM dev_goal_signals", [], |r| r
+                .get::<_, i64>(0))
+                .unwrap(),
+            1,
+            "the anomaly is reported once, not once per launch",
         );
     }
 

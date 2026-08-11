@@ -7,7 +7,7 @@
 import { useMemo, useState } from 'react';
 
 import { motion } from 'framer-motion';
-import { ArrowLeft, Wand2 } from 'lucide-react';
+import { ArrowLeft, Globe, Network } from 'lucide-react';
 
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -30,7 +30,9 @@ const CHIP_H = 34;
 export function SkillTreeView({ model, onBack, onOpenInfo }: SkillTreeViewProps) {
   const { t, tx } = useTranslation();
   const [hovered, setHovered] = useState<string | null>(null);
-  const Icon = model.visual?.icon ?? Wand2;
+  // Icon encodes the method's scope (context-tracked vs agnostic), mirroring
+  // the Level-1 rows; the skill's accent colour still identifies the family.
+  const Icon = model.contextTracked ? Network : Globe;
   const accent = model.visual?.color ?? undefined;
 
   // Geometry + mid-branch label anchors — pure math, recomputed only when
@@ -51,8 +53,13 @@ export function SkillTreeView({ model, onBack, onOpenInfo }: SkillTreeViewProps)
           <ArrowLeft size={13} />
           {t.plugins.dev_tools.trace_back}
         </button>
-        <button type="button" onClick={() => onOpenInfo(model.skillName)} className="inline-flex items-center gap-2 hover:text-primary transition-colors">
-          <Icon size={16} style={accent ? { color: accent } : undefined} />
+        <button
+          type="button"
+          onClick={() => onOpenInfo(model.skillName)}
+          className="inline-flex items-center gap-2 hover:text-primary transition-colors"
+          title={model.contextTracked ? t.plugins.dev_tools.skills_info_context_tracked : undefined}
+        >
+          <Icon size={18} style={accent ? { color: accent } : undefined} />
           <span className="typo-title">{model.skillName}</span>
         </button>
         <span className="typo-caption text-foreground">

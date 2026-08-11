@@ -8,6 +8,72 @@ use crate::DbPool;
 use personas_core::types::ExecutionState;
 use personas_core::error::AppError;
 
+/// Recipe provenance stamped onto an execution at insert time:
+/// `(source_recipe_id, source_recipe_version)`.
+type RecipeProvenance = (Option<String>, Option<String>);
+
+/// Resolve which recipe (if any) is behind a run, from the persona's existing
+/// `design_context.useCases[]` provenance.
+///
+/// Adopting a capability from the catalog stamps `source_recipe_id` onto the
+/// use case (and the promote/Foundry path also pins `source_recipe_version`).
+/// That provenance is READ here and copied onto the execution row — there is
+/// deliberately no new write path into `design_context`, which is a JSON TEXT
+/// column mutated through a queued mutator.
+///
+/// Denormalizing rather than joining live is the point: detaching a capability
+/// deletes the use case, and a live join would then silently rewrite the
+/// history of every run it produced. Returns `(None, None)` for any run with no
+/// use case, no persona row, unparseable context, or a use case that was not
+/// adopted from a recipe. NULL is the honest answer — never a sentinel.
+///
+/// Best-effort by construction: a failure to resolve provenance must never fail
+/// the execution insert.
+fn resolve_recipe_provenance(
+    conn: &rusqlite::Connection,
+    persona_id: &str,
+    use_case_id: Option<&str>,
+) -> RecipeProvenance {
+    let Some(use_case_id) = use_case_id else {
+        return (None, None);
+    };
+    let design_context: Option<String> = conn
+        .query_row(
+            "SELECT design_context FROM personas WHERE id = ?1",
+            params![persona_id],
+            |row| row.get(0),
+        )
+        .ok()
+        .flatten();
+    let Some(raw) = design_context else {
+        return (None, None);
+    };
+    let Ok(ctx) = serde_json::from_str::<serde_json::Value>(&raw) else {
+        return (None, None);
+    };
+    let Some(use_cases) = ctx.get("useCases").and_then(|v| v.as_array()) else {
+        return (None, None);
+    };
+    let Some(uc) = use_cases
+        .iter()
+        .find(|uc| uc.get("id").and_then(|v| v.as_str()) == Some(use_case_id))
+    else {
+        return (None, None);
+    };
+    let str_field = |key: &str| {
+        uc.get(key)
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.trim().is_empty())
+            .map(str::to_string)
+    };
+    match str_field("source_recipe_id") {
+        // Only pin a version alongside a real recipe id — a version with
+        // nothing to version is noise.
+        Some(recipe_id) => (Some(recipe_id), str_field("source_recipe_version")),
+        None => (None, None),
+    }
+}
+
 fn row_to_execution(row: &Row) -> rusqlite::Result<PersonaExecution> {
     Ok(PersonaExecution {
         id: row.get("id")?,
@@ -469,10 +535,15 @@ pub fn create_with_idempotency(
             // it is released before any re-select below.
             let rows_changed = {
                 let conn = pool.get()?;
+                // Stamp which recipe this run came from, if any. Read from the
+                // persona's existing use-case provenance; NULL when there is no
+                // recipe behind the run.
+                let (source_recipe_id, source_recipe_version) =
+                    resolve_recipe_provenance(&conn, persona_id, use_case_id.as_deref());
                 let mut stmt = conn.prepare_cached(
                 "INSERT INTO persona_executions
-                 (id, persona_id, trigger_id, status, input_data, model_used, input_tokens, output_tokens, cost_usd, use_case_id, idempotency_key, is_simulation, created_at)
-                 VALUES (?1, ?2, ?3, 'queued', ?4, ?5, 0, 0, 0, ?6, ?7, ?8, ?9)
+                 (id, persona_id, trigger_id, status, input_data, model_used, input_tokens, output_tokens, cost_usd, use_case_id, idempotency_key, is_simulation, created_at, source_recipe_id, source_recipe_version)
+                 VALUES (?1, ?2, ?3, 'queued', ?4, ?5, 0, 0, 0, ?6, ?7, ?8, ?9, ?10, ?11)
                  ON CONFLICT(idempotency_key) WHERE idempotency_key IS NOT NULL DO NOTHING",
                 )?;
                 stmt.execute(params![
@@ -484,7 +555,9 @@ pub fn create_with_idempotency(
                     use_case_id,
                     idempotency_key,
                     is_simulation as i64,
-                    now
+                    now,
+                    source_recipe_id,
+                    source_recipe_version
                 ])?
             };
 
@@ -1389,11 +1462,17 @@ pub fn create_retry(
         // engine/mod.rs:spawn_delayed_retry read from the retry exec
         // directly instead of falling back to the original.
         let conn = pool.get()?;
+        // Recipe provenance is inherited from the original rather than
+        // re-resolved: a retry re-attempts the same work, and the capability may
+        // since have been detached. Copying keeps the retry attributed to the
+        // recipe that actually produced it.
         let mut stmt = conn.prepare_cached(
             "INSERT INTO persona_executions
-             (id, persona_id, status, input_tokens, output_tokens, cost_usd, retry_of_execution_id, retry_count, created_at, input_data)
+             (id, persona_id, status, input_tokens, output_tokens, cost_usd, retry_of_execution_id, retry_count, created_at, input_data, source_recipe_id, source_recipe_version)
              VALUES (?1, ?2, 'queued', 0, 0, 0, ?3, ?4, ?5,
-                     (SELECT input_data FROM persona_executions WHERE id = ?3))",
+                     (SELECT input_data FROM persona_executions WHERE id = ?3),
+                     (SELECT source_recipe_id FROM persona_executions WHERE id = ?3),
+                     (SELECT source_recipe_version FROM persona_executions WHERE id = ?3))",
         )?;
         stmt.execute(params![id, persona_id, original_exec_id, retry_count, now])?;
 
@@ -1816,6 +1895,76 @@ pub fn cleanup_old_executions(
     )
 }
 
+/// One recipe's run tally, from executions stamped with its provenance.
+///
+/// Raw counts rather than a pre-computed rate: what belongs in the denominator
+/// of "success rate" is a product judgement (does a cancelled run count against
+/// the recipe?), and baking one in would hide it. `terminal` is the honest
+/// denominator — queued/running rows are not outcomes yet.
+#[derive(Debug, Clone, PartialEq)]
+pub struct RecipeRunTally {
+    pub recipe_id: String,
+    /// Recipe display name, or `None` if the recipe row has since been deleted
+    /// (the runs stay attributed — provenance is a fact about the past).
+    pub recipe_name: Option<String>,
+    /// Every execution stamped with this recipe, any status.
+    pub runs: i64,
+    /// Runs that reached a terminal status (completed/failed/incomplete/cancelled).
+    pub terminal: i64,
+    pub completed: i64,
+    pub failed: i64,
+    /// Runs whose persona self-assessed that it actually delivered its job.
+    /// A stricter, more meaningful bar than `completed`.
+    pub value_delivered: i64,
+    /// ISO-8601 timestamp of the most recent run, or `None` if never run.
+    pub last_run_at: Option<String>,
+}
+
+/// Runs-per-recipe and success-rate-per-recipe, over every execution carrying
+/// recipe provenance. Ordered by run count descending, so "which recipes do
+/// people actually use" reads off the top.
+///
+/// Recipes that have never been run do not appear — this reports outcomes, and
+/// a recipe with no runs has none. Executions predating provenance stamping
+/// have a NULL `source_recipe_id` and are excluded, not guessed at.
+pub fn recipe_run_tallies(pool: &DbPool, limit: i64) -> Result<Vec<RecipeRunTally>, AppError> {
+    timed_query!("persona_executions", "persona_executions::recipe_run_tallies", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare_cached(
+            "SELECT e.source_recipe_id                                            AS recipe_id,
+                    r.name                                                        AS recipe_name,
+                    COUNT(*)                                                      AS runs,
+                    SUM(e.status IN ('completed','failed','incomplete','cancelled')) AS terminal,
+                    SUM(e.status = 'completed')                                   AS completed,
+                    SUM(e.status = 'failed')                                      AS failed,
+                    SUM(COALESCE(e.business_outcome,'') = 'value_delivered')      AS value_delivered,
+                    MAX(e.created_at)                                             AS last_run_at
+             FROM persona_executions e
+             LEFT JOIN recipe_definitions r ON r.id = e.source_recipe_id
+             WHERE e.source_recipe_id IS NOT NULL
+             GROUP BY e.source_recipe_id, r.name
+             ORDER BY runs DESC, last_run_at DESC
+             LIMIT ?1",
+        )?;
+        let rows = stmt.query_map(params![limit], |row| {
+            Ok(RecipeRunTally {
+                recipe_id: row.get("recipe_id")?,
+                recipe_name: row.get("recipe_name")?,
+                runs: row.get("runs")?,
+                terminal: row.get("terminal")?,
+                completed: row.get("completed")?,
+                failed: row.get("failed")?,
+                value_delivered: row.get("value_delivered")?,
+                last_run_at: row.get("last_run_at")?,
+            })
+        })?;
+        Ok(crate::repos::utils::collect_rows(
+            rows,
+            "persona_executions::recipe_run_tallies",
+        ))
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2208,5 +2357,200 @@ mod tests {
     fn list_active_chains_empty_when_nothing_running() {
         let pool = init_test_db().unwrap();
         assert!(list_active_chains(&pool).unwrap().is_empty());
+    }
+
+    // ---- Recipe outcome attribution ------------------------------------
+
+    /// Persona whose design_context carries one recipe-adopted use case
+    /// (`uc-recipe`) and one hand-built one (`uc-manual`).
+    fn make_persona_with_adopted_use_case(pool: &DbPool, name: &str) -> String {
+        let ctx = serde_json::json!({
+            "useCases": [
+                {
+                    "id": "uc-recipe",
+                    "title": "Adopted capability",
+                    "source_recipe_id": "recipe-abc",
+                    "source_recipe_version": "3",
+                },
+                { "id": "uc-manual", "title": "Hand-built capability" },
+            ]
+        })
+        .to_string();
+        let id = make_persona(pool, name);
+        crate::repos::core::personas::update(
+            pool,
+            &id,
+            crate::models::UpdatePersonaInput {
+                design_context: Some(Some(ctx)),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        id
+    }
+
+    fn provenance_of(pool: &DbPool, execution_id: &str) -> (Option<String>, Option<String>) {
+        let conn = pool.get().unwrap();
+        conn.query_row(
+            "SELECT source_recipe_id, source_recipe_version FROM persona_executions WHERE id = ?1",
+            params![execution_id],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn run_from_adopted_use_case_stamps_the_recipe() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona_with_adopted_use_case(&pool, "Recipe Runner");
+
+        let exec = create(
+            &pool,
+            &persona_id,
+            None,
+            None,
+            None,
+            Some("uc-recipe".into()),
+        )
+        .unwrap();
+
+        assert_eq!(
+            provenance_of(&pool, &exec.id),
+            (Some("recipe-abc".to_string()), Some("3".to_string())),
+            "an execution from an adopted use case must carry its recipe id and pinned version"
+        );
+    }
+
+    #[test]
+    fn run_without_recipe_provenance_stamps_null_not_a_sentinel() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona_with_adopted_use_case(&pool, "Mixed Runner");
+
+        // A use case that was never adopted from a recipe.
+        let manual = create(
+            &pool,
+            &persona_id,
+            None,
+            None,
+            None,
+            Some("uc-manual".into()),
+        )
+        .unwrap();
+        assert_eq!(provenance_of(&pool, &manual.id), (None, None));
+
+        // No use case at all (an ad-hoc / trigger run).
+        let adhoc = create(&pool, &persona_id, None, None, None, None).unwrap();
+        assert_eq!(provenance_of(&pool, &adhoc.id), (None, None));
+
+        // A use case id that is not in design_context (stale caller).
+        let stale = create(&pool, &persona_id, None, None, None, Some("uc-gone".into())).unwrap();
+        assert_eq!(provenance_of(&pool, &stale.id), (None, None));
+    }
+
+    #[test]
+    fn detaching_the_capability_does_not_rewrite_past_runs() {
+        // The whole reason provenance is denormalized onto the row: removing a
+        // capability must not retroactively un-attribute its history.
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona_with_adopted_use_case(&pool, "Detach Test");
+        let exec = create(
+            &pool,
+            &persona_id,
+            None,
+            None,
+            None,
+            Some("uc-recipe".into()),
+        )
+        .unwrap();
+
+        crate::repos::core::personas::update(
+            &pool,
+            &persona_id,
+            crate::models::UpdatePersonaInput {
+                design_context: Some(Some(r#"{"useCases":[]}"#.to_string())),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            provenance_of(&pool, &exec.id).0,
+            Some("recipe-abc".to_string()),
+        );
+    }
+
+    #[test]
+    fn retry_inherits_the_original_runs_recipe() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona_with_adopted_use_case(&pool, "Retry Test");
+        let original = create(
+            &pool,
+            &persona_id,
+            None,
+            None,
+            None,
+            Some("uc-recipe".into()),
+        )
+        .unwrap();
+
+        let retry = create_retry(&pool, &persona_id, &original.id, 1).unwrap();
+        assert_eq!(
+            provenance_of(&pool, &retry.id),
+            (Some("recipe-abc".to_string()), Some("3".to_string())),
+            "a retry re-attempts the same work and must stay attributed to the same recipe"
+        );
+    }
+
+    #[test]
+    fn tallies_answer_runs_and_success_rate_per_recipe() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona_with_adopted_use_case(&pool, "Tally Test");
+
+        let mk = |status: &str, outcome: Option<&str>| {
+            let e = create(
+                &pool,
+                &persona_id,
+                None,
+                None,
+                None,
+                Some("uc-recipe".into()),
+            )
+            .unwrap();
+            let conn = pool.get().unwrap();
+            conn.execute(
+                "UPDATE persona_executions SET status = ?2, business_outcome = COALESCE(?3, business_outcome) WHERE id = ?1",
+                params![e.id, status, outcome],
+            )
+            .unwrap();
+        };
+        mk("completed", Some("value_delivered"));
+        mk("completed", Some("no_input_available"));
+        mk("failed", None);
+        mk("running", None);
+        // A run with no recipe behind it must not pollute any recipe's tally.
+        create(&pool, &persona_id, None, None, None, Some("uc-manual".into())).unwrap();
+
+        let tallies = recipe_run_tallies(&pool, 50).unwrap();
+        assert_eq!(tallies.len(), 1, "only recipe-attributed runs are tallied");
+        let t = &tallies[0];
+        assert_eq!(t.recipe_id, "recipe-abc");
+        assert_eq!(t.runs, 4);
+        // The still-running row is not an outcome yet, so it stays out of the
+        // success-rate denominator.
+        assert_eq!(t.terminal, 3);
+        assert_eq!(t.completed, 2);
+        assert_eq!(t.failed, 1);
+        // Stricter than `completed`: one of the two completions delivered nothing.
+        assert_eq!(t.value_delivered, 1);
+        assert!(t.last_run_at.is_some());
+        // No recipe_definitions row was seeded, so the name is honestly absent
+        // rather than fabricated.
+        assert_eq!(t.recipe_name, None);
+    }
+
+    #[test]
+    fn tallies_are_empty_before_any_recipe_run() {
+        let pool = init_test_db().unwrap();
+        assert!(recipe_run_tallies(&pool, 50).unwrap().is_empty());
     }
 }

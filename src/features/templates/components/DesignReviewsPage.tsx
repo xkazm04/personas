@@ -23,7 +23,7 @@ import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
 export default function DesignReviewsPage() {
   const { t } = useTranslation();
   const {
-    reviews,
+    totalCount,
     error,
     refresh,
     isLoading,
@@ -46,12 +46,18 @@ export default function DesignReviewsPage() {
           // Explore has its own domain structure — a flat template count is
           // misleading there, so the header shows title-only on that tab.
           if (activeTab === 'explore') return undefined;
-          // Don't flash a misleading "0 templates" while the reviews fetch is in
-          // flight (the hook exposes isLoading; the page previously dropped it).
-          if (isLoading && reviews.length === 0 && !(activeTab === 'generated' && galleryTotal > 0)) {
+          // The `generated` tab has its own paginated total from
+          // useTemplateGallery; every other tab reads the hook's dedicated
+          // count query. It is deliberately NOT `reviews.length` — that array
+          // is a capped page (REVIEW_LIST_LIMIT), so using it printed "50"
+          // for a catalog of 124+ templates.
+          const galleryCount = activeTab === 'generated' && galleryTotal > 0 ? galleryTotal : null;
+          const count = galleryCount ?? totalCount;
+          // Don't flash a misleading "0 templates" while the count is still
+          // in flight — `null` means "not known yet", not "none".
+          if (count === null || (isLoading && count === 0 && galleryCount === null)) {
             return '…';
           }
-          const count = activeTab === 'generated' && galleryTotal > 0 ? galleryTotal : reviews.length;
           return (count === 1 ? t.templates.page.subtitle_one : t.templates.page.subtitle_other).replace('{count}', String(count));
         })()}
       />

@@ -10,6 +10,7 @@ import * as api from "@/api/overview/observability";
 import { useToastStore } from "@/stores/toastStore";
 import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { en } from "@/i18n/en";
+import type { Translations } from "@/i18n/generated/types";
 
 // -- Alert metric / severity display helpers (sourced from backend enums) -----
 
@@ -19,18 +20,50 @@ export type { AlertSeverity } from "@/lib/bindings/AlertSeverity";
 export type { AlertRule } from "@/lib/bindings/AlertRule";
 export type { FiredAlert } from "@/lib/bindings/FiredAlert";
 
-export const ALERT_METRIC_OPTIONS: { value: AlertMetric; label: string; unit: string }[] = [
-  { value: 'error_rate', label: en.alerts.metric_error_rate, unit: '%' },
-  { value: 'success_rate', label: en.alerts.metric_success_rate, unit: '%' },
-  { value: 'cost', label: en.alerts.metric_cost, unit: '$' },
-  { value: 'cost_spike', label: en.alerts.metric_cost_spike, unit: 'x' },
-  { value: 'executions', label: en.alerts.metric_executions, unit: '' },
+/**
+ * Key under the `alerts` section, not the English string.
+ *
+ * These option lists used to carry `label: en.alerts.metric_error_rate` — a
+ * VALUE read from the English shim at MODULE SCOPE. Module init runs once,
+ * before the user has picked a language and long before any locale chunk
+ * resolves, so those labels were frozen English for every user in every locale.
+ * The alert-rules panel rendered them directly with no `useTranslation()`
+ * anywhere in the data path, so nothing could recover. `custom/no-module-scope-en-value`
+ * now flags the pattern.
+ *
+ * Going through `Extract<keyof …>` rather than a bare string union means a key
+ * renamed in en.json fails the build here instead of rendering blank at runtime.
+ */
+type AlertsSection = Translations['alerts'];
+export type AlertLabelKey = Extract<
+  keyof AlertsSection,
+  | 'metric_error_rate'
+  | 'metric_success_rate'
+  | 'metric_cost'
+  | 'metric_cost_spike'
+  | 'metric_executions'
+  | 'severity_info'
+  | 'severity_warning'
+  | 'severity_critical'
+>;
+
+/** Resolve an option label against a translation bundle (t from useTranslation). */
+export function alertLabel(t: Translations, key: AlertLabelKey): string {
+  return t.alerts[key];
+}
+
+export const ALERT_METRIC_OPTIONS: readonly { value: AlertMetric; labelKey: AlertLabelKey; unit: string }[] = [
+  { value: 'error_rate', labelKey: 'metric_error_rate', unit: '%' },
+  { value: 'success_rate', labelKey: 'metric_success_rate', unit: '%' },
+  { value: 'cost', labelKey: 'metric_cost', unit: '$' },
+  { value: 'cost_spike', labelKey: 'metric_cost_spike', unit: 'x' },
+  { value: 'executions', labelKey: 'metric_executions', unit: '' },
 ];
 
-export const ALERT_SEVERITY_OPTIONS: { value: AlertSeverity; label: string; color: string }[] = [
-  { value: 'info', label: en.alerts.severity_info, color: '#3b82f6' },
-  { value: 'warning', label: en.alerts.severity_warning, color: '#f59e0b' },
-  { value: 'critical', label: en.alerts.severity_critical, color: '#ef4444' },
+export const ALERT_SEVERITY_OPTIONS: readonly { value: AlertSeverity; labelKey: AlertLabelKey; color: string }[] = [
+  { value: 'info', labelKey: 'severity_info', color: '#3b82f6' },
+  { value: 'warning', labelKey: 'severity_warning', color: '#f59e0b' },
+  { value: 'critical', labelKey: 'severity_critical', color: '#ef4444' },
 ];
 
 export const MAX_ALERT_HISTORY = 200;
@@ -108,7 +141,12 @@ function evaluateRule(rule: AlertRule, metrics: MetricsSnapshot): { triggered: b
 
 function formatAlertMessage(rule: AlertRule, value: number): string {
   const metricInfo = ALERT_METRIC_OPTIONS.find(m => m.value === rule.metric);
-  const label = metricInfo?.label ?? rule.metric;
+  // Deliberately English: this string is PERSISTED to SQLite as
+  // FiredAlert.message and read back by the alert history long after the fact.
+  // Localizing at write time would leave history in whatever language was
+  // active when each alert fired. Read at call time, not module scope, so the
+  // shim's laziness still applies.
+  const label = metricInfo ? en.alerts[metricInfo.labelKey] : rule.metric;
   const unit = metricInfo?.unit ?? '';
   const fmtValue = unit === '$' ? `$${value.toFixed(2)}` : unit === '%' ? `${value.toFixed(1)}%` : unit === 'x' ? `${value.toFixed(1)}x` : String(Math.round(value));
   const fmtThreshold = unit === '$' ? `$${rule.threshold}` : unit === '%' ? `${rule.threshold}%` : unit === 'x' ? `${rule.threshold}x` : String(rule.threshold);

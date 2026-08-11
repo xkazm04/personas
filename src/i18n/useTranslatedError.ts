@@ -96,6 +96,11 @@ const ERROR_KEY_MAP: Array<{ match: string | RegExp; keyPrefix: string; category
   // emitted from create_n8n_session (commands/design/n8n_sessions.rs) and need
   // a more actionable, link-bearing message than the generic validation copy.
   { match: 'is not a valid n8n workflow export', keyPrefix: 'n8n_invalid_shape', category: 'user_action' },
+  // Also before the generic 'Validation' rule. Emitted as
+  // ADOPTION_ANSWERS_REJECTED (engine/src/adoption_answers.rs:388) when the
+  // server-side questionnaire check refuses a save; the generic validation copy
+  // would not tell the user that the fix is to reopen the setup questions.
+  { match: 'Adoption answers rejected', keyPrefix: 'adoption_answers_rejected', category: 'user_action' },
   { match: 'Validation', keyPrefix: 'validation', category: 'user_action' },
   { match: 'Request body too large', keyPrefix: 'body_too_large', category: 'user_action' },
   { match: 'is too large for OCR', keyPrefix: 'ocr_file_too_large', category: 'user_action' },

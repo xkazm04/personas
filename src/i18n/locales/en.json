@@ -10271,7 +10271,13 @@
       "run_now": "Approve & run",
       "discard": "Discard",
       "approved": "Approved — running",
-      "discarded": "Discarded"
+      "discarded": "Discarded",
+      "_comment_badge_one": "Header badge, singular. {count} is a number. 'fire' = one held trigger firing, not flame.",
+      "badge_one": "{count} fire waiting",
+      "_comment_badge_other": "Header badge, plural. {count} is a number. 'fires' = held trigger firings, not flames.",
+      "badge_other": "{count} fires waiting",
+      "_comment_badge_title": "Tooltip on the header badge.",
+      "badge_title": "Trigger fires held for your approval"
     },
     "copy_sample_curl": "Copy sample curl",
     "event_listener_label": "Event Listener",
@@ -10676,7 +10682,13 @@
       "sev_major": "Major",
       "sev_breaking": "Breaking",
       "watching_only": "Watching only"
-    }
+    },
+    "_comment_event_reason_label": "Column header in the trigger Live Stream / Dead Letter tables: why this event did not start a run.",
+    "event_reason_label": "Reason",
+    "_comment_event_reason_unknown": "Shown for events recorded before reasons were tracked. Must NOT read like a fabricated reason.",
+    "event_reason_unknown": "Unknown",
+    "_comment_event_reason_unknown_hint": "Tooltip explaining the Unknown reason - honesty about missing history, not an error.",
+    "event_reason_unknown_hint": "Recorded before reasons were tracked, so why this event ended without a run is not known."
   },
   "remote_approval": {
     "title": "Remote run request",
@@ -11981,7 +11993,11 @@
     "authorization_required_message": "This tool needs your authorization before it can run.",
     "authorization_required_suggestion": "Open the authorization page to grant consent, then try again.",
     "external_service_message": "The external service couldn't complete the request.",
-    "external_service_suggestion": "Check the service status and your connection, then try again."
+    "external_service_suggestion": "Check the service status and your connection, then try again.",
+    "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
+    "adoption_answers_rejected_message": "Some questionnaire answers are missing or not valid.",
+    "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in.",
+    "adoption_answers_rejected_suggestion": "Reopen the setup questions and complete the ones named, then continue."
   },
   "empty_states": {
     "credentials_title": "Your agents need credentials to run",
@@ -12462,7 +12478,13 @@
     "remove_tooltip": "Detach this capability from the selected agent",
     "remove_confirm_title": "Remove this capability?",
     "remove_confirm_body": "This detaches \"{title}\" from {persona}. Its trigger and configuration are removed; the recipe stays in the catalog and can be re-adopted anytime.",
-    "tags_heading": "Tags"
+    "tags_heading": "Tags",
+    "_comment_adopted_params_partial_toast": "Warning toast after adopting a capability whose input_schema declared setting types the persona parameter system cannot express. {missing}/{declared} are counts; {types} is a comma-joined list of RAW TYPE TOKENS (source_definition, connector_ref, list[string]) - do NOT translate the tokens themselves.",
+    "adopted_params_partial_toast": "Adopted \"{title}\", but {missing} of {declared} settings could not be created ({types})",
+    "_comment_adopted_params_failed_toast": "Warning toast when adoption succeeded but the parameter sync call failed outright, so the capability has no editable settings at all.",
+    "adopted_params_failed_toast": "Adopted \"{title}\", but its settings could not be created",
+    "_comment_removed_params_failed_toast": "Warning toast when removal succeeded but the parameter re-sync failed, so the detached capability's lines are still in the prompt.",
+    "removed_params_failed_toast": "Removed \"{title}\", but its settings could not be cleaned up"
   },
   "explore": {
     "agents": "agents",
@@ -12855,6 +12877,18 @@
       "failed": "Failed",
       "refused": "Refused",
       "cancelled": "Cancelled"
+    },
+    "event_reason": {
+      "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion.",
+      "no_subscriber": "No subscriber matched",
+      "approval_held": "Held for approval",
+      "persona_disabled": "Agent is off",
+      "handoff_target_disabled": "Handoff target is off",
+      "cross_team_blocked": "Blocked across teams",
+      "cascade_guard": "Already running",
+      "dry_run": "Dry run (simulated)",
+      "stuck_reclaimed": "Reclaimed and requeued",
+      "stuck_retry_exhausted": "Reclaimed, retries exhausted"
     }
   },
   "project_overview": {

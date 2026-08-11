@@ -26,6 +26,94 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
     Ok(())
 }
 
+/// One column as the database itself reports it, via `pragma_table_info`.
+/// Enough to re-declare the column on the staging table when the rebuild's
+/// hand-written `CREATE TABLE` has never heard of it.
+struct ColumnDef {
+    name: String,
+    decl_type: String,
+    notnull: bool,
+    dflt_value: Option<String>,
+}
+
+/// The table's live column list, straight from its stored DDL. This — not a
+/// hand-written CSV — is the source of truth for what a rebuild has to carry.
+fn table_columns(conn: &Connection, table: &str) -> Result<Vec<ColumnDef>, AppError> {
+    let mut stmt = conn.prepare(&format!(
+        "SELECT \"name\", \"type\", \"notnull\", \"dflt_value\" FROM pragma_table_info('{}')",
+        table.replace('\'', "''"),
+    ))?;
+    let rows = stmt.query_map([], |row| {
+        Ok(ColumnDef {
+            name: row.get(0)?,
+            decl_type: row.get::<_, Option<String>>(1)?.unwrap_or_default(),
+            notnull: row.get::<_, i64>(2)? != 0,
+            dflt_value: row.get::<_, Option<String>>(3)?,
+        })
+    })?;
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
+}
+
+/// Double-quote an identifier so a column named after a keyword survives the
+/// round-trip into the generated SQL.
+fn quote_ident(name: &str) -> String {
+    format!("\"{}\"", name.replace('"', "\"\""))
+}
+
+/// `ALTER TABLE <staging> ADD COLUMN …` that re-declares `col` on the staging
+/// table as faithfully as `ALTER TABLE` permits.
+///
+/// SQLite's `ADD COLUMN` refuses a parenthesised-expression or `CURRENT_*`
+/// default, and refuses `NOT NULL` without a usable default. A column in that
+/// shape is carried WITHOUT the constraint and a `tracing::warn!` names it:
+/// preserving the user's data is the point of this whole function, and a
+/// relaxed constraint on a column the rebuild never declared is a far smaller
+/// loss than the column vanishing. In practice this branch is unreachable —
+/// a column the rebuild has never heard of got there via `ALTER TABLE ADD
+/// COLUMN`, which is subject to exactly the same restrictions.
+fn add_column_ddl(staging_table: &str, col: &ColumnDef) -> String {
+    let expressible_default = col.dflt_value.as_deref().filter(|d| {
+        let d = d.trim();
+        !d.starts_with('(') && !d.to_ascii_uppercase().starts_with("CURRENT_")
+    });
+    if col.dflt_value.is_some() && expressible_default.is_none() {
+        tracing::warn!(
+            table = %staging_table,
+            column = %col.name,
+            "FK hygiene: carrying column without its DEFAULT — ALTER TABLE ADD COLUMN cannot \
+             express an expression default; the column and its data are preserved",
+        );
+    }
+    let keep_notnull = col.notnull && expressible_default.is_some();
+    if col.notnull && !keep_notnull {
+        tracing::warn!(
+            table = %staging_table,
+            column = %col.name,
+            "FK hygiene: carrying column as nullable — ALTER TABLE ADD COLUMN cannot add a \
+             NOT NULL column without a literal default; the column and its data are preserved",
+        );
+    }
+
+    let mut ddl = format!(
+        "ALTER TABLE {staging_table} ADD COLUMN {}",
+        quote_ident(&col.name),
+    );
+    if !col.decl_type.is_empty() {
+        ddl.push(' ');
+        ddl.push_str(&col.decl_type);
+    }
+    if keep_notnull {
+        ddl.push_str(" NOT NULL");
+    }
+    if let Some(default) = expressible_default {
+        ddl.push_str(" DEFAULT ");
+        ddl.push_str(default);
+    }
+    ddl.push(';');
+    ddl
+}
+
 /// Internal helper: rebuild `<table>` to add an FK constraint that
 /// `ALTER TABLE` cannot express. Skips if the table already declares
 /// `expected_fk_count` or more foreign keys.
@@ -41,13 +129,32 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
 ///   * `new_create_sql` — the full `CREATE TABLE <table>_new (...)`
 ///     including the FK declaration. The trailing `_new` suffix is required
 ///     so the helper can drop the original and rename atomically.
-///   * `columns_csv` — explicit column list for the
-///     `INSERT INTO <table>_new (...) SELECT ... FROM <table>` copy. Explicit
-///     (rather than `SELECT *`) so reordering or adding columns in the new
-///     shape doesn't silently corrupt the copy.
-///   * `index_sqls` — `CREATE INDEX IF NOT EXISTS` statements to recreate
-///     after the rename. The original table's indexes are dropped along
-///     with it.
+///   * `narrow_to_columns_csv` — **normally `None`.** The column list is
+///     derived from the table's OWN stored DDL (see below). Pass
+///     `Some("a, b, c")` only to deliberately NARROW the copy — i.e. when the
+///     rebuild's purpose includes dropping a column.
+///   * `index_sqls` — `CREATE INDEX IF NOT EXISTS` statements the new shape
+///     wants. Anything else the original table carried is replayed
+///     automatically (see below).
+///
+/// ## Why the column list is derived, not hand-written
+///
+/// This helper is shared by nine tables. Every caller used to hand-write a
+/// `columns_csv`, which meant the copy silently DROPPED any column a later
+/// migration had added — the exact trap
+/// `rebuild_executions_table_with_incomplete_status` and
+/// `widen_kpi_measurement_source_with_ai_compose` avoid by recreating from
+/// stored DDL. Deriving the list from `pragma_table_info` closes all nine at
+/// once. Columns the live table has but the new shape does not declare are
+/// re-added to the staging table before the copy, so they ride along with
+/// their data instead of being destroyed.
+///
+/// Indexes and triggers are likewise replayed from `sqlite_master` rather than
+/// only from `index_sqls`: `DROP TABLE` takes them with it. (`persona_memories`
+/// really does carry the MEMORY CONTRACT 4 importance triggers, installed one
+/// phase-1 step before this sweep runs.) `index_sqls` is applied first so the
+/// new shape's own indexes win a name collision; a captured object whose name
+/// already exists after that is skipped.
 ///
 /// Wraps the whole operation in a transaction. On row-count mismatch or any
 /// SQL error, the transaction rolls back and the function returns Err — the
@@ -59,7 +166,7 @@ fn recreate_with_fk(
     expected_fk_count: i64,
     cleanup_orphans_sql: &[&str],
     new_create_sql: &str,
-    columns_csv: &str,
+    narrow_to_columns_csv: Option<&str>,
     index_sqls: &[&str],
 ) -> Result<(), AppError> {
     // Idempotency: count existing FKs on the table. If it's already >= the
@@ -83,6 +190,23 @@ fn recreate_with_fk(
     // prior state when it drops (after commit). Mirrors the executions rebuild.
     let _fk_guard = crate::FkDisabledGuard::new(conn).map_err(AppError::Database)?;
 
+    // Snapshot the LIVE shape before anything is dropped: the column list the
+    // copy has to carry, and the index/trigger DDL `DROP TABLE` is about to
+    // take with it. Auto-indexes (PK/UNIQUE) have a NULL `sql` and are skipped
+    // — SQLite recreates them implicitly from the new shape.
+    let live_columns = table_columns(conn, table_name)?;
+    let replay_objects: Vec<(String, String, String)> = {
+        let mut stmt = conn.prepare(
+            "SELECT type, name, sql FROM sqlite_master
+              WHERE tbl_name = ?1 AND type IN ('index', 'trigger') AND sql IS NOT NULL",
+        )?;
+        let rows = stmt.query_map([table_name], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?
+    };
+
     // Purge any pre-existing orphans that would violate the new FK. Done
     // inside the same transaction so a partial cleanup can't leak if the
     // rebuild fails.
@@ -99,11 +223,43 @@ fn recreate_with_fk(
         ))?
         .query_row([], |row| row.get(0))?;
 
-    // Rebuild: create _new, copy data, drop original, rename.
+    // Rebuild: create _new, copy data, drop original, rename. The staging
+    // table is dropped first so a rolled-back earlier attempt can't collide.
+    let staging = format!("{table_name}_new");
+    tx.execute_batch(&format!("DROP TABLE IF EXISTS {staging};"))?;
     tx.execute_batch(new_create_sql)?;
 
+    let columns_csv = match narrow_to_columns_csv {
+        Some(csv) => csv.to_string(),
+        None => {
+            let staged_columns = table_columns(&tx, &staging)?;
+            for col in &live_columns {
+                if staged_columns
+                    .iter()
+                    .any(|s| s.name.eq_ignore_ascii_case(&col.name))
+                {
+                    continue;
+                }
+                // A column a LATER migration added. The new shape predates it,
+                // so re-declare it on the staging table rather than dropping
+                // the user's data on the floor.
+                tracing::info!(
+                    table = %table_name,
+                    column = %col.name,
+                    "FK hygiene: carrying a column the rebuild shape does not declare",
+                );
+                tx.execute_batch(&add_column_ddl(&staging, col))?;
+            }
+            live_columns
+                .iter()
+                .map(|c| quote_ident(&c.name))
+                .collect::<Vec<_>>()
+                .join(", ")
+        }
+    };
+
     let copy_sql = format!(
-        "INSERT INTO {table}_new ({cols}) SELECT {cols} FROM {table}",
+        "INSERT INTO {staging} ({cols}) SELECT {cols} FROM {table}",
         table = table_name,
         cols = columns_csv,
     );
@@ -117,7 +273,10 @@ fn recreate_with_fk(
         .query_row([], |row| row.get(0))?;
 
     if row_count_after != row_count_before {
-        return Err(AppError::Database(rusqlite::Error::InvalidQuery));
+        return Err(AppError::Validation(format!(
+            "FK hygiene: rebuilding `{table_name}` copied {row_count_after} of \
+             {row_count_before} rows — refusing to swap the table in",
+        )));
     }
 
     tx.execute_batch(&format!("DROP TABLE {};", table_name))?;
@@ -126,8 +285,21 @@ fn recreate_with_fk(
         table = table_name,
     ))?;
 
+    // The new shape's own indexes first, so they win any name collision with
+    // a stale object of the same name captured from the old table.
     for index_sql in index_sqls {
         tx.execute_batch(index_sql)?;
+    }
+    for (obj_type, obj_name, obj_sql) in &replay_objects {
+        let already: i64 = tx.query_row(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type = ?1 AND name = ?2",
+            rusqlite::params![obj_type, obj_name],
+            |row| row.get(0),
+        )?;
+        if already > 0 {
+            continue;
+        }
+        tx.execute_batch(obj_sql)?;
     }
 
     // Verify the new state has no violations before committing. The
@@ -138,7 +310,10 @@ fn recreate_with_fk(
         .prepare("SELECT COUNT(*) FROM pragma_foreign_key_check")?
         .query_row([], |row| row.get(0))?;
     if violations > 0 {
-        return Err(AppError::Database(rusqlite::Error::InvalidQuery));
+        return Err(AppError::Validation(format!(
+            "FK hygiene: rebuilt `{table_name}` still has {violations} foreign-key \
+             violation(s) — refusing to commit the swap",
+        )));
     }
 
     tx.commit()?;
@@ -194,7 +369,7 @@ fn migrate_persona_events(conn: &Connection) -> Result<(), AppError> {
             processed_at       TEXT,
             created_at         TEXT NOT NULL
         );",
-        "id, project_id, event_type, source_type, source_id, target_persona_id, payload, payload_iv, status, error_message, processed_at, created_at",
+        None,
         &[
             "CREATE INDEX IF NOT EXISTS idx_pev_status ON persona_events(status);",
             "CREATE INDEX IF NOT EXISTS idx_pev_project ON persona_events(project_id);",
@@ -226,7 +401,7 @@ fn migrate_pipeline_runs(conn: &Connection) -> Result<(), AppError> {
             completed_at    TEXT,
             error_message   TEXT
         );",
-        "id, team_id, status, node_statuses, input_data, started_at, completed_at, error_message",
+        None,
         &[
             "CREATE INDEX IF NOT EXISTS idx_pr_team ON pipeline_runs(team_id);",
             "CREATE INDEX IF NOT EXISTS idx_pr_status ON pipeline_runs(status);",
@@ -256,7 +431,7 @@ fn migrate_persona_prompt_versions(conn: &Connection) -> Result<(), AppError> {
             tag               TEXT NOT NULL DEFAULT 'experimental',
             created_at        TEXT NOT NULL DEFAULT (datetime('now'))
         );",
-        "id, persona_id, version_number, structured_prompt, system_prompt, change_summary, tag, created_at",
+        None,
         &[
             "CREATE INDEX IF NOT EXISTS idx_ppv_persona ON persona_prompt_versions(persona_id);",
             "CREATE INDEX IF NOT EXISTS idx_ppv_version ON persona_prompt_versions(persona_id, version_number DESC);",
@@ -292,7 +467,7 @@ fn migrate_persona_metrics_snapshots(conn: &Connection) -> Result<(), AppError> 
             messages_sent           INTEGER NOT NULL DEFAULT 0,
             created_at              TEXT NOT NULL
         );",
-        "id, persona_id, snapshot_date, total_executions, successful_executions, failed_executions, total_cost_usd, total_input_tokens, total_output_tokens, avg_duration_ms, events_emitted, events_consumed, messages_sent, created_at",
+        None,
         &[
             "CREATE INDEX IF NOT EXISTS idx_pms_persona ON persona_metrics_snapshots(persona_id);",
             "CREATE INDEX IF NOT EXISTS idx_pms_date ON persona_metrics_snapshots(snapshot_date);",
@@ -341,7 +516,7 @@ fn migrate_persona_healing_issues(conn: &Connection) -> Result<(), AppError> {
             created_at  TEXT NOT NULL DEFAULT (datetime('now')),
             resolved_at TEXT
         );",
-        "id, persona_id, execution_id, title, description, is_circuit_breaker, severity, category, suggested_fix, auto_fixed, status, created_at, resolved_at",
+        None,
         &[
             "CREATE INDEX IF NOT EXISTS idx_phi_persona ON persona_healing_issues(persona_id);",
             "CREATE INDEX IF NOT EXISTS idx_phi_status ON persona_healing_issues(status);",
@@ -374,7 +549,7 @@ fn migrate_persona_message_deliveries(conn: &Connection) -> Result<(), AppError>
             delivered_at  TEXT,
             created_at    TEXT NOT NULL
         );",
-        "id, message_id, channel_type, status, error_message, external_id, delivered_at, created_at",
+        None,
         &[
             "CREATE INDEX IF NOT EXISTS idx_pmd_message ON persona_message_deliveries(message_id);",
         ],
@@ -409,7 +584,7 @@ fn migrate_persona_messages(conn: &Connection) -> Result<(), AppError> {
             read_at      TEXT,
             thread_id    TEXT
         );",
-        "id, persona_id, execution_id, title, content, content_type, priority, is_read, metadata, created_at, read_at, thread_id",
+        None,
         &[
             "CREATE INDEX IF NOT EXISTS idx_pmsg_persona ON persona_messages(persona_id);",
             "CREATE INDEX IF NOT EXISTS idx_pmsg_is_read ON persona_messages(is_read);",
@@ -440,7 +615,7 @@ fn migrate_persona_memories(conn: &Connection) -> Result<(), AppError> {
             created_at          TEXT NOT NULL DEFAULT (datetime('now')),
             updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
         );",
-        "id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at",
+        None,
         &[
             "CREATE INDEX IF NOT EXISTS idx_persona_memories_persona ON persona_memories(persona_id);",
             "CREATE INDEX IF NOT EXISTS idx_persona_memories_category ON persona_memories(category);",
@@ -481,7 +656,7 @@ fn migrate_team_memories(conn: &Connection) -> Result<(), AppError> {
             created_at  TEXT NOT NULL DEFAULT (datetime('now')),
             updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
         );",
-        "id, team_id, run_id, member_id, persona_id, title, content, category, importance, tags, created_at, updated_at",
+        None,
         &[
             "CREATE INDEX IF NOT EXISTS idx_tm_team       ON team_memories(team_id);",
             "CREATE INDEX IF NOT EXISTS idx_tm_run        ON team_memories(run_id);",
@@ -741,6 +916,202 @@ mod tests {
             target.is_none(),
             "target_persona_id should be NULL after parent delete"
         );
+    }
+
+    /// A column, index or trigger that a LATER migration added must SURVIVE the
+    /// FK rebuild. The helper used to copy through a hand-written `columns_csv`
+    /// and re-create only a hand-written index list, so anything it had never
+    /// heard of was silently destroyed by the drop-and-rename.
+    ///
+    /// Simulates a legacy database the way
+    /// `incremental::widening_the_measurement_source_preserves_rows_and_later_columns`
+    /// does: rewind `persona_memories` to its pre-FK shape, then bolt on the
+    /// artifacts of a "future" migration — two columns, an index over one of
+    /// them, and the MEMORY CONTRACT 4 importance trigger (which
+    /// `install_persona_memory_invariants` really does install one phase-1 step
+    /// BEFORE `fk_hygiene::run`, so this is the live ordering, not a hypothetical).
+    #[test]
+    fn recreate_with_fk_preserves_later_columns_indexes_and_triggers() {
+        let pool = init_test_db().expect("init_test_db");
+        let conn = pool.get().expect("pool.get");
+        conn.execute(
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at) \
+             VALUES ('p1', 'test', 'sp', datetime('now'), datetime('now'))",
+            [],
+        )
+        .expect("insert persona");
+
+        conn.execute_batch(
+            "PRAGMA foreign_keys = OFF;
+             DROP TABLE persona_memories;
+             CREATE TABLE persona_memories (
+                id                  TEXT PRIMARY KEY,
+                persona_id          TEXT NOT NULL,
+                title               TEXT NOT NULL,
+                content             TEXT NOT NULL,
+                category            TEXT DEFAULT 'fact',
+                source_execution_id TEXT,
+                importance          INTEGER DEFAULT 3,
+                tags                TEXT,
+                created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
+             );
+             ALTER TABLE persona_memories ADD COLUMN tier TEXT NOT NULL DEFAULT 'active';
+             ALTER TABLE persona_memories ADD COLUMN access_count INTEGER NOT NULL DEFAULT 0;
+             CREATE INDEX idx_pm_tier_injection
+                ON persona_memories(persona_id, tier, importance DESC);
+             CREATE TRIGGER persona_memories_importance_insert
+             BEFORE INSERT ON persona_memories
+             FOR EACH ROW
+             WHEN NEW.importance IS NOT NULL AND (NEW.importance < 1 OR NEW.importance > 5)
+             BEGIN
+                 SELECT RAISE(ABORT, 'persona_memories.importance must be in 1..=5');
+             END;
+             INSERT INTO persona_memories
+                (id, persona_id, title, content, importance, tier, access_count)
+                VALUES ('m1', 'p1', 't', 'c', 4, 'core', 7);
+             PRAGMA foreign_keys = ON;",
+        )
+        .expect("rewind persona_memories to a legacy, FK-less shape");
+
+        let fk_before: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM pragma_foreign_key_list('persona_memories')",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(fk_before, 0, "the rewound table must start out FK-less");
+
+        super::run(&conn).expect("fk_hygiene::run over a legacy persona_memories");
+
+        // 1. The rebuild did what it exists to do.
+        let fk_after: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM pragma_foreign_key_list('persona_memories')",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(fk_after, 1, "the FK must be declared after the rebuild");
+
+        // 2. The row AND the columns a later migration added rode along.
+        let (tier, access_count, importance): (String, i64, i64) = conn
+            .query_row(
+                "SELECT tier, access_count, importance FROM persona_memories WHERE id = 'm1'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .expect("a column the rebuild code never knew about must survive with its data");
+        assert_eq!(tier, "core", "tier value must be preserved verbatim");
+        assert_eq!(access_count, 7, "access_count value must be preserved");
+        assert_eq!(importance, 4);
+
+        // 3. An index the rebuild does not hand-write was replayed.
+        let idx: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master \
+                 WHERE type = 'index' AND name = 'idx_pm_tier_injection'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(idx, 1, "an index over a later column must be replayed");
+
+        // 4. The hand-written indexes are still created too.
+        let idx_persona: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master \
+                 WHERE type = 'index' AND name = 'idx_persona_memories_persona'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(idx_persona, 1, "the hand-written index list must still apply");
+
+        // 5. The trigger survived — it still refuses an out-of-range importance.
+        assert!(
+            conn.execute(
+                "INSERT INTO persona_memories (id, persona_id, title, content, importance) \
+                 VALUES ('m2', 'p1', 't', 'c', 99)",
+                [],
+            )
+            .is_err(),
+            "the importance-invariant trigger must survive the rebuild",
+        );
+
+        // 6. And the point of the whole rebuild: the FK cascades.
+        conn.execute("DELETE FROM personas WHERE id = 'p1'", [])
+            .unwrap();
+        let left: i64 = conn
+            .query_row("SELECT COUNT(*) FROM persona_memories", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(left, 0, "deleting the persona must cascade to its memories");
+    }
+
+    /// The narrowing capability the derived column list replaced must stay
+    /// reachable: a rebuild that deliberately DROPS a column can still say so.
+    #[test]
+    fn recreate_with_fk_can_still_narrow_the_column_set_on_purpose() {
+        let pool = init_test_db().expect("init_test_db");
+        let conn = pool.get().expect("pool.get");
+        conn.execute_batch(
+            "PRAGMA foreign_keys = OFF;
+             DROP TABLE team_memories;
+             CREATE TABLE team_memories (
+                id          TEXT PRIMARY KEY,
+                team_id     TEXT NOT NULL,
+                run_id      TEXT,
+                member_id   TEXT,
+                persona_id  TEXT,
+                title       TEXT NOT NULL,
+                content     TEXT NOT NULL,
+                category    TEXT NOT NULL DEFAULT 'observation',
+                importance  INTEGER NOT NULL DEFAULT 3,
+                tags        TEXT,
+                created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at  TEXT NOT NULL DEFAULT (datetime('now')),
+                doomed      TEXT
+             );
+             INSERT INTO persona_teams (id, name, created_at, updated_at)
+                VALUES ('t1', 'team', datetime('now'), datetime('now'));
+             INSERT INTO team_memories (id, team_id, title, content, doomed)
+                VALUES ('tm1', 't1', 't', 'c', 'goodbye');
+             PRAGMA foreign_keys = ON;",
+        )
+        .expect("rewind team_memories with a column we intend to drop");
+
+        super::recreate_with_fk(
+            &conn,
+            "team_memories",
+            1,
+            &[],
+            "CREATE TABLE team_memories_new (
+                id          TEXT PRIMARY KEY,
+                team_id     TEXT NOT NULL REFERENCES persona_teams(id) ON DELETE CASCADE,
+                title       TEXT NOT NULL,
+                content     TEXT NOT NULL
+            );",
+            Some("id, team_id, title, content"),
+            &[],
+        )
+        .expect("an intentional narrowing must still be expressible");
+
+        assert!(
+            !super::table_columns(&conn, "team_memories")
+                .unwrap()
+                .iter()
+                .any(|c| c.name == "doomed"),
+            "an explicitly narrowed rebuild must drop the column it left out",
+        );
+        let content: String = conn
+            .query_row(
+                "SELECT content FROM team_memories WHERE id = 'tm1'",
+                [],
+                |r| r.get(0),
+            )
+            .expect("the retained columns still carry their data");
+        assert_eq!(content, "c");
     }
 
     #[test]

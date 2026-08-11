@@ -13,9 +13,29 @@
 //!     intent into a COMPLETE KPI proposal (metadata + a tested measurement).
 //!     Result: `{"kpi_proposal": {…}}`. Pre-fills the add-KPI form.
 //!
-//! Neither writes to the DB: the composed result rides back on the job's `extra`
-//! channel and the frontend applies it via `createKpi` / `updateKpi` (mirrors
-//! the connector compose→verify→activate doctrine — the user confirms).
+//! Neither of those two writes to the DB: the composed result rides back on the
+//! job's `extra` channel and the frontend applies it via `createKpi` /
+//! `updateKpi` (mirrors the connector compose→verify→activate doctrine — the
+//! user confirms).
+//!
+//! There is a THIRD path, and it does NOT work that way:
+//!
+//!   * `dev_tools_propose_kpi_auto` → `propose_kpi_auto_inner` →
+//!     `launch_compose_apply` → `apply_composed_measure`. This one creates the
+//!     KPI and then writes to the DB UNATTENDED — `measure_config` plus a first
+//!     recorded reading — while the KPI is still `status='proposed'`, with no
+//!     human confirmation gate anywhere in the chain. It is deliberate (the
+//!     modal closes immediately and the proposal fills in its own measurement),
+//!     but it is an autonomous write and should be read as one.
+//!
+//!     Athena reaches this path too: her `propose_kpi` op calls
+//!     `propose_kpi_auto_inner` directly (`approval_exec_dev.rs`), so a
+//!     conversational "track our coverage" can end with a composed command and
+//!     a measured value on a KPI the user has not yet reviewed.
+//!
+//! The reading that path records goes through `record_kpi_compose_measurement`,
+//! the governed door that REQUIRES evidence and states its `env` — the same
+//! provenance standard the evaluator and the sim ingester are held to.
 //!
 //! Spawn/stream boilerplate is cloned from `kpi_scan.rs`.
 
@@ -385,11 +405,21 @@ fn launch_compose_apply(
     task_id
 }
 
-/// Write a composed `{"kpi_measure": {cmd, parse, value}}` envelope onto a KPI:
-/// set its measure_config, record the verified reading, and seed the baseline
-/// if the user left it blank. Best-effort — failures are swallowed (background).
-fn apply_composed_measure(pool: &crate::db::DbPool, kpi_id: &str, env: &Value) {
-    let Some(m) = env.get("kpi_measure") else { return };
+/// Write a composed `{"kpi_measure": {cmd, parse, value, evidence}}` envelope
+/// onto a KPI: set its measure_config, record the verified reading WITH its
+/// provenance, and seed the baseline if the user left it blank.
+///
+/// This is the unattended write named in the module header — nothing between
+/// the model's answer and the database asks a human. The least it can do is
+/// leave the same audit trail every other measured value leaves, so a composed
+/// reading is traceable to the command that produced it instead of appearing as
+/// a bare evidence-free number in the provenance UI.
+///
+/// Recording failures are logged rather than swallowed: the first version of
+/// this function passed an unrecorded `source` and every write was rejected by
+/// the column CHECK in silence.
+fn apply_composed_measure(pool: &crate::db::DbPool, kpi_id: &str, envelope: &Value) {
+    let Some(m) = envelope.get("kpi_measure") else { return };
     let cmd = m.get("cmd").and_then(|v| v.as_str()).unwrap_or("");
     let parse = m.get("parse").and_then(|v| v.as_str()).unwrap_or("");
     if cmd.is_empty() || parse.is_empty() {
@@ -401,13 +431,32 @@ fn apply_composed_measure(pool: &crate::db::DbPool, kpi_id: &str, env: &Value) {
         None, None, None, None, None, None, None, /* use_case_id */ None,
     );
     if let Some(value) = m.get("value").and_then(|v| v.as_f64()) {
-        let _ = repo::record_kpi_measurement(pool, kpi_id, value, "ai-compose", None, None);
-        if matches!(repo::get_kpi(pool, kpi_id), Ok(k) if k.baseline_value.is_none()) {
-            let _ = repo::update_kpi(
-                pool, kpi_id, None, None, None, None, None, None, None, None, None,
-                Some(Some(value)), None, None, None, None, None, None, None,
-                /* use_case_id */ None,
-            );
+        // Same evidence SHAPE the evaluator writes (`kpi_eval::measure_codebase`
+        // → `{cmd, parse, output_tail}`), so `summarizeEvidence` renders it with
+        // no special case: `cmd` becomes the summary line, the rest the tooltip.
+        // The compose run's own one-line report of what the command returned is
+        // the closest thing it has to the evaluator's captured output.
+        let evidence = json!({
+            "cmd": cmd,
+            "parse": parse,
+            "output_tail": m.get("evidence").and_then(|v| v.as_str()).unwrap_or("").trim(),
+        })
+        .to_string();
+        match repo::record_kpi_compose_measurement(pool, kpi_id, value, &evidence, None) {
+            Ok(_) => {
+                if matches!(repo::get_kpi(pool, kpi_id), Ok(k) if k.baseline_value.is_none()) {
+                    let _ = repo::update_kpi(
+                        pool, kpi_id, None, None, None, None, None, None, None, None, None,
+                        Some(Some(value)), None, None, None, None, None, None, None,
+                        /* use_case_id */ None,
+                    );
+                }
+            }
+            Err(e) => tracing::warn!(
+                kpi_id = %kpi_id,
+                error = %e,
+                "kpi compose: the composed reading was NOT recorded — the KPI keeps its measure_config but no value",
+            ),
         }
     }
 }
@@ -638,4 +687,109 @@ Emit EXACTLY ONE line and nothing else on it:
         scope = scope,
         shell = RUN_SHELL_HINT,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::repos::dev_tools as r;
+
+    fn seed_kpi(pool: &crate::db::DbPool, root: &str) -> crate::db::models::DevKpi {
+        let project = r::create_project(pool, "P", root, None, None, None, None, None).unwrap();
+        r::create_kpi(
+            pool, &project.id, "Branch coverage", None, None, "technical", "codebase", "{}", "%",
+            "up", None, None, None, "weekly", Some("proposed"), "user", None, None, None, None,
+            None,
+        )
+        .unwrap()
+    }
+
+    /// The compose-apply path is unattended, so its audit trail is the only
+    /// record of where the number came from. It must carry the cmd/parse/output
+    /// the run actually verified — and it must SAY which environment it claims
+    /// rather than inheriting `'production'` from the column default.
+    #[test]
+    fn an_ai_composed_reading_is_stored_with_its_provenance() {
+        let pool = crate::db::init_test_db().unwrap();
+        let kpi = seed_kpi(&pool, "/tmp/kpi-compose-provenance");
+
+        apply_composed_measure(
+            &pool,
+            &kpi.id,
+            &json!({
+                "kpi_measure": {
+                    "cmd": "npx vitest run --coverage",
+                    "parse": "coverage_pct",
+                    "value": 61.5,
+                    "evidence": "Ran the suite from the repo root; branch coverage printed 61.5%."
+                }
+            }),
+        );
+
+        let rows = r::list_kpi_measurements(&pool, &kpi.id, None).unwrap();
+        assert_eq!(
+            rows.len(),
+            1,
+            "the composed reading must actually reach the series — a rejected write is not a measurement",
+        );
+        let m = &rows[0];
+        assert_eq!(m.source, "ai-compose");
+        assert_eq!(
+            m.env, "production",
+            "env is stated by the writer, not inherited from the column default",
+        );
+        let raw = m
+            .evidence
+            .as_deref()
+            .expect("an AI-composed reading carries evidence like every other measured value");
+        let ev: Value = serde_json::from_str(raw).expect("evidence is the evaluator's JSON shape");
+        assert_eq!(ev["cmd"], "npx vitest run --coverage");
+        assert_eq!(ev["parse"], "coverage_pct");
+        assert!(
+            ev["output_tail"].as_str().unwrap().contains("61.5%"),
+            "the run's own report of what the command returned rides along",
+        );
+
+        // …and the KPI's live state rolled forward, baseline seeded from blank.
+        let k = r::get_kpi(&pool, &kpi.id).unwrap();
+        assert_eq!(k.current_value, Some(61.5));
+        assert_eq!(k.baseline_value, Some(61.5));
+        assert!(k.last_measured_at.is_some());
+        assert!(k.measure_config.contains("npx vitest run --coverage"));
+    }
+
+    /// A compose run that reported no output detail still has the command and
+    /// the parse strategy — that IS provenance, and the reading is kept.
+    #[test]
+    fn a_reading_without_the_models_prose_still_records_cmd_and_parse() {
+        let pool = crate::db::init_test_db().unwrap();
+        let kpi = seed_kpi(&pool, "/tmp/kpi-compose-terse");
+
+        apply_composed_measure(
+            &pool,
+            &kpi.id,
+            &json!({
+                "kpi_measure": { "cmd": "npm run lint -- -f json", "parse": "json_path:errorCount", "value": 12.0 }
+            }),
+        );
+
+        let rows = r::list_kpi_measurements(&pool, &kpi.id, None).unwrap();
+        assert_eq!(rows.len(), 1);
+        let ev: Value = serde_json::from_str(rows[0].evidence.as_deref().unwrap()).unwrap();
+        assert_eq!(ev["cmd"], "npm run lint -- -f json");
+        assert_eq!(ev["output_tail"], "");
+    }
+
+    /// An envelope with no command is not a measurement at all — nothing is
+    /// written, not even a config.
+    #[test]
+    fn an_unmeasurable_envelope_writes_nothing() {
+        let pool = crate::db::init_test_db().unwrap();
+        let kpi = seed_kpi(&pool, "/tmp/kpi-compose-null");
+
+        apply_composed_measure(&pool, &kpi.id, &json!({ "kpi_measure": Value::Null }));
+
+        assert!(r::list_kpi_measurements(&pool, &kpi.id, None).unwrap().is_empty());
+        assert_eq!(r::get_kpi(&pool, &kpi.id).unwrap().current_value, None);
+    }
 }

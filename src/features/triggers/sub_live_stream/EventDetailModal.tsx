@@ -8,6 +8,8 @@ import { HighlightedJson } from './HighlightedJson';
 import { formatRelativeTime, EVENT_STATUS_COLORS } from '@/lib/utils/formatters';
 import type { PersonaEvent } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
+import { EventReasonNote } from '../lib/EventReasonView';
+import { classifyEventReason } from '../lib/eventReason';
 
 interface EventDetailModalProps {
   event: PersonaEvent;
@@ -27,6 +29,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
   const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
   const sourceConfig = event.source_type ? SOURCE_ICONS[event.source_type] : null;
   const SourceIcon = sourceConfig?.icon;
+  const showReason = classifyEventReason(event).kind !== 'none';
 
   const handleCopy = () => {
     const text = (() => { try { return JSON.stringify(JSON.parse(event.payload!), null, 2); } catch { return event.payload!; } })();
@@ -149,14 +152,17 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
           )}
 
           {/* If no payload, show empty state */}
-          {!event.payload && !event.error_message && (
+          {!event.payload && !showReason && (
             <div className="flex-1 flex items-center justify-center text-foreground typo-body">
               {t.triggers.no_event_data}
             </div>
           )}
 
-          {/* Improvement #8: Error section with icon and improved styling */}
-          {event.error_message && (
+          {/* Improvement #8: Error section with icon and improved styling.
+              The same column carries the bus's gate tokens ("why nothing ran")
+              and genuine failure text — EventReasonNote tells them apart and
+              never invents a reason for a row that has none. */}
+          {showReason && (
             <div className="flex-shrink-0 border-t border-red-500/15 bg-red-500/3">
               <div className="flex items-center gap-2 px-5 py-2.5 border-b border-red-500/10">
                 <AlertCircle className="w-3.5 h-3.5 text-red-400" />
@@ -165,9 +171,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
                 </span>
               </div>
               <div className="px-5 py-3">
-                <pre className="typo-code font-mono text-red-400/90 whitespace-pre-wrap break-words leading-relaxed">
-                  {event.error_message}
-                </pre>
+                <EventReasonNote event={event} />
               </div>
             </div>
           )}

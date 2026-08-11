@@ -6,6 +6,8 @@
 // reads the current backlog. Bounded + operator-confirmed: rows are
 // checkbox-selected (default: the first few least-covered) before dispatch.
 import { useEffect, useMemo, useState } from 'react';
+
+import { useProgressiveReveal } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { Info, PlayCircle, Workflow } from 'lucide-react';
 
 import { exportBacklogDigest, listContexts, listMemoryNodes, type DevContext } from '@/api/devTools/devTools';
@@ -96,6 +98,10 @@ export function CoveragePipeline({ projectId, busy, onDispatch }: {
     });
   };
 
+  // Mount rows across a short window instead of big-banging every context
+  // row (checkbox + lens chips each) onto one frame (loading-pattern v2 §3).
+  const reveal = useProgressiveReveal(rows.length, { initialCount: 14 });
+
   const runnable = useMemo(
     () => rows.filter((r) => selected.has(r.context.id) && !dispatched.has(r.context.id)),
     [rows, selected, dispatched],
@@ -142,7 +148,7 @@ export function CoveragePipeline({ projectId, busy, onDispatch }: {
           <p className="typo-caption text-foreground/45 py-6 text-center">{d.skills_pipeline_no_contexts}</p>
         ) : (
           <ul>
-            {rows.map((r) => {
+            {rows.slice(0, reveal.count).map((r) => {
               const done = dispatched.has(r.context.id);
               return (
                 <li key={r.context.id} className="flex items-center gap-2.5 py-1.5 border-b border-foreground/[0.08] last:border-b-0">

@@ -9,6 +9,7 @@ import { ArrowDown, ArrowDownToLine, ArrowUp, ArrowUpFromLine, CheckCircle2, Pla
 
 import type { SkillEntry } from '@/api/devTools/devTools';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { useProgressiveReveal } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { isPresetSkill, presetVisual, SWEEP_SKILL_NAME } from '../constants/presetSkills';
@@ -197,6 +198,23 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
       })] as const);
   }, [libRows, libTab, wsSort.key, wsSort.dir]);
 
+  // Stagger row MOUNTING on both panels (loading-pattern v2 §3): a 17-skill
+  // library plus a 30-skill project list big-banged every row (memory button,
+  // coverage bar, action icons each) onto one frame on cold load.
+  const wsTotal = useMemo(() => wsGroups.reduce((n, [, rows]) => n + rows.length, 0), [wsGroups]);
+  const wsReveal = useProgressiveReveal(wsTotal, { initialCount: 12, resetKey: `${libTab}:${wsSort.key}:${wsSort.dir}` });
+  const wsShownGroups = useMemo(() => {
+    let budget = wsReveal.count;
+    const out: Array<readonly [string, WsRow[]]> = [];
+    for (const [cat, rows] of wsGroups) {
+      if (budget <= 0) break;
+      const take = rows.slice(0, budget);
+      budget -= take.length;
+      out.push([cat, take] as const);
+    }
+    return out;
+  }, [wsGroups, wsReveal.count]);
+
   // Preset-tab divider labels — the four lens families, translated.
   const groupLabel = (cat: string): string => {
     if (libTab !== 'preset') return cat;
@@ -213,15 +231,25 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
     lastused: (r) => lastUsedTs(r.usage),
     coverage: (r) => r.coverage?.coveredContexts ?? 0,
   };
-  const tracked = useMemo(
+  const trackedAll = useMemo(
     () => sortRows(proj.filter((r) => r.tracked), projSort.key, projSort.dir, projAcc),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [proj, projSort.key, projSort.dir],
   );
-  const plain = useMemo(
+  const plainAll = useMemo(
     () => sortRows(proj.filter((r) => !r.tracked), projSort.key, projSort.dir, projAcc),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [proj, projSort.key, projSort.dir],
+  );
+  // Same mount stagger for the right panel — one budget across both sections.
+  const projReveal = useProgressiveReveal(trackedAll.length + plainAll.length, {
+    initialCount: 12,
+    resetKey: `${projSort.key}:${projSort.dir}`,
+  });
+  const tracked = useMemo(() => trackedAll.slice(0, projReveal.count), [trackedAll, projReveal.count]);
+  const plain = useMemo(
+    () => plainAll.slice(0, Math.max(0, projReveal.count - trackedAll.length)),
+    [plainAll, projReveal.count, trackedAll.length],
   );
 
   const confirmAdoptShare = () => {
@@ -301,7 +329,7 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
             onAdopt={(entry) => setPending({ kind: 'adopt', skill: entry })}
           />
         )}
-        {wsGroups.map(([cat, rows]) => (
+        {wsShownGroups.map(([cat, rows]) => (
           <div key={cat}>
             <GroupDivider>{groupLabel(cat)}</GroupDivider>
             <ul>

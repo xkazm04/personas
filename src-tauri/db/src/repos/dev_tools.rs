@@ -704,6 +704,7 @@ pub fn create_goal(
             .unwrap_or(-1);
         let order_index = max_order + 1;
 
+        let status = accept_goal_status(status)?;
         conn.execute(
             "INSERT INTO dev_goals (id, project_id, parent_goal_id, context_id, order_index, title, description, status, target_date, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)",
@@ -711,6 +712,26 @@ pub fn create_goal(
         )?;
 
         get_goal_by_id(pool, &id)
+    })
+}
+
+/// Fold a caller-supplied `dev_goals.status` onto the canonical set, or refuse
+/// it with a message that names the alternatives.
+///
+/// `dev_goals.status` carries a CHECK, which is the backstop that makes a
+/// mis-laned goal impossible. This is the door in front of it, for two reasons:
+/// the legacy aliases (`in_progress`, `running`, `completed`, …) that the UI has
+/// always folded keep working instead of becoming a hard error, and a genuinely
+/// unknown value comes back as "Unknown goal status …, expected one of …"
+/// rather than SQLite's `CHECK constraint failed: status IN (...)`. The Athena
+/// `update_dev_goal` op feeds this an LLM-authored string; it deserves an error
+/// it can act on.
+fn accept_goal_status(raw: &str) -> Result<&'static str, AppError> {
+    canonical_goal_status(raw).ok_or_else(|| {
+        AppError::Validation(format!(
+            "Unknown goal status {raw:?} — expected one of: {}",
+            CANONICAL_GOAL_STATUSES.join(", "),
+        ))
     })
 }
 
@@ -734,6 +755,12 @@ pub fn update_goal(
 ) -> Result<DevGoal, AppError> {
     timed_query!("dev_goals", "dev_goals::update_goal", {
         get_goal_by_id(pool, id)?;
+        // Same door as `create_goal`: legacy aliases fold, unknown values are
+        // refused here with a readable message instead of at the column CHECK.
+        let status = match status {
+            Some(raw) => Some(accept_goal_status(raw)?),
+            None => None,
+        };
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
 
@@ -1172,6 +1199,33 @@ pub fn normalize_goal_status(raw: &str) -> &'static str {
     }
 }
 
+/// The canonical `dev_goals.status` set — the values the column's CHECK
+/// constraint admits, and the ones `goalStatus.ts` declares as `GoalStatus`.
+pub const CANONICAL_GOAL_STATUSES: [&str; 5] =
+    ["open", "in-progress", "awaiting_acceptance", "blocked", "done"];
+
+/// STRICT counterpart to [`normalize_goal_status`]: the same alias table with
+/// the catch-all removed, so an unrecognised value comes back as `None` instead
+/// of quietly becoming `open`.
+///
+/// The runtime normalizer's fallback is right for rendering (never throw at the
+/// user) and wrong for a migration, which has to be able to tell "this is the
+/// legacy spelling of in-progress" from "nobody knows what this is". A wrong
+/// status is a bug to see, not to bury, so the caller reports what this
+/// returns `None` for.
+pub fn canonical_goal_status(raw: &str) -> Option<&'static str> {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "in-progress" | "in_progress" | "running" | "active" | "matching" => Some("in-progress"),
+        "blocked" | "review" | "awaiting_review" => Some("blocked"),
+        "awaiting_acceptance" | "awaiting-acceptance" | "pending_acceptance" => {
+            Some("awaiting_acceptance")
+        }
+        "done" | "completed" | "complete" | "skipped" => Some("done"),
+        "open" | "pending" | "todo" | "queued" => Some("open"),
+        _ => None,
+    }
+}
+
 /// Not terminal — counts as active work (drives at-risk / portfolio rollups).
 pub fn goal_status_is_ongoing(status: &str) -> bool {
     normalize_goal_status(status) != "done"
@@ -1543,14 +1597,41 @@ pub fn portfolio_summary(pool: &DbPool) -> Result<PortfolioSummary, AppError> {
     })
 }
 
-/// Cross-project "needs you" queue over all three record types.
+/// How long a KPI's last measurement may age before goal derivation refuses to
+/// use it, in days — 2× its cadence, with manual/unknown cadences treated as
+/// weekly.
 ///
-/// Seven kinds, ranked. The four GOAL kinds keep the ranks they always had —
+/// This is a MIRROR of the `CASE k.cadence` window in
+/// `engine/kpi_derivation.rs::find_derivation_candidates` (app crate; this one
+/// is in `personas-db`, which cannot depend on it). Keep the two in sync: this
+/// function exists only to report the consequence of that rule, so if it drifts
+/// the attention queue starts claiming derivation stopped when it has not, or
+/// stays quiet when it has.
+fn kpi_freshness_window_days(cadence: &str) -> i64 {
+    match cadence {
+        "daily" => 2,
+        // weekly → 14; `manual` and any cadence not yet wired into the
+        // derivation CASE fall through to the same 14-day arm it uses.
+        _ => 14,
+    }
+}
+
+/// Cross-project "needs you" queue over all three record types, plus the KPIs
+/// that feed them.
+///
+/// Nine kinds, ranked. The four GOAL kinds keep the ranks they always had —
 /// awaiting_review team steps (0) → overdue goals (1) → stalled goals (2) →
-/// unstaffed goals (3) — and the three record-widening kinds are appended:
-/// undispatched ideas (4) → stuck running tasks (5) → stale queued tasks (6).
-/// Appended rather than interleaved so the existing ordering contract holds;
-/// within a rank the list sorts by age, worst first.
+/// unstaffed goals (3) — the three record-widening kinds follow: undispatched
+/// ideas (4) → stuck running tasks (5) → stale queued tasks (6), and the two
+/// KPI-supply kinds are appended last: `kpi_gone_dark` (7) → `kpi_never_measured`
+/// (8). Appended rather than interleaved so the existing ordering contract
+/// holds; within a rank the list sorts by age, worst first.
+///
+/// The two KPI kinds deliberately carry NO roll-up counter on `AttentionQueue`
+/// (unlike the seven above): that struct lives in `personas-core` and the count
+/// is derivable from `items` by `kind`. If a summary surface needs them, add
+/// `kpi_gone_dark` / `kpi_never_measured` fields there and fill them here the
+/// same way the others are filled.
 ///
 /// Every cutoff comes from `thresholds` (pass `AttentionThresholds::default()`
 /// for the shipped numbers) instead of the single hard-coded 7-day window that
@@ -1932,6 +2013,141 @@ pub fn attention_queue(
                 assignment_id: None,
                 step_id: None,
                 age_hours: Some(hours),
+                rank,
+            });
+        }
+    }
+
+    // 8) KPIs whose measurement has gone dark + 9) active KPIs never measured.
+    //
+    // Not "this number is old" — the CONSEQUENCE. `kpi_derivation::
+    // find_derivation_candidates` refuses to derive a goal from a KPI measured
+    // longer ago than 2x its cadence, so past that window the KPI silently
+    // stops producing work. A codebase command that started failing and a
+    // connector binding that rotted both land here, and both read to the user
+    // as "this KPI just isn't generating goals any more" with nothing to click.
+    //
+    // Cadence-relative (`kpi_freshness_window_days`), not one global cutoff: a
+    // daily KPI and a quarterly one do not share a threshold, and the window
+    // used here is the same one the derivation gate enforces.
+    //
+    // Two distinct kinds because they are two different user problems: a KPI
+    // that WAS reporting and went dark is a broken measurement to repair; one
+    // that was never measured at all was never wired up in the first place.
+    //
+    // Scoped to keep the signal worth reading:
+    //   * `status = 'active'` only. A paused or archived KPI is silent on
+    //     purpose and a `proposed` one has not been adopted yet; lighting the
+    //     queue up for either is exactly the noise that makes a queue ignored.
+    //   * projects with a team only (`p.team_id IS NOT NULL`) — the same join
+    //     `find_derivation_candidates` makes. Derivation never ran for a
+    //     team-less project, so "derivation has stopped" would not be TRUE of
+    //     one, and this row's whole value is that its claim is true.
+    //   * a never-measured KPI is not reported until it is older than its own
+    //     window, so activating a KPI does not immediately accuse it.
+    {
+        struct LiveKpi {
+            id: String,
+            name: String,
+            status: String,
+            cadence: String,
+            last_measured_at: Option<String>,
+            created_at: String,
+            project_id: String,
+            project_name: String,
+        }
+        let mut stmt = conn.prepare(
+            "SELECT k.id, k.name, k.status, k.cadence, k.last_measured_at, k.created_at,
+                    p.id AS project_id, p.name AS project_name
+             FROM dev_kpis k
+             JOIN dev_projects p ON p.id = k.project_id AND p.team_id IS NOT NULL
+             WHERE k.status = 'active'",
+        )?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok(LiveKpi {
+                    id: row.get("id")?,
+                    name: row.get("name")?,
+                    status: row.get("status")?,
+                    cadence: row.get("cadence")?,
+                    last_measured_at: row.get("last_measured_at")?,
+                    created_at: row.get("created_at")?,
+                    project_id: row.get("project_id")?,
+                    project_name: row.get("project_name")?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
+        for k in rows {
+            let window = chrono::Duration::days(kpi_freshness_window_days(&k.cadence));
+            let cutoff = now - window;
+            let window_days = window.num_days();
+
+            let (kind, rank, since_raw) = match k.last_measured_at.as_deref() {
+                // Measured once and then went quiet past its own window.
+                Some(stamp) => {
+                    let Some(measured) = parse_stamp(stamp) else {
+                        tracing::warn!(
+                            kpi_id = %k.id,
+                            last_measured_at = %stamp,
+                            "attention_queue: unparseable KPI last_measured_at — cannot judge staleness",
+                        );
+                        continue;
+                    };
+                    if measured >= cutoff {
+                        continue;
+                    }
+                    ("kpi_gone_dark", 7, measured)
+                }
+                // Never measured — reported only once it has had its own window
+                // to produce a first reading.
+                None => {
+                    let Some(created) = parse_stamp(&k.created_at) else {
+                        tracing::warn!(
+                            kpi_id = %k.id,
+                            created_at = %k.created_at,
+                            "attention_queue: unparseable KPI created_at — cannot judge staleness",
+                        );
+                        continue;
+                    };
+                    if created >= cutoff {
+                        continue;
+                    }
+                    ("kpi_never_measured", 8, created)
+                }
+            };
+
+            let elapsed = now - since_raw;
+            let days = elapsed.num_days();
+            let detail = if rank == 7 {
+                format!(
+                    "no reading in {days}d (cadence {}, derivation needs one every {window_days}d) — goal derivation has stopped for it",
+                    k.cadence
+                )
+            } else {
+                format!(
+                    "active {days}d, never measured — no goal can be derived from it yet"
+                )
+            };
+            items.push(AttentionItem {
+                kind: kind.into(),
+                entity_kind: "kpi".into(),
+                entity_id: k.id,
+                entity_title: k.name,
+                // A KPI is upstream of goals, not attached to one: naming any
+                // single derived goal here would misdirect the click.
+                goal_id: None,
+                goal_title: None,
+                project_id: Some(k.project_id),
+                project_name: Some(k.project_name),
+                status: k.status,
+                // A KPI has no progress; 0 would read as "measured, at zero",
+                // which is a completely different (and much worse) claim.
+                progress: None,
+                detail,
+                assignment_id: None,
+                step_id: None,
+                age_hours: Some(elapsed.num_hours().max(0) as u32),
                 rank,
             });
         }
@@ -6120,6 +6336,109 @@ mod goal_status_tests {
         assert!(goal_status_is_ongoing("blocked"));
     }
 
+    /// The strict mapper is the runtime normalizer minus its catch-all — the
+    /// two must never disagree on a value they both recognise, or the DB
+    /// migration and the UI would fold the same legacy row differently.
+    #[test]
+    fn the_strict_mapper_agrees_with_the_runtime_normalizer_and_only_drops_the_fallback() {
+        for raw in [
+            "in-progress", "in_progress", "running", "active", "matching", "blocked", "review",
+            "awaiting_review", "awaiting_acceptance", "awaiting-acceptance", "pending_acceptance",
+            "done", "completed", "complete", "skipped", "open", "pending", "todo", "queued",
+            "  In_Progress ",
+        ] {
+            assert_eq!(
+                super::canonical_goal_status(raw),
+                Some(normalize_goal_status(raw)),
+                "{raw} folds differently in the strict mapper than at runtime",
+            );
+        }
+        // The whole difference: what the normalizer swallows, this reports.
+        for unknown in ["weird", "", "escalated-to-legal", "in progress"] {
+            assert_eq!(super::canonical_goal_status(unknown), None, "{unknown}");
+            assert_eq!(normalize_goal_status(unknown), "open", "{unknown}");
+        }
+    }
+
+    /// The repo door in front of the column CHECK: aliases still fold (so no
+    /// existing writer regresses into a hard error), and a value nothing maps
+    /// is refused with a message that names the alternatives rather than
+    /// SQLite's bare "CHECK constraint failed".
+    #[test]
+    fn goal_writers_fold_aliases_and_refuse_what_nothing_maps() {
+        let pool = crate::init_test_db().unwrap();
+        let project =
+            super::create_project(&pool, "P", "/tmp/goal-door", None, None, None, None, None)
+                .unwrap();
+
+        let g = super::create_goal(&pool, &project.id, "G", None, None, Some("running"), None, None)
+            .unwrap();
+        assert_eq!(g.status, "in-progress", "a legacy alias is folded, not rejected");
+
+        let updated = super::update_goal(
+            &pool,
+            &g.id,
+            None,
+            None,
+            Some("completed"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        assert_eq!(updated.status, "done");
+
+        let err = super::create_goal(
+            &pool,
+            &project.id,
+            "Bad",
+            None,
+            None,
+            Some("escalated-to-legal"),
+            None,
+            None,
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(
+            err.contains("escalated-to-legal") && err.contains("awaiting_acceptance"),
+            "the refusal must name the offending value AND the canonical set: {err}",
+        );
+        assert!(super::update_goal(
+            &pool,
+            &g.id,
+            None,
+            None,
+            Some("whatever"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .is_err());
+    }
+
+    /// The constrained set is exactly `GoalStatus` in `goalStatus.ts`, and
+    /// every member survives its own normalizer unchanged (a canonical value
+    /// that folded to something else would make the CHECK unsatisfiable).
+    #[test]
+    fn the_canonical_set_is_closed_under_normalization() {
+        assert_eq!(
+            super::CANONICAL_GOAL_STATUSES,
+            ["open", "in-progress", "awaiting_acceptance", "blocked", "done"],
+            "keep in sync with GoalStatus in src/features/teams/sub_goals/goalStatus.ts",
+        );
+        for s in super::CANONICAL_GOAL_STATUSES {
+            assert_eq!(normalize_goal_status(s), s, "{s} is not a fixed point");
+            assert_eq!(super::canonical_goal_status(s), Some(s), "{s}");
+        }
+    }
+
     #[test]
     fn days_between_handles_rfc3339_date_only_and_garbage() {
         assert_eq!(
@@ -6729,6 +7048,75 @@ pub fn record_kpi_simulation_measurement(
         )
         .map_err(AppError::Database)
     })
+}
+
+/// Record an AI-COMPOSED measurement — the reading a Factory "measurement
+/// setup" compose run produced by ACTUALLY RUNNING the command it had just
+/// written.
+///
+/// Its own door, for the same reason `record_kpi_simulation_measurement` has
+/// one: the class of a value is a property of the WRITER, not of a string the
+/// caller happens to pass. Two invariants the generic recorder cannot enforce:
+///
+///  * `evidence` is REQUIRED. An evidence-free composed value is exactly the
+///    row `ingest_kpi_sim` refuses; the compose run always holds the cmd/parse/
+///    output that produced the number, so there is no honest case for dropping
+///    it on the floor.
+///  * `env` is written EXPLICITLY. The column defaults to `'production'`, so a
+///    composed reading used to claim production by omission instead of by
+///    decision. The command really did run against the project's working tree,
+///    so `'production'` is the right answer — it is now stated rather than
+///    inherited.
+///
+/// Unlike the simulation door this DOES roll `current_value` /
+/// `last_measured_at` forward: it is a real measurement of the real repo, the
+/// same act the evaluator performs.
+pub fn record_kpi_compose_measurement(
+    pool: &DbPool,
+    kpi_id: &str,
+    value: f64,
+    evidence: &str,
+    note: Option<&str>,
+) -> Result<DevKpiMeasurement, AppError> {
+    if !value.is_finite() {
+        return Err(AppError::Validation(
+            "AI-composed measurement value is not a finite number".into(),
+        ));
+    }
+    if evidence.trim().is_empty() {
+        return Err(AppError::Validation(
+            "An AI-composed measurement must carry evidence — a value without provenance is refused"
+                .into(),
+        ));
+    }
+    timed_query!(
+        "dev_kpi_measurements",
+        "dev_kpis::record_kpi_compose_measurement",
+        {
+            let id = uuid::Uuid::new_v4().to_string();
+            let conn = pool.get()?;
+            conn.execute(
+                "INSERT INTO dev_kpi_measurements (id, kpi_id, value, source, env, evidence, note)
+                 VALUES (?1,?2,?3,'ai-compose','production',?4,?5)",
+                params![id, kpi_id, value, evidence, note],
+            )?;
+            let n = conn.execute(
+                "UPDATE dev_kpis SET current_value = ?1, last_measured_at = datetime('now'),
+                     updated_at = datetime('now')
+                 WHERE id = ?2",
+                params![value, kpi_id],
+            )?;
+            if n == 0 {
+                return Err(AppError::NotFound(format!("KPI {kpi_id} not found")));
+            }
+            conn.query_row(
+                "SELECT * FROM dev_kpi_measurements WHERE id = ?1",
+                params![id],
+                row_to_kpi_measurement,
+            )
+            .map_err(AppError::Database)
+        }
+    )
 }
 
 // ============================================================================
@@ -8642,6 +9030,151 @@ mod attention_queue_tests {
         assert!(q.items.is_empty());
         assert_eq!(q.undispatched_ideas + q.stuck_tasks + q.stale_queued_tasks, 0);
         assert_eq!(q.thresholds.task_running_hours, 4);
+    }
+
+    // ------------------------------------------------------- KPI supply ----
+
+    /// A KPI whose measurement stops reporting takes goal derivation down with
+    /// it, and nothing used to say so. These pin the four states apart.
+    fn kpi(
+        pool: &DbPool,
+        project: &str,
+        name: &str,
+        cadence: &str,
+        status: &str,
+    ) -> crate::models::DevKpi {
+        create_kpi(
+            pool, project, name, None, None, "technical", "codebase", "{}", "%", "up", None, None,
+            None, cadence, Some(status), "user", None, None, None, None, None,
+        )
+        .unwrap()
+    }
+
+    fn measured(pool: &DbPool, kpi_id: &str, days_ago: i64) {
+        set(
+            pool,
+            "UPDATE dev_kpis SET current_value = 50.0, last_measured_at = ?1 WHERE id = ?2",
+            &[&ago(days_ago, 0), &kpi_id],
+        );
+    }
+
+    #[test]
+    fn a_kpi_that_went_dark_is_reported_and_says_derivation_has_stopped() {
+        let pool = crate::init_test_db().unwrap();
+        let p = create_project(&pool, "P", "/tmp/kpi-dark", None, None, None, None, Some("team-1"))
+            .unwrap();
+
+        // Weekly window is 14d: 3d ago is fresh, 30d ago is dark.
+        let fresh = kpi(&pool, &p.id, "fresh weekly", "weekly", "active");
+        measured(&pool, &fresh.id, 3);
+        let dark = kpi(&pool, &p.id, "dark weekly", "weekly", "active");
+        measured(&pool, &dark.id, 30);
+
+        let q = attention_queue(&pool, AttentionThresholds::default()).unwrap();
+        let reported = kinds(&q, "kpi_gone_dark");
+        assert_eq!(reported.len(), 1, "only the KPI past its own window is reported");
+        assert_eq!(reported[0].entity_id, dark.id);
+        assert_eq!(reported[0].entity_kind, "kpi");
+        assert_eq!(reported[0].rank, 7);
+        assert_eq!(
+            reported[0].project_name.as_deref(),
+            Some("P"),
+            "the row must name the project so the queue can route it",
+        );
+        assert!(
+            reported[0].progress.is_none(),
+            "a KPI has no progress; 0 would read as 'measured, at zero'",
+        );
+        assert!(
+            reported[0].detail.contains("derivation"),
+            "the signal must say WHY it matters, not just that the number is old: {}",
+            reported[0].detail,
+        );
+        assert!(reported[0].age_hours.unwrap() >= 29 * 24);
+    }
+
+    #[test]
+    fn the_staleness_window_follows_the_kpis_own_cadence() {
+        let pool = crate::init_test_db().unwrap();
+        let p =
+            create_project(&pool, "P", "/tmp/kpi-cadence", None, None, None, None, Some("team-1"))
+                .unwrap();
+
+        // 5 days without a reading: past a DAILY KPI's 2-day window, well
+        // inside a WEEKLY one's 14-day window. One global cutoff cannot say
+        // both, which is the whole point.
+        let daily = kpi(&pool, &p.id, "daily", "daily", "active");
+        measured(&pool, &daily.id, 5);
+        let weekly = kpi(&pool, &p.id, "weekly", "weekly", "active");
+        measured(&pool, &weekly.id, 5);
+
+        let q = attention_queue(&pool, AttentionThresholds::default()).unwrap();
+        let ids: Vec<&str> = kinds(&q, "kpi_gone_dark")
+            .iter()
+            .map(|i| i.entity_id.as_str())
+            .collect();
+        assert_eq!(ids, vec![daily.id.as_str()]);
+    }
+
+    #[test]
+    fn never_measured_is_a_different_signal_from_gone_dark() {
+        let pool = crate::init_test_db().unwrap();
+        let p =
+            create_project(&pool, "P", "/tmp/kpi-never", None, None, None, None, Some("team-1"))
+                .unwrap();
+
+        let never = kpi(&pool, &p.id, "never wired up", "weekly", "active");
+        set(
+            &pool,
+            "UPDATE dev_kpis SET created_at = ?1 WHERE id = ?2",
+            &[&ago(30, 0), &never.id],
+        );
+        // Activated moments ago and not yet measured: not an accusation, just
+        // a KPI that has not had its window.
+        let brand_new = kpi(&pool, &p.id, "just activated", "weekly", "active");
+
+        let q = attention_queue(&pool, AttentionThresholds::default()).unwrap();
+        let reported = kinds(&q, "kpi_never_measured");
+        assert_eq!(reported.len(), 1);
+        assert_eq!(reported[0].entity_id, never.id);
+        assert_eq!(reported[0].rank, 8, "a different rank from gone-dark");
+        assert!(reported[0].detail.contains("never measured"));
+        assert!(
+            kinds(&q, "kpi_gone_dark").is_empty(),
+            "a KPI with no reading at all has not 'gone dark' — it never started",
+        );
+        assert!(
+            !q.items.iter().any(|i| i.entity_id == brand_new.id),
+            "a freshly activated KPI is not yet overdue for its first reading",
+        );
+    }
+
+    #[test]
+    fn kpis_that_are_silent_on_purpose_or_unowned_stay_out_of_the_queue() {
+        let pool = crate::init_test_db().unwrap();
+        let owned =
+            create_project(&pool, "Owned", "/tmp/kpi-owned", None, None, None, None, Some("team-1"))
+                .unwrap();
+        let teamless =
+            create_project(&pool, "Teamless", "/tmp/kpi-teamless", None, None, None, None, None)
+                .unwrap();
+
+        for status in ["paused", "archived", "proposed"] {
+            let k = kpi(&pool, &owned.id, status, "weekly", status);
+            measured(&pool, &k.id, 60);
+        }
+        // Active + ancient, but nobody derives goals for a team-less project,
+        // so claiming derivation stopped would be false.
+        let orphan = kpi(&pool, &teamless.id, "orphan", "weekly", "active");
+        measured(&pool, &orphan.id, 60);
+
+        let q = attention_queue(&pool, AttentionThresholds::default()).unwrap();
+        assert!(
+            !q.items.iter().any(|i| i.entity_kind == "kpi"),
+            "paused/archived/proposed KPIs are silent on purpose, and a team-less \
+             project never derived anything to stop: {:?}",
+            q.items.iter().map(|i| &i.entity_title).collect::<Vec<_>>(),
+        );
     }
 
     // ---------------------------------------------------------------- C1 ----

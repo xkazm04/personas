@@ -6,6 +6,7 @@ import { getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { useVaultStore } from "@/stores/vaultStore";
 import { deleteDesignReview, cleanupDuplicateReviews, backfillServiceFlow, backfillRelatedTools } from '@/api/overview/reviews';
 import { computeAdoptionReadiness } from '../../shared/adoptionReadiness';
+import { useConnectorReadiness } from '../../shared/useConnectorReadiness';
 import { computeDifficulty, computeSetupLevel } from '../../shared/templateComplexity';
 import { deriveArchCategories } from '../../shared/architecturalCategories';
 import { getCachedDesignResult, getCachedLightFields } from './reviewParseCache';
@@ -39,6 +40,25 @@ export function useGalleryActions(
     () => new Set(credentials.map((c) => c.service_type)),
     [credentials],
   );
+
+  // -- Authoritative connector readiness ------------------------------
+  // ONE batch IPC per gallery data change (NOT per card): the union of every
+  // connector the loaded page names, resolved by the same Rust resolver that
+  // gates execution. Recomputed only when that vocabulary actually changes, so
+  // paging in more templates that reuse known connectors costs nothing.
+  const galleryConnectorNames = useMemo(() => {
+    const names = new Set<string>();
+    for (const item of allItems) {
+      for (const name of getCachedLightFields(item).connectors) names.add(name);
+      const dr = getCachedDesignResult(item);
+      for (const sc of dr?.suggested_connectors ?? []) {
+        if (sc?.name) names.add(sc.name);
+      }
+    }
+    return [...names];
+  }, [allItems]);
+
+  const { readiness: connectorReadiness } = useConnectorReadiness(galleryConnectorNames);
 
   const isReadinessSort = sortBy === 'readiness';
 
@@ -212,6 +232,7 @@ export function useGalleryActions(
   return {
     installedConnectorNames,
     credentialServiceTypes,
+    connectorReadiness,
     readinessScores,
     coverageCounts,
     displayItems,

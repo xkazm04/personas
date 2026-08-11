@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { deriveConnectorReadiness } from '../../shared/ConnectorReadiness';
+import { resolveConnectorStatuses } from '../../shared/useConnectorReadiness';
+import type { ConnectorReadinessMap } from '../../shared/useConnectorReadiness';
 import { computeAdoptionReadiness, readinessTier } from '../../shared/adoptionReadiness';
 import { computeDifficulty, computeSetupLevel, estimateSetupMinutes, DIFFICULTY_META, SETUP_META } from '../../shared/templateComplexity';
 import { verifyTemplate, detectTemplateOrigin, deriveTrustLevel, getSandboxPolicy } from '@/lib/templates/templateVerification';
@@ -29,6 +30,7 @@ export function useTemplateCardData(
   review: PersonaDesignReview,
   installedConnectorNames: Set<string>,
   credentialServiceTypes: Set<string>,
+  connectorReadiness: ConnectorReadinessMap,
   isActive = false,
 ) {
   const parsedData = useMemo(() => {
@@ -52,11 +54,15 @@ export function useTemplateCardData(
 
   const suggestedTriggers: SuggestedTrigger[] = designResult?.suggested_triggers ?? [];
 
+  // Authoritative readiness, resolved in Rust and looked up here. Covers the
+  // union of the template's declared connectors and its design result's
+  // suggestions so neither source can silently read as not-ready.
   const readinessStatuses = useMemo(
-    () => designResult?.suggested_connectors
-      ? deriveConnectorReadiness(designResult.suggested_connectors, installedConnectorNames, credentialServiceTypes)
-      : [],
-    [designResult?.suggested_connectors, installedConnectorNames, credentialServiceTypes],
+    () => resolveConnectorStatuses(
+      [...connectors, ...(designResult?.suggested_connectors ?? [])],
+      connectorReadiness,
+    ),
+    [connectors, designResult?.suggested_connectors, connectorReadiness],
   );
 
   // Deferred: only compute full verification (with content hash) on hover/expand.

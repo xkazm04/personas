@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
 import { cancelDesignReviewRun, deleteDesignReview, listDesignReviews, startDesignReviewRun } from "@/api/overview/reviews";
+import { countDesignReviews } from "@/api/design/reviewCounts";
 
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { seedCatalogTemplatesOnce } from '@/lib/personas/templates/seedTemplates';
@@ -12,7 +13,25 @@ import { silentCatch } from '@/lib/silentCatch';
 
 
 const SWR_KEY = 'design-reviews';
-const fetchReviewsSWR = createSWRFetcher(SWR_KEY, () => listDesignReviews());
+
+/**
+ * How many review rows this hook keeps in memory.
+ *
+ * This is a DELIBERATE cap, stated here rather than inherited by accident:
+ * `listDesignReviews()` with no argument silently took the backend's
+ * `limit.unwrap_or(50)`, which is how `reviews.length` came to be rendered as
+ * a total for a catalog of 124+ seeded templates. The cap stays — nothing
+ * renders this array, it only feeds derived facts — but the TOTAL now comes
+ * from a dedicated count query (`totalCount`), never from `reviews.length`.
+ */
+export const REVIEW_LIST_LIMIT = 50;
+
+const fetchReviewsSWR = createSWRFetcher(SWR_KEY, () =>
+  listDesignReviews(undefined, REVIEW_LIST_LIMIT),
+);
+
+const COUNT_SWR_KEY = 'design-reviews-count';
+const fetchReviewCountSWR = createSWRFetcher(COUNT_SWR_KEY, () => countDesignReviews());
 
 interface ReviewStatusPayload {
   run_id: string;
@@ -41,6 +60,9 @@ export interface RunProgress {
 
 export function useDesignReviews() {
   const [reviews, setReviews] = useState<PersonaDesignReview[]>([]);
+  // `null` until the count query answers — callers render a placeholder
+  // rather than a number that would be wrong.
+  const [totalCount, setTotalCount] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [runLines, setRunLines] = useState<string[]>([]);
@@ -52,7 +74,26 @@ export function useDesignReviews() {
   const countersRef = useRef({ passed: 0, failed: 0, errored: 0 });
   const currentRunId = useRef<string | null>(null);
 
-  // Derive unique connectors from review data
+  /**
+   * Refresh the true row count. Cheap (one indexed aggregate), so it runs
+   * alongside every list fetch rather than being wired to its own trigger —
+   * a count that lags the list is the same class of lie as a capped one.
+   * Failures leave `totalCount` alone: a stale-but-real number beats
+   * reverting to the page length.
+   */
+  const refreshCount = useCallback(async () => {
+    invalidateSWRCache(COUNT_SWR_KEY);
+    try {
+      const { data } = await fetchReviewCountSWR();
+      setTotalCount(data);
+    } catch (err) { silentCatch("hooks/design/template/useDesignReviews:count")(err); }
+  }, []);
+
+  // Derive unique connectors from review data.
+  // NOTE: derived from the capped `reviews` page, so this is a SAMPLE of the
+  // connector vocabulary, not the whole of it. Nothing consumes it today; a
+  // future consumer that needs completeness must query the backend
+  // (`list_review_connectors`) rather than widen this cap.
   const availableConnectors = useMemo(() => {
     const connectorSet = new Set<string>();
     for (const review of reviews) {
@@ -74,7 +115,8 @@ export function useDesignReviews() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+    void refreshCount();
+  }, [refreshCount]);
 
   const seedDoneRef = useRef(false);
 
@@ -109,8 +151,11 @@ export function useDesignReviews() {
       invalidateSWRCache(SWR_KEY);
       const { data } = await fetchReviewsSWR();
       setReviews(data);
+      // Seeding is exactly when the total moves — recount, or the header
+      // keeps reporting the pre-seed number.
+      await refreshCount();
     } catch (err) { silentCatch("hooks/design/template/useDesignReviews:catch1")(err); }
-  }, []);
+  }, [refreshCount]);
 
   useEffect(() => {
     let cancelled = false;
@@ -122,6 +167,7 @@ export function useDesignReviews() {
         const { data, fromCache } = await fetchReviewsSWR();
         if (cancelled) return;
         setReviews(data);
+        void refreshCount();
 
         // Only seed on first real fetch, not from stale cache
         if (!fromCache) {
@@ -148,7 +194,7 @@ export function useDesignReviews() {
     })();
 
     return () => { cancelled = true; };
-  }, [seedCatalogTemplates]);
+  }, [seedCatalogTemplates, refreshCount]);
 
   const startNewReview = useCallback(async (personaId?: string, testCases?: object[]) => {
     if (!personaId) {
@@ -277,13 +323,31 @@ export function useDesignReviews() {
     try {
       await deleteDesignReview(id);
       setReviews((prev) => prev.filter((r) => r.id !== id));
+      // Decrement optimistically so the header moves with the delete, then
+      // reconcile against the backend. Without the local step the count would
+      // sit one high until the round-trip lands.
+      setTotalCount((prev) => (prev === null ? prev : Math.max(0, prev - 1)));
+      void refreshCount();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete review');
     }
-  }, []);
+  }, [refreshCount]);
 
   return {
     reviews,
+    /**
+     * The TRUE number of design reviews in the database, from a dedicated
+     * count query — `null` while it is still in flight. NEVER use
+     * `reviews.length` as a total: that array is capped at
+     * {@link REVIEW_LIST_LIMIT}.
+     */
+    totalCount,
+    /**
+     * True when the in-memory page is a strict subset of the real population.
+     * Anything rendering `reviews` as if it were the whole set must surface
+     * this rather than silently showing a slice.
+     */
+    isTruncated: totalCount !== null && reviews.length < totalCount,
     isLoading,
     error,
     runLines,

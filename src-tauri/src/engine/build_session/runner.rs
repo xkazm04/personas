@@ -24,11 +24,11 @@ use crate::db::DbPool;
 use crate::notifications;
 use crate::ActiveProcessRegistry;
 
-use super::super::cli_process::{read_line_limited, CliProcessDriver};
+use super::super::cli_process::{read_line_within, CliProcessDriver, LineRead};
 use super::super::types::CliArgs;
 use super::events::{
-    cleanup_session, dual_emit, emit_error, emit_session_status, record_build_usage, update_phase,
-    update_phase_with_error,
+    cleanup_session, dual_emit, emit_error, emit_session_status, record_build_spend,
+    record_build_usage, update_phase, update_phase_with_error, SPEND_RESOLUTION,
 };
 use super::gates::{
     ensure_capability_in_coverage_with_context, find_first_unopen_gate,
@@ -42,6 +42,50 @@ use super::parser::{
 use super::SessionHandle;
 
 const CANCEL_POLL_INTERVAL: Duration = Duration::from_millis(100);
+
+// =============================================================================
+// Hang bounds -- why a build turn can no longer block forever
+// =============================================================================
+//
+// A build turn whose CLI stalled was never force-terminated. `read_line_within`
+// reports `Silence`, but its predecessor collapsed that into the same `Ok(None)`
+// as EOF, so the read loop just broke; control then fell to
+// `wait_for_driver_or_cancel`, which polled the cancel flag every 100ms and
+// otherwise blocked on `driver.wait()` with no bound at all. The session sat in
+// its phase until a human noticed and hit cancel. `MAX_TURNS` bounds
+// ITERATIONS, not time, so it never fired either.
+//
+// The signal that matters is SILENCE -- no output for N seconds while the
+// child's pipe is still open -- NOT elapsed turn time. Killing a long-but-
+// healthy turn would be strictly worse than the hang it prevents, and build
+// turns legitimately run 50-155s each.
+
+/// How long a turn's CLI may produce **nothing at all** before we treat it as
+/// wedged and kill it.
+///
+/// Ten minutes. Sized off what a healthy turn actually looks like: the runner
+/// passes `--include-partial-messages`, so a working turn emits
+/// `content_block_delta` envelopes continuously as the model types, and the
+/// longest healthy turn observed is ~155s end to end. Continuous silence for
+/// 10 minutes is ~4x the *entire* duration of the slowest healthy turn, so a
+/// slow-but-alive turn cannot trip it — while a genuinely wedged child (
+/// suspended process, stalled network read, a CLI waiting on input that will
+/// never come) is caught in bounded time instead of never.
+///
+/// Note the shape of the check: the window restarts on every byte received
+/// (see `read_line_within`), so this is "nothing for 10 minutes", never "this
+/// turn has taken 10 minutes".
+const CLI_SILENCE_KILL_TIMEOUT: Duration = Duration::from_secs(600);
+
+/// How long to wait for the CLI process to actually exit **after** its stdout
+/// has already hit EOF.
+///
+/// Two minutes. By the time stdout closes the model is done and only process
+/// teardown remains, which takes milliseconds; anything past that is a child
+/// that will not reap. We already hold the turn's complete output at this
+/// point, so timing out here is NOT a session failure — we kill the stuck
+/// process and carry on with the turn we read.
+const CLI_EXIT_GRACE_TIMEOUT: Duration = Duration::from_secs(120);
 
 type ConversationHistory = Vec<(&'static str, Arc<str>)>;
 
@@ -189,34 +233,77 @@ fn extract_early_behavior_core(buf: &str, session_id: &str) -> Option<Vec<BuildE
     }
 }
 
-async fn kill_cancelled_turn(
+/// Force-terminate this turn's CLI child and release its registry PID slot.
+///
+/// The ONE kill path for a build turn — `reason` only changes what we log, so
+/// cancellation and the stall watchdog cannot drift into two different process-
+/// management mechanisms. Matches what `BuildSessionManager::cancel_session`
+/// does from the outside (`registry.take_run_pid` → `kill_process`); here we
+/// own the `Child` directly, so `driver.kill()` is the same act with a handle
+/// instead of a PID lookup, and the registry slot is cleared either way.
+async fn kill_turn_child(
     driver: &mut CliProcessDriver,
     registry: &ActiveProcessRegistry,
     session_id: &str,
     turn: usize,
+    reason: &'static str,
 ) {
     tracing::info!(
         session_id = %session_id,
         turn = turn + 1,
-        "Build session cancelled mid-turn; killing CLI child"
+        reason,
+        "Killing build-session CLI child"
     );
     driver.kill().await;
     registry.clear_run_pid("build_session", session_id);
 }
 
+/// How a bounded wait for the CLI child ended.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum DriverWait {
+    /// The child exited on its own.
+    Exited,
+    /// The cancel flag was raised while waiting.
+    Cancelled,
+    /// `max_wait` elapsed and the child is still running.
+    TimedOut,
+}
+
+/// Wait for the CLI child to exit, giving up after `max_wait`.
+///
+/// Cancellation responsiveness is unchanged: the flag is still polled every
+/// `CANCEL_POLL_INTERVAL`, and a raised flag wins over the deadline. The only
+/// difference from the previous version is that this can no longer loop
+/// forever on a child that never reaps.
 async fn wait_for_driver_or_cancel(
     driver: &mut CliProcessDriver,
     cancel_flag: &Arc<AtomicBool>,
-) -> std::io::Result<bool> {
+    max_wait: Duration,
+) -> std::io::Result<DriverWait> {
+    let deadline = tokio::time::Instant::now() + max_wait;
     loop {
         if cancel_flag.load(Ordering::Acquire) {
-            return Ok(false);
+            return Ok(DriverWait::Cancelled);
+        }
+        if tokio::time::Instant::now() >= deadline {
+            return Ok(DriverWait::TimedOut);
         }
         match tokio::time::timeout(CANCEL_POLL_INTERVAL, driver.wait()).await {
-            Ok(result) => return result.map(|_| true),
+            Ok(result) => return result.map(|_| DriverWait::Exited),
             Err(_) => {}
         }
     }
+}
+
+/// The user-visible reason a turn was abandoned because its CLI went silent.
+/// Split out so the wording is pinned by a test and identical on the phase row,
+/// the emitted `BuildEvent::Error`, and the log.
+fn stalled_turn_reason(turn: usize) -> String {
+    format!(
+        "Build stalled on turn {}: the Claude CLI produced no output for {} seconds and was stopped. Try running the build again.",
+        turn + 1,
+        CLI_SILENCE_KILL_TIMEOUT.as_secs()
+    )
 }
 
 // =============================================================================
@@ -507,7 +594,10 @@ pub(super) async fn run_session(
 
     // Build telemetry (Phase 0): sum CLI cost/tokens across resolution turns.
     // Written to the session row after each turn so build-bench reads cumulative
-    // build cost. (One-shot test/fix-pass cost in oneshot.rs is a follow-up.)
+    // build cost. The per-turn `result` envelope is ALSO booked into
+    // `dev_llm_spend` (see `events::record_build_spend`) so build spend appears
+    // on the standing LLM-spend dashboard; the one-shot test / test-summary /
+    // fix-pass legs book there too, each under its own `trigger_kind`.
     let mut acc_cost_usd: f64 = 0.0;
     let mut acc_input_tokens: i64 = 0;
     let mut acc_output_tokens: i64 = 0;
@@ -651,13 +741,13 @@ pub(super) async fn run_session(
             loop {
                 tokio::select! {
                     _ = &mut cancel_wait => {
-                        kill_cancelled_turn(&mut driver, &registry, &session_id, turn).await;
+                        kill_turn_child(&mut driver, &registry, &session_id, turn, "cancelled").await;
                         cleanup_session(&sessions_map, &registry, &session_id, handle_generation);
                         return;
                     }
-                    line_result = read_line_limited(&mut reader) => {
+                    line_result = read_line_within(&mut reader, CLI_SILENCE_KILL_TIMEOUT) => {
                         match line_result {
-                            Ok(Some(line)) => {
+                            Ok(LineRead::Line(line)) => {
                                 turn_raw.push_str(&line);
                                 turn_raw.push('\n');
                                 turn_events.extend(parse_build_line(&line, &session_id));
@@ -668,6 +758,22 @@ pub(super) async fn run_session(
                                     acc_cost_usd += u.cost_usd;
                                     acc_input_tokens += u.input_tokens;
                                     acc_output_tokens += u.output_tokens;
+
+                                    // …and book THIS turn (never the running
+                                    // accumulator) into the central ledger the
+                                    // LLM-spend dashboard reads. Gated behind
+                                    // the extract above so the hot streaming
+                                    // loop pays no extra JSON parse: with
+                                    // --include-partial-messages the vast
+                                    // majority of lines are deltas, and only a
+                                    // `result` envelope ever reaches here.
+                                    record_build_spend(
+                                        &pool,
+                                        Some(&persona_id),
+                                        SPEND_RESOLUTION,
+                                        None,
+                                        &line,
+                                    );
                                 }
 
                                 // Mid-turn: surface behavior_core the instant it completes.
@@ -695,7 +801,47 @@ pub(super) async fn run_session(
                                     }
                                 }
                             }
-                            Ok(None) => break,
+                            Ok(LineRead::Eof) => break,
+                            Ok(LineRead::Silence) => {
+                                // The child is holding its stdout open and has
+                                // said nothing for the whole silence window: it
+                                // is wedged, not finishing. Left alone this used
+                                // to fall through to an unbounded `wait()` and
+                                // hang the session until a human cancelled it.
+                                let reason = stalled_turn_reason(turn);
+                                tracing::error!(
+                                    session_id = %session_id,
+                                    turn = turn + 1,
+                                    silence_secs = CLI_SILENCE_KILL_TIMEOUT.as_secs(),
+                                    "Build session CLI went silent; force-terminating the turn"
+                                );
+                                kill_turn_child(
+                                    &mut driver,
+                                    &registry,
+                                    &session_id,
+                                    turn,
+                                    "cli-silence-watchdog",
+                                )
+                                .await;
+                                let _ = update_phase_with_error(&pool, &session_id, &reason);
+                                cancel_if_emit_dropped!(emit_error(
+                                    &pool,
+                                    &channel,
+                                    &app_handle,
+                                    &session_id,
+                                    &reason,
+                                    // Retryable: a stall is a transient CLI
+                                    // condition, not a broken build request.
+                                    true,
+                                ));
+                                cleanup_session(
+                                    &sessions_map,
+                                    &registry,
+                                    &session_id,
+                                    handle_generation,
+                                );
+                                return;
+                            }
                             Err(_) => break,
                         }
                     }
@@ -716,12 +862,31 @@ pub(super) async fn run_session(
 
         // Wait for the CLI process to exit (don't use finish() which would
         // attempt dir cleanup — we reuse session_exec_dir across turns).
-        match wait_for_driver_or_cancel(&mut driver, &cancel_flag).await {
-            Ok(true) => registry.clear_run_pid("build_session", &session_id),
-            Ok(false) => {
-                kill_cancelled_turn(&mut driver, &registry, &session_id, turn).await;
+        match wait_for_driver_or_cancel(&mut driver, &cancel_flag, CLI_EXIT_GRACE_TIMEOUT).await {
+            Ok(DriverWait::Exited) => registry.clear_run_pid("build_session", &session_id),
+            Ok(DriverWait::Cancelled) => {
+                kill_turn_child(&mut driver, &registry, &session_id, turn, "cancelled").await;
                 cleanup_session(&sessions_map, &registry, &session_id, handle_generation);
                 return;
+            }
+            Ok(DriverWait::TimedOut) => {
+                // stdout already hit EOF, so we hold this turn's complete
+                // output — the child simply never reaped. Reap it ourselves and
+                // carry on rather than failing a turn we successfully read.
+                tracing::warn!(
+                    session_id = %session_id,
+                    turn = turn + 1,
+                    grace_secs = CLI_EXIT_GRACE_TIMEOUT.as_secs(),
+                    "CLI child did not exit after stdout EOF; killing it and continuing"
+                );
+                kill_turn_child(
+                    &mut driver,
+                    &registry,
+                    &session_id,
+                    turn,
+                    "exit-grace-exceeded",
+                )
+                .await;
             }
             Err(e) => {
                 tracing::warn!(
@@ -1776,4 +1941,161 @@ pub(super) async fn run_session(
         9,
     ));
     cleanup_session(&sessions_map, &registry, &session_id, handle_generation);
+}
+
+// =============================================================================
+// Tests -- the hang bounds (cli-hang-timeout)
+// =============================================================================
+//
+// The two mechanics that make a stalled turn terminable are exercised against
+// REAL child processes, because the bug was never in the arithmetic: it was
+// that a wedged child and a finishing child produced identical signals. A
+// fake would have reproduced the fake, not the hang.
+
+#[cfg(test)]
+mod hang_tests {
+    use super::*;
+    use crate::engine::types::CliArgs;
+
+    /// A child that lives (silently) far longer than any test bound.
+    fn wedged_child_args() -> CliArgs {
+        #[cfg(windows)]
+        // `ping -n 300` sleeps ~5 minutes; its output is swallowed by `> nul`
+        // so the pipe stays open and silent -- exactly the wedged shape.
+        let (command, args) = (
+            "cmd".to_string(),
+            vec![
+                "/C".to_string(),
+                "ping 127.0.0.1 -n 300 > nul".to_string(),
+            ],
+        );
+        #[cfg(not(windows))]
+        let (command, args) = (
+            "sh".to_string(),
+            vec!["-c".to_string(), "sleep 300".to_string()],
+        );
+        CliArgs {
+            command,
+            args,
+            env_overrides: vec![],
+            env_removals: vec![],
+            cwd: None,
+        }
+    }
+
+    /// A child that says nothing, then exits promptly on its own.
+    fn quiet_then_exiting_child_args() -> CliArgs {
+        #[cfg(windows)]
+        let (command, args) = (
+            "cmd".to_string(),
+            vec!["/C".to_string(), "ping 127.0.0.1 -n 2 > nul".to_string()],
+        );
+        #[cfg(not(windows))]
+        let (command, args) = (
+            "sh".to_string(),
+            vec!["-c".to_string(), "sleep 1".to_string()],
+        );
+        CliArgs {
+            command,
+            args,
+            env_overrides: vec![],
+            env_removals: vec![],
+            cwd: None,
+        }
+    }
+
+    #[tokio::test]
+    async fn a_silent_but_exiting_process_is_not_killed() {
+        let mut driver = CliProcessDriver::spawn(&quiet_then_exiting_child_args(), std::env::temp_dir())
+            .expect("failed to spawn the quiet child");
+        driver.close_stdin().await;
+        let cancel = Arc::new(AtomicBool::new(false));
+
+        let outcome = wait_for_driver_or_cancel(&mut driver, &cancel, Duration::from_secs(30))
+            .await
+            .expect("wait failed");
+
+        assert_eq!(
+            outcome,
+            DriverWait::Exited,
+            "a process that goes quiet and then exits must be allowed to finish, not killed"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_wedged_process_is_killed_and_the_turn_gets_a_reason() {
+        let registry = ActiveProcessRegistry::new();
+        let session_id = "wedged-session";
+        registry.register_run("build_session", session_id);
+
+        let mut driver = CliProcessDriver::spawn(&wedged_child_args(), std::env::temp_dir())
+            .expect("failed to spawn the wedged child");
+        driver.close_stdin().await;
+        let pid = driver.pid().expect("child must report a pid");
+        registry.set_run_pid("build_session", session_id, pid);
+
+        // 1. The bounded wait gives up instead of blocking forever.
+        let cancel = Arc::new(AtomicBool::new(false));
+        let started = std::time::Instant::now();
+        let outcome = wait_for_driver_or_cancel(&mut driver, &cancel, Duration::from_millis(600))
+            .await
+            .expect("wait failed");
+        assert_eq!(
+            outcome,
+            DriverWait::TimedOut,
+            "a child that never exits must time out, not hang the caller"
+        );
+        assert!(
+            started.elapsed() < Duration::from_secs(20),
+            "the wait was not actually bounded (took {:?})",
+            started.elapsed()
+        );
+
+        // 2. The shared kill path really terminates it and frees the registry slot.
+        kill_turn_child(&mut driver, &registry, session_id, 0, "test").await;
+        assert!(
+            registry.take_run_pid("build_session", session_id).is_none(),
+            "the registry PID slot must be released by the kill path"
+        );
+        // The child is reaped: a second wait returns immediately.
+        let reaped = tokio::time::timeout(Duration::from_secs(5), driver.wait()).await;
+        assert!(reaped.is_ok(), "the wedged child was not actually killed");
+
+        registry.unregister_run("build_session", session_id);
+
+        // 3. The session terminates with a reason a user can act on.
+        let reason = stalled_turn_reason(0);
+        assert!(reason.contains("turn 1"), "reason must name the turn: {reason}");
+        assert!(
+            reason.contains(&CLI_SILENCE_KILL_TIMEOUT.as_secs().to_string()),
+            "reason must name the bound it hit: {reason}"
+        );
+        assert!(
+            !reason.is_empty(),
+            "a stalled session must not stop silently mid-phase"
+        );
+    }
+
+    #[tokio::test]
+    async fn cancellation_still_wins_immediately_over_the_new_bound() {
+        let mut driver = CliProcessDriver::spawn(&wedged_child_args(), std::env::temp_dir())
+            .expect("failed to spawn the wedged child");
+        driver.close_stdin().await;
+
+        // Flag already raised: the very first poll must return, without
+        // waiting out the (deliberately huge) grace window.
+        let cancel = Arc::new(AtomicBool::new(true));
+        let started = std::time::Instant::now();
+        let outcome = wait_for_driver_or_cancel(&mut driver, &cancel, Duration::from_secs(3600))
+            .await
+            .expect("wait failed");
+        assert_eq!(outcome, DriverWait::Cancelled);
+        assert!(
+            started.elapsed() < Duration::from_secs(2),
+            "cancellation was slowed down by the new wall-clock bound ({:?})",
+            started.elapsed()
+        );
+
+        driver.kill().await;
+    }
 }

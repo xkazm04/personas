@@ -772,7 +772,13 @@
     "run_now": "अनुमोदित करें और चलाएं",
     "subtitle_one": "{count} निर्धारित रन आपकी स्वीकृति तक रोका गया है।",
     "subtitle_other": "{count} निर्धारित रन आपकी स्वीकृति तक रोके गए हैं।",
-    "title": "आपकी स्वीकृति की प्रतीक्षा में"
+    "title": "आपकी स्वीकृति की प्रतीक्षा में",
+    "badge_one": "{count} फ़ायर प्रतीक्षा में",
+    "badge_other": "{count} फ़ायर प्रतीक्षा में",
+    "badge_title": "आपकी मंज़ूरी के लिए रोके गए ट्रिगर फ़ायर",
+    "_comment_badge_one": "Header badge, singular. {count} is a number. 'fire' = one held trigger firing, not flame.",
+    "_comment_badge_other": "Header badge, plural. {count} is a number. 'fires' = held trigger firings, not flames.",
+    "_comment_badge_title": "Tooltip on the header badge."
   },
   "unattended": {
     "approval": "मेरी स्वीकृति आवश्यक है",
@@ -821,5 +827,11 @@
     "watching_only": "केवल देखे जा रहे"
   },
   "overdue_label": "अतिदेय",
-  "relay_delete_failed": "relay हटाने में विफल — कृपया पुनः प्रयास करें"
+  "relay_delete_failed": "relay हटाने में विफल — कृपया पुनः प्रयास करें",
+  "event_reason_label": "कारण",
+  "event_reason_unknown": "अज्ञात",
+  "event_reason_unknown_hint": "यह कारण ट्रैक होने से पहले दर्ज हुआ था, इसलिए पता नहीं कि यह इवेंट बिना रन के क्यों समाप्त हुआ।",
+  "_comment_event_reason_label": "Column header in the trigger Live Stream / Dead Letter tables: why this event did not start a run.",
+  "_comment_event_reason_unknown": "Shown for events recorded before reasons were tracked. Must NOT read like a fabricated reason.",
+  "_comment_event_reason_unknown_hint": "Tooltip explaining the Unknown reason - honesty about missing history, not an error."
 }

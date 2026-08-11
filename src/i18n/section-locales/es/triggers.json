@@ -772,7 +772,13 @@
     "run_now": "Aprobar y ejecutar",
     "subtitle_one": "{count} ejecución programada está en espera hasta que la apruebes.",
     "subtitle_other": "{count} ejecuciones programadas están en espera hasta que las apruebes.",
-    "title": "Esperando tu aprobación"
+    "title": "Esperando tu aprobación",
+    "badge_one": "{count} disparo en espera",
+    "badge_other": "{count} disparos en espera",
+    "badge_title": "Disparos de activadores en espera de tu aprobación",
+    "_comment_badge_one": "Header badge, singular. {count} is a number. 'fire' = one held trigger firing, not flame.",
+    "_comment_badge_other": "Header badge, plural. {count} is a number. 'fires' = held trigger firings, not flames.",
+    "_comment_badge_title": "Tooltip on the header badge."
   },
   "unattended": {
     "approval": "Requerir mi aprobación",
@@ -821,5 +827,11 @@
     "watching_only": "Solo siguiendo"
   },
   "overdue_label": "Atrasado",
-  "relay_delete_failed": "No se pudo eliminar el relay — inténtalo de nuevo"
+  "relay_delete_failed": "No se pudo eliminar el relay — inténtalo de nuevo",
+  "event_reason_label": "Motivo",
+  "event_reason_unknown": "Desconocido",
+  "event_reason_unknown_hint": "Se registró antes de que se rastrearan los motivos, así que no se sabe por qué este evento terminó sin ejecución.",
+  "_comment_event_reason_label": "Column header in the trigger Live Stream / Dead Letter tables: why this event did not start a run.",
+  "_comment_event_reason_unknown": "Shown for events recorded before reasons were tracked. Must NOT read like a fabricated reason.",
+  "_comment_event_reason_unknown_hint": "Tooltip explaining the Unknown reason - honesty about missing history, not an error."
 }

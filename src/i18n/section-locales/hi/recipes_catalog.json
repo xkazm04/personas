@@ -231,5 +231,11 @@
   "update_badge_detail_tooltip": "v{from} में अपनाया गया; कैटलॉग अब v{to} है। अपडेट के लिए हटाएं और फिर से अपनाएं।",
   "update_badge_tooltip": "इस क्षमता का नया संस्करण उपलब्ध है — अपडेट के लिए हटाएं और फिर से अपनाएं",
   "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-  "tags_heading": "टैग"
+  "tags_heading": "टैग",
+  "adopted_params_failed_toast": "\"{title}\" अपनाया गया, लेकिन इसकी सेटिंग्स नहीं बनाई जा सकीं",
+  "adopted_params_partial_toast": "\"{title}\" अपनाया गया, लेकिन {declared} में से {missing} सेटिंग्स नहीं बनाई जा सकीं ({types})",
+  "removed_params_failed_toast": "\"{title}\" हटाया गया, लेकिन इसकी सेटिंग्स साफ़ नहीं की जा सकीं",
+  "_comment_adopted_params_failed_toast": "Warning toast when adoption succeeded but the parameter sync call failed outright, so the capability has no editable settings at all.",
+  "_comment_adopted_params_partial_toast": "Warning toast after adopting a capability whose input_schema declared setting types the persona parameter system cannot express. {missing}/{declared} are counts; {types} is a comma-joined list of RAW TYPE TOKENS (source_definition, connector_ref, list[string]) - do NOT translate the tokens themselves.",
+  "_comment_removed_params_failed_toast": "Warning toast when removal succeeded but the parameter re-sync failed, so the detached capability's lines are still in the prompt."
 }

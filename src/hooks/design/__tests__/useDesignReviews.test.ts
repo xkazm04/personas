@@ -42,9 +42,47 @@ describe("useDesignReviews", () => {
     clearSWRCache();
   });
 
+  it("reports the TRUE total from the count query, not the length of the capped page", async () => {
+    // The regression this locks in: `listDesignReviews()` returns at most
+    // REVIEW_LIST_LIMIT rows, so a page of 50 was being rendered as the total
+    // for a catalog of 124+. The count comes from its own query now.
+    const page = Array.from({ length: 50 }, (_, i) => makeReview({ id: `r-${i}` }));
+    mockInvokeMap({ list_design_reviews: page, count_design_reviews: 124 });
+
+    const { result } = renderHook(() => useDesignReviews());
+
+    await waitFor(
+      () => {
+        expect(result.current.totalCount).toBe(124);
+      },
+      { timeout: 10_000 },
+    );
+
+    expect(result.current.reviews).toHaveLength(50);
+    expect(result.current.totalCount).not.toBe(result.current.reviews.length);
+    // And the truncation is surfaced rather than silently applied.
+    expect(result.current.isTruncated).toBe(true);
+  });
+
+  it("does not claim a total before the count query answers", async () => {
+    mockInvokeMap({ list_design_reviews: [], count_design_reviews: 0 });
+
+    const { result } = renderHook(() => useDesignReviews());
+
+    // `null`, never 0 — "not known yet" must be distinguishable from "none",
+    // or the header flashes a confident wrong number on every cold load.
+    expect(result.current.totalCount).toBeNull();
+    expect(result.current.isTruncated).toBe(false);
+
+    await waitFor(() => {
+      expect(result.current.totalCount).toBe(0);
+    });
+    expect(result.current.isTruncated).toBe(false);
+  });
+
   it("fetches reviews on mount", async () => {
     const reviews = [makeReview({ id: "r-1" }), makeReview({ id: "r-2" })];
-    mockInvokeMap({ list_design_reviews: reviews });
+    mockInvokeMap({ list_design_reviews: reviews, count_design_reviews: 2 });
 
     const { result } = renderHook(() => useDesignReviews());
 

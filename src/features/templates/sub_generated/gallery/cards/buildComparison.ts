@@ -1,5 +1,6 @@
 import { getCachedLightFields, getCachedDesignResult } from './reviewParseCache';
-import { deriveConnectorReadiness } from '../../shared/ConnectorReadiness';
+import { resolveConnectorStatuses } from '../../shared/useConnectorReadiness';
+import type { ConnectorReadinessMap } from '../../shared/useConnectorReadiness';
 import { computeDifficulty, estimateSetupMinutes } from '../../shared/templateComplexity';
 import type { DifficultyLevel } from '../../shared/templateComplexity';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
@@ -8,7 +9,8 @@ import type { SuggestedTrigger } from '@/lib/types/designTypes';
 
 export interface CompareConnector {
   name: string;
-  ready: boolean;
+  /** `null` while the authoritative resolver has not answered yet. */
+  ready: boolean | null;
 }
 
 /** One column of the side-by-side comparison — all dimensions for a single template. */
@@ -34,17 +36,22 @@ export interface CompareColumn {
  */
 export function buildComparison(
   reviews: PersonaDesignReview[],
-  installedConnectorNames: Set<string>,
-  credentialServiceTypes: Set<string>,
+  connectorReadiness: ConnectorReadinessMap,
 ): CompareColumn[] {
   return reviews.map((review) => {
     const { connectors, flowCount } = getCachedLightFields(review);
     const designResult = getCachedDesignResult(review);
 
-    const readiness = designResult?.suggested_connectors
-      ? deriveConnectorReadiness(designResult.suggested_connectors, installedConnectorNames, credentialServiceTypes)
-      : [];
-    const readyMap = new Map(readiness.map((s) => [s.connector_name, s.health === 'ready']));
+    // Resolve over the union of what the template declares and what its design
+    // result suggests, so a connector named in only one of the two still gets
+    // the authoritative verdict rather than silently defaulting to not-ready.
+    const readiness = resolveConnectorStatuses(
+      [...connectors, ...(designResult?.suggested_connectors ?? [])],
+      connectorReadiness,
+    );
+    const readyMap = new Map(
+      readiness.map((s) => [s.connector_name, s.health === 'unknown' ? null : s.health === 'ready']),
+    );
 
     const suggestedTriggers: SuggestedTrigger[] = designResult?.suggested_triggers ?? [];
     const triggerTypes = parseJsonSafe<string[]>(review.trigger_types, []);
@@ -60,7 +67,7 @@ export function buildComparison(
       name: review.test_case_name,
       category: review.category,
       goal,
-      connectors: connectors.map((name) => ({ name, ready: readyMap.get(name) ?? false })),
+      connectors: connectors.map((name) => ({ name, ready: readyMap.get(name) ?? null })),
       triggerCount,
       flowCount,
       difficulty: computeDifficulty(review),

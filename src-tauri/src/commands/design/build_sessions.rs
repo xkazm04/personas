@@ -299,6 +299,16 @@ pub async fn create_adoption_session(
 /// The answers are stored in `build_sessions.adoption_answers` and applied to
 /// the `AgentIr` during `test_build_draft` and `promote_build_draft_inner` via
 /// `adoption_answers::substitute_variables` + `inject_configuration_section`.
+///
+/// This is the AUTHORITATIVE gate on answer completeness. The browser's
+/// `canSubmit = allAnswered && blockedCount === 0` stays as the fast path that
+/// keeps the user from ever reaching a rejection, but it is not the enforcement
+/// — every non-UI caller of the answer-application pipeline (the management
+/// API, the test-automation harness, the one-shot orchestrator, build simulate)
+/// could otherwise produce a persona that looks adopted and fails at run time.
+///
+/// Validation happens on WRITE only. Existing half-configured rows keep loading
+/// exactly as they do today; nothing on the read path consults this.
 #[tauri::command]
 pub async fn save_adoption_answers(
     state: State<'_, Arc<AppState>>,
@@ -316,6 +326,8 @@ pub async fn save_adoption_answers(
     // recoverable and the failure immediate and retryable.
     super::template_adopt::validate_json_field("adoption_answers_json", &adoption_answers_json)?;
 
+    validate_adoption_answers_against_schema(&state, &session_id, &adoption_answers_json)?;
+
     build_session_repo::update(
         &state.db,
         &session_id,
@@ -327,6 +339,70 @@ pub async fn save_adoption_answers(
 
     tracing::info!(session_id = %session_id, "save_adoption_answers: persisted adoption answers");
     Ok(())
+}
+
+/// Server-side schema gate for [`save_adoption_answers`].
+///
+/// The template's declared question schema is reachable here without asking the
+/// caller for it: an adoption session's `build_sessions.agent_ir` holds the
+/// design payload round-tripped as a raw JSON value (see
+/// `create_adoption_session`), so `adoption_questions[]` survives verbatim
+/// alongside the IR. That — not the client-supplied `questions[]` echo inside
+/// the answers payload — is what we validate against.
+///
+/// Fails OPEN on every "nothing declared" case: a session with no row, no
+/// `agent_ir`, an unparseable `agent_ir`, or a payload that declares no
+/// questions is accepted unchanged. There is nothing to enforce for a
+/// from-scratch build, and a schema we cannot read is not evidence of a bad
+/// answer set.
+fn validate_adoption_answers_against_schema(
+    state: &Arc<AppState>,
+    session_id: &str,
+    adoption_answers_json: &str,
+) -> Result<(), AppError> {
+    use crate::engine::adoption_answers;
+
+    let Some(session) = build_session_repo::get_by_id(&state.db, session_id)? else {
+        return Ok(());
+    };
+    let Some(agent_ir) = session.agent_ir.as_deref() else {
+        return Ok(());
+    };
+    let declared = adoption_answers::declared_questions(agent_ir);
+    if declared.is_empty() {
+        return Ok(());
+    }
+
+    let parsed: adoption_answers::AdoptionAnswers = serde_json::from_str(adoption_answers_json)
+        .map_err(|e| {
+            AppError::Validation(format!(
+                "{}: the payload is not a readable answer set ({e})",
+                adoption_answers::ADOPTION_ANSWERS_REJECTED
+            ))
+        })?;
+
+    let selection = adoption_answers::submitted_use_case_selection(adoption_answers_json);
+    let disabled_dims =
+        adoption_answers::parse_disabled_dims(session.disabled_dims_json.as_deref());
+
+    let violations = adoption_answers::validate_answers(
+        &declared,
+        &parsed,
+        selection.as_deref(),
+        &disabled_dims,
+    );
+    if violations.is_empty() {
+        return Ok(());
+    }
+
+    let message = adoption_answers::describe_violations(&violations);
+    tracing::warn!(
+        session_id = %session_id,
+        violations = violations.len(),
+        declared = declared.len(),
+        "save_adoption_answers: rejected an under-configured answer set"
+    );
+    Err(AppError::Validation(message))
 }
 
 /// Update the per-capability disabled-dims map on a build session row.

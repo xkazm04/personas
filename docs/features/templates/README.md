@@ -114,6 +114,16 @@ src-tauri/src/db/repos/communication/reviews.rs   (persona_design_reviews DAO)
   `DensityToggle` and the `ExploreVariantA` role-cards surface were removed).
 - **Coverage filter — All / Ready / Partial / Drafts** (`gallery/search/filters/FilterChips.tsx`
   + `gallery/cards/useGalleryActions.ts`): Ready = 100% connector readiness, Partial = some.
+  **Readiness comes from the authoritative Rust resolver** (2026-08). Until then the gallery used
+  a TS heuristic, `deriveConnectorReadiness`, that was just `installed && has_credential` — so it
+  disagreed by construction with the resolver that actually gates a run: a **zero-config** connector
+  read as *not* ready, and a connector with a stored-but-unusable credential read as *ready*. The
+  heuristic is deleted. `connector_readiness_batch` now exposes
+  `commands/design/connector_readiness.rs` (zero-config / native / aggregate connectors, CLI probes
+  — the same code path behind `commands/execution/executions.rs`'s run gate and `personas.setup_status`),
+  consumed through `sub_generated/shared/useConnectorReadiness.ts`. One batch call per gallery data
+  change, keyed on the sorted connector vocabulary — not one call per card. `unknown` is a
+  first-class state: while a fetch is in flight the badge says unknown rather than guessing "ready".
   **Drafts** isolates unpublished (`is_published: false`) templates and is **dev-build-only**:
   the catalog skips drafts in production (`templateCatalog.ts` — `import.meta.env.DEV` gate), so
   they never leak into All/Ready/Partial, trending, or home; in dev they seed with a `_draft`
@@ -323,12 +333,72 @@ mismatches. This is the authoritative catalog health check.
 See [05-dynamic-discovery.md](05-dynamic-discovery.md) for the full
 mechanics including body + headers support (Notion, GraphQL, etc.).
 
+## The build engine — cost, hangs, and answer validation (2026-08)
+
+Three changes to the interactive/CLI build path (`engine/build_session/**`) and
+to adoption-answer handling. Note the build wizard and template adoption are
+*different* paths: adoption bypasses `build_session`'s CLI-spawn entirely and
+reuses only its shared leaf `run_tool_tests`.
+
+- **Build spend now reaches the ledger the dashboard reads.** Per-turn cost was
+  accumulated only into `build_sessions.total_cost_usd`, a bespoke column, never
+  into `dev_llm_spend` — so on a real database **68 builds totalling $45.92 were
+  invisible**, and the post-draft one-shot loop (Testing → fix_pass → retest, up
+  to 3 retries with real tool API calls plus an LLM correction each) was
+  unmetered entirely. Every leg now books an append-only `dev_llm_spend` row,
+  named in `trigger_kind` as `build_resolution` / `build_tool_test` /
+  `build_test_summary` / `build_fix_pass`. The session column stays —
+  `tools/test-mcp/run_build_bench.py` reads it directly. Booking takes the
+  turn's own `result` envelope, never the running accumulator, so the two sinks
+  cannot double-count; and it is gated on a *complete* envelope, so a
+  `…[timeout]` partial books nothing rather than asserting a stalled leg was
+  free. `fix_pass` needed `--output-format json` to report usage at all — bare
+  `--print` reports none, which is *why* the retry loop was invisible.
+- **A wedged CLI turn is now killed instead of hanging forever.** The real cause
+  was an unreadable signal, not a missing timer: the watchdog returned
+  `Ok(None)` for both "300s of silence" and "genuine EOF", so the read loop
+  broke as if the stream had ended and then blocked indefinitely on
+  `driver.wait()`. `LineRead { Line, Eof, Silence }` makes the two
+  distinguishable; silence kills through the existing `ActiveProcessRegistry`
+  path (still exactly one kill path) and fails with a retryable reason naming
+  the turn and the bound. A *post-EOF* timeout kills and continues, since the
+  turn's output was already read. `CLI_SILENCE_KILL_TIMEOUT = 600s` is
+  deliberately about silence, not elapsed turn time — killing a long-but-healthy
+  turn would be worse than the hang. `MAX_TURNS` and the 24h stale-session
+  reaper are untouched.
+- **Adoption answers are validated server-side.** `canSubmit` in the browser was
+  the entire required-field enforcement; `save_adoption_answers` checked only
+  JSON well-formedness, so every non-UI caller (`management_api`,
+  `test_automation`, `oneshot`, `build_simulate`) could produce an
+  under-configured persona that looked adopted and failed at run time. The
+  schema is reachable because `create_adoption_session` round-trips the payload
+  through `serde_json::Value`, so `adoption_questions[]` survives verbatim on
+  `build_sessions.agent_ir`. Validates on **write** only, so existing
+  half-configured sessions still load. The browser gate stays as the fast path.
+  Blind spot, stated rather than hidden: `isQuestionDimOff` gates
+  `memory`/`review` questions from component state the server cannot see, so
+  71 of 817 questions (~8.7%) are exempt from the *required* check while still
+  being range-checked.
+
+⚠️ **Ten shipped templates declare a `default` that is not in their own
+`options`** — a de-branding pass rewrote defaults (`Slack`→`messaging`,
+`Notion`→`knowledge base`, `DocuSign`→`legal platform`) without rewriting the
+option lists, and `digital-clone.json` even reads "messaging + messaging" where
+two brands collapsed onto one word. The validator accepts a declared default as
+in-range specifically so this does not block adoption, but the underlying data
+is still wrong and the user sees a pre-filled answer that matches no option. See
+the `template-default-brand-drift` backlog item; fixing it requires regenerating
+**both** checksum manifests, or the edited templates get skipped at catalog load.
+
 ## Gotchas that burn time
 
 1. **Running `tauri dev` caches `template_checksums.rs` at compile time.**
-   Edits to template JSON files need a dev-server restart before the
-   Rust-side `check_template_integrity` accepts the new content.
-   Frontend-only changes hot-reload fine.
+   Edits to template JSON files need a dev-server restart. (The Rust-side
+   `check_template_integrity` this used to mention was deleted in 2026-08 — it
+   was inert; see
+   [06-integrity-and-security.md](./06-integrity-and-security.md). The gate that
+   matters is the TS catalog-load checksum check, which *skips* a mismatched
+   template.) Frontend-only changes hot-reload fine.
 2. **The backend adoption path reads `design_result` from the DB**, not
    from the JSON file directly. If the DB row is stale (e.g. pre-edit
    seed), the user sees old content. `batchImportDesignReviews` uses

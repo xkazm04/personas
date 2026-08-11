@@ -22,6 +22,16 @@ use super::super::prompt;
 use super::super::runner as engine_runner;
 use super::super::tool_runner;
 
+/// Model driving the test-plan composition leg. Named so the same string
+/// reaches both the CLI `--model` flag and the `dev_llm_spend` ledger row
+/// (the ledger's model is only a fallback — the CLI's own `result` envelope
+/// wins — but the two must not be allowed to drift).
+const TEST_PLAN_MODEL: &str = "claude-sonnet-4-6";
+
+/// Model driving the plain-language test-report leg. Cheap on purpose — this
+/// pass only rewrites an already-computed report for a non-technical reader.
+const TEST_SUMMARY_MODEL: &str = "claude-haiku-4-5-20251001";
+
 // =============================================================================
 // The promote-gate decision table
 // =============================================================================
@@ -418,7 +428,7 @@ pub async fn run_tool_tests(
     // Step 3: Spawn CLI and get test plan
     let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
-    cli_args.args.push("claude-sonnet-4-6".to_string());
+    cli_args.args.push(TEST_PLAN_MODEL.to_string());
 
     let mut driver = CliProcessDriver::spawn_temp(&cli_args, "build-test")
         .map_err(|e| AppError::ProcessSpawn(format!("Failed to spawn test CLI: {e}")))?;
@@ -437,6 +447,17 @@ pub async fn run_tool_tests(
         loop {
             match read_line_limited(&mut reader).await {
                 Ok(Some(line)) => {
+                    // Book this leg in `dev_llm_spend` — the one-shot
+                    // test/fix-pass path used to be entirely unmetered while
+                    // running up to MAX_TEST_RETRIES real LLM passes. No-op for
+                    // every line that is not a `result` envelope.
+                    super::events::record_build_spend(
+                        pool,
+                        Some(persona_id),
+                        super::events::SPEND_TOOL_TEST,
+                        Some(TEST_PLAN_MODEL),
+                        &line,
+                    );
                     raw_output.push_str(&line);
                     raw_output.push('\n');
                 }
@@ -614,6 +635,8 @@ pub async fn run_tool_tests(
     // Step 5: Generate human-friendly summary via CLI
     let results_json = serde_json::to_string_pretty(&tally.results).unwrap_or_default();
     let summary = generate_test_summary(
+        pool,
+        persona_id,
         &results_json,
         persona_name,
         tally.passed,
@@ -1006,7 +1029,10 @@ async fn run_scripted_connector_tests(
     }))
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn generate_test_summary(
+    pool: &DbPool,
+    persona_id: &str,
     results_json: &str,
     agent_name: &str,
     passed: usize,
@@ -1052,7 +1078,7 @@ If some are unverified: say that this build will not be promoted automatically u
 
     let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
-    cli_args.args.push("claude-haiku-4-5-20251001".to_string());
+    cli_args.args.push(TEST_SUMMARY_MODEL.to_string());
 
     let mut driver = CliProcessDriver::spawn_temp(&cli_args, "test-summary")
         .map_err(|e| AppError::ProcessSpawn(format!("Failed to spawn summary CLI: {e}")))?;
@@ -1070,6 +1096,13 @@ If some are unverified: say that this build will not be promoted automatically u
         loop {
             match read_line_limited(&mut reader).await {
                 Ok(Some(line)) => {
+                    super::events::record_build_spend(
+                        pool,
+                        Some(persona_id),
+                        super::events::SPEND_TEST_SUMMARY,
+                        Some(TEST_SUMMARY_MODEL),
+                        &line,
+                    );
                     raw_output.push_str(&line);
                     raw_output.push('\n');
                 }

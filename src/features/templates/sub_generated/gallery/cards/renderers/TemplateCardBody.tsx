@@ -5,7 +5,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { TRIGGER_ICONS } from './templateCardTypes';
 import type { SuggestedTrigger } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
-import type { ConnectorReadinessStatus } from '@/lib/types/designTypes';
+import type { ResolvedConnectorReadiness } from '../../../shared/useConnectorReadiness';
 import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CARD_PADDING } from '@/lib/utils/designTokens';
@@ -15,7 +15,7 @@ interface TemplateCardBodyProps {
   triggerTypes: string[];
   suggestedTriggers: SuggestedTrigger[];
   displayFlows: UseCaseFlow[];
-  readinessStatuses: ConnectorReadinessStatus[];
+  readinessStatuses: ResolvedConnectorReadiness[];
   onViewFlows: () => void;
 }
 

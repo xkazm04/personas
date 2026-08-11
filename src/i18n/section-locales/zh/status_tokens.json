@@ -194,5 +194,17 @@
     "refused": "已拒绝",
     "pending": "待处理",
     "running": "运行中"
+  },
+  "event_reason": {
+    "approval_held": "等待审批",
+    "cascade_guard": "已在运行",
+    "cross_team_blocked": "跨团队被阻止",
+    "dry_run": "试运行（模拟）",
+    "handoff_target_disabled": "交接目标已关闭",
+    "no_subscriber": "没有匹配的订阅者",
+    "persona_disabled": "代理已关闭",
+    "stuck_reclaimed": "已回收并重新排队",
+    "stuck_retry_exhausted": "已回收，重试次数用尽",
+    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
   }
 }

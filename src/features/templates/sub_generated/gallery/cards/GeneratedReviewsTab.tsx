@@ -100,8 +100,8 @@ export default function GeneratedReviewsTab({
   );
 
   const compareColumns = useMemo(
-    () => buildComparison(compare.selected, actions.installedConnectorNames, actions.credentialServiceTypes),
-    [compare.selected, actions.installedConnectorNames, actions.credentialServiceTypes],
+    () => buildComparison(compare.selected, actions.connectorReadiness),
+    [compare.selected, actions.connectorReadiness],
   );
 
   const handlePersonaCreated = () => {
@@ -250,8 +250,8 @@ export default function GeneratedReviewsTab({
           expandedRow={expandedRow}
           searchQuery={gallery.search.trim()}
           isAiResult={gallery.aiSearchActive}
-          installedConnectorNames={actions.installedConnectorNames}
           credentialServiceTypes={actions.credentialServiceTypes}
+          connectorReadiness={actions.connectorReadiness}
           modals={modals}
           onToggleExpand={handleToggleExpand}
           onViewFlows={onViewFlows}

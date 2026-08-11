@@ -772,7 +772,13 @@
     "run_now": "اعتمد وشغّل",
     "subtitle_one": "تشغيل مجدوَل واحد ({count}) في الانتظار حتى تعتمده.",
     "subtitle_other": "{count} تشغيلات مجدوَلة في الانتظار حتى تعتمدها.",
-    "title": "في انتظار موافقتك"
+    "title": "في انتظار موافقتك",
+    "badge_one": "{count} تشغيل في الانتظار",
+    "badge_other": "{count} تشغيل في الانتظار",
+    "badge_title": "عمليات تشغيل المشغّلات المحتجزة بانتظار موافقتك",
+    "_comment_badge_one": "Header badge, singular. {count} is a number. 'fire' = one held trigger firing, not flame.",
+    "_comment_badge_other": "Header badge, plural. {count} is a number. 'fires' = held trigger firings, not flames.",
+    "_comment_badge_title": "Tooltip on the header badge."
   },
   "unattended": {
     "approval": "اطلب موافقتي",
@@ -821,5 +827,11 @@
     "watching_only": "المراقَبة فقط"
   },
   "overdue_label": "متأخر",
-  "relay_delete_failed": "فشل حذف الترحيل — يرجى المحاولة مرة أخرى"
+  "relay_delete_failed": "فشل حذف الترحيل — يرجى المحاولة مرة أخرى",
+  "event_reason_label": "السبب",
+  "event_reason_unknown": "غير معروف",
+  "event_reason_unknown_hint": "سُجِّل قبل تتبّع الأسباب، لذا لا يُعرف سبب انتهاء هذا الحدث دون تشغيل.",
+  "_comment_event_reason_label": "Column header in the trigger Live Stream / Dead Letter tables: why this event did not start a run.",
+  "_comment_event_reason_unknown": "Shown for events recorded before reasons were tracked. Must NOT read like a fabricated reason.",
+  "_comment_event_reason_unknown_hint": "Tooltip explaining the Unknown reason - honesty about missing history, not an error."
 }

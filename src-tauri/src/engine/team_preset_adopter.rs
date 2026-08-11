@@ -98,7 +98,14 @@ fn preset_role_config(role: &str) -> String {
 /// member as `worker` — so it can neither skip already-present roles (it would
 /// re-adopt duplicates) nor resolve connection endpoints back to existing
 /// members (new members would wire only to each other, not into the pipeline).
-fn member_semantic_role(config: Option<&str>, role: &str) -> String {
+///
+/// `pub(crate)` because the same recovery is the ONLY way any consumer can read
+/// a semantic role: `team_assignment_orchestrator::maybe_post_channel_message`
+/// gates channel posting on `engineer` / `qa` / `architect`, none of which the
+/// `role` column's CHECK admits, so reading that column made the gate
+/// unreachable for every team. Any future role-aware feature must come through
+/// here rather than growing a second config parser.
+pub(crate) fn member_semantic_role(config: Option<&str>, role: &str) -> String {
     config
         .and_then(|c| serde_json::from_str::<serde_json::Value>(c).ok())
         .and_then(|v| {

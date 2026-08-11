@@ -772,7 +772,13 @@
     "run_now": "承認して実行",
     "subtitle_one": "{count}件のスケジュール実行が承認待ちで保留中です。",
     "subtitle_other": "{count}件のスケジュール実行が承認待ちで保留中です。",
-    "title": "承認待ち"
+    "title": "承認待ち",
+    "badge_one": "{count} 件の起動が待機中",
+    "badge_other": "{count} 件の起動が待機中",
+    "badge_title": "承認待ちのトリガー起動",
+    "_comment_badge_one": "Header badge, singular. {count} is a number. 'fire' = one held trigger firing, not flame.",
+    "_comment_badge_other": "Header badge, plural. {count} is a number. 'fires' = held trigger firings, not flames.",
+    "_comment_badge_title": "Tooltip on the header badge."
   },
   "unattended": {
     "approval": "承認を要求する",
@@ -821,5 +827,11 @@
     "watching_only": "ウォッチ中のみ"
   },
   "overdue_label": "期限超過",
-  "relay_delete_failed": "リレーの削除に失敗しました — もう一度お試しください"
+  "relay_delete_failed": "リレーの削除に失敗しました — もう一度お試しください",
+  "event_reason_label": "理由",
+  "event_reason_unknown": "不明",
+  "event_reason_unknown_hint": "理由の記録が始まる前のデータのため、このイベントが実行されずに終了した理由は分かりません。",
+  "_comment_event_reason_label": "Column header in the trigger Live Stream / Dead Letter tables: why this event did not start a run.",
+  "_comment_event_reason_unknown": "Shown for events recorded before reasons were tracked. Must NOT read like a fabricated reason.",
+  "_comment_event_reason_unknown_hint": "Tooltip explaining the Unknown reason - honesty about missing history, not an error."
 }

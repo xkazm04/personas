@@ -134,5 +134,9 @@
   "webhook_missing_secret_message": "A este disparador de webhook le falta su secreto de firma.",
   "webhook_missing_secret_suggestion": "Vuelve a ejecutar Promote; el flujo genera automáticamente un webhook_secret al enviarlo. Si persiste, reinicia la build.",
   "decision_conflict_message": "Otra persona ya decidió esto — recargando.",
-  "decision_conflict_suggestion": "La lista se está actualizando con el último veredicto. Revísalo y vuelve a decidir si no estás de acuerdo."
+  "decision_conflict_suggestion": "La lista se está actualizando con el último veredicto. Revísalo y vuelve a decidir si no estás de acuerdo.",
+  "adoption_answers_rejected_message": "Faltan algunas respuestas del cuestionario o no son válidas.",
+  "adoption_answers_rejected_suggestion": "Vuelve a abrir las preguntas de configuración, completa las indicadas y continúa.",
+  "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
+  "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
 }

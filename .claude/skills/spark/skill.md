@@ -5,6 +5,7 @@ memory: vault
 category: Development
 description: Turn a vague product idea (a "sparkle") into a complete, grounded design through waves of select/multi-select questions — then orchestrate the build. Uses the context map to target exactly which contexts/files the idea touches, scouts them before asking anything, converges the design across four perspectives (functional, UX, UI, performance/architecture), and executes via builder subagents in a worktree under Director review. All runs live in a linked Obsidian vault; every run ends with a self-improvement retro that sharpens the skill itself. Invoke with `/spark <idea…>` or `/spark resume <slug> | status | reflect`.
 argument-hint: "<idea…> | resume <slug> | status | reflect"
+version: 1.0
 ---
 
 # Spark — sparkle in, fire out
@@ -134,3 +135,19 @@ Wrap: session note with `next:` pointer, update `Spark.md` ledger, move the acti
 - The operator's verbatim spark text is sacred — design converges *toward* it; scope creep beyond it needs an explicit question.
 - Waves are uncapped; clarity is the terminator. Each question must earn its place (its answer changes the design); the checklist decides when the dialog is done. Two consecutive waves that open more than they close → propose splitting the spark.
 - Never mark shipped on tsc/cargo alone — the gates run, and UI work gets observed, not assumed.
+
+---
+
+## Skill Reflection
+
+After the run’s real work is done, reflect twice — autonomously, without asking the user. Be honest about volume: most runs produce NOTHING for lane 2. An empty reflection is a valid result; a forced lesson is pollution. Calibration: nothing (common) / one line (sometimes) / a lesson entry (occasionally) / a redesign proposal (rare).
+
+Lane 1 — PROJECT learnings (what the next session in THIS repo needs): write via the MEMORY BLOCK contract if this prompt carries one, else append node lines to `.personas/memory-outbox.jsonl` per that contract. Project-specific insight only.
+
+Lane 2 — METHOD learnings (what would improve THIS SKILL for every project):
+1. If nothing generalizes beyond this repo, stop here.
+2. Append an entry to `LESSONS.md` in this skill’s directory: `## <version-used> — <YYYY-MM-DD> — <project-name>` followed by `- ` bullets (create the file with a `# Lessons — <skill>` heading if absent). Record the version the run USED, not a bump target. Wrap a bullet in a `### Redesign proposal` sub-block when it argues for a methodic redesign you are NOT applying now.
+3. Version bump — ONLY when you also edit SKILL.md to apply the improvement in the same change: minor (1.2 → 1.3) for a prompt/step refinement, major (1.x → 2.0) for a methodic redesign. Update the `version:` frontmatter field (add `version: 1.1` if the file had none — absent means 1.0). Never bump without an applied edit; never edit the method without a bump.
+4. Sync ritual (only when you bumped): (a) commit the skill directory as a STANDALONE commit on the current branch — message `skill(<name>): v<new> — <one-line reason>` — containing nothing but this skill’s files; (b) copy the updated skill directory to `~/.claude/skills/<name>/` (overwrite) so sibling projects can adopt it. EXCEPTION: read `.personas/skill-registry.json` first — if the library already carries a HIGHER version than yours, do not overwrite it; keep your lesson in LESSONS.md and note the version conflict in the entry.
+
+Sibling awareness: `.personas/skill-registry.json` (repo root, when present) lists this skill’s installed version, the workspace library version, and which sibling projects run it at which version with recent usage. Use it to judge whether a lesson is worth a bump (heavily-used siblings raise the bar for majors) and to notice you are BEHIND (library newer than yours → prefer recording the lesson over editing a stale method).

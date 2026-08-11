@@ -2152,6 +2152,7 @@ pub fn run() {
             commands::design::platform_definitions::get_platform_definition,
             // Design -- Reviews
             commands::design::reviews::list_design_reviews,
+            commands::design::reviews::count_design_reviews,
             commands::design::reviews::list_design_reviews_paginated,
             commands::design::reviews::list_review_connectors,
             commands::design::reviews::list_review_categories,
@@ -2422,6 +2423,10 @@ pub fn run() {
             commands::recipes::recipe_derivation::derive_recipes_from_template,
             // Recipes -- Stage D Phase 1 keyword matcher (composer suggestions)
             commands::recipes::recipe_match::match_recipes_to_intent,
+            // Recipes -- parameter-derivation coverage (which declared settings survive adoption)
+            commands::recipes::recipe_parameter_coverage::get_recipe_parameter_coverage,
+            // Recipes -- outcome attribution (runs + success rate per recipe)
+            commands::recipes::recipe_outcomes::get_recipe_outcome_tallies,
             // Recipes -- Stage D Phase 4 telemetry (impression/accept/dismiss)
             commands::recipes::recipe_suggestion_log::log_recipe_suggestion_event,
             commands::recipes::recipe_suggestion_log::get_recipe_suggestion_stats,
@@ -2768,6 +2773,8 @@ pub fn run() {
             // Provider-CLI auth readiness (vercel/netlify/wrangler/flyctl/railway/gh)
             commands::design::connector_readiness::connector_cli_probe_status,
             commands::design::connector_readiness::connector_cli_probe_refresh,
+            // Authoritative connector readiness for browsing surfaces (batch)
+            commands::design::connector_readiness::connector_readiness_batch,
             // Drive -- managed local filesystem plugin
             commands::drive::drive_get_root,
             commands::drive::drive_storage_info,

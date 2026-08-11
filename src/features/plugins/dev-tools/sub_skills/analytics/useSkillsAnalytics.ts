@@ -13,6 +13,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { listScans, type DevScan } from '@/api/devTools/devTools';
 import { listSessions, sessionMetadata } from '@/api/fleet/fleet';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
+import { mapWithConcurrency } from '@/lib/concurrency';
 import { silentCatch } from '@/lib/silentCatch';
 
 export interface SkillRunRow {
@@ -106,12 +107,16 @@ export function useSkillsAnalytics(projectId: string | null, refreshTick = 0): {
           .filter((x): x is { s: FleetSession; parsed: { skill: string; rest: string } } => x.parsed !== null);
         setFleetRows(skillSessions.map(({ s, parsed }) => fleetRun(s, parsed)));
 
-        // Token rollups for the most recent runs — bounded, cheap delta path.
+        // Token rollups for the most recent runs — bounded count AND bounded
+        // concurrency: each lookup reads a transcript file backend-side, and
+        // firing all 30 at once was an IO burst that stalled the cold load's
+        // other queries. Three at a time finishes almost as fast and stays
+        // polite; rows are already on screen while these trickle in.
         const bound = skillSessions
           .filter(({ s }) => s.claudeSessionId)
           .sort((a, b) => Number(b.s.createdAtMs) - Number(a.s.createdAtMs))
           .slice(0, TOKEN_LOOKUPS);
-        const entries = await Promise.all(bound.map(async ({ s }) => {
+        const entries = await mapWithConcurrency(bound, 3, async ({ s }) => {
           try {
             const meta = await sessionMetadata(s.claudeSessionId as string);
             if (!meta) return null;
@@ -120,7 +125,7 @@ export function useSkillsAnalytics(projectId: string | null, refreshTick = 0): {
               output: Number(meta.tokens.output),
             }] as const;
           } catch { return null; }
-        }));
+        });
         if (alive) setTokensBySession(new Map(entries.filter((e): e is NonNullable<typeof e> => e !== null)));
       })
       .catch(silentCatch('skillsAnalytics fleet sessions'))

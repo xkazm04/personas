@@ -231,5 +231,11 @@
   "update_badge_detail_tooltip": "v{from}에서 적용됨; 현재 카탈로그 버전은 v{to}입니다. 업데이트하려면 제거 후 다시 적용하세요.",
   "update_badge_tooltip": "이 기능의 최신 버전을 사용할 수 있습니다 — 업데이트하려면 제거 후 다시 적용하세요",
   "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-  "tags_heading": "태그"
+  "tags_heading": "태그",
+  "adopted_params_failed_toast": "\"{title}\"을(를) 도입했지만 설정을 만들지 못했습니다",
+  "adopted_params_partial_toast": "\"{title}\"을(를) 도입했지만 설정 {declared}개 중 {missing}개를 만들지 못했습니다({types})",
+  "removed_params_failed_toast": "\"{title}\"을(를) 제거했지만 설정을 정리하지 못했습니다",
+  "_comment_adopted_params_failed_toast": "Warning toast when adoption succeeded but the parameter sync call failed outright, so the capability has no editable settings at all.",
+  "_comment_adopted_params_partial_toast": "Warning toast after adopting a capability whose input_schema declared setting types the persona parameter system cannot express. {missing}/{declared} are counts; {types} is a comma-joined list of RAW TYPE TOKENS (source_definition, connector_ref, list[string]) - do NOT translate the tokens themselves.",
+  "_comment_removed_params_failed_toast": "Warning toast when removal succeeded but the parameter re-sync failed, so the detached capability's lines are still in the prompt."
 }

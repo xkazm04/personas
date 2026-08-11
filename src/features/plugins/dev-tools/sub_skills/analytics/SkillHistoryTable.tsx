@@ -3,6 +3,7 @@
 import { RotateCcw } from 'lucide-react';
 
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { useProgressiveReveal } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { SCAN_AGENTS } from '../../constants/scanAgents';
@@ -83,6 +84,10 @@ export function SkillHistoryTable({ runs, onRerun, onOpenInfo }: {
     return typeof v === 'string' ? v : s;
   };
 
+  // The run log can hold dozens of rows in a scroll well — reveal them across
+  // a short window instead of mounting all at once (loading-pattern v2 §3).
+  const reveal = useProgressiveReveal(runs.length, { initialCount: 12 });
+
   const H = ({ children, right }: { children: React.ReactNode; right?: boolean }) => (
     <span className={`text-[10.5px] uppercase tracking-[0.12em] text-foreground/40 ${right ? 'text-right' : ''}`}>{children}</span>
   );
@@ -107,7 +112,7 @@ export function SkillHistoryTable({ runs, onRerun, onOpenInfo }: {
           <p className="typo-caption text-foreground/45 py-8 text-center">{d.skills_history_empty}</p>
         )}
         <ul>
-          {runs.map((row) => (
+          {runs.slice(0, reveal.count).map((row) => (
             <li key={`${row.kind}-${row.id}`} className={`${GRID} py-2 border-b border-foreground/[0.08] last:border-b-0`}>
               <SkillCell row={row} onOpenInfo={onOpenInfo} />
               <span

@@ -194,5 +194,17 @@
     "refused": "مرفوضة",
     "pending": "قيد الانتظار",
     "running": "قيد التشغيل"
+  },
+  "event_reason": {
+    "approval_held": "في انتظار الموافقة",
+    "cascade_guard": "قيد التشغيل بالفعل",
+    "cross_team_blocked": "محظور بين الفرق",
+    "dry_run": "تشغيل تجريبي (محاكاة)",
+    "handoff_target_disabled": "وجهة التسليم متوقفة",
+    "no_subscriber": "لا يوجد مشترك مطابق",
+    "persona_disabled": "الوكيل متوقف",
+    "stuck_reclaimed": "تمت الاستعادة وإعادة الإدراج في الطابور",
+    "stuck_retry_exhausted": "تمت الاستعادة، ونفدت المحاولات",
+    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
   }
 }

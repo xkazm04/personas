@@ -174,6 +174,66 @@ global flags, so existing setups are unchanged. The discovery loop (idea scan /
 backlog triage / Athena reactions) still rides its global flags today and folds
 into Suggest/Full in a follow-up.
 
+## AI-composed measurements were never landing (fixed 2026-08)
+
+`apply_composed_measure` recorded its reading with `source = 'ai-compose'` — a
+value the `dev_kpi_measurements.source` CHECK **never allowed**
+(`evaluator | manual | scan | health_snapshot | simulation`). SQLite rejected
+every insert and a `let _ =` swallowed the error, so **no AI-composed reading
+had ever reached the series**, and neither had the Factory `MeasureSetupModal`'s,
+which posts the same source through `dev_tools_record_kpi_measurement`.
+Confirmed against a real database before the fix: `select source, count(*)`
+returned `simulation` rows only.
+
+`ai-compose` is now a sixth allowed source, and writes go through a governed
+door — `record_kpi_compose_measurement`, mirroring
+`record_kpi_simulation_measurement` — which **requires evidence** and writes
+`env` explicitly as `production` rather than inheriting the column default. The
+evidence JSON is byte-shape-identical to the evaluator's
+`{cmd, parse, output_tail}`, so `summarizeEvidence` needs no special case and an
+AI-composed reading now carries the same provenance line every other measured
+value does. Unlike the simulation door, it rolls `current_value` /
+`last_measured_at` forward, because the command really did run.
+
+Recording failures now `tracing::warn!` instead of vanishing.
+
+Also corrected in the same pass: the `kpi_compose` module header claimed
+"neither compose command writes to the DB". True of the manual flow, false of
+`launch_compose_apply` / `propose_kpi_auto_inner` — the path
+`dev_tools_propose_kpi_auto` and **Athena's `propose_kpi` op** reach, which
+writes `measure_config` plus a first value with no human confirmation gate,
+before the KPI has left `status='proposed'`. The header now says so. The
+autonomy contract itself is unchanged.
+
+## When a KPI goes dark (2026-08)
+
+Goal derivation is gated on freshness: `find_derivation_candidates` only derives
+from a KPI measured within **2× its cadence** (daily → 2 days, everything else →
+14 days). Past that window derivation for that KPI simply stops — and until
+2026-08 nothing said so. A measurement path that broke (a `codebase` command
+that started failing, a connector binding that rotted) read to the user as
+"this KPI just isn't generating work any more".
+
+The existing `attention_queue` now carries two kinds — no new panel, no new
+command:
+
+| kind | rank | means |
+| --- | --- | --- |
+| `kpi_gone_dark` | 7 | was being measured, has aged past its own window |
+| `kpi_never_measured` | 8 | active and older than its window, never measured once |
+
+`entity_kind` is `kpi`. The row's detail states the *consequence* — that goal
+derivation has stopped for it — rather than just the age. The window mirrors the
+derivation gate's own `CASE k.cadence`, with cross-pointers in both files,
+because a daily KPI and a quarterly KPI must not share one threshold.
+
+Deliberately excluded so the signal stays worth reading: anything not
+`status='active'` (paused and archived KPIs are silent on purpose, and proposed
+ones haven't started), a KPI younger than its own window, and **projects with no
+team** — the same join derivation makes, since a team-less project never derived
+anything and the claim would be false. Unparseable timestamps are logged and
+skipped, never rendered as age 0.
+
 ## Environments & simulation (the LLM-engine channel)
 
 Measurements carry an **environment** (`local` / `test` / `production` — the

@@ -772,7 +772,13 @@
     "run_now": "Phê duyệt & chạy",
     "subtitle_one": "{count} lần chạy theo lịch đang chờ bạn phê duyệt.",
     "subtitle_other": "{count} lần chạy theo lịch đang chờ bạn phê duyệt.",
-    "title": "Đang chờ phê duyệt của bạn"
+    "title": "Đang chờ phê duyệt của bạn",
+    "badge_one": "{count} lượt kích hoạt đang chờ",
+    "badge_other": "{count} lượt kích hoạt đang chờ",
+    "badge_title": "Các lượt kích hoạt đang chờ bạn phê duyệt",
+    "_comment_badge_one": "Header badge, singular. {count} is a number. 'fire' = one held trigger firing, not flame.",
+    "_comment_badge_other": "Header badge, plural. {count} is a number. 'fires' = held trigger firings, not flames.",
+    "_comment_badge_title": "Tooltip on the header badge."
   },
   "unattended": {
     "approval": "Yêu cầu phê duyệt của tôi",
@@ -821,5 +827,11 @@
     "watching_only": "Chỉ theo dõi"
   },
   "overdue_label": "Quá hạn",
-  "relay_delete_failed": "Xóa relay thất bại — vui lòng thử lại"
+  "relay_delete_failed": "Xóa relay thất bại — vui lòng thử lại",
+  "event_reason_label": "Lý do",
+  "event_reason_unknown": "Không rõ",
+  "event_reason_unknown_hint": "Được ghi lại trước khi lý do được theo dõi, nên không rõ vì sao sự kiện này kết thúc mà không chạy.",
+  "_comment_event_reason_label": "Column header in the trigger Live Stream / Dead Letter tables: why this event did not start a run.",
+  "_comment_event_reason_unknown": "Shown for events recorded before reasons were tracked. Must NOT read like a fabricated reason.",
+  "_comment_event_reason_unknown_hint": "Tooltip explaining the Unknown reason - honesty about missing history, not an error."
 }

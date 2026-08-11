@@ -13,8 +13,9 @@ use serde_json::Value;
 use tauri::ipc::Channel;
 use tauri::Emitter;
 
-use crate::db::models::{BuildEvent, BuildPhase, UpdateBuildSession};
+use crate::db::models::{BuildEvent, BuildPhase, LlmSpendInsert, UpdateBuildSession};
 use crate::db::repos::core::build_sessions as build_session_repo;
+use crate::db::repos::llm_spend;
 use crate::db::DbPool;
 use crate::error::AppError;
 use crate::ActiveProcessRegistry;
@@ -111,6 +112,101 @@ pub(super) fn record_build_usage(
             ..Default::default()
         },
     );
+}
+
+// =============================================================================
+// Central LLM-spend ledger (`dev_llm_spend`)
+// =============================================================================
+//
+// `record_build_usage` above is the *session-local* sink: a cumulative
+// overwrite of `build_sessions.total_cost_usd` that `tools/test-mcp/
+// run_build_bench.py` reads directly. It is NOT on the LLM-spend dashboard —
+// that surface only ever reads `dev_llm_spend`, which until now carried zero
+// build rows (`select source, count(*) from dev_llm_spend group by 1` returned
+// only `scanner` and `evaluator` on the operator's live DB, while 68 build
+// sessions had booked $45.92 into the column nobody aggregates).
+//
+// So the two sinks are complementary, not duplicates:
+//   * session column  — cumulative, overwritten per turn, one row per session.
+//   * `dev_llm_spend` — append-only, ONE row per CLI `result` envelope.
+// A turn therefore appears exactly once on the dashboard. Never book the
+// accumulator (`acc_cost_usd`) into the ledger — that would re-book every
+// prior turn on each pass.
+
+/// Ledger `source` tier for every LLM leg of a design-wizard build. Matches
+/// the `LlmSpendInsert::source` taxonomy (`scanner` | `evaluator` | `design` |
+/// `kpi`); the build wizard is a design surface.
+pub(super) const BUILD_SPEND_SOURCE: &str = "design";
+
+/// `trigger_kind` for the main resolution turns driven by `runner::run_session`.
+pub(super) const SPEND_RESOLUTION: &str = "build_resolution";
+
+/// `trigger_kind` for the one-shot tool-test leg (`tool_tests::run_tool_tests`)
+/// — the CLI pass that composes the per-tool test plan.
+pub(super) const SPEND_TOOL_TEST: &str = "build_tool_test";
+
+/// `trigger_kind` for the plain-language test-report leg
+/// (`tool_tests::generate_test_summary`).
+pub(super) const SPEND_TEST_SUMMARY: &str = "build_test_summary";
+
+/// `trigger_kind` for the one-shot LLM correction leg
+/// (`fix_pass::run_fix_pass`), which can run up to `MAX_TEST_RETRIES` times.
+pub(super) const SPEND_FIX_PASS: &str = "build_fix_pass";
+
+/// Decide whether `line` is a CLI `result` envelope worth booking, and if so
+/// build the ledger row for it. Pure — split out from [`record_build_spend`]
+/// so the booking rules are unit-testable without a database.
+///
+/// Returns `None` (book nothing) for anything that is not a complete `result`
+/// envelope. That is deliberate: a leg whose stream was cut mid-flight (the
+/// `...[timeout]` / `...[truncated]` partials `read_line_limited` hands back)
+/// has an unknown cost, and inserting a zero-cost row would assert on the
+/// dashboard that the leg was free. A `result` envelope with `is_error: true`
+/// DOES book — a failed turn still costs money.
+pub(super) fn build_spend_entry(
+    persona_id: Option<&str>,
+    trigger_kind: &str,
+    model: Option<&str>,
+    line: &str,
+) -> Option<LlmSpendInsert> {
+    // Cheap pre-filter so feeding this every stdout line stays ~free: only a
+    // JSON object can be a `result` envelope.
+    let trimmed = line.trim_start();
+    if !trimmed.starts_with('{') {
+        return None;
+    }
+    llm_spend::parse_result_line(
+        &llm_spend::SpendCtx {
+            source: BUILD_SPEND_SOURCE,
+            trigger_kind,
+            model,
+            persona_id,
+            project_id: None,
+        },
+        trimmed,
+    )
+}
+
+/// Book one build-session CLI leg into the central `dev_llm_spend` ledger.
+/// Best-effort (the repo layer logs + swallows insert failures) — spend
+/// recording must never break a build. Returns `true` when a row was written.
+///
+/// `model` is only a fallback: `parse_result_line` prefers the model the CLI
+/// itself reported in the envelope.
+pub(super) fn record_build_spend(
+    pool: &DbPool,
+    persona_id: Option<&str>,
+    trigger_kind: &str,
+    model: Option<&str>,
+    line: &str,
+) -> bool {
+    match build_spend_entry(persona_id, trigger_kind, model, line) {
+        Some(entry) => {
+            llm_spend::record(pool, &entry);
+            true
+        }
+        None => false,
+    }
 }
 
 /// Dual-emit a BuildEvent via both Channel (component-scoped) and Tauri events (global).
@@ -348,5 +444,117 @@ pub(super) fn cleanup_session(
     // "cleanup_session unregisters without the generation guard").
     if should_remove {
         registry.unregister_run("build_session", session_id);
+    }
+}
+
+// =============================================================================
+// Tests — pin the ledger booking rules (build-cost-in-the-ledger).
+// =============================================================================
+
+#[cfg(test)]
+mod spend_tests {
+    use super::*;
+
+    /// A realistic stream-json `result` envelope.
+    fn result_line(cost: f64, is_error: bool) -> String {
+        format!(
+            r#"{{"type":"result","subtype":"success","is_error":{is_error},"duration_ms":41234,"num_turns":3,"total_cost_usd":{cost},"model":"claude-sonnet-4-6","usage":{{"input_tokens":1200,"output_tokens":840,"cache_read_input_tokens":9000,"cache_creation_input_tokens":150}}}}"#
+        )
+    }
+
+    #[test]
+    fn resolution_turn_books_once_under_its_own_kind() {
+        let entry = build_spend_entry(
+            Some("persona-1"),
+            SPEND_RESOLUTION,
+            None,
+            &result_line(0.37, false),
+        )
+        .expect("a result envelope must book");
+        assert_eq!(entry.source, BUILD_SPEND_SOURCE);
+        assert_eq!(entry.trigger_kind, SPEND_RESOLUTION);
+        assert_eq!(entry.cost_usd, Some(0.37));
+        assert_eq!(entry.input_tokens, Some(1200));
+        assert_eq!(entry.output_tokens, Some(840));
+        assert_eq!(entry.cache_read_tokens, Some(9000));
+        assert_eq!(entry.persona_id.as_deref(), Some("persona-1"));
+        assert!(!entry.is_error);
+
+        // Every other line of the same turn's stream books nothing, so the
+        // turn lands on the dashboard exactly once.
+        for other in [
+            r#"{"type":"system","subtype":"init","session_id":"s"}"#,
+            r#"{"type":"assistant","message":{"content":[{"type":"text","text":"hi"}]}}"#,
+            r#"{"type":"stream_event","event":{"type":"content_block_delta"}}"#,
+            "plain verbose text line",
+            "",
+        ] {
+            assert!(
+                build_spend_entry(Some("persona-1"), SPEND_RESOLUTION, None, other).is_none(),
+                "non-result line booked a spend row: {other}"
+            );
+        }
+    }
+
+    #[test]
+    fn each_oneshot_leg_books_under_its_own_kind() {
+        for kind in [SPEND_TOOL_TEST, SPEND_TEST_SUMMARY, SPEND_FIX_PASS] {
+            let entry = build_spend_entry(Some("persona-1"), kind, None, &result_line(0.11, false))
+                .expect("a result envelope must book");
+            assert_eq!(entry.trigger_kind, kind);
+            assert_eq!(entry.source, BUILD_SPEND_SOURCE);
+            assert_ne!(
+                entry.trigger_kind, SPEND_RESOLUTION,
+                "one-shot legs must be distinguishable from resolution turns"
+            );
+        }
+    }
+
+    #[test]
+    fn failed_leg_still_books_its_cost() {
+        let entry = build_spend_entry(
+            Some("persona-1"),
+            SPEND_FIX_PASS,
+            None,
+            &result_line(0.52, true),
+        )
+        .expect("an errored turn still cost money and must book");
+        assert!(entry.is_error);
+        assert_eq!(entry.cost_usd, Some(0.52));
+    }
+
+    #[test]
+    fn partial_blob_from_a_stalled_leg_does_not_book_as_free() {
+        // `read_line_limited` hands back the buffered prefix with a marker
+        // suffix when its watchdog fires or the line blows the size cap.
+        // Neither is a complete envelope: booking it would post a $0 row and
+        // the dashboard would report a stalled leg as free.
+        let partial = r#"{"type":"result","subtype":"success","total_cost_usd":0.9"#;
+        for suffix in ["...[timeout]", "...[truncated]", ""] {
+            let line = format!("{partial}{suffix}");
+            assert!(
+                build_spend_entry(Some("persona-1"), SPEND_TOOL_TEST, None, &line).is_none(),
+                "a partial result blob must not book (suffix {suffix:?})"
+            );
+        }
+    }
+
+    #[test]
+    fn envelope_model_wins_over_the_ctx_fallback() {
+        let entry = build_spend_entry(
+            None,
+            SPEND_TEST_SUMMARY,
+            Some("claude-haiku-4-5-20251001"),
+            &result_line(0.01, false),
+        )
+        .expect("must book");
+        assert_eq!(entry.model.as_deref(), Some("claude-sonnet-4-6"));
+
+        // …and the ctx pin is used when the CLI omitted the model.
+        let no_model = r#"{"type":"result","total_cost_usd":0.01,"usage":{"input_tokens":5,"output_tokens":2}}"#;
+        let entry =
+            build_spend_entry(None, SPEND_TEST_SUMMARY, Some("claude-haiku-4-5-20251001"), no_model)
+                .expect("must book");
+        assert_eq!(entry.model.as_deref(), Some("claude-haiku-4-5-20251001"));
     }
 }
