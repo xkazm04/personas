@@ -1,0 +1,367 @@
+{
+  "verdicts": [
+    {
+      "id": "62ce1d43-df03-4ea2-9b5a-c8db7fea28ab",
+      "verdict": "adopt"
+    },
+    {
+      "id": "157193ca-fa36-4355-beb6-cde5549f434c",
+      "verdict": "adopt"
+    },
+    {
+      "id": "4c39e136-e66b-4e48-88e4-8ece13cc2540",
+      "verdict": "adopt"
+    },
+    {
+      "id": "36b401e4-c301-4867-976d-d92baff13f2e",
+      "verdict": "adopt"
+    },
+    {
+      "id": "730199a7-08a4-4477-96b0-c159cd0b1c5c",
+      "verdict": "adopt"
+    },
+    {
+      "id": "74eb0323-29df-4507-b03b-eea26cb3f7e4",
+      "verdict": "adopt"
+    },
+    {
+      "id": "b37d7518-4d29-4818-b2d1-12c9dec86b2f",
+      "verdict": "adopt"
+    },
+    {
+      "id": "a500cad6-8491-4f11-9f35-f6b205846f3e",
+      "verdict": "adopt"
+    },
+    {
+      "id": "8b96dd6e-d993-4a2a-b9f8-d1f79cec9492",
+      "verdict": "adopt"
+    },
+    {
+      "id": "05077007-5c1d-456e-9326-541dfe6cfc2a",
+      "verdict": "adopt"
+    },
+    {
+      "id": "f78b326d-b6a1-4711-91d0-79a12ab1df8d",
+      "verdict": "adopt"
+    },
+    {
+      "id": "8054fc92-a273-4473-876c-7e6fcba81053",
+      "verdict": "adopt"
+    },
+    {
+      "id": "ad576284-2830-4f16-940b-d2999a8b3f04",
+      "verdict": "adopt"
+    },
+    {
+      "id": "b9427536-df93-47af-84af-57b087ff3bbb",
+      "verdict": "adopt"
+    },
+    {
+      "id": "2285d32c-6206-4886-85b7-55e44f3d26f2",
+      "verdict": "adopt"
+    },
+    {
+      "id": "35776fa4-a88a-4470-940c-94db35362d3b",
+      "verdict": "adopt"
+    },
+    {
+      "id": "4752fdd0-8615-4384-bd10-ba101afc5243",
+      "verdict": "adopt"
+    },
+    {
+      "id": "b7463490-d404-43ac-8add-2d1233baa3f0",
+      "verdict": "adopt"
+    },
+    {
+      "id": "d73f8ac3-43f8-49f3-84db-7fba244b63f2",
+      "verdict": "reject",
+      "reason": "lint-level micro-optimization (pre-filter before JSON.parse), single-site, framework-common knowledge"
+    },
+    {
+      "id": "e1293065-cdfc-43c8-8ae8-610573d0c3eb",
+      "verdict": "reject",
+      "reason": "duplicate of canon: Normalize failure messages into a signature so a retry loop can stop repeating the same failure"
+    },
+    {
+      "id": "112b942c-7b96-4f96-a96a-e5ab6175bd9c",
+      "verdict": "adopt"
+    },
+    {
+      "id": "86fe3141-3683-4faf-afaa-9995d6611020",
+      "verdict": "adopt"
+    },
+    {
+      "id": "83874c7c-a896-4561-92f1-459f1b2e1d82",
+      "verdict": "adopt"
+    },
+    {
+      "id": "8364e763-811b-468b-be49-47ff678557e2",
+      "verdict": "adopt"
+    },
+    {
+      "id": "6c9b285f-c2a7-4263-aa80-cbb79ba73bc6",
+      "verdict": "adopt"
+    },
+    {
+      "id": "310566a9-92f8-4790-af54-9cf50aaabf80",
+      "verdict": "adopt"
+    },
+    {
+      "id": "30d772a6-60b2-4aeb-95d4-79a5af3051cb",
+      "verdict": "adopt"
+    },
+    {
+      "id": "b141f75f-51fc-4646-b080-eb86f04e30ef",
+      "verdict": "adopt"
+    },
+    {
+      "id": "b1cb517f-9d96-4f78-b0ba-3dcf23a39ab1",
+      "verdict": "adopt"
+    },
+    {
+      "id": "3921ed6e-e273-432a-8b20-31876fa8a477",
+      "verdict": "adopt"
+    },
+    {
+      "id": "c57eb789-343b-4a43-b6ae-de777e0c0420",
+      "verdict": "adopt"
+    },
+    {
+      "id": "945e5ac1-9cb6-4c60-8d10-b0580a875547",
+      "verdict": "reject",
+      "reason": "duplicate of canon: Hold hand-typed secrets in a ref with a version counter, never in React state"
+    },
+    {
+      "id": "6352ba3b-429b-4d40-b998-197751f67617",
+      "verdict": "adopt"
+    },
+    {
+      "id": "8705740e-4276-4219-8371-12155352ea50",
+      "verdict": "adopt"
+    },
+    {
+      "id": "57769d7d-4fdd-4512-b184-4187598ad31b",
+      "verdict": "reject",
+      "reason": "duplicate of canon: Parse backend error envelopes through a typed, ordered fallback chain that never throws"
+    },
+    {
+      "id": "71727012-95ee-4b08-9cea-7da5f6d735ad",
+      "verdict": "adopt"
+    },
+    {
+      "id": "18283c59-b7bc-4069-8d46-54b15ed49e15",
+      "verdict": "adopt"
+    },
+    {
+      "id": "00881776-93eb-4749-a5af-2465a3372d5a",
+      "verdict": "adopt"
+    },
+    {
+      "id": "9af474c0-2cd9-458c-bf14-7eff380c12c4",
+      "verdict": "adopt"
+    },
+    {
+      "id": "29c40929-dfc6-41f7-ba57-aff69d8ac7a3",
+      "verdict": "adopt"
+    },
+    {
+      "id": "50039e93-801a-4153-a6dc-0211407bc1b7",
+      "verdict": "adopt"
+    },
+    {
+      "id": "f946f021-a3d6-4f5f-9952-b98e49f4a4ea",
+      "verdict": "adopt"
+    },
+    {
+      "id": "17eb601c-39a9-4734-9f6a-e72a80655a3e",
+      "verdict": "adopt"
+    },
+    {
+      "id": "1d776fbc-24a1-406f-8df0-feaca97e59ad",
+      "verdict": "adopt"
+    },
+    {
+      "id": "9a74f25f-70a8-4a90-90fa-2d3d2b74ab82",
+      "verdict": "adopt"
+    },
+    {
+      "id": "ec07a904-036b-490f-af70-a38a9cc41397",
+      "verdict": "adopt"
+    },
+    {
+      "id": "bf762016-3d8f-48ea-a355-1cfd37b188f7",
+      "verdict": "reject",
+      "reason": "duplicate of canon: Claim layered budgets in one transaction, after the work is enqueued"
+    },
+    {
+      "id": "c24c9184-7156-46b8-9efe-8c0cb842f483",
+      "verdict": "reject",
+      "reason": "duplicate of canon: Write the contract as numbered points and pin each with a test"
+    },
+    {
+      "id": "ddf87acc-1d0d-41dd-8bdc-0545ce150aa5",
+      "verdict": "adopt"
+    },
+    {
+      "id": "6ed3807e-8a24-4895-950f-4fc332ad2599",
+      "verdict": "adopt"
+    },
+    {
+      "id": "9982c3b6-d9df-42cc-a56d-449999b22a89",
+      "verdict": "adopt"
+    },
+    {
+      "id": "f7f8103c-45c4-4c35-801b-513a2a188a94",
+      "verdict": "adopt"
+    },
+    {
+      "id": "c9a388f9-0e0b-435b-81dd-34170bb69757",
+      "verdict": "adopt"
+    },
+    {
+      "id": "30414971-6caf-4251-b3b0-57301ed717b2",
+      "verdict": "adopt"
+    },
+    {
+      "id": "0ec040fd-d8b0-41c0-b4b7-bbbff6c49292",
+      "verdict": "adopt"
+    },
+    {
+      "id": "dc7fa608-19bf-4d9c-88a7-bd0b3e54215d",
+      "verdict": "adopt"
+    },
+    {
+      "id": "c86a7329-ecd7-444d-854c-1a47b8e8a192",
+      "verdict": "reject",
+      "reason": "duplicate of canon: Health checks must PROBE, not infer"
+    },
+    {
+      "id": "df686279-203b-4073-a1b6-e48cbb6108e9",
+      "verdict": "adopt"
+    },
+    {
+      "id": "5289b796-d274-46b9-b6e3-da9e6df0d7bd",
+      "verdict": "adopt"
+    },
+    {
+      "id": "3eb5227b-24d5-4c29-b132-f7d55ad45e87",
+      "verdict": "adopt"
+    },
+    {
+      "id": "aca295d9-4d34-4a5c-9306-4045a69ab739",
+      "verdict": "adopt"
+    },
+    {
+      "id": "036575e5-d4a8-4c88-bb50-6662afac0f75",
+      "verdict": "adopt"
+    },
+    {
+      "id": "7299fa38-bea1-48d7-8b8a-bd9d75c594ae",
+      "verdict": "adopt"
+    },
+    {
+      "id": "fcd3e7b0-c8c7-49ee-984e-cb876eec48e8",
+      "verdict": "adopt"
+    },
+    {
+      "id": "1d219f08-e2dd-4b7b-9998-681b0cf2c16e",
+      "verdict": "adopt"
+    },
+    {
+      "id": "d304dc6a-d8e2-4d08-9b72-e0b12340768b",
+      "verdict": "adopt"
+    },
+    {
+      "id": "085258d0-5cd7-4ab7-9981-99517a8b2e39",
+      "verdict": "adopt"
+    },
+    {
+      "id": "ac62cc8c-bb22-4e65-a3f1-2aa4278b53e2",
+      "verdict": "adopt"
+    },
+    {
+      "id": "30bd4b95-4439-4588-88b3-205542a47233",
+      "verdict": "adopt"
+    },
+    {
+      "id": "0e5012ca-daf4-411a-b383-bbcbe7e4127b",
+      "verdict": "adopt"
+    },
+    {
+      "id": "9f10ebf7-1449-4be2-a7a4-1b80908ee80d",
+      "verdict": "reject",
+      "reason": "duplicate of canon: Write a rejected agent action back into the transcript"
+    },
+    {
+      "id": "06a6e7ed-266a-4e99-b335-751e61d01f0d",
+      "verdict": "reject",
+      "reason": "duplicate of canon: Pick lock-acquisition policy per caller class, not per resource"
+    },
+    {
+      "id": "4c21752f-86a5-4212-a33b-96fc9adf8798",
+      "verdict": "adopt"
+    },
+    {
+      "id": "12006281-d5ff-4d5a-a888-bb39195d967c",
+      "verdict": "adopt"
+    },
+    {
+      "id": "73bab28b-8b67-4ddf-b3bc-f7b538b51e81",
+      "verdict": "adopt"
+    },
+    {
+      "id": "2dbc03e6-0686-41dc-968d-a8085c1913a5",
+      "verdict": "adopt"
+    },
+    {
+      "id": "5d7d64d3-6078-4261-8f1f-5acaec52f01c",
+      "verdict": "adopt"
+    },
+    {
+      "id": "7c2ddc15-28ba-4f05-ac55-909a940d193e",
+      "verdict": "adopt"
+    },
+    {
+      "id": "60cf8727-bccc-4751-987f-da4c61293be6",
+      "verdict": "adopt"
+    },
+    {
+      "id": "86fbca77-afcd-4349-b5f2-ca0eaee9471c",
+      "verdict": "adopt"
+    },
+    {
+      "id": "f96a2dc0-eaaa-4982-a440-1bbc346c35e4",
+      "verdict": "adopt"
+    },
+    {
+      "id": "c1f60c29-d153-4ab1-9cb4-2b8e60ebf6c1",
+      "verdict": "adopt"
+    },
+    {
+      "id": "23bfcfbe-f913-45b1-822e-5b20ca162eb8",
+      "verdict": "adopt"
+    },
+    {
+      "id": "1da5eab7-ad43-446b-b8f5-dab5a37f4f81",
+      "verdict": "adopt"
+    },
+    {
+      "id": "97d841d2-8bdd-44f7-b247-d25bb56a1649",
+      "verdict": "adopt"
+    },
+    {
+      "id": "93ec5365-f137-4256-8af6-b13421405534",
+      "verdict": "adopt"
+    },
+    {
+      "id": "f797e017-c7da-4322-8869-cd67bfe103a8",
+      "verdict": "reject",
+      "reason": "duplicate of canon: Prototype visual variants against one shared data-and-actions hook"
+    },
+    {
+      "id": "2634a71c-9f21-4b59-8c48-e0f91140967a",
+      "verdict": "reject",
+      "reason": "duplicate of canon: A 'single source of truth' comment without landed consumers is a lie the next reader trusts"
+    }
+  ]
+}

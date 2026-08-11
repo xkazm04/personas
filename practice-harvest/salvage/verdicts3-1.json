@@ -1,0 +1,363 @@
+{
+  "verdicts": [
+    {
+      "id": "ba16f7b3-8502-4d95-86b4-25f44e893cfe",
+      "verdict": "adopt"
+    },
+    {
+      "id": "e164c8d1-8b03-489e-9606-d1f3f59e2b4e",
+      "verdict": "adopt"
+    },
+    {
+      "id": "85586152-d069-48ff-9724-c729b89ac3d0",
+      "verdict": "adopt"
+    },
+    {
+      "id": "7a4a483f-36b8-4378-a1fc-4a02b5022659",
+      "verdict": "adopt"
+    },
+    {
+      "id": "3bd3f44c-09ac-4f01-bf79-e515a4fb82bd",
+      "verdict": "adopt"
+    },
+    {
+      "id": "5e7ea421-c2a1-4e92-9f6f-67869b50af58",
+      "verdict": "adopt"
+    },
+    {
+      "id": "2c250c34-28fa-4726-8dc4-ecacce8ffe06",
+      "verdict": "reject",
+      "reason": "duplicate of canon: Gate new admissions on host load with asymmetric watermarks"
+    },
+    {
+      "id": "9b96203e-9b1a-463f-909c-707f82446b45",
+      "verdict": "adopt"
+    },
+    {
+      "id": "1e6aa6bd-b612-446a-aeee-abff5e1a7ce0",
+      "verdict": "adopt"
+    },
+    {
+      "id": "95ac6a70-0fd7-4180-bb4e-2bdcbe3e81b2",
+      "verdict": "adopt"
+    },
+    {
+      "id": "e121734a-251b-4a36-b2fe-29998c2b372b",
+      "verdict": "adopt"
+    },
+    {
+      "id": "4fb1cdd7-7952-4ea9-b8ee-4233b25f84fb",
+      "verdict": "adopt"
+    },
+    {
+      "id": "78df32e0-b19a-493f-aeea-84be67568de9",
+      "verdict": "adopt"
+    },
+    {
+      "id": "0530c99b-20f4-4370-87c0-cb51313aa433",
+      "verdict": "adopt"
+    },
+    {
+      "id": "27ad1885-31e8-4358-bfd3-e3620151cfcc",
+      "verdict": "adopt"
+    },
+    {
+      "id": "0b418d39-e095-4088-9676-f3a3def59e2d",
+      "verdict": "reject",
+      "reason": "duplicate of canon: Let the insert resolve the idempotency conflict, not a pre-check"
+    },
+    {
+      "id": "784a4b44-c40d-43c1-8322-16825b984a9e",
+      "verdict": "adopt"
+    },
+    {
+      "id": "c68b3b17-7730-4172-b312-95b70c27f7dc",
+      "verdict": "adopt"
+    },
+    {
+      "id": "ddc1bf17-a793-4e54-8e6e-8c0379ed4b8b",
+      "verdict": "adopt"
+    },
+    {
+      "id": "e16cdaa2-a8c4-462e-b978-b384263d4553",
+      "verdict": "adopt"
+    },
+    {
+      "id": "d1612e8e-fbb1-430a-abfb-a6c195b5eb49",
+      "verdict": "adopt"
+    },
+    {
+      "id": "2c80ce2a-4c52-49b5-9286-d205e0728ced",
+      "verdict": "adopt"
+    },
+    {
+      "id": "56d7606e-47c1-4430-96cd-574a4b84076a",
+      "verdict": "adopt"
+    },
+    {
+      "id": "eb0c5a16-8bc6-4e5d-a30f-c3acc269c150",
+      "verdict": "adopt"
+    },
+    {
+      "id": "53729eb8-e935-4573-9b75-b07274d0c041",
+      "verdict": "adopt"
+    },
+    {
+      "id": "4e503e9e-198f-4e52-8f76-e00677a1e4ce",
+      "verdict": "adopt"
+    },
+    {
+      "id": "d36f9066-952b-46f3-ba8e-d411c95bde90",
+      "verdict": "adopt"
+    },
+    {
+      "id": "1911061b-bb24-4381-a5fb-82e5ae24f89e",
+      "verdict": "reject",
+      "reason": "duplicate of canon: A worker is only usable if its client handles every degenerate case"
+    },
+    {
+      "id": "3dda3ac9-e896-4066-9e69-c721a9de3a5e",
+      "verdict": "adopt"
+    },
+    {
+      "id": "ea6b7a2d-1928-4707-8432-5c8eccf8c2df",
+      "verdict": "adopt"
+    },
+    {
+      "id": "0aa1579e-6d7d-41b6-82c7-d95edc30607f",
+      "verdict": "adopt"
+    },
+    {
+      "id": "846b4dbd-8aa7-48ae-95ff-4c4c2b1a27c9",
+      "verdict": "adopt"
+    },
+    {
+      "id": "afcc8ce6-9e53-4158-89f6-2669add36873",
+      "verdict": "adopt"
+    },
+    {
+      "id": "92e8b171-22ff-48f8-a213-e00604037229",
+      "verdict": "adopt"
+    },
+    {
+      "id": "a0792f79-4662-472c-9f2a-52c9b17150a0",
+      "verdict": "adopt"
+    },
+    {
+      "id": "4217d930-4f79-4d6a-b18f-1e3fa671922a",
+      "verdict": "adopt"
+    },
+    {
+      "id": "274dd39d-cbdf-4386-b698-82a5db8ba52e",
+      "verdict": "adopt"
+    },
+    {
+      "id": "9bb1045f-06d2-4d5b-8a42-b4a7082675ee",
+      "verdict": "adopt"
+    },
+    {
+      "id": "df6fae1b-413c-4d64-a1ec-c26e0a259a62",
+      "verdict": "adopt"
+    },
+    {
+      "id": "a4444f2b-fa16-4f4e-9c6a-786becb8fe9f",
+      "verdict": "adopt"
+    },
+    {
+      "id": "19b37c6a-e931-4c3a-b4f1-8ede1c932145",
+      "verdict": "adopt"
+    },
+    {
+      "id": "090bf2d8-876f-4805-bcdc-f33c489c7dea",
+      "verdict": "adopt"
+    },
+    {
+      "id": "0071b080-fd45-4455-89d7-3732d4871a5a",
+      "verdict": "reject",
+      "reason": "duplicate of canon: Make adding a variant one declarative edit against a registry"
+    },
+    {
+      "id": "4a862bdc-583e-493c-b019-cd30e8fd0629",
+      "verdict": "adopt"
+    },
+    {
+      "id": "4a92dce9-7bfa-4e03-bf42-cdae9329937f",
+      "verdict": "adopt"
+    },
+    {
+      "id": "0b515d5d-6d79-40e8-ac1b-df445dcb2393",
+      "verdict": "adopt"
+    },
+    {
+      "id": "e7a20fc1-4096-4c6d-bd08-306833ebef2f",
+      "verdict": "adopt"
+    },
+    {
+      "id": "12ab05d9-fe14-423a-82b6-1719053045fb",
+      "verdict": "reject",
+      "reason": "duplicate of canon: Guard double-submit with a ref, not with render state"
+    },
+    {
+      "id": "0274b4a5-85e8-488d-8e4a-725ffa97ab36",
+      "verdict": "adopt"
+    },
+    {
+      "id": "11a88ee6-930a-441d-b544-4a101cc2b687",
+      "verdict": "adopt"
+    },
+    {
+      "id": "d64abdc2-a794-4082-b2a8-da79191a1ef7",
+      "verdict": "adopt"
+    },
+    {
+      "id": "0df3ab23-0be3-48e3-9e59-1df7069a7ada",
+      "verdict": "adopt"
+    },
+    {
+      "id": "4ae56ff0-3899-45a3-b42e-05d1f3bff24a",
+      "verdict": "reject",
+      "reason": "duplicate of canon: Release a dedupe mark on failure and on leaving the state"
+    },
+    {
+      "id": "2a359c05-231e-4c83-99c4-d49d1de8ee82",
+      "verdict": "adopt"
+    },
+    {
+      "id": "36745170-9ab2-4bda-99c8-41bcb04c07f4",
+      "verdict": "adopt"
+    },
+    {
+      "id": "3df5fb2c-ed88-4daa-8b6c-0a5224841812",
+      "verdict": "adopt"
+    },
+    {
+      "id": "2c1cf0ac-0aed-4e46-9383-1d0905a1ccfe",
+      "verdict": "adopt"
+    },
+    {
+      "id": "167d5fc6-ecec-450f-8358-080399950a4f",
+      "verdict": "adopt"
+    },
+    {
+      "id": "509da5b5-6d50-49b7-81b4-739f5a1ca27b",
+      "verdict": "adopt"
+    },
+    {
+      "id": "05791026-facc-4e47-aa4a-4c61a8a46768",
+      "verdict": "adopt"
+    },
+    {
+      "id": "f1ccd8dc-1994-4f1e-b957-146bd45967ab",
+      "verdict": "adopt"
+    },
+    {
+      "id": "d78eb822-a9eb-4726-84c0-f9788f751596",
+      "verdict": "adopt"
+    },
+    {
+      "id": "3fe6eb2d-76fc-4486-a1e3-af4229d60dad",
+      "verdict": "adopt"
+    },
+    {
+      "id": "00c456c3-0be1-499a-a2bc-53abe00692d5",
+      "verdict": "adopt"
+    },
+    {
+      "id": "d99820ce-74dc-427b-8fe3-52c3c7e3a480",
+      "verdict": "adopt"
+    },
+    {
+      "id": "d8678efc-0540-4a0f-bb6f-589c0c807516",
+      "verdict": "adopt"
+    },
+    {
+      "id": "7926bfb9-0c1c-4cbe-8602-043aaf5e46f2",
+      "verdict": "adopt"
+    },
+    {
+      "id": "dd88f528-7a6c-4017-b9c2-25112faf3af6",
+      "verdict": "adopt"
+    },
+    {
+      "id": "8f4d57ca-5c16-4dcd-a02c-f7220dfcadd2",
+      "verdict": "adopt"
+    },
+    {
+      "id": "04f5ab59-11cc-4973-a2e3-df40c224c194",
+      "verdict": "adopt"
+    },
+    {
+      "id": "0000793f-685a-427a-9ea8-cd7d0e8f2baf",
+      "verdict": "adopt"
+    },
+    {
+      "id": "4344bf78-ea87-43b8-8054-873d7edae1d5",
+      "verdict": "adopt"
+    },
+    {
+      "id": "de96a897-c432-4d15-a545-af0981cc8e02",
+      "verdict": "adopt"
+    },
+    {
+      "id": "e4ec255a-0300-4720-9a6d-768ad0124ed9",
+      "verdict": "adopt"
+    },
+    {
+      "id": "819a7657-e2cd-4ce7-adc7-acb78d2f67e3",
+      "verdict": "adopt"
+    },
+    {
+      "id": "90054438-528e-4c36-bda8-5b7097185453",
+      "verdict": "adopt"
+    },
+    {
+      "id": "8aa7adc4-4b80-4b4f-aadc-8e054b45c508",
+      "verdict": "adopt"
+    },
+    {
+      "id": "e0b1d058-99c7-43f4-93e8-9bd6658f1a2e",
+      "verdict": "adopt"
+    },
+    {
+      "id": "60ca0816-dc28-4db5-b203-4196a2346cc9",
+      "verdict": "adopt"
+    },
+    {
+      "id": "771b420e-452b-47e7-a79f-653a187df689",
+      "verdict": "adopt"
+    },
+    {
+      "id": "c549dab4-b292-48c7-8c29-42dc20c589d4",
+      "verdict": "adopt"
+    },
+    {
+      "id": "be21922c-f112-432e-ab0f-bdf094aa63d0",
+      "verdict": "adopt"
+    },
+    {
+      "id": "461b11c0-5691-4ad0-a61c-6781680fd611",
+      "verdict": "reject",
+      "reason": "duplicate of canon: Absorb history at mount and bound every set a live overlay grows"
+    },
+    {
+      "id": "8159cc70-c372-4e7e-b2a9-20d253e518b7",
+      "verdict": "adopt"
+    },
+    {
+      "id": "a7b34ed6-2cca-4922-84d5-a236bb012418",
+      "verdict": "adopt"
+    },
+    {
+      "id": "beea8755-00d2-4223-b4c0-805072193f21",
+      "verdict": "adopt"
+    },
+    {
+      "id": "0d803ad8-21fd-4699-9366-df62d8d99d9a",
+      "verdict": "adopt"
+    },
+    {
+      "id": "96aee6c0-7857-490b-9ac7-4644af3904f9",
+      "verdict": "adopt"
+    }
+  ]
+}
