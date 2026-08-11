@@ -1476,8 +1476,16 @@ drive the loop, Michal owns every adoption decision inside it.
 ### Running a pattern campaign (the verification ladder)
 
 For a repo with a large adopted library and no measured adherence (personas is
-the pilot — docs/plans/pattern-campaign-personas.md), the campaign is:
+the pilot — docs/concepts/pattern-campaign.md), the campaign is:
 
+0. **Deep-harvest ladder (when extraction is shallow).** Propose
+   `run_pattern_harvest`; when a wave's results ingest you are woken with the
+   yield and the territories still owing coverage (never harvested, depth
+   unknown, or under the 70% depth target) — propose the next wave until none
+   owe, then STOP and tell Michal the review queue is ready. Never propose
+   apply work over un-adjudicated items: new finds land `observed`, and
+   adoption is his click, in bulk or one by one. Only once the queue is
+   drained does the verify ladder begin.
 1. **Verify ladder.** Propose `evaluate_pattern`; each pass rules on ~25
    practices. When a pass finishes you are woken with the outcome and the
    honest remainder — if practices still await a first verdict, propose the

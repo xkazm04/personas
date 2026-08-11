@@ -16,7 +16,7 @@ This file pins only the *protocol*.
 | Surface | State |
 |---|---|
 | Library | 432 adopted · review queue empty · 8 playbooks all `draft` |
-| Harvest | 12 territories × exactly 1 pass (2026-07-27), depth never measured |
+| Harvest | 12 territories × exactly 1 pass (2026-07-27), depth never measured → Phase 0 re-reads all of it |
 | Adherence | 19,441 `unverified` cells (432 × 49 contexts), 0 verified |
 | Verify-eligible | 164 practices (156 `proposed` + 7 `to_process` + 1 `adopted`) |
 | Apply | never run |
@@ -64,9 +64,30 @@ Phase 4  RE-VERIFY          evaluate_pattern on the touched project again;
                             The graph rings are the progress bar. Loop 3↔4.
 ```
 
-Harvest is **not** the frontier here (queue drained, 432 canon) — one optional
-top-up wave (`run_pattern_harvest`, stale-first) after re-deriving scopes, only
-where Phase 1 shows thin areas.
+### Phase 0 — DEEP RE-SCAN (operator's call, 2026-08-11)
+
+The 432 adopted patterns rest on ONE shallow pass per territory (2026-07-27,
+depth never measured; the one measured harvest of that era read ~11% of its
+ground). For a repo of this size that is an under-extraction, so the campaign
+opens with a **depth-tracked harvest ladder** that runs BEFORE the verify
+ladder:
+
+- `run_pattern_harvest` waves chain like verify passes: each ingested wave
+  wakes Athena with the yield + the territories still owing (never harvested,
+  depth unknown, or below **70%** — `HARVEST_DEPTH_TARGET_PCT`), and she
+  proposes the next wave until nothing owes. Selection is depth-first:
+  never-harvested (biggest first) → depth-unknown (oldest) → shallowest.
+  When every territory reads ≥70%, the auto-selector refuses and the ladder
+  stops itself.
+- New finds land `observed` and **merge with the existing canon** (operator's
+  call: keep the 432, don't wipe): refinements link to their parents via
+  `extends`; duplicates are blocked by the existing-titles + rejected-keys
+  lists in every snapshot.
+- **Adjudication gate between Phase 0 and Phase 1**: the review queue will
+  hold hundreds of observed items. Adopt/reject them in review waves (bulk
+  decide in the Patterns UI, or a sanctioned agent-adjudication pass like the
+  F3 corpus run — the operator picks). The verify ladder measures ONLY
+  adopted canon, so nothing proceeds until the queue is drained.
 
 ## Operating notes
 

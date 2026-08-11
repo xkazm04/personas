@@ -291,11 +291,27 @@ pub(crate) fn execute_run_pattern_harvest(
     // otherwise stale-first: never harvested, then oldest `last_harvested_at`.
     let mut skipped: Vec<String> = Vec::new();
     let mut chosen: Vec<(String, String, i64)> = Vec::new(); // (id, label, files)
+    // Depth class of a territory: 0 = never harvested, 1 = harvested but depth
+    // unknown (pre-depth-report runs), 2 = below the depth target, 3 = read.
+    // The deep-re-scan ladder only auto-selects classes 0-2 — once everything
+    // reads >= HARVEST_DEPTH_TARGET_PCT, the ladder has nothing to pick and
+    // stops honestly. Explicit scope ids bypass the class filter (the operator
+    // or Athena may deliberately re-read a "read" territory).
+    type ScopeRow = (String, String, i64, Option<String>, Option<i64>);
+    fn depth_class(s: &ScopeRow) -> u8 {
+        use crate::commands::infrastructure::workspace_harvest::HARVEST_DEPTH_TARGET_PCT;
+        match (&s.3, s.4) {
+            (None, _) => 0,
+            (Some(_), None) => 1,
+            (Some(_), Some(p)) if p < HARVEST_DEPTH_TARGET_PCT => 2,
+            _ => 3,
+        }
+    }
     match explicit {
         Some(ids) => {
             for id in ids {
                 match core.scopes.iter().find(|(sid, ..)| *sid == id) {
-                    Some((sid, label, files, _)) => {
+                    Some((sid, label, files, _, _)) => {
                         chosen.push((sid.clone(), label.clone(), *files))
                     }
                     None => skipped.push(format!("`{id}`: not a territory of this repo")),
@@ -303,18 +319,32 @@ pub(crate) fn execute_run_pattern_harvest(
             }
         }
         None => {
-            let mut ranked: Vec<&(String, String, i64, Option<String>)> =
-                core.scopes.iter().collect();
-            ranked.sort_by(|a, b| match (&a.3, &b.3) {
-                (None, None) => b.2.cmp(&a.2), // both never harvested → bigger first
-                (None, Some(_)) => std::cmp::Ordering::Less,
-                (Some(_), None) => std::cmp::Ordering::Greater,
-                (Some(x), Some(y)) => x.cmp(y), // oldest first
+            let mut ranked: Vec<&ScopeRow> = core
+                .scopes
+                .iter()
+                .filter(|s| depth_class(s) < 3)
+                .collect();
+            ranked.sort_by(|a, b| {
+                depth_class(a).cmp(&depth_class(b)).then_with(|| match depth_class(a) {
+                    // Never harvested: biggest territory first (most unread ground).
+                    0 => b.2.cmp(&a.2),
+                    // Depth unknown: oldest pass first.
+                    1 => a.3.cmp(&b.3),
+                    // Below target: shallowest first.
+                    _ => a.4.unwrap_or(0).cmp(&b.4.unwrap_or(0)),
+                })
             });
             chosen = ranked
                 .into_iter()
-                .map(|(id, label, files, _)| (id.clone(), label.clone(), *files))
+                .map(|(id, label, files, _, _)| (id.clone(), label.clone(), *files))
                 .collect();
+            if chosen.is_empty() {
+                return Err(AppError::Validation(format!(
+                    "run_pattern_harvest: every territory of {} already reads at or above                      {}% depth — the extraction ladder is done here. Name explicit `scopes`                      if you deliberately want a re-read.",
+                    core.project_name,
+                    harvest::HARVEST_DEPTH_TARGET_PCT
+                )));
+            }
         }
     }
     // Skip territories already being harvested right now (live session under

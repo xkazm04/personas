@@ -322,8 +322,11 @@ pub(crate) struct KnowledgeDigest {
     pub adopted_by_area: Vec<(String, i64)>,
     pub playbooks_active: Vec<String>,
     pub playbooks_draft: usize,
-    /// (project name, total scopes, never-harvested scopes, stale scopes).
-    pub coverage: Vec<(String, usize, usize, usize)>,
+    /// (project name, total scopes, never-harvested scopes, stale scopes,
+    /// low/unknown-depth scopes). Depth debt is the deep-re-scan campaign's
+    /// primary metric — a harvested-once territory with no depth report still
+    /// owes a pass.
+    pub coverage: Vec<(String, usize, usize, usize, usize)>,
     /// Campaign lens per project: (name, practices awaiting a first verdict,
     /// violating cells, adopted-with-evidence cells). Only projects with any
     /// signal are listed.
@@ -383,11 +386,12 @@ pub(crate) fn render_knowledge_digest(digests: &[KnowledgeDigest]) -> String {
                 },
             ));
         }
-        for (project, total, never, stale) in &d.coverage {
-            if *never > 0 || *stale > 0 {
+        for (project, total, never, stale, shallow) in &d.coverage {
+            if *never > 0 || *stale > 0 || *shallow > 0 {
                 out.push_str(&format!(
                     "- harvest coverage {project}: {total} territories, {never} never harvested, \
-                     {stale} stale — candidates for `run_pattern_harvest`\n",
+                     {shallow} below/without a depth report, {stale} stale — candidates for \
+                     `run_pattern_harvest`\n",
                 ));
             }
         }
@@ -495,7 +499,16 @@ pub fn describe_knowledge(db: &DbPool, query: &str) -> String {
                         .is_some_and(|at| at < stale_cutoff.as_str())
                 })
                 .count();
-            coverage.push((pname.clone(), rows.len(), never, stale));
+            let shallow = rows
+                .iter()
+                .filter(|c| {
+                    c.last_harvested_at.is_some()
+                        && !c.estimated_pct.is_some_and(|p| {
+                            p >= crate::commands::infrastructure::workspace_harvest::HARVEST_DEPTH_TARGET_PCT
+                        })
+                })
+                .count();
+            coverage.push((pname.clone(), rows.len(), never, stale, shallow));
         }
 
         // Campaign lens: verify progress per member + violation hotspots.
@@ -729,7 +742,7 @@ mod tests {
             adopted_by_area: vec![("backend".into(), 200), ("ui".into(), 100)],
             playbooks_active: vec!["add-db-table".into()],
             playbooks_draft: 7,
-            coverage: vec![("brainiac".into(), 12, 3, 2), ("clean".into(), 4, 0, 0)],
+            coverage: vec![("brainiac".into(), 12, 3, 2, 7), ("clean".into(), 4, 0, 0, 0)],
             verify: vec![("personas".into(), 140, 37, 12)],
             violation_hotspots: vec![("Wrap IPC in invokeWithTimeout".into(), 9)],
         };
@@ -737,11 +750,12 @@ mod tests {
         assert!(out.contains("140 practices await a first verdict"), "{out}");
         assert!(out.contains("37 violating cells"), "{out}");
         assert!(out.contains("Wrap IPC in invokeWithTimeout (9 contexts)"), "{out}");
+        assert!(out.contains("7 below/without a depth report"), "{out}");
         assert!(out.contains("455 adopted"), "{out}");
         assert!(out.contains("12 items await human review"), "{out}");
         assert!(out.contains("backend (200)"), "{out}");
         assert!(out.contains("7 draft awaiting activation"), "{out}");
-        assert!(out.contains("brainiac: 12 territories, 3 never harvested, 2 stale"), "{out}");
+        assert!(out.contains("brainiac: 12 territories, 3 never harvested, 7 below/without a depth report, 2 stale"), "{out}");
         // The clean project owes nothing and must not be listed as debt.
         assert!(!out.contains("clean: 4"), "{out}");
         assert!(out.contains("run_pattern_harvest"), "{out}");

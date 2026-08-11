@@ -122,14 +122,21 @@ pub async fn dev_tools_workspace_harvest_prepare(
 
 /// What the companion's `run_pattern_harvest` executor needs beyond the
 /// frontend's `HarvestPrepared`: the names for prompt-building and the
-/// territory list (with coverage) for stale-first scope selection.
+/// territory list (with coverage) for depth-first scope selection.
 pub(crate) struct PreparedHarvestCore {
     pub prepared: HarvestPrepared,
     pub workspace_name: String,
     pub project_name: String,
-    /// `(scope_id, label, file_count, last_harvested_at)` — coverage-joined.
-    pub scopes: Vec<(String, String, i64, Option<String>)>,
+    /// `(scope_id, label, file_count, last_harvested_at, estimated_pct)` —
+    /// coverage-joined. `estimated_pct = None` on a harvested scope means the
+    /// run predates depth reporting — treat as UNKNOWN depth, i.e. owing.
+    pub scopes: Vec<(String, String, i64, Option<String>, Option<i64>)>,
 }
+
+/// A territory counts as READ once its self-reported depth reaches this.
+/// Below (or unmeasured), it still owes a pass — the deep-re-scan campaign's
+/// whole premise is that a 1-pass, depth-unknown harvest is not coverage.
+pub(crate) const HARVEST_DEPTH_TARGET_PCT: i64 = 70;
 
 /// Auth-free core of [`dev_tools_workspace_harvest_prepare`], shared with the
 /// companion executor so both dispatch surfaces ground sessions through ONE
@@ -295,13 +302,13 @@ pub(crate) fn prepare_harvest_core(
         scopes: scopes
             .iter()
             .map(|s| {
+                let cov = covered_at.get(s.id.as_str());
                 (
                     s.id.clone(),
                     s.label.clone(),
                     s.file_count as i64,
-                    covered_at
-                        .get(s.id.as_str())
-                        .and_then(|c| c.last_harvested_at.clone()),
+                    cov.and_then(|c| c.last_harvested_at.clone()),
+                    cov.and_then(|c| c.estimated_pct),
                 )
             })
             .collect(),
@@ -756,8 +763,16 @@ pub fn sweep_pending_harvest_ingests(app: &tauri::AppHandle) {
                     skipped = summary.skipped.len(),
                     "harvest watcher: ingested dispatched harvest runs"
                 );
-                let mut p = pending_harvest_ingests().lock().unwrap();
-                p.retain(|(w, pr)| !(w == &ws_id && pr == &project_id));
+                {
+                    let mut p = pending_harvest_ingests().lock().unwrap();
+                    p.retain(|(w, pr)| !(w == &ws_id && pr == &project_id));
+                }
+                // Deep-re-scan chaining (docs/concepts/pattern-campaign.md
+                // Phase 0): a wave landed — wake Athena with the yield and
+                // the honest coverage debt so her next turn proposes the
+                // next wave (auto-fires under autonomous mode) or declares
+                // the extraction done. Mirrors the verify ladder's wake.
+                wake_athena_after_harvest(app, &state, &ws_id, &project_id, summary.inserted);
             }
             Err(e) => {
                 let msg = e.to_string();
@@ -784,6 +799,74 @@ pub fn sweep_pending_harvest_ingests(app: &tauri::AppHandle) {
             }
         }
     }
+}
+
+/// The harvest ladder's wake — after a dispatched wave ingests, hand Athena
+/// the yield + the remaining coverage debt (never-harvested or below
+/// [`HARVEST_DEPTH_TARGET_PCT`] / depth-unknown territories) so she chains
+/// the next `run_pattern_harvest` or stops honestly. Best-effort: a failed
+/// lookup just means no wake, never a failed ingest.
+fn wake_athena_after_harvest(
+    app: &tauri::AppHandle,
+    state: &Arc<AppState>,
+    workspace_id: &str,
+    project_id: &str,
+    inserted: u32,
+) {
+    let Ok(conn) = state.db.get() else { return };
+    let project_name: String = conn
+        .query_row(
+            "SELECT name FROM dev_projects WHERE id = ?1",
+            [project_id],
+            |r| r.get(0),
+        )
+        .unwrap_or_else(|_| project_id.to_string());
+    // Coverage debt straight from the ledger the ingest just stamped.
+    let coverage = repo::list_harvest_coverage(&state.db, project_id).unwrap_or_default();
+    let owing: Vec<String> = coverage
+        .iter()
+        .filter(|c| {
+            c.last_harvested_at.is_none()
+                || c.estimated_pct.is_none()
+                || c.estimated_pct.is_some_and(|p| p < HARVEST_DEPTH_TARGET_PCT)
+        })
+        .map(|c| {
+            format!(
+                "{} ({})",
+                c.scope_label,
+                match c.estimated_pct {
+                    _ if c.last_harvested_at.is_none() => "never".to_string(),
+                    None => "depth unknown".to_string(),
+                    Some(p) => format!("{p}%"),
+                }
+            )
+        })
+        .collect();
+    let pending_review: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM workspace_knowledge
+             WHERE workspace_id = ?1 AND status IN ('observed', 'proposed')",
+            [workspace_id],
+            |r| r.get(0),
+        )
+        .unwrap_or(0);
+    let directive = format!(
+        "The harvest wave you dispatched on `{project_name}` finished and ingested:          {inserted} new observed item(s); {pending_review} now await Michal's review in the          knowledge queue.
+         Territories still owing coverage (never harvested, depth unknown, or below          {HARVEST_DEPTH_TARGET_PCT}%): {owing_txt}.
+         If territories still owe coverage and the deep re-scan should continue, propose the          next `run_pattern_harvest` for the same project now (it picks the neediest          territories itself). If none owe, the extraction phase is DONE — tell Michal the          review queue is ready for adjudication, and do NOT propose apply work until the new          items are adopted and the verify ladder has measured them.",
+        owing_txt = if owing.is_empty() { "none".to_string() } else { owing.join(", ") },
+    );
+    crate::companion::session::spawn_proactive_turn_in(
+        app.clone(),
+        std::sync::Arc::new(state.user_db.clone()),
+        std::sync::Arc::new(state.db.clone()),
+        #[cfg(feature = "ml")]
+        state.embedding_manager.clone(),
+        "harvest_wave_done".to_string(),
+        Some(project_id.to_string()),
+        directive,
+        crate::companion::session::DEFAULT_SESSION_ID.to_string(),
+    );
 }
 
 #[cfg(test)]
