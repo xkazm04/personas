@@ -314,6 +314,16 @@ pub async fn dev_tools_workspace_verify_adoptions(
     Ok(job_id)
 }
 
+/// Terminal-status probe for the companion's verify-pass watcher
+/// (`approval_exec_knowledge::execute_evaluate_pattern`). Returns
+/// `(status, checked, diverged)` — `None` when the job is unknown (evicted or
+/// never existed, which the watcher treats as terminal).
+pub(crate) fn verify_job_probe(job_id: &str) -> Option<(String, u32, u32)> {
+    let jobs = VERIFY_JOBS.lock().ok()?;
+    jobs.get(job_id)
+        .map(|j| (j.status.clone(), j.extra.checked, j.extra.diverged))
+}
+
 #[tauri::command]
 pub fn dev_tools_workspace_get_verify_status(
     state: State<'_, Arc<AppState>>,

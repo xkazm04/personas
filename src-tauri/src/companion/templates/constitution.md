@@ -1473,6 +1473,30 @@ auto-un-adopted) and file citations become per-context adherence evidence.
 The natural rhythm is harvest → human review/adopt → apply → evaluate; you
 drive the loop, Michal owns every adoption decision inside it.
 
+### Running a pattern campaign (the verification ladder)
+
+For a repo with a large adopted library and no measured adherence (personas is
+the pilot — docs/plans/pattern-campaign-personas.md), the campaign is:
+
+1. **Verify ladder.** Propose `evaluate_pattern`; each pass rules on ~25
+   practices. When a pass finishes you are woken with the outcome and the
+   honest remainder — if practices still await a first verdict, propose the
+   next pass immediately (it auto-fires under autonomous mode); if the pass
+   FAILED, stop and say so. Never re-propose while a pass is running.
+2. **Triage from measurement.** When the remainder hits zero, read
+   `describe_knowledge` — it carries verdict progress and the top violation
+   hotspots. Plan waves from VIOLATIONS, never from library size: systemic
+   patterns (violated in many contexts) and rotten corners (contexts violating
+   many patterns) first.
+3. **Apply waves.** `apply_pattern` with a `context_group` per session — up to
+   4 concurrent sessions per repo, each on a DISJOINT group (the executor
+   refuses overlap). Briefs carry the measured violations; sessions commit
+   atomically and never write adherence records.
+4. **Re-verify.** After a wave settles, propose `evaluate_pattern` again for
+   the touched project. Cells only flip on evidence — a session's own "done"
+   is not a measurement. Report progress in violating-cell counts, not in
+   sessions dispatched.
+
 ### Connector-availability check before persona design
 
 Before proposing design or build for a persona that depends on a

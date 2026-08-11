@@ -426,13 +426,31 @@ pub(crate) fn execute_run_pattern_harvest(
 /// session's brief, it is a migration — split it across waves.
 const APPLY_MAX_PATTERNS: usize = 8;
 
+/// Concurrent apply sessions per repo (campaign doctrine, operator's call
+/// 2026-08-11: "aggressive 4"). Sessions must target DISJOINT context groups
+/// — the group token in the session name is how overlap is refused — because
+/// they share one checkout; four writers on the same files is the 2026-05-09
+/// incident with extra steps.
+const APPLY_MAX_CONCURRENT_PER_REPO: usize = 4;
+
+/// One pattern's violation evidence inside the target repo, read from the
+/// pattern×context adherence cells: `(context names, evidence file paths)`.
+pub(crate) struct ViolationBrief {
+    pub contexts: Vec<String>,
+    pub files: Vec<String>,
+}
+
 /// Build the apply session's brief. Pure so the shape is testable: the
 /// consent doctrine (never write adoption records; commit atomically; honest
-/// report) must survive any rewrite.
+/// report) must survive any rewrite. `territory` scopes the session to one
+/// context group's contexts/paths (None = whole repo); `violations` carries
+/// the verify lane's evidence per pattern id when verdicts exist.
 pub(crate) fn build_apply_prompt(
     project_name: &str,
     objective: Option<&str>,
     patterns: &[(String, String, String, Option<String>)], // (id, title, statement, detail)
+    territory: Option<(&str, &[(String, Vec<String>)])>, // (group name, [(context, paths)])
+    violations: &std::collections::BTreeMap<String, ViolationBrief>,
 ) -> String {
     let mut cards = String::new();
     for (id, title, statement, detail) in patterns {
@@ -446,33 +464,72 @@ pub(crate) fn build_apply_prompt(
             }
             cards.push('\n');
         }
+        // The verify lane's evidence, when it exists, is the session's work
+        // list — measured violations beat a fresh survey.
+        if let Some(v) = violations.get(id) {
+            cards.push_str(&format!(
+                "KNOWN VIOLATIONS (from the verify lane — start here): contexts {}{}\n",
+                v.contexts.join(", "),
+                if v.files.is_empty() {
+                    String::new()
+                } else {
+                    format!("; cited files: {}", v.files.join(", "))
+                }
+            ));
+        } else if !violations.is_empty() {
+            cards.push_str(
+                "No measured violation in scope for this one — verify before changing \
+                 anything, and prefer an honest no-op.\n",
+            );
+        }
     }
     let objective_line = objective
         .map(|o| format!("\nOPERATOR OBJECTIVE — {o}\n"))
         .unwrap_or_default();
+    let territory_block = match territory {
+        None => String::new(),
+        Some((group, contexts)) => {
+            let mut b = format!(
+                "\nYOUR TERRITORY — the `{group}` context group. Concurrent sessions own OTHER \
+                 groups of this repo; writing outside your territory collides with them.\n"
+            );
+            for (name, paths) in contexts.iter().take(24) {
+                b.push_str(&format!("- {name}: {}\n", paths.join(", ")));
+            }
+            b.push_str(
+                "Stay inside these paths for every EDIT. Reading anywhere is fine; \
+                 shared/generated files (lockfiles, generated bindings, i18n catalogs) are \
+                 OFF LIMITS — if a change genuinely needs one, report it instead of editing.\n",
+            );
+            b
+        }
+    };
     format!(
         "You are implementing ADOPTED workspace practices in the \"{project_name}\" repository.\n\
-         {objective_line}\
+         {objective_line}{territory_block}\
          \nTHE PRACTICES — each is canon this workspace already adopted; your job is to make \
          this repo actually follow them where it currently does not:\n{cards}\n\
          METHOD:\n\
          - If `.claude/patterns/` exists in this repo, read its README router first — it \
          carries the full library, this repo's adoption state and per-playbook briefs; prefer \
          its exemplars over inventing your own shape.\n\
-         - For each practice: find where this repo violates or lacks it (search broadly, cite \
-         real files), apply the minimal faithful change, and run the repo's own gates \
-         (typecheck / lint / tests as the repo defines them) before moving on.\n\
+         - For each practice: start from the KNOWN VIOLATIONS above when given (they are \
+         measured, with cited files); otherwise find where this repo violates or lacks it \
+         (search broadly, cite real files). Apply the minimal faithful change, and run the \
+         repo's own gates (typecheck / lint / tests as the repo defines them) before moving on.\n\
          - Commit atomically — one practice (or one coherent site) per commit, message naming \
-         the practice.\n\
+         the practice. Stage files by explicit path, NEVER `git add -A` — other sessions may \
+         be working in this checkout.\n\
          - A practice this repo genuinely already follows, or that does not apply to this \
          stack: SAY SO in your summary and touch nothing — an honest no-op beats a cosmetic \
          change.\n\
          \nHARD RULES:\n\
          - You are changing code, not records: never write adoption/adherence/verification \
          state anywhere — the verify lane measures adherence AFTER your work, from evidence.\n\
-         - Stay inside this repository.\n\
+         - Stay inside this repository{}.\n\
          - End with a short summary: per practice — applied (where) / already-followed / \
-         not-applicable (why)."
+         not-applicable (why).",
+        if territory.is_some() { " and inside your territory for edits" } else { "" }
     )
 }
 
@@ -480,8 +537,15 @@ pub(crate) fn build_apply_prompt(
 /// workspace patterns (or an active playbook's members) in a target project.
 /// The session changes code and commits; it never writes adoption or
 /// adherence records — those only move through the verify lane, from
-/// evidence. Params: `{target_project, pattern_ids?: [id…], playbook?: slug,
-/// objective?}` — at least one of `pattern_ids` / `playbook`.
+/// evidence.
+///
+/// Params: `{target_project, pattern_ids?: [id…], playbook?: slug,
+/// context_group?: <group name>, objective?}` — at least one of
+/// `pattern_ids` / `playbook`. `context_group` scopes the session's WRITE
+/// territory to one context group, which is what makes concurrent waves safe:
+/// up to [`APPLY_MAX_CONCURRENT_PER_REPO`] live apply sessions per repo, each
+/// on a DISJOINT group (same-group overlap is refused; a second un-scoped
+/// whole-repo session is refused outright).
 pub(crate) fn execute_apply_pattern(
     state: &State<'_, Arc<AppState>>,
     app: &tauri::AppHandle,
@@ -519,6 +583,98 @@ pub(crate) fn execute_apply_pattern(
         )));
     };
     validate_fleet_cwd(app, &root_path)?;
+
+    // Territory: an optional context group scopes the session's write set.
+    let group_q = params
+        .get("context_group")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    let territory: Option<(String, String, Vec<(String, String, Vec<String>)>)> = match group_q {
+        None => None,
+        Some(g) => {
+            let (gid, gname): (String, String) = conn
+                .query_row(
+                    "SELECT id, name FROM dev_context_groups
+                     WHERE project_id = ?1 AND (id = ?2 OR name = ?2 COLLATE NOCASE)
+                     LIMIT 1",
+                    rusqlite::params![&project_id, g],
+                    |r| Ok((r.get(0)?, r.get(1)?)),
+                )
+                .map_err(|_| {
+                    AppError::Validation(format!(
+                        "apply_pattern: `{g}` is not a context group of {project_name} — \
+                         describe_context lists them"
+                    ))
+                })?;
+            let mut stmt = conn.prepare(
+                "SELECT id, name, file_paths FROM dev_contexts
+                 WHERE project_id = ?1 AND group_id = ?2 ORDER BY name",
+            )?;
+            let contexts: Vec<(String, String, Vec<String>)> = stmt
+                .query_map(rusqlite::params![&project_id, &gid], |r| {
+                    Ok((
+                        r.get::<_, String>(0)?,
+                        r.get::<_, String>(1)?,
+                        r.get::<_, String>(2)?,
+                    ))
+                })?
+                .flatten()
+                .map(|(id, name, paths)| {
+                    let paths: Vec<String> =
+                        serde_json::from_str(&paths).unwrap_or_default();
+                    (id, name, paths)
+                })
+                .collect();
+            if contexts.is_empty() {
+                return Err(AppError::Validation(format!(
+                    "apply_pattern: group `{gname}` has no contexts — nothing to scope to"
+                )));
+            }
+            Some((gid, gname, contexts))
+        }
+    };
+
+    // Concurrency guard (campaign doctrine): ≤4 live apply sessions per repo,
+    // each on a DISJOINT group. The group token in the session name is the
+    // overlap detector; a whole-repo session (no group) is only allowed alone.
+    let group_token = territory
+        .as_ref()
+        .map(|(gid, ..)| gid.clone())
+        .unwrap_or_else(|| "all".to_string());
+    let name_prefix = format!("apply:{project_id}:");
+    let live: Vec<String> = crate::commands::fleet::registry::registry()
+        .list_dto()
+        .into_iter()
+        .filter(|s| {
+            matches!(
+                s.state,
+                crate::commands::fleet::types::FleetSessionState::Spawning
+                    | crate::commands::fleet::types::FleetSessionState::Running
+                    | crate::commands::fleet::types::FleetSessionState::AwaitingInput
+            )
+        })
+        .filter_map(|s| s.name)
+        .filter(|n| n.contains(&name_prefix))
+        .collect();
+    if live.len() >= APPLY_MAX_CONCURRENT_PER_REPO {
+        return Err(AppError::Validation(format!(
+            "apply_pattern: {} apply sessions are already live in {project_name} (cap \
+             {APPLY_MAX_CONCURRENT_PER_REPO}) — wait for one to settle",
+            live.len()
+        )));
+    }
+    let overlap = live.iter().any(|n| {
+        n.contains(&format!("{name_prefix}{group_token}")) || n.contains(&format!("{name_prefix}all"))
+    });
+    if overlap || (group_token == "all" && !live.is_empty()) {
+        return Err(AppError::Validation(format!(
+            "apply_pattern: a live apply session already covers this territory of \
+             {project_name} — concurrent sessions must target disjoint context groups \
+             (live: {})",
+            live.join("; ")
+        )));
+    }
 
     // Resolve the pattern set: explicit ids, or an ACTIVE playbook's members.
     // Only ADOPTED knowledge is applicable — observed/proposed items are
@@ -605,10 +761,77 @@ pub(crate) fn execute_apply_pattern(
         label = format!("{} pattern(s)", patterns.len());
     }
 
-    let objective = params.get("objective").and_then(|v| v.as_str()).map(str::trim);
-    let prompt = build_apply_prompt(&project_name, objective, &patterns);
+    // Verify-lane evidence: violating cells for these patterns in this repo
+    // (restricted to the territory when one is set). Measured violations are
+    // the session's work list; their absence is stated rather than implied.
+    let mut violations: std::collections::BTreeMap<String, ViolationBrief> =
+        std::collections::BTreeMap::new();
+    {
+        let ctx_filter: Option<std::collections::HashSet<String>> = territory
+            .as_ref()
+            .map(|(_, _, cs)| cs.iter().map(|(id, ..)| id.clone()).collect());
+        let mut stmt = conn.prepare(
+            "SELECT practice_id, context_id, context_name, evidence
+             FROM workspace_practice_context_state
+             WHERE project_id = ?1 AND state = 'violating'",
+        )?;
+        let rows = stmt
+            .query_map(rusqlite::params![&project_id], |r| {
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, String>(1)?,
+                    r.get::<_, String>(2)?,
+                    r.get::<_, Option<String>>(3)?,
+                ))
+            })?
+            .flatten();
+        for (practice_id, context_id, context_name, evidence) in rows {
+            if !patterns.iter().any(|(id, ..)| id == &practice_id) {
+                continue;
+            }
+            if let Some(f) = &ctx_filter {
+                if !f.contains(&context_id) {
+                    continue;
+                }
+            }
+            let entry = violations.entry(practice_id).or_insert_with(|| ViolationBrief {
+                contexts: Vec::new(),
+                files: Vec::new(),
+            });
+            entry.contexts.push(context_name);
+            if let Some(ev) = evidence {
+                if let Ok(paths) = serde_json::from_str::<Vec<String>>(&ev) {
+                    for p in paths.into_iter().take(6) {
+                        if !entry.files.contains(&p) {
+                            entry.files.push(p);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
-    let intent = format!("[apply-pattern] {project_name}: {label}");
+    let objective = params.get("objective").and_then(|v| v.as_str()).map(str::trim);
+    let territory_ref: Option<(&str, Vec<(String, Vec<String>)>)> = territory
+        .as_ref()
+        .map(|(_, gname, cs)| {
+            (
+                gname.as_str(),
+                cs.iter().map(|(_, n, p)| (n.clone(), p.clone())).collect(),
+            )
+        });
+    let prompt = build_apply_prompt(
+        &project_name,
+        objective,
+        &patterns,
+        territory_ref.as_ref().map(|(g, cs)| (*g, cs.as_slice())),
+        &violations,
+    );
+
+    let intent = format!(
+        "[apply-pattern] {project_name}{}: {label}",
+        territory.as_ref().map(|(_, g, _)| format!(" · {g}")).unwrap_or_default()
+    );
     let op_id = crate::companion::orchestration::operative_memory::memory()
         .begin_dispatched_operation(intent.clone());
     let id = crate::commands::fleet::pty::spawn_session(
@@ -623,16 +846,22 @@ pub(crate) fn execute_apply_pattern(
         .attach_session_to_operation(&op_id, &id, "apply", &root_path);
     let sentinel = crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL;
     let _ = crate::commands::fleet::registry::registry()
-        .rename(&id, Some(format!("{sentinel} · apply:{project_id}")));
+        .rename(&id, Some(format!("{sentinel} · apply:{project_id}:{group_token}")));
     crate::companion::orchestration::emit_digest_changed(app);
 
     let mut msg = format!(
-        "Applying {label} in {project_name} — session `{}` dispatched with {} adopted \
-         pattern(s): {}.",
+        "Applying {label} in {project_name}{} — session `{}` with {} adopted pattern(s): {}.",
+        territory.as_ref().map(|(_, g, _)| format!(" (territory: {g})")).unwrap_or_default(),
         &id[..id.len().min(8)],
         patterns.len(),
         patterns.iter().map(|(_, t, ..)| t.as_str()).collect::<Vec<_>>().join("; "),
     );
+    if !violations.is_empty() {
+        msg.push_str(&format!(
+            "\nBriefed with measured violations for {} pattern(s) from the verify lane.",
+            violations.len()
+        ));
+    }
     if !skipped.is_empty() {
         msg.push_str(&format!("\nSkipped: {}", skipped.join("; ")));
     }
@@ -645,25 +874,76 @@ pub(crate) fn execute_apply_pattern(
 
 #[cfg(test)]
 mod apply_prompt_tests {
-    use super::build_apply_prompt;
+    use super::{build_apply_prompt, ViolationBrief};
+    use std::collections::BTreeMap;
+
+    fn patterns() -> Vec<(String, String, String, Option<String>)> {
+        vec![
+            (
+                "wk_1".to_string(),
+                "Wrap IPC in invokeWithTimeout".to_string(),
+                "Never call raw invoke.".to_string(),
+                Some("Evidence: …".to_string()),
+            ),
+            (
+                "wk_2".to_string(),
+                "Use silentCatch for background errors".to_string(),
+                "No empty catch blocks.".to_string(),
+                None,
+            ),
+        ]
+    }
 
     #[test]
     fn apply_brief_carries_doctrine_and_patterns() {
-        let patterns = vec![(
-            "wk_1".to_string(),
-            "Wrap IPC in invokeWithTimeout".to_string(),
-            "Never call raw invoke.".to_string(),
-            Some("Evidence: …".to_string()),
-        )];
-        let p = build_apply_prompt("brainiac", Some("harden IPC"), &patterns);
+        let p = build_apply_prompt("brainiac", Some("harden IPC"), &patterns(), None, &BTreeMap::new());
         assert!(p.contains("Wrap IPC in invokeWithTimeout"), "{p}");
         assert!(p.contains("`wk_1`"), "{p}");
         assert!(p.contains("OPERATOR OBJECTIVE — harden IPC"), "{p}");
-        // The two doctrine lines that must never be edited away.
+        // The doctrine lines that must never be edited away.
         assert!(p.contains("never write adoption/adherence/verification"), "{p}");
         assert!(p.contains("Commit atomically"), "{p}");
+        assert!(p.contains("NEVER `git add -A`"), "{p}");
         // Repo-projected bundle is preferred over invention.
         assert!(p.contains(".claude/patterns/"), "{p}");
+    }
+
+    #[test]
+    fn territory_scopes_edits_and_names_the_group() {
+        let contexts = vec![(
+            "Agent Editor".to_string(),
+            vec!["src/features/agents/editor".to_string()],
+        )];
+        let p = build_apply_prompt(
+            "personas",
+            None,
+            &patterns(),
+            Some(("Agent Platform", contexts.as_slice())),
+            &BTreeMap::new(),
+        );
+        assert!(p.contains("YOUR TERRITORY — the `Agent Platform` context group"), "{p}");
+        assert!(p.contains("src/features/agents/editor"), "{p}");
+        assert!(p.contains("OFF LIMITS"), "shared-file rule gone: {p}");
+        assert!(p.contains("inside your territory for edits"), "{p}");
+    }
+
+    #[test]
+    fn measured_violations_lead_and_unmeasured_patterns_say_so() {
+        let mut v: BTreeMap<String, ViolationBrief> = BTreeMap::new();
+        v.insert(
+            "wk_1".to_string(),
+            ViolationBrief {
+                contexts: vec!["Vault Catalog".to_string()],
+                files: vec!["src/features/vault/x.ts".to_string()],
+            },
+        );
+        let p = build_apply_prompt("personas", None, &patterns(), None, &v);
+        assert!(p.contains("KNOWN VIOLATIONS"), "{p}");
+        assert!(p.contains("Vault Catalog"), "{p}");
+        assert!(p.contains("src/features/vault/x.ts"), "{p}");
+        // wk_2 has no measured violation while verdicts exist — it must be
+        // told to verify-first rather than invent work.
+        assert!(p.contains("No measured violation in scope"), "{p}");
     }
 }
 
@@ -717,14 +997,90 @@ pub(crate) async fn execute_evaluate_pattern(
     let job_id = crate::commands::infrastructure::workspace_verify::dev_tools_workspace_verify_adoptions(
         app.clone(),
         state.clone(),
-        workspace_id,
-        project_id,
+        workspace_id.clone(),
+        project_id.clone(),
     )
     .await?;
+
+    // Campaign chaining: a verify pass is one rung of a ladder (~25 practices
+    // per pass over a backlog of hundreds), and with autonomous mode on the
+    // whole ladder should climb itself. Watch the job to its terminal state,
+    // then wake Athena with the pass outcome + the honest remainder so her
+    // next turn proposes the next pass (which auto-fires) — or, when the
+    // remainder hits zero, moves to planning apply waves. Poll cadence is
+    // lazy (30s) against a bounded lifetime; a vanished job (evicted) is
+    // treated as terminal so the watcher can never spin forever.
+    {
+        let app_bg = app.clone();
+        let user_db = std::sync::Arc::new(state.user_db.clone());
+        let sys_db = std::sync::Arc::new(state.db.clone());
+        #[cfg(feature = "ml")]
+        let embedder = state.embedding_manager.clone();
+        let jid = job_id.clone();
+        let pname = project_name.clone();
+        let pid = project_id;
+        tauri::async_runtime::spawn(async move {
+            use crate::commands::infrastructure::workspace_verify::verify_job_probe;
+            let mut outcome: Option<(String, u32, u32)> = None;
+            // 30s × 120 = a 60-minute ceiling, comfortably past the verify
+            // lane's own 20-minute session timeout.
+            for _ in 0..120 {
+                tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+                match verify_job_probe(&jid) {
+                    Some((status, checked, diverged)) if status != "running" => {
+                        outcome = Some((status, checked, diverged));
+                        break;
+                    }
+                    Some(_) => continue,
+                    None => break, // evicted/unknown — terminal for our purposes
+                }
+            }
+            let (status, checked, diverged) =
+                outcome.unwrap_or_else(|| ("unknown".into(), 0, 0));
+            // The honest remainder: practices still awaiting a first verdict.
+            let remaining: i64 = sys_db
+                .get()
+                .ok()
+                .and_then(|conn| {
+                    conn.query_row(
+                        "SELECT COUNT(*) FROM workspace_practice_adoption
+                         WHERE project_id = ?1 AND state IN ('proposed', 'to_process')",
+                        rusqlite::params![&pid],
+                        |r| r.get(0),
+                    )
+                    .ok()
+                })
+                .unwrap_or(-1);
+            let directive = format!(
+                "The verification pass you started on `{pname}` just finished \
+                 (status: {status}; {checked} practices ruled, {diverged} need work). \
+                 Practices still awaiting a first verdict in this project: {remaining}.\n\
+                 If the remainder is greater than zero and this campaign should continue, \
+                 propose the next `evaluate_pattern` pass for the same project now. If the \
+                 remainder is zero, verification is complete — read `describe_knowledge` and \
+                 propose targeted `apply_pattern` waves for the measured violations instead \
+                 (disjoint context groups, and say what you chose and why). If the pass \
+                 FAILED, say so and stop chaining rather than retrying blindly."
+            );
+            crate::companion::session::spawn_proactive_turn_in(
+                app_bg,
+                user_db,
+                sys_db,
+                #[cfg(feature = "ml")]
+                embedder,
+                "verify_pass_done".to_string(),
+                Some(jid),
+                directive,
+                crate::companion::session::DEFAULT_SESSION_ID.to_string(),
+            );
+        });
+    }
+
     Ok(ExecuteResult::message(format!(
         "Verification pass started for {project_name} (job `{job_id}`). A headless session is \
          reading the repo against its applicable practices; verdicts land on the adoption \
          matrix (drifted cells flip to `diverged` — surfaced for a human, never auto-un-adopted) \
-         and file citations become per-context adherence evidence."
+         and file citations become per-context adherence evidence. I'll report back here when \
+         the pass settles."
     )))
 }

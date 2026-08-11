@@ -324,6 +324,13 @@ pub(crate) struct KnowledgeDigest {
     pub playbooks_draft: usize,
     /// (project name, total scopes, never-harvested scopes, stale scopes).
     pub coverage: Vec<(String, usize, usize, usize)>,
+    /// Campaign lens per project: (name, practices awaiting a first verdict,
+    /// violating cells, adopted-with-evidence cells). Only projects with any
+    /// signal are listed.
+    pub verify: Vec<(String, i64, i64, i64)>,
+    /// Top measured-violation hotspots: (pattern title, violating-context
+    /// count) across the workspace, descending.
+    pub violation_hotspots: Vec<(String, i64)>,
 }
 
 pub(crate) fn render_knowledge_digest(digests: &[KnowledgeDigest]) -> String {
@@ -383,6 +390,25 @@ pub(crate) fn render_knowledge_digest(digests: &[KnowledgeDigest]) -> String {
                      {stale} stale — candidates for `run_pattern_harvest`\n",
                 ));
             }
+        }
+        for (project, remaining, violating, adopted) in &d.verify {
+            out.push_str(&format!(
+                "- verification {project}: {remaining} practices await a first verdict \
+                 (`evaluate_pattern`), {violating} violating cells measured, {adopted} \
+                 adopted-with-evidence\n",
+            ));
+        }
+        if !d.violation_hotspots.is_empty() {
+            let tops: Vec<String> = d
+                .violation_hotspots
+                .iter()
+                .take(6)
+                .map(|(t, n)| format!("{t} ({n} contexts)"))
+                .collect();
+            out.push_str(&format!(
+                "- top measured violations — `apply_pattern` targets: {}\n",
+                tops.join("; ")
+            ));
         }
         out.push('\n');
     }
@@ -472,6 +498,45 @@ pub fn describe_knowledge(db: &DbPool, query: &str) -> String {
             coverage.push((pname.clone(), rows.len(), never, stale));
         }
 
+        // Campaign lens: verify progress per member + violation hotspots.
+        let mut verify = Vec::new();
+        for (pid, pname) in members.iter().take(MAX_PROJECTS) {
+            let remaining: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM workspace_practice_adoption
+                     WHERE project_id = ?1 AND state IN ('proposed', 'to_process')",
+                    [pid],
+                    |r| r.get(0),
+                )
+                .unwrap_or(0);
+            let (violating, adopted): (i64, i64) = conn
+                .query_row(
+                    "SELECT
+                       COALESCE(SUM(state = 'violating'), 0),
+                       COALESCE(SUM(state = 'adopted'), 0)
+                     FROM workspace_practice_context_state WHERE project_id = ?1",
+                    [pid],
+                    |r| Ok((r.get(0)?, r.get(1)?)),
+                )
+                .unwrap_or((0, 0));
+            if remaining > 0 || violating > 0 || adopted > 0 {
+                verify.push((pname.clone(), remaining, violating, adopted));
+            }
+        }
+        let violation_hotspots: Vec<(String, i64)> = conn
+            .prepare(
+                "SELECT k.title, COUNT(*) n
+                 FROM workspace_practice_context_state s
+                 JOIN workspace_knowledge k ON k.id = s.practice_id
+                 WHERE s.state = 'violating' AND k.workspace_id = ?1
+                 GROUP BY s.practice_id ORDER BY n DESC LIMIT 6",
+            )
+            .and_then(|mut s| {
+                let rows = s.query_map([&ws.id], |r| Ok((r.get(0)?, r.get(1)?)))?;
+                Ok(rows.flatten().collect())
+            })
+            .unwrap_or_default();
+
         digests.push(KnowledgeDigest {
             workspace: ws.name.clone(),
             by_status,
@@ -479,6 +544,8 @@ pub fn describe_knowledge(db: &DbPool, query: &str) -> String {
             playbooks_active,
             playbooks_draft,
             coverage,
+            verify,
+            violation_hotspots,
         });
     }
     render_knowledge_digest(&digests)
@@ -663,8 +730,13 @@ mod tests {
             playbooks_active: vec!["add-db-table".into()],
             playbooks_draft: 7,
             coverage: vec![("brainiac".into(), 12, 3, 2), ("clean".into(), 4, 0, 0)],
+            verify: vec![("personas".into(), 140, 37, 12)],
+            violation_hotspots: vec![("Wrap IPC in invokeWithTimeout".into(), 9)],
         };
         let out = render_knowledge_digest(&[d]);
+        assert!(out.contains("140 practices await a first verdict"), "{out}");
+        assert!(out.contains("37 violating cells"), "{out}");
+        assert!(out.contains("Wrap IPC in invokeWithTimeout (9 contexts)"), "{out}");
         assert!(out.contains("455 adopted"), "{out}");
         assert!(out.contains("12 items await human review"), "{out}");
         assert!(out.contains("backend (200)"), "{out}");
