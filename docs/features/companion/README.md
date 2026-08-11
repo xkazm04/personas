@@ -866,6 +866,19 @@ read-before-act discipline:
 The intended rhythm: harvest → human review/adopt → apply → evaluate. Athena
 drives the loop; every adoption decision inside it stays human.
 
+**Pattern campaigns (constitution v53).** For a repo with a large adopted
+library and no measured adherence, the ops compose into a self-advancing
+campaign ([docs/concepts/pattern-campaign.md](../../concepts/pattern-campaign.md)):
+`evaluate_pattern` passes CHAIN — a watcher follows each verify job to its
+terminal state and wakes Athena with the outcome + the honest remainder, so
+under autonomous mode the ladder climbs itself and stops at zero or on
+failure. `apply_pattern` takes an optional `context_group` that scopes the
+session's write territory (measured violations + territory paths in the
+brief), guarded at **max 4 concurrent apply sessions per repo on disjoint
+groups**. `describe_knowledge` carries the campaign lens: per-project verdict
+progress and top violation hotspots. Progress is reported in violating-cell
+counts, never in sessions dispatched.
+
 ## Another one of your devices — constitution v50 (`remote_instruct`)
 
 Two paired Personas installs on one LAN can hand each other work (pairing and the job transport are documented in [sharing](../sharing/README.md)). Athena is wired to both ends of it.
