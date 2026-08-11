@@ -1,0 +1,654 @@
+{
+ "doctrines": [
+  {
+   "area": "errors",
+   "title": "Classify failures structurally, once, into a shared typed taxonomy",
+   "statement": "Every failure is classified exactly once, through one classifier per boundary, into a documented typed union — preferring the producer's structured kind and falling back to anchored patterns only where breakage was measured. Substring-matching a message to decide behavior is forbidden, as is re-deciding retryability/copy/severity independently at each call site. New failure modes map onto existing variants and their existing recovery pipelines before anyone invents a parallel path.",
+   "detail_md": "**Why:** the recorded incidents are all the same shape — a `msg.includes('not found')` check swallowing every business not-found into an empty-list fallback, a dead deployment rendering false-green because 'broken' collapsed into `unknown`, a reworded message silently rotting a metric because the classifier degraded it to 'other'. One classifier with a pinned test table of the literal strings each producer emits makes drift loud instead of silent.\n\n**Tensions:** typed enums earn their cost only where a caller matches on the variants — internal services may prefer a context chain, but the stance is picked per module, never mixed. Anchoring is applied only where breakage was proven; over-anchoring breaks safe writers.\n\nGoverns: Map heterogeneous statuses through one mapper per source into a documented union · Anchor a matcher's regex only where breakage was measured · Never classify infrastructure 'not found' by substring — anchor the exact shape · Classify errors structured-kind-first with regex fallback, into transient/permanent plus retry hints · Map a new failure mode onto the recovery pipeline that already exists · Parse backend error envelopes through a typed, ordered fallback chain that never throws · One shared failure taxonomy, pinned by tests on the literal error strings each call site produces · Type a not-ready verdict by the remediation it needs, with a fail-closed 'misconfigured' sentinel · Never substring-match an error message to decide on a fallback · Normalize failure messages into a signature so a retry loop can stop repeating the same failure · Type error variants only where a caller matches on them · Make throttling a typed error, never an empty result · Carry the client-fault distinction in the error enum itself · Classify an error once through one pipeline, not at every site",
+   "topic": "errors/classification",
+   "kind": "decision",
+   "governs": [
+    "9ab60793-6aac-44c4-83e7-7d98fdb8c260",
+    "004c5be0-47d7-4910-9c19-cad63bd96f0d",
+    "e3e6e6bb-1278-4338-b0ed-06d6b53a488a",
+    "998df985-b7c4-4dde-a9eb-a5487e8b6aca",
+    "673d7ec7-57ca-4933-8211-29133a3d5117",
+    "6a6543d6-c9e5-47c2-b5a6-4feeebd265bc",
+    "d304dc6a-d8e2-4d08-9b72-e0b12340768b",
+    "12850a3f-3b57-4a31-9119-0c3cb51e7d92",
+    "2ab21a50-716a-4daf-b54d-c7a5a139330c",
+    "0fcb5e5e-652f-482c-8269-12404c6cd560",
+    "0343b6df-6cdc-422d-ab17-c0cc138622a1",
+    "146a79dc-45fa-4329-a8af-0ffab0816d24",
+    "63e8c1d2-c5ce-46d4-bd66-c52285a70aed",
+    "440acd1a-28bb-448b-8d10-c1e837e3b153"
+   ],
+   "triggers": [
+    "catching an error from an external service",
+    "branching on an error message",
+    "adding a new error variant",
+    "mapping backend errors for the UI",
+    "deciding whether a failure is retryable"
+   ]
+  },
+  {
+   "area": "errors",
+   "title": "Transient failure is its own class — never a verdict, never silent",
+   "statement": "Infrastructure, transport, and environmental failures (rate limits, expired tokens, provider outages, a probe that never ran) say nothing about the subject being checked, so they must never overwrite last-known truth, trip a subject's breaker, or be counted as a real outcome. Symmetrically, every path that degrades on such a failure must emit a classified server-side signal — returning null/false/[] with no telemetry is not graceful degradation, it is an unobservable outage.",
+   "detail_md": "**Why:** the incidents recorded here are outages that looked like data — a genuine provider outage indistinguishable from an unconfigured build, a failing IPC call erasing the last-succeeded-at timestamp of a credential that still worked, an entity breaker tripped by app-restart kills, a codebase passing its own no-silent-catch lint while swallowing every error unlogged, and a fire-and-forget async helper whose SyntaxError rejection simply vanished. The fix is one discipline: classify the failure (transient/infra vs expected content/config) before choosing silence, and let only the expected class stay quiet.\n\n**Tensions:** expected failures (expired cookies, unconfigured optional features) genuinely should be quiet — logging them trains operators to ignore the channel. The doctrine is a split, not blanket loudness. Retrying transient failures is bounded and budgeted, then surfaced to the user.\n\nGoverns: A transport failure means the probe never ran — leave the last-known outcome alone · A breaker's streak means failures since the last success, excluding environmental causes · Tell 'not configured' apart from a real outage before logging · Let transient provider failures escape the degradation path · Log auth failures loudly only when they signal misconfiguration · A degraded path must be classified and logged, never silently swallowed · A lint on catch-block shape does not enforce its own intent · A fallback layer hides absence: check translated VALUES, not just key parity · Attach realtime subscriptions in priority waves, retry failures on a budget, then tell the user · A degraded automated reviewer resolves with a distinct audit tag — it never blocks the run · Validate selector fragments at the mouth of a fire-and-forget async helper",
+   "topic": "errors/classification",
+   "kind": "decision",
+   "governs": [
+    "a1ccb20c-d194-48b8-8a54-951faf861eb0",
+    "ddc1bf17-a793-4e54-8e6e-8c0379ed4b8b",
+    "c5989cae-1b01-40e6-a37d-364530762e88",
+    "0e075a36-28c7-4924-a587-ace26fd2d274",
+    "5d22ca91-f53a-414c-b309-a435da8a4041",
+    "453e4de1-30d3-4c68-842c-873c5aee2d91",
+    "bf358702-79f0-4cb2-8b0f-afcd2c8faf06",
+    "71bc9a9a-2070-4f6e-9993-1c1d19441050",
+    "aa6ae5a2-8a5a-41c3-b242-5571ebb7a54a",
+    "112b942c-7b96-4f96-a96a-e5ab6175bd9c",
+    "40aaaeeb-c9b0-43c4-8e93-9fc0bb1792d4"
+   ],
+   "triggers": [
+    "writing a catch that returns a default",
+    "handling a provider timeout or rate limit",
+    "mirroring a health-check result into state",
+    "counting consecutive failures for a breaker",
+    "adding a silent fallback path"
+   ]
+  },
+  {
+   "area": "errors",
+   "title": "Ambiguity abstains, malformity fails closed — never guess toward maximum effect",
+   "statement": "When input is ambiguous, the system returns an explicit ambiguous/unknown verdict for a human to resolve, or falls through to the safe conversational/no-op path — it never auto-picks among plausible candidates. When state is malformed or corrupt where the empty value is meaningful, the operation throws or refuses loudly rather than degrading to the interpretation with the largest blast radius.",
+   "detail_md": "**Why:** the items record the two failure classes this prevents. Guessing: a fuzzy matcher auto-picking among generic tokens ('api', 'db'); a spoken-intent parser mis-clicking a destructive decision on an ambiguous utterance (mid-turn ruling: destroying running work on an ambiguous message is the worse failure mode). Maximum-effect degradation: equal window endpoints read as 'all day' silencing 24 hours; a corrupt JSON column silently collapsed to {} then re-saved, permanently discarding real data; a rollback deploying a best-effort mis-parsed snapshot.\n\n**Tensions:** abstention needs a first-class 'ambiguous'/'unknown' state in the type — bolting it on later forces callers to guess again. The cheapest failure mode is chosen deliberately: a no-op the user notices beats a wrong action the user doesn't.\n\nGoverns: Fuzzy matching needs a length floor, uniqueness-gated prefix matches, and ambiguity as a verdict · Classify an ambiguous parked state with a typed verdict that may abstain · Parse spoken intent conservatively, returning null to fall through to chat · Malformed or ambiguous configuration degrades to a no-op, never to maximum effect · Throw on a corrupt JSON column when empty is a meaningful state · Fail a rollback loudly rather than deploying a mis-parsed snapshot",
+   "topic": "errors/degradation",
+   "kind": "decision",
+   "governs": [
+    "fb42f840-215b-40cd-9499-de59f60ae61c",
+    "1c6779e5-c4e6-4b35-9dfb-5b14ebcc71ad",
+    "ba598e0d-d74b-4ce2-8b75-0e4294882838",
+    "7899d7cc-7e02-4496-bd05-fd2e29a52ec3",
+    "92dd9ab9-c3ed-452d-a2d7-a81ef73ee174",
+    "0f2244c9-a943-4acb-9e1f-4ad36dd2056c"
+   ],
+   "triggers": [
+    "matching user input to candidates",
+    "parsing a config or schedule value",
+    "handling a corrupt stored value",
+    "interpreting a voice or free-text command",
+    "choosing a default for malformed input"
+   ]
+  },
+  {
+   "area": "errors",
+   "title": "Success is verified, never assumed — a hollow or unchecked result is a failure",
+   "statement": "No path may report, toast, or act on success it did not verify: check failure-as-value results before clearing state, await the write before resolving a consent or closing a modal, and assert the produced artifact is real (non-empty output, resolvable binary, no surviving stubs) before claiming done. A zero exit code, a fixed success notification, or a resolved promise proves nothing by itself.",
+   "detail_md": "**Why:** the recorded incidents are all success theater — `if (result.applied)` never checked so dirty flags cleared on failed writes; a success toast fired before the await; a fire-and-forget consent surface that cleared the bubble and fired resolved analytics while the write never landed; a zero-exit subprocess with empty stdout silently inserting nothing; a dirty save section with no callback marked clean, producing an all-saved confirmation for data never written; a timeout resolving to Ok making is_err() blind to the most common failure mode. The typed-answer corollary: state clears ONLY on a landed write, because the typed answer is the only copy.\n\n**Tensions:** optimistic UI is fine for latency, not for data — an optimistic mutation without rollback is 'the one failure mode where being optimistic costs data'. Rejecting a no-op patch and rolling back in-memory state on failed persist are the write-side halves of the same honesty.\n\nGoverns: Check a mutation's failure-as-value result; never clear state on assumption · Give store mutations one throw contract so awaiting callers can't celebrate a failed write · Never report success on a hollow result — assert the artifact through the same resolver the runtime uses · A timeout that resolves to Ok is invisible to error-shaped checks — carry an explicit timed_out flag in the return type · A zero-exit run with empty output is a failure, not a success · After an in-place multi-entry hydration, assert no un-transformed stubs survive before reporting success · Reject a no-op patch instead of returning the unchanged row · Make consent surfaces await the action and keep the decision pending on failure · Treat a dirty section with no save callback as a save failure · Read the result payload before claiming something is ready · Order side effects so a failed persist rolls back in-memory state",
+   "topic": "errors/result-contracts",
+   "kind": "decision",
+   "governs": [
+    "5906ef83-e46e-42d5-acdf-be6938f7ced8",
+    "eebe3bbc-db18-42fc-abf6-020589f80f65",
+    "30414971-6caf-4251-b3b0-57301ed717b2",
+    "085258d0-5cd7-4ab7-9981-99517a8b2e39",
+    "5783e2a6-cb1b-494d-a937-1d7f07593b51",
+    "edaf86e7-9f37-43b6-bc3d-07cec3756dcc",
+    "8e811633-5fd7-40c3-b4a3-16af195929c0",
+    "e72a71e9-69cd-4084-b174-c52a8c0845b2",
+    "d4e39d7f-dcbd-44da-9294-ac611ade35b9",
+    "e8175ae7-9fac-45db-90cd-59073418206d",
+    "a7f08199-f9ff-441a-af5b-472796b35c4b"
+   ],
+   "triggers": [
+    "toasting success after a save",
+    "clearing dirty state after a mutation",
+    "handling a subprocess exit code",
+    "closing a modal after an await",
+    "reporting an install or build as done"
+   ]
+  },
+  {
+   "area": "errors",
+   "title": "Cross every boundary with a typed result carrying the reason; throw only for bugs",
+   "statement": "Any failure a caller could reasonably handle comes back as a discriminated result union naming the reason — never `T | null`, never a thrown exception across a module, network, or IPC line, and never a bespoke shape per validator or route. Exceptions are reserved for programmer error and infrastructure faults. One canonical envelope, one status map, and one reason-to-copy mapping per feature, so the client never parses a message.",
+   "detail_md": "**Why:** a thrown error crossing a module boundary loses its variants, so exhaustive handling stops being verifiable; a thrown server action becomes an opaque network error on the client; `T | null` throws away the only information the caller needs to tell the user what was wrong; and one handler skipping the shared wrapper returns a raw stack trace where every sibling returns a domain error. Pre-flight refusals that bypass the typed path render as garbage and leave holes in the audit trail. Browser fetches additionally hang forever without a funneled abort timeout.\n\n**Tensions:** the shape is only worth anything if it is universal — partial adoption is worse than none because callers stop being able to trust the contract. Combinators at the adapter seam are what keep the ceremony cheap enough to stay universal.\n\nGoverns: Return a result at every domain boundary; throw only for bugs · Discriminated result unions at domain boundaries, exceptions only for programmer error · Flatten results into a reason union before crossing the network · Give every API route the same error envelope and status map · Funnel every client fetch into one typed error with a timeout · Standardize one parse-result shape across every form validator · Boundary parsers must return a reason, through one canonical result contract · Return a typed store error for writes, and preflight the quota · Resolve null, access and shaping once at the data-adapter seam · Have repository writes return ok/error for domain failures · Route pre-flight refusals through the same typed result and audit path as runtime failures",
+   "topic": "errors/result-contracts",
+   "kind": "decision",
+   "governs": [
+    "c7409ee9-ae16-4b7a-ae73-1d65bd2d3a4f",
+    "057b3a3e-6e6c-4283-b784-6704394d4add",
+    "1cf19d74-e83a-4819-a982-87fc0ee8ad0b",
+    "060d4055-781e-422a-b114-b27cc2609274",
+    "0c4df903-a51e-4c88-934a-097464b04998",
+    "397f4254-d0fc-4edd-a912-040a02637fa0",
+    "96f30396-3bef-43f6-9b81-f5cd6cebdbe3",
+    "1053596b-f621-45a6-b110-c7acdbd12944",
+    "452ea327-dd1a-4fae-abf5-9fd1501122b0",
+    "56983945-7f4d-4b51-acfd-77d9e104b0a9",
+    "64aecf3c-463a-452e-b724-0884ade2f2f9"
+   ],
+   "triggers": [
+    "designing a new API route or command",
+    "writing a form or request validator",
+    "returning errors from a repository or store",
+    "deciding between throwing and returning",
+    "adding a pre-flight check to a pipeline"
+   ]
+  },
+  {
+   "area": "errors",
+   "title": "Absent, empty, failed, and unknown are different truths — never render one as another",
+   "statement": "'Never fetched', 'fetched and genuinely empty', 'fetch failed', and 'expected but missing' are distinct states that must stay distinct through the type system and the UI. Collapsing an integration failure into null/[]/false, or letting a failed reload blank previously loaded data, makes an outage indistinguishable from ground truth — and no sensible retry policy or honest empty-state can be written on top of the collapse.",
+   "detail_md": "**Why:** the recorded failures are all lies of collapse — a flaky network rendering as an empty catalog (a dead-end UI), a permanently failing allSettled source degrading to stale rows indistinguishable from healthy data, a comparison participant whose run failed rendering as a generic no-data placeholder, a lost OS keyring defaulting to a healthy-looking blank identity, a total outage rendering as 'nothing is waiting on you', and a real error folded into the 'no change' bucket so the caller believed open work was clear. Empty must mean empty: an empty list is returned only after the parent resource is confirmed to exist — otherwise 404.\n\n**Tensions:** the extra states cost UI work (stale banners, unknown badges, per-source failure slots) — the doctrine says that cost is the feature. Rollups must rank unknown worse than healthy so a failed family can never read green.\n\nGoverns: Don't collapse integration failures into null or an empty list · Report an empty collection only when the resource EXISTS — 404 the rest · Model a fetch as a phase enum so failed never renders as empty · A failed fetch renders as unknown, never as a fake absent · A scanner must distinguish 'source absent' from 'source unreadable' · Make an empty surface distinguish finished, filtered, batched, and unread — plus failures · Reading only allSettled's fulfilled branch makes persistent failure look fresh · In an N-way comparison, an expected participant with zero result rows is a failure signal, not an empty state · In a tiered fallback fetch, report error only when every tier failed — and stamp which tier served · Track each data family's fetch lifecycle with a stale state distinct from failed · Don't collapse a real error into 'no change' in a bulk operation · Surface a degraded identity instead of defaulting to a healthy-looking blank",
+   "topic": "errors/surfacing",
+   "kind": "decision",
+   "governs": [
+    "edcab8c2-38ff-4397-a51f-38338acc98ce",
+    "f698d682-b6ba-48cb-94b8-84516928f2c9",
+    "ef2a580a-8541-4767-a0d0-034f37fd28fc",
+    "afcc8ce6-9e53-4158-89f6-2669add36873",
+    "9181bb11-9d8d-42ae-bfcf-99dd163635ce",
+    "2824c563-e5b4-4767-b724-196eb556782c",
+    "eff2bcc6-e338-4e98-9f5e-b522deb950af",
+    "ca58e9fe-5d19-4ec2-99b2-b40bd150d90e",
+    "e6e69563-4c02-4ec5-ab72-bb9ac6074e9e",
+    "846b4dbd-8aa7-48ae-95ff-4c4c2b1a27c9",
+    "7c4b64b0-179b-47f2-b09a-be8f53a66978",
+    "9c5527f1-9ffe-43b6-b9fc-78e6e839392c"
+   ],
+   "triggers": [
+    "designing an empty state",
+    "fetching data from multiple sources",
+    "handling a failed reload of loaded data",
+    "returning an empty list from an endpoint",
+    "aggregating statuses into a rollup"
+   ]
+  },
+  {
+   "area": "errors",
+   "title": "Decompose composite work: isolate faults per unit, keep side work best-effort, count only what persisted",
+   "statement": "Any operation composed of multiple units — a sync pass, a batch, a multi-step create, a scan over N sources — classifies each step as critical (roll back the parent), degradable (isolate, log, continue), or optional (fully best-effort, capped), so one bad unit never aborts work that already succeeded. Follow-up work after a confirmed write can never fail that write. The result reports what actually persisted and what was skipped — as part of the result type, not a log line — and every unit is driven to a terminal state.",
+   "detail_md": "**Why:** the incidents span both failure directions. Too-fragile: a trailing `?` in a persist loop stranding a scan row next to a half-written idea set; one unmappable row blanking a whole list; one backend-rejected edge aborting a team build that had already succeeded. Too-silent: an intended count reported as achieved; a degraded scan indistinguishable from a clean one; a batch claiming success when items landed but a cross-cutting step didn't — with no repair path, so the user is told to start over. And the terminal-status corollary: a panicking task or failed final persist leaves a row 'running' forever, so catch_unwind plus bounded-retry-then-dead-letter is mandatory. Alert emission from a completion path is the canonical best-effort example — durable one-row episode dedupe, but emission can never break completion.\n\n**Tensions:** per-item isolation trades atomicity for progress — where atomicity actually matters the step is classified critical and rolls back. Retry only the failed members (not the whole bundle) before surfacing degradation.\n\nGoverns: Fault-isolate each table in a sync pass with per-table outcome structs · Persist findings one at a time with log-and-continue, never `?` mid-loop · A list endpoint should skip a corrupt row and log it, not fail the whole page · A partial pass must report what it skipped — make the skipped set part of the result type · In a non-transactional multi-step create, classify every step as critical, degradable, or optional · Multi-step create flows: roll back the parent on member failure, isolate per-edge inserts, count only what persisted · A partially-succeeded batch needs its own UI state and an idempotent repair action · Bulk mutations return per-item outcomes with machine reasons; the client applies successes and summarizes failures by reason · Retry only the failed sources of an aggregate bundle once before raising a staleness banner · Run the advisory audit on the way OUT of a mutation; never let it fail the mutation · Never let a best-effort follow-up fail a confirmed write · Degrade optional enrichment to the base result; never let it fail the request · Load feature data in a loader that degrades, never throws · Dedupe state-crossing alerts with a durable one-row episode, so restarts never re-announce · Wrap every spawned scan task in catch_unwind and drive the record to a terminal status · Persist terminal status with bounded retry, then dead-letter — never leave a row non-terminal · Resolve optimistically with a three-way failure taxonomy: deferral, failed write, lost CAS",
+   "topic": "errors/degradation",
+   "kind": "decision",
+   "governs": [
+    "f15535dc-9bad-462d-9119-0edec3f72db2",
+    "6f3f5538-1e12-4335-8a8a-c804e9862dca",
+    "9202ca82-a9c2-46bc-97c9-4eff5253f847",
+    "2fb729b4-e486-4ef3-8c0c-166d452cda2f",
+    "ecf034d1-a954-47fc-aec0-5db14244b52a",
+    "e7a20fc1-4096-4c6d-bd08-306833ebef2f",
+    "92a2efe6-c3f3-47ff-841d-3650fb66b62c",
+    "ea7a4e8e-f6b0-4bfa-8dc1-36f6e855ffc6",
+    "58700d26-4ddc-4f4d-bf18-e99c8d09a33d",
+    "667bb16c-d869-454d-8514-54d8a4920072",
+    "5499028d-64b0-4c2f-9aa6-faa5575f79fd",
+    "5a7b647a-18dc-4f29-8cc6-03a7fb9e23bd",
+    "f33b6250-35da-4d8a-963c-91462c72e98d",
+    "95ac6a70-0fd7-4180-bb4e-2bdcbe3e81b2",
+    "d29bbec4-d04e-4c82-aa93-ea00f7af4125",
+    "aa71c932-4089-464a-9c14-f3aa17d40438",
+    "612296dc-6d20-4af5-8659-5a9fcec7870b"
+   ],
+   "triggers": [
+    "building a bulk or batch operation",
+    "writing a multi-step create flow",
+    "looping over rows to persist results",
+    "adding cache revalidation after a write",
+    "adding enrichment to a core path"
+   ]
+  },
+  {
+   "area": "errors",
+   "title": "Present failures through one sanitizing, intent-aware chokepoint",
+   "statement": "Everything the user sees about a failure flows through one seam: raw driver/model/filesystem errors are logged server-side under a stable tag and replaced with a mapped, localized message; status-to-copy mapping lives in one module; and the channel is chosen by who initiated the action — user-initiated failures toast, background failures log silently and degrade to a labelled state. A failure with a purpose-built inline surface is never double-surfaced into a generic channel.",
+   "detail_md": "**Why:** raw errors echoed to clients leak schema names, paths, key hints, and prompt fragments; inline status-to-copy mapping produces inconsistent wording and gaps for statuses nobody remembered; toasting on a poll trains users to dismiss toasts; and double-surfacing drags raw stderr into the next LLM prompt. The sanitize-at-display rule exists because backend rejection branches persisted directives the happy path stripped — the render chokepoint is the only branch-proof place. A stale-deploy chunk failure is the classification exception that proves the rule: it needs its own copy ('refresh for new version') because a retry can never fix it.\n\n**Tensions:** sanitizing must not hide the real error from the user who needs it — a failed save on a form holding minutes of work shows the underlying message verbatim and rescues the draft. Chokepoint helpers must carry a call-site context string or debugging loses the trail; a per-action error map keeps concurrent failures from clobbering each other.\n\nGoverns: Route client-facing failures through one sanitizing chokepoint · Sanitize display at the single chokepoint every message flows through · Map HTTP status to user copy in one place, not per component · Choose toast-vs-silent error surfacing by whether the user initiated the action · One error reporter that writes a per-action error map, tags telemetry, and dedupes the toast · Do not double-surface a failure that already has an inline channel · On a failed save, show the real error and rescue the draft · Separate a stale-deploy chunk failure from a render error",
+   "topic": "errors/surfacing",
+   "kind": "decision",
+   "governs": [
+    "9e5539a5-be04-42fc-9024-d04e15906b44",
+    "5952d669-764a-4298-9803-54a5b0ea0000",
+    "94917efb-39ab-4e1c-ab34-d500238aaea9",
+    "b982f095-d649-420a-9459-a1dbfb65dd4f",
+    "3cf29027-139c-450c-8283-e494e708f296",
+    "833933ea-1aee-434e-8593-bd95e98c0090",
+    "cec686cd-fec3-44eb-9cdf-faf62bd46431",
+    "51900b9b-f129-4b34-a8dd-1369ba907083"
+   ],
+   "triggers": [
+    "showing an error to the user",
+    "writing error copy for a status code",
+    "deciding toast versus silent logging",
+    "handling errors in a background poll",
+    "wiring an error boundary"
+   ]
+  },
+  {
+   "area": "errors",
+   "title": "Fallbacks render the truth: deterministic, neutral, or raw — never confidently wrong",
+   "statement": "When a value cannot be interpreted, the rendering degrades to something honest: the raw string, a neutral badge, 'parsed 0' with the pre-formatted original — never a fabricated-but-plausible interpretation. Where a fallback must produce something, it is deterministic (tiered resolvers ending in a stable hash floor) so every surface derives the same answer. Any value the system rewrote, clamped, or coerced to satisfy a limit is flagged to the user beside the accepted result.",
+   "detail_md": "**Why:** confident wrongness is the recorded failure class — a cron humanizer collapsing '0 9,17 * * *' to 'Daily · 09:00', an unparseable timestamp rendering 'NaNm ago', an already-percent value double-scaled to '8311%', a schema-valid-but-empty remote roadmap blanking the surface, and an unknown model badged with a wrong tier. Users can recover from a raw string; they silently trust a wrong rendering. Renderability validation (not just schema validity), read-time re-clamping of pre-guard rows, and a warnings channel for rewritten values are the same stance applied at ingest, consumption, and confirmation.\n\n**Tensions:** loose forward-compatible matching (`.includes('opus')`) is deliberately chosen over exact matching so future variants map without edits — but the miss case lands on a neutral badge, never a guessed one. Storage corruption degrades to the in-memory mirror of the last good parse (session data, toasted once) rather than data loss. A tolerant parser (prefix matches, \\r strips) is fine as long as its zero-parse case falls back to the raw artifact.\n\nGoverns: Build deterministic tiered resolvers with a hash floor so results are never blank · Make a cron humanizer fall back to raw rather than lie · Match model tiers loosely with a neutral fallback for unknowns · Degrade a line-oriented digest parser to 'parsed 0' instead of throwing · Interpret ratio-vs-percent by magnitude before scaling, clamp, and flag genuine overflow · Warn when you rewrite a value to satisfy a platform limit · Warn with a nearest-suggestion on unknown event types instead of rejecting · Re-clamp persisted values at the point of use to the validator's ceiling · Mirror the last good parse in memory so storage corruption degrades to session data, not loss · Validate remote payloads for RENDERABILITY, not just schema",
+   "topic": "errors/degradation",
+   "kind": "decision",
+   "governs": [
+    "7e8b35fa-0844-43a8-8d98-c3708aa37e2b",
+    "438b6d5a-2c6d-4135-9de1-f81f2968d7b9",
+    "e0812261-fdd4-47a9-ad03-5b647c7867ce",
+    "0f81adb4-fee4-452a-afd7-29e66d834f7b",
+    "f0062b2c-c4b9-4678-8d0a-d691a91ed579",
+    "4ba1cb42-829d-49ad-a22c-6c224c8b2832",
+    "f1f45dab-9ee9-4412-bdc3-6affd01d0d44",
+    "7d87366b-5305-4588-9457-8c61cbfafd14",
+    "535b4889-6de8-4bbb-917a-b43a19517c69",
+    "d80c2f0e-6d49-4b47-ac42-1a9df3676319"
+   ],
+   "triggers": [
+    "formatting a value for display",
+    "parsing a timestamp or cron expression",
+    "rendering data from a remote payload",
+    "mapping an unknown enum value to UI",
+    "clamping user input to a limit"
+   ]
+  },
+  {
+   "area": "errors",
+   "title": "Automated remediation acts only within proven power, on real evidence, with bounds and an audit trail",
+   "statement": "Any loop that fixes things by itself — auto-rotate, auto-disable, auto-rollback, 'fix it for me' — must verify the target state is genuinely better (symmetric minimum-sample floors, absolute ceilings), refuse operations containing gaps outside its remediation power, and keep every action bounded by cooldowns and windowed counters. Destructive actions get materially longer cooldowns than advisories, every exempted failure class gets its own dedicated bound, and every action — including ones handled elsewhere — logs an outcome.",
+   "detail_md": "**Why:** the items record automation making things worse with confidence — a 90%-error version 'rolled back' onto an 80%-error version because a one-lucky-run 0% rate passed as a track record; a single success purging a provider's whole failure history so the global breaker never tripped (the fix: 1:1 offset); a failure class exempted from the entity breaker losing its only retry bound, so each run started a fresh chain. The signal-bus/executor split exists so dedupe, cooldown, and the bounded action log live in one place that knows nothing about execution, and idempotent handlers report outcomes by event id.\n\n**Tensions:** remediation must be aggressive enough to matter and bounded enough to trust; the resolution is evidence thresholds (execution-weighted rates, noise floors, minimum samples on BOTH sides) rather than timidity. Past a documented cap, auto-retry converts into a surfaced manual issue — the human is the terminal fallback.\n\nGoverns: Split the remediation signal bus from the action executor, with longer cooldowns for destructive actions · An automated rollback must verify the TARGET is genuinely healthier, with symmetric minimum-sample floors · An auto-remediation flag must refuse gaps outside its remediation power · Every failure class you exempt from a breaker needs its own dedicated bound · In a windowed global breaker, one success offsets exactly one failure",
+   "topic": "errors/degradation",
+   "kind": "decision",
+   "governs": [
+    "e0b7109d-0162-4f78-955c-a2436c8c7eae",
+    "4e503e9e-198f-4e52-8f76-e00677a1e4ce",
+    "bf9159cb-3011-4080-84ed-e202c41017c6",
+    "e16cdaa2-a8c4-462e-b978-b384263d4553",
+    "7a4a483f-36b8-4378-a1fc-4a02b5022659"
+   ],
+   "triggers": [
+    "building an auto-rollback or auto-heal path",
+    "designing a circuit breaker",
+    "adding a 'fix it for me' action",
+    "exempting a failure class from retry limits",
+    "wiring automated alerts to actions"
+   ]
+  },
+  {
+   "area": "concurrency",
+   "title": "Claims are atomic where the data lives — a check beside the write is a race",
+   "statement": "Any 'only one may proceed' decision — claiming work, deduping an insert, enforcing capacity, spending a budget — happens as one atomic operation at the authority (a conditional UPDATE, an INSERT-on-conflict, a check-and-install under one lock), never as a read followed by a write. Every subsequent state transition carries the observed state in its predicate, and advisory pre-checks left standing beside the authoritative one are deleted, not tolerated.",
+   "detail_md": "**Why:** the recorded races are all check-then-act gaps — two double-clicked starts both passing a check-before-set guard; a pre-flight idempotency lookup hard-erroring on a double-delivered webhook; a max_peers check split from its insert (TOCTOU); racing first-launch creators each winning one of two stores and leaving a keyring/DB identity mismatched; two concurrent refreshers clobbering a shared temp filename. The queue-worker specializations: SKIP LOCKED batch claims with per-job transactions; the ownership predicate INSIDE the claim statement (claim-then-release churns WAL and starves owned rows); layered budgets claimed in one transaction so an inner failure rolls back the outer increment. Delete must acquire the SAME in-flight guard execution holds — a parallel guard is a race with a live run.\n\n**Tensions:** invariants enforced by callers hold until the next caller forgets — push idempotency keys and legal state edges into the store contract itself. A serialized pass whose due-gate reads non-atomic state holds a process-wide RAII lease for the whole pass; skipping is an enum outcome, not an error.\n\nGoverns: Claim shared work first-writer-wins, and release on failure · Dedupe inside the serialized write, not in a pre-flight check · Let the insert resolve the idempotency conflict, not a pre-check · Claim rows in one UPDATE and gate transitions on the status you read · Claim a batch with SKIP LOCKED and give each job its own transaction · Filter consumer ownership inside the claim query itself · Single-flight expensive passes whose due-gate is a non-atomic read; the guard travels inside the admission object · Serialize the create path of a dual-store secret (keyring + DB) and re-check after acquiring · Break simultaneous-connect ties deterministically, and enforce capacity under the write lock · Remove redundant advisory checks left beside the authoritative one · Claim layered budgets in one transaction, after the work is enqueued · Put money and lifecycle invariants in the store contract · Serialize delete against execution on the same in-flight guard, and let a staleness TTL unwedge orphans · Make cache writes atomic with a per-call unique temp name",
+   "topic": "concurrency/idempotency",
+   "kind": "decision",
+   "governs": [
+    "eaced591-e08c-497c-93df-ab8708020d57",
+    "2f065386-58d8-4c59-92c1-3938214124ce",
+    "6297e72b-a75e-4f2b-b2f9-195dbabfa923",
+    "4baed67e-324a-4b1c-9e6c-26388dcd76be",
+    "9db3b473-c843-48ea-9a81-b111f68de0a4",
+    "7467d89f-8d75-4f15-8cfd-409ad5cec89e",
+    "f7f8103c-45c4-4c35-801b-513a2a188a94",
+    "8364e763-811b-468b-be49-47ff678557e2",
+    "6e2475a6-b2dd-41c9-ae09-e96790ef737c",
+    "51a85e18-88e7-40a4-aa07-6ad8926db432",
+    "5ebc8d0d-a3c2-4373-933f-467a3a40116d",
+    "16e01fd7-d327-4ccf-aaf2-cb6bad0feb0b",
+    "738b9128-0201-4bf2-9ef3-22307baf991d",
+    "f6716407-1b76-4008-bcc0-66389bc8b932"
+   ],
+   "triggers": [
+    "claiming work from a shared table",
+    "guarding against duplicate inserts",
+    "enforcing a capacity or budget cap",
+    "adding a 'only one may run' check",
+    "writing a queue worker"
+   ]
+  },
+  {
+   "area": "concurrency",
+   "title": "Stale async results must lose: carry identity, commit only if still current",
+   "statement": "Every async result carries the identity it was launched for — an entity id snapshotted before the first await, a run-instance id, a monotonic generation counter — and the receiver verifies it before any write, dropping (never redirecting) a mismatch. Cancellation advances the generation rather than resetting a flag; shared busy/selection state is cleared only if it still belongs to your call; and batch inputs are frozen at click time so a mid-flight refresh cannot reshuffle the set.",
+   "detail_md": "**Why:** the incidents are writes landing on the wrong target — an editor setter writing to whichever entity is selected *now* after an await gap; a cross-workspace prompt leak when the owning entity switched mid-run; a prior run's late terminal event tearing down the live run because owner-id filtering can't distinguish successive runs; a boolean 'already fetching' guard that can't tell a duplicate poll from a post-filter-change request and does nothing about out-of-order responses; an autosave short-circuit comparing against a baseline that lags the await, swallowing edits. Undo and verdict flows derive their CAS expectation from the card actually rendered — and never advertise a CAS the backend doesn't have.\n\n**Tensions:** dropping a mismatched report feels wasteful when the incoming result would take the same verdict — the doctrine drops it anyway, because redirecting is how cross-target corruption starts. Generation keys go on the finest independent stream, or cancelling one conversation stops another's pending work.\n\nGoverns: Snapshot the target entity id before an await and re-check after · Supersede stale responses with a request token, not a boolean · Cancel by advancing a generation counter, never by resetting a flag · Clear a shared busyId only if it still belongs to YOUR call · Owner-entity checks are not run correlation — a prior run's late terminal event tears down the live run · Send identity with the async act and drop a mismatched report, never redirect it · When the owning entity switches mid-run, clear the stale run id AND best-effort cancel the orphaned backend run · Pin a late-arriving async result onto the last matching anchor, not the next one · Diff a serialized autosave against the in-flight snapshot · Carry the CAS token from the rendered card and never advertise a CAS you don't have · Snapshot the id set before running a sequential batch of long operations",
+   "topic": "concurrency/cancellation",
+   "kind": "decision",
+   "governs": [
+    "ce35d86d-33e8-468e-bc4f-011d2631fea6",
+    "ce4b26a2-d234-40a2-9620-50713a11b4b8",
+    "d3fb20f8-c19d-4607-934b-8187d7a799f6",
+    "2c154016-b76d-48bf-9153-5738736e0b6b",
+    "27ad1885-31e8-4358-bfd3-e3620151cfcc",
+    "ca2d1e80-d9bc-4b83-abf5-6e9e3e448ad6",
+    "ffe708aa-858b-486e-9d0f-afbb93c970ee",
+    "dcec3cdc-8ce5-4ed9-9dd4-ce6992b66d64",
+    "153e2852-d3cf-487e-8bb5-5f09beab5481",
+    "1ebb84ec-4da8-41d2-88d9-0ddcc808f331",
+    "418869a4-f04a-4a22-bdba-b9d5635eb01c"
+   ],
+   "triggers": [
+    "awaiting inside a handler over selectable state",
+    "handling a response that may arrive late",
+    "cancelling an in-flight request",
+    "writing an async setter in an editor",
+    "correlating lifecycle events to a run"
+   ]
+  },
+  {
+   "area": "concurrency",
+   "title": "Own every spawned thing in one registry, and tear it down on every exit path",
+   "statement": "Whatever you spawn — child processes, listeners, timers, mic streams, temp files — is owned in exactly one registry, keyed by the run's own id, and spawn and cancel go through that same registry; a cancel path wired to a different mechanism is a silent no-op that keeps burning tokens. Teardown must cover every exit path: unmount (including unmount-during-async-setup), panic (RAII guards with generation-stamped cleanup), process death (window-close stop_all), and the paths Drop never sees — SIGKILL survivors get swept explicitly at session boundaries.",
+   "detail_md": "**Why:** the incidents are leaks and no-ops — a cancel consulting a map the spawner never populated while the child kept running and billing; a fixed guard key letting a second start's Drop delete the first's live entry, leaving it permanently uncancelable; unmount-during-async-listen double-freeing or leaking the subscription; orphaned Chromium grandchildren at 200-500 MB each surviving Task-Manager kills; a debounced write whose unmount case IS the case. Per-mode lifecycle flags exist because one shared 'is running' boolean wedges the UI when two modes run at once. When the observer channel drops, the work is cancelled — an unobservable interactive session is dead and only burns tokens. Restart-triggering actions count live work first and offer install-when-idle; a first Ctrl-C pauses and persists, only the second force-quits.\n\n**Tensions:** RAII is the right default but is not sufficient — Drop never runs on SIGKILL, so guards are complemented by start-of-session sweeps and end-of-session pattern-kills. Generation stamps keep a stale task's cleanup from evicting a newer session's live handle. Drop-releasing sets need a sync mutex so release works during future cancellation.\n\nGoverns: A cancel path wired to a different registry than the spawn path is a silent no-op that keeps burning tokens · Key a single-run guard by the run's OWN id, not a fixed slot · Claim single-flight and store its cancel handle under one lock · Guard session-scoped resources with Drop types, and generation-stamp shared-map cleanup · Give every concurrently-runnable mode its own lifecycle flag · Own long-lived child processes in a registry keyed by logical owner, with replace-on-restart and stop_all on exit · Clear every pending timer in a keyed timer map on unmount · Flush a debounce on unmount and discard stale in-flight responses per row · An async listener attach needs an in-flight flag, or unmount-during-setup leaks or double-frees the subscription · Model the async mic-permission window as its own lifecycle state · Sweep temp files and orphan grandchildren explicitly — RAII cleanup never runs when you are killed · Use an RAII guard with a sync mutex for in-flight-operation sets · When the observer channel drops, cancel the work — an unobservable interactive session is dead · Gate a restart-triggering action on live work and offer install-when-idle · Give a long-running agent CLI loop a two-stage Ctrl-C: first pauses and persists, second force-quits · Drain in-flight work with one shared cancellation token",
+   "topic": "concurrency/cancellation",
+   "kind": "decision",
+   "governs": [
+    "04278a8a-18df-4b87-bdf6-76b8eaa5e4ff",
+    "689f39cc-cc6c-41f8-9e98-1607345f8356",
+    "04fa8267-f421-4940-819b-e07c4e645fa9",
+    "74eb0323-29df-4507-b03b-eea26cb3f7e4",
+    "04f0e897-314b-4d25-87b1-53e7e3c3d2ad",
+    "5289b796-d274-46b9-b6e3-da9e6df0d7bd",
+    "c3ddbf4f-435d-4979-b0f6-3ef148602442",
+    "2e33aa7a-a046-4cba-a576-cd66d57aa2d9",
+    "78df32e0-b19a-493f-aeea-84be67568de9",
+    "0678868b-6edb-4b1c-83a3-d5f74f0742d9",
+    "6970f350-cb57-4228-9a10-92d5e3c811b6",
+    "6da6fcef-5943-4ed3-bfdd-69de4ee41aec",
+    "50039e93-801a-4153-a6dc-0211407bc1b7",
+    "3e9e1588-7f23-48e6-8213-278c61167dbc",
+    "e5227283-d2ff-4093-a18f-4f976874dd03",
+    "f8cec2d9-6ee6-4690-9691-3bb3f0fe648b"
+   ],
+   "triggers": [
+    "spawning a child process",
+    "attaching an event listener in an effect",
+    "wiring a cancel button",
+    "cleaning up on unmount",
+    "handling app shutdown or restart"
+   ]
+  },
+  {
+   "area": "concurrency",
+   "title": "Every wait has a bounded exit, and a fired timeout kills for real",
+   "statement": "Every network read, IPC call, subprocess exchange, polling loop, and human-answer wait carries an explicit bound — a tiered timeout matched to its work class, an iteration cap, a TTL — and every waiter has all its exits wired: resolved, expired, and cancelled-because-the-requester-died. When a bound fires it must actively tear down the work (kill the whole process tree, unregister the handle, salvage partial output), because a timeout that merely abandons a live process converts the bound into an at-least-once hazard.",
+   "detail_md": "**Why:** the incidents are waits that never ended or 'ended' without ending — a runaway-loop cap that only logged a warning while the stream kept burning budget; a hard timeout dropping the driver so kill-on-drop signaled only the immediate child while grandchildren kept billing, with the shared-map PID never unregistered; awaiting child.wait() before reading pipes deadlocking any subprocess past ~64KB of output; a frontend timeout firing before the backend's, abandoning a live process (deadlines must nest so the process owner wins the race); 20 minutes of 2s polls continuing after navigation. Documented at the seam: an IPC timeout doesn't cancel the Rust side — the at-least-once hazard is part of the contract, so blocking mutating calls get ceilings, not bounds. Settle promises resolve on cancellation too — an awaiting caller must never hang. Human-bridged waits (oneshot registry) treat TTL expiry as a normal outcome the caller proceeds from.\n\n**Tensions:** the four-defect subprocess checklist (drain stderr, kill on drop, kill-then-bounded-wait on timeout, translate spawn-not-found) has individually bitten this codebase — treat it as mandatory review furniture for every new spawn site, not optional hardening.\n\nGoverns: Put a timeout on every network read, and one whole-operation timeout on exchanges · Tier IPC timeouts by work class and document the at-least-once hazard · Nest deadlines so the process owner always wins the timeout race · A runaway-loop cap must kill the process at the crossing, not log a warning · Reap the whole process tree yourself when a timeout fires · Drain stderr, kill on drop, and kill again on timeout · Drain a child process's pipes concurrently with wait(), or chatty output deadlocks it · Poll short calls for long work, with a cap and a cancel check · Long client polling loops need cooperative cancellation on unmount AND single-owner arbitration · Bridge a blocking call to a human with a oneshot registry and TTL · Animation settle promises must resolve on cancel too",
+   "topic": "concurrency/cancellation",
+   "kind": "decision",
+   "governs": [
+    "307ab440-b8f7-4762-8e03-e7b9a089ed8b",
+    "417b6fcb-aca6-4d64-8227-c334e6e0d36f",
+    "19f450a0-0a43-4a81-9e4a-09c5f3ff05db",
+    "e96e595f-4efb-4783-acf1-833ea3343c8e",
+    "e2a23fda-ae60-4ed2-8c35-6e80f35d9085",
+    "36dec81b-397f-45e7-a36b-8a9eed354384",
+    "9b96203e-9b1a-463f-909c-707f82446b45",
+    "1ece1512-e68b-4177-8807-effc430435c0",
+    "0df3ab23-0be3-48e3-9e59-1df7069a7ada",
+    "52267017-bd2a-4b60-b7c8-5f52624cd14d",
+    "19b37c6a-e931-4c3a-b4f1-8ede1c932145"
+   ],
+   "triggers": [
+    "calling a subprocess or CLI tool",
+    "setting an IPC or fetch timeout",
+    "writing a polling loop",
+    "awaiting a human decision from code",
+    "handling a timeout that fired"
+   ]
+  },
+  {
+   "area": "concurrency",
+   "title": "Background loops are declared, supervised, panic-bounded, and leader-gated",
+   "statement": "Recurring background work runs through one shared loop abstraction — not hand-rolled spawn blocks — with a panic boundary that counts consecutive failures, backs off multiplicatively, and keeps a per-loop health record; a panic must never silently kill a loop or poison its shared state. Under multi-process deployment every singleton loop asks a heartbeat leadership lease whether it is leader each tick. Failure paths still advance the cadence clock (stamp-before-work) so a persistently failing tick backs off instead of retry-storming, while only successes increment the progress counters.",
+   "detail_md": "**Why:** the incidents are dead loops and storms — a panicking background loop disappearing silently, a feature quietly dead for days; a due-poller whose failed bookkeeping write left the due timestamp in the past, re-selecting the same row every tick in a failure-driven storm; a throttle gate that a failing cycle never stamped, re-firing a money-burning cycle on every trigger with zero progress; a run-on-launch job whose un-latched transient failure turned every host re-render into a retry storm; a second process double-firing every scheduler against the same database. A poisoned lock is recovered (clear poison, drop the torn entry, surface the anomaly) — unwrap() turns one panic into a crash for every later caller. Wake batching gates autonomous surfaces behind one window/cap/priority gate with named bypass reasons, so the log is an impact ledger, not a tick log.\n\n**Tensions:** backoff maps need both a size cap and a TTL — any keyed map that grows by nature needs both bounds, or the fix becomes its own leak. Where leadership state is unavailable (tests, headless), behave as leader so single-instance behaviour is unchanged.\n\nGoverns: Declare background loops as one trait behind one scheduler · Wrap every background tick in a panic boundary with backoff · Gate singleton loops behind a heartbeat leadership lease · Back off a due-poller whose bookkeeping write keeps failing · Latch one attempt per session for self-scheduled jobs · Stamp the cadence timestamp before doing the periodic work, and abort if the stamp fails · A failed periodic cycle must still advance the retry-gate clock — but only successes may increment the counters · Batch autonomous wakes behind one gate with named bypasses · Recover a poisoned lock by clearing the cached entry and surfacing the anomaly — never unwrap()",
+   "topic": "concurrency/background-work",
+   "kind": "decision",
+   "governs": [
+    "cf20e0b3-8e59-4f81-ba66-7df3e2bd9f24",
+    "656115ee-09f6-446e-b629-c0eeece7dcfe",
+    "d8f83f62-f28b-4ea6-9e92-e10af0b0f69c",
+    "60ce38c9-efb6-4415-a039-a20038b3ff72",
+    "70a62447-13f6-4a64-8797-0b9271fb17b8",
+    "e0f6d62d-2820-4742-a1c2-ef834febc03c",
+    "0ee9bd18-434e-4785-9b47-5052a875003b",
+    "aa59c8b6-f549-481d-82b5-4270a4a8327c",
+    "6efc57b9-5219-4f90-83ef-0f5442f588a8"
+   ],
+   "triggers": [
+    "spawning a background loop or ticker",
+    "scheduling periodic work",
+    "handling a panic in a worker",
+    "adding a run-on-launch job",
+    "throttling an expensive automated cycle"
+   ]
+  },
+  {
+   "area": "concurrency",
+   "title": "The persisted row is the truth that outlives the process — sweep phantoms, restore timers",
+   "statement": "Any state whose horizon exceeds a process lifetime — scheduled retries, open breakers, queued work, run status — lives in a table, not a sleep or an in-memory map; restart restores it instead of re-learning it by failing. At boot, recovery treats the rows as the queue: rows with a dead process attached are failed with an explicit reason, rows that were only queued are re-admitted, and no row may sit in a non-terminal state indefinitely. Where in-memory-only is deliberately chosen, the loss-on-restart trade-off is stated at the design.",
+   "detail_md": "**Why:** the incidents are phantoms and cancelled futures — non-terminal run rows re-hydrating on every launch as phantom active runs (buttons disabled, cancel shown) that a frontend timeout could never fix; a crash sweep that collapsed running and queued rows into one bucket, silently dropping every job that was waiting at shutdown; a restart silently cancelling a retry scheduled hours out; a zombie sweep killing healthy retries because a re-claimed job kept its first attempt's started_at. Lifecycle truth extends to external processes: an interactive CLI session that finished sits at 'idle' forever — completion is the transition out of the active states, never process exit — and live workers are fingerprinted against their rows so config edits actually apply. Non-terminal states are usually also dedupe keys and prune exclusions, so the lifecycle sweep runs before the dedupe check.\n\n**Tensions:** not everything needs durability — post-completion follow-up work registered in-memory and swept by ticker is an accepted, documented loss because the sweep re-finds the runs. The doctrine requires the decision be explicit, not accidental.\n\nGoverns: Persist any timer that must outlive the process · Treat the row as the queue; recover running and queued rows apart · When no worker survives a restart, fail every non-terminal run row at boot — an in-memory timeout cannot fix a persisted phantom · A re-claimed job must re-stamp its start timestamp, or the zombie sweep kills healthy retries · Sweep the status lifecycle before the dedupe check, and give every non-terminal state an expiry · Register post-completion work in-memory and sweep on a ticker · Detect a dispatched CLI session's completion as leaving the active states, never as process exit · Fingerprint a live worker's config and restart the task when the fingerprint drifts",
+   "topic": "concurrency/queues",
+   "kind": "decision",
+   "governs": [
+    "8607b408-8884-4adf-9f4c-b51fb4bb1e00",
+    "4a4a6ef8-4a83-4fa8-9ae8-f58cc932cb4b",
+    "1bf00995-6ac3-4f10-a1d1-7e677d79c7c4",
+    "c68b3b17-7730-4172-b312-95b70c27f7dc",
+    "ec07a904-036b-490f-af70-a38a9cc41397",
+    "8874323e-b7fe-4fb5-bdb0-a83e86425af7",
+    "b2f6b579-5321-46df-ba44-11d4f342fed0",
+    "1f710701-5224-4ed2-8940-1e18f6ba0579"
+   ],
+   "triggers": [
+    "persisting a job or run status",
+    "writing startup recovery code",
+    "scheduling a retry hours out",
+    "detecting when dispatched work finished",
+    "designing a zombie or staleness sweep"
+   ]
+  },
+  {
+   "area": "concurrency",
+   "title": "Resume, don't restart: checkpoint progress, advance only on evidence, retry only transient",
+   "statement": "Long or external-facing work is modeled as bounded, named steps that read a persisted cursor, do one chunk, and advance — so the same entry point always resumes and a crash or rate limit never re-pays completed work. Cursors advance only to watermarks present in the rows actually processed (never wall-clock now, never past a failed item), hold on failure, and abandon poison batches after bounded attempts. Retries flow through one shared policy that retries only provably transient failures, re-runs the original pre-flight gate on every replay, and treats an uncancellable timeout as at-least-once.",
+   "detail_md": "**Why:** the recorded losses are restart-and-skip bugs — a cursor advanced to a pass-start now() permanently skipping rows committed after the SELECT's snapshot but stamped earlier; a relay watermark advanced past a failed item stranding it forever; a whole long job re-running its expensive reads after every deploy; replay skipping the original validator and re-firing something a human disabled on purpose; per-call-site retry loops retrying hard failures until the budget was gone. Two-phase cursors seed to now on first enable (never retroactively process all history), store attempts as {cursor, attempts} so a new window reads fresh, and advance past a poison batch after max attempts — bounded work, never a livelock. When a rate-limit banner states its own reset time, schedule exactly one retry there but treat parsing ambiguity as no-ETA and keep the blind cadence as fallback. Deletes cascade children-first with the tombstone cursor advancing only on full-batch success. Chunk-and-accumulate beats negotiating a bigger per-call cap — but only because the walk is checkpointed.\n\n**Tensions:** bounds are guesses at first — instrument before setting them and keep workload-dependent ones configurable. Client timeouts on uncancellable transports are ceilings, not bounds: anything the UI may retry needs genuine backend idempotency.\n\nGoverns: Resume long jobs from a persisted cursor, never restart them · Stage long-running pipelines and bound every step · Beat a provider's per-call cap by chunking and accumulating locally · Advance an incremental-sync cursor to the max watermark present in the rows read · Drain relayed items oldest-first, pair each publish with its watermark atomically, and stop the lane on first failure · Two-phase cursors: seed to now on first enable, hold on failure, bound retries by anchoring attempts to the cursor value · Run every fallible lookup BEFORE taking the permanent claim, and never collapse a fallible read into its empty default · Propagate deletes children-first and advance the tombstone cursor only on full-batch success · Retry only transient failures through one shared backoff wrapper · Parse a stated reset time for one scheduled retry; refuse ambiguity and keep the blind cadence as fallback · Re-run the original pre-flight gate on every replay or rerun · Treat a timeout on an uncancellable call as at-least-once",
+   "topic": "concurrency/pipelines",
+   "kind": "decision",
+   "governs": [
+    "23511964-aba4-4c91-a94b-073d09dfcef0",
+    "83a45d59-bd3c-47d8-ac1e-b61a017ddb5f",
+    "2e500c66-2658-4a78-8328-2a0c91161cff",
+    "8bb1b36d-4d6c-43b8-96c7-0a59493623c0",
+    "bf15e3d1-af25-4383-a47c-373f22de7986",
+    "9982c3b6-d9df-42cc-a56d-449999b22a89",
+    "eb0c5a16-8bc6-4e5d-a30f-c3acc269c150",
+    "d683d3c9-f0f4-4628-9fd2-7beaa69d78a5",
+    "5c4a78bc-cd78-4147-91ad-bdf102194e77",
+    "0e863701-06a4-46a2-9f90-3a817d0ee357",
+    "572968ce-8fd6-4a41-a90f-2d4b19a448c1",
+    "1843d3ee-4e50-4669-b576-2e8258599757"
+   ],
+   "triggers": [
+    "building an incremental sync",
+    "advancing a cursor or watermark",
+    "adding retry logic to an external call",
+    "replaying or re-running recorded work",
+    "designing a multi-step import pipeline"
+   ]
+  },
+  {
+   "area": "concurrency",
+   "title": "Idempotency keys are minted centrally, scoped to their evidence, and released on failure",
+   "statement": "Dedup keys are minted in the shared wrapper (never left to call sites), include every dimension meant to run concurrently, and dedupe on a minted nonce — never on content. Every once-only guard latches on success, not on 'it ran'; every dedupe mark is rolled back when the guarded work fails and cleared when the entity leaves the triggering state; and once-only scopes bind to the evidence episode, not 'once ever'. Where a fired mark and a publish race, the mark is a compare-and-swap persisted first — lose the CAS, skip the publish.",
+   "detail_md": "**Why:** the recorded failures are permanent silences and duplicate storms — a standard once-only primitive caching a transient first-call failure for the life of the process, silently degrading every downstream feature forever; a once-ever guard deadlocking a pipeline because the item re-entered the same state and nothing was ever allowed to look at it again; publish-first-then-crash re-firing a trigger with duplicated downstream work; budget claimed at insert time stranding rows that then dedupe-blocked their own trigger (the fix: candidate generation writes rows unconditionally; a separate release pass is the only place budget is spent); a per-row guard keyed without intent writing one approval and reporting approve-then-reject both as landed; two evaluators (client loop + backend) double-firing the same rule until the persisted fire log became the shared cooldown authority. Double-submit needs a synchronous ref, because the click dispatches before the re-render commits. Content-based dedupe is forbidden because retyped identical words must go through.\n\n**Tensions:** eager marks are correct — they close the duplicate window — but only with the catch-path rollback and state-exit release; skipping either turns a dedupe guard into permanent silence. A rare duplicate can be an accepted trade over a never-sent notification, but that decision is recorded at the contract. An external delivery record commits unconditionally; a lost CAS on trigger metadata is a logged no-op, never a reason to discard the delivery.\n\nGoverns: Mint the idempotency key in the shared wrapper, not at call sites · Put every concurrent dimension into an out-of-process job's dedup key · Dedupe sends on a minted nonce, never on content · Latch a once-only init on success, never on 'it ran' · Release a dedupe mark on failure and on leaving the state · Scope a once-only guard to the evidence, not to 'once ever' · Record the fire before you publish, and skip publishing if you lose · Block double-submit with a synchronous ref, only for async handlers · Key in-flight write guards by INTENT, not just by row — same intent joins, different intents both reach the backend · When two evaluators can fire the same rule, share cooldown through the persisted fire log · Commit the external delivery record unconditionally; keep trigger bookkeeping best-effort · Decouple noticing from delivering in any proactive-nudge pipeline",
+   "topic": "concurrency/idempotency",
+   "kind": "decision",
+   "governs": [
+    "be7ca9eb-e582-4369-8867-f32ef2f59237",
+    "b05d7097-6c49-45f5-be06-d06bef3906e4",
+    "8466ea1a-aebb-4938-b440-860cc1987320",
+    "2e9fa00c-2e27-4904-8fee-5a4a68afe1c5",
+    "69a4a774-2577-4ceb-9ff2-9fde37533eeb",
+    "6fd924ae-cdea-4f62-8308-8f4bb92f7e96",
+    "805d4fa1-c121-4c91-ada7-3a9bf9684aca",
+    "2a0e5daa-7d6b-4ffa-9422-9d8c475f587c",
+    "819a7657-e2cd-4ce7-adc7-acb78d2f67e3",
+    "1e28cf98-76f4-48d6-aa0e-eb94fc610aab",
+    "6391ff82-93a8-42d3-9033-63e2146c0cf3",
+    "9a74f25f-70a8-4a90-90fa-2d3d2b74ab82"
+   ],
+   "triggers": [
+    "adding a dedupe or once-only guard",
+    "sending a notification or alert",
+    "preventing double-submit on a button",
+    "choosing an idempotency key",
+    "wiring fire-then-notify sequences"
+   ]
+  },
+  {
+   "area": "concurrency",
+   "title": "Bound every fan-out and key every limit to its blast radius",
+   "statement": "No bare parallel map over N entities: every fan-out flows through one shared limiter whose width is a stated decision sized by cost class, and one item's failure means honestly-absent-from-the-map, never family failure. Rate limiting is implemented once and configured per endpoint or per credential — keyed so a runaway's blast radius is one integration, not the whole system. Admission composes independent gates, and work refused by a soft gate queues rather than running into a known failure; acquisition policy is chosen per caller class by what a dropped request costs.",
+   "detail_md": "**Why:** the recorded costs are saturation and silent drops — a bare parallel map saturating the transport the rest of the page was waiting on, so first paint paid for a background wall; per-endpoint rate-limit re-implementations each making a different keying mistake; a global limiter unable to confine a runaway automation to its one credential; one lock-acquisition strategy for all callers silently dropping human requests with no reply, error, or queue entry. Bounded channels behind non-blocking hooks lose events invisibly — count every drop, warn on the first, and record a high-water mark so the blackout is replayable. Cooldown setters never shorten an active cooldown; adjusting a bucket in place must not hand out a free burst. Ship the fan-out primitive alone, proven by tests, one phase before anything calls it.\n\n**Tensions:** widths and windows are workload guesses — declare them next to a stated reason and keep them configurable; state the accepted risk (in-process limiter state resets on deploy) where the module is declared so swapping in a shared store stays a one-file change.\n\nGoverns: Bound every fan-out with one limiter sized by cost class · Implement rate limiting once and configure it per endpoint · Rate-limit outbound calls per credential, not globally · Bounded per-item remote fan-out where one item's failure means absent-from-map, not family failure · Ship the fan-out primitive alone, proven by tests, before any behavior flips · Pick lock-acquisition policy per caller class, not per resource · Compose independent admission gates; held work queues instead of failing fast · Count every dropped change event and replay the startup gap",
+   "topic": "concurrency/throttling",
+   "kind": "decision",
+   "governs": [
+    "fe8744d7-ba20-4020-b9d4-056e862925ae",
+    "99399074-39d2-4b26-ad4a-b9da25ca0bba",
+    "65316f87-b617-4f54-a272-392ca3419f3e",
+    "3df5fb2c-ed88-4daa-8b6c-0a5224841812",
+    "ad576284-2830-4f16-940b-d2999a8b3f04",
+    "d0f52689-3785-4f62-a045-6c0b6de63683",
+    "ba16f7b3-8502-4d95-86b4-25f44e893cfe",
+    "13f2328c-729e-4bee-a2e3-fb96c5856674"
+   ],
+   "triggers": [
+    "fetching data per entity in parallel",
+    "adding a rate limit to an endpoint",
+    "sizing a concurrency pool",
+    "admitting work into an execution engine",
+    "pushing events into a bounded channel"
+   ]
+  },
+  {
+   "area": "concurrency",
+   "title": "Notifications are lossy hints; the store is the truth — always keep a poll or replay path",
+   "statement": "Wake signals, change events, and cross-store notifications accelerate work but never carry correctness: the durable store remains the authority, a poll or coalesced-refresh fallback survives any missed signal, and consumers claim work atomically so signal-driven and poll-driven runs can never double-process. Deleting the poll after adding the push converts every missed signal into permanently dropped work.",
+   "detail_md": "**Why:** the recorded mechanics all defend against the same loss — Notify's single permit is lossy under select!, so wakes are backed by a durable dirty flag set before the notify and re-checked after the pass; a push-upgraded polling loop keeps the interval unchanged as the degraded-mode heartbeat, so a lost signal costs one interval of latency instead of the work itself; a cross-store bridge treats 'store hasn't caught up' as a first-class branch that schedules a coalesced refresh (safe because the refresh is a whole-snapshot idempotent replace); reconciliation lets the backend resolve identity from the DB and no-op when absent, keeping the frontend cache as a cheap replay guard rather than a correctness guard.\n\n**Tensions:** the poll cadence is now a latency floor for the failure case only — teams tempted to tighten it should instead trust the push for the happy path. Idempotent whole-snapshot refreshes are what make coalescing safe; delta protocols reintroduce ordering hazards.\n\nGoverns: Add a push wake-up but keep the poll as the fallback heartbeat · Back a Notify-style wake with a durable dirty flag · Count every dropped change event and replay the startup gap (see also throttling doctrine) · Treat 'store hasn't caught up' as a first-class branch in cross-store event bridges · Make reconciliation fire decisions server-side and cache-independent",
+   "topic": "concurrency/queues",
+   "kind": "decision",
+   "governs": [
+    "cfcb4135-3be4-40e7-91b1-8b3ec0b3ec2d",
+    "a7cc8872-04da-4410-a5c7-dcd0a0a9a330",
+    "e2a88db4-de34-4981-8d37-40e800240e79",
+    "f94e5135-ec87-4a81-945d-75aeed998839"
+   ],
+   "triggers": [
+    "making a polling loop event-driven",
+    "wiring a wake or notify signal",
+    "bridging events between stores",
+    "handling events that may arrive before state"
+   ]
+  },
+  {
+   "area": "process",
+   "title": "Docs and comments are load-bearing truth: measurements, hazards, boundaries — never promises code doesn't keep",
+   "statement": "Written context earns its place by recording what a reader cannot see in the code: the measurement or incident that killed the previous design, why each tuning constant breaks if halved or doubled, why dormant code exists and how to revive it, the precise future condition under which a documented latent hazard becomes a mandatory fix, and which modules a folder explicitly does NOT own. Docs that describe unimplemented behavior, declare an SSOT with no landed consumers, or hand-mirror an enforced pipeline are forbidden — they actively teach the next reader something false.",
+   "detail_md": "**Why:** the incidents are docs lying with authority — a module header advertising 'auto-reconnect' while max_retries sat dead-coded at 3 and retry_count was never incremented; an SSOT comment naming two components as thin wrappers while both survived as full implementations, drifting three config maps; a hand-maintained mirror CI pipeline decaying until it actively taught pre-fix behavior. The positive half: an unjustified magic number gets deleted or 'simplified' by the next well-meaning reader, and a comment carrying the number, date, and observed symptom defends the constraint by itself. Dormant code without a revival checklist reads exactly like abandoned code six months later. A dependency floor advanced as an annotated dossier — citing the upstream fixes that land on YOUR call surface — becomes an auditable decision log instead of a magic number. The owns / does-NOT-own table exists because the positive column alone is just a directory listing.\n\n**Tensions:** the cost of writing incident-grade comments is real; the doctrine spends it only where removal or drift would be expensive. Where an invariant pairs two constants, assert it at load rather than trusting a comment. Correct a comment that has since been proven wrong — stale truth is the same failure as an original lie.\n\nGoverns: Don't let module docs promise auto-reconnect and retries that don't exist · A 'single source of truth' comment without landed consumers is a lie the next reader trusts · Unchecked mirrors of the real gates — a second CI pipeline, contributor docs — rot into contradicting them · Comment the measurement that killed the previous design · Say what breaks if each tuning constant is halved or doubled · Label deliberately dormant code with its revival checklist · Document a latent hazard at its site with the exact condition that makes it real, instead of fixing it speculatively · Advance a pinned dependency floor only with a dossier of fixes that land on your exact call surface · Give a sprawling feature folder an owns / does NOT own table",
+   "topic": "process/documentation",
+   "kind": "decision",
+   "governs": [
+    "2c8802ec-1f41-4b11-8ed7-493f81b7badf",
+    "ffedd4dc-de30-4074-9f04-0dc88df877e3",
+    "138149c8-62f0-420d-9b98-f4a7e9192ce9",
+    "6c4dc4c3-bbd8-4ed0-a8f6-fff7f9f2032d",
+    "34a768eb-5807-4af5-a499-69eff2079a6f",
+    "c55c1ad1-2660-4e4c-a3c6-0ac0d3e65b96",
+    "1d776fbc-24a1-406f-8df0-feaca97e59ad",
+    "6c9b285f-c2a7-4263-aa80-cbb79ba73bc6",
+    "722e018e-b22d-47cc-8138-3049866e9aeb"
+   ],
+   "triggers": [
+    "writing a module header or README",
+    "adding a magic number or tuning constant",
+    "leaving code dormant behind a flag",
+    "documenting a known-but-unfixed hazard",
+    "bumping a pinned dependency version"
+   ]
+  },
+  {
+   "area": "process",
+   "title": "Every increment declares its blast radius: fence scope, gate defaults off, state accepted risk at the site",
+   "statement": "A change ships with its boundaries made explicit and checkable: decision records end with the out-of-scope list naming files and behaviours the change must not touch; new derived-data pipelines land gated off by default and fully best-effort through their bake-in window; removed safety gates are recorded at the removal site enumerating every surviving guard and what now fires unattended; deliberate rule exemptions are scoped and stated where they apply. In a shared checkout, physical isolation (worktrees, per-path staging, no stash) plus a declared-intent ledger is how the blast radius holds against concurrent sessions.",
+   "detail_md": "**Why:** the recorded discipline exists because agent-driven and unfamiliar increments sprawl silently — the out-of-scope fence turns the review question from taste into something checkable against the diff; the gated-off/best-effort rollout keeps production behaviour unchanged and makes the parent write unable to fail because of the new feature; the removed-allowlist note ('autonomous mode IS the standing consent') makes risk accepted explicitly, not discovered later. The multi-session incidents are concrete: git stash sweeping another session's in-flight and untracked work; a pre-staged index layering an unrelated session's 18 files under a misleading commit message. Honest parallel exploration needs one shared data-and-actions hook so variants differ only in what's being compared and consolidation is a deletion, not a rewrite. Scoped exemptions (operator-facing paste-out artifacts staying locale-independent English) survive the repo's own mandatory rules only because the exemption's boundary is stated in the module doc.\n\n**Tensions:** fences and ledgers cost ceremony per change — the doctrine spends it in proportion to blast radius (single-file fixes stay on the main checkout). A gate off by default delays feedback; the trade is bake-in safety over speed.\n\nGoverns: End every decision record with what this increment must not touch · Ship a derived-data pipeline gated off by default and best-effort · When deleting an approval allowlist, restate every surviving guard at the deletion site · Operator-facing paste-out artifacts stay deliberately locale-independent English · Isolate concurrent sessions in worktrees and log intent in a ledger · Prototype visual variants against one shared data-and-actions hook",
+   "topic": "process/decisions",
+   "kind": "decision",
+   "governs": [
+    "fa48f6c7-2567-491c-a387-46378fb82f08",
+    "01fe22ab-ecc7-4688-a20e-ab87fba76c1c",
+    "95c12886-11de-43a3-8f1c-20fe15d8afc3",
+    "157193ca-fa36-4355-beb6-cde5549f434c",
+    "070ee750-670a-4167-91f4-79052c06b265",
+    "ba1e247c-fd47-424d-84c9-56bd2f8d10e4"
+   ],
+   "triggers": [
+    "writing an ADR or decision record",
+    "rolling out a new pipeline or feature flag",
+    "removing a consent or approval gate",
+    "working alongside concurrent sessions",
+    "prototyping variants of one surface"
+   ]
+  },
+  {
+   "area": "process",
+   "title": "Conventions live in machine-checked gates — graded by maturity, tiered by cost, with a real escape path",
+   "statement": "A convention a reviewer keeps restating belongs in the linter, the build, or a hook — not a checklist — with severity itself documenting maturity: hard error at the non-negotiable seam, warn plus a dated in-config inventory of known violations at aspirational seams, promoted to error when the inventory empties. Gates are tiered by cost (seconds on staged files at commit, full suites at push), routed through one runner so 'run the app' is the only ritual, and never rewrite the working tree. Every soft gate needs a legitimate one-sentence dismissal — a gate with no escape is a gate everyone learns to disable.",
+   "detail_md": "**Why:** the items encode a working enforcement stack and its failure modes — repeated review comments (raw utility classes, hand-rolled modals, whole-store subscriptions) that only stopped recurring once shipped as lint rules; boundaries that can't be error-on-day-one becoming ambient noise unless the warning carries a tracked, dated violation inventory; a second codegen registration point silently diverging when a new task joined only one list; and a source-to-docs coupling map that nags at session end, satisfiable cheaply and dismissible honestly. Where prose disambiguates confusable modules, back the README matrix with a registry constant and a compile-time length assertion so the doc and the code must move in the same change. Tree-mutating hooks are banned outright: with concurrent sessions sharing one checkout, a stashing hook clobbers work nobody will think to look for.\n\n**Tensions:** severity grading is the release valve — errors everywhere blocks legitimate legacy work, warnings everywhere become wallpaper; the dated inventory is what keeps warn-level rules from being permanent. Escape paths must be logged/visible, or they become the norm silently.\n\nGoverns: Turn every repeated review comment into a local lint rule · Grade lint boundaries by maturity: hard error at the mandatory seam, warn plus a dated inventory of known violations at aspirational seams · Machine-check the source-to-docs coupling, with a real dismissal path · Tier git hooks by cost, and never let one rewrite the tree · Route all codegen through one runner wired into the build's own pre-hooks · Back a decision-matrix README with a compile-time inventory assertion",
+   "topic": "process/enforcement",
+   "kind": "decision",
+   "governs": [
+    "09a020ca-7105-490d-b5ae-8a2b8849fcab",
+    "33110444-9f6c-46b7-818b-a84f7a5d2c02",
+    "3a8f1cf4-0505-4627-943a-263d22e3dd59",
+    "a499e6de-a667-4ec8-87fe-2fd17d91615d",
+    "52517f2e-884d-409c-99e1-c8d1d75a6564",
+    "89230531-62fb-4340-809b-a055684763ca"
+   ],
+   "triggers": [
+    "repeating the same review comment",
+    "adding a lint rule or CI check",
+    "wiring a pre-commit or pre-push hook",
+    "adding a codegen step",
+    "enforcing a module boundary"
+   ]
+  },
+  {
+   "area": "process",
+   "title": "Governance artifacts are derived data: computed from live sources, suggesting — never auto-applying",
+   "statement": "Scorecards, maturity grades, remediation rankings, and curated playbooks are pure derivations over live, reviewable data — rubrics with per-archetype targets as one editable table, staleness computed against current canon status, priority as score-lift over effort tier — never hand-maintained snapshots or absolute bars buried in code. The system computes and surfaces; the human judgment calls (which replacement fits, which phase it belongs in) stay with the curator, and gaps with no executable action are dropped rather than shown as inert rows.",
+   "detail_md": "**Why:** the recorded stances answer three failure modes. A curated collection whose member was deprecated actively teaches something the organization abandoned — worse than a missing entry — so staleness is a derived view over live canon status with replacements resolved through explicit relationship edges and surfaced as suggestions. Magic-number score weights hold a solo prototype to an org-grade bar, so the rubric moves into data with archetype-scaled targets, reviewable and tunable in one table. And a diagnostic scorecard that isn't ranked by impact-per-effort (weighted score lift ÷ action-cost tier) never answers 'what's the single best next thing', while listing gaps with no executable lever just decorates the report.\n\n**Tensions:** deriving everything from live data costs computation and schema discipline over relationship edges (supersedes vs governs precedence); the payoff is that the artifact can never silently disagree with the source. Auto-apply is deliberately withheld even when the replacement resolution is confident — placement is judgment the system cannot make.\n\nGoverns: Audit a curated collection's members against live canon status, and suggest — never auto-apply — replacements · Grade maturity against an explicit rubric with archetype-scaled targets, not one absolute bar · Rank remediation by impact-per-effort — score lift ÷ action cost tier — and drop gaps with no executable action",
+   "topic": "process/readiness",
+   "kind": "decision",
+   "governs": [
+    "9fc14a3c-5a94-4d83-ad03-eb100f96b112",
+    "ca398fd2-9f27-4ff9-af68-26515935fec2",
+    "8209122e-09ec-478a-a95f-f1c795e59565"
+   ],
+   "triggers": [
+    "building a scorecard or maturity grade",
+    "curating a playbook or checklist",
+    "ranking remediation work",
+    "designing a readiness rubric"
+   ]
+  }
+ ],
+ "orphans": [
+  {
+   "id": "beea8755-00d2-4223-b4c0-805072193f21",
+   "reason": "OS-truth process-registry reconciliation (scan, classify, re-adopt or kill orphans) is a supervision pattern whose siblings live in the concurrency area; no >=3-item errors doctrine covers it without force-fitting."
+  },
+  {
+   "id": "2c92e24d-f672-4e0a-a33f-864e9eefabc2",
+   "reason": "Preserving exit-status bit patterns across integer widths is a platform-specific micro-technique with no >=3 sibling items in the errors set; folding it into a surfacing doctrine would dilute the doctrine's direction."
+  }
+ ]
+}

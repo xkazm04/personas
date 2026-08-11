@@ -1,0 +1,527 @@
+{
+ "doctrines": [
+  {
+   "area": "security",
+   "title": "Bound, then validate in layers: every boundary crossing has a cap and one door",
+   "statement": "Anything arriving from a network peer, a subprocess, an archive, an import, or a user is unbounded and unstructured until you bound and structure it. Route it through a single ingest chokepoint that applies escalating layers — size/count caps first, then type, then parse, then per-element validation — with each rejection specific and each truncation flagged, never silent. It forbids scattering validation across callers and forbids trusting any declared size or generic early truncation.",
+   "detail_md": "**Why**: the recorded failures are all of one class — a check that existed but sat in the wrong place or ran in the wrong order. A generic 2000-char slice ran before type dispatch and silently corrupted large JSON mid-structure; unbounded peer collections invited flood-eviction of real queues (drop-new beats LRU under flood); an archive's declared entry size is itself attacker-controlled, so it must be capped twice; trim() ran before the hostile-codepoint scan and destroyed the evidence it was scanning for. **Tension**: layered gates cost friendly-input latency and produce more rejection paths to message — the items resolve this by making each layer cheap, each cap a named constant with a rationale comment, and each rejection carry its own message.\n\nGoverns:\n- Pin a content hash across every import path, and decide what a missing hash means\n- Treat every field from mDNS as hostile input — especially string truncation\n- Bound every peer-controlled collection, and prefer drop-new over LRU under flood\n- Make the ingest door the only writer: validate, cap, path-confine, mark once\n- Truncate at the type-appropriate limit BEFORE type dispatch, or big payloads corrupt silently\n- Cap the decompressed size of every archive entry twice — declared size is attacker-controlled\n- Gate an imported artifact in layers, one message per rejection\n- Put an explicit, justified numeric cap on every boundary crossing, and flag truncation rather than hiding it\n- Check hostile-input codepoints on the RAW string, before trim",
+   "topic": "security/input-hardening",
+   "kind": "decision",
+   "governs": [
+    "fd96f4e5-7730-4e04-af79-e5413e8a9951",
+    "1010d462-d4ef-45f7-932b-a5decca8550b",
+    "895f1790-b708-4bc7-9c47-f7341de2a5a6",
+    "a279b15b-105d-4ba2-90f6-0df9bf768920",
+    "cfd15f28-fe54-4a8d-b6b3-75ae2523484e",
+    "2eee8b60-e265-4e17-8763-c41244e0b7c2",
+    "a66318b1-bc94-4db0-9d6b-961064a0ef55",
+    "a85d8ff7-09d7-491e-9755-720306bb11ea",
+    "8b34e7e8-9ca1-49d5-8da3-6144edd99d05"
+   ],
+   "triggers": [
+    "accepting network input",
+    "parsing an uploaded or imported file",
+    "reading subprocess output",
+    "extracting an archive",
+    "adding a new ingest endpoint"
+   ]
+  },
+  {
+   "area": "security",
+   "title": "Model output is untrusted input: closed vocabularies, ids, and re-validation",
+   "statement": "Anything an LLM emits — UI blocks, SQL, endpoints, actions, links, file references — is attacker-influenceable input, not trusted program output. Constrain it to closed vocabularies (enum block types, capability ids from a generated allowlist, discriminated action unions) so a hallucinated value fails a lookup instead of reaching something arbitrary, and run whatever free-form content remains through the same validators user input gets. Forbidden: letting 'the AI produced it' bypass a boundary check, and letting model output auto-execute anything.",
+   "detail_md": "**Why**: this is the workspace's largest single family of practiced defenses. The items record real classifier traps (user data reading 'please delete this' false-positived a SQL mutation scan until literals were stripped; CTE wrappers hid mutations behind read-only verbs), streaming-markdown link injection, and a fence-first edge case that discarded whole message bodies. The construction that keeps recurring: the model emits symbolic ids from a catalog, both halves of the catalog are generated from one source and mirror-tested, validators rebuild a fresh object from accepted fields only, and every ambiguity in a destructive-action classifier resolves as dangerous. **Tension**: closed vocabularies cap expressiveness — extension is deliberately a code change (new block + schema + one case), which is the point.\n\nGoverns:\n- Let agents emit UI only through a frozen vocabulary mapped 1:1 onto blessed components — and test that nothing auto-runs\n- Have the model emit ids from a generated allowlist, not paths\n- Gate, fingerprint and bound model-authored SQL before executing it\n- Run model-proposed endpoints and values through the same untrusted-input validators as user input\n- Make destructive-action classifiers resolve every ambiguity as dangerous, after stripping literals\n- Render streaming LLM markdown defensively: close fences and sanitize every link\n- Fence user attachments into an LLM turn behind size, type, and SSRF guards\n- At the model-to-system boundary, fail closed when the validation source is unreachable, and re-serialize only validated fields\n- LLM-composed widgets carry only enum actions — validated twice, capped, confirmed when spendy, audited\n- Let ambient signals cross a boundary only as matched vocabulary, never raw content",
+   "topic": "security/input-hardening",
+   "kind": "decision",
+   "governs": [
+    "20f5518d-6eb0-4e94-9e9c-8f0afebee139",
+    "ac19d9aa-2eb6-48a6-a160-42d7e88499ec",
+    "651287c7-f2c7-4550-9566-a522af9abef7",
+    "02fcef92-1101-4920-9f3c-06eba3eb5005",
+    "ab52663a-0274-49c2-8ba2-0927bef5f442",
+    "d3262137-096c-4225-9a6b-c23e1e36e94f",
+    "35776fa4-a88a-4470-940c-94db35362d3b",
+    "0e5012ca-daf4-411a-b383-bbcbe7e4127b",
+    "0ebcbcfa-c7a4-4c40-b575-1c462792bf70",
+    "f946f021-a3d6-4f5f-9952-b98e49f4a4ea"
+   ],
+   "triggers": [
+    "rendering LLM output in the UI",
+    "executing model-generated SQL or code",
+    "letting an agent propose an action",
+    "injecting file or URL content into a prompt",
+    "wiring a new agent capability"
+   ]
+  },
+  {
+   "area": "security",
+   "title": "Compare canonical forms, never strings: paths, binaries, identifiers, schemes",
+   "statement": "Every security comparison over a name — a filesystem path, an executable, a SQL identifier, a URL scheme, a CLI argument — must happen on the canonical, semantically-resolved form, not on string prefixes, suffixes, or charsets. Enforce the guard in the lowest-level helper so no caller can route around it. Forbidden: `starts_with`/`ends_with` containment, basename matching against allowlists, and 'sanitize to alphanumerics' regexes that corrupt legitimate names.",
+   "detail_md": "**Why**: textual matching has produced concrete recorded exploits and bugs here: `ends_with` let a planted same-name executable pass a binary allowlist; `Path::starts_with` is purely lexical so `root/../../x` still 'starts with' root and a bare string prefix accepted a sibling dir like `personas-evil`; a letters-and-hyphens whitelist still admitted `--nt`, which the child CLI re-parsed as an option; `order-items` parsed as `order MINUS items` and a Redis prefix `cache[v1]` silently read as a character class. The practiced fix is layered canonicalization: charset/length first, then syntax rejections (UNC, ADS, dot-dot, leading hyphens), then parent-equality, then canonicalize-and-recheck — remembering canonicalize fails on non-existent targets. **Tension**: canonicalization is platform-messy (symlinks, junctions, 8.3 names) and slower than a prefix check; the items accept that cost everywhere a name gates execution or containment.\n\nGoverns:\n- Resolve binary allowlists to canonical on-disk paths — basename matching is a code-exec vector\n- String-prefix path containment is not containment — reject dot-dot and absolute components, and remember canonicalize fails on non-existent targets\n- Build path containment in layers: charset allowlist, syntax checks, parent equality, then canonicalize\n- A validated charset is not a validated argument — reject flag-shaped and injection-shaped values where they become argv or path segments\n- Escape identifiers per dialect and pin that escaping preserves printable characters\n- Constrain what the OS is asked to open",
+   "topic": "security/input-hardening",
+   "kind": "decision",
+   "governs": [
+    "a48e3b76-3db2-4c86-94d5-8e1d7ed71538",
+    "f96a2dc0-eaaa-4982-a440-1bbc346c35e4",
+    "271ba294-2716-4832-b90f-f72a4b044a55",
+    "0ec040fd-d8b0-41c0-b4b7-bbbff6c49292",
+    "664e9079-a4cc-4d02-81a6-5cedcc4a7664",
+    "fd6126e4-8d13-4415-be9c-a510c45be269"
+   ],
+   "triggers": [
+    "joining user input onto a filesystem path",
+    "checking a binary against an allowlist",
+    "building argv for a child process",
+    "interpolating an identifier into SQL",
+    "shelling out to open a URL or file"
+   ]
+  },
+  {
+   "area": "security",
+   "title": "Secrets live in one trusted process; boundaries carry opaque references",
+   "statement": "Plaintext secret material is injected, consumed, and stored inside exactly one trusted process. Everything that crosses a process, IPC, or bundle boundary is an opaque reference (session ref, credential id) redeemed on the trusted side — or, where raw transport is unavoidable, a hybrid-encrypted envelope. It forbids returning minted tokens to the renderer for round-tripping, keeping 'just in case' IPC commands that carry raw tokens, letting the client declare which fields are sensitive, and holding typed secrets in serializable state.",
+   "detail_md": "**Why**: every extra crossing is an extra leak surface — DevTools serializes React state, barrels drag server-only modules into client bundles, and a secret that crosses IPC twice for no reason doubles its exposure for zero function. The practiced architecture: mint server-side, hand back a session ref, redeem inside the privileged command; resolve field sensitivity in the backend with a name-classifier backstop that defaults unknown fields to sensitive; mask scanned values in the same scope that read them; strip transport-only prefixed keys at the persistence boundary; and when secrets must cross locally, wrap them in a symmetric content key asymmetrically sealed, with a self-healing peer-key cache. Retired raw-token IPC surfaces get a dated tombstone stating the safe future shape. **Tension**: references add round-trips and state on the trusted side; the items treat that as the fair price, and keep the renderer's UX intact via version-counter refs instead of state.\n\nGoverns:\n- Keep secret handling in one trusted process, gated explicitly\n- Hand the renderer a session ref, redeem the token server-side\n- Retire IPC surfaces that carry raw token material, and leave a dated tombstone comment\n- Cross IPC with a hybrid envelope and a self-healing key cache\n- Mask discovered secrets at the point of read; re-read raw values only at commit\n- Strip transport-only prefixed keys before persisting captured data\n- Derive field sensitivity server-side, with a name backstop\n- Hold hand-typed secrets in a ref with a version counter, never in React state\n- Deep-import the pure modules; keep the barrel off client paths",
+   "topic": "security/secrets",
+   "kind": "decision",
+   "governs": [
+    "4854f4b2-62e8-4eba-bd3c-b640c32b9e82",
+    "ccece962-3ef4-4465-9731-0864e0c9e856",
+    "063d8623-4c1f-4944-894a-5f05802fa4f1",
+    "5c6eeb89-e665-4616-9547-4435517f8f1b",
+    "3f473aad-20e3-465e-9952-f73a55b2f505",
+    "be0922df-ecbc-4c8d-93d6-98880d24fbad",
+    "6c257f78-b7fc-41eb-9d64-bab3c0d5cf51",
+    "261e35e7-3949-4282-a3f5-8df34c4b8d33",
+    "64e7b1c9-f488-4f76-8e90-ab64e1480bf0"
+   ],
+   "triggers": [
+    "passing a credential across IPC",
+    "designing a token-minting flow",
+    "adding a secret field to the UI",
+    "importing server modules from client code",
+    "persisting captured connector data"
+   ]
+  },
+  {
+   "area": "security",
+   "title": "Redact where data exits — logs, errors, storage, telemetry — and pin it with tests",
+   "statement": "Secrets leak through side channels, not the happy path: error bodies, crash stack args, request URLs, broadcast payloads, audit copies, and stored output. Scrub at the point where data leaves your control — the error constructor, the persistence boundary, the egress sanitizer, the pre-commit hook — using shape-typed redaction, and pin each scrubber with a test asserting the secret is absent while diagnostic context survives. Forbidden: logging a plaintext duplicate of anything you encrypt at rest, echoing parse-input snippets in errors, and relying on a static sensitivity flag as the only log guard.",
+   "detail_md": "**Why**: the recorded leaks are all side channels — 40 chars of an unparsable .env line reached toasts and Sentry; reqwest's Display printed secret-bearing URLs; token endpoints echo client_secret inside error envelopes; stack-frame arguments leak independently of message text; a path-redaction regex shredded URLs unless full URLs were placeholder-shielded first (pass ORDER is part of the contract). The practiced structure: redact inside the single place the value is built (error constructor, capture function, persistence write), use typed tokens per credential shape, make the secret boundary structural in row projections and then test forbidden keys ABSENT, broadcast change events by key only, store trigger content as a hash, and scan staged changes at pre-commit because CI catching a leak is already a leak. **Tension**: default-on redaction risks corrupting legitimate identifiers — the items explicitly tune for precision (high-confidence patterns plus a precision-tuned entropy sweep) and prefer positional error references over content.\n\nGoverns:\n- Redact credential shapes at capture with a typed token per shape\n- Never log a plaintext duplicate of a payload you encrypt at rest\n- Reference position, never content, in errors from secret-bearing parsers\n- Sanitize secret-echoing provider error bodies inside the error constructor, pinned by leak tests\n- Strip the request URL out of HTTP client errors before logging or displaying them\n- Sanitize crash reports before storage, including stack args\n- Redact at the persistence boundary, tuned for precision\n- Redact by field category where the whole value is the secret\n- Shield URLs behind placeholders before running path-redaction regexes\n- Sanitize free-form payloads on four axes before they leave the device\n- Make the secret boundary structural in row projections, then test forbidden keys absent\n- Broadcast change events by KEY only — the payload may hold secrets\n- Store trigger events as a content HASH, never the plaintext that produced them\n- Scan for leaked secrets at pre-commit — CI catching a leak is already a leak\n- Keep credential-capture command specs as compile-time constants, and never let a static sensitivity flag be the only log guard",
+   "topic": "security/secrets",
+   "kind": "decision",
+   "governs": [
+    "5c4f14c9-5667-4598-8dc5-10e12ce814b8",
+    "f6ebcea7-e33a-4e60-9c9d-b8b12d8e16f0",
+    "cd58ebc8-bd15-4aa3-8abf-981be606bde7",
+    "18dd208b-9388-43b1-8f04-88de8c136f09",
+    "b080de9b-130e-45ff-b62d-7bb3a0910e5a",
+    "2a3c1a3d-03d9-46cc-835b-1ecba9703e18",
+    "499a03b9-b737-4c44-9fbc-ce9afb1df838",
+    "c9426139-8e7d-4fe2-8075-c15ba738f272",
+    "245ad81a-040b-47b2-bf62-27040fb3705f",
+    "ddee2316-dcd0-4575-bd6b-5250f55ae860",
+    "369d3375-68cd-4e2a-9d69-05abf01af696",
+    "2594fa67-4a87-4ebd-9b56-729849d4a1ba",
+    "3c20c2de-2061-4a0c-b3be-489dd519daf6",
+    "432b979a-91b8-4bf8-adac-e5f9037ae717",
+    "b22f2f0a-8d1f-4c15-a744-2fd9d9978d2d"
+   ],
+   "triggers": [
+    "adding a log line",
+    "constructing an error message",
+    "sending telemetry or crash reports",
+    "persisting or broadcasting captured data",
+    "committing code that touched credentials"
+   ]
+  },
+  {
+   "area": "security",
+   "title": "Fail closed on key material and give every secret exposure an expiry and a scrub",
+   "statement": "Key material and revealed plaintext are managed for their whole lifetime, not just at creation. Fail closed when the keychain or key file cannot be trusted (authenticated at rest, permissions-first writes, legacy paths rejected by default and counted); give every exposure a bounded window (clipboard wipe, focus-aware re-mask, acknowledged once-only reveal); scrub run-scoped secret files on every exit path; and treat migration and rotation as all-or-nothing transactions verified by read-back. Forbidden: caching a failed key derivation, silently keeping a weaker legacy decrypt path selectable, and trusting file timestamps to invalidate secret-bearing builds.",
+   "detail_md": "**Why**: the failure class is temporal — a secret that was handled correctly at second zero and leaks or bricks at second thousand. The items record: a raw key blob accepted at rest lets any app-data writer plant a known key; a payload-selectable legacy decrypt path is a downgrade attack; caching a failed derivation bricks all credential crypto until restart; a build cache keyed on files silently ships a rotated-out secret; half-migrated secrets and cleared-source/incomplete-destination are the two designed-against migration failures; clipboard contents outlive the flow that put them there; and stale peer-key caches make rotation look like transport faults. **Tension**: fail-closed fights availability — the practiced resolution is an explicit, single-flag, documented opt-in for each weaker path (local-file key fallback, legacy decrypt window) with hit counters and written deletion criteria, never an implicit fallback.\n\nGoverns:\n- Fail closed on the keychain; cache only a successful derivation\n- Authenticate a key file at rest and write it permissions-first\n- Give secrets a type that cannot be serialized or cloned\n- Reject the legacy crypto path by default and count every hit\n- Scrub run-scoped secret files on every exit path, and sweep stale copies before writing\n- Wipe a secret off the clipboard on a timer, forcibly if unsure\n- Auto-re-mask revealed secrets on a focus-aware timer and keep the reveal toggle out of the Tab order\n- Gate a once-only secret reveal behind an acknowledgement\n- Migrate secrets all-or-nothing, clearing the old copy last\n- Detect silent key rotation by re-fetching the cheap PEM and re-importing only on change\n- Invalidate a build on the secret's value, not a file timestamp",
+   "topic": "security/secrets",
+   "kind": "decision",
+   "governs": [
+    "472cc4dd-c0ea-46e6-831a-24e546a666a7",
+    "76ed255e-281b-42c1-b731-38acf80dc27e",
+    "a166685f-7c8b-4ce4-a317-f78499967cd7",
+    "9bafe44d-6494-4ae3-8c71-629e0705c259",
+    "3c6c8a9d-6701-4aa9-837b-77ec519f2804",
+    "566b1c73-b31d-4db3-90bb-ed5dec20e228",
+    "2501d5a5-eb85-4802-b7c3-93709a647a2c",
+    "3c7884c2-ea1e-41cf-b7aa-bcc32f2bb28b",
+    "7e2b3b22-9671-4e2a-b76c-efba03156f50",
+    "cd19a621-b5f6-49a6-a8d2-bef4579e4f19",
+    "b52f9dae-6328-4672-8400-a32afb16fc16"
+   ],
+   "triggers": [
+    "storing a credential",
+    "deriving or caching an encryption key",
+    "revealing a secret in the UI",
+    "migrating or rotating secrets",
+    "writing secrets to temp or build files"
+   ]
+  },
+  {
+   "area": "security",
+   "title": "Authenticate the claim yourself; where you can't, say so loudly",
+   "statement": "Any trust-bearing assertion — a peer's identity, a 'verified' flag, a client address, provenance metadata — is proven on your side or treated as forgeable. Verify both halves of self-certifying identities, take signatures over domain-separated injective transcripts, add the third handshake leg that proves liveness, stamp provenance server-side, and run verifications in constant time over bytes read once. Where a surface genuinely cannot authenticate yet, the doctrine forbids pretending: name which filters are routing conveniences versus security controls, and log the unauthenticated posture with what an attacker can do.",
+   "detail_md": "**Why**: the items record exactly how claims get forged: a two-leg handshake replays forever because the initiator's first signature contains nothing the responder chose; a self-certifying id is spoofable unless the key both hashes to the id AND verifies the signature; leftmost forwarded-for entries mint fresh rate-limit buckets per forged hop; a client-sent 'verified' boolean is a request, not evidence; two fs reads between hash and sign open a TOCTOU window; invalid-hex signatures on a fast path leak timing. The honesty half is equally practiced: client-side guards carry explicit trust statements naming the unverified backend and the bypass, and unconfigured authenticity gates emit loud specific warnings instead of letting routing filters masquerade as auth. **Tension**: full verification costs handshake legs and latency, and honest 'this is not authenticated' comments feel like self-incrimination — the items treat both as cheaper than a boundary the next maintainer wrongly trusts.\n\nGoverns:\n- Make the handshake three legs, not two, to get mutual freshness\n- Domain-separate and injectively encode every signing transcript\n- Verify BOTH halves of an identity claim: key-to-id binding and signature\n- Read the bytes once when you hash-and-sign or hash-and-verify\n- Run the constant-time HMAC compare even when the signature hex is invalid\n- A client-supplied 'verified' flag is a request, not evidence — re-run the check server-side\n- Stamp app-owned provenance rather than trusting the agent's claim\n- Count forwarded-for hops from the right, and admit the limits\n- Name which filters are routing conveniences and which are security controls — and log the unauthenticated posture loudly\n- Ship a client-side security guard with an explicit honest trust statement",
+   "topic": "security/trust-boundaries",
+   "kind": "decision",
+   "governs": [
+    "22a34083-81a5-4950-96c0-2814e774eea2",
+    "5982806a-4cad-4a1c-b528-75a60d5711d6",
+    "ec120b3e-2e5e-4d87-be32-e6c0010015f7",
+    "eaecfe07-95ec-418d-a1cd-1d9a8ee5ed6d",
+    "291e4c48-23ae-43ba-827f-2d85191ebc77",
+    "b2ccfa62-c812-403f-a330-5b1164ad3f90",
+    "d253428c-f48b-427a-9d7e-b55ba846234a",
+    "dbf15747-c587-4c4c-ab15-d1867cd7f2b5",
+    "8ac2ffd5-7091-4d4f-a252-60841daa6f76",
+    "ca33d4fe-14ed-4bd8-829c-c2bf9bd61234"
+   ],
+   "triggers": [
+    "designing a handshake or pairing flow",
+    "verifying a signature or HMAC",
+    "trusting a client-sent status field",
+    "rate limiting by client address",
+    "documenting a partial security guard"
+   ]
+  },
+  {
+   "area": "security",
+   "title": "Default closed: corrupt, unverified, or ambient input is denied until proven",
+   "statement": "When state is corrupt, identity is unestablished, or capture is ambient, the safe interpretation is denial — never a default. Present-but-unparseable config blocks (only genuinely-absent config gets the documented default); unverified peers are served the fail-closed subset and labelled 'unverified', not 'unknown'; events deliver self-scoped unless an explicit filter widens them; ambient capture is gated per source at the capture site, default-OFF, with unknown sources failing closed. It forbids `unwrap_or_default()` on anything that becomes actionable, and forbids read-time-only filtering of capture.",
+   "detail_md": "**Why**: the named incident is SDLC2 Medical Bill at 0% value — every team's persona woke on every other team's event because delivery defaulted broad instead of self-scoped. The sibling traps are recorded too: silently treating a corrupt scope blob as broad-allow restores a narrowed credential's full reach with no log line; `unwrap_or_default()` turns an unparseable row into an approvable no-op the user can consent to; and a trusted-peer cache relying on manual invalidation gives a revoked peer a silent 30-second trusted window the moment one mutation site forgets to call invalidate. **Tension**: fail-closed produces visible breakage where fail-open produces silent overexposure — the items consistently choose visible breakage plus a loud skip/warn, and keep the two vocabularies (absent vs corrupt, unverified vs unknown) distinct so the choice is legible.\n\nGoverns:\n- Fail closed when serving data to peers whose identity isn't established\n- Distinguish absent config from CORRUPT config — corrupt fails CLOSED\n- Default event delivery to SELF-scoped; require an explicit filter to cross boundaries\n- Gate ambient capture at the CAPTURE site, per source, default-OFF\n- Never render a corrupt or empty row as an actionable control — skip it loudly\n- Don't rely on manual invalidation of a global static cache",
+   "topic": "security/trust-boundaries",
+   "kind": "decision",
+   "governs": [
+    "fb08f17a-bedf-49e8-9417-08055d642d2c",
+    "7e4c6c9b-fc59-4ae7-b762-3d4e1530283e",
+    "f7a75b0d-ecb1-46d4-bc5c-7fe2e65bb219",
+    "97683231-b00a-4d12-b51b-c4492a4fc615",
+    "863e6798-f4e7-4431-b6a2-8e62fe7f703c",
+    "d8cf28dd-9237-4b7b-9e33-fe57710a482e"
+   ],
+   "triggers": [
+    "handling unparseable config or rows",
+    "scoping event delivery",
+    "capturing ambient desktop context",
+    "serving data to unverified peers",
+    "caching trust decisions"
+   ]
+  },
+  {
+   "area": "security",
+   "title": "Outbound reach is a guarded capability: SSRF-proof clients, minimal child envs",
+   "statement": "Nothing in the system gets raw outbound reach. HTTP egress goes through one SSRF-guarded client — a single private-IP predicate, a connect-time DNS resolver, per-redirect-hop re-validation — injected into every embedded engine and module that fetches; agents get intent-shaped capability slugs with approval flags, never a general client; discovered endpoints are pinned to their issuer's host. Spawned processes mirror the discipline inward: cleared, allowlisted environments, blocked env-var name families (by prefix, not exact name), and the other auth mode's variables stripped. Forbidden: validating a URL once and then fetching it, and letting a third-party library construct its own client.",
+   "detail_md": "**Why**: single-point URL validation loses to DNS rebinding between check and connect, and to `Location:` headers carrying raw private-IP literals that skip DNS entirely — hence three layers, consolidated into ONE predicate so coverage (loopback, RFC1918, link-local, CGNAT, IPv4-mapped-IPv6, cloud metadata, `.internal`) cannot drift between callers. On the subprocess side: exact-name env denylists were defeated by runner namespaces (prefixed vars mapped back onto the blocked knobs), a vendor CLI silently billed the wrong account off an inherited credential, and probes inherit ambient secrets unless env_clear() plus an allowlist is the spawn default. A tampered OIDC discovery document redirecting codes to an attacker's host is the same doctrine at the auth layer. **Tension**: a single shared egress client and capability registry are chokepoints that every feature must route through — the items accept the coupling because a per-module client is exactly where one forgotten check becomes an SSRF probe.\n\nGoverns:\n- Connector egress needs SSRF defence at three layers: one private-IP predicate, a connect-time resolver, and per-redirect-hop re-validation\n- Inject your own egress-guarded HTTP client into any embedded fetch engine\n- Give an agent capability slugs, not an HTTP client\n- Pin auto-discovered OAuth endpoints to the issuer's own host\n- An env-var denylist at the subprocess boundary must block name families, not just exact names\n- Spawn detection probes with a cleared, allowlisted environment and byte-capped output readers\n- Strip the other auth mode's env vars from every spawned CLI",
+   "topic": "security/trust-boundaries",
+   "kind": "decision",
+   "governs": [
+    "f6df3890-1145-4a77-952c-85ac2398234e",
+    "310566a9-92f8-4790-af54-9cf50aaabf80",
+    "dfd16faf-b22e-4106-8a29-9af289096495",
+    "d11b5a55-736a-4f03-8ddd-5c0ea47e3f64",
+    "5346ba28-ffc9-4d7c-98cf-12b0236beee4",
+    "a6aa56cb-28b1-461f-ba52-68dab4c51b88",
+    "dd9dcf06-b37d-40ef-906f-e0fadc3faa49"
+   ],
+   "triggers": [
+    "fetching a user-supplied URL",
+    "embedding a scraping or fetch library",
+    "spawning a child process",
+    "setting env vars for a subprocess",
+    "giving an agent external reach"
+   ]
+  },
+  {
+   "area": "security",
+   "title": "Bind consent to the exact artifact and hazard that was shown",
+   "statement": "A user's approval is evidence about one specific thing at one specific moment — the artifact previewed, the hazard named, the run described. Tag acknowledgements with the hazard kind and reset them when the preview's identity changes; pass the previewed hash into the apply call; disarm approve buttons when the queued request is replaced; and back consequential actions with a declarative consent catalog fed live run data under a same-edit truthfulness contract. Forbidden: a single boolean 'user accepted', mutating an integrity-checked payload after verification, and generic consent copy standing in for what this run will do.",
+   "detail_md": "**Why**: consent laundering is the recorded failure class — a boolean acknowledgement let consent for one hazard silently carry into a different hazard when server-derived flags flipped between preview re-fetches; a click in flight against the previous queue head could auto-approve its replacement; and 'conveniently' injecting customizations into a checksum-verified payload before the check forces either rejection or a gutted integrity guarantee (customizations thread through a parallel channel merged after verification instead). The consent catalog adds the positive form: impact class, the ordered steps a click actually sets off, standing boundaries, and run-specific facts passed in late so the copy is true of THIS run. **Tension**: precise consent is friction (re-acknowledgement on every preview change, disarm delays) — the items spend that friction only on consequential actions and keep reads auto-firing.\n\nGoverns:\n- Tag danger consent by which danger was shown, and bind the apply call to the exact preview it approved\n- Disarm the approve button for a beat whenever a queued consent request is replaced\n- Back every consequential action with a consent catalog: impact class, ordered steps, standing boundaries — fed live data so the copy is true of THIS run\n- Never mutate an integrity-checked payload — thread customizations through a parallel channel",
+   "topic": "security/trust-boundaries",
+   "kind": "decision",
+   "governs": [
+    "eb62db73-797d-424d-be5a-6f09ccf6ae15",
+    "ee9f971f-928b-4c9f-87b5-6c76d28259c5",
+    "ae5ee047-2926-4a2c-885b-b33cb53b4573",
+    "5efca890-501c-4ea5-9a6d-0efdb8196dd1"
+   ],
+   "triggers": [
+    "building an approval or consent dialog",
+    "applying a previewed import",
+    "queueing consequential requests",
+    "customizing a signed or checksummed artifact"
+   ]
+  },
+  {
+   "area": "auth",
+   "title": "Authenticated is not authorized: every privileged surface gets a declarative gate",
+   "statement": "Proving who a caller is never implies what they may do. Every message family, command, route, and capability with real power carries its own authorization gate, expressed declaratively — an attribute on the handler, a requires_approval flag on the capability, a composable fail-closed policy object — and enforced at exactly one chokepoint, with the decision logic pure and testable apart from persistence. Forbidden: hand-written guard calls at the top of handlers, per-route ownership checks that diverge, and gating a cross-tenant fallback on a demo/UI flag.",
+   "detail_md": "**Why**: hand-rolled per-callsite guards are easy to omit and diverge silently — and the divergence is where cross-tenant reads slip through; conflating a UI unlock with an authorization predicate is named here as the classic fail-open data-egress bug. The practiced structure makes the gate data instead of discipline: an attribute macro that prepends the guard and derives the audit name so it cannot drift; a registry-walking test asserting every non-read-only capability slug carries requires_approval (so an ungated write capability fails CI, not a live audit months later); a second gate keyed on a local registry row for powerful message families even after a successful handshake; and a dependency-free decision module fed grants plus an injected clock. **Tension**: declaring levels only on sensitive commands means coverage is a policy, not a proof — one item says exactly that out loud, which is the honest boundary of this doctrine.\n\nGoverns:\n- Authenticated is not authorized: gate privileged message families at one chokepoint\n- Encode 'needs human approval' as data on the capability, and enforce the rule with a registry-walking test\n- Declare a command's auth level as an attribute, not a guard call\n- Decide access in a pure function; keep persistence separate\n- Express route authorization as one composable fail-closed policy",
+   "topic": "auth/authorization",
+   "kind": "decision",
+   "governs": [
+    "0defed8c-0bfa-46da-8a49-7cbcf0fc2900",
+    "12006281-d5ff-4d5a-a888-bb39195d967c",
+    "5825caee-0012-4c74-ba1b-977463df043f",
+    "d4ef65c1-c2d5-4adf-af0f-76d9109f5c7f",
+    "7f3c9b5a-4480-4cc1-ab57-245c958ddeab"
+   ],
+   "triggers": [
+    "adding a new command or route",
+    "adding an agent capability",
+    "handling a privileged message type",
+    "writing an ownership check",
+    "adding a cross-tenant fallback"
+   ]
+  },
+  {
+   "area": "auth",
+   "title": "Issue least-privilege credentials: scoped, expiring, hashed at rest, shown once",
+   "statement": "Every credential the system mints or accepts is narrowed by construction: expensive scopes named per resource (a blanket grant has no path to exist), TTLs clamped into a server-owned window with cap, default and non-zero floor, plaintext revealed exactly once behind an acknowledgement, only a hash plus display prefix at rest. Approval flows default scopes to what was requested and let the user narrow, never widen. Revoke is distinct from delete so the audit trail survives, and staleness is surfaced rather than silently tolerated. Forbidden: trusting client clocks for expiry, blanket capabilities born of creation-time friction, and a mintable-scope vocabulary that drifts from enforcement.",
+   "detail_md": "**Why**: an exfiltrated blanket key is what the attacker monetizes, and blanket keys exist because enumerating targets is friction at creation time — so the doctrine removes the path (enabling the expensive capability without naming a target is a blocking validation error). The drift trap is recorded concretely: a scope enforced per endpoint but missing from the central mintable vocabulary collapsed least-privilege into all-or-nothing, discovered while onboarding a real customer — mint through the real endpoint in tests. The layer above provider tokens matters too: a third-party token grants more than the user wants an agent to touch, so a credential can narrow a token's scope, shipped warn-before-block. Bootstrap break-glass credentials and scoped managed tokens are split because conflating them makes one requirement impossible. **Tension**: never-expiring options and unscoped bootstrap tokens are sometimes operationally necessary — the items allow them explicitly but never as the default, and demand their meaning be defined in one function.\n\nGoverns:\n- Enumerate expensive scopes per resource and time-box by default\n- Let a credential narrow a token's scope, and ship warn-before-block\n- Clamp caller-supplied lifetimes into a server-owned window with max, default and floor\n- Keep the mintable scope vocabulary and enforcement in one place\n- Store API keys as hashes with a display prefix, and separate audit-preserving revoke from delete\n- Surface probably-forgotten API keys with a two-window staleness heuristic\n- Split bootstrap tokens from scoped managed tokens\n- Gate remote-app pairing on an explicit approval that mints an origin-bound, scoped, expiring key",
+   "topic": "auth/tokens",
+   "kind": "decision",
+   "governs": [
+    "47b55b54-9319-45da-81d1-96a383338f71",
+    "165cbc92-fd2d-4b7b-abab-5eb48418466e",
+    "cb9ada5b-5f58-4707-89ee-c31c644fd946",
+    "06d3ac67-37dd-47db-9e4f-6d75b0528076",
+    "83dc96d8-af6f-4ae7-bd6f-4dde0007043d",
+    "2b7dec75-733a-40ed-ab1d-9b9653bf10b7",
+    "9a62682b-5445-498e-bbe4-a216325487df",
+    "e9975d55-cff1-422b-a862-1412567f9b2f"
+   ],
+   "triggers": [
+    "minting an API key or token",
+    "designing a scopes model",
+    "approving a pairing request",
+    "storing issued credentials",
+    "adding a new enforced scope"
+   ]
+  },
+  {
+   "area": "auth",
+   "title": "Make tenant isolation structural — a seam that cannot be skipped",
+   "statement": "Every multi-tenant system fails the same way: one new query that forgets the filter. Put isolation where a new query cannot skip it — a database-enforced row-level policy with the app's role demoted so policies actually apply, or a scope argument the type system requires — and resolve the tenant exactly once at the request boundary, threading the value down into session-agnostic storage code. Per-route checks and hand-threaded tenant ids are the documented exception, never the default. Every table living outside the boundary is named as such.",
+   "detail_md": "**Why**: this portfolio already contains a case where the weaker per-call form leaked a cross-tenant read. The structural traps are specific and recorded: RLS does nothing when the app connects as owner/superuser (those roles bypass policies by design), so pooled connections must be demoted at connect time and tenant scope set as transaction-local config inside a scoped transaction — never on a pooled connection another request will reuse; and an operational table set (job queues, tokens, onboarding) reached through the raw pool while being described as 'non-tenant' misleads the next maintainer into trusting a boundary that is not there. Resolution happens once, at the framework boundary, from session plus a membership-validated cookie, failing fast rather than falling back to a shared default org. **Tension**: structural isolation costs retrofit effort and needs named escape hatches for genuine wide readers (pipeline workers) — the doctrine's answer is to make every escape hatch separate, named, and documented.\n\nGoverns:\n- Make tenant scope structurally unforgettable, not per-call discipline\n- Make the database enforce tenancy by demoting the app's role\n- Name every table that sits outside your RLS boundary\n- Resolve the tenant once at the request boundary and thread it down",
+   "topic": "auth/tenancy",
+   "kind": "decision",
+   "governs": [
+    "84f49d9b-0faa-4b50-950c-382052739f09",
+    "4a6dc28f-d5db-4b5a-8ccd-3faf80644eab",
+    "1a1de099-335e-4049-94ad-959539daa6cb",
+    "37b19955-e39d-450c-90c0-905c2c5bfe74"
+   ],
+   "triggers": [
+    "writing a new tenant-scoped query",
+    "configuring database roles and pooling",
+    "adding an org or workspace concept",
+    "resolving the active tenant per request",
+    "adding a background worker that reads wide"
+   ]
+  },
+  {
+   "area": "auth",
+   "title": "Treat token plumbing as adversarial and concurrent",
+   "statement": "The machinery between 'user consented' and 'valid token in hand' is both attackable and racy, and must be engineered as such. Sign OAuth states so forgery and lateness are distinguishable outcomes; keep loopback listeners alive past stray hits against an absolute deadline; serialize refresh per credential; treat a provider-rotated refresh token as irreplaceable — retry the local commit until it sticks, verified by read-back; parse provider responses leniently; seed expiries at connect; and validate the system clock before minting anything time-bound. Forbidden: a bare-nonce state, a listener that acts on the first thing that arrives, and two code paths exchanging the same refresh token.",
+   "detail_md": "**Why**: every item records a real symptom class. A nonce-only state made every slow enterprise sign-in surface as a CSRF warning; a discoverable loopback port let a port scanner consume the consent so the user saw a timeout; concurrent refreshers (timer + healthcheck + manual) both exchanging one rotating refresh token permanently killed the credential; a transient keyring hiccup after the provider had already burned the old token bricked it with no auto-recovery; a provider returning expires_in as a JSON string got a default lifetime stamped that outlived the real one — the daily-401 bug; and a pre-epoch clock fabricated 0 timestamps surfacing as 'Authorization took too long'. **Tension**: per-credential locks and forced refresh-and-retry add latency and deadlock risk — one item specifically orders 'drop your lock before calling the refresh helper' and 'evict the cached token on force', because the naive composition of the right pieces still fails.\n\nGoverns:\n- Sign the OAuth state and report stale states as expired, not invalid\n- Keep the loopback OAuth listener alive past the first stray hit\n- Serialize OAuth refresh per credential and persist rotated tokens\n- When the provider has already burned the old token, retry the local commit until it sticks\n- On a 401 from an OAuth-backed call, force one refresh-and-retry — and drop your lock first\n- Parse expires_in leniently and seed an expiry at connect time\n- Validate the system clock before minting anything time-bound\n- Consume short-lived tokens for the whole batch before any interactive pause",
+   "topic": "auth/tokens",
+   "kind": "decision",
+   "governs": [
+    "89be0065-a2d0-49c3-bf30-cbce673ce77a",
+    "1e9c668e-2438-4d44-951a-4a79c014852e",
+    "1239ecdd-9ae0-4807-ad3f-4e5dea8ca32e",
+    "4d9d1ae6-24f5-42c4-9567-9b3fa4c2fe1f",
+    "2a10f7be-815d-41ce-b343-9411f42b41bc",
+    "4b710940-624b-4976-b5e9-3f71f9e95487",
+    "d65782b0-af6c-4a8d-a8b7-4b4cf20befcb",
+    "723fbf1f-c2ad-4c8e-9e7a-5861ec7c9f6a"
+   ],
+   "triggers": [
+    "implementing an OAuth flow",
+    "refreshing an access token",
+    "handling a 401 from a provider",
+    "persisting rotated tokens",
+    "batching operations that redeem tokens"
+   ]
+  },
+  {
+   "area": "auth",
+   "title": "Degrade auth honestly: one predicate, ordered fallbacks, written invariants",
+   "statement": "Where auth must degrade — keyless dev builds, unconfigured consoles, CLI-session fallbacks, provider switches — the degradation is expressed once and documented, never improvised per call site. Fail open in dev and closed in production behind a single predicate that both the request gate and the UI read; return 'not configured' as a state distinct from 'unauthorized'; order resolution portable-first (a stored credential always beats local CLI auth); and write the flow's invariants and accepted risks down next to the code. Forbidden: a UI that promises what the API does not honour, and treating an auth-provider flip as a config toggle when it is a silent session drain.",
+   "detail_md": "**Why**: the recorded failures are all divergence-between-surfaces bugs. The same missing configuration must behave differently in dev and prod, and when two code paths implement that separately the UI ends up promising what the request gate refuses; an unconfigured shared secret rendered as a broken write path instead of an honest read-only state; and flipping an active-provider switch made every live session of the other medium invisible at once — reported as an outage, because nothing wrote down that a provider change is a planned session drain. Portable-first resolution is the same honesty about environments: local CLI auth does not survive CI, another device, or a headless run, so it is strictly a fallback, memoised and hard-timeout-bounded off the hot path. **Tension**: writing invariants into wrapper docs and switch sites feels like ceremony, but it is what turns an accepted risk into a decision the next maintainer can see rather than a trap they rediscover.\n\nGoverns:\n- Fail open in dev and closed in production behind one predicate\n- Size the auth model to the operator count, and say when it's unset\n- Treat an auth-provider flip as a session drain, not a config toggle\n- Order auth resolution portable-first: a stored credential always beats local CLI auth, which is only a fallback\n- Encode auth-flow invariants in the wrapper docs beside each call",
+   "topic": "auth/tokens",
+   "kind": "decision",
+   "governs": [
+    "2f2fe3b5-e58f-4658-8cb9-43d8319f8ddb",
+    "1fcf8957-6f1c-46b2-92e8-0cdd4e382a97",
+    "1f70e40c-497c-409e-9ea9-f72139a544d6",
+    "b71b1663-5c25-4a4e-ab00-36967d7f2094",
+    "78d8fd30-210a-4c2a-b5cc-819e77e085ba"
+   ],
+   "triggers": [
+    "supporting keyless dev or demo builds",
+    "switching auth providers",
+    "falling back to CLI or local auth",
+    "handling unconfigured auth state",
+    "documenting an auth flow"
+   ]
+  },
+  {
+   "area": "observability",
+   "title": "Unknown is a first-class state: absence is never zero, success, or health",
+   "statement": "Any surface that reconstructs history, aggregates independent sources, or matches records must carry an explicit unknown/stale/insufficient state and render it — never substitute a default that reads as a measured fact. A missing record means the observation is missing; an unmatched row, orphan, or unserved request gets its own visible bucket; an all-clear requires a positive health condition, not merely the absence of a matched problem. Forbidden: green cards by default, fabricated trends from a single window, and metrics that cannot currently differentiate rendered as ranking signal.",
+   "detail_md": "**Why**: defaults masquerading as measurements are the recorded failure class across the whole area. A recommendation ladder ending in green reassured users about a broken system whenever no rule matched; front-half/back-half splits of one loaded window shipped as 'period-over-period change' that users acted on; aggregations quietly dropped exactly the orphaned rows an operator most needs; a ledger that guessed between 'process died' and 'still working' would conflate two different facts — so an unfinished row deliberately stays running forever; and a sim channel with no truth partner reports 'insufficient', never a gap of 0. The positive form: stamp coverage on what was READ, record unknown depth as owing, detect a degenerate (all-tied) metric from the data itself and label it. **Tension**: honest unknowns look worse on a dashboard than optimistic defaults — every item chooses the uglier, truer rendering, because operators act on what they see.\n\nGoverns:\n- Make 'unknown' a first-class state, distinct from zero and absent\n- Gate an advisory all-clear on a positive health condition\n- Stamp coverage on WHAT WAS READ, not what survived dedup\n- Weight aggregate read-depth by territory size, and return null over an empty denominator\n- Learned per-entity thresholds need a sample floor, absolute floors, and 'absent band means unknown, not zero'\n- Give orphans and collisions their own bucket in every rollup\n- Label a non-differentiating metric as tied or unavailable instead of letting it masquerade as ranking signal\n- A failed run is a completed observation; an unfinished row stays running — a ledger must not guess between them\n- Judge a simulation channel by pairing each sim point with its nearest real point and trending the normalized gap\n- Log the intents your matcher could NOT serve, and surface them to the curator",
+   "topic": "observability/metrics",
+   "kind": "decision",
+   "governs": [
+    "76136f12-cbe0-47fb-8544-a854baf26170",
+    "fe4bfb60-037f-4453-804f-06269e70799b",
+    "12553e59-c323-4bee-8fae-5668ae65511c",
+    "2743337a-27cb-4c0d-87b9-22d13e722af2",
+    "dc7fa608-19bf-4d9c-88a7-bd0b3e54215d",
+    "b83f74d1-e513-4b91-ae93-1f5ad56e3db7",
+    "7d3fffa0-e264-40ff-b0fd-2129ab036177",
+    "23bfcfbe-f913-45b1-822e-5b20ca162eb8",
+    "3c2916b5-ab77-4ba3-8451-1b7a18ddb646",
+    "60070831-a400-4864-b8ea-7a83d8a103fe"
+   ],
+   "triggers": [
+    "aggregating metrics into a rollup",
+    "rendering a health or status indicator",
+    "computing a trend or comparison",
+    "handling rows that fail to match or join",
+    "reporting coverage of a scan"
+   ]
+  },
+  {
+   "area": "observability",
+   "title": "Every number must be able to be bad: measure, don't fabricate; pin the population",
+   "statement": "A displayed metric earns trust only if it was actually measured, from a numerator and denominator drawn from the same population and window, through a path where failure can register. Never ship a hardcoded constant that renders as computed; badge reconstructed or estimated values as synthetic; write back the real outcome of delegated work rather than success-at-emit; and design self-measuring loops so they are structurally unable to fake a win. History integrity is part of this: append only real changes, and never fold a new dimension into a composite retroactively.",
+   "detail_md": "**Why**: the flagship incident is the health dashboard that reported a perfect error rate by construction — every error exit returned before the ledger write, so is_error was 0 on all 1,734 rows; the fix is an arm/disarm guard ensuring exactly one failure row per failed attempt. The siblings: a literal `strength: 0.7` rendered as an analytics measurement and poisoned trust in everything beside it; mismatched populations made error_rate + success_rate stop summing to 100 so alerts under-fired; a recreated CPU sampler always read 0%; scheduled automation recorded success at request-emit time; composite scores shipped with double-counted inputs and non-monotonic curves, both invisible until someone did the algebra; and split-window trends manufactured period-over-period noise. Self-closing loops get three coded honesty rules: proof the sensor ran before absence counts as cleared, 'unchanged' and 'regressed' as first-class outcomes, and a material-improvement noise floor. **Tension**: real measurement needs sample floors and sometimes returns nothing — returning nothing is correct; one coincident bad day must not print a 1.0 correlation.\n\nGoverns:\n- Record a failure row for every attempt via an arm/disarm guard, so backpressure is not counted and no attempt counts twice\n- Match a rate's numerator and denominator to the same population and window\n- Never fabricate a trend from a single loaded window\n- Never ship a hardcoded constant that renders as a computed metric — measure it, with a minimum-sample floor\n- Prove a composite score's inputs are independent and monotonic\n- Publish each metric's identity: source, window, computation\n- Flag reconstructed telemetry as synthetic and badge it, never present estimates as measurements\n- Make a self-measuring loop structurally unable to fake a win\n- Guard a derived-score history's integrity: append only real changes, and never fold a new dimension into the composite retroactively\n- Write back the REAL outcome of a delegated run\n- Sample host metrics from ONE long-lived sampler, first sample marked invalid",
+   "topic": "observability/telemetry",
+   "kind": "decision",
+   "governs": [
+    "1d219f08-e2dd-4b7b-9998-681b0cf2c16e",
+    "04fd241e-935f-4796-81a8-f726b9bda3ae",
+    "ed13533a-b830-4713-a650-f9afb44e7fbe",
+    "776643a0-2545-493d-8ef0-e3da574c7d1e",
+    "07ffedcf-a7b5-420a-8fbd-4adc72f64342",
+    "b66e041a-a78a-4384-afe5-78249ac19458",
+    "2c80ce2a-4c52-49b5-9286-d205e0728ced",
+    "44325018-918e-4e7b-ba0c-208b3d0f3f10",
+    "eb949253-347f-497a-b6ff-a8d8d62075f4",
+    "add48c82-06ea-4d2a-a392-9c12d36b816b",
+    "7a2290e3-c67f-4513-9d34-aa5bd5bcfb34"
+   ],
+   "triggers": [
+    "displaying a computed metric or score",
+    "defining a success or error rate",
+    "recording outcomes of delegated work",
+    "building a self-verifying loop",
+    "adding a dimension to a composite score"
+   ]
+  },
+  {
+   "area": "observability",
+   "title": "Instrument at chokepoints, and never let the recorder fail the work",
+   "statement": "Instrumentation you have to remember to add is instrumentation you will forget: bake it into the shared layer everything already passes through — the transport wrapper, the repository macro, the one logging helper, the one audit-insert function, the one error-swallowing helper. And the recorder must be structurally unable to fail or distort the work it measures: best-effort writes, tolerant parsing, NULLs over skipped rows, and chokepoints that count their own failures. Forbidden: bare console calls, audit writes in command handlers, and instrumentation whose Result propagates into the measured operation.",
+   "detail_md": "**Why**: the area's two recurring tensions are coverage and safety, both resolved by chokepoint placement. Coverage: macro-generated repository CRUD times every query for free; a closed event union plus one lint-held logging helper means the type checker catches the branch that logs a partial row; the audit write lives in the repository, not the handler, so background ticks and engine subscriptions are audited too. Safety: auditability and availability genuinely conflict — failing the operation on audit failure causes outages, swallowing it yields decrypts with no trail — so the third path is one append-only insert whose failures increment a counter the product surfaces in its own trust UI; the recorder returns Option and logs instead of erroring, and a missing measurement records a row with NULLs because the event still happened. Counting swallows inside the helper turned 400 invisible breadcrumbs per session into one visible issue with zero call-site changes. **Tension**: chokepoints lose caller-origin detail (the repository doesn't know which surface called) — the items accept that trade explicitly.\n\nGoverns:\n- Give the recorder a signature that cannot fail the work\n- Count the swallows inside the helper, not at the call sites\n- Generate repository CRUD from macros so every query is timed for free\n- Keep a ring for percentiles and lifetime counters for rates\n- Log through one closed event union, never a bare console call\n- Audit through one chokepoint that counts its own failures\n- Write the audit entry in the repository, not the command handler\n- Stamp ambient write-attribution via task-local plus thread-scope RAII, readable inside database hooks",
+   "topic": "observability/instrumentation",
+   "kind": "decision",
+   "governs": [
+    "7a6aee5d-63ec-45d9-b8f4-c82e2893deb4",
+    "d581776b-4e03-4628-bcd5-d5254a2a7ef6",
+    "74354cca-0280-4b12-bf80-d334c0dfb06d",
+    "3abc6673-4cba-4a70-9d17-cbd51c9725f0",
+    "8acb387d-d6c4-4723-a189-ac63f9849ae9",
+    "360d9899-d117-4561-a8dd-53cc87e16f16",
+    "d78d1a1b-e0fe-412d-b6e2-b20788fb0f6e",
+    "a0acef58-33f4-4152-a002-44776c7c75d6"
+   ],
+   "triggers": [
+    "adding metrics to a code path",
+    "writing an audit or ledger entry",
+    "adding a log or event type",
+    "swallowing an error intentionally",
+    "measuring query or call durations"
+   ]
+  },
+  {
+   "area": "observability",
+   "title": "Alert on crossings, not levels — with hysteresis, budgets, and durable episodes",
+   "statement": "An alert is a statement that a state CHANGED, not that a condition holds. Fire once per episode via a durable per-subject row that survives restarts; damp the input (EMA) and separate enter/exit thresholds so band boundaries don't flicker; latch repeated-rejection warnings per streak and budget threshold warnings per key per window; require both a minimum terminal sample and a strict majority before painting anything red; and age-gate anything presented as happening now. Evaluation runs in an always-mounted background service — never only in the tab that displays the results.",
+   "detail_md": "**Why**: each rule answers a recorded noise or blindness mode. Rules evaluated only in the observability screen's data hook meant alerts fired only while that screen was open — and two overlapping ticks could race past the cooldown and double-fire; per-event emission (instead of per-episode) re-alerts on every failing sample and forgets state across restarts, so the episode lives in a table; raw-sample gauges flicker at every band boundary without the enter/exit gap; a hammering caller either floods one warning per call or (with an unreset latch) never warns on a later independent streak; a single bad run on a quiet morning painted the fleet red until a minimum-sample floor and strict-majority ratio were both required, with thresholds as named constants carrying per-constant rationale; and dashboards retaining weeks of anomalies let an old spike masquerade as a current critical without a recency bound. **Tension**: hysteresis, floors, and budgets all delay true positives slightly — the items choose that over operators learning to ignore the channel.\n\nGoverns:\n- De-duplicate alerts with a durable episode row per subject\n- Smooth a noisy metric, then band it with two-threshold hysteresis\n- Alert evaluation must not live in the tab that displays alerts\n- Warn on the crossing, not the level — latch per rejection streak, reset on admission\n- Budget threshold warnings per key, and summarise the suppressed\n- A red fleet indicator needs both a minimum terminal sample and a strict-majority ratio\n- Age-gate 'live' alerts derived from a retained analytics window",
+   "topic": "observability/alerting",
+   "kind": "decision",
+   "governs": [
+    "d9d856cc-8117-40ff-a24a-ea910d94695f",
+    "70159d2b-2c81-4364-8d98-37537a408122",
+    "7c8258b3-12e1-44fc-b1c9-e7e647dfa59e",
+    "e164c8d1-8b03-489e-9606-d1f3f59e2b4e",
+    "6eec86f0-95a1-4f91-9f76-bc46b60d5af1",
+    "c79a5cc2-cf3d-4f28-9a45-339f193238cd",
+    "9bb4b55d-ce18-4655-abf2-c83b212ffb83"
+   ],
+   "triggers": [
+    "adding an alert or warning rule",
+    "thresholding a noisy metric",
+    "rendering a red/failing indicator",
+    "logging inside a rate limiter or breaker",
+    "deciding where alert evaluation runs"
+   ]
+  },
+  {
+   "area": "observability",
+   "title": "Liveness comes from evidence the subject cannot fake",
+   "statement": "A process, run, or schedule is alive only if independent evidence says so — never because it claims to be, and never because its terminal record simply hasn't arrived. Probe, don't infer (round-trip a real write); corroborate idle claims with artifacts the subject can't fake (log byte growth); derive stall state from output silence with graded thresholds; time-bound 'working' by the producer's own heartbeat cadence while leaving human-wait states deliberately unbounded; and wire any new liveness signal as corroboration that degrades to the old rule when its evidence is unusable.",
+   "detail_md": "**Why**: the terminal row that clears a state may simply never arrive — crash, cancel, machine sleep — so any liveness rule that waits for it reports 'working' forever; conversely a managed process saying 'idle' is a hint, not a fact, and the practiced check snapshots a baseline and revives the state when the transcript grows past it. Health checks that infer from configuration miss the actual broken thing, hence throwaway keyring round-trips and TEMP-table writes, each failing item shipping its remediation. Windows are principled, not arbitrary: freshness horizons come from the producer's heartbeat cadence, slot-to-run matching tolerance caps at half the neighbour gap so a fast schedule can't steal its neighbour's run (unmatched slots stay explicitly unknown), and 'waiting on a human' is deliberately unbounded because review gates legitimately hold for hours. **Tension**: new signals can be wrong too — so they may veto or confirm incumbent rules but never replace a trigger, and every rule falls back to exactly the pre-signal behaviour when the new evidence is unusable.\n\nGoverns:\n- Corroborate an idle claim with an artifact the process can't fake\n- Derive stall state from output silence when there is no heartbeat\n- Presence from an append-only feed: time-bound the working state, leave the waiting state unbounded\n- Health checks must PROBE, not infer\n- Add a new liveness signal as corroboration that degrades to the old rule\n- Cap slot-to-run matching tolerance at half the neighbour gap",
+   "topic": "observability/liveness",
+   "kind": "decision",
+   "governs": [
+    "459dfd32-5357-47f0-bb98-c1e4d84bc54f",
+    "0e406f39-bcfc-4fab-a82a-8d514f2e5eaa",
+    "11a88ee6-930a-441d-b544-4a101cc2b687",
+    "6e719a98-bf1b-469e-b0cf-03cf988b7d9a",
+    "18c072cf-a02e-437f-9a72-cf9d98db8e8d",
+    "da3c24f4-0f77-4c89-a9ac-1b89d6ba2294"
+   ],
+   "triggers": [
+    "showing a running/idle/stuck state",
+    "writing a health check",
+    "detecting a stalled job",
+    "matching scheduled slots to runs",
+    "adding a heartbeat or staleness rule"
+   ]
+  },
+  {
+   "area": "observability",
+   "title": "Capture bounded evidence at the failure site so incidents are diagnosable later",
+   "statement": "The moment of failure is the only moment the evidence exists — capture it there, bounded and structured. Keep a capped stderr ring so a timeout is diagnosable after the fact; attach snapshot, tail, and an ended-vs-unresponsive flag inside the wait primitive itself, with a content-free shape for shareable logs; write a structured stop-reason row for every path where an automation did NOT continue; name the subtype of every empty terminal envelope; tag refused handshakes with their concrete stage; and assert cross-table invariants at startup with a loud error log, never a crash. Forbidden: dropping a stream line silently, and evidence capture that can itself fail or hang the work.",
+   "detail_md": "**Why**: undiagnosable absence is the failure class — a timed-out subprocess with no stderr tail, a turn that BROKE looking identical to a turn that had nothing to add (error_max_turns carried no text until the subtype was named), an operator unable to answer 'why did this chain stop?' until every non-continuation path (suppressed handoff, cycle skip, depth ceiling, quarantine, cost ceiling) wrote a structured stop-reason row keyed by trace id, and a misconfigured device indistinguishable from an impersonation attempt until rejection logging tagged the handshake stage. Bounds and best-effort are integral, not optional: 32KB char-boundary rings, pool acquires converted from hangs into recoverable errors with labeled starvation logging, audit writes that never fail the cascade, and startup invariant checks that log offending ids for forensics but do not abort boot — a transient migration inconsistency may be acceptable while a silent one regresses undetected. **Tension**: evidence can carry user data — the wait primitive exposes a content-free summary for shareable logs, verified by a test.\n\nGoverns:\n- Keep a bounded stderr ring so a timeout is diagnosable\n- Capture timeout diagnostics inside the wait primitive itself, with a content-free shape for shareable logs\n- Never drop a stream line silently — an empty terminal envelope must name its subtype\n- Audit why an automation cascade did NOT continue, one structured row per non-continuation\n- Log refused handshakes at warn with the concrete stage and reason\n- Instrument pool acquires with a labeled starvation threshold, and convert acquire hangs into recoverable errors\n- Assert cross-table data invariants at startup — loud error log, never a crash",
+   "topic": "observability/diagnostics",
+   "kind": "decision",
+   "governs": [
+    "62b4a05e-ebbb-4a70-bfc9-d81f605ed022",
+    "c1540d86-c812-4aad-b1fa-a62c69b18578",
+    "b7463490-d404-43ac-8add-2d1233baa3f0",
+    "56d7606e-47c1-4430-96cd-574a4b84076a",
+    "2d79d06f-3a91-410a-b02e-f1a7a8fa5205",
+    "ba41ec0c-2942-4ae8-a383-88403f3ffcb3",
+    "f8acab83-dc32-4685-81b2-eb81a52684c6"
+   ],
+   "triggers": [
+    "handling a timeout",
+    "parsing a stream protocol",
+    "deciding what to log on rejection",
+    "adding a stop or skip path to automation",
+    "running post-migration checks"
+   ]
+  }
+ ],
+ "orphans": []
+}

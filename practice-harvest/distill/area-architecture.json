@@ -1,0 +1,612 @@
+[
+ {
+  "id": "851670b5-f563-4c1f-8917-bcdc9ea72dac",
+  "kind": "decision",
+  "title": "A dry-run reuses the real pipeline's validate stages but persists nothing",
+  "statement": "Build execution previews by running the production pipeline's exact validation stages (credential resolution, contract checks, prompt assembly) and stopping before the spawn stage — deliberately creating NO execution row, so previews stay out of every metric query, dashboard, and activity feed by construction rather than by filtering.",
+  "topic": "architecture/boundaries",
+  "abstraction": "meso",
+  "ftype": "architecture",
+  "governing_id": "32633fd9-58b2-497c-ab0c-d5f2845c3ea3"
+ },
+ {
+  "id": "32633fd9-58b2-497c-ab0c-d5f2845c3ea3",
+  "kind": "pattern",
+  "title": "Keep shared primitives store-free by taking capability slots from the host",
+  "statement": "A shared component library stays domain-free when primitives receive capabilities as slots instead of importing app stores: an ErrorBoundary takes `onGoHome`, a renderer takes `onExecutePersona` and renders actions disabled-with-explanation when absent, a destructive-confirm takes `blastRadius` as a ReactNode the host fetched, a board takes `renderCard`. The host owns fetching and wiring; the primitive owns behaviour — which is exactly what lets it live in a catalog.",
+  "topic": "architecture/boundaries",
+  "abstraction": "macro",
+  "ftype": "module-boundary",
+  "governing_id": null
+ },
+ {
+  "id": "660345a7-82bf-4b38-85fe-aa87e3c180a9",
+  "kind": "pitfall",
+  "title": "Two components with the same name and divergent classifiers — an import typo silently changes behavior",
+  "statement": "The repo carries two `TerminalBody.tsx` files with the same export name: one uses the shared terminal line classifier/style map, the other defines a local substring-matching classifier with a different colour language. An import-path typo silently swaps classification rules, and terminal styling is maintained twice. Shared classification belongs in one module; if two components must share a name, one should re-export or delegate to the other.",
+  "topic": "architecture/boundaries",
+  "abstraction": "meso",
+  "ftype": "module-boundary",
+  "governing_id": "32633fd9-58b2-497c-ab0c-d5f2845c3ea3"
+ },
+ {
+  "id": "f1ccd8dc-1994-4f1e-b957-146bd45967ab",
+  "kind": "decision",
+  "title": "Two surfaces answering the same question must call the same predicate module, not fork it",
+  "statement": "When a second surface (canvas cell) mirrors an affordance that already exists elsewhere (passport wall gear), it must invoke the SAME applicability functions — 'a canvas cell is clickable exactly when its wall row would show a gear' — instead of re-deriving the answer. The mapping layer is thin: the registry names the counterpart row key and resolution kind; the shared predicates decide. Fork-avoidance applies to adapters too: the canvas reuses the Observability tab's Sentry adapter verbatim. Where a mapping was wrong (a cell labelled Database pointed at the migrations row), the fix is recorded in the registry entry as a comment so the correction can't regress silently.",
+  "topic": "architecture/boundaries",
+  "abstraction": "meso",
+  "ftype": "module-boundary",
+  "governing_id": "32633fd9-58b2-497c-ab0c-d5f2845c3ea3"
+ },
+ {
+  "id": "04f5ab59-11cc-4973-a2e3-df40c224c194",
+  "kind": "pitfall",
+  "title": "Never mount app-critical bootstrap inside a dev-gated component — dead-code elimination deletes it from production",
+  "statement": "A side-effect-only bootstrap (event listeners, startup refresh, policy push) mounted inside a component whose own mount is gated on import.meta.env.DEV gets tree-shaken out of production builds along with the gate. Split the bootstrap into its own always-mounted render-null component with an explicit comment forbidding the move back, and verify the fix in the built bundle, not just in dev.",
+  "topic": "architecture/boundaries",
+  "abstraction": "meso",
+  "ftype": "architecture",
+  "governing_id": "32633fd9-58b2-497c-ab0c-d5f2845c3ea3"
+ },
+ {
+  "id": "b141f75f-51fc-4646-b080-eb86f04e30ef",
+  "kind": "pattern",
+  "title": "Alternate engines emit progress and return a result; only one caller writes terminal status",
+  "statement": "When a second execution path is added (remote HTTP inference beside the local CLI engine), both variants must honor the same seam: emit live output/status events and return an ExecutionResult, but never write the terminal DB row themselves — the single dispatching caller persists it. Route on a provider string at the dispatch point so the alternate path doesn't leak into the engine enum.",
+  "topic": "architecture/boundaries",
+  "abstraction": "meso",
+  "ftype": "module-boundary",
+  "governing_id": "32633fd9-58b2-497c-ab0c-d5f2845c3ea3"
+ },
+ {
+  "id": "5dfa8d13-26c5-4d35-bf11-c3d730523138",
+  "kind": "decision",
+  "title": "Label a display-only heuristic that shadows a canonical classifier, and make its misses harmless",
+  "statement": "When the canonical classification lives server-side and isn't exposed where a small UI count needs it, a local heuristic (name set + prefix regex) is acceptable ONLY if its docblock names the canonical model, states it is display-only and not a gate, and the miss mode is harmless by construction (an unmatched item lands in the default bucket; nothing breaks). Record that earlier allowlists were deliberately retired so nobody 'fixes' the heuristic back into a readiness gate.",
+  "topic": "architecture/boundaries",
+  "abstraction": "meso",
+  "ftype": "module-boundary",
+  "governing_id": "32633fd9-58b2-497c-ab0c-d5f2845c3ea3"
+ },
+ {
+  "id": "caf602ed-ed10-4b2f-94f7-3f1cbb8a45da",
+  "kind": "decision",
+  "title": "Restrict cross-feature imports to public barrels, checked by a test",
+  "statement": "Deep imports between features couple peers to each other's file layout, so any internal reorganisation becomes a cross-feature change. Enforce barrel-only cross-feature imports with a real restricted-import rule, exempt type-only imports since they erase at build time, verify the rule by running the actual lint config against fixtures rather than trusting the documentation, and state which trees are not yet covered.",
+  "topic": "architecture/boundaries/barrels",
+  "abstraction": "macro",
+  "ftype": "extensibility",
+  "governing_id": "48f7fd89-5f49-49ca-9f27-71a8d6f27af0"
+ },
+ {
+  "id": "648a94ce-ad10-46a5-a582-9718e9c1667a",
+  "kind": "pattern",
+  "title": "Split crates along data-flow stages, one job per crate",
+  "statement": "Crates split by technical layer end up depending on each other in both directions; crates split along the pipeline's stages do not. Give each crate a single responsibility mirroring a stage, keep the crate root a short index of re-exports with no logic in it, and open each with a doc comment naming its one job and the architecture section it implements.",
+  "topic": "architecture/boundaries/layers",
+  "abstraction": "macro",
+  "ftype": "module-boundary",
+  "governing_id": "10ad93f3-a4ee-4096-ab3a-33efd901fe2b"
+ },
+ {
+  "id": "3410b315-cf28-48a5-b306-c79178d5d622",
+  "kind": "pattern",
+  "title": "Make each use case a crate implementing one trait over a shared core",
+  "statement": "When every use case is an independent crate implementing a single trait and all shared machinery lives in a core crate, adding one is purely additive: create the crate, declare it, register one line. Document that checklist next to the registry and glob the workspace members, so existing crates never have to be edited to admit a new one.",
+  "topic": "architecture/boundaries/layers",
+  "abstraction": "macro",
+  "ftype": "architecture",
+  "governing_id": "10ad93f3-a4ee-4096-ab3a-33efd901fe2b"
+ },
+ {
+  "id": "10ad93f3-a4ee-4096-ab3a-33efd901fe2b",
+  "kind": "decision",
+  "title": "Split a monolith crate by dependency direction and re-export wholesale",
+  "statement": "When one compilation unit outgrows a single compiler process, split it into layers ordered by who depends on whom and have the top layer re-export the extracted crates, so every existing import path keeps resolving. The split then costs no call-site churn and can land in reviewable steps, and which modules move down is decided by the dependency graph rather than by feeling.",
+  "topic": "architecture/boundaries/layers",
+  "abstraction": "macro",
+  "ftype": "module-boundary",
+  "governing_id": null
+ },
+ {
+  "id": "9d61809d-b506-44c5-a2dc-209a22b40a0e",
+  "kind": "pitfall",
+  "title": "Re-declare every cfg feature in the crate the code moved into",
+  "statement": "A conditional-compilation flag naming a feature the crate does not declare is not an error — it is silently always false, so the gated code simply disappears and the failure surfaces much later as a missing runtime capability. When code moves between crates, declare every feature it mentions in the destination manifest and forward each parent feature explicitly to every child.",
+  "topic": "architecture/boundaries/layers",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "48f7fd89-5f49-49ca-9f27-71a8d6f27af0"
+ },
+ {
+  "id": "43c486a3-ca09-47a4-ad7b-917896a1ffb7",
+  "kind": "pattern",
+  "title": "Invert engine-to-shell calls: hooks struct in, emitter trait out",
+  "statement": "A business-logic layer that calls up into UI or OS surfaces cannot be extracted or run headless. Replace those calls with a registered struct of plain function pointers whose default is all no-ops, plus a trait for the event sink with a real and a null implementation, so a missing registration degrades to silence rather than a panic and tests and daemons reuse the same code path.",
+  "topic": "architecture/boundaries/layers",
+  "abstraction": "macro",
+  "ftype": "module-boundary",
+  "governing_id": "48f7fd89-5f49-49ca-9f27-71a8d6f27af0"
+ },
+ {
+  "id": "019f66dc-c72b-4b01-8dd6-7b2bd02f4889",
+  "kind": "decision",
+  "title": "Delete a drifted client reimplementation rather than aligning it",
+  "statement": "When the backend owns a non-trivial semantic — cron parsing, timezone handling, fire-time seeding — the client must ask it for projections across the API seam, passing the same inputs the engine uses. A client copy that diverges renders a lie as a preview, and even a correct copy fed the wrong inputs does the same, so remove it instead of patching it.",
+  "topic": "architecture/boundaries/mirrors",
+  "abstraction": "meso",
+  "ftype": "module-boundary",
+  "governing_id": "48f7fd89-5f49-49ca-9f27-71a8d6f27af0"
+ },
+ {
+  "id": "dfe55dc4-ef79-4f20-926c-4d3ab609ac6c",
+  "kind": "pattern",
+  "title": "If you must mirror a backend predicate, cite it and keep it pure",
+  "statement": "Cheap, pure, stable predicates may be duplicated client-side for responsiveness, but every mirror must name the exact backend function it ports in its doc comment, live in its own pure module with unit tests, and mirror the backend's fallback behaviour too. Anything with real domain complexity should be delegated across the seam instead of copied.",
+  "topic": "architecture/boundaries/mirrors",
+  "abstraction": "meso",
+  "ftype": "api-design",
+  "governing_id": "44ea4a2d-23b5-487c-8a52-88a5f8bba51a"
+ },
+ {
+  "id": "48f7fd89-5f49-49ca-9f27-71a8d6f27af0",
+  "kind": "decision",
+  "title": "Depend on a module's boundary, never on its internals",
+  "statement": "A module owns its internals; peers reach it through a declared surface, and data access stays behind its own layer — SQL behind repositories, UI primitives free of application state. Boundaries cost indirection, so a documented, deliberate exception beats one nobody believes in; the failure mode to fear is undocumented drift, not the exception itself.",
+  "topic": "architecture/boundaries/modules",
+  "abstraction": "macro",
+  "ftype": "module-boundary",
+  "governing_id": null
+ },
+ {
+  "id": "6a96f2fe-bdd8-4bb1-b487-682ad4400459",
+  "kind": "pitfall",
+  "title": "Stop peer features importing another feature's internal modals",
+  "statement": "Detail and execution modals owned by one feature are imported directly by sibling features across several call sites, so the owning feature can no longer change its internals without breaking peers. Promote the shared surface into a boundary both sides can depend on instead of deepening the reach.",
+  "topic": "architecture/boundaries/modules",
+  "abstraction": "meso",
+  "ftype": "module-boundary",
+  "governing_id": "doctrine:D4"
+ },
+ {
+  "id": "c41a332a-f950-425b-933c-a0d6ba48a302",
+  "kind": "pitfall",
+  "title": "Give the shared lib root a curated barrel instead of a flat drawer",
+  "statement": "The top level of the shared library mixes domain directories, infrastructure, loose business logic and generated artifacts across dozens of entries with no curated entry point, unlike the hooks index and component catalog in the same repo. Nothing tells a newcomer which of it is public surface.",
+  "topic": "architecture/boundaries/modules",
+  "abstraction": "meso",
+  "ftype": "module-boundary",
+  "governing_id": "doctrine:D4"
+ },
+ {
+  "id": "fc397b85-cb0f-4aaa-bf58-b19800ca95a7",
+  "kind": "pattern",
+  "title": "Pass cross-feature enrichment as an optional parameter",
+  "statement": "When one feature's output enriches another's work, importing across features from inside the core logic couples them permanently. Take the enrichment as an optional parameter so the consumer degrades gracefully when it is absent, and let the action layer decide what context to inject — keeping the core pure and independently testable.",
+  "topic": "architecture/boundaries/modules",
+  "abstraction": "meso",
+  "ftype": "data-flow",
+  "governing_id": "48f7fd89-5f49-49ca-9f27-71a8d6f27af0"
+ },
+ {
+  "id": "66442b59-1309-4d1e-8611-9165b3e3e0f5",
+  "kind": "pattern",
+  "title": "Let each feature own its types, storage, validation and components",
+  "statement": "Domain logic scattered between routes and shared utilities has no obvious home, so it lands wherever the current task happens to be. Give each business domain a directory that owns its types, persistence wrapper, validation and components behind a barrel, keep cross-cutting infrastructure in shared modules imported by features and never the reverse, and leave the route layer as glue.",
+  "topic": "architecture/boundaries/modules",
+  "abstraction": "macro",
+  "ftype": "module-boundary",
+  "governing_id": "48f7fd89-5f49-49ca-9f27-71a8d6f27af0"
+ },
+ {
+  "id": "2e875347-d72a-4c39-ade4-1167f737d0e7",
+  "kind": "pattern",
+  "title": "Keep route files to metadata and mounting one feature component",
+  "statement": "Once a route file holds UI logic, that logic is reachable only through the URL that owns it. Keep every route a thin shell that resolves metadata and mounts the feature component, so the same feature can be composed, tested and relocated without touching routing.",
+  "topic": "architecture/boundaries/modules",
+  "abstraction": "macro",
+  "ftype": "architecture",
+  "governing_id": "48f7fd89-5f49-49ca-9f27-71a8d6f27af0"
+ },
+ {
+  "id": "866e3ec7-0fc4-4698-a15a-0a0f50a296fa",
+  "kind": "decision",
+  "title": "Slice by domain and keep the route layer routing only",
+  "statement": "Independently converged on by many projects in this portfolio: each business domain owns its types, persistence wrapper, validation, actions and components; the framework's route directory only resolves metadata and mounts a feature; and cross-feature reach goes through a public barrel rather than a deep path.",
+  "topic": "architecture/boundaries/modules",
+  "abstraction": "macro",
+  "ftype": "module-boundary",
+  "governing_id": "48f7fd89-5f49-49ca-9f27-71a8d6f27af0"
+ },
+ {
+  "id": "b4f2dc36-fc2f-49ee-9943-f9d3dfac20eb",
+  "kind": "decision",
+  "title": "Group look-alike panels by data tier and commit the routing rubric",
+  "statement": "Panels that all render 'what the system is doing' look identical but consume different data tiers and answer different questions, so they get filed by appearance and the tree-rendering logic is duplicated. Name the tiers, declare the direction data flows between them, and commit a numbered decision rubric plus an anti-pattern list in the folder so the next panel lands in the right place.",
+  "topic": "architecture/boundaries/modules",
+  "abstraction": "macro",
+  "ftype": "architecture",
+  "governing_id": "48f7fd89-5f49-49ca-9f27-71a8d6f27af0"
+ },
+ {
+  "id": "83afde59-122d-42e6-af2f-e947a37b8c03",
+  "kind": "pattern",
+  "title": "Route one slug computation through a single helper on both build and match sides",
+  "statement": "Deploy built `persona/my-bot/v1` while rollback matched `my-bot!` — rollback was silently disabled for punctuated names. Any derived key used on both a build side and a match side must come from one shared helper.",
+  "topic": "architecture/chokepoints",
+  "abstraction": "meso",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "4313064d-bc98-4605-869e-d36dc62d2ecc",
+  "kind": "pattern",
+  "title": "Funnel every state emission through one choke point so cross-cutting concerns attach once",
+  "statement": "When multiple independent lanes can change an entity's state, force them all through a single emit function; debug logging, waiter wakeups, and durable persistence then attach to that one point and a new lane gets them for free — while a hand-rolled emit silently gets none.",
+  "topic": "architecture/chokepoints",
+  "abstraction": "meso",
+  "ftype": "architecture",
+  "governing_id": null
+ },
+ {
+  "id": "35802c28-6fbe-4e39-a800-6bcb856eb968",
+  "kind": "decision",
+  "title": "Route each cross-cutting concern through exactly one governed door",
+  "statement": "A concern implemented at every call site can only be hardened at every call site. Give each one a single door — the IPC wrapper, the auth gate, the job manager, the process-spawn envelope — so timeouts, retries, instrumentation and enforcement live in one place. Below roughly three call sites it is not worth it, and one door accreting unrelated concerns has become a god module: one door per concern, not one door for everything.",
+  "topic": "architecture/chokepoints/doors",
+  "abstraction": "macro",
+  "ftype": "architecture",
+  "governing_id": null
+ },
+ {
+  "id": "68eb6df9-d8cd-47ba-bf5a-711a7278f906",
+  "kind": "pattern",
+  "title": "Expose metered capabilities only as methods on a context object",
+  "statement": "Handing application code the raw engines means unmetered calls, and cost accounting silently under-reports rather than failing. Expose every side-effecting capability as a method on one context object that meters, budget-checks and records learned routing in a single place — and if an escape hatch must exist, document that whoever uses it owes the accounting themselves.",
+  "topic": "architecture/chokepoints/doors",
+  "abstraction": "macro",
+  "ftype": "data-flow",
+  "governing_id": "35802c28-6fbe-4e39-a800-6bcb856eb968"
+ },
+ {
+  "id": "0123462a-51c7-46a0-91f0-e237fb2f53a3",
+  "kind": "decision",
+  "title": "Sequence auth, metering, validation and shaping once per request",
+  "statement": "Re-implementing the request preamble per route guarantees that some route eventually does it in the wrong order, and that ordering bug is invisible until it is exploited. Sequence auth, metering, validation, logging and response shaping once inside a single wrapper or context object every handler passes through, so the concern becomes hardenable and enforceable in one place.",
+  "topic": "architecture/chokepoints/doors",
+  "abstraction": "macro",
+  "ftype": "architecture",
+  "governing_id": "35802c28-6fbe-4e39-a800-6bcb856eb968"
+ },
+ {
+  "id": "bcb6788a-b8e8-4d11-bb9a-7f856f0c7ec8",
+  "kind": "pattern",
+  "title": "Give a multi-section editor one dirty/save registry, wired via refs",
+  "statement": "Sections that each own their dirty flag and save routine cannot be saved, cancelled or undone as one document. Put dirty state, save and cancel callbacks and the undo stack in a single external store that sections self-register into — and register a stable trampoline that dereferences a ref at call time, because under concurrent rendering a discarded render can otherwise leave the registry pointing at aborted state.",
+  "topic": "architecture/chokepoints/doors",
+  "abstraction": "macro",
+  "ftype": "architecture",
+  "governing_id": "35802c28-6fbe-4e39-a800-6bcb856eb968"
+ },
+ {
+  "id": "1ff99bcd-e632-4603-a631-247285f6cdd9",
+  "kind": "pitfall",
+  "title": "A door that only convention protects is not a chokepoint",
+  "statement": "Once a governed door exists, the only remaining question is what stops the next call site from skipping it. Enforce it mechanically — restricted-import zones, type-level operation registries, boundary tests — and make any deliberate bypass an enumerated, tested exception list rather than an open escape hatch, because a self-documented leak is still a leak.",
+  "topic": "architecture/chokepoints/enforcement",
+  "abstraction": "macro",
+  "ftype": "architecture",
+  "governing_id": "35802c28-6fbe-4e39-a800-6bcb856eb968"
+ },
+ {
+  "id": "f7ca5641-1113-4854-90b3-85741cf690e7",
+  "kind": "pattern",
+  "title": "Make the privilege level an attribute that derives its command name",
+  "statement": "A hand-written guard as the first line of every handler is a copy-paste that drifts invisibly in review. Use an attribute macro that injects the guard, picks the sync or async form automatically, and derives the audited name from the function name so the two can never diverge. Reading a file then shows the privilege posture of every command, and the absence of the attribute becomes a deliberate, commentable choice.",
+  "topic": "architecture/chokepoints/enforcement",
+  "abstraction": "meso",
+  "ftype": "micro-technique",
+  "governing_id": "35802c28-6fbe-4e39-a800-6bcb856eb968"
+ },
+ {
+  "id": "4191e4d7-8a8c-4c94-aded-10287a02a7a0",
+  "kind": "pattern",
+  "title": "Encode overlapping precedence once and list every read site",
+  "statement": "Two overlapping control surfaces — global toggles plus per-scope overrides — leave 'who wins where' to be re-derived at every call site, and the answers diverge. Put the precedence rule in one module, enumerate every consumer in its doc comment so the surface is auditable in one place, and make the tie-breaks fail closed: an unknown or corrupt value must resolve to the most restrictive setting, never widen access.",
+  "topic": "architecture/chokepoints/precedence",
+  "abstraction": "meso",
+  "ftype": "module-boundary",
+  "governing_id": "35802c28-6fbe-4e39-a800-6bcb856eb968"
+ },
+ {
+  "id": "b4b52c21-a2e3-47cf-8b60-8656518e5c39",
+  "kind": "pattern",
+  "title": "Repair, then EXPORT — never leave the published artifact stale after a mutation",
+  "statement": "A mutation leaving the published artifact stale poisons the next agent; rewrite context-map.json after every non-dry repair (observed drift: 236/34 vs 233/25).",
+  "topic": "architecture/contract-artifacts",
+  "abstraction": "meso",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "ea6b7a2d-1928-4707-8432-5c8eccf8c2df",
+  "kind": "pattern",
+  "title": "Mirror a cross-language status enum from generated bindings and derive its terminal/active sets in one place",
+  "statement": "When a state machine's enum lives in the backend and the frontend needs it, re-export the codegen'd binding type rather than re-declaring the union, add frontend-only extensions (an 'unknown' corruption fallback) at that single seam, and derive the TERMINAL/ACTIVE sets plus the valid-transition map in the same module — so a new variant has exactly one frontend place to update, with a backend compile-time test enforcing its side of the parity.",
+  "topic": "architecture/contract-artifacts",
+  "abstraction": "meso",
+  "ftype": "module-boundary",
+  "governing_id": null
+ },
+ {
+  "id": "274dd39d-cbdf-4386-b698-82a5db8ba52e",
+  "kind": "decision",
+  "title": "When a view's derived model cannot be reproduced server-side, publish the derivation itself",
+  "statement": "If a rich client derives state that the backend cannot re-derive (client-only closures over multiple fetch families, including which family FAILED to load in the client), don't try to rebuild it server-side — have the client publish its derived snapshot to a versioned settings key and make every other consumer read that. Document the contract on the consuming (Rust) type; field names match exactly; unknown fields ignored; and never publish demo/fixture scenes — publishing nothing is the honest answer when no real data exists.",
+  "topic": "architecture/contract-artifacts",
+  "abstraction": "meso",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "30d772a6-60b2-4aeb-95d4-79a5af3051cb",
+  "kind": "decision",
+  "title": "Generate typed bindings only for shapes your own frontend consumes; external wire types stay bare serde",
+  "statement": "Type-generation (ts-rs) is for the app's own IPC boundary. Outbound HTTP wire types consumed by external protocol clients get bare serde with a comment saying so — generating frontend bindings for them would imply a consumer relationship that doesn't exist and bloat the binding surface.",
+  "topic": "architecture/contract-artifacts",
+  "abstraction": "meso",
+  "ftype": "module-boundary",
+  "governing_id": null
+ },
+ {
+  "id": "fcd3e7b0-c8c7-49ee-984e-cb876eec48e8",
+  "kind": "howto",
+  "title": "Regenerate tool-owned injected files freely; patch host files only at known anchors, else refuse",
+  "statement": "A tool injecting code into user projects should split its files in two classes: tool-owned generated files are rewritten whenever content differs from the embedded constant (users never edit them, so upgrades propagate); host files are patched idempotently at explicit anchors and the patcher returns None when an anchor is missing so the caller leaves the file untouched. The whole path is best-effort and never fails the main operation.",
+  "topic": "architecture/contract-artifacts",
+  "abstraction": "meso",
+  "ftype": "extensibility",
+  "governing_id": null
+ },
+ {
+  "id": "44ea4a2d-23b5-487c-8a52-88a5f8bba51a",
+  "kind": "decision",
+  "title": "Write a cross-cutting contract down only if a test enforces it",
+  "statement": "Ownership maps, dependency contracts and layering rules are worth checking in, but an artifact nobody verifies rots into a confident lie. Back each one with a compile-time guard, a replay test, or a CI diff gate so drift fails the build; if you cannot verify it, generate it from code instead of maintaining it by hand.",
+  "topic": "architecture/contracts/artifacts",
+  "abstraction": "macro",
+  "ftype": "architecture",
+  "governing_id": null
+ },
+ {
+  "id": "d87b94b2-465e-46d6-97ae-7de4d1d36233",
+  "kind": "pitfall",
+  "title": "Fix the template checksum gate's key contract before re-enabling it",
+  "statement": "The manifest is keyed by full file path and hashes whole files while every caller passes a bare name and a payload, so the check passes vacuously for every adoption. This is tracked drift rather than an unknown hole — the earlier hard-reject variant bricked the feature in release builds — so repair the key and content contract instead of simply switching rejection back on.",
+  "topic": "architecture/contracts/artifacts",
+  "abstraction": "meso",
+  "ftype": "architecture",
+  "governing_id": "doctrine:D5"
+ },
+ {
+  "id": "5044807a-bb79-40d6-9ca2-8ad97e43c1cb",
+  "kind": "pitfall",
+  "title": "Generate the module ownership table instead of hand-maintaining it",
+  "statement": "The checked-in ownership map omits several real modules including a very large one, so the map that is supposed to govern the directory has drifted from it. An unverified hand-written map is precisely the failure the repo's own contract doctrine warns about.",
+  "topic": "architecture/contracts/artifacts",
+  "abstraction": "meso",
+  "ftype": "architecture",
+  "governing_id": "doctrine:D5"
+ },
+ {
+  "id": "ea89a558-3e76-480c-a7b8-9100c3ccc847",
+  "kind": "pitfall",
+  "title": "Make the prompt/gate keyword pairing compiler-enforced",
+  "statement": "The build session's prompt and its gate machine agree on a keyword set only by hand, so adding a keyword on one side silently desynchronises the other and the gate stops firing. Derive both from one declaration, or add an exhaustiveness check that fails compilation.",
+  "topic": "architecture/contracts/artifacts",
+  "abstraction": "meso",
+  "ftype": "architecture",
+  "governing_id": "doctrine:D5"
+ },
+ {
+  "id": "0fa1828e-afef-4317-9b66-9f7e70deaccd",
+  "kind": "decision",
+  "title": "Force the codegen output dir at the compiler and gate drift in CI",
+  "statement": "Configuration passed through the build tool's environment table does not reliably reach proc-macro expansion, so generated bindings can land in a second tree and drift there unnoticed. Set the output directory from the build script directly into the compiler's own environment, gitignore every other output tree, name the regeneration command, and let CI fail on a diff of the bindings directory.",
+  "topic": "architecture/contracts/codegen",
+  "abstraction": "meso",
+  "ftype": "api-design",
+  "governing_id": "44ea4a2d-23b5-487c-8a52-88a5f8bba51a"
+ },
+ {
+  "id": "b2ad6dc6-2f75-4122-a6af-60af549e5430",
+  "kind": "pattern",
+  "title": "Enforce load-bearing invariants with branded types, not runtime checks",
+  "statement": "Tenant isolation, citation verification and sign-off state are invariants an outbound function must never violate, and a runtime check only catches the violation after the code exists. Encode them as branded types whose only constructor is the function that performs the check, keep the unsafe minting helper internal and out of the barrel, and unverified or unsigned artifacts stop compiling rather than failing review.",
+  "topic": "architecture/contracts/types",
+  "abstraction": "macro",
+  "ftype": "extensibility",
+  "governing_id": "44ea4a2d-23b5-487c-8a52-88a5f8bba51a"
+ },
+ {
+  "id": "bb73c03d-575e-4183-9ef0-603a58f9f783",
+  "kind": "pattern",
+  "title": "Canonicalize event-name separators before MATCHING, never before semantics",
+  "statement": "Collapse `-_.` to one `.` and lowercase for matching only — exact matching silently dropped events across both the subscription and trigger paths. The canonical form is used for comparison, not stored as the event's identity.",
+  "topic": "architecture/events",
+  "abstraction": "meso",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "4c69369c-4ba3-4413-8aad-d908d0422ad7",
+  "kind": "pattern",
+  "title": "Sequence matching must consume events by positional cursor — one event can never satisfy two steps",
+  "statement": "When matching an ordered condition list against a time-sorted event window, advance a positional consumption cursor past each matched event instead of comparing timestamps inclusively — otherwise one physical event (or two same-timestamp events handled wrongly) satisfies adjacent steps and an N-step sequence fires on fewer than N events.",
+  "topic": "architecture/events",
+  "abstraction": "micro",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "f44c85ea-bb6c-4fb6-8e49-5d60abda09e7",
+  "kind": "pitfall",
+  "title": "Advancing a chain's control flow is not forwarding its data",
+  "statement": "In a step-chaining system, wiring B to run after A does not automatically give B A's output — treat payload forwarding as an explicit, tested flag on the link, or chains 'work' in demos while every downstream step runs blind.",
+  "topic": "architecture/events",
+  "abstraction": "meso",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "73faba07-9701-494a-998b-7146ffdac898",
+  "kind": "pattern",
+  "title": "When lifecycle events and process ownership disagree, the owned process is authoritative",
+  "statement": "For entities backed by a live OS process, treat process death (the reaper) as the authoritative exit signal and demote protocol-level end events to advisory: ignore an 'ended' event while the child is demonstrably alive, and never let any later event downgrade a confirmed Exited state.",
+  "topic": "architecture/events",
+  "abstraction": "meso",
+  "ftype": "state-mgmt",
+  "governing_id": null
+ },
+ {
+  "id": "b37d7518-4d29-4818-b2d1-12c9dec86b2f",
+  "kind": "pitfall",
+  "title": "When one event fans out into mirrored representations, suppress the whole pair",
+  "statement": "If every new-format event is paired with a legacy mirror for the old UI, any filter that suppresses the new event must also suppress its mirror. Otherwise downstream state accumulated from the mirror (resolved counters, completion shortcuts) diverges from the filtered stream and trips phase transitions the filter meant to block.",
+  "topic": "architecture/events",
+  "abstraction": "meso",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "745f16a8-b543-4a88-b9a5-0ee0c691195d",
+  "kind": "pattern",
+  "title": "Isolate every event subscriber with its own timeout and error boundary",
+  "statement": "An in-process bus attached to the store lets mutations publish domain events without knowing their consumers, but a throwing or slow subscriber must never break the mutation or its siblings. Race each handler against a timeout, report failures through an error hook that is itself wrapped, and state the scope — single process, no durability — explicitly so nobody mistakes it for a queue.",
+  "topic": "architecture/events/buses",
+  "abstraction": "meso",
+  "ftype": "data-flow",
+  "governing_id": "2889d4d1-d184-484c-b6b6-ae841945a7be"
+ },
+ {
+  "id": "2889d4d1-d184-484c-b6b6-ae841945a7be",
+  "kind": "pattern",
+  "title": "Declare cross-store dependencies in a typed bus, not sibling imports",
+  "statement": "Stores reaching into each other directly make the dependency graph invisible and create module-load cycles. Declare every cross-domain relationship in one typed event map plus named accessor keys, wire them in a single file, and try/catch each handler so one bad subscriber cannot break the emit loop — the map then doubles as documentation of the ordering hazards.",
+  "topic": "architecture/events/buses",
+  "abstraction": "macro",
+  "ftype": "module-boundary",
+  "governing_id": "48f7fd89-5f49-49ca-9f27-71a8d6f27af0"
+ },
+ {
+  "id": "344a5509-1ae4-42df-863b-907a70b11ad6",
+  "kind": "pattern",
+  "title": "Carry live progress on the event, never in the persisted row",
+  "statement": "A long job that goes silent between 'running' and its terminal status reads as hung, but writing progress to the database on every step buys stale rows and extra writes. Add event-only fields to the row struct that the row mapper always reads back as absent, so a reporter can re-emit the running row with them set and the terminal re-emit from the database naturally clears them.",
+  "topic": "architecture/events/progress",
+  "abstraction": "micro",
+  "ftype": "module-boundary",
+  "governing_id": null
+ },
+ {
+  "id": "4bc843ff-b026-407b-b67e-93879a17ec82",
+  "kind": "pattern",
+  "title": "Keep one transport subscription and fan out to components in JS",
+  "statement": "A hot event stream consumed by many components should not open one transport subscription per consumer. Hold exactly one and fan out in application code: buffer events that arrive before the first subscriber mounts with a cap and a drop counter the subscriber can see, dispatch once per animation frame so the framework batches them into a single render, and guard the race where every subscriber unmounts while the subscribe call is still resolving.",
+  "topic": "architecture/events/subscriptions",
+  "abstraction": "meso",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "5fc61fac-36ce-4938-889a-fa942ccbe47c",
+  "kind": "pattern",
+  "title": "Put browser/agent automation behind a swappable adapter with an AbortSignal contract",
+  "statement": "Define automation as a narrow run(ctx, onLog, signal) interface so a stub can drive development and the real driver is one implementation. The adapter owns subprocess kill and event-listener teardown on abort — in both the abort handler and finally — so cancellation is complete regardless of which path exits.",
+  "topic": "architecture/extensibility",
+  "abstraction": "meso",
+  "ftype": "module-boundary",
+  "governing_id": null
+ },
+ {
+  "id": "5e7ea421-c2a1-4e92-9f6f-67869b50af58",
+  "kind": "pattern",
+  "title": "Document the degenerate shape of generic machinery, and mark the one re-entry seam",
+  "statement": "When a generic mechanism (multi-provider failover, plugin dispatch) currently has only one participant, document what it honestly degrades to (\"a breaker-gated single-candidate probe\") and mark the exact code seam where a second participant re-enters — so callers stop assuming richness that isn't there and future extension is a one-arm change.",
+  "topic": "architecture/extensibility",
+  "abstraction": "meso",
+  "ftype": "extensibility",
+  "governing_id": null
+ },
+ {
+  "id": "48ec7022-e969-4735-b337-b803d1b8c93a",
+  "kind": "pattern",
+  "title": "Keep the catalog mapping in config and make the fallback noisy",
+  "statement": "A large name-to-category mapping belongs in a config file that both build scripts and application code read, with only the parts config cannot express — icons, colors — hydrated in code. Keep a heuristic fallback so the UI never collapses into one bucket, but make it loud in development and mark unknown keys in the data, or the gap stays invisible until someone audits the whole catalog.",
+  "topic": "architecture/extensibility/catalogs",
+  "abstraction": "meso",
+  "ftype": "extensibility",
+  "governing_id": "d13a15c4-cc5f-461e-b40b-414163f57a0a"
+ },
+ {
+  "id": "8bfcd69d-8317-4b19-8d7b-1d2d44e34874",
+  "kind": "pattern",
+  "title": "Ship risky runtime changes disabled behind one flag both sides read",
+  "statement": "Land a risky change as a complete no-op: gate it on one named flag so the disabled path is bit-identical to today's behaviour. When the feature spans two cooperating modules, document and unit-assert that both consult the same flag, and layer an environment override on top of the persisted setting so either state can be forced without touching the database.",
+  "topic": "architecture/extensibility/flags",
+  "abstraction": "meso",
+  "ftype": "architecture",
+  "governing_id": "d13a15c4-cc5f-461e-b40b-414163f57a0a"
+ },
+ {
+  "id": "c800cfad-36d1-4210-ab1c-a2fa832cf38c",
+  "kind": "pitfall",
+  "title": "Give plugin panels one page contract the shell can host uniformly",
+  "statement": "Each plugin panel is an independently shaped feature module defining its own page contract, so the shell cannot treat plugins as a single kind and every new plugin is bespoke wiring rather than an entry in a registry.",
+  "topic": "architecture/extensibility/plugins",
+  "abstraction": "meso",
+  "ftype": "module-boundary",
+  "governing_id": "doctrine:D4"
+ },
+ {
+  "id": "2e83de9d-7a53-4069-b8e7-a8bb33cc3b83",
+  "kind": "pattern",
+  "title": "Define the plugin trait in core, keep the runtime in its own crate",
+  "statement": "A sandbox runtime dependency in the shared crate is paid for by everything that depends on it. Declare only the plugin trait plus a null-object fallback in core and keep the actual runtime in a separate crate, so the shared crate never compiles the sandbox and disabling plugins returns a typed error instead of panicking.",
+  "topic": "architecture/extensibility/plugins",
+  "abstraction": "meso",
+  "ftype": "extensibility",
+  "governing_id": "10ad93f3-a4ee-4096-ab3a-33efd901fe2b"
+ },
+ {
+  "id": "d13a15c4-cc5f-461e-b40b-414163f57a0a",
+  "kind": "decision",
+  "title": "Make adding a variant one declarative edit against a registry",
+  "statement": "When a new connector, nav section, event or template requires synchronized edits across several files, someone will eventually miss one and the omission is silent. Declare variants in a registry the code reads, and add a completeness check that fails the build when a variant is half-wired — the check is the payoff, so a registry without one buys little, and below three real variants a hand-wired switch is more honest.",
+  "topic": "architecture/extensibility/registries",
+  "abstraction": "macro",
+  "ftype": "extensibility",
+  "governing_id": null
+ },
+ {
+  "id": "b727a840-3550-4015-b98a-bc7b3d45d16a",
+  "kind": "pitfall",
+  "title": "Derive route-keyed maps from the nav registry, not alongside it",
+  "statement": "A second map keyed by the same union as the nav registry but authored independently is a registry in shape only: adding a section compiles cleanly while the parallel map silently lacks its entry. Either derive such maps from the registry or bring them under the same completeness check that governs it.",
+  "topic": "architecture/extensibility/registries",
+  "abstraction": "meso",
+  "ftype": "extensibility",
+  "governing_id": "doctrine:D2"
+ },
+ {
+  "id": "eb49a3ca-29f8-4338-9899-a150392043c6",
+  "kind": "pattern",
+  "title": "Declare integrations as data; put only odd behaviour in a trait",
+  "statement": "Split an integration catalog in two. The declarative half — fields and their sensitivity, healthcheck configuration, emitted events, pickable sub-resources — lives in per-integration config generated into a compiled table, so a new integration normally means one config file and no code. The behavioural half is a strategy trait whose every method has a working default, so only genuinely unusual providers implement anything.",
+  "topic": "architecture/extensibility/registries",
+  "abstraction": "macro",
+  "ftype": "architecture",
+  "governing_id": "d13a15c4-cc5f-461e-b40b-414163f57a0a"
+ }
+]

@@ -1,0 +1,653 @@
+{
+ "doctrines": [
+  {
+   "area": "performance",
+   "title": "Compute once and keep it at module scope — derived work outlives the component",
+   "statement": "Expensive pure derivations and remote reads belong in module-scoped caches keyed by stable identity (input string, row object, size, options), not in component state that dies on unmount. Seed remounting surfaces from the last successful result and refresh silently. Forbids re-parsing, re-deriving, or re-fetching the same input on every render or remount.",
+   "detail_md": "**Why:** the recurring failure class is invisible repeated work — SVG paths rebuilt on hover, serialized columns re-parsed per memo re-run, Intl.NumberFormat reconstructed per cell, a ledger re-aggregated per call making a job quadratic in its own history, and lazy routes re-ghosting on every return because state was component-local. **Tensions:** module caches need an identity discipline (WeakMap on the row object avoids eviction policy entirely; string keys need bounds — see the retention doctrine) and an invalidation wired to the mutation that changes the data. Caching is an optimization, never a requirement: recipe-cache failures are non-fatal by design.\n\nGoverns:\n- Cache remote reads outside React state with explicit TTL, eviction, and refresh bypass\n- Precompute SVG geometry per size in a module cache and memoize the leaf\n- Cache derived parses in a WeakMap keyed on the row object\n- Cache Intl.NumberFormat instances keyed by the options you actually vary\n- Probe a subprocess without holding the lock, cache the probe\n- Persist the first successful AI derivation as a recipe shared by every entry path\n- Mirror a running total in memory instead of re-aggregating per call\n- Seed unmounting panels from a module-scoped cache of the last fetch",
+   "topic": "performance/caching",
+   "kind": "decision",
+   "governs": [
+    "a621aab6-5f26-46bb-9f2c-d22dd357e1fc",
+    "5c5e2f5e-2df6-49f7-9270-6297e4b74c9d",
+    "0476af56-af9c-4709-86f0-fe2c0d9a940e",
+    "71192b68-d414-4c01-ab0c-6bfa1c36387b",
+    "73effedd-153a-47d1-baf9-d50c5e20e58f",
+    "23c0fabd-6f1d-4924-965c-ef1d7f0e3ffa",
+    "432dfdde-3fb9-4ed2-8bce-d04ca7f64bac",
+    "26491742-b994-4ee6-abd3-4f3c20af0ace"
+   ],
+   "triggers": [
+    "an expensive pure computation in a render path",
+    "parsing serialized rows for a list",
+    "a panel that re-fetches on every remount",
+    "constructing formatters or geometry per render",
+    "a pre-flight check that re-reads history"
+   ]
+  },
+  {
+   "area": "performance",
+   "title": "Every cache and buffer gets an explicit retention bound; TTL is not eviction",
+   "statement": "TTL decides freshness, never memory release — every long-lived cache, buffer, registry, or parked-instance pool needs a hard bound in the unit that actually hurts (entries, bytes, ring length) plus an active eviction path. Forbids unbounded per-key growth in long-lived sessions and treating detach as dispose.",
+   "detail_md": "**Why:** the failure class is the slow leak that only appears in long sessions — variadic per-entity keys growing forever under a TTL, decoded images pinning gigabytes behind an entry-count cap that was never a memory bound, per-peer entries leaking one per peer in a daemon, and detached terminals accumulating without limit. Cleanup written only on the success path leaks on every error. **Tensions:** eviction must be lossless or safe — parked instances may only be evicted because re-attach replays a backend snapshot; media entries are released when the last visible consumer unmounts; the just-inserted entry is never evicted. Bounding costs a policy decision (what unit, what cap) that a bare Map lets you skip.\n\nGoverns:\n- Cap a TTL cache's entry count — TTL gates freshness, not retention\n- Bound media caches by bytes, and dedupe loads through an in-flight map\n- Actively evict per-peer caches, or a long-running daemon leaks one entry per peer\n- Bound the parked-instance population with an LRU whose eviction is lossless via backend replay\n- Keep a long job's verbose output server-side in a bounded tail ring\n- Free decoded media with the same observer that allocated it\n- Own expensive instances in a registry — detach is not dispose",
+   "topic": "performance/resource-budgets",
+   "kind": "decision",
+   "governs": [
+    "2c790c90-3561-49e9-a189-1619ec830023",
+    "363e253c-6977-4ba1-9d17-13bace16ef87",
+    "107ebedf-aa59-47b3-81d9-4e0d1ed563c8",
+    "dd88f528-7a6c-4017-b9c2-25112faf3af6",
+    "fe015c26-1549-495f-86d5-597d094af3c4",
+    "53e27817-ce7f-4d0c-b470-7d0c724c18a7",
+    "3b1161b2-120c-41a9-b147-3c5dcdcd3109"
+   ],
+   "triggers": [
+    "adding a Map-based cache keyed by entity id",
+    "caching decoded media or large blobs",
+    "a long-running daemon holding per-peer state",
+    "parking heavyweight instances for re-attach",
+    "buffering a chatty subprocess's output"
+   ]
+  },
+  {
+   "area": "performance",
+   "title": "Cache only successes, through one canonical key, with single-flight refills",
+   "statement": "A cache's correctness rules are stricter than its speed rules: never cache a failure or an empty degraded result at full TTL, evict rejections immediately so retry works, compute the cache key/fingerprint through one shared helper on both write and read sides, and hold the lock across a miss-and-refill so concurrent callers do the expensive work once. Forbids hand-rolled key derivation duplicated per site and refills raced by N callers.",
+   "detail_md": "**Why:** the recorded incidents are silent — a fingerprint hashed slightly differently on each side made the cache a permanent no-op that looked healthy; a negative clock delta treated as zero pinned stale content forever; a degraded fan-out result cached at normal TTL hid both the failure and its recovery; a released lock between miss and refill let every concurrent caller run the subprocess fan-out. **Tensions:** self-healing costs ownership checks (promise.catch clears the slot only if it still owns it) and handing out deep copies costs allocations but prevents the first caller mutating the shared instance. Degraded results get seconds, not minutes — observably, not silently.\n\nGoverns:\n- Both sides of a fingerprint check must call one canonical hash function\n- Single-flight an expensive probe cache by holding the lock across the recompute\n- Guard cached freshness against backward clock skew\n- Cache at the api seam with self-healing on rejection\n- Give a degraded result a much shorter TTL, never cache an empty one\n- Dedupe reads at two seams and hand every caller its own copy",
+   "topic": "performance/caching",
+   "kind": "decision",
+   "governs": [
+    "85586152-d069-48ff-9724-c729b89ac3d0",
+    "f60a6d83-efa3-4d18-8f75-d22c0396fe13",
+    "51b892ce-1785-4607-8612-0c7ff003c9d9",
+    "b23a979c-3adf-4747-bce6-a6621270a718",
+    "90d75a9f-5301-4a9c-a07c-49d0c00758c2",
+    "a0982003-7235-44ff-8ec1-3c123c5bf0ae"
+   ],
+   "triggers": [
+    "writing a cache-hit fingerprint check",
+    "caching the result of a fallible fetch",
+    "a promise cache at an api seam",
+    "concurrent callers hitting a cold cache",
+    "partial results from a fan-out"
+   ]
+  },
+  {
+   "area": "performance",
+   "title": "Coalesce high-frequency streams at one seam; never one event per render or write",
+   "statement": "Anything arriving at animation-frame or burst rate — token deltas, PTY chunks, audio levels, pointer frames, FS events, hot store writes — must be buffered at a single owner and flushed once per frame, per tick, or per debounce window. Per-frame values live in refs and touch the DOM imperatively; state commits happen on release or terminal transitions. Forbids routing each tick through React state or synchronous storage.",
+   "detail_md": "**Why:** the failure class is multiplicative cost — one filtered listener per entity makes every chunk run N callbacks; a persistence middleware serialized to disk hundreds of times per second for unchanged payloads; a sync per-event DB write per mDNS packet; 60fps setState per audio frame. The cure is topological: exactly one app-level listener dispatching into a registry map, one shared analyser tap, one debounced storage adapter, one buffered flush per transaction. **Tensions:** imperative escape hatches need re-assertion guards against React reconciliation snapping back stale state, flush-on-exit paths (cancellation, page hide, terminal transitions) so buffered data is never lost, and eagerly-set re-entrancy flags so async setup cannot double-subscribe.\n\nGoverns:\n- Keep frame-rate values in refs, and coalesce stream deltas per frame\n- Drive N springs from one module rAF engine that writes to DOM refs\n- Render-free gesture navigation: drive the transform imperatively, commit state on release\n- Tap audio once with a shared analyser, rAF-only delivery, and an idle-stop loop\n- Coalesce, then debounce, then match — prune the debounce map under the same lock\n- Dispatch a high-frequency stream through ONE app-wide listener into a registry map, with an eagerly-set re-entrancy flag\n- Put a debounce and a write-dedupe in front of persistent storage\n- Batch high-frequency discovery writes behind a buffer, and flush on every exit path",
+   "topic": "performance/hot-paths",
+   "kind": "decision",
+   "governs": [
+    "91910975-2bf4-45f9-ae0e-c7e88c23fa96",
+    "8e8bc22a-7ac4-447d-b9e5-8824654ca3e2",
+    "a4444f2b-fa16-4f4e-9c6a-786becb8fe9f",
+    "8777d546-ae28-4c00-bb42-7975fc58d3ff",
+    "96fb8cd1-e258-48ca-b091-d275c0ce0723",
+    "8f4d57ca-5c16-4dcd-a02c-f7220dfcadd2",
+    "9121f197-30bf-48a2-8806-70ea1d88b54d",
+    "ca38c324-dceb-47c8-949f-27a1d683b3fc"
+   ],
+   "triggers": [
+    "streaming tokens or log chunks into the UI",
+    "a value updating at animation-frame rate",
+    "pan/zoom or drag over a large scene",
+    "persisting a hot store to disk",
+    "bursty filesystem or network events"
+   ]
+  },
+  {
+   "area": "performance",
+   "title": "Preserve reference identity across recomputes so memo chains stay real",
+   "statement": "Memoization keys on object identity, so any layer that rebuilds objects — a poll re-shaping rows, a comparator, a parse cache — must return the previous reference when nothing changed. Compare with allocation-free field walks that short-circuit, never JSON.stringify, and size shared caches above the number of simultaneously visible consumers. Pin the contract with a render-count test.",
+   "detail_md": "**Why:** the failure class is a whole pipeline rebuilding on data that did not move — a poll producing fresh identities every tick made an untouched surface rebuild twice a minute; a size-one LRU shared by two siblings thrashed every frame and made Object.is selectors re-fire forever; JSON.stringify equality allocated multi-kilobyte strings per item per animation frame. **Tensions:** hand-rolled comparators carry a documented maintenance cost (a new field must be added or changes paint stale), and memoizing a hook's return is only justified when a NAMED downstream memo depends on it — memo for its own sake is noise. Reference stability includes the miss path: share one frozen empty result.\n\nGoverns:\n- Preserve object identity across polls: compare shaped rows field-by-field and thread the previous model through the adapter\n- Replace JSON.stringify cache-hit tests with exhaustive field comparators that short-circuit\n- Memoise a hook's return because a named downstream memo depends on it\n- A parser cache of size one shared by sibling consumers thrashes on every render — bound the LRU above the visible working set",
+   "topic": "performance/hot-paths",
+   "kind": "decision",
+   "governs": [
+    "96aee6c0-7857-490b-9ac7-4644af3904f9",
+    "df6fae1b-413c-4d64-a1ec-c26e0a259a62",
+    "a25e78b9-1bce-4946-a44c-8d35ad9a6783",
+    "3b7285f6-6467-4619-9cc9-6fa1ec54c0a2"
+   ],
+   "triggers": [
+    "a poll that re-shapes backend rows",
+    "writing an equality check for a render cache",
+    "adding useMemo to a hook return",
+    "a store selector re-firing without data changes"
+   ]
+  },
+  {
+   "area": "performance",
+   "title": "Cross the IPC/DB seam in aggregates, and never block the thread that serves it",
+   "statement": "Each seam crossing has a fixed overhead, so N scoped calls lose to one batched call filtered client-side, list views get their own column projection, and repeated per-request reads are memoised at the seam. Symmetrically, the thread serving the seam must never run blocking work: probes, walks, and synchronous queries go to blocking pools or workers, with panics re-raised and worker clients handling every degenerate case. Forbids per-entity IPC fan-outs and sync work on the IPC thread.",
+   "detail_md": "**Why:** two recorded failure classes at the same seam. Cost: each invoke burns ~1-5ms of serialization, so an N-by-3 fan-out multiplies invisible latency, and a list view reading every heavy blob pays for rows never opened. Blocking: a sync ~2s HTTP probe froze the webview on every poll, and sync repositories in async tasks starved the runtime under pool contention — with the subtle downgrade that spawn_blocking swallows panics unless re-propagated. **Tensions:** batch-plus-client-filter trades payload size for round-trips (invalidate surgically per entity, not by re-poll); projections need the field-consumer map written down to stay safe; a worker is only usable if its client handles crash, cancellation, and construction failure.\n\nGoverns:\n- Replace an N-by-3 IPC fan-out with one aggregate command\n- Prefer one unfiltered batch call plus client-side filtering over N scoped IPC calls\n- Use the point lookup you already have, and read shared docs once\n- Aggregate feeds with one refcounted subscription, not N hidden ones\n- Give list views their own column projection\n- Offload blocking database work, and re-raise the panic it swallows\n- Offload blocking probes and walks off the IPC thread\n- A worker is only usable if its client handles every degenerate case",
+   "topic": "performance/data-access",
+   "kind": "decision",
+   "governs": [
+    "e203d7ef-c739-42c5-959d-4d3f0331b5c9",
+    "36745170-9ab2-4bda-99c8-41bcb04c07f4",
+    "ce052b2d-d1fd-4f65-bfa6-c47eeaf97d2f",
+    "816bb8fc-7233-479e-962c-88ce8d29e0cf",
+    "30a0c2f3-90d2-420b-ab12-0791c3a68db0",
+    "f51b83ef-de2e-4e63-8784-d833004df8aa",
+    "2b1443b4-f699-49a1-a845-46acb7e60b09",
+    "59d927a9-2c75-434a-b1b5-604e8d79cedc"
+   ],
+   "triggers": [
+    "invoking a backend command inside a loop",
+    "a screen needing a cross-entity rollup",
+    "one table serving both list and detail views",
+    "a synchronous probe or filesystem walk in a handler",
+    "moving computation to a web worker"
+   ]
+  },
+  {
+   "area": "performance",
+   "title": "Spend render and fetch cost only where attention is",
+   "statement": "UI cost should track what the user is looking at, not what exists: gate expensive fetches on the render branch that consumes them, defer heavy subtrees behind named priorities, paint frame and chrome first and mount expensive bodies a beat later, virtualise long lists, unmount idle tabs while keeping their modules cached, and give only attention-worthy entities the expensive live view. Forbids eager-mounting everything and letting the slowest source gate first paint.",
+   "detail_md": "**Why:** the failure class is paying full price for invisible work — eager fetch clusters measured as wasted IPC, the webview hanging on large single React commits, tab containers keyed on the active tab re-running every tab's mount work per switch, and a whole aggregate surface held as slow as its worst input. **Tensions:** deferral must stay honest and deterministic — wrappers need a synchronous escape hatch for tests; a degraded early frame must never paint over cached real data; hidden-tab pauses must refetch immediately on return (a stale all-green during an outage is the worst failure); virtualization has silent-wrongness traps (spacer rows, an explicitly opted-in scroll parent, a pure testable flattening module). Mount policy is a per-surface decision, not a default.\n\nGoverns:\n- Gate an expensive fetch on the render branch that actually consumes it\n- Lazy-mount monitoring surfaces and pause them when nobody looks\n- Defer heavy subtrees behind a priority ladder with a synchronous test escape hatch\n- Defer heavy below-fold subtrees behind a named priority wrapper\n- Two-phase overlay open: paint the frame and cheap chrome first, mount expensive bodies a beat later\n- Choose a mount policy per tab surface instead of remounting\n- Unmount lazy tabs after an idle window instead of keeping every visited tab mounted\n- Attention-tiered rendering: only entities that need the operator get the expensive live view; the rest get status blocks\n- Virtualise a table with spacer rows and an opted-in scroll parent\n- Flatten a grouped list into one indexed sequence in a pure module\n- Publish an aggregate in phases, each frame complete and honest",
+   "topic": "performance/rendering",
+   "kind": "decision",
+   "governs": [
+    "fab44cb0-95e2-4661-a0b9-8c7f7f135efe",
+    "99d0cdec-f84e-43cc-be02-54df3f24c50c",
+    "3d3e7de2-c435-49b3-b4f6-62ffb9fa3952",
+    "2ff96304-878b-4864-a178-646a6b8317ce",
+    "4344bf78-ea87-43b8-8054-873d7edae1d5",
+    "df0da2e1-40dc-4783-affa-1cbe9301fe04",
+    "30ccdd83-b13e-4424-aa14-b5b705f8408f",
+    "de96a897-c432-4d15-a545-af0981cc8e02",
+    "bc2f3ef9-f527-470d-a5d7-ae7ad11e6f65",
+    "768fb97e-bcb7-4e26-bfe6-9d5953b389ce",
+    "74ab4004-09a0-4daa-9a98-3c8fc6262dfe"
+   ],
+   "triggers": [
+    "a hot render path with heavy subtrees",
+    "designing a tab or overlay surface",
+    "a long list or table of rows",
+    "a monitoring grid over many entities",
+    "one slow source gating first paint"
+   ]
+  },
+  {
+   "area": "performance",
+   "title": "Every background poller has one owner, a visibility gate, and ways to stop",
+   "statement": "Polling is a liability by default: exactly one always-mounted owner per interval, one shared timer per cadence bucket, a document-visibility gate with immediate refresh on return, and explicit termination — terminal statuses, failure budgets, and malformed-state clears. Cadence and skip decisions are justified against the rate the signal actually moves. Forbids per-component intervals and pollers that can outlive their target.",
+   "detail_md": "**Why:** the failure class is background cost that nobody owns — desynchronised pollers turning one refresh window into several bursts, a component-hosted interval multiplied by however many instances mounted, and the recorded worst case: a poller reading a persisted id with swallowed errors polling a dead session forever and replaying stale notifications into the next session. Timers alone are also insufficient gates — maintenance ticks must yield to live work. **Tensions:** stopping aggressively risks discarding resumable flows, so terminal and non-terminal statuses must be distinguished; skips and throttles must be counted so restraint stays observable rather than looking broken.\n\nGoverns:\n- Run one timer per cadence bucket, not one per poller\n- Gate polls on visibility, one owner, and the job still being alive\n- Give every background poller three ways to stop\n- Throttle a rescan to the rate the signal actually moves\n- Gate periodic database maintenance on a live-work gauge, not just a timer",
+   "topic": "performance/resource-budgets",
+   "kind": "decision",
+   "governs": [
+    "463bac69-2b8c-4115-8f97-d351aa95acd6",
+    "970a2949-8ece-4316-b720-c513d3fd69d6",
+    "1ef10fb6-c455-4781-8849-db63bcd041ee",
+    "c366789f-b80d-46e6-9ad8-14e31648d23f",
+    "09be39c0-8599-425b-b675-2dbb6e895776"
+   ],
+   "triggers": [
+    "adding a setInterval or background tick",
+    "polling a job's status from the UI",
+    "scheduling periodic maintenance",
+    "choosing a refresh cadence",
+    "a poller reading persisted target state"
+   ]
+  },
+  {
+   "area": "performance",
+   "title": "Treat startup as a budgeted chunk graph: split, defer, prefetch on intent",
+   "statement": "First paint pays only for what the first screen needs: split per-route and per-section (locales included), host app-wide side-effect hooks in one lazy render-nothing component with per-hook justification, prefetch chunks from real intent through one memoised helper, and drain speculative imports one at a time in likelihood order. Forbids monolithic bundles, eager global hook hosts, and firing all speculative imports at once.",
+   "detail_md": "**Why:** the failure class is everyone paying for everything — a monolithic locale bundle charged to users who never see most strings, with a visible English first paint; global hooks dragging whole store graphs into the initial bundle; speculative imports stacking into one long main-thread block because chunk evaluation ignores idle deadlines; and a dep imported only by a lazy route 504-ing the first navigation in dev. **Tensions:** prefetch helpers duplicate the router's lazy imports — an accepted, documented maintenance cost; rejected prefetches must reset their memo entry or a transient failure is remembered as loaded; ordering the drain queue means later entries warm noticeably later, so order by likelihood.\n\nGoverns:\n- Split localisation per route section and preload before mount\n- Host app-wide background hooks in one lazy render-nothing component\n- Prefetch route chunks on pointer intent through one cached helper\n- Drain speculative imports one at a time, most likely first\n- Deps imported only by lazy routes must be pre-bundled in dev, or first navigation 504s",
+   "topic": "performance/startup",
+   "kind": "decision",
+   "governs": [
+    "0650cd63-bb6a-4dde-ad76-ea74e7b5b4ca",
+    "59f71c1d-0d1a-42db-9934-09be68bec844",
+    "6ab58ac9-f6b8-4777-adb2-31f21a1fe0cb",
+    "ba2a0d49-9f15-4c92-aab5-08355b26e5f7",
+    "bf537032-e35d-4e18-9c6f-44c410e684a3"
+   ],
+   "triggers": [
+    "adding an app-wide startup hook",
+    "a new lazy route or heavy dependency",
+    "first-paint latency work",
+    "adding locale or catalog data to the bundle",
+    "scheduling speculative chunk warming"
+   ]
+  },
+  {
+   "area": "performance",
+   "title": "Derive budgets and limits from measurement, and degrade through ladders",
+   "statement": "Every numeric limit — bundle budget, mount-wave size, pool size, admission watermark, algorithmic cell budget, scan budget — is set from a measurement of the real system, encoded in one shared constant, and paired with a graceful degradation path rather than a hard stop. Forbids aspirational round numbers, thresholds duplicated between local scripts and CI, and quadratic work with no budget check.",
+   "detail_md": "**Why:** unmeasured limits fail in both directions — a threshold nobody can pass gets bypassed, while caps tuned on an idle machine exhaust a busy one; a fixed mount-wave size either stalls a laptop or wastes a workstation; a flat DFS spent its whole budget on one generated tree. The structural cures recur: measure then clamp (time the previous wave), degrade through correct-but-coarser rungs (word LCS → line LCS → whole-replaced; priority-ordered deterministic truncation), use asymmetric watermarks so admission doesn't flap, and make the budget ONE constant both dev and CI import so it cannot drift. **Tensions:** ladders add code for rare inputs — the discipline is that every rung stays correct; deterministic truncation matters when downstream acts on the truncated set (the scan DELETEs rows).\n\nGoverns:\n- Set the bundle budget from measurement, in one shared constant\n- Adapt the per-frame mount budget by measuring the previous wave instead of hardcoding it\n- Put an explicit cell budget on quadratic diff work and degrade through a ladder of coarser algorithms\n- Precompute pair features once and prune O(n²) comparisons with best-case bounds\n- Spend a bounded scan budget in priority order, per-directory cap, deterministically\n- Gate new admissions on host load with asymmetric watermarks\n- Define connection pragmas once and size the pool for real holders",
+   "topic": "performance/resource-budgets",
+   "kind": "decision",
+   "governs": [
+    "8721e604-84b0-4114-8d04-913d18bc7371",
+    "509da5b5-6d50-49b7-81b4-739f5a1ca27b",
+    "aadf7786-f363-4d69-a6da-5a718afef898",
+    "33b92fb6-26de-4324-b2f7-653afb0e7da7",
+    "78e45261-63f5-4044-90fa-551781c8f20b",
+    "19f98d4f-aad2-4b7e-b874-97d5650f07cc",
+    "b050dd7d-31ee-48c6-84f5-1e91141d0c7a"
+   ],
+   "triggers": [
+    "picking a size or concurrency limit",
+    "an O(n²) algorithm over user-sized input",
+    "adding a CI size or perf gate",
+    "tuning a scan or mount batch size",
+    "sizing a connection pool"
+   ]
+  },
+  {
+   "area": "architecture",
+   "title": "Slice by domain; peers touch declared surfaces, primitives take capabilities as slots",
+   "statement": "Each business domain owns its types, persistence, validation and components behind a barrel; routes stay thin shells; shared primitives receive capabilities as props/slots instead of importing app stores; and variant execution paths (preview, remote engine) honor the same seam with exactly one caller writing terminal state. Boundaries admit documented exceptions — the failure to fear is undocumented drift, not the exception.",
+   "detail_md": "**Why:** without owned slices, logic lands wherever the current task is and becomes reachable only through the URL that hosts it; peer features importing another feature's internals freeze the owner's layout; store-importing primitives can't live in a catalog; and a bootstrap mounted inside a dev-gated component was tree-shaken out of production entirely. The dry-run and remote-engine items show the payoff of seam discipline: previews stay out of every metric by construction, and a second engine can't corrupt terminal status because only the dispatcher persists it. **Tensions:** boundaries cost indirection and slot-wiring; where surfaces genuinely look alike, commit the routing rubric (data tiers, decision list) so filing-by-appearance stops.\n\nGoverns:\n- Depend on a module's boundary, never on its internals\n- Let each feature own its types, storage, validation and components\n- Slice by domain and keep the route layer routing only\n- Keep route files to metadata and mounting one feature component\n- Restrict cross-feature imports to public barrels, checked by a test\n- Stop peer features importing another feature's internal modals\n- Give the shared lib root a curated barrel instead of a flat drawer\n- Pass cross-feature enrichment as an optional parameter\n- Keep shared primitives store-free by taking capability slots from the host\n- Group look-alike panels by data tier and commit the routing rubric\n- A dry-run reuses the real pipeline's validate stages but persists nothing\n- Alternate engines emit progress and return a result; only one caller writes terminal status\n- Never mount app-critical bootstrap inside a dev-gated component — dead-code elimination deletes it from production",
+   "topic": "architecture/boundaries",
+   "kind": "decision",
+   "governs": [
+    "48f7fd89-5f49-49ca-9f27-71a8d6f27af0",
+    "66442b59-1309-4d1e-8611-9165b3e3e0f5",
+    "866e3ec7-0fc4-4698-a15a-0a0f50a296fa",
+    "2e875347-d72a-4c39-ade4-1167f737d0e7",
+    "caf602ed-ed10-4b2f-94f7-3f1cbb8a45da",
+    "6a96f2fe-bdd8-4bb1-b487-682ad4400459",
+    "c41a332a-f950-425b-933c-a0d6ba48a302",
+    "fc397b85-cb0f-4aaa-bf58-b19800ca95a7",
+    "32633fd9-58b2-497c-ab0c-d5f2845c3ea3",
+    "b4f2dc36-fc2f-49ee-9943-f9d3dfac20eb",
+    "851670b5-f563-4c1f-8917-bcdc9ea72dac",
+    "b141f75f-51fc-4646-b080-eb86f04e30ef",
+    "04f5ab59-11cc-4973-a2e3-df40c224c194"
+   ],
+   "triggers": [
+    "drawing a module boundary",
+    "starting a new feature area",
+    "importing from another feature",
+    "building a shared/reusable component",
+    "adding a preview or alternate execution path"
+   ]
+  },
+  {
+   "area": "architecture",
+   "title": "Split compilation units along dependency direction; invert calls that reach upward",
+   "statement": "When a monolith outgrows one compiler process, split along the dependency graph or pipeline stages — never by technical layer — with the top layer re-exporting wholesale so import paths keep resolving. Business logic must not call up into UI/OS surfaces: invert with a hooks struct and emitter trait whose defaults are no-ops. Heavy optional runtimes live in their own crate behind a trait declared in core; every cfg feature is re-declared in the destination crate.",
+   "detail_md": "**Why:** layer-wise splits produce bidirectional dependencies that cannot be extracted; upward calls make the engine impossible to run headless or test; a sandbox runtime in the shared crate is compiled by everything; and the nastiest recorded failure is silent — a cfg feature the crate doesn't declare is simply always false, so gated code vanishes and surfaces later as a missing runtime capability. **Tensions:** wholesale re-export trades a clean public surface for zero call-site churn and reviewable landing steps; no-op defaults trade loud failure for graceful headless degradation — a deliberate choice that must be known.\n\nGoverns:\n- Split a monolith crate by dependency direction and re-export wholesale\n- Split crates along data-flow stages, one job per crate\n- Make each use case a crate implementing one trait over a shared core\n- Invert engine-to-shell calls: hooks struct in, emitter trait out\n- Define the plugin trait in core, keep the runtime in its own crate\n- Re-declare every cfg feature in the crate the code moved into",
+   "topic": "architecture/boundaries",
+   "kind": "decision",
+   "governs": [
+    "10ad93f3-a4ee-4096-ab3a-33efd901fe2b",
+    "648a94ce-ad10-46a5-a582-9718e9c1667a",
+    "3410b315-cf28-48a5-b306-c79178d5d622",
+    "43c486a3-ca09-47a4-ad7b-917896a1ffb7",
+    "2e83de9d-7a53-4069-b8e7-a8bb33cc3b83",
+    "9d61809d-b506-44c5-a2dc-209a22b40a0e"
+   ],
+   "triggers": [
+    "a crate or package growing too large",
+    "extracting code into a new compilation unit",
+    "engine code calling UI or OS APIs",
+    "adding a heavy optional runtime dependency",
+    "moving cfg-gated code between crates"
+   ]
+  },
+  {
+   "area": "architecture",
+   "title": "Route each cross-cutting concern through one mechanically enforced door",
+   "statement": "Auth, metering, validation, retries, state emission, save/dirty tracking — each gets a single door (wrapper, context object, emit function, registry) so hardening happens once, sequenced correctly. Convention is not enforcement: back the door with restricted imports, attribute macros, boundary tests, or an enumerated exception list. One door per concern — below ~3 call sites it isn't worth it, and one door for everything is a god module.",
+   "detail_md": "**Why:** a concern implemented per call site can only be hardened per call site — some route eventually sequences auth/metering/validation in the wrong order, and that bug is invisible until exploited; hand-rolled emits silently lack the logging, waiter wakeups and persistence the choke point attaches; raw engine access under-reports cost silently instead of failing. And a door only convention protects is not a chokepoint: the next call site skips it. The attribute-macro item shows enforcement can also make absence legible — a missing guard becomes a deliberate, commentable choice. **Tensions:** doors cost indirection and can accrete unrelated concerns; escape hatches may exist but owe the accounting themselves, documented.\n\nGoverns:\n- Route each cross-cutting concern through exactly one governed door\n- Sequence auth, metering, validation and shaping once per request\n- Funnel every state emission through one choke point so cross-cutting concerns attach once\n- Expose metered capabilities only as methods on a context object\n- A door that only convention protects is not a chokepoint\n- Make the privilege level an attribute that derives its command name\n- Encode overlapping precedence once and list every read site\n- Give a multi-section editor one dirty/save registry, wired via refs",
+   "topic": "architecture/chokepoints",
+   "kind": "decision",
+   "governs": [
+    "35802c28-6fbe-4e39-a800-6bcb856eb968",
+    "0123462a-51c7-46a0-91f0-e237fb2f53a3",
+    "4313064d-bc98-4605-869e-d36dc62d2ecc",
+    "68eb6df9-d8cd-47ba-bf5a-711a7278f906",
+    "1ff99bcd-e632-4603-a631-247285f6cdd9",
+    "f7ca5641-1113-4854-90b3-85741cf690e7",
+    "4191e4d7-8a8c-4c94-aded-10287a02a7a0",
+    "bcb6788a-b8e8-4d11-bb9a-7f856f0c7ec8"
+   ],
+   "triggers": [
+    "adding a third call site for the same concern",
+    "writing an IPC command or route handler",
+    "implementing auth, metering, or audit logging",
+    "multiple lanes mutating one entity's state",
+    "an escape hatch around a wrapper"
+   ]
+  },
+  {
+   "area": "architecture",
+   "title": "One canonical implementation per semantic; mirrors cite their source or are deleted",
+   "statement": "Any derived key, predicate, enum, classifier or flag used on two sides must come from one shared helper or a generated binding — or, if a client-side mirror is truly needed for responsiveness, it must be cheap, pure, cite the exact backend function it ports, and mirror its fallback. A drifted reimplementation is deleted, not aligned. Display-only heuristics that shadow a canonical classifier must be labeled as such with harmless misses by construction.",
+   "detail_md": "**Why:** duplicated semantics fail silently — deploy built `persona/my-bot/v1` while rollback matched `my-bot!`, disabling rollback for punctuated names; a client cron reimplementation rendered a lie as a preview; two same-named components with divergent classifiers meant an import typo silently changed behavior. When the derivation cannot be reproduced server-side, the answer is still one source: publish the client's derived snapshot and make everyone read it. Cross-language enums re-export the codegen'd binding and derive their terminal/active sets in one module. Flags spanning two modules are one flag, unit-asserted on both sides. **Tensions:** mirrors buy responsiveness at a real drift cost — the citation, purity and tests are the price of admission; anything with real domain complexity gets delegated across the seam instead.\n\nGoverns:\n- Delete a drifted client reimplementation rather than aligning it\n- If you must mirror a backend predicate, cite it and keep it pure\n- Two surfaces answering the same question must call the same predicate module, not fork it\n- Route one slug computation through a single helper on both build and match sides\n- Two components with the same name and divergent classifiers — an import typo silently changes behavior\n- Mirror a cross-language status enum from generated bindings and derive its terminal/active sets in one place\n- When a view's derived model cannot be reproduced server-side, publish the derivation itself\n- Label a display-only heuristic that shadows a canonical classifier, and make its misses harmless\n- Ship risky runtime changes disabled behind one flag both sides read",
+   "topic": "architecture/boundaries",
+   "kind": "decision",
+   "governs": [
+    "019f66dc-c72b-4b01-8dd6-7b2bd02f4889",
+    "dfe55dc4-ef79-4f20-926c-4d3ab609ac6c",
+    "f1ccd8dc-1994-4f1e-b957-146bd45967ab",
+    "83afde59-122d-42e6-af2f-e947a37b8c03",
+    "660345a7-82bf-4b38-85fe-aa87e3c180a9",
+    "ea6b7a2d-1928-4707-8432-5c8eccf8c2df",
+    "274dd39d-cbdf-4386-b698-82a5db8ba52e",
+    "5dfa8d13-26c5-4d35-bf11-c3d730523138",
+    "8bfcd69d-8317-4b19-8d7b-1d2d44e34874"
+   ],
+   "triggers": [
+    "reimplementing a backend rule client-side",
+    "a derived key used on build and match sides",
+    "a second surface answering an existing question",
+    "previewing engine behavior in the UI",
+    "one flag consulted by two modules"
+   ]
+  },
+  {
+   "area": "architecture",
+   "title": "A written contract counts only if a compiler, test, or CI diff enforces it",
+   "statement": "Ownership maps, checksum gates, keyword pairings, codegen outputs, and published artifacts are worth having only when drift fails something: a compile-time guard, branded types, a CI diff on the generated tree, or regeneration after every mutation. If you cannot verify a contract, generate it from code instead of hand-maintaining it. Generate typed bindings only for shapes your own frontend consumes.",
+   "detail_md": "**Why:** the unverified contract is a confident lie — the checked-in ownership map omits real modules; the template checksum gate passes vacuously because its key contract broke; the prompt/gate keyword sets desynchronise silently; env-table config never reached proc-macro expansion so bindings drifted in a second tree; a repaired context map left stale poisons the next agent (observed drift: 236/34 vs 233/25). Branded types are the strongest form: unverified or unsigned artifacts stop compiling rather than failing review. **Tensions:** enforcement machinery has its own failure modes — the earlier hard-reject checksum variant bricked the feature in release builds, so repair the contract before re-arming the gate; over-generating bindings implies consumer relationships that don't exist.\n\nGoverns:\n- Write a cross-cutting contract down only if a test enforces it\n- Generate the module ownership table instead of hand-maintaining it\n- Fix the template checksum gate's key contract before re-enabling it\n- Make the prompt/gate keyword pairing compiler-enforced\n- Force the codegen output dir at the compiler and gate drift in CI\n- Repair, then EXPORT — never leave the published artifact stale after a mutation\n- Enforce load-bearing invariants with branded types, not runtime checks\n- Generate typed bindings only for shapes your own frontend consumes; external wire types stay bare serde",
+   "topic": "architecture/contracts",
+   "kind": "decision",
+   "governs": [
+    "44ea4a2d-23b5-487c-8a52-88a5f8bba51a",
+    "5044807a-bb79-40d6-9ca2-8ad97e43c1cb",
+    "d87b94b2-465e-46d6-97ae-7de4d1d36233",
+    "ea89a558-3e76-480c-a7b8-9100c3ccc847",
+    "0fa1828e-afef-4317-9b66-9f7e70deaccd",
+    "b4b52c21-a2e3-47cf-8b60-8656518e5c39",
+    "b2ad6dc6-2f75-4122-a6af-60af549e5430",
+    "30d772a6-60b2-4aeb-95d4-79a5af3051cb"
+   ],
+   "triggers": [
+    "checking in an ownership or dependency map",
+    "adding generated bindings or codegen",
+    "a checksum or integrity gate",
+    "two artifacts that must agree on a keyword set",
+    "an invariant currently guarded by review"
+   ]
+  },
+  {
+   "area": "architecture",
+   "title": "Make adding a variant one declarative registry edit with a completeness check",
+   "statement": "Connectors, nav sections, plugins, adapters and integrations are declared as data in a registry the code reads, split so the declarative half is config and only genuinely odd behaviour lives in a trait with working defaults. The registry earns its keep through a completeness check that fails the build on a half-wired variant; parallel maps keyed the same way must be derived from it or brought under the same check. Below ~3 real variants, a hand-wired switch is more honest.",
+   "detail_md": "**Why:** synchronized edits across several files guarantee someone eventually misses one, silently — the recorded case being a route-keyed map authored beside the nav registry that compiles cleanly while lacking the new entry. Bespoke per-plugin shells are the same failure at panel scale: the shell cannot treat plugins as one kind. Heuristic fallbacks must be loud in dev and marked in the data, or gaps stay invisible until a full audit. Where generic machinery currently has one participant, document what it degrades to and mark the re-entry seam so callers don't assume richness that isn't there. **Tensions:** the check is the payoff — a registry without one buys little; adapters need narrow interfaces (run(ctx, onLog, signal)) with ownership of their own teardown so swapping implementations stays safe.\n\nGoverns:\n- Make adding a variant one declarative edit against a registry\n- Declare integrations as data; put only odd behaviour in a trait\n- Derive route-keyed maps from the nav registry, not alongside it\n- Keep the catalog mapping in config and make the fallback noisy\n- Give plugin panels one page contract the shell can host uniformly\n- Put browser/agent automation behind a swappable adapter with an AbortSignal contract\n- Document the degenerate shape of generic machinery, and mark the one re-entry seam",
+   "topic": "architecture/extensibility",
+   "kind": "decision",
+   "governs": [
+    "d13a15c4-cc5f-461e-b40b-414163f57a0a",
+    "eb49a3ca-29f8-4338-9899-a150392043c6",
+    "b727a840-3550-4015-b98a-bc7b3d45d16a",
+    "48ec7022-e969-4735-b337-b803d1b8c93a",
+    "c800cfad-36d1-4210-ab1c-a2fa832cf38c",
+    "5fc61fac-36ce-4938-889a-fa942ccbe47c",
+    "5e7ea421-c2a1-4e92-9f6f-67869b50af58"
+   ],
+   "triggers": [
+    "adding a connector, plugin, or nav section",
+    "a switch statement growing a fourth arm",
+    "a second map keyed by the same union",
+    "wrapping an external driver or automation tool",
+    "designing for a future second implementation"
+   ]
+  },
+  {
+   "area": "architecture",
+   "title": "Decouple through buses, but isolate every subscriber and hold one subscription",
+   "statement": "Cross-domain coupling goes through a typed event bus wired in one file, never sibling store imports — and the bus's contract is defensive: each handler is try/caught and timeout-raced so one bad subscriber cannot break the emit loop or its siblings, and a hot transport stream is held as exactly one subscription fanned out in application code with a capped pre-mount buffer and per-frame dispatch. State the bus's scope (in-process, no durability) explicitly.",
+   "detail_md": "**Why:** stores reaching into each other create invisible dependency graphs and module-load cycles; an unguarded subscriber lets a throwing consumer break the mutation that published the event; and per-consumer transport subscriptions multiply every chunk by the consumer count. The pre-mount buffer needs a cap and a visible drop counter, plus a guard for the race where every subscriber unmounts while subscribe is still resolving. **Tensions:** a bus hides ordering hazards — the typed event map doubling as documentation is the mitigation; explicitly stating non-durability stops anyone mistaking it for a queue.\n\nGoverns:\n- Declare cross-store dependencies in a typed bus, not sibling imports\n- Isolate every event subscriber with its own timeout and error boundary\n- Keep one transport subscription and fan out to components in JS",
+   "topic": "architecture/events",
+   "kind": "decision",
+   "governs": [
+    "2889d4d1-d184-484c-b6b6-ae841945a7be",
+    "745f16a8-b543-4a88-b9a5-0ee0c691195d",
+    "4bc843ff-b026-407b-b67e-93879a17ec82"
+   ],
+   "triggers": [
+    "one store needing another store's data",
+    "adding a subscriber to an in-process bus",
+    "many components consuming one event stream",
+    "a mutation that must notify other domains"
+   ]
+  },
+  {
+   "area": "architecture",
+   "title": "Treat event semantics — matching, forwarding, authority — as explicit decisions",
+   "statement": "Event plumbing is full of defaults that are silently wrong: canonicalize names for matching only (never as stored identity), consume matched events with a positional cursor so one event cannot satisfy two steps, treat payload forwarding as an explicit tested flag rather than a side effect of sequencing, suppress a mirrored legacy event whenever its modern twin is filtered, let the owned OS process outrank protocol-level end events, and carry live progress on the event rather than the persisted row.",
+   "detail_md": "**Why:** each governed item records a silent divergence between what the wiring appears to do and what it does — exact matching dropped events across both subscription and trigger paths; an N-step sequence fired on fewer than N events; chains 'worked' in demos while every downstream step ran blind because control flow was mistaken for data flow; a filtered event's legacy mirror kept feeding counters and tripped phase transitions; an 'ended' event downgraded a demonstrably-alive process. **Tensions:** progress-on-the-event trades queryability for freshness — the row mapper reads the fields back as absent by design, and the terminal re-emit from the database naturally clears them; authority rules need a ratchet (never downgrade a confirmed Exited state).\n\nGoverns:\n- Canonicalize event-name separators before MATCHING, never before semantics\n- Sequence matching must consume events by positional cursor — one event can never satisfy two steps\n- Advancing a chain's control flow is not forwarding its data\n- When one event fans out into mirrored representations, suppress the whole pair\n- When lifecycle events and process ownership disagree, the owned process is authoritative\n- Carry live progress on the event, never in the persisted row",
+   "topic": "architecture/events",
+   "kind": "decision",
+   "governs": [
+    "bb73c03d-575e-4183-9ef0-603a58f9f783",
+    "4c69369c-4ba3-4413-8aad-d908d0422ad7",
+    "f44c85ea-bb6c-4fb6-8e49-5d60abda09e7",
+    "b37d7518-4d29-4818-b2d1-12c9dec86b2f",
+    "73faba07-9701-494a-998b-7146ffdac898",
+    "344a5509-1ae4-42df-863b-907a70b11ad6"
+   ],
+   "triggers": [
+    "matching events against subscriptions or triggers",
+    "chaining steps where B follows A",
+    "filtering an event stream with legacy mirrors",
+    "reconciling process death with protocol events",
+    "reporting progress for a long job"
+   ]
+  },
+  {
+   "area": "testing",
+   "title": "Write decisions as pure, injectable functions; test logic without booting the world",
+   "statement": "Policy and computation — gating, ordering, scoring, layout, eval arithmetic, timing transitions — live in dependency-free functions over plain data, with the clock, RNG, config and every external capability injected. Middleware, components and background loops reduce to plumbing that calls them. Forbids logic testable only by booting a framework, mocking modules, or running a model.",
+   "detail_md": "**Why:** logic entangled with I/O is in practice untested — gating decisions inside middleware, computations inside components, harness arithmetic that can be wrong while every model call succeeds, and build-time server-only guards that made the most sensitive modules the least tested. Purity also buys determinism (the layout item bans Date and Math.random outright, hashing tie-breaks so identical input yields identical output) and cheap per-PR coverage of E2E fixture logic the live run can never re-check. **Tensions:** injection seams must be honest — port asymmetries are justified rather than smoothed, nullish fallbacks silently eat explicit nulls, and where the behaviour under test IS the query, use a real in-memory database rather than a fake query layer.\n\nGoverns:\n- Write policy decisions as pure functions over plain data\n- Keep business logic pure and inject the provider seam\n- Extract framework-free predicates out of middleware plumbing\n- Move a component's computation into a React-free sibling module\n- Guard server-only modules at runtime and inject their deps lazily\n- Inject ports to make untestable branches testable, and document the asymmetries\n- Give background-ticker cutoffs a three-tier override: env test knob > user tune > default\n- One-shot deterministic layout: bounded force pass, no clock or RNG, hashed tie-breaks, pinned anchors\n- Unit-test the E2E harness's own pure fixture logic, because the E2E run can never be a per-PR gate\n- Keep eval aggregation pure and preserve explicit nulls in fixtures",
+   "topic": "testing/testability",
+   "kind": "decision",
+   "governs": [
+    "bf9ee2a8-246a-4c17-8f85-4e8c1bf160e9",
+    "ddce0f66-02e4-4b0d-a9aa-b8ee623aa429",
+    "e143383f-30b9-49ab-9ba0-7458947de057",
+    "70f5f3ae-cde6-49b1-839b-cc221dd5e20d",
+    "2b50d693-633b-4536-8353-4783c95cd5fc",
+    "d07f2de5-a199-4948-9ec1-65a53b898baf",
+    "3ab4c261-255d-4821-aef2-fe0c7a690402",
+    "090bf2d8-876f-4805-bcdc-f33c489c7dea",
+    "511dbd99-3240-4f04-a9aa-4b62e42c0edd",
+    "11f53a7a-5024-498a-88e4-089760f54d31"
+   ],
+   "triggers": [
+    "writing a gating or policy decision",
+    "logic accumulating inside a component or middleware",
+    "code that reads the clock or RNG",
+    "hard-importing an LLM client or database in logic",
+    "an E2E harness that seeds its own fixtures"
+   ]
+  },
+  {
+   "area": "testing",
+   "title": "Pin every duplicated semantic to its counterpart with parity and drift tests",
+   "statement": "Wherever one semantic exists in two places — two languages, two drivers, two renderers, code map vs locale catalog, allowlist vs embedded copy, preview vs engine — a test must hold the two together: set-equality walks, byte-identical mirrored fixture tables, one suite run against every driver, exhaustiveness derived from the type's own constant. A shared interface is not parity; typechecking both sides proves nothing about their semantics.",
+   "detail_md": "**Why:** the drift these tests catch had real teeth — a hand-synced allowlist made every ingest permanently report missing files; eight tour anchors drifted undetected before the registry-walking gate; divergent storage-driver semantics (create-if-absent, partial merge) surface only as silent data loss in the weaker environment; MessagePack reorders enum payloads silently; a preview seeded with a different hash seed than the engine made the calendar lie; a switch with no default let a new kind silently no-op. The strongest variants derive exhaustiveness from the single source (ALL_KINDS from the same constant, compile-time _AssertAllCovered) so the drift cannot even compile. **Tensions:** mirrored fixture tables are deliberate duplication — the header naming the other file is what turns copy-paste into a tripwire; parity suites cost a fake for drivers you cannot run locally.\n\nGoverns:\n- Mirror fixture lists in both suites of a cross-language contract\n- Run one storage suite against every driver, real or faked\n- A multi-driver store needs a parity suite, not a shared interface\n- Pin code-config to locale-catalog parity with a key-set equality test\n- Lock-step tests pin two hand-maintained lists against each other, and one test per module runs against the real schema\n- Pin a two-renderer prompt contract with a test naming every deserializer field\n- Share ONE pure renderer between in-process and out-of-process paths\n- Seed schedule previews with the same id the engine hashes so preview and reality agree\n- Gate tour anchors with a data-driven drift test over the REAL registry\n- Derive exhaustiveness tests from the type's own constant and guard the guard\n- Lock a data catalog's file shape and its cross-language seed idempotency in one test\n- Assert VALUES in wire round-trip tests — positional encoding reorders silently",
+   "topic": "testing/parity",
+   "kind": "decision",
+   "governs": [
+    "6b725f48-f904-486c-bfa3-9c209bfdcec5",
+    "1565088c-8a0f-43eb-bf7a-de73abd1d90d",
+    "1962a99a-54e6-48be-8c01-2bff3d2714ef",
+    "96e52713-0f61-47c4-a5e8-d4134bef15be",
+    "06b43c30-51ea-4835-b141-a283c116d250",
+    "ade0f812-5f56-4b31-9b14-48bc450388b0",
+    "764922f3-33e8-47ed-9172-a208969d1e22",
+    "d99820ce-74dc-427b-8fe3-52c3c7e3a480",
+    "9bf045ca-f270-4d40-8627-dc161e4c8f91",
+    "b89b118f-0c20-4cc2-ac19-7ffbc6e604ce",
+    "fc54fc8f-60af-4eee-8582-5c1487bec496",
+    "6c5327af-8a33-4f8c-a2f0-5fd27c543a99"
+   ],
+   "triggers": [
+    "the same enum or ladder in two languages",
+    "a second storage driver behind one interface",
+    "a hand-maintained list with an embedded copy",
+    "a preview that must match engine behavior",
+    "serializing enums over a wire format"
+   ]
+  },
+  {
+   "area": "testing",
+   "title": "Test against real infrastructure; a mock may replace only the slow producer",
+   "statement": "Storage-backed subsystems run against a real database driven through the full migration chain, with time controlled by writing timestamps rather than sleeping, per-test-named in-memory databases, and a pool shape matched to production's concurrency semantics. A mock seam may stand in for the slow producer, never for the wiring under test — and the mock's own driven sequence is asserted so it cannot silently drift.",
+   "detail_md": "**Why:** mocked stores drift from the real schema and keep every test green while production's migration stops creating the index under test; a bare shared-cache :memory: URI is ONE process-wide database, so parallel tests share tables and flake; an in-memory double quietly changes concurrency semantics (deadlocking where a file-backed pool would not); and a mock that shortcuts the event bus 'completes' flows through a contract the real stream never exercises. **Tensions:** real infrastructure costs setup time — temp-directory databases per test and explicit test locks for process-wide state are the price; the discipline for mocks is scoping (replace the producer, walk the real phase sequence, assert the driven phase list itself).\n\nGoverns:\n- Test against a real migrated database and control time by writing it\n- Match the test pool's concurrency shape to production's\n- Name each in-memory SQLite test database per test — shared-cache memory URIs are process-wide\n- A mock seam may replace the slow producer, never the wiring under test — and assert the mock's own sequence",
+   "topic": "testing/harnesses",
+   "kind": "decision",
+   "governs": [
+    "2de3af29-3bfb-4425-99b0-88d3ad2b396d",
+    "ed2c2d8f-e222-4301-af51-d05193ca3657",
+    "73bab28b-8b67-4ddf-b3bc-f7b538b51e81",
+    "47516f30-0389-44f2-b366-c9a406e614df"
+   ],
+   "triggers": [
+    "testing a storage-backed subsystem",
+    "mocking a database or store",
+    "a test that sleeps to age data",
+    "stubbing a slow build or model step"
+   ]
+  },
+  {
+   "area": "testing",
+   "title": "Protect the signal: no vacuous greens, no infrastructure reds, no synthetic truth",
+   "statement": "A green result must mean something ran and proved something: require at least one genuine pass (all-skipped is not success), pre-assert that fixtures actually fail before trusting a pass, and make the backend consequence — not the DOM or an agent's claim — the load-bearing assertion. Symmetrically, optional infrastructure (build caches) must never turn its own outage into a red, and test/eval traffic must never leak into surfaces users read as operational truth.",
+   "detail_md": "**Why:** each governed item records a lying signal — zero failures over a fully-skipped set read as success; a broken fixture would have produced a vacuous pass had it not been pre-asserted to fail; agents claim fixes that re-running the real verification disproves; an unconditional sccache wrapper made a cache outage kill every compile; and eval instrumentation promoted rows into incident/metric tables, corrupting the operational picture it was measuring — while placeholder panes get read as project state once shipped. **Tensions:** honest reporting means keeping skips visible rather than folded into counts, and distinguishing 'available at runtime' from 'actually exercised' in both the result model and the user-facing wording.\n\nGoverns:\n- Require at least one real pass before reporting green\n- Assert the strongest available signal — backend truth or a re-run of the real thing — and pre-assert the fixture fails\n- A build-acceleration cache must never be able to fail the build\n- Keep test and mock data out of surfaces users read as truth",
+   "topic": "testing/signal-integrity",
+   "kind": "decision",
+   "governs": [
+    "e0b10c36-7cdf-4da5-a6a9-8c1dd533cbc1",
+    "f080bf2a-6ac3-4005-903a-3b925d91e547",
+    "ae54cc7c-a7a2-484d-8512-8df0a65693ce",
+    "8037c846-1f67-4d96-85c2-b459baeb74b7"
+   ],
+   "triggers": [
+    "reporting a verification summary",
+    "a suite where skips are possible",
+    "trusting an agent's claim of a fix",
+    "wiring optional CI acceleration",
+    "instrumentation running during eval or lab runs"
+   ]
+  },
+  {
+   "area": "testing",
+   "title": "A gate that has never produced a real red has never gated anything",
+   "statement": "Treat 'this check never actually ran' as a distinct bug class: audit that each CI gate reaches its assertion (no || true masks, no skipped surfaces, triggers that fire on the real flow) and verify each has produced a genuine red at least once. Calibrate what fails: correctness and safety are zero-tolerance, quality metrics compare against committed baselines with bounded tolerance, coverage is scoped to logic layers and ratcheted, and advisory checks stay warnings so the gate keeps its credibility.",
+   "detail_md": "**Why:** gates fail in ways that look like enforcement — a step erroring before its assertion, a masked command, a trigger that never fires — and gates that block on noise get bypassed, which is the same outcome. Repo-wide coverage percentages measure mostly presentational code and produce a number nobody trusts; a contrast gate that hard-failed accent colours would lose the argument, so it hard-fails only tokens carrying readable copy, checked at the minimum opacity actually rendered. Baseline recalibration must be deliberate, never silent. **Tensions:** every calibration choice trades sensitivity for credibility — the ratchet (pin just under measured, raise as work lands) resolves it without demanding a big-bang.\n\nGoverns:\n- A CI gate that dies before its verdict has never gated anything — audit that each gate actually runs\n- Gate evals on curated fixtures: hard zero-tolerance, soft baselines\n- Measure coverage on logic layers and ratchet the floor\n- Gate theme contrast in CI, hard-failing only on text tokens",
+   "topic": "testing/harnesses",
+   "kind": "decision",
+   "governs": [
+    "096010e2-397e-4ceb-a80c-921b9f983706",
+    "1f000b03-d2bb-483c-b16f-29c754f1de3c",
+    "8d430c6f-6627-4f60-90cd-e78fca8f7eca",
+    "198c5a46-6708-40c6-847b-8d5d69447a4a"
+   ],
+   "triggers": [
+    "adding a new CI gate",
+    "setting a coverage or quality threshold",
+    "an eval harness that only reports scores",
+    "a check that has never failed"
+   ]
+  },
+  {
+   "area": "testing",
+   "title": "Engineer deterministic seams into the harness for async and live UI",
+   "statement": "Async and live-app testing is a harness-design problem, not an assertion problem: replace sleeps with deadline-bounded predicate polls that embed the last observed state in the failure, pin race fixes by interleaving manually-resolved deferreds with the competing mutation, bridge fire-and-forget channels through named-method RPC seams plus state injectors and DOM result stashes, discriminate UI state by data attributes rather than styling classes, and standardize minimal harnesses (the three-line slice harness) reused verbatim across files.",
+   "detail_md": "**Why:** without engineered seams, async tests are slow, flaky, or impossible — sleeps tell you nothing on timeout, slice-level races are untestable through rendering, a fire-and-forget /eval channel cannot await results across calls, and class-substring assertions break on cosmetic refactors while asserting nothing behavioral. The state-injector split is the highest-leverage move for LLM-driven apps: 'does the model do the right thing' versus 'does the UI render each state correctly', so render-tier behavior never burns a 30-90s model turn. **Tensions:** dev-gated globals must mount/unmount with the surface they drive so they never ship; harness quirks must be written down (which built-in wait is unsafe for which element class); standardized harnesses trade flexibility for cross-file legibility.\n\nGoverns:\n- Replace sleeps with deadline-bounded predicate polls that embed the last observed state in the failure\n- Pin store race fixes by interleaving a deferred promise with the competing mutation\n- Bridge fire-and-forget eval harnesses with a window global plus a hidden DOM result stash\n- Add a named-method RPC seam plus state injectors, so UI states are tested without burning an LLM turn\n- Asserting on styling-class substrings couples tests to cosmetics — plant data attributes and migrate the query seam\n- Standardize a three-line Zustand slice harness and reuse it verbatim",
+   "topic": "testing/harnesses",
+   "kind": "decision",
+   "governs": [
+    "851d399d-f87c-4b48-bc66-2fe0820a46b7",
+    "9b295946-c06b-437e-a28b-0b7903b6b27c",
+    "167d5fc6-ecec-450f-8358-080399950a4f",
+    "3b5dd723-db2b-4fef-b085-b26cabc5c346",
+    "bc1851de-f09c-4301-bfa2-4b8a3fe29506",
+    "fa6460d6-1e49-4cc4-9054-b89e0e5f92db"
+   ],
+   "triggers": [
+    "writing a test for async UI",
+    "a race condition in a store slice",
+    "driving a live app from a test harness",
+    "asserting UI state from the DOM",
+    "testing an LLM-driven surface"
+   ]
+  },
+  {
+   "area": "testing",
+   "title": "Assert the invariant itself: identity, absence, cost, values, and relations",
+   "statement": "Non-functional contracts deserve direct assertions, not proxies: reference identity for memo bail-outs (toBe, not toEqual), absence of banned dependencies via raw-source scans, absence of duplicate live regions for accessibility, render budgets via spied leaves and counters — with an anti-freeze floor proving the memo is a cache, not a freeze — allocation counts via spies on the allocation itself with the legacy implementation as oracle, and relations between weight bands rather than magic numbers.",
+   "detail_md": "**Why:** value-level assertions pass while the real contract breaks — a patch returning a new array reference with equal values destroys every memoized consumer; a behavioral spy proves only the tested path clean while a raw-source assertion proves NO path reaches the banned surface; a memo that never re-parses is a freeze that value tests cannot see; magic-number assertions on a ranking table pin the accident, not the claim. The oracle pattern (keep the old implementation verbatim in the test, property-test ordering over shuffled inputs with ties) makes rebuild regressions visible without trusting either side. **Tensions:** these assertions couple to internals by design — each needs its guard-of-the-guard (self-check toContain against silent import failure, the >0 sanity floor, a second loop proving every case was decidable).\n\nGoverns:\n- Assert array/row IDENTITY, not just values, for memo bail-out contracts\n- Guard a banned dependency by asserting its absence in the module's raw source\n- Test accessibility rulings as absences, not just presences\n- Assert render cost with a spied expensive leaf and a hook-based render counter\n- Test a rebuild's cost and correctness against the legacy implementation as oracle\n- State a cross-domain ranking once, claims beside numbers, tested as relations",
+   "topic": "testing/strategy",
+   "kind": "decision",
+   "governs": [
+    "78f3a152-88b4-481b-b9e9-c8dfaa56eb8d",
+    "9b49aab9-5dbc-4007-8ecb-818699230fb6",
+    "7820aaed-87b4-4820-8932-552aeb92e565",
+    "4ba419f2-9aa5-4ab2-9086-4bed8d1c49a1",
+    "e458be49-90e7-49bd-90cc-9ef7fb86910d",
+    "624189fd-70d8-47e9-93f1-b7c44c1c0525"
+   ],
+   "triggers": [
+    "a memoization or bail-out contract",
+    "banning a dependency from a module",
+    "an accessibility rule about announcements",
+    "rebuilding hot logic",
+    "a weight or priority table"
+   ]
+  },
+  {
+   "area": "testing",
+   "title": "Write the testing doctrine down and make every deviation enumerable",
+   "statement": "The suite's own rules are contracts: name one canonical test pattern with template files and an exhaustive list of valid deviations (anything off the list is a default-pattern test), write predicate semantics as numbered points each pinned by a property test citing its number, and when consolidating implementations, re-point the deleted one's regression tests at the survivor with the rationale in the test-file header. Forbids leaving pattern choice to taste and dropping tests with the code they guarded.",
+   "detail_md": "**Why:** two coexisting test styles both keep growing when the choice is taste; predicate edge cases — time windows, boundary inclusivity, dedupe intervals — end up written nowhere, so a failing test is a puzzle instead of a contract change requiring an explicit doc edit; and consolidation quietly deletes the tests that guarded the surviving invariant. The same written-doctrine surface is where mandated-but-skipped categories live (persistence-migration tests that only break for users with old stored state). **Tensions:** documentation rots unless the tests cite it — the numbered-points scheme is what couples them; example-based tests then only need the memorable cases.\n\nGoverns:\n- Document the canonical test pattern and an exhaustive deviation list\n- Write the contract as numbered points and pin each with a test\n- When you delete a redundant implementation, move its regression tests onto the survivor",
+   "topic": "testing/strategy",
+   "kind": "decision",
+   "governs": [
+    "41816b09-3290-43d8-ad53-b2ab839b66f4",
+    "e056f979-3dca-4c49-a4ac-5fa3b7ee9d74",
+    "9bf5b19a-c903-4601-b4c4-d49da7a6e39d"
+   ],
+   "triggers": [
+    "two test styles coexisting in a suite",
+    "a predicate whose edge cases are the product",
+    "consolidating duplicate implementations",
+    "onboarding a contributor to the test suite"
+   ]
+  },
+  {
+   "area": "testing",
+   "title": "Layer the suite by what only each layer can catch, and spend expensive runs once",
+   "statement": "Decide test tiers deliberately: fast unit tests for pure logic, browser/live suites for journeys, a separate evaluation lane for model-dependent quality (pass/fail is the wrong instrument), and for every expensive real run a cheap deterministic twin in the per-PR gate — each header naming what it does NOT cover and pointing at its twin. Constraints like serialization are written down as architectural facts with the named future fix; required gates run per iteration, informational gates once.",
+   "detail_md": "**Why:** a single tier always over-serves one risk and misses another; without the twin-pairing convention, someone deletes the real-LLM spec or the mock as 'redundant' and one whole risk class goes dark; without recorded justification, the next contributor bumps workers:1 to chase speed and corrupts the singleton backend session; and rerunning a slow build after each of ~70 agent-loop iterations burns hours on results that change nothing. **Tensions:** twins are deliberate duplication maintained by the mutual-citation headers; long timeouts are defended in writing because a flaky test is worse than a slow one; the required/informational split must be decided per gate, not assumed.\n\nGoverns:\n- Layer the test surface by what only that layer can catch\n- Pair every expensive real-LLM spec with a cheap mocked twin, and let each header name what the other covers\n- Write serialization down as an architectural constraint with the named future fix, not a flake workaround\n- In an iterative agent loop, run only the required gates per iteration and batch informational gates into one final pass",
+   "topic": "testing/strategy",
+   "kind": "decision",
+   "governs": [
+    "89a70634-b5fa-4798-b0a2-2f09df57eb79",
+    "bf0f6c8c-7e07-4cd6-8180-ed23c78ed3f1",
+    "7622f62f-c659-416e-bc93-269808dd607b",
+    "ea803dbe-5d61-498d-96ab-f4900adbca53"
+   ],
+   "triggers": [
+    "designing the CI pipeline's tiers",
+    "an expensive end-to-end or real-LLM spec",
+    "a suite forced to run serially",
+    "gates inside an iterative agent loop"
+   ]
+  }
+ ],
+ "orphans": [
+  {
+   "id": "57aacdd9-f2cd-4d3d-8151-9fb358ae3d7c",
+   "reason": "Standalone CSS micro-technique (per-row containment); no cluster of 3+ items shares its paint-isolation concern, and folding it into the attention or high-frequency doctrines would stretch their direction."
+  },
+  {
+   "id": "fa018f9f-1ae7-45f2-860f-24929fafd915",
+   "reason": "Platform-specific compositor pitfall (WebView2 backdrop-filter flicker) with no sibling items about compositor/paint behavior; it prescribes avoidance of one CSS feature rather than practicing a shared direction."
+  },
+  {
+   "id": "fcd3e7b0-c8c7-49ee-984e-cb876eec48e8",
+   "reason": "Concerns a tool injecting files into third-party user projects (owned-file regeneration vs anchored host patching); no other architecture item shares this cross-project code-injection concern, so a 3+ item doctrine cannot be grounded."
+  }
+ ]
+}

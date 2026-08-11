@@ -1,0 +1,497 @@
+{
+ "doctrines": [
+  {
+   "area": "frontend",
+   "title": "Loading and motion are one choreography: presets, ghosts, one-shot reveals",
+   "statement": "No async surface hand-rolls a skeleton, spinner branch, or entrance animation. Compose the shared mechanics — delayed route-chunk fallbacks, ghost-under-permanent-chrome gated on loading-into-empty, id-guarded one-shot reveal cascades, skeleton twins, honest progress bars — and keep every timing as data in one preset module. Content already on screen is never hidden by a refetch; the anti-flash delay lives on the placeholder, never on content; animations that must survive the global motion config are CSS keyframes, not framer.",
+   "detail_md": "**Why.** The recorded failure class is a UI that flickers or lies while waiting: blank chunk-load gaps, ghosts flashing on fast fetches, index-keyed staggers that make lists blink on every refetch and virtualized scroll, a global `MotionConfig reducedMotion='always'` silently snapping reveals that had to play, literal `layoutId`s teleporting indicators between mounted instances, toast timers burning through their lifetime in a hidden tab, and progress bars sitting at 100% while work continues. Every one of these was hit and fixed once; the doctrine is that the fix lives in shared mechanics, not per page.\n\n**Tensions.** Skeleton twins deliberately COPY the real component's class list (truthful geometry over DRY — sharing would couple styling refactors). Early backend completion fast-forwards the animation rather than cutting it, and burst data is paced into a timed reveal — product feel bought with a bounded delay. Reduced-motion demands a real render branch to plain DOM; zeroed durations still mount wrappers and can flash. Chunk-retry must reuse one stable `React.lazy` instance or recovery re-suspends forever.\n\n**Governs:** Route every list/table view through UnifiedTable to inherit the cold-load contract; Compose cold-load UX from four shared mechanics, never a per-page skeleton; Show ghost placeholders only into cold emptiness, never over rendered rows; Put the loading delay on the placeholder, never on the content; Build skeletons as explicit twins: copied chrome classes, em-sized bars inside real typo line boxes; Make row entrance animations one-shot and id-guarded; Show an honest asymptotic bar for unknown-duration work; Cover unbounded async waits with a three-phase choreography whose payoff is triggered by real data, never a timer; Fast-forward an animation on early completion — never cut it — and pace burst data into a timed reveal; Virtualize streaming logs with threshold-based sticky-bottom and typed pre-output states; Retry a failed chunk import, but keep one stable lazy instance; Keep every motion timing in one preset module, as data; Under a global MotionConfig, must-run animations use CSS keyframes, not framer; Honor reduced-motion with a real render branch to plain DOM, not by zeroing animation durations; Replay a CSS keyframe with the remove-class → force-reflow → re-add idiom, once per codebase; Suffix every framer layoutId with a per-instance useId; Replay a viewport-entry animation with IntersectionObserver plus a run key, skipping the first observation; Animate collapse with grid rows, and keep the unmount you replaced; Pause toast lifetimes on hover AND on tab-background, re-anchoring the clock on resume.",
+   "topic": "frontend/motion",
+   "kind": "decision",
+   "governs": [
+    "3b825e83-05a6-49e8-83f6-19f1a450d148",
+    "9dd06b94-0ef9-4d77-8901-9dfeaf122737",
+    "12842172-3c21-465c-92a4-34ca1bf6d039",
+    "360a9194-d829-4b73-8e2d-08bb0c69bd6c",
+    "e94de2d3-4f60-421b-bd4c-1a840902b054",
+    "901e6f71-1d84-4225-a4cc-4eb0aecbac56",
+    "55ac88ce-06a0-49a8-87e8-67dcee0c3ee4",
+    "1da5eab7-ad43-446b-b8f5-dab5a37f4f81",
+    "97d841d2-8bdd-44f7-b247-d25bb56a1649",
+    "906fbfc5-3b96-42fd-9571-a372afe49aa0",
+    "70b12318-24d5-415c-9700-9c8fab5dc047",
+    "9215acd9-687f-4df9-9969-c063823628b1",
+    "51491a52-b8de-4886-ac13-6e73d429e94c",
+    "ee8a0fac-131c-4374-bc06-b643afa34b27",
+    "e4081030-a298-4a72-a28f-61794a9441aa",
+    "109a565f-9dfa-41e7-966d-34ef61a4a6d0",
+    "48fa16be-cc36-488b-ad0d-2160ea4751c3",
+    "ea14fa76-5aa5-431f-bb18-758784e31f23",
+    "9b466eb6-e005-4015-9eb2-5c41b66df479"
+   ],
+   "triggers": [
+    "adding a list or table surface",
+    "writing a loading skeleton or spinner",
+    "animating a reveal or entrance",
+    "adding a progress bar for slow work",
+    "lazy-loading a route or chunk",
+    "handling prefers-reduced-motion"
+   ]
+  },
+  {
+   "area": "frontend",
+   "title": "State crossing an async boundary is owned by refs, tokens, and generations",
+   "statement": "Any value read on the far side of an await, timer, listener, or poll is owned by a synchronously-updated ref, a latest-wins token, a generation counter, or an id-stamped record — never by the render closure or the store-as-it-was. Every landing re-validates that the world it assumed (entity, route, request generation) still holds, and every terminal event has exactly one responsible finalizer. Identity is always a stable id, never an index or object identity.",
+   "detail_md": "**Why.** This is the largest recorded failure class in the corpus: stale responses winning because a per-slice latest-wins compare was backwards; double-sends under StrictMode from acting on a closure copy after clearing the store; an optimistic delete resurrected by an in-flight fetch; tool results started under persona A surfacing under persona B; a confirm dialog executing against a target the user had switched away from; a stale navigation timer yanking the user to a tab of a screen they had left; a terminal stream event handled by neither the focused nor the background listener, wedging busy flags; a queue cursor remembered as an index pointing at a different card after a poll; a blank questionnaire from local state carried across drafts. Each bug is the same shape — async result meets moved world — and each fix is the same move: pin identity at start, verify it at landing.\n\n**Tensions.** Centralize the token primitive once (per-slice reimplementations are where the compare flips); consult it in failure branches too, so a stale failure cannot clear a fresh load flag. Defense in depth is deliberate: clear timers on state change AND re-check inside callbacks. Tombstones and seen-sets must retire so they stay bounded. Read-and-clear one-shot slots inside the store, acting on the returned value.\n\n**Governs:** Centralise the latest-wins token so the compare is right once; Carry a monotonic key so a repeated identical arrival still fires; Guard double-submit with a ref, not with render state; Hold a synchronous latest-known ref so rapid toggles compose instead of clobbering; Stamp cached async results with their owning entity and guard both write and read; Register stream listeners before invoking the command — and unhook them if the world moved during the await; Bind a destructive confirm to the target it was raised against; Tombstone deleted ids so an in-flight fetch can't resurrect them; Reconcile a failed optimistic delete by re-fetching, not by re-appending; Serialize read-modify-write of a shared persisted blob through one module write queue; Every terminal event needs exactly one responsible finalizer — navigation must hand off, never orphan; A delayed navigation side effect must re-validate the route it assumed before landing; Debounce inline availability checks, abort stale ones, fail open; Claim-and-clear one-shot store slots inside the store, acting on the returned value; Reset every piece of component-local UI state when the session/entity identity changes — standardize a resetKey prop; Flag saved selections as stale only after a confirmed successful fetch; Invalidate the downstream fetch cache, not just the selection, when a parent picker changes; A per-key cache-hit short-circuit blinds the store to set changes — compare a set signature too; Write keyed per-conversation slices and the active mirror in the same set() call; Run session side channels as stream → attach → hydrate pipelines where live wins; Track the cursor as an ID, bound 'not now' skips, and build the numerator into the denominator; Pair a no-replay event with a consume-on-mount latch for lazy-mounted deep links; Snapshot the data a post-completion hook needs into the event payload, before state resets; Make a two-writer shared document safe with one mutable copy plus per-object author provenance; Cancel a tour step's queued effects, and survive a missing anchor.",
+   "topic": "frontend/state",
+   "kind": "decision",
+   "governs": [
+    "dc5292d7-0473-4fdc-9d2d-a1c073482207",
+    "fdfd1067-fa41-4028-9332-54c69e5f4a9d",
+    "d0ed1529-73bc-4457-8217-daa43179853d",
+    "b0b8fb7e-4fe9-42cc-9f58-037c47865588",
+    "71727012-95ee-4b08-9cea-7da5f6d735ad",
+    "b1cb517f-9d96-4f78-b0ba-3dcf23a39ab1",
+    "27cc6bd0-e35c-4df0-b62f-f60ff53f4cad",
+    "66e8026b-e42a-4b05-8bc1-cd461372a26c",
+    "7b6f435f-b6e4-4433-b1de-a8bc183a1e18",
+    "8705740e-4276-4219-8371-12155352ea50",
+    "0530c99b-20f4-4370-87c0-cb51313aa433",
+    "182de9be-4c38-4082-ae59-d57a23fb9deb",
+    "65c62849-61bd-4f1f-814d-3c564c4df261",
+    "0128a40d-c411-4eb7-af58-aa2e79fb65ec",
+    "93ec5365-f137-4256-8af6-b13421405534",
+    "2c25072e-1a61-4c51-b3d9-727c5f3c5606",
+    "1b581aa2-d3d5-41a4-995b-d0caca9050f3",
+    "a9815df6-a88d-4701-9c6c-82dbb15f6d12",
+    "9b558f3a-7932-4ae4-8678-caea771a4f90",
+    "d5c7e309-a83d-4eb9-8bbb-dda2498db28d",
+    "64aba89a-5848-4871-ad49-a2537c85de25",
+    "a42ee5d0-02c0-48ef-bc03-f0eaf8858b76",
+    "4fb1cdd7-7952-4ea9-b8ee-4233b25f84fb",
+    "a0792f79-4662-472c-9f2a-52c9b17150a0",
+    "c195e8c6-0c10-4497-b148-3f53fa6570dd"
+   ],
+   "triggers": [
+    "writing a handler with an await inside",
+    "adding optimistic update or delete",
+    "consuming a stream or event listener",
+    "scheduling a timer that touches state",
+    "caching results keyed by id",
+    "switching the active entity or session"
+   ]
+  },
+  {
+   "area": "frontend",
+   "title": "Effects depend on stable scalars, latch one-shots, and tear down automatically",
+   "statement": "An effect's dependency list carries only stable scalar values or value-derived keys — never fresh object/array identities, never props that merely gate capability. Run-once work is latched in a ref, latest values are read through refs, and cleanup is automatic inside the hook (re-arming on mount for StrictMode), never opt-in at the call site. setState updaters stay pure, and anything a mounted component both reads and writes (mount flags, registries, derived sets) must be structured so re-entry cannot loop or accumulate.",
+   "detail_md": "**Why.** The recorded incidents are all loops, leaks, and double-applies born from dependency identity: a fetch-if-empty guard keyed on a fresh `[]` looping forever; a debounced auto-save firing per render because it depended on a returned object; a seed effect wiping everything a live subscription had accumulated because an unread collection sat in its deps; HMR re-registering middleware closures so handlers ran N times; StrictMode double-applying sibling setState calls nested in another updater; an overlay wedged visibly open because it wrote the very store flag that mounted it; subscriptions orphaned when a start path re-entered before `listen()` resolved; a derived id-set effect looping because the prune returned a fresh identical Set; a rAF loop cancelled mid-run because the effect depended on the tick's identity.\n\n**Tensions.** Honest deps sometimes require engineering around the linter: mutually recursive callbacks go through refs; a deliberate deps deviation is documented with its causal chain at the eslint-disable; arrays are joined into string keys because callers routinely pass fresh arrays. Long-lived overlays must bound every set they grow and absorb history at mount.\n\n**Governs:** A fetch-if-empty guard keyed on the empty result loops forever — latch the request in a ref; Keep a run-once backfill effect's deps empty, or it wipes live state; Depend a debounced auto-save on scalar fields, skip the hydration run, ref the latest; Keep a rAF loop alive across prop changes by calling the tick through a ref; Route mutually recursive callbacks through refs so useCallback deps stay honest; Treat a capability-gate prop as a non-dependency; depend on the stable store action; Prune derived id-sets against their live collection, returning the previous reference when nothing was pruned; Nesting sibling setState calls inside another updater double-applies under StrictMode; A store flag that decides an overlay's mount must never also be written by the overlay; Register middleware and listeners under a dedup key so hot-reload replaces instead of accumulates; Read the previous session's watermark in a render-time initializer — child effects advance it before parent effects run; Derive graph decorations in one useMemo pass instead of N setState effects; Make the unmount guard automatic in the hook, never opt-in; Tear down subscriptions on re-entry, and store the listen promise; A reusable stream consumer must let the caller opt out of its internal buffer; Absorb history at mount and bound every set a live overlay grows.",
+   "topic": "frontend/state",
+   "kind": "decision",
+   "governs": [
+    "2428cc42-60b2-45d7-9e9e-cec88f98a77f",
+    "069093eb-b0f2-4c2c-ba16-9b1deb264305",
+    "c8317fd5-016d-47be-9d57-49c90a9f9751",
+    "e13c2432-f161-49fa-82ac-d57f5e57d1f5",
+    "640e5cab-3087-4acd-9568-56f110f3461e",
+    "d9a13d9d-70d9-465e-94c6-0d28cc868fb1",
+    "e0b1d058-99c7-43f4-93e8-9bd6658f1a2e",
+    "0b515d5d-6d79-40e8-ac1b-df445dcb2393",
+    "0000793f-685a-427a-9ea8-cd7d0e8f2baf",
+    "e121734a-251b-4a36-b2fe-29998c2b372b",
+    "faf90911-983b-43f9-b3c3-cf21788eb38d",
+    "4a92dce9-7bfa-4e03-bf42-cdae9329937f",
+    "cbeb7efe-4317-44d2-b863-09c7494f987a",
+    "6b0b90dc-30d0-463b-b58d-bc5768d2e6e4",
+    "3dda3ac9-e896-4066-9e69-c721a9de3a5e",
+    "ecb8b881-c3bf-4a2a-ac01-ebcd14fd1f9e"
+   ],
+   "triggers": [
+    "writing a useEffect over async results",
+    "adding a dependency array",
+    "auto-saving or debouncing from an effect",
+    "registering into a module-level registry",
+    "subscribing to events in an effect",
+    "deriving a Set or Map from live data"
+   ]
+  },
+  {
+   "area": "frontend",
+   "title": "Every data feed has exactly one owner; every other surface subscribes",
+   "statement": "For each entity or feed, exactly one module owns fetching, caching, invalidation, and polling — a shell-level pipeline hook, a per-entity hook module, a refcounted store subscription, or the server itself — and every other surface subscribes to the decided state. No surface rides another surface's ticker, runs a parallel poll for the same rows, or leaves a borrowed store re-scoped. Size the machinery to the need: the server can be the owner outright, and a module-level pub/sub is enough for one small value — but the absence of a caching layer must be a named decision, not a discovery.",
+   "detail_md": "**Why.** The incidents are duplicated and orphaned data paths: a badge that stayed fresh only because a sibling happened to poll — and froze when the sibling collapsed; a lightweight surface running a parallel 30s IPC poll for rows a heavy store already held; every tab of a dashboard re-issuing the same queries; a panel that narrowed a shared store's query and left the surface it borrowed from rendering empty after close; a recorder whose stop control unmounted with its overlay, stranding the armed job; N surfaces each running their own poll plus push listener for one live feed; a teaser hanging a spinner forever because an optional feature's anchor entity was absent.\n\n**Tensions.** Ownership has a cost axis the items argue explicitly: refetch-after-every-mutation with no client cache is a legitimate design while panel count stays small — the failure is discovering the absence later; many small stores beat one combined object for narrow subscriptions; non-serializable handles (timers, unlisten fns) live in module maps beside the store, never in it; layered hooks (stream primitive → task wrapper → thin domain hooks) keep new flows cheap; external callers (tests, agents, deep links) drive the owner through a typed request queue with honest result envelopes, not by reaching into its state.\n\n**Governs:** Give a multi-tab dashboard one fetch owner at the shell level; Give every entity one hook module owning its client and its cache; Every badge owns its own poll registration — never ride another surface's ticker; Refcount channel subscriptions and key effect dependencies by value, not array identity; Read a heavy store from a light surface via lazy import plus manual subscribe; Keep live handles in module maps beside the store; the store holds only serializable runtime; Shared controller hook for a backend-owned recorder whose start surface can unmount before stop; Host flow follow-ups that must outlive their trigger in a module store + app-root component; Lazy-gate an optional module's fetch cluster on its anchor entity — but explicit routes must still resolve ready; Pause a persisted surface's refresh loop while a transient overlay owns it; When a panel re-scopes a shared store list, capture the prior query and re-issue it on unmount; Let shared data hooks take feed opt-in flags, and make bounded reads report that they are bounded; Re-run one load callback on mount and after every mutation; Refetch after each mutation instead of keeping a client cache; Own durable state on the server; keep client state ephemeral; Share one small client-only value with a module-level pub/sub; Split global state into many small stores, not one combined object; Layer AI-task hooks: one stream primitive, one task wrapper, thin domain hooks naming only events and phases; Drive a mounted view from outside by queueing typed requests it answers with honest envelopes.",
+   "topic": "frontend/data-fetching",
+   "kind": "decision",
+   "governs": [
+    "567c2870-75a1-4a16-9de1-e7ca7d921cdf",
+    "cb07ae53-8e00-4793-8f38-f1d91f3cc26f",
+    "f80dff7d-c606-40cb-bed9-f4e787f4b776",
+    "d64abdc2-a794-4082-b2a8-da79191a1ef7",
+    "8b4ff247-dad9-4cfc-8c71-c7ae523e9347",
+    "18283c59-b7bc-4069-8d46-54b15ed49e15",
+    "4c39e136-e66b-4e48-88e4-8ece13cc2540",
+    "29e496fd-1344-4f06-93ce-6faca1039cbf",
+    "895537b5-c6c6-48c3-ad83-d4bb4dfd66d8",
+    "0b655f76-c201-4a3f-b490-e83a400bfd4a",
+    "3087ed13-eb6c-463a-82a2-c198db6bde1c",
+    "90054438-528e-4c36-bda8-5b7097185453",
+    "1a47cb60-dfc0-4d1f-8c2c-3d9e9235a445",
+    "03075b3a-7744-4872-93e0-7a04c380d33c",
+    "096a5947-a2fa-443d-803a-d5c720700981",
+    "6c883398-bba7-4409-acbd-fd1be3559a49",
+    "e5397644-17d2-4c7c-b818-fec9e6304de7",
+    "c57eb789-343b-4a43-b6ae-de777e0c0420",
+    "9bb1045f-06d2-4d5b-8a42-b4a7082675ee"
+   ],
+   "triggers": [
+    "adding a fetch or poll to a component",
+    "showing the same data on two surfaces",
+    "adding a count badge or ticker",
+    "choosing a store vs local state",
+    "reusing a data hook on a leaner surface",
+    "controlling a view from tests or agents"
+   ]
+  },
+  {
+   "area": "frontend",
+   "title": "Persist deliberately; validate, migrate, and reconcile everything you rehydrate",
+   "statement": "Persisted client state is a contract with a future session, so choose what to persist (stable dimensions, watermarks, view preferences, versioned consents — never absolute timestamps or transient drill-ins), namespace keys per view, and guard every read/write. On rehydrate, nothing is trusted: enums pass fallbacks tables and type guards, derived state is replayed through the same callbacks a real edit would fire, server copies are reconciled with a documented winner, and storage failure degrades to a functional in-memory app.",
+   "detail_md": "**Why.** The failure class is a session that reopens broken or lying: retired enum ids surviving in storage and rendering nothing; a control restored to its old value while the list it filters stayed unfiltered (input cached, derivation not replayed); a view reopening into a stale deep-filter from last week; a consent stored as key-presence that could never be re-asked after terms changed; Safari private mode throwing on every setItem; a webview reload showing an empty screen while the backing process kept running; and — single-window-shell specific — code waiting on a `storage` event that only ever fires in OTHER windows.\n\n**Tensions.** Persistence cuts both ways: persist too little and user work (sort order, column widths, open tabs, tour progress) evaporates on reload; persist too much and stale identity leaks across sessions. The items resolve this by classifying fields — durable dimensions persist, transient scopes reset on load. Cross-variant flows migrate progress through shared step ids one-directionally so a tier flip-flop loses nothing. Local-first state hydrates immediately and reconciles with the server as non-fatal best-effort.\n\n**Governs:** Hydrate from local storage first, then reconcile with the server; Persist a background session's view state and re-attach on reload; Namespace persisted view preferences by view id, and guard the parse; Rehydrate derived state from a remount cache, not just the input; Sanitize persisted enums on rehydrate through an explicit fallbacks table; Probe localStorage once at boot, disable persistence, toast exactly once; Persist only a filter's stable dimensions; reset absolute timestamps and drill-ins on restore; Stamp a last-seen watermark on leaving the surface and derive 'N new since' client-side; Version consent records, compare for equality, and badge only the newly disclosed sections on re-prompt; The storage event never fires in the writing window — pair persisted markers with an in-process subscriber list; Migrate flow progress across tier variants through shared step ids.",
+   "topic": "frontend/state",
+   "kind": "decision",
+   "governs": [
+    "5cab69cd-6987-4665-a855-d46d4f796788",
+    "7242f5a3-a956-435e-b03c-ee8b73e39c56",
+    "303748e6-9b12-49c3-8861-0a63139814ce",
+    "35f757c2-4c07-42d5-b340-abbe58c2fcb5",
+    "6c18951c-0b53-4ac5-9b59-aefc498f7d9e",
+    "601916c5-0612-4315-aa69-4faaa2821387",
+    "030bd926-db80-487a-bf05-cd9d13b1cc1f",
+    "24012255-3b2b-41a4-bfdc-41e41db2cba3",
+    "74f5ef89-9df7-4202-9711-68e2b186ab24",
+    "282aff5b-94e6-41c7-96eb-3373bad60afe",
+    "6b5c2a78-75db-46a0-a455-7700998aaccc"
+   ],
+   "triggers": [
+    "persisting UI state to localStorage",
+    "rehydrating a store on boot",
+    "saving view preferences or filters",
+    "adding a consent or first-run flag",
+    "restoring a session after reload"
+   ]
+  },
+  {
+   "area": "frontend",
+   "title": "Model every finite concept as one closed typed registry — behavior as data",
+   "statement": "Any finite vocabulary — statuses, tabs, tones, modal kinds, step rules, accent hues, icons — lives in exactly one registry: an ordered as-const tuple or discriminated union with every derived map a total Record and every dispatch point exhaustive. Adding or removing a member is then a compile error at every render site, and behavior extensions are registry edits, not new branches. Runtime ids arriving from persistence or the backend pass an allowlist before they drive the registry.",
+   "detail_md": "**Why.** The incidents are silent wrong-branch bugs and drift: ternary chains that fell through to another scope's collection, so a new picker kind compiled clean while mutating the wrong scope; the same concept's accent hue drifting across three shades on three surfaces because local colorMaps multiplied; duplicated icon maps disagreeing per surface; a retired tab id that type-checked and rendered blank forever because a persisted cast bypassed any allowlist; two ~36-line copy-pasted variant branches in a file that already proved the table-driven alternative; invalid navigation transitions corrupting state where an FSM transition table would have no-opped.\n\n**Tensions.** Closedness is the point and the cost: a closed tone map makes a fourth tone impossible to invent, which is friction when a genuine new member arrives — the doctrine makes that friction a single reviewed registry edit. Registries also carry non-code policy as data: which guided-flow steps complete on acknowledgement, which skip predicates apply (each returning a user-visible reason), which bespoke art a dimension gets. Backend three-way outcomes are mirrored as typed unions so a question cannot be smuggled through the result or error channel. Labels live in registries as labelKeys typed into Translations, resolved at render.\n\n**Governs:** Make one ordered as-const tuple the whole vocabulary, every map a total Record; Keep the attention taxonomy in one pure vocabulary module; Model a multi-scope picker as a closed union with exhaustiveness at every dispatch; Keep per-concept accent hues in one registry of literal class strings; Consolidate an icon map into one canonical module that records its reconciliation; Drive a texture-per-dimension CVD fallback off the same registry as the colors; Give the registry an optional bespoke-art slot whose structural marker survives absent data; Drive the router from a typed registry with a completeness guard; Per-variant UI branches copy-pasted instead of table-driven, plus identity-based state matching; Model multi-view flows as an FSM with a per-view transition allow-list; Normalize repeated human decisions onto one record type and one action control, with tone rationale recorded; Steps with no detectable action complete on explicit acknowledgement, never a timer; Skip wizard steps via predicates that return a user-visible reason, not by deleting them; Render plugin tabs from a lazy table with a self-healing allowlist; Replace N modal booleans with one typed modal stack; Type the stream outcome as the backend's three-way result — a question is neither a result nor an error.",
+   "topic": "frontend/components",
+   "kind": "decision",
+   "governs": [
+    "3eb5851e-1e5c-4e91-81dc-c372c91bd036",
+    "98be50dc-c9a7-40a6-bb9b-6a4d07e2e18b",
+    "67c7045b-3293-4281-a1bc-eba00242ac5a",
+    "49280fbd-c625-49f8-a54c-ba43ed2a54bc",
+    "70cbb7db-0e8e-43ce-9d01-4440d19e2a30",
+    "11fcaea4-bc76-457c-98b6-4d13748b66ef",
+    "d64f656a-c6a3-4f0e-a484-57e0d0de3a85",
+    "7ced455b-2294-446a-add9-99f92b5f020a",
+    "7299fa38-bea1-48d7-8b8a-bd9d75c594ae",
+    "001a7b54-fd33-4dff-b13d-b925f8f5b28f",
+    "66a6110a-6320-4571-b1e7-83e4de944e3b",
+    "a708815e-b8db-412d-8b2e-c4db144b10e7",
+    "6352ba3b-429b-4d40-b998-197751f67617",
+    "811dc509-42d2-4fdc-b480-204646ecdec3",
+    "49474601-3d90-4c9b-86b6-60a19b80b68d",
+    "3921ed6e-e273-432a-8b20-31876fa8a477"
+   ],
+   "triggers": [
+    "adding a new status, kind, or tab",
+    "writing a switch or ternary over a union",
+    "mapping a concept to colors or icons",
+    "adding a dialog to a screen",
+    "encoding flow rules or step behavior"
+   ]
+  },
+  {
+   "area": "frontend",
+   "title": "Derive what surfaces show in one pure model module so views cannot disagree",
+   "statement": "When the same underlying data renders on more than one surface, at more than one zoom level, or through more than one lens, the mapping from stored shape to decided view row lives in one pure, React-free, store-free module that every surface consumes. Counts, buckets, cursors, horizons, and priority picks are computed there — never re-derived per call site and never hand-synced in parallel switches. Ambiguity degrades safely (prose over facts, unknown kept over dropped) inside the shared derivation.",
+   "detail_md": "**Why.** The recorded failure is surfaces contradicting each other over the same data: a mid-level breakdown that would not add up to the far count would make one band a liar — and the operator zooms between them; a parallel isDimEmpty switch annotated 'keep the two in sync' with the render switch was a live drift trap; filtering dead items at call sites let one band count finished work; a lifecycle enum rendered ambiguously until split into orthogonal axes with the legend reading the exact same exported tokens; facet counts computed against the wrong base made the filter rail a misleading total; a merged feed rendered below the loaded horizon put older rows above the user's scroll.\n\n**Tensions.** Purity is what buys testability — the spatial-nav geometry and view-model comparators are unit-testable precisely because they own no React, i18n, or store access. Safe degradation is a derivation concern, not a render concern: prose-or-facts unions bail to prose on any parse ambiguity; unrecognized states are kept because an unrecognised state is still a running thing; empty lanes render as empty lanes since a missing lane and a zero-count lane look identical once gone. Multi-input decisions (landing view, resume signal) centralize as explicit priority ladders returning null rather than filler.\n\n**Governs:** Derive view rows in a React-free, store-free model module; Every zoom level of an aggregate must reduce from one module so the bands cannot disagree; Resolve entity state once, then fold it per view density; Split a mixed lifecycle enum into orthogonal display axes at the UI edge; Derive emptiness from the render descriptor, never a hand-synced parallel switch; Feed a heterogeneous inbox through per-source pure adapters and a partitioning classifier; Collapse mixed backend detail blobs to prose-or-facts, bailing to prose on any ambiguity; Cluster feed rows by consecutive run of a shared key, anchored at the newest event — never globally by id; Surface one ranked resume signal, never a list — priority-ordered kinds with null meaning render nothing; Compute each facet's counts against the rows surviving the OTHER dimensions; Resolve a surface's landing view through a module-scoped one-shot-request > explicit-pick > size-default chain, with a pure peek and a consuming resolve; Page transcripts by keyset with a derived cursor and re-arming exhaustion; Render a merged feed only down to the horizon every source loaded; Model a multi-surface facet filter as one discriminated union with toggle-to-clear; Make the legend a coverage key with shared hover state; Extract a multi-step apply as a dependency-injected transaction returning typed failed operations.",
+   "topic": "frontend/state",
+   "kind": "decision",
+   "governs": [
+    "6d29bd89-a6bb-4cf3-8b4f-70a613a5beab",
+    "4a862bdc-583e-493c-b019-cd30e8fd0629",
+    "0b5deed9-f7d2-4b20-956d-111add2ecf86",
+    "62ce1d43-df03-4ea2-9b5a-c8db7fea28ab",
+    "22fff784-6cc3-4826-ae99-b0e4007d77df",
+    "e1eae182-9a35-4c52-b3b3-dc27d7472eec",
+    "2ccdc396-7bcd-43d6-b437-1317da1d9cf1",
+    "771b420e-452b-47e7-a79f-653a187df689",
+    "7a9ba48e-fc2b-42b2-be80-b313a7cc2ddc",
+    "c549dab4-b292-48c7-8c29-42dc20c589d4",
+    "8aa7adc4-4b80-4b4f-aadc-8e054b45c508",
+    "36277e38-c4aa-414c-a53f-1390b95c1de1",
+    "bd0ad824-dd8f-4c59-b234-2fe224e2b99c",
+    "d2720b35-de32-4062-a76f-8916e0bf8c7f",
+    "44bed500-3b0f-4740-879c-e40610d7ac16",
+    "e3978dad-640c-4dc5-a8b9-018b0c8d0c8e",
+    "17eb601c-39a9-4734-9f6a-e72a80655a3e"
+   ],
+   "triggers": [
+    "rendering the same data on two surfaces",
+    "adding counts, buckets, or aggregates",
+    "mapping backend rows into view rows",
+    "building a faceted filter rail",
+    "merging or clustering feeds"
+   ]
+  },
+  {
+   "area": "frontend",
+   "title": "Never let a surface lie: honest counts, flagged placeholders, stable order",
+   "statement": "Operator-facing surfaces tell the truth even when it is awkward: unmeasured and unknown things render as visibly unmeasured — never dropped, never faked as success; simulated or placeholder values carry an explicit flag; aggregates take the authoritative total rather than hand-added subsets; overflow declares itself with +N; and the true number is printed even when the visual clamps. Spatial and ordinal stability is part of honesty — decorative randomness comes from stable hashes, order is locked with total tie-breaks, and rows leave only by explicit user action.",
+   "detail_md": "**Why.** The incidents are confident lies: a mount-only fetch left a 'vault secured' badge green through a live failure; a hand-summed 'anything waiting on me?' badge showed a confidently wrong 0 — worse than nothing; past schedule slots drawn from the future's projection faked successes over real skips and downtime; a measurement matrix built only from measured rows hid exactly the rows users must act on (the live config with no score yet); a real spend rendered as $0.00; a signal row dropped because the other query's page was short rebuilt the very bug the panel existed to expose; missing (date, series) cells rendered NaN tooltips; a 'Try it' click measured curiosity and called it adoption; Math.random reshuffled a field under the reader's cursor on every rebuild; a filter wired into only one of two sources became a dead control; promoting a new default left silent per-item pins executing the old value; a false inbox-zero celebration fired on a filter change.\n\n**Tensions.** Honesty costs pixels and code: placeholder rows must be synthesized and ordered last, orphan classes get synthetic buckets, tombstones occupy grid slots, and the architectural corollary is that pending-decision queues stay un-gated because a gated queue makes approvals invisible. Fixed scales beat auto-scaling so trends stay comparable even when individual rows look flatter.\n\n**Governs:** Keep security-reassurance badges live, control-free, and honest about their own gaps; An aggregate badge must sum the authoritative total plus ONLY rowless terms — and pin the arithmetic in a test; Split a schedule timeline at 'now': project the future, but ground the past only in run records; In a measurement matrix, synthesize placeholder rows so unmeasured entities — especially the live config — stay visible and actionable; Union-merge partially-overlapping queries so the headline signal always renders its own row; Anchor score charts to the metric's fixed scale, never the sample's min/max; Format metrics to survive both extremes of their range; Give every dashboard number a healthy range and a destination; Zero-fill every date-by-series cell when pivoting long rows for stacked charts; Clamp the gauge, print the true number when a metric can legitimately exceed its nominal scale; Derive layout jitter and placeholder metrics from a hash of the stable id, and flag simulated rows as simulated; Seed cosmetic variety from a stable hash plus the date, not Math.random; Lock grid tile order to creation time with a total tie-break; tiles leave only by explicit dismissal; Clamp the current page when row count changes — never reset to page 1; Cap every ambient indicator set and collapse the excess into one +N counter; A filter wired only into the primary backend query silently no-ops on views fed from a different source — apply the facet at every source; Build filter vocabularies from a registry unioned with observed rows; Measure adoption with a data probe, not with a 'Try it' click; Pair every calibration control with a live consequence sentence computed by the same predicate the automation uses; After promoting a new default, enumerate the per-item overrides that now diverge and offer clear-or-keep — keep is a first-class no-op; Fire the inbox-zero celebration only when a user action drained it — arm a ref, judge after settle; Enforce two communication dimensions and delete the third.",
+   "topic": "frontend/components",
+   "kind": "decision",
+   "governs": [
+    "a2a06063-9e95-4831-a7cd-7732ef291a60",
+    "9899d075-e555-485a-9652-8defe772aece",
+    "3f53fb67-7350-4acd-a2e6-bb7370980777",
+    "4a812eac-edb8-4328-bb7c-f29e6905c478",
+    "c9ec3295-2d7e-460e-abbd-a1c5c436e4ae",
+    "83a14bf9-d906-4919-81b3-d90cd5616029",
+    "c05068cc-1d29-4e15-ab9c-d3949116c59a",
+    "21354ce9-5ad4-4bf6-8913-f79d066ab1a5",
+    "82503fca-b0a2-4ad5-b1a3-30cc48d0f7d0",
+    "04a827e0-59e4-478b-b2a8-1ea455fda9a1",
+    "60ca0816-dc28-4db5-b203-4196a2346cc9",
+    "db10ae77-29a4-4efe-a5be-de5e95dc7b5d",
+    "e4ec255a-0300-4720-9a6d-768ad0124ed9",
+    "3a2a9f6b-a3a6-465e-af06-04c668058595",
+    "f5ae800a-623a-4b6b-b03d-c895197fd2bb",
+    "9398d0bb-28db-4021-bcc2-d8d5c240ced1",
+    "3d2ad3a8-41cd-47d5-b876-758fbea06e97",
+    "c610174f-ebbe-423a-8f6f-8d87416d56b3",
+    "2f28abff-9f12-40cb-8e64-f285392e933e",
+    "6d38ebbe-1796-493e-9182-1b3f9a625e1f",
+    "f7d75ed5-6772-45bb-a80e-fb2fcc0deecb",
+    "03f08a47-0043-4ab5-b224-b463b317ed62"
+   ],
+   "triggers": [
+    "building a dashboard or metric tile",
+    "aggregating counts into a badge",
+    "charting scores or time series",
+    "rendering rows with missing data",
+    "wiring a filter across sources",
+    "ordering an operator-facing grid"
+   ]
+  },
+  {
+   "area": "frontend",
+   "title": "Forms edit local drafts and commit atomically through one validation gate",
+   "statement": "Editing surfaces never write the store per keystroke or per step: a modal picker or wizard seeds a local draft on open, mutates only the draft, and commits atomically on apply — dismissal discards cleanly. Drafts are keyed by stable identity (never render identity or user-supplied fields), seeded only into untouched fields, and protected from the parent echoing lossy serializations back. One schema validates the whole entity, its issues flatten into a path-keyed map, fields self-register errors through split contexts, and the same full gate runs before every side-effecting action, not just submit.",
+   "detail_md": "**Why.** The incidents are lost or corrupted user input: a poll landing mid-typing wiped a half-written answer because drafts were keyed to render identity; a half-buffered stepper (some steps instant-write, some buffered) silently corrupted the saved profile when the user opened it to compare options and dismissed; an undo implemented by moving the baseline back evaporated on reload while the header read 'All saved'; a fresh initialValues identity per render wiped in-progress typing; a lossy rows→JSON echo re-derived local state and destroyed edits; duplicate .env keys toggled together because selection keyed on the parsed field; a colon in user text re-bucketed a structured-freeform round trip; preselected credential-gated scopes turned one-click export into a blocked button.\n\n**Tensions.** Draft buffering trades immediacy for safety — external store changes must re-sync into open drafts so a stale draft cannot overwrite a newer value on save. Validation feedback timing is a named policy (default first-blur, forced on submit), not an accident. Error registration splits into a stable writer context and a reader context so error churn does not re-render every field. Continuous inputs split live onChange from settle-only onCommit so expensive effects run once per gesture. Secret inputs warn on paste-error smells without hard-blocking.\n\n**Governs:** Modal pickers own a local draft, seeded on open, committed only on apply; Buffer every wizard step as a draft and commit atomically on Finish — X must mean Cancel; Group draft fields per save operation and assert coverage in types; Key drafts by stable identity, not render identity; Seed a form from props only for fields the user hasn't touched; Suppress the parent echo in lossy controlled round-trips with a last-emitted ref; Persist an undo before moving the baseline, or it silently vanishes; Run the full form validation gate before every side-effecting action, not just submit; Split live onChange from settle-only onCommit on continuous inputs; Mark machine-composed section headers with an invisible sentinel so structured-freeform round-trips are lossless; Give parsed rows a synthetic stable id — never key selection on a user-supplied field; Never preselect scopes whose export is credential-gated; Secret inputs warn on paste-error smells without blocking, with explicit paste and reveal affordances; Fold schema issues into a path-keyed error map before the UI; Let fields self-register errors, and split the context in two; Split a form-error registry into a stable writer context and a reader context, and jump to fields without a focus fight; Default validation feedback to first blur, and name the policy.",
+   "topic": "frontend/forms",
+   "kind": "decision",
+   "governs": [
+    "aca295d9-4d34-4a5c-9306-4045a69ab739",
+    "005861b6-b95d-41cb-a903-f7516a6cce27",
+    "0e538cef-9eb9-4b0c-9412-690e4686968e",
+    "7cc92c1a-270e-4266-ba11-ddb8d5428cc6",
+    "9a47f856-6641-4a72-b866-f9278f116f83",
+    "e9fe62d4-6522-45db-8611-5064403f4399",
+    "a957cc68-4a6e-4f07-9914-ceb101132118",
+    "d8d71d54-980b-4971-bde7-3fb26881018e",
+    "f2cd1e02-6c9d-4d99-b129-444139ffb995",
+    "036575e5-d4a8-4c88-bb50-6662afac0f75",
+    "c5160c19-fa23-4062-873c-04021246d601",
+    "1792484a-e805-4581-abd6-1085c9915201",
+    "cf05e459-adf5-448c-98c7-4ef9de4151c1",
+    "1e430be8-48eb-41a5-aec2-18b84962d378",
+    "8a6fbd02-83e7-41f0-8443-a7ead32066ab",
+    "7c757b3a-5650-44da-96da-a0b726d3a874",
+    "0284d8c1-f865-4848-9963-173fd8c9aedd"
+   ],
+   "triggers": [
+    "building a modal picker or wizard",
+    "wiring form state to a store",
+    "adding validation and error display",
+    "seeding a form from props or server data",
+    "handling secrets or import parsing"
+   ]
+  },
+  {
+   "area": "frontend",
+   "title": "Shared primitives stay domain-free; theme, labels, and data arrive from outside",
+   "statement": "Reusable primitives own behavior, never domain: no feature imports, no store reads, no i18n catalog — labels arrive as functions, data as props, and the boundary is machine-checked by lint, not a README. Extending a widely-consumed primitive happens behind an opt-in prop that is a no-op when absent, with the default path stated as unchanged. Theme and density variance is expressed in CSS — data-theme rules, tokens, and custom properties — never by subscribing to the theme store or patching token classes with local utilities.",
+   "detail_md": "**Why.** The incidents are drift from hand-rolling and boundary erosion: four incompatible hand-rolled dropdowns coexisted in one pocket — one with no dismissal path at all — while shared primitives sat unadopted; `import { en }` at module scope froze labels to English while looking internationalized; a call-site Tailwind patch silently lost to unlayered `typo-*` token classes and had no effect; per-export React.lazy wrapping broke recharts' child-identity matching; every popover re-implemented anchor measurement and flip logic; a convention stated only in a README eroded within sprints until an import-restriction lint rule made the catalog boundary real.\n\n**Tensions.** Domain-freedom has a ceiling worth naming: a token hook branching on theme works for two themes, and a third theme touching every token is the signal to move to a real token file. Opt-in extension keeps dozens of consumers safe but accumulates props — structural additions get their own sub-component instead. CSS-expressed theming means the component repaints on theme switch without re-rendering, and content-aware primitives may silently downgrade display modes their content cannot survive.\n\n**Governs:** Keep the shared catalog domain-free, and let a lint rule enforce it; Add to a shared primitive behind an isolated, opt-in render path; Express theme variance in CSS, not by reading the theme store; Derive every primitive's classes from one shared token hook; Use a generic grid with per-row render props instead of branching the card; Put a structural row contract between N producers and one renderer; Let an icon primitive downgrade display modes its content can't survive; Extract anchored-portal positioning into one shared hook; Adopt the shared dropdown primitives instead of hand-rolling incompatible ones; Lazy-load libraries that inspect child identity via one render-prop wrapper, not per-component React.lazy; Pin a virtualized group header through the range extractor; Give shared primitives label FUNCTIONS, not translation keys; Never import the English catalog at module scope to build user-visible labels; Bind semantic spacing tokens to density CSS variables so one setting reflows every card; Pass CSS custom properties into SVG through style, not presentation attributes; Preview a theme by re-scoping CSS variables and painting from its advertised samples; Unlayered token classes beat Tailwind utilities — change the token, not the call site.",
+   "topic": "frontend/components",
+   "kind": "decision",
+   "governs": [
+    "56945079-74d3-4a9d-89c9-a3ced2054521",
+    "d5d3dc43-5736-4c7c-99de-2485f2c2ea0f",
+    "48c5a172-2a1d-46db-99e6-ffb9c58bc71c",
+    "219c7f5e-abd1-49cc-b4d9-e27a3ccd5819",
+    "dd123276-092e-4b5b-a6c0-1d59504e0dfa",
+    "47a8a888-deca-45dd-9bc2-70a5bb690c65",
+    "afbe1078-f55f-490e-9fd5-7adaa54c6476",
+    "9594993f-d5c2-4d93-b7d6-9038776ac70a",
+    "da1f93ab-cdf0-48b2-bfd9-14104570d57c",
+    "65b1339d-ad2f-4960-8197-7319cfef9b06",
+    "c735ce3f-b0bf-417a-bf6f-a3b95b1f2f1c",
+    "0ed762b2-dd23-4305-a022-92b4ebe4727d",
+    "d31c8d22-8c09-49b2-90a3-496237185415",
+    "ad0bb4e2-2016-40e9-bbb7-bff7dcb3e3c6",
+    "903037c4-6e54-40d4-9bb5-d450f6876ba7",
+    "a243f37d-fa03-40f4-a76d-801ee0c0532f",
+    "e0ccf77f-8d4d-4ae2-8080-9977652d0a6d"
+   ],
+   "triggers": [
+    "building a new UI component",
+    "extending a shared primitive",
+    "hand-rolling a dropdown or popover",
+    "styling for light and dark themes",
+    "adding labels to a reusable widget"
+   ]
+  },
+  {
+   "area": "frontend",
+   "title": "Interactive means accessible: real semantics and explicitly owned keyboards",
+   "statement": "Every interactive affordance is a real control with truthful semantics — role, name, state (aria-checked, aria-pressed, aria-sort), non-colour status cues, and live-region announcements that cannot be lost. Keyboard behavior is owned explicitly: composite widgets use one roving tab stop with arrow-key routing, document-level hotkey layers bail on modifiers and all typing contexts, ownership claims are exclusive and scoped (narrowed under overlays, released on unmount), and focus is returned only when nothing real holds it. Nesting interactive elements is forbidden; disabled controls still explain themselves.",
+   "detail_md": "**Why.** The incidents are affordances that silently excluded users or fought them: bare divs acting as checkboxes with no role or name; a native disabled button swallowing both the tooltip and the focus that would explain WHY; same-tick live-region announcements coalesced by React so only the last one spoke; keys typed into a focused terminal's hidden helper textarea triggering app navigation; a 200-project spatial map threatening to become 200 tab presses; a nested real control inside a button breaking hydration and swallowing clicks; a non-modal overlay wrongly claiming dialog semantics; keyboard exclusivity gaps letting a key the deck ignored reach an invisible surface beneath it.\n\n**Tensions.** Exclusivity versus reachability is the live tradeoff: the priority-registry item deliberately reserves vertical keys for reading and picks `U` over mod+Z because exclusivity would swallow undo inside a text box; a nested palette owns arrows only while a match survives the filter so a no-match state cannot trap keys; spatial navigation needs a plain-nearest fallback so a sparse map can never strand the cursor. Status must never be colour-alone (WCAG 1.4.1), and SVG focus rings are drawn as extra paths because outline rendering there is unreliable.\n\n**Governs:** Make selection affordances real controls with non-colour status cues; Explain a disabled control through a focusable wrapper; Put aria-sort on the column-header element and swap the tag for grid faux tables; Never nest interactive elements — render secondary actions as siblings or role-button spans; Ship a tablist with roving tabindex and arrow-key navigation; Queue and re-key live-region announcements so none are lost; Return focus only when nothing real holds it; Use role=region for non-modal overlays and record the reason at the call site; Own keys exclusively through a priority registry, tested as nothing-beneath-is-called; Document-level hotkey layers: skip modifiers and ALL typing contexts (including hidden helper textareas), and narrow the active set per overlay; Scope nested-palette keyboard ownership and share the exact filter with the parent; Spatial keyboard navigation: one roving cursor with cone-scored directional picks and a nearest fallback; Give a radial SVG group roving tabindex with parent-owned key routing.",
+   "topic": "frontend/components",
+   "kind": "decision",
+   "governs": [
+    "250a2b41-0f6c-4cb2-9f28-d23dfdae72e0",
+    "3a128833-7dc3-42a3-bdce-4ebf6380a517",
+    "ffe41453-f143-4f77-bdf2-34a8e49fee16",
+    "e8707324-72b6-430a-ae82-64cebad2dc33",
+    "dd069d3a-e608-4dbf-809f-b0504e422fe8",
+    "63b58f6f-25ea-4bda-bb56-f399152fcec0",
+    "d7b8bfc7-9a94-4dca-b529-5653f20d5d84",
+    "9080c166-6cd1-404f-a314-8fe4fc721ef2",
+    "850ac30d-803e-4148-b5b0-241c0a0b9f1f",
+    "be21922c-f112-432e-ab0f-bdf094aa63d0",
+    "67cc5bd2-7eb7-4706-8483-635a3cba4061",
+    "05791026-facc-4e47-aa4a-4c61a8a46768",
+    "9c5070c8-13d4-4ef8-b26f-14e615b53882"
+   ],
+   "triggers": [
+    "making an element clickable",
+    "adding keyboard shortcuts or hotkeys",
+    "building tabs, palettes, or composite widgets",
+    "disabling a control",
+    "announcing dynamic status changes"
+   ]
+  },
+  {
+   "area": "frontend",
+   "title": "Program against the browser's real pointer, layout, and stacking physics",
+   "statement": "Gestures, geometry, and stacking behave by the platform's actual rules, not the idealized model: pointer capture retargets the whole stream including the trailing click, synthetic wheel listeners are passive, transforms neither resize layout boxes nor leave fixed-positioning alone, display:contents wrappers measure 0x0, and z-index is scoped by containment. So: require movement slop before a drag commits, bind must-preventDefault listeners natively on the drawing element, give art real layout boxes, portal overlays past transformed ancestors and reserve chrome space in layout, and clean up gesture state on every exit path including unmount-before-dragend.",
+   "detail_md": "**Why.** Every governed item records a concrete physics ambush: pointer capture on pointerdown made every node tap read as background pan; React's passive onWheel meant zoom scrolled the page underneath — and a container-level listener turned overlay scrolls into canvas zooms; a plain click froze a flexible column at its pixel width because no drag threshold existed; a card moved to another column stayed stuck at drag opacity because the source unmounted before dragend; a scale-transformed watermark measured 48px while painting 156px over the heading; tooltips pinned to the viewport corner off a display:contents 0x0 rect; a body-portaled overlay lost its z-order promise under an ancestor's contain:layout, and position:fixed anchored to a transformed ancestor instead of the viewport; hover tooltips never fired because a pointer-events-none container never let hover reach the tiles; colliding SVG defs ids cross-wired gradients between sigils; a hold-to-repeat timer outlived its gesture because a mid-hold disable swallowed pointerup; a scroll-spy gated on current overflow permanently disabled itself when content grew after mount.\n\n**Tensions.** Thresholds trade a few pixels of responsiveness for click integrity; native listeners trade React idioms for correctness; the user always wins the camera over animated moves. Measurement work belongs in useLayoutEffect (with height reset to auto first) or it visibly lags input.\n\n**Governs:** Take pointer capture only after drag slop, and swallow the trailing click; Bind wheel-zoom as a native non-passive listener on the drawing element, not its container; Require a movement threshold before a resize handle commits a width; Namespace drag payloads by custom MIME and clear drag state on drop, not only dragend; Guard hold-to-repeat loops against buttons that become disabled mid-hold; scale-* transforms do not resize the layout box — size illustrations with real dimensions; Guard display:contents wrappers against the 0x0 bounding rect; Fullscreen overlays: reserve chrome space in layout, not z-order, and portal above transformed ancestors; Stack overlay totems center-out and opt tiles back into pointer events; Auto-grow textareas in useLayoutEffect, resetting height to auto first; Scroll-spy binds the real scroll parent up-front and never gates on current overflow; Namespace every SVG defs id with a per-instance uid; Overlay absolutely-positioned HTML icons on SVG from the cached geometry; Advance on the user's real click with capture+once over a pass-through highlight.",
+   "topic": "frontend/components",
+   "kind": "decision",
+   "governs": [
+    "fe1ad937-8c9d-4abb-9d02-e64961037663",
+    "90fb60d2-5d40-4f8a-a425-5a857c49c4ba",
+    "ef930a96-7edd-4d5b-a3dc-339e234d095f",
+    "59c4ed34-e3c2-4b8e-83b6-6db09dbf4cb6",
+    "33611840-f30f-485d-88cc-9bc0a7d34bd1",
+    "d92eb30e-005d-45bc-8dd8-cce4f0fc1c21",
+    "c80eb0f1-81b0-41bb-8e0d-314ea7654791",
+    "0d803ad8-21fd-4699-9366-df62d8d99d9a",
+    "a9ef4541-7ba7-4fd1-90e0-944947c489de",
+    "f7dcb982-fdf8-4f6d-8cec-7b6e19078579",
+    "b1c12258-35b7-4392-b141-a7c799dc35f9",
+    "25531158-9136-4f0a-b4a9-0355e2c7c956",
+    "4f1ff6cd-196d-427c-9e18-ef233a81d1d1",
+    "a39cba8e-681c-40e2-823e-14d0e776a599"
+   ],
+   "triggers": [
+    "implementing drag, pan, or zoom",
+    "positioning a tooltip or popover",
+    "portaling an overlay",
+    "measuring DOM geometry",
+    "layering interactive elements",
+    "rendering many SVGs per page"
+   ]
+  },
+  {
+   "area": "api",
+   "title": "Cross the wire through one owned seam that fixes casing, types, and tolerance",
+   "statement": "Every payload crossing the frontend/backend boundary passes through one owned adapter seam that settles the wire contract in a single place: casing conversion, serialization, numeric width coercion, discriminated-union mirroring, and shape tolerance. Serde casing attributes and null-vs-absent semantics are cross-boundary contracts pinned with comments naming their consumers; generated bindings are re-exported rather than hand-duplicated; and inbound rows are adapted defensively so one malformed row degrades instead of blanking the surface.",
+   "detail_md": "**Why.** The recorded incidents are silent contract inversions far from their cause: a payload builder that emitted explicit null for every unmentioned nullable inverted to Some(None) when serde double_option arrived, and any partial update wiped twelve columns; a well-meaning rename_all cleanup silently changed every key on the wire while untyped consumers read undefined; a hand-rolled duplicate typing u64 as number drifted from the generated binding; bridge hooks that direct-invoked left the discriminator with no compile-time contract, so typos took the else-branch silently; and un-adapted stored rows meant one malformed row could blank a whole catalog.\n\n**Tensions.** The seam is where deliberate impurity concentrates: bigint→number coercion is allowed only at an explicit boundary where each site argues why the value cannot exceed 2^53; wire-name-faithful interfaces are kept where the backend renames rather than pretending the wire is clean; hand-written types override generated bindings only where the generator is provably wrong (i64→bigint vs plain JSON numbers) — and that override is documented, because the drift risk it reintroduces is exactly what the re-export rule exists to prevent. Tolerance is directional: inbound adapters always return a valid object with documented defaults; outbound payloads are strict, asserting presence/absence semantics in regression tests.\n\n**Governs:** Let the api wrapper own wire casing and serialization; Never emit explicit null for unmentioned nullables where serde double_option lives; Serde casing attributes are wire contracts — pin them with a comment naming the consumers; Coerce bigint to number only at a justified, explicit boundary; Type unions at the seam so invalid states are unreachable from TS; Adapt rows into the UI shape once; never let one row break the list.",
+   "topic": "api/client-seam",
+   "kind": "decision",
+   "governs": [
+    "43e36cfe-631d-4f75-81c2-8f25bf3b942b",
+    "ef0d0c1e-b40c-4071-a842-d7a0ebba9342",
+    "1e6aa6bd-b612-446a-aeee-abff5e1a7ce0",
+    "5557af6d-d49f-41a9-9ad3-ead3c8fe1530",
+    "9d8136e8-9df1-4593-b7fa-9aca671f03ef",
+    "97b94b75-572c-46e8-96bf-c5cc68695185"
+   ],
+   "triggers": [
+    "adding or changing an IPC payload",
+    "renaming serde fields or casing",
+    "typing a backend response in TS",
+    "handling nullable update fields",
+    "mapping stored rows into UI models"
+   ]
+  },
+  {
+   "area": "api",
+   "title": "One door per direction: a typed request helper out, one route wrapper in",
+   "statement": "Cross-cutting request concerns are properties of a chokepoint layer, never of individual call sites. Outbound, client components reach the app's own routes only through a single typed request helper owning timeouts, status branching, and one typed error class. Inbound, every route runs inside one wrapper that owns error catching, structured logging, the typed response envelope, and a required validator — so no route can skip validation and no component re-derives error handling from status codes. Entry-point form is chosen by caller identity, with the decision table written down.",
+   "detail_md": "**Why.** The recorded failure is asymmetric discipline: an inbound boundary rigorously centralized while browser code called the app's own routes from dozens of components, each re-implementing status branching, JSON parsing, and error toasts — meaning the next contract change costs every component instead of one module. Per-route response shapes drift into several dialects every client must understand. And when validation is optional per route, some routes skip it; making the wrapper take the validator as a required option turns the gap into a compile-visible absence.\n\n**Tensions.** The items are explicit that some choices inside the door are defensible either way — hand-written parse functions versus a schema library both work; what is non-negotiable is running exactly one idiom and having the wrapper demand it. Caller identity genuinely forks the design: internal UI mutations want type safety and no public URL, while external callers need a stable URL and raw-request access for signature verification — so the split is principled, written down as a decision table, and enforced by greppable file naming, which is acknowledged as convention-only enforcement.\n\n**Governs:** Give the browser one typed request helper for your own routes; Close the outbound seam — the inbound one-door leaves it half done; Wrap every route in one handler that owns errors and the envelope; Pick one validation idiom and make the wrapper demand it; Choose the entry-point form by caller identity, not convenience.",
+   "topic": "api/request-pipeline",
+   "kind": "decision",
+   "governs": [
+    "eb23b54d-7bc9-40de-9036-7e1ae8f7e311",
+    "6cc94ace-194e-43ac-bc6c-30589c6d5a9e",
+    "0817639b-0eb4-4d8e-8a97-fabe3e40cc39",
+    "0cd2eda6-faf6-4372-8782-25d978c15537",
+    "7b936ad2-cd1a-41d6-96b2-a206bfffa30b"
+   ],
+   "triggers": [
+    "calling fetch from a component",
+    "adding a new API route",
+    "validating request bodies",
+    "handling route errors and responses",
+    "exposing an endpoint to external callers"
+   ]
+  },
+  {
+   "area": "api",
+   "title": "Design endpoint call shapes deliberately: batch, return ids, report partials",
+   "statement": "An endpoint's call count, response contract, and failure granularity are explicit design decisions, not accidents of implementation. Loops over privileged calls move server-side into one call; aggregates return in one round trip with partial failure reported in the response (warnings, per-id outcomes) rather than thrown; creation flows return the created id instead of letting callers infer it; and time- or window-sensitive endpoints carry the context the contract needs — the client's UTC offset for day bucketing, a Retry-After for out-of-window rejections.",
+   "detail_md": "**Why.** The incidents are contracts that lied under concurrency, scale, or timezones: a 'test all' button implemented as a client-side fan-out over N privileged calls stampeded and raced the session-token injection those calls depended on, reporting healthy resources as failures; inferring 'the newest row is mine' by max(created_at) was racy against concurrent creates and server-clock drift; a two-IPC dance could partially apply where a server-side transaction could not; day-bucketed aggregations without the caller's UTC offset smeared a persona failing every evening local time across two UTC days, making the trend lie; and machine senders had no way to back off correctly without a retryable status plus Retry-After.\n\n**Tensions.** Server-side batching costs progress fidelity — the items accept an indeterminate progress bar as the explicit price of correctness, and share the batched implementation with the scheduled sweep so both persist results identically. Partial failure in the response body (rather than a thrown error) shifts burden onto callers to actually read warnings and per-id outcomes. After a creation returns its id, the follow-up list refresh is best-effort: the id alone renders a minimal fallback, so a failed refresh must not abort the flow.\n\n**Governs:** Make batching an explicit IPC-count decision with partial failure in the response; Move a 'refresh all' loop server-side into one privileged call; Creation flows must return the created id — never infer 'the newest row is mine'; Ship the client's UTC offset with every day-bucketed query; Reject out-of-window deliveries with 422 + Retry-After, and document the window on a GET.",
+   "topic": "api/client-seam",
+   "kind": "decision",
+   "governs": [
+    "a632a755-a6d0-4ae4-ba10-f5d7234c5aa9",
+    "76e8bf10-8d64-4607-a1d9-c6e99d02df5b",
+    "d2e8e209-d369-4084-b2e4-4d2154eaf7f0",
+    "230ebfc3-fdea-450b-b847-76d8ebc3809c",
+    "6cbe4505-8e42-4b55-8ec7-e4867d99bf3e"
+   ],
+   "triggers": [
+    "designing a new command or endpoint",
+    "looping API calls from the client",
+    "wiring a create-then-continue flow",
+    "aggregating data by day or window",
+    "handling bulk operations"
+   ]
+  }
+ ],
+ "orphans": [
+  {
+   "id": "bac53ae6-66d7-4e7d-a195-25883422b5e4",
+   "reason": "Single-purpose first-run ranking heuristic (float zero-setup options); no third sibling item forms a picker-ranking theme."
+  },
+  {
+   "id": "6b00d765-bd3f-46d1-a0b2-0ff698af8dcb",
+   "reason": "Companion-specific naming of two handoff primitives (forward vs seed); one-off interaction vocabulary with no supporting cluster."
+  }
+ ]
+}

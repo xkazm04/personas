@@ -1,0 +1,162 @@
+[
+ {
+  "id": "4fda21ad-d9ca-4661-9530-559729095b1a",
+  "kind": "pattern",
+  "title": "Show tokens beside cost, and rank on cost per success",
+  "statement": "Cost alone is a bad comparison axis for LLM variants: it is price-weighted, so it hides which variant is token-hungry, and providers that report no price make a real run look free. Show summed tokens beside cost, rank on cost-per-successful-outcome rather than raw spend, and render an explicit 'not tracked' when the price is unknown.",
+  "topic": "billing/cost-visibility/cost-metrics",
+  "abstraction": "meso",
+  "ftype": "micro-technique",
+  "governing_id": "06fc976f-501c-4cdc-8538-fd4843c3827a"
+ },
+ {
+  "id": "43f46875-d08a-472b-a1e6-9c0e8a9a9b14",
+  "kind": "pattern",
+  "title": "Capture provider spend at one chokepoint loops can feed blindly",
+  "statement": "Give every subprocess/streaming call site one `observe_line(pool, ctx, line)` it can feed blindly; the helper recognises the provider's terminal `result` event and writes a spend row. Pass call-site identity as a small context struct, prefer the model the provider actually reported over the pinned one, and swallow ledger failures so accounting can never break the call it accounts for.",
+  "topic": "billing/cost-visibility/spend-capture",
+  "abstraction": "meso",
+  "ftype": "micro-technique",
+  "governing_id": "06fc976f-501c-4cdc-8538-fd4843c3827a"
+ },
+ {
+  "id": "71479c37-e762-4f55-bfa9-86d71c1c3bd0",
+  "kind": "pattern",
+  "title": "Debit before the model call, refund on every failure path",
+  "statement": "Metered work must debit the ledger before the provider call, so a caller who cannot pay never reaches the model. Every failure path — a handler throw, a degraded response with no billable value, a rate-limit race that fills the window mid-charge — must issue a best-effort, idempotent refund keyed to the original charge, and that refund must never throw and mask the real error.",
+  "topic": "billing/ledger/charge-reclaim",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": "66493cf7-f907-43fa-aa08-8e16e044abcf"
+ },
+ {
+  "id": "bd20eaba-dd89-49e9-ab0c-a98b6a1452c9",
+  "kind": "pattern",
+  "title": "Fold the idempotency key into the ledger ref to stop double-billing",
+  "statement": "A retried or double-clicked metered request must de-duplicate against the first charge rather than billing twice, so validate the client-supplied idempotency key and fold it into the ledger reference. Scope the refund reference by user as well, or a global reference index will cross-de-duplicate two different users' reclaims.",
+  "topic": "billing/ledger/charge-reclaim",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": "66493cf7-f907-43fa-aa08-8e16e044abcf"
+ },
+ {
+  "id": "377afd0f-ee2c-4888-8618-268c6185d0f6",
+  "kind": "pattern",
+  "title": "Arm auto-reclaim on the abort signal, and disarm it on settle",
+  "statement": "A client that disappears between the debit and the delivered stream must be refunded, but a disconnect after the work was saved must not be. Register a once-guarded auto-reclaim on the request's cancellation signal at charge time and disarm it the moment billable work is persisted, refunding synchronously when the request was already cancelled on entry.",
+  "topic": "billing/ledger/durability",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": "66493cf7-f907-43fa-aa08-8e16e044abcf"
+ },
+ {
+  "id": "a43c4579-dd7f-40b5-9e45-4be039a2550f",
+  "kind": "pattern",
+  "title": "Write the pending-charge marker in the debit's own transaction",
+  "statement": "A crash between the debit and completion leaves money taken for work never delivered unless the durability marker is written atomically with the debit itself. Write it in the same transaction, sweep stale markers periodically to refund the orphans, and run any budget-cap check inside that same transaction so the read-compute-charge race cannot open.",
+  "topic": "billing/ledger/durability",
+  "abstraction": "macro",
+  "ftype": "data-flow",
+  "governing_id": "66493cf7-f907-43fa-aa08-8e16e044abcf"
+ },
+ {
+  "id": "d54e7b53-db69-4d53-b772-76039492a2a3",
+  "kind": "pattern",
+  "title": "Make the charge-then-reclaim handshake durable, not in-process",
+  "statement": "Metered LLM operations must write a durable pending-charge marker in the same transaction as the debit and reconcile orphans with a periodic sweep; an in-request boolean guard or an AbortSignal hook cannot refund a charge when the process dies between debit and completion.",
+  "topic": "billing/ledger/durability",
+  "abstraction": "macro",
+  "ftype": "concurrency-reliability",
+  "governing_id": "66493cf7-f907-43fa-aa08-8e16e044abcf"
+ },
+ {
+  "id": "29a66835-b7d9-47e5-96db-44200d075520",
+  "kind": "pattern",
+  "title": "Apply review-queue backpressure BEFORE spending tokens",
+  "statement": "Refuse to start a scan while N items are pending review, and set the per-run budget to min(cap, queue_cap - pending) — backpressure belongs before the token spend, not after.",
+  "topic": "billing/limits",
+  "abstraction": "meso",
+  "ftype": "perf-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "a0b72155-6c8b-4ce4-a566-a5fa851d699d",
+  "kind": "decision",
+  "title": "State whether a spend cap counts gross or net, on the money path",
+  "statement": "A cap that sums gross debits while refunds are recorded outside its scope keeps a payer capped after money was returned. Either behaviour can be the right one; what is not acceptable is leaving it implicit — write the contract next to the query that computes the cap, and cite the audit that forced the choice so the next reader inherits the reasoning.",
+  "topic": "billing/limits/budgets",
+  "abstraction": "macro",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "e2adb798-1dfa-4e15-96c5-d478dd4717d5",
+  "kind": "decision",
+  "title": "Treat the default timeout as a spend control, and record its bill",
+  "statement": "For anything that runs a metered model call, the default timeout is a cost lever, not a hygiene setting. Pick a value that catches hung calls and runaway loops early, expose explicit min/max UI bounds matching the engine's hard ceiling, and write the reasoning — including what the old value cost — next to the constant.",
+  "topic": "billing/limits/timeouts",
+  "abstraction": "micro",
+  "ftype": "architecture",
+  "governing_id": "a0b72155-6c8b-4ce4-a566-a5fa851d699d"
+ },
+ {
+  "id": "c1f60c29-d153-4ab1-9cb4-2b8e60ebf6c1",
+  "kind": "pattern",
+  "title": "Leave no unmetered entry point: the shared LLM one-shot helper takes the metering sink by signature",
+  "statement": "The one helper every headless model call goes through requires a DB pool parameter, so a future caller structurally cannot add an unmetered leg — the type system enforces what a comment would only request. One row is written per invocation, success or failure, and one low-cardinality leg token is used for both the ledger label and the error tag so GROUP BY and logs cannot name a leg two ways.",
+  "topic": "billing/metering",
+  "abstraction": "meso",
+  "ftype": "module-boundary",
+  "governing_id": null
+ },
+ {
+  "id": "e7e0ca2f-328c-465e-85cf-7652fbba468a",
+  "kind": "pattern",
+  "title": "A hardcoded $0 from an unmetered provider is 'cost unknown', not 'free' — flag it at aggregation and render 'not tracked'",
+  "statement": "Local/self-hosted providers whose runner hardcodes per-call cost to 0.0 will win every cost ranking and read as free. Stamp a cost_unknown flag on the aggregate wherever the provider is known to not report cost, exclude flagged rows from value verdicts, and render 'not tracked' instead of $0.000.",
+  "topic": "billing/metering",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "8419dbc4-75c1-48b8-93b2-66e8fafc1326",
+  "kind": "pattern",
+  "title": "Declare billable operations once in a typed registry",
+  "statement": "When a charge helper accepts a free-form operation string, a typo compiles and silently bills at the wrong tier — a money bug with no compile-time signal. Declare every billable operation once in a registry mapping a key to a stable persisted id and a cost tier, and type the charge helpers to accept only that union; keep the persisted ids as authored literals, since ledger history already references them.",
+  "topic": "billing/metering/operations",
+  "abstraction": "meso",
+  "ftype": "extensibility",
+  "governing_id": "06fc976f-501c-4cdc-8538-fd4843c3827a"
+ },
+ {
+  "id": "06fc976f-501c-4cdc-8538-fd4843c3827a",
+  "kind": "pattern",
+  "title": "Wrap every metered route in one envelope owning the four concerns",
+  "statement": "Auth, metering, billing telemetry and structured logging repeat verbatim in every metered AI route, and each hand-rolled copy drifts. Put them in one wrapper that sequences them in a fixed order — logging, then auth independent of metering, then charge-with-reclaim around the handler — and hand the handler a clean context so it never re-implements the reject ladder.",
+  "topic": "billing/metering/route-guards",
+  "abstraction": "macro",
+  "ftype": "api-design",
+  "governing_id": null
+ },
+ {
+  "id": "39c9cc25-1df2-4959-8afb-3f1456fff150",
+  "kind": "pattern",
+  "title": "Cap the request body before the charge, not after it",
+  "statement": "Compose the metered route's door as one fixed pipeline: body-size cap, parse, shape validation, charge, handler, reclaim-on-throw. The cap belongs before the charge specifically, so a caller cannot amplify a flat per-operation price into an arbitrarily large model invocation, and one shared error mapping keeps every endpoint's failure shape identical.",
+  "topic": "billing/metering/route-guards",
+  "abstraction": "macro",
+  "ftype": "api-design",
+  "governing_id": "06fc976f-501c-4cdc-8538-fd4843c3827a"
+ },
+ {
+  "id": "036d830b-8729-4fa5-8b57-146319f763c0",
+  "kind": "pattern",
+  "title": "Fail closed when production cannot meter or identify the caller",
+  "statement": "Graceful degradation on a billable path is an open wallet: if a billable engine is configured but there is no store to meter with or no way to identify the caller, production must refuse rather than serve an unmetered anonymous call. Keep the free pass for development and keyless builds, and return the refusal reason as a typed result so each route can phrase its own rejection without re-deriving the ladder.",
+  "topic": "billing/metering/route-guards",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "66493cf7-f907-43fa-aa08-8e16e044abcf"
+ }
+]

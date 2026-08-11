@@ -1,0 +1,302 @@
+[
+ {
+  "id": "c453fb8f-2d87-4f9a-a587-5f6d92c8a5ce",
+  "kind": "pattern",
+  "title": "Bind dual-stack via socket2 rather than letting the platform decide",
+  "statement": "`0.0.0.0:port` rejects IPv6, and `[::]:port` is IPv6-only on Windows unless `V6Only` is cleared. Hand-build the UDP socket with `set_only_v6(false)` instead of relying on platform defaults.",
+  "topic": "integration/external-services",
+  "abstraction": "micro",
+  "ftype": "micro-technique",
+  "governing_id": null
+ },
+ {
+  "id": "548e790b-44a9-4718-ad4f-c1aad84bc8c8",
+  "kind": "howto",
+  "title": "Probe a CLI's capabilities by reading only its init handshake, then kill it",
+  "statement": "To detect which tools/tiers a spawned agent CLI exposes on this machine and account, launch it with the production flag set, read only its session-init event (emitted before any model turn), then kill the child — a near-zero-cost, account-accurate capability probe that gates tier-dependent features.",
+  "topic": "integration/external-services",
+  "abstraction": "meso",
+  "ftype": "micro-technique",
+  "governing_id": null
+ },
+ {
+  "id": "1cf75610-818b-4e2e-a700-20bbcdfb1268",
+  "kind": "pitfall",
+  "title": "Actively strip inherited environment when spawning nested agent CLIs — not setting it isn't enough",
+  "statement": "A child CLI spawned from a process that was itself launched by that CLI inherits identity/auth env markers that silently change the child's behaviour; maintain an explicit env_remove list for nesting markers and credential variables, shared by every spawn path.",
+  "topic": "integration/external-services",
+  "abstraction": "micro",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "a01e2b3c-016e-46ac-ac2f-ad11860aad97",
+  "kind": "decision",
+  "title": "Classify reachability-sweep verdicts by intent: non-auth 4xx is a pass",
+  "statement": "A batch endpoint-reachability test should treat 400/404/422 as passed (the server responded, auth worked, the endpoint exists) and only 401/403/5xx as failed; endpoints it cannot construct (unresolved path params) are pre-marked skipped with the reason in the result rather than silently omitted.",
+  "topic": "integration/external-services",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "91e6c0f2-2dd7-46a1-ab1e-d0a0b71df68f",
+  "kind": "pitfall",
+  "title": "On Windows, probing a CLI through `cmd /C` hides the binary-absent signal — read the shell's own error text",
+  "statement": "npm-installed provider CLIs are `.cmd` shims on Windows; `CreateProcess` (and therefore `Command::new(\"vercel\")`) cannot execute them, so probes must route through `cmd /C`. But `cmd` itself always spawns successfully, so the usual 'spawn error → binary absent' signal disappears: absence must be detected from the shell's stderr text ('is not recognized', 'command not found') or its 9009 exit code. Also pass CREATE_NO_WINDOW so no console flashes, close stdin so an interactive prompt fails fast instead of blocking, and treat a probe that hangs past its deadline as 'present but needs login' after killing it.",
+  "topic": "integration/external-services",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "4cc0d81c-7c01-47ad-a49d-5f7a61875d5a",
+  "kind": "pitfall",
+  "title": "Derive an injective filename and reuse the recorded path",
+  "statement": "Naming an exported file from a sanitized title is a many-to-one mapping, so two distinct entities silently clobber each other's file — data loss that reports success. Append a stable slice of the entity id to make the name injective, persist the chosen path in your sync state, and reuse it on every later write so renaming the entity does not orphan its file.",
+  "topic": "integration/external-services/filenames",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "7222e4d9-edc1-44e7-aa4c-9dcd2f73e57c",
+  "kind": "pitfall",
+  "title": "Resolve a CLI dependency's real executable, not its PATH shim",
+  "statement": "Depending on a third-party CLI through a shell shim on PATH breaks in two independent ways: a stale shim earlier on PATH shadows the working one, and package-manager churn deletes the shim while the binary survives. Locate the real executable across known install layouts in an explicit preference order and invoke it directly, keeping the shim only as a last resort, and route every caller through one resolver so a fix lands everywhere.",
+  "topic": "integration/external-services/subprocesses",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "cbc42c6e-71d6-44da-aefe-1e356e2f4b08",
+  "kind": "howto",
+  "title": "Neutralize a foreign repo's tool config when you shell into it",
+  "statement": "When you shell out to a version-control or package tool inside a working tree you do not own, its local configuration is not yours to inherit. Disable it on every invocation — background maintenance makes latency unpredictable, signing can block on a prompt, and the repository's own hooks will run your automated commits through checks written for humans.",
+  "topic": "integration/external-services/subprocesses",
+  "abstraction": "micro",
+  "ftype": "micro-technique",
+  "governing_id": null
+ },
+ {
+  "id": "3b00877d-c4f2-4411-9f35-6553ee5ef8f8",
+  "kind": "pattern",
+  "title": "Treat a protocol version bump as a hard, deliberate break — pin it in tests",
+  "statement": "Check `PROTOCOL_VERSION` at both ends and reject mismatches outright. When new wire fields are added while a version is unshipped, add a test asserting the version they're bound to, and carry the version into discovery metadata (mDNS TXT).",
+  "topic": "integration/protocol-contracts",
+  "abstraction": "meso",
+  "ftype": "api-design",
+  "governing_id": null
+ },
+ {
+  "id": "5fa1a3bb-468f-4bfe-b368-caecdf3db355",
+  "kind": "pattern",
+  "title": "Request the audio format, then reconcile it client-side anyway",
+  "statement": "WebView audio-format contract: request the sample rate (AudioContext({sampleRate:16000}) is honored only on Chromium/WebView2), then capture ctx.sampleRate at flush and linear-resample so the fast path is a no-op. A sibling uses OfflineAudioContext to resample AND downmix in one pass; both share chunked bytesToBase64 and hand-written 44-byte RIFF headers.",
+  "topic": "integration/protocol-contracts",
+  "abstraction": "meso",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "402bf4b9-6c29-4dcb-8a7a-d2692c5b0046",
+  "kind": "fact",
+  "title": "GitHub Actions YAML `on:` parses as a boolean `true` key",
+  "statement": "YAML 1.1 parsers read the bare key `on` as boolean true, so a parsed GitHub Actions workflow may carry its trigger block under the key `true` instead of `on` — detectors and transformers must check both.",
+  "topic": "integration/protocol-contracts",
+  "abstraction": "micro",
+  "ftype": "micro-technique",
+  "governing_id": null
+ },
+ {
+  "id": "99ee61f8-84d6-483d-8b81-f8ee7ccd9490",
+  "kind": "pattern",
+  "title": "Encode automated TUI keystroke plans in readable notation with one chunk per key",
+  "statement": "When a program drives another program's TUI, represent keystroke plans in human-readable notation (`<Down><Space><CR>`) that compiles to byte chunks, and make chunk boundaries semantic — one write per key — because target TUIs distinguish a typed key from the same byte arriving inside a paste.",
+  "topic": "integration/protocol-contracts",
+  "abstraction": "micro",
+  "ftype": "micro-technique",
+  "governing_id": null
+ },
+ {
+  "id": "bc128f1a-a94d-4374-821f-9787c404d498",
+  "kind": "pitfall",
+  "title": "Pin the exact serde casing of backend enums at every frontend comparison — drift disables features silently",
+  "statement": "A frontend string comparison against a Rust enum must match its actual serialization (no rename_all means PascalCase); a lowercase guess silently disables the whole branch. Cite the backend's serde config in a comment at each comparison site. This repo still carries a live instance of the drift: a label map keyed snake_case that always falls through to its default.",
+  "topic": "integration/protocol-contracts",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "4fd54965-8f1f-4d8a-bad1-d591431d2614",
+  "kind": "decision",
+  "title": "Let a child agent declare its intent instead of inferring it",
+  "statement": "Lifecycle hooks around a child process are passive and one-way: you infer intent from tool-call shapes and can never answer back. Giving the child a small endpoint to call turns inference into declaration and makes synchronous questions possible, so a stuck session asks instead of burning tokens guessing — and a single request/response endpoint is enough when nothing needs to push the other way.",
+  "topic": "integration/protocol-contracts/agent-tools",
+  "abstraction": "macro",
+  "ftype": "api-design",
+  "governing_id": null
+ },
+ {
+  "id": "f2adecbc-7747-4ae5-8c00-0869327ec5fe",
+  "kind": "pitfall",
+  "title": "Keep one alias map beside the matcher for a provider's ids",
+  "statement": "Several code paths can create the same logical record — a form, a CLI probe, a filesystem scrape, a health check — and each will spell the external provider's identifier differently, so an exact-match lookup silently returns not-found. Keep one alias map next to the matcher, document which creator path emits which spelling, and layer a broader category match beneath the alias match.",
+  "topic": "integration/protocol-contracts/ids",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "4fd54965-8f1f-4d8a-bad1-d591431d2614"
+ },
+ {
+  "id": "15cb9e28-daad-4629-9f9f-a47b143ce19f",
+  "kind": "fact",
+  "title": "Generate the API contract from the live handlers",
+  "statement": "Hand-maintained type bindings between a server and its clients drift the moment a handler changes without its annotation. Generate the contract document from the live handlers and the structs they actually serialize, then generate the client's types from that document, so there is one artifact to keep honest instead of one per type.",
+  "topic": "integration/protocol-contracts/schemas",
+  "abstraction": "meso",
+  "ftype": "api-design",
+  "governing_id": "4fd54965-8f1f-4d8a-bad1-d591431d2614"
+ },
+ {
+  "id": "753285bc-143c-4d23-b05d-2b758a0d5965",
+  "kind": "pattern",
+  "title": "Demote an unknown enum value visibly, with a breadcrumb",
+  "statement": "A shipped client will meet content authored by a newer server, and dropping the values it does not recognize makes the omission invisible. Coerce each unknown value to the safest known member — a visible demotion, not a disappearance — leave a telemetry breadcrumb naming the raw value and the item so schema drift is observable, and de-duplicate ids the server may ship twice.",
+  "topic": "integration/protocol-contracts/schemas",
+  "abstraction": "meso",
+  "ftype": "api-design",
+  "governing_id": "4fd54965-8f1f-4d8a-bad1-d591431d2614"
+ },
+ {
+  "id": "24db37e5-819c-4de3-95bf-ad2add91d5a7",
+  "kind": "pattern",
+  "title": "Pair a snapshot with live events and dedupe by request id",
+  "statement": "A protocol carried over a fire-and-forget event channel strands every pending request on a client reload. Fetch a snapshot on mount, subscribe to live events, and dedupe by request id inside the reducer so the snapshot/live race is impossible by construction rather than by ordering luck — and where a restored request has lost its payload, label the degraded value instead of fabricating one.",
+  "topic": "integration/protocol-contracts/subscriptions",
+  "abstraction": "meso",
+  "ftype": "api-design",
+  "governing_id": "4fd54965-8f1f-4d8a-bad1-d591431d2614"
+ },
+ {
+  "id": "1fbbc491-89f6-4f2a-967d-770bdcad2d9d",
+  "kind": "pattern",
+  "title": "A stream source that replays history on reconnect needs a cross-reconnect dedupe with a tiered key",
+  "statement": "When a push source (SSE, message replay service) re-sends recent history on every new connection, keep a bounded FIFO dedupe that SURVIVES reconnects, keyed by the best available delivery identity in tiers (protocol event id > provider delivery header > content hash), and send the last seen id (Last-Event-ID) on reconnect so a compliant server resumes instead of replaying.",
+  "topic": "integration/resilience",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "c4995fcc-765e-486b-8f30-eaba679dfb50",
+  "kind": "pattern",
+  "title": "Reset reconnect backoff only after the connection proved stable",
+  "statement": "Do not reset exponential reconnect backoff on every clean disconnect — reset it only when the connection stayed alive past a minimum stability threshold, or a server that accepts TCP then immediately closes (rate limiting) turns your backoff into a reconnect storm.",
+  "topic": "integration/resilience",
+  "abstraction": "micro",
+  "ftype": "micro-technique",
+  "governing_id": null
+ },
+ {
+  "id": "c9a388f9-0e0b-435b-81dd-34170bb69757",
+  "kind": "pitfall",
+  "title": "Verify a download's completeness against Content-Length before the atomic rename — and clean up only your own partial",
+  "statement": "A stream that ends early is not an HTTP-layer error; without an explicit length check the truncated file gets promoted to the final name and the installed-probe reports true forever. The companion pitfall: a failure path that sweeps every *.partial in a shared directory destroys a concurrently-downloading sibling's in-flight file when the in-flight guard is keyed per item.",
+  "topic": "integration/resilience",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "df686279-203b-4073-a1b6-e48cbb6108e9",
+  "kind": "pitfall",
+  "title": "Recover crash-orphaned lockfiles before respawning — but verify the pid's identity first",
+  "statement": "A supervised third-party server's pidfile survives a force-kill and blocks every future start. Clear it proactively before spawning — but only kill the locked pid if it is still a live process of the expected executable, so a recycled pid cannot take down something unrelated; the identity check fails closed.",
+  "topic": "integration/resilience",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "4c21752f-86a5-4212-a33b-96fc9adf8798",
+  "kind": "pattern",
+  "title": "Automated git merges verify the content landed before reporting success or pruning anything",
+  "statement": "Never trust exit status: probe patch-equivalence with git cherry first (an empty cherry-pick after a parallel session landed the same change is success, not failure), pick a strategy, re-verify with merge-base --is-ancestor or patch-equivalence before pruning any worktree, abort conflicted merges so the live checkout is never left mid-merge, and report the branch tip sha on every refusal so a commit can never be stranded behind a pruned worktree.",
+  "topic": "integration/resilience",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "a2cfbe15-0990-4f36-ac65-3fa658cea2de",
+  "kind": "pattern",
+  "title": "Report whether the cache answered from freshness or from rescue",
+  "statement": "A cache that silently rescues a failed network call hides a broken live channel behind fresh-looking content. Have the fetch layer return the provenance of the payload and map it to distinct statuses, so served-because-still-fresh and served-because-the-network-died are separable — and surface the degraded one in the UI, not only in telemetry.",
+  "topic": "integration/resilience/caching",
+  "abstraction": "meso",
+  "ftype": "state-mgmt",
+  "governing_id": "94982299-0ff7-4e06-9d71-5c6c19e644a1"
+ },
+ {
+  "id": "ecc97bfc-4d9a-4f0e-be3c-967dfb15a168",
+  "kind": "pattern",
+  "title": "Gate an integration by config, and fail closed on network errors",
+  "statement": "An integration that silently falls back to a heuristic whenever the network fails cannot be distinguished, in production, from one that is working. Gate it on an explicit enablement check, have the real and fallback paths produce the same outcome union so callers never fork on source, and give a genuine network failure its own unavailable variant instead of quietly degrading.",
+  "topic": "integration/resilience/fallbacks",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": "94982299-0ff7-4e06-9d71-5c6c19e644a1"
+ },
+ {
+  "id": "94982299-0ff7-4e06-9d71-5c6c19e644a1",
+  "kind": "pattern",
+  "title": "Escalate to a costlier fetch tier only on evidence of failure",
+  "statement": "When several fetch strategies differ by an order of magnitude in cost, run the cheapest first and climb only on evidence — a measurably thin body, a bot-wall marker, an error — never on a guess. Derive the escalation decision from a structured verdict rather than matching strings, and remember per host which tier keeps losing so the ladder gets cheaper over time.",
+  "topic": "integration/resilience/fallbacks",
+  "abstraction": "macro",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "3c28ba5c-ec72-4670-b4c6-391bc063ac61",
+  "kind": "pattern",
+  "title": "Defend a flaky embed against errors, stalls and repeat failures",
+  "statement": "A third-party player or widget fails in three distinct ways and each needs its own defence: it errors, so separate fatal from transient; it stalls silently, so arm a watchdog on every start and treat the timeout as a failure; and it fails repeatedly, so memoize failures for the session and cap consecutive auto-skips. Wrap the vendor SDK so every method is caught and the whole surface degrades to no-ops.",
+  "topic": "integration/resilience/fallbacks",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "94982299-0ff7-4e06-9d71-5c6c19e644a1"
+ },
+ {
+  "id": "c569a857-97dc-4f1d-ae21-9280a81a46df",
+  "kind": "pattern",
+  "title": "Keep a slow liveness heartbeat after the boot poll succeeds",
+  "statement": "A boot poll that stops once a service reports healthy leaves nothing watching, so a mid-session crash renders as a stale-looking live UI. Keep a low-frequency heartbeat on healthy sessions, require consecutive misses before acting, skip the check while the session is busy, and make the probe a real request — a bound-but-dead port passes a port check.",
+  "topic": "integration/resilience/probes",
+  "abstraction": "meso",
+  "ftype": "state-mgmt",
+  "governing_id": "94982299-0ff7-4e06-9d71-5c6c19e644a1"
+ },
+ {
+  "id": "76a7d6f3-c40d-4b80-a337-ab16ff913195",
+  "kind": "pattern",
+  "title": "Score integration health over a window, then pick a remediation",
+  "statement": "Counting consecutive failures treats a rate limit and a revoked credential identically. Keep a bounded window of recent probe results, classify each failure as transient or permanent from its status, compute failure rates over several time windows, and map the result to a small typed ladder of remediations — reporting the absence of recent evidence as its own state rather than as health.",
+  "topic": "integration/resilience/probes",
+  "abstraction": "meso",
+  "ftype": "architecture",
+  "governing_id": "94982299-0ff7-4e06-9d71-5c6c19e644a1"
+ },
+ {
+  "id": "63d4d65c-eda6-4dad-8c75-a9fd8f9c6d44",
+  "kind": "decision",
+  "title": "Collapse an unrecognized status to unknown, never to green",
+  "statement": "A dashboard merging lifecycle status from heterogeneous backends will meet strings it does not know, and the default it picks decides whether it lies optimistically or pessimistically. Define the status union as a documented contract, map every source through a named total mapper, collapse unrecognized or unconfirmable values to a neutral unknown, and forbid folding real failures into that neutral value.",
+  "topic": "integration/resilience/status-mapping",
+  "abstraction": "meso",
+  "ftype": "micro-technique",
+  "governing_id": "94982299-0ff7-4e06-9d71-5c6c19e644a1"
+ }
+]

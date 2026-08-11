@@ -1,0 +1,1072 @@
+[
+ {
+  "id": "9ab60793-6aac-44c4-83e7-7d98fdb8c260",
+  "kind": "pattern",
+  "title": "Map heterogeneous statuses through one mapper per source into a documented union",
+  "statement": "Heterogeneous status sources need a documented union contract with one mapper per source; reserve `unknown` for \"unrecognized\", NOT \"broken\" — broken/missing-heartbeat maps to failed so a dead deployment can never render as a false green. Pin the mapping with named tests.",
+  "topic": "errors/classification",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "004c5be0-47d7-4910-9c19-cad63bd96f0d",
+  "kind": "decision",
+  "title": "Anchor a matcher's regex only where breakage was measured",
+  "statement": "\"Anchor what is proven broken; leave what is proven fine\": anchor a marker regex only where a writer was measured emitting both forms and live rows rendered broken; leave prefix matches whose writers are cited as safe. One predicate is shared by both consuming components because duplicating the regexes is how they drift.",
+  "topic": "errors/classification",
+  "abstraction": "micro",
+  "ftype": "micro-technique",
+  "governing_id": null
+ },
+ {
+  "id": "612296dc-6d20-4af5-8659-5a9fcec7870b",
+  "kind": "pattern",
+  "title": "Resolve optimistically with a three-way failure taxonomy: deferral, failed write, lost CAS",
+  "statement": "A queue removing rows optimistically must distinguish three failures: deferral (write nothing), failed write (restore the row AND the reader cursor), and lost compare-and-swap (KEEP resolved — restoring would re-offer a decision that can never land).",
+  "topic": "errors/classification",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "fb42f840-215b-40cd-9499-de59f60ae61c",
+  "kind": "pattern",
+  "title": "Fuzzy matching needs a length floor, uniqueness-gated prefix matches, and ambiguity as a verdict",
+  "statement": "When fuzzily matching user resources to declared requirements, (1) skip fuzzy modes entirely below a minimum name length so generic tokens ('api', 'db') can't match vacuously, (2) accept prefix matches only when exactly one candidate hits, and (3) return multi-match as a first-class 'ambiguous' state the user resolves — never auto-pick among plausible candidates.",
+  "topic": "errors/classification",
+  "abstraction": "meso",
+  "ftype": "api-design",
+  "governing_id": null
+ },
+ {
+  "id": "1c6779e5-c4e6-4b35-9dfb-5b14ebcc71ad",
+  "kind": "pattern",
+  "title": "Classify an ambiguous parked state with a typed verdict that may abstain",
+  "statement": "When one catch-all state (e.g. 'stale') conflates situations the operator handles differently, add a classifier that reads the authoritative artifact and returns a typed verdict including an explicit Unknown that keeps the incumbent decision — and map verdicts onto the EXISTING lifecycle rather than inventing new states.",
+  "topic": "errors/classification",
+  "abstraction": "meso",
+  "ftype": "state-mgmt",
+  "governing_id": null
+ },
+ {
+  "id": "e3e6e6bb-1278-4338-b0ed-06d6b53a488a",
+  "kind": "pitfall",
+  "title": "Never classify infrastructure 'not found' by substring — anchor the exact shape",
+  "statement": "Deciding \"this IPC command isn't registered\" via `msg.includes('not found')` silently swallows every business not-found error ('project not found', 'host not found') into an empty-list fallback. Match the transport's canonical error shape with an anchored regex, or better, a structured `kind` field; real resource-not-found errors must propagate.",
+  "topic": "errors/classification",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "998df985-b7c4-4dde-a9eb-a5487e8b6aca",
+  "kind": "pattern",
+  "title": "Classify errors structured-kind-first with regex fallback, into transient/permanent plus retry hints",
+  "statement": "Give the client one classifier that prefers the backend's structured error `kind` (no regex when the server already computed the taxonomy) and only falls back to message-pattern matching for foreign errors. Output a typed error carrying severity (transient/permanent/unknown) AND a suggested retryAfterMs, so retry policy lives with classification instead of being re-decided per call site.",
+  "topic": "errors/classification",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "673d7ec7-57ca-4933-8211-29133a3d5117",
+  "kind": "decision",
+  "title": "Map a new failure mode onto the recovery pipeline that already exists",
+  "statement": "When a new failure is semantically identical to an old one (a dead CLI session is the CLI equivalent of a revoked OAuth grant), convert it into that existing error variant so all downstream healing — ledger flag, event, OS notification, vault banner, auto-resolve — fires for free, instead of inventing a parallel path that silently backs off.",
+  "topic": "errors/classification",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "6a6543d6-c9e5-47c2-b5a6-4feeebd265bc",
+  "kind": "pattern",
+  "title": "Parse backend error envelopes through a typed, ordered fallback chain that never throws",
+  "statement": "When a backend migrates error shapes, the client parser tries structured envelope → Error.message → raw string → caller-supplied default, checks the discriminant and every field's type before trusting a shape, returns null/default for everything else, and logs (not swallows) a failed JSON parse so shape drift stays visible.",
+  "topic": "errors/classification",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "a1ccb20c-d194-48b8-8a54-951faf861eb0",
+  "kind": "pattern",
+  "title": "A transport failure means the probe never ran — leave the last-known outcome alone",
+  "statement": "When mirroring backend check outcomes into client state, distinguish 'check ran and failed' from 'IPC/transport failed': the latter means the backend wrote nothing, so overwrite nothing. And a failing check must never erase the last-succeeded-at timestamp — that is when the credential last actually worked.",
+  "topic": "errors/classification",
+  "abstraction": "meso",
+  "ftype": "state-mgmt",
+  "governing_id": null
+ },
+ {
+  "id": "ddc1bf17-a793-4e54-8e6e-8c0379ed4b8b",
+  "kind": "pitfall",
+  "title": "A breaker's streak means failures since the last success, excluding environmental causes",
+  "statement": "Two ways a 'consecutive failures' breaker silently degrades: (1) counting the last N failed rows regardless of interleaved successes means any entity with N lifetime failures permanently reads as 'N consecutive'; (2) counting environment-caused failures (rate/usage/session limits, app-restart kills) trips the breaker on conditions that say nothing about the entity itself. Compute the streak as failures newer than the last success, with the environmental class explicitly excluded.",
+  "topic": "errors/classification",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "d304dc6a-d8e2-4d08-9b72-e0b12340768b",
+  "kind": "pattern",
+  "title": "One shared failure taxonomy, pinned by tests on the literal error strings each call site produces",
+  "statement": "When several modules word the same failure differently, a classifier that silently degrades one wording to 'other' looks precise while hiding the most actionable cause. Keep a single pub(crate) classifier and a test table of the exact literals each producer emits — reword a message and the test fails loudly instead of the metric quietly rotting.",
+  "topic": "errors/classification",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "e6e69563-4c02-4ec5-ab72-bb9ac6074e9e",
+  "kind": "pattern",
+  "title": "In a tiered fallback fetch, report error only when every tier failed — and stamp which tier served",
+  "statement": "When a list loads through a preferred source with a fallback source, capture each tier's error separately and classify the final state precisely: results → loaded (stamped with the serving tier for diagnostics); no results with at least one tier succeeding → genuinely empty; error only when EVERY tier threw. Collapsing these makes a flaky network look like an empty catalog (dead-end UI) or an empty catalog look broken. Emit the (phase, source) pair as a metric so the funnel is observable.",
+  "topic": "errors/classification",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "12850a3f-3b57-4a31-9119-0c3cb51e7d92",
+  "kind": "pattern",
+  "title": "Type a not-ready verdict by the remediation it needs, with a fail-closed 'misconfigured' sentinel",
+  "statement": "A readiness check that answers only ready/not-ready forces the UI to guess where to send the user. Return the setup KIND with the verdict — which remediation fixes it (add a credential, run the provider CLI's login, register a project, configure a vault) — and let the UI route accordingly, specializing generic hints with the concrete fix (the actual `vercel login` command, not 'run its login command'). Crucially, include a Misconfigured sentinel for declarations that are blank, corrupted, or reference a probe arm that was never wired: it is the fail-closed state that keeps a broken declaration from silently promoting the subject as ready.",
+  "topic": "errors/classification",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "ca58e9fe-5d19-4ec2-99b2-b40bd150d90e",
+  "kind": "pattern",
+  "title": "In an N-way comparison, an expected participant with zero result rows is a failure signal, not an empty state",
+  "statement": "Type the aggregation of a comparison cell as a three-way result — ok(metrics), missing(participantId), empty — where 'missing' means the caller asked for this participant but no rows carry its id (its run failed or never dispatched) and 'empty' means no run has produced anything yet. The UI then renders 'X produced no results — run may have failed' for missing instead of a generic no-data placeholder that hides the failure.",
+  "topic": "errors/classification",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "2ab21a50-716a-4daf-b54d-c7a5a139330c",
+  "kind": "pitfall",
+  "title": "Never substring-match an error message to decide on a fallback",
+  "statement": "Coercing an error into an empty fallback based on a substring like \"not found\" swallows genuine failures and renders empty-state UIs that look like real data. Match a structured error code, or an anchored regex on the exact canonical shape.",
+  "topic": "errors/classification/signatures",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": "0343b6df-6cdc-422d-ab17-c0cc138622a1"
+ },
+ {
+  "id": "0fcb5e5e-652f-482c-8269-12404c6cd560",
+  "kind": "pattern",
+  "title": "Normalize failure messages into a signature so a retry loop can stop repeating the same failure",
+  "statement": "Automatic retry and fix loops burn budget re-hitting an identical deterministic error because each occurrence's text differs in incidental detail. Collapse the volatile parts (UUIDs, hex digests, line numbers, addresses, timestamps, whitespace) into a normalized signature, count occurrences, and abort the loop once one signature recurs past a limit.",
+  "topic": "errors/classification/signatures",
+  "abstraction": "micro",
+  "ftype": "micro-technique",
+  "governing_id": "0343b6df-6cdc-422d-ab17-c0cc138622a1"
+ },
+ {
+  "id": "0343b6df-6cdc-422d-ab17-c0cc138622a1",
+  "kind": "decision",
+  "title": "Type error variants only where a caller matches on them",
+  "statement": "Typed error enums earn their cost only where a caller actually matches on the variants; for an internal service with no public error contract, a context chain annotated at each fallible call reads better and moves faster. Pick one stance per crate or module and back it with a lint against bare unwraps, rather than mixing both and getting neither the exhaustive match nor the readable chain.",
+  "topic": "errors/classification/taxonomies",
+  "abstraction": "macro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "146a79dc-45fa-4329-a8af-0ffab0816d24",
+  "kind": "pattern",
+  "title": "Make throttling a typed error, never an empty result",
+  "statement": "Rate limits and quota caps arrive from every provider in a different shape, and returning an empty result for them makes a gap indistinguishable from ground truth. Normalize the provider-specific throttle signatures into one predicate, raise a dedicated error type, and let callers branch on that type to preserve their cursor and report 'retry' rather than committing the gap as data.",
+  "topic": "errors/classification/taxonomies",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "0343b6df-6cdc-422d-ab17-c0cc138622a1"
+ },
+ {
+  "id": "63e8c1d2-c5ce-46d4-bd66-c52285a70aed",
+  "kind": "pattern",
+  "title": "Carry the client-fault distinction in the error enum itself",
+  "statement": "Most error variants are the server's fault and belong on the same status; only a few are the caller's. Give the core error type one explicit client-fault variant, map that at the HTTP boundary and default everything else to a server error, letting handlers raise the situational statuses themselves. Pair it with a stable machine code in the envelope so consumers branch on the code, never on the human message.",
+  "topic": "errors/classification/taxonomies",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "0343b6df-6cdc-422d-ab17-c0cc138622a1"
+ },
+ {
+  "id": "440acd1a-28bb-448b-8d10-c1e837e3b153",
+  "kind": "pattern",
+  "title": "Classify an error once through one pipeline, not at every site",
+  "statement": "Independent classifiers — retryability, user-facing copy, UI guidance — drift apart and force every call site to run all three over the same string. Collapse them behind one call that returns a single classified object, and give the user-facing result an explicit intent category so each surface picks its treatment from data rather than from string matching.",
+  "topic": "errors/classification/taxonomies",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "0343b6df-6cdc-422d-ab17-c0cc138622a1"
+ },
+ {
+  "id": "c5989cae-1b01-40e6-a37d-364530762e88",
+  "kind": "pattern",
+  "title": "Tell 'not configured' apart from a real outage before logging",
+  "statement": "A provider that collapses every failure to a uniform empty value gives the caller a clean contract and gives the operator nothing — a genuine outage then looks exactly like an unconfigured build. Keep the uniform return, but add a separate telemetry seam that records why the call failed, staying silent only for the reasons you expect and recording every other reason with structured context.",
+  "topic": "errors/classification/transient-failures",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "0343b6df-6cdc-422d-ab17-c0cc138622a1"
+ },
+ {
+  "id": "0e075a36-28c7-4924-a587-ace26fd2d274",
+  "kind": "pattern",
+  "title": "Let transient provider failures escape the degradation path",
+  "statement": "Routes that degrade to a deterministic heuristic on any provider failure return success and hide real outages. Give transient failures — rate limits, provider errors, timeouts — a distinct error type so they can escape the degradation path and surface as an actionable status, while content failures such as unparseable model output keep degrading silently. Classify defensively: anything not clearly transient stays on the fallback path.",
+  "topic": "errors/classification/transient-failures",
+  "abstraction": "macro",
+  "ftype": "error-strategy",
+  "governing_id": "0343b6df-6cdc-422d-ab17-c0cc138622a1"
+ },
+ {
+  "id": "5d22ca91-f53a-414c-b309-a435da8a4041",
+  "kind": "pattern",
+  "title": "Log auth failures loudly only when they signal misconfiguration",
+  "statement": "Session verification fails constantly in normal operation — expired cookies, revoked tokens — so logging every failure trains operators to ignore the channel and hides the one failure that matters. Split expected token failures from credential and project misconfiguration, log only the latter, and put the diagnosis hint in the message so a half-configured deploy cannot masquerade as routine mass logout.",
+  "topic": "errors/classification/transient-failures",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "0343b6df-6cdc-422d-ab17-c0cc138622a1"
+ },
+ {
+  "id": "a7f08199-f9ff-441a-af5b-472796b35c4b",
+  "kind": "pattern",
+  "title": "Order side effects so a failed persist rolls back in-memory state",
+  "statement": "Write to the DB before success metrics; on failure remove and close the in-memory connection so observers never see a phantom-connected peer disagreeing with `discovered_peers.is_connected`. Add a startup counterpart that resets stale flags.",
+  "topic": "errors/degradation",
+  "abstraction": "meso",
+  "ftype": "state-mgmt",
+  "governing_id": null
+ },
+ {
+  "id": "f15535dc-9bad-462d-9119-0edec3f72db2",
+  "kind": "pattern",
+  "title": "Fault-isolate each table in a sync pass with per-table outcome structs",
+  "statement": "Each table in a sync pass is fault-isolated with its own outcome struct; one canonical table list drives both the dispatch loop and the status grid, and its shape is guarded by tests.",
+  "topic": "errors/degradation",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "d80c2f0e-6d49-4b47-ac42-1a9df3676319",
+  "kind": "pattern",
+  "title": "Validate remote payloads for RENDERABILITY, not just schema",
+  "statement": "A schema-valid empty roadmap blanked the surface; reject empty items and blank titles so the Err path fires the bundled fallback, and reject version mismatch in both directions.",
+  "topic": "errors/degradation",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "d29bbec4-d04e-4c82-aa93-ea00f7af4125",
+  "kind": "pattern",
+  "title": "Wrap every spawned scan task in catch_unwind and drive the record to a terminal status",
+  "statement": "A panicking task leaves its row stuck at running forever; wrap every spawned scan task in catch_unwind and always drive the persisted record to a terminal status.",
+  "topic": "errors/degradation",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "6f3f5538-1e12-4335-8a8a-c804e9862dca",
+  "kind": "pattern",
+  "title": "Persist findings one at a time with log-and-continue, never `?` mid-loop",
+  "statement": "A trailing `?` in the persist loop stranded the scan row next to a half-written idea set; persist findings one at a time, logging and continuing on individual failures.",
+  "topic": "errors/degradation",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "667bb16c-d869-454d-8514-54d8a4920072",
+  "kind": "pattern",
+  "title": "Run the advisory audit on the way OUT of a mutation; never let it fail the mutation",
+  "statement": "Advisory audits run after the mutation commits and are never allowed to fail it — auditing is a side observation, not a gate on the write.",
+  "topic": "errors/degradation",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "f1f45dab-9ee9-4412-bdc3-6affd01d0d44",
+  "kind": "pattern",
+  "title": "Warn with a nearest-suggestion on unknown event types instead of rejecting",
+  "statement": "Free-form LLM-emitted event_type means a typo silently starves listeners. Validate at publish and `tracing::warn` naming the nearest builtin by length-scaled Levenshtein (threshold (len/5).clamp(1,3)); the UI filter reads seed ∪ observed so the vocabulary self-extends.",
+  "topic": "errors/degradation",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "ba598e0d-d74b-4ce2-8b75-0e4294882838",
+  "kind": "pattern",
+  "title": "Parse spoken intent conservatively, returning null to fall through to chat",
+  "statement": "A spoken-to-structured intent parser is deliberately conservative: bare digits, number words, and \"explain\" only; STT punctuation stripped; out-of-range numbers become a chat message rather than a mis-click; only attempted while a decision is pending. Mirrors the mid-turn default-to-queue ruling — destroying running work on an ambiguous message is the worse failure mode.",
+  "topic": "errors/degradation",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "7e8b35fa-0844-43a8-8d98-c3708aa37e2b",
+  "kind": "pattern",
+  "title": "Build deterministic tiered resolvers with a hash floor so results are never blank",
+  "statement": "Tiered resolvers (emoji map → keyword scan including JSON-folded text → backend category → stable hash of the id) always land on a deterministic result, never null/blank; export the hash so other surfaces derive the same choice. Corollary: an unparseable timestamp renders the RAW string (users see the bad value instead of \"NaNm ago\") and future timestamps collapse to \"just now\".",
+  "topic": "errors/degradation",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "0f81adb4-fee4-452a-afd7-29e66d834f7b",
+  "kind": "pattern",
+  "title": "Degrade a line-oriented digest parser to 'parsed 0' instead of throwing",
+  "statement": "A line-oriented markdown digest parser degrades to \"parsed 0\" instead of throwing: the format doc lives inline as the sync contract with the Rust formatter, matching is tolerant (prefix matching, \\r strip, compound-line splits), and the caller detects parsed-0 and falls back to raw pre. The pairing store documents why there is no delta protocol.",
+  "topic": "errors/degradation",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "438b6d5a-2c6d-4135-9de1-f81f2968d7b9",
+  "kind": "pattern",
+  "title": "Make a cron humanizer fall back to raw rather than lie",
+  "statement": "humanizeCron never lies: unrecognized shapes fall back to the raw cron string, a multi-valued hour forces the time display to null so \"0 9,17 * * *\" can't collapse to \"Daily · 09:00\", and DOW ranges expand with a %7 guard after a 5-field arity check.",
+  "topic": "errors/degradation",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "e0812261-fdd4-47a9-ad03-5b647c7867ce",
+  "kind": "pattern",
+  "title": "Match model tiers loosely with a neutral fallback for unknowns",
+  "statement": "Model-tier badges match loosely and forward-compatibly (.includes('haiku'|'opus'|'sonnet') deliberately, so future variants map without editing) and an unknown model gets a neutral \"Custom\" badge rather than a wrong tier.",
+  "topic": "errors/degradation",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "7d87366b-5305-4588-9457-8c61cbfafd14",
+  "kind": "pattern",
+  "title": "Re-clamp persisted values at the point of use to the validator's ceiling",
+  "statement": "A bound enforced at create/update time must be re-applied defensively where the value is consumed — rows persisted before the guard existed, or edited directly in the store, otherwise drive unbounded work (full-table scans, unbounded look-backs) every tick.",
+  "topic": "errors/degradation",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "bf9159cb-3011-4080-84ed-e202c41017c6",
+  "kind": "pattern",
+  "title": "An auto-remediation flag must refuse gaps outside its remediation power",
+  "statement": "A 'fix it for me' option may only proceed when every blocking gap is of the kind it can actually fix; if any gap is outside its power (a credential it cannot provision, an unverifiable requirement), refuse the whole operation with the concrete list — and after remediating, re-score so the returned verdict reflects the post-fix state.",
+  "topic": "errors/degradation",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "535b4889-6de8-4bbb-917a-b43a19517c69",
+  "kind": "pattern",
+  "title": "Mirror the last good parse in memory so storage corruption degrades to session data, not loss",
+  "statement": "Back a localStorage-persisted collection with a module-level mirror of the last successful load, return the mirror on any read failure, and toast the corruption exactly once with copy that differs depending on whether the mirror could rescue anything.",
+  "topic": "errors/degradation",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "58700d26-4ddc-4f4d-bf18-e99c8d09a33d",
+  "kind": "pattern",
+  "title": "Retry only the failed sources of an aggregate bundle once before raising a staleness banner",
+  "statement": "When one server-side bundle replaces N independent fetches, keep each source independently fail-able (per-source error map in the response), then — before surfacing any degraded-data banner — run ONE automatic retry of only the failed sources through their individual endpoints. This absorbs cold-start races (first bundle call landing before a session token is ready) without hammering healthy sources, and the banner that finally shows carries each source's concrete failure reason.",
+  "topic": "errors/degradation",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "5a7b647a-18dc-4f29-8cc6-03a7fb9e23bd",
+  "kind": "pattern",
+  "title": "Degrade optional enrichment to the base result; never let it fail the request",
+  "statement": "Re-rankers, schema introspection and other enrichment steps get wrapped so every failure mode (serialization, pool checkout, SQL error, empty result) logs a warning and falls through to the primary result — a broken optimizer must not break the feature it optimizes.",
+  "topic": "errors/degradation",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "e0b7109d-0162-4f78-955c-a2436c8c7eae",
+  "kind": "pattern",
+  "title": "Split the remediation signal bus from the action executor, with longer cooldowns for destructive actions",
+  "statement": "Model automated remediation as Signal → Event → Bus → Executor: the bus owns dedupe, per-action cooldown and a bounded log and knows nothing about execution; the executor is a total Record<Action, handler> where every handler is idempotent and reports its outcome back by event id. Destructive actions (auto-rotate, auto-disable) get materially longer cooldowns than advisories, and actions handled elsewhere still log an outcome so the action trail is complete.",
+  "topic": "errors/degradation",
+  "abstraction": "meso",
+  "ftype": "architecture",
+  "governing_id": null
+ },
+ {
+  "id": "7a4a483f-36b8-4378-a1fc-4a02b5022659",
+  "kind": "pattern",
+  "title": "In a windowed global breaker, one success offsets exactly one failure",
+  "statement": "When a global circuit breaker counts failures across providers in a rolling window, a success must remove at most ONE matching failure entry (1:1 offset), never purge the provider's whole history — a single lucky success would otherwise mask cascading failures and stop the global breaker from ever tripping.",
+  "topic": "errors/degradation",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "e16cdaa2-a8c4-462e-b978-b384263d4553",
+  "kind": "pattern",
+  "title": "Every failure class you exempt from a breaker needs its own dedicated bound",
+  "statement": "Exempting a failure class (e.g. provider-environmental errors) from the entity circuit breaker removes the only thing bounding retries of that class: each new run starts a fresh retry chain and the breaker never trips. Add a complementary windowed counter over exactly the exempted class, and past a documented cap, convert the auto-retry into a surfaced manual issue. Bound retry COUNT, not wait time, so one legitimate long wait still schedules.",
+  "topic": "errors/degradation",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "4e503e9e-198f-4e52-8f76-e00677a1e4ce",
+  "kind": "pattern",
+  "title": "An automated rollback must verify the TARGET is genuinely healthier, with symmetric minimum-sample floors",
+  "statement": "Rolling back automatically on 'current error rate > 2x previous' is not enough. Apply the minimum-execution floor to BOTH sides — a target whose 0% error rate is one lucky run is not a track record — and require the target's rate to be strictly lower than the current AND under an absolute ceiling; otherwise a 90%-error version gets confidently 'rolled back' onto an 80%-error version. Use execution-weighted (not per-day) error rates, and put a noise floor under the trigger threshold.",
+  "topic": "errors/degradation",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "846b4dbd-8aa7-48ae-95ff-4c4c2b1a27c9",
+  "kind": "pattern",
+  "title": "Track each data family's fetch lifecycle with a stale state distinct from failed",
+  "statement": "When a screen composes several independently fetched data families, give each family its own status ('idle'|'loading'|'loaded'|'failed'|'stale') where a failed RELOAD of previously loaded data goes 'stale' (keep showing it, flag it) instead of 'failed' (nothing to show). A retry action sweeps every failed/stale family, replaying remembered inputs for parameterized loads.",
+  "topic": "errors/degradation",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "e7a20fc1-4096-4c6d-bd08-306833ebef2f",
+  "kind": "pattern",
+  "title": "Multi-step create flows: roll back the parent on member failure, isolate per-edge inserts, count only what persisted",
+  "statement": "A blueprint-apply flow (create team → add members → create connections → seed extras) needs three distinct failure disciplines: (1) member creation failure rolls back the parent (best-effort delete) so no orphaned half-team survives; (2) per-edge inserts are individually try/caught because an LLM blueprint routinely contains edges the backend legitimately rejects (duplicates, self-loops, cycle-forming) — one bad edge must not abort the whole build, and the reported count reflects rows that actually persisted; (3) optional enrichment (memory seeding) is fully best-effort and capped. Also null-check store actions that swallow backend errors — a null return later throws an unrelated TypeError and surfaces a generic message.",
+  "topic": "errors/degradation",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "beea8755-00d2-4223-b4c0-805072193f21",
+  "kind": "pattern",
+  "title": "Give a volatile in-memory process registry an OS-truth reconciliation surface: scan, classify, re-adopt or kill orphans",
+  "statement": "When a supervisor tracks child processes in an in-memory registry that dies with the app but the children survive restarts, ship a reconciliation surface that scans the OS process table, classifies each hit (interactive vs the app's own transient calls; tracked vs orphan), and offers re-adoption (resume the conversation as a tracked unit) alongside kill. Keep an ambient orphan count fresh via a background scan so the surface's badge alerts without being opened — but gate that scan on window visibility, because process-table scans are the priciest poll.",
+  "topic": "errors/degradation",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "112b942c-7b96-4f96-a96a-e5ab6175bd9c",
+  "kind": "pattern",
+  "title": "A degraded automated reviewer resolves with a distinct audit tag — it never blocks the run",
+  "statement": "When an LLM second-pass evaluator gates outputs (approve/reject against stated principles), every evaluator failure mode (spawn error, timeout, JSON parse) must fall back to a resolution with its own distinct audit tag rather than leaving the item pending. The run continues; the audit trail distinguishes 'LLM approved', 'LLM rejected', and 'evaluator degraded, auto-resolved' so degradation is visible, not silent.",
+  "topic": "errors/degradation",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "f0062b2c-c4b9-4678-8d0a-d691a91ed579",
+  "kind": "pattern",
+  "title": "Interpret ratio-vs-percent by magnitude before scaling, clamp, and flag genuine overflow",
+  "statement": "A 0–1 ratio rendered as `round(x*100)%` double-scales when a legacy row or model-composed spec stored the value already as a percent (83.11 → '8311%'). Guard at render time: value ≤ 1 → genuine ratio → ×100; value > 1 → already-percent signature → use as-is; clamp to [0,100] and return an explicit overflow flag when the interpreted percentage still exceeds 100, so the caller shows a 'clamped' treatment + tooltip instead of a silently wrong number. Fixing at read means old stored data displays sanely without a migration.",
+  "topic": "errors/degradation",
+  "abstraction": "micro",
+  "ftype": "micro-technique",
+  "governing_id": null
+ },
+ {
+  "id": "edaf86e7-9f37-43b6-bc3d-07cec3756dcc",
+  "kind": "pattern",
+  "title": "After an in-place multi-entry hydration, assert no un-transformed stubs survive before reporting success",
+  "statement": "When a transform mutates a list of entries in place (expanding refs/stubs into full content), a mid-list failure leaves earlier entries transformed and later ones as raw stubs — and downstream normalization will happily map those stubs to empty-but-valid records. Defend twice: propagate the transform error as fatal (naming the offending entry id), AND run a post-condition scan that fails the whole operation if any stub survived, so a partial transform can never be reported as success.",
+  "topic": "errors/degradation",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "f33b6250-35da-4d8a-963c-91462c72e98d",
+  "kind": "pattern",
+  "title": "Load feature data in a loader that degrades, never throws",
+  "statement": "A feature's data read should never be able to break the page that introduces it. Put the read in a per-feature server-side loader that catches everything and returns an empty result, keep the page itself thin, and let the presentational component decide what to render when given nothing — sample content, a hidden section, or a retry affordance.",
+  "topic": "errors/degradation/fallbacks",
+  "abstraction": "macro",
+  "ftype": "data-flow",
+  "governing_id": "453e4de1-30d3-4c68-842c-873c5aee2d91"
+ },
+ {
+  "id": "bf358702-79f0-4cb2-8b0f-afcd2c8faf06",
+  "kind": "decision",
+  "title": "A lint on catch-block shape does not enforce its own intent",
+  "statement": "A rule that flags empty catch blocks is satisfied by a catch that returns a default, so a codebase can pass its own no-silent-catch gate while swallowing every error unlogged. Check the intent, not the shape: if the rule exists because the next person debugging production needs a signal, the gate has to assert that a signal is actually emitted.",
+  "topic": "errors/degradation/fallbacks",
+  "abstraction": "macro",
+  "ftype": "error-strategy",
+  "governing_id": "453e4de1-30d3-4c68-842c-873c5aee2d91"
+ },
+ {
+  "id": "453e4de1-30d3-4c68-842c-873c5aee2d91",
+  "kind": "pitfall",
+  "title": "A degraded path must be classified and logged, never silently swallowed",
+  "statement": "Every catch that returns a safe default must first classify the failure — transient provider/infra outage vs expected content or config failure — and emit a server-side signal for the transient class; returning null/false/[] with no telemetry is not graceful degradation, it is an unobservable outage.",
+  "topic": "errors/degradation/fallbacks",
+  "abstraction": "macro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "71bc9a9a-2070-4f6e-9993-1c1d19441050",
+  "kind": "pitfall",
+  "title": "A fallback layer hides absence: check translated VALUES, not just key parity",
+  "statement": "When a runtime fallback silently substitutes a default (English under every locale, a default config under every tenant), a parity check on KEYS proves nothing. Add a second gate that asserts the VALUE actually differs from the fallback, scoped to live (source-referenced) entries, with an explicit allowlist for legitimately-identical values.",
+  "topic": "errors/degradation/fallbacks",
+  "abstraction": "macro",
+  "ftype": "error-strategy",
+  "governing_id": "453e4de1-30d3-4c68-842c-873c5aee2d91"
+ },
+ {
+  "id": "7899d7cc-7e02-4496-bd05-fd2e29a52ec3",
+  "kind": "decision",
+  "title": "Malformed or ambiguous configuration degrades to a no-op, never to maximum effect",
+  "statement": "When a config value is ambiguous or malformed, pick the interpretation whose failure mode is cheapest. Equal window endpoints mean a zero-length window, not 'all day'; an empty whitelist matches nothing, not everything; an unparseable schedule is skipped, not applied. The most common cause of a degenerate value is a UI bug or a half-finished edit — turning that into 24-hour silence is a far worse outcome than turning it into a no-op.",
+  "topic": "errors/degradation/fallbacks",
+  "abstraction": "meso",
+  "ftype": "architecture",
+  "governing_id": "453e4de1-30d3-4c68-842c-873c5aee2d91"
+ },
+ {
+  "id": "5499028d-64b0-4c2f-9aa6-faa5575f79fd",
+  "kind": "pattern",
+  "title": "Never let a best-effort follow-up fail a confirmed write",
+  "statement": "A step that runs after a write has already committed — cache revalidation, an index refresh, a notification — must not be able to report the write as failed. Wrap it in its own catch that logs and swallows, so a transient downstream fault or a call outside a request scope cannot turn an honest success into a reported error.",
+  "topic": "errors/degradation/partial-results",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "453e4de1-30d3-4c68-842c-873c5aee2d91"
+ },
+ {
+  "id": "92a2efe6-c3f3-47ff-841d-3650fb66b62c",
+  "kind": "pattern",
+  "title": "A partially-succeeded batch needs its own UI state and an idempotent repair action",
+  "statement": "Batch provisioning has three outcomes, not two: all-good, all-failed, and 'the items landed but a cross-cutting step didn't'. Model the third explicitly, don't claim success for it, and ship a targeted retry for failed items plus an idempotent repair for the cross-cutting step — so the user is never told to start over.",
+  "topic": "errors/degradation/partial-results",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "453e4de1-30d3-4c68-842c-873c5aee2d91"
+ },
+ {
+  "id": "ecf034d1-a954-47fc-aec0-5db14244b52a",
+  "kind": "pattern",
+  "title": "In a non-transactional multi-step create, classify every step as critical, degradable, or optional",
+  "statement": "A create flow that spans several independent writes has no transaction. Decide per step: critical steps roll back everything already written on failure; degradable steps isolate each item, swallow its error, and report the count that actually persisted; optional steps are fully best-effort and capped. Never let one rejected item abort a build that already succeeded, and never report an intended count as an achieved one.",
+  "topic": "errors/degradation/partial-results",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "453e4de1-30d3-4c68-842c-873c5aee2d91"
+ },
+ {
+  "id": "9202ca82-a9c2-46bc-97c9-4eff5253f847",
+  "kind": "pattern",
+  "title": "A list endpoint should skip a corrupt row and log it, not fail the whole page",
+  "statement": "Collect query results through a helper that logs each row-mapping failure with the caller's context and row index, then logs a total skipped count — so one unmappable row (schema drift, bad data) degrades a list instead of blanking it.",
+  "topic": "errors/degradation/partial-results",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": "453e4de1-30d3-4c68-842c-873c5aee2d91"
+ },
+ {
+  "id": "2fb729b4-e486-4ef3-8c0c-166d452cda2f",
+  "kind": "pattern",
+  "title": "A partial pass must report what it skipped — make the skipped set part of the result type",
+  "statement": "A scan over N optional sources must never fail as a whole, but tolerating failures silently makes a degraded pass indistinguishable from a clean one. Put the degradation in the return type: which sensors were skipped, how many duplicates were dropped, how much was truncated by the cap. Order by impact so that when the cap bites, what survives is what mattered.",
+  "topic": "errors/degradation/partial-results",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "453e4de1-30d3-4c68-842c-873c5aee2d91"
+ },
+ {
+  "id": "aa6ae5a2-8a5a-41c3-b242-5571ebb7a54a",
+  "kind": "pattern",
+  "title": "Attach realtime subscriptions in priority waves, retry failures on a budget, then tell the user",
+  "statement": "Cold-start listener registration will intermittently fail. Attach critical channels first, yield a frame, bulk-register the rest, retry the failures on a bounded backoff schedule detached from startup — and if the budget is exhausted, surface a non-blocking 'updates may be delayed' toast instead of leaving the UI silently half-wired.",
+  "topic": "errors/degradation/retries",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "453e4de1-30d3-4c68-842c-873c5aee2d91"
+ },
+ {
+  "id": "aa71c932-4089-464a-9c14-f3aa17d40438",
+  "kind": "pattern",
+  "title": "Persist terminal status with bounded retry, then dead-letter — never leave a row non-terminal",
+  "statement": "The write that records a job's final state is the one write you cannot afford to lose: if it fails, the row stays 'running' forever and the UI lies. Retry it with exponential backoff, and on exhaustion force the row into a terminal failed state carrying the persist error as its message, plus a user-visible event. Log loudly if even the dead-letter write fails.",
+  "topic": "errors/degradation/retries",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": "453e4de1-30d3-4c68-842c-873c5aee2d91"
+ },
+ {
+  "id": "f698d682-b6ba-48cb-94b8-84516928f2c9",
+  "kind": "pattern",
+  "title": "Report an empty collection only when the resource EXISTS — 404 the rest",
+  "statement": "\"Empty must mean empty, not absent\": return an empty list only after confirming the parent resource exists; otherwise 404.",
+  "topic": "errors/result-contracts",
+  "abstraction": "meso",
+  "ftype": "api-design",
+  "governing_id": null
+ },
+ {
+  "id": "8e811633-5fd7-40c3-b4a3-16af195929c0",
+  "kind": "pattern",
+  "title": "Reject a no-op patch instead of returning the unchanged row",
+  "statement": "An all-optional patch with a mistyped field is a silent success; reject a patch that changes nothing, and validate enums in Rust rather than letting SQLite CHECK constraints surface as 500s.",
+  "topic": "errors/result-contracts",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "92dd9ab9-c3ed-452d-a2d7-a81ef73ee174",
+  "kind": "pattern",
+  "title": "Throw on a corrupt JSON column when empty is a meaningful state",
+  "statement": "At the api seam, a JSON column whose empty value is meaningful must THROW on parse failure, not collapse: {} is the valid \"picker opened, user skipped\" state, and a silent collapse followed by re-save would permanently discard real data. Document the three-valued domain (null / {} / populated) and let the writer own serialization. A sibling encodes tri-state without a round trip: undefined = everything, [] = nothing short-circuits locally.",
+  "topic": "errors/result-contracts",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "5906ef83-e46e-42d5-acdf-be6938f7ced8",
+  "kind": "pattern",
+  "title": "Check a mutation's failure-as-value result; never clear state on assumption",
+  "statement": "A mutation queue that reports failure AS A VALUE must be checked, not assumed: `if (result.applied)` — clearing dirty unconditionally was success theater. Same class: a failed review verdict closed the modal like success; quick-answer fields clear ONLY on a landed write (typed answers are the only copy); a success toast fired before the await; and an optimistic store mutation with no rollback moved AFTER the await — \"the one failure mode where being optimistic costs data rather than latency.\"",
+  "topic": "errors/result-contracts",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "64aecf3c-463a-452e-b724-0884ade2f2f9",
+  "kind": "pattern",
+  "title": "Route pre-flight refusals through the same typed result and audit path as runtime failures",
+  "statement": "Early returns (rate-limited, unsupported, misconfigured, missing credentials) in an invocation pipeline must produce the SAME typed result shape and hit the SAME audit log as post-dispatch failures — a raw error escaping before dispatch renders as garbage in the UI and leaves a hole in the audit trail.",
+  "topic": "errors/result-contracts",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "eebe3bbc-db18-42fc-abf6-020589f80f65",
+  "kind": "decision",
+  "title": "Give store mutations one throw contract so awaiting callers can't celebrate a failed write",
+  "statement": "Mutating store actions must have a consistent rethrow/swallow contract, stated in a comment: callers that gate UI transitions (close modal, navigate, toast 'Saved') on await must see a rejected backend write as a rejection — silently resolving makes the UI lie.",
+  "topic": "errors/result-contracts",
+  "abstraction": "meso",
+  "ftype": "api-design",
+  "governing_id": null
+ },
+ {
+  "id": "30414971-6caf-4251-b3b0-57301ed717b2",
+  "kind": "pattern",
+  "title": "Never report success on a hollow result — assert the artifact through the same resolver the runtime uses",
+  "statement": "Installers re-run the runtime's own binary/model resolver after extraction and error if it cannot resolve; extraction fails loudly when zero executables or a sentinel file are missing (the signal a pinned upstream asset changed shape); and a zero-exit subprocess with empty stdout is converted to an error, because Ok(\"\") made the caller silently insert nothing.",
+  "topic": "errors/result-contracts",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "085258d0-5cd7-4ab7-9981-99517a8b2e39",
+  "kind": "pitfall",
+  "title": "A timeout that resolves to Ok is invisible to error-shaped checks — carry an explicit timed_out flag in the return type",
+  "statement": "A wrapper that kills a child at its deadline and returns Ok with whatever partial text streamed makes is_err() see a clean run — the failure mode most likely to be common is the one an error-shaped check cannot see. Return a struct carrying timed_out, and synthesize a usage record when the child emitted none, so the ledger row exists even when the cost does not.",
+  "topic": "errors/result-contracts",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "ea7a4e8e-f6b0-4bfa-8dc1-36f6e855ffc6",
+  "kind": "pattern",
+  "title": "Bulk mutations return per-item outcomes with machine reasons; the client applies successes and summarizes failures by reason",
+  "statement": "A bulk endpoint should never be all-or-nothing and never a bare count. Return the succeeded ids plus per-id failure reasons as machine tokens. The client then removes exactly the succeeded rows from its optimistic state, tallies failure reasons into a single localized summary, and leaves the rest selectable for a retry.",
+  "topic": "errors/result-contracts/bulk-outcomes",
+  "abstraction": "meso",
+  "ftype": "api-design",
+  "governing_id": "057b3a3e-6e6c-4283-b784-6704394d4add"
+ },
+ {
+  "id": "7c4b64b0-179b-47f2-b09a-be8f53a66978",
+  "kind": "pitfall",
+  "title": "Don't collapse a real error into 'no change' in a bulk operation",
+  "statement": "In a loop that reports which items it changed, propagate a genuine failure instead of folding it into the not-changed bucket. Otherwise the caller reads a short success list as 'those were already done' and believes the rest is clear when it is still open.",
+  "topic": "errors/result-contracts/bulk-outcomes",
+  "abstraction": "micro",
+  "ftype": "api-design",
+  "governing_id": "057b3a3e-6e6c-4283-b784-6704394d4add"
+ },
+ {
+  "id": "1cf19d74-e83a-4819-a982-87fc0ee8ad0b",
+  "kind": "pattern",
+  "title": "Flatten results into a reason union before crossing the network",
+  "statement": "A result type designed for in-process use serializes awkwardly across a server/client network boundary, and a thrown server action becomes an opaque network error on the client. Return a flat discriminated union whose variants are string-literal reasons, and map reasons to copy in one function per feature so the client never parses a message.",
+  "topic": "errors/result-contracts/envelopes",
+  "abstraction": "macro",
+  "ftype": "api-design",
+  "governing_id": "057b3a3e-6e6c-4283-b784-6704394d4add"
+ },
+ {
+  "id": "060d4055-781e-422a-b114-b27cc2609274",
+  "kind": "pattern",
+  "title": "Give every API route the same error envelope and status map",
+  "statement": "Every route that touches an external service or a database needs the same envelope: validate inputs before the risky call, choose the status from the cause, and wrap the call so an unexpected throw still leaves through the envelope. The shape is only worth anything if it is universal — one handler that skips the wrapper returns a raw stack trace where every sibling returns a domain error.",
+  "topic": "errors/result-contracts/envelopes",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "057b3a3e-6e6c-4283-b784-6704394d4add"
+ },
+ {
+  "id": "0c4df903-a51e-4c88-934a-097464b04998",
+  "kind": "pattern",
+  "title": "Funnel every client fetch into one typed error with a timeout",
+  "statement": "A browser fetch has no inherent timeout, so a hung route leaves the promise unsettled forever. Funnel every call through one helper that applies a per-call abort timeout and converts transport failures, timeouts and malformed success bodies into a single typed error — then expose the one discriminator callers actually branch on, so a payment or quota state never gets string-matched.",
+  "topic": "errors/result-contracts/envelopes",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "057b3a3e-6e6c-4283-b784-6704394d4add"
+ },
+ {
+  "id": "397f4254-d0fc-4edd-a912-040a02637fa0",
+  "kind": "pattern",
+  "title": "Standardize one parse-result shape across every form validator",
+  "statement": "Feature-local validators drift into several slightly different result shapes, and every consumer then has to handle each one. Define one canonical parse result in a shared module, converge the divergent shapes onto it at the parser boundary, and fix the naming convention for whole-form parsers versus single-field coercers so the contract is guessable rather than looked up.",
+  "topic": "errors/result-contracts/parsers",
+  "abstraction": "meso",
+  "ftype": "api-design",
+  "governing_id": "057b3a3e-6e6c-4283-b784-6704394d4add"
+ },
+ {
+  "id": "96f30396-3bef-43f6-9b81-f5cd6cebdbe3",
+  "kind": "pattern",
+  "title": "Boundary parsers must return a reason, through one canonical result contract",
+  "statement": "Every request/form validator at a trust boundary should return one workspace-canonical discriminated union carrying the failure reason — not `T | null`, which throws away the only information the caller needs to tell the user what was wrong.",
+  "topic": "errors/result-contracts/parsers",
+  "abstraction": "meso",
+  "ftype": "api-design",
+  "governing_id": "057b3a3e-6e6c-4283-b784-6704394d4add"
+ },
+ {
+  "id": "c7409ee9-ae16-4b7a-ae73-1d65bd2d3a4f",
+  "kind": "pattern",
+  "title": "Return a result at every domain boundary; throw only for bugs",
+  "statement": "Reserve thrown exceptions for programmer error and genuinely exceptional conditions; anything a caller could reasonably handle should come back as a two-variant result carrying the error in the type system. The point is not ceremony — a thrown error crossing a module boundary loses its variants, so an exhaustive switch over the failure modes stops being verifiable.",
+  "topic": "errors/result-contracts/results",
+  "abstraction": "macro",
+  "ftype": "error-strategy",
+  "governing_id": "057b3a3e-6e6c-4283-b784-6704394d4add"
+ },
+ {
+  "id": "1053596b-f621-45a6-b110-c7acdbd12944",
+  "kind": "pattern",
+  "title": "Return a typed store error for writes, and preflight the quota",
+  "statement": "Storage writes fail in ways the caller must handle — quota exhaustion, a disabled store — and they fail differently in each browser. Return a discriminated store error with a small kind union instead of throwing, classify quota across the vendors' divergent error names, and preflight the payload size so the common failure is refused before the write is attempted at all.",
+  "topic": "errors/result-contracts/results",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "057b3a3e-6e6c-4283-b784-6704394d4add"
+ },
+ {
+  "id": "452ea327-dd1a-4fae-abf5-9fd1501122b0",
+  "kind": "pattern",
+  "title": "Resolve null, access and shaping once at the data-adapter seam",
+  "statement": "Null-handling, access validation and response shaping get re-implemented at every route unless the adapter seam resolves them once. Have every adapter method return one result union with a small closed set of error kinds, provide combinators that collapse the repeated try/catch tail, and log store faults where the error is constructed rather than trusting each call site to remember.",
+  "topic": "errors/result-contracts/results",
+  "abstraction": "macro",
+  "ftype": "error-strategy",
+  "governing_id": "057b3a3e-6e6c-4283-b784-6704394d4add"
+ },
+ {
+  "id": "56983945-7f4d-4b51-acfd-77d9e104b0a9",
+  "kind": "pattern",
+  "title": "Have repository writes return ok/error for domain failures",
+  "statement": "A repository method that throws when the target row is missing forces every caller into a catch that can only guess at the cause. Return the ok/error union for expected domain failures — not found, already in the target state — and keep exceptions for infrastructure faults, so one result shape carries from the data layer through the action to the UI.",
+  "topic": "errors/result-contracts/results",
+  "abstraction": "meso",
+  "ftype": "api-design",
+  "governing_id": "057b3a3e-6e6c-4283-b784-6704394d4add"
+ },
+ {
+  "id": "057b3a3e-6e6c-4283-b784-6704394d4add",
+  "kind": "decision",
+  "title": "Discriminated result unions at domain boundaries, exceptions only for programmer error",
+  "statement": "Functions whose failure a caller might reasonably handle return an {ok:true,...} | {ok:false,...} union rather than throwing across module or network lines; thrown exceptions are reserved for genuinely exceptional conditions.",
+  "topic": "errors/result-contracts/results",
+  "abstraction": "macro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "edcab8c2-38ff-4397-a51f-38338acc98ce",
+  "kind": "pattern",
+  "title": "Don't collapse integration failures into null or an empty list",
+  "statement": "Wrapping every call to an external client so it returns a sentinel — false, null, an empty list — spares callers a try/catch and destroys the only information they need. A caller cannot tell 'the service answered no' from 'the network failed', so no sensible retry policy can be written. If you must swallow, swallow into a typed result that still names the cause.",
+  "topic": "errors/result-contracts/sentinels",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": "057b3a3e-6e6c-4283-b784-6704394d4add"
+ },
+ {
+  "id": "5783e2a6-cb1b-494d-a937-1d7f07593b51",
+  "kind": "pitfall",
+  "title": "A zero-exit run with empty output is a failure, not a success",
+  "statement": "External tools frequently exit 0 having produced nothing — no speech detected, no rows matched, no result parsed. Returning that empty value as a successful result pushes a silent no-op into the caller, which inserts nothing and says nothing. Convert the empty terminal state into an explicit error at the boundary so the UI can say what happened.",
+  "topic": "errors/result-contracts/sentinels",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": "057b3a3e-6e6c-4283-b784-6704394d4add"
+ },
+ {
+  "id": "9c5527f1-9ffe-43b6-b9fc-78e6e839392c",
+  "kind": "pattern",
+  "title": "Surface a degraded identity instead of defaulting to a healthy-looking blank",
+  "statement": "A lost OS keyring sets an explicit `identity_degraded` flag rather than a silent empty peer_id, with a dedicated `reinitialize_identity` command whose trust-invalidation consequence is documented.",
+  "topic": "errors/surfacing",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "0f2244c9-a943-4acb-9e1f-4ad36dd2056c",
+  "kind": "pattern",
+  "title": "Fail a rollback loudly rather than deploying a mis-parsed snapshot",
+  "statement": "A rollback that cannot parse its snapshot must fail loudly, never deploy best-effort; the fence extractor handles arbitrary-length CommonMark fences.",
+  "topic": "errors/surfacing",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "e72a71e9-69cd-4084-b174-c52a8c0845b2",
+  "kind": "pattern",
+  "title": "Make consent surfaces await the action and keep the decision pending on failure",
+  "statement": "A consent surface must AWAIT the underlying action and keep the decision pending when it fails, reporting in place: fire-and-forget cleared the bubble and fired resolved analytics while the write never landed. Adapters RE-THROW after silentCatch so failure reaches the awaiter; the error renders as a short token on the surface touched, not a toast.",
+  "topic": "errors/surfacing",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "5952d669-764a-4298-9803-54a5b0ea0000",
+  "kind": "pattern",
+  "title": "Sanitize display at the single chokepoint every message flows through",
+  "statement": "Sanitize at the one render chokepoint every message flows through: the backend strips OP directives on the happy path but rejection/parse-failure branches persist them, so Bubble sanitizes at display time regardless of which server branch ran. User messages pass untouched — their text is theirs — and label helpers never return a raw slug (titleCase fallback).",
+  "topic": "errors/surfacing",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "2824c563-e5b4-4767-b724-196eb556782c",
+  "kind": "pattern",
+  "title": "Make an empty surface distinguish finished, filtered, batched, and unread — plus failures",
+  "statement": "An empty queue surface must distinguish finished / filtered / batched / unread plus per-source failures — a total outage used to render \"nothing is waiting on you\". Model failures[], backlog.remaining (exact, only the keyset source may report it), and backlog.capped (a fixed-limit query that came back full told you nothing about what is behind it); failed outranks cleared absolutely, filtered and batched stay independent facts with their own actions, and \"deal next batch\" is not offered when there is no next page.",
+  "topic": "errors/surfacing",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "2c92e24d-f672-4e0a-a33f-864e9eefabc2",
+  "kind": "pitfall",
+  "title": "Preserve abnormal exit-status bits — reinterpret, never saturate",
+  "statement": "When converting an OS exit status across integer widths, reinterpret the bit pattern (as-cast) instead of saturating; saturation destroys diagnostic codes like Windows NTSTATUS values and renders every abnormal exit as one meaningless number.",
+  "topic": "errors/surfacing",
+  "abstraction": "micro",
+  "ftype": "micro-technique",
+  "governing_id": null
+ },
+ {
+  "id": "eff2bcc6-e338-4e98-9f5e-b522deb950af",
+  "kind": "pitfall",
+  "title": "Reading only allSettled's fulfilled branch makes persistent failure look fresh",
+  "statement": "When a dashboard fans out to N sources with Promise.allSettled and only consumes the fulfilled branches, a permanently failing source degrades to silent stale/'unknown' rows indistinguishable from healthy data. Give each source its own error slot, and route them through the existing combined error channel so the current banner fires on partial failure without any consumer change.",
+  "topic": "errors/surfacing",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "9181bb11-9d8d-42ae-bfcf-99dd163635ce",
+  "kind": "pattern",
+  "title": "A scanner must distinguish 'source absent' from 'source unreadable'",
+  "statement": "Silently skipping an unreadable file makes a permissions problem look like a missing integration. Return None for NotFound, push a source token onto an error list for any other I/O error, and surface the deduped list so the UI can say 'couldn't read X' instead of omitting a source the user expected.",
+  "topic": "errors/surfacing",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "b982f095-d649-420a-9459-a1dbfb65dd4f",
+  "kind": "decision",
+  "title": "Choose toast-vs-silent error surfacing by whether the user initiated the action",
+  "statement": "Background/passive reads fail silently (a toast on a poll is noise) while user-initiated actions toast — codified as named silentCatch(context)/toastCatch(context) helpers that always carry a call-site string. Passive surfaces degrade to a labelled 'unverified' state rather than blocking.",
+  "topic": "errors/surfacing",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "95ac6a70-0fd7-4180-bb4e-2bdcbe3e81b2",
+  "kind": "pattern",
+  "title": "Dedupe state-crossing alerts with a durable one-row episode, so restarts never re-announce",
+  "statement": "Breach/recovery alerting should be an enter-once state machine backed by ONE durable row per entity: a crossing INTO breach emits exactly one 'opened' event and writes the episode row; failing runs while open are no-ops; crossing back emits one 'recovered' and closes the row. Because the state lives in a table (not memory), a process restart mid-episode never re-announces an already-open breach. Emission is best-effort and can never break the completion path that triggered it.",
+  "topic": "errors/surfacing",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "afcc8ce6-9e53-4158-89f6-2669add36873",
+  "kind": "pattern",
+  "title": "A failed fetch renders as unknown, never as a fake absent",
+  "statement": "Derivation functions that turn fetched data into status cells must accept a per-family 'hard-failed' flag and emit a distinct 'unknown' status for it — because 'never scanned', 'no KPIs', and 'we could not load the data' are three different truths, and collapsing the last into either of the others makes the UI lie. Aggregation rollups must also rank unknown worse than healthy so a failed family can never read as green.",
+  "topic": "errors/surfacing",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "40aaaeeb-c9b0-43c4-8e93-9fc0bb1792d4",
+  "kind": "pitfall",
+  "title": "Validate selector fragments at the mouth of a fire-and-forget async helper",
+  "statement": "A helper that interpolates a caller-supplied fragment into `querySelector` and runs as fire-and-forget async (nobody awaits or catches it) turns one stray quote/bracket into an invisible SyntaxError — the rejection vanishes. Validate the fragment against a strict pattern at function entry and bail with a console.warn, even when every known caller passes hand-audited literals; keep the pattern local (duplicated, with a comment naming its mirrors) rather than importing a store slice into a DOM utility.",
+  "topic": "errors/surfacing",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "51900b9b-f129-4b34-a8dd-1369ba907083",
+  "kind": "pattern",
+  "title": "Separate a stale-deploy chunk failure from a render error",
+  "statement": "A chunk that fails to load after a deploy is not a render error: the code the user is running no longer exists on the server, and a retry will never fix it. Pattern-match the bundler's chunk-load failure shapes inside the boundary and show a refresh-for-new-version message instead, and expose a reset key so navigation can clear the boundary without a full reload.",
+  "topic": "errors/surfacing/boundaries",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "9e5539a5-be04-42fc-9024-d04e15906b44",
+  "kind": "pattern",
+  "title": "Route client-facing failures through one sanitizing chokepoint",
+  "statement": "Raw driver, model and filesystem errors leak schema names, file paths, key hints and prompt fragments the moment they are echoed into a URL or a stream payload. Route every catch that reports to the client through one function that logs the real error server-side under a stable context tag and returns a single fixed generic message.",
+  "topic": "errors/surfacing/messages",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "94917efb-39ab-4e1c-ab34-d500238aaea9",
+  "kind": "pattern",
+  "title": "Map HTTP status to user copy in one place, not per component",
+  "statement": "Status-to-copy mapping written inline at each call site produces inconsistent wording and gaps for the statuses nobody remembered. Type the client error with its status and details, and centralize the mapping to title, message and severity in one module — exported both as a hook and as a plain function so non-component code shares exactly the same copy.",
+  "topic": "errors/surfacing/messages",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "cec686cd-fec3-44eb-9cdf-faf62bd46431",
+  "kind": "pattern",
+  "title": "On a failed save, show the real error and rescue the draft",
+  "statement": "A generic 'failed to save' toast on a form holding minutes of work destroys that work and explains nothing. Show the underlying message verbatim and, in the same handler, put the exact serialized payload somewhere the user can retrieve it, so recovery does not depend on you diagnosing the backend — and wrap the rescue itself so its own failure cannot swallow the error report.",
+  "topic": "errors/surfacing/messages",
+  "abstraction": "micro",
+  "ftype": "micro-technique",
+  "governing_id": null
+ },
+ {
+  "id": "ef2a580a-8541-4767-a0d0-034f37fd28fc",
+  "kind": "pattern",
+  "title": "Model a fetch as a phase enum so failed never renders as empty",
+  "statement": "A single nullable data field collapses never-fetched, fetched-and-empty and fetch-failed into one blank screen with no retry. Track an explicit phase alongside the data, keep the error as first-class state, and record which path served the result, so a flaky network shows a recoverable error rather than the same empty state a legitimately-empty account would see.",
+  "topic": "errors/surfacing/phases",
+  "abstraction": "meso",
+  "ftype": "state-mgmt",
+  "governing_id": null
+ },
+ {
+  "id": "d4e39d7f-dcbd-44da-9294-ac611ade35b9",
+  "kind": "pitfall",
+  "title": "Treat a dirty section with no save callback as a save failure",
+  "statement": "In a registry that fans a save across independently-registered sections, the missing-callback branch is the one that lies: marking the section clean produces an all-saved confirmation for data that was never written. Treat it as a save failure, keep the section dirty, log it as the wiring bug it is, and carry both the failed and the succeeded sets so partial success is reported honestly.",
+  "topic": "errors/surfacing/success-claims",
+  "abstraction": "meso",
+  "ftype": "api-design",
+  "governing_id": null
+ },
+ {
+  "id": "e8175ae7-9fac-45db-90cd-59073418206d",
+  "kind": "pitfall",
+  "title": "Read the result payload before claiming something is ready",
+  "statement": "A creation flow that ends in a fixed success notification will eventually announce readiness for something that cannot run. Read the result payload before choosing the wording and name what is outstanding — unmet credentials, entities that failed to create — because a generic 'ready to use' is exactly the silent failure that burns a non-technical user.",
+  "topic": "errors/surfacing/success-claims",
+  "abstraction": "meso",
+  "ftype": "api-design",
+  "governing_id": null
+ },
+ {
+  "id": "4ba1cb42-829d-49ad-a22c-6c224c8b2832",
+  "kind": "pitfall",
+  "title": "Warn when you rewrite a value to satisfy a platform limit",
+  "statement": "Clamping, coercing or defaulting a user-supplied value without saying so produces a UI that confirms something the system will not do. Give the parse or normalize result a warnings channel carrying a coded, human-readable advisory whenever a value was rewritten, and render it beside the accepted result rather than in a log.",
+  "topic": "errors/surfacing/success-claims",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "3cf29027-139c-450c-8283-e494e708f296",
+  "kind": "pattern",
+  "title": "One error reporter that writes a per-action error map, tags telemetry, and dedupes the toast",
+  "statement": "Give every store slice a single `reportError(err, fallback, set, { action, severity })`: it captures to the error tracker with structured tags, writes into a per-action error map (so concurrent failures don't clobber each other), and rate-limits identical toasts.",
+  "topic": "errors/surfacing/toasts",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "833933ea-1aee-434e-8593-bd95e98c0090",
+  "kind": "pattern",
+  "title": "Do not double-surface a failure that already has an inline channel",
+  "statement": "When a failure is already rendered in a purpose-built UI surface, writing it a second time into a general log or transcript is not extra safety — it duplicates the message to the user and, in an LLM system, drags raw stderr into the next prompt for no benefit. Make the fan-out kind-aware: suppress the generic path exactly for the kinds that have a specific one, and log the suppression so it is auditable.",
+  "topic": "errors/surfacing/toasts",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ }
+]

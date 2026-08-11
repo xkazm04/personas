@@ -1,0 +1,1052 @@
+[
+ {
+  "id": "d8f83f62-f28b-4ea6-9e92-e10af0b0f69c",
+  "kind": "pattern",
+  "title": "Gate singleton loops behind a heartbeat leadership lease",
+  "statement": "If more than one process can run against the same local database, every scheduler, relay and token-refresh loop double-fires — the data survives, the behaviour is wrong. Generalize the existing single-process lock into a leadership lease where the lock is leadership, a stale heartbeat is taken over, and each loop asks whether it is leader on every tick. Where leadership state is unavailable (tests, headless runs), behave as leader so single-instance behaviour is unchanged.",
+  "topic": "concurrency/background-work/leadership",
+  "abstraction": "macro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "f8cec2d9-6ee6-4690-9691-3bb3f0fe648b",
+  "kind": "pattern",
+  "title": "Drain in-flight work with one shared cancellation token",
+  "statement": "When each background loop polls its own shutdown flag, exit ordering is accidental: the listener stops before workers drain, or a worker claims new work after the process decided to die. Clone one cancellation token into every loop and into the HTTP server's graceful-shutdown hook, cancel it once from the signal handler, and explicitly await the worker after the listener stops. Loops should check cancellation before claiming new work but let already-running work keep its permit and finish.",
+  "topic": "concurrency/background-work/shutdown",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "cf20e0b3-8e59-4f81-ba66-7df3e2bd9f24",
+  "kind": "pattern",
+  "title": "Declare background loops as one trait behind one scheduler",
+  "statement": "Polling a table, watching files, refreshing tokens and relaying webhooks are all the same shape — source, predicate, action, on a cadence — but hand-rolled one spawn block at a time each gets its own error handling, its own logging and its own bugs. Declare that shape once as an interface carrying name, interval, idle interval, initial delay and a tick, and run every implementation through one shared loop. Adding a reactivity source then becomes an implementation rather than another lifecycle to review.",
+  "topic": "concurrency/background-work/subscriptions",
+  "abstraction": "macro",
+  "ftype": "architecture",
+  "governing_id": "83a45d59-bd3c-47d8-ac1e-b61a017ddb5f"
+ },
+ {
+  "id": "656115ee-09f6-446e-b629-c0eeece7dcfe",
+  "kind": "pattern",
+  "title": "Wrap every background tick in a panic boundary with backoff",
+  "statement": "A background loop that panics disappears silently, and nothing notices until a feature has quietly been dead for days. Catch the panic at the loop boundary, count consecutive panics, reset on the first success, surface the crash to the UI, and back off multiplicatively past a threshold so a permanently broken tick cannot hot-loop. Keep a per-loop health record rich enough to diagnose without a debugger — last and max tick duration, overrun, alive, last error.",
+  "topic": "concurrency/background-work/subscriptions",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "83a45d59-bd3c-47d8-ac1e-b61a017ddb5f"
+ },
+ {
+  "id": "cfcb4135-3be4-40e7-91b1-8b3ec0b3ec2d",
+  "kind": "pattern",
+  "title": "Add a push wake-up but keep the poll as the fallback heartbeat",
+  "statement": "Making a polling loop event-driven for latency tempts you to delete the poll, which converts every missed signal into permanently dropped work. Select over the wake signal and the interval, leave the interval unchanged as the degraded-mode heartbeat, and make the consumer claim its work atomically so signal-driven and poll-driven runs can never double-process. A lost signal then costs one interval of latency instead of the work itself.",
+  "topic": "concurrency/background-work/subscriptions",
+  "abstraction": "meso",
+  "ftype": "micro-technique",
+  "governing_id": "cf20e0b3-8e59-4f81-ba66-7df3e2bd9f24"
+ },
+ {
+  "id": "60ce38c9-efb6-4415-a039-a20038b3ff72",
+  "kind": "pitfall",
+  "title": "Back off a due-poller whose bookkeeping write keeps failing",
+  "statement": "In a 'select what is due, act, mark it done' loop, a failed mark leaves the due timestamp in the past, so the next tick selects the same row and acts again — a storm driven by the failure itself. Keep an in-memory per-key backoff with escalating delay, and bound that map with both a size cap and a TTL so the fix cannot become its own leak. Any keyed map that grows by nature needs both bounds, not one.",
+  "topic": "concurrency/background-work/timers",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "8607b408-8884-4adf-9f4c-b51fb4bb1e00",
+  "kind": "pattern",
+  "title": "Persist any timer that must outlive the process",
+  "statement": "Runtime state whose horizon exceeds a process lifetime — a retry scheduled hours out, an open circuit breaker, a spend ledger — cannot live in a sleep or an in-memory map, because a restart silently cancels it. Give it a table that a periodic tick drains, with a TTL sweep for expiry, and keep the in-memory copy as the hot path that is persisted at the finalize point. Restart then restores the state instead of re-learning it by failing again.",
+  "topic": "concurrency/background-work/timers",
+  "abstraction": "meso",
+  "ftype": "state-mgmt",
+  "governing_id": null
+ },
+ {
+  "id": "70a62447-13f6-4a64-8797-0b9271fb17b8",
+  "kind": "pitfall",
+  "title": "Latch one attempt per session for self-scheduled jobs",
+  "statement": "'Run this periodically on launch' jobs fail in two independent ways. Returning on a transient failure without latching lets every re-render of the host re-fire the effect into a tight retry storm, so make one attempt per session the contract regardless of outcome. And a corrupt stored timestamp makes the elapsed-time comparison always false, so the job runs on every launch — treat any unparseable timestamp as 'never run' so the next success rewrites a valid one.",
+  "topic": "concurrency/background-work/timers",
+  "abstraction": "meso",
+  "ftype": "micro-technique",
+  "governing_id": null
+ },
+ {
+  "id": "6da6fcef-5943-4ed3-bfdd-69de4ee41aec",
+  "kind": "pattern",
+  "title": "Use an RAII guard with a sync mutex for in-flight-operation sets",
+  "statement": "Track 'currently connecting' peers in a set released by a Drop guard, protected by `std::sync::Mutex` (not tokio's) so Drop can release synchronously on future cancellation. A leaked entry would silently block every future connect to that peer.",
+  "topic": "concurrency/cancellation",
+  "abstraction": "micro",
+  "ftype": "micro-technique",
+  "governing_id": "417b6fcb-aca6-4d64-8227-c334e6e0d36f"
+ },
+ {
+  "id": "307ab440-b8f7-4762-8e03-e7b9a089ed8b",
+  "kind": "pattern",
+  "title": "Put a timeout on every network read, and one whole-operation timeout on exchanges",
+  "statement": "Wrap every `protocol::decode` in request paths in `tokio::time::timeout` with reason-bearing errors; multi-step exchanges get ONE timeout around the whole open_stream→write→read sequence.",
+  "topic": "concurrency/cancellation",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": "417b6fcb-aca6-4d64-8227-c334e6e0d36f"
+ },
+ {
+  "id": "c3ddbf4f-435d-4979-b0f6-3ef148602442",
+  "kind": "pattern",
+  "title": "Clear every pending timer in a keyed timer map on unmount",
+  "statement": "Track timers in a keyed map and clear all of them on unmount — React silently no-ops the setState but the closure and result map stay alive until the timer fires.",
+  "topic": "concurrency/cancellation",
+  "abstraction": "micro",
+  "ftype": "concurrency-reliability",
+  "governing_id": "417b6fcb-aca6-4d64-8227-c334e6e0d36f"
+ },
+ {
+  "id": "689f39cc-cc6c-41f8-9e98-1607345f8356",
+  "kind": "pattern",
+  "title": "Key a single-run guard by the run's OWN id, not a fixed slot",
+  "statement": "A fixed guard key let a second start's Drop delete the first's live entry, leaving it permanently uncancelable. Claim the single-run slot atomically, key the guard by the run's own id, and make cleanup a `clear_id_if` that refuses stale cleanup.",
+  "topic": "concurrency/cancellation",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": "417b6fcb-aca6-4d64-8227-c334e6e0d36f"
+ },
+ {
+  "id": "0678868b-6edb-4b1c-83a3-d5f74f0742d9",
+  "kind": "pattern",
+  "title": "Model the async mic-permission window as its own lifecycle state",
+  "statement": "Mic capture treats the async-permission window as a lifecycle state (pendingStartRef + abortStartRef): a double-tap would acquire a second stream and leak the first; resolution checks the abort flag and stops freshly-acquired tracks; unmount raises abort; a monotonic transcribeIdRef discards stale transcriptions. Multi-engine corollary: both hooks are instantiated unconditionally (rules of hooks) but an effect keyed on engine force-stops the now-inactive one, else flipping engine mid-capture leaves a mic live with nothing holding its stop().",
+  "topic": "concurrency/cancellation",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": "417b6fcb-aca6-4d64-8227-c334e6e0d36f"
+ },
+ {
+  "id": "417b6fcb-aca6-4d64-8227-c334e6e0d36f",
+  "kind": "pattern",
+  "title": "Tier IPC timeouts by work class and document the at-least-once hazard",
+  "statement": "IPC timeouts resolve as explicit ?? per-command registry ?? default, with the registry kept tiny (each entry carries an inline reason and admission criteria) and per-call tiers matched to work class (image decode 30s … chat turn 25min matched to the backend's own timeout). The AT-LEAST-ONCE HAZARD is documented at the seam — a timeout doesn't cancel the Rust side, the error says don't retry — and the command with server-side idempotency dedup is deliberately OFF the registry, its caller defaulting an idempotencyKey.",
+  "topic": "concurrency/cancellation",
+  "abstraction": "macro",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "2e33aa7a-a046-4cba-a576-cd66d57aa2d9",
+  "kind": "pattern",
+  "title": "Flush a debounce on unmount and discard stale in-flight responses per row",
+  "statement": "A debounced write's cleanup performs the write — \"the unmount case IS the case.\" For debounced lookups feeding a destructive warning, discard late responses per row by comparing the queried text to the current text at resolve time (stale numbers are worse than late), and deliberately don't gate Save on advisory counts because the backend is authoritative.",
+  "topic": "concurrency/cancellation",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": "417b6fcb-aca6-4d64-8227-c334e6e0d36f"
+ },
+ {
+  "id": "3e9e1588-7f23-48e6-8213-278c61167dbc",
+  "kind": "pattern",
+  "title": "Gate a restart-triggering action on live work and offer install-when-idle",
+  "statement": "An action that restarts the app (update install) silently kills in-flight jobs. Count live work before executing; if nonzero, interpose a three-way choice — proceed anyway / defer until idle / cancel — where \"defer\" is an effect that watches the running count and fires the action the moment it reaches zero, with a visible, cancellable pending state.",
+  "topic": "concurrency/cancellation",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "417b6fcb-aca6-4d64-8227-c334e6e0d36f"
+ },
+ {
+  "id": "e96e595f-4efb-4783-acf1-833ea3343c8e",
+  "kind": "pitfall",
+  "title": "A runaway-loop cap must kill the process at the crossing, not log a warning",
+  "statement": "A max-iterations guard that only queues a warning does nothing — the stream keeps being consumed until the model stops or the session timeout fires, burning most of the budget. Fire the guard exactly once with == at the boundary and actively tear the child process down.",
+  "topic": "concurrency/cancellation",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "417b6fcb-aca6-4d64-8227-c334e6e0d36f"
+ },
+ {
+  "id": "19f450a0-0a43-4a81-9e4a-09c5f3ff05db",
+  "kind": "decision",
+  "title": "Nest deadlines so the process owner always wins the timeout race",
+  "statement": "When a frontend IPC timeout wraps a backend that spawns a long-running child, keep the backend's hard timeout strictly below the frontend's so the failure is a clean typed error and a killed child — a frontend timeout that fires first abandons a live process. Both sides document the ordering.",
+  "topic": "concurrency/cancellation",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": "417b6fcb-aca6-4d64-8227-c334e6e0d36f"
+ },
+ {
+  "id": "6970f350-cb57-4228-9a10-92d5e3c811b6",
+  "kind": "pattern",
+  "title": "Sweep temp files and orphan grandchildren explicitly — RAII cleanup never runs when you are killed",
+  "statement": "NamedTempFile Drop and child reaping do not happen on SIGKILL/Task-Manager kills, and spawned driver servers leave their own children (Chromium, 200-500 MB each) behind. Sweep prefixed temp files at session start and pattern-kill orphan grandchildren at session end.",
+  "topic": "concurrency/cancellation",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "417b6fcb-aca6-4d64-8227-c334e6e0d36f"
+ },
+ {
+  "id": "78df32e0-b19a-493f-aeea-84be67568de9",
+  "kind": "pitfall",
+  "title": "An async listener attach needs an in-flight flag, or unmount-during-setup leaks or double-frees the subscription",
+  "statement": "When attaching a subscription is asynchronous (await listen(...)), a subscriber can unmount while setup is still in flight. Teardown must not run while setup is in flight (there is nothing to unlisten yet); instead the setup completion handler must check for zero subscribers and immediately unlisten what it just created. Symmetrically, ad-hoc listeners need a `cancelled` flag checked after the await so a late-resolving attach is torn down instead of stored.",
+  "topic": "concurrency/cancellation",
+  "abstraction": "micro",
+  "ftype": "concurrency-reliability",
+  "governing_id": "417b6fcb-aca6-4d64-8227-c334e6e0d36f"
+ },
+ {
+  "id": "19b37c6a-e931-4c3a-b4f1-8ede1c932145",
+  "kind": "pattern",
+  "title": "Animation settle promises must resolve on cancel too",
+  "statement": "A programmatic tween that returns a promise must resolve it on completion AND on cancellation (user input interrupting the travel) — an awaiting caller must never hang; it simply observes wherever the camera/animation ended up. Store the resolver in a ref, and have every interrupt path (new tween, wheel, drag, unmount) call it.",
+  "topic": "concurrency/cancellation",
+  "abstraction": "micro",
+  "ftype": "concurrency-reliability",
+  "governing_id": "417b6fcb-aca6-4d64-8227-c334e6e0d36f"
+ },
+ {
+  "id": "0df3ab23-0be3-48e3-9e59-1df7069a7ada",
+  "kind": "pattern",
+  "title": "Long client polling loops need cooperative cancellation on unmount AND single-owner arbitration",
+  "statement": "Imperative loops that poll a backend for minutes (reap-until-done, run-to-budget) must check a mountedRef/runningRef pair at every iteration and after every await — otherwise navigation away leaves them polling for up to their full cap (documented: 20 minutes of 2s polls plus a refresh fan-out). When a periodic interval AND an imperative loop can both drive the same recovery call, gate the interval on the loop's busy flag so two owners never call the same operation for the same id concurrently.",
+  "topic": "concurrency/cancellation",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": "417b6fcb-aca6-4d64-8227-c334e6e0d36f"
+ },
+ {
+  "id": "74eb0323-29df-4507-b03b-eea26cb3f7e4",
+  "kind": "pattern",
+  "title": "Guard session-scoped resources with Drop types, and generation-stamp shared-map cleanup",
+  "statement": "Wrap per-session scratch resources (temp workspaces, registry handles) in RAII guards whose Drop runs on every exit path including panics, with an explicit disarm() escape hatch. When the guard removes an entry from a shared session map, compare a generation stamp first so a stale task's cleanup can never evict a newer session's live handle.",
+  "topic": "concurrency/cancellation",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": "417b6fcb-aca6-4d64-8227-c334e6e0d36f"
+ },
+ {
+  "id": "50039e93-801a-4153-a6dc-0211407bc1b7",
+  "kind": "pattern",
+  "title": "When the observer channel drops, cancel the work — an unobservable interactive session is dead",
+  "statement": "An interactive long-running task whose progress channel to the UI returns 'receiver dropped' should treat that as cancellation: set the cancel flag, log why, clean up, and return. The user can no longer observe or answer, so continuing only burns tokens and leaves a zombie session. (Autonomous variants instead emit to a global bus and notify on terminal state.)",
+  "topic": "concurrency/cancellation",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": "417b6fcb-aca6-4d64-8227-c334e6e0d36f"
+ },
+ {
+  "id": "04278a8a-18df-4b87-bdf6-76b8eaa5e4ff",
+  "kind": "pitfall",
+  "title": "A cancel path wired to a different registry than the spawn path is a silent no-op that keeps burning tokens",
+  "statement": "When start and cancel go through parallel process-tracking mechanisms (a single-slot domain API vs a multi-run map), a cancel that consults the map the spawner never populated does nothing: the cancellation flag stays false, the child keeps running (and billing), and the stale run later overwrites fresh state with its discarded result. Register and cancel MUST use the same registry API — and the cancel must additionally guard on the currently active run id so a stale id from the UI can't kill a newer run.",
+  "topic": "concurrency/cancellation",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": "417b6fcb-aca6-4d64-8227-c334e6e0d36f"
+ },
+ {
+  "id": "e5227283-d2ff-4093-a18f-4f976874dd03",
+  "kind": "howto",
+  "title": "Give a long-running agent CLI loop a two-stage Ctrl-C: first pauses and persists, second force-quits",
+  "statement": "A single SIGINT on an autonomous loop should not discard hours of state. Handle the first interrupt by pausing the orchestrator (which persists plan/progress so a later run resumes), print that a second interrupt force-quits, and only exit hard on the second signal.",
+  "topic": "concurrency/cancellation",
+  "abstraction": "micro",
+  "ftype": "micro-technique",
+  "governing_id": "417b6fcb-aca6-4d64-8227-c334e6e0d36f"
+ },
+ {
+  "id": "ffe708aa-858b-486e-9d0f-afbb93c970ee",
+  "kind": "pattern",
+  "title": "When the owning entity switches mid-run, clear the stale run id AND best-effort cancel the orphaned backend run",
+  "statement": "Switching the selected entity while an expensive comparison run is in flight must do two things: reset the local run state so the new entity's UI can never render the old entity's output (a cross-workspace prompt leak), and fire a best-effort cancel at the backend run so the orphan stops burning budget. A run id obtained after an await is only adopted if the entity token captured before the await is still current — otherwise it is cancelled immediately.",
+  "topic": "concurrency/cancellation",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": "417b6fcb-aca6-4d64-8227-c334e6e0d36f"
+ },
+ {
+  "id": "04fa8267-f421-4940-819b-e07c4e645fa9",
+  "kind": "pattern",
+  "title": "Claim single-flight and store its cancel handle under one lock",
+  "statement": "A 'only one of these may run' guard written as a check followed by a set is a race that two double-clicked starts both pass. Make the claim atomic — check and install under a single lock — and store the cancellation handle in the same registry keyed by the caller-supplied job id, so a separate command can abort in-flight work and can report whether anything was actually running. Deregister on every settle path, and let a re-registration cancel the stale handle it replaces.",
+  "topic": "concurrency/cancellation/handles",
+  "abstraction": "meso",
+  "ftype": "state-mgmt",
+  "governing_id": null
+ },
+ {
+  "id": "52267017-bd2a-4b60-b7c8-5f52624cd14d",
+  "kind": "pattern",
+  "title": "Bridge a blocking call to a human with a oneshot registry and TTL",
+  "statement": "When a synchronous handler must be answered by a UI living in another process or runtime, you cannot hold the reply channel in the handler's own state. Register a oneshot sender in a process-wide hub keyed by a minted request id, emit that id plus the payload to the UI, and await the receiver in the handler. Every waiter needs three exits — resolved, TTL-expired, and cancelled because the requesting session died — and expiry should be a normal outcome the caller can proceed from, not an error.",
+  "topic": "concurrency/cancellation/handles",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "04f0e897-314b-4d25-87b1-53e7e3c3d2ad",
+  "kind": "pitfall",
+  "title": "Give every concurrently-runnable mode its own lifecycle flag",
+  "statement": "One shared 'is running' boolean is fine until two modes run at once: cancelling one clears the wrong flag, or clears a flag a live run still needs, and the UI stays wedged until restart. Declare the state machine once and instantiate it per mode so legal transitions live in one place while the instances stay independent. Pin it with a concurrency regression test — start several modes, cancel one, assert the others are untouched — because a per-mode test passes even with a shared flag.",
+  "topic": "concurrency/cancellation/lifecycle",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "e2a23fda-ae60-4ed2-8c35-6e80f35d9085",
+  "kind": "pitfall",
+  "title": "Reap the whole process tree yourself when a timeout fires",
+  "statement": "A hard timeout around a future that drives a subprocess drops the driver, so kill-on-drop signals only the immediate child while grandchildren keep running and keep billing. The normal cleanup path is skipped too, so any PID the driver registered in a shared map is never unregistered. The timeout arm must remove the registry entry and kill the tree itself, and synthesize a result that still points at the partial log so the run stays auditable.",
+  "topic": "concurrency/cancellation/subprocesses",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "36dec81b-397f-45e7-a36b-8a9eed354384",
+  "kind": "pitfall",
+  "title": "Drain stderr, kill on drop, and kill again on timeout",
+  "statement": "Four defects recur in every hand-rolled subprocess call, and each one has bitten this codebase. An undrained stderr pipe fills and deadlocks the child; async child handles often do not kill on drop, so an early return leaks a live process and its in-flight model call; a timeout must kill and then bounded-wait rather than just returning; and a spawn not-found should be translated into an actionable install message instead of an opaque OS error. Treat the four as a checklist for every new spawn site.",
+  "topic": "concurrency/cancellation/subprocesses",
+  "abstraction": "micro",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "ce35d86d-33e8-468e-bc4f-011d2631fea6",
+  "kind": "pattern",
+  "title": "Snapshot the target entity id before an await and re-check after",
+  "statement": "In an editor over a selectable entity, every setter implicitly targets whatever is selected now, so any async hop lets the user switch entities in the gap and the write lands on the wrong record. Capture the id before the first await and bail on every resume where the live store no longer matches; for undo entries, carry a token captured at record time and check it on both sides of the call. Read the live store rather than a closure flag, since an effect that nulls its own dependency mid-flight will fire cleanup on the wrong trigger.",
+  "topic": "concurrency/cancellation/teardown",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "1ece1512-e68b-4177-8807-effc430435c0",
+  "kind": "pattern",
+  "title": "Poll short calls for long work, with a cap and a cancel check",
+  "statement": "Holding one request open for minutes of backend work turns the client timeout into an at-least-once hazard and leaks the call when the view unmounts. Spawn the work, take a fast handle back, and poll with short calls in a loop that has an explicit iteration cap, checks a mounted or cancel ref before every await and before every commit, and exposes a user-facing stop. The cap bounds the pathological case; the ref is what stops the loop from running for twenty minutes after the user navigated away.",
+  "topic": "concurrency/cancellation/teardown",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "ce4b26a2-d234-40a2-9620-50713a11b4b8",
+  "kind": "pitfall",
+  "title": "Supersede stale responses with a request token, not a boolean",
+  "statement": "A boolean 'already fetching' guard cannot tell a duplicate poll (drop it) from a new request after a filter change (must run), and it does nothing about out-of-order responses. Bump a monotonic counter per call and let only the response whose sequence still matches write to state, so overlapping requests are allowed and the newest one wins. Close and cancel must bump the counter too, or an in-flight fetch writes into a panel the user already dismissed.",
+  "topic": "concurrency/cancellation/tokens",
+  "abstraction": "micro",
+  "ftype": "micro-technique",
+  "governing_id": null
+ },
+ {
+  "id": "d3fb20f8-c19d-4607-934b-8187d7a799f6",
+  "kind": "pitfall",
+  "title": "Cancel by advancing a generation counter, never by resetting a flag",
+  "statement": "A boolean 'cancelled' flag that any later scheduler resets can revive work the user already stopped, because the pending task re-reads the flag after the reset. Key a monotonic counter per logical stream, have each scheduled task capture the value it was born with, and abort as soon as its key's value differs. Key by the finest independent stream — cancelling in one conversation or terminal must not stop a pending task in another.",
+  "topic": "concurrency/cancellation/tokens",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "eaced591-e08c-497c-93df-ab8708020d57",
+  "kind": "pattern",
+  "title": "Claim shared work first-writer-wins, and release on failure",
+  "statement": "Re-entrancy across a cron tick, a manual trigger and a retry is the same problem every time: two callers reach one resource and both act. Express it once as an atomic claim that writes a marker only if unclaimed or expired and returns whether this caller won, then reuse that primitive for run leases, cooldowns and notification dedupe. Every claim needs an explicit release-on-failure path, or one failed delivery leaks a permanent lock.",
+  "topic": "concurrency/idempotency/claims",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "2f065386-58d8-4c59-92c1-3938214124ce",
+  "kind": "pattern",
+  "title": "Dedupe inside the serialized write, not in a pre-flight check",
+  "statement": "A 'have I already added this?' check against UI state before the mutation is a race, not a guard — a double-click or a stale view appends the same thing twice. Push the dedupe into the same serialized mutator that performs the write so it sees the freshest list, and report the no-op back to the caller so the UI can say 'already there' rather than claiming success. Keep post-write reconciliation best-effort so a follow-up failure cannot fail the primary action.",
+  "topic": "concurrency/idempotency/claims",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "69a4a774-2577-4ceb-9ff2-9fde37533eeb",
+  "kind": "pitfall",
+  "title": "Release a dedupe mark on failure and on leaving the state",
+  "statement": "Marking an id as already-notified before the notification completes is correct — it closes the duplicate-event window — but only if the mark is rolled back when that work throws, and cleared when the entity leaves the triggering state. The catch-path release is what stops one transient failure from muting the signal forever; the state-exit release is what makes the guard re-armable across the entity's lifecycle. Skipping either turns a dedupe guard into a permanent silence.",
+  "topic": "concurrency/idempotency/claims",
+  "abstraction": "micro",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "805d4fa1-c121-4c91-ada7-3a9bf9684aca",
+  "kind": "pitfall",
+  "title": "Record the fire before you publish, and skip publishing if you lose",
+  "statement": "In a fire-then-notify sequence the persistence of the 'fired' mark must come first: publish first and crash, and the trigger re-fires on next startup with duplicated downstream work. Treat the mark as a compare-and-swap with three outcomes — won, so publish; lost to a concurrent evaluator, so skip the publish entirely and record a structured reason; errored, so retry once and then take the resource out of service. The terminal action on a persistent error is disabling, because a retry loop on a permanent failure is a cascade.",
+  "topic": "concurrency/idempotency/claims",
+  "abstraction": "micro",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "2e9fa00c-2e27-4904-8fee-5a4a68afe1c5",
+  "kind": "pitfall",
+  "title": "Latch a once-only init on success, never on 'it ran'",
+  "statement": "Standard once-only primitives record that the closure executed, not that it succeeded — so a transient first-call failure is cached for the life of the process and every downstream feature degrades silently forever. Use an explicit flag set only on the success path, and keep the initialization itself idempotent so retrying costs nothing. The same discipline applies to any eager 're-entrancy blocked' flag: set it early, but roll it back on failure so a retry is possible.",
+  "topic": "concurrency/idempotency/claims",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "6fd924ae-cdea-4f62-8308-8f4bb92f7e96",
+  "kind": "pitfall",
+  "title": "Scope a once-only guard to the evidence, not to 'once ever'",
+  "statement": "A once-ever guard on an automated decision looks safe and deadlocks the pipeline: the first decision fails to converge, the item re-enters the same state, and nothing is ever allowed to look at it again. Scope the guard to the evidence episode — not decided since the newest failure — so new evidence earns a new decision while an unchanged situation cannot be re-decided. Implementing it as a correlated check against the entity's own event log keeps the guard and the audit trail as one artifact.",
+  "topic": "concurrency/idempotency/claims",
+  "abstraction": "meso",
+  "ftype": "architecture",
+  "governing_id": null
+ },
+ {
+  "id": "2a0e5daa-7d6b-4ffa-9422-9d8c475f587c",
+  "kind": "pattern",
+  "title": "Block double-submit with a synchronous ref, only for async handlers",
+  "statement": "A reactive loading or disabled flag cannot stop a fast double-click, because the click event is dispatched synchronously before the re-render commits. Set an in-flight ref at click time, block subsequent clicks while it is set, and clear it in a finally so a thrown action stays retryable. Engage the guard only when the handler returns a thenable, or rapid-click controls like steppers and paginators stop firing every click.",
+  "topic": "concurrency/idempotency/double-submit",
+  "abstraction": "meso",
+  "ftype": "micro-technique",
+  "governing_id": null
+ },
+ {
+  "id": "16e01fd7-d327-4ccf-aaf2-cb6bad0feb0b",
+  "kind": "pattern",
+  "title": "Put money and lifecycle invariants in the store contract",
+  "statement": "Idempotency and legal state transitions enforced by callers hold exactly until the next caller forgets. Push them into the storage interface itself — a de-dup key on the write, or a declared table of allowed from-state edges — so every driver is forced to honour the same invariant and none of them can drift. Where a trade-off is accepted (a rare duplicate beats a never-sent notification), record it at the contract, not in a commit message.",
+  "topic": "concurrency/idempotency/invariants",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "be7ca9eb-e582-4369-8867-f32ef2f59237",
+  "kind": "pattern",
+  "title": "Mint the idempotency key in the shared wrapper, not at call sites",
+  "statement": "A backend dedup guarantee that depends on callers remembering to send a key is not a guarantee — every new call site is a fresh chance to lose it. Default the key inside the shared API wrapper so it holds for callers who never thought about idempotency, and thread the same value into both the request payload (backend dedup) and the client's in-flight registry (double-click collapse). Two dedup layers, one key, one place that mints it.",
+  "topic": "concurrency/idempotency/keys",
+  "abstraction": "meso",
+  "ftype": "api-design",
+  "governing_id": null
+ },
+ {
+  "id": "6297e72b-a75e-4f2b-b2f9-195dbabfa923",
+  "kind": "pattern",
+  "title": "Let the insert resolve the idempotency conflict, not a pre-check",
+  "statement": "Looking up the idempotency key first is a fine fast path for the common case, but on its own it is a race that hard-errors on a double-delivered webhook or a timeout retry. Write with an insert that handles the conflict and re-select the winner when zero rows changed, so the retry returns the same shape as a fresh insert and is transparently idempotent. Where the uniqueness is a partial index, the conflict target must repeat that predicate or the database will not use it.",
+  "topic": "concurrency/idempotency/keys",
+  "abstraction": "micro",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "b05d7097-6c49-45f5-be06-d06bef3906e4",
+  "kind": "pattern",
+  "title": "Put every concurrent dimension into an out-of-process job's dedup key",
+  "statement": "For work that runs in a process you do not control, three decisions carry the design. The dedup key must include every dimension that is meant to run concurrently, or parallel work collides as duplicates of itself. 'Finished' is a transition out of the active states you can observe by polling — for an interactive session that is idle, not exited — so make the result import idempotent with an on-disk marker and it is safe to fire on any settle signal.",
+  "topic": "concurrency/idempotency/keys",
+  "abstraction": "meso",
+  "ftype": "api-design",
+  "governing_id": null
+ },
+ {
+  "id": "5c4a78bc-cd78-4147-91ad-bdf102194e77",
+  "kind": "pattern",
+  "title": "Retry only transient failures through one shared backoff wrapper",
+  "statement": "Per-call-site retry loops diverge on what counts as retryable, and usually retry hard failures until the budget is gone. Route every external fetch through one wrapper that retries only transient status classes with exponential backoff and rethrows everything else immediately, using a lightweight status field on the error rather than a bespoke exception hierarchy. Make the delay function injectable so the suite exercises the retry path without sleeping.",
+  "topic": "concurrency/idempotency/retries",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "1843d3ee-4e50-4669-b576-2e8258599757",
+  "kind": "pitfall",
+  "title": "Treat a timeout on an uncancellable call as at-least-once",
+  "statement": "If the transport has no cancellation, a client timeout only rejects the caller's promise — the backend keeps running and commits, so any retry after that timeout is a second real mutation. Treat the timeout as a safety ceiling rather than a bound: raise it well above realistic runtime for blocking mutating calls, and require genuine backend idempotency for anything the UI may retry. Client-side in-flight coalescing collapses only concurrent calls and does nothing for a post-timeout retry.",
+  "topic": "concurrency/idempotency/retries",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "572968ce-8fd6-4a41-a90f-2d4b19a448c1",
+  "kind": "pitfall",
+  "title": "Re-run the original pre-flight gate on every replay or rerun",
+  "statement": "Replaying a recorded run is a new execution, not a playback, so it must call the identical validator the original path used. Skip it and replay silently spawns doomed work against rotated secrets, dead endpoints or a deliberately paused resource — and worse, re-fires something a human disabled on purpose. Share the validator between the two paths so 'blocked' reads identically wherever the run was started.",
+  "topic": "concurrency/idempotency/retries",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "738b9128-0201-4bf2-9ef3-22307baf991d",
+  "kind": "pattern",
+  "title": "Serialize delete against execution on the same in-flight guard, and let a staleness TTL unwedge orphans",
+  "statement": "A destructive lifecycle operation (delete) must acquire the SAME in-flight guard its entity's execution paths hold — refusing rather than racing a live run — and its 'active runs block delete' check must exempt rows past a generous staleness TTL so a crash-orphaned 'running' row cannot wedge deletion forever.",
+  "topic": "concurrency/mutual-exclusion",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "e2a88db4-de34-4981-8d37-40e800240e79",
+  "kind": "pattern",
+  "title": "Treat 'store hasn't caught up' as a first-class branch in cross-store event bridges",
+  "statement": "Cross-store event bridges coalesce snapshot refreshes and treat \"store hasn't caught up\" as a first-class branch: a miss schedules a coalesced refresh so the NEXT event resolves, justified by idempotence (whole-snapshot replace). A local lastState Map distinguishes added-vs-transitioned without trusting the backend's coarse kind; four coalescing strategies coexist (timer, debounce with in-flight re-run, per-key debounce + latest-wins, fired-Set keyed id:status).",
+  "topic": "concurrency/pipelines",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "dcec3cdc-8ce5-4ed9-9dd4-ce6992b66d64",
+  "kind": "pattern",
+  "title": "Pin a late-arriving async result onto the last matching anchor, not the next one",
+  "statement": "A job event landing after the finished turn cleared the pending list would attach to the NEXT turn — instead, when not streaming, pin the orphaned result to the most-recent matching assistant episode, check alreadyAttached across ALL buckets, and judge \"streaming\" against the job's OWN conversation when stamped.",
+  "topic": "concurrency/pipelines",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "1f710701-5224-4ed2-8940-1e18f6ba0579",
+  "kind": "pattern",
+  "title": "Fingerprint a live worker's config and restart the task when the fingerprint drifts",
+  "statement": "A manager loop that reconciles long-lived worker tasks (one per DB row) should store a serialized fingerprint of each worker's effective config at spawn time and cancel/respawn any worker whose row's current fingerprint differs — otherwise config edits made while a connection is alive silently never apply.",
+  "topic": "concurrency/pipelines",
+  "abstraction": "meso",
+  "ftype": "state-mgmt",
+  "governing_id": null
+ },
+ {
+  "id": "418869a4-f04a-4a22-bdba-b9d5635eb01c",
+  "kind": "pattern",
+  "title": "Snapshot the id set before running a sequential batch of long operations",
+  "statement": "A batch action over a filtered/derived set (each item a minutes-long operation) must copy the ids at click time and iterate that frozen array sequentially with inline N-of-M progress — if the batch re-reads the live filtered list, a data refresh between items reshuffles or regrows the set mid-flight, skipping or double-processing items.",
+  "topic": "concurrency/pipelines",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "b2f6b579-5321-46df-ba44-11d4f342fed0",
+  "kind": "pattern",
+  "title": "Detect a dispatched CLI session's completion as leaving the active states, never as process exit",
+  "statement": "An interactive CLI session that finished its work sits at 'idle' (the prompt) forever — it never reaches 'exited'. Auto-ingest of dispatched work must fire on the transition out of a set of ACTIVE states (spawning/running/awaiting_input), track liveness per dispatch key, prefix-match fan-out session names (key plus ':scope' suffixes), and seed the just-dispatched key as live so a fast-settling session still produces a live-to-gone transition even if the first poll misses it.",
+  "topic": "concurrency/pipelines",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "6efc57b9-5219-4f90-83ef-0f5442f588a8",
+  "kind": "pattern",
+  "title": "Recover a poisoned lock by clearing the cached entry and surfacing the anomaly — never unwrap()",
+  "statement": "A poisoned Mutex/RwLock around a cache must be recovered (into_inner/clear_poison), the possibly-torn entry dropped so later reads repopulate from the source of truth, and the regression reported (log + returned error) — unwrap() would turn one panic into a crash for every later caller, silent recovery would serve stale data forever.",
+  "topic": "concurrency/pipelines",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "9b96203e-9b1a-463f-909c-707f82446b45",
+  "kind": "pitfall",
+  "title": "Drain a child process's pipes concurrently with wait(), or chatty output deadlocks it",
+  "statement": "Awaiting child.wait() before reading stdout/stderr deadlocks any subprocess that emits more than the OS pipe buffer (~64KB): the child blocks on write, wait() never returns, and every chatty run burns its full timeout. Join the wait and both pipe reads concurrently; on timeout, kill the child and salvage the partial buffers.",
+  "topic": "concurrency/pipelines",
+  "abstraction": "micro",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "ad576284-2830-4f16-940b-d2999a8b3f04",
+  "kind": "pattern",
+  "title": "Ship the fan-out primitive alone, proven by tests, before any behavior flips",
+  "statement": "Extract the bounded-parallel scheduler as a standalone primitive — semaphore budget, per-lane catch_unwind so one panic is reported as that lane's error instead of aborting the batch, results returned in input order tagged by lane id — and land it with its tests (behind #[allow(dead_code)]) one phase before anything calls it.",
+  "topic": "concurrency/pipelines",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "f7f8103c-45c4-4c35-801b-513a2a188a94",
+  "kind": "pattern",
+  "title": "Single-flight expensive passes whose due-gate is a non-atomic read; the guard travels inside the admission object",
+  "statement": "When 'is it due' reads a table that is only written after the expensive turn completes, and multiple entry points exist (tick, debouncer, manual button), two passes can both pass the gate — so the whole pass holds a process-wide RAII lease released on every exit path including panic. The scheduled variant admits synchronously on the caller's thread and hands back an object that owns the lock guard, making double-spawn structurally impossible; skipping is an enum outcome, not an Err, because 'not yet' is the normal answer.",
+  "topic": "concurrency/pipelines",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "5289b796-d274-46b9-b6e3-da9e6df0d7bd",
+  "kind": "pattern",
+  "title": "Own long-lived child processes in a registry keyed by logical owner, with replace-on-restart and stop_all on exit",
+  "statement": "One Mutex<HashMap<owner_id, Child>> in app state gives replace-and-teardown on restart, idempotent stop, list-all, and a stop_all wired to the window-close hook so a closing app never orphans a process tree. Kill the whole tree (taskkill /F /T) because dev-runner commands fork children a parent-only kill would orphan. Read paths snapshot fields under the mutex and run blocking probes after releasing it, with a poison-tolerant lock idiom throughout.",
+  "topic": "concurrency/pipelines",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "23511964-aba4-4c91-a94b-073d09dfcef0",
+  "kind": "pattern",
+  "title": "Resume long jobs from a persisted cursor, never restart them",
+  "statement": "Multi-step external-data work that runs as one long call cannot survive a crash, a deploy, or a rate limit — the whole job restarts and the same expensive reads are paid twice. Model every such job as one generic step function that reads a persisted cursor, does one bounded chunk of work, writes results and advances the cursor, so calling the same entry point again always resumes. The API surface then becomes a thin wrapper that returns the checkpoint and holds no pipeline logic of its own.",
+  "topic": "concurrency/pipelines/checkpoints",
+  "abstraction": "macro",
+  "ftype": "data-flow",
+  "governing_id": "83a45d59-bd3c-47d8-ac1e-b61a017ddb5f"
+ },
+ {
+  "id": "2e500c66-2658-4a78-8328-2a0c91161cff",
+  "kind": "pattern",
+  "title": "Beat a provider's per-call cap by chunking and accumulating locally",
+  "statement": "When a provider hard-caps how much one request may return, the instinct is to negotiate a bigger call or a paid tier. The durable fix is a bounded per-call chunk size walked forward across many resumed steps, accumulating into local storage — the effective window then grows past any single call's cap instead of collapsing to it. This only works when the walk is checkpointed, so it composes with the resumable-step pattern rather than replacing it.",
+  "topic": "concurrency/pipelines/chunking",
+  "abstraction": "meso",
+  "ftype": "extensibility",
+  "governing_id": "83a45d59-bd3c-47d8-ac1e-b61a017ddb5f"
+ },
+ {
+  "id": "83a45d59-bd3c-47d8-ac1e-b61a017ddb5f",
+  "kind": "decision",
+  "title": "Stage long-running pipelines and bound every step",
+  "statement": "Long-running and external-facing work drifts into one opaque function that nobody can observe, resume, or cap. Model it as named stages with an explicit bound on every dimension that can grow (rows, bytes, depth, parallelism), and make publication and instrumentation structural rather than something each writer must remember. Bounds are guesses at first, so instrument before you set them and keep the ones that depend on workload configurable.",
+  "topic": "concurrency/pipelines/stages",
+  "abstraction": "macro",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "a7cc8872-04da-4410-a5c7-dcd0a0a9a330",
+  "kind": "pattern",
+  "title": "Back a Notify-style wake with a durable dirty flag",
+  "statement": "Notify's single permit is lossy under select!, so back the wake with a durable AtomicBool: set the flag first then notify, clear it before the pass, and re-notify if it was re-set during the pass.",
+  "topic": "concurrency/queues",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": "9a74f25f-70a8-4a90-90fa-2d3d2b74ab82"
+ },
+ {
+  "id": "8874323e-b7fe-4fb5-bdb0-a83e86425af7",
+  "kind": "decision",
+  "title": "Register post-completion work in-memory and sweep on a ticker",
+  "statement": "Post-completion follow-up work is registered in-memory and swept by a ticker; by design it is lost on restart — the runs are picked up later by the sweep, so nothing is permanently lost and no durable queue is needed.",
+  "topic": "concurrency/queues",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": "9a74f25f-70a8-4a90-90fa-2d3d2b74ab82"
+ },
+ {
+  "id": "bf15e3d1-af25-4383-a47c-373f22de7986",
+  "kind": "pattern",
+  "title": "Drain relayed items oldest-first, pair each publish with its watermark atomically, and stop the lane on first failure",
+  "statement": "A poll-based relay must sort fetched items oldest-first, persist each item and its advanced watermark in ONE transaction, and on a publish failure break that source's loop so the watermark holds at the last contiguous success — a later success advancing past a failed item strands it forever.",
+  "topic": "concurrency/queues",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": "9a74f25f-70a8-4a90-90fa-2d3d2b74ab82"
+ },
+ {
+  "id": "7467d89f-8d75-4f15-8cfd-409ad5cec89e",
+  "kind": "pattern",
+  "title": "Filter consumer ownership inside the claim query itself",
+  "statement": "When multiple consumers share a pending-work table but own disjoint subsets, the ownership predicate belongs INSIDE the atomic claim statement — claiming broadly and releasing non-owned rows both churns the WAL every tick (the released rows keep their position and are re-claimed forever) and lets a full window of non-owned rows starve the owned ones behind them.",
+  "topic": "concurrency/queues",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": "9a74f25f-70a8-4a90-90fa-2d3d2b74ab82"
+ },
+ {
+  "id": "ba16f7b3-8502-4d95-86b4-25f44e893cfe",
+  "kind": "pattern",
+  "title": "Compose independent admission gates; held work queues instead of failing fast",
+  "statement": "An execution admission decision should AND several independent gates (per-entity capacity, global cap, provider-quota cooldown, host resource pressure). When any soft gate is closed, admit() enqueues the work instead of running it into a known failure, and every drain path re-checks the same gates. Cooldown setters must never shorten an active cooldown.",
+  "topic": "concurrency/queues",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": "9a74f25f-70a8-4a90-90fa-2d3d2b74ab82"
+ },
+ {
+  "id": "c68b3b17-7730-4172-b312-95b70c27f7dc",
+  "kind": "pitfall",
+  "title": "A re-claimed job must re-stamp its start timestamp, or the zombie sweep kills healthy retries",
+  "statement": "If a watchdog judges liveness by started_at, then started_at must mean 'when the CURRENT attempt began'. Preserving the first attempt's timestamp across a running→queued→running re-claim (COALESCE(started_at, now)) makes a freshly re-claimed healthy run look like an hours-old zombie, and the sweep drops its real result. Stamp started_at unconditionally on every claim.",
+  "topic": "concurrency/queues",
+  "abstraction": "micro",
+  "ftype": "concurrency-reliability",
+  "governing_id": "9a74f25f-70a8-4a90-90fa-2d3d2b74ab82"
+ },
+ {
+  "id": "9a74f25f-70a8-4a90-90fa-2d3d2b74ab82",
+  "kind": "decision",
+  "title": "Decouple noticing from delivering in any proactive-nudge pipeline",
+  "statement": "Candidate generation writes queue rows unconditionally and cheaply; a separate release pass is the only place the rate budget is spent and the only place queued -> delivered happens. Claiming budget at insert time stranded rows forever: a candidate that lost its claim stayed queued AND dedupe-blocked its own trigger from re-firing.",
+  "topic": "concurrency/queues",
+  "abstraction": "macro",
+  "ftype": "architecture",
+  "governing_id": null
+ },
+ {
+  "id": "ec07a904-036b-490f-af70-a38a9cc41397",
+  "kind": "pattern",
+  "title": "Sweep the status lifecycle before the dedupe check, and give every non-terminal state an expiry",
+  "statement": "One lifecycle sweep runs before every insert and release: stale queued/scheduled/delivered rows expire on per-state windows, then terminal rows are pruned. Ordering is load-bearing — retiring an aged row before dedupe lets the trigger restate its case on the same pass. The invariant: no row may sit in a non-terminal state indefinitely, because non-terminal states are usually also dedupe keys and prune exclusions.",
+  "topic": "concurrency/queues",
+  "abstraction": "meso",
+  "ftype": "state-mgmt",
+  "governing_id": "9a74f25f-70a8-4a90-90fa-2d3d2b74ab82"
+ },
+ {
+  "id": "1bf00995-6ac3-4f10-a1d1-7e677d79c7c4",
+  "kind": "pattern",
+  "title": "When no worker survives a restart, fail every non-terminal run row at boot — an in-memory timeout cannot fix a persisted phantom",
+  "statement": "If run rows are driven by in-process tasks that die with the process, rows left non-terminal re-hydrate on every launch as phantom active runs (buttons disabled, cancel shown) and a frontend timeout only resets in-memory flags, so re-selection resurrects the phantom forever. Sweep all non-terminal rows to failed at startup with an explicit reason string; the sweep must be idempotent and must not touch terminal rows.",
+  "topic": "concurrency/queues",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": "9a74f25f-70a8-4a90-90fa-2d3d2b74ab82"
+ },
+ {
+  "id": "aa59c8b6-f549-481d-82b5-4270a4a8327c",
+  "kind": "pattern",
+  "title": "Batch autonomous wakes behind one gate with named bypasses",
+  "statement": "Autonomous surfaces that each poll their own queue produce constant low-value churn and cost. Put one gate in front of all of them: signals accumulate until the surface's last wake is older than a configured window, the backlog crosses a queue cap, or a priority signal demands immediate handling. Return the bypass reason alongside the decision and log only the wakes that actually happened, so the log is an impact ledger rather than a tick log.",
+  "topic": "concurrency/queues/batching",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "13f2328c-729e-4bee-a2e3-fb96c5856674",
+  "kind": "pitfall",
+  "title": "Count every dropped change event and replay the startup gap",
+  "statement": "A synchronous database hook must not block, so it pushes into a bounded channel — and a full channel then loses change notifications with no trace. Count every drop and warn loudly on the first, start the reader before any readiness wait so boot bursts have a consumer, and record a high-water mark before the wait so the blackout can be replayed from the database once the consumer is live. Gate only the emit on readiness, never the drain.",
+  "topic": "concurrency/queues/channels",
+  "abstraction": "meso",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "9db3b473-c843-48ea-9a81-b111f68de0a4",
+  "kind": "decision",
+  "title": "Claim a batch with SKIP LOCKED and give each job its own transaction",
+  "statement": "A queue worker that claims one row at a time serializes on latency it does not control, while one that shares a transaction across jobs turns any single failure into a batch rollback. Claim a small batch with SKIP LOCKED so parallel workers never contend, then run each job's full chain in its own transaction so concurrency is pure I/O overlap rather than shared mutable state. Make batch size, concurrency, visibility and backoff env-overridable with defaults that reproduce the previous behaviour exactly.",
+  "topic": "concurrency/queues/claiming",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "4baed67e-324a-4b1c-9e6c-26388dcd76be",
+  "kind": "pattern",
+  "title": "Claim rows in one UPDATE and gate transitions on the status you read",
+  "statement": "Poll-driven workers with overlapping ticks will process the same row twice unless the claim is a single atomic statement that both selects and marks the batch. Every subsequent state change must then carry the observed state in its predicate, so a concurrent writer makes the update touch zero rows instead of silently overwriting — the compare-and-swap closes the read-then-write gap. Push eligibility filtering into the claim statement rather than filtering in the worker.",
+  "topic": "concurrency/queues/claiming",
+  "abstraction": "meso",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "4a4a6ef8-4a83-4fa8-9ae8-f58cc932cb4b",
+  "kind": "pattern",
+  "title": "Treat the row as the queue; recover running and queued rows apart",
+  "statement": "After a crash the in-memory queue is gone but the work rows remain, so the persisted row is the only durable queue you have. Recovery must distinguish two cases: rows that had a live process attached are orphaned and must be failed so their slot is freed, while rows that were only queued never started and must be re-admitted as durable work. Collapsing both into one sweep silently drops every scheduled job that was waiting at shutdown.",
+  "topic": "concurrency/queues/durability",
+  "abstraction": "meso",
+  "ftype": "state-mgmt",
+  "governing_id": null
+ },
+ {
+  "id": "d0f52689-3785-4f62-a045-6c0b6de63683",
+  "kind": "decision",
+  "title": "Pick lock-acquisition policy per caller class, not per resource",
+  "statement": "When one resource must be single-writer, one acquisition strategy for all callers is always wrong for someone: blocking machine work piles up, and non-blocking human work is silently dropped with no reply, error or queue entry. Classify callers by what a dropped request costs — user-initiated blocks, speculative background work tries and self-skips because a missed tick self-heals, and work that genuinely must wait queues behind a hard depth cap. The taxonomy is the reusable part; the constants are workload-specific.",
+  "topic": "concurrency/queues/locks",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "153e2852-d3cf-487e-8bb5-5f09beab5481",
+  "kind": "pitfall",
+  "title": "Diff a serialized autosave against the in-flight snapshot",
+  "statement": "Serializing overlapping autosaves by awaiting the in-flight promise invites a 'nothing changed, skip' short-circuit that compares the live draft to the baseline — but the baseline is updated through render state and lags the await, so edits made during the await get swallowed. Store the exact snapshot handed to the running save synchronously in a ref and short-circuit only when the live draft still equals that snapshot. Clear the refs only when they still point at the save that is finishing, so a queued successor is not torn down by its predecessor.",
+  "topic": "concurrency/queues/serialization",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "6e2475a6-b2dd-41c9-ae09-e96790ef737c",
+  "kind": "pattern",
+  "title": "Break simultaneous-connect ties deterministically, and enforce capacity under the write lock",
+  "statement": "Make the lexicographically smaller peer_id the canonical initiator, and put the authoritative `max_peers` check inside the write-lock section — a read-then-write split is a TOCTOU race. Give each close reason a distinct QUIC close code (capacity/tie-break/rate/db).",
+  "topic": "concurrency/races",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "51a85e18-88e7-40a4-aa07-6ad8926db432",
+  "kind": "pitfall",
+  "title": "Remove redundant advisory checks left beside the authoritative one",
+  "statement": "`is_at_capacity()` is still called early on both connect paths even though the doc on `try_insert_connection` explains the early check is racy; both paths increment the same metric, and an identical 40-char error string is duplicated three times. A racy advisory check beside the authoritative one invites drift.",
+  "topic": "concurrency/races",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "f6716407-1b76-4008-bcc0-66389bc8b932",
+  "kind": "pattern",
+  "title": "Make cache writes atomic with a per-call unique temp name",
+  "statement": "Two concurrent refreshers clobbered a shared tmp name; give each atomic write its own unique temp file before the rename.",
+  "topic": "concurrency/races",
+  "abstraction": "micro",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "2c154016-b76d-48bf-9153-5738736e0b6b",
+  "kind": "pattern",
+  "title": "Clear a shared busyId only if it still belongs to YOUR call",
+  "statement": "`busyId: s.busyId===id?null:s.busyId` on success AND failure — an unconditional clear re-enables another command's buttons mid-flight. The same commit-only-if-still-current shape appears three more times in ambientContextSlice.",
+  "topic": "concurrency/races",
+  "abstraction": "micro",
+  "ftype": "state-mgmt",
+  "governing_id": null
+ },
+ {
+  "id": "3df5fb2c-ed88-4daa-8b6c-0a5224841812",
+  "kind": "pattern",
+  "title": "Bounded per-item remote fan-out where one item's failure means absent-from-map, not family failure",
+  "statement": "Fetching a live stat per entity from a remote API: run a worker-pool limiter (fixed width, shared cursor) over only the eligible targets, and treat each per-item failure as 'this entity is honestly unknown' — leave it out of the returned map and log — rather than failing the whole batch. Throw only when the operation can't run at all. Consumers then render absent entries with the honest-fallback (static-only) treatment.",
+  "topic": "concurrency/rate-limiting",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "8bb1b36d-4d6c-43b8-96c7-0a59493623c0",
+  "kind": "pattern",
+  "title": "Advance an incremental-sync cursor to the max watermark present in the rows read",
+  "statement": "Never advance a sync cursor to wall-clock now(): a now() captured at pass start permanently skips rows committed after the SELECT's snapshot but stamped earlier. Advance to the max watermark PRESENT IN THE ROWS READ; an empty batch leaves the cursor untouched.",
+  "topic": "concurrency/retry-idempotency",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "d683d3c9-f0f4-4628-9fd2-7beaa69d78a5",
+  "kind": "pattern",
+  "title": "Propagate deletes children-first and advance the tombstone cursor only on full-batch success",
+  "statement": "Cascade deletes children-first and only advance the tombstone cursor when the whole batch succeeded: a mid-cascade failure then leaves the parent present and retried, not orphaned. Deletes are idempotent so reprocessing is safe.",
+  "topic": "concurrency/retry-idempotency",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "f94e5135-ec87-4a81-945d-75aeed998839",
+  "kind": "pattern",
+  "title": "Make reconciliation fire decisions server-side and cache-independent",
+  "statement": "Reconciliation hooks should let the backend resolve identity from the DB and no-op when absent, keeping the frontend cache as a cheap replay guard, not a correctness guard — this removes the cache-warmth precondition.",
+  "topic": "concurrency/retry-idempotency",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "8466ea1a-aebb-4938-b440-860cc1987320",
+  "kind": "pattern",
+  "title": "Dedupe sends on a minted nonce, never on content",
+  "statement": "An idempotency ledger in localStorage dedupes on a minted NONCE, never on content, so retyped identical words always go through (200 entries, 24h TTL, crypto.randomUUID). Record the nonce synchronously BEFORE the IPC; a write failure degrades to same-session-only dedupe; the nonce rides into queued records so a drained dispatch dedupes on the original intent's key.",
+  "topic": "concurrency/retry-idempotency",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "1ebb84ec-4da8-41d2-88d9-0ddcc808f331",
+  "kind": "pattern",
+  "title": "Carry the CAS token from the rendered card and never advertise a CAS you don't have",
+  "statement": "The client-side CAS token (seenStatus) rides from the card that was RENDERED, and undo derives its expectation from the verdict just made; reversibleStatus returns null for kinds with no reverse door (\"an undo button that cannot deliver is worse than no undo button\"), and goals carry NO token because the backend has no CAS — \"a token nothing reads would advertise a protection this queue does not have.\"",
+  "topic": "concurrency/retry-idempotency",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "ca2d1e80-d9bc-4b83-abf5-6e9e3e448ad6",
+  "kind": "pattern",
+  "title": "Send identity with the async act and drop a mismatched report, never redirect it",
+  "statement": "Identity travels with the async act: the itemId is captured at LAUNCH and the receiver verifies it before any write, refusing a mismatched report even when the incoming card would take the same verdict. Companion rulings: the lock that is also the queue needs a watchdog (FLIGHT_TIMEOUT_MS lands the decision anyway), and a re-dealt last card with the same id and rank needs a cycle counter in reset deps.",
+  "topic": "concurrency/retry-idempotency",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "6391ff82-93a8-42d3-9033-63e2146c0cf3",
+  "kind": "pattern",
+  "title": "Commit the external delivery record unconditionally; keep trigger bookkeeping best-effort",
+  "statement": "When an externally-delivered event (webhook) and its trigger's metadata share a transaction, insert the durable event record FIRST and treat a lost CAS on the trigger's version bump as a logged no-op — never discard a legitimately-received external delivery over a benign metadata race.",
+  "topic": "concurrency/retry-idempotency",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "0e863701-06a4-46a2-9f90-3a817d0ee357",
+  "kind": "pattern",
+  "title": "Parse a stated reset time for one scheduled retry; refuse ambiguity and keep the blind cadence as fallback",
+  "statement": "When a rate-limit banner states its own reset time, parse it to schedule exactly ONE retry at reset+grace — but treat any parsing ambiguity as 'no ETA' (a wrong ETA silences retries until a moment that never comes), and fall back to the blind retry cadence after the scheduled attempt fires, in case the stated time didn't hold.",
+  "topic": "concurrency/retry-idempotency",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "1e28cf98-76f4-48d6-aa0e-eb94fc610aab",
+  "kind": "pattern",
+  "title": "When two evaluators can fire the same rule, share cooldown through the persisted fire log",
+  "statement": "A client-side alert loop plus a backend evaluator (running even with the UI closed) will double-fire the same rule unless their dedup state is shared. Make the persisted fired-alerts log the shared cooldown authority: the client force-refreshes history every tick (bypassing its TTL) so it sees backend fires, falls back from its in-memory cooldown map to the last persisted fire (so a reload doesn't instantly re-fire a still-triggering rule), and guards its own tick with a running flag so a slow pass can't overlap the next one and race past the cooldown check.",
+  "topic": "concurrency/retry-idempotency",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "e0f6d62d-2820-4742-a1c2-ef834febc03c",
+  "kind": "pattern",
+  "title": "Stamp the cadence timestamp before doing the periodic work, and abort if the stamp fails",
+  "statement": "For run-at-most-once-per-interval jobs, write the last-run marker before starting the sweep: if the run panics or the process dies midway, the next tick still backs off instead of retry-storming. If the timestamp write itself fails, skip the sweep entirely; a missing/corrupt timestamp is treated as due and healed by the write.",
+  "topic": "concurrency/retry-idempotency",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "27ad1885-31e8-4358-bfd3-e3620151cfcc",
+  "kind": "pitfall",
+  "title": "Owner-entity checks are not run correlation — a prior run's late terminal event tears down the live run",
+  "statement": "Filtering lifecycle events by owning-entity id cannot distinguish two successive runs of the SAME entity: a late or duplicated terminal event from the previous run passes the owner check and tears down the new run's UI state while it keeps running headless. Correlate every lifecycle event against the specific run-instance id, falling through only when no id is present (legacy).",
+  "topic": "concurrency/retry-idempotency",
+  "abstraction": "micro",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "eb0c5a16-8bc6-4e5d-a30f-c3acc269c150",
+  "kind": "pitfall",
+  "title": "Run every fallible lookup BEFORE taking the permanent claim, and never collapse a fallible read into its empty default",
+  "statement": "In a claim-then-work loop, any fallible read whose result decides what the work is must run before the atomic claim: if it runs after, a transient error (DB busy/lock) gets locked in by the already-stamped claim and the work is permanently stranded. On read error, skip WITHOUT claiming so the next tick retries. The enabling bug is often `.ok()...unwrap_or_default()`, which collapses 'transient error' and 'legitimately empty' into the same value — return a real Result instead.",
+  "topic": "concurrency/retry-idempotency",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "819a7657-e2cd-4ce7-adc7-acb78d2f67e3",
+  "kind": "pattern",
+  "title": "Key in-flight write guards by INTENT, not just by row — same intent joins, different intents both reach the backend",
+  "statement": "A per-row in-flight guard that keys only on the row id silently gives a second, DIFFERENT verdict on the same row the first verdict's outcome — approve-then-reject inside one round-trip writes one approval and reports both as landed. Key the guard on (row, intent): repeat calls for the same intent join the in-flight promise instead of racing a duplicate write; different intents both proceed to the backend, where the compare-and-swap decides the winner and the loser gets a surfaceable conflict.",
+  "topic": "concurrency/retry-idempotency",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "8364e763-811b-468b-be49-47ff678557e2",
+  "kind": "pattern",
+  "title": "Serialize the create path of a dual-store secret (keyring + DB) and re-check after acquiring",
+  "statement": "When an identity/keypair lives in two stores (OS keyring holds the private key, DB holds the public half), racing first-launch creators can each win one store and leave them mismatched. Serialize only the create/reinit paths with a static mutex, re-check the cache AND re-read the DB after acquisition, keep steady-state reads lock-free, and surface a poisoned lock as an error rather than silently retrying on possibly-torn state.",
+  "topic": "concurrency/retry-idempotency",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "9982c3b6-d9df-42cc-a56d-449999b22a89",
+  "kind": "pattern",
+  "title": "Two-phase cursors: seed to now on first enable, hold on failure, bound retries by anchoring attempts to the cursor value",
+  "statement": "On first run the cursor seeds to now so enabling a feature never retroactively processes all history. On failure the cursor is not advanced (same window re-scans), the attempt counter is stored as {cursor, attempts} so a different window reads as fresh, and after max attempts the poison batch is abandoned and the cursor advances — bounded work, never a livelock.",
+  "topic": "concurrency/retry-idempotency",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "0ee9bd18-434e-4785-9b47-5052a875003b",
+  "kind": "pattern",
+  "title": "A failed periodic cycle must still advance the retry-gate clock — but only successes may increment the counters",
+  "statement": "When a gate like 'at least N executions since last_cycle_at' throttles an expensive automated cycle, a persistently failing cycle that never stamps last_cycle_at re-fires on every trigger — a real money-burning retry storm with zero forward progress. Give the failure path its own bookkeeping call that advances only the cadence timestamp, while success-only stats (total_cycles, total_promotions) are bumped solely by the completion path.",
+  "topic": "concurrency/retry-idempotency",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "5ebc8d0d-a3c2-4373-933f-467a3a40116d",
+  "kind": "pattern",
+  "title": "Claim layered budgets in one transaction, after the work is enqueued",
+  "statement": "Layered quotas — a global ceiling plus a per-source sub-budget — must be claimed in a single transaction with conditional updates, so a failure on the inner budget rolls back the outer increment and concurrent passes cannot burst past either cap. Consume the unit only after the work is safely persisted, so a transient error never burns budget. When the budget is spent, leave the overflow queued for the next window rather than discarding it.",
+  "topic": "concurrency/throttling/budgets",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "fe8744d7-ba20-4020-b9d4-056e862925ae",
+  "kind": "pattern",
+  "title": "Bound every fan-out with one limiter sized by cost class",
+  "statement": "A bare parallel map over N entities is an unbounded fan-out that saturates the same transport the rest of the page is waiting on, so first paint pays for a background wall. Route every per-entity fan-out through one shared concurrency limiter and set its width from the call's cost class — narrow for remote or IPC work, wider for local filesystem work, narrowest for calls that spawn real jobs. The width is a decision that belongs next to a stated reason, not a constant someone guessed.",
+  "topic": "concurrency/throttling/fan-out",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "99399074-39d2-4b26-ad4a-b9da25ca0bba",
+  "kind": "pattern",
+  "title": "Implement rate limiting once and configure it per endpoint",
+  "statement": "Rate limiting re-implemented per endpoint produces inconsistent wire contracts and a different keying mistake at each site. Put the algorithm and the rejection response in one module, make every limited endpoint a config entry naming its key (user, org, or source IP) and its window, and justify each keying choice where it is declared. State the accepted risk explicitly — in-process state is per-instance and resets on deploy — and keep the module boundary such that swapping in a shared store is a one-file change.",
+  "topic": "concurrency/throttling/rate-limits",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "65316f87-b617-4f54-a272-392ca3419f3e",
+  "kind": "pattern",
+  "title": "Rate-limit outbound calls per credential, not globally",
+  "statement": "A proxy that executes arbitrary third-party calls on behalf of automations needs the blast radius of a runaway loop to be one integration, which a global limiter cannot give you. Key the token bucket per credential, read the limit from the connector's own metadata (clamped) so it is configurable as data, and adjust an existing bucket's capacity in place on a config change instead of resetting its tokens and handing out a free burst. Sweep idle buckets on a throttled interval so the registry cannot grow unbounded.",
+  "topic": "concurrency/throttling/rate-limits",
+  "abstraction": "meso",
+  "ftype": "architecture",
+  "governing_id": null
+ }
+]

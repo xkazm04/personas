@@ -1,0 +1,872 @@
+[
+ {
+  "id": "fd96f4e5-7730-4e04-af79-e5413e8a9951",
+  "kind": "pattern",
+  "title": "Pin a content hash across every import path, and decide what a missing hash means",
+  "statement": "File, clipboard, and share-link imports re-hash bytes against the preview-time hash before touching the DB. Decide the missing-hash case explicitly per path: a hashless deep link is rejected (the generator always emits one); a pasted raw HTTP URL warns and proceeds.",
+  "topic": "security/input-hardening",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "20f5518d-6eb0-4e94-9e9c-8f0afebee139"
+ },
+ {
+  "id": "1010d462-d4ef-45f7-932b-a5decca8550b",
+  "kind": "pattern",
+  "title": "Treat every field from mDNS as hostile input — especially string truncation",
+  "statement": "peer_id must base58-decode to exactly 32 bytes; addresses parse as `SocketAddr` built via `SocketAddr::new` so IPv6 gets bracketed (`format!(\"{}:{}\")` yields unparseable `fe80::1:4242`); display names truncate on a character boundary — a byte slice panics on multibyte and would kill the discovery task. All through a single validation chokepoint.",
+  "topic": "security/input-hardening",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "20f5518d-6eb0-4e94-9e9c-8f0afebee139"
+ },
+ {
+  "id": "895f1790-b708-4bc7-9c47-f7341de2a5a6",
+  "kind": "pattern",
+  "title": "Bound every peer-controlled collection, and prefer drop-new over LRU under flood",
+  "statement": "Cap manifest entries, inbox persona keys, frame sizes (on encode AND decode), per-peer rates at two layers, mDNS name/address lengths, and clipboard bytes. For keyed queues under flood, drop NEW keys rather than LRU-evict — LRU would let fabricated ids evict real queues.",
+  "topic": "security/input-hardening",
+  "abstraction": "meso",
+  "ftype": "perf-strategy",
+  "governing_id": "20f5518d-6eb0-4e94-9e9c-8f0afebee139"
+ },
+ {
+  "id": "d3262137-096c-4225-9a6b-c23e1e36e94f",
+  "kind": "pattern",
+  "title": "Render streaming LLM markdown defensively: close fences and sanitize every link",
+  "statement": "Streaming model markdown needs dangling code fences closed (including the fence-first edge where slicing to the fence start would discard the whole body) and every link sanitized — an unsafe href degrades to a non-link span.",
+  "topic": "security/input-hardening",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "20f5518d-6eb0-4e94-9e9c-8f0afebee139"
+ },
+ {
+  "id": "a279b15b-105d-4ba2-90f6-0df9bf768920",
+  "kind": "pattern",
+  "title": "Make the ingest door the only writer: validate, cap, path-confine, mark once",
+  "statement": "Every external result enters through one ingest door that validates the payload, caps its size, canonicalizes the run dir against the runs root before reading, and refuses re-ingest via a marker file (ingested.json). Nothing else writes those tables.",
+  "topic": "security/input-hardening",
+  "abstraction": "meso",
+  "ftype": "architecture",
+  "governing_id": "20f5518d-6eb0-4e94-9e9c-8f0afebee139"
+ },
+ {
+  "id": "fd6126e4-8d13-4415-be9c-a510c45be269",
+  "kind": "pattern",
+  "title": "Constrain what the OS is asked to open",
+  "statement": "Shell-open accepts http/https only; editor schemes come from an allowlist, else the path must exist on disk; remote URLs must be HTTPS except loopback.",
+  "topic": "security/input-hardening",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "20f5518d-6eb0-4e94-9e9c-8f0afebee139"
+ },
+ {
+  "id": "a48e3b76-3db2-4c86-94d5-8e1d7ed71538",
+  "kind": "pattern",
+  "title": "Resolve binary allowlists to canonical on-disk paths — basename matching is a code-exec vector",
+  "statement": "Resolve symlinks/junctions/8.3 short names on both sides and compare full-path equality; `ends_with` allowed a planted same-name executable to pass the allowlist.",
+  "topic": "security/input-hardening",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "20f5518d-6eb0-4e94-9e9c-8f0afebee139"
+ },
+ {
+  "id": "291e4c48-23ae-43ba-827f-2d85191ebc77",
+  "kind": "pattern",
+  "title": "Run the constant-time HMAC compare even when the signature hex is invalid",
+  "statement": "In an HMAC verifier, substitute a dummy digest when hex-decoding the supplied signature fails, run the constant-time comparison anyway, and AND the result with the hex-validity flag — so valid-hex and invalid-hex signatures take the same timing path.",
+  "topic": "security/input-hardening",
+  "abstraction": "micro",
+  "ftype": "micro-technique",
+  "governing_id": "20f5518d-6eb0-4e94-9e9c-8f0afebee139"
+ },
+ {
+  "id": "8b34e7e8-9ca1-49d5-8da3-6144edd99d05",
+  "kind": "pattern",
+  "title": "Check hostile-input codepoints on the RAW string, before trim",
+  "statement": "JavaScript's trim() strips BOM and some zero-width characters — exactly the codepoints attackers use to disguise a `javascript:` scheme or hide a destination behind a bidi override. If you trim before scanning for unsafe codepoints, the evidence is destroyed and the check passes. Scan the original input first, then trim, then parse.",
+  "topic": "security/input-hardening",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": "20f5518d-6eb0-4e94-9e9c-8f0afebee139"
+ },
+ {
+  "id": "cfd15f28-fe54-4a8d-b6b3-75ae2523484e",
+  "kind": "pitfall",
+  "title": "Truncate at the type-appropriate limit BEFORE type dispatch, or big payloads corrupt silently",
+  "statement": "A sanitizer that applies a generic length slice up front and a larger type-specific cap later has already destroyed the data: the early 2000-char slice cut large JSON mid-structure — embedding malformed JSON into the prompt — and the later per-type re-slice was a no-op. Resolve the limit from the declared type first, then truncate once.",
+  "topic": "security/input-hardening",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": "20f5518d-6eb0-4e94-9e9c-8f0afebee139"
+ },
+ {
+  "id": "20f5518d-6eb0-4e94-9e9c-8f0afebee139",
+  "kind": "pattern",
+  "title": "Let agents emit UI only through a frozen vocabulary mapped 1:1 onto blessed components — and test that nothing auto-runs",
+  "statement": "Agent-generated UI is injection-free and on-brand by construction when every emitted block type renders through exactly one existing catalog component — no arbitrary HTML, the switch IS the entire vocabulary, extension = new block + schema + one case. Pair it with an executable invariant that agent-proposed actions only ever set pending state: tests assert the consent surface opens ONLY after an explicit click and the execute mock was never called.",
+  "topic": "security/input-hardening",
+  "abstraction": "macro",
+  "ftype": "extensibility",
+  "governing_id": null
+ },
+ {
+  "id": "651287c7-f2c7-4550-9566-a522af9abef7",
+  "kind": "pattern",
+  "title": "Gate, fingerprint and bound model-authored SQL before executing it",
+  "statement": "Never execute LLM-generated SQL blindly: classify mutation vs read and refuse mutations unless the user explicitly opted in; audit a fingerprint (length + attempt), never the query text; cap the fix-and-retry loop; and feed each retry the sanitized error plus the user's original question — not the model's last attempt — so intent doesn't drift.",
+  "topic": "security/input-hardening",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "20f5518d-6eb0-4e94-9e9c-8f0afebee139"
+ },
+ {
+  "id": "2eee8b60-e265-4e17-8763-c41244e0b7c2",
+  "kind": "pattern",
+  "title": "Cap the decompressed size of every archive entry twice — declared size is attacker-controlled",
+  "statement": "Untrusted archives must be read through both a declared-size check and a take()-bounded reader with a post-read length re-check, because the declared entry size is part of the attacker-controlled input (zip-bomb defence).",
+  "topic": "security/input-hardening",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": "20f5518d-6eb0-4e94-9e9c-8f0afebee139"
+ },
+ {
+  "id": "02fcef92-1101-4920-9f3c-06eba3eb5005",
+  "kind": "pattern",
+  "title": "Run model-proposed endpoints and values through the same untrusted-input validators as user input",
+  "statement": "LLM output is untrusted input: AI-proposed API endpoints still go through SSRF validation before any request; non-scalar header values are skipped loudly rather than silently dropped; the model's explicit 'skip' verdict is honored with its reason surfaced. Never let 'the AI produced it' bypass a boundary check.",
+  "topic": "security/input-hardening",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "20f5518d-6eb0-4e94-9e9c-8f0afebee139"
+ },
+ {
+  "id": "ab52663a-0274-49c2-8ba2-0927bef5f442",
+  "kind": "pattern",
+  "title": "Make destructive-action classifiers resolve every ambiguity as dangerous, after stripping literals",
+  "statement": "A heuristic guard that gates destructive execution (SQL safe mode) must fail toward 'treat as mutation': unclosed comments, unknown leading verbs, and CTE wrappers all classify as dangerous. Strip quoted literals (including dialect dollar-quoting) before keyword scanning so user data like 'please delete this' can't false-positive — and enumerate the wrapper cases where a read-only verb hides a mutation.",
+  "topic": "security/input-hardening",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "20f5518d-6eb0-4e94-9e9c-8f0afebee139"
+ },
+ {
+  "id": "664e9079-a4cc-4d02-81a6-5cedcc4a7664",
+  "kind": "pitfall",
+  "title": "Escape identifiers per dialect and pin that escaping preserves printable characters",
+  "statement": "Identifier/glob escaping must be dialect-specific (double-quote doubling, backtick doubling, Redis glob metas) and strip only control characters — a 'sanitize to alphanumerics' regex silently corrupts legitimate names. The recorded bug: `SELECT * FROM order-items` parsed as `order MINUS items`; a Redis prefix `cache[v1]` read as a character class and silently mismatched.",
+  "topic": "security/input-hardening",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "20f5518d-6eb0-4e94-9e9c-8f0afebee139"
+ },
+ {
+  "id": "35776fa4-a88a-4470-940c-94db35362d3b",
+  "kind": "pattern",
+  "title": "Fence user attachments into an LLM turn behind size, type, and SSRF guards",
+  "statement": "When users can attach a file or URL whose contents get injected into the next model turn, guard the ingestion in layers — extension allowlist (text formats only), byte cap with an explicit '[…truncated, X bytes elided]' marker, content-type prefix allowlist on URL responses, and an SSRF-safe resolver/client for fetches — then wrap the content in an unambiguous fence that the system prompt itself documents, so the model can reliably separate attachment from answer.",
+  "topic": "security/input-hardening",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "20f5518d-6eb0-4e94-9e9c-8f0afebee139"
+ },
+ {
+  "id": "0ec040fd-d8b0-41c0-b4b7-bbbff6c49292",
+  "kind": "pitfall",
+  "title": "A validated charset is not a validated argument — reject flag-shaped and injection-shaped values where they become argv or path segments",
+  "statement": "A letters-and-hyphens whitelist still admits --nt / -l, which the child CLI re-parses as options, defeating the validator's purpose; reject leading/doubled hyphens too. Enforce arg and path-segment guards in the lowest-level helper (not at the command boundary) so no caller can bypass them: version ids are length-capped alphanumeric before reaching git argv, project slugs reject /, \\ and .. before joining onto a root.",
+  "topic": "security/input-hardening",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "20f5518d-6eb0-4e94-9e9c-8f0afebee139"
+ },
+ {
+  "id": "f96a2dc0-eaaa-4982-a440-1bbc346c35e4",
+  "kind": "pitfall",
+  "title": "String-prefix path containment is not containment — reject dot-dot and absolute components, and remember canonicalize fails on non-existent targets",
+  "statement": "Path::starts_with is purely lexical, so root/../../x still 'starts with' root, and canonicalize() fails when the target does not exist, forcing a fallback to the lexically-joined path. Containment needs a component-level guard (reject ParentDir and absolute components) plus the canonical check, and comparisons must be component-wise (root or root + separator) — a bare string prefix accepts a sibling directory like personas-evil. Auto-fire filesystem walks additionally carry an entry cap, a wall-clock budget, and no-follow-symlinks.",
+  "topic": "security/input-hardening",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "20f5518d-6eb0-4e94-9e9c-8f0afebee139"
+ },
+ {
+  "id": "ac19d9aa-2eb6-48a6-a160-42d7e88499ec",
+  "kind": "pattern",
+  "title": "Have the model emit ids from a generated allowlist, not paths",
+  "statement": "Any time a model's output steers the UI or the filesystem, it should emit a symbolic id from a closed catalog rather than a selector, URL or path, so a hallucinated value fails a lookup instead of pointing at something arbitrary. Generate one side's copy of the catalog from the other in the build and assert the mirror in a test, so the two halves cannot drift.",
+  "topic": "security/input-hardening/allowlists",
+  "abstraction": "meso",
+  "ftype": "architecture",
+  "governing_id": null
+ },
+ {
+  "id": "5346ba28-ffc9-4d7c-98cf-12b0236beee4",
+  "kind": "pitfall",
+  "title": "An env-var denylist at the subprocess boundary must block name families, not just exact names",
+  "statement": "When user- or credential-supplied values become environment variables for a spawned process, an exact-name denylist (PATH, LD_PRELOAD, NODE_OPTIONS…) is not enough: package managers and runners read whole prefixed namespaces and map them back onto the blocked knobs, re-arming the exact vector you denied. Block the runner namespaces by prefix too, and treat the list as append-only.",
+  "topic": "security/input-hardening/env-vars",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "271ba294-2716-4832-b90f-f72a4b044a55",
+  "kind": "pattern",
+  "title": "Build path containment in layers: charset allowlist, syntax checks, parent equality, then canonicalize",
+  "statement": "Any filename derived from caller-supplied input needs more than one check. Validate the identifier's charset and length first, then reject UNC prefixes, alternate data streams and traversal sequences, then assert the path's parent IS the base dir, and finally canonicalize and re-check containment to defeat symlinks.",
+  "topic": "security/input-hardening/paths",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "a66318b1-bc94-4db0-9d6b-961064a0ef55",
+  "kind": "pattern",
+  "title": "Gate an imported artifact in layers, one message per rejection",
+  "statement": "Anything a user imports from another product — a workflow export, a config dump, model output — is untrusted input. Gate it in escalating layers: type, a hard byte cap, parse, a structural sniff, then per-element validators that drop corrupt items, with each rejection carrying its own specific message. Never let a partly-valid artifact reach application state.",
+  "topic": "security/input-hardening/payloads",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "a85d8ff7-09d7-491e-9755-720306bb11ea",
+  "kind": "pattern",
+  "title": "Put an explicit, justified numeric cap on every boundary crossing, and flag truncation rather than hiding it",
+  "statement": "Anything arriving from a subprocess, a network peer, or a model is unbounded until you bound it. Cap line length, payload size, nesting depth, pagination follow-count, and retained output — each as a named constant whose comment says what the number protects against — and surface truncation with an explicit flag so downstream consumers never mistake a cut-off value for a complete one.",
+  "topic": "security/input-hardening/payloads",
+  "abstraction": "meso",
+  "ftype": "micro-technique",
+  "governing_id": null
+ },
+ {
+  "id": "369d3375-68cd-4e2a-9d69-05abf01af696",
+  "kind": "pattern",
+  "title": "Make the secret boundary structural in row projections, then test forbidden keys absent",
+  "statement": "Sync row structs have NO field for encrypted/device-local/tenant columns (user_id omitted so server RLS owns it) — the secret boundary is structural. Then serialize a sample row and assert the forbidden keys are ABSENT, because a structural guarantee silently degrades the day someone adds a field.",
+  "topic": "security/secrets",
+  "abstraction": "meso",
+  "ftype": "module-boundary",
+  "governing_id": null
+ },
+ {
+  "id": "ddee2316-dcd0-4575-bd6b-5250f55ae860",
+  "kind": "pattern",
+  "title": "Sanitize free-form payloads on four axes before they leave the device",
+  "statement": "Free-form payloads get four sanitization axes before egress: secret-looking key names; credential-looking VALUES under innocuous keys (known prefixes; long whitespace-free high-base64-density runs); non-JSON dropped; oversized replaced with a bounded marker. Each axis is tested.",
+  "topic": "security/secrets",
+  "abstraction": "meso",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "2594fa67-4a87-4ebd-9b56-729849d4a1ba",
+  "kind": "pattern",
+  "title": "Broadcast change events by KEY only — the payload may hold secrets",
+  "statement": "Settings-change broadcasts carry only the key; listeners re-read the value via an auth-checked getter, and writes that deliberately do not broadcast are documented.",
+  "topic": "security/secrets",
+  "abstraction": "meso",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "5c4f14c9-5667-4598-8dc5-10e12ce814b8",
+  "kind": "pattern",
+  "title": "Redact credential shapes at capture with a typed token per shape",
+  "statement": "JWT/AWS/Stripe/GitHub/Slack/Bearer/email become `[REDACTED:jwt]`-style typed tokens via an idempotent pure function over a OnceLock regex table, with a char-boundary length cap; window titles collapse paths to basenames and drop URL path/query.",
+  "topic": "security/secrets",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "3c20c2de-2061-4a0c-b3be-489dd519daf6",
+  "kind": "pattern",
+  "title": "Store trigger events as a content HASH, never the plaintext that produced them",
+  "statement": "The clipboard trigger publishes {content_type, content_hash, content_length}; redacted content travels a separate gated ambient path — so the trigger/event table can never become a secondary secret store.",
+  "topic": "security/secrets",
+  "abstraction": "meso",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "f6ebcea7-e33a-4e60-9c9d-b8b12d8e16f0",
+  "kind": "pattern",
+  "title": "Never log a plaintext duplicate of a payload you encrypt at rest",
+  "statement": "When an inbound payload is encrypted before persistence, do not also write the identical raw body into a request/audit log table in plaintext — redact the logged body to a pointer at the encrypted durable copy, keeping headers and status for diagnostics.",
+  "topic": "security/secrets",
+  "abstraction": "meso",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "3c6c8a9d-6701-4aa9-837b-77ec519f2804",
+  "kind": "pattern",
+  "title": "Scrub run-scoped secret files on every exit path, and sweep stale copies before writing",
+  "statement": "A config file that embeds short-lived secrets in a reused (non-deleted) working directory must be scrubbed on EVERY run exit path — normal, error, cancel, timeout, kill — and the writer must also sweep any stale copy from a prior possibly-killed run before writing, as belt-and-suspenders.",
+  "topic": "security/secrets",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "cd19a621-b5f6-49a6-a8d2-bef4579e4f19",
+  "kind": "pattern",
+  "title": "Detect silent key rotation by re-fetching the cheap PEM and re-importing only on change",
+  "statement": "When a frontend caches an imported public key whose backend keypair can rotate without the frontend restarting, don't trust the cache and don't re-import blindly: on an interval, refetch the cheap raw PEM, compare strings, and only pay the heavy CryptoKey import when the PEM actually changed. Share one in-flight refresh promise so concurrent encrypts during the stale window don't fan out, and clear the cache on any explicit invalidation event (logout).",
+  "topic": "security/secrets",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "245ad81a-040b-47b2-bf62-27040fb3705f",
+  "kind": "pattern",
+  "title": "Shield URLs behind placeholders before running path-redaction regexes",
+  "statement": "In a redaction pipeline, a filesystem-path regex will shred ordinary URLs — the `//host/path` portion matches the unix-path branch and destroys the URL before host/email rules ever see it. Match and protect full URLs first (swap in placeholder tokens, strip only query/fragment where secrets live), run the destructive passes, then restore. Redaction pass ORDER is part of the contract.",
+  "topic": "security/secrets",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "2501d5a5-eb85-4802-b7c3-93709a647a2c",
+  "kind": "pattern",
+  "title": "Auto-re-mask revealed secrets on a focus-aware timer and keep the reveal toggle out of the Tab order",
+  "statement": "A password/key field that the user reveals should re-mask itself on a timer (~8s) that only runs while focus is OUTSIDE the field — never re-mask a key mid-read — capping shoulder-surf exposure without fighting intent. Reserve input padding so text can't slide under the icon, and put the toggle at `tabIndex={-1}` with `aria-pressed` so keyboard flow goes field-to-field.",
+  "topic": "security/secrets",
+  "abstraction": "micro",
+  "ftype": "micro-technique",
+  "governing_id": null
+ },
+ {
+  "id": "261e35e7-3949-4282-a3f5-8df34c4b8d33",
+  "kind": "pattern",
+  "title": "Hold hand-typed secrets in a ref with a version counter, never in React state",
+  "statement": "Secret field values (API keys, passwords, client secrets) must live in a useRef with a bumped version counter as the re-render trigger, because useState contents get serialized into React DevTools, Sentry payloads and error-boundary dumps. Pin the behavior with a regression test asserting typing and submit still work.",
+  "topic": "security/secrets",
+  "abstraction": "meso",
+  "ftype": "state-mgmt",
+  "governing_id": null
+ },
+ {
+  "id": "cd58ebc8-bd15-4aa3-8abf-981be606bde7",
+  "kind": "pitfall",
+  "title": "Reference position, never content, in errors from secret-bearing parsers",
+  "statement": "Parse errors over input that may contain secrets must cite only line/index, never a snippet. Echoing even 40 chars of an unparsable .env line leaked secret-shaped content into user-visible toasts and Sentry payloads.",
+  "topic": "security/secrets",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "3f473aad-20e3-465e-9952-f73a55b2f505",
+  "kind": "pattern",
+  "title": "Mask discovered secrets at the point of read; re-read raw values only at commit",
+  "statement": "A credential scanner should mask each value in the same scope it reads it and drop the plaintext immediately — raw secrets never accumulate in intermediate collections, cross IPC, or reach the render layer. Only the import/commit path re-reads the real value, after validating the item id as a safe path component.",
+  "topic": "security/secrets",
+  "abstraction": "meso",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "18dd208b-9388-43b1-8f04-88de8c136f09",
+  "kind": "pattern",
+  "title": "Sanitize secret-echoing provider error bodies inside the error constructor, pinned by leak tests",
+  "statement": "Token/auth endpoints echo submitted secrets (client_secret, refresh_token) or issue fresh token material inside error envelopes. Run the body through the redactor at the single place the error value is built — so message, body, logs, audit and IPC are all covered — and pin it with a test asserting the secret is absent while diagnostic context survives.",
+  "topic": "security/secrets",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "b080de9b-130e-45ff-b62d-7bb3a0910e5a",
+  "kind": "pattern",
+  "title": "Strip the request URL out of HTTP client errors before logging or displaying them",
+  "statement": "Dynamic base URLs can embed a secret in the path or query (.../bot{token}, ?apikey=...), and reqwest::Error's Display includes the URL. Call .without_url() on every error-to-string conversion so failure detail survives without the secret-bearing URL.",
+  "topic": "security/secrets",
+  "abstraction": "micro",
+  "ftype": "micro-technique",
+  "governing_id": null
+ },
+ {
+  "id": "b22f2f0a-8d1f-4c15-a744-2fd9d9978d2d",
+  "kind": "decision",
+  "title": "Keep credential-capture command specs as compile-time constants, and never let a static sensitivity flag be the only log guard",
+  "statement": "Subprocess invocations that touch credentials are built from &'static spec tables whose args never interpolate user input or catalog data. And even where the table marks fields sensitive, do not log the 'non-sensitive' branch's value — a future row added without the flag would leak silently. Spec completeness is enforced by tests.",
+  "topic": "security/secrets",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "be0922df-ecbc-4c8d-93d6-98880d24fbad",
+  "kind": "pattern",
+  "title": "Strip transport-only prefixed keys before persisting captured data",
+  "statement": "When an adapter smuggles diagnostics through the same value bag as real data, reserve a prefix (__) and filter it at the persistence boundary so debug payloads never enter the encrypted secret blob.",
+  "topic": "security/secrets",
+  "abstraction": "micro",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "063d8623-4c1f-4944-894a-5f05802fa4f1",
+  "kind": "decision",
+  "title": "Retire IPC surfaces that carry raw token material, and leave a dated tombstone comment",
+  "statement": "Delete unused commands that pass secrets across a process boundary rather than leaving them 'just in case', and record the date, the hygiene rationale, and the safe shape a future implementation must take (id-based, secrets loaded backend-side) at the deletion site.",
+  "topic": "security/secrets",
+  "abstraction": "meso",
+  "ftype": "api-design",
+  "governing_id": null
+ },
+ {
+  "id": "432b979a-91b8-4bf8-adac-e5f9037ae717",
+  "kind": "pattern",
+  "title": "Scan for leaked secrets at pre-commit — CI catching a leak is already a leak",
+  "statement": "Run a secret scanner over staged changes in the pre-commit hook, because a credential that reaches the remote is compromised even if CI rejects the push. When the scanner is an optional local install, wrap it so absence degrades to a skip-with-install-hint — the wrapper must never break a commit and never mutate the tree.",
+  "topic": "security/secrets",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "ccece962-3ef4-4465-9731-0864e0c9e856",
+  "kind": "pattern",
+  "title": "Hand the renderer a session ref, redeem the token server-side",
+  "statement": "When an interactive flow mints secret material in the backend, returning it to the UI so the UI can send it back on save moves the secret across the process boundary twice for no reason. Return an opaque session reference instead, hold the tokens encrypted server-side, and redeem the reference inside the privileged save command — stripping the transport-only key so it can never be persisted as a field.",
+  "topic": "security/secrets/credentials",
+  "abstraction": "meso",
+  "ftype": "architecture",
+  "governing_id": "e8cec752-463f-4f4a-8a23-cfae0f3504ec"
+ },
+ {
+  "id": "6c257f78-b7fc-41eb-9d64-bab3c0d5cf51",
+  "kind": "pattern",
+  "title": "Derive field sensitivity server-side, with a name backstop",
+  "statement": "Never let the client tell you which fields are secret, and do not fully trust a user- or model-authored connector schema either. Resolve sensitivity in the backend, but run a field-name classifier first so a schema declaring a token field non-sensitive cannot downgrade it, log the misconfiguration, keep a small allowlist for public names that merely look secret-ish, and default unknown fields to sensitive.",
+  "topic": "security/secrets/credentials",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "e8cec752-463f-4f4a-8a23-cfae0f3504ec"
+ },
+ {
+  "id": "7e2b3b22-9671-4e2a-b76c-efba03156f50",
+  "kind": "pattern",
+  "title": "Migrate secrets all-or-nothing, clearing the old copy last",
+  "statement": "Moving secrets between storage shapes has two failure modes worth designing against: a half-migrated secret, and a cleared source whose destination is incomplete. Commit each secret's full field set in one transaction, leave the legacy copy untouched while anything is unproven, clear it only after re-reading the source and confirming every key landed, then assert the invariant on every boot.",
+  "topic": "security/secrets/credentials",
+  "abstraction": "meso",
+  "ftype": "state-mgmt",
+  "governing_id": "e8cec752-463f-4f4a-8a23-cfae0f3504ec"
+ },
+ {
+  "id": "b52f9dae-6328-4672-8400-a32afb16fc16",
+  "kind": "pitfall",
+  "title": "Invalidate a build on the secret's value, not a file timestamp",
+  "statement": "A build that embeds secrets from the environment must declare each forwarded variable as a build input. Build systems key on files by default, so with a restored cache a rotated secret is silently ignored and the previous or empty value ships — and because the artifact still builds green, nothing surfaces the staleness until the credential is exercised in production.",
+  "topic": "security/secrets/env-vars",
+  "abstraction": "meso",
+  "ftype": "micro-technique",
+  "governing_id": "e8cec752-463f-4f4a-8a23-cfae0f3504ec"
+ },
+ {
+  "id": "dd9dcf06-b37d-40ef-906f-e0fadc3faa49",
+  "kind": "pitfall",
+  "title": "Strip the other auth mode's env vars from every spawned CLI",
+  "statement": "A vendor CLI that supports two authentication modes will silently prefer whichever credential it finds in its environment, inherited from the OS or injected by your own resolution, and bill the wrong account. If your product is built on one mode, remove the other mode's variables from every spawned command after all overrides are applied so nothing can reintroduce them, and refuse to inject them upstream as well.",
+  "topic": "security/secrets/env-vars",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": "e8cec752-463f-4f4a-8a23-cfae0f3504ec"
+ },
+ {
+  "id": "566b1c73-b31d-4db3-90bb-ed5dec20e228",
+  "kind": "pattern",
+  "title": "Wipe a secret off the clipboard on a timer, forcibly if unsure",
+  "statement": "A credential-grade payload placed on the OS clipboard stays there indefinitely, long after the flow that put it there is forgotten. Schedule an automatic clear after a short window: re-read first and clear only if your payload is still there, but if the read itself fails, wipe anyway — re-copying benign content is cheap, and an exfiltrated secret cannot be undone.",
+  "topic": "security/secrets/handoff",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "e8cec752-463f-4f4a-8a23-cfae0f3504ec"
+ },
+ {
+  "id": "3c7884c2-ea1e-41cf-b7aa-bcc32f2bb28b",
+  "kind": "pattern",
+  "title": "Gate a once-only secret reveal behind an acknowledgement",
+  "statement": "When plaintext leaves the backend exactly once, every accidental exit from the dialog showing it is data loss. Remove backdrop-click dismissal, withhold the close affordance until an explicit acknowledgement, and make the confirm control visibly inert rather than merely non-functional until then.",
+  "topic": "security/secrets/handoff",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": "e8cec752-463f-4f4a-8a23-cfae0f3504ec"
+ },
+ {
+  "id": "5c6eeb89-e665-4616-9547-4435517f8f1b",
+  "kind": "pattern",
+  "title": "Cross IPC with a hybrid envelope and a self-healing key cache",
+  "statement": "Plain asymmetric encryption caps out well below the size of a real credential payload, so secrets crossing a local process boundary need a hybrid envelope: a random symmetric content key for the payload, asymmetrically wrapped and shipped alongside it. Cache the peer's public key but re-fetch and compare it periodically, because a rotated key otherwise produces decrypt failures indistinguishable from transient transport faults.",
+  "topic": "security/secrets/ipc-transport",
+  "abstraction": "meso",
+  "ftype": "architecture",
+  "governing_id": "e8cec752-463f-4f4a-8a23-cfae0f3504ec"
+ },
+ {
+  "id": "9bafe44d-6494-4ae3-8c71-629e0705c259",
+  "kind": "pitfall",
+  "title": "Reject the legacy crypto path by default and count every hit",
+  "statement": "A weaker legacy decrypt path kept for migration becomes a downgrade attack the moment the caller can select it by the shape of the payload. Reject it by default, gate it behind an explicit flag for a named migration window, count every hit in a counter the product itself surfaces, and write the deletion criteria into the code so retirement becomes a decision someone can actually make.",
+  "topic": "security/secrets/ipc-transport",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "e8cec752-463f-4f4a-8a23-cfae0f3504ec"
+ },
+ {
+  "id": "472cc4dd-c0ea-46e6-831a-24e546a666a7",
+  "kind": "decision",
+  "title": "Fail closed on the keychain; cache only a successful derivation",
+  "statement": "Bind the master key to the OS keychain and refuse to operate without it by default, making the weaker local-file fallback opt-in through a single flag parsed in exactly one place so the doc comment, the error text and the runtime branch cannot diverge. Cache only a successful derivation — caching the outcome means one transient keychain hiccup bricks all credential crypto until restart.",
+  "topic": "security/secrets/keys",
+  "abstraction": "meso",
+  "ftype": "architecture",
+  "governing_id": "e8cec752-463f-4f4a-8a23-cfae0f3504ec"
+ },
+ {
+  "id": "76ed255e-281b-42c1-b731-38acf80dc27e",
+  "kind": "pattern",
+  "title": "Authenticate a key file at rest and write it permissions-first",
+  "statement": "Key material on disk needs two properties that are easy to miss. It must be authenticated at rest — accepting any raw blob lets anyone who can write your app-data directory plant a known key and read every credential the user later enters — and it must be written atomically, with permissions restricted before the file becomes visible at its final path.",
+  "topic": "security/secrets/keys",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "e8cec752-463f-4f4a-8a23-cfae0f3504ec"
+ },
+ {
+  "id": "a166685f-7c8b-4ce4-a317-f78499967cd7",
+  "kind": "pattern",
+  "title": "Give secrets a type that cannot be serialized or cloned",
+  "statement": "Passing a secret around as a plain string makes every log line, error report and serialized response a potential leak. Give secrets a dedicated type that zeroizes on drop, redacts itself when formatted, exposes the value only through a named accessor and requires an explicit duplicate rather than an implicit clone — and above all does not implement serialization, the single omission that stops accidental exfiltration.",
+  "topic": "security/secrets/keys",
+  "abstraction": "micro",
+  "ftype": "micro-technique",
+  "governing_id": "e8cec752-463f-4f4a-8a23-cfae0f3504ec"
+ },
+ {
+  "id": "2a3c1a3d-03d9-46cc-835b-1ecba9703e18",
+  "kind": "pattern",
+  "title": "Sanitize crash reports before storage, including stack args",
+  "statement": "Crash payloads carry secrets in stack frames and URLs, and the crash handler is exactly the wrong place to throw. Redact query strings, fragments and stack-frame arguments before the report is written anywhere, then persist best-effort through a quota ladder rather than failing — stack-frame arguments are the channel most redactors miss, because they leak independently of the message text.",
+  "topic": "security/secrets/redaction",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "e8cec752-463f-4f4a-8a23-cfae0f3504ec"
+ },
+ {
+  "id": "499a03b9-b737-4c44-9fbc-ce9afb1df838",
+  "kind": "pattern",
+  "title": "Redact at the persistence boundary, tuned for precision",
+  "statement": "Scrub secrets on the way into storage rather than on the way to the screen: the live view can show a user their own output, but the stored copy feeds inspectors, exports, error reporting and downstream memory, so a secret echoed once leaks at rest. Combine a few high-confidence key patterns with an entropy sweep tuned for precision — because in a default-on transform, corrupting legitimate identifiers costs more than missing an exotic secret.",
+  "topic": "security/secrets/redaction",
+  "abstraction": "meso",
+  "ftype": "architecture",
+  "governing_id": "e8cec752-463f-4f4a-8a23-cfae0f3504ec"
+ },
+ {
+  "id": "c9426139-8e7d-4fe2-8075-c15ba738f272",
+  "kind": "pitfall",
+  "title": "Redact by field category where the whole value is the secret",
+  "statement": "A pattern-based sanitizer looks for key/value shapes and known prefixes, and cannot recognize a bare token sitting alone in a field. Where you know by category that the value is the secret, replace it structurally with a fixed marker before it reaches the log — keeping the fact that the value changed visible while the value itself never is.",
+  "topic": "security/secrets/redaction",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": "e8cec752-463f-4f4a-8a23-cfae0f3504ec"
+ },
+ {
+  "id": "22a34083-81a5-4950-96c0-2814e774eea2",
+  "kind": "pattern",
+  "title": "Make the handshake three legs, not two, to get mutual freshness",
+  "statement": "Two-leg handshakes prove key possession but not liveness: the initiator's first signature contains nothing the responder chose, so a recorded Hello replays forever. Add a third leg where the initiator signs the responder's nonce, and refuse to count the connection as established until it arrives (with a timeout).",
+  "topic": "security/trust-boundaries",
+  "abstraction": "meso",
+  "ftype": "api-design",
+  "governing_id": null
+ },
+ {
+  "id": "5982806a-4cad-4a1c-b528-75a60d5711d6",
+  "kind": "pattern",
+  "title": "Domain-separate and injectively encode every signing transcript",
+  "statement": "Take every signature over a transcript of `domain \\n label \\n peer_id \\n nonce…` with a version-bearing domain constant. Argue injectivity from the alphabets involved so no two purposes can produce a colliding transcript — a signature minted for an identity card or enclave seal can't be replayed as a handshake proof.",
+  "topic": "security/trust-boundaries",
+  "abstraction": "meso",
+  "ftype": "micro-technique",
+  "governing_id": null
+ },
+ {
+  "id": "ec120b3e-2e5e-4d87-be32-e6c0010015f7",
+  "kind": "pattern",
+  "title": "Verify BOTH halves of an identity claim: key-to-id binding and signature",
+  "statement": "A self-certifying id (peer_id = hash(pubkey)) is only safe if the presented key hashes to the claimed id AND the signature verifies under that key. Check both halves on both sides of the handshake and store the proven key on the connection.",
+  "topic": "security/trust-boundaries",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "fb08f17a-bedf-49e8-9417-08055d642d2c",
+  "kind": "pattern",
+  "title": "Fail closed when serving data to peers whose identity isn't established",
+  "statement": "The manifest served to any connected peer omits `requires_auth` resources at the SQL level, failing closed until verified-peer gating exists. Keep the two trust vocabularies distinct: unknown peers are labelled 'unverified', not 'unknown'.",
+  "topic": "security/trust-boundaries",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "eaecfe07-95ec-418d-a1cd-1d9a8ee5ed6d",
+  "kind": "pattern",
+  "title": "Read the bytes once when you hash-and-sign or hash-and-verify",
+  "statement": "Two separate `std::fs::read` calls open a TOCTOU window (editor autosave or cloud-sync between hash and sign). Derive both the hash and the signature from one buffer read once.",
+  "topic": "security/trust-boundaries",
+  "abstraction": "micro",
+  "ftype": "concurrency-reliability",
+  "governing_id": null
+ },
+ {
+  "id": "d8cf28dd-9237-4b7b-9e33-fe57710a482e",
+  "kind": "pitfall",
+  "title": "Don't rely on manual invalidation of a global static cache",
+  "statement": "The trusted-peer cache is a file-level `static Mutex<Option<...>>` with a 30s TTL whose correctness depends on every mutation site remembering to call `invalidate_trusted_peer_cache()`. Three commands do; nothing prevents a fourth from forgetting — a silent 30s window showing a revoked peer as trusted. The lock is `.unwrap()`ed, so poisoning panics all discovery.",
+  "topic": "security/trust-boundaries",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "d253428c-f48b-427a-9d7e-b55ba846234a",
+  "kind": "pattern",
+  "title": "Stamp app-owned provenance rather than trusting the agent's claim",
+  "statement": "Derive origin_project_id from the dispatch scope, derive dedup_key from the normalized title when missing, and stamp sim_run_id server-side — provenance is the app's to assert, not the agent's.",
+  "topic": "security/trust-boundaries",
+  "abstraction": "meso",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "f7a75b0d-ecb1-46d4-bc5c-7fe2e65bb219",
+  "kind": "pattern",
+  "title": "Default event delivery to SELF-scoped; require an explicit filter to cross boundaries",
+  "statement": "Events deliver self-scoped by default and need an explicit filter to cross persona/team boundaries; wildcard matches crossing a team boundary are suppressed. Named incident: SDLC2 Medical Bill at 0% value — every team's persona woke on every other team's event.",
+  "topic": "security/trust-boundaries",
+  "abstraction": "meso",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "97683231-b00a-4d12-b51b-c4492a4fc615",
+  "kind": "pattern",
+  "title": "Gate ambient capture at the CAPTURE site, per source, default-OFF",
+  "statement": "Read-time-only filtering is a lie: every push_* checks the master gate plus a per-source gate first; per-persona SensoryPolicy is a SECOND independent layer at consumption; unknown source names fail closed.",
+  "topic": "security/trust-boundaries",
+  "abstraction": "meso",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "7e4c6c9b-fc59-4ae7-b762-3d4e1530283e",
+  "kind": "pattern",
+  "title": "Distinguish absent config from CORRUPT config — corrupt fails CLOSED",
+  "statement": "Absent scope metadata gets the documented default (Warn); present-but-unparseable is Block. An empty/{} /null scope blob means broad allow, but a non-empty unparseable one is an error — silently treating corruption as broad restores a narrowed credential's full reach with no log line.",
+  "topic": "security/trust-boundaries",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "ca33d4fe-14ed-4bd8-829c-c2bf9bd61234",
+  "kind": "pattern",
+  "title": "Ship a client-side security guard with an explicit honest trust statement",
+  "statement": "A security guard at the api seam carries an explicit honest trust statement: sensitive-path patterns are checked before the privileged call with a dedicated rejection error, and the comment states the audit boundary — backend enforcement has NOT been verified, treat this guard as the PRIMARY gate — names the bypass, and records a pattern-authoring regression (an over-broad pattern tightened to require a path boundary plus a key-bearing extension).",
+  "topic": "security/trust-boundaries",
+  "abstraction": "meso",
+  "ftype": "module-boundary",
+  "governing_id": null
+ },
+ {
+  "id": "8ac2ffd5-7091-4d4f-a252-60841daa6f76",
+  "kind": "pattern",
+  "title": "Name which filters are routing conveniences and which are security controls — and log the unauthenticated posture loudly",
+  "statement": "When an ingest path has both forgeable routing filters and a real authenticity gate, document at every touchpoint which is which, and when the authenticity gate is not configured, emit a loud, specific warning stating exactly what an attacker can do — never let a routing filter masquerade as authentication.",
+  "topic": "security/trust-boundaries",
+  "abstraction": "meso",
+  "ftype": "api-design",
+  "governing_id": null
+ },
+ {
+  "id": "863e6798-f4e7-4431-b6a2-8e62fe7f703c",
+  "kind": "pitfall",
+  "title": "Never render a corrupt or empty row as an actionable control — skip it loudly",
+  "statement": "When listing rows that become clickable consent/approval surfaces, a row with an unparseable payload or a blank action must be skipped with a warning, not defaulted — `unwrap_or_default()` turns garbage into an approvable no-op the user can consent to.",
+  "topic": "security/trust-boundaries",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "a6aa56cb-28b1-461f-ba52-68dab4c51b88",
+  "kind": "pattern",
+  "title": "Spawn detection probes with a cleared, allowlisted environment and byte-capped output readers",
+  "statement": "External tool probes should run with env_clear() plus a minimal allowlisted environment (no ambient secrets reach the child), read stdout/stderr through a take()-bounded reader so a malicious binary cannot exhaust memory, and hide the console window on Windows.",
+  "topic": "security/trust-boundaries",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "d11b5a55-736a-4f03-8ddd-5c0ea47e3f64",
+  "kind": "pattern",
+  "title": "Pin auto-discovered OAuth endpoints to the issuer's own host",
+  "statement": "A tampered OIDC discovery document can redirect authorization codes and client secrets to an attacker's server. Validate the issuer itself against localhost/private/CGNAT ranges, then require every discovered URL to be HTTPS and at-or-under the issuer host (a subdomain test avoids needing a public-suffix list).",
+  "topic": "security/trust-boundaries",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "310566a9-92f8-4790-af54-9cf50aaabf80",
+  "kind": "pattern",
+  "title": "Inject your own egress-guarded HTTP client into any embedded fetch engine",
+  "statement": "When embedding a third-party scraping/fetch engine, do not let it construct its own HTTP client: implement its client trait over your SSRF-safe client (private-IP rejection at connect time), so a user-facing 'fetch a URL' capability cannot be repurposed as an SSRF probe. Export the same guard for every other module that POSTs to externally-supplied URLs.",
+  "topic": "security/trust-boundaries",
+  "abstraction": "meso",
+  "ftype": "module-boundary",
+  "governing_id": null
+ },
+ {
+  "id": "f946f021-a3d6-4f5f-9952-b98e49f4a4ea",
+  "kind": "pattern",
+  "title": "Let ambient signals cross a boundary only as matched vocabulary, never raw content",
+  "statement": "When ambient desktop context (focused window titles, recent file paths) is used to pre-rank suggestions, project it through a keyword match against a known vocabulary before it crosses into another surface: only the matched connector keywords travel, never the raw titles, paths, or clipboard text. Pre-ranking still asks — the question fires and the user confirms — and the whole path is skipped in headless mode where nobody can confirm.",
+  "topic": "security/trust-boundaries",
+  "abstraction": "meso",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "0e5012ca-daf4-411a-b383-bbcbe7e4127b",
+  "kind": "pattern",
+  "title": "At the model-to-system boundary, fail closed when the validation source is unreachable, and re-serialize only validated fields",
+  "statement": "Model-emitted ops carrying ids/paths are checked against the live registry at the dispatcher door; when the registry handle is absent the op is refused with a message the model reads next turn, never rendered as an unvalidated actionable card. The validator rebuilds a fresh object from accepted fields only, so an invented parameter can never reach the consumer — even env-var overrides are allowlisted values.",
+  "topic": "security/trust-boundaries",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": null
+ },
+ {
+  "id": "0ebcbcfa-c7a4-4c40-b575-1c462792bf70",
+  "kind": "pattern",
+  "title": "LLM-composed widgets carry only enum actions — validated twice, capped, confirmed when spendy, audited",
+  "statement": "When a model composes UI that includes one-click actions, the actions are a closed discriminated union (never free-form), validated server-side against the source document AND re-parsed client-side at render time (unknown kinds and missing targets silently dropped, count capped), with a confirm dialog for spendy/destructive kinds, and every execution recorded to an audit ledger as a best-effort follow-up that cannot fail the action itself.",
+  "topic": "security/trust-boundaries",
+  "abstraction": "meso",
+  "ftype": "api-design",
+  "governing_id": null
+ },
+ {
+  "id": "5efca890-501c-4ea5-9a6d-0efdb8196dd1",
+  "kind": "pattern",
+  "title": "Never mutate an integrity-checked payload — thread customizations through a parallel channel",
+  "statement": "When a payload is verified against a checksum/signature at the top of a flow, later steps must not 'conveniently' inject user customizations by editing that payload before the check — the check would reject it, and weakening the check to allow it guts the integrity guarantee. Instead thread overrides as a separate argument that downstream steps merge after verification, leaving the verified bytes untouched.",
+  "topic": "security/trust-boundaries",
+  "abstraction": "meso",
+  "ftype": "data-flow",
+  "governing_id": null
+ },
+ {
+  "id": "ae5ee047-2926-4a2c-885b-b33cb53b4573",
+  "kind": "pattern",
+  "title": "Back every consequential action with a consent catalog: impact class, ordered steps, standing boundaries — fed live data so the copy is true of THIS run",
+  "statement": "Actions that spawn agents or write to a user's repo deserve more than a tooltip. Keep a declarative catalog per action: an impact class (read / write / agent), the ordered steps the click actually sets off, the boundaries that hold no matter what, and at-a-glance facts (scope, engine, duration, what it writes). Two disciplines make it honest: the catalog carries an explicit same-edit contract ('everything here must stay TRUE of the code paths — if a flow changes, change its steps in the same edit'), and run-specific data is passed in late so the consent copy describes what THIS project's run would do, falling back to generic copy only before the data loads.",
+  "topic": "security/trust-boundaries",
+  "abstraction": "meso",
+  "ftype": "api-design",
+  "governing_id": null
+ },
+ {
+  "id": "dbf15747-c587-4c4c-ab15-d1867cd7f2b5",
+  "kind": "pattern",
+  "title": "Count forwarded-for hops from the right, and admit the limits",
+  "statement": "An in-memory per-instance rate limiter is a first line against naive abuse, not a distributed guarantee — and it is worthless if the client key can be forged. Resolve the client address by counting a known number of trusted proxy hops from the right of the forwarded-for header rather than taking the leftmost entry, so padded forged hops cannot mint a fresh bucket per request, and state the limitation in the module rather than implying more.",
+  "topic": "security/trust-boundaries/client-claims",
+  "abstraction": "meso",
+  "ftype": "concurrency-reliability",
+  "governing_id": "4854f4b2-62e8-4eba-bd3c-b640c32b9e82"
+ },
+ {
+  "id": "b2ccfa62-c812-403f-a330-5b1164ad3f90",
+  "kind": "pitfall",
+  "title": "A client-supplied 'verified' flag is a request, not evidence — re-run the check server-side",
+  "statement": "Never stamp a trust-bearing state (verified / healthy / validated) from a boolean the caller sent. Treat it as a request to perform the real check on the trusted side, and let only the code that actually ran the check write the result.",
+  "topic": "security/trust-boundaries/client-claims",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": "4854f4b2-62e8-4eba-bd3c-b640c32b9e82"
+ },
+ {
+  "id": "eb62db73-797d-424d-be5a-6f09ccf6ae15",
+  "kind": "pitfall",
+  "title": "Tag danger consent by which danger was shown, and bind the apply call to the exact preview it approved",
+  "statement": "A single boolean 'user accepted the warning' lets consent for one hazard silently carry into a different hazard when server-derived flags flip between preview re-fetches. Tag the acknowledgement with the hazard kind, reset it whenever the preview's identity or trust fields change, and pass the previewed artifact's hash/preview id into the apply call so the thing imported is the thing that was reviewed.",
+  "topic": "security/trust-boundaries/consent",
+  "abstraction": "meso",
+  "ftype": "error-strategy",
+  "governing_id": "4854f4b2-62e8-4eba-bd3c-b640c32b9e82"
+ },
+ {
+  "id": "ee9f971f-928b-4c9f-87b5-6c76d28259c5",
+  "kind": "pattern",
+  "title": "Disarm the approve button for a beat whenever a queued consent request is replaced",
+  "statement": "Modals that surface a queue of consequential requests (run remote code, grant an origin access) must re-disarm their primary action every time the head of the queue changes, so a click already in flight against the previous item cannot auto-approve its replacement.",
+  "topic": "security/trust-boundaries/consent",
+  "abstraction": "micro",
+  "ftype": "error-strategy",
+  "governing_id": "4854f4b2-62e8-4eba-bd3c-b640c32b9e82"
+ },
+ {
+  "id": "f6df3890-1145-4a77-952c-85ac2398234e",
+  "kind": "pattern",
+  "title": "Connector egress needs SSRF defence at three layers: one private-IP predicate, a connect-time resolver, and per-redirect-hop re-validation",
+  "statement": "Validating a URL before you fetch it is not enough. Consolidate the private-IP predicate into ONE function (covering loopback, RFC1918, link-local, CGNAT, IPv4-mapped-IPv6, cloud-metadata and `.internal`/`.local` suffixes), attach a custom DNS resolver that rejects private results at connect time (closing the DNS-rebinding window between validation and request), and install a redirect policy that re-checks every hop — a `Location:` header carrying a raw private IP literal skips DNS entirely. Fail closed on DNS failure and on client-construction failure.",
+  "topic": "security/trust-boundaries/egress",
+  "abstraction": "meso",
+  "ftype": "architecture",
+  "governing_id": "4854f4b2-62e8-4eba-bd3c-b640c32b9e82"
+ },
+ {
+  "id": "dfd16faf-b22e-4106-8a29-9af289096495",
+  "kind": "pattern",
+  "title": "Give an agent capability slugs, not an HTTP client",
+  "statement": "When an agent may call external services, do not hand it a general client. Give it a registry of intent-shaped capability names, each carrying an approval flag set for anything that writes to a user-visible external surface, so reads auto-fire and writes route through a consent step. Re-validate the pair at execution time, not only at dispatch — the registry can change in between.",
+  "topic": "security/trust-boundaries/egress",
+  "abstraction": "meso",
+  "ftype": "architecture",
+  "governing_id": "4854f4b2-62e8-4eba-bd3c-b640c32b9e82"
+ },
+ {
+  "id": "4854f4b2-62e8-4eba-bd3c-b640c32b9e82",
+  "kind": "decision",
+  "title": "Keep secret handling in one trusted process, gated explicitly",
+  "statement": "Inject and consume secrets entirely inside the trusted process so plaintext never reaches the renderer, and make every exception to a trust-sensitive gate declarative and reviewable rather than a per-call decision. The layer is only as strong as its narrowest gate, and being inside the trusted process is not by itself an argument that a surface can go unauthenticated.",
+  "topic": "security/trust-boundaries/guards",
+  "abstraction": "macro",
+  "ftype": "api-design",
+  "governing_id": null
+ },
+ {
+  "id": "64e7b1c9-f488-4f76-8e90-ab64e1480bf0",
+  "kind": "pattern",
+  "title": "Deep-import the pure modules; keep the barrel off client paths",
+  "statement": "A directory that mixes client-safe and server-only modules cannot be safely re-exported through one barrel: importing the barrel from a client path drags the database into the bundle. Deep-import the pure modules, ban value-imports of the barrel from client-reachable code, and apply a server-only marker at file level so accidental bundling fails the build instead of shipping.",
+  "topic": "security/trust-boundaries/guards",
+  "abstraction": "macro",
+  "ftype": "module-boundary",
+  "governing_id": "4854f4b2-62e8-4eba-bd3c-b640c32b9e82"
+ }
+]
