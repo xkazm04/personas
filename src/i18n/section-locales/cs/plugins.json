@@ -1395,7 +1395,13 @@
       "playbook_unmatched_title": "Nenaplněné záměry",
       "playbook_suggested_title": "Navrhovaná doplnění",
       "playbook_add": "Přidat",
-      "playbook_suggested_reason": "Rozšiřuje „{title}“"
+      "playbook_suggested_reason": "Rozšiřuje „{title}“",
+      "altitude_all": "Všechny úrovně",
+      "altitude_directions": "Směry",
+      "altitude_techniques": "Techniky",
+      "direction_badge": "Směr",
+      "filter_by_altitude": "Filtrovat podle úrovně",
+      "graph_sort_directions": "Nejdřív směry"
     },
     "skills_adopt": "Převzít",
     "skills_adopt_hint": "Převzít do {name} — Claude ji přizpůsobí repozitáři",

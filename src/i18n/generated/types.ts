@@ -14507,6 +14507,12 @@ export type Translations = {
         playbook_suggested_title: string;
         playbook_add: string;
         playbook_suggested_reason: string;
+        direction_badge: string;
+        altitude_all: string;
+        altitude_directions: string;
+        altitude_techniques: string;
+        filter_by_altitude: string;
+        graph_sort_directions: string;
       };
       skills_info_args: string;
       skills_info_context_tracked: string;

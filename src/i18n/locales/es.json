@@ -14049,7 +14049,13 @@
         "playbook_unmatched_title": "Intenciones sin coincidencia",
         "playbook_suggested_title": "Adiciones sugeridas",
         "playbook_add": "Añadir",
-        "playbook_suggested_reason": "Extiende «{title}»"
+        "playbook_suggested_reason": "Extiende «{title}»",
+        "altitude_all": "Todos los niveles",
+        "altitude_directions": "Direcciones",
+        "altitude_techniques": "Técnicas",
+        "direction_badge": "Dirección",
+        "filter_by_altitude": "Filtrar por nivel",
+        "graph_sort_directions": "Direcciones primero"
       },
       "skills_adopt": "Adoptar",
       "skills_adopt_hint": "Adoptar en {name} — Claude la adapta al repositorio",

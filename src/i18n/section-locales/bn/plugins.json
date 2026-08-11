@@ -1395,7 +1395,13 @@
       "playbook_unmatched_title": "মিলহীন অভিপ্রায়",
       "playbook_suggested_title": "প্রস্তাবিত সংযোজন",
       "playbook_add": "যোগ করুন",
-      "playbook_suggested_reason": "“{title}” সম্প্রসারণ"
+      "playbook_suggested_reason": "“{title}” সম্প্রসারণ",
+      "altitude_all": "সব স্তর",
+      "altitude_directions": "দিকনির্দেশসমূহ",
+      "altitude_techniques": "টেকনিকসমূহ",
+      "direction_badge": "দিকনির্দেশ",
+      "filter_by_altitude": "স্তর অনুযায়ী ফিল্টার",
+      "graph_sort_directions": "দিকনির্দেশ আগে"
     },
     "skills_adopt": "গ্রহণ করুন",
     "skills_adopt_hint": "{name}-এ গ্রহণ করুন — Claude রিপোর জন্য এটি কাস্টমাইজ করে",

@@ -1395,7 +1395,13 @@
       "playbook_unmatched_title": "बिना मिलान के इरादे",
       "playbook_suggested_title": "सुझाए गए जोड़",
       "playbook_add": "जोड़ें",
-      "playbook_suggested_reason": "“{title}” का विस्तार"
+      "playbook_suggested_reason": "“{title}” का विस्तार",
+      "altitude_all": "सभी स्तर",
+      "altitude_directions": "दिशाएँ",
+      "altitude_techniques": "तकनीकें",
+      "direction_badge": "दिशा",
+      "filter_by_altitude": "स्तर के अनुसार फ़िल्टर करें",
+      "graph_sort_directions": "पहले दिशाएँ"
     },
     "skills_adopt": "अपनाएँ",
     "skills_adopt_hint": "{name} में अपनाएँ — Claude इसे रिपॉज़िटरी के लिए अनुकूलित करता है",

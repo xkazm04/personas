@@ -14500,7 +14500,13 @@
         "playbook_unmatched_title": "Unmatched intents",
         "playbook_suggested_title": "Suggested additions",
         "playbook_add": "Add",
-        "playbook_suggested_reason": "Extends “{title}”"
+        "playbook_suggested_reason": "Extends “{title}”",
+        "direction_badge": "Direction",
+        "altitude_all": "All levels",
+        "altitude_directions": "Directions",
+        "altitude_techniques": "Techniques",
+        "filter_by_altitude": "Filter by level",
+        "graph_sort_directions": "Directions first"
       },
       "skills_info_args": "args",
       "skills_info_context_tracked": "context-tracked",

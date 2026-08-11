@@ -50,6 +50,16 @@ export interface KnowledgeItemView {
 export type Abstraction = 'macro' | 'meso' | 'micro';
 export type Durability = 'durable' | 'situational' | 'mechanical';
 
+/**
+ * A DIRECTION — the doctrine tier of the inverted library (2026-08-11
+ * distillation): a macro item that states how things should be done, with its
+ * governed techniques as evidence underneath. Every surface that lists
+ * knowledge puts directions FIRST; techniques are what you drill into, not
+ * what you meet.
+ */
+export const isDirection = (i: Pick<KnowledgeItemView, 'abstraction'>): boolean =>
+  i.abstraction === 'macro';
+
 export function viewFromRow(row: WorkspaceKnowledge): KnowledgeItemView {
   let layers: string[] = [];
   let frameworks: string[] = [];

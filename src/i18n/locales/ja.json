@@ -14049,7 +14049,13 @@
         "playbook_unmatched_title": "未一致のインテント",
         "playbook_suggested_title": "追加候補",
         "playbook_add": "追加",
-        "playbook_suggested_reason": "「{title}」を拡張"
+        "playbook_suggested_reason": "「{title}」を拡張",
+        "altitude_all": "すべてのレベル",
+        "altitude_directions": "方針",
+        "altitude_techniques": "テクニック",
+        "direction_badge": "方針",
+        "filter_by_altitude": "レベルで絞り込み",
+        "graph_sort_directions": "方針を先に"
       },
       "skills_adopt": "採用",
       "skills_adopt_hint": "{name} に採用 — Claude がリポジトリ向けにカスタマイズします",

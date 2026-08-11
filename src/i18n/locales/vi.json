@@ -14049,7 +14049,13 @@
         "playbook_unmatched_title": "Ý định chưa khớp",
         "playbook_suggested_title": "Đề xuất bổ sung",
         "playbook_add": "Thêm",
-        "playbook_suggested_reason": "Mở rộng “{title}”"
+        "playbook_suggested_reason": "Mở rộng “{title}”",
+        "altitude_all": "Tất cả cấp độ",
+        "altitude_directions": "Định hướng",
+        "altitude_techniques": "Kỹ thuật",
+        "direction_badge": "Định hướng",
+        "filter_by_altitude": "Lọc theo cấp độ",
+        "graph_sort_directions": "Định hướng trước"
       },
       "skills_adopt": "Áp dụng",
       "skills_adopt_hint": "Áp dụng vào {name} — Claude tùy chỉnh cho kho mã",

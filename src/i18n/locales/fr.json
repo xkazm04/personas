@@ -14049,7 +14049,13 @@
         "playbook_unmatched_title": "Intentions sans correspondance",
         "playbook_suggested_title": "Ajouts suggérés",
         "playbook_add": "Ajouter",
-        "playbook_suggested_reason": "Étend « {title} »"
+        "playbook_suggested_reason": "Étend « {title} »",
+        "altitude_all": "Tous les niveaux",
+        "altitude_directions": "Directions",
+        "altitude_techniques": "Techniques",
+        "direction_badge": "Direction",
+        "filter_by_altitude": "Filtrer par niveau",
+        "graph_sort_directions": "Directions d'abord"
       },
       "skills_adopt": "Adopter",
       "skills_adopt_hint": "Adopter dans {name} — Claude l’adapte au dépôt",

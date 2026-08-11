@@ -14049,7 +14049,13 @@
         "playbook_unmatched_title": "미일치 인텐트",
         "playbook_suggested_title": "추가 제안",
         "playbook_add": "추가",
-        "playbook_suggested_reason": "“{title}” 확장"
+        "playbook_suggested_reason": "“{title}” 확장",
+        "altitude_all": "모든 수준",
+        "altitude_directions": "방침",
+        "altitude_techniques": "기법",
+        "direction_badge": "방침",
+        "filter_by_altitude": "수준별 필터",
+        "graph_sort_directions": "방침 우선"
       },
       "skills_adopt": "채택",
       "skills_adopt_hint": "{name}에 채택 — Claude가 저장소에 맞게 맞춤 설정합니다",

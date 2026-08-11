@@ -1395,7 +1395,13 @@
       "playbook_unmatched_title": "Unerfüllte Anfragen",
       "playbook_suggested_title": "Vorgeschlagene Ergänzungen",
       "playbook_add": "Hinzufügen",
-      "playbook_suggested_reason": "Erweitert „{title}“"
+      "playbook_suggested_reason": "Erweitert „{title}“",
+      "altitude_all": "Alle Ebenen",
+      "altitude_directions": "Richtungen",
+      "altitude_techniques": "Techniken",
+      "direction_badge": "Richtung",
+      "filter_by_altitude": "Nach Ebene filtern",
+      "graph_sort_directions": "Richtungen zuerst"
     },
     "skills_adopt": "Übernehmen",
     "skills_adopt_hint": "In {name} übernehmen — Claude passt sie an das Repository an",

@@ -14049,7 +14049,13 @@
         "playbook_unmatched_title": "Niat tanpa kecocokan",
         "playbook_suggested_title": "Tambahan yang disarankan",
         "playbook_add": "Tambah",
-        "playbook_suggested_reason": "Memperluas “{title}”"
+        "playbook_suggested_reason": "Memperluas “{title}”",
+        "altitude_all": "Semua level",
+        "altitude_directions": "Arah",
+        "altitude_techniques": "Teknik",
+        "direction_badge": "Arah",
+        "filter_by_altitude": "Filter menurut level",
+        "graph_sort_directions": "Arah dulu"
       },
       "skills_adopt": "Adopsi",
       "skills_adopt_hint": "Adopsi ke {name} — Claude menyesuaikannya untuk repo",

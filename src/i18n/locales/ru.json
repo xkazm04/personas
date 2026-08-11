@@ -14049,7 +14049,13 @@
         "playbook_unmatched_title": "Запросы без совпадений",
         "playbook_suggested_title": "Предлагаемые дополнения",
         "playbook_add": "Добавить",
-        "playbook_suggested_reason": "Расширяет «{title}»"
+        "playbook_suggested_reason": "Расширяет «{title}»",
+        "altitude_all": "Все уровни",
+        "altitude_directions": "Направления",
+        "altitude_techniques": "Техники",
+        "direction_badge": "Направление",
+        "filter_by_altitude": "Фильтр по уровню",
+        "graph_sort_directions": "Сначала направления"
       },
       "skills_adopt": "Внедрить",
       "skills_adopt_hint": "Внедрить в {name} — Claude адаптирует под репозиторий",
