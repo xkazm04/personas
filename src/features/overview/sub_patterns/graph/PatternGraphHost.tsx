@@ -293,28 +293,31 @@ export default function PatternGraphHost({
     canvas.flyTo(target.x, target.y, target.k);
   };
 
-  // A third-level topic opens its pattern stack — same modal, facet-shaped
-  // node (a FacetNode is a leaf ClusterNode with the facet as its label).
+  // A third-level topic routes the same way — its lead item anchors the
+  // unified modal (facet items are a subset of one cluster's stack).
   const selectFacet = (f: FacetNode) => {
-    setSelected({
-      topic: f.topic,
-      area: f.area,
-      cluster: f.facet,
-      count: f.count,
-      pending: f.pending,
-      adopted: f.items.filter((i) => i.status === 'adopted').length,
-      items: f.items,
-      facets: [],
-    });
+    const lead =
+      [...f.items]
+        .filter((i) => i.layer === 'principle')
+        .sort((a, b) => (b.evidenceCount ?? 0) - (a.evidenceCount ?? 0))[0]
+      ?? [...f.items].sort((a, b) => (b.evidenceCount ?? 0) - (a.evidenceCount ?? 0))[0];
+    if (lead) onOpenItem?.(lead);
   };
 
   // Leaf click: the cluster is the tree's last level while patterns stay off
-  // the canvas, so it opens the structured patterns modal directly (a camera
-  // flight under a full modal would never be seen). Its area stays focused so
-  // closing the modal leaves you inside the dimension you were exploring.
+  // the canvas. Under the v2 three-layer model it opens the UNIFIED detail
+  // modal anchored on the cluster's lead item — the principle with the most
+  // evidence when the cluster has one, its heaviest item otherwise — and the
+  // modal's sibling-principle rail covers browsing the rest of the stack.
+  // (`selected`/ClusterPatternsModal is superseded; deleted at consolidation.)
   const selectCluster = (node: ClusterNode) => {
-    setSelected(node);
     setFocusArea(node.area);
+    const lead =
+      [...node.items]
+        .filter((i) => i.layer === 'principle')
+        .sort((a, b) => (b.evidenceCount ?? 0) - (a.evidenceCount ?? 0))[0]
+      ?? [...node.items].sort((a, b) => (b.evidenceCount ?? 0) - (a.evidenceCount ?? 0))[0];
+    if (lead) onOpenItem?.(lead);
   };
 
   // -- omnibox ---------------------------------------------------------------

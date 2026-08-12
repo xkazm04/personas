@@ -45,7 +45,15 @@ export interface KnowledgeItemView {
   durability: Durability | null;
   governingId: string | null;
   evidenceCount: number | null;
+  /** Three-layer classification (pattern-fabric v2): 'principle' |
+   *  'manifestation' | null while the pre-v2 corpus awaits its ruling. */
+  layer: KnowledgeLayerView;
+  /** Full evidence/detail markdown — the detail surfaces render it; list
+   *  surfaces ignore it. */
+  detailMd: string | null;
 }
+
+export type KnowledgeLayerView = 'principle' | 'manifestation' | null;
 
 export type Abstraction = 'macro' | 'meso' | 'micro';
 export type Durability = 'durable' | 'situational' | 'mechanical';
@@ -101,6 +109,8 @@ export function viewFromRow(row: WorkspaceKnowledge): KnowledgeItemView {
     // JSON number, so narrow it here rather than letting `bigint` leak into the
     // view model (counts here are single/double digits — no precision at risk).
     evidenceCount: row.evidence_count != null ? Number(row.evidence_count) : null,
+    layer: (row.layer as KnowledgeLayerView) ?? null,
+    detailMd: row.detail_md ?? null,
   };
 }
 
