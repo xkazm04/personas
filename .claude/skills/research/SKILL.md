@@ -1,5 +1,6 @@
 ---
 name: research
+version: 1.1
 description: Extract actionable improvements for a project from external sources (video, blog, article, raw text). Scores ideas against the codebase, buckets into Code / Template / Credential, and persists findings to an Obsidian memory vault.
 argument-hint: "[source or question]"
 category: Maintenance
@@ -358,6 +359,7 @@ Different source types produce different finding profiles. **A "low" finding cou
 | **Product demo / competitor walkthrough** | **low + many catches** — 1-3 real findings, 5-10 "already existed" catches | Run 4 (Paperclip): 2 findings, **8 already-existed catches**. Product demos of competing systems are high signal for the host-first rule because every feature demonstrated is potentially "does personas have this?". Expect the catch count to exceed the finding count. |
 | **Philosophical / forward-looking article or video** | low — 1-2 findings, mostly discovery-brief territory | Run 5 (Karpathy LLM Wiki): 2 accepted findings + 7 already-existed (the skill's own prior iteration had already implemented the core insight). Philosophical sources often produce narrow deltas against existing implementations. |
 | **Product launch article** | low-medium — 1-3 findings including at least one scaffolding-shaped finding | Run 6 (Claude Managed Agents): 2 findings, one of which became a theoretical scaffolding handoff (Option C). Launch articles frequently describe gated/preview features that fit Option C. |
+| **Best-practices listicle** ("N rules for X") | **low findings + many catches**, ~1:3 | Run 2026-08-12 (12 Rules for Claude.md): 4 findings, **11 already-existed catches**. A listicle enumerates a canonical checklist, so against a mature repo most items resolve to catches and the value is the confirmation table plus two or three genuine deltas. Do NOT stretch for parity with the list's length — a 12-rule video is not a 12-finding run. Watch for the item the repo deliberately does the *opposite* of; that is a catch with a reason, not a gap (here: "always ask clarifying questions" versus a headless engine's act-autonomously directives). |
 | **Blog post / raw text** | varies widely | Phase 2b and 2c work the same as 2a downstream; the yield depends on content density, not transport. |
 
 **If the finding count feels low, check the source type first.** If the source is a product demo and you have 7+ catches, that's a successful run, not a failed one. Surface the catch count prominently in Phase 7 as the primary metric for low-finding runs.
@@ -443,7 +445,11 @@ If the finding's premise depends on catalog count = runtime count, **the finding
 
 When the finding spans multiple feature areas (e.g. an execution-runtime change that surfaces in Overview), read both relevant docs — the framing in one is rarely sufficient for cross-area work.
 
+**Step 3b — If the finding adds a cap, budget, limit, or guard, find the existing one first.** Grep for a cap already applied to the *same material* (`budget`, `MAX_`, `LIMIT`, `truncate`, `pack_`) before choosing a mechanism. Two distinct failures this catches: (a) the cap already exists one layer down and the finding is void; (b) the cap exists but made the **opposite** design decision, so your implementation would be locally reasonable and globally inconsistent. Run 2026-08-12 hit (b) — a per-entry *truncation* with an announce-the-cut marker was written and reverted after reading `pack_by_budget`, which **skips** over-budget entries on the documented grounds that "a partial memory is worse than none". Reusing the existing packer made the change smaller and removed a duplicated constant instead of adding a competing one. Truncate-vs-skip, drop-oldest-vs-drop-lowest-ranked, and fail-vs-degrade are all decisions a codebase may have already made once.
+
 **Step 4 — Drop if redundant.** If the gap doesn't actually exist (the codebase already does this), drop the idea.
+
+**Step 4b — Read backgrounded tool output even when you re-ran it scoped.** A grep that times out and gets backgrounded is usually slow *because it covered more ground*. Re-run it scoped to stay unblocked, but read the original when it lands: on run 2026-08-12 the wide version contained one reference the scoped re-run had missed, which turned a single-module finding into a documented three-instance pattern and then into a shipped-template consequence. A superseded background result is not redundant.
 
 **Step 5 — Grounding check (per finding, before Phase 7).** Every code finding that will be presented as `High` must carry at least one `file_path:line` citation produced by a Read or Grep **in this session** — the line that proves the gap exists (or the host surface the change attaches to). If you can't produce that citation within budget, downgrade to `Medium` + `unverified` per the Phase 4 scoring-honesty rule; don't fabricate an anchor from the context map's file list.
 
