@@ -13,6 +13,7 @@ import type { IngestSummary } from "@/lib/bindings/IngestSummary";
 import type { ProjectionResult } from "@/lib/bindings/ProjectionResult";
 import type { WorkspaceImportItem } from "@/lib/bindings/WorkspaceImportItem";
 import type { WorkspaceKnowledge } from "@/lib/bindings/WorkspaceKnowledge";
+import type { WorkspaceKnowledgeEvidence } from "@/lib/bindings/WorkspaceKnowledgeEvidence";
 import type { BulkDecision } from "@/lib/bindings/BulkDecision";
 import type { WorkspaceHarvestCoverage } from "@/lib/bindings/WorkspaceHarvestCoverage";
 import type { PracticeContextRollup } from "@/lib/bindings/PracticeContextRollup";
@@ -195,6 +196,50 @@ export async function rollUpDoctrine(workspaceId: string): Promise<number> {
 
 export async function deleteWorkspaceKnowledge(id: string): Promise<boolean> {
   return invoke<boolean>("dev_tools_workspace_knowledge_delete", { id });
+}
+
+// -- three-layer structure (pattern-fabric v2) --------------------------------
+
+export type KnowledgeLayer = "principle" | "manifestation";
+
+/** Evidence rows stacked under a practice — the proof layer of the
+ *  Principle → Manifestation → Evidence hierarchy. */
+export async function listWorkspaceEvidence(
+  knowledgeId: string,
+): Promise<WorkspaceKnowledgeEvidence[]> {
+  return invoke<WorkspaceKnowledgeEvidence[]>("dev_tools_workspace_evidence_list", {
+    knowledgeId,
+  });
+}
+
+export async function addWorkspaceEvidence(
+  knowledgeId: string,
+  refs: string[],
+  opts?: { projectId?: string | null; quote?: string | null },
+): Promise<WorkspaceKnowledgeEvidence> {
+  return invoke<WorkspaceKnowledgeEvidence>("dev_tools_workspace_evidence_add", {
+    knowledgeId,
+    projectId: opts?.projectId ?? null,
+    refs,
+    quote: opts?.quote ?? null,
+  });
+}
+
+export async function deleteWorkspaceEvidence(id: string): Promise<boolean> {
+  return invoke<boolean>("dev_tools_workspace_evidence_delete", { id });
+}
+
+/** Reclassify a practice's place in the hierarchy. Nullable-patch semantics
+ *  per field: omit = leave unchanged, `null` = clear, value = set. Setting
+ *  `governingId` keeps the mirrored `governs` edge in sync server-side. */
+export async function setKnowledgeStructure(
+  id: string,
+  patch: { layer?: KnowledgeLayer | null; governingId?: string | null },
+): Promise<WorkspaceKnowledge> {
+  const args: Record<string, unknown> = { id };
+  if ("layer" in patch) args.layer = patch.layer;
+  if ("governingId" in patch) args.governingId = patch.governingId;
+  return invoke<WorkspaceKnowledge>("dev_tools_workspace_knowledge_set_structure", args);
 }
 
 // -- adoption matrix ---------------------------------------------------------

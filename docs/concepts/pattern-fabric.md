@@ -223,6 +223,48 @@ one set of ids.
 - **F4** — Contribution loop (`extends` through the harvest door) + factory
   scaffold consumption.
 
+## v2 — the three-layer model (Principle → Manifestation → Evidence)
+
+The 2026-08-11 doctrine distillation surfaced the structural gap: an adopted
+item like "Tier IPC timeouts by work class" fuses three different things —
+a universal direction (timeout orchestration), its application to one stack
+seam (Tauri IPC in Rust), and the repo-specific proof — into one row. That
+blocks cross-workspace growth: a Next.js project has nowhere to hang its
+fetch-timeout evidence except a new sibling item, re-fragmenting the library.
+
+v2 pulls them apart into three layers:
+
+- **Principle** (`layer = 'principle'`) — universal and language-free; the
+  ONLY layer the topic tree and the graph canvas carry. "Timeout
+  orchestration" is the last node the graph shows.
+- **Manifestation** (`layer = 'manifestation'`) — a principle applied to one
+  stack/seam (Tauri IPC, browser fetch, tokio reads). Parent is the existing
+  `governing_id` + mirrored `governs` edge — the hierarchy reuses the
+  governance spine rather than deepening the topic path. Lives in the detail
+  view, not on the canvas.
+- **Evidence** — first-class rows in `workspace_knowledge_evidence`
+  (`knowledge_id`, `project_id`, `refs` JSON array, `quote`, `source ∈
+  harvest|verify|manual`, `recorded_at`, `verified_at`), not markdown fused
+  into `detail_md`. Multiple projects stack references under one
+  manifestation; the verify lane refreshes `verified_at` so proof ages
+  visibly instead of fossilizing.
+
+`layer` is nullable and the migration classifies NOTHING: guessing at
+migration time would fake the review the restructuring panels exist to do.
+Pre-v2 rows stay honestly unclassified until a panel (or a human) rules on
+them through the `dev_tools_workspace_knowledge_set_structure` door, which
+validates the closed vocabulary, rejects self-loops and dangling parents,
+and keeps `governing_id` and the `governs` edge in sync. Evidence flows in
+through three doors: harvest ingest (structured `evidence` rows in the
+result contract, preferred over prose citations in `detail_md`), the verify
+lane (refreshing), and `dev_tools_workspace_evidence_add` (manual).
+
+Phases: **P1** schema + doors (this section) → **P2** pilot migration of the
+concurrency area through the panels → **P3** unified detail modal
+(prototyped ×3, replacing `PracticeDetailLedger` and `ClusterPatternsModal`)
+→ **P4** migrate remaining areas; consult serves stack-matched
+manifestations under each principle.
+
 ## Risks named now
 
 - **Playbook sprawl** — the layer only works closed. Cap ~40, human-gated,

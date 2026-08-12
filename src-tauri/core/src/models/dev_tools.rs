@@ -231,8 +231,43 @@ pub struct WorkspaceKnowledge {
     /// (`group:execution-orchestration`, `repo-global`, …). NULL for
     /// hand-authored rows and for runs that predate scoping.
     pub harvest_scope: Option<String>,
+    /// Three-layer model (pattern-fabric v2): 'principle' (universal,
+    /// language-free — the only layer the topic tree and graph canvas carry)
+    /// | 'manifestation' (the principle applied to one stack/seam; parent =
+    /// `governing_id`) | NULL (pre-v2 row, honestly unclassified until a
+    /// restructuring panel or a human rules on it).
+    #[serde(default)]
+    pub layer: Option<String>,
     pub created_at: String,
     pub updated_at: String,
+}
+
+/// One evidence row under a manifestation (pattern-fabric v2): a project's
+/// concrete proof — file refs + an excerpt — recorded as data, not markdown.
+/// Multiple projects stack evidence under one manifestation (the
+/// cross-language improvement flow), and the verify lane refreshes
+/// `verified_at` when its citations re-confirm the refs, so proof ages
+/// visibly instead of fossilizing in prose.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct WorkspaceKnowledgeEvidence {
+    pub id: String,
+    /// The manifestation (or, transitionally, any knowledge row) this proves.
+    pub knowledge_id: String,
+    /// Member project the proof lives in. No FK by design — deleting a
+    /// project leaves provenance readable (same posture as
+    /// `WorkspaceKnowledge::origin_project_id`).
+    pub project_id: Option<String>,
+    /// JSON array of `path:line` (or bare path) strings.
+    pub refs: String,
+    /// Excerpt / incident note, markdown.
+    pub quote: Option<String>,
+    /// 'harvest' | 'verify' | 'manual' (DB CHECK).
+    pub source: String,
+    pub recorded_at: String,
+    /// Last time the verify lane re-confirmed the refs. NULL = never.
+    pub verified_at: Option<String>,
 }
 
 /// Per-project adoption state of an adopted practice — the scaling surface:

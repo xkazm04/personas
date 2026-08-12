@@ -7426,6 +7426,56 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+
+    // -- Pattern fabric v2: the three-layer model ----------------------------
+    // (docs/concepts/pattern-fabric.md v2) Principle → Manifestation →
+    // Evidence. `layer` classifies a knowledge row's place in that hierarchy:
+    //   'principle'     — universal, language-free direction; the only layer
+    //                     the topic tree and the graph canvas carry.
+    //   'manifestation' — a principle applied to one stack/seam (Tauri IPC,
+    //                     browser fetch, tokio reads); parent = governing_id.
+    //   NULL            — not yet reclassified (the pre-v2 corpus). NULL is
+    //                     deliberate: guessing a layer at migration time would
+    //                     fake the review the restructuring panels exist to
+    //                     do, so legacy rows stay honestly unclassified until
+    //                     a panel (or a human) rules on them.
+    if !has_column(conn, "workspace_knowledge", "layer").unwrap_or(true) {
+        let _ = ddl_step(
+            conn,
+            "ALTER TABLE workspace_knowledge ADD COLUMN layer TEXT
+                 CHECK (layer IN ('principle','manifestation'));",
+        );
+    }
+    // Evidence as first-class rows, not markdown fused into detail_md. This
+    // is what lets MULTIPLE projects stack references under one manifestation
+    // (cross-language improvement flow), lets the verify lane REFRESH proof
+    // (verified_at) instead of only scoring adherence, and makes evidence
+    // aging visible instead of fossilized prose. `project_id` has no FK on
+    // purpose — deleting a project leaves provenance readable, same posture
+    // as workspace_knowledge.origin_project_id.
+    let _ = ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS workspace_knowledge_evidence (
+            id           TEXT PRIMARY KEY,
+            knowledge_id TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
+            project_id   TEXT,
+            refs         TEXT NOT NULL DEFAULT '[]',
+            quote        TEXT,
+            source       TEXT NOT NULL CHECK (source IN ('harvest','verify','manual')),
+            recorded_at  TEXT NOT NULL,
+            verified_at  TEXT
+        );",
+    );
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_wke_knowledge
+            ON workspace_knowledge_evidence(knowledge_id);",
+    );
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_wke_project
+            ON workspace_knowledge_evidence(project_id);",
+    );
     Ok(())
 }
 

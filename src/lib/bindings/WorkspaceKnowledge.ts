@@ -94,4 +94,12 @@ decided_at: string | null,
  * (`group:execution-orchestration`, `repo-global`, …). NULL for
  * hand-authored rows and for runs that predate scoping.
  */
-harvest_scope: string | null, created_at: string, updated_at: string, };
+harvest_scope: string | null, 
+/**
+ * Three-layer model (pattern-fabric v2): 'principle' (universal,
+ * language-free — the only layer the topic tree and graph canvas carry)
+ * | 'manifestation' (the principle applied to one stack/seam; parent =
+ * `governing_id`) | NULL (pre-v2 row, honestly unclassified until a
+ * restructuring panel or a human rules on it).
+ */
+layer: string | null, created_at: string, updated_at: string, };

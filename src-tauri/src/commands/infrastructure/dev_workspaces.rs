@@ -11,7 +11,7 @@ use tauri::State;
 
 use crate::db::models::{
     DevProject, DevWorkspace, PracticeContextRollup, WorkspaceConsultStats, WorkspaceImportItem,
-    WorkspaceKnowledge, WorkspacePatternEdge, WorkspacePlaybook, WorkspacePlaybookPattern,
+    WorkspaceKnowledge, WorkspaceKnowledgeEvidence, WorkspacePatternEdge, WorkspacePlaybook, WorkspacePlaybookPattern,
     WorkspacePracticeAdoption,
 };
 use crate::db::repos::dev_workspaces as repo;
@@ -285,6 +285,67 @@ pub fn dev_tools_workspace_knowledge_decide_bulk(
 
 /// Derive `governing_id` across a workspace: within each topic, the macro
 /// doctrine adopts its instances. Runs after ingest and on demand.
+// ── pattern-fabric v2: evidence + structure doors ───────────────────────
+
+/// Evidence rows for one knowledge item (pattern-fabric v2), newest first.
+#[tauri::command]
+pub fn dev_tools_workspace_evidence_list(
+    state: State<'_, Arc<AppState>>,
+    knowledge_id: String,
+) -> Result<Vec<WorkspaceKnowledgeEvidence>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_knowledge_evidence(&state.db, &knowledge_id)
+}
+
+/// Add one evidence row (source defaults to 'manual' — the human door; the
+/// harvest ingest and the verify lane write their own sources internally).
+#[tauri::command]
+pub fn dev_tools_workspace_evidence_add(
+    state: State<'_, Arc<AppState>>,
+    knowledge_id: String,
+    project_id: Option<String>,
+    refs: Vec<String>,
+    quote: Option<String>,
+) -> Result<WorkspaceKnowledgeEvidence, AppError> {
+    require_auth_sync(&state)?;
+    repo::add_knowledge_evidence(
+        &state.db,
+        &knowledge_id,
+        project_id.as_deref(),
+        &refs,
+        quote.as_deref(),
+        "manual",
+    )
+}
+
+#[tauri::command]
+pub fn dev_tools_workspace_evidence_delete(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    repo::delete_knowledge_evidence(&state.db, &id)
+}
+
+/// Set a knowledge row's place in the three-layer hierarchy. Nullable-patch
+/// semantics (omit = leave alone, explicit null = clear); setting/clearing
+/// the parent keeps the mirrored `governs` edge in sync.
+#[tauri::command]
+pub fn dev_tools_workspace_knowledge_set_structure(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    layer: Option<Option<String>>,
+    governing_id: Option<Option<String>>,
+) -> Result<WorkspaceKnowledge, AppError> {
+    require_auth_sync(&state)?;
+    repo::set_knowledge_structure(
+        &state.db,
+        &id,
+        layer.as_ref().map(|o| o.as_deref()),
+        governing_id.as_ref().map(|o| o.as_deref()),
+    )
+}
+
 #[tauri::command]
 pub fn dev_tools_workspace_roll_up_doctrine(
     state: State<'_, Arc<AppState>>,

@@ -417,6 +417,8 @@ async fn patterns_propose(
         // workspace_harvest / skill_lessons; cross-project code passes None).
         origin_project_id: b.project_id.clone(),
         extends: b.extends.clone(),
+        layer: None,
+        evidence: Vec::new(),
     };
     let summary = ws_repo::ingest_candidates(&pool, &ws, &[candidate], "cli-consult", None)
         .map_err(err)?;

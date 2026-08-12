@@ -15,6 +15,7 @@ use rusqlite::{params, OptionalExtension, Row};
 use crate::models::{
     DevProject, DevWorkspace, PlaybookConsultCount, PracticeContextRollup, UnmatchedIntent,
     WorkspaceConsultStats, WorkspaceHarvestCoverage, WorkspaceImportItem, WorkspaceKnowledge,
+    WorkspaceKnowledgeEvidence,
     WorkspacePatternEdge, WorkspacePlaybook, WorkspacePlaybookPattern, WorkspacePracticeAdoption,
 };
 use crate::DbPool;
@@ -159,6 +160,24 @@ pub struct KnowledgeCandidate {
     /// child inherits the parent's topic when it has none of its own. The
     /// item itself still lands `observed` — sessions propose, humans adopt.
     pub extends: Option<String>,
+    /// Three-layer model (pattern-fabric v2): 'principle' | 'manifestation'.
+    /// Validated at the door; anything else lands NULL (unclassified) rather
+    /// than inventing a layer.
+    pub layer: Option<String>,
+    /// Structured proof rows (pattern-fabric v2) — written to
+    /// `workspace_knowledge_evidence` with `source='harvest'` and the run's
+    /// own project id. Supersedes fusing citations into `detail_md`.
+    pub evidence: Vec<EvidenceCandidate>,
+}
+
+/// One structured proof reference carried by a harvest/propose candidate.
+#[derive(Debug, Clone, Default, serde::Deserialize)]
+pub struct EvidenceCandidate {
+    /// `path:line` (or bare path) strings.
+    #[serde(default)]
+    pub refs: Vec<String>,
+    #[serde(default)]
+    pub quote: Option<String>,
 }
 
 /// Result of an ingest run — inserted count + a per-row reason for every
@@ -220,6 +239,7 @@ fn row_to_knowledge(row: &Row) -> rusqlite::Result<WorkspaceKnowledge> {
         valid_to: row.get("valid_to")?,
         decided_at: row.get("decided_at")?,
         harvest_scope: row.get("harvest_scope")?,
+        layer: row.get("layer")?,
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -1662,8 +1682,8 @@ pub fn ingest_candidates(
                      (id, workspace_id, kind, title, statement, detail_md, topic,
                       abstraction, ftype, durability, governing_id, evidence_count,
                       applicability, status, origin_project_id, provenance, confidence, dedup_key,
-                      harvest_scope, valid_from, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, 'observed', ?14, ?15, ?16, ?17, ?19, ?18, ?18, ?18)",
+                      harvest_scope, layer, valid_from, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, 'observed', ?14, ?15, ?16, ?17, ?19, ?20, ?18, ?18, ?18)",
                 params![
                     id,
                     workspace_id,
@@ -1704,9 +1724,36 @@ pub fn ingest_candidates(
                     c.dedup_key,
                     now,
                     c.harvest_scope,
+                    // Closed at the door like every other axis: an unknown
+                    // layer value lands NULL (unclassified), never invented.
+                    c.layer
+                        .as_deref()
+                        .filter(|l| ["principle", "manifestation"].contains(l)),
                 ],
             )?;
             summary.inserted += 1;
+
+            // Pattern-fabric v2: structured proof rows. Stamped with the
+            // run's own project (app-owned, same trust posture as
+            // origin_project_id) and source='harvest'.
+            for ev in &c.evidence {
+                if ev.refs.is_empty() && ev.quote.is_none() {
+                    continue;
+                }
+                tx.execute(
+                    "INSERT INTO workspace_knowledge_evidence
+                         (id, knowledge_id, project_id, refs, quote, source, recorded_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, 'harvest', ?6)",
+                    params![
+                        uuid::Uuid::new_v4().to_string(),
+                        id,
+                        c.origin_project_id,
+                        serde_json::to_string(&ev.refs).unwrap_or_else(|_| "[]".into()),
+                        ev.quote,
+                        now,
+                    ],
+                )?;
+            }
 
             // F4 contribution loop: an `extends` reference becomes a typed
             // edge child->parent. A dangling target never blocks the item —
@@ -1739,6 +1786,151 @@ pub fn ingest_candidates(
         tx.commit()?;
         Ok(summary)
     })
+}
+
+// ── pattern-fabric v2: evidence + structure ─────────────────────────────
+
+fn row_to_evidence(row: &Row) -> rusqlite::Result<WorkspaceKnowledgeEvidence> {
+    Ok(WorkspaceKnowledgeEvidence {
+        id: row.get("id")?,
+        knowledge_id: row.get("knowledge_id")?,
+        project_id: row.get("project_id")?,
+        refs: row.get("refs")?,
+        quote: row.get("quote")?,
+        source: row.get("source")?,
+        recorded_at: row.get("recorded_at")?,
+        verified_at: row.get("verified_at")?,
+    })
+}
+
+/// Evidence rows for one knowledge item, newest first.
+pub fn list_knowledge_evidence(
+    pool: &DbPool,
+    knowledge_id: &str,
+) -> Result<Vec<WorkspaceKnowledgeEvidence>, AppError> {
+    timed_query!("dev_workspaces", "dev_workspaces::list_knowledge_evidence", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM workspace_knowledge_evidence
+             WHERE knowledge_id = ?1 ORDER BY recorded_at DESC",
+        )?;
+        let rows = stmt.query_map(params![knowledge_id], row_to_evidence)?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    })
+}
+
+/// Add one evidence row. `source` is closed at the door ('harvest' | 'verify'
+/// | 'manual'); the knowledge row must exist (FK).
+pub fn add_knowledge_evidence(
+    pool: &DbPool,
+    knowledge_id: &str,
+    project_id: Option<&str>,
+    refs: &[String],
+    quote: Option<&str>,
+    source: &str,
+) -> Result<WorkspaceKnowledgeEvidence, AppError> {
+    validate_one_of(source, &["harvest", "verify", "manual"], "evidence source")?;
+    let conn = pool.get()?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+    let refs_json = serde_json::to_string(refs)
+        .map_err(|e| AppError::Internal(format!("serialize evidence refs: {e}")))?;
+    conn.execute(
+        "INSERT INTO workspace_knowledge_evidence
+             (id, knowledge_id, project_id, refs, quote, source, recorded_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        params![id, knowledge_id, project_id, refs_json, quote, source, now],
+    )?;
+    conn.query_row(
+        "SELECT * FROM workspace_knowledge_evidence WHERE id = ?1",
+        params![id],
+        row_to_evidence,
+    )
+    .map_err(Into::into)
+}
+
+pub fn delete_knowledge_evidence(pool: &DbPool, id: &str) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    conn.execute(
+        "DELETE FROM workspace_knowledge_evidence WHERE id = ?1",
+        params![id],
+    )?;
+    Ok(())
+}
+
+/// Set a knowledge row's place in the three-layer hierarchy (pattern-fabric
+/// v2). Nullable-patch semantics per field: outer `None` = leave alone, inner
+/// `None` = clear. Setting `governing_id` also mirrors the `governs` edge
+/// (and clearing removes the mirror from the OLD governor), so the graph and
+/// the fast-path column cannot drift.
+pub fn set_knowledge_structure(
+    pool: &DbPool,
+    id: &str,
+    layer: Option<Option<&str>>,
+    governing_id: Option<Option<&str>>,
+) -> Result<WorkspaceKnowledge, AppError> {
+    let conn = pool.get()?;
+    let now = chrono::Utc::now().to_rfc3339();
+    if let Some(l) = layer {
+        if let Some(v) = l {
+            validate_one_of(v, &["principle", "manifestation"], "layer")?;
+        }
+        conn.execute(
+            "UPDATE workspace_knowledge SET layer = ?1, updated_at = ?2 WHERE id = ?3",
+            params![l, now, id],
+        )?;
+    }
+    if let Some(g) = governing_id {
+        // Old governor first, so a cleared/changed parent drops its mirror.
+        let old: Option<String> = conn
+            .query_row(
+                "SELECT governing_id FROM workspace_knowledge WHERE id = ?1",
+                params![id],
+                |r| r.get(0),
+            )
+            .optional()?
+            .flatten();
+        if let Some(new_parent) = g {
+            if new_parent == id {
+                return Err(AppError::Validation(
+                    "a knowledge row cannot govern itself".into(),
+                ));
+            }
+            let exists: bool = conn
+                .query_row(
+                    "SELECT 1 FROM workspace_knowledge WHERE id = ?1",
+                    params![new_parent],
+                    |_| Ok(true),
+                )
+                .optional()?
+                .unwrap_or(false);
+            if !exists {
+                return Err(AppError::Validation(format!(
+                    "governing target `{new_parent}` does not exist"
+                )));
+            }
+        }
+        conn.execute(
+            "UPDATE workspace_knowledge SET governing_id = ?1, updated_at = ?2 WHERE id = ?3",
+            params![g, now, id],
+        )?;
+        if let Some(prev) = old.filter(|p| Some(p.as_str()) != g) {
+            conn.execute(
+                "DELETE FROM workspace_pattern_edges
+                 WHERE from_id = ?1 AND to_id = ?2 AND rel = 'governs'",
+                params![prev, id],
+            )?;
+        }
+        if let Some(new_parent) = g {
+            conn.execute(
+                "INSERT OR IGNORE INTO workspace_pattern_edges
+                     (from_id, to_id, rel, note, created_at)
+                 VALUES (?1, ?2, 'governs', NULL, ?3)",
+                params![new_parent, id, now],
+            )?;
+        }
+    }
+    get_knowledge_by_id(pool, id)
 }
 
 #[cfg(test)]
@@ -1779,6 +1971,8 @@ mod extends_loop_tests {
             dedup_key: Some(format!("t:{title}")),
             confidence: None,
             extends: extends.map(str::to_string),
+            layer: None,
+            evidence: Vec::new(),
         }
     }
 
@@ -1989,6 +2183,8 @@ fn cluster_shared_findings(findings: &[MinedFinding]) -> Vec<KnowledgeCandidate>
                 dedup_key: Some(format!("miner:findings:{identity}")),
                 confidence: Some(confidence),
                 extends: None,
+                layer: None,
+                evidence: Vec::new(),
             },
         ));
     }
@@ -2138,6 +2334,8 @@ fn cluster_skill_adoption(
             dedup_key: Some(format!("miner:skill-adopt:{name}")),
             confidence: Some(0.6),
             extends: None,
+            layer: None,
+            evidence: Vec::new(),
         });
     }
     out
