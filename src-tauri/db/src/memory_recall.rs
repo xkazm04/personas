@@ -184,6 +184,17 @@ pub struct PackedRecall {
     pub omitted: usize,
 }
 
+/// Character budget for the active tier of a memory injection.
+///
+/// Shared so every surface that projects persona memory to the model agrees
+/// on how much of it to show. Two consumers today: the runner's
+/// `## Agent Memory` system-prompt section and `claude_md_projection`, which
+/// writes the same material into the exec_dir so it survives `/compact`. The
+/// projection previously rendered straight from `get_for_injection_v2` — which
+/// caps rows, not characters — and so could show materially more than the
+/// system prompt it mirrors. Keep them on this one constant.
+pub const ACTIVE_MEM_BUDGET_CHARS: usize = 6000;
+
 /// Greedy-pack active-tier candidates into `char_budget`, best
 /// [`decay_score`] first. Always admits at least one entry (a single
 /// over-budget memory is better than an empty section). Entries that

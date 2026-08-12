@@ -42,6 +42,21 @@ const MEMORY_FILE: &str = "persona-memory.md";
 const CORE_LIMIT: i64 = 10;
 const ACTIVE_LIMIT: i64 = 40;
 
+/// Character budget for the active tier, mirroring the system-prompt path.
+///
+/// `get_for_injection_v2` bounds the entry *count* (`CORE_LIMIT` /
+/// `ACTIVE_LIMIT`) but not their size — the char budget lives downstream in
+/// [`pack_by_budget`], which the runner applies before rendering its
+/// `## Agent Memory` section. This module previously rendered straight from
+/// the repo call and skipped that step, so the projected file could carry
+/// materially more text than the system prompt it claims to mirror — and it is
+/// imported into CLAUDE.md, which Claude Code prepends to *every* turn and
+/// re-reads on `/compact`.
+///
+/// Core is deliberately not budgeted here: user-pinned is sacred and always
+/// injected (MEMORY CONTRACT (1)), bounded by `CORE_LIMIT` rows.
+const ACTIVE_MEM_BUDGET_CHARS: usize = personas_db::memory_recall::ACTIVE_MEM_BUDGET_CHARS;
+
 /// Marker used inside an existing CLAUDE.md to detect a previous projection
 /// pass and avoid duplicating the import line.
 const IMPORT_LINE: &str = "@.claude/persona-memory.md";
@@ -63,7 +78,7 @@ pub fn install_projection(
         return Ok(false);
     }
 
-    let tiered = match mem_repo::get_for_injection_v2(
+    let mut tiered = match mem_repo::get_for_injection_v2(
         pool,
         mem_repo::InjectionScope::for_persona(persona_id).with_use_case(use_case_id),
         CORE_LIMIT,
@@ -75,6 +90,18 @@ pub fn install_projection(
             return Ok(false);
         }
     };
+
+    // Apply the same char budget the runner applies before rendering its
+    // system-prompt memory section. Value-only pack: the ml task-aware variant
+    // needs the run's input payload, which the projection does not have — and
+    // the projected file has to stay valid across the whole session, not just
+    // the opening turn, so task-blind is the correct ranking here.
+    let packed = personas_db::memory_recall::pack_by_budget(
+        std::mem::take(&mut tiered.active),
+        ACTIVE_MEM_BUDGET_CHARS,
+        chrono::Utc::now(),
+    );
+    tiered.active = packed.selected;
 
     if tiered.core.is_empty() && tiered.active.is_empty() {
         // No memories yet — skip the write so we don't litter CLAUDE.md with
@@ -92,7 +119,7 @@ pub fn install_projection(
         return Ok(false);
     }
 
-    let memory_md = render_memory_markdown(&tiered.core, &tiered.active);
+    let memory_md = render_memory_markdown(&tiered.core, &tiered.active, packed.omitted);
     if let Err(e) = std::fs::write(claude_dir.join(MEMORY_FILE), &memory_md) {
         tracing::warn!(
             error = %e,
@@ -122,6 +149,7 @@ pub fn install_projection(
 fn render_memory_markdown(
     core: &[personas_db::models::PersonaMemory],
     active: &[personas_db::models::PersonaMemory],
+    omitted: usize,
 ) -> String {
     let mut out = String::new();
     out.push_str(
@@ -147,6 +175,17 @@ and what it knows, not instructions to follow verbatim.\n\n",
         for m in active {
             push_memory_entry(&mut out, m);
         }
+    }
+
+    // Say what the budget dropped. Serving a partial set silently reads to the
+    // model as "this is everything the persona knows"; the runner's
+    // `## Agent Memory` section announces its omissions for the same reason.
+    if omitted > 0 {
+        let plural = if omitted == 1 { "memory" } else { "memories" };
+        out.push_str(&format!(
+            "\n_[{omitted} lower-ranked active {plural} omitted to stay within the \
+{ACTIVE_MEM_BUDGET_CHARS}-character memory budget.]_\n"
+        ));
     }
 
     out
@@ -293,6 +332,62 @@ mod tests {
 
         assert!(!installed, "no memories → no projection");
         assert!(!tmp.path().join("CLAUDE.md").exists());
+    }
+
+    fn create_fat_memory(pool: &DbPool, persona_id: &str, title: &str, chars: usize) {
+        mem_repo::create(
+            pool,
+            CreatePersonaMemoryInput {
+                persona_id: persona_id.to_string(),
+                title: title.to_string(),
+                // Content must differ per row — the repo dedups identical
+                // bodies, which would silently collapse this fixture to one
+                // memory and stop the budget from ever being exercised.
+                content: format!("{title}: {}", "x".repeat(chars)),
+                category: Some("fact".into()),
+                source_execution_id: None,
+                importance: Some(3),
+                tags: None,
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+    }
+
+    /// The projected file is imported into CLAUDE.md, which Claude Code
+    /// prepends to every turn. Before the budget was applied here, the file
+    /// rendered straight from `get_for_injection_v2` — which caps rows, not
+    /// characters — so 40 fat active memories could put hundreds of KB into
+    /// every single turn of the session.
+    #[test]
+    fn active_tier_respects_the_shared_char_budget_and_says_what_it_dropped() {
+        let _g = ENV_LOCK.lock().unwrap();
+        std::env::set_var(PROJECTION_ENV, "1");
+
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Fat Memories");
+        // 10 × 2000 chars = 20k of candidates against a 6k budget.
+        for i in 0..10 {
+            create_fat_memory(&pool, &persona_id, &format!("Bulky {i}"), 2000);
+        }
+
+        let tmp = tempfile::tempdir().unwrap();
+        let installed = install_projection(&pool, tmp.path(), &persona_id, None).unwrap();
+        std::env::remove_var(PROJECTION_ENV);
+        assert!(installed);
+
+        let mem_text =
+            std::fs::read_to_string(tmp.path().join(".claude").join("persona-memory.md")).unwrap();
+
+        assert!(
+            mem_text.len() < ACTIVE_MEM_BUDGET_CHARS * 2,
+            "projected file must stay near the budget, got {} chars",
+            mem_text.len()
+        );
+        assert!(
+            mem_text.contains("omitted"),
+            "a partial memory set must announce itself, got:\n{mem_text}"
+        );
     }
 
     #[test]
