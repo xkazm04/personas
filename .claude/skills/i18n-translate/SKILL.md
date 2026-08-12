@@ -5,7 +5,7 @@ description: Copywriting-grade, context-aware localization for any managed app �
 argument-hint: <mode> [locale] [scope]
 memory: project
 contexts: tracked
-version: 1.0
+version: 1.1
 ---
 
 # i18n-translate — copywriting-grade, context-aware localization
@@ -86,7 +86,7 @@ other.
 
 ---
 
-## The four artifacts (create once, maintain forever)
+## The five artifacts (create once, maintain forever)
 
 The memory that makes run N+1 consistent with run N. All live in the target
 repo under `docs/i18n/` — they are project truth, not skill-internal state:
@@ -106,7 +106,15 @@ repo under `docs/i18n/` — they are project truth, not skill-internal state:
    policy (decide per term IN THE GLOSSARY, be consistent), grammar traps a
    mechanical translation gets wrong (number agreement, aspect, gender for
    unknown referents), and length discipline for UI chrome.
-4. **`exemplars-<locale>.md`** — the gold pairs. *Register by demonstration.*
+4. **`source-defects.md`** — the defects you found in the SOURCE catalog while
+   translating, and did not fix. Concatenated sentences, flat strings that need
+   plurals, hardcoded currency or dates, one value carrying four claims,
+   ambiguous copy that forced three locales to guess three different ways. These
+   cap quality for every locale and are the user's to fix, so they need a durable
+   home rather than a line in a chat message that scrolls away. Append per run,
+   grouped by defect class, each row naming the key and the problem. A run that
+   reports zero source defects over thousands of keys did not look.
+5. **`exemplars-<locale>.md`** — the gold pairs. *Register by demonstration.*
    ~8 source→locale pairs harvested from the locale's best already-reviewed
    strings, one per string class: button/CTA, heading, tooltip, error/status,
    empty-state **transcreation** (the money example — show the rhythm, not the
@@ -253,12 +261,66 @@ wording on this control?* — a style finding if the answer is no.
 - **Skip dead keys** if the contract provides a dead-key check — never spend a
   token on a string no user can see.
 - A **workflow / ultracode** fan-out is the natural shape for a full
-  multi-locale sweep: one agent per (locale × section) chunk, each fed the four
-  artifacts + call sites, then a parity/QA merge, with Pass C applied centrally
-  so the catalog is never edited concurrently. Don't spin it up unprompted —
-  offer it for big jobs.
+  multi-locale sweep: one agent per (locale × section) chunk, each fed the
+  artifacts + call sites. Don't spin it up unprompted — offer it for big jobs.
 - Never machine-blast a whole file in one edit; that's how silent format breaks
   and terminology drift ship.
+
+### The central writer (non-negotiable in a fan-out)
+
+**Agents never edit a catalog.** Two agents writing one JSON file silently lose
+keys. Each agent writes its own scratch file; one script merges them and is the
+only writer. Prefer **sparse patches** (only the keys and locales that changed)
+for review passes, so a clean value cannot be accidentally rewritten and the
+merge stays reviewable.
+
+That merge script is a **gate, not a pipe.** It refuses to write unless, for
+every proposed value: the key exists in the source catalog; every locale is
+present and a string; the value compiles under the project's real ICU parser;
+its placeholder and rich-tag set is byte-identical to the SOURCE value's; and
+any house typography rule holds. Run it dry first, read the problem list, and
+only then write. Nothing else in this method catches a renamed placeholder
+before it ships.
+
+Before scripting any bulk edit, check that the catalog **round-trips
+byte-exactly** through your writer (for JSON: `JSON.stringify(obj, null, 2)`
+plus the file's trailing newline). If it does not, edit surgically instead. A
+reformatted catalog buries the real change in thousands of noise lines, and some
+sibling files (a scoring source shared with another language) must not be
+reformatted at all.
+
+### Finish a fan-out with a terminology consolidation pass
+
+Agents on disjoint namespace batches cannot see each other, so **the same concept
+reliably picks up two words in two namespaces**, and individual batches quietly
+diverge from the glossary. This is not a risk to watch for; it is what happens.
+Budget the pass.
+
+Find the drift mechanically, then let judgment rule on it:
+
+1. For each glossary row, find keys whose SOURCE value uses the term, and check
+   whether the locale value contains the canonical rendering. Match on a
+   **diacritics-folded stem**, not the whole word, or inflection (Czech cases,
+   German compounds) will drown you in false hits.
+2. Hand the misses to one agent per locale as **candidates, not violations**,
+   and say so in the prompt. Most will be legitimate: a different sense of the
+   same source word, a sanctioned verb/noun split, an implied subject, a
+   restructured sentence. In the run that produced this section, ~1,400
+   candidates yielded ~75 real fixes, and the agents' most valuable output was
+   the reasoned "no sweep" on term after term.
+3. Never let the script rewrite from this signal. A wrong sweep destroys a
+   correct distinction, and a half-sweep is worse than the split it replaces.
+
+### Coverage is self-reported, so verify it
+
+An agent asked to audit 190 keys may audit 130 and report honestly that it did.
+Ask each batch to return the number it actually reviewed, compare against the
+batch size, and **re-run the short batches** with inputs regenerated from the
+CURRENT catalog (never the original snapshot, or the second pass will revert the
+first pass's fixes). Tell the second pass plainly that its job is completeness,
+that the values it sees are already fixed, and that finding little is a success.
+Report the honest coverage number; a sweep that quietly covered 85% while
+sounding complete is the failure this paragraph exists to prevent.
 
 ---
 
@@ -280,6 +342,23 @@ wording on this control?* — a style finding if the answer is no.
 - **Verify, don't assume.** A catalog that "looks translated" can still fail a
   gate on one plural — or silently render 24% source-language. Run every gate
   the contract lists, including post-edit build steps.
+- **Read the gate's exit code, not its tail.** `npm test | tail -5` reports the
+  exit status of `tail`, which is always 0. Redirect to a file and check `$?`,
+  or you will report a green suite that is failing. This has burned a run.
+- **The glossary can be the thing that is wrong.** A row can name a word that
+  appears NOWHERE in the catalog while the catalog is coherent and correct
+  (an aspirational entry someone wrote and never applied). Before sweeping a
+  catalog to match a row, count the row's actual occurrences. If the catalog
+  wins, fix the glossary and say so in the row.
+- **Look for a catalog duplicated outside the catalog.** Some projects copy
+  source-language strings into a second file (a scoring rubric, a schema, a
+  config shared with another language) and pin the two byte-identical with a
+  test. Grep a distinctive phrase before you change source copy; the contract
+  should name any such file.
+- **Some findings are the source's bug, not the translation's.** When a locale
+  looks wrong, check the call site before rewriting: a value concatenated as
+  `{name} {predicate}` will read as gibberish in any language whose translation
+  supplied its own subject, and the fix is the predicate form, not the words.
 - **Known non-levers — don't drift into these.** Back-translation as a quality
   gate (fluent mistranslations round-trip cleanly; use it only as an
   omission/placeholder sanity check). Holistic 1–10 scoring (use typed errors).
@@ -299,10 +378,14 @@ wording on this control?* — a style finding if the answer is no.
 - [ ] `docs/i18n/review-<locale>.md` updated: the strings worth a native second
       look, each with its typed error record and severity; anything
       capped/deferred named explicitly.
-- [ ] The source-defect list surfaced to the user (flag only — never fixed
-      silently).
+- [ ] The source-defect list written to `docs/i18n/source-defects.md` AND
+      surfaced to the user (flag only — never fixed silently).
+- [ ] If the run fanned out: a terminology consolidation pass ran, and its
+      rulings (including every "no sweep" and why) are recorded in the glossary.
+- [ ] Coverage counted, not assumed: reviewed-vs-batch-size compared, short
+      batches re-run, and the honest percentage stated in the summary.
 - [ ] One-line summary: locale(s), keys audited/translated/fixed by severity,
-      # queued for native review.
+      # queued for native review, and % of the catalog actually covered.
 
 When every box is checked, the locale should read like it was written by a
 person who uses the product every day — and the build stays green.
