@@ -27,7 +27,7 @@ import { ExtractionMenu } from './ExtractionMenu';
 import KnowledgeTree from './KnowledgeTree';
 import PatternGraphHost from './graph/PatternGraphHost';
 import { ProjectFilter } from './graph/ProjectFilter';
-import { nextQueueIndex, viewFromRow, type KnowledgeItemView } from './libraryModel';
+import { isDirection, nextQueueIndex, viewFromRow, type KnowledgeItemView } from './libraryModel';
 import { WorkspacePulse } from './WorkspacePulse';
 import type { Workspace } from '@/features/plugins/dev-tools/sub_workspaces/workspaceStore';
 
@@ -48,6 +48,12 @@ export default function KnowledgeLibrary({
   // Library | Graph view — the graph (Nexus) is auditioning to replace the
   // table and got its own project lens: null = whole workspace as-is.
   const [view, setView] = useState<'library' | 'graph'>('library');
+  // Altitude scope — the INVERTED library: both views are built from
+  // Directions (macro doctrines) by default; techniques are the evidence you
+  // drill into (a direction's `governs` chips) or flip the scope to see. This
+  // scopes the STRUCTURE — topic rail counts, graph clusters, rings, stats —
+  // not just row order.
+  const [altitude, setAltitude] = useState<'directions' | 'all' | 'techniques'>('directions');
   const [graphProjectId, setGraphProjectId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [projecting, setProjecting] = useState(false);
@@ -85,6 +91,15 @@ export default function KnowledgeLibrary({
   };
 
   const items = useMemo(() => rows.map(viewFromRow), [rows]);
+  // A corpus with no distilled directions yet must not open on an empty view.
+  const hasDirections = useMemo(() => items.some(isDirection), [items]);
+  const effectiveAltitude = hasDirections ? altitude : 'all';
+  const scopedItems = useMemo(() => {
+    if (effectiveAltitude === 'all') return items;
+    return items.filter((i) =>
+      effectiveAltitude === 'directions' ? isDirection(i) : !isDirection(i),
+    );
+  }, [items, effectiveAltitude]);
 
   // The adoption matrix is what makes the liquidity pillar measurable (is
   // adopted canon actually reaching the repos?). Re-read whenever the rows
@@ -178,6 +193,31 @@ export default function KnowledgeLibrary({
               </button>
             ))}
           </div>
+          {hasDirections && (
+            <div className="flex items-center rounded-interactive border border-border/60 bg-secondary/50 p-0.5">
+              {(
+                [
+                  { id: 'directions', label: w.altitude_directions },
+                  { id: 'all', label: w.altitude_all },
+                  { id: 'techniques', label: w.altitude_techniques },
+                ] as const
+              ).map(({ id, label }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setAltitude(id)}
+                  aria-pressed={effectiveAltitude === id}
+                  className={`typo-label rounded-interactive px-2.5 py-1 transition-colors ${
+                    effectiveAltitude === id
+                      ? 'bg-background text-foreground shadow-elevation-1'
+                      : 'text-foreground/60 hover:text-foreground'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {view === 'graph' && (
@@ -227,7 +267,7 @@ export default function KnowledgeLibrary({
       <div className="flex-1 min-h-0">
         {view === 'graph' ? (
           <PatternGraphHost
-            items={items}
+            items={scopedItems}
             workspaceId={workspace.id}
             workspaceName={workspace.name}
             adoptions={adoptions}
@@ -238,7 +278,7 @@ export default function KnowledgeLibrary({
           />
         ) : (
           <KnowledgeTree
-            items={items}
+            items={scopedItems}
             projectById={projectById}
             // Review before distribute: a row opens its DETAIL, and rollout is
             // reached from inside that modal (adopted practices only). Wiring

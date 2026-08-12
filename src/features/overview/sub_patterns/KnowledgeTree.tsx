@@ -71,10 +71,6 @@ export default function KnowledgeTree({
   };
   const [statusFilter, setStatusFilter] = useState('all');
   const [kindFilter, setKindFilter] = useState('all');
-  // Altitude tier (the inverted library): directions (macro doctrines) are
-  // the working surface, techniques their evidence. Default shows both —
-  // but directions always SORT first, so the library opens on them.
-  const [altitudeFilter, setAltitudeFilter] = useState<'all' | 'directions' | 'techniques'>('all');
   // Origin filter: which member repo a practice was harvested from. '' is the
   // workspace itself (hand-authored, no origin project).
   const [projectFilter, setProjectFilter] = useState('all');
@@ -159,10 +155,8 @@ export default function KnowledgeTree({
           i.status,
         ) === true) &&
       (kindFilter === 'all' || i.kind === kindFilter) &&
-      (altitudeFilter === 'all' ||
-        (altitudeFilter === 'directions' ? isDirection(i) : !isDirection(i))) &&
       (projectFilter === 'all' || (i.originProjectId ?? '') === projectFilter),
-    [statusFilter, kindFilter, altitudeFilter, projectFilter],
+    [statusFilter, kindFilter, projectFilter],
   );
 
   const compare = useCallback(
@@ -415,30 +409,17 @@ export default function KnowledgeTree({
         emptyDescription: tw.library_empty_desc,
       }}
       toolbar={
-        <>
-          <ThemedSelect
-            options={[
-              { value: 'all', label: tw.altitude_all },
-              { value: 'directions', label: tw.altitude_directions },
-              { value: 'techniques', label: tw.altitude_techniques },
-            ]}
-            value={altitudeFilter}
-            onValueChange={(v) => setAltitudeFilter(v as 'all' | 'directions' | 'techniques')}
-            aria-label={tw.filter_by_altitude}
-            wrapperClassName="ml-auto"
-            className="typo-label !py-1 w-36"
-          />
-          <ThemedSelect
-            filterable
-            hideSearch={projectOptions.length < 8}
-            options={projectOptions}
-            value={projectFilter}
-            onValueChange={setProjectFilter}
-            placeholder={tw.all_projects}
-            aria-label={tw.filter_by_project}
-            className="typo-label !py-1 w-44"
-          />
-        </>
+        <ThemedSelect
+          filterable
+          hideSearch={projectOptions.length < 8}
+          options={projectOptions}
+          value={projectFilter}
+          onValueChange={setProjectFilter}
+          placeholder={tw.all_projects}
+          aria-label={tw.filter_by_project}
+          wrapperClassName="ml-auto"
+          className="typo-label !py-1 w-44"
+        />
       }
     />
   );
