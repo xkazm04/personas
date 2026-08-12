@@ -29,11 +29,18 @@ Give concrete `evidence` (file paths / config found or absent) and an actionable
 - **quality.naming** — consistent naming + idiomatic conventions for the language.
 - **quality.error_handling** — errors are handled deliberately (no silent catches / unwraps in critical paths).
 - **quality.dead_code** — little dead/duplicated code; unused exports are pruned.
+- **quality.type_strictness** — where the stack is typed, the strict settings are actually on and escape hatches are rare (`strict`/`noImplicitAny` in tsconfig and few `any`; mypy strict; no blanket clippy allows). A type checker that runs in permissive mode counts as `partial`.
+- **quality.dependencies** — third-party dependencies are well-established and actively maintained rather than hand-rolled or abandoned: no unmaintained packages (no releases/commits in ~12 months), no lockfile-less installs, and a dependency audit (`npm audit`, `cargo audit`, `pip-audit`) is available. Flag single-maintainer packages with negligible download counts pulled in for trivial functionality.
 
 ## testing — automated test coverage
 - **tests.exist** — an automated test suite exists and can run (a test runner is configured).
 - **tests.coverage** — meaningful coverage of core logic (not just a smoke test).
 - **tests.ci** — tests run in CI (or an equivalent automated gate) on changes.
+
+## performance — runtime cost discipline
+- **perf.budgets** — user-facing operations have a stated latency budget (an endpoint/response-time target, a bundle-size ceiling, a frame budget) rather than "fast enough".
+- **perf.data_access** — work is pushed down to the data layer instead of fetched-then-filtered in application code: no unbounded `SELECT *` feeding in-memory filtering, pagination on list endpoints, indexes covering the hot query paths.
+- **perf.regression_guard** — something would catch a performance regression before release (a benchmark, a load test, a bundle-size check in CI, or query timing in observability). Absence is `missing`, a manual-only spot check is `partial`.
 
 ## branching — source-control & PR hygiene
 - **branching.naming** — a branch-naming convention is followed (e.g. `feature/*`, `fix/*`, `<owner>/<ticket>`).

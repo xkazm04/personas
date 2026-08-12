@@ -41,7 +41,18 @@ fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
 /// Tauri frontend event channel for standards-scan lifecycle updates.
 const STANDARDS_SCAN_STATUS: &str = "dev_tools_standards_scan_status";
 
-const ALLOWED_CATEGORIES: &[&str] = &["precommit", "docs", "code_quality", "branching", "testing"];
+// Keep in lockstep with the `## <category>` headings in `standards_ruleset.md`
+// and with the category enum in `build_standards_prompt`. `norm()` silently
+// coerces anything unlisted to `code_quality`, so a ruleset category missing
+// here does not fail loudly — it just mis-files every finding under it.
+const ALLOWED_CATEGORIES: &[&str] = &[
+    "precommit",
+    "docs",
+    "code_quality",
+    "performance",
+    "branching",
+    "testing",
+];
 const ALLOWED_STATUS: &[&str] = &["present", "partial", "missing"];
 const ALLOWED_SEVERITY: &[&str] = &["info", "warn", "critical"];
 
@@ -101,7 +112,7 @@ ruleset below. Adapt each rule to the repo's actual tech stack and conventions.
 For EACH rule in the ruleset, after you have looked at the relevant files, emit
 exactly one JSON object on its own line (NDJSON), in this shape:
 
-{{"standards_finding": {{"rule_key": "<rule key from the ruleset>", "category": "<precommit|docs|code_quality|branching|testing>", "title": "<short human title>", "status": "<present|partial|missing>", "severity": "<info|warn|critical>", "evidence": "<what you found / didn't find, with paths>", "recommendation": "<one concrete next step>"}}}}
+{{"standards_finding": {{"rule_key": "<rule key from the ruleset>", "category": "<precommit|docs|code_quality|performance|branching|testing>", "title": "<short human title>", "status": "<present|partial|missing>", "severity": "<info|warn|critical>", "evidence": "<what you found / didn't find, with paths>", "recommendation": "<one concrete next step>"}}}}
 
 Rules:
 - Emit one finding per rule_key in the ruleset — no more, no less. Do not invent rule keys.
