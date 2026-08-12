@@ -204,7 +204,7 @@
         "default": "false",
         "maps_to": null,
         "variable_name": "hooks_sidecar_enabled",
-        "context": "Session capture requires the hooks sidecar. Without the env var, the persona runs idle (safe but does nothing useful for capture). Set PERSONAS_HOOKS_SIDECAR=1 before relying on this persona.",
+        "context": "Session capture requires the hooks sidecar. Without the env var this persona adopts cleanly and then produces nothing, every run. Personas cannot set it for you: it is read from the environment the app was launched from, so set PERSONAS_HOOKS_SIDECAR=1 and restart the app. To check the current state, open Overview then Health and look for Hooks Sidecar under Environment.",
         "dimension": "trigger"
       }
     ],

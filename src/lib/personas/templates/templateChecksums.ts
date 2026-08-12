@@ -31,7 +31,7 @@ export const TEMPLATE_CHECKSUMS: Record<string, string> = {
   'development/lean-codebase-sentinel.json': '000af68557f2d526',
   'development/qa-guardian.json': '00090ca62e830c46',
   'development/real-time-database-watcher.json': '000a8316306b346b',
-  'development/self-evolving-codebase-memory.json': '0010964654a6eac8',
+  'development/self-evolving-codebase-memory.json': '0015c12fd536e590',
   'development/skill-librarian.json': '001715cb96cae02f',
   'development/solution-architect.json': '00165f3fe9ea5333',
   'development/user-lifecycle-manager.json': '001eddcc7a2638dd',
