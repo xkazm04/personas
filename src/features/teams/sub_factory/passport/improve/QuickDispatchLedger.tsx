@@ -9,10 +9,13 @@ import { motion } from 'framer-motion';
 import { Play, Sparkles } from 'lucide-react';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useTranslation } from '@/i18n/useTranslation';
 
 import { NEUTRAL_HUE, withAlpha, type QuickDispatchProps, type QuickSkill } from './quickDispatch';
 
 export function QuickDispatchLedger({ model, busySkill, onDispatch }: QuickDispatchProps) {
+  const { t } = useTranslation();
+
   if (model.loading && model.skills.length === 0) {
     return (
       <div className="flex flex-col gap-1.5">
@@ -23,7 +26,7 @@ export function QuickDispatchLedger({ model, busySkill, onDispatch }: QuickDispa
     );
   }
   if (model.skills.length === 0) {
-    return <p className="typo-caption text-foreground/45 py-8 text-center">No skills installed in this repo yet — adopt some from Manage.</p>;
+    return <p className="typo-caption text-foreground/45 py-8 text-center">{t.plugins.dev_tools.skills_workbench_quick_empty}</p>;
   }
 
   return (
@@ -38,6 +41,8 @@ export function QuickDispatchLedger({ model, busySkill, onDispatch }: QuickDispa
 function Row({ skill, index, busy, onDispatch }: {
   skill: QuickSkill; index: number; busy: boolean; onDispatch: (name: string) => void;
 }) {
+  const { t, tx } = useTranslation();
+  const d = t.plugins.dev_tools;
   const hue = skill.visual?.color ?? NEUTRAL_HUE;
   const Icon = skill.visual?.icon ?? Sparkles;
   const totalUnits = skill.groups.reduce((n, g) => n + g.units, 0) || 1;
@@ -52,7 +57,7 @@ function Row({ skill, index, busy, onDispatch }: {
       disabled={busy || skill.running}
       className="group grid grid-cols-[minmax(9rem,14rem)_1fr_3.5rem_2.5rem] items-center gap-3 px-3 h-10 border-b border-primary/[0.06] last:border-b-0 hover:bg-primary/[0.04] transition-colors text-left disabled:cursor-not-allowed"
       data-testid={`quick-dispatch-row-${skill.name}`}
-      aria-label={`Dispatch /${skill.name}`}
+      aria-label={tx(d.skills_workbench_quick_dispatch_aria, { skill: skill.name })}
     >
       {/* identity */}
       <span className="flex items-center gap-2 min-w-0">
@@ -61,13 +66,13 @@ function Row({ skill, index, busy, onDispatch }: {
           <Icon className="w-3 h-3" strokeWidth={1.75} aria-hidden />
         </span>
         <span className="typo-caption font-medium text-foreground truncate">{skill.name}</span>
-        {skill.running && <span className="typo-label text-status-info flex-shrink-0">live</span>}
+        {skill.running && <span className="typo-label text-status-info flex-shrink-0">{d.skills_workbench_quick_running}</span>}
       </span>
 
       {/* segmented coverage bar — one segment per group, width ∝ contexts */}
       <span className="flex h-2 rounded-full overflow-hidden bg-primary/[0.06] gap-px">
         {skill.groups.map((g) => (
-          <Tooltip key={g.id} content={`${g.name} — ${g.covered}/${g.units} contexts`} placement="top">
+          <Tooltip key={g.id} content={tx(d.skills_workbench_quick_group_hint, { name: g.name, covered: g.covered, units: g.units })} placement="top">
             <span
               className="h-full"
               style={{
