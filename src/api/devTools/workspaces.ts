@@ -230,16 +230,22 @@ export async function deleteWorkspaceEvidence(id: string): Promise<boolean> {
 }
 
 /** Reclassify a practice's place in the hierarchy. Nullable-patch semantics
- *  per field: omit = leave unchanged, `null` = clear, value = set. Setting
+ *  per field: omit = leave unchanged, `null` = clear, value = set. The patch
+ *  travels as one object because bare double-option command args collapse an
+ *  explicit `null` to "leave alone" over IPC (the backend's
+ *  `KnowledgeStructurePatch` restores the three states). Setting
  *  `governingId` keeps the mirrored `governs` edge in sync server-side. */
 export async function setKnowledgeStructure(
   id: string,
   patch: { layer?: KnowledgeLayer | null; governingId?: string | null },
 ): Promise<WorkspaceKnowledge> {
-  const args: Record<string, unknown> = { id };
-  if ("layer" in patch) args.layer = patch.layer;
-  if ("governingId" in patch) args.governingId = patch.governingId;
-  return invoke<WorkspaceKnowledge>("dev_tools_workspace_knowledge_set_structure", args);
+  const body: Record<string, unknown> = {};
+  if ("layer" in patch) body.layer = patch.layer;
+  if ("governingId" in patch) body.governingId = patch.governingId;
+  return invoke<WorkspaceKnowledge>("dev_tools_workspace_knowledge_set_structure", {
+    id,
+    patch: body,
+  });
 }
 
 // -- adoption matrix ---------------------------------------------------------

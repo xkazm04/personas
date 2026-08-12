@@ -327,22 +327,45 @@ pub fn dev_tools_workspace_evidence_delete(
     repo::delete_knowledge_evidence(&state.db, &id)
 }
 
+/// Patch body for `set_structure`. A bare `Option<Option<T>>` command arg
+/// CANNOT express "clear" over IPC: serde matches an explicit JSON `null`
+/// at the OUTER option first, collapsing it to "leave alone" — the P2 pilot
+/// hit exactly this (5 promoted principles silently kept their governors).
+/// The `double_option` deserializer restores the three states: field absent
+/// = leave alone, `null` = clear, value = set.
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct KnowledgeStructurePatch {
+    #[serde(default, deserialize_with = "double_option")]
+    layer: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
+    governing_id: Option<Option<String>>,
+}
+
+fn double_option<'de, T, D>(de: D) -> Result<Option<Option<T>>, D::Error>
+where
+    T: serde::Deserialize<'de>,
+    D: serde::Deserializer<'de>,
+{
+    serde::Deserialize::deserialize(de).map(Some)
+}
+
 /// Set a knowledge row's place in the three-layer hierarchy. Nullable-patch
-/// semantics (omit = leave alone, explicit null = clear); setting/clearing
-/// the parent keeps the mirrored `governs` edge in sync.
+/// semantics per `KnowledgeStructurePatch` (omit = leave alone, explicit
+/// null = clear); setting/clearing the parent keeps the mirrored `governs`
+/// edge in sync.
 #[tauri::command]
 pub fn dev_tools_workspace_knowledge_set_structure(
     state: State<'_, Arc<AppState>>,
     id: String,
-    layer: Option<Option<String>>,
-    governing_id: Option<Option<String>>,
+    patch: KnowledgeStructurePatch,
 ) -> Result<WorkspaceKnowledge, AppError> {
     require_auth_sync(&state)?;
     repo::set_knowledge_structure(
         &state.db,
         &id,
-        layer.as_ref().map(|o| o.as_deref()),
-        governing_id.as_ref().map(|o| o.as_deref()),
+        patch.layer.as_ref().map(|o| o.as_deref()),
+        patch.governing_id.as_ref().map(|o| o.as_deref()),
     )
 }
 
