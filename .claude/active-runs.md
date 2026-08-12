@@ -287,6 +287,12 @@
 
 ## Recently completed
 
+### research-claude-md-12-rules — /research: 12 CLAUDE.md rules for long-running agents (Better Stack) — session opus-5[1m] — **COMPLETE**
+- 2026-08-12. Focus: code. 4 findings / 11 already-existed catches. Commits: `585926b09` standards ruleset (perf + deps + type-strictness rules, new `performance` category w/ allowlist) · `ffa336ac5` codebase-init CLAUDE.md rule classes + size budget · `55e1ebd9c` shared memory char budget applied to the CLAUDE.md projection (`ACTIVE_MEM_BUDGET_CHARS` promoted out of the runner) · `d6092fb65` opt-in engine gates surfaced in the environment doctor + template adoption honesty · `730192642` skill(research) v1.1.
+- Gates: `cargo check --features desktop` 0 errors at the 213-warning baseline (run after each Rust task) · `cargo test -p personas-engine --lib claude_md_projection` 6/6 · `npx tsc --noEmit` clean · gitleaks + eslint via pre-commit. No i18n surface touched.
+- **NOT live-app verified:** the two new doctor items were not observed in a running app; they render into the existing `environment` section which is already in `SKELETON_SECTIONS`, verified by reading only.
+- Key finding for future sessions: `PERSONAS_HOOKS_SIDECAR`, `PERSONAS_CLAUDE_MD_PROJECTION`, `PERSONAS_INCIDENTS_PROMOTION` are shipped but **never armed** — no production setter anywhere. Recorded in `.claude/codebase-stack.md`; bake-out audit tracked in the vault at `Patterns/descoped-reopenable.md`.
+
 ### triage-verdicts-ingest — `dev_tools_triage_verdicts_ingest` result.json door — session fable-5 subagent — **COMPLETE**, commit `0b8967995`
 - 2026-08-10. New ingest door `commands/infrastructure/dev_tools/triage_ingest.rs` (ship_ingest-shaped: path-confined, 1 MiB cap, ingested.json idempotency, ALL-OR-NOTHING validation, exact accept|reject tokens) persisting a pending `backlog_apply_triage` approval via the refactored pool-based `insert_triage_approval` (shared with the live Athena batch). dev_ideas never touched; ALLOWED_ACTIONS/executors untouched.
 - Gates: cargo check --features desktop green at 213-warning baseline · triage_ingest 13/13 + backlog_triage 16/16 (via manifest-patched exe; bare cargo test hit the known 0xc0000139 loader trap) · tsc clean · binding exported by ts-rs test.

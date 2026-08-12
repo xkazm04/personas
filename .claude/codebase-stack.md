@@ -799,3 +799,71 @@ src-tauri/src/commands/fleet/hook_install.rs installs SessionStart/Notification/
 SessionEnd hooks POSTing to /fleet/hooks/*; fleet/classify.rs treats a Stop hook as the confident
 DONE signal. Claude Code's native cross-session messaging (2026-08) is ABSENT on native Windows
 and cloud-routed across machines - personas' app-side channel is strictly richer.
+
+## Opt-in engine gates are shipped but NEVER armed (added 2026-08-12, /research 12-rules run)
+
+Personas has a recurring convention: ship a feature behind an opt-in env gate for a
+"bake-in window", keeping production behavior unchanged. The convention is stated
+explicitly at `db/src/audit_incidents_promoter.rs:13-18`. **There is no bake-out step, and
+as of 2026-08-12 no production code sets any of these gates** — across all of
+`src-tauri/{src,engine/src,db/src,core/src}` every reference is a doc comment, a const, or
+a reader.
+
+| Gate | Const | Feature | State |
+|---|---|---|---|
+| `PERSONAS_HOOKS_SIDECAR` | `engine/hooks_sidecar.rs:39` | Claude Code native hooks -> session-queue memory capture | never armed |
+| `PERSONAS_CLAUDE_MD_PROJECTION` | `engine/claude_md_projection.rs:33` | tiered memories -> exec_dir CLAUDE.md (survives /compact) | never armed; 6 unit tests arm it |
+| `PERSONAS_INCIDENTS_PROMOTION` | `db/src/audit_incidents_promoter.rs:40` | audit inserts -> incidents inbox (8 call sites) | **partially live** via a deliberate carve-out at `alert_evaluator.rs:268` |
+
+**Consequences for /research findings:**
+- **Never score a gated feature as live.** Grep for a setter before treating one as
+  production behavior. A module can be fully implemented, unit-tested, and wired into the
+  runner while being a complete no-op in every real execution.
+- **A gate can have downstream victims.** The shipped catalog template
+  `scripts/templates/development/self-evolving-codebase-memory.json` exists to drain the
+  hooks-sidecar queue; with the gate unset it adopts cleanly and produces nothing forever
+  (its own `error_handling` says so). When a finding touches a gated lane, grep
+  `scripts/templates/` for dependents.
+- Both engine gates now report in the environment doctor
+  (`commands/infrastructure/system/health.rs::build_environment_section`, surfaced at
+  Overview -> Health -> Environment), so their state is observable rather than silent.
+- Bake-out audit is tracked at `Patterns/descoped-reopenable.md` (2026-08-12 entry).
+
+## Memory injection: rows are capped by the repo, characters by the packer
+
+`repos::core::memories::get_for_injection_v2(pool, scope, core_limit, active_limit)` applies
+**row limits only** (`LIMIT` in SQL). The character budget is a separate, downstream step:
+`memory_recall::pack_by_budget(candidates, ACTIVE_MEM_BUDGET_CHARS, now)`.
+
+- `ACTIVE_MEM_BUDGET_CHARS = 6000` lives at `db/src/memory_recall.rs` and is shared by the
+  two surfaces that project persona memory to the model: the runner's `## Agent Memory`
+  system-prompt section and `claude_md_projection`. It was a runner-local const until
+  2026-08-12, when the projection was found to have skipped the budget entirely.
+- **`pack_by_budget` SKIPS over-budget entries rather than truncating them**, on the
+  documented grounds that "a partial memory is worse than none". Any new cap on this
+  material must follow that rule, not invent a truncating one.
+- Core tier is deliberately unbudgeted: user-pinned is sacred (MEMORY CONTRACT (1)) and is
+  bounded by `CORE_LIMIT` rows.
+- The full MEMORY CONTRACT (tiers, decay, ml task-aware recall) is the doc-comment block
+  above `pub struct PersonaMemory` in `core/src/models/memory.rs`.
+
+## Personas WRITES CLAUDE.md in three places (it is a producer, not just a consumer)
+
+A /research finding about CLAUDE.md content almost always lands on one of these, not on
+personas' own root file:
+
+1. **Managed repos, context map** - `commands/infrastructure/context_map_export.rs::render_section`
+   splices a marker-delimited `<!-- personas:context-map -->` block into `<root>/CLAUDE.md`
+   on every context scan. Everything outside the markers is preserved verbatim; copy this
+   splice pattern for any other managed-repo write.
+2. **Managed repos, conventions** - the `/codebase-init` skill Phase 2 generates
+   `.claude/CLAUDE.md` (commands, architecture, code conventions, working agreements,
+   dependency policy, performance expectations, type strictness, size budget).
+3. **Per-execution exec_dir** - `engine/claude_md_projection.rs` writes
+   `.claude/persona-memory.md` plus an `@import` line, gated (see above).
+
+`standards_ruleset.md` note: the golden ruleset is `include_str!`'d into the standards-scan
+prompt at `commands/infrastructure/standards_scan.rs:95`. `rule_key` is free-form, but
+**categories are allowlisted** at `standards_scan.rs:44` and `norm()` silently coerces an
+unlisted category to `code_quality` - adding a `## <category>` heading to the markdown
+without updating the const mis-files every finding under it without failing.
