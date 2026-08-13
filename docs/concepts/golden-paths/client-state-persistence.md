@@ -218,7 +218,7 @@ Three incompatible error dialects. Representative worst cases:
 
 Everything else — including all 30 hand-rolled wrapper files — is a violation, not an exception.
 
-**How it fails loudly when its own precondition is absent.** This repo has a live example of the failure mode. `scripts/check-event-registry.mjs` guards one side only: it exits 1 when the TS `EventName` object is missing (`:24-27`), but if the *Rust* regex matches zero events, `rustEvents` is empty, both diff sets are empty, and it prints `Event registry OK (0 Rust events, …)` and exits **0**. The storage gate must not inherit that shape:
+**How it fails loudly when its own precondition is absent.** *(Evaluator correction, 2026-08-13: this section originally cited `scripts/check-event-registry.mjs` as a live example of a gate that prints `Event registry OK (0 Rust events, ...)` and exits 0 when its Rust regex matches nothing. **That is false and was verified false.** If `rustEvents` is empty, `missingInRust` becomes every TypeScript event and the script `process.exit(1)`s at `:50`. It fails correctly. Real examples of the pattern in this repo are `ci.yml:258` — `cargo test` without `--workspace`, so an entire crate's suite never runs — and `scripts/secret-scan.mjs`, which exits 0 when gitleaks is absent. The requirements below stand on their own merits; only the cited precedent was wrong.)* The storage gate must not inherit that shape:
 
 - **Assert non-zero extraction on both sides before comparing.** Zero keys parsed from `keys.ts`, or zero entries parsed from `ALLOWED_KEYS`, is `exit 1` with "extractor matched nothing — the file moved or its shape changed". Never "OK".
 - **A missing or unparseable `storage-baseline.json` is `exit 1`,** not "nothing to compare against".
