@@ -517,6 +517,48 @@ When a `/research` source is a walkthrough of a **Claude Code plugin** (Superpow
 
 ---
 
+### `npx tsc --noEmit` does NOT typecheck test files
+
+Found in `/research` run 2026-08-13 (kpi-dashboard-design compare). `tsconfig.json`
+sets `exclude: ["src/test", "src/**/__tests__/**", "src/lib/harness"]`, so the
+canonical type gate — the one in `npm run check`, the PR self-review list, and CI —
+**skips every `__tests__/` file in the repo**. Vitest transpiles with esbuild and
+does not typecheck either. So there is no gate at all on test-file types.
+
+The failure mode this creates: add a required field to a shared interface, and
+every `__tests__` object literal constructing that interface is now type-broken
+while `tsc` stays green and the suite still passes (esbuild strips the types).
+The error surfaces only in an editor, for whoever opens the file next.
+
+**Rule for any change that adds a required field to a shared type:** grep
+`src/**/__tests__/` for constructors of that type and update them in the same
+change. To verify, run tsc against a temporary config that re-includes tests:
+
+```bash
+cat > .tsconfig.testcheck.json <<'EOF'
+{ "extends": "./tsconfig.json", "include": ["src"], "exclude": ["src/test", "src/lib/harness"] }
+EOF
+npx tsc --noEmit -p .tsconfig.testcheck.json; rm -f .tsconfig.testcheck.json
+```
+
+Expect pre-existing errors from other test files (e.g.
+`sub_factory/l2/ship/__tests__/shipAnnotations.test.ts` as of 2026-08-13) — grep
+the output for your own paths rather than expecting a clean exit.
+
+### A column with a DEFAULT and no writer is invisible dead configuration
+
+Same run. `dev_kpis.tier` had a migration, a `NOT NULL DEFAULT 'supporting'`, two
+live consumers (`kpi_derivation.rs`'s ORDER BY and the Factory's tier-weighted
+health), a settable UI control, and an Athena op — and was still effectively
+constant, because the KPI *scan* (which creates most KPIs) had no `tier` field in
+its proposal struct at all. Everything downstream ran correctly on a value that
+never varied.
+
+Greps for the column name find plenty of hits and look healthy; what is missing is
+a **writer on the dominant creation path**. When a `/research` finding depends on a
+column meaning something, check who WRITES it, not just who reads it — and check
+the highest-volume creator specifically.
+
 ## 5. Build & Dev Commands
 
 ```bash
