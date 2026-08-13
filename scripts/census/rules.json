@@ -132,6 +132,29 @@
         "matches": 63
       },
       "floor": 4000
+    },
+    {
+      "id": "raw-react-lazy",
+      "goldenPath": "docs/concepts/golden-paths/lazy-route-chunk.md",
+      "title": "Code-split boundary declared with raw React.lazy instead of lazyRetry",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?<![A-Za-z0-9_$.])lazy\\s*\\(",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a chunk boundary declared with raw React.lazy(); lazyRetry() is the drop-in that survives a failed chunk fetch instead of caching the rejection forever (2026-06-07 incident). Proxy for: a dynamic-import boundary with no recovery path."
+      },
+      "baseline": {
+        "files": 38,
+        "matches": 105
+      },
+      "floor": 4000
     }
   ]
 }
