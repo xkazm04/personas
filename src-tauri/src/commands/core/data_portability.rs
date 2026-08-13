@@ -13,6 +13,7 @@ use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 use ts_rs::TS;
 
+use crate::commands::infrastructure::skill_files;
 use crate::db::credential_fields::classify_field_type;
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::dev_tools as dev_tools_repo;
@@ -3598,10 +3599,20 @@ fn collect_project_skills(
             continue;
         }
 
+        // A symlinked entry resolves outside the skills dir; exporting through
+        // it would put arbitrary repo/home content into a shareable bundle.
+        let kind = skill_files::classify_skill_entry(&entry);
+        if let skill_files::SkillEntryKind::Rejected(reason) = kind {
+            export_warnings.push(format!(
+                "Project '{project_name}': skill '{entry_name}' not exported ({reason})."
+            ));
+            continue;
+        }
+
         let mut dropped: Vec<String> = Vec::new();
-        let (name, mut files) = if path.is_dir() {
+        let (name, mut files) = if matches!(kind, skill_files::SkillEntryKind::Dir) {
             let mut files = Vec::new();
-            collect_skill_dir_files(&path, &path, &mut files, &mut dropped);
+            collect_skill_dir_files(&path, &path, &mut files, &mut dropped, 0);
             (entry_name.clone(), files)
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             // Single-file skill: skills/<name>.md
@@ -3669,15 +3680,36 @@ fn collect_skill_dir_files(
     dir: &std::path::Path,
     out: &mut Vec<SkillFileEntry>,
     dropped: &mut Vec<String>,
+    depth: usize,
 ) {
+    if depth >= skill_files::MAX_SKILL_DIR_DEPTH {
+        dropped.push(format!(
+            "'{}' (nested deeper than {})",
+            dir.display(),
+            skill_files::MAX_SKILL_DIR_DEPTH
+        ));
+        return;
+    }
     let Ok(read_dir) = std::fs::read_dir(dir) else {
         return;
     };
     for entry in read_dir.flatten() {
         let path = entry.path();
-        if path.is_dir() {
-            collect_skill_dir_files(base, &path, out, dropped);
-            continue;
+        let rel_of = |p: &std::path::Path| {
+            p.strip_prefix(base)
+                .map(|r| r.to_string_lossy().replace('\\', "/"))
+                .unwrap_or_else(|_| p.to_string_lossy().to_string())
+        };
+        match skill_files::classify_skill_entry(&entry) {
+            skill_files::SkillEntryKind::Dir => {
+                collect_skill_dir_files(base, &path, out, dropped, depth + 1);
+                continue;
+            }
+            skill_files::SkillEntryKind::Rejected(reason) => {
+                dropped.push(format!("'{}' ({reason})", rel_of(&path)));
+                continue;
+            }
+            skill_files::SkillEntryKind::File => {}
         }
         if path.file_name().and_then(|n| n.to_str()) == Some(SKILL_PROVENANCE_FILE) {
             continue;
@@ -8823,7 +8855,7 @@ fn hash_existing_skill_dir(dir: &std::path::Path) -> Option<String> {
     let mut files = Vec::new();
     // Drop reasons are irrelevant here: this hash only has to match what the
     // exporter would have produced from the same directory.
-    collect_skill_dir_files(dir, dir, &mut files, &mut Vec::new());
+    collect_skill_dir_files(dir, dir, &mut files, &mut Vec::new(), 0);
     if files.is_empty() {
         return None;
     }
