@@ -22,6 +22,29 @@
     "context-map.json"
   ],
 
+  "$readBeforeEditingCaveat": [
+    "CATALOG.md is on this list because CLAUDE.md mandates it, but it is GENERATED and two of its",
+    "rows are known-wrong: `LoadingSpinner` is described as 'Canonical loading spinner… Use for any",
+    "full-element loading state' when the component renders null, and `DataGrid` reads 'CSS grid",
+    "fraction, e.' (a truncated fragment of an unrelated prop comment, because DataGrid has no",
+    "@catalog tag). Regenerating does NOT fix the LoadingSpinner row — that string is hardcoded in",
+    "the CURATED map at scripts/docs/gen-shared-catalog.mjs:56, which takes priority over any tag.",
+    "Prefer the `situationalDoctrine` map below and `uiRules.reuse.doNotHandRoll` over the catalog",
+    "for anything loading-related."
+  ],
+
+  "situationalDoctrine": {
+    "$comment": "Read the named doc BEFORE writing the surface. These are the per-situation golden paths; each states one way, its mandated primitives, its anti-patterns, and the gate it is owed. Loading is deliberately TWO entries because the two situations have opposite prescriptions.",
+    "a list or table": "docs/concepts/golden-paths/tables.md",
+    "a surface loading its data (tab/page/panel/list/chart on mount)": "docs/design/overview-loading.md (the five laws — root doctrine) + docs/concepts/golden-paths/page-loading.md (the applied path)",
+    "a busy state on a control the user just pressed": "docs/concepts/golden-paths/inline-busy-state.md",
+    "a button at rest (element/variant/size/radius/accessible name)": "docs/concepts/golden-paths/button.md",
+    "a modal or dialog": "docs/concepts/golden-paths/modals.md",
+    "a select / dropdown": "docs/concepts/golden-paths/dropdown-and-select.md",
+    "a form field and its validation": "docs/concepts/golden-paths/form-field-and-validation.md",
+    "theOneRuleThatSpansTwoOfThem": "Spinners are BANNED for surfaces and REQUIRED for actions. feedback/LoadingSpinner satisfies neither — it renders null."
+  },
+
   "blockingGates": [
     {
       "id": "typecheck",
@@ -109,7 +132,25 @@
     "modals": { "rule": "Use modals/BaseModal or feedback/ConfirmDialog. Never hand-roll a `fixed inset-0` backdrop.", "enforcedBy": "custom/enforce-base-modal" },
     "reuse": {
       "rule": "Check src/features/shared/components/CATALOG.md before building any UI primitive. ~115 exist.",
-      "doNotHandRoll": ["spinner", "empty state", "button", "copy button", "tooltip", "relative time", "number formatting", "toggle", "select", "form field", "tab strip"]
+      "$comment": "doNotHandRoll was a bare string list with no primitive named and no gate declared, so a tool could read the ban and still not know what to import or whether anything would catch it. Each entry is now an object: `use` names the real component (verified against src/features/shared/components/ on 2026-08-13), `enforcedBy` names a rule that exists TODAY, and `gateOwed` records a gate a golden path has specified but nobody has built. Absent `enforcedBy` means UNENFORCED — every violation of that row ships under a green `npm run check`.",
+      "doNotHandRoll": [
+        { "what": "empty state", "use": "feedback/ScenarioEmptyState (default export; imported as EmptyState). Chart panel: display/ChartEmptyState. Compact generic: display/EmptyIllustration.", "note": "There is NO feedback/EmptyState — that path appeared in CLAUDE.md, Design.md and the reuse doc until 2026-08-13 and never existed. 12 feature-local *EmptyState components grew in the gap." },
+        { "what": "button", "use": "buttons/Button (variant + size; aria-label on icon-* sizes)", "gateOwed": "custom/prefer-button-primitive — specified in docs/concepts/golden-paths/button.md §9 (messageIds: unnamedControl, unthemedFocus, variantClone). 2,311 drift elements / 915 files, 844 with no accessible name at all." },
+        { "what": "async button / double-submit guard", "use": "buttons/AsyncButton with an onClick that RETURNS the promise", "note": "onClick={() => void fn()} returns undefined, which silently disarms both the guard and the self-derived spinner. 177 void handlers exist.", "gateOwed": "custom/no-noop-busy-state messageId voidDisarmsGuard — specified in docs/concepts/golden-paths/inline-busy-state.md; autofixable, 34 hits, precision 100%." },
+        { "what": "busy state on an action control", "use": "buttons/AsyncButton (renders a real spinner) — NEVER feedback/LoadingSpinner", "note": "feedback/LoadingSpinner renders null (LoadingSpinner.tsx:12-21). Spinners are banned for SURFACES and required for ACTIONS; see docs/design/overview-loading.md and docs/concepts/golden-paths/inline-busy-state.md.", "gateOwed": "custom/no-noop-busy-state messageId noopSpinner — 252 call sites, structurally zero false positives (the component cannot render anything)." },
+        { "what": "surface loading state / skeleton", "use": "display/UnifiedTable with isLoading + data for lists; layout/RouteChunkSkeleton as a lazy-route Suspense fallback; otherwise a calm delayed ghost per docs/design/overview-loading.md §C", "note": "Never a spinner, never animate-pulse, never `if (loading) return <X/>` around chrome.", "gateOwed": "none specified yet. Zero automated enforcement of the five laws; UnifiedTable has no test file." },
+        { "what": "table", "use": "display/UnifiedTable (default) · display/DataGrid (pagination/selection/bulk/drag) · display/FacetedDecisionTable (slash-path taxonomy)", "gateOwed": "custom/prefer-unified-table — specified in docs/concepts/golden-paths/tables.md §Gaps 9; role=\"columnheader\" is the near-perfect signal (6 files, 4 true positives)." },
+        { "what": "copy button", "use": "buttons/CopyButton / useCopyToClipboard", "enforcedBy": "custom/prefer-shared-clipboard" },
+        { "what": "tooltip", "use": "display/Tooltip" },
+        { "what": "relative time", "use": "display/RelativeTime (live) / display/AbsoluteTime (fixed)" },
+        { "what": "number formatting", "use": "display/Numeric", "enforcedBy": "custom/prefer-numeric" },
+        { "what": "status pill", "use": "display/StatusBadge + tokenLabel()", "enforcedBy": "custom/prefer-status-badge" },
+        { "what": "grouped content panel", "use": "layout/SectionCard + layout/SectionHeader", "enforcedBy": "custom/prefer-section-card" },
+        { "what": "toggle", "use": "forms/AccessibleToggle" },
+        { "what": "select", "use": "forms/Listbox" },
+        { "what": "form field", "use": "forms/FormField" },
+        { "what": "tab strip", "use": "layout/PanelTabBar / layout/SegmentedTabs" }
+      ]
     }
   },
 
