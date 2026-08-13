@@ -102,7 +102,12 @@ export interface UnifiedTableProps<T> {
   onRowClick?: (row: T) => void;
   /** Row height for virtual list (0 = no virtual list) */
   rowHeight?: number;
-  /** Empty state */
+  /**
+   * Empty state. **Always pass an already-translated, surface-specific title**
+   * ("No executions yet", not "No data") — omitting it falls back to the
+   * generic translated `shared.grid_no_data`, which is a last resort, not a
+   * default worth shipping.
+   */
   emptyTitle?: string;
   emptyDescription?: string;
   /** Optional traced glyph drawn above the empty title (illustrated empty state). */
@@ -439,7 +444,7 @@ export function UnifiedTable<T>({
   getRowKey,
   onRowClick,
   rowHeight = 0,
-  emptyTitle = 'No data',
+  emptyTitle,
   emptyDescription,
   emptyGlyph,
   isLoading,
@@ -606,7 +611,10 @@ export function UnifiedTable<T>({
               className="w-28 h-28 mx-auto mb-1"
             />
           )}
-          <p className="typo-body text-foreground">{emptyTitle}</p>
+          {/* No hardcoded English fallback: an untranslated default leaks into
+              all 14 locales. `shared.grid_no_data` is the shared translated
+              last resort — always pass a specific `emptyTitle` instead. */}
+          <p className="typo-body text-foreground">{emptyTitle ?? t.shared.grid_no_data}</p>
           {emptyDescription && <p className="typo-body text-foreground/90 mt-1">{emptyDescription}</p>}
         </div>
       ) : null}
