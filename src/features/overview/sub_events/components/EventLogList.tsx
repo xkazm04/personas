@@ -10,7 +10,6 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import { GROUP_HEADER_SIZE } from '@/features/shared/components/display/GroupedVirtualList';
 import { timeGroupKey, timeGroupLabels } from '@/features/shared/components/display/grouping';
 import { PersonaColumnFilter } from '@/features/agents/components/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
@@ -266,16 +265,15 @@ export default function EventLogList() {
     },
   ];
 
-  // Mirrors UnifiedTable's own `columns.map(c => c.width).join(' ')` so the
-  // ghost rows line up under the real column header pixel-for-pixel.
-  const eventGridTemplate = columns.map((c) => c.width).join(' ');
-
   // ── Loading choreography (docs/design/overview-loading.md, law 1) ──
-  // Ghost rows ONLY when the row region would otherwise be empty while the
-  // initial/filter-context fetch is in flight. Rows already on screen —
-  // including store data that was pre-warmed by the event bus or a prior
-  // visit — are never hidden by a fetch.
-  const showGhost = isFetching && displayedEvents.length === 0;
+  // `isFetching` is handed straight to UnifiedTable, which owns the whole
+  // cold-load contract: calm delayed ghost rows under its real column header
+  // while the region is empty and a fetch runs, the settled-only empty state,
+  // and the id-guarded row cascade. Rows already on screen — including store
+  // data pre-warmed by the event bus or a prior visit — are never hidden by a
+  // fetch. The only thing left here is gating this surface's own rich
+  // zero-events CTA on the fetch having settled (law 5).
+  const showRichEmpty = !isFetching && displayedEvents.length === 0 && !hasActiveFilters;
 
   return (
     <ContentBox>
@@ -426,17 +424,7 @@ export default function EventLogList() {
       </div>
 
       <ContentBody flex>
-        {showGhost ? (
-          /* Nothing to show yet + a fetch in flight: ghost rows under the
-             real column header (rendered by UnifiedTable's own chrome would
-             require data, so the ghost stands in for the whole region — see
-             EventGhostRows). Ghosts are invisible for their first ~120ms
-             (animation-delay + fill-mode both) so a fast fetch skips them
-             entirely; real rows replace them the frame they arrive. */
-          <div className="flex-1 min-h-0 flex flex-col">
-            <EventGhostRows gridTemplate={eventGridTemplate} />
-          </div>
-        ) : displayedEvents.length === 0 && !hasActiveFilters ? (
+        {showRichEmpty ? (
           <div className="flex-1 flex items-center justify-center p-6">
             <EmptyState
               icon={Zap}
@@ -450,19 +438,12 @@ export default function EventLogList() {
           </div>
         ) : (
           <div className="flex-1 flex flex-col min-h-0">
-            {/* UnifiedTable owns row rendering; its own pulsing skeleton stays
-                disabled (isLoading={false} below) — the ghost branch above is
-                the only loading placeholder this surface shows. UnifiedTable
-                doesn't expose a row-level entrance cascade hook, so no
-                RevealItem staggering here (see docs/design/overview-loading.md
-                §"Lists & tables" — rows paint instantly once data lands,
-                which satisfies law 2 even without the cascade). */}
             <UnifiedTable<PersonaEvent>
               columns={columns}
               data={displayedEvents}
               getRowKey={(e) => e.id}
               onRowClick={setSelectedEvent}
-              isLoading={false}
+              isLoading={isFetching}
               emptyTitle={t.overview.events.no_filter_match}
               rowHeight={EVENT_ROW_HEIGHT}
               rowAccent={(e) =>
@@ -502,60 +483,5 @@ export default function EventLogList() {
         </DetailModal>
       )}
     </ContentBox>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// EventGhostRows — calm ghost rows for the ONLY moment the row region has
-// nothing to show (a fetch with a cold store / empty filter context).
-//
-// Each ghost enters via `animate-fade-in` (150ms, fill-mode: both) behind a
-// staggered animation-delay starting at 120ms — `both` holds opacity 0 through
-// the delay, so a fetch that resolves quickly never paints a single ghost.
-// The delay IS the anti-flash: no timers, no minimum display, and real rows
-// replace ghosts on the very frame data arrives, in the same geometry
-// (identical row height + grid template, mirrored from `eventGridTemplate`).
-// No `animate-pulse` — the entrance stagger is the only motion.
-// ---------------------------------------------------------------------------
-
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
-/** Deterministic width variation so ghosts read as rows, not a barcode. */
-const GHOST_NAME_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'];
-
-function EventGhostRows({ gridTemplate }: { gridTemplate: string }) {
-  return (
-    <div className="flex-1 min-h-0 overflow-hidden" aria-hidden="true">
-      {/* group-header ghost — mirrors the sticky day-group bar's silhouette */}
-      <div
-        className="flex items-center px-4 border-b border-primary/5 animate-fade-in"
-        style={{ height: GROUP_HEADER_SIZE, animationDelay: '120ms' }}
-      >
-        <span className={`h-2.5 w-16 ${GHOST_BAR}`} />
-      </div>
-      {Array.from({ length: 10 }).map((_, i) => {
-        const nameW = GHOST_NAME_WIDTHS[i % GHOST_NAME_WIDTHS.length];
-        const delay = `${140 + i * 35}ms`;
-        return (
-          <div
-            key={i}
-            className="grid items-center border-b border-primary/[0.06] border-l-2 border-l-transparent animate-fade-in"
-            style={{ gridTemplateColumns: gridTemplate, height: EVENT_ROW_HEIGHT, animationDelay: delay }}
-          >
-            {/* trigger icon */}
-            <div className="flex items-center px-4">
-              <span className="w-7 h-7 rounded-card bg-primary/[0.06]" />
-            </div>
-            {/* persona name */}
-            <div className="px-4"><span className={`h-3.5 ${nameW} max-w-full block ${GHOST_BAR}`} /></div>
-            {/* event type */}
-            <div className="px-4"><span className={`h-3.5 w-28 block ${GHOST_BAR}`} /></div>
-            {/* status pill */}
-            <div className="px-4"><span className="inline-block h-5 w-20 rounded-card bg-primary/[0.06]" /></div>
-            {/* created (right-aligned) */}
-            <div className="px-4 flex justify-end"><span className={`h-3.5 w-16 ${GHOST_BAR}`} /></div>
-          </div>
-        );
-      })}
-    </div>
   );
 }
