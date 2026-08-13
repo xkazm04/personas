@@ -1,5 +1,13 @@
 # Golden path — IPC command authorization
 
+> **Corrections pass — 2026-08-13.** Applied after the wave-1 expert review
+> (`REVIEW-wave1.md`). Command counts across the corpus disagreed (1,649 /
+> 1,657 / 1,661 / 1,666) because each composer counted with a slightly
+> different grep; the authoritative figure, measured once with
+> `grep -rn --include=*.rs -o '#\[tauri::command' src-tauri | wc -l`, is
+> **1,673**, and every occurrence below now reads that. Any §9 floor
+> assertion seeded from the old number must be re-derived from 1,673.
+
 > Situation node: `backend-runtime/command-authorization/ipc-command-authorization` · [situation spine](../situation-spine.md)
 > Composed 2026-08-13 from a ground-truth sweep of all 564 `.rs` files under
 > `src-tauri/src/` (236 of them defining commands) plus the frontend IPC wrapper,
@@ -192,7 +200,7 @@ id — that is a different leaf and `ipc_auth` does not do it.
 
 ## Evidence
 
-**Adoption:** 1,657 `#[tauri::command]` definitions across 236 files, 1,585 of
+**Adoption:** 1,673 `#[tauri::command]` definitions across 236 files, 1,585 of
 them registered. 237 `#[requires(...)]` annotations (162 privileged — 78 sync,
 84 async — / 56 cloud / 19 auth) concentrated in just **43 of the 236 files**.
 198 list entries (153 privileged + 45 cloud). 195 of the 1,585 registered

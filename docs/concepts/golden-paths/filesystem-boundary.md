@@ -1,5 +1,13 @@
 # Golden path — Caller-supplied filesystem paths
 
+> **Corrections pass — 2026-08-13.** Applied after the wave-1 expert review
+> (`REVIEW-wave1.md`). Command counts across the corpus disagreed (1,649 /
+> 1,657 / 1,661 / 1,666) because each composer counted with a slightly
+> different grep; the authoritative figure, measured once with
+> `grep -rn --include=*.rs -o '#\[tauri::command' src-tauri | wc -l`, is
+> **1,673**, and every occurrence below now reads that. Any §9 floor
+> assertion seeded from the old number must be re-derived from 1,673.
+
 > Situation node: `integrations-external/external-and-host/filesystem-boundary` · [situation spine](../situation-spine.md)
 > Leaf metadata: `sides: server` · `convergence: diverged` · `risk: high` · `recurrence: 157` ·
 > `twoSided: true` · `fusedAcrossSides: true`. Merged from *File-path arguments from
@@ -263,7 +271,7 @@ orthogonal — it decides *who calls*, never *what the argument points at*.
 
 ## Evidence
 
-**Adoption.** 1,661 `#[tauri::command]` definitions, all in `src-tauri/src/`. **71
+**Adoption.** 1,673 `#[tauri::command]` definitions, all in `src-tauri/src/`. **71
 take a caller-supplied path parameter** by name+type; 3 are semantic false positives
 (`list_design_reviews_paginated(sort_dir)` is a sort direction;
 `execute_api_request(path)` and `openapi_playground_test(path)` are URL paths), giving
@@ -865,7 +873,7 @@ has actually shipped is a checker that passes because it examined nothing —
 scan exiting 0 with gitleaks absent. Copy `ipc_auth.rs:971-976`'s `checked > 50`
 precedent and go further:
 
-- `assert!(commands_parsed > 1_500, "command walk broke — parsed {commands_parsed}, expected ~1,661")`.
+- `assert!(commands_parsed > 1_500, "command walk broke — parsed {commands_parsed}, expected ~1,673")`.
   A regex that stops matching `#[tauri::command]` must read as breakage, not as
   compliance.
 - `assert!(path_commands_found >= 60, …)` as a **separate** counter from the total. One
@@ -896,3 +904,17 @@ E and A: a command taking both a root-like and a path-like parameter, and a comm
 body contains `fs::write` / `fs::read_to_string` / `File::create` / `create_dir_all` on a
 value derived from a parameter with no sanctioned resolver between them. That is a
 review-time nudge, and it should be labelled as one.
+
+> **Corrections pass — 2026-08-13 · gate lane.** This document specifies a
+> gate living in `personas-db` (or another extracted crate) and describes it as
+> "already CI-gated" via `npm run test:rust`. That was **false when written**:
+> `scripts/build/run-rust-tests.mjs` passes `--lib` against the ROOT manifest,
+> so only `personas-desktop`'s lib target compiles, and `test:rust` appeared in
+> no workflow and no lefthook job. A test placed there would have been written,
+> merged, marked done, and never executed.
+>
+> `ad91bd538` added `--workspace` to `cargo test` and `cargo clippy` in
+> `ci.yml`, so crate tests now run **in CI**. `npm run test:rust` still does
+> not run them locally — use `cargo test -p <crate>` or
+> `npm run test:rust:crates`. Any gate here must state which lane it runs in
+> and must not claim `test:rust` covers it.

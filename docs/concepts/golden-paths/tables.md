@@ -1,6 +1,11 @@
 # Golden path — Tables & list surfaces
 
-> Situation node: `frontend/surfaces/tables` · [situation spine](../situation-spine.md)
+> **Corrections pass — 2026-08-13.** This path was written as a probe BEFORE
+> discovery replaced the top-down 56-topic tree with the 247-leaf spine, and
+> its topic path was never re-pointed. Old address `frontend/surfaces/tables` names a domain that
+> no longer exists. Corrected above. The document's content was not affected.
+
+> Situation node: `product-surfaces/lists-and-tables/data-table` · [situation spine](../situation-spine.md)
 > Hand-authored 2026-08-13 from a repo-wide ground-truth sweep (51 tool calls),
 > against `master` @ `2a874e692`. `.claude/worktrees/**` excluded from all counts.
 > The **Deviations** section is a fix backlog; it migrates to `violating` cells

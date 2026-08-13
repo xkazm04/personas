@@ -210,3 +210,17 @@ if (new Date().getTimezoneOffset() === 0) throw new Error(
 ```
 
 and `vitest.config.ts` must set `TZ` for this suite. A test that cannot detect the bug it exists to prevent is worse than no test. Mirror it in Rust: a `#[test]` in `db/src/migrations/` that opens an in-memory DB, runs the full migration chain, reads `PRAGMA table_info` for every table, and asserts each timestamp column's default is either absent or exactly `strftime('%Y-%m-%dT%H:%M:%fZ','now')` — with the same floor assertion (`≥ 250 tables seen`) so a broken migration chain fails instead of asserting over nothing. That test runs today in `ci.yml:258`'s `rust-tests` job with no new infrastructure.
+
+> **Corrections pass — 2026-08-13 · gate lane.** This document specifies a
+> gate living in `personas-db` (or another extracted crate) and describes it as
+> "already CI-gated" via `npm run test:rust`. That was **false when written**:
+> `scripts/build/run-rust-tests.mjs` passes `--lib` against the ROOT manifest,
+> so only `personas-desktop`'s lib target compiles, and `test:rust` appeared in
+> no workflow and no lefthook job. A test placed there would have been written,
+> merged, marked done, and never executed.
+>
+> `ad91bd538` added `--workspace` to `cargo test` and `cargo clippy` in
+> `ci.yml`, so crate tests now run **in CI**. `npm run test:rust` still does
+> not run them locally — use `cargo test -p <crate>` or
+> `npm run test:rust:crates`. Any gate here must state which lane it runs in
+> and must not claim `test:rust` covers it.

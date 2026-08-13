@@ -1,6 +1,11 @@
 # Golden path — Page loading
 
-> Situation node: `frontend/motion/page-loading` · [situation spine](../situation-spine.md)
+> **Corrections pass — 2026-08-13.** This path was written as a probe BEFORE
+> discovery replaced the top-down 56-topic tree with the 247-leaf spine, and
+> its topic path was never re-pointed. Old address `frontend/motion/page-loading` names a domain that
+> no longer exists. Corrected above. The document's content was not affected.
+
+> Situation node: `ui-system/empty-and-loading/cold-load-choreography` · [situation spine](../situation-spine.md)
 > Hand-authored 2026-08-13 from a repo-wide ground-truth sweep (60 tool calls).
 > The **Deviations** section is a fix backlog; it migrates to `violating` cells
 > in `workspace_practice_context_state` when this path is ingested.

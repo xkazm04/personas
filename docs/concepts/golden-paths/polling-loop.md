@@ -1,11 +1,19 @@
 # Golden path — Polled read: client cadence, server cache
 
+> **Corrections pass — 2026-08-13.** Applied after the wave-1 expert review
+> (`REVIEW-wave1.md`). Command counts across the corpus disagreed (1,649 /
+> 1,657 / 1,661 / 1,666) because each composer counted with a slightly
+> different grep; the authoritative figure, measured once with
+> `grep -rn --include=*.rs -o '#\[tauri::command' src-tauri | wc -l`, is
+> **1,673**, and every occurrence below now reads that. Any §9 floor
+> assertion seeded from the old number must be re-derived from 1,673.
+
 > Situation node: `client-runtime/data-fetching/polling-loop` · [situation spine](../situation-spine.md)
 > Composed 2026-08-13 from a ground-truth sweep of every `setInterval(` site
 > under `src/` (84 grep hits, all read individually), every `usePolling` call
 > site, all four competing cadence primitives, the `PollingCoordinator`, a full
 > `npx eslint` run over all 4,829 `src/**/*.{ts,tsx}` files, and — for the
-> server half — all 1,666 `#[tauri::command]` definitions across the five
+> server half — all 1,673 `#[tauri::command]` definitions across the five
 > `src-tauri/` crates, the 100 snapshot/status commands among them, and the
 > in-process cache inventory (~39 caches, all 8 `invalidate_*` functions and
 > their call sites verified directly). Against `master` @ `f7676ab82`.
@@ -27,7 +35,7 @@ keeps a superseded response from clobbering a newer one — a poll needs one, bu
 the rule belongs there.
 `client-runtime/data-fetching/snapshot-plus-stream` owns opening a running
 entity with a snapshot + a stream.
-`frontend/motion/page-loading` ([page-loading.md](./page-loading.md)) owns what
+`ui-system/empty-and-loading/cold-load-choreography` ([page-loading.md](./page-loading.md)) owns what
 the surface *shows*; §"The contract" states the one rule where the two meet.
 
 ## Trigger
@@ -134,7 +142,7 @@ Four rules bind the two halves. Every one of them is violated somewhere in this 
 2. **The server may not cache without invalidating.** If a poll reads through a TTL memo, every mutation that changes the underlying data must clear or bump it. Otherwise the poll is *worse* than no poll: it guarantees the user stares at a value that has already changed, for up to one TTL, with full confidence. Six caches in this repo fail this rule, one of them for a full hour.
 3. **A poll must never set a loading flag.** The loading flag means "there is nothing on screen yet". A refetch that flips it makes a live surface flicker into its cold-load state on every tick — law 1 of [page-loading](./page-loading.md). The correct pair is `isLoading` for the first fetch and `lastRefreshed` for every one after.
 4. **The failure signal must survive the trip.** The backoff only exists if `fetchFn` rejects; the error banner only exists if the store records it. Doing both is fine — swallowing into store state *and* resolving is the shape that kills backoff silently.
-5. **Every poll in this app is a full re-read, so size it that way.** Of **1,666** Tauri commands, **zero** accept a since/cursor/etag/version parameter with delta semantics and zero return a change token. (Eight commands *look* like they do: five are absolute analytics windows — `events.rs:33-36`, `tools/tools.rs:114,123,133,144`; three are keyset *pagination* cursors — `reviews.rs:1027`, `dev_tools.rs:646`, `:1300`; and `fetch_roadmap`'s ETag is HTTP-to-GitHub and never crosses IPC.) There is no cheap incremental tick available to you. Until that changes, cadence is the only cost lever you have — which is exactly why steps 5 and 10 matter more here than in an app with delta reads.
+5. **Every poll in this app is a full re-read, so size it that way.** Of **1,673** Tauri commands, **zero** accept a since/cursor/etag/version parameter with delta semantics and zero return a change token. (Eight commands *look* like they do: five are absolute analytics windows — `events.rs:33-36`, `tools/tools.rs:114,123,133,144`; three are keyset *pagination* cursors — `reviews.rs:1027`, `dev_tools.rs:646`, `:1300`; and `fetch_roadmap`'s ETag is HTTP-to-GitHub and never crosses IPC.) There is no cheap incremental tick available to you. Until that changes, cadence is the only cost lever you have — which is exactly why steps 5 and 10 matter more here than in an app with delta reads.
 
 ## Anti-patterns
 
@@ -352,7 +360,7 @@ Already free (zero SQLite) and correctly so — **do not "optimise" these**:
 
 ### Server — no delta reads exist
 
-**0 of 1,666** commands accept a change token or return one (see contract rule 5).
+**0 of 1,673** commands accept a change token or return one (see contract rule 5).
 Not a defect to fix in one PR; recorded because it bounds every cost argument in
 this document — there is no incremental tick to migrate to.
 

@@ -1,5 +1,13 @@
 # Golden path — Paginated list query
 
+> **Corrections pass — 2026-08-13.** Applied after the wave-1 expert review
+> (`REVIEW-wave1.md`). Command counts across the corpus disagreed (1,649 /
+> 1,657 / 1,661 / 1,666) because each composer counted with a slightly
+> different grep; the authoritative figure, measured once with
+> `grep -rn --include=*.rs -o '#\[tauri::command' src-tauri | wc -l`, is
+> **1,673**, and every occurrence below now reads that. Any §9 floor
+> assertion seeded from the old number must be re-derived from 1,673.
+
 > Situation node: `data-persistence/query-performance/paginated-list-query` · [situation spine](../situation-spine.md)
 > Composed 2026-08-13 from a ground-truth sweep of `src-tauri/{src,db,core}` and `src/**`,
 > against `master` @ `f7676ab82`. `.claude/worktrees/**` and `target/` excluded from every count.
@@ -118,7 +126,7 @@ return a projection type (`ExecutionListItem`, 16 scalars) — never the full re
 
 ## Evidence
 
-**Adoption, against 1,649 `#[tauri::command]` fns of which 390 (23.6%) are list-shaped:** **6** commands return a page type; **4** of those have a ts-rs binding (`ManualReviewPage`, `TriagePage`, `TasksPage`, `PaginatedEvents`); only **3** accept a `cursor` parameter at all. **2** surfaces consume the shared client hook. **4** call sites wire `onEndReached`. **7** surfaces use `DataGrid`'s `pageSize` (4 direct + 3 through `FacetedDecisionTable`'s `pageSize = 25` default). Properly bounded list commands: ~41 of 384 (~11%).
+**Adoption, against 1,673 `#[tauri::command]` fns of which 390 (23.6%) are list-shaped:** **6** commands return a page type; **4** of those have a ts-rs binding (`ManualReviewPage`, `TriagePage`, `TasksPage`, `PaginatedEvents`); only **3** accept a `cursor` parameter at all. **2** surfaces consume the shared client hook. **4** call sites wire `onEndReached`. **7** surfaces use `DataGrid`'s `pageSize` (4 direct + 3 through `FacetedDecisionTable`'s `pageSize = 25` default). Properly bounded list commands: ~41 of 384 (~11%).
 
 - **`src-tauri/db/src/repos/dev_tools.rs:3814-3876` — the ONE server site to copy.** Named clamp consts, composite cursor predicate, `limit + 1` truncation, and counts sharing the page's own filter builder. Every other paginated repo fn in the tree is a subset of this.
 - **`src/features/overview/sub_manual-review/hooks/useManualReviewQueue.ts:35` — the ONE client site to copy.** 22 lines, no state, filters folded into `filterKey`, `PAGE_SIZE` documented as matching the server clamp.
@@ -133,7 +141,7 @@ return a projection type (`ExecutionListItem`, 16 scalars) — never the full re
 
 ## Deviations found
 
-Counts are over `src-tauri/src/commands/**` (1,649 `#[tauri::command]` fns, 384 returning `Result<Vec<…>>` + 6 returning a page type) and `src/**`.
+Counts are over `src-tauri/src/commands/**` (1,673 `#[tauri::command]` fns, 384 returning `Result<Vec<…>>` + 6 returning a page type) and `src/**`.
 
 ### P0 — the shared-layer root causes (fix first; upstream of everything below)
 
@@ -246,7 +254,7 @@ Every row below was verified by reading the SQL. This is the migration front, or
 
 ## The missing gate
 
-**Signal.** A `#[tauri::command]` whose return type is `Result<Vec<T>, …>` or `Result<…Page, …>`. This is a near-perfect machine signal: 384 + 6 hits out of 1,649 commands, no false positives, and it is **already extracted** by an existing script — `scripts/check-command-contract.mjs:102` carries the exact `#[tauri::command] … fn <name>` regex. The client signal is much weaker (2 real hand-rolls in the whole tree) and does not warrant its own rule; enforce the server.
+**Signal.** A `#[tauri::command]` whose return type is `Result<Vec<T>, …>` or `Result<…Page, …>`. This is a near-perfect machine signal: 384 + 6 hits out of 1,673 commands, no false positives, and it is **already extracted** by an existing script — `scripts/check-command-contract.mjs:102` carries the exact `#[tauri::command] … fn <name>` regex. The client signal is much weaker (2 real hand-rolls in the whole tree) and does not warrant its own rule; enforce the server.
 
 **Mechanism.** A new `scripts/check-list-bounding.mjs`, wired into the existing `check:contracts` npm target (already inside `npm run check`, already CI-gated). For every list command it asserts three things:
 

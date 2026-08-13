@@ -46,7 +46,16 @@ Two things this repo already does that you must not re-derive: `PRAGMA foreign_k
 - **`DeletePersonaResult`** (`commands/core/personas.rs:612-623`) — the receipt struct. `deleted`, `executions_cancelled`, `executions_force_cancelled`, `timeout_reached`, `cancel_failures`.
 - **`deletion_forbidden_reason`** (`commands/core/personas.rs:655-664`) — the protection guard, deliberately kept pure so the most safety-critical check on the delete path is unit-testable without `AppState`.
 - **`db/src/macros.rs:207-222` `crud_delete!`** — the one-liner for a **leaf row only**. It expands to `DELETE FROM <table> WHERE id = ?1` with no transaction and no owner predicate, which is correct under autocommit for a row with no dependents and wrong for anything else. If your entity has children, do not reach for it.
-- **`#[requires(auth)]` / `#[requires(privileged)]`** (or `require_auth_sync(&state)?`) — on the delete **and** on its blast radius.
+- **`#[requires(privileged)]`** — on the delete **and** on its blast radius.
+  **NOT `#[requires(auth)]`, and NOT `require_auth_sync(&state)?`.** Corrections
+  pass 2026-08-13: `require_auth` and `require_auth_sync` are unconditional
+  `Ok(())` (`ipc_auth.rs:418-421`, `:478-481`) — they take `_state` and ignore
+  it. `require_privileged` (async) only checks that the IPC session token was
+  initialised at boot, then returns `Ok(())`; its own doc says primary
+  enforcement lives in the invoke-handler wrapper. Only
+  `require_privileged_sync` fails closed. An in-body `require_auth*` call is
+  documentation, not a guard — the attribute plus the `PRIVILEGED_COMMANDS`
+  listing is what enforces. See `ipc-command-authorization.md`.
 
 **Client**
 
@@ -70,7 +79,7 @@ Two things this repo already does that you must not re-derive: `PRAGMA foreign_k
 
 **Writing the delete**
 
-4. **Guard first — twice.** Put `#[requires(auth)]` or `#[requires(privileged)]` on the command (a secret, a device pairing, or anything cross-entity earns `privileged`), **and put the same attribute on the matching `*_blast_radius`** — the preview must never be cheaper to obtain than the action. Then load the entity, run a pure `*_forbidden_reason` check (system/builtin origin, in-use, tier), and return `AppError::Forbidden` before touching anything.
+4. **Guard first — twice.** Put `#[requires(privileged)]` on the command (a secret, a device pairing, or anything cross-entity earns `privileged`), **and put the same attribute on the matching `*_blast_radius`** — the preview must never be cheaper to obtain than the action. Then load the entity, run a pure `*_forbidden_reason` check (system/builtin origin, in-use, tier), and return `AppError::Forbidden` before touching anything.
 5. **Quiesce the runtime.** If the entity can have live work (executions, pollers, sessions), mark it deleting, cancel, and drain with a deadline before the row goes. `delete_persona` is the reference.
 6. **One transaction.** `let tx = conn.transaction()?;` — hard-delete only the polymorphic / FK-unreachable children, then the row, then `tx.commit()`. Never `unchecked_transaction()` on a delete path; it opts out of rusqlite's nesting safety for no gain.
 7. **Return a receipt, not `bool`.** A `#[derive(TS)] #[ts(export)]` struct naming what was cancelled, what was force-stopped, what failed. `bool` throws away the only honest thing you can tell the user afterwards.
@@ -322,8 +331,22 @@ The gate nobody has, and the one the whole leaf turns on.
 ### Gate C (client) — every destructive command has a confirm, and every preview costs what its delete costs
 
 - **Signal.** The command name. `check-command-contract.mjs` already extracts every registered command from `lib.rs` and every `#[tauri::command]` from the Rust tree; the destructive set is `/(^|_)(delete|remove|purge|clear|wipe|prune|forget|discard|reset|revoke|drop)(_|$)/` over that list — 128 today (113 for the narrow `delete|remove|purge|clear`). It is a *name* check, so no unusual call shape defeats it.
-- **Mechanism.** A `check:delete-contract` block inside `scripts/check-command-contract.mjs` — it already owns the `lib.rs` parse, the `src/**` walk and the `process.exit(1)` — wired into `npm run check` beside `check:contracts`. Three assertions: **(1)** every destructive command's `src/api/**` wrapper is referenced only from files that also import a sanctioned confirm primitive, or is allowlisted (**fails today for 52 UI call sites**); **(2)** every destructive command carries a `#[requires(…)]` attribute or a `require_auth*` call (**fails today for 7**); **(3)** every `<entity>_blast_radius` carries **at least** the privilege attribute of its `delete_<entity>` (**fails today for `credential_blast_radius`**). Assertion (3) is one comparison and closes a real security hole.
+- **Mechanism.** A `check:delete-contract` block inside `scripts/check-command-contract.mjs` — it already owns the `lib.rs` parse, the `src/**` walk and the `process.exit(1)` — wired into `npm run check` beside `check:contracts`. Three assertions: **(1)** every destructive command's `src/api/**` wrapper is referenced only from files that also import a sanctioned confirm primitive, or is allowlisted (**fails today for 52 UI call sites**); **(2)** every destructive command carries a `#[requires(…)]` attribute **and is listed in `PRIVILEGED_COMMANDS`** — a bare `require_auth*` call MUST NOT count as compliance, because both functions are unconditional `Ok(())`; accepting them would certify an unguarded command as guarded (**fails today for 7 with no attribute at all, plus the 40 annotated-but-unlisted commands `ipc-command-authorization.md` enumerates**); **(3)** every `<entity>_blast_radius` carries **at least** the privilege attribute of its `delete_<entity>` (**fails today for `credential_blast_radius`**). Assertion (3) is one comparison and closes a real security hole.
 - **Allowlist.** Named, with reasons: leaf-row deletes with no dependents and a trivially reversible effect (`delete_app_setting`, `clear_frontend_crashes`, `artist_clear_autosave`, `clear_pending_oauth`, `companion_daily_goals_discard`), and internal/dev-only commands (`delete_stale_seed_templates`). Seed the allowlist at today's population minus the named parents, then ratchet — the gate's value is that new entries require a diff someone reads.
 - **How it fails loudly if its own precondition is absent.** `check-command-contract.mjs` already models the right instinct: it `throw`s when the `invoke_handler` regex misses (`:43`) rather than proceeding over an empty set. The new block inherits that and adds `if (destructive.size < 100) throw new Error(…)` — if a refactor moves the handler block or breaks name extraction, the destructive set collapses toward zero and *every* assertion passes vacuously. That is the exact shape of the `cargo test`-without-`--features desktop` and gitleaks-not-installed failures this repo has already shipped. **A gate over a set must assert the set is populated before it asserts anything about its members.**
 
 **What no gate can catch, and therefore belongs to review:** context drift (Gap #4) is a runtime-ordering property — no static signal distinguishes a confirm that re-resolves its target from one that does not, and the two correct implementations in the repo look nothing alike. Until the guard lives inside `useConfirmDestructive`, "does this confirm survive its entity changing?" is a question for the security-sensitive-edit review checklist, not a linter. That is a finding, not an omission.
+
+> **Corrections pass — 2026-08-13 · gate lane.** This document specifies a
+> gate living in `personas-db` (or another extracted crate) and describes it as
+> "already CI-gated" via `npm run test:rust`. That was **false when written**:
+> `scripts/build/run-rust-tests.mjs` passes `--lib` against the ROOT manifest,
+> so only `personas-desktop`'s lib target compiles, and `test:rust` appeared in
+> no workflow and no lefthook job. A test placed there would have been written,
+> merged, marked done, and never executed.
+>
+> `ad91bd538` added `--workspace` to `cargo test` and `cargo clippy` in
+> `ci.yml`, so crate tests now run **in CI**. `npm run test:rust` still does
+> not run them locally — use `cargo test -p <crate>` or
+> `npm run test:rust:crates`. Any gate here must state which lane it runs in
+> and must not claim `test:rust` covers it.

@@ -228,3 +228,17 @@ SELECT COUNT(*) FROM <table> WHERE <col> IS NOT NULL AND NOT json_valid(<col>);
 ```
 
 Verified to detect the exact failure this path is about: a row written by `to_string(..).unwrap_or_default()` holds `''`, and `json_valid('') = 0`. Any non-zero result is a column that has *already* been corrupted in the field — repair it (from the original bytes where an audit trail exists, or `NULL` where it does not) before adding the constraint, because a table rebuild with a `CHECK` will otherwise fail on the existing data and take the migration with it.
+
+> **Corrections pass — 2026-08-13 · gate lane.** This document specifies a
+> gate living in `personas-db` (or another extracted crate) and describes it as
+> "already CI-gated" via `npm run test:rust`. That was **false when written**:
+> `scripts/build/run-rust-tests.mjs` passes `--lib` against the ROOT manifest,
+> so only `personas-desktop`'s lib target compiles, and `test:rust` appeared in
+> no workflow and no lefthook job. A test placed there would have been written,
+> merged, marked done, and never executed.
+>
+> `ad91bd538` added `--workspace` to `cargo test` and `cargo clippy` in
+> `ci.yml`, so crate tests now run **in CI**. `npm run test:rust` still does
+> not run them locally — use `cargo test -p <crate>` or
+> `npm run test:rust:crates`. Any gate here must state which lane it runs in
+> and must not claim `test:rust` covers it.

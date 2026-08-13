@@ -1,5 +1,13 @@
 # Golden path — Typed error contract
 
+> **Corrections pass — 2026-08-13.** Applied after the wave-1 expert review
+> (`REVIEW-wave1.md`). Command counts across the corpus disagreed (1,649 /
+> 1,657 / 1,661 / 1,666) because each composer counted with a slightly
+> different grep; the authoritative figure, measured once with
+> `grep -rn --include=*.rs -o '#\[tauri::command' src-tauri | wc -l`, is
+> **1,673**, and every occurrence below now reads that. Any §9 floor
+> assertion seeded from the old number must be re-derived from 1,673.
+
 > Situation node: `backend-runtime/contract-and-validation/typed-error-contract` · [situation spine](../situation-spine.md)
 > Two-sided (`sides: both`, `fusedAcrossSides: true`) · recurrence **2,562** — the highest-recurrence leaf in the corpus.
 > Dimensions: **ui · resilience · function · code-quality**.
@@ -158,7 +166,7 @@ is a new `AppError` variant on the backend — that is what "typed" buys.
 
 ## Evidence
 
-**Adoption of the backend half is excellent:** of **1,661** `#[tauri::command]` functions, **1,614**
+**Adoption of the backend half is excellent:** of **1,673** `#[tauri::command]` functions, **1,614**
 return `Result<_, AppError>` (97.2%), **15** are infallible, and **32** return `Result<_, String>` —
 all 32 in `commands/fleet/`, all three files allowlisted with a written reason. The frontend half is
 where the contract stops.
@@ -412,7 +420,7 @@ rule is now guarding a corpse; that fails just as loudly as an unauthorised impo
 ### 4. Repair the two existing gates' self-checks
 
 - `tauri-command-error-envelope.test.ts:132` asserts `allCommands.length >= 400` against a real count
-  of **1,661**. A refactor that hid 75% of the IPC surface would pass. Raise the floor to `>= 1400`
+  of **1,673**. A refactor that hid 75% of the IPC surface would pass. Raise the floor to `>= 1400`
   and add a comment binding it to the measured count, so the tripwire sits just under reality rather
   than 4× below it.
 - Fix the three stale source paths (`errorTaxonomy.ts:5`, `errorTaxonomy.parity.test.ts:5`,
