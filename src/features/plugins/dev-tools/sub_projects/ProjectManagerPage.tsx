@@ -35,20 +35,13 @@ import { scopeProjects, setActiveWorkspace, useWorkspaces } from '../sub_workspa
 
 /**
  * Loading choreography (docs/design/overview-loading.md v2): `projectsLoading`
- * (from `devToolsProjectSlice`) gates ghost rows ONLY into an empty region
- * (`projectsLoading && projects.length === 0`); a warm return visit already
- * has `projects` populated in the store and paints on the first frame
- * regardless of `projectsLoading`. `UnifiedTable` owns header + row rendering
- * as a single opaque unit (no prop to inject a per-row `RevealItem` cascade or
- * to split header from body) — same shape as `LlmCallsTable`'s `CallsGhostRows`
- * — so the recipe's row-cascade step is a reported gap here rather than
- * hacked in: rows render instantly the frame they arrive (law 2), which is
- * the actual requirement; only the entrance ripple is missing. The ghost also
- * mimics the table's shape (header band + rows) instead of reusing
- * UnifiedTable's real interactive header, for the same reason. This table has
- * no `tableId`, so it isn't user-resizable — the ghost's grid template is
- * built from the same static per-column width strings as `columns` below
- * rather than `useColumnWidths` (there is no persisted-width state to share).
+ * (from `devToolsProjectSlice`) is handed to `UnifiedTable`, which owns the
+ * whole cold-load contract — calm delayed ghost rows under its real column
+ * header while the row region is empty and the fetch runs, the settled-only
+ * empty state, and the id-guarded row cascade. A warm return visit already has
+ * `projects` populated in the store and paints on the first frame regardless
+ * of `projectsLoading`. The only local gate left is this page's rich
+ * zero-projects CTA, which waits for the fetch to settle (law 5).
  */
 export default function ProjectManagerPage() {
   const { t } = useTranslation();
@@ -382,14 +375,10 @@ export default function ProjectManagerPage() {
     },
   ];
 
-  // Row region gate (docs/design/overview-loading.md v2): ghost rows ONLY
-  // into an empty region while a fetch is in flight — a cold first visit
-  // (projects fetched lazily via runStartup's non-devtools path). A warm
-  // return visit has `projects` already populated by the time this mounts,
-  // so `showGhost` is false and the real table paints frame-1. The
-  // settled-empty state below only renders once `projectsLoading` has
-  // resolved to false, so a fast fetch never flashes "no projects yet".
-  const showGhost = projectsLoading && projects.length === 0;
+  // Rich zero-projects CTA is settled-only (law 5): while the cold-first-visit
+  // fetch is in flight the table renders instead, and its own ghost rows fill
+  // the empty region — so a fast fetch never flashes "no projects yet".
+  const showRichEmpty = !projectsLoading && projects.length === 0;
 
   // Left-accent bar marks the active project (primary) or a bulk-selected row
   // (amber) — replaces the old full-row background tint.
@@ -481,15 +470,7 @@ export default function ProjectManagerPage() {
             )}
           </div>
 
-          {showGhost ? (
-            /* Cold first visit, fetch in flight, nothing on screen yet: calm
-               ghost table under the mimicked column geometry (see
-               ProjectGhostRows below). Invisible for its first ~120ms
-               (animation-delay + fill-mode: both) so a fast fetch skips it
-               entirely; the real UnifiedTable replaces it the frame data
-               arrives — no gate, no held content (law 2). */
-            <ProjectGhostRows />
-          ) : projects.length === 0 ? (
+          {showRichEmpty ? (
             <div className="text-center py-16">
               <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-3">
                 <FolderKanban className="w-7 h-7 text-amber-400/50" />
@@ -510,11 +491,12 @@ export default function ProjectManagerPage() {
               columns={columns}
               data={projects}
               getRowKey={(p) => p.id}
-              rowReveal={{ resetKey: activeWorkspaceId ?? 'all' }}
               onRowClick={(p) => handleSetActive(p.id)}
-              rowAccent={rowAccent}
+              isLoading={projectsLoading}
               stickyHeader={false}
               ariaLabel={t.plugins.dev_projects.all_projects}
+              rowAccent={rowAccent}
+              rowReveal={{ resetKey: activeWorkspaceId ?? 'all' }}
             />
           )}
         </div>
@@ -542,82 +524,5 @@ export default function ProjectManagerPage() {
         />
       )}
     </ContentBox>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// ProjectGhostRows — calm ghost table for the ONLY moment the row region has
-// nothing to show (a cold first visit with a fetch in flight).
-//
-// Each ghost enters via `animate-fade-in` (150ms, fill-mode: both) behind a
-// staggered animation-delay starting at 120ms — `both` holds opacity 0 through
-// the delay, so a fetch that resolves quickly never paints a single ghost.
-// Mirrors the real 6-column grid (select/name/tech/status/created/actions) —
-// same width strings as the `columns` memo above — so the ghost-to-content
-// swap moves nothing. Keep this list in lockstep with `columns`: it drifting is
-// exactly what makes a ghost jump when the data lands. No `animate-pulse` —
-// the entrance stagger is the only motion.
-// ---------------------------------------------------------------------------
-
-const PROJECT_GHOST_GRID = [
-  '40px',
-  'minmax(180px, 1.4fr)',
-  'minmax(100px, 0.9fr)',
-  '110px',
-  '110px',
-  '132px',
-].join(' ');
-const PROJECT_GHOST_COLS = 6;
-
-const GHOST_ROW_HEIGHT = 44;
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
-/** Deterministic width variation so the name column reads as rows, not a barcode. */
-const GHOST_NAME_WIDTHS = ['w-36', 'w-28', 'w-32', 'w-24'];
-
-function ProjectGhostRows() {
-  return (
-    <div className="border border-primary/10 rounded-modal overflow-hidden" aria-hidden="true">
-      <div
-        className="grid border-b border-primary/10 bg-primary/5 px-0 py-2.5 animate-fade-in"
-        style={{ gridTemplateColumns: PROJECT_GHOST_GRID, animationDelay: '120ms' }}
-      >
-        {Array.from({ length: PROJECT_GHOST_COLS }).map((_, i) => (
-          <span key={i} className="px-4">
-            {/* Right-aligned from `status` on — index 3 since `path` was dropped. */}
-            <span className={`h-2.5 w-10 block ${GHOST_BAR} ${i >= 3 ? 'ml-auto' : ''}`} />
-          </span>
-        ))}
-      </div>
-      {Array.from({ length: 8 }).map((_, i) => {
-        const nameW = GHOST_NAME_WIDTHS[i % GHOST_NAME_WIDTHS.length];
-        const delay = `${140 + i * 35}ms`;
-        return (
-          <div
-            key={i}
-            className="grid items-center px-0 border-t border-t-primary/10 animate-fade-in"
-            style={{ gridTemplateColumns: PROJECT_GHOST_GRID, height: GHOST_ROW_HEIGHT, animationDelay: delay }}
-          >
-            <span className="px-4">
-              <span className={`h-3.5 w-3.5 block ${GHOST_BAR}`} />
-            </span>
-            <span className="px-4">
-              <span className={`h-3.5 ${nameW} max-w-full block ${GHOST_BAR}`} />
-            </span>
-            <span className="px-4">
-              <span className={`h-3.5 w-16 block ${GHOST_BAR}`} />
-            </span>
-            <span className="px-4">
-              <span className={`h-3.5 w-14 block ${GHOST_BAR}`} />
-            </span>
-            <span className="px-4">
-              <span className={`h-3.5 w-14 ml-auto block ${GHOST_BAR}`} />
-            </span>
-            <span className="px-4">
-              <span className={`h-3.5 w-20 ml-auto block ${GHOST_BAR}`} />
-            </span>
-          </div>
-        );
-      })}
-    </div>
   );
 }
