@@ -1,3 +1,23 @@
+/**
+ * @catalog Paginated table — page-size selector, row selection + bulk-action toolbar, row drag; caller-owned sort. Else use UnifiedTable.
+ *
+ * One of the three shared table primitives (see the tables golden path,
+ * `docs/concepts/golden-paths/tables.md`). Reach for `DataGrid` **only** when
+ * you need page-based pagination, checkbox row selection with a floating
+ * bulk-action toolbar, or HTML5 row drag — `UnifiedTable` has none of those.
+ * Everything else belongs on `UnifiedTable`, which in turn has what this one
+ * lacks: virtualization, `groupBy`, column resize, sort persistence, keyboard
+ * row nav, scroll restoration and infinite scroll. Slash-path taxonomies go to
+ * `FacetedDecisionTable`, which wraps this component.
+ *
+ * **Sorting is caller-owned here** — pass `sortKey` + `sortDirection` + `onSort`
+ * (unlike `UnifiedTable`, which sorts internally).
+ *
+ * Cold load is handled for you: pass the real in-flight `isLoading` flag and
+ * the grid renders the calm delayed ghost rows under its permanent column
+ * header, then ripples rows in via the shared id-guarded entrance. Don't build
+ * a skeleton, an empty state, a pagination bar or a row cascade around it.
+ */
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Inbox, X } from 'lucide-react';
