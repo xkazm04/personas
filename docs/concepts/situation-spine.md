@@ -70,31 +70,40 @@ the campaign's input with nothing in between.
 
 ## The tree
 
-Three levels, **noun-labelled**: `domain / subdomain / topic`. Closed
-vocabulary — an open one fragmented this library twice already (154 topics for
-177 items; 90 values of `ftype`). 6 domains · 21 subdomains · **56 topics**,
-and all 38 playbooks are absorbed with none orphaned.
+Three levels, **noun-labelled**: `domain / subdomain / situation`. The
+situation leaf IS the golden path — its topic path is its address. Closed
+vocabulary; an open one fragmented this library twice already.
 
-- **frontend** — surfaces (tables, modals, forms, dropdowns, dashboards,
-  failure states) · state (async state, stores, view models) · data flow
-  (fetching, live feeds, bulk actions) · motion (page loading, transitions) ·
-  shell (navigation, keyboard, notifications) · foundation (tokens, i18n,
-  shared primitives)
-- **backend** — data (tables, migrations, repositories, cleanup) · api (IPC
-  commands, bindings, input validation) · engine (background loops, job
-  queues, subprocesses, caches) · domain (boundaries, variants, settings)
-- **ai** — calls (call sites, prompt contracts, model routing & BYOM) ·
-  pipelines (background processing, agent pipelines) · knowledge (embeddings)
-- **integrations** — auth (OAuth, credentials, privileged surfaces) ·
-  external (service calls, connector onboarding)
-- **platform** — observability (telemetry, alerts, error handling) · cost ·
-  performance · extensibility
-- **quality** — testing (unit & async, live UI, rust) · governance
-  (conventions, documentation sync)
+Built **bottom-up from the code**, not from the playbooks. Ten Opus scouts
+(six client, four server) surveyed the repo for recurring situations and
+returned **527 candidates** ([`discovery/`](./discovery/)); semantic fusion
+collapsed those to **260 leaves** across **8 domains / 46 subdomains**, every
+subdomain holding 4–8 leaves. All 496 post-dedup candidate names are
+accounted for in exactly one leaf; none unplaced.
 
-Nodes are nouns because the operator browses them; the *content contract* is
-still a situation — a topic node that accumulates facts instead of a procedure
-has failed, however well-filed those facts are.
+| Domain | Leaves / subdomains |
+| --- | --- |
+| Backend Command & Runtime | 54 / 10 |
+| UI System & Primitives | 44 / 8 |
+| Product Surfaces | 33 / 5 |
+| Data & Persistence | 31 / 5 |
+| Client State & Data Flow | 26 / 5 |
+| Platform, Build & Quality | 25 / 4 |
+| Integrations & Credentials | 24 / 4 |
+| AI & Agent Runtime | 23 / 5 |
+
+**153 of the 260 are `twoSided`** — a scout reported a counterpart across the
+IPC boundary — so their golden path must document both halves or it documents
+half a path. Only **21** were `fusedAcrossSides` (both halves independently
+discovered and merged). The gap is a known limitation of wave 1, not a
+finding: the roster handed to the clustering pass dropped the scouts'
+`crossCutting` flag, so cross-boundary pairs could only fuse when both sides
+happened to choose similar names. The flag has been re-attached
+mechanically; **pairing the remaining halves is an open seam pass.**
+
+The earlier 56-topic tree in this document was a top-down hypothesis derived
+from the 38 playbooks. Discovery superseded it: it was roughly a fifth of the
+real resolution, and it inherited the playbooks' backend skew.
 
 ## Playbooks are retired
 
