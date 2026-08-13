@@ -2,6 +2,22 @@
 
 ## Active
 
+### research-mattpocock-prototype — /research: compare skills.sh/mattpocock prototype vs our /prototype — session opus-5[1m]
+- **[2026-08-13 16:10]** Source: https://www.skills.sh/mattpocock/skills/prototype (raw SKILL.md + LOGIC.md + UI.md + docs/engineering/prototype.md from github.com/mattpocock/skills)
+- **Paths:** `.claude/skills/prototype/SKILL.md` · `C:/Users/kazda/Documents/Obsidian/personas/{Research,Lessons,Patterns}/` · `.claude/active-runs.md`
+- **Status:** started
+
+### agent-plugins-open-standard — /research code: Agent Plugins 1.0.0 open standard (agent-plugins.org) — session opus-5[1m]
+- **[2026-08-13] Status:** started
+- **Source:** https://agent-plugins.org/ (spec + schemas)
+- **Paths (best guess):** src-tauri/engine/src/cli_mcp_config.rs · src-tauri/src/engine/mcp_tools.rs · src-tauri/src/mcp_server/** · src-tauri/src/commands/fleet/pty.rs · Obsidian personas/{Research,Lessons}/ · .claude/active-runs.md
+
+### research-kpi-dashboard-design — /research: wshobson kpi-dashboard-design skill vs our KPI module — session opus-5[1m] — **COMPLETE**
+- 2026-08-13. Compare-only run (skill NOT adopted). Commits: `a9fe81180` unpaced verdict + both target_date sources closed · `7d64d41d5` tier assigned by the scan + tier-ordered dashboard · `1904088cf` feature-doc sync · `79a41d840` codebase-stack facts.
+- Findings: 2 accepted (both shipped), 13 already-existed catches. Real defects: (1) NO authoring path set `target_date`, so `kpi_is_off_track` bailed at `:75` and every such KPI was invisible to goal derivation while the dashboard counted it as "On track"; (2) `dev_kpis.tier` was never emitted by the scan, making the derivation ORDER BY a no-op for scan-created KPIs.
+- Gates: tsc clean · `cargo check --features desktop` AND `--tests` 0 errors at the 213-warning baseline · vitest sub_kpis 33/33 (12 new) · i18n strict 19,096 x 14 at 0/0 · eslint 0 errors. NOT live-app verified (no instance driven).
+- **NOTE FOR OTHER SESSIONS:** `npx tsc --noEmit` excludes `src/**/__tests__/**` — adding a required field to a shared interface leaves test constructors broken with every gate green. Recipe to verify in `.claude/codebase-stack.md`.
+- Release log: user declined (Phase 12 unchanged).
 ### athena-skills-knowledge-ops — Athena ops over Skills + Knowledge Base — session fable-5 — **COMPLETE**
 - 2026-08-10/11. Commits: `0caa83cce` fabric F4 committed on operator approval · `a10b6220a` autonomous-approve-everything (allowlist retired, shared executor table, companion://client-action) · `bb8a9f40c` side panel 4-lane redesign · `0b4dd5306` describe_skill_fleet + describe_knowledge READ_OPS · `67905dfe9` skill_sync (adopt/sync/publish, version-bump-guarded publish) · `ef4154f9c` run_pattern_harvest (Rust prompt twin + pending-ingest watcher on the fleet 30s ticker) · `1ccae0a48` apply_pattern + evaluate_pattern · final wiring commit = constitution v52 + labels + i18n×14 + docs.
 - Gates: cargo check lib+tests clean · targeted rust suites green (approvals 47, knowledge_ops 6, harvest 3, dispatcher knowledge 2, apply_prompt 1) · tsc clean · vitest companion 450/450 (one non-repro flake) · i18n strict 0/0.
