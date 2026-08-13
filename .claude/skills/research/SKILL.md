@@ -1,11 +1,10 @@
 ---
 name: research
-version: 1.1
+version: 1.2
 description: Extract actionable improvements for a project from external sources (video, blog, article, raw text). Scores ideas against the codebase, buckets into Code / Template / Credential, and persists findings to an Obsidian memory vault.
 argument-hint: "[source or question]"
 category: Maintenance
 memory: vault
-version: 1.0
 ---
 # Research
 
@@ -260,10 +259,21 @@ Rules for the cleanup:
 ### 2b. Other URL
 Use `WebFetch` with a prompt asking for the article body, stripped of nav/footer/ads.
 
+**A landing page is not the source.** When the URL is the front door of a multi-page site —
+a specification, a docs set, a standard, a product's documentation tree — the overview page
+is a marketing summary and the substance lives one level down (`/specification`, `/docs`,
+`/reference`, `/schema`). Fetch the substantive subpage(s) BEFORE applying the thinness
+check below, or a rich source gets rejected as thin. Run 2026-08-13 (agent-plugins.org) hit
+this: the overview returned ~250 words of positioning, while `/specification` carried the
+entire normative contract that produced both shipped findings. Budget the same way as
+Phase 2.5 — two or three focused fetches, not a crawl. A 404 on a guessed subpath is cheap;
+guess from the overview's own links rather than from convention.
+
 ### 2c. Raw text
 Use as-is.
 
-**Sanity check:** if the resulting text is <300 words, report it's too thin to harvest meaningful ideas and stop.
+**Sanity check:** if the resulting text is <300 words **after** the subpage pass above,
+report it's too thin to harvest meaningful ideas and stop.
 
 > **Source-type agnosticism confirmed.** Runs 1-5 used YouTube videos (Phase 2a); run 6 used a blog article (Phase 2b WebFetch). Both paths produced the same downstream shape — same frontmatter, same Phase 6 rules, same output formats. The skill is source-type agnostic; do not special-case downstream phases based on whether the source came from 2a, 2b, or 2c.
 
@@ -359,6 +369,7 @@ Different source types produce different finding profiles. **A "low" finding cou
 | **Product demo / competitor walkthrough** | **low + many catches** — 1-3 real findings, 5-10 "already existed" catches | Run 4 (Paperclip): 2 findings, **8 already-existed catches**. Product demos of competing systems are high signal for the host-first rule because every feature demonstrated is potentially "does personas have this?". Expect the catch count to exceed the finding count. |
 | **Philosophical / forward-looking article or video** | low — 1-2 findings, mostly discovery-brief territory | Run 5 (Karpathy LLM Wiki): 2 accepted findings + 7 already-existed (the skill's own prior iteration had already implemented the core insight). Philosophical sources often produce narrow deltas against existing implementations. |
 | **Product launch article** | low-medium — 1-3 findings including at least one scaffolding-shaped finding | Run 6 (Claude Managed Agents): 2 findings, one of which became a theoretical scaffolding handoff (Option C). Launch articles frequently describe gated/preview features that fit Option C. |
+| **Specification / standard / RFC** | **medium findings + many catches**, and the findings are unusually *actionable* | Run 2026-08-13 (Agent Plugins 1.0.0): 4 findings / 6 catches, 2 shipped same-session. A mature codebase has usually built a spec's **features** (those become catches) and skipped one of its **invariants** — so **read the MUST/SHOULD/MAY table before the feature tour.** The prize on this source type is a constraint the repo never checked, not a capability it lacks. Distinct from a product-launch article: a spec has no roadmap to defer to, so nothing lands in Option C. |
 | **Best-practices listicle** ("N rules for X") | **low findings + many catches**, ~1:3 | Run 2026-08-12 (12 Rules for Claude.md): 4 findings, **11 already-existed catches**. A listicle enumerates a canonical checklist, so against a mature repo most items resolve to catches and the value is the confirmation table plus two or three genuine deltas. Do NOT stretch for parity with the list's length — a 12-rule video is not a 12-finding run. Watch for the item the repo deliberately does the *opposite* of; that is a catch with a reason, not a gap (here: "always ask clarifying questions" versus a headless engine's act-autonomously directives). |
 | **Blog post / raw text** | varies widely | Phase 2b and 2c work the same as 2a downstream; the yield depends on content density, not transport. |
 
@@ -720,7 +731,17 @@ If the user types `skip`, jump to 10c.
 
 ### 10b. Append to Lessons
 
-Write/append to `C:/Users/kazda/Documents/Obsidian/personas/Lessons/{YYYY-MM-DD}-research.md` (Edit-append, never Write-replace — shared-by-date file, see the 2026-04-14 iteration-log entry):
+Write/append to `C:/Users/kazda/Documents/Obsidian/personas/Lessons/{YYYY-MM-DD}-research.md` (Edit-append, never Write-replace — shared-by-date file, see the 2026-04-14 iteration-log entry).
+
+**Write it LATE, and re-read before the Phase 11 summary.** Following the Edit-append rule
+protects other sessions from you; it does not protect you from them. On 2026-08-13 a
+concurrent session `Write`-replaced this file mid-run and erased a block that had been
+correctly Edit-appended minutes earlier. Recovery was only possible because the loss
+surfaced in the same turn and the content was still in context. Two mitigations, both
+cheap: (a) write this block as late in the run as it can go, so the exposure window is
+short; (b) before printing the Phase 11 summary, re-read the Lessons file and confirm your
+block is still present — restore it by Edit-append (never Write, which would repeat the
+offense in the other direction) if it is gone.
 ```markdown
 ## Run: {timestamp} — {source title}
 
