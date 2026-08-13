@@ -123,6 +123,13 @@ export function KPIDashboard({
   const offTrack = paced.filter((p) => p.d.track === 'off-track');
   const onTrack = paced.filter((p) => p.d.track === 'on-track').length;
   const met = paced.filter((p) => p.d.track === 'met').length;
+  // Measured, but no verdict is computable (no target, or no target_date +
+  // baseline and no critical line). These used to be counted as "On track",
+  // which read as a green all-clear for KPIs goal derivation cannot even see.
+  // Surfaced as their own number so the gap is visible instead of flattering.
+  const unpaced = paced.filter((p) => p.d.track === 'unpaced').length;
+  // Literal class strings so Tailwind's JIT emits both (see Design.md).
+  const statCols = unpaced > 0 ? 'md:grid-cols-5' : 'md:grid-cols-4';
 
   // --- chart models -----------------------------------------------------
   /** One distance row per KPI — the shared model behind the grouping. */
@@ -266,7 +273,7 @@ export function KPIDashboard({
           (AnimatedCounter is a no-op when the target hasn't changed). The
           section itself ripples in once, on first data (mount of this
           branch) — a poll/refresh never replays it. */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-fade-in" style={{ animationDelay: '0ms' }}>
+      <div className={`grid grid-cols-2 ${statCols} gap-3 animate-fade-in`} style={{ animationDelay: '0ms' }}>
         <StatCard label={t.kpis.stat_active} value={<AnimatedCounter value={filtered.length} />} />
         <StatCard label={t.kpis.stat_on_track} value={<AnimatedCounter value={onTrack} />} tone="success" />
         <StatCard
@@ -275,6 +282,14 @@ export function KPIDashboard({
           tone={offTrack.length ? 'danger' : 'neutral'}
         />
         <StatCard label={t.kpis.stat_met} value={<AnimatedCounter value={met} />} tone={met ? 'success' : 'neutral'} />
+        {unpaced > 0 && (
+          <StatCard
+            label={t.kpis.stat_unpaced}
+            value={<AnimatedCounter value={unpaced} />}
+            tone="neutral"
+            hint={t.kpis.stat_unpaced_hint}
+          />
+        )}
       </div>
 
       {/* Distance to target, grouped by project, with each project's off-track

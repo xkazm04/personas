@@ -204,11 +204,12 @@ Rules:
 4. If a traffic/value KPI needs a connector that is NOT in the vault list above, still propose it with `measure_kind: "manual"` and set `needed_connector` to the missing service name (e.g. "google_analytics", "stripe", "posthog") — the UI offers one-click onboarding for it.
 4b. Every connector-shaped KPI (current or future) MUST set `metric_type` to one of: unique_visitors, api_requests, llm_tokens, llm_cost, revenue, open_errors. The KPI is bound to the TYPE; the concrete tool is wired later and swappable. Leave metric_type empty for codebase/derived KPIs.
 5. `baseline_hint`: your measured/estimated CURRENT value when you can ground it from the repo (run the codebase command if cheap); otherwise null. `suggested_target`: ambitious but reachable in ~4-6 weeks. `direction`: "up" if higher is better, else "down".
+5b. **`target_date` is REQUIRED — always emit one, never null.** Format `YYYY-MM-DD`, and make it the date by which `suggested_target` should be reached, i.e. ~4-6 weeks out from {today} (rule 5's own horizon). This is not decoration: pace is the trigger that puts a KPI off-track, and a KPI with no target_date has no pace to fall behind, so the system can never derive work from it and it reports as having no verdict. A target without a date is a wish.
 6. `cadence`: "weekly" for codebase KPIs, "daily" only for cheap derived ones, "manual" for connector-parked ones.
 7. `rationale`: ONE sentence the user reads in the review queue — why THIS metric steers value.
 
 For each proposal emit EXACTLY ONE line that is this JSON object and nothing else on that line:
-{{"kpi_proposal": {{"group_name": "...", "name": "...", "description": "...", "category": "technical", "measure_kind": "codebase", "measure_config": {{}}, "unit": "%", "direction": "up", "baseline_hint": null, "suggested_target": 70, "target_date": null, "cadence": "weekly", "rationale": "...", "needed_connector": "", "metric_type": "", "context_name": "", "use_case_name": ""}}}}
+{{"kpi_proposal": {{"group_name": "...", "name": "...", "description": "...", "category": "technical", "measure_kind": "codebase", "measure_config": {{}}, "unit": "%", "direction": "up", "baseline_hint": null, "suggested_target": 70, "target_date": "{target_date_hint}", "cadence": "weekly", "rationale": "...", "needed_connector": "", "metric_type": "", "context_name": "", "use_case_name": ""}}}}
 
 Finish with one line: {{"kpi_scan_summary": {{"proposals": <count>}}}}
 "#,
@@ -219,7 +220,24 @@ Finish with one line: {{"kpi_scan_summary": {{"proposals": <count>}}}}
         archived_kpis = archived_kpis,
         connectors = connectors,
         max = MAX_PROPOSALS_PER_SCAN,
+        today = today_ymd(),
+        target_date_hint = default_target_ymd(),
     )
+}
+
+/// Today as `YYYY-MM-DD`, for the prompt's target-date horizon.
+fn today_ymd() -> String {
+    chrono::Utc::now().format("%Y-%m-%d").to_string()
+}
+
+/// The default target date the prompt shows in its emit template: five weeks
+/// out, the midpoint of rule 5's "ambitious but reachable in ~4-6 weeks". A
+/// concrete date in the template matters more than the prose rule — an example
+/// showing `null` is what taught every prior scan to omit it.
+fn default_target_ymd() -> String {
+    (chrono::Utc::now() + chrono::Duration::weeks(5))
+        .format("%Y-%m-%d")
+        .to_string()
 }
 
 /// Markdown digest of the project's accepted use cases — the behavioral slices
@@ -346,9 +364,10 @@ Same rules as the project-level scan otherwise:
 - `measure_kind` + `measure_config` must be a REAL procedure: codebase (`{{"cmd","parse"}}`, and RUN it to confirm), derived (only the four catalog metrics, and only if the project is team-linked), connector (HTTPS/REST against a real API — never SQL, never a local database), or manual (a human or simulated journey check).
 - Every connector-shaped KPI sets `metric_type` to one of: unique_visitors, api_requests, llm_tokens, llm_cost, revenue, open_errors.
 - `rationale` is ONE sentence the user reads while triaging.
+- **`target_date` is REQUIRED, never null** — `YYYY-MM-DD`, ~4-6 weeks from {today}. Without it the KPI has no pace, so it can never go off-track and the system will never derive work from it.
 
 For each proposal emit EXACTLY ONE line that is this JSON object and nothing else on that line:
-{{"kpi_proposal": {{"group_name": "", "name": "...", "description": "...", "category": "value", "measure_kind": "manual", "measure_config": {{}}, "unit": "%", "direction": "up", "baseline_hint": null, "suggested_target": 80, "target_date": null, "cadence": "manual", "rationale": "...", "needed_connector": "", "metric_type": "", "context_name": "{ctx_name_hint}", "use_case_name": ""}}}}
+{{"kpi_proposal": {{"group_name": "", "name": "...", "description": "...", "category": "value", "measure_kind": "manual", "measure_config": {{}}, "unit": "%", "direction": "up", "baseline_hint": null, "suggested_target": 80, "target_date": "{target_date_hint}", "cadence": "manual", "rationale": "...", "needed_connector": "", "metric_type": "", "context_name": "{ctx_name_hint}", "use_case_name": ""}}}}
 
 `context_name` MUST be the exact context name from the heading above, on every proposal.
 
@@ -360,6 +379,8 @@ Finish with one line: {{"kpi_scan_summary": {{"proposals": <count>}}}}
         archived_kpis = archived_kpis,
         connectors = connectors,
         max = MAX_PROPOSALS_PER_CONTEXT_SCAN,
+        today = today_ymd(),
+        target_date_hint = default_target_ymd(),
         ctx_name_hint = context_block
             .lines()
             .next()

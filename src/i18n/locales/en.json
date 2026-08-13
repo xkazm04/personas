@@ -19334,7 +19334,12 @@
     "populate_lane_kpis": "KPIs",
     "populate_lane_simulation": "Simulated KPI data",
     "populate_lane_simulation_detail": "For a product that has not shipped: walks your features as representative users to estimate the adopted KPIs, and researches targets from comparable products. The longest step.",
-    "populate_scope_empty": "Pick at least one thing to cover."
+    "populate_scope_empty": "Pick at least one thing to cover.",
+    "track_unpaced": "No pace set",
+    "stat_unpaced": "No pace set",
+    "stat_unpaced_hint": "not steerable yet",
+    "pace_unpaced": "Measured, but with no target date there is nothing to fall behind. Add one so the system can steer this.",
+    "pace_unpaced_no_target": "Measured, but no target is set, so there is nothing to steer toward yet."
   },
   "planner": {
     "nav_label": "Plan",

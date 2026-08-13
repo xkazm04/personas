@@ -244,5 +244,10 @@
   "populate_lane_simulation": "Data KPI simulasi",
   "populate_lane_simulation_detail": "Untuk produk yang belum dirilis: menelusuri fitur Anda sebagai pengguna representatif untuk memperkirakan KPI yang diadopsi, dan meneliti target dari produk sebanding. Langkah terpanjang.",
   "populate_scope_empty": "Pilih setidaknya satu hal untuk dicakup.",
-  "populate_scope_heading": "Apa yang akan dicakup oleh proses ini"
+  "populate_scope_heading": "Apa yang akan dicakup oleh proses ini",
+  "track_unpaced": "Tanpa laju",
+  "stat_unpaced": "Tanpa laju",
+  "stat_unpaced_hint": "belum bisa diarahkan",
+  "pace_unpaced": "Sudah diukur, tetapi tanpa tanggal target tidak ada yang bisa tertinggal. Tambahkan satu agar sistem dapat mengarahkannya.",
+  "pace_unpaced_no_target": "Sudah diukur, tetapi target belum ditetapkan, jadi belum ada yang bisa dituju."
 }

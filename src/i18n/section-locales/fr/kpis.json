@@ -244,5 +244,10 @@
   "populate_lane_simulation": "Données KPI simulées",
   "populate_lane_simulation_detail": "Pour un produit qui n'a pas encore été lancé : parcourt vos fonctionnalités comme des utilisateurs représentatifs pour estimer les KPI adoptés, et recherche des cibles à partir de produits comparables. L'étape la plus longue.",
   "populate_scope_empty": "Choisissez au moins un élément à couvrir.",
-  "populate_scope_heading": "Ce que cette exécution couvrira"
+  "populate_scope_heading": "Ce que cette exécution couvrira",
+  "track_unpaced": "Aucun rythme défini",
+  "stat_unpaced": "Aucun rythme défini",
+  "stat_unpaced_hint": "pas encore pilotable",
+  "pace_unpaced": "Mesuré, mais sans date cible il n'y a rien à rattraper. Ajoutez-en une pour que le système puisse le piloter.",
+  "pace_unpaced_no_target": "Mesuré, mais aucune cible n'est définie, il n'y a donc encore rien à viser."
 }

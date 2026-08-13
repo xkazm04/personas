@@ -244,5 +244,10 @@
   "populate_lane_simulation": "Simulierte KPI-Daten",
   "populate_lane_simulation_detail": "Für ein Produkt, das noch nicht veröffentlicht wurde: durchläuft Ihre Funktionen als repräsentative Nutzer, um die übernommenen KPI-Kennzahlen zu schätzen, und recherchiert Zielwerte aus vergleichbaren Produkten. Der längste Schritt.",
   "populate_scope_empty": "Wählen Sie mindestens einen Punkt aus, der abgedeckt werden soll.",
-  "populate_scope_heading": "Was dieser Durchlauf abdeckt"
+  "populate_scope_heading": "Was dieser Durchlauf abdeckt",
+  "track_unpaced": "Kein Tempo festgelegt",
+  "stat_unpaced": "Kein Tempo festgelegt",
+  "stat_unpaced_hint": "noch nicht steuerbar",
+  "pace_unpaced": "Gemessen, aber ohne Zieldatum gibt es nichts, wovon man zurückfallen könnte. Fügen Sie eines hinzu, damit das System steuern kann.",
+  "pace_unpaced_no_target": "Gemessen, aber es ist kein Ziel gesetzt, also gibt es noch nichts, worauf hingesteuert werden kann."
 }

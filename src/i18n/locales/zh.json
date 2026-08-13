@@ -19229,7 +19229,12 @@
     "populate_lane_simulation": "模拟的 KPI 数据",
     "populate_lane_simulation_detail": "适用于尚未发布的产品：以代表性用户的身份遍历您的功能，估算将采用的 KPI 指标，并从同类产品中调研目标值。这是耗时最长的一步。",
     "populate_scope_empty": "请至少选择一项要覆盖的内容。",
-    "populate_scope_heading": "此次运行将覆盖的内容"
+    "populate_scope_heading": "此次运行将覆盖的内容",
+    "track_unpaced": "未设定进度",
+    "stat_unpaced": "未设定进度",
+    "stat_unpaced_hint": "暂时无法调控",
+    "pace_unpaced": "已测量，但没有目标日期就无从判断是否落后。请添加一个，让系统能够进行调控。",
+    "pace_unpaced_no_target": "已测量，但尚未设定目标，因此暂时没有努力的方向。"
   },
   "deliberation": {
     "agenda": "议程",

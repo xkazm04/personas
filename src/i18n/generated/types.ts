@@ -19341,6 +19341,11 @@ export type Translations = {
     populate_lane_simulation: string;
     populate_lane_simulation_detail: string;
     populate_scope_empty: string;
+    track_unpaced: string;
+    stat_unpaced: string;
+    stat_unpaced_hint: string;
+    pace_unpaced: string;
+    pace_unpaced_no_target: string;
   };
   planner: {
     nav_label: string;

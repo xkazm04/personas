@@ -3,7 +3,20 @@
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import type { DevKpiMeasurement } from '@/lib/bindings/DevKpiMeasurement';
 
-export type KpiTrack = 'on-track' | 'off-track' | 'met' | 'unmeasured';
+/**
+ * `on-track` and `unpaced` are BOTH "not off-track", but they are different
+ * claims and must not be collapsed. `on-track` means a verdict was actually
+ * computed and came back fine (pace math ran, or the user's critical line is
+ * drawn and clear). `unpaced` means no verdict is computable at all: no target,
+ * or no `target_date`+`baseline` to pace against and no `crit_at` to test.
+ *
+ * This matters beyond cosmetics. `engine/kpi_derivation.rs::kpi_is_off_track`
+ * bails at `:58` (no target) and `:75` (no target_date/baseline) — so an
+ * `unpaced` KPI can NEVER be picked up by goal derivation, and autopilot's
+ * Suggest/Full tiers do nothing for it. Reporting it as "on track" hid that.
+ * Same honesty rule as the `unmeasured` exclusion in `buildProjectGroups`.
+ */
+export type KpiTrack = 'on-track' | 'off-track' | 'met' | 'unmeasured' | 'unpaced';
 
 /** Why a KPI is off-track — the three direction-aware triggers, in priority
  *  order. `null` when it isn't off-track. Drives the "what the system will do
@@ -35,12 +48,17 @@ export function kpiFloorBreached(kpi: DevKpi): boolean {
  *   3. pace lag — with a target_date + baseline, `current` lags the linearly-
  *      paced expectation by more than `tolerance` (default 10% of the span).
  * A met target wins over every threshold/pace verdict.
+ *
+ * The off-track/not-off-track SPLIT is what mirrors the Rust predicate exactly;
+ * `unpaced` is a finer reading of the not-off-track side (see `KpiTrack`) and
+ * changes no derivation behavior.
  */
 export function kpiTrack(kpi: DevKpi, toleranceFrac = 0.1): KpiTrack {
   const { current_value: cur, target_value: target, baseline_value: baseline, direction } = kpi;
   if (cur == null) return 'unmeasured';
   if (kpiFloorBreached(kpi)) return 'off-track';
-  if (target == null) return 'on-track';
+  // Nothing to steer against at all — `kpi_derivation.rs:58` returns false here.
+  if (target == null) return 'unpaced';
   const better = direction === 'down' ? cur <= target : cur >= target;
   if (better) return 'met';
 
@@ -64,8 +82,11 @@ export function kpiTrack(kpi: DevKpi, toleranceFrac = 0.1): KpiTrack {
       return lagging ? 'off-track' : 'on-track';
     }
   }
-  // No pace info — not met yet, but not provably lagging either.
-  return 'on-track';
+  // No pace math available (`kpi_derivation.rs:75` returns false here). If the
+  // user drew a critical line we got this far by clearing it, which IS a real
+  // verdict; otherwise nothing was evaluated and saying "on track" would be a
+  // claim we cannot support.
+  return kpi.crit_at != null ? 'on-track' : 'unpaced';
 }
 
 /** Which of the three triggers put this KPI off-track (null when on-track/met/

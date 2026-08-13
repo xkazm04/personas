@@ -244,5 +244,10 @@
   "populate_lane_simulation": "Simulovaná data KPI",
   "populate_lane_simulation_detail": "Pro produkt, který ještě nebyl vydán: prochází vaše funkce jako reprezentativní uživatelé a odhaduje přijaté ukazatele KPI a zjišťuje cíle z podobných produktů. Nejdelší krok.",
   "populate_scope_empty": "Vyberte alespoň jednu věc, kterou chcete zahrnout.",
-  "populate_scope_heading": "Co tento běh zahrne"
+  "populate_scope_heading": "Co tento běh zahrne",
+  "track_unpaced": "Bez tempa",
+  "stat_unpaced": "Bez tempa",
+  "stat_unpaced_hint": "zatím nelze řídit",
+  "pace_unpaced": "Změřeno, ale bez cílového data není za čím zaostávat. Doplňte ho, aby to systém mohl řídit.",
+  "pace_unpaced_no_target": "Změřeno, ale není nastaven cíl, takže zatím není k čemu směřovat."
 }
