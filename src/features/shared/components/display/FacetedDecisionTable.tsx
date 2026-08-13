@@ -41,6 +41,14 @@ export interface FacetedDecisionTableProps<T> {
   /** Slash-delimited group path for a row ('' = ungrouped, sits at the root). */
   getGroupPath: (row: T) => string;
   columns: DataGridColumn<T>[];
+  /**
+   * In-flight fetch flag, forwarded to the inner `DataGrid`. Pass the real
+   * request state and nothing else: the grid shows its calm delayed ghost rows
+   * only while `isLoading && rows.length === 0`, so a refetch with rows on
+   * screen changes nothing and the empty state stays unreachable until the
+   * fetch has settled (`docs/design/overview-loading.md` laws 1 and 5).
+   */
+  isLoading?: boolean;
   /** Caller-owned row predicate (status/kind/project/... filters). */
   filterRow?: (row: T) => boolean;
   /** Fields the search box matches against. Omit to hide the search box. */
@@ -84,6 +92,7 @@ export function FacetedDecisionTable<T>({
   getRowKey,
   getGroupPath,
   columns,
+  isLoading,
   filterRow,
   searchHaystack,
   sortKey,
@@ -183,6 +192,7 @@ export function FacetedDecisionTable<T>({
           data={rows}
           getRowKey={getRowKey}
           onRowClick={onRowClick ? (r) => onRowClick(r, rows) : undefined}
+          isLoading={isLoading}
           sortKey={sortKey}
           sortDirection={sortDir}
           onSort={onSort}
