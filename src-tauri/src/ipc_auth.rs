@@ -120,6 +120,11 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "update_credential",
     "patch_credential_metadata",
     "delete_credential",
+    // Impact preview for `delete_credential` — enumerates the personas,
+    // rotation policies and event triggers bound to a secret. A preview must
+    // cost at least what the action costs; it was Public while the delete was
+    // privileged, which made reconnaissance cheaper than the attack.
+    "credential_blast_radius",
     "create_credential_event",
     "update_credential_event",
     "delete_credential_event",
