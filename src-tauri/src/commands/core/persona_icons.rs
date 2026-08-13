@@ -26,6 +26,7 @@ use tokio::fs;
 
 use crate::error::AppError;
 use crate::AppState;
+use personas_macros::requires;
 
 /// Stored-icon value prefix. Mirrors the frontend `CUSTOM_ICON_PREFIX`
 /// (`src/lib/icons/customIconStore.ts`): a persona's `icon` column holds
@@ -200,7 +201,14 @@ pub async fn list_persona_icons(app: AppHandle) -> Result<Vec<String>, AppError>
 /// Delete a custom icon file from the library. Best-effort — a missing file is
 /// not an error. Personas still referencing the deleted asset fall back to the
 /// default icon at render time.
+///
+/// Privileged: deletes a file under the app data dir *and* runs an unscoped
+/// `UPDATE personas SET icon = ''` across every persona referencing the asset.
+/// Its sibling `generate_persona_icon` is already gated; this one was not.
+/// Note the attribute is audit-only here (async `require_privileged` cannot
+/// enforce) — the `PRIVILEGED_COMMANDS` entry is what gates the call.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn delete_persona_icon(
     state: State<'_, Arc<AppState>>,
     app: AppHandle,

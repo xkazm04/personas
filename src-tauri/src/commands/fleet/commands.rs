@@ -311,8 +311,16 @@ pub async fn fleet_check_hooks() -> Result<FleetHookStatus, String> {
     hook_install::check_hooks(port)
 }
 
-/// Drop an exited session from the registry. Returns `true` if a row
-/// was removed.
+/// Drop a session from the registry. Returns `true` if a row was removed.
+///
+/// Note this is `Registry::remove`, which removes **any** row — including one
+/// with a live PTY child. The liveness-checked variant is `forget_dead`.
+/// Removing a live row orphans a running Claude Code process: it can no longer
+/// be listed, killed, or resumed from this app.
+///
+/// Privileged via `PRIVILEGED_COMMANDS` only — no `state` parameter for the
+/// `#[requires]` macro to derive a guard from, and on an async command that
+/// attribute would be audit-only anyway. The list entry is the gate.
 #[tauri::command]
 pub async fn fleet_remove_session(app: AppHandle, session_id: String) -> Result<bool, String> {
     let removed = registry().remove(&session_id);

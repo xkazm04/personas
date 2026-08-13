@@ -20,7 +20,8 @@ use std::time::{Duration, Instant};
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager};
+use personas_macros::requires;
+use tauri::{AppHandle, Manager, State};
 use ts_rs::TS;
 
 use crate::error::AppError;
@@ -1009,8 +1010,29 @@ fn rel_path_targets_root(rel_path: &str) -> bool {
     trimmed.split('/').all(|seg| seg.is_empty() || seg == ".")
 }
 
+/// Delete a path inside the managed root. Soft-deletes to `.trash/` unless the
+/// target already lives there, in which case it hard-deletes (that second pass
+/// is the "Empty Trash" affordance).
+///
+/// Privileged: this is the sandbox's recursive-destroy primitive —
+/// `remove_dir_all` on a caller-supplied relative path. `resolve_safe` +
+/// `rel_path_targets_root` confine *what* it can address; the tier is what
+/// constrains *who* may call it, and the two are independent controls.
+///
+/// The `state` parameter exists solely so the `#[requires]` macro can derive
+/// the guard call. That is worth it here specifically because this command is
+/// **sync**: `require_privileged_sync` genuinely fails closed on the wrapper's
+/// thread-local flag, and the sync shape is the only one the drift-guard test
+/// in `ipc_auth.rs` can see — so the `PRIVILEGED_COMMANDS` entry below can
+/// never silently go missing again. Tauri injects `State`, so the JS call
+/// shape is unchanged.
 #[tauri::command]
-pub fn drive_delete(app: AppHandle, rel_path: String) -> Result<(), AppError> {
+#[requires(privileged)]
+pub fn drive_delete(
+    state: State<'_, Arc<AppState>>,
+    app: AppHandle,
+    rel_path: String,
+) -> Result<(), AppError> {
     let root = managed_root(&app)?;
     // Refuse anything that addresses the managed root itself. Catches both
     // separator-only inputs ("", "/", "\\") and CurDir-only inputs

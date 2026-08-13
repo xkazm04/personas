@@ -348,10 +348,34 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "artist_save_composition",
     "artist_load_composition",
     "artist_autosave_composition",
+    // ...and the destructive members of the same surface, which were the only
+    // artist commands left ungated: `artist_delete_asset` unlinks a file from
+    // disk and drops a row whose delete cascades to `artist_tags`;
+    // `artist_clear_autosave` destroys the user's unsaved composition.
+    "artist_delete_asset",
+    "artist_clear_autosave",
+    // Drive -- the managed-sandbox recursive-destroy primitive. `resolve_safe`
+    // constrains WHAT it can address; this entry constrains WHO may call it.
+    // A second call on a `.trash/` path hard-deletes.
+    "drive_delete",
+    // Fleet -- `Registry::remove` drops ANY session row, including one holding
+    // a live PTY child (the liveness-checked variant is `forget_dead`).
+    // Removing a live row orphans a running Claude Code process.
+    "fleet_remove_session",
+    // Auth -- clears the RFC 6749 §10.12 OAuth CSRF nonce. Not a CSRF bypass
+    // (the callback fails closed when no nonce is pending) but a denial of
+    // login, and it releases the "sign-in already in progress" interlock.
+    "clear_pending_oauth",
+    // Scraper -- destroys a saved scrape config together with its cron
+    // schedule. No undo.
+    "scraper_delete_config",
     // Persona icon generation -- decrypts a vault credential and spends the
     // user's image-gen API key, so it must be privileged like other secret-using
     // commands (its sibling `list_image_gen_credentials` is read-only metadata).
     "generate_persona_icon",
+    // ...and its delete counterpart, which removes the icon file AND runs an
+    // unscoped `UPDATE personas SET icon = ''` over every persona using it.
+    "delete_persona_icon",
     // Network -- Persona bundle export/import (file + clipboard) + share link
     // + enclave seal. Every entry here reads/writes a caller-supplied file
     // path, clipboard payload, or persona secret bundle, and all but
