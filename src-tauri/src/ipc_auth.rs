@@ -115,6 +115,35 @@ pub fn is_privileged_command(command: &str) -> bool {
 /// The IPC token monkey-patch has a race condition on Windows WebView2 where
 /// the native bridge may not forward `Headers` objects before the patch fires.
 pub const PRIVILEGED_COMMANDS: &[&str] = &[
+    // Promoted 2026-08-13: each already carried #[requires(privileged)] but was
+    // absent from this list, which for an async command is ZERO enforcement.
+    // Verified before listing: none opens a native file dialog (the documented
+    // WebView2 header-forwarding failure at the Data Portability note below),
+    // and none is a boot-path call. tauriInvoke attaches x-ipc-token to every
+    // invoke, so listing is safe for user-initiated commands.
+    "add_mcp_gateway_member",
+    "remove_mcp_gateway_member",
+    "set_mcp_gateway_member_enabled",
+    "cli_capture_save",
+    "refresh_credential_cli_now",
+    "deploy_automation",
+    "n8n_create_workflow",
+    "n8n_activate_workflow",
+    "n8n_deactivate_workflow",
+    "n8n_trigger_webhook",
+    "github_create_patch_release",
+    "invoke_tool_direct",
+    "probe_mcp_server",
+    "openapi_parse_from_url",
+    "openapi_playground_test",
+    "dry_run_trigger",
+    "simulate_use_case",
+    "set_use_case_enabled",
+    "set_use_case_generation_settings",
+    "rename_event_listeners",
+    "cloud_sync_set_enabled",
+    "discover_connector_resources",
+    "execute_persona",
     // Credentials -- Write/Delete CRUD (reads are public)
     "create_credential",
     "update_credential",
@@ -732,6 +761,12 @@ static CLOUD_COMMANDS_SET: LazyLock<HashSet<&'static str>> =
 /// Read-only config/status checks (cloud_get_config, cloud_status,
 /// gitlab_get_config) are public to allow startup without auth.
 pub const CLOUD_COMMANDS: &[&str] = &[
+    // Promoted 2026-08-13 — same reasoning as the PRIVILEGED block above.
+    "remote_command_approve",
+    "remote_command_reject",
+    "cloud_sync_persona",
+    "cloud_adopt_deployment",
+    "cloud_sync_now",
     "cloud_connect",
     "cloud_reconnect_from_keyring",
     "cloud_disconnect",
@@ -816,7 +851,11 @@ mod tests {
         assert_eq!(command_tier("greet"), AuthTier::Public);
         assert_eq!(command_tier("get_auth_state"), AuthTier::Public);
         assert_eq!(command_tier("list_personas"), AuthTier::Public);
-        assert_eq!(command_tier("execute_persona"), AuthTier::Public);
+        // execute_persona was asserted Public here purely because it was
+        // missing from PRIVILEGED_COMMANDS — a description of the drift, not a
+        // requirement. Its own #[requires(privileged)] attribute is the stated
+        // intent, and it spends money. Promoted 2026-08-13.
+        assert_eq!(command_tier("execute_persona"), AuthTier::Privileged);
     }
 
     #[test]
@@ -1053,33 +1092,7 @@ mod tests {
         ("list_deployment_history_all", "read-only listing"),
         // — sensitive writes that SHOULD be listed; verify the UI call path
         //   carries the IPC token before listing, or the feature breaks —
-        ("add_mcp_gateway_member", "OWED: sensitive write"),
-        ("remove_mcp_gateway_member", "OWED: sensitive write"),
-        ("set_mcp_gateway_member_enabled", "OWED: sensitive write"),
-        ("cli_capture_save", "OWED: writes a captured credential"),
-        ("refresh_credential_cli_now", "OWED: refreshes a credential"),
-        ("deploy_automation", "OWED: deploys"),
-        ("n8n_create_workflow", "OWED: remote write"),
-        ("n8n_activate_workflow", "OWED: remote state change"),
-        ("n8n_deactivate_workflow", "OWED: remote state change"),
-        ("n8n_trigger_webhook", "OWED: fires a remote webhook"),
-        ("github_create_patch_release", "OWED: remote write"),
-        ("invoke_tool_direct", "OWED: arbitrary tool invocation"),
         ("import_portability_bundle_from_path", "OWED: bulk import"),
-        ("probe_mcp_server", "OWED: outbound probe"),
-        ("openapi_parse_from_url", "OWED: outbound fetch"),
-        ("openapi_playground_test", "OWED: outbound request"),
-        ("dry_run_trigger", "OWED: executes a trigger path"),
-        ("simulate_use_case", "OWED: executes a simulation"),
-        ("set_use_case_enabled", "OWED: state change"),
-        ("set_use_case_generation_settings", "OWED: state change"),
-        ("rename_event_listeners", "OWED: bulk rename"),
-        ("cloud_sync_set_enabled", "OWED: state change"),
-        ("cloud_sync_persona", "OWED: pushes a persona to cloud"),
-        ("cloud_sync_now", "OWED: triggers a sync"),
-        ("cloud_adopt_deployment", "OWED: adopts a remote deployment"),
-        ("remote_command_approve", "OWED: approves a remote instruction"),
-        ("remote_command_reject", "OWED: rejects a remote instruction"),
         // — deliberate exclusions, documented at ipc_auth.rs:396: the wrapper
         //   already gates these and listing them would double-guard —
         ("export_credentials", "deliberate: wrapper-level gate, see :396"),
@@ -1087,11 +1100,14 @@ mod tests {
         ("export_full", "deliberate: wrapper-level gate, see :396"),
         ("import_portability_bundle", "deliberate: wrapper-level gate, see :396"),
         ("get_api_proxy_metrics", "OWED: verify tier"),
-        ("save_api_definition", "OWED: sensitive write, verify UI token path"),
-        ("discover_connector_resources", "OWED: outbound discovery, verify tier"),
-        ("execute_api_request", "OWED: arbitrary outbound request, verify tier"),
+        // — deliberate exclusions (ipc_auth.rs:245-252): the wrapper x-ipc-token
+        //   check fails intermittently on Windows WebView2 when the renderer
+        //   BATCHES several privileged invokes during page init. Their bodies call
+        //   async require_privileged, which verifies init and emits an audit trace
+        //   but does NOT authorize — audit depth, not access control. —
+        ("execute_api_request", "deliberate: WebView2 batched-invoke race, see :245"),
+        ("save_api_definition", "deliberate: WebView2 batched-invoke race, see :245"),
         // — OPERATOR DECISION REQUIRED —
-        ("execute_persona", "CONTRADICTION: annotated privileged, but a test in this file asserts its tier is Public. Hottest command path in the app. Not changed unilaterally."),
     ];
 
     fn scan_annotations(dir: &std::path::Path, found: &mut Vec<(String, String)>) {
