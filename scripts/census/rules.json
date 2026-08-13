@@ -1,0 +1,137 @@
+{
+  "$comment": [
+    "Declarative gate registry for the golden-path corpus. Adding a gate is an entry here,",
+    "not a new script. Run `node scripts/census/run-census.mjs --help` for the contract.",
+    "",
+    "Field guide:",
+    "  id           stable slug; also the --rule filter value",
+    "  goldenPath   the doc that owns this rule. A rule with no owner is a rule nobody maintains.",
+    "  roots        directories to walk, repo-root-relative",
+    "  extensions   file suffixes to read",
+    "  signal       { pattern, flags, description, ignoreCommentLines }",
+    "               pattern is matched against WHOLE FILE CONTENT, never line-by-line",
+    "  exclude      [{ path, reason }] — reason is REQUIRED and enforced (>= 12 chars).",
+    "               An exclude that matches no file fails the run (stale exemption).",
+    "  baseline     { files, matches } — the run fails if either RISES, and also if either",
+    "               DROPS without this being updated (a silent drop is usually a broken matcher)",
+    "  floor        minimum files the walk must SEE. Below it, the result is untrustworthy",
+    "               and the run fails with 'matcher broken, not codebase clean'."
+  ],
+  "rules": [
+    {
+      "id": "raw-web-storage",
+      "goldenPath": "docs/concepts/golden-paths/client-state-persistence.md",
+      "title": "Direct Web Storage access outside the storage layer",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?:\\bwindow\\s*\\.\\s*)?\\b(?:localStorage|sessionStorage)\\b",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "localStorage / sessionStorage / window.localStorage identifiers in src/**/*.{ts,tsx}, excluding comment-only lines"
+      },
+      "exclude": [
+        {
+          "path": "src/stores/util/dedupedStorage.ts",
+          "reason": "the deduped Web Storage wrapper itself — this is the primitive the golden path routes callers TO"
+        },
+        {
+          "path": "src/lib/throttledStorage.ts",
+          "reason": "the throttled-write Web Storage primitive itself; it must touch the raw API"
+        },
+        {
+          "path": "src/lib/utils/crashPersistence.ts",
+          "reason": "the crash path must not depend on a module that may itself be what crashed"
+        },
+        {
+          "path": "src/main.tsx",
+          "reason": "pre-mount synchronous reads that run before React and before the store module graph loads"
+        },
+        {
+          "path": "**/__tests__/**",
+          "reason": "test fixtures legitimately poke Web Storage directly to set up and assert state"
+        },
+        {
+          "path": "**/*.test.ts",
+          "reason": "test fixtures legitimately poke Web Storage directly to set up and assert state"
+        },
+        {
+          "path": "**/*.test.tsx",
+          "reason": "test fixtures legitimately poke Web Storage directly to set up and assert state"
+        }
+      ],
+      "baseline": {
+        "files": 72,
+        "matches": 186
+      },
+      "floor": 4000
+    },
+    {
+      "id": "hand-rolled-spinner",
+      "goldenPath": "docs/concepts/golden-paths/inline-busy-state.md",
+      "title": "Hand-rolled spinner on a surface",
+      "roots": [
+        "src/features"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "animate-spin",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "the animate-spin utility class in src/features/**; a surface should render a ghost, not a spinner"
+      },
+      "exclude": [
+        {
+          "path": "src/features/shared/components/buttons/Button.tsx",
+          "reason": "spinners are REQUIRED for actions and banned only for surfaces — Button owns the real action spinner"
+        },
+        {
+          "path": "src/features/shared/components/buttons/AsyncButton.tsx",
+          "reason": "spinners are REQUIRED for actions and banned only for surfaces — AsyncButton is the destination this rule points at"
+        }
+      ],
+      "baseline": {
+        "files": 182,
+        "matches": 248
+      },
+      "floor": 2500
+    },
+    {
+      "id": "raw-select",
+      "goldenPath": "docs/concepts/golden-paths/dropdown-and-select.md",
+      "title": "Raw <select> element instead of ThemedSelect",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "<select(?![A-Za-z0-9_$-])",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a raw <select> JSX opening element; ThemedSelect extends SelectHTMLAttributes so the migration is prop-for-prop"
+      },
+      "exclude": [
+        {
+          "path": "src/features/shared/components/forms/ThemedSelect.tsx",
+          "reason": "the primitive itself — ThemedSelect IS the <select>, so it is the one legitimate site"
+        }
+      ],
+      "baseline": {
+        "files": 46,
+        "matches": 63
+      },
+      "floor": 4000
+    }
+  ]
+}

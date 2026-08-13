@@ -2,6 +2,12 @@
 
 ## Active
 
+### census-runner — one shared gate runner for golden-path §9 (replaces ~460 bespoke scripts) — session opus-5[1m]
+- 2026-08-13. Scope: `scripts/census/**` (new), `package.json` scripts block, `docs/concepts/golden-path-contract.md`. Deliberately does NOT touch `docs/concepts/golden-paths/*` — that is `patterns-situation-spine`'s declared territory; the note lives in the contract doc instead.
+- Shipped: `run-census.mjs` + `lib/engine.mjs` + declarative `rules.json` + `self-test.mjs` (21 assertions, no deps) + `__fixtures__/`. `npm run census` / `census:check` / `census:test`. NOT wired into CI or lefthook — landing it as a gate is a separate decision.
+- Baselines measured today, each cross-checked against a second independent implementation: raw-web-storage **72 files / 186 matches**, hand-rolled-spinner **182 / 248**, raw-select **46 / 63**.
+- **Two matcher bugs found and killed, both worth knowing:** (1) line-by-line matching misses tokens that END a line — `<select[\s/>]` finds 4 of 67 raw selects and reads as "looks clean"; the engine matches whole-file content only. (2) the naive line indexer (`split(/\r?\n/)` + `offset += len + 1`) drifts one char per line on CRLF files, so the comment filter reads a NEIGHBOURING line — caught by a second implementation disagreeing by exactly 1 match. Both have regression tests.
+
 ### patterns-situation-spine — pattern-fabric v2: library restructured around situations + golden paths — session fable-5
 - 2026-08-12/13. Scope: `docs/concepts/situation-spine.{md,json}`, `docs/concepts/golden-paths/*`, `src/features/overview/sub_patterns/**`. Status: golden-path review pending with operator.
 - Round-1 modal prototype ABORTED by operator ruling ("rather see none than these") — all three variants deleted, Library/Graph restored to prior surfaces; the modal is re-prototyped after the restructure.
