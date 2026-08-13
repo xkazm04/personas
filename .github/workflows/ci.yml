@@ -107,9 +107,11 @@ jobs:
         run: npm ci
 
       - name: Typecheck + lint
+        if: always()
         run: npm run check
 
       - name: Check i18n locale keyset parity
+        if: always()
         # CLAUDE.md long claimed this was a CI gate — it wasn't until
         # build-tooling architect run 2026-05-01 wired it. Catches locale
         # files that drift from en.json's keyset (missing or extra keys),
@@ -117,6 +119,7 @@ jobs:
         run: npm run check:i18n
 
       - name: Check ERROR_KEY_MAP ↔ en.json error_registry parity
+        if: always()
         # Asserts every keyPrefix in src/i18n/useTranslatedError.ts has both
         # <prefix>_message and <prefix>_suggestion under error_registry in
         # en.json. Without these, runtime falls back to the raw error string
@@ -125,6 +128,7 @@ jobs:
         run: npm run check:error-registry
 
       - name: Check theme contrast (WCAG AA token pairings)
+        if: always()
         # Audits src/styles/globals.css for every theme: body, muted-foreground,
         # muted-foreground at the minimum caption opacity (80%), and muted text
         # must each clear AA (4.5:1) against the canvas. Fails the build on any
@@ -133,12 +137,14 @@ jobs:
         run: npm run check:themes
 
       - name: Validate Tauri config overlays
+        if: always()
         # Catches: drift in $schema across the three configs, overlays
         # touching unexpected keys (so the overlay surface stays small),
         # and feature names that don't match Cargo.toml [features].
         run: npm run check:tauri-configs
 
       - name: Validate tier builds (starter / team)
+        if: always()
         # Tier variants flip frontend gating via VITE_APP_TIER and tree-shake
         # disabled features. Validate starter + team compile here so a broken
         # tier-gate import doesn't slip through. The builder tier is NOT built
@@ -150,9 +156,11 @@ jobs:
         run: npm run check:tiers starter team
 
       - name: Build
+        if: always()
         run: npm run build
 
       - name: Check bundle size budget
+        if: always()
         # Budget lives in scripts/lib/bundle-budget.mjs (single source shared
         # with bundle-size-report.mjs): 850 KB/chunk, 5000 KB total. No flags
         # needed — the script defaults to the shared budget.
@@ -167,9 +175,11 @@ jobs:
         run: node scripts/bundle-comment.mjs
 
       - name: Check for unused bindings
+        if: always()
         run: bash scripts/check-unused-bindings.sh
 
       - name: Run frontend tests
+        if: always()
         run: npm run test -- --run
 
   # ─── Job B: Rust tests on all 3 platforms ───────────────────
@@ -255,14 +265,28 @@ jobs:
         # only by `desktop`. Without it the tauri build script aborts with
         # "Permission updater:default not found" before compiling anything —
         # so this step has never actually run a test.
-        run: cargo test --manifest-path src-tauri/Cargo.toml --features desktop
+        #
+        # --workspace is ALSO required. Without it cargo tests only the root
+        # package (personas-desktop), so every test in personas-core,
+        # personas-db and personas-engine never compiles or runs. That is ~770
+        # tests in personas-db alone, including every migration and
+        # boot-safety assertion. Three independent reviews of this repo
+        # arrived at this same missing word.
+        run: cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop
 
       - name: Run Clippy
-        run: cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
+        # if: always() so a failing test step does not hide a lint regression.
+        # --workspace and --features desktop for the same reasons as above:
+        # without them clippy lints the root package only, and aborts on the
+        # updater capability before linting anything.
+        if: always()
+        run: cargo clippy --workspace --manifest-path src-tauri/Cargo.toml --features desktop -- -D warnings
 
       - name: Install cargo-deny
+        if: always()
         run: cargo install cargo-deny --locked
       - name: Check dependency policies
+        if: always()
         run: cd src-tauri && cargo deny check
 
       - name: Show sccache stats
