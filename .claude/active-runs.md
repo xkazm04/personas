@@ -293,6 +293,12 @@
 
 ## Recently completed
 
+### security-schema-repair — Obsidian bridge path traversal + phantom `credentials` table — session opus-5 — **COMPLETE**
+- 2026-08-13. Commits: `2cafef719` restore personas-engine test build (WorkspaceKnowledge.layer fixture) · `829858d9e` close the Obsidian bridge path traversal · `fc99a7a46` repair the phantom `credentials` references (3 sites).
+- Fix 1: `vault.join(path).starts_with(vault)` was a no-op guard at 4 sites in `desktop_bridges.rs` (arbitrary read/write/append/list, LLM-influenced path). Replaced with a new shared anchored resolver `engine::path_safety::resolve_within_root` + lexical `validate_relative_fragment` (also applied to the REST arm URL fragment). 16 tests; 4 verified FAILING against the pre-fix code.
+- Fix 2: `mcp_gateway_members` FK, `mcp_gateways::list_members` JOIN and `metrics::get_anomaly_drilldown` JOIN all named a `credentials` table that does not exist. DDL corrected at the creation site + guarded table-rebuild `run_step` at the END of `run_incremental` (phase 2 — the table is created in phase 1). Three dead `ALTER TABLE executions ADD COLUMN pending_auth_*` statements deleted (zero readers anywhere). 10 tests incl. the dangling-FK schema gate.
+- Golden-path corrections found: filesystem-boundary says `validate_file_access_path` is the fallback (wrong model here — it is the absolute/blocklist model with no root); schema-change says `list_members` reads work (they never did — a second phantom JOIN). Both noted to the operator.
+
 ### triage-verdicts-ingest — `dev_tools_triage_verdicts_ingest` result.json door — session fable-5 subagent — **COMPLETE**, commit `0b8967995`
 - 2026-08-10. New ingest door `commands/infrastructure/dev_tools/triage_ingest.rs` (ship_ingest-shaped: path-confined, 1 MiB cap, ingested.json idempotency, ALL-OR-NOTHING validation, exact accept|reject tokens) persisting a pending `backlog_apply_triage` approval via the refactored pool-based `insert_triage_approval` (shared with the live Athena batch). dev_ideas never touched; ALLOWED_ACTIONS/executors untouched.
 - Gates: cargo check --features desktop green at 213-warning baseline · triage_ingest 13/13 + backlog_triage 16/16 (via manifest-patched exe; bare cargo test hit the known 0xc0000139 loader trap) · tsc clean · binding exported by ts-rs test.
