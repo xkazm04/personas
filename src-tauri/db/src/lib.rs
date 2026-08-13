@@ -1878,12 +1878,75 @@ fn seed_example_scrape_config(conn: &rusqlite::Connection) -> Result<(), AppErro
 // Available to this crate's own tests AND, via the `test-support` feature, to
 // the desktop crate's — `cfg(test)` does not cross a crate boundary, and ~72
 // test modules over there build their fixtures with this.
+/// Path to a fully-migrated, fully-seeded database built **once per test
+/// process**, which [`init_test_db`] copies per call.
+///
+/// WHY (2026-08-13). This fixture has ~576 call sites. Each one used to run the
+/// entire migration chain from scratch — the initial schema, 124 `run_step`s,
+/// 378 `ddl_step` calls and three seed functions — against a temp file on disk.
+/// Measured, that is ~24 CPU-minutes of pure schema setup per suite before a
+/// single assertion executes, and cargo's default `--test-threads` is the core
+/// count, so it lands on every core at once. Two concurrent suites made a
+/// developer machine unusable.
+///
+/// Building the chain once and copying the resulting file is orders of
+/// magnitude cheaper: a copy is a few milliseconds against seconds for the
+/// chain.
+///
+/// Safe because the standard pragma set does **not** enable WAL, so a database
+/// is a single self-contained file with no `-wal`/`-shm` sidecar to tear; the
+/// building connection is dropped before any copy is taken.
+#[cfg(any(test, feature = "test-support"))]
+fn migrated_template() -> Result<std::path::PathBuf, AppError> {
+    use std::sync::OnceLock;
+    static TEMPLATE: OnceLock<Result<std::path::PathBuf, String>> = OnceLock::new();
+
+    TEMPLATE
+        .get_or_init(|| {
+            // One template per process — the pid keeps concurrent cargo test
+            // binaries (and parallel harness runs) off each other's file.
+            let path = std::env::temp_dir()
+                .join(format!("personas_test_template_{}.db", std::process::id()));
+            let _ = std::fs::remove_file(&path); // stale template from a crashed run
+
+            let build = || -> Result<(), AppError> {
+                let conn = rusqlite::Connection::open(&path)?;
+                apply_standard_pragmas(&conn)?;
+                migrations::run(&conn)?;
+                migrations::run_incremental(&conn)?;
+                seed_builtin_tools(&conn)?;
+                seed_builtin_connectors(&conn)?;
+                seed_builtin_shared_events(&conn)?;
+                // Drop before the first copy: an open handle can leave the
+                // rollback journal on disk, and a copy taken then is torn.
+                drop(conn);
+                Ok(())
+            };
+
+            match build() {
+                Ok(()) => Ok(path),
+                Err(e) => {
+                    let _ = std::fs::remove_file(&path);
+                    Err(format!("could not build the test-database template: {e}"))
+                }
+            }
+        })
+        .clone()
+        .map_err(AppError::Internal)
+}
+
 #[cfg(any(test, feature = "test-support"))]
 pub fn init_test_db() -> Result<DbPool, AppError> {
     use std::time::Duration;
 
-    // Use a unique temp file for each test to avoid in-memory connection issues with r2d2.
+    // Copy the once-built template rather than re-running the migration chain.
+    // A unique file per test (not `:memory:`) because r2d2 hands out multiple
+    // connections and each in-memory connection would get its own empty
+    // database.
+    let template = migrated_template()?;
     let tmp = std::env::temp_dir().join(format!("personas_test_{}.db", uuid::Uuid::new_v4()));
+    std::fs::copy(&template, &tmp).map_err(AppError::Io)?;
+
     let manager = SqliteConnectionManager::file(&tmp);
     let pool = Pool::builder()
         .max_size(2)
@@ -1891,13 +1954,15 @@ pub fn init_test_db() -> Result<DbPool, AppError> {
         .connection_customizer(Box::new(SqlitePragmaCustomizer))
         .build(manager)?;
 
-    let conn = pool.get()?;
-    migrations::run(&conn)?;
-    migrations::run_incremental(&conn)?;
-    seed_builtin_tools(&conn)?;
-    seed_builtin_connectors(&conn)?;
-    seed_builtin_shared_events(&conn)?;
-    drop(conn);
+    // Prove the copy is usable before handing it to a test: a torn or truncated
+    // copy would otherwise surface as a baffling failure in whichever assertion
+    // touched the database first.
+    {
+        let conn = pool.get()?;
+        conn.query_row("SELECT COUNT(*) FROM sqlite_master", [], |r| {
+            r.get::<_, i64>(0)
+        })?;
+    }
     Ok(pool)
 }
 

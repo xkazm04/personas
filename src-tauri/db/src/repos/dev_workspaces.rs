@@ -1937,20 +1937,13 @@ pub fn set_knowledge_structure(
 mod extends_loop_tests {
     use super::*;
 
+    /// Delegates to the crate fixture, which copies a once-built,
+    /// fully-migrated template instead of re-running the migration chain
+    /// (~436 statements) per test. This fixture used to run the chain
+    /// itself against a shared-cache in-memory DB; correct, but it paid
+    /// the full setup cost on every one of these tests.
     fn pool() -> DbPool {
-        use std::sync::atomic::{AtomicU64, Ordering};
-        static COUNTER: AtomicU64 = AtomicU64::new(0);
-        let id = COUNTER.fetch_add(1, Ordering::Relaxed);
-        let uri = format!("file:ws_extends_testdb_{id}?mode=memory&cache=shared");
-        let manager = r2d2_sqlite::SqliteConnectionManager::file(&uri);
-        let pool = r2d2::Pool::builder().max_size(4).build(manager).expect("pool");
-        {
-            let conn = pool.get().expect("conn");
-            conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
-            crate::migrations::run(&conn).expect("migrations");
-            crate::migrations::run_incremental(&conn).expect("incremental");
-        }
-        pool
+        crate::init_test_db().expect("test db")
     }
 
     fn candidate(title: &str, extends: Option<&str>) -> KnowledgeCandidate {
@@ -3844,20 +3837,13 @@ mod tests {
     // Materialization + lifecycle (DB-backed)
     // ------------------------------------------------------------------
 
+    /// Delegates to the crate fixture, which copies a once-built,
+    /// fully-migrated template instead of re-running the migration chain
+    /// (~436 statements) per test. This fixture used to run the chain
+    /// itself against a shared-cache in-memory DB; correct, but it paid
+    /// the full setup cost on every one of these tests.
     fn test_pool() -> DbPool {
-        use std::sync::atomic::{AtomicU64, Ordering};
-        static COUNTER: AtomicU64 = AtomicU64::new(0);
-        let id = COUNTER.fetch_add(1, Ordering::Relaxed);
-        let uri = format!("file:ws_practice_testdb_{id}?mode=memory&cache=shared");
-        let manager = r2d2_sqlite::SqliteConnectionManager::file(&uri);
-        let pool = r2d2::Pool::builder().max_size(4).build(manager).expect("pool");
-        {
-            let conn = pool.get().expect("conn");
-            conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
-            crate::migrations::run(&conn).expect("migrations");
-            crate::migrations::run_incremental(&conn).expect("incremental migrations");
-        }
-        pool
+        crate::init_test_db().expect("test db")
     }
 
     /// A workspace with `n` member projects and one proposed actionable
