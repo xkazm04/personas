@@ -42,7 +42,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `ChartEmptyState` | _(add a `@catalog` tag)_ |
 | `Collapse` | Pure-CSS animated expand/collapse container. |
 | `ConfidenceArc` | Semi-circular arc gauge for displaying confidence metrics. |
-| `DataGrid` | CSS grid fraction, e. |
+| `DataGrid` | Paginated table — page-size selector, row selection + bulk-action toolbar, row drag; caller-owned sort. Else use UnifiedTable. |
 | `DensityToggle` | Suffix added to layoutId to avoid collisions when multiple toggles render. |
 | `DesignConnectorGrid` | _(add a `@catalog` tag)_ |
 | `DragHandle` | Visual size of the grip icon. |
@@ -94,7 +94,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `ErrorBoundary` | Called when the user clicks "Go to dashboard". |
 | `ErrorRecoveryBanner` | _(add a `@catalog` tag)_ |
 | `InlineErrorBanner` | _(add a `@catalog` tag)_ |
-| `LoadingSpinner` | Canonical loading spinner with size + a11y label. Use for any full-element loading state. |
+| `LoadingSpinner` | RENDERS NOTHING. Spinners are disabled app-wide; this survives for import compatibility and emits an sr-only role="status" only when given `label`. Never use it as a visual loading state — for a SURFACE use a calm delayed ghost (docs/design/overview-loading.md), for an ACTION use Button/AsyncButton, which render real spinners by design. |
 | `Reveal` | Reveal — fade (+ subtle slide-up) a block of content in on mount; the canonical "content arrived" reveal for the golden loading pa |
 | `ScenarioEmptyState` | _(add a `@catalog` tag)_ |
 | `StalenessIndicator` | Epoch ms when this data source was last successfully fetched. |
@@ -151,7 +151,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `ContentHeaderSkeleton` | _(add a `@catalog` tag)_ |
 | `DeferUntilIdle` | _(add a `@catalog` tag)_ |
 | `FullScreenOverlay` | _(add a `@catalog` tag)_ |
-| `ListSkeleton` | ListSkeleton — shimmer placeholder rows for a list/table body while the first page loads, so panel chrome lands before data (no bi |
+| `ListSkeleton` | ListSkeleton — calm, non-pulsing placeholder rows for a list/table body while the first page loads, so panel chrome lands before d |
 | `PanelTabBar` | Horizontal tab bar for in-panel navigation. |
 | `ReasoningTrace` | _(add a `@catalog` tag)_ |
 | `RouteChunkSkeleton` | RouteChunkSkeleton — the delayed, header-only Suspense fallback for a lazy route/section chunk. Renders nothing for the first ~150 |
@@ -160,7 +160,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `SectionHeading` | _(add a `@catalog` tag)_ |
 | `SegmentedTabs` | Segmented control / pill tab switcher. |
 | `SettingsScaffold` | Two-column settings layout — a sticky quick-nav rail (scroll-spy + smooth-scroll + animated active pill) beside a stack of Section |
-| `TableSkeleton` | TableSkeleton — grid-shaped shimmer placeholder for a 12-col table (optional header band + N body rows), with per-column bar width |
+| `TableSkeleton` | TableSkeleton — grid-shaped calm placeholder for a 12-col table (optional header band + N body rows), with per-column bar widths s |
 | `useSectionScrollSpy` | auto/scroll/overlay), else null. |
 | `VibeThemeProvider` | Applies persona-derived "vibe" CSS custom properties to a wrapper element. |
 

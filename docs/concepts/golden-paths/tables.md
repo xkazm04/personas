@@ -171,3 +171,12 @@ Do not build a table. Pick one of exactly three shared primitives and feed it a 
 9. **Zero enforcement.** 21 custom ESLint rules exist, including `custom/enforce-base-modal` for modals — **none** covers tables. Highest-leverage fix: `custom/prefer-unified-table` flagging `<table>`+`<thead>` and `role="columnheader"` in `src/features/**`, with an allowlist for the 4 legitimate pivots. The `role="columnheader"` signal is near-perfect — 6 files, 4 true positives.
 10. **Zero tests.** `display/__tests__/` covers `facetedTableModel`, `grouping`, `SortableHeader`, `Numeric` — but neither `UnifiedTable` nor `DataGrid`. The three-state loading body, sort persistence and the id-guard have no regression coverage.
 11. **Documentation gaps that cause the drift.** (a) `DataGrid` has **no `@catalog` JSDoc tag**, so its generated row in `CATALOG.md:45` reads `"CSS grid fraction, e."` — a truncated fragment of an unrelated prop comment. The catalog CLAUDE.md mandates consulting describes the pagination/selection primitive as gibberish. (b) `docs/refactor/shared-component-reuse.md` §5 has families for empty states, badges, errors, counts, headers, time and pickers — **no table family row**, despite three primitives with disjoint capabilities. (c) `.claude/Design.md:295`'s don't-hand-roll table omits tables entirely.
+
+> **Corrections pass — 2026-08-13 · catalog mechanism.** An earlier version of
+> this document said the `LoadingSpinner` row in `CATALOG.md` comes from the
+> component's missing `@catalog` tag. **That is wrong.**
+> `scripts/docs/gen-shared-catalog.mjs:92-96` — `describe()` returns
+> `CURATED[name]` and only falls through to a `@catalog` tag when the name is
+> absent from that map. `LoadingSpinner` IS in `CURATED`, so adding a tag to the
+> component would appear to work and change nothing. The row was fixed at its
+> real source (the `CURATED` map) and the catalog regenerated.

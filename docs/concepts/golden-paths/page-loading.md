@@ -166,3 +166,12 @@ Never gate a surface on a loading flag. Render the static chrome — header, fil
 8. **Zero automated enforcement.** No ESLint rule, no check script, no test asserts any of the five laws; `UnifiedTable` has no test file. Contrast `custom/enforce-base-modal`, which does gate the modal primitive. `.claude/conventions.json:112` lists `"spinner"` under `doNotHandRoll` but nothing reads it at build time. **Every deviation above was introduced under a green `npm run check`.**
 
 **Not a gap — confirmed clean:** the v1 pattern is fully retired; `LoadingReveal` and `useStableLoading` have zero occurrences in `src/`.
+
+> **Corrections pass — 2026-08-13 · catalog mechanism.** An earlier version of
+> this document said the `LoadingSpinner` row in `CATALOG.md` comes from the
+> component's missing `@catalog` tag. **That is wrong.**
+> `scripts/docs/gen-shared-catalog.mjs:92-96` — `describe()` returns
+> `CURATED[name]` and only falls through to a `@catalog` tag when the name is
+> absent from that map. `LoadingSpinner` IS in `CURATED`, so adding a tag to the
+> component would appear to work and change nothing. The row was fixed at its
+> real source (the `CURATED` map) and the catalog regenerated.
