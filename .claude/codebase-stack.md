@@ -909,3 +909,75 @@ prompt at `commands/infrastructure/standards_scan.rs:95`. `rule_key` is free-for
 **categories are allowlisted** at `standards_scan.rs:44` and `norm()` silently coerces an
 unlisted category to `code_quality` - adding a `## <category>` heading to the markdown
 without updating the const mis-files every finding under it without failing.
+
+## `mcpServers` blocks: one typed model, and the transport-name divergence (added 2026-08-13)
+
+Personas WRITES `mcpServers` JSON from **eight** places — three of them into a *user's own*
+client config, not just its own temp dirs:
+
+| Site | Consumer |
+|---|---|
+| `engine/src/cli_mcp_config.rs` | the per-execution `--mcp-config` sidecar (`personas-mcp`) |
+| `commands/fleet/pty.rs` | per-Fleet-session Athena MCP endpoint |
+| `browser_bridge/mod.rs` | browser-bridge HTTP endpoint |
+| `commands/artist/mod.rs` | Blender MCP for artist turns |
+| `commands/credentials/auto_cred_browser.rs` | Playwright MCP |
+| `webbuild/mcp.rs` | Studio build-turn connectors |
+| `mcp_server/install.rs` | **user's** `~/.claude/mcp.json` and `~/.cursor/mcp.json` |
+| `commands/infrastructure/system/mcp_integration.rs` | **user's** Claude Desktop config |
+
+**All eight now construct entries through `personas_core::mcp_config::McpServer` +
+`mcp_config_json`** (`/research` run 2026-08-13, commit `50714e4ee`). Before that they were
+eight `json!` literals that had drifted into five conventions for the discriminator —
+including `"transport": "stdio"` (a key no MCP or Agent Plugins schema defines, silently
+ignored by every reader) and two sites with no discriminator at all. Add new writers through
+the builder; do not hand-roll a ninth literal.
+
+**The transport-name divergence is deliberate, not an oversight.** MCP and Agent Plugins
+1.0.0 both name the modern HTTP transport `streamable-http`. Personas emits `"http"`, pinned
+at `personas_core::mcp_config::MCP_HTTP_TYPE`, because that is what Claude Code / Cursor /
+Claude Desktop accept and what the live Fleet-Athena and browser-bridge paths are verified
+working with. **Changing that constant is a wire-visible behavior change against a
+third-party reader — it needs a live CLI test, not a compile.** Reopen conditions are
+tracked at `Patterns/descoped-reopenable.md` (2026-08-13 entry).
+
+**The inbound client is a separate vocabulary and is one name behind.**
+`engine/mcp_tools.rs` dispatches on a credential's `connection_type` at three sites
+(`:437-443`, `:706-712`, `:880-895`) and accepts only `"stdio"` / `"sse"`, erroring
+otherwise. Its `"sse"` path (`:1395-1465`) is a plain HTTP POST with 2026-07-28/legacy
+dual-era negotiation — **personas already implements Streamable HTTP and files it under the
+legacy name**; the credential UI (`vault/sub_catalog/components/schemas/schemaConfigs.tsx:41-51`)
+offers those same two subtypes. A `/research` finding about MCP transports must say which
+direction it targets: the writer vocabulary (the builder above) or the reader vocabulary
+(these three match arms).
+
+**Latent, unfixed:** `engine/src/desktop_discovery.rs:404` — `ClaudeMcpServerEntry` declares
+`command: String` with no `#[serde(default)]`, so a user whose Claude Desktop config holds
+any HTTP MCP server fails `import_claude_desktop_mcp_servers` for **every** server, not just
+that one. Found 2026-08-13 while scoping the writer cleanup; out of scope there (a reader).
+
+## Skill-tree walks are containment-guarded (added 2026-08-13)
+
+A skill tree is content supplied by a **managed repository**, which personas does not
+control. Every walk over `.claude/skills/` must go through
+`commands::infrastructure::skill_files::classify_skill_entry`, which types an entry via
+`DirEntry::file_type` (which does NOT traverse) and rejects symlinks — Windows junctions
+included — plus non-regular files. `MAX_SKILL_DIR_DEPTH` (8) caps recursion. Shipped by
+`/research` run 2026-08-13, commit `ee97789bc`, after finding that all five walks used
+`Path::is_dir()` / `fs::metadata` (both follow symlinks) with no depth cap: a link at
+`.claude/skills/<name>/refs -> ~/.ssh` was read into the shareable export bundle and
+**copied into the shared skill library on adopt**, and a self-referential link recursed to
+stack overflow.
+
+The five walks: `skill_files.rs` copy/install, hash (`collect_skill_files`), library scan
+(`scan_skills_dir`) and its reference listing; `commands/core/data_portability.rs`
+export collector (`collect_skill_dir_files`).
+
+**Invariant a new walk must preserve:** the copy walk and the hash walk must apply
+*identical* skip rules. `collect_skill_files` backs `hash_skill_dir`, so if they disagreed
+about what counts as skill content, every installed copy of a skill containing a rejected
+entry would hash differently from its source and read as permanently `diverged`. A unit
+test in `skill_files.rs` asserts this.
+
+Rejections **degrade, never fail** — a stray link warns (install) or lands in
+`export_warnings` (export) rather than blocking an otherwise valid skill.
