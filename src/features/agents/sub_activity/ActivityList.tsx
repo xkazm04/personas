@@ -166,10 +166,11 @@ export function ActivityList({ items, isLoading, useCaseOptions, annotationsByEx
   const { t } = useTranslation();
   const columns = useColumns(useCaseOptions, annotationsByExecution);
   return (
-    <div
-      key={isLoading ? 'loading' : 'ready'}
-      className={`animate-fade-slide-in transition-opacity duration-150 ${isLoading ? 'opacity-60' : 'opacity-100'}`}
-    >
+    /* No loading `key` and no dim: remounting on every fetch wiped the reveal
+       tracker's ref (replaying the cascade) and dimming live rows violates
+       law 1 — a fetch in flight changes nothing that is already on screen.
+       UnifiedTable's own `isLoading` branch is the entire loading state. */
+    <div className="animate-fade-slide-in">
       <UnifiedTable
         columns={columns}
         data={items}
