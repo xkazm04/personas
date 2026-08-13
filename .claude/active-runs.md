@@ -2,9 +2,11 @@
 
 ## Active
 
-### prototype-unified-practice-modal — /prototype: pattern-fabric v2 unified detail modal (3 variants) — session fable-5
-- Started 2026-08-12. Scope: `src/features/overview/sub_patterns/` — new `UnifiedPracticeModal` + 3 variant siblings + hierarchy helper; wiring edits in `KnowledgeLibrary.tsx`, `graph/PatternGraphHost.tsx`; consolidation will DELETE `PracticeDetailLedger.tsx` + `graph/ClusterPatternsModal.tsx` (operator-directed). Status: started.
-- NOTE: deliberately prototyping ON MASTER (no worktree): variants must render in the singleton live app (:1420 HMR); per-file staging + atomic per-round commits instead.
+### patterns-situation-spine — pattern-fabric v2: library restructured around situations + golden paths — session fable-5
+- 2026-08-12/13. Scope: `docs/concepts/situation-spine.{md,json}`, `docs/concepts/golden-paths/*`, `src/features/overview/sub_patterns/**`. Status: golden-path review pending with operator.
+- Round-1 modal prototype ABORTED by operator ruling ("rather see none than these") — all three variants deleted, Library/Graph restored to prior surfaces; the modal is re-prototyped after the restructure.
+- Landed: P1 schema+doors `27c928ff1` · set_structure clear-semantics fix `2cddf530d` · concurrency pilot applied live (13 principles / 104 manifestations / 104 evidence rows) · situation spine (6 domains / 21 subdomains / 56 topics, all 38 playbooks absorbed) · first 3 golden paths (tables, modals, page loading).
+- NEXT: operator review of golden paths → scan-orchestration handshake → attach the 1,048 → UI phase (3-level graph + topic ledger + re-prototyped modal; playbooks UI removed there).
 
 ### athena-skills-knowledge-ops — Athena ops over Skills + Knowledge Base — session fable-5 — **COMPLETE**
 - 2026-08-10/11. Commits: `0caa83cce` fabric F4 committed on operator approval · `a10b6220a` autonomous-approve-everything (allowlist retired, shared executor table, companion://client-action) · `bb8a9f40c` side panel 4-lane redesign · `0b4dd5306` describe_skill_fleet + describe_knowledge READ_OPS · `67905dfe9` skill_sync (adopt/sync/publish, version-bump-guarded publish) · `ef4154f9c` run_pattern_harvest (Rust prompt twin + pending-ingest watcher on the fleet 30s ticker) · `1ccae0a48` apply_pattern + evaluate_pattern · final wiring commit = constitution v52 + labels + i18n×14 + docs.
