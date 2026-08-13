@@ -1,0 +1,224 @@
+{
+  "version": 1,
+  "note": "Closed situation vocabulary for the knowledge library (docs/concepts/situation-spine.md). Topic path = domain/subdomain/topic, all kebab-case. Nodes are NOUNS; each topic node holds exactly one golden path (a principle-layer row) plus its manifestations and evidence. `seededFrom` records the playbook slug(s) whose content this node absorbs — playbooks are retired as a separate concept.",
+  "domains": [
+    {
+      "slug": "frontend",
+      "label": "Frontend",
+      "subdomains": [
+        {
+          "slug": "surfaces",
+          "label": "Surfaces",
+          "topics": [
+            { "slug": "tables", "label": "Tables", "seededFrom": ["build-a-list-surface"] },
+            { "slug": "modals", "label": "Modals", "seededFrom": ["build-a-form-or-editor"] },
+            { "slug": "forms", "label": "Forms", "seededFrom": ["build-a-form-or-editor"] },
+            { "slug": "dropdowns", "label": "Dropdowns & selects", "seededFrom": [] },
+            { "slug": "dashboards", "label": "Dashboards & metrics", "seededFrom": ["build-a-dashboard-or-metric"] },
+            { "slug": "failure-states", "label": "Empty & failure states", "seededFrom": ["handle-and-display-errors"] }
+          ]
+        },
+        {
+          "slug": "state",
+          "label": "State",
+          "topics": [
+            { "slug": "async-state", "label": "Async UI state", "seededFrom": ["write-async-ui-state"] },
+            { "slug": "stores", "label": "Stores & slices", "seededFrom": [] },
+            { "slug": "view-models", "label": "View models", "seededFrom": [] }
+          ]
+        },
+        {
+          "slug": "data",
+          "label": "Data flow",
+          "topics": [
+            { "slug": "fetching", "label": "Data fetching", "seededFrom": [] },
+            { "slug": "live-feeds", "label": "Live feeds & polling", "seededFrom": ["add-a-poll-or-live-feed"] },
+            { "slug": "bulk-actions", "label": "Bulk & batch actions", "seededFrom": ["build-a-bulk-operation"] }
+          ]
+        },
+        {
+          "slug": "motion",
+          "label": "Motion",
+          "topics": [
+            { "slug": "page-loading", "label": "Page loading", "seededFrom": [] },
+            { "slug": "transitions", "label": "Reveals & transitions", "seededFrom": [] }
+          ]
+        },
+        {
+          "slug": "shell",
+          "label": "Shell",
+          "topics": [
+            { "slug": "navigation", "label": "Navigation & routing", "seededFrom": ["new-ui-surface"] },
+            { "slug": "keyboard", "label": "Keyboard & accessibility", "seededFrom": [] },
+            { "slug": "notifications", "label": "Toasts & notifications", "seededFrom": [] }
+          ]
+        },
+        {
+          "slug": "foundation",
+          "label": "Foundation",
+          "topics": [
+            { "slug": "tokens", "label": "Design tokens & theming", "seededFrom": [] },
+            { "slug": "i18n", "label": "i18n strings", "seededFrom": [] },
+            { "slug": "primitives", "label": "Shared primitives", "seededFrom": ["new-shared-component", "build-a-shared-component"] }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "backend",
+      "label": "Backend",
+      "subdomains": [
+        {
+          "slug": "data",
+          "label": "Data",
+          "topics": [
+            { "slug": "tables", "label": "Database tables", "seededFrom": ["add-db-table", "add-or-migrate-a-table"] },
+            { "slug": "migrations", "label": "Migrations", "seededFrom": ["add-or-migrate-a-table"] },
+            { "slug": "repositories", "label": "Repositories & queries", "seededFrom": [] },
+            { "slug": "cleanup", "label": "Delete & cleanup paths", "seededFrom": ["write-a-delete-or-cleanup-path"] }
+          ]
+        },
+        {
+          "slug": "api",
+          "label": "API",
+          "topics": [
+            { "slug": "ipc-commands", "label": "IPC commands", "seededFrom": ["add-an-ipc-command-or-route", "new-ipc-command"] },
+            { "slug": "bindings", "label": "Type bindings", "seededFrom": [] },
+            { "slug": "input-validation", "label": "Input validation", "seededFrom": ["accept-external-input"] }
+          ]
+        },
+        {
+          "slug": "engine",
+          "label": "Engine",
+          "topics": [
+            { "slug": "background-loops", "label": "Background loops", "seededFrom": ["add-a-background-job", "new-cron-or-trigger"] },
+            { "slug": "job-queues", "label": "Job queues & claiming", "seededFrom": ["update-run-or-job-status"] },
+            { "slug": "subprocesses", "label": "Subprocesses", "seededFrom": ["spawn-a-subprocess"] },
+            { "slug": "caches", "label": "Caches", "seededFrom": ["add-a-cache"] }
+          ]
+        },
+        {
+          "slug": "domain",
+          "label": "Domain",
+          "topics": [
+            { "slug": "boundaries", "label": "Module boundaries", "seededFrom": ["draw-a-module-boundary"] },
+            { "slug": "variants", "label": "Status & registry variants", "seededFrom": ["add-a-variant-to-a-registry"] },
+            { "slug": "settings", "label": "Settings & flags", "seededFrom": ["persist-a-setting-or-flag"] }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "ai",
+      "label": "AI",
+      "subdomains": [
+        {
+          "slug": "calls",
+          "label": "Calls",
+          "topics": [
+            { "slug": "call-sites", "label": "LLM call sites", "seededFrom": ["call-an-llm", "add-llm-call-site"] },
+            { "slug": "prompt-contracts", "label": "Prompt contracts", "seededFrom": [] },
+            { "slug": "model-routing", "label": "Model routing & BYOM", "seededFrom": [] }
+          ]
+        },
+        {
+          "slug": "pipelines",
+          "label": "Pipelines",
+          "topics": [
+            { "slug": "background-processing", "label": "Background LLM processing", "seededFrom": [] },
+            { "slug": "agent-pipelines", "label": "Agent & scan pipelines", "seededFrom": ["build-an-agent-pipeline"] }
+          ]
+        },
+        {
+          "slug": "knowledge",
+          "label": "Knowledge",
+          "topics": [
+            { "slug": "embeddings", "label": "Embeddings & search", "seededFrom": [] }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "integrations",
+      "label": "Integrations",
+      "subdomains": [
+        {
+          "slug": "auth",
+          "label": "Auth",
+          "topics": [
+            { "slug": "oauth", "label": "OAuth connectors", "seededFrom": [] },
+            { "slug": "credentials", "label": "Credentials & secrets", "seededFrom": ["add-a-credential"] },
+            { "slug": "privileged-surfaces", "label": "Privileged surfaces", "seededFrom": ["gate-a-privileged-surface"] }
+          ]
+        },
+        {
+          "slug": "external",
+          "label": "External services",
+          "topics": [
+            { "slug": "service-calls", "label": "External service calls", "seededFrom": ["integrate-an-external-service"] },
+            { "slug": "connectors", "label": "Connector onboarding", "seededFrom": ["new-connector"] }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "platform",
+      "label": "Platform",
+      "subdomains": [
+        {
+          "slug": "observability",
+          "label": "Observability",
+          "topics": [
+            { "slug": "telemetry", "label": "Telemetry & audit trails", "seededFrom": ["add-telemetry"] },
+            { "slug": "alerts", "label": "Alerts & self-healing", "seededFrom": ["add-an-alert-or-health-check"] },
+            { "slug": "error-handling", "label": "Error handling", "seededFrom": ["handle-and-display-errors"] }
+          ]
+        },
+        {
+          "slug": "cost",
+          "label": "Cost",
+          "topics": [
+            { "slug": "metering", "label": "Billing & metering", "seededFrom": ["bill-a-metered-operation"] }
+          ]
+        },
+        {
+          "slug": "performance",
+          "label": "Performance",
+          "topics": [
+            { "slug": "startup", "label": "Startup & slow surfaces", "seededFrom": ["optimize-a-slow-surface"] }
+          ]
+        },
+        {
+          "slug": "extensibility",
+          "label": "Extensibility",
+          "topics": [
+            { "slug": "plugins", "label": "Plugins", "seededFrom": ["new-plugin"] }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "quality",
+      "label": "Quality",
+      "subdomains": [
+        {
+          "slug": "testing",
+          "label": "Testing",
+          "topics": [
+            { "slug": "unit-async", "label": "Unit & async tests", "seededFrom": ["test-async-or-live-ui"] },
+            { "slug": "live-ui", "label": "Live UI tests", "seededFrom": ["test-async-or-live-ui"] },
+            { "slug": "rust-tests", "label": "Rust tests", "seededFrom": [] }
+          ]
+        },
+        {
+          "slug": "governance",
+          "label": "Governance",
+          "topics": [
+            { "slug": "conventions", "label": "Conventions & gates", "seededFrom": ["codify-a-convention-or-decision"] },
+            { "slug": "documentation", "label": "Documentation sync", "seededFrom": [] }
+          ]
+        }
+      ]
+    }
+  ]
+}
