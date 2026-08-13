@@ -1012,4 +1012,187 @@ mod tests {
              this list) — add each one to PRIVILEGED_COMMANDS above."
         );
     }
+
+    // ── Async annotation drift ──────────────────────────────────────────
+    //
+    // The sibling test above walks `require_privileged_sync` CALL SITES, so it
+    // only ever sees sync commands. That blind spot is not cosmetic: for a sync
+    // command, annotated-but-unlisted fails closed on every call and someone
+    // notices. For an ASYNC command it is ZERO enforcement — `require_privileged`
+    // merely checks the session token exists at boot and returns Ok(()), and
+    // `require_auth` / `require_auth_sync` are unconditional Ok(()). So an async
+    // command can carry `#[requires(privileged)]`, be absent from the list, and
+    // be silently public.
+    //
+    // This test walks the ANNOTATIONS instead — both tiers, sync and async.
+
+    /// Commands annotated but not listed as of 2026-08-13, with the reason each
+    /// is tolerated. **This list may only shrink.** A new annotated-but-unlisted
+    /// command fails the test; removing an entry means either listing the command
+    /// or deleting a wrong annotation.
+    ///
+    /// Deliberately NOT bulk-listed: adding a name to PRIVILEGED_COMMANDS makes
+    /// the command fail closed without a session token, so a wrong entry breaks a
+    /// live feature. Each OWED entry needs its UI call path verified first.
+    const DRIFT_BASELINE: &[(&str, &str)] = &[
+        // — read-only; the annotation is arguably the wrong tier —
+        ("list_mcp_gateway_members", "read-only listing"),
+        ("count_event_listeners", "read-only count"),
+        ("get_use_case_cascade", "read-only read"),
+        ("github_list_repos", "read-only listing"),
+        ("n8n_list_workflows", "read-only listing"),
+        ("cloud_sync_status", "read-only status"),
+        ("github_check_permissions", "read-only probe"),
+        ("get_simulation_artefacts", "read-only read"),
+        ("remote_command_list_pending", "read-only listing"),
+        ("cloud_get_config", "read-only config read"),
+        ("cloud_diagnose", "read-only diagnostic"),
+        ("cloud_status", "read-only status"),
+        ("gitlab_get_config", "read-only config read"),
+        ("gitlab_deployment_status", "read-only status"),
+        ("list_deployment_history_all", "read-only listing"),
+        // — sensitive writes that SHOULD be listed; verify the UI call path
+        //   carries the IPC token before listing, or the feature breaks —
+        ("add_mcp_gateway_member", "OWED: sensitive write"),
+        ("remove_mcp_gateway_member", "OWED: sensitive write"),
+        ("set_mcp_gateway_member_enabled", "OWED: sensitive write"),
+        ("cli_capture_save", "OWED: writes a captured credential"),
+        ("refresh_credential_cli_now", "OWED: refreshes a credential"),
+        ("deploy_automation", "OWED: deploys"),
+        ("n8n_create_workflow", "OWED: remote write"),
+        ("n8n_activate_workflow", "OWED: remote state change"),
+        ("n8n_deactivate_workflow", "OWED: remote state change"),
+        ("n8n_trigger_webhook", "OWED: fires a remote webhook"),
+        ("github_create_patch_release", "OWED: remote write"),
+        ("invoke_tool_direct", "OWED: arbitrary tool invocation"),
+        ("import_portability_bundle_from_path", "OWED: bulk import"),
+        ("probe_mcp_server", "OWED: outbound probe"),
+        ("openapi_parse_from_url", "OWED: outbound fetch"),
+        ("openapi_playground_test", "OWED: outbound request"),
+        ("dry_run_trigger", "OWED: executes a trigger path"),
+        ("simulate_use_case", "OWED: executes a simulation"),
+        ("set_use_case_enabled", "OWED: state change"),
+        ("set_use_case_generation_settings", "OWED: state change"),
+        ("rename_event_listeners", "OWED: bulk rename"),
+        ("cloud_sync_set_enabled", "OWED: state change"),
+        ("cloud_sync_persona", "OWED: pushes a persona to cloud"),
+        ("cloud_sync_now", "OWED: triggers a sync"),
+        ("cloud_adopt_deployment", "OWED: adopts a remote deployment"),
+        ("remote_command_approve", "OWED: approves a remote instruction"),
+        ("remote_command_reject", "OWED: rejects a remote instruction"),
+        // — deliberate exclusions, documented at ipc_auth.rs:396: the wrapper
+        //   already gates these and listing them would double-guard —
+        ("export_credentials", "deliberate: wrapper-level gate, see :396"),
+        ("import_credentials", "deliberate: wrapper-level gate, see :396"),
+        ("export_full", "deliberate: wrapper-level gate, see :396"),
+        ("import_portability_bundle", "deliberate: wrapper-level gate, see :396"),
+        ("get_api_proxy_metrics", "OWED: verify tier"),
+        ("save_api_definition", "OWED: sensitive write, verify UI token path"),
+        ("discover_connector_resources", "OWED: outbound discovery, verify tier"),
+        ("execute_api_request", "OWED: arbitrary outbound request, verify tier"),
+        // — OPERATOR DECISION REQUIRED —
+        ("execute_persona", "CONTRADICTION: annotated privileged, but a test in this file asserts its tier is Public. Hottest command path in the app. Not changed unilaterally."),
+    ];
+
+    fn scan_annotations(dir: &std::path::Path, found: &mut Vec<(String, String)>) {
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            return;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                scan_annotations(&path, found);
+            } else if path.extension().and_then(|e| e.to_str()) == Some("rs") {
+                let Ok(text) = std::fs::read_to_string(&path) else {
+                    continue;
+                };
+                let lines: Vec<&str> = text.lines().collect();
+                for (i, line) in lines.iter().enumerate() {
+                    let tier = if line.contains("#[requires(privileged)]") {
+                        "privileged"
+                    } else if line.contains("#[requires(cloud)]") {
+                        "cloud"
+                    } else {
+                        continue;
+                    };
+                    for probe in lines.iter().skip(i + 1).take(5) {
+                        let trimmed = probe.trim();
+                        let rest = trimmed
+                            .strip_prefix("pub async fn ")
+                            .or_else(|| trimmed.strip_prefix("pub fn "));
+                        if let Some(rest) = rest {
+                            let name: String = rest
+                                .chars()
+                                .take_while(|c| c.is_alphanumeric() || *c == '_')
+                                .collect();
+                            if !name.is_empty() {
+                                found.push((name, tier.to_string()));
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn every_requires_annotation_is_listed_or_baselined() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut found = Vec::new();
+        scan_annotations(&root, &mut found);
+
+        // Assert the INSTRUMENT before the result. A walk that silently matched
+        // nothing would otherwise report perfect compliance — the exact failure
+        // shape this repo keeps shipping (golden-path-contract.md section 9).
+        assert!(
+            found.len() > 150,
+            "expected well over 150 `#[requires(...)]` annotations, found {} — the \
+             source walk is broken, not the codebase suddenly clean",
+            found.len()
+        );
+
+        let baselined: std::collections::HashSet<&str> =
+            DRIFT_BASELINE.iter().map(|(n, _)| *n).collect();
+
+        let mut unlisted: Vec<String> = found
+            .iter()
+            .filter(|(name, _)| {
+                !PRIVILEGED_COMMANDS.contains(&name.as_str())
+                    && !CLOUD_COMMANDS.contains(&name.as_str())
+                    && !baselined.contains(name.as_str())
+            })
+            .map(|(name, tier)| format!("{name} (#[requires({tier})])"))
+            .collect();
+        unlisted.sort();
+        unlisted.dedup();
+        assert!(
+            unlisted.is_empty(),
+            "These commands carry a `#[requires(...)]` attribute but appear in \
+             neither PRIVILEGED_COMMANDS nor CLOUD_COMMANDS. For an ASYNC command \
+             that is ZERO enforcement, not a missing signal. Add each to the \
+             correct list, or remove the wrong annotation:\n  {}",
+            unlisted.join("\n  ")
+        );
+
+        // The baseline may only shrink: an entry now listed, or no longer
+        // annotated, is stale and must be deleted from it.
+        let annotated: std::collections::HashSet<&str> =
+            found.iter().map(|(n, _)| n.as_str()).collect();
+        let stale: Vec<&str> = DRIFT_BASELINE
+            .iter()
+            .map(|(n, _)| *n)
+            .filter(|n| {
+                !annotated.contains(n)
+                    || PRIVILEGED_COMMANDS.contains(n)
+                    || CLOUD_COMMANDS.contains(n)
+            })
+            .collect();
+        assert!(
+            stale.is_empty(),
+            "DRIFT_BASELINE entries are resolved (listed, or no longer annotated). \
+             Delete them — the baseline may only shrink:\n  {}",
+            stale.join("\n  ")
+        );
+    }
 }
