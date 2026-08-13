@@ -237,13 +237,19 @@ pub fn install_mcp_sidecar(
     // tools (`drive_*`, `personas_*`) are deterministically discoverable on
     // every spawn. Field added in CLI 2.1.121; older CLIs ignore unknown
     // server-config fields per the MCP schema, so this is safe across versions.
-    let server_entry = serde_json::json!({
-        "type": "stdio",
-        "command": mcp_binary.display().to_string(),
-        "args": ["--db-path", db_path.display().to_string()],
-        "env": serde_json::Value::Object(env_map),
-        "alwaysLoad": true,
-    });
+    // Every value inserted above is a `Value::String`, so this is lossless.
+    let env: std::collections::BTreeMap<String, String> = env_map
+        .into_iter()
+        .filter_map(|(k, v)| v.as_str().map(|s| (k, s.to_string())))
+        .collect();
+
+    let server_entry = personas_core::mcp_config::McpServer::stdio(
+        mcp_binary.display().to_string(),
+        ["--db-path".to_string(), db_path.display().to_string()],
+    )
+    .with_env_map(env)
+    .always_loaded()
+    .to_json();
 
     // CRITICAL: Claude Code does NOT load `mcpServers` from `.claude/settings.json`
     // (that key is ignored there). For a headless `claude -p` run, MCP servers must

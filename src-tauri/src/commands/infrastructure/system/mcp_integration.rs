@@ -122,10 +122,7 @@ pub fn register_claude_desktop_mcp(
     if let Some(obj) = servers.as_object_mut() {
         obj.insert(
             "personas".into(),
-            serde_json::json!({
-                "command": "node",
-                "args": [server_path_str]
-            }),
+            personas_core::mcp_config::McpServer::stdio("node", [server_path_str]).to_json(),
         );
     }
 

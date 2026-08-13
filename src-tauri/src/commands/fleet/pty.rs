@@ -565,17 +565,11 @@ pub(super) fn build_mcp_spawn(fleet_session_id: &str) -> McpSpawn {
     // per-session token — no per-request crypto, just a UUID lookup
     // on our side. Header name MUST match `mcp::SESSION_HEADER`
     // (case-insensitive per HTTP).
-    let body = serde_json::json!({
-        "mcpServers": {
-            "athena": {
-                "type": "http",
-                "url": format!("http://127.0.0.1:{port}/mcp/rpc"),
-                "headers": {
-                    "X-Athena-Session": token
-                }
-            }
-        }
-    });
+    let body = personas_core::mcp_config::mcp_config_json([(
+        "athena",
+        personas_core::mcp_config::McpServer::http(format!("http://127.0.0.1:{port}/mcp/rpc"))
+            .with_header("X-Athena-Session", token),
+    )]);
     let serialized = match serde_json::to_string_pretty(&body) {
         Ok(s) => s,
         Err(e) => {

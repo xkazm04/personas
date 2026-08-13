@@ -40,7 +40,6 @@ use std::time::{Duration, Instant};
 
 use axum::routing::{get, post};
 use axum::Router;
-use serde_json::json;
 
 /// A registered browser-test session expires after this long. Sessions are
 /// single-slot (one browser test at a time — turns are serialized by the
@@ -187,15 +186,13 @@ pub enum BrowserToolMode {
 pub fn build_browser_mcp_config() -> Result<(tempfile::NamedTempFile, BrowserToolMode), String> {
     if extension_connected() {
         if let (Some(token), Some(port)) = (current_session_token(), crate::local_http::port()) {
-            let config = json!({
-                "mcpServers": {
-                    "browser": {
-                        "type": "http",
-                        "url": format!("http://127.0.0.1:{port}/browser-bridge/mcp"),
-                        "headers": { "X-Browser-Session": token }
-                    }
-                }
-            });
+            let config = personas_core::mcp_config::mcp_config_json([(
+                "browser",
+                personas_core::mcp_config::McpServer::http(format!(
+                    "http://127.0.0.1:{port}/browser-bridge/mcp"
+                ))
+                .with_header("X-Browser-Session", token),
+            )]);
             let mut tmp = tempfile::Builder::new()
                 .prefix("personas_mcp_")
                 .suffix(".json")
