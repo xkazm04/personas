@@ -19234,7 +19234,8 @@
     "stat_unpaced": "Chưa đặt nhịp độ",
     "stat_unpaced_hint": "chưa thể điều hướng",
     "pace_unpaced": "Đã đo, nhưng không có ngày mục tiêu thì không có gì để tụt lại phía sau. Hãy thêm một ngày để hệ thống có thể điều hướng.",
-    "pace_unpaced_no_target": "Đã đo, nhưng chưa đặt mục tiêu, nên chưa có gì để hướng tới."
+    "pace_unpaced_no_target": "Đã đo, nhưng chưa đặt mục tiêu, nên chưa có gì để hướng tới.",
+    "headline_count": "{count} trọng điểm"
   },
   "deliberation": {
     "agenda": "Chương trình nghị sự",

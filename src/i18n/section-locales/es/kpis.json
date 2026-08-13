@@ -249,5 +249,6 @@
   "stat_unpaced": "Sin ritmo definido",
   "stat_unpaced_hint": "aún no dirigible",
   "pace_unpaced": "Medido, pero sin fecha objetivo no hay nada de lo que retrasarse. Añade una para que el sistema pueda dirigirlo.",
-  "pace_unpaced_no_target": "Medido, pero no hay objetivo definido, así que todavía no hay nada hacia lo que dirigirse."
+  "pace_unpaced_no_target": "Medido, pero no hay objetivo definido, así que todavía no hay nada hacia lo que dirigirse.",
+  "headline_count": "{count} principales"
 }

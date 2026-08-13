@@ -60,6 +60,7 @@ function buildRow(kpi: DevKpi, d: PaceDescriptor): DistanceRow {
     track: d.track,
     reason: null,
     category: kpi.category,
+    tier: kpi.tier,
   };
 }
 
@@ -84,5 +85,44 @@ describe('buildProjectGroups — unmeasured KPIs are omitted, not shown at 0%', 
     const groups = buildProjectGroups(paced, projectName, buildRow);
     expect(groups).toHaveLength(1);
     expect(groups[0]!.rows.map((r) => r.id)).toEqual(['k-measured']);
+  });
+});
+
+describe('buildProjectGroups — rows order by tier, then name', () => {
+  // The dashboard used to ignore dev_kpis.tier entirely, rendering every KPI as
+  // a peer even though kpi_derivation.rs:157 ranks them. Recharts draws bars in
+  // data order, so this order IS the visual hierarchy.
+  it('puts north_star above primary above supporting', () => {
+    const kpis = [
+      makeKpi({ id: 'k-sup', name: 'AAA supporting', tier: 'supporting' }),
+      makeKpi({ id: 'k-pri', name: 'MMM primary', tier: 'primary' }),
+      makeKpi({ id: 'k-north', name: 'ZZZ north star', tier: 'north_star' }),
+    ];
+    const paced = kpis.map((kpi) => ({ kpi, d: paceDescriptor(kpi) }));
+
+    const groups = buildProjectGroups(paced, projectName, buildRow);
+    expect(groups[0]!.rows.map((r) => r.id)).toEqual(['k-north', 'k-pri', 'k-sup']);
+  });
+
+  it('falls back to name order within one tier', () => {
+    const kpis = [
+      makeKpi({ id: 'k-b', name: 'Bravo', tier: 'primary' }),
+      makeKpi({ id: 'k-a', name: 'Alpha', tier: 'primary' }),
+    ];
+    const paced = kpis.map((kpi) => ({ kpi, d: paceDescriptor(kpi) }));
+
+    const groups = buildProjectGroups(paced, projectName, buildRow);
+    expect(groups[0]!.rows.map((r) => r.id)).toEqual(['k-a', 'k-b']);
+  });
+
+  it('treats an unknown/absent tier as supporting rather than dropping the row', () => {
+    const kpis = [
+      makeKpi({ id: 'k-junk', name: 'Alpha', tier: 'not-a-tier' }),
+      makeKpi({ id: 'k-pri', name: 'Zulu', tier: 'primary' }),
+    ];
+    const paced = kpis.map((kpi) => ({ kpi, d: paceDescriptor(kpi) }));
+
+    const groups = buildProjectGroups(paced, projectName, buildRow);
+    expect(groups[0]!.rows.map((r) => r.id)).toEqual(['k-pri', 'k-junk']);
   });
 });

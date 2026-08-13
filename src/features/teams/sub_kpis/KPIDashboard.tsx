@@ -19,7 +19,7 @@ import { LazyChart } from '@/features/shared/charts/RechartsWrapper';
 import { paceDescriptor, kpiOffTrackReason, type PaceDescriptor } from './kpiMath';
 import { TRACK_COLOR } from './kpiMeta';
 import { AutopilotControl } from './AutopilotControl';
-import { distancePct, type DistanceGroup, type DistanceRow } from './kpiDistance';
+import { distancePct, tierRank, type DistanceGroup, type DistanceRow } from './kpiDistance';
 import { KpiSignalBoard } from './KpiSignalBoard';
 import { KpiSimControl } from './KpiSimControl';
 import { KpiSimSuggestions } from './KpiSimSuggestions';
@@ -58,6 +58,14 @@ function normValue(kpi: DevKpi, v: number): number | null {
  * which is a different (and false) claim than "no reading yet" —
  * kpiConvergence.ts documents the same 'unmeasured' exclusion rule for the
  * convergence view.
+ *
+ * Rows sort by TIER first (north_star → primary → supporting), then by name.
+ * `dev_kpis.tier` already ranks derivation precedence in
+ * `kpi_derivation.rs::find_derivation_candidates`, but this dashboard used to
+ * ignore it entirely and render every KPI as a peer — so the surface that is
+ * supposed to say "what matters here" was the one place the ranking was
+ * invisible. Recharts draws bars in data order, so tier-first order puts the
+ * headline metrics at the top of each project's card.
  */
 export function buildProjectGroups(
   paced: Array<{ kpi: DevKpi; d: PaceDescriptor }>,
@@ -73,7 +81,9 @@ export function buildProjectGroups(
     entry.rows.push(buildRow(kpi, d));
   }
   const arr = [...groups.values()];
-  for (const e of arr) e.rows.sort((a, b) => a.name.localeCompare(b.name));
+  for (const e of arr) {
+    e.rows.sort((a, b) => tierRank(a.tier) - tierRank(b.tier) || a.name.localeCompare(b.name));
+  }
   arr.sort((a, b) => a.label.localeCompare(b.label));
   return arr;
 }
@@ -147,6 +157,7 @@ export function KPIDashboard({
       track: d.track,
       reason: kpiOffTrackReason(kpi),
       category: kpi.category,
+      tier: kpi.tier,
     }),
     [projectName],
   );

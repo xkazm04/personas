@@ -19234,7 +19234,8 @@
     "stat_unpaced": "Kein Tempo festgelegt",
     "stat_unpaced_hint": "noch nicht steuerbar",
     "pace_unpaced": "Gemessen, aber ohne Zieldatum gibt es nichts, wovon man zurückfallen könnte. Fügen Sie eines hinzu, damit das System steuern kann.",
-    "pace_unpaced_no_target": "Gemessen, aber es ist kein Ziel gesetzt, also gibt es noch nichts, worauf hingesteuert werden kann."
+    "pace_unpaced_no_target": "Gemessen, aber es ist kein Ziel gesetzt, also gibt es noch nichts, worauf hingesteuert werden kann.",
+    "headline_count": "{count} Leitmetriken"
   },
   "deliberation": {
     "agenda": "Tagesordnung",

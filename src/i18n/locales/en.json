@@ -19339,7 +19339,8 @@
     "stat_unpaced": "No pace set",
     "stat_unpaced_hint": "not steerable yet",
     "pace_unpaced": "Measured, but with no target date there is nothing to fall behind. Add one so the system can steer this.",
-    "pace_unpaced_no_target": "Measured, but no target is set, so there is nothing to steer toward yet."
+    "pace_unpaced_no_target": "Measured, but no target is set, so there is nothing to steer toward yet.",
+    "headline_count": "{count} headline"
   },
   "planner": {
     "nav_label": "Plan",

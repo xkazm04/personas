@@ -19234,7 +19234,8 @@
     "stat_unpaced": "未设定进度",
     "stat_unpaced_hint": "暂时无法调控",
     "pace_unpaced": "已测量，但没有目标日期就无从判断是否落后。请添加一个，让系统能够进行调控。",
-    "pace_unpaced_no_target": "已测量，但尚未设定目标，因此暂时没有努力的方向。"
+    "pace_unpaced_no_target": "已测量，但尚未设定目标，因此暂时没有努力的方向。",
+    "headline_count": "{count} 项核心"
   },
   "deliberation": {
     "agenda": "议程",

@@ -249,5 +249,6 @@
   "stat_unpaced": "ペース未設定",
   "stat_unpaced_hint": "まだ制御できません",
   "pace_unpaced": "測定済みですが、目標期日がないため遅れを判定できません。日付を設定するとシステムが制御できます。",
-  "pace_unpaced_no_target": "測定済みですが、目標が設定されていないため、まだ目指す先がありません。"
+  "pace_unpaced_no_target": "測定済みですが、目標が設定されていないため、まだ目指す先がありません。",
+  "headline_count": "主要 {count} 件"
 }

@@ -11,7 +11,7 @@
 // This replaces both the standalone "Needs attention" strip and the separate
 // context-grouped distance chart — the alerts and the measurement now read
 // together, per project.
-import { FolderKanban, ShieldAlert } from 'lucide-react';
+import { FolderKanban, ShieldAlert, Star } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 import type { OffTrackReason } from './kpiMath';
@@ -19,6 +19,9 @@ import { categoryMeta } from './kpiMeta';
 import { DistanceBars, type DistanceGroup, type DistanceRow } from './kpiDistance';
 
 const isOff = (r: DistanceRow) => r.track === 'off-track';
+/** north_star + primary — the KPIs that answer "is this working?" and that
+ *  goal derivation reaches for first (`kpi_derivation.rs:157`). */
+const isHeadline = (r: DistanceRow) => r.tier === 'north_star' || r.tier === 'primary';
 
 export function KpiSignalBoard({
   projectGroups,
@@ -41,6 +44,7 @@ export function KpiSignalBoard({
             <div className="flex items-center gap-1.5 mb-3">
               <FolderKanban className="w-3.5 h-3.5 text-primary" aria-hidden />
               <h3 className="typo-overline text-foreground flex-1 truncate">{g.label}</h3>
+              <HeadlineCount n={g.rows.filter(isHeadline).length} />
               <OffCount n={off.length} />
               <span className="typo-caption text-foreground/70 tabular-nums">{g.rows.length}</span>
             </div>
@@ -61,6 +65,20 @@ export function KpiSignalBoard({
         );
       })}
     </div>
+  );
+}
+
+/** "2 headline" — how many of this project's KPIs are ranked north-star or
+ *  primary. Nothing when the project has never been tiered, which is itself
+ *  the honest reading: an untiered set has no headline. */
+function HeadlineCount({ n }: { n: number }) {
+  const { t, tx } = useTranslation();
+  if (n === 0) return null;
+  return (
+    <span className="inline-flex items-center gap-1 typo-caption text-foreground tabular-nums">
+      <Star className="w-3 h-3 text-primary" aria-hidden />
+      {tx(t.kpis.headline_count, { count: n })}
+    </span>
   );
 }
 
@@ -96,6 +114,9 @@ function IncidentChip({ row, onOpen }: { row: DistanceRow; onOpen: (id: string) 
       className="inline-flex items-center gap-1.5 rounded-interactive border border-status-error/40 bg-status-error/10 hover:bg-status-error/20 transition-colors px-2 py-1"
     >
       <CatIcon className="w-3.5 h-3.5 text-status-error flex-shrink-0" aria-hidden />
+      {isHeadline(row) && (
+        <Star className="w-3 h-3 text-status-error flex-shrink-0" aria-hidden />
+      )}
       <span className="typo-caption text-foreground font-medium">{row.name}</span>
       <span className="typo-caption text-foreground/80 tabular-nums">
         {row.current ?? '—'}/{row.target ?? '—'} {row.unit}

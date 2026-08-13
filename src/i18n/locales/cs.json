@@ -19234,7 +19234,8 @@
     "stat_unpaced": "Bez tempa",
     "stat_unpaced_hint": "zatím nelze řídit",
     "pace_unpaced": "Změřeno, ale bez cílového data není za čím zaostávat. Doplňte ho, aby to systém mohl řídit.",
-    "pace_unpaced_no_target": "Změřeno, ale není nastaven cíl, takže zatím není k čemu směřovat."
+    "pace_unpaced_no_target": "Změřeno, ale není nastaven cíl, takže zatím není k čemu směřovat.",
+    "headline_count": "{count} hlavních"
   },
   "deliberation": {
     "agenda": "Agenda",

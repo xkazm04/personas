@@ -19346,6 +19346,7 @@ export type Translations = {
     stat_unpaced_hint: string;
     pace_unpaced: string;
     pace_unpaced_no_target: string;
+    headline_count: string;
   };
   planner: {
     nav_label: string;

@@ -19234,7 +19234,8 @@
     "stat_unpaced": "Tanpa laju",
     "stat_unpaced_hint": "belum bisa diarahkan",
     "pace_unpaced": "Sudah diukur, tetapi tanpa tanggal target tidak ada yang bisa tertinggal. Tambahkan satu agar sistem dapat mengarahkannya.",
-    "pace_unpaced_no_target": "Sudah diukur, tetapi target belum ditetapkan, jadi belum ada yang bisa dituju."
+    "pace_unpaced_no_target": "Sudah diukur, tetapi target belum ditetapkan, jadi belum ada yang bisa dituju.",
+    "headline_count": "{count} utama"
   },
   "deliberation": {
     "agenda": "Agenda",

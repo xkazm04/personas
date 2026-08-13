@@ -249,5 +249,6 @@
   "stat_unpaced": "Aucun rythme défini",
   "stat_unpaced_hint": "pas encore pilotable",
   "pace_unpaced": "Mesuré, mais sans date cible il n'y a rien à rattraper. Ajoutez-en une pour que le système puisse le piloter.",
-  "pace_unpaced_no_target": "Mesuré, mais aucune cible n'est définie, il n'y a donc encore rien à viser."
+  "pace_unpaced_no_target": "Mesuré, mais aucune cible n'est définie, il n'y a donc encore rien à viser.",
+  "headline_count": "{count} prioritaires"
 }
