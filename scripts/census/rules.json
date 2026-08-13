@@ -220,6 +220,28 @@
         "matches": 12
       },
       "floor": 900
+    },
+    {
+      "id": "silent-row-skip",
+      "goldenPath": "docs/concepts/golden-paths/row-to-struct-mapping.md",
+      "title": "Row-set read that discards per-row mapping failures without logging",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "query_map\\((?:[^;]|\\n){0,700}?(?:(?:\\.filter_map\\(\\s*\\|\\s*\\w+\\s*\\|\\s*\\w+\\.ok\\(\\)\\s*\\)|\\.filter_map\\(\\s*Result::ok\\s*\\)|\\.flatten\\(\\))|\\?;[^;]{0,200}(?:\\.filter_map\\(\\s*\\|\\s*\\w+\\s*\\|\\s*\\w+\\.ok\\(\\)\\s*\\)|\\.filter_map\\(\\s*Result::ok\\s*\\)|\\.flatten\\(\\)))",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a rusqlite query_map row iterator reduced by filter_map(|r| r.ok()) / filter_map(Result::ok) / .flatten() — the row and the evidence both disappear and the caller still gets Ok. Anchored to query_map because all three are generic Rust idioms; unanchored, .flatten() alone matches hundreds of Option chains. PROXY FOR the stack-free condition \"a row-set read discards a per-row mapping failure without recording it\" — an adopting repo must re-derive its own proxy (see the golden path §9). PRECONDITION: this repo reduces row iterators with iterator adapters within ~700 chars of the query_map( call and does not wrap them in helpers. 8/8 sampled matches were true positives; 4 of the 148 sit in #[cfg(test)] modules and are carried in the baseline rather than excluded, because excluding them means excluding three whole production files. The two legal policies are `collect::<Result<Vec<_>,_>>()` (propagate) and `collect_rows(rows, \"table::op\")` (skip AND log)."
+      },
+      "baseline": {
+        "files": 64,
+        "matches": 148
+      },
+      "floor": 900
     }
   ]
 }
