@@ -167,6 +167,14 @@ that nobody uses (`usePolling`, `FormField`, `DecisionRow`, `lazyRetry`,
 `run_lanes`), the path's job is to route people to it — not to invent a new
 one. Where the primitive is genuinely inadequate, that belongs in Gaps.
 
+**Do NOT edit `scripts/census/rules.json` directly when composing in parallel.**
+Three wave-2 composers wrote that one shared file concurrently and a completed,
+runner-validated rule was silently overwritten — recovered only because its
+author had also pasted the full JSON block into its own document. So: put your
+rule block in your path's §9 as fenced JSON, and let the orchestrator merge it.
+A shared mutable registry plus N concurrent writers loses entries, and a lost
+rule looks exactly like a rule nobody wrote.
+
 **Convergence is a free portability oracle — use it.** The portability test
 found five mechanics **independently reinvented** in the sibling repo with no
 shared document between them: a staggered-reveal hook matching ours down to

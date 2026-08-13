@@ -155,6 +155,71 @@
         "matches": 105
       },
       "floor": 4000
+    },
+    {
+      "id": "local-empty-state",
+      "goldenPath": "docs/concepts/golden-paths/empty-and-demo-states.md",
+      "title": "Feature-local empty-state component instead of ScenarioEmptyState",
+      "roots": [
+        "src/features"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "^\\s*(?:export\\s+)?(?:default\\s+)?(?:function|const)\\s+(?:[A-Z]\\w*)?Empty(?:State(?:View)?|Glyph|Hint|List)?\\s*[(=<]",
+        "flags": "gm",
+        "ignoreCommentLines": true,
+        "description": "a component declared in a feature folder to render a settled-empty region. Proxy for: this surface answers \"what do I show when there is nothing\" by authoring a new component rather than selecting a condition on the shared one — so no condition taxonomy (first-use / filtered-to-zero / prerequisite-not-met / errored) can reach it. The extracted-and-named shape is a house accident, NOT the condition: personas-web has the same condition at the same scale and this pattern scores ~0 there, because its hand-rolls stay inline."
+      },
+      "exclude": [
+        {
+          "path": "src/features/shared/components/feedback/ScenarioEmptyState.tsx",
+          "reason": "the primitive itself — this is the destination the rule routes callers to"
+        },
+        {
+          "path": "src/features/shared/components/display/ChartEmptyState.tsx",
+          "reason": "shared chart-shaped empty state; a consolidation target for Gap 1, not a feature-local hand-roll"
+        },
+        {
+          "path": "src/features/shared/components/display/IllustratedEmptyState.tsx",
+          "reason": "shared illustrated variant; same consolidation target, not a feature-local hand-roll"
+        }
+      ],
+      "baseline": {
+        "files": 36,
+        "matches": 38
+      },
+      "floor": 2500
+    },
+    {
+      "id": "deferred-read-then-write",
+      "goldenPath": "docs/concepts/golden-paths/transaction-boundary.md",
+      "title": "Deferred transaction whose first statement is a SELECT that informs a later write",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\.\\s*(?:unchecked_transaction|transaction)\\s*\\(\\s*\\)(?:(?!\\btx\\s*\\.\\s*(?:execute|execute_batch|commit)\\b)[\\s\\S]){0,1200}?\\btx\\s*\\.\\s*(?:query_row|query_map|prepare|prepare_cached)\\s*\\(\\s*(?:&?format!\\s*\\(\\s*)?r?#*\"\\s*\\n?\\s*SELECT[\\s\\S]{0,3000}?\\btx\\s*\\.\\s*(?:execute|execute_batch)\\s*\\(",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a DEFERRED transaction (BEGIN, not BEGIN IMMEDIATE) whose first use of `tx` is a literal SELECT and which later writes through the same `tx` — the SQLITE_BUSY_SNAPSHOT shape"
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/db/src/migrations/**",
+          "reason": "migrations run inside init_db_with_journal (db/src/lib.rs:332-333) before any other consumer holds a pooled connection, so there is no concurrent writer to lose the snapshot to; the boot-migration-step golden path owns this phase"
+        }
+      ],
+      "baseline": {
+        "files": 10,
+        "matches": 12
+      },
+      "floor": 900
     }
   ]
 }
