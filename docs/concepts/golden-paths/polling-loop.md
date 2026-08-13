@@ -6,8 +6,9 @@
 > site, all four competing cadence primitives, the `PollingCoordinator`, a full
 > `npx eslint` run over all 4,829 `src/**/*.{ts,tsx}` files, and — for the
 > server half — all 1,666 `#[tauri::command]` definitions across the five
-> `src-tauri/` crates, the 100 snapshot/status commands among them, and all 39
-> in-process caches. Against `master` @ `f7676ab82`.
+> `src-tauri/` crates, the 100 snapshot/status commands among them, and the
+> in-process cache inventory (~39 caches, all 8 `invalidate_*` functions and
+> their call sites verified directly). Against `master` @ `f7676ab82`.
 > Every count below was produced by reading the source, not estimated.
 > `.claude/worktrees/**` excluded.
 > This leaf is **two-sided and fused**: the client cadence and the server read
@@ -72,8 +73,8 @@ warm process state on `AppState` — the shape `get_scheduler_status`,
 poll with zero SQLite — falling back to a short TTL memo only when the read must
 touch the database, and wiring that memo's `invalidate_*` into every mutation
 that stales it in the same commit that introduces it (`api_proxy.rs`'s
-`CONNECTOR_CACHE` is the pattern; four of the repo's five invalidators have zero
-callers, which is how a cache becomes a correctness bug).
+`CONNECTOR_CACHE` is the pattern; six of the repo's eight invalidation paths are
+dead, which is how a cache becomes a correctness bug).
 
 ## Mandated primitives
 
@@ -97,7 +98,7 @@ fan-out; a fan-out at least beats N separate commands.
    - **`SystemMetricsSampler`** (`lib.rs:414`; impl `commands/infrastructure/system_metrics.rs:52-95`) — **copy this one.** One `sysinfo::System` refreshing CPU + RAM *only*, never the process list (the expensive part). `get_system_metrics` (`:106-115`) is `require_auth` + one mutex lock + one `sample()`. Its comment records *why* the state must persist: CPU% is a delta between samples, so a fresh `System` per call would always read 0%. This is what makes a 2s client cadence defensible.
    - **`SchedulerState`** (`lib.rs:375`) → `get_scheduler_status` (`commands/execution/scheduler.rs:16`) is 11 `AtomicU64::load(Relaxed)` + `subscription_health()` (`src/engine/background.rs:224-239`).
    - **`ExecutionEngine.circuit_breaker`** (`lib.rs:374`) → `get_circuit_breaker_status` (`commands/execution/executions.rs:797`).
-   - **`get_network_snapshot`** (`commands/network/discovery.rs`) — **the "one snapshot replaces N calls" reference**: eight in-memory reads (`is_running`, `listening_port`, connected count, mDNS peers, connection health, message metrics, connection metrics, manifest-sync metrics) fused into one command with a single DB read for the peer id.
+   - **`get_network_snapshot`** (`commands/network/discovery.rs:154`) — **the "one snapshot replaces N calls" reference**: eight in-memory reads (`is_running`, `listening_port`, connected count, mDNS peers, connection health, message metrics, connection metrics, manifest-sync metrics) fused into one command with a single DB read for the peer id.
    - Also warm and poll-readable: `AmbientContextHandle` (`:423`), `DevServerRegistry` (`:487`), `ActiveProcessRegistry` (`:378`), `tier_config`/`rate_limiter` (`:397`,`:401`), `RadioServiceHandle` (`lib.rs:1328`), the fleet PTY registry (`fleet_monitor_stats`, `commands/fleet/monitor_stats.rs:171`).
 2. **A TTL memo** when the read genuinely must hit SQLite. `get_tier_usage` (`commands/infrastructure/tier_usage.rs:15` TTL = 3s, read `:63-67`, write `:126`) is the **only** polled command in the repo with one.
 3. **`invalidate_*` wired into every staling mutation.** **`engine/api_proxy.rs`'s `CONNECTOR_CACHE` (`:34` TTL 30s, `:41` static) is the reference implementation** — `invalidate_connector_cache()` (`:133`) is called from `create_connector` (`commands/credentials/connectors.rs:36`), `update_connector` (`:49`), `delete_connector` (`:58`) and `openapi_autopilot.rs:777`. Two other correct patterns worth knowing: `session_pool` (`engine/src/session_pool.rs:20`, 30min) invalidated from five persona/use-case mutations; and **content-addressed keys that need no invalidator at all** — `SMART_SEARCH_CACHE` folds the whole candidate set into its key (`commands/design/smart_search.rs:171`), `PREPARED_RUN_CACHE` SHA256s its full input (`engine/src/prepared_run_cache.rs:30-60`). Prefer a content-addressed key; it cannot go stale.
@@ -130,7 +131,7 @@ fan-out; a fan-out at least beats N separate commands.
 Four rules bind the two halves. Every one of them is violated somewhere in this repo.
 
 1. **The client may not choose a cadence without reading the command.** The cadence is a budget drawn against the server read's cost. `SystemLoadFooterIcon` at 2s is correct *because* `get_system_metrics` is a warm in-memory sample; the same cadence against an uncached SQLite fan-out is a defect. Cite the command in a comment when the cadence is faster than 5s.
-2. **The server may not cache without invalidating.** If a poll reads through a TTL memo, every mutation that changes the underlying data must clear or bump it. Otherwise the poll is *worse* than no poll: it guarantees the user stares at a value that has already changed, for up to one TTL, with full confidence. Five caches in this repo fail this rule, one of them for a full hour.
+2. **The server may not cache without invalidating.** If a poll reads through a TTL memo, every mutation that changes the underlying data must clear or bump it. Otherwise the poll is *worse* than no poll: it guarantees the user stares at a value that has already changed, for up to one TTL, with full confidence. Six caches in this repo fail this rule, one of them for a full hour.
 3. **A poll must never set a loading flag.** The loading flag means "there is nothing on screen yet". A refetch that flips it makes a live surface flicker into its cold-load state on every tick — law 1 of [page-loading](./page-loading.md). The correct pair is `isLoading` for the first fetch and `lastRefreshed` for every one after.
 4. **The failure signal must survive the trip.** The backoff only exists if `fetchFn` rejects; the error banner only exists if the store records it. Doing both is fine — swallowing into store state *and* resolving is the shape that kills backoff silently.
 5. **Every poll in this app is a full re-read, so size it that way.** Of **1,666** Tauri commands, **zero** accept a since/cursor/etag/version parameter with delta semantics and zero return a change token. (Eight commands *look* like they do: five are absolute analytics windows — `events.rs:33-36`, `tools/tools.rs:114,123,133,144`; three are keyset *pagination* cursors — `reviews.rs:1027`, `dev_tools.rs:646`, `:1300`; and `fetch_roadmap`'s ETag is HTTP-to-GitHub and never crosses IPC.) There is no cheap incremental tick available to you. Until that changes, cadence is the only cost lever you have — which is exactly why steps 5 and 10 matter more here than in an app with delta reads.
@@ -144,7 +145,7 @@ Four rules bind the two halves. Every one of them is violated somewhere in this 
 - **A raw literal cadence.** `NetworkDashboard.tsx:251` — `usePolling(fetchNetworkSnapshot, { interval: 30_000, enabled: true })`. It happens to land on a bucket; the next one won't.
 - **`enabled: true`.** `CloudHistoryPanel.tsx:123` and `NetworkDashboard.tsx:251`. A permanently-true gate says this surface must poll for its whole mounted life; usually there is a real condition available.
 - **A `fetchFn` that cannot fail.** See Deviations P0 — this is the defect that makes 6 of 6 `POLLING_CONFIG.maxBackoff` values dead configuration.
-- **Setting a loading flag from the poll.** `useStatusPageData.ts:81` (`setLoading(true)` every 60s), `CloudHistoryPanel.tsx:43` (every 15s), `cloudSlice.ts:213` (`cloudIsLoadingStatus: true` every 12s).
+- **Setting a loading flag from the poll.** `useStatusPageData.ts:80` (`setLoading(true)` every 60s), `CloudHistoryPanel.tsx:43` (every 15s), `cloudSlice.ts:213` (`cloudIsLoadingStatus: true` every 12s).
 - **Hand-rolling the visibility pause.** `useStatusPageData.ts:123-157` — 35 lines reimplementing `usePausableInterval`, which already exists, in a different feature folder, with a test. Ten of the 41 raw sites hand-roll some visibility gate; the other 31 poll a hidden window forever.
 - **One timer per rendered row.** `CompositePartialMatchIndicator.tsx:32` (4s × N trigger rows) and `RecentChangeChip.tsx:42` (30s × N settings sections). Both are visibility-gated, which is the right instinct applied at the wrong altitude.
 - **Two timers for one job in one module.** `studioStore.ts` runs a 1.5s boot poll *and* a 6s liveness watch per studio tab, both in module-level `Map`s: N tabs → up to 2N live `webbuildStatus` pollers with no React lifecycle attached at all.
@@ -152,7 +153,7 @@ Four rules bind the two halves. Every one of them is violated somewhere in this 
 
 **Server-side:**
 
-- **Adding a TTL cache and its `invalidate_*` in the same file, then never calling the invalidator.** Four of the repo's five invalidators have **zero callers workspace-wide**; two are papered over with `#[allow(dead_code)]`, which silences the one signal that would have caught it. The lint attribute is the anti-pattern: it converts "nobody wired this up" into "this is intentional".
+- **Adding a TTL cache and its `invalidate_*` in the same file, then never calling the invalidator.** Five of the repo's eight invalidators have **zero callers workspace-wide**; three are papered over with `#[allow(dead_code)]`, which silences the one signal that would have caught it. The lint attribute is the anti-pattern: it converts "nobody wired this up" into "this is intentional".
 - **Making the invalidator private.** `obsidian_brain/graph.rs:106`'s `invalidate_vault_index_cache` is a private `fn`, so the five vault writers in the sibling module *physically cannot* call it. Its single caller is a file-watcher callback — so correctness depends on a watcher being alive.
 - **A `SELECT COUNT(*)` per badge.** `dev_tools_pending_counts` (`db/src/repos/dev_tools.rs:1350`) issues six separate counts on one connection with no transaction, uncached, every 30 seconds — and is polled by *two* registrations at once (see server P0).
 - **Reading SQLite when the warm authority is right there.** `get_build_status` (`commands/design/build_sessions.rs:608`) is polled throughout a live build and goes to the `build_sessions` row, while `AppState.build_session_manager` (`lib.rs:460`) holds that session in memory.
@@ -168,7 +169,7 @@ Four rules bind the two halves. Every one of them is violated somewhere in this 
 - `agents/sub_deployment/components/cloud/CloudDeployPanel.tsx:130` — `enabled: isConnected && activeTab === 'status'`, the tab-scoped gate.
 - `commands/infrastructure/system_metrics.rs:52-115` — **the exemplary server half.** Warm `AppState` struct, refresh-only-what-you-need, zero SQLite, and a module comment that explains why the state must persist across calls. Paired with the app's fastest client cadence (2s), it is the whole contract in one file.
 - `engine/api_proxy.rs:34,:41,:133` + `commands/credentials/connectors.rs:36,:49,:58` — **the exemplary cache-plus-invalidation pair.** A 30s TTL on the connector list (read on every proxied request) with the invalidator called from all three mutations and the autopilot. This is what the other four caches should look like.
-- `commands/network/discovery.rs` (`get_network_snapshot`) — the exemplary *bundled* poll target: eight in-memory reads fused into one command so the client needs one ticker, not eight.
+- `commands/network/discovery.rs:154` (`get_network_snapshot`) — the exemplary *bundled* poll target: eight in-memory reads fused into one command so the client needs one ticker, not eight.
 - `commands/design/smart_search.rs:161-171` and `engine/src/prepared_run_cache.rs:30-60` — **caches that cannot go stale**, because the key is content-addressed over the whole input. The best kind of invalidation is the kind you don't have to remember.
 - `commands/communication/observability/metrics.rs:140-161` — three repo calls in one `BEGIN DEFERRED` with `prepare_cached`; the right transaction shape even though it still wants a memo.
 - `commands/infrastructure/tier_usage.rs:15,:63-67,:126` — the only TTL-cached poll target in the repo (3s), and correct: the value derives purely from live in-memory state, so nothing external can stale it.
@@ -278,7 +279,7 @@ is mutated by its own `refresh()`, so the effect re-fires itself.
 
 ### Contract rule 3 violations (poll sets a loading flag)
 
-`overview/sub_health/libs/useStatusPageData.ts:81` (60s) ·
+`overview/sub_health/libs/useStatusPageData.ts:80` (60s) ·
 `agents/sub_deployment/components/cloud/CloudHistoryPanel.tsx:43` (15s) ·
 `stores/slices/system/cloudSlice.ts:213` (12s, via `usePolling`).
 
@@ -291,7 +292,7 @@ is mutated by its own `refresh()`, so the effect re-fires itself.
 
 ---
 
-### Server P0 — five TTL caches whose invalidator is never called
+### Server P0 — six TTL caches whose invalidator is never called
 
 Each of these serves a value that a mutation in this same app changes. The TTL
 is the only thing that eventually corrects them, so the user sees a confidently
@@ -303,7 +304,17 @@ wrong number for up to the full window.
 | MCP tools list, per credential | `engine/mcp_tools.rs:169` (TTL `:41`) | 60s (5s degraded `:59`) | `invalidate_tools_cache(credential_id)` `:212` | **0.** Should fire from credential update/delete (`commands/credentials/crud.rs`) and MCP gateway mutations (`commands/credentials/mcp_gateways.rs`). |
 | Connector resource listing (dropdown options) | `engine/resource_listing.rs:140`, put `:164` | per-entry | `invalidate_credential(credential_id)` `:179` | **0.** |
 | Auth detection (9 CLI probes + browser cookie DB copies) | `commands/credentials/auth_detect.rs:747`; field `lib.rs:432` | **300s** | `invalidate_auth_detect_cache(state)` `:756`, `#[allow(dead_code)]` | **0 of the named fn.** Two sites null the field inline instead (`credentials/oauth.rs:693`, `:1892`), so OAuth is covered by copy-paste; **no other auth-state mutation clears it** — a CLI login capture is invisible for 5 minutes. |
+| MCP stdio session pool | `engine/mcp_tools.rs:247` | idle-timeout | `invalidate_pooled_session(credential_id)` `:367`, `#[allow(dead_code)]` | **0.** Its sibling `shutdown_stdio_pool()` (`:375`) is *also* orphaned and `#[allow(dead_code)]` — so pooled MCP child processes are never killed on credential change **or on app shutdown**. |
 | Obsidian vault index (full body of every `.md`) | `commands/obsidian_brain/graph.rs:98`, TTL `:100` | 30s | `invalidate_vault_index_cache()` `:106` — **private `fn`** | **1**, and it is the `notify` file-watcher callback (`:760`). The five vault writers in the sibling module (`obsidian_brain/mod.rs:528`, `:867`, `:460`, `:1636`, `:1258`) cannot reach it; neither do the two writers **in the same file** (`graph.rs:530/:566`, `:602`). Correctness depends on the watcher being alive. |
+
+**Measured directly:** the repo defines **8** `invalidate_*` functions. **Five
+have zero call sites** (`invalidate_heatmap_cache`, `invalidate_tools_cache`,
+`invalidate_pooled_session`, `invalidate_credential`,
+`invalidate_auth_detect_cache`), **one** has a single watcher-only caller and is
+private (`invalidate_vault_index_cache`), and **two are healthy**:
+`invalidate_connector_cache` (7 call sites) and `invalidate_trusted_peer_cache`
+(3, from `commands/network/identity.rs:90`, `:119`, `:131`). **Six of eight
+invalidation paths in this repo are dead.**
 
 Bonus, same class: `skills_sidecar/mod.rs:42` and `skill_scratchpad.rs:74` are
 seeded once at engine construction (`src/engine/mod.rs:505`, `:508`) and
@@ -359,9 +370,9 @@ this document — there is no incremental tick to migrate to.
 
 ### Server-side gaps
 
-10. **There is no server-side caching primitive at all.** All 39 in-process caches are hand-rolled: a bare `Lazy`/`OnceLock`/`LazyLock<Mutex<HashMap<K, (V, Instant)>>>` with an open-coded `elapsed() < TTL` check and, sometimes, an `invalidate_*` free function. There is no `TtlCache<K, V>` type, no registry, and therefore nothing that can enumerate caches, report hit rates, or assert that a cache has a live invalidator. The five broken invalidators are the predictable consequence — the pattern gives you no place to notice. A `TtlCache` in `personas-core` that takes its invalidation keys at construction would make the whole class checkable.
-11. **No cache is per-window or per-caller.** Tauri has no connection concept, so every one of the 39 is a process-wide static or an `AppState` field shared by all windows. Fine today; worth knowing before anyone caches a per-user or per-workspace value in one.
-12. **`#[allow(dead_code)]` is load-bearing in the wrong direction.** Two of the five orphaned invalidators carry it (`metrics.rs:2079`, `auth_detect.rs:756`). The attribute is doing exactly the job it is designed for — silencing the compiler — and in doing so it silences the *only* automatic signal that a cache has no invalidation path. Any `invalidate_*` / `clear_*` fn is a case where the dead-code warning is the feature.
+10. **There is no server-side caching primitive at all.** The ~39 enumerated in-process caches are each hand-rolled: a bare `Lazy`/`OnceLock`/`LazyLock<Mutex<HashMap<K, (V, Instant)>>>` with an open-coded `elapsed() < TTL` check and, sometimes, an `invalidate_*` free function. There is no `TtlCache<K, V>` type, no registry, and therefore nothing that can enumerate caches, report hit rates, or assert that a cache has a live invalidator. **The six dead invalidation paths are the predictable consequence** — the pattern gives you no place to notice. A `TtlCache` in `personas-core` taking its invalidation keys at construction would make the whole class checkable, and would make gap #13 testable in one place instead of 39.
+11. **No cache is per-window or per-caller.** Tauri has no connection concept, so every one is a process-wide static or an `AppState` field shared by all windows. Fine today; worth knowing before anyone caches a per-user or per-workspace value in one.
+12. **`#[allow(dead_code)]` is load-bearing in the wrong direction.** Three of the orphaned invalidators carry it (`metrics.rs:2079`, `auth_detect.rs:756`, `mcp_tools.rs:366`). The attribute is doing exactly the job it is designed for — silencing the compiler — and in doing so it silences the *only* automatic signal that a cache has no invalidation path. For the `invalidate_*` / `shutdown_*` family the dead-code warning **is** the feature; `mcp_tools.rs:375`'s equally-orphaned `shutdown_stdio_pool` shows what the silence costs.
 13. **Cache invalidation is untested.** `src-tauri/tests/` holds 8 files (all codegen / render-plan); `grep -rl "cache" src-tauri/tests/` returns **nothing**. Inline coverage exists for TTL *expiry* in three places (`connector_readiness.rs:1809`, `mcp_tools.rs:2008-2023`, `session_pool.rs:155-165` — the last is the only one that tests invalidation at all), and `api_proxy.rs`'s reference invalidation pattern has **zero** tests. `tier_usage.rs`, `graph.rs`, `resource_listing.rs`, `smart_search.rs`, `prepared_run_cache.rs` have zero tests each.
 14. **The typed emit helper covers ~13% of emit sites.** `event_registry.rs` documents `emit_event_bus` as preferable to raw `app.emit()`, but there are ~31 typed calls against **200 `.emit(` + 40 `.emit_to(`** raw calls in `src-tauri/src/`. Relevant here only because "just use events instead" is this path's primary escape hatch, and the escape hatch is itself diverged. Owned by `backend-to-frontend-events`.
 
@@ -425,10 +436,10 @@ self-checks, because every one of them has a real precedent in this repo's CI:
 
 ### Proposed gate, server half — `scripts/check-cache-invalidation.mjs`
 
-**Signal.** A Rust free function whose name matches `/^invalidate_|^clear_.*_cache$/`
-in `src-tauri/**`. Measured against the corpus this is near-perfect: it finds
-exactly the 5 orphaned invalidators plus the 3 healthy ones, with no false
-positives.
+**Signal.** A Rust free function whose name matches `/^(pub )?(async )?fn (invalidate_|clear_[a-z_]*cache)/`
+in `src-tauri/**`. **Measured: 8 definitions, 0 false positives** — it returns
+exactly the invalidator family and nothing else. Precision 8/8 against a signal
+that costs one grep.
 
 **Mechanism.** A node script in `scripts/`, run from `npm run check`. For each
 match, count call sites of that identifier across the whole workspace excluding
@@ -439,7 +450,7 @@ because a dead invalidator *is* the bug (gap #12). Third: flag a private
 (non-`pub`) invalidator in a module that also exposes `#[tauri::command]`
 writers, which is the `obsidian_brain/graph.rs:106` shape.
 
-Ship it as a **shrink-only baseline** seeded with the 5 known offenders so it
+Ship it as a **shrink-only baseline** seeded with the 6 known offenders so it
 gates the next one without blocking today's tree.
 
 **Allowlist (named).** `commands/design/smart_search.rs` and
@@ -456,9 +467,18 @@ A rename of the convention, a moved crate, or a broken glob then reads as a
 failure rather than as a clean tree — the `cargo test` -without- `--features desktop`
 failure mode this repo already has a scar from.
 
-**And a fourth thing a linter cannot do, so say it here:** the *cadence-vs-cost*
-half of the contract (rule 1) is not machine-checkable — no static rule can know
-whether the command behind a 2s poll is a warm sampler or a SQLite fan-out. That
-is a **review** obligation: any new `POLLING_CONFIG` entry faster than 15s, or
-any new poll of an uncached command, is a security-sensitive-equivalent change
-and gets a human read. Recording it as unenforceable is the honest finding.
+### The part no gate can cover
+
+The two gates above cover the client's *shape* and the server's *invalidation
+wiring*. They cannot cover the join between them — **contract rule 1, cadence
+versus cost**. No static rule can know whether the command behind a 2s poll is a
+warm `AppState` sampler or six uncached `SELECT COUNT(*)`s, because that answer
+lives across an IPC boundary, a generated command-name table and a repo
+function. Both real states exist in this repo today at the same 30s cadence.
+
+So this half is a **review obligation**, stated here so it is at least written
+down: a new `POLLING_CONFIG` entry faster than 15s, or a new poll of a command
+that touches SQLite without a memo, gets a human read — the same treatment
+`CLAUDE.md` gives crypto/vault/IPC changes. Recording it as unenforceable is the
+finding, not a gap in effort: the alternative is a check that pretends to verify
+it, which is the exact failure mode this section exists to prevent.
