@@ -807,6 +807,24 @@ pub mod obsidian {
         // very loopback target and break every Obsidian bridge call, for no
         // additional protection since the host can't be redirected off-loopback
         // by anything this function accepts as input.
+        // The vault fragment is interpolated into `{base_url}/vault/{path}`,
+        // so a `..` segment escapes the `/vault/` namespace into the Local
+        // REST API's other endpoints once the URL is normalised. Same
+        // fragment contract as the filesystem arm, so it gets the same lexical
+        // guard (the filesystem half additionally proves containment on disk).
+        match action {
+            ObsidianAction::ReadNote { path }
+            | ObsidianAction::WriteNote { path, .. }
+            | ObsidianAction::AppendToNote { path, .. } => {
+                crate::path_safety::validate_relative_fragment(path)
+                    .map_err(AppError::Forbidden)?;
+            }
+            ObsidianAction::ListNotes { folder: Some(f) } => {
+                crate::path_safety::validate_relative_fragment(f).map_err(AppError::Forbidden)?;
+            }
+            _ => {}
+        }
+
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(10))
             .build()
@@ -876,6 +894,28 @@ pub mod obsidian {
         }
     }
 
+    /// Resolve a caller-supplied, vault-relative fragment inside `vault`.
+    ///
+    /// EVERY command that joins a caller-supplied fragment to the vault MUST
+    /// go through this, so the guard cannot diverge between siblings. It
+    /// delegates to the shared anchored resolver
+    /// (`crate::path_safety::resolve_within_root`) rather than re-deriving a
+    /// local one — the four call sites below previously each carried their own
+    /// `vault.join(path).starts_with(vault)`, which is not a containment check
+    /// at all: `Path::starts_with` compares whole components and never
+    /// resolves `..`, so `vault.join("../../.ssh/id_rsa")` starts with `vault`,
+    /// the check returned `true` while printing "Path traversal detected", and
+    /// the un-normalised path went to an OS call that DOES resolve the `..`.
+    ///
+    /// `vault` must already be canonical (see `execute_via_filesystem`).
+    /// Returns the resolved path — use only the returned value.
+    fn resolve_vault_path(
+        vault: &std::path::Path,
+        rel: &str,
+    ) -> Result<std::path::PathBuf, AppError> {
+        crate::path_safety::resolve_within_root(vault, rel).map_err(AppError::Forbidden)
+    }
+
     /// Execute via direct filesystem access to the vault directory.
     ///
     /// All filesystem I/O is offloaded to a blocking thread via
@@ -889,38 +929,35 @@ pub mod obsidian {
         let action = action.clone();
 
         tokio::task::spawn_blocking(move || {
-            let vault = std::path::Path::new(&vault_path);
-            if !vault.exists() {
+            let vault_raw = std::path::Path::new(&vault_path);
+            if !vault_raw.exists() {
                 return Err(AppError::NotFound(format!(
                     "Vault path not found: {vault_path}"
                 )));
             }
+            // Canonicalise the root ONCE. Containment is only meaningful
+            // between two canonical paths, and `collect_markdown_files`'
+            // `strip_prefix(vault_root)` silently drops every result if the
+            // root it is handed is not the same form the walk produced.
+            let vault_buf = std::fs::canonicalize(vault_raw).map_err(AppError::Io)?;
+            let vault = vault_buf.as_path();
 
             match &action {
                 ObsidianAction::ListNotes { folder } => {
                     let search_path = match folder {
-                        Some(f) => vault.join(f),
+                        Some(f) => resolve_vault_path(vault, f)?,
                         None => vault.to_path_buf(),
                     };
-                    if !search_path.starts_with(vault) {
-                        return Err(AppError::Forbidden("Path traversal detected".into()));
-                    }
                     let mut notes = Vec::new();
                     collect_markdown_files(&search_path, vault, &mut notes)?;
                     Ok(notes.join("\n"))
                 }
                 ObsidianAction::ReadNote { path } => {
-                    let full_path = vault.join(path);
-                    if !full_path.starts_with(vault) {
-                        return Err(AppError::Forbidden("Path traversal detected".into()));
-                    }
+                    let full_path = resolve_vault_path(vault, path)?;
                     std::fs::read_to_string(&full_path).map_err(AppError::Io)
                 }
                 ObsidianAction::WriteNote { path, content } => {
-                    let full_path = vault.join(path);
-                    if !full_path.starts_with(vault) {
-                        return Err(AppError::Forbidden("Path traversal detected".into()));
-                    }
+                    let full_path = resolve_vault_path(vault, path)?;
                     if let Some(parent) = full_path.parent() {
                         std::fs::create_dir_all(parent).map_err(AppError::Io)?;
                     }
@@ -938,7 +975,13 @@ pub mod obsidian {
                         if results.len() >= max {
                             break;
                         }
-                        let full = vault.join(&note_path);
+                        // `note_path` comes from our own walk, but the walk
+                        // follows symlinked directories, so a link inside the
+                        // vault could still surface a file outside it. Resolve
+                        // it like any other fragment and skip what escapes.
+                        let Ok(full) = resolve_vault_path(vault, &note_path) else {
+                            continue;
+                        };
                         if let Ok(content) = std::fs::read_to_string(&full) {
                             if content.to_lowercase().contains(&query_lower) {
                                 let context = content
@@ -960,10 +1003,7 @@ pub mod obsidian {
                     Ok(dirs.join("\n"))
                 }
                 ObsidianAction::AppendToNote { path, content } => {
-                    let full_path = vault.join(path);
-                    if !full_path.starts_with(vault) {
-                        return Err(AppError::Forbidden("Path traversal detected".into()));
-                    }
+                    let full_path = resolve_vault_path(vault, path)?;
                     use std::io::Write;
                     let mut file = std::fs::OpenOptions::new()
                         .append(true)
@@ -1079,5 +1119,205 @@ async fn run_cli(binary: &str, args: &[&str]) -> Result<String, AppError> {
         Ok(combined)
     } else {
         Err(AppError::Execution(combined))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::obsidian::{execute, ObsidianAction};
+
+    /// `<tmp>/vault/notes/nested.md` plus a sibling `<tmp>/outside/secret.txt`
+    /// the vault must never be able to reach.
+    fn vault_fixture() -> (tempfile::TempDir, std::path::PathBuf) {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let vault = dir.path().join("vault");
+        std::fs::create_dir_all(vault.join("notes")).unwrap();
+        std::fs::write(vault.join("notes").join("nested.md"), "# nested").unwrap();
+        std::fs::create_dir_all(dir.path().join("outside")).unwrap();
+        std::fs::write(
+            dir.path().join("outside").join("secret.txt"),
+            "PRIVATE KEY",
+        )
+        .unwrap();
+        (dir, vault)
+    }
+
+    async fn run(vault: &std::path::Path, action: ObsidianAction) -> super::BridgeActionResult {
+        // `api_port`/`api_key` both None forces the filesystem arm.
+        execute(&vault.to_string_lossy(), None, None, action)
+            .await
+            .expect("bridge execute must not error out of band")
+    }
+
+    /// REGRESSION: `ReadNote` was an arbitrary file read. The old guard was
+    /// `vault.join(path).starts_with(vault)`, which is TRUE for a `..` escape
+    /// because `Path::starts_with` is component-wise and never resolves `..`.
+    #[tokio::test]
+    async fn read_note_rejects_parent_traversal() {
+        let (_tmp, vault) = vault_fixture();
+        for path in [
+            "../outside/secret.txt",
+            "notes/../../outside/secret.txt",
+            r"..\outside\secret.txt",
+        ] {
+            let r = run(
+                &vault,
+                ObsidianAction::ReadNote {
+                    path: path.to_string(),
+                },
+            )
+            .await;
+            assert!(!r.success, "traversal must be rejected: {path}");
+            assert!(
+                !r.output.contains("PRIVATE KEY"),
+                "traversal leaked file contents: {path}"
+            );
+        }
+    }
+
+    /// REGRESSION: an absolute path also passed the old guard on Unix
+    /// (`Path::join` with an absolute argument discards the base entirely, so
+    /// the result did NOT start with the vault — but nothing rejected the
+    /// Windows drive-relative form, and the error message was wrong either
+    /// way). Both forms must be refused explicitly.
+    #[tokio::test]
+    async fn read_note_rejects_absolute_and_drive_relative_paths() {
+        let (tmp, vault) = vault_fixture();
+        let absolute = tmp.path().join("outside").join("secret.txt");
+        for path in [
+            absolute.to_string_lossy().to_string(),
+            "/etc/shadow".to_string(),
+            r"\\server\share\secret.txt".to_string(),
+            "C:evil.md".to_string(),
+        ] {
+            let r = run(
+                &vault,
+                ObsidianAction::ReadNote {
+                    path: path.clone(),
+                },
+            )
+            .await;
+            assert!(!r.success, "absolute path must be rejected: {path}");
+            assert!(!r.output.contains("PRIVATE KEY"));
+        }
+    }
+
+    /// REGRESSION: `WriteNote` was an arbitrary write that also
+    /// `create_dir_all`'d the parent on the way out of the vault.
+    #[tokio::test]
+    async fn write_note_rejects_traversal_and_creates_nothing_outside() {
+        let (tmp, vault) = vault_fixture();
+        let r = run(
+            &vault,
+            ObsidianAction::WriteNote {
+                path: "../escaped/pwned.md".into(),
+                content: "x".into(),
+            },
+        )
+        .await;
+        assert!(!r.success, "traversal write must be rejected");
+        // One level up from the vault is the per-test tempdir, so this
+        // assertion cannot be polluted by another run.
+        assert!(
+            !tmp.path().join("escaped").exists(),
+            "rejected write still created directories outside the vault"
+        );
+    }
+
+    /// REGRESSION: `AppendToNote` is an append-OR-CREATE, so the same escape
+    /// produced a new file at an arbitrary path.
+    #[tokio::test]
+    async fn append_to_note_rejects_traversal() {
+        let (tmp, vault) = vault_fixture();
+        let r = run(
+            &vault,
+            ObsidianAction::AppendToNote {
+                path: "../outside/secret.txt".into(),
+                content: "appended".into(),
+            },
+        )
+        .await;
+        assert!(!r.success, "traversal append must be rejected");
+        assert_eq!(
+            std::fs::read_to_string(tmp.path().join("outside").join("secret.txt")).unwrap(),
+            "PRIVATE KEY",
+            "rejected append still modified a file outside the vault"
+        );
+    }
+
+    #[tokio::test]
+    async fn list_notes_rejects_traversal_folder() {
+        let (_tmp, vault) = vault_fixture();
+        let r = run(
+            &vault,
+            ObsidianAction::ListNotes {
+                folder: Some("../outside".into()),
+            },
+        )
+        .await;
+        assert!(!r.success, "traversal folder must be rejected");
+    }
+
+    /// The other half of the contract: legitimate vault-relative work must
+    /// still succeed, including creating a note in a folder that does not
+    /// exist yet (the case `canonicalize` alone cannot handle).
+    #[tokio::test]
+    async fn legitimate_nested_paths_still_work() {
+        let (_tmp, vault) = vault_fixture();
+
+        let read = run(
+            &vault,
+            ObsidianAction::ReadNote {
+                path: "notes/nested.md".into(),
+            },
+        )
+        .await;
+        assert!(read.success, "legitimate read failed: {:?}", read.error);
+        assert_eq!(read.output, "# nested");
+
+        let write = run(
+            &vault,
+            ObsidianAction::WriteNote {
+                path: "new/deeper/note.md".into(),
+                content: "created".into(),
+            },
+        )
+        .await;
+        assert!(write.success, "legitimate write failed: {:?}", write.error);
+        assert_eq!(
+            std::fs::read_to_string(vault.join("new").join("deeper").join("note.md")).unwrap(),
+            "created"
+        );
+
+        let append = run(
+            &vault,
+            ObsidianAction::AppendToNote {
+                path: "notes/nested.md".into(),
+                content: "more".into(),
+            },
+        )
+        .await;
+        assert!(append.success, "legitimate append failed: {:?}", append.error);
+        assert!(std::fs::read_to_string(vault.join("notes").join("nested.md"))
+            .unwrap()
+            .contains("more"));
+
+        let list = run(&vault, ObsidianAction::ListNotes { folder: None }).await;
+        assert!(list.success, "legitimate list failed: {:?}", list.error);
+        assert!(
+            list.output.contains("nested.md"),
+            "vault walk returned nothing: {:?}",
+            list.output
+        );
+
+        let list_sub = run(
+            &vault,
+            ObsidianAction::ListNotes {
+                folder: Some("notes".into()),
+            },
+        )
+        .await;
+        assert!(list_sub.success, "legitimate subfolder list failed");
+        assert!(list_sub.output.contains("nested.md"));
     }
 }

@@ -1,9 +1,23 @@
-//! Path safety checks for file watcher triggers.
+//! Path safety checks for file watcher triggers and sandboxed file access.
 //!
-//! Validates that watch paths don't target sensitive system directories,
-//! the app's own data directory, or locations outside the user's home tree.
-//! Defence-in-depth against malicious persona templates that could leak
-//! file names and change patterns from sensitive directories.
+//! Two distinct models live here, and picking the wrong one is the classic
+//! mistake (see `docs/concepts/golden-paths/filesystem-boundary.md`):
+//!
+//! * **Anchored** — the app owns the root, the caller supplies a *relative*
+//!   fragment. [`resolve_within_root`] resolves and proves containment; an
+//!   escape requires defeating `canonicalize`. Use this whenever the boundary
+//!   has a name (a vault, the managed drive, a project dir).
+//! * **Blocklist** — the caller supplies an *absolute* path the user picked
+//!   through an OS dialog and the app checks it is not somewhere known-bad
+//!   ([`validate_file_access_path`], [`validate_watch_path`]). Weaker by
+//!   construction: an escape only needs a location nobody enumerated.
+//!
+//! The blocklist half also validates that watch paths don't target sensitive
+//! system directories, the app's own data directory, or locations outside the
+//! user's home tree — defence-in-depth against malicious persona templates
+//! that could leak file names and change patterns from sensitive directories.
+
+use std::path::{Component, Path, PathBuf};
 
 /// Sensitive directory prefixes that must never be watched (normalised to forward slashes, lowercase).
 /// Covers Windows and Unix system directories.
@@ -382,6 +396,175 @@ pub fn validate_file_access_path(
     resolve_and_guard(raw, trimmed, true, "Access to", "File path")
 }
 
+// -- Anchored resolution (app-owned root + caller-supplied fragment) -------
+
+/// Lexical half of [`resolve_within_root`]: reject a caller-supplied fragment
+/// that is not safely joinable to an app-owned root. **No filesystem access**,
+/// so it is also usable where the fragment is not a local path at all (e.g.
+/// the Obsidian Local REST API's `/vault/{fragment}` URL space, where a `..`
+/// would escape the `/vault/` namespace into other API endpoints).
+///
+/// Rejects, on every platform so behaviour is uniform and testable:
+///   * NUL bytes (defeat the OS call before it is ever made — the textual
+///     pre-check `open_log_file_safely` shows is the correct first step);
+///   * absolute forms, including POSIX `/x` and UNC `\\server\share`;
+///   * any `..` segment (after normalising `\` to `/`, so `..\..\x` is
+///     rejected on Unix too even though it is not an escape there);
+///   * a leading drive letter (`C:`, `C:/x`, `C:foo`) — `Path::join` DISCARDS
+///     the base when the argument carries a prefix, so `root.join("C:evil")`
+///     evaluates to `C:evil`, outside the root entirely.
+///
+/// On Windows it additionally rejects `:` anywhere in a segment, which closes
+/// NTFS alternate data streams (`note.md:hidden`). That check is deliberately
+/// `cfg`-gated rather than universal: `:` is *illegal* in a Win32 filename, so
+/// on Windows it has no false positives, while on Unix it is a perfectly legal
+/// filename character (`2026-08-13 10:30 standup.md`) that must keep working.
+/// Contrast `desktop_bridges::validate_path_safety`, whose Windows-only
+/// sensitive-directory list gates a hazard that is *not* platform-specific —
+/// that one is a bug, this one is not.
+pub fn validate_relative_fragment(rel: &str) -> Result<(), String> {
+    if rel.contains('\0') {
+        return Err("Path may not contain NUL bytes".into());
+    }
+
+    let trimmed = rel.trim();
+    let normalised = trimmed.replace('\\', "/");
+
+    if normalised.starts_with('/') {
+        return Err(format!("Path must be relative, not absolute: {trimmed}"));
+    }
+
+    for seg in normalised.split('/') {
+        if seg == ".." {
+            return Err(format!("Path may not contain '..': {trimmed}"));
+        }
+        // `C:`, `C:/…`, `C:foo` — a Windows prefix anywhere in the first
+        // position defeats `join`; reject it wherever it appears.
+        let bytes = seg.as_bytes();
+        if bytes.len() >= 2 && bytes[1] == b':' && bytes[0].is_ascii_alphabetic() {
+            return Err(format!("Path may not contain a drive letter: {trimmed}"));
+        }
+        #[cfg(windows)]
+        if seg.contains(':') {
+            return Err(format!(
+                "Path may not contain ':' (NTFS alternate data stream): {trimmed}"
+            ));
+        }
+    }
+
+    // Second belt: let the platform's own parser have a look. This catches
+    // any prefix/root form the textual pass above did not anticipate.
+    let candidate = Path::new(trimmed);
+    if candidate.is_absolute() {
+        return Err(format!("Path must be relative, not absolute: {trimmed}"));
+    }
+    for comp in candidate.components() {
+        match comp {
+            Component::Normal(_) | Component::CurDir => {}
+            Component::ParentDir => {
+                return Err(format!("Path may not contain '..': {trimmed}"));
+            }
+            Component::RootDir | Component::Prefix(_) => {
+                return Err(format!("Path must be relative: {trimmed}"));
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Resolve a caller-supplied fragment against an **app-owned** `root` and
+/// return the canonical path inside it.
+///
+/// This is the anchored model: the app names the boundary, the caller only
+/// names a fragment within it, and containment is asserted on the
+/// **canonicalised** form. A lexical `root.join(rel).starts_with(root)` is NOT
+/// a containment check — `Path::starts_with` compares whole components and
+/// `Path::components()` deliberately preserves `ParentDir`, so
+/// `root.join("../../x")` starts with `root` and the un-normalised path then
+/// goes to an OS call that *does* resolve the `..`. That exact shape was live
+/// in `desktop_bridges::execute_via_filesystem` until this function replaced it.
+///
+/// `std::fs::canonicalize` alone is insufficient because it fails on paths that
+/// do not exist yet, which is the create/write case. So: if the target exists,
+/// canonicalise it (which also resolves symlinks); if it does not, probe every
+/// component with `symlink_metadata` (which does not follow links) to reject a
+/// symlink anywhere along the way, then canonicalise the deepest *existing*
+/// ancestor and re-append the not-yet-existing tail. Without the probe, a
+/// symlink living in the tail would be appended verbatim and could redirect a
+/// write outside the root while still passing containment.
+///
+/// Returns the resolved `PathBuf` — use only that, never the original string.
+/// A guard that returns `Result<()>` invites its caller to go back to the raw
+/// input, which is how 18 sites in this repo became check-then-use-original.
+///
+/// Mirrors `commands::drive::resolve_safe`, which is `pub(crate)` inside the
+/// `personas-desktop` crate and therefore unreachable from `engine` / `core` /
+/// `mcp_server`. This is that resolver in the shared crate.
+pub fn resolve_within_root(root: &Path, rel: &str) -> Result<PathBuf, String> {
+    validate_relative_fragment(rel)?;
+
+    // Canonicalise the root ourselves: containment is only meaningful when
+    // both sides are canonical, and callers pass roots straight out of config.
+    let canonical_root = std::fs::canonicalize(root)
+        .map_err(|e| format!("Root directory is not accessible: {e}"))?;
+
+    let trimmed = rel.trim();
+    if trimmed.is_empty() || trimmed == "." {
+        return Ok(canonical_root);
+    }
+
+    let candidate = PathBuf::from(trimmed);
+    let joined = canonical_root.join(&candidate);
+
+    let canonical = if joined.exists() {
+        std::fs::canonicalize(&joined)
+            .map_err(|e| format!("Could not resolve path '{trimmed}': {e}"))?
+    } else {
+        let mut probe = canonical_root.clone();
+        for comp in candidate.components() {
+            if let Component::Normal(seg) = comp {
+                probe.push(seg);
+                if let Ok(meta) = std::fs::symlink_metadata(&probe) {
+                    if meta.file_type().is_symlink() {
+                        return Err(format!(
+                            "Path traverses a symlink, which is not allowed: {trimmed}"
+                        ));
+                    }
+                }
+            }
+        }
+
+        // Walk up to the deepest ancestor that exists, canonicalise it, and
+        // re-append the remaining tail so a create in a new subtree works.
+        let mut ancestor = joined
+            .parent()
+            .ok_or_else(|| format!("Path has no parent directory: {trimmed}"))?
+            .to_path_buf();
+        loop {
+            if ancestor.exists() {
+                break;
+            }
+            match ancestor.parent() {
+                Some(p) => ancestor = p.to_path_buf(),
+                None => return Err(format!("Path resolves above the root: {trimmed}")),
+            }
+        }
+        let canonical_ancestor = std::fs::canonicalize(&ancestor)
+            .map_err(|e| format!("Could not resolve path '{trimmed}': {e}"))?;
+        let tail = joined
+            .strip_prefix(&ancestor)
+            .map_err(|_| format!("Could not resolve path '{trimmed}'"))?;
+        canonical_ancestor.join(tail)
+    };
+
+    if !canonical.starts_with(&canonical_root) {
+        return Err(format!("Path escapes the root directory: {trimmed}"));
+    }
+
+    Ok(canonical)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -509,6 +692,144 @@ mod tests {
         if let Some(home) = dirs::home_dir() {
             let p = home.join("nonexistent_dir_12345").join("export.persona");
             assert!(validate_save_path(&p.to_string_lossy()).is_err());
+        }
+    }
+
+    // -- Anchored resolution -------------------------------------------------
+
+    /// The bug this whole section exists to close, pinned as an executable
+    /// fact: a lexical `root.join(rel).starts_with(root)` returns TRUE for a
+    /// `..` escape, because `Path::starts_with` compares whole components and
+    /// `Path::components()` preserves `ParentDir` instead of resolving it.
+    /// Four sites in `desktop_bridges.rs` shipped this check while printing
+    /// the words "Path traversal detected".
+    #[test]
+    fn lexical_starts_with_does_not_detect_traversal() {
+        let root = Path::new("/vault");
+        let escaped = root.join("../../etc/shadow");
+        assert!(
+            escaped.starts_with(root),
+            "if this ever fails, Path::starts_with changed semantics and the \
+             doc comments in this module need revisiting"
+        );
+    }
+
+    struct Sandbox {
+        _dir: tempfile::TempDir,
+        root: PathBuf,
+    }
+
+    /// `<tmp>/root/notes/nested.md` plus `<tmp>/outside/secret.txt`, so a
+    /// `../` escape has something real to reach.
+    fn sandbox() -> Sandbox {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let root = dir.path().join("root");
+        std::fs::create_dir_all(root.join("notes")).unwrap();
+        std::fs::write(root.join("notes").join("nested.md"), "# nested").unwrap();
+        std::fs::create_dir_all(dir.path().join("outside")).unwrap();
+        std::fs::write(dir.path().join("outside").join("secret.txt"), "shh").unwrap();
+        Sandbox { _dir: dir, root }
+    }
+
+    #[test]
+    fn resolve_within_root_rejects_parent_traversal() {
+        let sb = sandbox();
+        for rel in [
+            "../outside/secret.txt",
+            "notes/../../outside/secret.txt",
+            "..",
+            "..\\outside\\secret.txt",
+            "./../outside/secret.txt",
+        ] {
+            assert!(
+                resolve_within_root(&sb.root, rel).is_err(),
+                "traversal fragment must be rejected: {rel}"
+            );
+        }
+    }
+
+    #[test]
+    fn resolve_within_root_rejects_absolute_paths() {
+        let sb = sandbox();
+        assert!(resolve_within_root(&sb.root, "/etc/shadow").is_err());
+        assert!(resolve_within_root(&sb.root, "//server/share/x").is_err());
+        assert!(resolve_within_root(&sb.root, "\\\\server\\share\\x").is_err());
+        // Drive-letter forms: absolute (`C:\…`) and drive-RELATIVE (`C:foo`),
+        // the latter of which `Path::join` would silently adopt wholesale.
+        assert!(resolve_within_root(&sb.root, "C:\\Windows\\win.ini").is_err());
+        assert!(resolve_within_root(&sb.root, "C:/Windows/win.ini").is_err());
+        assert!(resolve_within_root(&sb.root, "C:evil.md").is_err());
+    }
+
+    #[test]
+    fn resolve_within_root_rejects_nul_byte() {
+        let sb = sandbox();
+        assert!(resolve_within_root(&sb.root, "notes/nested.md\0.png").is_err());
+    }
+
+    #[test]
+    fn resolve_within_root_allows_legitimate_nested_path() {
+        let sb = sandbox();
+        let resolved = resolve_within_root(&sb.root, "notes/nested.md")
+            .expect("a legitimate vault-relative note must still resolve");
+        assert_eq!(std::fs::read_to_string(&resolved).unwrap(), "# nested");
+        let canonical_root = std::fs::canonicalize(&sb.root).unwrap();
+        assert!(resolved.starts_with(&canonical_root));
+    }
+
+    /// The create/write case: `canonicalize` alone fails on a path that does
+    /// not exist yet, so the resolver has to canonicalise the deepest existing
+    /// ancestor and re-append the tail. Two levels of not-yet-existing
+    /// directory, which is what `WriteNote`'s `create_dir_all` relies on.
+    #[test]
+    fn resolve_within_root_allows_not_yet_existing_path() {
+        let sb = sandbox();
+        let resolved = resolve_within_root(&sb.root, "new/deeper/note.md")
+            .expect("a not-yet-existing target must resolve for create/write");
+        let canonical_root = std::fs::canonicalize(&sb.root).unwrap();
+        assert!(resolved.starts_with(&canonical_root));
+        std::fs::create_dir_all(resolved.parent().unwrap()).unwrap();
+        std::fs::write(&resolved, "hello").unwrap();
+        assert_eq!(
+            std::fs::read_to_string(sb.root.join("new").join("deeper").join("note.md")).unwrap(),
+            "hello"
+        );
+    }
+
+    #[test]
+    fn resolve_within_root_empty_fragment_is_the_root() {
+        let sb = sandbox();
+        let canonical_root = std::fs::canonicalize(&sb.root).unwrap();
+        assert_eq!(resolve_within_root(&sb.root, "").unwrap(), canonical_root);
+        assert_eq!(resolve_within_root(&sb.root, ".").unwrap(), canonical_root);
+    }
+
+    /// A symlink escape is the reason the not-yet-exists branch probes each
+    /// component: canonicalising only the deepest *existing* ancestor would
+    /// append a symlinked tail verbatim and still pass containment.
+    #[cfg(unix)]
+    #[test]
+    fn resolve_within_root_rejects_symlink_escape() {
+        let sb = sandbox();
+        let outside = sb.root.parent().unwrap().join("outside");
+        std::os::unix::fs::symlink(&outside, sb.root.join("link")).unwrap();
+        assert!(resolve_within_root(&sb.root, "link/secret.txt").is_err());
+        assert!(resolve_within_root(&sb.root, "link/brand-new.md").is_err());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn validate_relative_fragment_rejects_ntfs_ads() {
+        assert!(validate_relative_fragment("notes/nested.md:hidden").is_err());
+    }
+
+    #[test]
+    fn validate_relative_fragment_accepts_ordinary_fragments() {
+        for rel in ["a.md", "folder/a.md", "./folder/a.md", "a b/c-d_e.md"] {
+            assert!(
+                validate_relative_fragment(rel).is_ok(),
+                "ordinary fragment must be accepted: {rel}"
+            );
         }
     }
 }
