@@ -1,0 +1,892 @@
+{
+  "slice": "server-data",
+  "situations": [
+    {
+      "name": "Adding a table",
+      "definition": "A developer needs a new SQLite table to exist on both fresh installs and every already-shipped database.",
+      "recurrence": 233,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["function", "resilience", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "schema",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/migrations/schema.rs:12",
+        "src-tauri/db/src/migrations/initial.rs:38",
+        "src-tauri/db/src/migrations/incremental.rs:4797",
+        "src-tauri/db/src/migrations/incremental.rs:7738"
+      ],
+      "risk": "high",
+      "note": "Four legal homes with no stated rule — SCHEMA const (78 tables), initial::run's post-schema block (23), ensure_composite_fires_table (phase 1), run_incremental (phase 2, 136). Placement decides whether the table exists before or after the columns another step reads; incremental.rs carries at least six comments saying 'this step MUST live here, not there' because that ordering was learned by breaking startup."
+    },
+    {
+      "name": "Adding a column",
+      "definition": "A developer needs one more column on an existing table, applied idempotently on every boot.",
+      "recurrence": 307,
+      "convergence": "mixed",
+      "owner": "src-tauri/db/src/migrations/incremental.rs:40 (has_column) + :33 (ddl_step)",
+      "dimensions": ["function", "resilience"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "schema",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/migrations/incremental.rs:201",
+        "src-tauri/db/src/migrations/incremental.rs:4902",
+        "src-tauri/db/src/migrations/initial.rs:92",
+        "src-tauri/db/src/lib.rs:539"
+      ],
+      "risk": "medium",
+      "note": "Three styles coexist: guarded run_step + has_column (the good one), `let _ = ddl_step(...)` relying on 'duplicate column name' being the success path, and `for stmt in &[...] { let _ = ... }` loops. Also SQLite forbids a non-constant DEFAULT on ADD COLUMN, so half the sites need a paired backfill and the other half forgot."
+    },
+    {
+      "name": "Migration idempotency guard",
+      "definition": "A developer must make a migration step safe to replay on every single app launch, because there is no version counter.",
+      "recurrence": 125,
+      "convergence": "diverged",
+      "owner": "src-tauri/db/src/migrations/incremental.rs:12 (run_step)",
+      "dimensions": ["resilience", "function", "performance"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "migrations",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/migrations/incremental.rs:12",
+        "src-tauri/db/src/migrations/incremental.rs:3317",
+        "src-tauri/db/src/migrations/incremental.rs:3408",
+        "src-tauri/db/src/backup.rs:16"
+      ],
+      "risk": "high",
+      "note": "There is NO applied-migrations ledger and no PRAGMA user_version anywhere in the crate — idempotency is entirely per-step guards. `run_step` records nothing, yet incremental.rs:3314 claims 'rely on run_step's id-tracking to run once'; the two steps with `already_applied: |_| Ok(false)` therefore re-execute their full data migration on every boot. backup.rs:16 documents the absence as the reason it snapshots the DB on EVERY launch."
+    },
+    {
+      "name": "Swallowed migration failure",
+      "definition": "A developer decides whether a DDL statement's error should abort startup, be logged, or be discarded.",
+      "recurrence": 42,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["resilience", "function"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "migrations",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/migrations/incremental.rs:4885",
+        "src-tauri/db/src/migrations/incremental.rs:4903",
+        "src-tauri/db/src/migrations/incremental.rs:65",
+        "src-tauri/db/src/migrations/incremental.rs:7708"
+      ],
+      "risk": "high",
+      "note": "`let _ = ddl_step(...)` appears 42 times and hides real bugs: incremental.rs:4903-4905 ALTERs a table named `executions` and :4885 declares an FK to `credentials` — neither table exists (the real names are persona_executions / persona_credentials), so three columns have silently never been added. incremental.rs:65 is the one place that chose to report instead of discard, and says why."
+    },
+    {
+      "name": "Rebuilding a table",
+      "definition": "A developer must change a CHECK constraint, drop a constrained column, or otherwise alter a table SQLite cannot ALTER in place.",
+      "recurrence": 13,
+      "convergence": "mixed",
+      "owner": "src-tauri/db/src/migrations/fk_hygiene.rs:163 (recreate_with_fk) — used by 9 of 13",
+      "dimensions": ["resilience", "function", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "migrations",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/migrations/fk_hygiene.rs:163",
+        "src-tauri/db/src/migrations/incremental.rs:104",
+        "src-tauri/db/src/migrations/incremental.rs:8079",
+        "src-tauri/db/src/migrations/incremental.rs:8223"
+      ],
+      "risk": "high",
+      "note": "A generic helper exists (recreate_with_fk: derives the column list from pragma_table_info, replays indexes/triggers from sqlite_master, FK-guarded, row-count checked) but the three CHECK-widening rebuilds hand-roll the same seven-step procedure with `create_sql.replacen(\"'cancelled'\", ...)` string splicing plus a bail-if-shape-unexpected guard. Getting the FK-disable wrong drops child rows via cascade — fk_hygiene.rs:184 documents that exact incident."
+    },
+    {
+      "name": "Foreign keys and their deliberate absence",
+      "definition": "A developer decides whether a reference column gets a REFERENCES clause, and with what ON DELETE behaviour.",
+      "recurrence": 87,
+      "convergence": "mixed",
+      "owner": "src-tauri/db/src/migrations/fk_hygiene.rs:1",
+      "dimensions": ["function", "resilience", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "schema",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/migrations/schema.rs:69",
+        "src-tauri/db/src/migrations/initial.rs:382",
+        "src-tauri/core/src/models/memory.rs:125",
+        "src-tauri/db/src/migrations/schema.rs:315"
+      ],
+      "risk": "medium",
+      "note": "63 CASCADE + 10 SET NULL in schema.rs alone, and ~14 sites where the FK is deliberately omitted so an audit trail or attribution survives its parent's deletion. The rationale is consistently good and consistently prose-only — there is no marker distinguishing 'no FK on purpose' from 'nobody got round to it', which is exactly what the fk_hygiene retrofit sweep had to reconstruct by hand."
+    },
+    {
+      "name": "Backfilling after a schema change",
+      "definition": "A developer adds a column or table and must populate existing rows so readers don't hit NULL.",
+      "recurrence": 21,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["function", "resilience", "performance"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "migrations",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/migrations/incremental.rs:7711",
+        "src-tauri/db/src/migrations/incremental.rs:7996",
+        "src-tauri/db/src/lib.rs:629",
+        "src-tauri/db/src/migrations/initial.rs:301"
+      ],
+      "risk": "medium",
+      "note": "Guards are ad hoc: `WHERE col IS NULL`, `WHERE NOT EXISTS (SELECT 1 FROM t LIMIT 1)` (incremental.rs:7996 — table-empty, so a curator's deletion isn't resurrected), a window-function dedupe before a unique index (initial.rs:301), or nothing at all. 'Run exactly once' vs 'safe to replay' is decided per site and the wrong choice either resurrects deleted rows or re-scans the whole table on every boot."
+    },
+    {
+      "name": "Closed-vocabulary value migration",
+      "definition": "A developer collapses two spellings of a status/category column onto one canonical set, without losing rows that match neither.",
+      "recurrence": 5,
+      "convergence": "mixed",
+      "owner": null,
+      "dimensions": ["function", "resilience", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "migrations",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/db/src/migrations/helpers.rs:330",
+        "src-tauri/db/src/migrations/incremental.rs:8161",
+        "src-tauri/db/src/migrations/helpers.rs:299",
+        "src-tauri/db/src/migrations/incremental.rs:8223"
+      ],
+      "risk": "high",
+      "note": "Two answers for unmappable survivors: helpers.rs:330 leaves them untouched and logs; incremental.rs:8161 rewrites them to a default AND writes a user-visible `status_unmappable` signal row carrying the original. Both refuse to fail the migration because it replays on every launch and a bail would brick the install — that constraint is the real design driver and it is only stated in prose."
+    },
+    {
+      "name": "Destructive migration",
+      "definition": "A developer retires a concept and must drop columns/tables that live data still references.",
+      "recurrence": 6,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["resilience", "function"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "migrations",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/migrations/incremental.rs:3390",
+        "src-tauri/db/src/migrations/incremental.rs:3412",
+        "src-tauri/db/src/migrations/incremental.rs:3288",
+        "src-tauri/db/src/migrations/initial.rs:344"
+      ],
+      "risk": "high",
+      "note": "The Groups→Teams retirement needed a populate phase and a separate drop phase, indexes dropped first (SQLite refuses DROP COLUMN on an indexed column), one column left permanently undropped because it carries an inline FK, and a table 'dropped only if empty' so user data is never destroyed. None of that is factored into a helper; the next retirement will rediscover all five rules."
+    },
+    {
+      "name": "Enforcing an invariant the schema can't express",
+      "definition": "A developer needs a rule (range bound, exclusivity, cross-column implication) enforced at the DB, not just in Rust.",
+      "recurrence": 6,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["resilience", "function", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "schema",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/migrations/helpers.rs:396",
+        "src-tauri/db/src/migrations/helpers.rs:271",
+        "src-tauri/db/src/migrations/initial.rs:314",
+        "src-tauri/core/src/models/memory.rs:90"
+      ],
+      "risk": "medium",
+      "note": "Four different mechanisms for the same job: BEFORE INSERT/UPDATE triggers with RAISE(ABORT) (because ALTER can't add a CHECK), a partial UNIQUE index, a boot-time assertion that only tracing::error!s, and a table rebuild to splice in a CHECK. helpers.rs:410 also documents the trap that the trigger guard skips re-creation, so changing a trigger body silently does nothing unless you rename it."
+    },
+    {
+      "name": "Pre-migration backup and recovery",
+      "definition": "A developer needs the user's database recoverable if the boot migration chain corrupts it.",
+      "recurrence": 1,
+      "convergence": "converged",
+      "owner": "src-tauri/db/src/backup.rs:48",
+      "dimensions": ["resilience", "performance"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "migrations",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/backup.rs:48",
+        "src-tauri/db/src/lib.rs:296"
+      ],
+      "risk": "medium",
+      "note": "Single owner, well documented, but the cost is structural: because there is no schema-version signal, it copies the whole DB + WAL + SHM on EVERY boot of an existing install and rotates three sets. That's the price the missing migration ledger charges at startup."
+    },
+    {
+      "name": "Second database schema evolution",
+      "definition": "A developer adds a column or table to the user-facing database (personas_data.db), which has no migration runner.",
+      "recurrence": 20,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["function", "resilience", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "schema",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/lib.rs:492",
+        "src-tauri/db/src/lib.rs:539",
+        "src-tauri/db/src/lib.rs:563",
+        "src-tauri/db/src/lib.rs:1946"
+      ],
+      "risk": "high",
+      "note": "init_user_db re-runs KNOWLEDGE_BASE_SCHEMA + COMPANION_SCHEMA and then a hand-maintained array of `let _ = execute_batch(ALTER ...)` statements. That array is HAND-COPIED into init_test_user_db (lib.rs:1946) with a partial subset — the test pool already diverges from production, and lib.rs:1953 documents having been bitten by exactly that. Nothing tells you which schema surface a new table belongs to."
+    },
+    {
+      "name": "Indexing decision",
+      "definition": "A developer decides which indexes a new table or query pattern needs, and whether an existing index is actually usable.",
+      "recurrence": 444,
+      "convergence": "mixed",
+      "owner": null,
+      "dimensions": ["performance", "function"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "query-performance",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/migrations/incremental.rs:7819",
+        "src-tauri/db/src/migrations/schema.rs:39",
+        "src-tauri/db/src/migrations/initial.rs:314",
+        "src-tauri/db/src/migrations/incremental.rs:7872"
+      ],
+      "risk": "medium",
+      "note": "444 CREATE INDEX statements and one genuinely hard sub-case documented at incremental.rs:7819: the sync predicate is `datetime(col) > datetime(?)`, which is non-sargable against a plain column index, so twelve tables needed an EXPRESSION index matching the predicate's tree. Nothing captures that rule; the next `datetime(col)` predicate will full-scan. Index placement also interacts with situation 'Adding a table' — schema.rs:40 documents an index that had to move to incremental.rs because it preceded its own column."
+    },
+    {
+      "name": "Dedupe then add a unique index",
+      "definition": "A developer wants to enforce uniqueness on a column that already contains duplicates in shipped databases.",
+      "recurrence": 4,
+      "convergence": "mixed",
+      "owner": null,
+      "dimensions": ["function", "resilience", "performance"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "migrations",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/migrations/initial.rs:74",
+        "src-tauri/db/src/migrations/initial.rs:301",
+        "src-tauri/db/src/migrations/incremental.rs:4822"
+      ],
+      "risk": "medium",
+      "note": "Same three-step shape each time (pick a survivor via MAX/MIN rowid or ROW_NUMBER, delete the rest, create the index) but the 'which row wins' rule differs and only initial.rs:74 gates the expensive dedupe scan on the index not yet existing — the other two re-run the full-table dedupe on every launch."
+    },
+    {
+      "name": "Repository read/write functions",
+      "definition": "A developer creates the CRUD surface for a new table.",
+      "recurrence": 144,
+      "convergence": "diverged",
+      "owner": "src-tauri/db/src/macros.rs:141 (crud_get_by_id / crud_get_all / crud_delete / crud_update / lab_crud)",
+      "dimensions": ["code-quality", "function"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "repository",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/macros.rs:141",
+        "src-tauri/db/src/macros.rs:376",
+        "src-tauri/db/src/repos/resources/db_schema.rs:45",
+        "src-tauri/db/src/repos/execution/executions.rs:764"
+      ],
+      "risk": "low",
+      "note": "The macros exist and are good, but only ~28 call sites use them across 144 repo files; lab_crud! (7 functions from one invocation) is used by exactly 5 modules. Everything else hand-writes get/list/create/update/delete. The best hand-rolled answer is executions.rs:764, which factors the shared 18-column SET clause and parameterizes only the WHERE — a pattern nothing else copies."
+    },
+    {
+      "name": "Row to struct mapping",
+      "definition": "A developer writes the function that turns a rusqlite Row into a model struct.",
+      "recurrence": 110,
+      "convergence": "diverged",
+      "owner": "src-tauri/db/src/macros.rs:100 (row_mapper!)",
+      "dimensions": ["code-quality", "resilience"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "repository",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/macros.rs:100",
+        "src-tauri/db/src/repos/system_ops.rs:14",
+        "src-tauri/db/src/repos/communication/events.rs:111",
+        "src-tauri/db/src/repos/dev_tools.rs:7245"
+      ],
+      "risk": "high",
+      "note": "34 files use row_mapper!, 47 hand-write `fn row_to_x` (110 functions), plus inline closures; dev_tools.rs alone hand-writes 25. The real hazard is the nullable/missing-column idiom, which has FIVE spellings — the macro's [opt] / [opt_i32] / [opt_str], and hand-written `.unwrap_or(None)` (60 sites) and `Option<i32>?.unwrap_or(0)`. Two of them are indistinguishable at the call site despite meaning different things ('column may not exist' vs 'column is nullable'). The defaults are load-bearing and wrong: macros.rs:120's [opt_str] hardcodes the domain string \"working\" into a generic mapper, and system_ops.rs:22 defaults a missing `enabled` column to ENABLED while :28 defaults a missing unattended_mode to 'auto'."
+    },
+    {
+      "name": "Row collection failure policy",
+      "definition": "A developer decides what happens when one row in a result set fails to map.",
+      "recurrence": 60,
+      "convergence": "diverged",
+      "owner": "src-tauri/db/src/repos/utils.rs:33 (collect_rows)",
+      "dimensions": ["resilience", "function"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "repository",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/repos/utils.rs:33",
+        "src-tauri/db/src/repos/communication/manual_reviews.rs:668",
+        "src-tauri/db/src/repos/communication/reviews.rs:529",
+        "src-tauri/db/src/repos/execution/executions.rs:1726"
+      ],
+      "risk": "high",
+      "note": "Four policies in one crate: collect_rows (log + skip, ~20 sites), collect::<Result<Vec>> (fail fast, ~20 sites), filter_map(|r| r.ok()) (SILENT drop, ~6 sites), and one inline re-implementation of collect_rows in metrics.rs. The rule 'skip on sweeps where a dropped row is an unreaped zombie, fail fast on list endpoints' is real and applied in executions.rs — and stated nowhere."
+    },
+    {
+      "name": "Dynamic filter query construction",
+      "definition": "A developer builds a SELECT whose WHERE clause depends on which optional filters the caller supplied.",
+      "recurrence": 59,
+      "convergence": "diverged",
+      "owner": "src-tauri/db/src/query_builder.rs:35 (QueryBuilder)",
+      "dimensions": ["code-quality", "security", "function"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "repository",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/query_builder.rs:35",
+        "src-tauri/db/src/query_builder.rs:283",
+        "src-tauri/db/src/repos/communication/manual_reviews.rs:644",
+        "src-tauri/db/src/repos/resources/db_schema.rs:85"
+      ],
+      "risk": "medium",
+      "note": "FOUR mechanisms for one job: QueryBuilder (15 files), push_field!/push_field_param! (~181 expansions), raw `Vec<Box<dyn ToSql>>` + `format!(\"?{idx}\")` (~44), and one bespoke inline `push` closure in a file that already uses the macro 70 times. manual_reviews.rs:644 sidesteps all of them with bare `?` + params_from_iter. QueryBuilder itself has an unguarded footgun — build_clauses derives LIMIT/OFFSET indices from params.len() (query_builder.rs:283), so any push_param after limit()/offset() silently corrupts the numbering. And column names are interpolated, never bound, so ORDER BY allowlisting is the caller's job."
+    },
+    {
+      "name": "Partial update semantics",
+      "definition": "A developer writes an update that changes only the fields the caller supplied, and can distinguish 'omitted' from 'set to null'.",
+      "recurrence": 64,
+      "convergence": "mixed",
+      "owner": "src-tauri/core/src/models/serde_util.rs:24 (double_option) + src-tauri/db/src/macros.rs:44 (push_field_param!)",
+      "dimensions": ["function", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "repository",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/core/src/models/serde_util.rs:24",
+        "src-tauri/db/src/macros.rs:44",
+        "src-tauri/db/src/macros.rs:251",
+        "src-tauri/db/src/repos/resources/db_schema.rs:85"
+      ],
+      "risk": "medium",
+      "note": "The three-state answer exists and its module doc calls out the drift it was created to stop, yet ~21 of 64 `Option<Option<T>>` fields lack the deserializer and so silently cannot clear a column over IPC. Meanwhile the SQL half has four spellings — push_field!, push_field_param!, crud_update!'s generated SET, and QueryBuilder::set_opt. The frontend half of this contract (send null vs omit) is why it is cross-cutting."
+    },
+    {
+      "name": "Compare-and-swap status write",
+      "definition": "A developer updates a row's status only if it is still in the expected state, and decides what a lost race means.",
+      "recurrence": 15,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["function", "resilience"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "concurrency",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/repos/execution/executions.rs:764",
+        "src-tauri/db/src/repos/execution/healing.rs:405",
+        "src-tauri/db/src/repos/communication/events.rs:287",
+        "src-tauri/db/src/macros.rs:436"
+      ],
+      "risk": "high",
+      "note": "The SQL idiom converges; the CONTRACT does not. Zero rows affected maps to Ok(false) (executions.rs), Err(Execution) (healing.rs:418), Err(Validation) (events.rs, manual_reviews.rs) and Err(NotFound) (alert_rules.rs — which conflates a race with an absent row). healing.rs:405 argues its choice against another file by name, which is the clearest evidence the canonical answer is missing. Worse, lab_crud!'s generated update validates the transition and then issues an UNGUARDED update — pure TOCTOU."
+    },
+    {
+      "name": "Idempotent claim and lease",
+      "definition": "A developer makes sure exactly one worker picks up a queued row, and that a crashed worker's claim eventually frees.",
+      "recurrence": 6,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["function", "resilience", "performance"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "concurrency",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/repos/execution/executions.rs:887",
+        "src-tauri/db/src/repos/communication/events.rs:239",
+        "src-tauri/db/src/repos/execution/healing.rs:212",
+        "src-tauri/db/src/migrations/schema.rs:123"
+      ],
+      "risk": "high",
+      "note": "Four incompatible mechanisms: TTL-lease CAS whose expiry predicate IS the reaper (executions.rs:887), single-statement UPDATE ... RETURNING batch claim with NO claim timestamp — so its reaper cannot use a TTL and has to count retries instead (events.rs:239), partial-unique-index ON CONFLICT DO NOTHING with a re-select of the winner, and INSERT OR IGNORE + rows==0. executions.rs:884 warns that all writers must stay RFC3339 or the lexicographic lease comparison silently inverts."
+    },
+    {
+      "name": "Upsert",
+      "definition": "A developer writes 'insert this row, or update it if the key already exists'.",
+      "recurrence": 106,
+      "convergence": "mixed",
+      "owner": null,
+      "dimensions": ["function", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "repository",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/lib.rs:1767",
+        "src-tauri/db/src/lib.rs:1817",
+        "src-tauri/db/src/migrations/incremental.rs:7996",
+        "src-tauri/db/src/repos/communication/events.rs:96"
+      ],
+      "risk": "medium",
+      "note": "51 ON CONFLICT DO UPDATE, 53 INSERT OR IGNORE, 2 INSERT OR REPLACE. The seeding sites use a deliberate two-statement idiom (INSERT OR IGNORE then a scoped UPDATE that refreshes presentation fields but preserves counters) — an unusual and correct answer that is not written down anywhere as the pattern. Elsewhere reviews.rs duplicates a 20-column upsert verbatim across two functions."
+    },
+    {
+      "name": "Pagination and cursors",
+      "definition": "A developer returns one page of a growing list plus a way to ask for the next.",
+      "recurrence": 14,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["performance", "function", "ui"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "query-performance",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/db/src/repos/communication/manual_reviews.rs:632",
+        "src-tauri/db/src/repos/communication/reviews.rs:527",
+        "src-tauri/db/src/query_builder.rs:284",
+        "src-tauri/db/src/repos/communication/events.rs:427"
+      ],
+      "risk": "high",
+      "note": "Three generations coexist: composite (created_at, id) keyset with limit+1 has_more (correct, implemented three separate times with no helper), LIMIT/OFFSET, and reviews.rs:527 which materializes EVERY matching row, parses JSON per row in Rust, then .skip().take() — next to a correct SQL path in the same function's else branch. The frontend consumes whichever shape it gets, so the cursor contract is cross-cutting."
+    },
+    {
+      "name": "Limit defaults and clamping",
+      "definition": "A developer picks the default and maximum row count for a list query.",
+      "recurrence": 30,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["performance", "resilience"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "query-performance",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/macros.rs:412",
+        "src-tauri/db/src/repos/communication/manual_reviews.rs:642",
+        "src-tauri/db/src/repos/communication/reviews.rs:558"
+      ],
+      "risk": "medium",
+      "note": "Defaults observed: 10, 20, 50, 100, 200, 1000 — chosen per function. Only two call sites clamp the caller's value at all, so `Some(i64::MAX)` is an unbounded scan almost everywhere. lab_crud! bakes `unwrap_or(20)` into the macro, making it the one enforced default and also the least visible one."
+    },
+    {
+      "name": "Retention and pruning",
+      "definition": "A developer bounds a growing table by age, count, or keep-N-per-key.",
+      "recurrence": 15,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["performance", "function", "resilience", "cost"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "retention",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/settings_keys.rs:72",
+        "src-tauri/db/src/repos/communication/sla.rs:830",
+        "src-tauri/db/src/repos/core/memories.rs:1052",
+        "src-tauri/db/src/repos/dev_tools.rs:861"
+      ],
+      "risk": "high",
+      "note": "At least 15 sweepers with five distinct algorithms (age TTL, global count cap, keep-N-per-key via LIMIT/OFFSET threshold in a Rust loop, status-revert TTL, ROW_NUMBER dedupe-prune) and no shared helper. Only the settings keys converge — settings_keys.rs pairs every retention key with a `_DEFAULT` constant. sla.rs documents an ORDERING dependency (roll up before pruning or the last day is lost forever) that only exists in a doc comment."
+    },
+    {
+      "name": "Transaction boundary",
+      "definition": "A developer decides whether a multi-statement write needs a transaction, and which kind.",
+      "recurrence": 91,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["resilience", "function", "performance"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "concurrency",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/migrations/incremental.rs:26",
+        "src-tauri/db/src/migrations/helpers.rs:107",
+        "src-tauri/db/src/repos/dev_tools.rs:861",
+        "src-tauri/db/src/repos/execution/executions.rs:764"
+      ],
+      "risk": "high",
+      "note": "58 conn.transaction(), 22 unchecked_transaction (needed when you only hold &Connection), 11 explicit BEGIN IMMEDIATE, and a long tail with none. incremental.rs:26 explains that SQLite auto-commits per statement so a DDL batch needs wrapping — the same reasoning never reached repos: reorder_goals loops N unguarded UPDATEs, and the retention/zombie sweeps interleave SELECT and UPDATE outside any transaction. Two files solve the identical read-then-write-across-pooled-connections problem in opposite ways (drop the connection vs take an IMMEDIATE lock)."
+    },
+    {
+      "name": "Timestamps and time formats",
+      "definition": "A developer chooses how a moment is written into a TEXT column and how it is compared on read.",
+      "recurrence": 793,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["function", "resilience", "performance"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "time",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/db/src/repos/communication/sla.rs:830",
+        "src-tauri/db/src/repos/execution/executions.rs:884",
+        "src-tauri/db/src/migrations/incremental.rs:7819",
+        "src-tauri/db/src/repos/communication/events.rs:96"
+      ],
+      "risk": "high",
+      "note": "THE worst divergence in the slice. 371 Rust-side `to_rfc3339()` writes vs 422 SQL-side `DEFAULT (datetime('now'))` — often on the same column. The shapes are not lexicographically comparable ('T' 0x54 > ' ' 0x20), so `WHERE created_at < datetime('now','-30 days')` behaves differently per table. The costs are already paid and visible: a four-format fallback parser exists solely for this (sla.rs:830), one file deliberately uses chrono for its cutoff to match its writer while three others do not, one lease predicate carries a warning comment, and twelve expression indexes exist to make `datetime(col)` sargable."
+    },
+    {
+      "name": "JSON blob columns",
+      "definition": "A developer stores a structured value in a TEXT column and decides how it is typed, validated, and recovered when it fails to parse.",
+      "recurrence": 84,
+      "convergence": "diverged",
+      "owner": "src-tauri/core/src/models/json_column.rs:26 (Json<T>)",
+      "dimensions": ["function", "resilience", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "serialization",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/core/src/models/json_column.rs:26",
+        "src-tauri/db/src/repos/resources/triggers.rs:593",
+        "src-tauri/db/src/repos/resources/triggers.rs:801",
+        "src-tauri/core/src/models/execution.rs:29"
+      ],
+      "risk": "high",
+      "note": "Json<T> validates at the DB boundary and delegates ts-rs transparently — and is used ~19 times, ZERO of them inside db/src/repos, against 65+ raw `*_json: String` fields and a larger set of un-suffixed JSON-in-String columns (~41 from_str / 39 to_string call sites in the repos alone). FIVE failure policies coexist: reject as Validation, warn-then-rebuild-a-minimal-object, warn-then-substitute-Null, silent unwrap_or_default, silent .ok() drop. triggers.rs:593 and :801 are the same file ~200 lines apart choosing the second and third. Writes are unguarded too: `to_string(..).unwrap_or_default()` writes an EMPTY string into a TEXT column, converting a write failure into a read failure later. execution.rs:23 records the helper's friction cost: a manual `#[ts(type=\"unknown\")]` escape hatch."
+    },
+    {
+      "name": "Closed vocabularies and unknown tokens",
+      "definition": "A developer declares the legal values of a TEXT status/category column and decides what happens when the DB holds something else.",
+      "recurrence": 53,
+      "convergence": "diverged",
+      "owner": "src-tauri/core/src/lifecycle.rs:70 (declare_lifecycle!)",
+      "dimensions": ["function", "resilience", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "vocabulary",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/core/src/lifecycle.rs:70",
+        "src-tauri/core/src/models/lab.rs:23",
+        "src-tauri/db/src/repos/dev_tools.rs:7403",
+        "src-tauri/db/src/migrations/incremental.rs:7980"
+      ],
+      "risk": "high",
+      "note": "declare_lifecycle! generates as_str/FromStr/ALL_VARIANTS/transitions and is used THREE times against 53 enums. Unknown-token policy has six answers: warn-then-neutral, silent fallback to Failed (lab.rs:31 — a schema-added status makes live runs read as failed), silent fallback to Rejected, Option<Self>, FromStr with AppError, and hard FromSql failure. Worse, writes and reads disagree: ~143 `.as_str()` call sites vs 1 `from_db()` — most repos read the column back as a bare String. dev_tools.rs:7403 coerces an invalid `kind` to 'capability' on create while :7469 silently DROPS an invalid one on update, so the same field has two wrong answers in one file."
+    },
+    {
+      "name": "Constraining an open text dimension",
+      "definition": "A developer has a free-form TEXT column that many independent writers fill, and must stop it fragmenting into a hundred near-synonyms.",
+      "recurrence": 4,
+      "convergence": "diverged",
+      "owner": "src-tauri/db/src/repos/workspace_taxonomy.rs:1",
+      "dimensions": ["function", "code-quality", "ui"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "vocabulary",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/db/src/repos/workspace_taxonomy.rs:1",
+        "src-tauri/db/src/repos/workspace_taxonomy.rs:81",
+        "src-tauri/db/src/repos/workspace_taxonomy.rs:89",
+        "src-tauri/db/src/repos/dev_tools.rs:7403"
+      ],
+      "risk": "medium",
+      "note": "There is one excellent reference implementation and nothing generalizing it. workspace_taxonomy.rs was written after thirteen parallel writers produced 154 topics for 177 items; its answer is a closed precedence-ordered area list, an open starter cluster vocabulary underneath, a historical-alias table, and — the load-bearing part — a VISIBLE quarantine shelf ('unsorted/needs-topic') rather than a silent default, plus a test asserting every alias targets a real value. Its own module doc records that enforcing one axis did not protect its neighbour (ftype fragmented to 90 values anyway). Everywhere else the same problem is answered by silent coercion to a default."
+    },
+    {
+      "name": "State transition validation",
+      "definition": "A developer expresses which status changes are legal and enforces them on write.",
+      "recurrence": 8,
+      "convergence": "diverged",
+      "owner": "src-tauri/core/src/lifecycle.rs:171 (generated can_transition_to / transition_to)",
+      "dimensions": ["function", "resilience", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "vocabulary",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/core/src/lifecycle.rs:171",
+        "src-tauri/core/src/models/lab.rs:50",
+        "src-tauri/db/src/macros.rs:448",
+        "src-tauri/db/src/repos/communication/events.rs:287"
+      ],
+      "risk": "medium",
+      "note": "One macro plus four hand-rolled validators with duplicated error strings and two incompatible signatures (`can_transition_to(self)` vs `(&self, &Self)`). Nothing binds validation to the write — lab_crud!'s generated update validates and then updates unguarded, while events.rs validates and then CASes. Terminal-ness is modelled three ways: empty target list, explicit is_terminal(), and const slices."
+    },
+    {
+      "name": "Encrypting a column at rest",
+      "definition": "A developer stores a secret in a column and must handle encrypt-on-write, decrypt-on-read, and the failure of either.",
+      "recurrence": 11,
+      "convergence": "mixed",
+      "owner": "personas_core::crypto (encrypt_for_db / decrypt_from_db / is_plaintext)",
+      "dimensions": ["security", "resilience", "function"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "secrets",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/repos/communication/events.rs:94",
+        "src-tauri/db/src/repos/communication/events.rs:111",
+        "src-tauri/db/src/migrations/helpers.rs:34",
+        "src-tauri/db/src/journal.rs:23"
+      ],
+      "risk": "high",
+      "note": "The crypto primitives are shared but the surrounding policy is per-site: events.rs:98 falls back to storing PLAINTEXT with a warn when encryption fails, while :122 refuses to leak ciphertext on decrypt failure and folds the error into error_message. The (ciphertext, iv) column pair is repeated per table with no type binding them, and journal.rs:23 has to state as an invariant that before-images capture ciphertext only. helpers.rs:34 is a whole three-stage migration (extract, verify, clear) written to avoid ever losing a secret."
+    },
+    {
+      "name": "Seeding built-in catalog rows",
+      "definition": "A developer ships default/catalog rows that must refresh on upgrade without clobbering user edits or deletions.",
+      "recurrence": 6,
+      "convergence": "mixed",
+      "owner": "src-tauri/db/src/lib.rs:1745 (seed_builtin_connectors pattern)",
+      "dimensions": ["function", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "seeding",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/lib.rs:1667",
+        "src-tauri/db/src/lib.rs:1745",
+        "src-tauri/db/src/lib.rs:1812",
+        "src-tauri/db/src/lib.rs:1863"
+      ],
+      "risk": "medium",
+      "note": "Two policies live side by side in one file. Connectors and shared events use INSERT OR IGNORE + a scoped `UPDATE ... WHERE is_builtin = 1` that force-refreshes presentation fields on every boot while preserving counters — so a user's edit to a builtin IS overwritten on upgrade. Tools use INSERT OR IGNORE only, so a builtin tool's description can never be corrected. The definitions are likewise split: connectors/events are codegen'd from JSON, tools are still the inline array literal the connectors seed was refactored away from. Retirement is a third unsolved half — it needs a hand-written DELETE (lib.rs:1761)."
+    },
+    {
+      "name": "ID generation",
+      "definition": "A developer chooses how a new row's primary key is produced.",
+      "recurrence": 220,
+      "convergence": "mixed",
+      "owner": null,
+      "dimensions": ["function", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "identity",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/repos/resources/db_schema.rs:57",
+        "src-tauri/db/src/migrations/incremental.rs:3340",
+        "src-tauri/db/src/repos/dev_tools.rs:7228",
+        "src-tauri/db/src/repos/workspace_taxonomy.rs:120"
+      ],
+      "risk": "medium",
+      "note": "uuid::Uuid::new_v4() dominates (213 sites) with minority forms: prefixed uuids (aout-/delib-/tcm-, plus one memprop_ with a different separator AND .simple() form), randomblob in migration SQL, and deterministic derived ids ('wsteam-' || g.id) chosen so a re-run needs no mapping table. Slugs are the diverged half: THREE independent slugify functions producing identical output but different error contracts (String vs Result), and TWO uniqueness strategies — translate the UNIQUE constraint violation (race-safe) vs a pre-check `if existing.contains(...) { continue; }` (TOCTOU, and silently skips). No auto-disambiguation anywhere."
+    },
+    {
+      "name": "Delete semantics and cascade",
+      "definition": "A developer decides what happens to dependent data when an entity is removed.",
+      "recurrence": 124,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["function", "resilience"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "lifecycle",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/repos/resources/teams.rs:308",
+        "src-tauri/db/src/repos/resources/credentials.rs:435",
+        "src-tauri/db/src/lib.rs:447",
+        "src-tauri/db/src/migrations/incremental.rs:3220"
+      ],
+      "risk": "high",
+      "note": "Three policies, and two of them rest on CONTRADICTORY stated premises: teams.rs:315 says 'PRAGMA foreign_keys = ON is the global default, so deleting the team row cascades' and cleans only the no-FK children; credentials.rs:441 hand-deletes six child tables 'even if PRAGMA foreign_keys is not active on this connection'. teams.rs:320 also records that one no-FK child table was missed until 2026-08-09, stranding every message of every deleted team. Meanwhile lib.rs:447 runs a hardcoded 12-table orphan sweep on every boot and admits orphans still accumulate. There is essentially no soft delete — the only deleted_at is persona_tombstones, for cross-device delete propagation."
+    },
+    {
+      "name": "Cross-cutting table registration",
+      "definition": "A developer adds a table and must also register it in every list that mentions tables by name.",
+      "recurrence": 6,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["function", "resilience", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "schema",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/db/src/cdc.rs:211",
+        "src-tauri/db/src/journal.rs:55",
+        "src-tauri/db/src/lib.rs:448",
+        "src-tauri/db/src/migrations/incremental.rs:7827"
+      ],
+      "risk": "high",
+      "note": "At least five hardcoded table-name lists (CDC table→Tauri-event map, JOURNAL_TABLES allowlist, ORPHAN_TABLES sweep, the sync-watermark index loop, and the pool pragma set) with nothing tying them to the schema. Drift is already present and silent: cdc.rs:235 maps `healing_issues` and :244 maps `audit_log`, neither of which is a real table (they are persona_healing_issues and credential_audit_log), so two of twelve live-update events have never fired."
+    },
+    {
+      "name": "Derived index sync and backfill",
+      "definition": "A developer keeps a shadow index (FTS5, vec0) consistent with its source table and repairs it when it drifts.",
+      "recurrence": 5,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["function", "resilience", "performance"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "search-index",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/lib.rs:409",
+        "src-tauri/db/src/lib.rs:641",
+        "src-tauri/db/src/repos/core/memories.rs:1673",
+        "src-tauri/db/src/migrations/incremental.rs:180"
+      ],
+      "risk": "high",
+      "note": "Five shadow indexes, three sync strategies: SQL triggers (executions_fts), explicit delete-then-insert in Rust (memory vec0), and a boot-time rebuild-on-drift check. The drift check is a trap in itself — lib.rs:391 documents that the original guard counted rows of an EXTERNAL-CONTENT FTS table, which is answered from the content table and therefore could never differ, so the backfill had never run since it was written. Bulk INSERT...SELECT during a table rebuild also bypasses the triggers and needs an explicit 'rebuild'."
+    },
+    {
+      "name": "Cross-database writes",
+      "definition": "A developer writes data that spans the app database and the user database, which cannot share a transaction or a foreign key.",
+      "recurrence": 8,
+      "convergence": "mixed",
+      "owner": null,
+      "dimensions": ["function", "resilience", "performance"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "schema",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/repos/core/memories.rs:1707",
+        "src-tauri/db/src/repos/core/memories.rs:1673",
+        "src-tauri/db/src/lib.rs:492",
+        "src-tauri/db/src/lib.rs:226"
+      ],
+      "risk": "medium",
+      "note": "A memory row lives in personas.db while its embedding + model stamp live in personas_data.db. Consistency is by convention only: 'best-effort, never fail the surrounding write', delete-then-insert for idempotence, a latched AtomicBool for lazy table creation (memories.rs:1662 explains why a Once would be wrong), and a sidecar meta table because vec0 can't carry an aux column. Nothing enumerates the pairs, so an orphan on either side is undetectable."
+    },
+    {
+      "name": "Test fixtures and in-memory pools",
+      "definition": "A developer needs a real database to write a repository test against.",
+      "recurrence": 48,
+      "convergence": "diverged",
+      "owner": "src-tauri/db/src/lib.rs:1882 (init_test_db) + src-tauri/db/src/repos/test_fixtures.rs:9",
+      "dimensions": ["code-quality", "resilience", "performance"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "testing",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/lib.rs:1882",
+        "src-tauri/db/src/repos/test_fixtures.rs:9",
+        "src-tauri/db/src/repos/resources/api_key_audit.rs:91",
+        "src-tauri/db/src/lib.rs:1929"
+      ],
+      "risk": "high",
+      "note": "init_test_db is the canonical answer (temp file, pragmas, full chain, all three seeders) and is used by 17 files — but ELEVEN files define their own private test_pool() in three flavors: shared-cache `file:...?mode=memory&cache=shared` copies (7 files, copy-pasted, no timeout, no seeding), the same plus FK seed rows, and — worst — three files that hand-write a CREATE TABLE and deliberately skip migrations because 'the chain drops these tables in the test binary' (api_key_audit.rs:87). Those three fixtures encode a schema copy that can drift from migrations/ with nothing detecting it. test_fixtures.rs itself is 37 lines and offers only personas, so most tests hand-write raw INSERT batches that encode column order."
+    },
+    {
+      "name": "Query performance instrumentation",
+      "definition": "A developer wants a new repository function's latency visible in the slow-query surface.",
+      "recurrence": 200,
+      "convergence": "converged",
+      "owner": "src-tauri/db/src/perf.rs:52 + src-tauri/db/src/macros.rs:331 (timed_query!)",
+      "dimensions": ["performance", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "observability",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/macros.rs:331",
+        "src-tauri/db/src/perf.rs:52",
+        "src-tauri/db/src/perf.rs:87",
+        "src-tauri/db/src/repos/resources/db_schema.rs:18"
+      ],
+      "risk": "low",
+      "note": "Clean shared answer: wrap the body in timed_query!(table, op, { ... }), the crud_* macros do it for you, and perf.rs owns the ring buffer plus a per-table warn budget so a retry storm can't flood tracing. The only judgement left is naming the (table, operation) pair consistently — nothing enforces it, and a typo just creates a phantom table in the perf snapshot."
+    },
+    {
+      "name": "Connection pool and pragmas",
+      "definition": "A developer opens a pool against a SQLite file and needs consistent pragmas, timeouts, and hooks on every connection.",
+      "recurrence": 5,
+      "convergence": "converged",
+      "owner": "src-tauri/db/src/lib.rs:201 (STANDARD_PRAGMAS + apply_standard_pragmas)",
+      "dimensions": ["performance", "resilience"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "connection",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/db/src/lib.rs:201",
+        "src-tauri/db/src/lib.rs:173",
+        "src-tauri/db/src/lib.rs:113",
+        "src-tauri/db/src/lib.rs:381"
+      ],
+      "risk": "medium",
+      "note": "Single pragma const shared by both customizers (lib.rs:198 records the drift incident that forced it), a 5s acquire timeout so a stall becomes a recoverable error instead of a frozen UI, an RAII FkDisabledGuard so a connection can never return to the pool with FKs off, and an idle-maintenance task gated on the IPC gauge. The remaining judgement — pool max_size per file — is tuned by comment, not by measurement."
+    },
+    {
+      "name": "Change capture and live updates",
+      "definition": "A developer wants a table's writes to reach the frontend live, or to be durably journaled for undo.",
+      "recurrence": 2,
+      "convergence": "converged",
+      "owner": "src-tauri/db/src/cdc.rs:134 (CdcCustomizer) + src-tauri/db/src/journal.rs:55",
+      "dimensions": ["ui", "function", "resilience", "performance"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "observability",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/db/src/cdc.rs:52",
+        "src-tauri/db/src/cdc.rs:211",
+        "src-tauri/db/src/journal.rs:55",
+        "src-tauri/db/src/attribution.rs:33"
+      ],
+      "risk": "medium",
+      "note": "Two hooks on the same connection (update_hook for UI, preupdate_hook for the durable journal), both bounded-channel with counted drops, plus a task-local/thread-local attribution scope so a repo call deep in the stack can stamp the owning execution without threading a parameter. The gap is the registration half — see 'Cross-cutting table registration' — and the documented v1 hole that out-of-process pools have no hooks at all."
+    },
+    {
+      "name": "Settings key-value store",
+      "definition": "A developer persists a scalar app setting and needs one answer for its key, default, unit, and validation.",
+      "recurrence": 60,
+      "convergence": "converged",
+      "owner": "src-tauri/db/src/settings_keys.rs:1",
+      "dimensions": ["function", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "settings",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/db/src/settings_keys.rs:1",
+        "src-tauri/db/src/settings_keys.rs:72"
+      ],
+      "risk": "low",
+      "note": "The cleanest module in the slice: every key has a paired `_DEFAULT` constant, units are encoded in the key name, and validate_key/validate_value are enforced inside the repo setter so no internal caller can bypass them. The only friction is that adding a key is a three-place edit (const, default, validator arm) with nothing checking the trio stays complete."
+    },
+    {
+      "name": "Defining a persisted model struct",
+      "definition": "A developer declares the Rust struct that mirrors a table row and crosses to TypeScript.",
+      "recurrence": 469,
+      "convergence": "mixed",
+      "owner": null,
+      "dimensions": ["function", "code-quality", "ui"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "models",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/core/src/models/execution.rs:11",
+        "src-tauri/core/src/models/execution.rs:35",
+        "src-tauri/core/src/models/lab.rs:73",
+        "src-tauri/core/src/models/json_column.rs:102"
+      ],
+      "risk": "medium",
+      "note": "The derive line is near-universal (375 of 469 structs) but `#[serde(rename_all = \"camelCase\")]` is applied per-struct, so 219 structs speak camelCase to the frontend and ~245 speak snake_case — including two structs in the SAME file (execution.rs:11 vs :153). Separately, 212 hand-written `#[ts(type = \"number\")]` annotations exist purely to stop ts-rs emitting bigint for i64, and ~47 fields use u32/u64/usize against SQLite's signed i64 storage."
+    },
+    {
+      "name": "Model invariant contracts",
+      "definition": "A developer documents a load-bearing rule about a table that no type or constraint can express, and points at what enforces it.",
+      "recurrence": 4,
+      "convergence": "mixed",
+      "owner": "src-tauri/core/src/models/memory.rs:90 (the MEMORY CONTRACT format)",
+      "dimensions": ["code-quality", "function", "resilience"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "models",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/core/src/models/memory.rs:90",
+        "src-tauri/core/src/models/memory.rs:125",
+        "src-tauri/db/src/migrations/helpers.rs:396",
+        "src-tauri/db/src/migrations/helpers.rs:271"
+      ],
+      "risk": "medium",
+      "note": "Where they exist these are the best documentation in the slice — numbered clauses, each naming its enforcement point (a trigger, a boot assertion, a single legal writer function), and individual fields back-referencing the clause number. But there are only three or four across 469 structs, and later files cite the format as precedent ('mirrors MEMORY CONTRACT (2)') without anything making it a convention."
+    },
+    {
+      "name": "Error mapping at the repo boundary",
+      "definition": "A developer converts a rusqlite error into the app's error type so the caller and the UI get the right message.",
+      "recurrence": 40,
+      "convergence": "mixed",
+      "owner": "src-tauri/db/src/macros.rs:152",
+      "dimensions": ["function", "ui", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "repository",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/db/src/macros.rs:152",
+        "src-tauri/db/src/repos/resources/db_schema.rs:36",
+        "src-tauri/db/src/repos/system_ops.rs:60",
+        "src-tauri/db/src/repos/execution/healing.rs:418"
+      ],
+      "risk": "medium",
+      "note": "QueryReturnedNoRows → AppError::NotFound(entity id) is the dominant shape, generated by the crud macros and hand-copied ~15 times. But 'the row is missing' has THREE return contracts across the layer — Err(NotFound), Ok(None) (build_sessions, saved_views), and a bare Result<T> — and the exceptions cluster at one seam: post-write lookups and lost CAS races, reported as NotFound, Validation, Execution, Internal, or raw Database depending on the file. Hand-rolled copies also drift on message shape ('{entity} {id}' vs 'system op automation not found: {id}')."
+    },
+    {
+      "name": "Ordering and reordering rows",
+      "definition": "A developer persists a user-controlled display order and applies a drag-and-drop reorder.",
+      "recurrence": 4,
+      "convergence": "mixed",
+      "owner": null,
+      "dimensions": ["ui", "function", "resilience"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "ordering",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/db/src/repos/dev_tools.rs:861",
+        "src-tauri/db/src/repos/resources/db_schema.rs:21",
+        "src-tauri/db/src/macros.rs:93",
+        "src-tauri/db/src/migrations/schema.rs:63"
+      ],
+      "risk": "medium",
+      "note": "Every reorder is the same shape — take the full ordered id list, loop N unguarded UPDATEs, no transaction — so a partial failure leaves duplicate ordinals, and now() is re-evaluated inside the loop so one reorder stamps different updated_at values. THREE column vocabularies coexist (order_index, position, sort_order) including two in the same file; sort_order is the name the row_mapper! doc example uses and no writer uses it. No gap-based or fractional ordering anywhere, so every reorder is O(n) writes."
+    }
+  ]
+}
