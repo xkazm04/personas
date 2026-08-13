@@ -412,7 +412,9 @@ pub fn validate_file_access_path(
 ///     rejected on Unix too even though it is not an escape there);
 ///   * a leading drive letter (`C:`, `C:/x`, `C:foo`) — `Path::join` DISCARDS
 ///     the base when the argument carries a prefix, so `root.join("C:evil")`
-///     evaluates to `C:evil`, outside the root entirely.
+///     evaluates to `C:evil`, outside the root entirely. Only the LEADING
+///     segment is checked, because that is the only position Win32 parses a
+///     drive prefix in; `notes/a:b.md` is a legal Unix filename and stays legal.
 ///
 /// On Windows it additionally rejects `:` anywhere in a segment, which closes
 /// NTFS alternate data streams (`note.md:hidden`). That check is deliberately
@@ -434,15 +436,18 @@ pub fn validate_relative_fragment(rel: &str) -> Result<(), String> {
         return Err(format!("Path must be relative, not absolute: {trimmed}"));
     }
 
+    // `C:`, `C:/…`, `C:foo`. Win32 parses a drive prefix only at the START of a
+    // path, and that is exactly where it is dangerous: `Path::join` discards its
+    // base when the argument carries a prefix. Checking only the leading segment
+    // keeps a legal Unix filename like `notes/a:b.md` working.
+    let leading = normalised.split('/').next().unwrap_or("").as_bytes();
+    if leading.len() >= 2 && leading[1] == b':' && leading[0].is_ascii_alphabetic() {
+        return Err(format!("Path may not contain a drive letter: {trimmed}"));
+    }
+
     for seg in normalised.split('/') {
         if seg == ".." {
             return Err(format!("Path may not contain '..': {trimmed}"));
-        }
-        // `C:`, `C:/…`, `C:foo` — a Windows prefix anywhere in the first
-        // position defeats `join`; reject it wherever it appears.
-        let bytes = seg.as_bytes();
-        if bytes.len() >= 2 && bytes[1] == b':' && bytes[0].is_ascii_alphabetic() {
-            return Err(format!("Path may not contain a drive letter: {trimmed}"));
         }
         #[cfg(windows)]
         if seg.contains(':') {
@@ -831,5 +836,17 @@ mod tests {
                 "ordinary fragment must be accepted: {rel}"
             );
         }
+    }
+
+    /// The drive-letter rule applies to the LEADING segment only. Win32 parses
+    /// a drive prefix nowhere else, and a colon is a legal filename character
+    /// on Unix — where an Obsidian note called `10:30 standup.md` is ordinary.
+    #[cfg(unix)]
+    #[test]
+    fn validate_relative_fragment_keeps_unix_colons_working() {
+        assert!(validate_relative_fragment("daily/10:30 standup.md").is_ok());
+        assert!(validate_relative_fragment("notes/a:b.md").is_ok());
+        // …but a LEADING drive letter is still refused everywhere.
+        assert!(validate_relative_fragment("C:evil.md").is_err());
     }
 }
