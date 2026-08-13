@@ -4,8 +4,9 @@
  "totals": {
   "domains": 8,
   "subdomains": 46,
-  "situations": 260,
-  "twoSided": 153
+  "situations": 247,
+  "twoSided": 142,
+  "fusedAcrossSides": 34
  },
  "domains": [
   {
@@ -34,26 +35,6 @@
         "Cross-cutting table registration"
        ],
        "why": "One way to add a table or column so fresh installs and shipped installs converge.",
-       "twoSided": true,
-       "fusedAcrossSides": false
-      },
-      {
-       "slug": "closed-vocabulary-column",
-       "name": "Closed vocabulary column",
-       "sides": "server",
-       "convergence": "diverged",
-       "risk": "high",
-       "recurrence": 57,
-       "dimensions": [
-        "function",
-        "resilience",
-        "code-quality"
-       ],
-       "mergedFrom": [
-        "Closed vocabularies and unknown tokens",
-        "Constraining an open text dimension"
-       ],
-       "why": "How legal values of a TEXT status/category column are declared and unknown tokens handled.",
        "twoSided": true,
        "fusedAcrossSides": false
       },
@@ -550,21 +531,27 @@
       },
       {
        "slug": "delete-semantics",
-       "name": "Delete semantics",
+       "name": "Entity deletion: cascade, blast radius, confirm",
        "sides": "server",
        "convergence": "diverged",
        "risk": "high",
-       "recurrence": 124,
+       "recurrence": 202,
        "dimensions": [
         "function",
         "resilience"
        ],
        "mergedFrom": [
-        "Delete semantics and cascade"
+        "Delete semantics and cascade",
+        "Destructive action confirmation",
+        "Destructive action confirm",
+        "Confirming destructive actions",
+        "Blast-radius confirmation"
        ],
        "why": "What happens to dependent data when an entity is removed.",
-       "twoSided": false,
-       "fusedAcrossSides": false
+       "twoSided": true,
+       "fusedAcrossSides": true,
+       "clientHalf": "One confirm that names what breaks and how many things it touches before the delete runs.",
+       "serverHalf": "What happens to dependent data on removal, and the blast-radius query that enumerates it."
       },
       {
        "slug": "json-blob-column",
@@ -759,43 +746,26 @@
       },
       {
        "slug": "bulk-command-variant",
-       "name": "Bulk command variant",
+       "name": "Bulk write with per-item outcomes",
        "sides": "server",
        "convergence": "mixed",
        "risk": "medium",
-       "recurrence": 21,
+       "recurrence": 31,
        "dimensions": [
         "performance",
         "ui",
         "function"
        ],
        "mergedFrom": [
-        "Bulk / batch command variant"
+        "Bulk / batch command variant",
+        "Partial-failure write reporting",
+        "Partial-success bulk action"
        ],
        "why": "When N calls become one list command, and how partial failure comes back.",
        "twoSided": true,
-       "fusedAcrossSides": false
-      },
-      {
-       "slug": "backend-result-caching",
-       "name": "Backend result caching",
-       "sides": "server",
-       "convergence": "mixed",
-       "risk": "medium",
-       "recurrence": 13,
-       "dimensions": [
-        "performance",
-        "cost",
-        "function",
-        "resilience"
-       ],
-       "mergedFrom": [
-        "Warm session and result caching",
-        "TTL-cached read command"
-       ],
-       "why": "Keeping a warm session or TTL-cached result so polled reads stay cheap.",
-       "twoSided": true,
-       "fusedAcrossSides": false
+       "fusedAcrossSides": true,
+       "clientHalf": "One action over N entities reporting per-reason failures rather than a single 'error'.",
+       "serverHalf": "Collapsing N calls into one list command and shaping how partial failure comes back."
       }
      ]
     },
@@ -886,43 +856,6 @@
        "fusedAcrossSides": false
       },
       {
-       "slug": "privileged-command-audit",
-       "name": "Privileged command audit",
-       "sides": "server",
-       "convergence": "mixed",
-       "risk": "medium",
-       "recurrence": 10,
-       "dimensions": [
-        "security",
-        "function",
-        "code-quality"
-       ],
-       "mergedFrom": [
-        "Audit logging a sensitive command"
-       ],
-       "why": "The durable record that a privileged operation happened, by whom, to what.",
-       "twoSided": true,
-       "fusedAcrossSides": false
-      },
-      {
-       "slug": "secrets-across-ipc",
-       "name": "Secrets across the IPC boundary",
-       "sides": "server",
-       "convergence": "converged",
-       "risk": "high",
-       "recurrence": 12,
-       "dimensions": [
-        "security",
-        "function"
-       ],
-       "mergedFrom": [
-        "Secrets crossing the IPC boundary"
-       ],
-       "why": "Getting a credential into the vault without it ever coming back out.",
-       "twoSided": true,
-       "fusedAcrossSides": false
-      },
-      {
        "slug": "cloud-auth-degraded-mode",
        "name": "Cloud-auth degraded mode",
        "sides": "server",
@@ -1008,26 +941,6 @@
         "Command input validation"
        ],
        "why": "Checking ids, names and free text at the door and returning a usable failure.",
-       "twoSided": true,
-       "fusedAcrossSides": false
-      },
-      {
-       "slug": "pre-flight-dependency-validation",
-       "name": "Pre-flight dependency validation",
-       "sides": "server",
-       "convergence": "converged",
-       "risk": "medium",
-       "recurrence": 5,
-       "dimensions": [
-        "function",
-        "ui",
-        "resilience",
-        "cost"
-       ],
-       "mergedFrom": [
-        "Pre-flight dependency validation"
-       ],
-       "why": "Proving credentials, connectors and peers exist before a run starts.",
        "twoSided": true,
        "fusedAcrossSides": false
       }
@@ -1169,25 +1082,6 @@
        "fusedAcrossSides": true
       },
       {
-       "slug": "human-in-the-loop-pause",
-       "name": "Human-in-the-loop pause",
-       "sides": "server",
-       "convergence": "diverged",
-       "risk": "high",
-       "recurrence": 7,
-       "dimensions": [
-        "ui",
-        "function",
-        "resilience"
-       ],
-       "mergedFrom": [
-        "Human-in-the-loop gates"
-       ],
-       "why": "Durably pausing autonomous work for a verdict and resuming from it.",
-       "twoSided": true,
-       "fusedAcrossSides": false
-      },
-      {
        "slug": "multi-step-orchestration",
        "name": "Multi-step orchestration",
        "sides": "server",
@@ -1275,28 +1169,6 @@
      "label": "Scheduling & Triggers",
      "situations": [
       {
-       "slug": "schedule-authoring",
-       "name": "Schedule authoring",
-       "sides": "client",
-       "convergence": "diverged",
-       "risk": "high",
-       "recurrence": 18,
-       "dimensions": [
-        "ui",
-        "function",
-        "resilience",
-        "code-quality"
-       ],
-       "mergedFrom": [
-        "Recurrence editor",
-        "Next-run projection",
-        "Timezone handling"
-       ],
-       "why": "Authoring how-often, in which zone, with the concrete next fires shown back.",
-       "twoSided": true,
-       "fusedAcrossSides": false
-      },
-      {
        "slug": "alert-dedupe-and-cooldown",
        "name": "Alert dedupe and cooldown",
        "sides": "both",
@@ -1339,11 +1211,11 @@
       },
       {
        "slug": "trigger-wiring-surface",
-       "name": "Trigger wiring surface",
+       "name": "Event subscription: armed in the UI, matched in the engine",
        "sides": "client",
        "convergence": "mixed",
        "risk": "medium",
-       "recurrence": 9,
+       "recurrence": 14,
        "dimensions": [
         "function",
         "ui",
@@ -1352,19 +1224,22 @@
        "mergedFrom": [
         "Per-entity event subscription",
         "Marketplace feed wiring",
-        "Route composer"
+        "Route composer",
+        "Event to subscriber matching"
        ],
        "why": "Arming a source against a target with per-event parameters on one entity.",
        "twoSided": true,
-       "fusedAcrossSides": false
+       "fusedAcrossSides": true,
+       "clientHalf": "Arming a source against a target with per-event parameters on one entity.",
+       "serverHalf": "Deciding which personas a published event wakes, and recording why a match was or was not made."
       },
       {
        "slug": "scheduled-trigger-firing",
-       "name": "Scheduled trigger firing",
+       "name": "Recurrence: authoring and firing",
        "sides": "server",
        "convergence": "converged",
        "risk": "high",
-       "recurrence": 8,
+       "recurrence": 26,
        "dimensions": [
         "function",
         "resilience",
@@ -1372,11 +1247,16 @@
         "ui"
        ],
        "mergedFrom": [
-        "Scheduled trigger firing"
+        "Scheduled trigger firing",
+        "Recurrence editor",
+        "Next-run projection",
+        "Timezone handling"
        ],
        "why": "Evaluating cron/interval on a tick and publishing exactly the right fires.",
        "twoSided": true,
-       "fusedAcrossSides": false
+       "fusedAcrossSides": true,
+       "clientHalf": "Recurrence editor, timezone choice, and the concrete next fires projected back to the author.",
+       "serverHalf": "Evaluating cron/interval on the tick and publishing exactly one fire per due window."
       },
       {
        "slug": "schedule-calendar",
@@ -1487,26 +1367,6 @@
         "Publishing a domain event"
        ],
        "why": "Recording something that happened so triggers, feeds and healing can see it.",
-       "twoSided": true,
-       "fusedAcrossSides": false
-      },
-      {
-       "slug": "event-subscriber-matching",
-       "name": "Event-subscriber matching",
-       "sides": "server",
-       "convergence": "converged",
-       "risk": "high",
-       "recurrence": 5,
-       "dimensions": [
-        "function",
-        "ui",
-        "security",
-        "resilience"
-       ],
-       "mergedFrom": [
-        "Event to subscriber matching"
-       ],
-       "why": "Which personas a published event wakes, and why a match was recorded.",
        "twoSided": true,
        "fusedAcrossSides": false
       }
@@ -1788,22 +1648,27 @@
       },
       {
        "slug": "execution-trace-instrumentation",
-       "name": "Execution trace instrumentation",
+       "name": "Execution trace: spans emitted, waterfall rendered",
        "sides": "server",
        "convergence": "converged",
        "risk": "low",
-       "recurrence": 12,
+       "recurrence": 21,
        "dimensions": [
         "performance",
         "cost",
         "ui"
        ],
        "mergedFrom": [
-        "Execution trace instrumentation"
+        "Execution trace instrumentation",
+        "Span tree and waterfall",
+        "Trace waterfall viewer",
+        "Event chain timeline"
        ],
        "why": "Making a new phase of work attributable in the execution inspector.",
        "twoSided": true,
-       "fusedAcrossSides": false
+       "fusedAcrossSides": true,
+       "clientHalf": "Rendering nested spans and related events as one collapsible duration narrative with drill-down.",
+       "serverHalf": "Emitting a new phase of work as a typed span so it is attributable in the execution inspector."
       }
      ]
     }
@@ -2034,11 +1899,11 @@
       },
       {
        "slug": "llm-spend-accounting",
-       "name": "LLM spend accounting",
+       "name": "LLM spend: recorded and rolled up",
        "sides": "server",
        "convergence": "mixed",
        "risk": "high",
-       "recurrence": 27,
+       "recurrence": 37,
        "dimensions": [
         "cost",
         "function",
@@ -2047,11 +1912,15 @@
        ],
        "mergedFrom": [
         "Token and cost accounting",
-        "Recording LLM spend"
+        "Recording LLM spend",
+        "Token and cost rollup",
+        "Cost and burn-down"
        ],
        "why": "Capturing what a call cost and attributing it to run, persona and project.",
        "twoSided": true,
-       "fusedAcrossSides": false
+       "fusedAcrossSides": true,
+       "clientHalf": "Rolling tokens and spend into a glanceable summary plus a burn-down projection.",
+       "serverHalf": "Capturing what a call cost and attributing it to run, persona and project."
       },
       {
        "slug": "billing-account-auth",
@@ -2070,27 +1939,6 @@
        ],
        "why": "Every spawned model process authenticating against the intended account.",
        "twoSided": false,
-       "fusedAcrossSides": false
-      },
-      {
-       "slug": "spend-visibility",
-       "name": "Spend visibility",
-       "sides": "client",
-       "convergence": "mixed",
-       "risk": "medium",
-       "recurrence": 10,
-       "dimensions": [
-        "cost",
-        "ui",
-        "function",
-        "performance"
-       ],
-       "mergedFrom": [
-        "Token and cost rollup",
-        "Cost and burn-down"
-       ],
-       "why": "Rolling tokens and spend into a glanceable summary plus a burn-down projection.",
-       "twoSided": true,
        "fusedAcrossSides": false
       },
       {
@@ -2235,11 +2083,11 @@
      "situations": [
       {
        "slug": "human-review-queue",
-       "name": "Human review queue",
+       "name": "Human review gate",
        "sides": "client",
        "convergence": "diverged",
        "risk": "high",
-       "recurrence": 65,
+       "recurrence": 72,
        "dimensions": [
         "ui",
         "function",
@@ -2253,11 +2101,14 @@
         "Decision and approval rows",
         "Queue keyboard navigation",
         "Queue-walking detail modal",
-        "Unread and seen state"
+        "Unread and seen state",
+        "Human-in-the-loop gates"
        ],
        "why": "One queue shape: verdict controls, keyboard walk, prev/next detail, unread counts.",
        "twoSided": true,
-       "fusedAcrossSides": false
+       "fusedAcrossSides": true,
+       "clientHalf": "The queue UI: verdict controls, keyboard walk, prev/next detail modal, unread counts.",
+       "serverHalf": "Durably pausing autonomous work at a gate, writing the pending-review row, resuming from the verdict."
       },
       {
        "slug": "selective-per-item-verdicts",
@@ -2559,27 +2410,6 @@
        "fusedAcrossSides": false
       },
       {
-       "slug": "file-selection-input",
-       "name": "File selection input",
-       "sides": "client",
-       "convergence": "diverged",
-       "risk": "medium",
-       "recurrence": 17,
-       "dimensions": [
-        "ui",
-        "function",
-        "security",
-        "resilience"
-       ],
-       "mergedFrom": [
-        "Local file and folder picker",
-        "File drop-zone ingestion"
-       ],
-       "why": "Picking or dropping paths and handing them to a backend command.",
-       "twoSided": true,
-       "fusedAcrossSides": false
-      },
-      {
        "slug": "schema-driven-form",
        "name": "Schema-driven form",
        "sides": "client",
@@ -2627,29 +2457,6 @@
      "slug": "overlays",
      "label": "Overlays",
      "situations": [
-      {
-       "slug": "destructive-confirmation",
-       "name": "Destructive confirmation",
-       "sides": "client",
-       "convergence": "diverged",
-       "risk": "high",
-       "recurrence": 78,
-       "dimensions": [
-        "ui",
-        "function",
-        "resilience",
-        "security"
-       ],
-       "mergedFrom": [
-        "Destructive action confirmation",
-        "Destructive action confirm",
-        "Confirming destructive actions",
-        "Blast-radius confirmation"
-       ],
-       "why": "One confirm that states what breaks and how many things it touches.",
-       "twoSided": true,
-       "fusedAcrossSides": false
-      },
       {
        "slug": "anchored-popover",
        "name": "Anchored popover",
@@ -3144,11 +2951,11 @@
      "situations": [
       {
        "slug": "status-and-severity-badges",
-       "name": "Status and severity badges",
+       "name": "Status token vocabulary, from column to badge",
        "sides": "client",
        "convergence": "mixed",
        "risk": "high",
-       "recurrence": 181,
+       "recurrence": 238,
        "dimensions": [
         "ui",
         "function",
@@ -3160,11 +2967,15 @@
         "Token visual map",
         "Backend token to remediation",
         "Severity taxonomy badge",
-        "Multi-condition status ladder"
+        "Multi-condition status ladder",
+        "Closed vocabularies and unknown tokens",
+        "Constraining an open text dimension"
        ],
        "why": "One machine token to label, colour, icon, priority order and remediation hint.",
        "twoSided": true,
-       "fusedAcrossSides": false
+       "fusedAcrossSides": true,
+       "clientHalf": "Mapping a machine token to label, colour, icon, priority order and remediation hint (tokenMaps + status_tokens).",
+       "serverHalf": "Declaring the column's legal token set and deciding what an unknown or legacy token does on read."
       },
       {
        "slug": "rendering-untrusted-content",
@@ -3395,11 +3206,11 @@
      "situations": [
       {
        "slug": "polling-loop",
-       "name": "Polling loop",
+       "name": "Polled read: client cadence, server cache",
        "sides": "client",
        "convergence": "diverged",
        "risk": "high",
-       "recurrence": 163,
+       "recurrence": 176,
        "dimensions": [
         "performance",
         "cost",
@@ -3410,11 +3221,15 @@
         "Periodic refresh and polling",
         "Live-refresh polling loop",
         "Auto-refresh polling",
-        "Background polling lifecycle"
+        "Background polling lifecycle",
+        "Warm session and result caching",
+        "TTL-cached read command"
        ],
        "why": "One cadence primitive: no stacked timers, pauses when hidden, cleans up on unmount.",
        "twoSided": true,
-       "fusedAcrossSides": false
+       "fusedAcrossSides": true,
+       "clientHalf": "One cadence primitive — no stacked timers, pauses when hidden, cleans up on unmount.",
+       "serverHalf": "TTL-cached or warm-session read command so repeated polls stay cheap."
       },
       {
        "slug": "stale-response-guard",
@@ -3566,26 +3381,6 @@
         "Optimistic versus refetch write"
        ],
        "why": "When a write paints first and how it rolls back, vs when it waits for a refetch.",
-       "twoSided": true,
-       "fusedAcrossSides": false
-      },
-      {
-       "slug": "partial-failure-write-reporting",
-       "name": "Partial-failure write reporting",
-       "sides": "client",
-       "convergence": "diverged",
-       "risk": "high",
-       "recurrence": 10,
-       "dimensions": [
-        "function",
-        "resilience",
-        "ui"
-       ],
-       "mergedFrom": [
-        "Partial-failure write reporting",
-        "Partial-success bulk action"
-       ],
-       "why": "One action writing several entities and reporting per-reason failures, not 'error'.",
        "twoSided": true,
        "fusedAcrossSides": false
       },
@@ -4090,27 +3885,6 @@
        "fusedAcrossSides": false
       },
       {
-       "slug": "timeline-and-waterfall",
-       "name": "Timeline and waterfall",
-       "sides": "client",
-       "convergence": "mixed",
-       "risk": "medium",
-       "recurrence": 9,
-       "dimensions": [
-        "ui",
-        "performance",
-        "function"
-       ],
-       "mergedFrom": [
-        "Span tree and waterfall",
-        "Trace waterfall viewer",
-        "Event chain timeline"
-       ],
-       "why": "Nested spans and related events as one collapsible duration narrative.",
-       "twoSided": true,
-       "fusedAcrossSides": false
-      },
-      {
        "slug": "chart-component",
        "name": "Chart component",
        "sides": "client",
@@ -4181,11 +3955,11 @@
       },
       {
        "slug": "audit-trail-view",
-       "name": "Audit trail view",
+       "name": "Audit trail: recorded and read back",
        "sides": "client",
        "convergence": "mixed",
        "risk": "medium",
-       "recurrence": 13,
+       "recurrence": 23,
        "dimensions": [
         "ui",
         "security",
@@ -4194,11 +3968,14 @@
        "mergedFrom": [
         "Run history log",
         "Entity audit trail view",
-        "Settings change audit"
+        "Settings change audit",
+        "Audit logging a sensitive command"
        ],
        "why": "Append-only history for one entity — runs, operations, setting changes — with paging.",
        "twoSided": true,
-       "fusedAcrossSides": false
+       "fusedAcrossSides": true,
+       "clientHalf": "Append-only per-entity history with paging — operations, setting changes, runs.",
+       "serverHalf": "Writing the durable record that a privileged operation happened, by whom, to what."
       },
       {
        "slug": "anomaly-marker",
@@ -4565,11 +4342,11 @@
      "situations": [
       {
        "slug": "secret-display-and-transfer",
-       "name": "Secret display and transfer",
+       "name": "Plaintext secrets across the IPC boundary",
        "sides": "client",
        "convergence": "mixed",
        "risk": "high",
-       "recurrence": 15,
+       "recurrence": 27,
        "dimensions": [
         "security",
         "ui",
@@ -4580,11 +4357,14 @@
         "Sensitive clipboard handling",
         "One-time secret reveal",
         "Secret reveal control",
-        "Secret value handling in UI"
+        "Secret value handling in UI",
+        "Secrets crossing the IPC boundary"
        ],
        "why": "Holding, masking, revealing once and copying a plaintext secret in the renderer.",
        "twoSided": true,
-       "fusedAcrossSides": false
+       "fusedAcrossSides": true,
+       "clientHalf": "Holding, masking, revealing once and copying a plaintext secret inside the renderer.",
+       "serverHalf": "Accepting a credential into the vault and deciding whether it may ever be handed back out."
       },
       {
        "slug": "automated-credential-provisioning",
@@ -4699,11 +4479,11 @@
      "situations": [
       {
        "slug": "credential-readiness-resolution",
-       "name": "Credential readiness resolution",
+       "name": "Dependency readiness: shown, then enforced",
        "sides": "client",
        "convergence": "diverged",
        "risk": "high",
-       "recurrence": 26,
+       "recurrence": 31,
        "dimensions": [
         "function",
         "security",
@@ -4713,11 +4493,14 @@
        "mergedFrom": [
         "Credential readiness resolution",
         "Connector readiness gating",
-        "Connector gating in a feature"
+        "Connector gating in a feature",
+        "Pre-flight dependency validation"
        ],
        "why": "Answering 'does this have the credentials it needs' and degrading the surface if not.",
        "twoSided": true,
-       "fusedAcrossSides": false
+       "fusedAcrossSides": true,
+       "clientHalf": "Answering 'does this have the credentials/connectors it needs' and degrading or gating the surface when not.",
+       "serverHalf": "Re-proving credentials, connectors and peers exist at run start and failing with a usable reason."
       },
       {
        "slug": "connection-health-check",
@@ -4918,11 +4701,11 @@
      "situations": [
       {
        "slug": "filesystem-boundary",
-       "name": "Filesystem boundary",
+       "name": "Caller-supplied filesystem paths",
        "sides": "server",
        "convergence": "diverged",
        "risk": "high",
-       "recurrence": 140,
+       "recurrence": 157,
        "dimensions": [
         "security",
         "resilience",
@@ -4930,11 +4713,15 @@
        ],
        "mergedFrom": [
         "File-path arguments from the UI",
-        "Writing a caller-supplied file"
+        "Writing a caller-supplied file",
+        "Local file and folder picker",
+        "File drop-zone ingestion"
        ],
        "why": "Proving a caller-supplied path stays inside the sandbox, and writing to it without tearing.",
-       "twoSided": false,
-       "fusedAcrossSides": false
+       "twoSided": true,
+       "fusedAcrossSides": true,
+       "clientHalf": "Picking or dropping paths (native dialog, drop zone) and handing them to a backend command.",
+       "serverHalf": "Proving a caller-supplied path stays inside the sandbox before reading or writing it, and writing without tearing."
       },
       {
        "slug": "outbound-http-call",
@@ -5584,5 +5371,16 @@
     }
    ]
   }
- ]
+ ],
+ "seamPass": {
+  "proposed": 16,
+  "applied": 13,
+  "overriddenByEvaluator": [
+   "long-list-rendering",
+   "debounced-autosave",
+   "streaming-chat-transcript"
+  ],
+  "orphans": 89,
+  "rejectedByAgent": 25
+ }
 }
