@@ -357,23 +357,6 @@ export function ExecutionList() {
     return <div className="flex items-center justify-center py-8 text-foreground">{e.no_persona_selected}</div>;
   }
 
-  if (loading) {
-    // Shape-matched skeleton: same card chrome + 12-col grid as the real table
-    // below, so loaded rows swap in without a layout shift (no spinner-then-pop).
-    return (
-      <div className="space-y-3">
-        <div className="overflow-hidden border border-primary/20 rounded-modal backdrop-blur-sm bg-secondary/40">
-          <TableSkeleton
-            columns={EXECUTION_TABLE_SKELETON_COLUMNS}
-            rows={6}
-            rowPaddingY={densityTokens.rowPaddingY}
-            headerPaddingY={densityTokens.headerPaddingY}
-          />
-        </div>
-      </div>
-    );
-  }
-
   if (showComparison && leftExec && rightExec) {
     return <div className="space-y-3"><ExecutionComparison left={leftExec} right={rightExec} onClose={exitCompareMode} /></div>;
   }
@@ -390,6 +373,22 @@ export function ExecutionList() {
       </div>
     );
   }
+
+  // The 12-col column header, built once and rendered identically above the
+  // ghost rows and the real rows (docs/design/overview-loading.md law 1/4:
+  // chrome is permanent, ghosts go UNDER it — they never replace it, and the
+  // swap must not move a pixel).
+  const tableHeader = (
+    <div className={`hidden md:grid grid-cols-12 gap-4 px-4 ${densityTokens.headerPaddingY} bg-primary/8 backdrop-blur-sm typo-code text-foreground uppercase tracking-wider sticky top-0 z-10 border-b transition-[box-shadow,border-color] duration-200 ${headerStuck ? 'border-primary/20 shadow-elevation-1' : 'border-primary/10'}`}>
+      {(compareMode || bulkMode) && <div className="col-span-1">{bulkMode ? e.bulk_rerun_col_header : ''}</div>}
+      <div className="col-span-2">{e.col_status}</div>
+      <div className="col-span-2">{e.col_capability}</div>
+      <div className={compareMode || bulkMode ? 'col-span-1' : 'col-span-2'}>{e.col_duration}</div>
+      <div className="col-span-2">{e.col_started}</div>
+      <div className="col-span-2">{e.col_tokens}</div>
+      <div className={compareMode || bulkMode ? 'col-span-1' : 'col-span-2'}>{e.col_cost}</div>
+    </div>
+  );
 
   return (
     <div className="space-y-3">
@@ -463,6 +462,22 @@ export function ExecutionList() {
             {t.common.retry}
           </button>
         </div>
+      ) : loading && executions.length === 0 ? (
+        /* Cold load into an empty region: calm, geometry-matched ghost rows
+           UNDER the real column header, inside the real card chrome. The
+           filters / bulk toolbar / density toggle above stay on screen the
+           whole time, and a refetch with rows already showing never reaches
+           this branch (docs/design/overview-loading.md laws 1-3). */
+        <div className="overflow-hidden border border-primary/20 rounded-modal backdrop-blur-sm bg-secondary/40">
+          {tableHeader}
+          <TableSkeleton
+            columns={EXECUTION_TABLE_SKELETON_COLUMNS}
+            rows={6}
+            header={false}
+            calm
+            rowPaddingY={densityTokens.rowPaddingY}
+          />
+        </div>
       ) : executions.length === 0 ? (
         <div
           className="animate-fade-slide-in flex flex-col items-center text-center py-12 px-6 bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-modal">
@@ -478,15 +493,7 @@ export function ExecutionList() {
       ) : (
         <div className="overflow-hidden border border-primary/20 rounded-modal backdrop-blur-sm bg-secondary/40">
           <div ref={setScrollRefs} className="max-h-[70vh] overflow-y-auto overflow-x-hidden">
-            <div className={`hidden md:grid grid-cols-12 gap-4 px-4 ${densityTokens.headerPaddingY} bg-primary/8 backdrop-blur-sm typo-code text-foreground uppercase tracking-wider sticky top-0 z-10 border-b transition-[box-shadow,border-color] duration-200 ${headerStuck ? 'border-primary/20 shadow-elevation-1' : 'border-primary/10'}`}>
-              {(compareMode || bulkMode) && <div className="col-span-1">{bulkMode ? e.bulk_rerun_col_header : ''}</div>}
-              <div className="col-span-2">{e.col_status}</div>
-              <div className="col-span-2">{e.col_capability}</div>
-              <div className={compareMode || bulkMode ? 'col-span-1' : 'col-span-2'}>{e.col_duration}</div>
-              <div className="col-span-2">{e.col_started}</div>
-              <div className="col-span-2">{e.col_tokens}</div>
-              <div className={compareMode || bulkMode ? 'col-span-1' : 'col-span-2'}>{e.col_cost}</div>
-            </div>
+            {tableHeader}
 
             <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
               {virtualizer.getVirtualItems().map((virtualRow) => {
