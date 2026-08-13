@@ -21,13 +21,13 @@ import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { CreatePracticeModal } from './CreatePracticeModal';
-import { UnifiedPracticeModal } from './unified/UnifiedPracticeModal';
+import { PracticeDetailModal } from './PracticeDetailModal';
 import { PracticeRolloutModal } from './PracticeRolloutModal';
 import { ExtractionMenu } from './ExtractionMenu';
 import KnowledgeTree from './KnowledgeTree';
 import PatternGraphHost from './graph/PatternGraphHost';
 import { ProjectFilter } from './graph/ProjectFilter';
-import { isDirection, viewFromRow, type KnowledgeItemView } from './libraryModel';
+import { isDirection, nextQueueIndex, viewFromRow, type KnowledgeItemView } from './libraryModel';
 import { WorkspacePulse } from './WorkspacePulse';
 import type { Workspace } from '@/features/plugins/dev-tools/sub_workspaces/workspaceStore';
 
@@ -146,8 +146,14 @@ export default function KnowledgeLibrary({
     setQueueIdx(Math.max(0, at));
   };
 
-  const detailView = queue.length > 0
-    ? items.find((i) => i.id === queue[queueIdx]) ?? null
+  const stepDetail = (delta: -1 | 1) => {
+    const next = nextQueueIndex(queue, queueIdx, delta, (id) => rows.some((r) => r.id === id));
+    if (next === null) closeDetail();
+    else setQueueIdx(next);
+  };
+
+  const detailRow = queue.length > 0
+    ? rows.find((r) => r.id === queue[queueIdx]) ?? null
     : null;
 
   const memberProjects = useMemo(
@@ -285,22 +291,18 @@ export default function KnowledgeLibrary({
         )}
       </div>
 
-      {detailView && (
-        // Unified detail (pattern-fabric v2, /prototype in progress): the row
-        // opens its PRINCIPLE context — manifestations + evidence — instead of
-        // the flat single-item ledger. Queue-nav is parked during the
-        // prototype rounds; the winner decides whether stepping returns.
-        <UnifiedPracticeModal
-          anchor={detailView}
-          items={items}
+      {detailRow && (
+        <PracticeDetailModal
+          practice={detailRow}
           projectById={projectById}
           onClose={closeDetail}
           onChanged={onChanged}
-          onRollout={(p) => {
-            const row = rows.find((r) => r.id === p.id);
-            if (row) setRollout(row);
-            closeDetail();
-          }}
+          onRollout={(p) => setRollout(p)}
+          nav={
+            queue.length > 1
+              ? { index: queueIdx, total: queue.length, onStep: stepDetail }
+              : undefined
+          }
         />
       )}
 
