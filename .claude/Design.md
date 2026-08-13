@@ -294,13 +294,29 @@ overlays · progress · terminal. Import as
 
 The don't-hand-roll quick table (full version in
 [`docs/refactor/shared-component-reuse.md`](../docs/refactor/shared-component-reuse.md)):
-spinner → `feedback/LoadingSpinner`; empty state → `feedback/EmptyState`;
+empty state → `feedback/ScenarioEmptyState` (default export, imported as
+`EmptyState`; `NoResults`/`InboxZero` wrappers alongside it) — chart panels use
+`display/ChartEmptyState`, a compact generic block `display/EmptyIllustration`;
 styled `<button>` → `buttons/Button`/`AsyncButton`; clipboard →
 `buttons/CopyButton`; modal backdrop → `modals/BaseModal`/`feedback/ConfirmDialog`;
 tooltip → `display/Tooltip`; timestamps → `display/RelativeTime`; number
 formatting → `display/Numeric`; switch → `forms/AccessibleToggle`; dropdown →
 `forms/Listbox`; label+input+error → `forms/FormField`; tab strip →
-`layout/PanelTabBar`/`SegmentedTabs`.
+`layout/PanelTabBar`/`SegmentedTabs`; table + its skeleton/empty/stagger →
+`display/UnifiedTable` (pass `isLoading` + `data`).
+
+**Loading is deliberately absent from that list, because there is no single
+answer — there are two opposite ones.** A **surface** fetching its data gets a
+calm delayed ghost under permanent chrome and **never** a spinner
+([`docs/design/overview-loading.md`](../docs/design/overview-loading.md)); a
+**control the user just pressed** gets a real spinner, and that is what
+`buttons/AsyncButton` renders
+([`docs/concepts/golden-paths/inline-busy-state.md`](../docs/concepts/golden-paths/inline-busy-state.md)).
+**`feedback/LoadingSpinner` serves neither** — it renders `null` (spinners are
+disabled app-wide) and survives only for import compatibility plus an `sr-only`
+`role="status"` when given a `label`. Earlier revisions of this file listed it
+as the canonical spinner; that was wrong, and it is why 184 files under
+`src/features/**` hand-roll `animate-spin`. Never render it as a busy branch.
 
 Rules of the folder: `shared/components/**` stays **primitives-only** (no
 `@/stores`, `@/api`, `@/lib/bindings`, or feature imports — advisory ESLint

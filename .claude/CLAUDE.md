@@ -148,8 +148,9 @@ src-tauri/
 
 | Don't hand-roll | Use |
 |---|---|
-| `animate-spin` / local spinner | `feedback/LoadingSpinner` |
-| "no data" block | `feedback/EmptyState` |
+| a busy state on an **action control** (a button/row affordance the user just pressed) | `buttons/AsyncButton` — it renders a **real** spinner. **Never `feedback/LoadingSpinner`, which renders `null`.** See [the spinner boundary](#the-spinner-boundary--banned-for-surfaces-required-for-actions) below |
+| a loading state for a **surface** (a region fetching its data) | a calm delayed ghost under permanent chrome — see [Cold-load / loading UX](#cold-load--loading-ux--the-standard-loading-pattern-v2) below. **A spinner is never a surface loading state in this app.** |
+| "no data" block | `feedback/ScenarioEmptyState` (default export — call sites import it as `EmptyState`), plus its `NoResults` / `InboxZero` wrappers. Chart panels → `display/ChartEmptyState`; compact generic block → `display/EmptyIllustration` |
 | styled `<button>` | `buttons/Button` / `buttons/AsyncButton` |
 | `navigator.clipboard.writeText` | `buttons/CopyButton` / `useCopyToClipboard` |
 | `fixed inset-0` modal backdrop | `modals/BaseModal` / `feedback/ConfirmDialog` (enforced by `custom/enforce-base-modal`) |
@@ -180,7 +181,38 @@ predev/prebuild, so CATALOG.md stays fresh on its own — but a stale catalog no
 longer fails `npm run check`; regeneration is a convenience, not a gate). The
 `check:catalog` / `check:catalog-boundary` scripts still exist for a manual
 staleness/boundary audit if you want one. Extraction/consolidation backlog
-(PanelShell, ContentCard, EmptyState merge, …) lives in the reuse doc above.
+(PanelShell, ContentCard, FilterToolbar, …) lives in the reuse doc above.
+
+### The spinner boundary — banned for surfaces, required for actions
+
+**These are two different situations with opposite prescriptions. Getting them
+confused is the single most common loading defect in this repo.**
+
+> **A spinner is banned for a surface loading its data. A spinner is required on
+> a control the user just pressed.**
+
+| | A **surface** loading its data | An **action** the user just triggered |
+|---|---|---|
+| Examples | a tab, page, panel, list, chart fetching on mount or on filter change | Save, Send, Retry, Test connection, row-level Approve |
+| Show | a calm geometry-matched ghost **under** the permanent chrome (see the four mechanics above) | a **real, visible spinner** on the control itself, plus `disabled` + `aria-busy` |
+| Use | `UnifiedTable` (`isLoading` + `data`) · `RouteChunkSkeleton` · a local delayed ghost | `buttons/AsyncButton` (returns-a-promise `onClick`, no state at all) or `buttons/Button loading={flag}` when the flag is externally owned |
+| Never | a spinner, `animate-pulse`, or `if (loading) return …` that replaces chrome | `useState(false)` + `try/finally`, a scalar flag for a per-row action, `onClick={() => void fn()}` (that silently disarms the double-submit guard) |
+| Doctrine | [`docs/design/overview-loading.md`](../docs/design/overview-loading.md) | [`docs/concepts/golden-paths/inline-busy-state.md`](../docs/concepts/golden-paths/inline-busy-state.md) |
+
+**`feedback/LoadingSpinner` renders `null`.** It is a compatibility shim that
+emits only an `sr-only` `role="status"` when you pass `label`. It is not a
+spinner and it is not a ghost — it is nothing. `{busy ? <LoadingSpinner/> :
+<Icon/>}` makes the icon vanish and puts nothing in its place. Do not render it
+as either half of the table above. The real spinners live inside `Button`
+(`Button.tsx:230,:237`) and `AsyncButton` (`AsyncButton.tsx:85`), which is
+deliberate.
+
+> ⚠️ `CATALOG.md`'s `LoadingSpinner` row still reads "Canonical loading
+> spinner… Use for any full-element loading state", which is wrong on both
+> halves. That text is **not** a `@catalog` tag on the component — it is
+> hardcoded in the `CURATED` map at `scripts/docs/gen-shared-catalog.mjs:56`,
+> so regenerating the catalog will not fix it. Correcting that line is an owed
+> follow-up in the shared-components territory.
 
 ### Error Handling
 - `toastCatch()` from `src/lib/silentCatch.ts` for user-facing errors (Sentry + toast)
