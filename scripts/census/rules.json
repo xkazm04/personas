@@ -1433,6 +1433,133 @@
         "matches": 3
       },
       "floor": 900
+    },
+    {
+      "id": "live-region-born-with-its-message",
+      "goldenPath": "docs/concepts/golden-paths/screen-reader-announcements.md",
+      "title": "Live region mounted in the same render as the text it exists to announce",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?:&&|\\?)(?:\\s|\\(|/\\*(?:(?!\\*/)[\\s\\S])*?\\*/|//[^\\n]*)*<[A-Za-z][A-Za-z0-9.]*(?![A-Za-z0-9_-])(?:(?!<|role=\"alert\")[\\s\\S]){0,900}?\\s(?:aria-live=|role=\"status\")",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a polite live region (aria-live=, or role=\"status\", whose implicit politeness is polite) whose opening tag is reached DIRECTLY from a conditional operator - `{cond && <div aria-live=...>}` or `{cond ? (<span role=\"status\">…)}` - with only whitespace, parentheses and comments in between. PROXY FOR the stack-free condition: the live-region node and the text it exists to announce enter the accessibility tree in the SAME commit, so there is no change for the assistive technology to observe and the announcement the author wrote never fires. Grounded in the specification, not in taste: MDN's live-region guide states the attribute 'works as long as you add the attribute before the changes occur ... Start with an empty live region, then - in a separate step - change the content inside the region.' role=\"alert\" is DELIBERATELY EXCLUDED from the pattern (the negated run cannot cross role=\"alert\") because it is the documented exception - alert content 'is announced, even when the region ... is injected dynamically into the page' - so gating it would flag a correct construct; the 14 conditionally-mounted role=\"alert\" regions in this repo are therefore not counted. PRECONDITION (measured, must be re-derived per repo): this repo spells conditional rendering as JSX && / ternary inside braces. RECALL IS PARTIAL AND THE SHORTFALL IS STRUCTURAL: the identical defect also appears as a component that early-returns null above its region (9 further sites here - EstimatedProgressBar.tsx:96, CharBudget.tsx:56, BulkRerunStrip.tsx:24, LabProgress.tsx:38, NarrationThread.tsx:77, DataHealthBar.tsx:23, RemoteJobNoticeChip.tsx:81, AthenaOrbLayer.tsx:173, TourPanelBody.tsx:90, plus LoadingSpinner.tsx:15 whose return null sits AFTER the region). A whole-file regex cannot see a control-flow guard, so the gate ratchets the lexically-visible half and section 7 names the rest. Measured against a brace/quote-aware JSX opening-tag parser over all 2,104 .tsx files: recall 17/17 = 100% of the JSX-conditional sub-population, 17/26 = 65% of the full condition; precision 15/17 - the two false positives are Composer.tsx:359 and Listbox.tsx:185, where the outer condition is a STATIC CAPABILITY flag (dictation.supported, searchable) rather than the message's own presence, so the region really is mounted for the surface's lifetime and its text swaps inside it. Both were hand-verified rather than assumed. CONVERGENCE: this defect is reinvented in both sibling repos at a HIGHER rate than here - personas-web 20 of 28 regions, brainiac/console 6 of 7 - which makes it a hazard in the problem rather than carelessness in one team. LEGAL FIX: render the region unconditionally and put the condition on its TEXT (`<span className=\"sr-only\" aria-live=\"polite\">{busy ? label : ''}</span>`), or delete the local region and call useAnnounce()/announceImperative() from the app-wide AriaLiveProvider, which is persistent by construction."
+      },
+      "baseline": {
+        "files": 17,
+        "matches": 17
+      },
+      "floor": 2000
+    },
+    {
+      "id": "hand-rolled-outside-click",
+      "goldenPath": "docs/concepts/golden-paths/anchored-popover.md",
+      "title": "Anchored surface wiring its own document-level outside-press dismissal",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?:document|window)\\s*\\.\\s*addEventListener\\s*\\(\\s*['\"](?:mousedown|pointerdown)['\"]",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a press listener attached straight to document/window, which in this repo is always the outside-click dismissal of a transient anchored surface. PROXY FOR the stack-free condition: a transient surface owns its own dismissal contract instead of inheriting one, so whether it closes on an outside press, on Escape, on both or on neither becomes a per-site decision - and the repo then disagrees with itself about which press event dismisses, when the listener may attach relative to the opening press, and whether Escape comes with it. PRECONDITION (must be re-derived per repo): this repo owns a shared dismissal hook (hooks/utility/interaction/useClickOutside.ts) that pairs outside-press with Escape and requires all three of its parameters, and no floating-UI library is in use; a repo with no such hook would find this rule fires on 100% of its popovers and should read that as the finding, not baseline it. Measured precision 46/47 matches and 45/46 files on the 2026-08-14 corpus, cross-checked by a second implementation that tests whether each file's handler calls .contains(e.target); the single false positive is src/lib/keyboard/NavHistoryShortcuts.tsx:52, where the mousedown listener reads the mouse's back/forward BUTTONS rather than dismissing anything. mouseup/click/touchstart are deliberately absent from the alternation: mouseup is this repo's drag-release idiom (ExecutionMiniPlayer, TeamMemoryPanel, DriveImageLightbox) and adding it drops precision without adding a single popover. Disjoint from unregistered-key-handler (focus-management.md), which owns the key* half of the same effects."
+      },
+      "exclude": [
+        {
+          "path": "src/hooks/utility/interaction/useClickOutside.ts",
+          "reason": "the shared dismissal hook itself - the one destination this rule routes every other caller into, and the file whose disappearance must fail the gate rather than silently widen it"
+        }
+      ],
+      "baseline": {
+        "files": 46,
+        "matches": 47
+      },
+      "floor": 4000
+    },
+    {
+      "id": "settings-key-holding-secret",
+      "goldenPath": "docs/concepts/golden-paths/app-settings-store.md",
+      "title": "A settings key whose own name says it holds a credential, in a store whose value column is plain TEXT",
+      "roots": [
+        "src-tauri/db/src"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "pub const [A-Z][A-Z0-9_]*(?:API_KEY|_TOKEN|_SECRET|_PASSWORD|MASTER_KEY|_CREDENTIAL): &str = \"",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a key constant in the app_settings registry whose NAME declares that its value is a credential. PROXY FOR the stack-free condition \"a credential is stored in the general-purpose configuration store instead of the system's secret store\". app_settings.value is `TEXT NOT NULL` (src-tauri/db/src/migrations/schema.rs:595-599) with no encryption hook anywhere on the write path: a grep for crypto/encrypt/decrypt over repos/core/settings.rs, settings_keys.rs and commands/infrastructure/settings.rs returns 0 in all three, while src-tauri/core/src/crypto.rs::encrypt_field (AES-256-GCM under an OS-keychain-bound master key) is used by repos/resources/credentials.rs and repos/core/personas.rs. Matches today: OLLAMA_API_KEY (settings_keys.rs:28), LITELLM_MASTER_KEY (:34), BROWSER_BRIDGE_PAIRING_TOKEN (:70). Precision is 100% and independently confirmed: settings_keys.rs::audit_category maps EXACTLY these three constants, and no others, to the \"api_keys\" category (:1181), and repos/core/settings.rs:45-49 redacts that category structurally because - in its own words - the pattern-based sanitizer \"cannot recognize a BARE token value\". The repo therefore already knows these three rows are secrets; it protects the AUDIT COPY and leaves the row itself in clear. Confirmed in the operator's live database 2026-08-14: browser_bridge_pairing_token is present, 32 characters, token-shaped, plaintext. The blast radius is not only at-rest: engine/src/config_merge.rs:75-86 reads the two BYOM keys on every persona config resolution, and src/api/system/settings.ts::getAppSetting returns the raw value to the renderer, which src/features/settings/sub_byom/components/ByomApiKeyManager.tsx:199 calls and :505/:531 renders and copies to the clipboard. LEGAL FIX, and the repo already contains it: route the secret to the OS keyring or the credential vault and keep only the non-secret half in app_settings. src-tauri/src/commands/infrastructure/qwen_engine.rs:32-49 does exactly this for the same shape of value - api_key to keyring::Entry (engine/http_engine/secrets.rs:28-33), base_url to app_settings - and its status command at :51-52 carries the comment \"Never returns the API key itself\". PRECONDITION (must be re-derived per repo): this repo declares its settings keys as `pub const NAME: &str` in one Rust module under src-tauri/db/src, and names credential-bearing keys with API_KEY/TOKEN/SECRET/MASTER_KEY. A repo whose keys are strings in a database table, a TS union, or an env-var list has this condition wearing different markup and scores zero here. If all three are migrated this rule matches zero and the runner fails structurally - that is correct: DELETE the rule at that point rather than baselining it at 0."
+      },
+      "baseline": {
+        "files": 1,
+        "matches": 3
+      },
+      "floor": 100
+    },
+    {
+      "id": "settings-bool-by-string-compare",
+      "goldenPath": "docs/concepts/golden-paths/app-settings-store.md",
+      "title": "A stored setting is turned back into a bool by comparing the raw TEXT at the call site",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "settings(?:_repo)?::(?:get|get_by_prefix)\\([^;]{0,240}?(?:==\\s*(?:Some\\()?\"true\"|!=\\s*\"false\")",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a read from the app_settings repo whose result is compared against the literal \"true\"/\"false\" within the same statement. PROXY FOR the stack-free condition \"a stored value's type is recovered by an ad-hoc idiom at each read site rather than once, at the key's declaration\". app_settings.value is TEXT, so every typed setting is decoded somewhere; settings_keys.rs::validate_value already fixes ONE canonical token pair on write - 24 keys are constrained to the literal strings \"true\"/\"false\" (:930-960) - but nothing fixes how they are read back, and the tree holds SIX distinct spellings of that one decode: `.as_deref() == Some(\"true\")` (3), `matches!(.., Ok(Some(v)) if v == \"true\")` (5), `.map(|v| v == \"true\")` (3), `.map(|s| s.trim() != \"false\")` (2 - inverted, for the two keys that default ON), `match { Ok(Some(v)) => v == \"true\", Ok(None) => false, Err(e) => .. }` (1 - the ONLY spelling that distinguishes a DB error from `off`), and `.map(|v| v == \"true\" || v == \"1\")` (1 - accepts a token validate_value would REJECT on write, so the reader is more permissive than the only thing that can create the value). The forward-anchored `[^;]{0,240}?` bound is deliberate: it keeps the match inside one statement, it cannot backtrack across the file, and it avoids a variable-length lookbehind (a lookbehind variant of this shape is what makes a rule take 73 seconds). It therefore UNDERCOUNTS - a decode split across a `;` is invisible - so treat the baseline as a floor on the condition, not a census of it. The 1 comment-only match the runner filters is engine/src/autonomy.rs:155, a doc comment quoting the very idiom it replaced; without ignoreCommentLines the prose about the fix would be counted as the defect. LEGAL FIX: a typed accessor at the registry, so the decode happens once where the key is declared. engine/src/autonomy.rs:157-162 `global_enabled(pool, Action)` is the existing partial version - it covers the 21 Action-keyed autonomy toggles and nothing else, which is why 18 sites still hand-roll it. PRECONDITION (must be re-derived per repo): this repo stores booleans as the TEXT tokens \"true\"/\"false\" and reads them through a Rust module path ending `settings::get`. A repo with a typed column, a JSON value, or an ORM accessor has this condition in a form this pattern cannot see."
+      },
+      "baseline": {
+        "files": 15,
+        "matches": 18
+      },
+      "floor": 900
+    },
+    {
+      "id": "settings-key-declared-outside-registry",
+      "goldenPath": "docs/concepts/golden-paths/app-settings-store.md",
+      "title": "A settings key name spelled a second time outside the registry that is supposed to own it",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "^[^\\S\\n]*(?:pub(?:\\([^)]*\\))?[^\\S\\n]+)?const [A-Z][A-Z0-9_]*_KEYS?: &(?:'static )?str = \"[a-z][a-z0-9_]*\";",
+        "flags": "gm",
+        "ignoreCommentLines": true,
+        "description": "a `const <NAME>_KEY: &str = \"<lowercase_snake>\"` declared anywhere in the Rust tree except the settings registry. PROXY FOR the stack-free condition \"a configuration key's name is declared in more than one place, so a consumer and the registry can disagree without anything noticing\". settings_keys.rs opens with the rule this violates - \"Use these instead of raw string literals to prevent typo-based key mismatches\" (:3) - and repos/core/settings.rs::set REJECTS any key not in ALLOWED_KEYS (:96), so a second declaration is not merely untidy: if its literal is absent from the allow-list the key becomes READ-ONLY FOREVER and its feature is inert. That is not hypothetical. settings_keys.rs:793-795 carries a comment recording exactly this bug for AUTONOMOUS_DELIBERATION (\"Read by engine/deliberation.rs but was missing here, so `set` rejected the write and the autonomous-deliberation toggle could never be enabled\"), and :1409-1414 records it again for MODEL_ROUTING_RULES. The class then recurred twice more and nothing caught it: core/src/redact.rs:34 REDACT_TRACES_ENABLED_KEY and engine/src/context_fidelity.rs:18 PIPELINE_CONTEXT_FIDELITY_KEY are both unregistered, both have exactly one reader and ZERO writers tree-wide (verified by grep across .rs/.ts/.tsx), so the trace-redaction preference and the whole graded pipeline-context-fidelity feature are permanently pinned to their compiled-in defaults - five of that feature's six levels are unreachable. Measured precision 10/10 by opening every match: the eight registered ones are duplicate aliases (obsidian_brain/mod.rs:44,45,46, byom.rs:22, model_routing.rs:22, skills_sidecar/mod.rs:33, skill_scratchpad.rs:51, fleet/pairing.rs:38) and two are the live shadow keys above. fleet/pairing.rs:36-38 is the tell: its doc comment says \"Registered in db::settings_keys::FLEET_COMPANION_DEVICES\" - the author knew, and wrote a prose cross-reference where an import would have made the drift impossible. The sibling sweep found brainiac doing the identical thing at crates/brainiac-server/src/http.rs:129-131 (\"Kept in sync by cross-reference\"), so the failed mitigation is convergent too. Note the requirement that the literal START with [a-z]: that alone excludes the keyring probe `__personas_health_probe__` (commands/infrastructure/system/health.rs:256) without needing an allowlist entry. PRECONDITION (must be re-derived per repo): this repo names settings-key constants `*_KEY`/`*_KEYS` and spells the key as a lowercase-snake string literal. LEGAL FIX: delete the local constant and `use personas_db::settings_keys::<NAME>` - or, if the key is genuinely new, ADD it to ALLOWED_KEYS in the same change, because a key that is read but not registered can never be written."
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/db/src/settings_keys.rs",
+          "reason": "the registry itself — every key literal is SUPPOSED to be spelled here, exactly once. Excluding the file rather than pattern-matching around it keeps the rule readable, at the stated cost that a duplicate declaration INSIDE the registry would be invisible."
+        },
+        {
+          "path": "src-tauri/engine/src/fix_loop.rs",
+          "reason": "its three *_KEY constants (_fix_attempt, _fix_instruction, _fix_failures) address keys inside an execution's input_data JSON object, not rows in app_settings — the same naming shape in a different namespace. Cost of the exemption: a real shadow settings key added to this one file would not be seen."
+        }
+      ],
+      "baseline": {
+        "files": 8,
+        "matches": 10
+      },
+      "floor": 900
     }
   ]
 }
