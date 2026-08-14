@@ -73,9 +73,30 @@ id — that is a different leaf and `ipc_auth` does not do it.
   It requires a parameter literally named `state`.
 - **`src-tauri/src/ipc_auth.rs:117` — `PRIVILEGED_COMMANDS: &[&str]`.** The set
   the invoke wrapper actually keys on. 153 active entries.
-- **`.../ipc_auth.rs:705` — `CLOUD_COMMANDS: &[&str]`.** 45 entries. Membership
-  implies the IPC token check *as well as* OAuth (`is_privileged_command`
-  at `:107` unions both sets).
+- **`.../ipc_auth.rs:705` — `CLOUD_COMMANDS: &[&str]`.** ~~45~~ **50** entries
+  (5 were promoted during this campaign). Membership implies the IPC token
+  check *as well as* OAuth (`is_privileged_command` at `:107` unions both sets).
+
+  > **CORRECTED 2026-08-14 — the enforcement asymmetry runs the OTHER WAY for
+  > cloud, and this document had it backwards.** For `privileged`, the LIST is
+  > what enforces: an async command carrying `#[requires(privileged)]` but
+  > absent from `PRIVILEGED_COMMANDS` gets no check at all, which is the finding
+  > that justified promoting 28 commands. For `cloud`, the ANNOTATION is what
+  > enforces — `macros/src/lib.rs:80-82` injects `require_cloud_auth(&state, …)`
+  > as the first statement of the function body. So an annotated-but-unlisted
+  > cloud command is **not** silently public, and the two tiers must not be
+  > reasoned about as one mechanism.
+  >
+  > Related count discipline: `shared-facts.json`'s `requiresCloud: 56` is the
+  > number of `#[requires(cloud)]` ANNOTATIONS, not the size of this list. I
+  > conflated the two when briefing a later composer; they differ by design.
+  >
+  > **§9 items 1–2 of this document have since been BUILT** —
+  > `every_requires_annotation_is_listed_or_baselined` (`ipc_auth.rs:1156`)
+  > covers sync and async across both tiers, with an instrument assertion and a
+  > typed shrink-only `DRIFT_BASELINE`. Gaps 1/3 and Deviations A/C here were
+  > written before that landed and need re-deriving. See
+  > [cloud-auth-degraded-mode](./cloud-auth-degraded-mode.md).
 - **`.../ipc_auth.rs:559` — `wrap_invoke_handler`.** The primary gate. For any
   command in either set it validates `x-ipc-token` with `constant_time_eq`
   (`:610`), rejects with `{"error": "IPC authentication failed: invalid session

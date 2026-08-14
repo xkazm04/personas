@@ -1637,6 +1637,28 @@
         "matches": 18
       },
       "floor": 2000
+    },
+    {
+      "id": "undiscriminated-credential-rejection",
+      "goldenPath": "docs/concepts/golden-paths/cloud-auth-degraded-mode.md",
+      "title": "A remote call that carried a credential folds its non-2xx into an untyped message string, so no caller can tell \"the credential was rejected, re-authenticate\" from \"the service is down, retry\"",
+      "roots": [
+        "src-tauri/src"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "(?:\\.bearer_auth\\(|\\.header\\(\\s*(?:&?\"(?:[Aa]uthorization|apikey|PRIVATE-TOKEN|X-User-Token|x-api-key|X-Api-Key)\"|k\\s*,))(?:(?!\\.bearer_auth\\(|UNAUTHORIZED|\\b401\\b|is_client_error|\\.as_u16\\(\\))[\\s\\S]){0,1200}?AppError::\\w+\\(\\s*format!\\(\\s*\"[^\"\\r\\n]*\\{status\\}",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A credential is attached to an outbound request (bearer_auth / an Authorization|apikey|PRIVATE-TOKEN|X-User-Token|x-api-key header / a header rendered from credential fields) and, within the next 1200 characters and WITHOUT any 401 / UNAUTHORIZED / is_client_error / status.as_u16() discrimination in between, the failure path constructs AppError::<Variant>(format!(\"...{status}...\")) - i.e. the one datum that says whether the credential was rejected survives only as text inside a message. PROXY FOR the stack-free condition: an authenticated remote call collapses every failure mode into one untyped error, so neither the caller nor the user can distinguish an expired/revoked credential (re-authenticate, do not retry) from an outage (retry with backoff, do not re-authenticate). PRECONDITION AND ADOPTION NOTE: this proxy keys on Rust's reqwest builder idiom plus this repo's AppError(format!) construction. A repo whose HTTP layer already returns a typed status (Python's requests.raise_for_status, a Result<Response, HttpError> with a status field) or whose errors are structs rather than format! strings scores ZERO here while the condition is present at full scale - re-derive the proxy against the local HTTP client and error type. MEASURED 2026-08-14: 17 matches across 6 files, all 6 credentialed surfaces (engine/db_query.rs Supabase+Convex introspection 8; cloud/sync/client.rs, the whole PostgREST writer, 4; commands/infrastructure/auth.rs 2 - fetch_user_profile AND refresh_access_token, i.e. the identity session's own refresh; commands/core/persona_icon_gen.rs 1; engine/kpi_binding.rs 1; gitlab/client.rs 1). Zero false-positive FILES. KNOWN FALSE NEGATIVE, declared: cloud/client.rs - the CloudClient serving all 30 cloud_* commands - attaches its credential in authed() and checks status in send_json()/send_ok() via .error_for_status(), two functions apart, so no forward-anchored text matcher can join them; that site is covered by the test in section 9 item 2, not by this rule. Deliberately does NOT match a site that branches on 401 first (engine/api_proxy.rs, notifications.rs, companion/jobs/connector_use.rs) - those are the correct shape."
+      },
+      "baseline": {
+        "files": 6,
+        "matches": 17
+      },
+      "floor": 500
     }
   ]
 }
