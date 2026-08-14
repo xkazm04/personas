@@ -191,6 +191,23 @@ export function scanRule(rule, { root }) {
         const lineIdx = lineOf(match.index);
         if (ignoreComments && isCommentOnlyLine(lines[lineIdx])) {
           commentMatchesSkipped++;
+          // Rewind to just after this match's START, not past its whole extent.
+          //
+          // `exec` leaves lastIndex at the END of the match, so a skipped match
+          // also CONSUMES everything it spanned. For a single-line pattern that
+          // is harmless. For a MULTILINE pattern it silently eats real matches:
+          // a comment containing the pattern's opening token can begin a match
+          // that runs for hundreds of lines (this rule's `[^\]]*` crosses
+          // newlines), and every genuine hit inside that span disappears.
+          //
+          // Measured 2026-08-14: adding an explanatory comment containing the
+          // literal `#[cfg(` to lib.rs dropped build-gated-ipc-entrypoint from
+          // 127 to 126 — the comment's runaway match swallowed a real
+          // registration. The count moved because of a COMMENT, which is the
+          // precise failure the `ignoreCommentLines` option exists to prevent,
+          // and it surfaced as a "silent drop" drift warning: the detector
+          // reporting the codebase improved when nothing had changed.
+          regexp.lastIndex = match.index + 1;
           continue;
         }
         fileMatches++;

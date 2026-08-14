@@ -2391,9 +2391,20 @@ pub fn run() {
             commands::execution::ambient::get_context_stream_stats,
             #[cfg(feature = "desktop")]
             commands::execution::ambient::capture_validation_screenshot,
-            // Clipboard Intelligence -- error detection + KB search
-            #[cfg(all(feature = "desktop", feature = "ml"))]
             // Credential Recipes -- shared discovery cache
+            //
+            // The `#[cfg(all(feature = "desktop", feature = "ml"))]` that used to
+            // sit here belonged to the Clipboard Intelligence commands, which are
+            // gone. A comment line separated it from its item, so it silently
+            // re-attached to `get_credential_recipe` — leaving that ONE command
+            // unregistered in every build without `ml` (CI's `--features desktop`,
+            // tauri:dev:lite, tauri:build:lite, tauri:dev:test) while
+            // src/api/vault/credentialRecipes.ts:8 invokes it unconditionally.
+            // Its three siblings below were never gated.
+            // `generate_handler_has_no_orphaned_cfg_attributes` (lib.rs:3916) misses
+            // this shape: it only fires when the next non-comment line is another
+            // `#[cfg(`. Found because a hand parser counted 128 gated registrations
+            // and the regex counted 127.
             commands::credentials::credential_recipes::get_credential_recipe,
             commands::credentials::credential_recipes::list_credential_recipes,
             commands::credentials::credential_recipes::upsert_credential_recipe,

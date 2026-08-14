@@ -194,6 +194,56 @@ test('REGRESSION: CRLF files map matches to the correct line', () => {
   }
 });
 
+test('REGRESSION: a comment-skipped MULTILINE match must not swallow real ones', () => {
+  // `exec` leaves lastIndex at the END of a match, so a match skipped for
+  // starting on a comment line also CONSUMED everything it spanned. Harmless
+  // for single-line patterns; for a multiline pattern it silently eats real
+  // matches — a comment containing the opening token can begin a match running
+  // for hundreds of lines, and every genuine hit inside vanishes.
+  //
+  // Caught in the wild 2026-08-14: adding an explanatory comment containing the
+  // literal `#[cfg(` to lib.rs moved build-gated-ipc-entrypoint from 127 to
+  // 126. A COMMENT changed the count — precisely what ignoreCommentLines
+  // exists to prevent — and it surfaced as a "silent drop" drift warning, i.e.
+  // the detector claiming the codebase improved when nothing had changed.
+  const dir = mkdtempSync(join(tmpdir(), 'census-multiline-'));
+  try {
+    mkdirSync(join(dir, 'tree'), { recursive: true });
+
+    // OPEN ... ] ... newline ... `use x;` — the `[^\]]*` crosses newlines, so a
+    // mention inside a comment runs forward to the next `]` anywhere below.
+    const src = [
+      '// a comment that merely MENTIONS OPEN( in prose',
+      'OPEN(one)]',
+      'use alpha;',
+      'OPEN(two)]',
+      'use beta;',
+      '',
+    ].join('\n');
+    writeFileSync(join(dir, 'tree', 'a.tsx'), src, 'utf8');
+
+    const rule = baseRule({
+      id: 'multiline-comment-swallow',
+      signal: {
+        pattern: 'OPEN\\([^\\]]*\\][^\\S\\r\\n]*\\r?\\nuse [a-z]+;',
+        flags: 'g',
+        description: 'multiline',
+        ignoreCommentLines: true,
+      },
+      baseline: { files: 1, matches: 2 },
+      floor: 1,
+    });
+    const result = scanRule(rule, { root: dir });
+
+    // Both real pairs must survive. Against the regressed engine the comment's
+    // runaway match consumed the first pair and this returned 1.
+    eq(result.matches, 2, 'both real multiline matches counted despite the comment mention');
+    eq(result.files, 1, 'the file is counted once');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 // ------------------------------------------- 3. every fail-loud path fires ---
 
 test('FAIL-LOUD: walking fewer files than `floor` is structural', () => {
