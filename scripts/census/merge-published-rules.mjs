@@ -46,8 +46,28 @@ for (const b of blocks) {
   try { parsed = JSON.parse(b); } catch { continue; }
   const candidates = Array.isArray(parsed) ? parsed : (parsed.rules ?? [parsed]);
   for (const c of candidates) {
-    if (c && typeof c === 'object' && c.id) incoming.push(c);
-    else console.warn(`  (skipped a json block with no "id" — assumed illustrative)`);
+    if (!c || typeof c !== 'object' || !c.id) {
+      console.warn(`  (skipped a json block with no "id" — assumed illustrative)`);
+      continue;
+    }
+    // Composers are now REQUIRED to ship a positive control: the same anchors
+    // pointed at the COMPLIANT form, which must also fail. That block is
+    // evidence, not a rule — and merging it is actively harmful, because a
+    // ratchet is monotone-downward, so a rule counting compliant code fails the
+    // build every time adoption IMPROVES. One slipped through on 2026-08-14
+    // (`POSITIVE-CONTROL-tooltip-primitive`, baseline undefined) and would have
+    // broken `census:check` outright. Mandating the control without teaching
+    // the merger about it was the defect.
+    if (/positive[-_ ]?control/i.test(c.id)) {
+      console.log(`  ~ ${c.id} looks like a positive control — NOT merged (evidence, not a gate)`);
+      continue;
+    }
+    // A rule with no baseline cannot ratchet and would fail structurally.
+    if (!c.baseline || typeof c.baseline.matches !== 'number') {
+      console.log(`  ~ ${c.id} has no numeric baseline — NOT merged (illustrative or a control)`);
+      continue;
+    }
+    incoming.push(c);
   }
 }
 if (incoming.length === 0) {
