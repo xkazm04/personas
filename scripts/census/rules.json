@@ -755,7 +755,7 @@
         "pattern": "\\bbigint\\b",
         "flags": "g",
         "ignoreCommentLines": true,
-        "description": "a ts-rs-generated field typed `bigint`. PROXY FOR the stack-free condition \"a generated wire type declares a value the transport cannot carry\". ts-rs v10 maps i64/u64/usize/isize to bigint, which is correct for the Rust type and wrong for every Tauri payload: the backend serializes through serde_json (which emits a JSON number) and the frontend receives it through JSON.parse (which cannot produce a bigint). Verified from the workaround rather than assumed - src/api/companion.ts:744 guards with `typeof raw.totalSignalsCaptured === 'bigint'`, a branch that can never be taken at runtime, and its comment at :722-726 states the coercion exists because the binding uses bigint; src/features/agents/sub_deployment/components/cloud/CloudExecutionRow.tsx:31 writes Number(exec.durationMs) for the same reason. Precision is 100% by construction: every match was emitted by the generator and the argument applies to all of them identically. 288 are field declarations; the balance are tuple positions such as Array<[string, bigint]>, which are the same defect. PRECONDITION (must be re-derived per repo): this repo generates frontend types with ts-rs v10. A repo whose generator emits number or string for 64-bit integers, or which hand-authors its types, has this condition wearing different markup and scores zero here. LEGAL FIX, in order: (1) narrow the Rust field to i32/f64 where the value provably fits, which is the honest fix; (2) `#[ts(type = \"number\")]` where the Rust type must stay 64-bit and the value stays under 2^53 - 314 such pins already exist, core/src/models/execution.rs:36,38,43,46,55 being the densest; (3) for a value that genuinely exceeds 2^53, change the Rust field to String, because JSON has no other honest carrier. Never hand-author a shadowing TypeScript interface - src/api/companion.ts:705-714 is what that costs."
+        "description": "a ts-rs-generated field typed `bigint`. PROXY FOR the stack-free condition \"a generated wire type declares a value the transport cannot carry\". ts-rs v10 maps i64/u64/CORRECTED 2026-08-14 (this sentence previously claimed usize/isize also map to bigint, which is FALSE and would rewrite correct fields): ts-rs maps i64 and u64 to bigint, but usize maps to number (verified: LedgerAnomalyScore.sample_count is `number`) and isize does not appear in any exported type.parse (which cannot produce a bigint). Verified from the workaround rather than assumed - src/api/companion.ts:744 guards with `typeof raw.totalSignalsCaptured === 'bigint'`, a branch that can never be taken at runtime, and its comment at :722-726 states the coercion exists because the binding uses bigint; src/features/agents/sub_deployment/components/cloud/CloudExecutionRow.tsx:31 writes Number(exec.durationMs) for the same reason. Precision is 100% by construction: every match was emitted by the generator and the argument applies to all of them identically. 288 are field declarations; the balance are tuple positions such as Array<[string, bigint]>, which are the same defect. PRECONDITION (must be re-derived per repo): this repo generates frontend types with ts-rs v10. A repo whose generator emits number or string for 64-bit integers, or which hand-authors its types, has this condition wearing different markup and scores zero here. LEGAL FIX, in order: (1) narrow the Rust field to i32/f64 where the value provably fits, which is the honest fix; (2) `#[ts(type = \"number\")]` where the Rust type must stay 64-bit and the value stays under 2^53 - 314 such pins already exist, core/src/models/execution.rs:36,38,43,46,55 being the densest; (3) for a value that genuinely exceeds 2^53, change the Rust field to String, because JSON has no other honest carrier. Never hand-author a shadowing TypeScript interface - src/api/companion.ts:705-714 is what that costs."
       },
       "baseline": {
         "files": 142,
@@ -954,6 +954,29 @@
       "baseline": {
         "files": 25,
         "matches": 28
+      },
+      "floor": 4000
+    },
+    {
+      "id": "ipc-payload-typed-inline",
+      "goldenPath": "docs/concepts/golden-paths/bridge-type-contract.md",
+      "title": "IPC call site declares the payload shape as an inline object literal, so the wire contract has no name and nothing can compare it to the producer",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\b(?:invokeWithTimeout|invoke|safeInvoke)\\s*<\\s*(?:Array<\\s*)?\\{",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "an IPC call whose type argument is an inline object literal rather than an imported generated binding. PROXY FOR the stack-free condition \"a consumer declares the wire contract at the call site, so the contract has no name, no single home, and no tool can compare it to what the producer actually sends\". Precision is 100% by construction: ts-rs only ever emits NAMED types, so an object-literal type argument cannot be a generated one. Measured consequence in this repo, by resolving each site's command-name string literal to the Rust fn's return type: 52 sites across 12 files, of which 32 call a command returning serde_json::Value (no binding CAN exist - the fix is on the backend), 7 shadow a command whose return type ALREADY has a generated binding (src/api/companion.ts:730 hand-writes nine fields over the existing src/lib/bindings/SensorySourceState.ts, and 5 sites in src/test/automation/bridge.ts hand-narrow Persona/PersonaDetail/TwinProfile), 8 call a command returning a named Rust struct that never derives ts_rs::TS (MemoryIngestResult, DocRotScanSummary, CliCaptureResult, ...), and 5 call a command that exists in no .rs file at all. The span is under 40 characters and never crosses a statement, so the runner's comment-skip rewind cannot swallow a neighbouring match; measured commentMatchesSkipped = 0. PRECONDITION (must be re-derived per repo): this repo funnels every IPC call through invokeWithTimeout/safeInvoke and generates named types with ts-rs. A repo whose transport is bare fetch(), whose generated types are reached through one indexed schema object such as components[\"schemas\"][\"Foo\"], or which validates responses with a zod parse instead of a type argument, has this condition wearing different markup and scores zero here. LEGAL FIX: import the generated binding - import type { Foo } from \"@/lib/bindings/Foo\" - and if no binding exists, THAT is the finding: give the Rust command a named success type carrying #[derive(TS)] #[ts(export)] rather than typing the hole on the consumer side."
+      },
+      "baseline": {
+        "files": 12,
+        "matches": 52
       },
       "floor": 4000
     }

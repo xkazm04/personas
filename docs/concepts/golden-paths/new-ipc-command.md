@@ -192,9 +192,13 @@ call is different. Then stop: no manual header handling, no second wrapper, no
 7. **`git status src/lib/bindings/` — do not skip this.** New binding files are
    **untracked**, and both the local `git diff --quiet` habit and CI Job D are blind to
    untracked files (verified: exit code 0 with a brand-new file present). `git add` each
-   new binding, and add its `export type { X } from "./X";` line to
+   new binding. ~~and add its `export type { X } from "./X";` line to
    `src/lib/bindings/index.ts` — nothing regenerates that barrel and **86 of 1,032
-   binding files are already missing from it**.
+   binding files are already missing from it**.~~ **Do NOT do this — corrected
+   2026-08-14.** The barrel has **zero importers**: all 853 consumers import the
+   direct path (`@/lib/bindings/Foo`), and `knip.json:18` excludes the directory
+   from dead-code analysis, which is why it went unnoticed. Adding a line to it
+   is work with no consumer. See §7.
 8. **Add one wrapper** in `src/api/<domain>/<file>.ts`:
    `export const doThing = (id: string) => invoke<MyResult>("do_thing", { id });`
    with `import type { MyResult } from "@/lib/bindings/MyResult";`. One line, no
@@ -440,7 +444,7 @@ argument; **130 share a name with a generated binding file** (e.g.
 | Path | What's wrong |
 |---|---|
 | `.claude/CLAUDE.md:116` (and `:67`) | Prescribes `cargo test --manifest-path src-tauri/Cargo.toml export_bindings`. Missing `--workspace` (skips ~200 `personas-core` types) **and** `--features desktop` (build script aborts; **zero** bindings regenerate). CI documents both at `ci.yml:376-386`. The repo's own onboarding step is the broken command. |
-| `src/lib/bindings/index.ts:2` | The regeneration instruction is a shell one-liner in a comment. Nothing runs it. **86 of 1,032 binding files are absent from the barrel**, so `import { X } from '@/lib/bindings'` fails for them with no explanation. |
+| `src/lib/bindings/index.ts:2` | The regeneration instruction is a shell one-liner in a comment. Nothing runs it. **86 of 1,032 binding files are absent from the barrel**, so `import { X } from '@/lib/bindings'` fails for them with no explanation. **CORRECTED 2026-08-14: the barrel has ZERO importers.** All 853 consumers use direct paths (`@/lib/bindings/Foo`), verified by grep; `knip.json:18` excludes the directory from dead-code analysis, which is why nobody noticed. So the missing entries break nothing, and "regenerate the barrel" is backlog for a 950-line artefact no code reads. The fix is `git rm`, not a generator. Kept visible because two paths independently filed the same non-problem. |
 | `scripts/generate-command-names.mjs:21` | Matches `/invoke_handler\(tauri::generate_handler!\[/` against a source line that reads `wrap_invoke_handler(tauri::generate_handler![`. **It matches by accident** — because `"wrap_invoke_handler("` happens to end in `"invoke_handler("`. Renaming the wrapper makes the codegen exit 1 loudly; inserting *any* other call between them makes it match a different block silently. `check-command-contract.mjs:41` matches the full, correct shape; the two parsers disagree. |
 | `scripts/check-unused-bindings.sh` | Runs in CI with `if: always()`, walks 1,032 files with a `grep -r` per file. Measured ~2+ minutes locally. Correct, slow, and pointed the wrong way (see C). |
 | `src/lib/bindings/SkillEntry.ts` | Uncommitted modification present in the working tree at the time of this sweep — i.e. a binding regenerated and not committed, which is the exact state Job D was built to catch and the one shape it can see. Left untouched: another session's in-flight work. |
