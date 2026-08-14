@@ -441,6 +441,80 @@
         "matches": 68
       },
       "floor": 4000
+    },
+    {
+      "id": "verdict-write-outside-door",
+      "goldenPath": "docs/concepts/golden-paths/human-review-queue.md",
+      "title": "A human verdict written without going through the one verdict door",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?:import\\s*\\{[^}]*\\b(?:updateManualReviewStatus|dispatchReviewAction|cloudRespondToReview|acceptIdea|rejectIdea|decideWorkspaceKnowledge|policyTuningApply|policyTuningDecline|resolvePromotionProposal)\\b[^}]*\\}\\s*from\\s*['\"]@/api/)|(?:updateKpi\\s*\\([^)]*\\bstatus\\b)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A verdict-writing IPC wrapper imported straight from @/api/**, or a KPI proposal verdict expressed as updateKpi({ status }) — both write a human decision without the compare-and-swap door in src/lib/decisions/rowWrites.ts"
+      },
+      "exclude": [
+        {
+          "path": "src/lib/decisions/rowWrites.ts",
+          "reason": "the verdict door itself — it is the module every other call site is being routed TO, so it must import the raw API wrappers"
+        },
+        {
+          "path": "src/features/teams/sub_kpis/useKpiDetail.ts",
+          "reason": "pause/resume/archive on an ALREADY-accepted KPI is a lifecycle edit, not a human review verdict — no proposal row is being decided, so no seen-status expectation exists to carry"
+        },
+        {
+          "path": "**/__tests__/**",
+          "reason": "test files legitimately import raw verdict wrappers to assert the door forwards to them"
+        },
+        {
+          "path": "**/*.test.ts",
+          "reason": "test files legitimately import raw verdict wrappers to assert the door forwards to them"
+        },
+        {
+          "path": "**/*.test.tsx",
+          "reason": "test files legitimately import raw verdict wrappers to assert the door forwards to them"
+        }
+      ],
+      "baseline": {
+        "files": 6,
+        "matches": 8
+      },
+      "floor": 4000
+    },
+    {
+      "id": "hand-rolled-stale-token",
+      "goldenPath": "docs/concepts/golden-paths/stale-response-guard.md",
+      "title": "Hand-rolled latest-wins counter instead of createLatestWins()",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\bconst\\s+[A-Za-z_$][\\w$]*\\s*=\\s*\\+\\+\\s*[A-Za-z_$][\\w$]*(?:\\s*\\.\\s*current)?\\s*;",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "capture-a-pre-incremented-counter (`const seq = ++xRef.current` / `const seq = ++moduleSeq`) — the mint half of a hand-rolled latest-wins guard. src/stores/util/latestWins.ts already owns this; every match is a re-implementation of it."
+      },
+      "exclude": [
+        {
+          "path": "src/features/shared/components/feedback/AriaLiveProvider.tsx",
+          "reason": "false positive: ++keyRef.current allocates a React key to re-announce a live-region message, it never guards an async commit"
+        }
+      ],
+      "baseline": {
+        "files": 36,
+        "matches": 42
+      },
+      "floor": 4000
     }
   ]
 }
