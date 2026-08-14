@@ -515,6 +515,28 @@
         "matches": 42
       },
       "floor": 4000
+    },
+    {
+      "id": "unbound-child-lifetime",
+      "goldenPath": "docs/concepts/golden-paths/cancelling-in-flight-work.md",
+      "title": "Child process spawned without binding its lifetime to the cancellable future",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "Command::new\\((?:(?!kill_on_drop)[\\s\\S]){0,1200}?Stdio::piped\\(\\)(?:(?!kill_on_drop)[\\s\\S]){0,1200}?\\.\\s*spawn\\s*\\(\\s*\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a piped child process spawned with no `.kill_on_drop(true)` anywhere between `Command::new(` and `.spawn()` — so when a `tokio::select!` cancel arm, a `tokio::time::timeout`, or a `JoinHandle::abort` drops the owning future, tokio DETACHES the child instead of killing it and the work the user just cancelled keeps running (and, for CLI children, keeps billing)"
+      },
+      "baseline": {
+        "files": 11,
+        "matches": 12
+      },
+      "floor": 900
     }
   ]
 }
