@@ -1560,6 +1560,83 @@
         "matches": 10
       },
       "floor": 900
+    },
+    {
+      "id": "secret-as-bare-string-field",
+      "goldenPath": "docs/concepts/golden-paths/secret-display-and-transfer.md",
+      "title": "A credential held in a struct field as a bare String instead of SecureString",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "[,{][ \\t]*\\r?\\n(?:[ \\t]*(?:#\\[|//)(?![^\\n]*skip_serializing)[^\\n]*\\r?\\n){0,6}[ \\t]*pub (?:[a-z0-9_]*_)?(?:token|secret|password|passwd|passphrase|api_key|apikey|private_key|master_key|access_key)[ \\t]*:[ \\t]*(?:Option<[ \\t]*)?String",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A `pub` struct field whose NAME is a secret noun, typed as a bare String/Option<String>, with no `#[serde(skip_serializing)]` on any attribute or doc line between the previous field and it. PROXY FOR the stack-free condition \"a credential is held in a value type that says nothing about it being a credential, so nothing prevents it from being serialized to a viewer, rendered, copied or exported\". LEGAL DESTINATION: `personas_core::crypto::SecureString` (core/src/crypto.rs:221) — Zeroize + ZeroizeOnDrop, `[REDACTED]` from both Debug and Display, and NO `Serialize` impl (verified: no `impl Serialize for SecureString`, no derive), so a SecureString field inside a `#[derive(Serialize)]` struct is a COMPILE ERROR. Where the value genuinely must cross IPC once, the legal shapes are `#[serde(skip_serializing)] #[ts(skip)]` (5 uses, models/credential.rs:40,45,121,124 + models/external_api_key.rs:17) or a dedicated show-once response type (CreateApiKeyResponse, FleetPairResult). TWO INDEPENDENT IMPLEMENTATIONS RECONCILE EXACTLY: this regex reports 12 matches in 10 files, and a struct-aware line parser that tracks the enclosing struct and its derive list independently enumerates 15 secret-named String/SecureString fields = 2 SecureString (not matched, correctly) + 13 bare String, minus the 1 excluded file = 12. Zero disagreeing files. Of the 12, 9 sit in a `Serialize`-deriving struct and therefore reach the renderer (7 of those are additionally `#[ts(export)]`); the other 3 are internal but hold live OAuth material with no zeroization, including auth.rs:82 which sits two fields below two SecureString siblings in the SAME struct. PRECISION on the stated condition is 12/12 after the exclude; before it, 12/13 — the single false positive is ChainStopReason.reason_token, a closed-vocabulary STATUS token, which is why the exclude exists rather than a broader vocabulary. The `(?:#\\[|//)` line class is load-bearing in both directions: it lets the match skip doc comments and unrelated attributes, and the inline `(?![^\\n]*skip_serializing)` makes a compliant field unmatched without any lookbehind (a variable-length lookbehind cost 73s in an earlier campaign rule; this pattern runs in 864ms over 963 files). PRECONDITION (must be re-derived per repo): this repo declares wire types as Rust structs with `pub <snake_case_name>: String` fields and names credential-bearing fields with token/secret/password/api_key. A repo whose secrets are dynamic map keys, a TypeScript interface, or environment variables has the SAME condition wearing markup this pattern cannot see and scores zero — personas-web scores zero for a different and legitimate reason: it holds no secrets at all (0 type=password, 0 reveal toggles, 0 secret-bearing clipboard writes of 10). Do NOT silence a match by renaming the field."
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/db/src/repos/execution/chain_stop_reasons.rs",
+          "reason": "ChainStopReason.reason_token is a closed-vocabulary MACHINE token resolved through status_tokens.chain_stop on the frontend, not a credential — the only `_token` field in 963 .rs files that names a status rather than a secret, and the one false positive this vocabulary produces"
+        }
+      ],
+      "baseline": {
+        "files": 10,
+        "matches": 12
+      },
+      "floor": 900
+    },
+    {
+      "id": "page-title-outside-header-primitive",
+      "goldenPath": "docs/concepts/golden-paths/page-scaffold.md",
+      "title": "A surface declares its own page-level heading instead of getting it from the one page-header primitive",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "<h1[\\s/>]",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a hand-written <h1> element. PROXY FOR the stack-free condition: a page's top-level heading is declared at the surface instead of by the one primitive that owns the page header band, so nothing can enumerate the app's page titles, restyle them in one place, or assert that a page has exactly one. In this repo the compliant form is ContentHeader's `subtitle` prop — src/features/shared/components/layout/ContentLayout.tsx:184 is the ONLY sanctioned <h1>, reached at 62 of 68 ContentHeader sites — so compliant code contains no <h1> token at all. MEASURED distribution of the 18: Twin 8 (TwinHeaderBand, ChannelsAtelier, IdentityAtelier, KnowledgeAtelier, TwinHero, ToneAtelier, ToneConsole, TrainingAtelier), Dev Tools 2 (DevToolsPageHeader, WorkspacesPage), Research Lab 2, plus FleetPage, PresetLibraryPage, UnifiedDeploymentDashboard, DecisionsPanel, HeroHeader, PersonaOverviewWidget. Two of these (DevToolsPageHeader, TwinHeaderBand) are COMPETING HEADER PRIMITIVES, so those 2 matches stand in for 8 downstream call sites. PRECONDITION: this proxy works only because exactly one shared component emits <h1> here. A repo whose page title comes from a framework layout, a generateMetadata export, a CMS field, or a hand-written heading class (personas-web: `text-2xl font-bold tracking-tight`, 13 of 13 dashboard pages) must re-derive its own proxy against its own page-header primitive — and a repo with NO such primitive cannot use a ratchet for this at all.",
+        "$falsePositiveNote": "Verified through a second, independently written implementation (a TypeScript-compiler JSX parser counting real h1 JSXOpeningElements). The two disagreed by exactly 1 and the text matcher was wrong: MessageDetailModal.tsx:361 is an <h1> inside a template literal that builds a standalone printable HTML document for print-to-PDF. It is excluded below. After that exclusion the two implementations agree exactly at 18/18."
+      },
+      "exclude": [
+        {
+          "path": "src/features/shared/components/layout/ContentLayout.tsx",
+          "reason": "the primitive itself - ContentHeader's <h1> at :184 is the sanctioned page title this rule routes callers toward"
+        },
+        {
+          "path": "src/features/shared/components/editors/MarkdownRenderer.tsx",
+          "reason": "maps authored markdown '# ' to <h1>; the heading is document content, not the app's page-frame title"
+        },
+        {
+          "path": "src/features/agents/components/ChatMessageContent.tsx",
+          "reason": "same markdown-content mapping for assistant replies inside a chat bubble, not a page header band"
+        },
+        {
+          "path": "src/features/vault/sub_catalog/components/design/setup/setupMarkdownComponents.tsx",
+          "reason": "markdown component map for connector setup docs; heading level comes from the authored document"
+        },
+        {
+          "path": "src/main.tsx",
+          "reason": "pre-mount boot-failure screen rendered before the app shell exists, so no scaffold primitive is reachable from it"
+        },
+        {
+          "path": "src/features/overview/sub_messages/components/MessageDetailModal.tsx",
+          "reason": "the <h1> at :361 is inside a template literal that builds a standalone printable HTML document for print-to-PDF, not a React surface inside the app scaffold"
+        }
+      ],
+      "baseline": {
+        "files": 18,
+        "matches": 18
+      },
+      "floor": 2000
     }
   ]
 }
