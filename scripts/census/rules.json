@@ -1261,6 +1261,43 @@
         "matches": 69
       },
       "floor": 500
+    },
+    {
+      "id": "unsolicited-failure-as-toast",
+      "goldenPath": "docs/concepts/golden-paths/error-surfacing-policy.md",
+      "title": "A failure the user did not ask for, delivered as a transient interruption",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\buse(?:Layout)?Effect\\s*\\(\\s*(?:\\(\\s*\\)|\\w+|async\\s*\\(\\s*\\))\\s*=>\\s*\\{(?:(?!\\buse(?:Layout)?Effect\\s*\\(|\\buseCallback\\s*\\(|\\bconst\\s+\\w+\\s*=\\s*(?:async\\s*)?\\()[\\s\\S]){0,900}?(?:toastCatch\\(|addToast\\((?:(?!addToast\\()[\\s\\S]){0,160}?,\\s*['\"]error['\"])",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "an error toast reached from the body of a useEffect/useLayoutEffect without crossing a nested function boundary on the way. PROXY FOR the stack-free condition: the app decided to do the work, the work failed, and the user - who pressed nothing - is interrupted by a transient, auto-dismissing, corner-anchored surface reporting a failure they did not request, from a component that already owns a loading state and could have rendered it inline. The effect anchor is load-bearing and is what makes this a fact rather than a taste judgement: a handler-reached toast answers a question the user asked and is CORRECT - 348 of 391 toastCatch sites are handler-reached and are deliberately NOT matched. The tempered middle, which refuses to cross `const x = (`, `const x = async (`, `useCallback(` or a second `useEffect(`, is what keeps precision high: without it the same scan reports 3 extra matches whose toast lives in a sibling function defined after the effect (IncidentDiagnosisCard.tsx:27 and BrowserBridgePanel.tsx:33 are the canonical false positives it removes). PRECISION measured by auditing ALL 21 raw matches rather than a sample: 18 true positives, 3 excluded by name below. POSITIVE CONTROL: the identical pattern with only the destination inverted to the compliant doors (silentCatch / silentCatchNull / noteFailure / an inline error setter) scores 295 matches across 241 files, a 16x separation, so the pattern discriminates on the destination and not on `is this an effect body`; that control FAILS against this rule's baseline, as it must. RECALL is deliberately partial: a surface whose loading flag lives in a Zustand slice fetches through the same effect but is counted only when the toast is lexically inside the effect body. Legal destinations, in order: (1) render the failure INSIDE the surface that was loading - it already owns the loading state, so it owns the failure state, and useUnifiedTriage.ts:519 `noteFailure(source, message)` is the reference implementation; (2) where the surface has no body of its own, a persistent inline banner, never a toast; (3) silentCatch(context) when the fetch is advisory and the user loses nothing they can see. PRECONDITION (must be re-derived per repo): this repo starts unsolicited work in useEffect and funnels transient notifications through toastCatch(ctx) / addToast(msg, 'error'). A repo that fetches in a router loader, a server component, or a query library's onError has the SAME condition wearing different syntax and scores ZERO here. Both UI-bearing siblings audited for this path score zero for a second reason: neither personas-web nor brainiac has a toast library at all, and brainiac routes every unreachable-server read to a persistent <ApiOffline /> or <DemoBanner /> instead."
+      },
+      "exclude": [
+        {
+          "path": "src/hooks/utility/timing/useDebouncedSave.ts",
+          "reason": "the effect is a DEBOUNCE of work the user initiated by typing, not an unsolicited fetch - the user is owed the failure. It additionally sets `lastError` for the inline surface before toasting, which is the shape this path prescribes"
+        },
+        {
+          "path": "src/features/triggers/lib/triggerError.ts",
+          "reason": "useRenderTriggerError IS this path's policy implemented - `triggerErrorPresentation(error.kind) === 'toast'` routes by error kind, and the effect is only the render-to-toast bridge for a failure the user already caused. The one place in the repo that decides surfacing by classification rather than by which door was imported"
+        },
+        {
+          "path": "src/features/triggers/sub_studio/useStudioComposer.ts",
+          "reason": "the effect reacts to `armedSource` and `armedSystemOp`, both set by a click, and rejects an invalid combination - a validation verdict on a user action, not a background failure. Excluding the whole file is the cost of a file-granular exclude list and is accepted here because the file contains exactly one toast"
+        }
+      ],
+      "baseline": {
+        "files": 15,
+        "matches": 18
+      },
+      "floor": 4000
     }
   ]
 }
