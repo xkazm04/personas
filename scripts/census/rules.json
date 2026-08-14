@@ -1659,6 +1659,39 @@
         "matches": 17
       },
       "floor": 500
+    },
+    {
+      "id": "call-site-text-match",
+      "goldenPath": "docs/concepts/golden-paths/filtering-and-search.md",
+      "title": "Text-match policy re-derived at the call site instead of taken from a shared matcher",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\.toLowerCase\\(\\)\\s*\\.\\s*includes\\(\\s*[A-Za-z_$]",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a case-folded substring match against a variable — the whole matching policy (case folding, diacritics, whitespace, multi-term) decided inline at the call site. This product ships 14 locales and contains zero toLocaleLowerCase and zero String.normalize('NF*') anywhere in src/**, while calling localeCompare at 180 sites to ORDER strings — so every one of these silently fails to match accented input. The destination is one shared matchesQuery() whose normalization is correct by default; see Gap 1 before ratcheting, because facetedTableModel.searchItems has the same defect today."
+      },
+      "exclude": [
+        {
+          "path": "src/test/**",
+          "reason": "the MCP test-automation bridge resolves personas by fuzzy name in order to drive the app; it is a harness affordance, not a user-facing search surface"
+        },
+        {
+          "path": "src/features/shared/components/display/facetedTableModel.ts",
+          "reason": "searchItems() is the shared matcher this rule routes callers toward; counting the destination as a violation is how a ratchet stops measuring anything"
+        }
+      ],
+      "baseline": {
+        "files": 56,
+        "matches": 121
+      },
+      "floor": 4000
     }
   ]
 }

@@ -344,8 +344,32 @@ export function validateRule(rule, index) {
   need(typeof rule?.signal?.pattern === 'string', 'missing "signal.pattern"');
   need(typeof rule?.signal?.description === 'string', 'missing "signal.description"');
   need(Number.isInteger(rule?.floor) && rule.floor > 0, 'missing "floor" (a positive integer)');
-  need(Number.isInteger(rule?.baseline?.files), 'missing "baseline.files"');
-  need(Number.isInteger(rule?.baseline?.matches), 'missing "baseline.matches"');
+
+  // A POSITIVE CONTROL is a rule shape, not a gate. Composers are required to
+  // ship one — the same anchors pointed at the COMPLIANT form, which must also
+  // fail — because that is what proves a matcher discriminates on shape rather
+  // than on a token. It deliberately carries NO baseline: a ratchet is
+  // monotone-downward, so a rule counting compliant code would fail the build
+  // every time adoption improved, and `merge-published-rules.mjs` skips these
+  // by construction.
+  //
+  // But `validateRule` required a baseline unconditionally, so a composer who
+  // followed the instruction could not validate the artifact the instruction
+  // demanded. Reported 2026-08-14 by a composer that hit the wall and said so
+  // rather than working around it — which is the correct response to a tool
+  // contradicting its own brief. Mandating the practice without teaching the
+  // validator about it was the same defect already fixed once in the merger.
+  const isControl = /positive[-_ ]?control/i.test(rule?.id ?? '');
+  if (!isControl) {
+    need(Number.isInteger(rule?.baseline?.files), 'missing "baseline.files"');
+    need(Number.isInteger(rule?.baseline?.matches), 'missing "baseline.matches"');
+  } else {
+    need(
+      rule?.baseline === undefined,
+      'a positive control must NOT carry a baseline — it exists to fail, and a baselined ' +
+        'control would ratchet against improving adoption',
+    );
+  }
 
   for (const [i, ex] of (rule?.exclude ?? []).entries()) {
     need(typeof ex?.path === 'string' && ex.path.length > 0, `exclude[${i}] missing "path"`);
