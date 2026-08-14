@@ -1855,6 +1855,28 @@
         "matches": 32
       },
       "floor": 4000
+    },
+    {
+      "id": "handrolled-llm-envelope-scan",
+      "goldenPath": "docs/concepts/golden-paths/model-composed-ui.md",
+      "title": "A model reply's JSON envelope located by a brace scan re-derived at the call site",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\[\\s*\\.\\.\\s*[A-Za-z_][A-Za-z0-9_]*\\s*\\]\\s*\\.\\s*rfind\\s*\\(\\s*'\\{'\\s*\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A slice-up-to-a-position followed by a backward scan for an opening brace (`blob[..pos].rfind('{')`) — the first move of the copy-pasted 12-line loop that pulls a model-authored JSON envelope out of free prose. PROXY FOR the stack-free condition: the step that turns model output into a typed shape is re-derived at the call site, so each copy silently disagrees about what the model actually emits (fanout.rs:440 omits the in_string state every other copy has, so a `}` inside a model-authored string truncates the slice). The destination exists and is generic: `athena_reaction::extract_json_envelope::<T>(blob, marker)` (athena_reaction.rs:855) IS this loop, with 2 adopters. PRECISION (all 15 matches read, 2026-08-15): 15/15 are model-reply parsers; 14 are violations and 1 (athena_reaction.rs:864) is the primitive itself, carried in the baseline rather than excluded because excluding it would exempt three real hand-rolls in the same file. PRECONDITION (must be re-derived per repo): this repo anchors on a JSON key and scans BACKWARD, and spells the brace as the char literal '{'. Sibling evidence that the CONDITION is universal but this SHAPE is not: brainiac has the same defect at faithfulness.rs:133 written as raw.find('{') + raw.rfind('}') — forward and unanchored — which this pattern scores ZERO on."
+      },
+      "baseline": {
+        "files": 9,
+        "matches": 15
+      },
+      "floor": 900
     }
   ]
 }
