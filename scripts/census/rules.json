@@ -718,6 +718,28 @@
         "matches": 818
       },
       "floor": 1500
+    },
+    {
+      "id": "persistence-handle-in-command-tree",
+      "goldenPath": "docs/concepts/golden-paths/command-naming-placement.md",
+      "title": "An IPC command module checks out a raw database connection instead of delegating to the layer that owns persistence",
+      "roots": [
+        "src-tauri/src/commands"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\b(?:[A-Za-z_][A-Za-z_0-9]*\\.)?[A-Za-z_0-9]*db\\.get\\(\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a connection-pool checkout (`state.db.get()`, `state.user_db.get()`, `user_db.get()`) inside src-tauri/src/commands/**. PROXY FOR the stack-free condition \"the transport/adapter layer acquires a persistence handle directly instead of delegating to the layer that owns data access\". The compliant shape is one line -- `repo::get_all_lean(&state.db)` (commands/core/personas.rs:44) -- which passes the POOL to the repository and never checks a connection out; the violating shape is `let conn = state.user_db.get()?;` followed by inline SQL (commands/companion/observability.rs:84-88). Measured in this repo: 134 checkouts across 46 of 299 command files; 88.1% are followed by a SQL literal or a rusqlite call within 900 chars; only 13.4% sit inside a #[cfg(test)] module; and 1,096 compliant repo:: delegations exist across 86 files, so the correct alternative is present and dominant. Convergence: all four repos in this fleet independently built this boundary and all four leak it (personas-web 6/11 routes, brainiac 20/42 SQL files outside its store crate, personas-cloud 1/8 routers) -- the condition is physics, not local taste. PRECONDITION: this proxy works because Personas' persistence handle is an r2d2 pool whose checkout is spelled `.get()` on a field ending in `db`. A repo using sqlx (`&pool` passed everywhere), an ORM session, or a DI-injected repository interface has the same condition wearing different markup and must re-derive its own proxy -- key on whatever the layer-crossing token is there, not on `.get()`. Legal destination: a function in src-tauri/db/ (the personas-db crate, 117 of 143 files already carry the SQL) called with `&state.db`."
+      },
+      "baseline": {
+        "files": 46,
+        "matches": 134
+      },
+      "floor": 200
     }
   ]
 }

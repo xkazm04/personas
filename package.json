@@ -98,7 +98,8 @@
     "i18n:plan-gaps": "node scripts/i18n/plan-gaps.mjs",
     "i18n:merge-chunks": "node scripts/i18n/merge-chunks.mjs",
     "i18n:purge-dead": "node scripts/i18n/purge-dead-keys.mjs",
-    "check:corpus": "node scripts/census/check-corpus-integrity.mjs"
+    "check:corpus": "node scripts/census/check-corpus-integrity.mjs",
+    "check:doc-map": "node scripts/docs/check-doc-map-paths.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

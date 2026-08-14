@@ -96,7 +96,11 @@ src/
 
 src-tauri/
 ├── src/commands/     # Tauri command handlers (IPC surface)
-├── src/db/           # SQLite schema, migrations, repository pattern
+├── ../db/            # SQLite schema, migrations, repos — an EXTRACTED CRATE at
+│                     # src-tauri/db/, not src-tauri/src/db/ (which does not
+│                     # exist; this line claimed it did until 2026-08-14).
+│                     # engine/ and core/ are extracted the same way — see
+│                     # `npm run test:rust:crates`.
 └── src/engine/       # Execution engine, scheduler, healing, crypto
 ```
 
