@@ -243,7 +243,7 @@ the Display template of every wire-facing thiserror variant (21 in `AppError`, p
 `CryptoError`, which reaches the wire through `From<CryptoError> for AppError → Internal`
 (`crypto.rs:437-441`)) — testing the **prefix the variant guarantees**, not a lucky payload:
 
-- **10 of 25 resolve. 15 do not.**
+- **10 of 25 resolve. 15 do not.** — **CORRECTED 2026-08-14 by [error-message-resolution](./error-message-resolution.md): `AppError` has 21 variants, not 25.** The 25 is not reproducible from `error.rs` by any counting that composer could construct. The right figure is **12 of 21 (57%) unresolved**. Related denominator correction: the "2,378 construction sites" figure counts *textual references*, not constructions — `AppError::Database` has 706 references against 134 constructions, because `error.rs`, `tool_outcome.rs` and the healing path all `match` on it. Weighted by what the backend actually **constructs**, **1,669 of 3,531 (47.3%)** render verbatim. The shape of the finding survives both corrections; the magnitude was overstated by about nine points.
 - Unresolved: `Database`, `Pool`, `Io`, `Serde`, `Execution`, `ProcessSpawn`, `Auth`, `Cloud`,
   `GitLab`, `DeviceGroupConflict`, `Internal`, `External`, `CryptoError::{Encrypt, KeyManagement,
   Base64}`.

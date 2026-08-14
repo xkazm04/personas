@@ -1763,6 +1763,75 @@
         "matches": 12
       },
       "floor": 900
+    },
+    {
+      "id": "constraintless-table-declaration",
+      "goldenPath": "docs/concepts/golden-paths/rust-test-fixtures.md",
+      "title": "A table declaration that cannot reject anything — a CREATE TABLE whose entire column list carries no NOT NULL, so every write the real table would refuse succeeds against it",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "CREATE\\s+TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?[\"'`]?[A-Za-z_][A-Za-z0-9_]*[\"'`]?\\s*\\((?:(?!NOT\\s+NULL|CREATE\\s+TABLE)[^;])*?\\)\\s*;",
+        "flags": "gi",
+        "ignoreCommentLines": true,
+        "description": "a CREATE TABLE statement in Rust source whose entire column list reaches its closing paren without one NOT NULL. PROXY FOR the stack-free condition: a test is given a structure that has the production structure's NAME but not its integrity rules, so a write the real store would REJECT is accepted and the test goes green on data that can never exist. DISTINCT FROM hand-rolled-fixture-ddl, which counts that a fixture EXISTS: that rule cannot see what the fixture DROPPED, because the production twin lives in another file and a single-file matcher cannot reach it. This one keys on the one form of dropping that IS visible in one file - a declaration with no integrity at all - and the two counts move independently: adding a faithful fixture raises that rule and not this one, and repairing a stripped fixture in place lowers this one and not that one. Measured 2026-08-14 at e76646f7d: 15 matches in 6 files, all 15 opened. 14 are #[cfg(test)] fixtures shadowing a production table, and every one is materially narrower than its twin as measured against the operator's live 347 MB personas.db and 17 MB personas_data.db via PRAGMA table_info: commands/design/connector_readiness.rs:1292-1297 declares connector_definitions(3 of 15), persona_credentials(3 of 10), credential_fields(3 of 9), dev_projects(2 of 23), twin_profiles(1 of 13) and dev_standards(1 of 12) in one batch, under a comment reading 'Minimal in-memory schema - only the tables the resolver probes'; mcp_server/obsidian_vault_tests.rs:23,24 declares personas with 1 of its 41 columns and app_settings with 2 of 3; companion/jobs/operations_views.rs:268 declares personas with 2 of 41; companion/proactive/triggers.rs:738 declares companion_proactive_message with 4 of 9; companion/brain/embeddings.rs:497,529,560,608 declares companion_embedding with 1 column and companion_node with 2 of 12. The 15th, db/src/migrations/incremental.rs:4511 dev_auto_runs, is PRODUCTION DDL in which no column is NOT NULL - a real instance of the same condition, kept in the baseline rather than excluded because the rule's claim is about declarations, not about test code. ACROSS THE WHOLE TREE the constraint loss these 15 are the visible tip of: 239 NOT NULL clauses, 187 DEFAULT clauses and 37 REFERENCES clauses absent from the 79 test fixtures relative to their live twins, plus 96 explicitly-created indexes and 52 UNIQUE indexes on the 45 shadowed tables against 4 index declarations on the test side, all four of them inside migration-mechanics tests. FALSE-POSITIVE FLOOR, by construction: 303 of this repo's 313 production CREATE TABLE statements carry at least one NOT NULL, so the pattern is not describing normal DDL - it is describing the 3% that declares nothing. PRECISION ANCHOR: the trailing \\)\\s*; is load-bearing and was found so by disagreement between two independent implementations - a paren-balancing parser without it counted commands/credentials/schema_proposal.rs:397, which is the English sentence 'Use IF NOT EXISTS on all CREATE TABLE statements (or the {database_type} equivalent)' inside a prompt string. English prose is not terminated like a SQL statement; removing the anchor raises the count 15 -> 27. POSITIVE CONTROL: the identical head with the compliant tail (body reaches a NOT NULL) matches 373 times across 35 files, and the token-only form (the words CREATE TABLE, no shape) matches 407 across 45 files - so the shape anchors reject 392 of 407 and the rule discriminates on the body's contents, not on the keyword. LEGAL FIX, in order: (1) delete the fixture and call personas_db::init_test_db() (db/src/lib.rs:1939, 524 sites) or init_test_user_db() (:1994, 57 sites in 8 files), which build from the real migration chain and carry every constraint, index and seed row; (2) if the DDL is legitimately not standing in for a production table - parser input, a sidecar store like bench_*, or a migration pre-state - say which on the line above; (3) NEVER repair it by hand-copying production's constraints, which is how companion/turn_ledger.rs:432 and companion/session.rs:2814 came to maintain 20 columns of companion_turn by hand while init_test_user_db() hands out 16. CONVERGENCE (2026-08-14, brainiac / personas-cloud): brainiac has zero CREATE TABLE in any of its 148 .rs files and 43 of 43 database-touching test files call brainiac_store::migrate(), so this rule scores ZERO there while the underlying condition is present in a different costume - 25 divergent hand-maintained TRUNCATE table lists across those same 43 files, 5 production tables named in none of them, and the resulting bug documented in its own source at brainiac-server/tests/console_pg.rs:618. An adopting repo must re-derive the proxy against wherever its own schema and its own integrity rules live; the SENTENCE travels, the regex does not. PRECONDITION: this proxy assumes schema-as-SQL-text-in-source and integrity-as-inline-column-constraints. PERFORMANCE: the body scan is a lazy tempered class bounded by the next semicolon, which a CREATE TABLE body never contains; no variable-length lookbehind; 0.34 s over 963 files."
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/src/engine/ai_helpers.rs",
+          "reason": "the six CREATE TABLE strings here (:351,:354,:360,:363,:371,:378) are INPUT DATA to extract_fenced_block's own tests - fenced LLM output being parsed, never executed against any connection. hand-rolled-fixture-ddl still counts this file, so the territory is not blind: this exclude narrows a severity band, it does not remove coverage."
+        },
+        {
+          "path": "src-tauri/src/commands/infrastructure/schema_vocabulary.rs",
+          "reason": "the CREATE TABLE strings here (:224,:225,:226) are INPUT DATA to names_of()'s own test, whose subject IS DDL parsing - it deliberately includes back-ticked, quoted, schema-qualified and VIRTUAL spellings because the parser must handle them. Never executed. hand-rolled-fixture-ddl still counts this file, so the territory is not blind."
+        }
+      ],
+      "baseline": {
+        "files": 6,
+        "matches": 15
+      },
+      "floor": 900
+    },
+    {
+      "id": "unresolved-error-as-inline-copy",
+      "goldenPath": "docs/concepts/golden-paths/error-message-resolution.md",
+      "title": "A machine-authored error string pushed into user-facing state with no resolution step",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\bset[A-Za-z0-9_$]*(?:Error|Err|Failure)[A-Za-z0-9_$]*\\(\\s*(?:extractMessage\\(|errMsg\\(|String\\(\\s*(?:e|err|error|ex)\\s*\\)|(?:e|err|error|ex)\\s+instanceof\\s+Error\\s*\\?|(?:e|err|error|ex)\\.message\\b)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "the FIRST argument of a user-facing error-state setter BEGINS with a raw-error expression - extractMessage(err), errMsg(err, ..), String(err), an `err instanceof Error ?` ternary, or err.message - so the sentence the user reads is whatever the producer emitted, with no resolution step in between. PROXY FOR the stack-free condition: a surface that shows the user a failure renders the machine's sentence rather than the product's, which is simultaneously an untranslated string in a 14-locale app, an unbounded string in a bounded layout, and a lost opportunity to say what the user should do. ANCHORED ON THE DESTINATION, NOT THE EXTRACTION SHAPE, and that is what makes it non-redundant with typed-error-contract.md's proposed custom/no-stringly-error-extraction rule: 21 of these 123 matches have ALREADY adopted the sanctioned extractor (extractMessage/errMsg) and still hand the user 'Validation error: interval_seconds must be at least 60' (shape split of the 123: 99 `instanceof Error` ternaries, 21 helper calls, 3 String(err)). Fixing extraction does not fix resolution. It is also disjoint from all three existing toast rules (raw-error-as-toast-message, discarded-toast-copy, unsolicited-failure-as-toast), every one of which anchors on addToast(/toastCatch(; this one anchors on set*Error( and covers the INLINE surfaces - banners, panels, cards - which 87 files use and no existing rule inspects. BOTH COUNTS PRODUCED TWICE as the contract requires: this regex through the real census engine reports 126 matches / 90 files raw, and an independent TypeScript-AST extractor (CallExpression whose callee matches the setter shape and whose first argument is a raw-error node) reports 121 / 86; the 5-match gap was audited and the REGEX is the correct one - the AST missed member-call forms (stream.setError, flow.setError, store.setSendError at useDesignAnalysis.ts:239,260, useCredentialDesign.ts:128, athenaChatSend.ts:128) and one `extractMessage(err) || fallback` argument. PRECISION audited on a systematic every-6th-file sample of 15 sites: 15/15 genuine, each setting a `string | null` state rendered directly into UI or returned from a hook to a consumer that renders it. The 3 excluded files below are the ONLY non-genuine shape found across all 90 raw-matching files. WHY THIS MATTERS NOW: ToastContainer.tsx:77-78 was changed on 2026-08-14 to prefer the caller's string when the classification is 'unclassified', and 1,669 of 3,531 AppError constructions (47.3%) classify as unclassified, so unresolved strings now reach users verbatim on the transient surface too. Measured against a corpus of 3,531 real AppError Display strings plus 47 ValidationError::new messages, both parsed from the Rust source: the shipped resolvers return the generic fallback for 47.3% and the single generic 'Validation' sentence for a further 40%. PRECONDITION (measured, must be re-derived per repo): this repo spells user-facing error state as a `const [x, setXError] = useState<string|null>` hook and spells raw extraction as extractMessage/errMsg/`instanceof Error` ternaries. A repo that stores an error OBJECT in state and resolves at render - which is the COMPLIANT shape here, see the excludes - scores zero while being correct; a repo using a query library's `error` field or a router errorElement has the same condition wearing different syntax and also scores zero. brainiac has neither shape: its console throws a typed ApiError and every describe() switches on e.status, so it scores zero for the right reason. LEGAL FIX, in order: (1) store the rejection VALUE (or the raw string) in state and call resolveErrorTranslated(t, raw) at the render site - AthenaFleetPlanCard.tsx:116 -> :169 is the reference implementation and is why it is excluded below; (2) where the surface is not a component, resolve through getActiveTranslations() before setting state; (3) where the error genuinely has no authored copy, render it verbatim ON PURPOSE by checking `category === 'unclassified'` first, so 'we did not recognise this' is a decision rather than an accident."
+      },
+      "exclude": [
+        {
+          "path": "src/features/plugins/companion/fleet/AthenaFleetPlanCard.tsx",
+          "reason": "the COMPLIANT shape and this path's reference implementation - :116 stores the raw string in state and :169 renders resolveErrorTranslated(t, error).message, which is resolution at the edge rather than no resolution at all"
+        },
+        {
+          "path": "src/features/plugins/companion/ship/AthenaShipMilestoneCard.tsx",
+          "reason": "same compliant shape - :101 stores the raw string, :177 renders resolveErrorTranslated(t, error).message at the edge"
+        },
+        {
+          "path": "src/features/teams/sub_kpis/KPIConnectWizard.tsx",
+          "reason": "compliant - :137 is `extractMessage(err) || resolveErrorTranslated(t, null).message`, i.e. the resolver supplies the fallback sentence when the producer had nothing to say; the file imports resolveErrorTranslated for exactly this"
+        }
+      ],
+      "baseline": {
+        "files": 87,
+        "matches": 123
+      },
+      "floor": 4000
     }
   ]
 }
