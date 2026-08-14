@@ -7,6 +7,7 @@ import { classifyErrorFull } from '@/lib/errors/errorPipeline';
 import { applyErrorAction, isGlobalErrorAction } from '@/lib/errors/errorActionNav';
 import { friendlySeverity } from '@/lib/errors/errorRegistry';
 import { useTranslation } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { useToastTimer } from './useToastTimer';
 
 // ---------------------------------------------------------------------------
@@ -55,8 +56,27 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
     () => (toast.type === 'error' ? classifyErrorFull(toast.message) : null),
     [toast.type, toast.message],
   );
-  const friendly = classified?.friendly ?? null;
-  const displayMessage = friendly?.message ?? toast.message;
+
+  // Resolve user-facing copy through the TRANSLATED registry. `classifyErrorFull`
+  // resolves against the English `errorRegistry`, so every error toast rendered
+  // English in all 14 locales — 596 call sites, and one line. `t` is already in
+  // scope; `resolveErrorTranslated` is fully populated and CI-checked for parity
+  // across 13 locales. `classified` is still what carries the nav action.
+  const friendly = useMemo(
+    () => (toast.type === 'error' ? resolveErrorTranslated(t, toast.message) : null),
+    [t, toast.type, toast.message],
+  );
+
+  // A registry miss returns the generic fallback, never null, so the old
+  // `friendly?.message ?? toast.message` had an UNREACHABLE right branch: the
+  // caller's own message was always discarded. Measured by executing all 62
+  // matchers against every caller-authored string — 94 strings, 0 reached the
+  // user. "Retry limit reached — this event cannot be retried again." rendered
+  // as "Something went wrong." `unclassified` means unmatched
+  // (errorRegistry.ts:20), and an unmatched caller string is strictly more
+  // specific than the generic, so it wins.
+  const matched = friendly !== null && friendly.category !== 'unclassified';
+  const displayMessage = matched ? friendly.message : toast.message;
 
   // Surface the funnel's navigation action on the toast when it's executable
   // without a persona context (Vault / Triggers). An explicit `toast.action`
@@ -90,7 +110,7 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
         )}
         <div className="flex-1 min-w-0">
           <span className="typo-heading block">{displayMessage}</span>
-          {friendly?.suggestion && (
+          {matched && friendly?.suggestion && (
             <span className="typo-caption opacity-70 block mt-0.5">{friendly.suggestion}</span>
           )}
           {toast.action && (

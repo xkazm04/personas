@@ -651,6 +651,73 @@
         "matches": 104
       },
       "floor": 500
+    },
+    {
+      "id": "discarded-toast-copy",
+      "goldenPath": "docs/concepts/golden-paths/i18n-string-authoring.md",
+      "title": "Error-toast copy authored at the call site, where it is neither translatable nor ever rendered",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "toastCatch\\(\\s*(['\"])[^'\"]*\\1\\s*,\\s*(['\"])[^'\"]*[A-Za-z] [A-Za-z][^'\"]*\\2|addToast\\(\\s*(['\"])[^'\"]*[A-Za-z] [A-Za-z][^'\"]*\\3\\s*,\\s*(['\"])error\\4",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a multi-word English string literal handed to an error-toast helper as its message. PROXY FOR the stack-free condition: copy is authored at a call site that cannot render it, so it is simultaneously untranslatable AND dead. Both halves were verified, not assumed. Untranslatable: the literal never enters src/i18n/locales/en.json, so no locale has a translation for it. Dead: ToastContainer.tsx:54-59 computes `friendly = classifyErrorFull(toast.message).friendly` and renders `friendly?.message ?? toast.message`, and resolveError() (errorRegistry.ts:637-657) ALWAYS returns a FriendlyError - GENERIC_FALLBACK 'Something went wrong.' (errorRegistry.ts:620) when nothing matches - so `friendly` is never null and the `?? toast.message` branch is unreachable. All 62 ERROR_RULES matchers were extracted from errorRegistry.ts and executed against every one of these strings: 0 of 94 match, so 94 of 94 render as 'Something went wrong.' Positive-controlled ('NetworkOffline', 'request timed out after 30s', 'Validation failed: name', 'Decryption failed' all match as expected, so the extraction is sound). Precision on a systematic 47-site sample: 47/47 genuine. PRECONDITION (measured, must be re-derived per repo): this repo funnels every error toast through ONE renderer that substitutes a classifier's friendly copy for the caller's string, and spells the emitters `toastCatch(ctx, msg)` and `addToast(msg, 'error')`. A repo whose toast renderer displays what it was handed has the untranslatable half of this condition and not the dead half; a repo using a different toast API scores zero while the condition is present - personas-web has neither helper and 577 hardcoded strings. Template literals are deliberately NOT matched: alertSlice.ts:249 interpolates en.alerts.error_load_rules into one, which is a DIFFERENT defect owned by custom/no-module-scope-en-value. STATUS 2026-08-14: fixes (1) and (2) LANDED in the same session that merged this rule — ToastContainer.tsx now resolves through resolveErrorTranslated(t, raw) and prefers the caller's string when the classification is 'unclassified'. The DEAD half of this condition is therefore closed: these 94 strings now reach the user. The rule stays at 94 because the UNTRANSLATABLE half is untouched — they are still call-site literals absent from en.json, so they render English in all 14 locales. Step (3) is what this baseline now tracks. Do not read the past-tense analysis below as current behaviour. LEGAL FIX, in order: (1) point ToastContainer at resolveErrorTranslated(t, raw) instead of classifyErrorFull().friendly; (2) make :59 prefer the caller's string when the classification is 'unclassified', so specific copy stops being discarded; (3) only then move these 94 strings into en.json. Doing (3) first translates strings that still would not render."
+      },
+      "exclude": [
+        {
+          "path": "src/lib/silentCatch.ts",
+          "reason": "the toastCatch definition itself — the destination this rule routes callers away from, not a call site"
+        }
+      ],
+      "baseline": {
+        "files": 49,
+        "matches": 94
+      },
+      "floor": 4000
+    },
+    {
+      "id": "frozen-ui-copy-constant",
+      "goldenPath": "docs/concepts/golden-paths/i18n-string-authoring.md",
+      "title": "User-facing copy authored as a literal in a non-JSX module, where no translation lookup can reach it",
+      "roots": [
+        "src/features",
+        "src/stores",
+        "src/lib"
+      ],
+      "extensions": [
+        ".ts"
+      ],
+      "signal": {
+        "pattern": "\\b(?:label|description|hint|subtitle|tooltip)\\s*:\\s*(['\"])[A-Z][^'\"]*[a-z] [a-zA-Z][^'\"]*\\1",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a capitalised, multi-word English string on a display-copy property inside a .ts module. PROXY FOR the stack-free condition: user-facing prose is authored as a value in a module with no render context, so no translation lookup can reach it and no render-layer audit can see it. This is the structural blind spot of custom/no-hardcoded-jsx-text, which has only JSXText and JSXAttribute visitors and therefore cannot reach ANY of the repo's 2,725 .ts files. Concentration measured: tourSlice.ts 350 (the 53-step guided onboarding tour, rendered raw at GuidedTour.tsx:457 and :483, three lines from a correctly-translated tx() call at :458), errorRegistry.ts 124, mockRecipes.ts 99, scanAgents.ts 45, triggerConstants.ts 31 - the last of which writes the correct i18n key as a COMMENT beside each English label (':51 label: Watch, // i18n: triggers.category_pull'), which is the clearest possible evidence that the author knew the answer and had no mechanism to reach it from a .ts file. sidebarData.ts holds both patterns in one file: :235 uses labelKey (correct), :64 uses label: 'Welcome' (this condition). The value is required to START uppercase and contain a lowercase-then-space-then-letter run, which excludes machine tokens, snake_case ids and SCREAMING_CONSTANTS; precision on a systematic 50-site sample after the excludes below was 42/50, the 8 misses all being test fixtures now excluded. PRECONDITION (measured, must be re-derived per repo): this repo separates .ts (logic/data) from .tsx (render) and spells display copy with these five key names. A repo that colocates data and components in one extension, or names the key `text`/`caption`/`copy`/`title`, scores zero while the condition is present at full scale - brainiac's equivalent is `STATUS_LABEL: Record<Status,string>` at console/src/kb/kb-data.ts:42, which this pattern would NOT match despite being the same condition. LEGAL FIX: carry the key, resolve at the render site - `labelKey: 'group_monitoring'` in the constant, `t.sidebar[o.labelKey]` in the component, per .claude/CLAUDE.md 'Constants with Labels' and the working precedent at sidebarData.ts:235. DELIBERATE EXCEPTIONS that keep this literal and take an inline reason instead: a value persisted to SQLite, a log line, a Sentry message, a machine-readable default."
+      },
+      "exclude": [
+        {
+          "path": "src/**/__tests__/**",
+          "reason": "test fixtures are English by design and no user reads them — the condition is 'a string a user will read', and including them would baseline 197 files of deliberate English"
+        },
+        {
+          "path": "src/**/*.test.ts",
+          "reason": "same, for colocated unit tests (56 files)"
+        },
+        {
+          "path": "src/lib/harness/scenario-parser.ts",
+          "reason": "the UAT / test-automation harness — its 55 labels are read by the harness author in a report, never rendered in the product UI"
+        }
+      ],
+      "baseline": {
+        "files": 62,
+        "matches": 818
+      },
+      "floor": 1500
     }
   ]
 }
