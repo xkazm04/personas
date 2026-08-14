@@ -1023,6 +1023,51 @@
         "matches": 299
       },
       "floor": 900
+    },
+    {
+      "id": "untimed-repo-query",
+      "goldenPath": "docs/concepts/golden-paths/query-latency-instrumentation.md",
+      "title": "A repository function reaches a SQL statement without passing through the timing wrapper, so its cost is never recorded",
+      "roots": [
+        "src-tauri/db/src/repos"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\bpub\\s+fn\\s+[A-Za-z_][A-Za-z0-9_]*(?:(?!\\bpub\\s+fn\\b|timed_query!)[\\s\\S]){0,2500}?\\.\\s*(?:query_row|query_map|execute_batch|execute|prepare_cached|prepare)\\s*\\(",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a pub fn in the repository layer whose text reaches a rusqlite statement call (query_row / query_map / execute / execute_batch / prepare / prepare_cached) without passing through timed_query! first, and with no intervening pub fn. PROXY FOR the stack-free condition: a persistence operation executes with no record of how long it took, so its cost can never be observed, compared across releases, or attributed when a surface gets slow. Measured 2026-08-14 at HEAD: 245 matches across 36 of 116 files. Two independent implementations reconcile EXACTLY - a brace-matching Rust parser counts 234 pub fns that hold SQL in their own body with no timed_query!, and the 11-match difference is precisely the 11 spans where the SQL belongs to a private helper declared immediately after the matched pub fn (llm_spend.rs:30 pub fn record -> the untimed INSERT is in fn try_record at :40). So precision on the CONDITION is 245/245 and precision on the ATTRIBUTED FUNCTION NAME is 234/245; every match is a real untimed statement either way. Median matched span is 197 chars and only 1 of 245 approaches the 2500 cap, so the bound loses almost nothing and makes the count a floor rather than an estimate. Every match is a distinct (file, fn) pair - no function is double-counted. Zero matches sit inside a #[cfg(test)] module (a naive after-the-marker heuristic flags 8, and all 8 are production functions declared below a mid-file test mod). The gap is FILE-shaped, not function-shaped, which is why a per-function lint would read as noise: twin.rs is 38/39 uninstrumented, research_lab.rs 25/25, orchestration/team_assignments.rs 24/24, while executions.rs, events.rs and triggers.rs are near 100 percent covered - a module either adopted the macro or never heard of it. It does not correlate with age (the three oldest repo files, 2026-02-19, are covered; 2026-07-31 arrivals are not) and it does not correlate with hotness. PRECONDITION (must be re-derived per repo): this repo executes SQL through rusqlite method calls spelled query_row / query_map / execute / prepare inside functions declared pub fn, and its timing wrapper is a macro named timed_query! that must be written by hand. A repo whose driver is sqlx (.fetch_one(&pool).await), an ORM, or a query builder has the SAME condition wearing different markup and this pattern scores zero against it - brainiac is exactly that repo, and 0 of its 176 store functions are timed. A repo that times structurally at a chokepoint has the condition designed out and needs no rule at all: this repo's own frontend is that case, since src/lib/tauriInvoke.ts:513,:517 calls recordIpcCall on BOTH the success and the failure path of every IPC call, so its coverage is 100 percent by construction and cannot regress. LEGAL FIX, in order: (1) wrap the body in timed_query!(TABLE, TABLE::op, { ... }) - alert_rules.rs:35-59 is the shape to copy; (2) if the function is a thin wrapper over a private helper, wrap the helper, not the wrapper; (3) if the function genuinely runs no SQL of its own and only composes other repo functions, it needs no wrapper and the match is telling you a private sibling below it does - wrap that one. Do NOT silence a match by moving SQL out of the repo layer; that trades this condition for the one persistence-handle-in-command-tree counts."
+      },
+      "baseline": {
+        "files": 36,
+        "matches": 245
+      },
+      "floor": 100
+    },
+    {
+      "id": "undeclared-tier-branch",
+      "goldenPath": "docs/concepts/golden-paths/tier-and-capability-gating.md",
+      "title": "A product-tier decision taken from an ambient boolean at a call site instead of declared on the destination, so no test can enumerate what a tier hides",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\{[^}]*\\bis(?:Starter|Team|Builder)\\b[^}]*\\}\\s*=\\s*useTier\\(\\s*\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "destructuring one of useTier()'s convenience booleans (isStarter / isTeam / isBuilder) at a call site. PROXY FOR the stack-free condition: a product-tier/entitlement decision is taken from an AMBIENT boolean where it is used, instead of being DECLARED on the destination where a test can enumerate it. In this repo the declared form is `gates: { minTier }` on a NAV_SECTIONS entry (src/lib/navigation/registry.ts:74-95) or `minTier` on a sidebarData item, evaluated once by passesGates (registry.ts:154-158) or isTierVisible — and registry.test.ts:133-157 can therefore assert exactly which sections a starter tier loses. The 13 ambient reads cannot be enumerated by anything, which is why npm run check:tiers (scripts/check-tiers.mjs) can only assert that three bundles COMPILE. Deliberately does NOT match `tier.isVisible(minTier)` or `tier.current`, which are the declared-gate evaluations. MEASURED PRECISION for the narrow reading 'this hides a capability': 7 of 13 (ExecutionMiniPlayer, PersonaSettingsTab, TemplateDetailModal, CredentialDetailModals, CredentialManagerHeader, CredentialList, NavigationGrid); the other 6 are presentation variance (SetupCards, HeroHeader, DesktopFooter) a redirect guard (EditorBody) or tour selection (TourLauncher, TourHandoffOffer) — all still undeclared tier reads, so they are in scope for the ratchet but should not be filed as capability leaks. PRECONDITION: this proxy keys on a React hook that returns precomputed booleans. A repo whose tier lives in a server-issued claim, a context value, a CSS class, or a route guard scores zero here while the same condition is present at full scale — re-derive the proxy against the local tier primitive."
+      },
+      "baseline": {
+        "files": 13,
+        "matches": 13
+      },
+      "floor": 4000
     }
   ]
 }

@@ -70,8 +70,18 @@ const exact = <T extends string>(map: Record<T, true>): readonly T[] => Object.k
 
 const HOME_TABS = exact<HomeTab>({ welcome: true, cockpit: true, roadmap: true, 'system-check': true, learning: true });
 // `observability` was removed from OverviewTab — it had no OverviewPage router
-// case (the ObservabilityDashboard component is mounted elsewhere), so tracking
-// it inflated the "ignored" denominator with an unreachable tab.
+// case, so tracking it inflated the "ignored" denominator with an unreachable tab.
+//
+// CORRECTED 2026-08-14: this comment used to add "(the ObservabilityDashboard
+// component is mounted elsewhere)". It is not mounted anywhere —
+// `ObservabilityDashboard` is imported by no file in `src/`. That makes
+// `IpcPerformancePanel` (255 lines, finished, p50/p95/p99, translated) and the
+// backend's `getDbPerformance` both unreachable: the same instrument was built
+// twice, once by discipline in Rust and once structurally in TypeScript, and
+// both are missing the same last mile — one import. Nothing in the pipeline
+// fails when a completed observability surface is never mounted, so a comment
+// asserting it is mounted is the only thing standing where the check should be.
+// See docs/concepts/golden-paths/query-latency-instrumentation.md.
 const OVERVIEW_TABS = exact<OverviewTab>({ home: true, incidents: true, executions: true, 'manual-review': true, messages: true, events: true, memories: true, patterns: true, extracted: true, 'memory-graph': true, sla: true, health: true, leaderboard: true, director: true, certification: true });
 const TEAMS_TABS = exact<TeamsTab>({ workspace: true, goals: true, kpis: true, factory: true, projects: true, lifecycle: true, competition: true, mastermind: true });
 const GOALS_TABS = exact<GoalsTab>({ board: true, timeline: true, progress: true, missions: true });
