@@ -1194,6 +1194,28 @@
         "matches": 78
       },
       "floor": 4000
+    },
+    {
+      "id": "raw-inner-html",
+      "goldenPath": "docs/concepts/golden-paths/rendering-untrusted-content.md",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "dangerouslySetInnerHTML",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "Every React escape-hatch into raw HTML. Proxy for: a string reaches the DOM as markup rather than as a text node. The population is small and fully enumerable (4 files), so this is pinned near zero as a review trigger, not a migration ratchet -- any new occurrence must be justified in review against the golden path."
+      },
+      "baseline": {
+        "files": 4,
+        "matches": 5
+      },
+      "floor": 4000
     }
   ]
 }
