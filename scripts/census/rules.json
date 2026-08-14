@@ -1692,6 +1692,27 @@
         "matches": 121
       },
       "floor": 4000
+    },
+    {
+      "id": "unlooking-lint-rule",
+      "goldenPath": "docs/concepts/golden-paths/custom-lint-rule.md",
+      "roots": [
+        "eslint-rules"
+      ],
+      "extensions": [
+        ".cjs"
+      ],
+      "signal": {
+        "pattern": "(?:getText\\(\\)|sourceCode\\.text)[\\s\\S]{0,200}?\\.includes\\(|\\.type !== ['\"]Literal['\"]|\\.type === ['\"]ArrowFunctionExpression['\"][^\\n]{0,80}return",
+        "flags": "g",
+        "description": "A custom ESLint rule that buys precision by NOT LOOKING: it trusts a whole-file text scan to decide whether to run (getText().includes(token)), rejects any attribute value that is not a bare Literal, or aborts its ancestor walk at the first enclosing arrow/function. Each shortcut silently removes most of the rule's own target population — measured: 13 of 18 same-defect variants escape.",
+        "ignoreCommentLines": false
+      },
+      "baseline": {
+        "files": 3,
+        "matches": 3
+      },
+      "floor": 15
     }
   ]
 }
