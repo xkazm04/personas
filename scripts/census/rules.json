@@ -740,6 +740,72 @@
         "matches": 134
       },
       "floor": 200
+    },
+    {
+      "id": "bigint-binding-field",
+      "goldenPath": "docs/concepts/golden-paths/persisted-model-struct.md",
+      "title": "Generated binding field typed bigint, which the IPC transport can never deliver",
+      "roots": [
+        "src/lib/bindings"
+      ],
+      "extensions": [
+        ".ts"
+      ],
+      "signal": {
+        "pattern": "\\bbigint\\b",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a ts-rs-generated field typed `bigint`. PROXY FOR the stack-free condition \"a generated wire type declares a value the transport cannot carry\". ts-rs v10 maps i64/u64/usize/isize to bigint, which is correct for the Rust type and wrong for every Tauri payload: the backend serializes through serde_json (which emits a JSON number) and the frontend receives it through JSON.parse (which cannot produce a bigint). Verified from the workaround rather than assumed - src/api/companion.ts:744 guards with `typeof raw.totalSignalsCaptured === 'bigint'`, a branch that can never be taken at runtime, and its comment at :722-726 states the coercion exists because the binding uses bigint; src/features/agents/sub_deployment/components/cloud/CloudExecutionRow.tsx:31 writes Number(exec.durationMs) for the same reason. Precision is 100% by construction: every match was emitted by the generator and the argument applies to all of them identically. 288 are field declarations; the balance are tuple positions such as Array<[string, bigint]>, which are the same defect. PRECONDITION (must be re-derived per repo): this repo generates frontend types with ts-rs v10. A repo whose generator emits number or string for 64-bit integers, or which hand-authors its types, has this condition wearing different markup and scores zero here. LEGAL FIX, in order: (1) narrow the Rust field to i32/f64 where the value provably fits, which is the honest fix; (2) `#[ts(type = \"number\")]` where the Rust type must stay 64-bit and the value stays under 2^53 - 314 such pins already exist, core/src/models/execution.rs:36,38,43,46,55 being the densest; (3) for a value that genuinely exceeds 2^53, change the Rust field to String, because JSON has no other honest carrier. Never hand-author a shadowing TypeScript interface - src/api/companion.ts:705-714 is what that costs."
+      },
+      "baseline": {
+        "files": 142,
+        "matches": 294
+      },
+      "floor": 900
+    },
+    {
+      "id": "nullable-default-column",
+      "goldenPath": "docs/concepts/golden-paths/persisted-model-struct.md",
+      "title": "Column given a DEFAULT without NOT NULL, so the default binds the writer and promises the reader nothing",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "^[^\\S\\n]*[a-z_][a-z0-9_]*[^\\S\\n]+(?:TEXT|INTEGER|REAL|BLOB|NUMERIC|BOOLEAN)(?![^\\n]*NOT[^\\S\\n]+NULL)[^\\n]*\\bDEFAULT\\b|ADD[^\\S\\n]+COLUMN[^\\S\\n]+(?:IF[^\\S\\n]+NOT[^\\S\\n]+EXISTS[^\\S\\n]+)?[\"'`]?[a-z_][a-z0-9_]*[\"'`]?[^\\S\\n]+(?:TEXT|INTEGER|REAL|BLOB|NUMERIC|BOOLEAN)(?![^\\n;]*NOT[^\\S\\n]+NULL)[^\\n;]*\\bDEFAULT\\b",
+        "flags": "gm",
+        "ignoreCommentLines": true,
+        "description": "a DDL column definition carrying DEFAULT with no NOT NULL, in both spellings this repo uses: a column line inside a CREATE TABLE body, and an ALTER TABLE ... ADD COLUMN clause. PROXY FOR the stack-free condition \"a column's declaration promises the writer something and the reader nothing, so the reader's type is a guess\". A DEFAULT fires only when the column is omitted from an INSERT; both `INSERT ... (col) VALUES (NULL)` and `UPDATE ... SET col = NULL` still write NULL, so the column is nullable and any non-Option Rust field over it is false. Measured consequence in this repo: 43 persisted read-model fields typed T over a nullable column, and 181 row-mapper sites carrying a defensive row.get(...).unwrap_or(...) - 23 of which sit over columns that are NOT NULL everywhere they are declared, because once the mapper compensates by habit the schema's decisions stop being observable. The ADD COLUMN half of the alternation is load-bearing, not thoroughness: per docs/concepts/golden-paths/schema-change.md every future column arrives through ALTER TABLE ... ADD COLUMN at incremental.rs, so a CREATE-TABLE-only rule would be blind to every new violation while reporting a stable count. Precision measured by reading all 27 matches: 27/27 true positives, 0 false positives; an independent DDL parser over all 308 tables agrees on the same set. For scale, this repo already declares 874 columns as NOT NULL DEFAULT - the correct form is the overwhelming majority and this is a closable backlog, not a systemic failure. PRECONDITION (must be re-derived per repo): this repo writes DDL as SQL string literals inside Rust, one column per line, with the type keyword adjacent to the column name. A repo using an ORM schema DSL, a .sql migration directory, or a schema-builder API has the same condition in a syntax this pattern cannot see. LEGAL FIX: write NOT NULL DEFAULT together. That is the type-level fix - it makes the wrong struct field unrepresentable rather than counted - and it is one word."
+      },
+      "baseline": {
+        "files": 4,
+        "matches": 27
+      },
+      "floor": 900
+    },
+    {
+      "id": "model-struct-without-rename-all",
+      "goldenPath": "docs/concepts/golden-paths/persisted-model-struct.md",
+      "title": "Exported model struct that declares no serde casing, so its wire shape is chosen by a default nobody picked",
+      "roots": [
+        "src-tauri/core/src/models"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "#\\[derive\\([^)]*\\bTS\\b[^)]*\\)\\]\\s*(?:#\\[(?!serde\\s*\\([^\\]]*rename_all)[^\\]]*\\]\\s*)*#\\[ts\\([^\\]]*export[^\\]]*\\]\\s*(?:#\\[(?!serde\\s*\\([^\\]]*rename_all)[^\\]]*\\]\\s*)*pub struct",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "an attribute run that derives TS and carries #[ts(export)] but no #[serde(rename_all = ...)], reaching `pub struct`. PROXY FOR the stack-free condition \"a type that crosses a serialization boundary leaves its field naming to a default nobody chose\". The negative lookahead inside the attribute-run repetition is what makes this work: the run cannot consume a rename_all attribute, so a conforming struct fails to reach `pub struct` and does not match. Consequence measured tree-wide: 292 of 854 exported structs declare no casing, 290 of which have at least one snake_case field, so the generated binding surface is split - src/lib/bindings/PersonaExecution.ts is persona_id/input_tokens/created_at while src/lib/bindings/MemoryReviewProposal.ts is personaId/reviewedCount/createdAt - and 5 tables (dev_workspaces, n8n_transform_sessions_new, audit_incidents, persona_memories_new, persona_triggers_new) are read by exported structs that disagree with EACH OTHER on casing. Deliberately STRUCT-LEVEL, not field-level: adding a field to one of the 198 legacy structs does not move the count, so this fires only when a NEW non-conforming model is authored, which is the moment the fix is free. A field-level variant over the generated output was measured (303 files / 1482 matches) and REJECTED - see the golden path section 9. Two independent implementations agree on 198. PRECONDITION (must be re-derived per repo): this repo homes its persisted models in one directory and expresses wire casing with a serde container attribute. LEGAL FIX: add #[serde(rename_all = \"camelCase\")]. The durable fix is a #[derive(PersistedModel)] that emits the whole container triple, after which this rule ratchets to zero and is deleted."
+      },
+      "baseline": {
+        "files": 40,
+        "matches": 198
+      },
+      "floor": 50
     }
   ]
 }

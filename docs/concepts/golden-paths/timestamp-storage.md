@@ -44,6 +44,16 @@ Store every moment as **one fixed-width string: `YYYY-MM-DDTHH:MM:SS.sssZ`** (24
 
 1. **Declare the column** `TEXT` with `DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))`. Never `DEFAULT (datetime('now'))`. Add the index you intend to use (`CREATE INDEX ... ON t(created_at DESC)`) — with a fixed-width canonical shape a plain column index is all you ever need.
 2. **Declare it once.** Put the DDL in exactly one migration file. If a table is created in both `initial.rs`/`schema.rs` *and* patched by `incremental.rs`, the two must agree byte-for-byte on the timestamp columns — 14 columns currently do not (see Deviations).
+
+   > **Contested count (2026-08-14).** A later composer re-parsed this
+   > **table-scoped** — comparing each column against the same table's other
+   > declaration — and measured **4**, not 14. The methods differ in exactly the
+   > way that inflates: an unscoped parse matches a column *name* across
+   > different tables and reports a disagreement that isn't one. That is the
+   > same substring-vs-structural error that made the Tauri-command count wrong
+   > three times running, so **4 is the more likely figure and 14 should not be
+   > cited until adjudicated.** Neither number has been re-derived by a third
+   > pass; the doctrine in this section does not depend on which is right.
 3. **Write it from Rust** with `now_utc()` bound as a parameter, or omit the column entirely and let the DEFAULT fire. Both now produce the identical 24-character string, so **either is correct** — that equivalence is the whole point of choosing a shape SQLite can also emit.
 4. **Compare the raw column.** `WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ','now','-30 days')`, `ORDER BY created_at DESC`, `WHERE expires_at > strftime('%Y-%m-%dT%H:%M:%fZ','now')`. No `datetime(col)`. No `julianday(col)`. Cross-table timeline merges compare the raw values directly — no `strftime` normalization layer.
 5. **Read it in TypeScript** through `RelativeTime` (elapsed) or `AbsoluteTime` (fixed). Sort with `localeCompare` on the raw string; when you need arithmetic use `toEpochMs()`. Never `new Date(str)` in a component.
