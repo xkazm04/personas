@@ -134,6 +134,18 @@ Three design points earned the hard way:
 3. **Vendor the catalogue, not the prose.** `library-index.json` carries ids,
    titles and recurrence — enough to enumerate what exists offline, with the
    principle text staying upstream where it can be corrected once.
+4. **A ported gate brings a fixture corpus, and a fixture corpus IS a set of
+   violations.** The census self-test hand-counts hits in `__fixtures__/tree/`,
+   so those files contain deliberate defects — an undefined component, an
+   unclosed tag. Dropping them into politicas broke **two** of that repo's own
+   gates on contact: `eslint` (its only error) and `tsc --noEmit` (two errors).
+   Neither was a problem with the host repo or with the port; it is that every
+   gate in the host now sees a corpus authored to fail. **The port is not
+   finished when the runner works — it is finished when the host's existing
+   gates have been taught to ignore its fixtures.** Three separate exclusions
+   were needed here (eslint `globalIgnores`, tsconfig `exclude`, and LF
+   normalisation of the provenance hashes so a CRLF checkout does not read as
+   drift).
 
 ## What the library owes, from this run
 
@@ -161,6 +173,77 @@ Three design points earned the hard way:
   class unrepresentable with no migration code. Adopt it into the principle.
 - **Token-contract tests.** Politicas `readFileSync`s its CSS and recomputes WCAG
   contrast in a test. That closes `design-token-usage.md`'s own Gap 7.
+
+## What happened when it met real work
+
+The protocol was fixed before starting: run the session-start check as a session
+would, do genuine work, and record whether the library fired, helped, misled, or
+was ignored. It misled, twice, and that is the result.
+
+**Observation 1 — the session-start check is generic.** It lists unreviewed
+principles ranked by **personas' recurrence**, which is not politicas' recurrence,
+and it has no idea what the session is about to touch. A session working on a
+chart gets the same twelve lines as one working on the ingest pipeline. Ranking by
+the library's own frequency is a proxy for "important here" that nothing supports.
+
+**Observation 2 — the first adopted gate had 0% precision.** `raw-web-storage`
+matched 5 code sites. Reading them:
+
+| Site | What it actually does | Verdict |
+| --- | --- | --- |
+| `followCodec.ts:25` | schema version in the key | correct (and better than the principle) |
+| `useSchranka.ts:32` | the designated accessor | correct |
+| `GraphPage.tsx:55` | `isVariant()` type guard validates on read, falls back to `"mapa"` | **correct — validate-on-read** |
+| `ReferendumPage.tsx:95` | tests existence only, never parses the value | **correct — no shape to drift** |
+
+Three *different* correct answers to one principle, and the gate called two of them
+violations. Repo-wide there are exactly **3 `getItem` sites** and **zero** that
+parse storage outside the accessor. Had the gate been trusted, the "fix" would have
+added version keys to two files that do not need them and could have broken the
+existence-only check. **The library pointed at work that did not exist.**
+
+**Observation 3 — the second gate also had 0% precision, and its failure is
+structural.** A doorless-catch rule found 5 of 106 catch clauses. All three sampled
+turned out to return the error *as a value* — `{status:'error', message}`,
+`{ok:false, errors:[…]}` — or to store and rethrow after a retry loop.
+
+That is not politicas being sloppy. **It is a Result-returning codebase**, where an
+error is part of the return type rather than a side effect. `swallowed-error-telemetry`'s
+central clause — *every caught error must reach a reporting door* — is calibrated to
+a codebase where errors are side effects, and a caller can ignore an unreported side
+effect in a way it cannot ignore a `Result`. **The clause is A-LOCAL and nobody
+noticed, because personas has no Result-typed comparison to see it against.**
+
+**The generalisable lesson, and it is about method rather than either repo:**
+
+> Writing a census rule from a principle *before reading the code* produces ~0%
+> precision. Twice in one hour, on two different principles, by someone who had
+> just spent a day documenting that exact failure in other people's rules.
+
+The corpus already knew this — nine composers refused to ship gates at 4%, 24% and
+26% precision, and `stale-response-guard` refused when 245 of 246 sites were already
+correct. What this run adds is that the failure is *sharpest* in a consuming repo,
+because the principle arrives with the authority of having been measured somewhere
+else. In its home repo a bad gate is caught by the population it was derived from;
+in a consuming repo there is no such anchor.
+
+**So the ledger grew a fourth state: `satisfied`.** The principle applies, this repo
+already meets it, and the entry must carry the *mechanism*, the *evidence*, and a
+`verifiedBy` command that reproduces the measurement — because "already fine" that
+cannot be re-measured is indistinguishable from "nobody looked". It is explicitly a
+snapshot, not a guarantee: nothing gates a regression, and the entry says so.
+
+Final state: **0 adopted · 2 satisfied · 7 declined · 36 unreviewed**. Zero adopted
+rules is the honest outcome — both principles reviewed on the merits were already
+met, by mechanisms this repo invented. The census is not run when the registry is
+empty, because the runner correctly treats an empty registry as structural failure.
+
+**What the library was actually worth here** was not a gate. It was two verified
+"you are already fine, and here is precisely how" results, and two upgrades
+travelling the other way (version-in-the-key; Result-as-contract). For a consuming
+repo that may be the normal case rather than a disappointment — a mature codebase
+should mostly *pass*, and a library whose only output is new gates would be
+measuring its own novelty rather than the repo's health.
 
 ## The honest limit
 
