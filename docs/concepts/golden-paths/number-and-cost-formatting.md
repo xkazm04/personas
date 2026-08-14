@@ -669,7 +669,13 @@ formatting test file (`slaFormat.test.ts`), and **no test asserts on money anywh
    English-emitting helpers' unit words into `en.json` under a `common.units` section and give each
    helper a `t`/`language` parameter — or, cheaper and more correct, replace `formatRelativeTime`'s
    ladder with `Intl.RelativeTimeFormat`, which is exactly this problem solved in the platform and
-   is used **zero** times in any of the three repos.
+   is used ~~**zero** times in any of the three repos~~ **— CORRECTED 2026-08-14 by
+   [timestamp-display](./timestamp-display.md): it is used ZERO times in the two siblings but
+   THREE times in this repo.** The claim was true of the siblings only, and the error mattered:
+   one of the three, `LiveRoadmapStatusPill.tsx:30`, is the single site in the tree that gets every
+   clause of the timestamp path right — it takes `language` as a **required** prop and clamps the
+   future behind a docblock naming NTP skew, DST and sleep-wake. Calling the API unused erased the
+   repo's own best worked example of the fix this gap recommends.
 
 ---
 
