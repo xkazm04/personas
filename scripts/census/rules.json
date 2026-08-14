@@ -588,6 +588,47 @@
         "matches": 815
       },
       "floor": 4000
+    },
+    {
+      "id": "bindingless-catch-on-io",
+      "goldenPath": "docs/concepts/golden-paths/swallowed-error-telemetry.md",
+      "title": "I/O failure caught without binding the error, so no record of it is possible",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\btry\\s*\\{(?:(?!\\btry\\s*\\{)[\\s\\S]){0,1500}?\\bawait\\b[\\s\\S]{0,1500}?\\}\\s*catch\\s*\\{(?!\\s*\\})",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a try block that AWAITS something, closed by a parameterless `catch {` with a non-empty body. PROXY FOR the stack-free condition: an I/O failure is handled at a site that has destroyed the only evidence of it, so no telemetry is reachable without first changing the handler's signature. The bindingless form is load-bearing and is what makes this a fact rather than a taste judgement - `catch {}` cannot call silentCatch(ctx)(err), reportError(err, ...) or Sentry.captureException(err) at all, because there is no `err`. The `await` conjunct is what keeps precision high: it restricts the rule to I/O (IPC, fetch, filesystem, subprocess), whose failure carries the backend-computed AppError envelope that typed-error-contract exists to produce. The 258 bindingless catches guarding SYNCHRONOUS work are deliberately NOT matched - 168 guard JSON.parse of local or user-authored text, where parse failure is the function's documented contract rather than an error (src/lib/utils/parseJson.ts:6 is the canonical legitimate shape). Measured precision on a deterministic spread sample of the await subset: 8/8 true positives; the broad all-bindingless variant measured ~30% false positives and was rejected for that reason. Line attribution points at the `try`, not the `catch`, because the match starts there. PRECONDITION (must be re-derived per repo): this repo writes async work as `try { await f() } catch { ... }` using ES2019 optional catch binding. A repo that always binds the error and then ignores it has the SAME condition wearing different syntax, and this pattern scores ZERO while the condition is present at full scale - the failure the portability test measured for tables.md and form-field-and-validation.md. Legal destinations: bind the error and hand it to silentCatch(context) / toastCatch(context) from @/lib/silentCatch, or reportError(err, fallback, set, { action }) from @/stores/storeTypes."
+      },
+      "exclude": [
+        {
+          "path": "src/test/**",
+          "reason": "the test-automation harness at src/test/automation/bridge.ts drives the live app through deliberately-failing paths; a swallow there is a fixture, not a production blind spot"
+        },
+        {
+          "path": "**/__tests__/**",
+          "reason": "test files legitimately await a rejecting fixture and discard it to assert the surrounding behaviour rather than the error"
+        },
+        {
+          "path": "**/*.test.ts",
+          "reason": "test files legitimately await a rejecting fixture and discard it to assert the surrounding behaviour rather than the error"
+        },
+        {
+          "path": "**/*.test.tsx",
+          "reason": "test files legitimately await a rejecting fixture and discard it to assert the surrounding behaviour rather than the error"
+        }
+      ],
+      "baseline": {
+        "files": 84,
+        "matches": 122
+      },
+      "floor": 4000
     }
   ]
 }

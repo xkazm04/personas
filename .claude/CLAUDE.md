@@ -218,7 +218,8 @@ deliberate.
 - `toastCatch()` from `src/lib/silentCatch.ts` for user-facing errors (Sentry + toast)
 - `silentCatch()` for background errors (Sentry + console only)
 - `resolveError()` from `src/lib/errors/errorRegistry.ts` maps raw errors to friendly messages
-- ESLint rule `custom/no-silent-catch` warns on empty `catch {}` blocks — the next person debugging in production needs a Sentry breadcrumb, not a comment.
+- ESLint rule `custom/no-silent-catch` is **`"error"`** (`eslint.config.js:104`), not "warns" as this line said until 2026-08-14. A full run over 4,829 files returns **0 findings** — the condition is extinct, not unenforced. It is absent from the top lint rules because the gate worked.
+- **But it only sees empty `catch {}`.** Measured 2026-08-14: of **2,752** production catch sites, **760 try/catch bodies reach no error door at all** (Sentry, toast, or log) across 440 files, and only **10.6%** produce a Sentry *event*. `.catch()` sits at **99.5%** adoption against try/catch's **58.6%** — a 41-point gap in the same repo for the same concept, and the sole difference is that a lint rule visits `.catch` while nothing visits a `CatchClause` body. See [`docs/concepts/golden-paths/swallowed-error-telemetry.md`](../docs/concepts/golden-paths/swallowed-error-telemetry.md).
 
 ### Concurrent CLI sessions (active-runs ledger)
 
