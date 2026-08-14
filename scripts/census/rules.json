@@ -344,6 +344,103 @@
         "matches": 38
       },
       "floor": 2000
+    },
+    {
+      "id": "unregistered-tauri-event-name",
+      "goldenPath": "docs/concepts/golden-paths/backend-to-frontend-events.md",
+      "title": "Tauri event emitted under a name the shared registry does not declare",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\b(?:app[A-Za-z0-9_]*|[A-Za-z0-9_]*handle[A-Za-z0-9_]*)\\s*\\.\\s*emit\\s*\\((?!\\s*(?:&\\s*)?(?:[a-z_][A-Za-z0-9_]*\\s*::\\s*)*event_name\\s*::)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "an AppHandle-shaped receiver calling Tauri .emit() whose first argument is NOT an `event_name::` constant - a module-local const, a raw literal, or an untyped &str threaded in from a config struct. Proxy for: an event name crosses the Rust->JS boundary without being declared in the one registry both sides read."
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/engine/src/event_registry.rs",
+          "reason": "the emit_event / try_emit_event wrappers themselves - they take the name as a parameter by design; this is the primitive the rule routes callers TO"
+        },
+        {
+          "path": "src-tauri/engine/src/events.rs",
+          "reason": "TauriEmitter::emit_json is the headless-safe emitter primitive; its &str parameter is the abstraction boundary the trait exists to provide, not a violation"
+        },
+        {
+          "path": "src-tauri/src/background_job.rs",
+          "reason": "BackgroundJobManager holds two &'static str event names given at construction; all nine production constructors pass event_name:: constants, so this indirection is registry-backed"
+        },
+        {
+          "path": "src-tauri/src/engine/system_ops.rs",
+          "reason": "its two consts are `pub const X: &str = event_name::Y;` aliases re-exported for the system-op catalog, so both emits are registry-backed by construction"
+        }
+      ],
+      "baseline": {
+        "files": 31,
+        "matches": 71
+      },
+      "floor": 900
+    },
+    {
+      "id": "unmanaged-tauri-subscription",
+      "goldenPath": "docs/concepts/golden-paths/backend-to-frontend-events.md",
+      "title": "Tauri event subscription created outside the five subscription primitives",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?<![.\\w$])listen\\s*(?:<[^>()]*>)?\\s*\\(",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a bare listen() call outside the five primitives that own subscription lifecycle (eventBridge registry, useTauriEvent/useTypedTauriEvent, createSingletonListener, useRunEventListener, typedListen). Proxy for: a subscription whose teardown, async-registration race and event-name typing are re-derived per call site instead of owned by one layer."
+      },
+      "exclude": [
+        {
+          "path": "src/lib/eventRegistry.ts",
+          "reason": "typedListen is the typed wrapper the rule routes callers to; it must call the raw API"
+        },
+        {
+          "path": "src/lib/eventBridge.ts",
+          "reason": "the declarative app-level subscription registry - the primitive that owns attach/retry/teardown for process-lifetime listeners"
+        },
+        {
+          "path": "src/hooks/useTauriEvent.ts",
+          "reason": "useTauriEvent / useTypedTauriEvent are the component-lifetime primitives that own the cancelled-flag teardown race"
+        },
+        {
+          "path": "src/hooks/realtime/createSingletonListener.ts",
+          "reason": "the singleton fan-out primitive - one underlying subscription shared by N React consumers"
+        },
+        {
+          "path": "src/hooks/realtime/useRunEventListener.ts",
+          "reason": "the run-status binding primitive that owns terminal-phase detection and multi-binding teardown"
+        },
+        {
+          "path": "**/__tests__/**",
+          "reason": "test doubles legitimately stub and call listen() directly to drive fixtures"
+        },
+        {
+          "path": "**/*.test.ts",
+          "reason": "test doubles legitimately stub and call listen() directly to drive fixtures"
+        },
+        {
+          "path": "src/test/**",
+          "reason": "the test-automation harness drives the real event API on purpose"
+        }
+      ],
+      "baseline": {
+        "files": 45,
+        "matches": 68
+      },
+      "floor": 4000
     }
   ]
 }
