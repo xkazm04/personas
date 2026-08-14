@@ -45,7 +45,7 @@
     "gen:catalog": "node scripts/docs/gen-shared-catalog.mjs",
     "check:catalog": "node scripts/docs/gen-shared-catalog.mjs --check",
     "check:catalog-boundary": "node scripts/refactor/classify-shared.mjs --check",
-    "census": "node scripts/census/run-census.mjs",
+    "census": "node scripts/census/check-corpus-integrity.mjs && node scripts/census/run-census.mjs",
     "census:check": "node scripts/census/run-census.mjs --check",
     "census:test": "node scripts/census/self-test.mjs",
     "check": "npm run check:contracts && npm run check:tiers && npm run check:tauri-configs && tsc --noEmit && eslint src/",
@@ -97,7 +97,8 @@
     "check:i18n:untranslated": "node scripts/i18n/check-untranslated.mjs --strict",
     "i18n:plan-gaps": "node scripts/i18n/plan-gaps.mjs",
     "i18n:merge-chunks": "node scripts/i18n/merge-chunks.mjs",
-    "i18n:purge-dead": "node scripts/i18n/purge-dead-keys.mjs"
+    "i18n:purge-dead": "node scripts/i18n/purge-dead-keys.mjs",
+    "check:corpus": "node scripts/census/check-corpus-integrity.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
