@@ -1366,6 +1366,29 @@
         "matches": 71
       },
       "floor": 900
+    },
+    {
+      "id": "module-scope-install-latch",
+      "goldenPath": "docs/concepts/golden-paths/hmr-safe-singletons.md",
+      "title": "One-way module-scope latch guarding an unreleased registration",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "^let\\s+([A-Za-z_$][\\w$]*)\\s*(?::[^=\\n]{0,60})?=\\s*false\\s*;(?![\\s\\S]*\\n[ \\t]*\\1\\s*=\\s*false)[\\s\\S]*?\\b\\1\\s*=\\s*true\\s*;",
+        "flags": "gm",
+        "ignoreCommentLines": true,
+        "description": "A module-scope `let x = false` that is later set to true and never set back to false — a one-way latch. Because it lives in module scope it is re-created on every HMR module re-evaluation, so whatever it guards runs a second time; and because it has no release path, the first registration can never be undone. Where the latch guards an unreleased side effect (a document/window listener, a monkey-patch, an injected <style>, a process-lifetime registry) a second copy is SILENTLY ADDITIVE — nothing throws, the handler count just rises. PROXY FOR the stack-free condition: a one-way latch guarding a registration that is never released. Fix by refcounting the resource (acquire on first subscriber, release on last — see relativeTimeTicker.ts:44-83), by a generation token (executionSink.ts:110), or, last, by a globalThis slot (eventBridge.ts:130-146)."
+      },
+      "baseline": {
+        "files": 13,
+        "matches": 13
+      },
+      "floor": 4000
     }
   ]
 }
