@@ -286,6 +286,21 @@ export function assertRule(rule, result) {
     }
   }
 
+  // A positive control has no baseline BY DESIGN — it exists to be run and to
+  // fail, never to ratchet. `validateRule` was taught this on 2026-08-14; this
+  // function was not, and it dereferenced `rule.baseline` unconditionally, so a
+  // CORRECTLY shaped control crashed `run-census.mjs` with a TypeError. Found by
+  // a composer that built one exactly as instructed and hit the crash.
+  //
+  // That is the third tool in this runner broken by mandating positive controls
+  // without teaching it about them (the merger, then validateRule, now this).
+  // The lesson is not about controls: a convention introduced at the authoring
+  // layer has to be pushed through every layer that consumes the artifact, and
+  // "I fixed the validator" is not the same as "the shape now works".
+  if (rule.baseline === undefined) {
+    return problems;
+  }
+
   const base = rule.baseline;
   for (const metric of ['files', 'matches']) {
     const actual = result[metric];
