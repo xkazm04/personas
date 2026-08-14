@@ -1411,6 +1411,28 @@
         "matches": 1108
       },
       "floor": 2000
+    },
+    {
+      "id": "undeclared-parent-fate",
+      "goldenPath": "docs/concepts/golden-paths/foreign-key-policy.md",
+      "title": "A foreign key that names its parent but never says what happens when that parent is deleted",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "(?:\\)|[A-Za-z0-9_])\\s+REFERENCES\\s+[\"'`]?[A-Za-z_][A-Za-z0-9_]*[\"'`]?\\s*\\(\\s*[\"'`]?[A-Za-z_][A-Za-z0-9_]*[\"'`]?\\s*\\)(?!\\s*(?:ON\\s+DELETE|ON\\s+UPDATE|DEFERRABLE))",
+        "flags": "gi",
+        "ignoreCommentLines": true,
+        "description": "a REFERENCES clause, in a column definition or a FOREIGN KEY table constraint, with no ON DELETE action after it. PROXY FOR the stack-free condition: a child row declares which parent it belongs to without declaring what becomes of it when that parent is destroyed, so the store picks a behaviour the author never chose. VERIFIED BEHAVIOURALLY against SQLite (node:sqlite, 2026-08-14), not inferred: with a parent row and one child row present, DELETE FROM parent under an omitted ON DELETE is REJECTED with `FOREIGN KEY constraint failed`, and pragma_foreign_key_list reports the clause as `NO ACTION`. The omission does not mean 'do nothing to the child' - it means 'refuse the delete', which is the opposite of what the two live instances' authors intended. Confirmed against the operator's real 347 MB personas.db: DELETE FROM dev_workspaces on the one workspace that has projects is refused outright, and the app only works because delete_workspace (db/src/repos/dev_workspaces.rs:386-405) hand-NULLs dev_projects.workspace_id first - under a doc comment whose stated reason ('SQLite FK cascade only fires with PRAGMA foreign_keys=ON, which we do not rely on here') is false, since STANDARD_PRAGMAS sets it on every pooled acquire (db/src/lib.rs:201, :216-224). The live schema carries exactly 2 NO ACTION constraints out of 172 total (149 CASCADE, 21 SET NULL); this pattern finds those 2 plus 1 inside a #[cfg(test)] fixture that recreates the retired persona_groups shape, which a live-schema check cannot see - that complementarity is why this is a static rule beside a runtime test rather than instead of one. PRECISION: 3 of 3 matches opened and confirmed. The forward-anchored preceding-token class is load-bearing and removes the tree's only two false positives, incremental.rs:211-212, where the bare string literals \"REFERENCES credentials(id)\" and \"REFERENCES persona_credentials(id)\" are the arguments of the .replace() that REPAIRED the mcp_gateway_members phantom-parent bug - without the anchor the fix is reported as the defect. POSITIVE CONTROL: the identical head with the compliant tail (ON DELETE) matches 209 times across 6 files and the token-only form (REFERENCES <name>, no shape) matches 254 across 29 files including English prose in prompt strings, so the rule discriminates on the trailing shape rather than on the word REFERENCES. Multi-column REFERENCES t(a,b) does not occur in this tree (measured: 0), so the single-column form has full coverage. No variable-length lookbehind - one forward scan, 308 ms over 963 files. CONVERGENCE (2026-08-14, brainiac / personas-cloud / vibeman): stating ON DELETE explicitly is physics ON SQLITE and only there - the three SQLite codebases measured sit at 97.5% / 100% / 97.1% explicit, while Postgres brainiac sits at 57.6% and its migrations/0034_projects_onboarding.sql:46-49 argues FOR the omission ('Default NO ACTION means a project with live keys cannot be dropped - revoke first'). That is a reasoned counter-example and it is why this rule is scoped to a SQLite tree: on Postgres the implicit default is enforced from birth, whereas on SQLite the constraint is opt-in per connection and un-ALTER-able, so an unstated fate is a full table rebuild away from being fixable. Also universal across all four repos: ON UPDATE = 0 and explicit RESTRICT = 0, so the only real choices are CASCADE, SET NULL, or a documented refusal. LEGAL FIX, in order: (1) ON DELETE CASCADE when the child is owned by the parent; (2) ON DELETE SET NULL when the child records something that happened TO the parent and should outlive it, with the column nullable; (3) keep the omission ONLY when refusing the parent delete is the intent, and then write that reason in a comment on the line above - brainiac 0034:46-49 is the exemplar. Dropping the FK entirely and relying on a hand-written DELETE is what produced this repo's 1,030 live orphan rows; see the golden path. END OF LIFE: this rule is designed to reach zero. When it does the runner fails structurally on zero-matches, by design - DELETE the rule then, do not baseline it at 0."
+      },
+      "baseline": {
+        "files": 1,
+        "matches": 3
+      },
+      "floor": 900
     }
   ]
 }
