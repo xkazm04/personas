@@ -1877,9 +1877,20 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             reason          TEXT,
             created_at      TEXT NOT NULL DEFAULT (datetime('now'))
         );
-        CREATE INDEX IF NOT EXISTS idx_pe_execution ON policy_events(execution_id);
-        CREATE INDEX IF NOT EXISTS idx_pe_persona   ON policy_events(persona_id);
-        CREATE INDEX IF NOT EXISTS idx_pe_created   ON policy_events(created_at DESC);",
+        -- Index names are GLOBAL in SQLite, not per-table. `idx_pe_persona` and
+        -- `idx_pe_created` already belong to persona_executions (schema.rs:130
+        -- and :132), which runs first — so `IF NOT EXISTS` matched the existing
+        -- NAME and these two statements were silent no-ops. policy_events had no
+        -- index on either column; EXPLAIN QUERY PLAN against the live database
+        -- confirmed `SCAN policy_events`. Renamed 2026-08-14.
+        --
+        -- `has_index(conn, name)` (line 76) cannot detect this class: it matches
+        -- on name alone, so it reports an index as present when the name belongs
+        -- to a different table. Hardening it to `has_index_on(conn, table, name)`
+        -- is an owed follow-up recorded in docs/concepts/golden-paths/index-design.md.
+        CREATE INDEX IF NOT EXISTS idx_pe_execution         ON policy_events(execution_id);
+        CREATE INDEX IF NOT EXISTS idx_policy_events_persona ON policy_events(persona_id);
+        CREATE INDEX IF NOT EXISTS idx_policy_events_created ON policy_events(created_at DESC);",
     )?;
 
     // -- saved_views: view_type + view_config columns ------

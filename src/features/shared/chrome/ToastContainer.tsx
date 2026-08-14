@@ -5,9 +5,8 @@ import { useToastStore, MAX_VISIBLE_TOASTS } from '@/stores/toastStore';
 import type { StandardToast, HealingToast } from '@/stores/toastStore';
 import { classifyErrorFull } from '@/lib/errors/errorPipeline';
 import { applyErrorAction, isGlobalErrorAction } from '@/lib/errors/errorActionNav';
-import { friendlySeverity } from '@/lib/errors/errorRegistry';
 import { useTranslation } from '@/i18n/useTranslation';
-import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { resolveErrorTranslated, friendlySeverityTranslated } from '@/i18n/useTranslatedError';
 import { useToastTimer } from './useToastTimer';
 
 // ---------------------------------------------------------------------------
@@ -109,7 +108,12 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
           <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
         )}
         <div className="flex-1 min-w-0">
-          <span className="typo-heading block">{displayMessage}</span>
+          {/* Clamped because the unclassified branch renders the caller's or
+              backend's string verbatim. Of 25 real AppError Display strings,
+              17 match neither registry, and those can be arbitrarily long
+              ("Database error: UNIQUE constraint failed: personas.name").
+              The healing variant has always clamped; the standard one did not. */}
+          <span className="typo-heading block line-clamp-3 break-words">{displayMessage}</span>
           {matched && friendly?.suggestion && (
             <span className="typo-caption opacity-70 block mt-0.5">{friendly.suggestion}</span>
           )}
@@ -193,7 +197,7 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
                 {toast.message}
               </span>
               <span className={`typo-caption px-1.5 py-0.5 rounded border flex-shrink-0 ${styles.badge}`}>
-                {friendlySeverity(toast.severity)}
+                {friendlySeverityTranslated(t, toast.severity)}
               </span>
             </div>
             <span className="typo-body text-foreground mt-0.5 block">

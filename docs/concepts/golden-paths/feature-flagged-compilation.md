@@ -514,7 +514,7 @@ production site).
    `scripts/census/lib/engine.mjs:82-85` recognises `//`, `*`, `/*` — not `#`), cannot
    expand `$CARGO_MANIFEST`, and cannot see an argv array. That is why the most valuable
    gate for this leaf cannot be a census rule (§9 item 2 measures all four reasons).
-8. **`npm run census:check` is wired into nothing.** Not `npm run check`
+8. **~~`npm run census:check` is wired into nothing.~~ CLOSED 2026-08-14, in the same commit that published this path.** It is now part of `npm run check` (alongside `check:corpus` and `check:doc-map`), which `ci.yml:111` already runs. The finding was true when measured and false within the hour — a later composer flagged it as wrong, which is correct *now* and would have been wrong then. Left visible rather than deleted because it is the sharpest thing this wave found: the corpus spent seven batches prescribing gates while its own 27 rules were a report nobody ran. Original text follows. — Not `npm run check`
    (`package.json:51`), not `lefthook.yml`, not any workflow — `census` appears **zero**
    times under `.github/`. Every census rule in the corpus, including the one below, is
    currently a report nobody runs.

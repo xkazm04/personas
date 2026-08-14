@@ -14,6 +14,15 @@
 // application always worked while `cargo test` was completely dead on Windows.
 // CI never caught it because CI runs the Rust suite on Linux.
 //
+// CORRECTION 2026-08-14: `.github/workflows/ci.yml`'s Rust job is a MATRIX over
+// windows-latest, macos-latest and ubuntu-24.04, and the Windows leg runs
+// `cargo test` bare (ci.yml:275) with no manifest fixup. So either that leg is
+// red, or the trap does not reproduce on the runner (plausibly a different
+// dependency graph, since the failure comes via rfd/tauri dialog APIs). Not
+// resolvable without compiling, and cargo runs are guarded on this machine —
+// flagged rather than guessed. The sentence above is kept because it records
+// what was believed when the fixup was written.
+//
 // WHY THIS IS A POST-LINK STEP AND NOT build.rs
 // ---------------------------------------------
 // Cargo has no build-script directive that targets the *lib unit-test* binary:

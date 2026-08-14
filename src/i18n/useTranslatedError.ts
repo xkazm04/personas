@@ -68,7 +68,7 @@ const ERROR_KEY_MAP: Array<{ match: string | RegExp; keyPrefix: string; category
   // ERROR_RULES. Kept first for the same reason: the raw string carries generic
   // words a later rule would otherwise claim.
   { match: /already (?:decided|resolved)[\s\S]{0,80}?by a concurrent action/i, keyPrefix: 'decision_conflict', category: 'recoverable' },
-  { match: 'NetworkOffline', keyPrefix: 'network_offline', category: 'system' },
+  { match: /NetworkOffline|Network offline:/, keyPrefix: 'network_offline', category: 'system' },
   { match: 'timed out', keyPrefix: 'timed_out', category: 'recoverable' },
   { match: 'Failed to build HTTP client', keyPrefix: 'http_client', category: 'system' },
   { match: 'Auth token missing or invalid', keyPrefix: 'auth_invalid', category: 'user_action' },
@@ -82,7 +82,7 @@ const ERROR_KEY_MAP: Array<{ match: string | RegExp; keyPrefix: string; category
   { match: 'weekly usage limit reached', keyPrefix: 'usage_limit_weekly', category: 'user_action' },
   { match: 'usage limit reached', keyPrefix: 'usage_limit_window', category: 'recoverable' },
   { match: 'rate limit exceeded', keyPrefix: 'rate_limit', category: 'recoverable' },
-  { match: 'RateLimited', keyPrefix: 'rate_limited', category: 'recoverable' },
+  { match: /RateLimited|Rate limited:/, keyPrefix: 'rate_limited', category: 'recoverable' },
   { match: 'Budget limit exceeded', keyPrefix: 'budget_limit', category: 'user_action' },
   { match: 'budget exceeded', keyPrefix: 'budget_exceeded', category: 'user_action' },
   { match: 'Claude CLI not found', keyPrefix: 'cli_not_found', category: 'system' },
@@ -106,7 +106,7 @@ const ERROR_KEY_MAP: Array<{ match: string | RegExp; keyPrefix: string; category
   { match: 'is too large for OCR', keyPrefix: 'ocr_file_too_large', category: 'user_action' },
   { match: 'Decryption failed', keyPrefix: 'decryption', category: 'user_action' },
   { match: 'Circular chain detected', keyPrefix: 'circular_chain', category: 'user_action' },
-  { match: 'NotFound', keyPrefix: 'not_found', category: 'recoverable' },
+  { match: /NotFound|Not found:/, keyPrefix: 'not_found', category: 'recoverable' },
   { match: 'Connection limit reached', keyPrefix: 'connection_limit', category: 'system' },
   { match: /Webhook returned HTTP \d+/, keyPrefix: 'webhook_error', category: 'system' },
   { match: 'Cannot reach Zapier hook', keyPrefix: 'zapier', category: 'user_action' },

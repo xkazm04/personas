@@ -828,6 +828,105 @@
         "matches": 127
       },
       "floor": 500
+    },
+    {
+      "id": "raw-error-as-toast-message",
+      "goldenPath": "docs/concepts/golden-paths/toasts.md",
+      "title": "A transient notification whose entire message is a machine-authored error string",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "addToast\\(\\s*(?:[A-Za-z_$][\\w$]*\\s+instanceof\\s+Error\\s*\\?|String\\(\\s*(?:e|err|error)\\s*\\)|extractMessage\\()(?:(?!addToast\\()[\\s\\S]){0,200}?,\\s*['\"]error['\"]",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "the FIRST argument to an error toast BEGINS with a machine-authored error expression - an `x instanceof Error ? x.message : ...` ladder, `String(err)`, or `extractMessage(err)` - so the entire visible text of the notification is a string the product never wrote. PROXY FOR the stack-free condition: a transient, auto-dismissing, corner-anchored surface is asked to carry an unbounded machine-authored string as its whole message, which is simultaneously a layout failure (unbounded), a locale failure (untranslated in all 14 locales) and a content failure (unreviewed). ANCHORED DELIBERATELY: a TRANSLATED FRAME with the detail scoped inside - tx(t.schedules.toast_update_failed, { error: err instanceof Error ? err.message : String(err) }), 14 sites - is the CORRECT shape prescribed by this path's step 5 and is NOT matched. Three template-literal frames with hardcoded English around the same ternary (CreateTriggerForm.tsx:37, useEditorSave.ts:139, ChronologyAdoptionView.tsx:1137) are also excluded by the anchor: they are the same rendering defect but their PRIMARY defect is untranslated English, which belongs to discarded-toast-copy in i18n-string-authoring.md. BOTH COUNTS WERE PRODUCED TWICE, as the contract requires for a multiline pattern: this regex and an independent brace-matching argument extractor (comments stripped, arguments split at paren depth 1) agree exactly - the unanchored variant at 37 matches / 19 files, the anchored variant shipped here at 20 matches / 12 files. WHY THIS IS NEWLY URGENT: until 2026-08-14 ToastContainer.tsx computed `friendly = classifyErrorFull(toast.message).friendly` and rendered `friendly?.message ?? toast.message`, and resolveError() ALWAYS returns a FriendlyError, so the right branch was unreachable and every one of these strings was replaced by the generic 'Something went wrong.' ToastContainer.tsx:78-79 now reads `matched ? friendly.message : toast.message` with matched = (friendly !== null && friendly.category !== 'unclassified'), so the unmatched branch is LIVE for the first time. Measured against a corpus of 25 real Rust AppError Display strings built from the #[error(...)] templates in src-tauri/core/src/error.rs with placeholders filled: 17 of 25 match NEITHER the 65 ERROR_KEY_MAP matchers NOR the 62 ERROR_RULES matchers, and therefore now render verbatim - including 'Database error: UNIQUE constraint failed: personas.name', 'Rate limited: 429 from api.anthropic.com; retry-after 42s' and 'Serialization error: missing field capabilities at line 1 column 84'. Three registry rules are additionally DEAD because they match the PascalCase Rust variant names NetworkOffline / NotFound / RateLimited while the wire carries the Display strings 'Network offline: ...' / 'Not found: ...' / 'Rate limited: ...' (error.rs:173-179); those three tokens appear nowhere in the repo outside the registries and their own tests. sanitize_error_message (error.rs:144-153) strips absolute file paths ONLY, and only for the Database/Io/Internal variants - not hostnames, SQL identifiers, URLs or ids - and Sentry's scrubPii runs in beforeSend/beforeBreadcrumb, i.e. on the TELEMETRY path, never on the toast. The standard toast has NO clamp: `truncate` and `line-clamp-2` appear only on the healing variant (ToastContainer.tsx:192, :216), while the message span at :112 is a bare `typo-heading block` inside a max-w-sm card. PRECONDITION (measured, must be re-derived per repo): this repo funnels every transient notification through ONE addToast(message, type) store action and spells raw-error extraction as an `instanceof Error` ternary. personas-web made the OPPOSITE choice at src/app/dashboard/agents/page.tsx:76-77 - `catch {` with no binding and a fixed i18n template - so this pattern scores ZERO there while the underlying question is answered by all five of its hand-rolled toast components. LEGAL FIX, in order of preference: (1) `.catch(toastCatch('feature:operation'))` from @/lib/silentCatch, which performs the same extraction AND emits log.warn + a Sentry breadcrumb first, which a bare addToast does not; (2) a translated frame, tx(t.<section>.<op>_failed, { error }), keeping the sentence localized and the raw detail scoped; (3) where no error object exists because the guard fired before any work started, an inline field/panel state rather than a toast at all."
+      },
+      "exclude": [
+        {
+          "path": "src/lib/silentCatch.ts",
+          "reason": "toastCatch is DEFINED here - silentCatch.ts:126-130 is addToast(customMessage || msg, 'error', 5000) with msg = extractMessage(err). This is the sanctioned door the rule routes callers TO, not a call site, and it earns the raw string because it emits log.warn + a Sentry breadcrumb before rendering it. Scoped to this one file rather than a src/lib/** glob so that future render-facing code under lib is still counted"
+        }
+      ],
+      "baseline": {
+        "files": 12,
+        "matches": 20
+      },
+      "floor": 4000
+    },
+    {
+      "id": "hand-rolled-fixture-ddl",
+      "goldenPath": "docs/concepts/golden-paths/rust-unit-test-harness.md",
+      "title": "A test builds its own copy of a production table instead of getting the schema from the production builder, so it certifies a shape no user will ever have",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "CREATE\\s+TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?[\"'`]?[A-Za-z_]",
+        "flags": "gi",
+        "ignoreCommentLines": true,
+        "description": "a CREATE TABLE statement in Rust source outside the six schema-owning files. PROXY FOR the stack-free condition: a test constructs its own copy of a production structure instead of obtaining it from the production builder. Measured 2026-08-14: 93 matches in 37 files; 72 of them are #[cfg(test)] fixtures shadowing 38 tables the migration chain already owns, 47 are NARROWER than the production table (561 production columns absent in total) and 26 omit a NOT NULL-no-default column, so an INSERT the real database would REJECT passes green — the mechanism behind the 30 schema-violating INSERTs in persisted-model-struct.md. Zero of the 74 sit in production code. The legal destination is personas_db::init_test_db() (db/src/lib.rs:1939, 525 call sites) for the app database and init_test_user_db() (:1994, only 62 sites in 8 files) for the user database; both build from the real migration chain via a once-per-process OnceLock template. KNOWN BLIND SPOT, deliberate: CREATE VIRTUAL TABLE is excluded because sqlite-vec tables cannot live in static schema text and production legitimately creates them at runtime (db/src/vector_store.rs:61, db/src/repos/core/memories.rs:1687); that hides 2 real test-side vec0 fixtures (companion/brain/embeddings.rs:559, companion/brain/keyword.rs:141). KNOWN IMPRECISION, quantified: 21 of the 93 name a table with no production counterpart — scratch tables in a SQL-generation test (src/engine/ai_helpers.rs, 6), a benchmark harness's own tables (src/bench/db.rs, 5), and DDL strings fed to the table-name parser under test (src/commands/infrastructure/schema_vocabulary.rs, 4). They are left IN the baseline on purpose: they are the same construct, a file-level exclude would blind the rule to a real fixture added to that same file later, and a new scratch table costs one `--update`. PRECONDITION: this proxy assumes schema-as-SQL-text-in-source. A repo whose schema lives in .sql migration files, an ORM model, or a schema DSL scores zero here while the condition is present at full scale — re-derive against the local schema home."
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/db/src/migrations/initial.rs",
+          "reason": "the production schema itself — migrations::run's first step, the thing every fixture is supposed to be built FROM"
+        },
+        {
+          "path": "src-tauri/db/src/migrations/schema.rs",
+          "reason": "the production schema itself — the frozen legacy fresh-install table set applied by migrations::run"
+        },
+        {
+          "path": "src-tauri/db/src/migrations/incremental.rs",
+          "reason": "the production migration chain — run_incremental's ddl_step/run_step bodies, replayed verbatim by the fixture"
+        },
+        {
+          "path": "src-tauri/db/src/migrations/mod.rs",
+          "reason": "the production migration chain's entry point and its own applied-migrations ledger table"
+        },
+        {
+          "path": "src-tauri/db/src/migrations/fk_hygiene.rs",
+          "reason": "the production migration chain — table rebuilds for foreign-key hygiene, also replayed by the fixture"
+        },
+        {
+          "path": "src-tauri/db/src/lib.rs",
+          "reason": "KNOWLEDGE_BASE_SCHEMA and COMPANION_SCHEMA — the production text for the user database, executed verbatim by init_user_db AND by the init_test_user_db fixture"
+        }
+      ],
+      "baseline": {
+        "files": 37,
+        "matches": 93
+      },
+      "floor": 900
+    },
+    {
+      "id": "boolean-column-index",
+      "goldenPath": "docs/concepts/golden-paths/index-design.md",
+      "title": "Single-column index on a boolean column, which cannot narrow a scan but is written on every row change",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "CREATE\\s+INDEX\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?[A-Za-z0-9_]+\\s+ON\\s+[A-Za-z0-9_]+\\s*\\(\\s*(?:is_[a-z_]+|enabled|active|starred|pinned|archived|dismissed|deleted|locked|hidden|approved|resolved|acknowledged)\\s*\\)\\s*(?!WHERE)",
+        "flags": "gi",
+        "ignoreCommentLines": true,
+        "description": "a non-partial, single-column CREATE INDEX whose only key is a boolean-shaped column. PROXY FOR the stack-free condition \"an index is declared over a key whose distinct-value count cannot narrow a scan, so it costs a write on every row change and returns no read\". Measured against the live 347MB personas.db with planner statistics present (PRAGMA analysis_limit=1000 on every connection plus PRAGMA optimize in the idle maintenance loop, db/src/lib.rs:207,:237, and sqlite_stat1+sqlite_stat4 are both populated): the query each index exists to serve, WHERE enabled = 1, matches 76 of 78 personas rows (97%), 325 of 351 persona_triggers rows (93%), and 95 of 102 persona_event_subscriptions rows (93%) - the predicate is a synonym for \"all rows\", not a filter. EXPLAIN QUERY PLAN confirms SQLite still CHOOSES them (SEARCH personas USING INDEX idx_personas_enabled) because sqlite_stat1 stores only the AVERAGE rows-per-distinct-key (39 of 78, 176 of 351) and never sees the skew, so these are not dead indexes the planner ignores - they are live indexes that add a b-tree hop to a near-full scan and a write to every INSERT and UPDATE of the table. The negative lookahead on WHERE is load-bearing: a PARTIAL index (CREATE INDEX ... ON t(enabled) WHERE enabled = 1) over the same column is the CORRECT construction, indexing only the rows a query wants, and must not be reported - incremental.rs:4726 is the one instance in this tree and it is the positive control that proves the lookahead works. Convergence: brainiac has ZERO single-column boolean indexes and 12 partial indexes (21% of its total) where this repo has 20 and 17 (2.9%, and 14 of those 17 are UNIQUE constraints rather than read optimizations), so the sibling reached the correct construction independently and uses it seven times as often. PRECONDITION (must be re-derived per repo): this repo writes DDL as SQL string literals inside Rust and names boolean columns with an is_/enabled/active vocabulary. A repo whose booleans are typed BOOLEAN in an ORM schema DSL, or named differently, has the same condition wearing markup this pattern cannot see. LEGAL FIX, in order: (1) delete the index - the column is almost always read together with another predicate that already has one; (2) make it PARTIAL over the selective branch (WHERE enabled = 1) when the query only ever wants one value; (3) fold it into a COMPOSITE with the column actually filtered alongside it, leading with the selective column - incremental.rs:1466-1512 is the band that does this correctly and states each served query as a -- comment above its index."
+      },
+      "baseline": {
+        "files": 4,
+        "matches": 20
+      },
+      "floor": 900
     }
   ]
 }
