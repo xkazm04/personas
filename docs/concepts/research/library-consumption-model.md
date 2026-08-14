@@ -245,12 +245,77 @@ repo that may be the normal case rather than a disappointment — a mature codeb
 should mostly *pass*, and a library whose only output is new gates would be
 measuring its own novelty rather than the repo's health.
 
+## The one downward transfer, and what actually caused it
+
+After two failed adoptions, one change did land in politicas from this direction —
+but the mechanism was not the one the design predicts, and that distinction is the
+point.
+
+`lib/format.ts` is built around determinism. It hand-rolls thousands-grouping
+(`groupDigits`, `groupedInt`) and states why: *"server and client can have
+different ICU versions, which can vary the grouping separator byte-for-byte and
+break hydration."* Four calls in `formatCompactCzk` used `toLocaleString("cs-CZ")`
+and `toLocaleString("en-US")` anyway — the only survivors of the very API the
+module was written to avoid, reintroducing exactly the hazard it documents.
+`toLocaleString("cs-CZ")` emits the Czech separator as **U+00A0** on some ICU
+versions and **U+202F** on others, so the module's own `czechInt` (pinned to
+U+00A0, ČSN 01 6910) and `formatCompactCzk` could disagree byte-for-byte on the
+same number, across 8 consumer sites.
+
+Fixed by routing those four calls through the module's own `groupedInt` with the
+separators its primitives already pin. Verified byte-for-byte against the old
+output on this runtime for both locales including negatives — identical now, and
+no longer ICU-dependent at all.
+
+**What found it was not a golden path.** No principle in the library covers
+hydration determinism. The convergence *comparison* surfaced the inconsistency,
+and what made it legible as a defect was **the repo's own comment** — the file
+states its rule, so the exception is visible without any external doctrine. What
+the library contributed was pattern recognition: having just fixed an implicit-locale
+defect in `<Numeric>` upstream is what made a hardcoded locale downstream read as a
+defect rather than as a detail.
+
+That is a real transfer mechanism and worth naming, because it is *not* the one
+the ledger implements. The ledger transfers **enforcement**. This transferred
+**attention** — and attention is what actually moved in every productive step of
+this run: the `<Numeric>` defect was invisible from inside personas until politicas
+showed a codebase that binds locale in the hook; the Result-vs-door distinction was
+invisible until a Result-typed codebase sat next to a door-typed one. Nothing was
+gated into existence. Things became *visible* by comparison.
+
+**A caveat on the test that appeared to protect this.** `deriveRadar.test.ts:184`
+asserts `expect(e.detailCs).toContain(formatCompactCzk(czk, "cs"))` — the function
+compared against itself, which passes whatever it returns. It would not have caught
+a separator change. The 30 green tests in `lib/civic/data.test.ts` pin the
+primitives, not this function. Both were checked before relying on either, and the
+real verification was a direct old-vs-new byte comparison.
+
 ## The honest limit
 
-Nothing here demonstrates that a golden path *authored in personas* improved
-politicas. One principle was adopted, and adopting it surfaced a place where
-politicas was already ahead. The transfer that has actually been demonstrated is
-of **method** — the census mechanism, the ledger, the discipline of measuring a
-population before gating it — not of content. Whether the 45 written paths help a
-repo that did not author them remains untested, and the next run should adopt a
-principle politicas has *not* already solved before claiming otherwise.
+**No golden path authored in personas improved politicas.** That remains true at
+the end of the run, and it is the result that should govern how much more of the
+corpus gets written before the next check.
+
+Three kinds of transfer were attempted; they did not fare equally.
+
+| Transfer of | Attempted via | Outcome |
+| --- | --- | --- |
+| **Enforcement** | adopt a principle, write a local gate | **Failed twice.** Both gates 0% precision; both principles already satisfied by better local mechanisms. |
+| **Method** | port the census engine, the ledger, measure-before-gating | **Succeeded.** Self-test 23/23 in a foreign stack; the ledger is what made the two failures legible instead of shipping them. |
+| **Attention** | put two codebases side by side | **Succeeded, and did all the real work.** |
+
+That third row is the finding this run actually earned. Every productive step came
+from *comparison*, not from doctrine: `<Numeric>`'s locale defect was invisible from
+inside personas until politicas showed a codebase binding locale in the hook; the
+Result-vs-door distinction was invisible until a Result-typed codebase sat beside a
+door-typed one; `format.ts`'s four stray `toLocaleString` calls became a defect only
+because that file states its own rule. **Nothing was gated into existence. Things
+became visible by being placed next to something different.**
+
+Which is uncomfortable for the corpus's premise, because attention does not
+obviously need 247 written paths — it needs two codebases and someone measuring.
+The next run should test the one thing still untested: adopt a principle politicas
+has **not** already solved, and see whether the *written path* — rather than the
+comparison — is what closes it. Until that is shown, the honest claim for the
+library is that it is an excellent instrument for *seeing*, and an unproven one for
+*telling*.
