@@ -338,7 +338,9 @@ false-positive shapes explicitly, ship at warn.
 
 **A gate is appropriate here, but not the obvious one.** "Raw `<button>` is
 banned" would fire on 2,751 sites, 440 of them legitimate, and would be ignored
-exactly like the ~10,086 existing warnings. The gate has to key on things that
+exactly like the 1,135 existing warnings — a figure corrected 2026-08-14 from the
+stale "~10,086" in `CLAUDE.md`; the argument is unaffected, since neither gate
+fails on warnings at any count. The gate has to key on things that
 are provably wrong.
 
 ### Signal A — exact variant clone (precision ≈ 100%)

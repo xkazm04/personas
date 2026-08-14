@@ -514,7 +514,11 @@ There is no scheduled `/guide-sync` cron — the per-session model is the entire
 ## Pre-existing Issues (Do Not Fix Unless Asked)
 
 - Git post-commit hook warning about `git_hook.py` is harmless.
-- Lint baseline (as of 2026-04-17 ship-ready pass): **0 errors, ~10,086 warnings**. The warnings are almost entirely `custom/no-raw-*-classes` (design-token migration) and `custom/no-hardcoded-jsx-text` (i18n extraction) — both are known incremental migrations. Follow CLAUDE.md's fix-as-you-touch policy; do not bulk-migrate.
+- Lint baseline — **measured 2026-08-14 at HEAD: 0 errors, 1,135 warnings across 246 of 4,829 files.** Breakdown: `custom/no-low-contrast-text-classes` **705 (62%)**, `custom/no-hardcoded-jsx-text` 226, `custom/no-raw-radius-classes` 128, `custom/no-raw-text-classes` 16, `no-restricted-imports` 13. Follow the fix-as-you-touch policy; do not bulk-migrate.
+
+  > **Corrected 2026-08-14.** This line previously read "~10,086 warnings … almost entirely `no-raw-*-classes`", a figure from the 2026-04-17 pass that went stale when `no-raw-spacing-classes` was disabled. It was wrong by ~9×, and wrong about the dominator: the whole `no-raw-*` family is **144 (12.7%)**, not "almost entirely". Five golden paths cited it as the *reason* to ship a gate at `"error"` ("a warn-level rule is invisible in a sea of 10,086"). **Re-measure before citing.**
+  >
+  > The conclusion survives on better grounds, and they don't depend on the count: `npm run check` runs `eslint src/` with **no `--max-warnings`**, so it exits 0 no matter how many warnings exist; the pre-commit hook runs `--quiet --max-warnings 99999`, and `--quiet` suppresses warnings before they can be counted. **A warn-level rule enforces nothing at either gate, by construction.** Warn-level rules still change behaviour — but through editor squiggles at authoring time, not enforcement, which is why they correlate with adoption without ever failing a build.
 - `react-hooks/rules-of-hooks` violations (conditional hooks, hooks called outside components): ~21 remain across ~7 files, at warn-level pending triage. Not a ship-blocker; fix opportunistically when touching those files.
 
 ### Historical (for context; no longer active on `master`)

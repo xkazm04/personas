@@ -556,9 +556,15 @@ be deferred: any file other than `shared/components/forms/FormField.tsx` that
 declares a component matching `/^(Form)?Field|LabeledInput|FormRow|InputRow$/`.
 
 **Mechanism.** Two rules in `eslint-rules/`, registered in `eslint.config.js`.
-Ship them at **`"error"`, not `"warn"`**. This is load-bearing: the repo's lint
-baseline is ~10,086 warnings, so a warn-level rule is indistinguishable from
-background noise and enforces nothing. Error-level is affordable because both
+Ship them at **`"error"`, not `"warn"`**. This is load-bearing, but **not for the
+reason originally given here** (corrected 2026-08-14): this section cited a
+"~10,086-warning baseline" from `CLAUDE.md`, which measurement put at **1,135
+warnings in 246 files** — wrong by ~9×. The real reason is stronger and
+count-independent: `npm run check` runs `eslint src/` with **no `--max-warnings`**,
+so it exits 0 with any number of warnings, and the pre-commit hook runs
+`--quiet --max-warnings 99999`, which suppresses warnings before counting them.
+**A warn-level rule enforces nothing at either gate by construction.**
+Error-level is affordable because both
 rules have small, enumerable violation sets. They run on `pre-commit`
 (`lefthook.yml` `eslint-staged`, `*.{ts,tsx}`) and in CI via
 `npm run check` → `eslint src/`.

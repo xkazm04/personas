@@ -208,7 +208,7 @@ Every deviation above shipped under a green `npm run check`, a green `cargo clip
 
 **Signal.** Any `JSON.parse(` outside `src/lib/utils/parseJson.ts`. Modelled on the existing `eslint-rules/prefer-numeric.cjs`, which bans raw `.toFixed()` in favour of `display/Numeric` — same shape of problem, same shape of answer.
 **Allowlist:** `src/lib/utils/parseJson.ts` (the one parse), `src/test/**` and `__tests__/**`, and the 34 LLM/HTTP-response decodes, which are a genuinely different situation (untrusted external payload, not a column) and should be listed explicitly rather than pattern-matched.
-**Severity:** `error` for new code, landed baselined-then-ratcheted. The repo's warning baseline is already ~10,086, so a new warn-level rule would be invisible — this is the lesson of the design-token migration and it applies verbatim here.
+**Severity:** `error` for new code, landed baselined-then-ratcheted. A new warn-level rule would enforce nothing: `npm run check` runs `eslint src/` with no `--max-warnings` and the pre-commit hook uses `--quiet --max-warnings 99999`, so warnings never fail either gate at any count. (Corrected 2026-08-14: this previously cited a "~10,086" baseline from `CLAUDE.md`, measured since at **1,135**. The lesson of the design-token migration does apply here — but the lesson is about *delivery format*, not volume: see `design-token-usage.md`.)
 **Message:** points at `safeJsonParse` for step-8 columns and at "this column should be `Json<T>` — the decode should not exist" for the rest.
 
 ### 3. The behavioural gate — corrupt-blob tests in both trees

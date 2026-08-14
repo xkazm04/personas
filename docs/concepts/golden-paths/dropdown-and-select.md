@@ -725,10 +725,14 @@ absence is always a bug. Three-line rule; ship it with the other two.
 Three rules in `eslint-rules/`, registered in `eslint.config.js`. Ship
 `no-raw-select` and `require-listbox-item-count` at **`"error"`**;
 `no-hand-rolled-dropdown` at `"error"` behind the allowlist below. This is
-load-bearing: the repo's lint baseline is ~10,086 warnings, so a warn-level rule
-is indistinguishable from background noise and enforces nothing — which is
-exactly the state `custom/prefer-status-badge` and `custom/prefer-numeric` are
-in. All three violation sets here are small and enumerable, so error-level is
+load-bearing, but **not for the reason originally given** (corrected 2026-08-14):
+this cited a "~10,086-warning baseline", measured since at **1,135 warnings in
+246 files**. The count-independent reason is stronger — `npm run check` passes
+`eslint src/` with **no `--max-warnings`** and the pre-commit hook uses
+`--quiet --max-warnings 99999`, so **a warn-level rule enforces nothing at either
+gate by construction** — which is exactly the state `custom/prefer-status-badge`
+and `custom/prefer-numeric` are in.
+All three violation sets here are small and enumerable, so error-level is
 affordable. They run on `pre-commit` (`lefthook.yml` `eslint-staged`,
 `*.{ts,tsx}`) and in CI via `npm run check` → `eslint src/`.
 

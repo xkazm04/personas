@@ -53,6 +53,45 @@ const rs = walk(path.join(ROOT, 'src-tauri'), ['.rs']);
 const tsx = walk(path.join(ROOT, 'src'), ['.tsx']);
 const ts = walk(path.join(ROOT, 'src'), ['.ts', '.tsx']);
 
+// The lint baseline belongs here for the same reason the command count does:
+// five golden paths cited CLAUDE.md's "~10,086 warnings" as the REASON to ship a
+// gate at "error". Measured 2026-08-14: 1,135. Wrong by ~9x, and wrong about the
+// dominator (the whole no-raw-* family is 144, not "almost entirely"). It went
+// stale when no-raw-spacing-classes was disabled and nobody re-ran it.
+//
+// Note what this number does NOT decide. `npm run check` runs `eslint src/` with
+// no --max-warnings, and the pre-commit hook runs --quiet --max-warnings 99999.
+// Warnings fail NEITHER gate at ANY count, so "warn is invisible because there
+// are so many" was never the real argument -- warn enforces nothing regardless.
+// Cite this to describe the tree, not to justify a severity.
+const lintBaseline = () => {
+  try {
+    const raw = execSync('npx eslint src --ext .ts,.tsx -f json', {
+      cwd: ROOT, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    const results = JSON.parse(raw);
+    let warnings = 0, errors = 0, filesWithFindings = 0;
+    const byRule = {};
+    for (const f of results) {
+      if (f.warningCount || f.errorCount) filesWithFindings++;
+      warnings += f.warningCount;
+      errors += f.errorCount;
+      for (const m of f.messages) byRule[m.ruleId] = (byRule[m.ruleId] ?? 0) + 1;
+    }
+    // A zero here means eslint failed to run, not that the tree is clean. Say so
+    // rather than emitting a triumphant 0 that everything downstream would cite.
+    if (!results.length) return { error: 'eslint produced no results — treat as UNMEASURED, not clean' };
+    return {
+      warnings, errors, filesWithFindings, filesLinted: results.length,
+      topRules: Object.fromEntries(
+        Object.entries(byRule).sort((a, b) => b[1] - a[1]).slice(0, 6),
+      ),
+    };
+  } catch (e) {
+    return { error: `eslint did not complete: ${String(e.message).slice(0, 120)}` };
+  }
+};
+
 const facts = {
   measuredAt: new Date().toISOString().slice(0, 10),
   commit: execSync('git rev-parse --short HEAD', { cwd: ROOT }).toString().trim(),
@@ -83,6 +122,7 @@ const facts = {
     webStorageFiles: count(ts, /\b(localStorage|sessionStorage)\b/g).files,
     setIntervalFiles: count(ts, /\bsetInterval\(/g).files,
   },
+  lint: lintBaseline(),
 };
 
 fs.writeFileSync(

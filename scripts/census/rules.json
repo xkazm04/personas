@@ -537,6 +537,57 @@
         "matches": 12
       },
       "floor": 900
+    },
+    {
+      "id": "typo-token-overpainted",
+      "goldenPath": "docs/concepts/golden-paths/design-token-usage.md",
+      "title": "Font-weight utility layered over a typo-* token, where the token silently wins",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\btypo-[a-z-]+[^\"'`{}<>]{0,120}?font-(?:thin|extralight|light|normal|medium|semibold|bold|extrabold|black)\\b|\\bfont-(?:thin|extralight|light|normal|medium|semibold|bold|extrabold|black)[^\"'`{}<>]{0,120}?\\btypo-[a-z-]+",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a Tailwind font-weight utility written next to a typo-* token inside one class string. PROXY FOR the stack-free condition: a call site tries to patch one property of a composite token with a utility that the cascade discards, so the authored intent is silently dropped and the code reads as if it were honoured. Verified from source, not inferred: typography.css is imported at globals.css:3 with no layer(), every real .typo-* tier declares font-weight (17 rules checked; only the .typo-rtl / .typo-hero-shine modifiers do not), and unlayered declarations beat every @layer utilities declaration regardless of order or specificity. The token file states the failure twice in its own comments - 'typo-caption font-semibold is silently a no-op' (typography.css:161-162) and 'typo-label font-bold is silently a no-op' (:190-191) - as does Design.md section 2. PRECONDITION: this repo ships semantic type tokens as UNLAYERED CSS classes alongside layered Tailwind utilities. A repo whose type tokens are React components, or are themselves inside @layer utilities, has the same condition wearing different markup and must re-derive the proxy. The legal fix is to move up a token (typo-caption -> typo-title -> typo-heading), never to add a font-* utility."
+      },
+      "baseline": {
+        "files": 824,
+        "matches": 2005
+      },
+      "floor": 2000
+    },
+    {
+      "id": "hand-rolled-disabled-state",
+      "goldenPath": "docs/concepts/golden-paths/design-token-usage.md",
+      "title": "Inert-control appearance re-derived at the call site instead of taken from the disabled token",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "disabled:(?:opacity-\\d+|cursor-not-allowed)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a disabled: variant that paints inertness by hand. PROXY FOR the stack-free condition: a state the design system defines exactly once is re-derived per call site, so the system holds a value nothing renders and the app holds N values nothing names. Here the token is --disabled-opacity (0.45, globals.css:413), surfaced as the `is-disabled` utility (globals.css:31-35) and the STATE_DISABLED_OPACITY constant (designTokens.ts:213); the app ships ten different opacities instead and 0.45 appears exactly once among 594 of them. PRECONDITION: this repo expresses conditional state with Tailwind's disabled: variant and owns a single-utility replacement that bundles opacity + cursor + pointer-events. A repo that styles :disabled in a stylesheet, or that has no unified inert token, must re-derive its own proxy - see the golden path section 9. The legal fix is `disabled:is-disabled` (or STATE_DISABLED_OPACITY), which replaces both halves of every match."
+      },
+      "exclude": [
+        {
+          "path": "src/features/shared/components/buttons/Button.tsx",
+          "reason": "the primitive that already applies is-disabled (Button.tsx:205) and carries the reasoning comment for why pointer-events-none stays — the destination this rule routes callers to"
+        }
+      ],
+      "baseline": {
+        "files": 361,
+        "matches": 815
+      },
+      "floor": 4000
     }
   ]
 }

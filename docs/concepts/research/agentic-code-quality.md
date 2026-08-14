@@ -367,6 +367,22 @@ invisible against a ~10,086-warning baseline." The conclusion may still be right
 evidence is not. §9's own rule — "ground truth, never memory" — was violated by citing
 CLAUDE.md instead of measuring.
 
+> **Resolved 2026-08-14, and this finding sat unpropagated for a week — which is
+> its own lesson.** Measured at HEAD: **1,135 warnings, 0 errors, 246 of 4,829
+> files**; dominator `no-low-contrast-text-classes` at 705 (62%), the entire
+> `no-raw-*` family 144 (12.7%). This estimate ("~700–1,300") was correct. Five
+> paths cited the stale figure, not two — `button`, `json-blob-column`, and
+> `design-token-usage` as well. All five are corrected, `CLAUDE.md` is corrected,
+> and the number is now measured into `docs/concepts/shared-facts.json` so it
+> cannot go stale silently again.
+>
+> The conclusion did survive, on a **stronger and count-independent** basis found
+> while fixing this: `npm run check` runs `eslint src/` with no `--max-warnings`
+> and the pre-commit hook runs `--quiet --max-warnings 99999`. Warnings fail
+> neither gate at any count. "Warn is invisible because there are 10,086 of them"
+> was not merely mis-numbered — it was the wrong *kind* of argument, and the
+> correct one was available without measuring anything.
+
 ### 5.8 Smaller vacuity holes worth fixing while we are in there
 
 - `audit.yml:44` — `cargo deny check | tee …` without `set -o pipefail`: **`tee`'s exit
