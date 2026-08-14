@@ -979,6 +979,50 @@
         "matches": 52
       },
       "floor": 4000
+    },
+    {
+      "id": "truncated-uuid-id",
+      "goldenPath": "docs/concepts/golden-paths/id-generation.md",
+      "title": "Identifier minted by truncating a UUID, discarding the entropy that made it collision-free",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "Uuid::new_v4\\(\\)\\s*(?:\\.\\s*simple\\(\\))?\\s*\\.\\s*to_string\\(\\)\\s*\\.\\s*chars\\(\\)\\s*\\.\\s*take\\(\\s*\\d+\\s*\\)|(?:^|[^_A-Za-z0-9])short_id\\(\\s*\\d+\\s*\\)",
+        "flags": "gm",
+        "ignoreCommentLines": true,
+        "description": "a UUIDv4 truncated to a fixed number of hex characters and used as an identifier, in either spelling this repo uses: the inline `.simple().to_string().chars().take(N)` chain, and a call to one of the two `short_id(N)` helpers. PROXY FOR the stack-free condition \"an identifier is minted with less entropy than its collision domain requires\". A full v4 UUID carries 122 random bits; take(8) keeps 32, take(10) keeps 40, take(12) keeps 48. Measured against the operator's live personas_data.db: the `ep_` (episode) namespace already holds 1,067 rows at 32 bits, where the birthday bound puts P(collision) at 1% by 9,291 rows and 50% by ~77,000 - and companion episodes are the one table this product is explicitly designed to grow without bound (docs/plans/athena-longevity.md). The same database shows the width has ALREADY drifted inside one namespace: `appr_` ids exist at both 10 hex (55 rows, minted by the pre-2026-07-17 `short_random()`) and 12 hex (65 rows, minted by today's `short_id(12)`), so one primary-key column holds two different entropy classes and nothing can tell them apart. The failure mode is a PRIMARY KEY constraint violation on INSERT - the write fails loudly rather than corrupting, which is the honest severity - but the write that fails is a memory the companion has already formed. Widths in the tree today: 8 hex x13, 10 hex x9, 12 hex x12. PRECISION measured by reading all 34 matches: 31 true positives (mint sites plus the eleven `fn short_uuid()` / `fn short_random()` wrappers that exist only to mint), 3 false positives - two are length assertions in the helper's own unit test (src-tauri/src/companion/brain/util.rs:104,105) and one names a scratch file rather than a row (src-tauri/src/companion/session.rs:2684). An independent enumeration by prefix over the live database agrees: 15 distinct truncated-id namespaces, all of them primary keys. PRECONDITION (must be re-derived per repo): this repo mints ids in Rust with the `uuid` crate and shortens them with a `.chars().take(N)` chain or a local `short_id(N)` helper. A repo using nanoid's length argument, a base62 encoder, or a database sequence has the same condition wearing markup this pattern cannot see. LEGAL FIX: store the full identifier and truncate only at DISPLAY time. `Uuid::new_v4().to_string()` is already what 302 other sites in this tree do; a short form for a log line or a UI chip is `&id[..8]` at the point of rendering, which costs nothing and keeps the stored key at 122 bits. If a short stored id is genuinely required (a QR payload, a user-typed code), say so in a comment and size it against the table's growth curve rather than by habit."
+      },
+      "baseline": {
+        "files": 28,
+        "matches": 34
+      },
+      "floor": 900
+    },
+    {
+      "id": "nullable-text-primary-key",
+      "goldenPath": "docs/concepts/golden-paths/id-generation.md",
+      "title": "TEXT PRIMARY KEY declared without NOT NULL, so a row's identity can be absent",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "[\"'`\\s(]id[\"'`]?\\s+TEXT\\s+PRIMARY\\s+KEY(?![^,)\\n]*NOT\\s+NULL)",
+        "flags": "gi",
+        "ignoreCommentLines": true,
+        "description": "a column named `id` declared TEXT PRIMARY KEY with no NOT NULL in the same column clause. PROXY FOR the stack-free condition \"a row's identity column can be absent\". This is a SQLite-specific manifestation of a universal condition, and the reason it exists is a documented SQLite bug preserved for backwards compatibility: unless the column is INTEGER PRIMARY KEY, or the table is WITHOUT ROWID, or NOT NULL is written explicitly, SQLite ALLOWS NULLs in a PRIMARY KEY column - and allows MANY of them, because the PK index treats each NULL as distinct. VERIFIED BEHAVIOURALLY, not inferred: against a copy of the operator's real 347MB personas.db, `INSERT INTO t (id) VALUES (NULL)` into a fresh `id TEXT PRIMARY KEY` table was accepted three times and left three rows with a NULL id; the same insert into `id TEXT PRIMARY KEY NOT NULL` was rejected with `NOT NULL constraint failed`. The consequence three layers up is the one docs/concepts/golden-paths/persisted-model-struct.md measures: every Rust read model types `pub id: String` (1,039 of them, non-Option), so a NULL id makes the row read fail with InvalidColumnType and, per docs/concepts/golden-paths/row-to-struct-mapping.md, take the whole list with it or make the row silently vanish. This tree has NO `WITHOUT ROWID` and NO `STRICT` table, so nothing else closes the hole. WHAT THIS DOES NOT SAY: no NULL or empty id exists in the live database - 77,763 rows across 198 tables with an `id` column were scanned and the count is zero. The class is reachable by construction and has never been reached. This is a preventive ratchet on a clean surface, not a fix backlog. PRECISION: 299 matches across 29 files, and an independent balanced-paren DDL parser over all 398 CREATE TABLE statements in the tree reaches the same 299 by a different route (parse the statement, split its top-level clauses, take the one that carries PRIMARY KEY, test its text for NOT NULL) - 299/299 true positives, 0 declared NOT NULL anywhere. The lookahead is scoped to the next comma or close-paren rather than to end-of-line, which is load-bearing: several fixtures write a whole CREATE TABLE on one line, and a line-scoped lookahead lets a LATER column's NOT NULL suppress the match (measured: 271 instead of 299, hiding 28 real declarations in 9 files). PRECONDITION (must be re-derived per repo): this repo writes DDL as SQL string literals inside Rust and names the identity column `id`. A Postgres sibling cannot have this condition at all - the SQL standard makes PRIMARY KEY imply NOT NULL, and brainiac's 30 `uuid PRIMARY KEY` columns are non-nullable for free. LEGAL FIX: write `id TEXT PRIMARY KEY NOT NULL`. It is two words, it makes `pub id: String` a true statement about the column instead of a hopeful one, and it is the type-level fix this golden path prefers over the gate."
+      },
+      "baseline": {
+        "files": 29,
+        "matches": 299
+      },
+      "floor": 900
     }
   ]
 }
