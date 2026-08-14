@@ -290,6 +290,82 @@ a separator change. The 30 green tests in `lib/civic/data.test.ts` pin the
 primitives, not this function. Both were checked before relying on either, and the
 real verification was a direct old-vs-new byte comparison.
 
+## The decisive test: does the WRITTEN PATH tell, or only the comparison?
+
+The limit stated below was that no golden path had improved politicas, and that
+every gain came from putting two codebases side by side. That is testable, so it
+was tested — as an explicit A/B on the reader.
+
+**Design.** Pick a situation with a real population. **Before reading the path**,
+seal a written counterfactual: what I would do from general competence alone.
+*Then* read the path and score only what it adds. Restating the counterfactual in
+better prose scores zero. The sealed file predicted, in advance, that the path
+would probably supply a primitive name and a loading-vs-empty distinction I
+already had — and that I had no view on the "demo" half of the leaf's name.
+
+**Situation:** `empty-and-demo-states`. Population: 124 `.tsx` files render a list
+via `.map`; 75 carry a length branch; 41 carry none.
+
+**Result — the path beat the counterfactual, decisively.** Six additions, none of
+them in the sealed file:
+
+| Path clause | In the counterfactual? |
+| --- | --- |
+| **`errored` is a distinct condition and comes FIRST** — never paint a reassuring empty state over a failed request (measured 20 of 27 error-holding surfaces get this wrong) | no |
+| **The `&& rows.length === 0` conjunct** on the error/loading branches — what stops a failed poll or background refetch wiping rows the user is reading | no |
+| Split settled-empty on the **raw** collection: `filtered===0 && raw>0` is filtered-to-zero, `raw===0` is genuinely empty | concept yes, predicate no |
+| **`InboxZero`** — zero as the *good* outcome; a drained queue is not a first-use screen | no |
+| **Copy register** — first-use is instructional future tense, filtered is diagnostic present tense | no |
+| **Placeholder values must be marked AND excluded from every aggregate** | no (predicted in advance that I'd miss it) |
+
+So **the library can tell.** The earlier verdict — "excellent for seeing, unproven
+for telling" — is overturned on the telling half. A written path carried real,
+non-obvious, defect-preventing content that competence alone did not supply.
+
+**And politicas satisfied essentially all of it anyway.** That is the fourth time:
+
+| Principle | How politicas already meets it |
+| --- | --- |
+| `client-state-persistence` | version-in-the-key + validate-on-read + existence-only |
+| `swallowed-error-telemetry` | errors are **Results**, not side effects |
+| `empty-and-demo-states` — errored-first | `app/error.tsx` / `global-error.tsx` / `not-found.tsx`: a failed fetch never becomes a variable in component scope |
+| `empty-and-demo-states` — mark the placeholder | `MockStatTile` renders `variant="illustrative"` + `illustrativeTag` + retained `source`, marking by **surface and dial colour**, not merely by text — a stronger mark than this repo's `FlaskConical` pill. Tiles are not summed, so the aggregate clause cannot bite. |
+
+The one place it looked like a hit was real and then closed: `FollowTheMoneyPage.tsx:225`
+renders `{STATS ? <StatTiles/> : <MockStatTiles/>}` — sample political-finance
+numbers on loader failure, which is precisely this path's *"substituting placeholder
+data for an empty state"* anti-pattern. Reading the component showed it marked,
+tagged, sourced, and reasoned about in a comment that argues against repeating the
+warning a third time "or the warning becomes noise". A defensible variant of the
+clause, not a violation of it.
+
+## What that actually means
+
+**The corpus is, to a large degree, a catalogue of failures that a different
+architecture prevents by construction.**
+
+- personas: Tauri desktop, client-side fetching, hand-rolled primitives, errors as
+  side effects, locale as an optional argument — every one of those enforced by
+  discipline, and every one of them a golden path.
+- politicas: RSC error boundaries, Result-typed errors, deterministic formatting,
+  versioned storage keys — the same failures made *unrepresentable*.
+
+Both repos are competent. The difference in how many principles each *needs* is
+mostly architectural, not cultural. Which means the warrant tags — physics /
+ergonomics / local calibration — are the right instrument but are currently being
+assigned **from inside one architecture**, by an author who cannot see which of
+their own laws are consequences of their own stack. `empty-and-demo-states` tags
+its five-case taxonomy as physics; three of the five turn out to be framework
+services in an RSC app.
+
+**The practical consequence for rollout:** the library pays where a consuming repo
+is *weaker* than the library home on that axis. Politicas is stronger on most axes
+tested, so it kept returning "already satisfied". That is not a failure of the
+library and not a failure of politicas — it is a targeting problem. The next
+consuming repo should be chosen for where it is *weak*, and the ledger's
+`unreviewed` list should be ranked by the consuming repo's own measured population,
+not by personas' recurrence.
+
 ## The honest limit
 
 **No golden path authored in personas improved politicas.** That remains true at
@@ -312,10 +388,24 @@ door-typed one; `format.ts`'s four stray `toLocaleString` calls became a defect 
 because that file states its own rule. **Nothing was gated into existence. Things
 became visible by being placed next to something different.**
 
-Which is uncomfortable for the corpus's premise, because attention does not
-obviously need 247 written paths — it needs two codebases and someone measuring.
-The next run should test the one thing still untested: adopt a principle politicas
-has **not** already solved, and see whether the *written path* — rather than the
-comparison — is what closes it. Until that is shown, the honest claim for the
-library is that it is an excellent instrument for *seeing*, and an unproven one for
-*telling*.
+Which looked uncomfortable for the corpus's premise — until the test above was run.
+
+**Revised after the `empty-and-demo-states` A/B.** The library *can* tell: a sealed
+counterfactual lost to the written path on six clauses, two of which
+(errored-condition-first, and the `&& length === 0` conjunct that stops a refetch
+wiping visible rows) are concrete defect-preventing mechanisms with measured
+populations behind them. So "unproven for telling" is withdrawn.
+
+What survives is narrower and more useful: **the library pays where the consuming
+repo is weaker than the library home on that axis.** Four principles were reviewed
+on the merits here and politicas already satisfied all four — three of them
+*structurally*, by an architecture that makes the failure unrepresentable rather
+than merely discouraged. The corpus is therefore, in large part, a catalogue of
+failures that a different architecture prevents by construction, written by an
+author who cannot see which of their own laws are consequences of their own stack.
+
+So the open question is no longer "can a path teach?" but **"who should receive
+it?"** — and the answer is a repo chosen for a measured weakness, with the
+`unreviewed` list ranked by the consuming repo's own population rather than by
+personas' recurrence. Ranking by the author's frequency is what made politicas look
+like a candidate for four principles it had already outgrown.
