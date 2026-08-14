@@ -1741,6 +1741,28 @@
         "matches": 25
       },
       "floor": 4000
+    },
+    {
+      "id": "unescaped-like-pattern",
+      "goldenPath": "docs/concepts/golden-paths/dynamic-filter-query.md",
+      "title": "A LIKE pattern built from an interpolated value without escape_like, so the value's own % and _ stay live wildcards",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\bformat!\\s*\\(\\s*\"%[^\"\\n]{0,20}\\{[^\"\\n]{0,20}\"(?:\\s*,(?:(?!escape_like)(?:\\([^()]{0,160}\\)|[^;()])){0,200})?\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a format! whose literal BEGINS with % and contains an interpolation - a SQL LIKE pattern - with no escape_like anywhere in its argument list. PROXY FOR the stack-free condition: a wildcard pattern for a substring match is assembled from an interpolated value without routing that value through the one shared escaper, so whether the value's own wildcard characters are literal or live is re-decided at each call site. Measured 2026-08-14 against the app's OWN SQLite build (rusqlite features=[\"bundled\"], zero ICU; probed with better-sqlite3 12.9.0 / SQLite 3.53.0, which has the same zero ICU compile options): 'axc' LIKE '%a_c%' returns 1, so a user who types a_c matches axc; with escape_like plus ESCAPE '\\' it returns 0. The first probe of this used the sqlite3.exe on PATH, which IS ICU-linked and gave the opposite answer for case folding - measure against the build you ship, not the build you have. The destination is repos/utils.rs:22 escape_like (backslash first, then % then _) paired with QueryBuilder::where_like_escape_any (query_builder.rs:108), which emits ESCAPE '\\'. WARNING before ratcheting: the sibling primitive where_like_any (query_builder.rs:123) is where_like_escape_any with the ESCAPE clause REMOVED, so a caller can reach the shared builder and still be wrong - delete it and its one caller (events.rs:1327) first, or this gate certifies a migration to a broken destination. Baseline 12 matches across 10 of 963 files. Precision by reading all 12: SEVEN interpolate caller- or model-supplied free text (companion/dispatcher.rs:2825,:2885,:3037 Athena's search; events.rs:1323 EventFilterInput.search which crosses IPC; shared_events.rs:52 which also crosses IPC; companion/jobs/operations_views.rs:149 a model-supplied persona name; approvals/approval_exec_ship.rs:119 a project slug where an underscore resolves a DIFFERENT project for a Ship approval), FOUR interpolate an internal UUID, and ONE interpolates a compile-time constant (auth_detect.rs:659 from COOKIE_DOMAIN_MAP). None is excluded: an id-valued site re-decides the escaping policy exactly as much as a search-valued one. mcp_server/tools.rs:495 is a true positive of a fourth kind - it re-derives escape_like inline and escapes % and _ but NOT backslash, so a query containing a backslash over-matches (measured: 1 where escape_like gives 0). CONVERGENCE: vibeman escapes 11 of 11 user-input LIKE sites and pairs every one with an explicit ESCAPE clause (repository.utils.ts:247-249); brainiac escapes 0 of 15 and has no escape_like and no ESCAPE anywhere in the tree; personas-cloud has no text search. The condition is real, achievable, and universally under-solved. PRECONDITION (must be re-derived per repo): this repo builds LIKE patterns with Rust format! and a leading literal %. A repo that concatenates wildcards inside SQL ('%' || $1 || '%', which is what brainiac does) or in a template literal has the SAME condition wearing markup this pattern cannot see and scores zero. LEGAL FIX, in order: (1) route the value through repos::utils::escape_like and use QueryBuilder::where_like_escape_any - core/memories.rs:114-115 is the two-line shape; (2) for a search over a large text corpus, use the FTS5 tables that already exist (executions_fts, companion_fts, kb_chunks_fts) whose unicode61 tokenizer also fixes the Unicode folding gap that LIKE cannot; (3) if the value is provably a constant, hoist it to a const and it stops being an interpolation. Do NOT silence a match by moving the % into the SQL string - that trades this condition for one no static analysis can see."
+      },
+      "baseline": {
+        "files": 10,
+        "matches": 12
+      },
+      "floor": 900
     }
   ]
 }

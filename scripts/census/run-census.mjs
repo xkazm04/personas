@@ -184,9 +184,25 @@ function report(args, { results, problemsByRule, exitCode }) {
     const problems = problemsByRule.get(rule.id) ?? [];
     const bad = problems.some((p) => p.kind === 'structural') || (args.check && problems.length > 0);
     const mark = problems.length === 0 ? c.green('OK  ') : bad ? c.red('FAIL') : c.yellow('DRIFT');
+    // A positive control carries NO baseline by design, so print a dash rather
+    // than dereferencing it.
+    //
+    // This was the FOURTH layer broken by mandating positive controls without
+    // teaching the tool about them — after the merger, `validateRule` and
+    // `assertRule` — and it was by far the worst, because of WHERE it crashed:
+    // `rule.baseline.files` threw AFTER this loop had already printed FAIL and
+    // BEFORE the exit-code path ran, so `run-census.mjs` EXITED 0. A gate that
+    // dies mid-report and reports success is the exact failure class this
+    // corpus exists to catch, committed inside the corpus's own runner.
+    //
+    // Found by a composer that built a control exactly as instructed, hit the
+    // crash, and reported it rather than working around it — the third composer
+    // in a row to surface one of these layers.
+    const baseFiles = rule.baseline ? lpad(rule.baseline.files, 6) : lpad('—', 6);
+    const baseMatches = rule.baseline ? lpad(rule.baseline.matches, 6) : lpad('—', 6);
     console.log(
-      `  ${mark} ${pad(rule.id, 22)} ${lpad(result.files, 6)} ${lpad(rule.baseline.files, 6)} ` +
-        `${lpad(result.matches, 8)} ${lpad(rule.baseline.matches, 6)} ` +
+      `  ${mark} ${pad(rule.id, 22)} ${lpad(result.files, 6)} ${baseFiles} ` +
+        `${lpad(result.matches, 8)} ${baseMatches} ` +
         `${lpad(result.walked, 7)} ${lpad(rule.floor, 6)}`,
     );
   }
