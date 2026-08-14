@@ -242,6 +242,51 @@
         "matches": 148
       },
       "floor": 900
+    },
+    {
+      "id": "unswept-job-registry-read",
+      "goldenPath": "docs/concepts/golden-paths/long-running-job-progress.md",
+      "title": "Job-registry read that bypasses the manager's liveness accessor",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\b[A-Z][A-Z0-9_]*_JOBS\\s*\\.\\s*lock\\s*\\(\\s*\\)[\\s\\S]{0,300}?\\bjobs\\s*\\.\\s*get\\s*\\(",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a BackgroundJobManager read that takes the raw `lock()` guard and pulls one entry with `jobs.get(...)` instead of `get_snapshot` / `get_task_snapshot` / `get_snapshot_with` — the four accessors that run `sweep_stale_running` + `evict_stale` before answering"
+      },
+      "baseline": {
+        "files": 6,
+        "matches": 9
+      },
+      "floor": 900
+    },
+    {
+      "id": "untranslatable-token-label",
+      "goldenPath": "docs/concepts/golden-paths/status-and-severity-badges.md",
+      "title": "Closed-vocabulary label authored beside its colour instead of resolved from the translation catalog",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\{(?=[^{}]*\\blabel\\s*:\\s*['\"][A-Z][^'\"]*['\"])(?=[^{}]*\\b(?:bg|text|border|ring)-[a-z])[^{}]*\\}",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "ONE object literal that holds BOTH an English `label:` string AND a colour utility class. PROXY FOR the stack-free condition \"the human-readable name of a closed-vocabulary member is authored at the same site as its presentation, so it can never be translated and the vocabulary has no single home\". PRECONDITION (measured, must be re-derived per repo): this repo writes badge/status config as flat single-level object entries on one line, with the key spelled `label` and colours as Tailwind utilities. Where a repo formats those entries across lines with nested objects, or names the key `title`/`text`, or uses CSS-in-JS, this pattern scores ZERO while the condition is present at full scale — the same failure the portability test measured for `tables.md` and `form-field-and-validation.md`. Sibling evidence that the CONDITION is universal but the SHAPE is not: personas-web's shared badge is `label: \"Queued\"` beside `bgColor` at StatusBadge.tsx:11 (would match), brainiac's is a separate `STATUS_LABEL` table with the colour resolved through band() at kb-data.ts:42 (would NOT match, same defect). Legal destinations: `tokenLabel(t, category, token)` for the label + `STATUS_PALETTE` / `StatusBadge variant` for the colour."
+      },
+      "baseline": {
+        "files": 38,
+        "matches": 241
+      },
+      "floor": 4000
     }
   ]
 }
