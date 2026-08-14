@@ -1832,6 +1832,29 @@
         "matches": 123
       },
       "floor": 4000
+    },
+    {
+      "id": "unverified-clipboard-write",
+      "goldenPath": "docs/concepts/golden-paths/copy-to-clipboard.md",
+      "title": "A clipboard write whose success/failure result is bound to nothing",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "^[ \\t]*(?:try[ \\t]*\\{[ \\t]*)?(?:await[ \\t]+|void[ \\t]+)?copyText[ \\t]*\\((?![\\s\\S]{0,240}?\\)[\\s]*\\.[\\s]*then[ \\t]*\\(\\s*(?:async\\s*)?\\(?\\s*[A-Za-z_$])",
+        "flags": "gm",
+        "ignoreCommentLines": true,
+        "description": "A `copyText(...)` call in STATEMENT position — it begins its line (after optional indentation, `await`, `void`, or an inline `try {`) — so the `Promise<boolean>` it returns is bound to nothing and the caller cannot distinguish a completed copy from a refused one. PROXY FOR the stack-free condition \"a copy affordance decides what to tell the user without knowing whether the write succeeded, so the confirmation is causally downstream of the click rather than of the result\". WHY THIS IS THE CONDITION AND NOT PEDANTRY, executed rather than reasoned: `copyText` (useCopyToClipboard.ts:11-19) catches internally and NEVER REJECTS. Run under Vitest+jsdom with navigator.clipboard.writeText stubbed to throw NotAllowedError, `copyText` did not throw and resolved `false`; with navigator.clipboard set to undefined (the non-secure-context case) it caught the synchronous TypeError and resolved `false`. Consequently `await copyText(x).then(f).catch(g)` runs f and NEVER g — measured handler order on failure is exactly [\"THEN-RAN\"] — so every try/catch and every .catch() written around a copyText call in this repo is UNREACHABLE code that reads as failure handling. 18 of the 32 matched sites go on to claim success (setCopied(true), addToast(...,'success'), or PrBridge's markDone() advancing a workflow checkpoint) on a clipboard that may be empty. LEGAL DESTINATIONS, all three of which this pattern leaves unmatched: (1) `<CopyButton text={...} />` — the component gates its flash on the resolved boolean (CopyButton.tsx:62-67 plus useCopyToClipboard.ts:42-47); (2) `useCopyToClipboard()` / `useKeyedCopyFlag()` — both write `.then((ok) => { if (!ok) return; ... })`; (3) a bound direct call, `const ok = await copyText(x); if (!ok) return;` (ChatMessageContent.tsx:70-74, DevInspector.tsx:45-46). NO EXCLUDE LIST BY DESIGN: the two primitives that legitimately call copyText are spared by the negative lookahead because their `.then` callbacks DECLARE a parameter — i.e. they are spared for reading the boolean, not for their filename. Deleting `ok` from either callback would make it match, which is the correct behaviour and is the proof the matcher keys on the condition rather than on a token. TWO INDEPENDENT IMPLEMENTATIONS RECONCILE: a prefix-context classifier and a statement-shape scanner over the same corpus disagreed on exactly 4 sites, all four `.then(() => ...)` chains with a zero-arity callback; hand-adjudication ruled all 4 as DISCARDED (a zero-arity `.then` cannot read the boolean) and both implementations now agree at 32. PRECISION on the stated condition is 32/32 — every match is a call whose boolean is bound to nothing. Four of the 32 are clipboard WIPES rather than copies (BundleExportDialog.tsx:30,44 and FieldCaptureHelpers.tsx:105,113, all `copyText('')`); they are reported as true positives, not exempted, because not knowing whether a secret wipe landed is the same defect pointed the other way. PRECONDITION (must be re-derived per repo): this repo HAS a clipboard chokepoint named `copyText`, enforced by custom/prefer-shared-clipboard at eslint.config.js:109 — 2 production navigator.clipboard.writeText calls in 4,830 files. A repo without a chokepoint wears the identical condition on raw `navigator.clipboard.writeText(...)` calls and scores ZERO here while being fully affected: measured, personas-web has 11 raw write sites, 0 helpers, and 2 confirmed optimistic-success paths plus 4 silent-failure paths; brainiac/console has 4 raw sites and 0 helpers. Such a repo should re-key this signal on its own raw API call in statement position. Do NOT silence a match by adding a try/catch — that is the defect, not the fix; bind the result, or take the type change in the golden path's §9."
+      },
+      "baseline": {
+        "files": 22,
+        "matches": 32
+      },
+      "floor": 4000
     }
   ]
 }
