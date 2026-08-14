@@ -58,25 +58,18 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
   const handleToggleStatus = async (id: string, newStatus: 'active' | 'paused') => {
     setTransitioningIds((prev) => new Set(prev).add(id));
     try {
+      // Send ONLY the field being changed. The previous version passed `null`
+      // for all sixteen fields, with a comment reading "null everything else to
+      // 'do not change'" — the exact opposite of what happens: ten of those
+      // fields carry `double_option`, where null means CLEAR. Pausing an
+      // automation therefore erased its webhook URL, platform credential,
+      // credential mapping, and input/output schemas.
+      //
+      // That comment was not carelessness — the generated type declared every
+      // field required, so type-correct code had no other option. Omission is
+      // the correct spelling of "leave alone"; see the note on updateAutomation.
       await updateAutomation(id, {
-        // Origin's UpdateAutomationInput requires every field nullable. We only
-        // want to flip deploymentStatus — null everything else to "do not change".
-        name: null,
-        description: null,
-        useCaseId: null,
-        platformWorkflowId: null,
-        platformUrl: null,
-        webhookUrl: null,
-        webhookMethod: null,
-        platformCredentialId: null,
-        credentialMapping: null,
-        inputSchema: null,
-        outputSchema: null,
-        timeoutMs: null,
-        retryCount: null,
-        fallbackMode: null,
         deploymentStatus: newStatus as AutomationDeploymentStatus,
-        errorMessage: null,
       });
     } finally {
       setTransitioningIds((prev) => {

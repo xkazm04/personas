@@ -1239,6 +1239,28 @@
         "matches": 14
       },
       "floor": 4000
+    },
+    {
+      "id": "ipc-collapsed-nullable-patch",
+      "goldenPath": "docs/concepts/golden-paths/partial-update-semantics.md",
+      "title": "A #[tauri::command] takes a bare Option<Option<T>> argument, so \"clear this column\" collapses into \"leave it alone\" at the IPC boundary and can never be sent",
+      "roots": [
+        "src-tauri/src"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "(?:#\\[tauri::command\\b[^{]{0,3000}?|Option\\s*<\\s*Option\\s*<(?:(?!\\bpub\\b|\\blet\\b|\\bfn\\b|\\bstruct\\b|double_option|;)[^{]){0,600}?)\\b[a-z_]\\w*\\s*:\\s*(?=Option\\s*<\\s*Option\\s*<)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a parameter of a #[tauri::command] function whose type is a bare Option<Option<T>>. PROXY FOR the stack-free condition: an update operation carries \"leave this field alone\" and \"set this column to NULL\" on the same wire slot with no mechanism that distinguishes an ABSENT key from an explicit null, so one of the two states is silently unreachable. The match starts at the #[tauri::command] attribute (seeding that command's first nullable parameter) or at a preceding Option<Option< (chaining to the next parameter in the same signature) and ends via lookahead just before the next one, so consecutive parameters each count. The tempered [^{] span cannot cross a brace, which is what guarantees a chain never enters a function body, never enters a struct body, and never escapes one command signature into another; the pub/let/fn/struct/double_option/; guard tokens exclude the three false-positive families found while refining it - consecutive struct fields (n8n_sessions.rs:75-82), the COMPLIANT double_option patch struct (dev_workspaces.rs:339-341), and adjacent let-bindings (context_generation.rs:2066-2067) - by construction rather than by allowlist. VERIFIED AGAINST tauri 2.11.2 SOURCE, not inferred: CommandItem's Deserializer::deserialize_option (tauri-2.11.2/src/ipc/command.rs:133-144) returns visitor.visit_none() when the argument key is ABSENT, and delegates an explicit null to serde_json's Value deserializer, which also visits none - so both collapse to the OUTER None and Some(None) is unreachable from any JSON payload. A bare fn argument cannot carry #[serde(default, deserialize_with = \"double_option\")] because that is a FIELD attribute with no argument-position equivalent, so precision is 100% by construction: every match is a site where the clear lane is dead code, and there is no legitimate exception and therefore no exclude list. Measured 2026-08-14 at HEAD: 69 parameters across 14 commands in 6 files, zero inside #[cfg(test)], commentMatchesSkipped 0, reconciled EXACTLY with an independent brace-matching Rust parser that classified all 238 Option<Option< occurrences in src-tauri by syntactic position. The dead affordance is documented at the call sites - src/commands/infrastructure/dev_tools/goals.rs:69-71 declares `kpi_id: Option<Option<String>>` with the comment \"Some(Some) links, Some(None) unlinks, None leaves untouched\", and Some(None) can never arrive, so a KPI cannot be unlinked; src/features/plugins/dev-tools/sub_projects/ProjectModal.tsx:166-176 nulls teamId or prCredentialId to make the two source modes mutually exclusive and neither null lands. All 14 commands forward to repository fns that DO implement the clear correctly via push_field_param!(.., clone) (db/src/macros.rs:45-51), which binds the inner Option as SQL NULL - so the defect is entirely at the IPC boundary and the backend half is already right. RESIDUAL FP CLASS, disclosed: two consecutive private attribute-free Option<Option<T>> struct fields would still chain; zero such structs exist under src-tauri/src today (DispatchContext and SkillMatrixRow each have exactly one field and cannot chain). PRECONDITION (must be re-derived per repo): this repo declares IPC entry points as free functions annotated #[tauri::command] whose arguments are deserialized one key at a time, and spells the tri-state as a nested option. A repo that takes one request body per endpoint, or that models the tri-state as a Zod .nullable().optional() (personas-cloud/packages/orchestrator/src/schemas.ts:124-141) or a `key in patch` probe (personas-cloud/packages/orchestrator/src/db.ts:572), has the SAME condition wearing markup this pattern cannot see and scores zero - as all three sibling repos in the convergence sweep do. LEGAL FIX: replace the bare arguments with ONE patch struct whose nullable fields carry #[serde(default, deserialize_with = \"double_option\")] AND #[ts(optional)] - src/commands/infrastructure/dev_workspaces.rs:330-370 (KnowledgeStructurePatch) is the shape to copy, and its own doc comment names this exact defect. Do NOT silence a match by flattening to a single Option<T> - that removes the clear lane on purpose instead of by accident."
+      },
+      "baseline": {
+        "files": 6,
+        "matches": 69
+      },
+      "floor": 500
     }
   ]
 }

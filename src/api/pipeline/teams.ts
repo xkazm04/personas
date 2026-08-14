@@ -25,7 +25,19 @@ export const getTeam = (id: string) =>
 export const createTeam = (input: CreateTeamInput) =>
   invoke<PersonaTeam>("create_team", { input });
 
-export const updateTeam = (id: string, input: UpdateTeamInput) =>
+/**
+ * Update a team. **Send only the fields you intend to change.**
+ *
+ * `Partial<>` is load-bearing: `UpdateTeamInput`'s generated type marks every
+ * field required, so type-correct callers were forced to name all of them, and
+ * the only available value was `null` — which on the eight fields carrying
+ * `#[serde(default, deserialize_with = "double_option")]` (`description`,
+ * `canvas_data`, `team_config`, `icon`, `shared_instructions`, and the three
+ * defaults) means CLEAR, not "leave alone". Omission is the correct spelling of
+ * "leave alone". Verified against `src-tauri/core/src/models/team.rs:49-70`.
+ * See docs/concepts/golden-paths/partial-update-semantics.md.
+ */
+export const updateTeam = (id: string, input: Partial<UpdateTeamInput>) =>
   invoke<PersonaTeam>("update_team", { id, input });
 
 export const deleteTeam = (id: string) =>

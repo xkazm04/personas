@@ -120,17 +120,21 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
     if (!team) return;
     setSaving(true);
     const profileModel = MODEL_OPTIONS.find((m) => m.key === modelKey)?.model ?? null;
-    const input: UpdateTeamInput = {
-      // Identity facet: value sets, null skips (plain Option — no clear lane;
-      // description lacks the double_option deserializer, so an emptied
-      // field is treated as "unchanged", never as "clear").
-      name: name.trim() !== '' && name.trim() !== team.name ? name.trim() : null,
-      description: description.trim() !== '' && description.trim() !== (team.description ?? '') ? description.trim() : null,
-      canvas_data: null,
-      team_config: null,
-      icon: null, // never set from the UI — see the identity block below
-      color: color !== (team.color ?? '#6366f1') ? color : null,
-      enabled: null,
+    // OMIT what this form does not change. The previous version sent
+    // `canvas_data: null, team_config: null, icon: null` under a comment saying
+    // "null skips" — the opposite of the truth: all three carry
+    // `double_option`, where null means CLEAR. Saving workspace settings
+    // therefore erased the team's canvas, config and icon. `description` was
+    // documented as "lacks the double_option deserializer"; it has one
+    // (team.rs:51-52), so leaving it unchanged also wiped it.
+    const input: Partial<UpdateTeamInput> = {
+      // Identity facet: set only when actually edited; never send a key we are
+      // not changing.
+      ...(name.trim() !== '' && name.trim() !== team.name ? { name: name.trim() } : {}),
+      ...(description.trim() !== (team.description ?? '')
+        ? { description: description.trim() === '' ? null : description.trim() }
+        : {}),
+      ...(color !== (team.color ?? '#6366f1') ? { color } : {}),
       // Workspace facet — value sets, null clears (double_option).
       shared_instructions: instructions.trim() === '' ? null : instructions,
       default_model_profile: profileModel ? JSON.stringify({ model: profileModel, provider: 'anthropic' }) : null,
