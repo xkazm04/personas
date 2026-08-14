@@ -54,6 +54,22 @@ No file path, primitive name or count appears below this line until the head end
 > ships, because passing the locale requires the call site to know that it must — and the call site
 > that knew would not have needed the primitive.
 >
+> > **P5 IS NOW IMPLEMENTED — landed 2026-08-14, confirmed by a second stack.** The
+> > convergence run against `politicas` (Next.js) measured the cost of the old
+> > default: of 197 value-driven `<Numeric>` sites **8** passed `language`, and of 27
+> > direct `formatCost` callers **4** did — so ~96% of the app rendered en-US
+> > separators across 14 locales, seven of which use a decimal comma. `politicas`
+> > binds the locale inside its `useFormat()` hook, so there is no argument to
+> > forget, and its off-token rate is 1 in 827.
+> >
+> > Fixed the same way: `<Numeric>` now defaults `language` from
+> > `useTranslation().language` (reactive, and 57 shared components already consume
+> > that hook), and the four `?? 'en'` defaults in `formatters.ts` now read an
+> > `activeLanguage()` helper off the i18n store so non-React callers get it too.
+> > The prop survives as a genuine override for a fixed-locale export preview.
+> > **One edit at the primitive corrected ~212 call sites**, which is the whole
+> > argument of P5 stated as a diff.
+>
 > **P6 — governance.** A checker that keys on *where a formatting call sits in the syntax tree*
 > rather than on *what the call produces* can always be narrowed until it reports zero. The
 > population it narrows away is not random: it is the reusable formatter helpers, which is precisely

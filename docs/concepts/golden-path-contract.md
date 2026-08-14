@@ -81,6 +81,31 @@ not hold a line. So every golden path proposes its own enforcement:
 
 If no gate is possible, say so and say why — that is a finding.
 
+**A fifth failure mode, added 2026-08-14: the gate that points at a broken
+destination.** The four above are all ways a gate can fail to *fire*. This one
+fires correctly, reports the truth, and is still useless — because reaching the
+primitive it names is not the same as using it correctly.
+
+`custom/prefer-numeric` routes callers to `<Numeric>` and reports 5 warnings, so
+by its own lights the codebase is healthy. But `<Numeric>` bound its locale
+through an **optional prop defaulting to `'en'`**, and 189 of 197 call sites did
+not pass it — so ~96% of a 14-locale app rendered en-US separators while the
+gate stayed green. The rule verifies you *arrived*; it cannot verify the
+destination was worth arriving at. It was invisible from inside this repo and
+surfaced only when a second codebase (`politicas`) was found binding the same
+locale inside its hook, where there is no argument to forget.
+
+So when a path's §9 proposes a gate whose mechanism is *"use the shared
+primitive"*, it must also state **what makes the primitive correct by default**,
+and treat any required configuration as part of the deviation surface. A
+primitive with a mandatory-but-forgettable argument does not concentrate a
+concern — it relocates it, and hides it behind a green check.
+
+The general form: **a gate on reaching a destination is only as good as the
+destination's defaults.** Prefer fixing the default over counting the callers —
+one edit at the primitive corrected ~212 call sites here, and no ratchet would
+have moved a single one.
+
 ### Don't write a script — add a census rule
 
 **A §9 gate whose mechanism is "count the violations and fail if the count

@@ -1,5 +1,6 @@
 import { createElement, type ElementType, type ReactNode } from 'react';
 import { formatNumeric, formatCount, type NumericUnit } from '@/lib/utils/formatters';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /**
  * `<Numeric>` — the canonical primitive for any number shown in the UI.
@@ -31,7 +32,20 @@ export interface NumericProps {
   unit?: NumericUnit;
   /** Decimal precision passed through to the unit formatter. */
   precision?: number;
-  /** BCP-47 locale for separators (default `'en'`). Pass `i18n.language` for locale-aware grouping. */
+  /**
+   * BCP-47 locale override for separators. **Defaults to the active UI
+   * language** — you almost never need to pass this.
+   *
+   * It used to default to `'en'`, and callers were instructed to pass
+   * `useTranslation().language` themselves. Measured 2026-08-14: of 197
+   * value-driven call sites, **8 passed it**. So 189 (95.9%) rendered
+   * en-US separators in a 14-locale app, seven of whose locales use a decimal
+   * comma — `1.50` where `1,50` is correct. `custom/prefer-numeric` could not
+   * catch it: the rule verifies you REACHED this primitive and cannot verify
+   * you CONFIGURED it, which made it a gate pointing at a broken destination.
+   * Binding the default here fixes every call site at once and leaves the prop
+   * as a genuine override (e.g. rendering a fixed-locale export preview).
+   */
   language?: string;
   /** Pre-formatted content. When set, `value`/`unit`/`precision` are ignored. */
   children?: ReactNode;
@@ -57,8 +71,13 @@ export function Numeric({
   title,
 }: NumericProps) {
   const tag: ElementType = as ?? 'span';
+  // Bind the locale here rather than requiring every caller to. `useTranslation`
+  // returns a stable identity per language, so this adds no re-render churn, and
+  // 57 other shared components already consume it.
+  const { language: activeLanguage } = useTranslation();
+  const locale = language ?? activeLanguage;
   const content =
-    children ?? formatNumeric(value, unit, { precision, language });
+    children ?? formatNumeric(value, unit, { precision, language: locale });
 
   // For compact-notation figures, default the tooltip to the full-precision
   // grouped value so the exact number is always one hover away — unless the
@@ -66,7 +85,7 @@ export function Numeric({
   const resolvedTitle =
     title ??
     (children == null && unit === 'compact' && value != null && !Number.isNaN(value)
-      ? formatCount(value, { language, precision: 0 })
+      ? formatCount(value, { language: locale, precision: 0 })
       : undefined);
 
   return createElement(
