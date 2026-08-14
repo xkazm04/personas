@@ -287,6 +287,63 @@
         "matches": 241
       },
       "floor": 4000
+    },
+    {
+      "id": "unregistered-key-handler",
+      "goldenPath": "docs/concepts/golden-paths/focus-management.md",
+      "title": "Global keystroke handler registered outside the app keyboard ladder",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "addEventListener\\(\\s*['\"]key(?:down|up|press)['\"]",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a keystroke listener attached straight to window/document. PROXY FOR the stack-free condition: a key handler that has no declared position relative to the other surfaces competing for the same key, so one press can be interpreted twice. PRECONDITION: this repo owns an ordering mechanism (AppKeyboardProvider) that the handler could have used; a repo without one must re-derive a different proxy (see the golden path section 9)."
+      },
+      "exclude": [
+        {
+          "path": "src/lib/keyboard/AppKeyboardProvider.tsx",
+          "reason": "the registry itself plus its no-provider fallback - the two listeners this rule routes every other caller into"
+        }
+      ],
+      "baseline": {
+        "files": 72,
+        "matches": 72
+      },
+      "floor": 4000
+    },
+    {
+      "id": "unfocusable-click-target",
+      "goldenPath": "docs/concepts/golden-paths/focus-management.md",
+      "title": "Element presented as clickable that can never receive keyboard focus",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "<(?:div|span|li|tr|td|section|article|nav|header|aside|figure)(?![A-Za-z0-9])(?:(?!<|\\btabIndex\\b|\\brole=)[\\s\\S]){0,700}?(?:onClick(?:(?!<|\\btabIndex\\b|\\brole=)[\\s\\S]){0,700}?cursor-pointer|cursor-pointer(?:(?!<|\\btabIndex\\b|\\brole=)[\\s\\S]){0,700}?onClick)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a non-interactive tag carrying BOTH a click handler AND cursor-pointer, with neither tabIndex nor role in the same opening tag. PROXY FOR the stack-free condition: an element the UI presents as operable that the keyboard can never reach. cursor-pointer is the load-bearing half - it separates a real control from an event shield or a card that merely happens to have an onClick. PRECONDITION: this repo signals clickability with the cursor-pointer utility class; a repo that signals it another way (a styled-component, a hover token) must re-derive the proxy. Measured precision 37/38 on the 2026-08-14 corpus - the one false positive is CreateMemoryForm.tsx:30, where role=slider and tabIndex=0 sit AFTER cursor-pointer in the tag so the negative lookahead completes before reaching them."
+      },
+      "exclude": [
+        {
+          "path": "src/features/shared/components/display/UnifiedTable.tsx",
+          "reason": "the primitive already solves this - a single tabIndex={0} scroll container (:642, :671, :783) owns the tab stop and moves a focusedIndex with arrow keys, so its rows are deliberately not individually focusable"
+        }
+      ],
+      "baseline": {
+        "files": 32,
+        "matches": 38
+      },
+      "floor": 2000
     }
   ]
 }
