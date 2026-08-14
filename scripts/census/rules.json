@@ -1068,6 +1068,36 @@
         "matches": 13
       },
       "floor": 4000
+    },
+    {
+      "id": "pinned-harness-endpoint",
+      "goldenPath": "docs/concepts/golden-paths/live-ui-test-automation.md",
+      "title": "A live-UI driver binds the harness endpoint to a literal host:port instead of discovering it, so when the server takes a fallback port the driver silently drives the WRONG app instance",
+      "roots": [
+        "tools",
+        "tests",
+        "scripts",
+        "uat"
+      ],
+      "extensions": [
+        ".py",
+        ".mjs",
+        ".ts",
+        ".tsx",
+        ".js"
+      ],
+      "signal": {
+        "pattern": "(?:=\\s*|fetch\\(\\s*)[\"'`]https?://(?:127\\.0\\.0\\.1|localhost):1732\\d",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a live-UI driver assigns, or fetches from, a string literal naming the test-automation harness host:port. PROXY FOR the stack-free condition: a test driver pins the address of the system under test instead of obtaining it from the harness's own discovery channel, so it cannot follow the system when it moves. Measured 2026-08-14: 60 matches in 54 files, precision 100% verified site-by-site against a second implementation. This matters here because src-tauri/src/test_automation.rs:1415 bind_with_fallback() tries 17320..17324 on EADDRINUSE and :1486 emits the bound port as the SERVER_LISTENING_EVENT Tauri event -- which has ZERO consumers repo-wide. A stale dev instance holding 17320 therefore makes the new app bind 17321 while all 60 of these sites keep driving the stale one, green. The legal destinations are tools/test-mcp/lib/client.py (reads PERSONAS_TEST_PORT, 10 of 84 Python drivers use it), tests/playwright/companion-bridge.ts, and scripts/test/launch-isolated.mjs (which returns the live port and has 2 consumers). The pattern deliberately requires the literal to be ASSIGNED or FETCHED so that os.environ.get(\"PERSONAS_TEST_BASE\", \"http://127.0.0.1:17320\") and process.env.X || 'http://localhost:17320' -- the CORRECT form, 13 sites -- do not match; the bare-number signal 17320 scores only 60% precision because it also hits those plus 95 prose mentions. KNOWN BENIGN MEMBER, left in the baseline on purpose: scripts/.archived/verify-scoping-live.mjs:18 is a retired script; a path exclude there would blind the rule to a live script added to the same directory later, and removing it costs one --update. PRECONDITION: this proxy assumes the harness is reached over a loopback URL that appears verbatim in driver source. A repo whose driver receives its target from a config object (personas-web's playwright.config.ts webServer block owns the port and no spec names it) scores zero here while the condition is absent by construction -- re-derive against wherever the local drivers name their target."
+      },
+      "exclude": [],
+      "baseline": {
+        "files": 54,
+        "matches": 60
+      },
+      "floor": 300
     }
   ]
 }
