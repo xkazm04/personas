@@ -388,9 +388,20 @@ jobs:
 
       - name: Check for binding drift
         run: |
+          # `git diff` sees TRACKED files only, so it exits 0 for a brand-new
+          # binding — verified 2026-08-14 by creating one. That is precisely the
+          # case this gate exists for: adding a command is when a NEW type
+          # appears. Untracked output must be checked separately, or the gate is
+          # green exactly when it matters.
+          NEW=$(git ls-files --others --exclude-standard src/lib/bindings/)
+          if [ -n "$NEW" ]; then
+            echo "::error::New TypeScript bindings were generated but not committed. Add them:"
+            echo "$NEW"
+            exit 1
+          fi
           if ! git diff --quiet src/lib/bindings/; then
-            echo "::error::TypeScript bindings are out of date. Run 'cargo test export_bindings' locally and commit the changes."
+            echo "::error::TypeScript bindings are out of date. Run 'cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop export_bindings' locally and commit the changes. (Without --workspace --features desktop, zero bindings regenerate — see the comment above this job.)"
             git diff src/lib/bindings/
             exit 1
           fi
-          echo "Bindings are up to date."
+          echo "Bindings are up to date (no drift, no uncommitted new types)."

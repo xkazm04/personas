@@ -1,12 +1,12 @@
 {
   "measuredAt": "2026-08-14",
-  "commit": "87ee4ea65",
+  "commit": "211d519bb",
   "note": "Shared facts, measured once, comments excluded. Golden-path composers MUST cite these rather than re-deriving: wave 1 produced four different command counts, three of which seeded floor assertions. \"files\" = files containing at least one hit; \"hits\" = occurrences.",
   "rust": {
     "files": 963,
-    "tauriCommands": 1666,
-    "requiresPrivileged": 173,
-    "requiresCloud": 58,
+    "tauriCommands": 1661,
+    "requiresPrivileged": 168,
+    "requiresCloud": 56,
     "requiresAuth": 19
   },
   "frontend": {

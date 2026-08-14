@@ -34,6 +34,35 @@ const isComment = (line) => {
   return t.startsWith('//') || t.startsWith('*') || t.startsWith('/*');
 };
 
+// Counting a Rust ATTRIBUTE means the line must BEGIN with it. Filtering
+// comments is not enough, and this file learned that the expensive way:
+//
+// Wave 1 published 1,666 Tauri commands as the "authoritative" correction to
+// four composers' four wrong numbers. It was also wrong. A raw grep finds
+// 1,673; 7 are comments (which this script already excluded) and 5 more are
+// STRING LITERALS inside the repo's own command-checkers —
+// context_fingerprint.rs:184,:614 and lib.rs:3858,:3874,:3957 all contain
+// "#[tauri::command]" as data because they are the code that counts commands.
+// The measurement instrument was counting itself. The true figure is 1,661
+// attribute sites (1,658 unique fns; 3 names are #[cfg]-gated duplicates).
+//
+// Three consecutive waves published a wrong number for the single most-cited
+// fact in the corpus, each correcting the last and each still wrong. A
+// substring match answers "does this text appear", never "is this a thing".
+const countAttr = (files, attr) => {
+  let hits = 0;
+  let inFiles = 0;
+  for (const f of files) {
+    let n = 0;
+    for (const line of fs.readFileSync(f, 'utf8').split('\n')) {
+      if (isComment(line)) continue;
+      if (line.trim().startsWith(attr)) n += 1;
+    }
+    if (n) { hits += n; inFiles++; }
+  }
+  return { hits, files: inFiles };
+};
+
 const count = (files, re) => {
   let hits = 0;
   let inFiles = 0;
@@ -102,10 +131,14 @@ const facts = {
     'at least one hit; "hits" = occurrences.',
   rust: {
     files: rs.length,
-    tauriCommands: count(rs, /#\[tauri::command/g).hits,
-    requiresPrivileged: count(rs, /#\[requires\(privileged\)\]/g).hits,
-    requiresCloud: count(rs, /#\[requires\(cloud\)\]/g).hits,
-    requiresAuth: count(rs, /#\[requires\(auth\)\]/g).hits,
+    // Attribute counts use countAttr (line must BEGIN with the attribute), not
+    // a substring match — see the note above countAttr. The previous substring
+    // count reported 1,666 here by counting five string literals in this repo's
+    // own checkers as if they were commands.
+    tauriCommands: countAttr(rs, '#[tauri::command').hits,
+    requiresPrivileged: countAttr(rs, '#[requires(privileged)]').hits,
+    requiresCloud: countAttr(rs, '#[requires(cloud)]').hits,
+    requiresAuth: countAttr(rs, '#[requires(auth)]').hits,
   },
   frontend: {
     tsxFiles: tsx.length,

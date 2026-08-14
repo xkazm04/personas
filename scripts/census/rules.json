@@ -629,6 +629,28 @@
         "matches": 122
       },
       "floor": 4000
+    },
+    {
+      "id": "untyped-command-payload",
+      "goldenPath": "docs/concepts/golden-paths/new-ipc-command.md",
+      "title": "IPC command whose success payload is serde_json::Value, so ts-rs can generate no binding for it",
+      "roots": [
+        "src-tauri/src"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "#\\[tauri::command[^{]{0,900}?->\\s*Result<\\s*(?:Option<\\s*|Vec<\\s*)*(?:serde_json::)?Value\\b",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a #[tauri::command] whose success type is serde_json::Value, directly or wrapped in Option/Vec. PROXY FOR the stack-free condition \"an operation's success payload is an untyped document, so the type generator emits nothing and the caller hand-authors the contract\". The [^{]{0,900} span cannot cross a function body, so the attribute and the return arrow are guaranteed to belong to the same signature. Measured consequence in this repo: 104 such commands; 55 production call sites in src/api/** hit them; 51 of those declare a concrete TypeScript type anyway; and 19 of those types are ORPHAN bindings whose Rust source no longer exists (src/lib/bindings/VaultStatus.ts, MigrationResult.ts, DesignStartResult.ts, ...). CI's binding-drift job cannot see them (ts-rs never deletes a file, so there is no diff) and check-unused-bindings.sh cannot see them (it asks whether a binding is USED, not whether it is still GENERATED). PRECONDITION: this repo spells its untyped escape hatch serde_json::Value; a repo using Box<dyn Serialize>, an un-schema'd JSON response, or `any` has the same condition wearing different markup and must re-derive the proxy. Legal destination: a named struct or enum carrying #[derive(TS)] #[ts(export)], imported on the frontend from @/lib/bindings/<Name>."
+      },
+      "baseline": {
+        "files": 40,
+        "matches": 104
+      },
+      "floor": 500
     }
   ]
 }

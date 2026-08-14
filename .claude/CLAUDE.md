@@ -64,7 +64,7 @@ Advisory pre-release scripts (manual, not CI-gated):
 - `npm run check` — TypeScript + ESLint (incl. the 18 custom rules)
 - `npm run check:i18n:strict` (no translation gaps — see i18n § "Translation completeness") · `npm run check:error-registry` · `npm run check:themes` · `npm run check:tauri-configs`
 - `npm run test -- --run` (Vitest)
-- If Rust changed: `cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings`, `cargo test --manifest-path src-tauri/Cargo.toml`, and `cargo test export_bindings` (then commit `src/lib/bindings/`)
+- If Rust changed: `cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings`, `cargo test --manifest-path src-tauri/Cargo.toml`, and `cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop export_bindings` (then commit `src/lib/bindings/`; without `--workspace --features desktop` **zero** bindings regenerate)
 - `node .ai/doctor.mjs` — `.ai` conformance (no hard FAILs)
 
 Then the judgment checks a linter can't make:
@@ -113,7 +113,11 @@ src-tauri/
 
 ### ts-rs bindings (Rust → TypeScript types)
 - **Single source of truth: `src/lib/bindings/`.** ts-rs writes here directly via `TS_RS_EXPORT_DIR`, which is forwarded to rustc by `src-tauri/build.rs` (`cargo:rustc-env=TS_RS_EXPORT_DIR=../src/lib/bindings`). The earlier `[env]` table in `src-tauri/.cargo/config.toml` did NOT reliably reach the proc-macro expansion path — the dual-tree drift (`src-tauri/bindings/` AND `src/lib/bindings/` both committed and drifting) traced to that. The build.rs route closes the gap; `src-tauri/bindings/` was retired and now appears in `src-tauri/.gitignore` to prevent any future leak. The `.cargo/config.toml` entry stays as a belt-and-suspenders backstop for tooling that calls cargo without going through the build.rs.
-- **After adding `#[derive(TS)] #[ts(export)]` to a Rust struct**, run `cargo test --manifest-path src-tauri/Cargo.toml export_bindings` from the repo root. Commit the resulting new/changed files in `src/lib/bindings/`.
+- **After adding `#[derive(TS)] #[ts(export)]` to a Rust struct**, run `cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop export_bindings` from the repo root. Commit the resulting new/changed files in `src/lib/bindings/`.
+
+  > **`--workspace` and `--features desktop` are load-bearing; this line omitted both until 2026-08-14.** Without them **zero** bindings regenerate — CI documents exactly this at `.github/workflows/ci.yml:385-386` and runs the full form itself. Following the old instruction produced no output, no diff, and nothing to commit, which is indistinguishable from "already up to date".
+  >
+  > **The drift job cannot catch that for a NEW type.** `git diff --quiet src/lib/bindings/` (`ci.yml:391`) exits **0** for an untracked file — verified directly. A new binding is untracked by definition, so the one case this gate exists for is the one it cannot see. Two independent failures pointing the same way is why 19 orphan bindings accumulated (types whose Rust source is gone; ts-rs never deletes, so there is no diff to notice).
 - CI verifies via `git diff --quiet src/lib/bindings/` — a missing regen fails the build at `.github/workflows/ci.yml`'s binding-drift job.
 - New Tauri commands additionally need `node scripts/generate-command-names.mjs` (or just `npm run dev`/`npm run build` which trigger `predev`/`prebuild`).
 
