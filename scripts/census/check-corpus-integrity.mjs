@@ -121,9 +121,25 @@ const walkDocs = (d) => {
 };
 walkDocs(CONCEPTS);
 
+// Strip fenced blocks and inline code BEFORE looking for links. A regex is not
+// a hyperlink, and this checker learned that by failing on its own corpus:
+// `(?:mousedown|pointerdown)` written next to a bracketed character class in
+// anchored-popover.md parses as `[...](?:mousedown|pointerdown)` and was
+// reported as a dead link. Every census rule ships its pattern in prose, so
+// this class of false positive was guaranteed to arrive — a gate that fires on
+// correct content is worse than no gate, because the first fix anyone reaches
+// for is to delete the gate.
+//
+// Replacing with newlines rather than deleting keeps byte offsets stable, so
+// nothing downstream shifts.
+const stripCode = (s) =>
+  s
+    .replace(/```[\s\S]*?```/g, (m) => '\n'.repeat((m.match(/\n/g) ?? []).length))
+    .replace(/`[^`\n]*`/g, '');
+
 let linksChecked = 0;
 for (const f of mdFiles) {
-  const src = fs.readFileSync(f, 'utf8');
+  const src = stripCode(fs.readFileSync(f, 'utf8'));
   for (const m of src.matchAll(/\[[^\]]*\]\(([^)\s]+)\)/g)) {
     let target = m[1];
     if (/^(https?:|mailto:|#)/.test(target)) continue;
