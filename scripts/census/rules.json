@@ -1120,6 +1120,80 @@
         "matches": 288
       },
       "floor": 700
+    },
+    {
+      "id": "blind-identity-write",
+      "goldenPath": "docs/concepts/golden-paths/repository-crud-surface.md",
+      "title": "Repository write targeted at one row by primary key whose affected-row count is discarded, so \"no such row\" is reported as success",
+      "roots": [
+        "src-tauri/db/src/repos"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\bpub\\s+fn\\s+[A-Za-z_]\\w*(?:(?!\\bpub\\s+fn\\b)[\\s\\S]){0,400}?->\\s*Result<\\s*\\(\\s*\\)\\s*,\\s*(?:personas_core::error::)?AppError\\s*>\\s*\\{(?:(?!\\bfn\\s+[A-Za-z_]|\\blet\\s+(?:mut\\s+)?[a-z_]\\w*\\s*(?::[^=;\\n]{0,40})?=\\s*[^;]{0,400}?\\.execute\\s*\\(|AppError::NotFound|QueryReturnedNoRows|\\w*by_id\\s*\\(|\\.optional\\s*\\()[\\s\\S]){0,4000}?\"[^\"]{0,400}?\\b(?:UPDATE|DELETE)\\b(?![^\"]{0,400}?\\b(?:INSERT|CONFLICT)\\b)[^\"]{0,400}?\\bWHERE\\b\\s+id\\s*=\\s*\\?\\d*\\s*\"",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a pub repository fn returning Result<(), AppError> that reaches an UPDATE or DELETE whose entire WHERE clause is `id = ?N` - a primary-key-targeted, exactly-one-row write - without ever binding the usize that .execute() returns and without any existence probe. PROXY FOR the stack-free condition: a write addressed at one identified row completes without reporting whether that row existed, so 'nothing happened' and 'it worked' are the same value. rusqlite's execute() returns the affected-row count; on a PK-targeted statement 0 means exactly one thing - no such row - and the unit return type physically cannot carry it. Measured 2026-08-14 at HEAD: 82 matches across 35 of 116 files, every match a distinct (file, fn) pair, median matched span 377 chars and max 2355 against a 4000 bound, zero matches inside a #[cfg(test)] module. 22 matches were opened and read during the pattern's refinement: the final pattern's set contains 20 verified true positives and the 2 verified false positives found on the way are excluded BY CONSTRUCTION rather than by an allowlist - a scope-keyed bulk DELETE (dev_workspaces.rs:1067 sync_harvest_scopes, WHERE project_id = ?1, where 0 rows is normal) is excluded by requiring the bare column `id`, and a function that probes existence first (rotation.rs:257 mark_rotated calls get_policy_by_id) is excluded by the `\\w*by_id\\s*\\(` guard. The other guards do the same work: a fn that already binds the count, maps QueryReturnedNoRows, constructs AppError::NotFound, or calls .optional() has made the no-op observable and does not match; INSERT/ON CONFLICT are excluded because an upsert can never affect zero rows. Live consequences in this tree: persona_triggers::set_enabled (triggers.rs:1856) flips a trigger that may not exist and the UI renders the new state; deliberation::finalize (deliberation.rs:306) finalizes a vanished deliberation; dev_goals::reorder_goals (dev_tools.rs:861) reorders stale ids one blind UPDATE at a time. PRECONDITION (must be re-derived per repo): this repo executes SQL through rusqlite's `.execute(sql, params)` inside functions declared `pub fn`, returns a unit-typed Result on writes, and spells its primary key `id`. A repo whose driver returns a result object the caller must destructure (better-sqlite3's {changes}), whose ORM raises on a zero-row update, or which returns the updated row via RETURNING has the SAME condition wearing different markup and this pattern scores zero against it. LEGAL FIX, in order: (1) bind the count and turn 0 into AppError::NotFound - resources/notification_subscriptions.rs:215 is the shape to copy, six lines; (2) return the refreshed entity instead of unit, which makes the absent row a NotFound from the re-read - resources/notification_subscriptions.rs:135 update is that shape; (3) reach for crud_delete! (macros.rs:196), which returns Ok(rows > 0) and cannot be written blind. Do NOT silence a match by widening the WHERE clause or by dropping the id predicate - that trades this condition for a worse one."
+      },
+      "baseline": {
+        "files": 35,
+        "matches": 82
+      },
+      "floor": 100
+    },
+    {
+      "id": "hand-assembled-currency",
+      "goldenPath": "docs/concepts/golden-paths/number-and-cost-formatting.md",
+      "title": "A money amount assembled by welding a currency glyph onto a separately-formatted number",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\$\\$\\{|\\$\\s*<Numeric\\b",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a literal `$` glyph immediately followed by an interpolation (`` `$${x.toFixed(2)}` ``) or by the shared <Numeric> primitive (`$<Numeric value={x} precision={4}/>`). PROXY FOR the stack-free condition: a monetary amount is composed at the call site out of a hard-coded currency glyph plus a number that was rounded by whoever wrote that line, so (a) the rounding contract is re-decided per call site, (b) the glyph cannot move to the position the locale requires, and (c) no currency other than USD can ever be represented. Precision measured 50/50 on a full read of every match: every one is a real money render, zero test-fixture or non-money hits. Two of the 50 are non-UI destinations (analyticsMiddleware.ts:33 writes a Sentry breadcrumb; knowledgeMiddleware.ts:33 builds an LLM prompt) and are left in deliberately — the rounding argument applies to them too and excluding two lines would cost more than it buys. Measured consequences in this repo: of the 40 `$${…}` sites, 22 round a sub-cent amount to a displayed `$0.00` (or `$0` at toFixed(0)) — FactoryOverviewTab.tsx:284 renders per-project spend at toFixed(0), so $0.49 of real spend reads as `$0`; and the 5 distinct precisions in flight (0,1,2,3,4 decimals) mean the same cost_usd field renders differently on two screens. The 10 `$<Numeric …>` sites are the sharper shape: the primitive IS imported, and the caller still hand-rolls the currency semantics around it (LlmTrackingCell.tsx:72 re-derives formatCost's 'auto' precision inline as `precision={spend >= 1 ? 2 : 4}`). PRECONDITION (measured, must be re-derived per repo): this repo denominates all money in USD, stores it as a float, and spells a currency render as a template literal starting with `$`. A repo that formats through Intl currency style, or uses a non-`$` symbol, or stores integer cents, scores zero while the condition is present — and the sibling personas-web, which has the identical idiom 11 times, ALSO has 0 `Intl.NumberFormat`, so the condition is convergent while this exact proxy is not portable to a repo that had adopted Intl. LEGAL FIX: `formatCost(usd, { language })` from @/lib/utils/formatters, or `<Numeric value={usd} unit=\"usd\" language={language} />` — both emit the currency glyph through Intl, so it lands where the locale puts it (`$1,234.50` en / `1.234,50 $` de / `US$1.234,50` id), and both carry the `<$0.01` sub-cent guard the hand-rolled sites lack."
+      },
+      "baseline": {
+        "files": 39,
+        "matches": 50
+      },
+      "floor": 4000
+    },
+    {
+      "id": "locale-blind-percent",
+      "goldenPath": "docs/concepts/golden-paths/number-and-cost-formatting.md",
+      "title": "A percentage assembled by pasting a % glyph after a locally-rounded number",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?<!(?:width|height|left|right|top|bottom|inset|maxWidth|minWidth|flexBasis|strokeDasharray|translate|offset)\\s*:\\s*[`'\"]?[^;`'\"]{0,50})(?:\\.toFixed\\(\\s*\\d*\\s*\\)|Math\\.round\\((?:[^()]|\\([^()]*\\))*\\))\\s*\\}\\s*%",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a number rounded in place with .toFixed()/Math.round() and closed with a literal `%` glyph. PROXY FOR the stack-free condition: a percentage is composed at the call site rather than requested from the number layer, so the decimal separator, the digit grouping and the spacing between the figure and the percent sign are all frozen to one locale's convention. Concretely wrong in 5 of this app's 14 shipped languages: Intl renders `42.5%` for en but `42,5 %` for de/fr/cs (comma decimal AND a no-break space before the sign) and wraps the sign in bidi marks for ar. The negative lookbehind removes the large CSS-geometry false-positive class — `style={{ width: `${Math.round(x*100)}%` }}` is a layout percentage, not a display number, and there are ~195 of those; verified discriminating against ModelABCompare.tsx:217, PersonaCoachingTable.tsx:201, HealingEffectivenessPanel.tsx:106 and SkillContextsModal.tsx:68, all of which the pattern correctly declines. Precision after the lookbehind and the harness exclusion, on a full read of all 78 matches: 78/78 are user-visible percentages (they include chart labels, aria-labels, zoom/volume chrome and generated markdown reports — all rendered, none internal arithmetic). PRECONDITION (measured, must be re-derived per repo): this repo writes percentages as template-literal interpolation followed by an ASCII `%`, and expresses layout percentages the same way, which is why the exclusion list is spelled in CSS property names. A repo that renders `<Percent value/>`, or that uses styled-components/`clsx` arbitrary values, or that formats through Intl percent style, must re-derive. Sibling evidence that the CONDITION is universal and the SHAPE is not: personas-web has 30 user-visible percent sites across 5 different idioms and 0 uses of Intl percent style, but several are `{pct}%` on a pre-scaled integer, which this pattern does NOT match. LEGAL FIX: `formatPercent(value, { language })` (pass `fromRatio: true` for a 0-1 ratio) or `<Numeric value={v} unit=\"percent\"|\"ratio\" language={language} />`, both of which route through Intl percent style and get the separator, the spacing and the bidi marks right for free."
+      },
+      "exclude": [
+        {
+          "path": "src/lib/harness/**",
+          "reason": "the UAT / test-automation harness — its progress and pass-rate percentages are read by the harness author in a run report, never rendered in the product UI, and the same carve-out is already precedent in i18n-string-authoring's frozen-ui-copy-constant rule"
+        }
+      ],
+      "baseline": {
+        "files": 55,
+        "matches": 78
+      },
+      "floor": 4000
     }
   ]
 }
