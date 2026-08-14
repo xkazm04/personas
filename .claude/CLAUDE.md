@@ -109,7 +109,7 @@ src-tauri/
 ### State Management
 - Zustand with slice pattern in `src/stores/slices/`
 - Use `useShallow` from zustand for selective subscriptions
-- `globalThis` for singletons surviving HMR (executionBuffers, eventBus)
+- `globalThis` for singletons surviving HMR. **Corrected 2026-08-14: this line named `executionBuffers` and `eventBus`, and NEITHER IDENTIFIER EXISTS.** `executionBuffers` appears nowhere in the tree except this line and three source comments citing it as precedent; the real object is `executionSink` (`src/lib/execution/executionSink.ts:339`), which is a **plain module const, not on `globalThis`**, and therefore does *not* survive HMR. `eventBus` is really `globalThis.__personasEventBridge` (`src/lib/eventBridge.ts:142`), which does. Three files copied the fictional name into their own comments as justification for their pattern — the convention is sound (7 correct singletons in the tree), the documentation of it was not.
 
 ### Tauri IPC
 - Always use `invokeWithTimeout` from `@/lib/tauriInvoke` — never raw `invoke`

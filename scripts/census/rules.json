@@ -1216,6 +1216,29 @@
         "matches": 5
       },
       "floor": 4000
+    },
+    {
+      "id": "shallow-wrapped-property-selector",
+      "goldenPath": "docs/concepts/golden-paths/zustand-domain-slices.md",
+      "title": "useShallow wrapping a selector that constructs nothing",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "useShallow\\(\\s*\\(?\\s*[A-Za-z_$][\\w$]*\\s*\\)?\\s*=>\\s*[A-Za-z_$][\\w$]*(?:\\??\\.[\\w$]+|\\[[^\\]]*\\])*\\s*\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "useShallow() wrapping a selector whose body is a bare property-access chain. It constructs nothing, so the shallow compare can only ever be a workaround for a slice that replaces a collection reference whose contents are unchanged — and when the collection is refetched over IPC, every element is a fresh object and the compare can never match. PROXY FOR the stack-free condition: subscription-side compensation for writer-side identity churn. The fix is in the writing slice; see Gaps #2."
+      },
+      "baseline": {
+        "files": 10,
+        "matches": 14
+      },
+      "floor": 4000
     }
   ]
 }
