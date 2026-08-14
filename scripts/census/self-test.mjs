@@ -354,7 +354,7 @@ test('validateRule rejects an exclude with no real reason', () => {
   ok(errors.some((e) => /needs a real "reason"/.test(e)), 'short reason rejected');
 });
 
-test('validateRule rejects missing floor, baseline, goldenPath and a bad regex', () => {
+test('validateRule rejects missing floor, baseline, grounding and a bad regex', () => {
   const rule = baseRule();
   delete rule.floor;
   delete rule.goldenPath;
@@ -362,9 +362,36 @@ test('validateRule rejects missing floor, baseline, goldenPath and a bad regex',
   rule.signal = { pattern: '(unclosed', flags: 'g', description: 'bad' };
   const errors = validateRule(rule, 0);
   ok(errors.some((e) => /missing "floor"/.test(e)), 'floor required');
-  ok(errors.some((e) => /missing "goldenPath"/.test(e)), 'goldenPath required');
+  ok(errors.some((e) => /missing grounding/.test(e)), 'grounding required');
   ok(errors.some((e) => /missing "baseline.files"/.test(e)), 'baseline.files required');
   ok(errors.some((e) => /not a valid RegExp/.test(e)), 'bad regex rejected');
+});
+
+test('a rule grounded by `principle` alone is valid — the consuming-repo shape', () => {
+  // A repo that CONSUMES the library has no docs/concepts/golden-paths/ of its own:
+  // the principle text stays upstream and the local rule cites a principle id
+  // resolved against a vendored index. Requiring `goldenPath` unconditionally made
+  // the runner unusable outside the repo that authored it — the first port to
+  // another codebase failed on exactly this.
+  //
+  // Both directions are asserted deliberately. Testing only that missing-BOTH fails
+  // would let a later refactor quietly drop `principle` support while this file
+  // stayed green, which is the failure mode the whole self-test exists to prevent.
+  const consuming = baseRule();
+  delete consuming.goldenPath;
+  consuming.principle = 'client-state-persistence';
+  eq(validateRule(consuming, 0).length, 0, 'principle alone grounds a rule');
+
+  const home = baseRule(); // goldenPath only — the library-home shape
+  delete home.principle;
+  eq(validateRule(home, 0).length, 0, 'goldenPath alone still grounds a rule');
+
+  const ungrounded = baseRule();
+  delete ungrounded.goldenPath;
+  ok(
+    validateRule(ungrounded, 0).some((e) => /missing grounding/.test(e)),
+    'a rule grounded by NEITHER is still rejected',
+  );
 });
 
 test('a malformed registry fails the run rather than scanning nothing', () => {

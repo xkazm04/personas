@@ -304,6 +304,31 @@ Two variables, and their relative weight is unambiguous:
   `is-disabled` to 1.0%. Same delivery format, same discoverability, no gate.
 - **Every import-delivered token sits at 0.2–3.4%**, gate or not.
 
+> **FALSIFIED 2026-08-14 against a second stack — read this before citing the band above.**
+> `politicas` (Next.js, 905 TS/TSX) delivers its number-format token as an **import**
+> — `useFormat()`, a hook you must reach for, versus `.toLocaleString()` you type
+> inline — and it sits at **99.9%**: 826 on-token calls across 117 files against
+> **1** off-token call, that one in a build-time generator. The "import-delivered
+> collapses" claim does not survive contact with another codebase.
+>
+> **Why it looked true here.** In this repo delivery format is *perfectly
+> confounded*: all five import-delivered axes also have **no gate that fires** —
+> three have no rule at all, `no-raw-spacing-classes` is `off`, and
+> `prefer-status-badge` fires 3× repo-wide. The gate variable never varied, so its
+> effect was attributed to the format beside it.
+>
+> **And a third variable was hiding behind both.** `git log --diff-filter=A` on each
+> rule: every axis in the 94–99% band got its rule in the **first six weeks** (days
+> 30, 38, 40). Every collapsed axis got one **late or never** — `prefer-numeric`
+> arrived on **day 121**. `politicas` wired its colour rule at `"error"` in its
+> *initial commit*, and its palette-class count is **0**.
+>
+> **What survives:** adoption is governed by **whether a gate fires, and how early
+> it was wired** — not by how the token is delivered. P6 is demoted from predictor
+> to ergonomic preference: a class is still nicer to reach for than an import, but
+> it does not buy adoption. Full working in
+> [`../research/convergence-politicas-design-display.md`](../research/convergence-politicas-design-display.md).
+
 So delivery format matters (P6) but enforcement dominates. And `personas-web` supplies the
 counterfactual for the top row: **the same `typo-*` layer, with no lint rule, has zero
 adopters there against 10,230 here.**

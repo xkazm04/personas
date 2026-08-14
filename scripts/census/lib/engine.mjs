@@ -322,7 +322,23 @@ export function validateRule(rule, index) {
   const need = (cond, msg) => { if (!cond) errors.push(`${where}: ${msg}`); };
 
   need(typeof rule?.id === 'string' && rule.id.length > 0, 'missing "id"');
-  need(typeof rule?.goldenPath === 'string', 'missing "goldenPath" — every rule names the path that owns it');
+  // Every rule must name what grounds it, but HOW it is grounded depends on where
+  // the rule lives. In the library home that is `goldenPath`, a real file in
+  // docs/concepts/golden-paths/. In a CONSUMING repo there is no such file — the
+  // principle text stays upstream — so grounding is a `principle` id resolved
+  // against a vendored library-index.json instead.
+  //
+  // Requiring `goldenPath` unconditionally made this runner unusable outside the
+  // repo that authored it: the first port to another codebase (politicas,
+  // 2026-08-14) failed on exactly this, and the only ways to satisfy it were to
+  // invent a dangling path or to fork the engine. Both are worse than widening
+  // the schema by one clause. What must NOT be relaxed is the requirement that
+  // SOMETHING grounds the rule — an ungated assertion nobody agreed to is the
+  // thing this check exists to prevent.
+  need(
+    typeof rule?.goldenPath === 'string' || typeof rule?.principle === 'string',
+    'missing grounding — a rule needs "goldenPath" (library home) or "principle" (consuming repo)',
+  );
   need(Array.isArray(rule?.roots) && rule.roots.length > 0, 'missing "roots"');
   need(Array.isArray(rule?.extensions) && rule.extensions.length > 0, 'missing "extensions"');
   need(typeof rule?.signal?.pattern === 'string', 'missing "signal.pattern"');
