@@ -137,6 +137,27 @@ remains the right host when the signal is structural/AST-shaped or wants an
 autofix — `inline-busy-state.md` §9 explains why. The two compose: the rule
 reports, the census ratchets.
 
+## Prefer a type over a gate — checked three times
+
+**Promoted 2026-08-14 after a third independent sighting.** Where a constraint
+can be made *unrepresentable*, that beats policing it:
+
+- `brainiac` (Rust/Postgres) made the transaction boundary a **type** —
+  `&mut PgConnection` vs `&PgPool` is a compile error to confuse — and needs no
+  gate at all. Personas made it a convention (2,133 pool-taking signatures vs 24
+  transaction-taking) and therefore needs one.
+- `FacetedDecisionTable` makes `emptyTitle` **required** and gets 3/3 real copy;
+  its optional-prop siblings have 5 of 20 falling through to `"No data"`.
+- `personas-web`'s `createLazySection` factory makes a missing Suspense fallback
+  unrepresentable: **22/22** factory sites have one, **2/31** hand-rolled do.
+
+So §4 (steps) should ask, before §9 (the gate) is written: **can the primitive's
+signature make the wrong call impossible?** A required prop, a newtype, a
+factory that owns the dangerous parameter, or a boundary that only accepts the
+scoped handle removes a whole deviation class permanently. A gate merely counts
+it. When both are available, propose the type change as the fix and the gate as
+the ratchet that holds the line until it lands.
+
 ## Composing rules
 
 **Ground truth, never memory.** Every claim traces to a file read during
