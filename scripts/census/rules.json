@@ -927,6 +927,35 @@
         "matches": 20
       },
       "floor": 900
+    },
+    {
+      "id": "looping-framer-animation",
+      "goldenPath": "docs/concepts/golden-paths/motion-and-reduced-motion.md",
+      "title": "Framer animation that loops forever",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "repeat:\\s*Infinity",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "framer-motion transitions with repeat: Infinity — the one animation class neither the global CSS reduced-motion reset (script-driven values are invisible to it) nor <MotionConfig reducedMotion=\"user\"> (non-positional keys are exempt by design) can stop. Every one needs a useReducedMotion branch, a useMotionVariants wrap, or a `// reduced-motion-ok:` reason."
+      },
+      "exclude": [
+        {
+          "path": "src/hooks/utility/interaction/__tests__/useMotion.test.ts",
+          "reason": "the reduced-motion primitive's own unit test — it asserts that toReducedVariants strips repeat, so the token must appear in the fixture"
+        }
+      ],
+      "baseline": {
+        "files": 25,
+        "matches": 28
+      },
+      "floor": 4000
     }
   ]
 }
