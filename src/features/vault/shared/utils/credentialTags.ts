@@ -31,12 +31,22 @@ export function getCredentialTags(credential: CredentialMetadata): string[] {
   return tags.filter((t): t is string => typeof t === 'string');
 }
 
-export function buildMetadataWithTags(credential: CredentialMetadata, tags: string[]): string {
-  const parsed = parseMetadata(credential.metadata);
-  const next = { ...parsed, tags: tags.length > 0 ? tags : undefined };
-  if (!next.tags) delete next.tags;
-  return JSON.stringify(next);
-}
+// REMOVED 2026-08-15: `buildMetadataWithTags(credential, tags)`.
+//
+// It parsed the whole metadata blob out of a client-held `CredentialMetadata`,
+// spliced `tags`, and returned the whole blob for the caller to write back —
+// a read-modify-write against a copy that may be seconds stale. Replaying its
+// two call sites against a live 18-key blob lost 3 keys the backend had written
+// in between.
+//
+// Both callers now use `patchCredentialMetadata(id, { tags })`, which merges
+// server-side inside a transaction and treats null as remove
+// (db/src/repos/resources/credentials.rs:719-724).
+//
+// Deliberately not replaced with a "safer" version. The helper's signature is
+// the defect: anything that hands you the whole blob to rewrite invites the
+// lost update, and widening the caller's type does not fix it. If you need to
+// change one metadata key, send that one key.
 
 /** Collect all unique tags across all credentials */
 export function collectAllTags(credentials: CredentialMetadata[]): string[] {

@@ -2373,6 +2373,74 @@
         "matches": 17
       },
       "floor": 900
+    },
+    {
+      "id": "discarded-timezone-parse",
+      "goldenPath": "docs/concepts/golden-paths/scheduled-trigger-firing.md",
+      "title": "An IANA zone name is parsed and the parse FAILURE is discarded, so an unrecognised zone silently becomes the host machine's local time",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "(?:parse::<(?:chrono_tz::)?Tz>\\(\\)\\s*\\.\\s*ok\\(\\)|\\.parse\\(\\)\\s*\\.\\s*ok\\(\\)[\\s\\S]{0,120}?next_fire_time_in_tz)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "an IANA zone name resolved into chrono_tz::Tz with the ParseError discarded by .ok(). TWO spellings, because one is invisible to the other: the explicit turbofish parse::<Tz>().ok(), and the type-INFERRED .parse().ok() whose target type comes only from the next_fire_time_in_tz call that consumes it (system_ops.rs:157 — missed by the turbofish-only first draft, recall 5/6). PROXY FOR the stack-free condition: a value that must name a member of a closed, externally-defined vocabulary is accepted as free text and the not-a-member outcome is discarded rather than refused. chrono_tz's FromStr is TIMEZONES.get(s) — an exact IANA-name lookup — so .ok() collapses 'you named a zone I do not recognise' into 'you named no zone', which every caller in this stack reads as 'use whatever zone this machine is in'. MEASURED 2026-08-15 at f2e002f7b: 6 matches in 4 files, ALL SIX OPENED AND CONFIRMED (precision 6/6) — models/trigger.rs:150 (the active-window gate, which then disagrees with its own schedule), commands/tools/triggers.rs:334/867/942 (the trigger list and BOTH calendar/preview IPCs, which render a fabricated future for a schedule the engine has permanently refused), engine/rotation.rs:1173, engine/system_ops.rs:157. The compliant form is resolve_schedule_tz (core/src/scheduler.rs:41), whose own doc comment says it exists so the paths 'can never diverge again'; it has 4 call sites against these 6. Live consequence: 16 rows in the operator's database carry timezone \"local\", 0 have ever fired. RATCHET ONLY — the real fix is typing the field Option<Tz> (see the path's 'Prefer a type over a gate'), which deletes all six sites"
+      },
+      "baseline": {
+        "files": 4,
+        "matches": 6
+      },
+      "floor": 900
+    },
+    {
+      "id": "blank-filled-update-payload",
+      "goldenPath": "docs/concepts/golden-paths/entity-draft-editing.md",
+      "title": "A client update payload names fields the user never edited and fills them with a literal null, so the wire carries the client's placeholder instead of the user's diff",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\bupdate[A-Z]\\w*\\s*\\([^;{}>]{0,160}\\{(?:[^{}]{0,700}?,)?\\s*\\w+\\s*:\\s*null\\s*,(?:[^{}]{0,700}?,)?\\s*\\w+\\s*:\\s*null\\b",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "an update*(...) call whose INLINE object-literal argument carries two or more properties whose entire value is the literal `null`. PROXY FOR the stack-free condition: a client sends a stored field a value it did not get from the user - a placeholder invented to satisfy a type that requires every field - so the payload is a record of the client's state rather than a diff of the user's edits. TWO is the discriminating threshold and is not arbitrary: one null is a plausible deliberate clear, two or more is blank-filling. EXECUTED, not argued: replaying serde_util.rs:24-30 (double_option) and macros.rs:45-51 (push_field_param!(.., clone)) against a real 18-key metadata blob from a read-only copy of the live database shows `metadata: null` clears all 18 keys (including oauth_token_expires_at, whose absence reintroduces the daily-401 documented at commands/credentials/crud.rs:124-127) while the same payload with the key OMITTED loses zero; and replaying triggers.rs:425-432 + 449-450 shows `next_trigger_at: null` writes SQL NULL *and* defeats the recompute guard, because that guard tests input.next_trigger_at.is_none() and an explicit null deserializes to Some(None), whose is_none() is false - after which get_due (triggers.rs:1590-1596, the only source of scheduler work, with no repair sweep anywhere) can never select the row again. Measured 2026-08-15 at HEAD: 12 matches across 9 files, ALL TWELVE OPENED AND CONFIRMED (precision 12/12), commentMatchesSkipped 0, over 4829 files walked. Reconciles with two independent AST/text implementations that agreed exactly on the 7 sites nulling a double_option field. TWO FALSE-POSITIVE FAMILIES ARE EXCLUDED BY CONSTRUCTION rather than by allowlist: (a) local React state setters - updateStatus(name, {testing: true, result: null}) at features/agents/sub_connectors/libs/useConnectorStatuses.ts:109,241, where result: null is a real value - are removed by tempering the pre-brace span with [^;{}>], which refuses an arrow-function body (`=> {`) and also removes updateSessionInState(state, id, (sess) => {..}) in stores/slices/agents/matrixBuildSlice.ts (3 matches); (b) ternary else-branches - `targetValue: typeof tv === 'number' ? tv : null` at features/teams/sub_kpis/KpiSimSuggestions.tsx:109 reads as `tv : null` to a naive matcher - are removed by requiring every null property to be delimited by the object's `{` or a `,`, which a ternary's `?` is not. NOT EVERY MATCH IS A LIVE BUG AND THE RULE DOES NOT CLAIM SO. The 12 break down exactly: SIX null a field carrying #[serde(default, deserialize_with = \"double_option\")] and destroy data today - useCredentialRename.ts:48, SchemaManagerModal.tsx:58 and credentialSlice.ts:189 clear persona_credentials.metadata; useScheduleActions.ts:112, useScheduleActions.ts:134 and useAutomationSuggestions.ts:85 clear persona_triggers.next_trigger_at. TWO are the lost-update sites - useCredentialTags.ts:26 and PlaygroundHeader.tsx:39 null only plain Option<T> fields (harmless) but round-trip the metadata blob from a stale client copy, which the type widening does NOT fix (see the golden path's P1-1; replay loses 3 of 18 keys). FOUR are latent - useScheduleActions.ts:195 and :229 null only plain-Option fields, and RecipeInputSection.tsx:54 (names 15 of 15 fields to change one) and WebhookSubscriptionsPanel.tsx:138 (names 7 of 7 to toggle a boolean) target types with ZERO double_option fields, so every null is read as skip. Those four are one serde attribute away from being data-loss bugs, and whoever adds that attribute will be editing a Rust file and will not see these call sites. 6 + 2 + 4 = 12. It is a RATCHET on a construction that is removable in every case. DISCLOSED RECALL GAPS, both structural: (1) 12 of the 40 production call sites hoist the payload into a variable and pass the identifier - recipes/sub_editor/components/RecipeEditor.tsx:108 is a blank-filled payload spelled exactly that way - and no call-site-anchored signal can see them, a ~30% blind spot that needs type information to close; (2) a placeholder spelled as an expression rather than a bare literal is invisible - stores/slices/pipeline/triggerSlice.ts:152-157 is a LIVE data-loss site with only one bare null (`next_trigger_at: null`) beside `?? null` and `? : null` siblings, and loosening the threshold to one null recovers it only at 88% precision (2 FPs of 17), which is worse than no gate. PRECONDITION (must be re-derived per repo): this repo names its mutation functions update<Entity>, passes a plain object literal as the payload argument, and generates required-everything update types via ts-rs, so the blank-filling is visible as text. A repo that takes one request body per endpoint, spells the tri-state as zod .nullable().optional(), or patches through an ORM has the SAME condition wearing markup this pattern cannot see and scores a structural zero. POSITIVE CONTROL: the identical anchors pointed at the COMPLIANT form (an update* payload literal containing no null at all) match 105 times across 56 files, so the rule discriminates on the blank-filling shape rather than on the token `update` - 10.3% of inline update payloads are blank-filled and 89.7% are not. LEGAL FIX, in order: (1) widen the api adapter to Partial<Update*Input> - src/api/agents/automations.ts:55 and src/api/pipeline/teams.ts:40 are the shape to copy, and their doc comments explain why omission is the only correct spelling of leave-alone - then delete the placeholder keys at the call site; (2) for a JSON blob column do NOT round-trip it from the client, send a patch and let the server merge in a transaction - src/api/vault/credentials.ts:29-30 -> db/src/repos/resources/credentials.rs:743-759 is the primitive and features/vault/shared/hooks/health/useCredentialHealth.ts:183 its only consumer; (3) the durable fix is an operation union so an intent carries only its own fields - src/api/agents/personas.ts:320-333, whose surface has 13 double_option fields, ~39 call sites and ZERO deviations. Do NOT silence a match by hoisting the same object into a variable (that hides it from the rule without fixing it) or by replacing `null` with `undefined` (JSON.stringify drops it, which happens to be correct, but the next author will read the two as interchangeable and they are not). END OF LIFE: this rule is designed to reach zero - all 12 are removable. When it does the runner fails structurally on zero-matches BY DESIGN: DELETE the rule then, do not baseline it at 0."
+      },
+      "baseline": {
+        "files": 2,
+        "matches": 2
+      },
+      "floor": 3000
+    },
+    {
+      "id": "unpinned-billing-account-spawn",
+      "goldenPath": "docs/concepts/golden-paths/headless-model-call.md",
+      "title": "A model-invoking child process launched without pinning which account pays",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "Command::new\\s*\\(\\s*&(?:cli_args\\.command|cmd_program|command|program|binary)\\s*\\)(?:(?!force_subscription_auth|CLI_SUBSCRIPTION_RESERVED_ENV|Command::new)[\\s\\S]){0,2000}?\\.\\s*spawn\\s*\\(\\s*\\)(?:(?!Command::new)[\\s\\S]){0,400}?[Cc]laude",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a resolved-binary child process that identifies itself as the Claude CLI on its own spawn-error path, launched with NEITHER force_subscription_auth() NOR an inline CLI_SUBSCRIPTION_RESERVED_ENV loop anywhere between Command::new and .spawn(). PROXY FOR the stack-free condition: a model call is launched without stating which billing identity pays for it, so it inherits whatever credential happens to be in the process environment. PRECISION 5/5, every match opened and confirmed. The negative-tempered middle is what makes this a fact rather than a taste judgement: the SAME anchor with the middle inverted to REQUIRE the strip scores 12 matches across 10 files, and the two halves partition 17 of the anchor's 18 raw matches (the 18th, bridge_manifest/mod.rs:298, is a generic desktop-bridge binary that reaches .output() rather than .spawn()) - so the count measures the STRIP, not 'how many CLI spawns exist'. The trap this rule exists to see through: four of the five violating sites DO run `for key in &cli_args.env_removals { cmd.env_remove(key) }`, which reads like billing hygiene and is not - build_cli_args populates env_removals with CLAUDECODE / CLAUDE_CODE / DISABLE_PROMPT_CACHING* only (cli_args.rs:184-199) and never the three auth vars, so the loop that looks like the guard is not the guard. RECALL is deliberately partial: ocr/mod.rs:579 spawns the same call through Command::new(\"cmd\") on Windows and is invisible to a resolved-binary anchor; a site whose strip arrives more than 2000 chars after Command::new would read as compliant. PRECONDITION (must be re-derived per repo): this repo bills a Claude CLI subprocess against either an OAuth subscription or a pay-as-you-go API account, and the API path is selected by three INHERITED env vars (ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN / ANTHROPIC_BASE_URL, cli_process.rs:36-40) that must be stripped per spawn. A repo that calls a hosted SDK with an explicit client object has the SAME condition wearing different syntax and scores ZERO here - which is what all four sibling repos audited for this path do, and why none of them has this rule."
+      },
+      "exclude": [],
+      "baseline": {
+        "files": 5,
+        "matches": 5
+      },
+      "floor": 900
     }
   ]
 }

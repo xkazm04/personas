@@ -300,13 +300,17 @@ async fn deploy_github(
 
     let conn = pool.get()?;
     conn.execute(
+        // `persona_triggers` has no `name` column — verified against the live
+        // PRAGMA and against every `ALTER TABLE persona_triggers` in the tree.
+        // This INSERT named one anyway and `?`-propagated the error, so GitHub
+        // deploy failed 100% of the time. The compiler cannot see it: the
+        // column name is a word inside a string literal.
         "INSERT INTO persona_triggers
-         (id, persona_id, name, trigger_type, config, enabled, created_at, updated_at)
-         VALUES (?1, ?2, ?3, 'webhook', ?4, 1, ?5, ?5)",
+         (id, persona_id, trigger_type, config, enabled, created_at, updated_at)
+         VALUES (?1, ?2, 'webhook', ?3, 1, ?4, ?4)",
         rusqlite::params![
             trigger_id,
             input.persona_id,
-            format!("GitHub: {}", design.name),
             trigger_config.to_string(),
             now,
         ],

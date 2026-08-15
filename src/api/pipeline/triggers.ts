@@ -23,7 +23,22 @@ export const listTriggers = (personaId: string) =>
 export const createTrigger = (input: CreateTriggerInput) =>
   invoke<PersonaTrigger>("create_trigger", { input });
 
-export const updateTrigger = (id: string, personaId: string, input: UpdateTriggerInput) =>
+// `Partial<>` since 2026-08-15. `next_trigger_at` is `Option<Option<String>>`
+// with `double_option` (core/src/models/trigger.rs:510), so callers filling in
+// `next_trigger_at: null` to satisfy a required field were CLEARING the column,
+// not leaving it alone.
+//
+// That is not cosmetic: `get_due` requires `next_trigger_at IS NOT NULL`
+// (repos/resources/triggers.rs:1590) and it is the only source of scheduler
+// work, so a NULLed trigger stops firing permanently and reports success. The
+// guard written to prevent exactly this — `input.next_trigger_at.is_none()` at
+// commands/tools/triggers.rs:450 — does not fire, because an explicit null
+// deserializes to `Some(None)` whose `is_none()` is false. So the column was
+// nulled AND the cron recompute was skipped.
+//
+// Send only the keys you are changing; omitting `next_trigger_at` is what makes
+// the backend recompute it.
+export const updateTrigger = (id: string, personaId: string, input: Partial<UpdateTriggerInput>) =>
   invoke<PersonaTrigger>("update_trigger", { id, personaId, input });
 
 export const deleteTrigger = (id: string, personaId: string) =>

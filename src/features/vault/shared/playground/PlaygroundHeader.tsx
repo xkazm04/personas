@@ -2,7 +2,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useState, useRef, useCallback } from 'react';
 import { X, Plug, Key, Plus, Pencil, Check } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
-import { getCredentialTags, getTagStyle, buildMetadataWithTags, SUGGESTED_TAGS } from '@/features/vault/shared/utils/credentialTags';
+import { getCredentialTags, getTagStyle, SUGGESTED_TAGS } from '@/features/vault/shared/utils/credentialTags';
 import { toCredentialMetadata } from '@/lib/types/types';
 import { useVaultStore } from '@/stores/vaultStore';
 import * as credApi from '@/api/vault/credentials';
@@ -34,15 +34,12 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
   const fieldKeys = connector?.fields?.map((f) => f.key) ?? [];
 
   const persistTags = useCallback(async (nextTags: string[]) => {
-    const metadata = buildMetadataWithTags(credential, nextTags);
+    // Patch rather than round-trip the whole blob from a stale prop — see the
+    // note in `useCredentialTags.ts`. Null removes the key, matching what
+    // `buildMetadataWithTags` did for an empty tag list.
     try {
-      const updatedRaw = await credApi.updateCredential(credential.id, {
-        name: null,
-        serviceType: null,
-        encryptedData: null,
-        iv: null,
-        metadata,
-        sessionEncryptedData: null,
+      const updatedRaw = await credApi.patchCredentialMetadata(credential.id, {
+        tags: nextTags.length > 0 ? nextTags : null,
       });
       const updated = toCredentialMetadata(updatedRaw);
       useVaultStore.setState((s) => ({

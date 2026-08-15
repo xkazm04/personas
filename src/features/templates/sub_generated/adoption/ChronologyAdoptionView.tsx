@@ -265,6 +265,16 @@ function triggerSelectionToTriggers(
 ): TriggerIR[] {
   const out: TriggerIR[] = [];
 
+  // NOTE: these configs deliberately carry NO `timezone` key.
+  //
+  // Until 2026-08-15 all four wrote `timezone: "local"`. `"local"` is not an
+  // IANA zone; `resolve_schedule_tz` parses with chrono-tz's `FromStr`, which is
+  // an exact lookup, so it returned an error and `next_trigger_at` was left
+  // NULL. `get_due` requires `next_trigger_at IS NOT NULL`, so every schedule
+  // created through this view was born dead — 16 live rows, none of which ever
+  // fired. Omitting the key resolves to `None`, which IS host-local: the meaning
+  // the sentinel was reaching for. The app's own picker already does this
+  // (TimezoneSelect.tsx:69 uses an empty value for "local").
   if (sel.time) {
     const timeSel = sel.time;
     const h = Math.max(0, Math.min(23, timeSel.hourOfDay ?? 9));
@@ -275,7 +285,7 @@ function triggerSelectionToTriggers(
         : `Daily at ${hourStr}:00 local`;
       out.push({
         trigger_type: "schedule",
-        config: { cron: `0 ${h} * * *`, timezone: "local" },
+        config: { cron: `0 ${h} * * *` },
         description: `${desc}.`,
       });
     } else if (timeSel.preset === "weekly") {
@@ -289,7 +299,7 @@ function triggerSelectionToTriggers(
         : `Weekly on ${dayName} at ${hourStr}:00 local`;
       out.push({
         trigger_type: "schedule",
-        config: { cron: `0 ${h} * * ${d}`, timezone: "local" },
+        config: { cron: `0 ${h} * * ${d}` },
         description: `${desc}.`,
       });
     } else {
@@ -298,7 +308,7 @@ function triggerSelectionToTriggers(
       const desc = translations?.templates.adoption.cron_descriptions.hourly_at_local ?? "Hourly";
       out.push({
         trigger_type: "schedule",
-        config: { cron: "0 * * * *", timezone: "local" },
+        config: { cron: "0 * * * *" },
         description: `${desc}.`,
       });
     }
@@ -328,7 +338,7 @@ function triggerSelectionToTriggers(
         : `Custom cron: ${custom}.`;
       out.push({
         trigger_type: "schedule",
-        config: { cron: custom, timezone: "local" },
+        config: { cron: custom },
         description,
       });
     } else {

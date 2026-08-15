@@ -5,7 +5,6 @@ import { useVaultStore } from '@/stores/vaultStore';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import {
   getCredentialTags,
-  buildMetadataWithTags,
   SUGGESTED_TAGS,
 } from '@/features/vault/shared/utils/credentialTags';
 import { silentCatch } from '@/lib/silentCatch';
@@ -21,15 +20,18 @@ export function useCredentialTags(credential: CredentialMetadata) {
   const currentTags = useMemo(() => getCredentialTags(credential), [credential]);
 
   const persistTags = useCallback(async (nextTags: string[]) => {
-    const metadata = buildMetadataWithTags(credential, nextTags);
+    // Patch, don't round-trip. This used to call `buildMetadataWithTags`, which
+    // parses the WHOLE metadata blob out of the `credential` React prop,
+    // replaces `tags`, and writes the whole thing back — a read-modify-write
+    // against a possibly-stale client copy. Replaying it against a live 18-key
+    // blob lost 3 keys written by the backend since the prop was captured.
+    //
+    // `patch_metadata_atomic` re-reads and merges inside one transaction, and
+    // treats a null value as REMOVE (credentials.rs:719-724) — which is exactly
+    // what `buildMetadataWithTags` did with `delete next.tags` on an empty list.
     try {
-      const updatedRaw = await credApi.updateCredential(credential.id, {
-        name: null,
-        serviceType: null,
-        encryptedData: null,
-        iv: null,
-        metadata,
-        sessionEncryptedData: null,
+      const updatedRaw = await credApi.patchCredentialMetadata(credential.id, {
+        tags: nextTags.length > 0 ? nextTags : null,
       });
       const updated = toCredentialMetadata(updatedRaw);
       useVaultStore.setState((s) => ({
