@@ -2224,6 +2224,28 @@
         "matches": 20
       },
       "floor": 4000
+    },
+    {
+      "id": "detached-readiness-verdict",
+      "goldenPath": "docs/concepts/golden-paths/credential-readiness-resolution.md",
+      "title": "A persona's readiness verdict is persisted by a statement that never mentions the structured account of what is blocking — a bare token written by something other than the resolver",
+      "roots": [
+        "src-tauri/src"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "UPDATE\\s+personas\\s+SET\\s+(?:(?!setup_detail)[^\"]){0,240}?setup_status\\s*=(?:(?!setup_detail)[^\"]){0,240}?WHERE",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "An UPDATE statement over `personas` that assigns setup_status and whose whole SQL string never mentions setup_detail. The tempered class [^\"] cannot leave the SQL string literal the match started in, so a match is always exactly one statement and can never run into a neighbouring one. PROXY FOR the stack-free condition: a readiness verdict is persisted as a bare status token by a writer that did not compute it through the one resolver, with no accompanying account of what is blocking - so the UI renders a badge it cannot explain and the next honest recompute silently overwrites a meaning the column was never able to hold. LEGAL DESTINATION: connector_readiness::recompute_persona_setup (src-tauri/src/commands/design/connector_readiness.rs:778), whose single UPDATE at :806-814 writes setup_status AND setup_detail together and derives both from the resolver. MEASURED 2026-08-15 at 145dbc908: 3 matches across 2 files - build_sessions.rs:1011 (verification-run failure downgrade), build_sessions.rs:2949 (promote-time missing connector; it does write setup_detail, but 35 lines later in a SEPARATE statement on a SEPARATE pool connection, and the status write is conditional while the detail write is not, so the pair can disagree), template_adopt.rs:936 (adopt-time missing connector; writes no detail at all). Each encodes a DIFFERENT meaning into one two-valued column and none is derived from the resolver, so each is silently reverted by the next recompute_persona_setup. SHAPE DISCRIMINATION PROVEN ON THE REAL TREE: all four sites share the anchor `UPDATE personas SET setup_status = ?1,` and the resolver's own compliant statement scores 0 here while scoring 1 under the positive control - the rule keys on the ABSENCE of setup_detail, not on the token setup_status. FORWARD GUARANTEE VERIFIED, not asserted: applying the section-4 fix to template_adopt.rs:936 in memory drops that file 1 -> 0. PRECONDITION AND ADOPTION NOTE: this keys on SQL-in-a-Rust-string-literal plus this schema's verdict/account column split; a repo using an ORM, a single JSON column, or no persisted verdict scores ZERO while the condition is present - re-derive the proxy against the local persistence layer."
+      },
+      "baseline": {
+        "files": 2,
+        "matches": 3
+      },
+      "floor": 400
     }
   ]
 }
