@@ -132,6 +132,28 @@ Hand-verify a sample regardless of whether the implementations agree.
 **Beware the measurement truncated by its own display limit.** A grep ending in
 `head -3` reported "three source comments"; the real count was four.
 
+**Fixing every instance of a defect is not the same as covering every place
+that needs the behaviour.** The first is a search over what exists; the second
+needs an inventory of what should. They differ exactly on the module that never
+had the broken form.
+
+> A pass corrected three byte-identical copies of a credential regex that could
+> not match any GitHub token, verified each, and reported the defect closed. A
+> composer then found a **fourth** redactor — the Sentry scrubber, the one
+> channel that ships data off-device — with **zero** credential patterns at all,
+> masking 2 of 26 real token shapes. It survived because the pass searched for
+> the broken literal, and this module never had that literal.
+
+When you fix a defect class, enumerate the places that need the behaviour, not
+the places that exhibit the bug.
+
+**Agreement between two implementations is not soundness — and composition is
+where it breaks.** Beyond the earlier cases, one pair agreed on a total of 34
+and disagreed on *membership*, because a consuming regex (`-> Option<[\s\S]{0,700}?serde_json`)
+swallowed the next function's signature and merged two matches into one.
+Rewriting it as a lookahead made both agree at 34 with an identical per-file
+distribution. Check that your matcher composes, not just that it counts.
+
 **A vocabulary-based signal's recall is bounded by its author's word list, and
 the misses cluster on the unusual cases.** Two implementations agreed on 22
 credential-bearing headers; a third returned 20, because its credential-noun
@@ -263,7 +285,25 @@ oracle results in the corpus were both negative:
 
 ---
 
-## 6. Corrections are the deliverable
+## 6. Check your prescription against your neighbours'
+
+**Two individually-correct golden paths can compose into a defect.** Each is
+right about its own leaf and the pair is wrong together.
+
+The measured case: `structured-logging` prescribes moving values out of the
+message string and into structured fields. That is correct for queryability —
+and on the `error!` path those fields land in `event.tags` and
+`event.contexts`, neither of which the Sentry `before_send` scrubber touches,
+while the message string it came from *was* scrubbed. Following the
+prescription moves data from a redacted field into two unredacted ones.
+
+So before publishing §2, read the prescriptions of the adjacent leaves and ask
+what happens to someone who follows both. Name the interaction if you find one.
+This has no enforcement — it is a habit the contract does not currently ask
+for, added here because a composer offered it upward rather than filing it as a
+bug in its own path.
+
+## 7. Corrections are the deliverable
 
 Composers have corrected their brief in nearly every batch, and those
 corrections are consistently the most valuable output. A brief is the
