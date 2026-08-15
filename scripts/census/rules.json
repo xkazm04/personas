@@ -2197,6 +2197,33 @@
         "matches": 9
       },
       "floor": 2000
+    },
+    {
+      "id": "unnamed-cast-at-navigation-door",
+      "goldenPath": "docs/concepts/golden-paths/cross-surface-deep-link.md",
+      "title": "An arriving deep link is asserted into a navigation setter through a cast that names no vocabulary, so neither the compiler nor the vocabulary-named census rule can see the value",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\b(?:setSidebarSection|setHeaderOverlay|setApprovalsMode|set[A-Z][A-Za-z]*Tab)\\s*\\(\\s*[^()]{0,160}?\\bas\\s+(?:never\\b|unknown\\b|Parameters\\s*<)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a navigation setter whose argument is asserted through a cast that names no destination vocabulary - `as never`, `as unknown`, or `as Parameters<typeof setter>[0]`. PROXY FOR the stack-free condition: an intent arriving from outside a surface (persisted notification payload, tour data, an HTTP harness, an IPC event) is written into that surface's navigation state through an escape that neither the compiler nor a vocabulary-named audit can read.",
+        "$measured": "9 files / 20 matches / 4829 files walked, 2026-08-15 at master. Population: GuidedTour.tsx:124,126,128,134,138,145,150 (7 - the tour's stringly-named sub-tab if-ladder, carrying `step.nav.subTab: string` from tour data); NotificationCenter.tsx:91,100,111,112,119 (5 - the single door every notification-bell deep link passes through, carrying a `redirectSection`/`redirectTab` string read back out of localStorage); bridge.ts:587,911 (2 - the HTTP test harness; :911 openSettingsTab has NO validation of any kind and still returns {success:true}); CompanionAssignmentCards.tsx:23, athenaChatNavigation.ts:145 (2 - Athena); navigateToProcess.ts:23 (1); QuickAnswerBody.tsx:25, QuickAnswerPopover.tsx:58 (2); CodebaseProjectPicker.tsx:102 (1).",
+        "$whyThisIsNotTheNeighbourRule": "STRICTLY DISJOINT AT THE MATCH LEVEL, by construction, from `unchecked-destination-id-assertion` (navigation-destination.md), whose alternation is a list of 24 vocabulary NAMES after `as`. This one matches only `as never|unknown|Parameters<` - the spellings that name nothing. Verified with one harness running both patterns over the same tree: neighbour 19 files / 54 matches (exactly its committed baseline, which validates the harness), this rule 9 files / 20 matches, ZERO shared matches; 4 files carry both. The disjointness is the point: the live defects in this population are INVISIBLE to a vocabulary-named rule precisely because they never write the vocabulary's name.",
+        "$whyTheAnonymousSpellingIsWorse": "MEASURED BY EXECUTION (npx tsc --noEmit --strict --ignoreConfig on a 4-line fixture): `setSidebarSection('pipeline' as SidebarSection)` compiles; `setSidebarSection('pipeline' as Parameters<typeof setSidebarSection>[0])` compiles; `setEditorTab('nope' as never)` compiles; `setSidebarSection('pipeline')` is the ONLY one that errors (TS2345). The compiler rejects exactly the form nobody writes. `'pipeline'` is not a member of SidebarSection - and CompanionAssignmentCards.tsx:23 ships it, as do two notification producers relayed through NotificationCenter.tsx:91 (eventBridge.ts:1002 'agents', useAssignmentNotificationDispatcher.ts:60 'pipeline'). Running the real registry + sectionRouter modules under Vitest against those ids: navSection=undefined, isSectionGated=THROWS(TypeError: Cannot read properties of undefined (reading 'gates')), railSection=THROWS(... reading 'parent'). isSectionGated is the FIRST statement of PersonasPage.renderContent, and sidebarSection is persisted, so the crash survives a restart.",
+        "$falsePositiveNote": "Two independent implementations. (1) A standalone whole-file text matcher with its own walker and (2) the census engine's scanRule both return 9 files / 20 matches over 4829 walked files. `[^()]{0,160}?` is load-bearing: it cannot run past the setter's own argument list into a neighbouring call. `typeof` is DELIBERATELY EXCLUDED from the alternation even though it was in the first draft: it added bridge.ts:256,270,283 (`as typeof VALID_PLUGIN_TABS[number]`), which are each preceded by a real `includes()` membership check. Those are the weakest members of the population and a gate that fires on a checked value is worse than no gate, so the line is drawn at 'the assertion names no checkable set at all'. Their real defect - the hand-written list has drifted from the vocabulary (VALID_PLUGIN_TABS omits `scraper`, VALID_TEMPLATE_TABS omits `explore`) - is catalog drift and belongs to navigation-destination.md, not here. Of the 20 that DO match, 2 currently carry a value outside its union; the other 18 currently carry valid values and are counted because the cast is what removes the compiler's ability to say so, which is the whole condition. PRECONDITION, and an adopting repo must re-derive its own: this works because Personas' navigation setters take closed string unions, so the compliant form carries no assertion token at all. A repo whose destinations are filesystem routes (personas-web: 37 page.tsx, ZERO such casts) scores zero here while the arrival condition is present at full scale in another form."
+      },
+      "baseline": {
+        "files": 9,
+        "matches": 20
+      },
+      "floor": 4000
     }
   ]
 }
