@@ -2351,6 +2351,28 @@
         "matches": 3
       },
       "floor": 900
+    },
+    {
+      "id": "optional-store-handle",
+      "goldenPath": "docs/concepts/golden-paths/second-database.md",
+      "title": "A persistent store's handle made optional at a boundary, so the store can be absent at runtime instead of at compile time",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "[A-Za-z_][A-Za-z0-9_]*\\s*:\\s*Option\\s*<\\s*&?(?:'[a-z]+\\s+)?(?:[A-Za-z_][A-Za-z0-9_]*::)*(?:User)?DbPool\\s*>",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a named binding (fn parameter or struct field) whose type is Option<[&]Pool> for either of this app's two SQLite stores. PROXY FOR the stack-free condition: a handle to one of the system's persistent stores is made optional at a boundary, so an operation can run with that store absent and report its contents as EMPTY rather than as UNKNOWN. This app opens two SQLite files - personas.db (primary, DbPool, core/src/pool.rs:14) and personas_data.db (UserDbPool, db/src/lib.rs:157) - and both aliases resolve to the same Pool<SqliteConnectionManager>, so nothing at the type level distinguishes them. MEASURED 2026-08-15 at 5108ff978: 17 matches in 5 files, ALL SEVENTEEN OPENED AND CONFIRMED (precision 17/17) - data_portability.rs 9, db_query.rs 4, dispatcher.rs 2, ai_helpers.rs 1, capability.rs 1. Fifteen of the 17 make the SECOND store optional and two make the first. Against 2,454 required (ident: &Pool) bindings that is 0.69% overall, but it is not evenly spread: normalised against each store's own borrowed-handle population (408 for the second store, 2,072 for the first) the second store's handle is optional 3.4% of the time and the primary store's 0.10%, a ~35x difference in discipline between two stores under the same team, the same driver and the same pool library. WHY IT IS A DEFECT AND NOT A DEGRADED MODE: the None arm does not report absence, it reports emptiness. athena_tier_counts (data_portability.rs:1707) returns (core, 0) when the store is missing; describe_skill (dispatcher.rs:2944) returns Vec::new(). A caller cannot distinguish 'this store holds nothing' from 'this store was not passed'. WHY THE OPTION EXISTS: every instance serves a test or bench harness that builds only one of the two databases - dispatcher.rs:589 says so outright ('sys_db: None keeps every other arm working ... the bench harness path, which builds only a user DB'). The cost is paid in coverage: import_bundle is invoked with None 33 times and Some 6 times, build_export_bundle 7 vs 5, twin_bundle 12 vs 1 - so 55 of 71 test invocations of the portability surface validate a bundle that structurally cannot contain the second store. PRECISION ANCHOR: the leading [A-Za-z_]\\w*\\s*:\\s* restricts the match to a BINDING and removes the tree's one true false positive, commands/fleet/persist.rs:63 `fn pool_of(app: &AppHandle) -> Option<DbPool>`, where the Option encodes a genuinely unknowable state (AppState is not yet managed during early boot) and is correct content; without the head the count is 18 and that function is reported as a defect. Path-qualified forms (Option<&crate::db::DbPool>, Option<crate::db::UserDbPool>) are covered - omitting the (?:ident::)* segment undercounts this family by 4 of 17, and undercounts the bare-handle census by 47%. POSITIVE CONTROL: the identical binding head pointed at the REQUIRED form (`ident: &[path::]DbPool`) matches 2,454 times across 368 files, so the rule discriminates on the Option wrapper rather than on the token DbPool - 0.7% of pool bindings are optional and 99.3% are not. LEGAL FIX, in order: (1) make the parameter required (&UserDbPool) and give the test init_test_user_db() (db/src/lib.rs:1994, 57 sites in 8 files) instead of None; (2) if the operation genuinely cannot reach the store, return Result and let the caller decide, never a zero count; (3) the durable fix is a repository layer for the second store so feature code never holds either pool - see the golden path. DO NOT 'fix' this by widening to Option<T> generally: the condition is about a STORE handle, and a store the code cannot see is a store the code will silently under-report. END OF LIFE: this rule is designed to reach zero. When it does the runner fails structurally on zero-matches, by design - DELETE the rule then, do not baseline it at 0."
+      },
+      "baseline": {
+        "files": 5,
+        "matches": 17
+      },
+      "floor": 900
     }
   ]
 }

@@ -10,6 +10,22 @@
  * 3. commandNames.overrides.ts may only contain truly unregistered commands.
  *    If a Rust #[tauri::command] with the same function name exists, register
  *    it or remove the frontend call.
+ * 4. Every invoke payload must supply every REQUIRED parameter the Rust command
+ *    declares (camelCased; `Option<T>` params are optional; State/AppHandle/
+ *    Window are injected by the framework and never sent).
+ *
+ *    Rules 1-3 check the command NAME. That is the smaller half of the
+ *    signature: Tauri resolves arguments BY NAME too, so a payload missing a
+ *    declared parameter is rejected at the boundary with the name check fully
+ *    green. Added 2026-08-15 after `drag-reorder.md` found that two of the
+ *    three `dev_tools_reorder_*` wrappers sent `{projectId, goalIds}` /
+ *    `{projectId, groupIds}` to commands declaring a single `ids: Vec<String>`
+ *    — a whole command family that could never have executed.
+ *
+ *    Measured before shipping: 1,226 call sites compliant, 3 violating, and
+ *    all 3 hand-verified as real. It is not an approximation that mostly
+ *    works; payloads built from a variable or containing a spread are counted
+ *    as unanalyzable and skipped rather than guessed at.
  */
 import { readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -107,6 +123,110 @@ function extractImplementedTauriCommands() {
   return implemented;
 }
 
+// ---------------------------------------------------------------------------
+// Rule 4 — invoke payloads must supply every required Rust parameter.
+// ---------------------------------------------------------------------------
+
+/** Params Tauri injects; the JS caller never sends these. */
+const INJECTED_PARAM_TYPE = /\b(State\s*<|AppHandle|Window\b|WebviewWindow|Emitter|Runtime\b|Channel\s*<)/;
+
+function snakeToCamel(name) {
+  return name.replace(/_([a-z0-9])/g, (_, c) => c.toUpperCase());
+}
+
+/** Split on commas at generic/paren/bracket depth 0. */
+function splitTopLevel(text) {
+  const parts = [];
+  let depth = 0;
+  let cur = "";
+  for (const ch of text) {
+    if (ch === "<" || ch === "(" || ch === "[") depth++;
+    else if (ch === ">" || ch === ")" || ch === "]") depth--;
+    if (ch === "," && depth === 0) {
+      parts.push(cur);
+      cur = "";
+      continue;
+    }
+    cur += ch;
+  }
+  if (cur.trim()) parts.push(cur);
+  return parts;
+}
+
+function extractCommandParams() {
+  const params = new Map();
+  for (const file of walk(RUST_SRC, (p) => p.endsWith(".rs"))) {
+    const src = read(file);
+    const re = /#\[tauri::command[^\]]*\]\s*(?:#\[[^\]]*\]\s*)*(?:pub\s+)?(?:async\s+)?fn\s+(\w+)\s*\(/g;
+    let match;
+    while ((match = re.exec(src)) !== null) {
+      let i = re.lastIndex;
+      let depth = 1;
+      while (i < src.length && depth > 0) {
+        if (src[i] === "(") depth++;
+        else if (src[i] === ")") depth--;
+        i++;
+      }
+      const required = new Set();
+      for (const raw of splitTopLevel(src.slice(re.lastIndex, i - 1))) {
+        const param = raw.trim();
+        const colon = param.indexOf(":");
+        if (colon < 0) continue;
+        const pname = param.slice(0, colon).trim().replace(/^mut\s+/, "");
+        const ptype = param.slice(colon + 1).trim();
+        if (!/^\w+$/.test(pname) || pname.startsWith("_")) continue;
+        if (INJECTED_PARAM_TYPE.test(ptype) || ptype.startsWith("Option<")) continue;
+        required.add(snakeToCamel(pname));
+      }
+      params.set(match[1], { required, file: file.replace(`${ROOT}\\`, "").replaceAll("\\", "/") });
+    }
+  }
+  return params;
+}
+
+function extractInvokePayloads() {
+  const sites = [];
+  for (const file of walk(SRC, (p) => /\.(ts|tsx)$/.test(p))) {
+    const src = read(file);
+    const re = /\binvoke\w*\s*(?:<[^;=]*?>)?\s*\(\s*["']([a-z][a-z0-9_]*)["']\s*,/g;
+    let match;
+    while ((match = re.exec(src)) !== null) {
+      let j = re.lastIndex;
+      while (j < src.length && /\s/.test(src[j])) j++;
+      // Not an object literal (variable payload) — unanalyzable, skip.
+      if (src[j] !== "{") continue;
+      let depth = 0;
+      let k = j;
+      for (; k < src.length; k++) {
+        if (src[k] === "{") depth++;
+        else if (src[k] === "}") {
+          depth--;
+          if (depth === 0) {
+            k++;
+            break;
+          }
+        }
+      }
+      const literal = src.slice(j + 1, k - 1);
+      // A spread can supply anything — unanalyzable, skip.
+      if (literal.includes("...")) continue;
+      const keys = new Set();
+      // Collapse nested objects so their inner keys are not read as top-level.
+      for (const raw of splitTopLevel(literal.replace(/\{[^{}]*\}/g, "0"))) {
+        const key = raw.trim().match(/^([A-Za-z_$][\w$]*)\s*(?::|$)/);
+        if (key) keys.add(key[1]);
+      }
+      sites.push({
+        command: match[1],
+        keys,
+        file: file.replace(`${ROOT}\\`, "").replaceAll("\\", "/"),
+        line: src.slice(0, match.index).split("\n").length,
+      });
+    }
+  }
+  return sites;
+}
+
 const registered = extractRegisteredCommands();
 const generated = extractTsUnion(GENERATED);
 const overrides = extractTsUnion(OVERRIDES);
@@ -164,6 +284,29 @@ if (implementedButUnregisteredOverrides.length) {
   errors.push(
     "Overrides point at implemented Rust commands that are not registered in lib.rs:\n" +
     implementedButUnregisteredOverrides.map((c) => `  - ${c}: ${implemented.get(c)}`).join("\n"),
+  );
+}
+
+const commandParams = extractCommandParams();
+const missingArgs = [];
+for (const site of extractInvokePayloads()) {
+  const decl = commandParams.get(site.command);
+  if (!decl) continue; // rules 1-3 own unknown command names
+  const missing = [...decl.required].filter((p) => !site.keys.has(p));
+  if (missing.length) missingArgs.push({ ...site, missing, declares: [...decl.required] });
+}
+if (missingArgs.length) {
+  errors.push(
+    "invoke payloads omit parameters the Rust command declares. Tauri resolves arguments\n" +
+    "by name, so these calls are rejected at the boundary — the command NAME being correct\n" +
+    "does not make the call work:\n" +
+    missingArgs
+      .map(
+        (a) =>
+          `  - ${a.file}:${a.line} → ${a.command}\n` +
+          `      missing: ${a.missing.join(", ")}   (declares: ${a.declares.join(", ") || "<none>"})`,
+      )
+      .join("\n"),
   );
 }
 

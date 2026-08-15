@@ -1488,6 +1488,43 @@ CREATE TABLE IF NOT EXISTS companion_chat_card (
 );
 CREATE INDEX IF NOT EXISTS idx_companion_chat_card_pending
     ON companion_chat_card(conversation_id, status, created_at DESC);
+
+-- companion_tours: Athena-composed guided tours (Generative Tours).
+-- One row per composed tour; steps stored as validated JSON in the frontend
+-- `TourStepDef` shape. `manifest_hash` records which anchor manifest the tour
+-- was proven against, so upgrades can re-prove and mark drifted tours 'stale'
+-- instead of letting them break mid-play.
+--
+-- Moved here 2026-08-15 from migrations/incremental.rs. Its DDL ran against
+-- the MAIN database while all four of its statements execute on
+-- `&UserDbPool` (companion/tours.rs:223,258,302,379). Verified on the live
+-- files: the table existed in personas.db with 0 rows, and
+-- `SELECT count(*) FROM companion_tours` against personas_data.db returned
+-- "no such table". The feature shipped 2026-07-30 and never wrote a row.
+--
+-- It compiled because DbPool and UserDbPool are the same type behind two
+-- aliases, so the store a handle points at is not a fact the compiler holds.
+-- Nothing else caught it either: no test asserts persistence, and
+-- `compose_tour` pays for a Claude call BEFORE it fails.
+--
+-- The empty table left behind in personas.db on existing installs is
+-- deliberately not dropped — it holds no rows and dropping it would be a
+-- destructive migration to reclaim nothing.
+CREATE TABLE IF NOT EXISTS companion_tours (
+    id            TEXT PRIMARY KEY,
+    topic         TEXT NOT NULL,
+    title         TEXT NOT NULL,
+    description   TEXT NOT NULL DEFAULT '',
+    icon          TEXT NOT NULL DEFAULT 'Sparkles',
+    color         TEXT NOT NULL DEFAULT 'violet',
+    steps_json    TEXT NOT NULL,
+    status        TEXT NOT NULL DEFAULT 'ready',
+    manifest_hash TEXT,
+    created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_companion_tours_created
+    ON companion_tours(created_at DESC);
 "#;
 
 /// Seed all built-in local credentials if they don't already exist.
