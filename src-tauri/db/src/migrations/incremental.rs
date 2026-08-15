@@ -7606,6 +7606,26 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         "CREATE INDEX IF NOT EXISTS idx_wke_project
             ON workspace_knowledge_evidence(project_id);",
     );
+
+    // `team_assignment_steps.execution_id` is the only one of seven children of
+    // `persona_executions` whose FK column has no index, and it carries
+    // ON DELETE SET NULL — so every delete of an execution row makes SQLite scan
+    // the whole child table to find referents.
+    //
+    // Measured by ablation on a copy of the live database: the FK cascade was
+    // 97% of a 31.8 s delete (FTS was 5%). Adding this index took the same
+    // delete from 26,016 ms to 1,066 ms — 24x.
+    //
+    // This matters beyond general slowness: execution retention has never
+    // actually deleted a row (see retention-and-pruning.md), so the day that is
+    // fixed, the hourly cleanup tick suddenly deletes ~1,776 rows. Without this
+    // index that is a ~26 s app-wide write stall on a local SQLite file. The
+    // index must therefore land BEFORE any retention change, not with it.
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_tas_execution
+            ON team_assignment_steps(execution_id);",
+    );
     Ok(())
 }
 

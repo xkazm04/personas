@@ -1773,7 +1773,7 @@ pub fn sweep_zombie_executions(pool: &DbPool) -> Result<Vec<String>, AppError> {
                     completed_at = ?2
                  WHERE id = ?3 AND status = ?4",
                     )?;
-                    update_stmt.execute(params![
+                    let swapped = update_stmt.execute(params![
                         format!(
                             "Execution stalled: {} since {} (>{} min) — marked as zombie",
                             if is_queued { "queued" } else { "running" },
@@ -1784,6 +1784,21 @@ pub fn sweep_zombie_executions(pool: &DbPool) -> Result<Vec<String>, AppError> {
                         id,
                         status,
                     ])?;
+
+                    // The CAS above exists to avoid clobbering a row that moved
+                    // between the read and here — but the verdict was discarded,
+                    // so the id was pushed onto `surface_ids` regardless. An
+                    // execution that COMPLETED in the race window was correctly
+                    // left alone and then reported to the user as
+                    // "Execution stalled". Losing the CAS means there is nothing
+                    // to surface: skip it.
+                    if swapped == 0 {
+                        tracing::debug!(
+                            execution_id = %id,
+                            "zombie sweep: row moved between read and swap — not a zombie, not surfaced"
+                        );
+                        continue;
+                    }
 
                     // Surface to user only if there's no newer completed run for
                     // the same persona. A newer completed run means the user
