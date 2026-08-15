@@ -132,13 +132,42 @@ Hand-verify a sample regardless of whether the implementations agree.
 **Beware the measurement truncated by its own display limit.** A grep ending in
 `head -3` reported "three source comments"; the real count was four.
 
+**A vocabulary-based signal's recall is bounded by its author's word list, and
+the misses cluster on the unusual cases.** Two implementations agreed on 22
+credential-bearing headers; a third returned 20, because its credential-noun
+list omitted `connection-string` — and the two it missed were the ones carrying
+a database password. The words you forget to list are disproportionately the
+interesting ones.
+
+**Assert the instrument before you trust the result.** A checker that silently
+measures nothing passes forever. Give every new instrument a precondition that
+fails loudly when it finds nothing to check:
+
+> `scripts/check-csp-hosts.mjs` reported ZERO frontend fetch hosts twice, for
+> two unrelated reasons — first because it anchored on the `fetch(...)` argument
+> list when the URL is assembled several statements earlier, then because its
+> comment stripper ate the URLs (`https://` contains `//`, so a naive
+> line-comment regex blanks the rest of every line holding a URL). Without the
+> exit-2 guard, both versions would have exited 0 and looked like working gates
+> indefinitely.
+
+`scripts/census/check-corpus-integrity.mjs` does the same, exiting 2 if the
+spine yields under 200 leaves or the link scan finds none.
+
 **Mechanics on this machine:**
 - Regex patterns go in a **file**, never in bash argv and never in a heredoc.
   MSYS mangles backslashes; a heredoc once collapsed `\b` into a literal
   backspace character.
 - No variable-length lookbehind — one rule took 73 seconds because of one.
+- **Check a pattern for backtracking, not only for precision.** The obvious
+  comment-tolerant construction `(?:\s|//[^\n]*)*` is a nested quantifier; it
+  hung a 963-file walk past 120 s and had to be killed. A pattern that is
+  correct and unrunnable is not a gate.
 - `#[cfg(test)]` exclusion must be a **brace-matched range**, never a
   line-number threshold. Test modules are not always at the end of the file.
+  And a brace-matched range does not catch everything:
+  `dev_tools_backlog_tests.rs` is a test file carrying **no `#[cfg(test)]`
+  attribute at all**, so only a filename rule sees it.
 - Never print a secret value. Shape, location, count only — not even a prefix.
 
 ---
@@ -184,6 +213,14 @@ The runner is `scripts/census/`. A rule is a **ratchet**, not a verdict.
 - **The census cannot express "must be zero"** by construction — a rule with
   zero matches fails structurally. If a condition should reach zero, say so, and
   say the rule must be **deleted** at that point rather than baselined at 0.
+- **The census cannot assert an ABSENCE**, which is a different and more
+  limiting thing. It ratchets a count of something present; it cannot say "no
+  code anywhere runs VACUUM", "this allowlist omits the production status", or
+  "this gate does not enforce what it names". The retention path's largest
+  findings were all absences and none was gateable by counting — they were
+  findable only by running the system. When the honest §9 is a decline plus a
+  specification for a *different* instrument, write that. `check-csp-hosts.mjs`
+  exists because an allowlist-covers-a-set condition cannot live in the census.
 - **Refusing to gate is a first-class outcome — with numbers.** Publish the
   violating-vs-compliant counts that made you refuse. Recent refusals:
   22% precision, then 44% after refinement (5 of 9 matches were `#[cfg(test)]`
