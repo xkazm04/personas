@@ -342,4 +342,19 @@ ms**. Reproduced 15/1 independently.
 }
 ```
 
-**One precondition neither half controls, and it is fatal.** `ci.yml:258` runs `cargo test --manifest-path src-tauri/Cargo.toml --features desktop` with **no `--workspace`**, which selects only `personas-desktop`. **Every test named in this document — `migration_chain_is_idempotent_on_rerun`, `a_genuinely_failed_guarded_alter_is_no_longer_swallowed`, `a_blocked_group_id_drop_no_longer_takes_persona_groups_with_it`, `fresh_schema_contains_latest_migration_artifacts`, `init_db_second_launch_reopens_and_preserves_data`, and all three backup tests — lives in `personas-db` and does not run in CI.** The boot-work budget would be the ninth dark test in that crate. Adding `--workspace` to that one line is the highest-leverage change available here; without it, half 2 is a gate that runs nowhere, which is worse than no gate at all.
+**One precondition neither half controls, and it is fatal.**
+
+> **Corrected 2026-08-15: the `--workspace` half of this is FIXED.** `ci.yml:289`
+> now reads `cargo test --workspace --manifest-path src-tauri/Cargo.toml
+> --features desktop`, and its comment records that three independent reviews
+> arrived at the same missing word. The paragraph below is kept because its
+> reasoning is what earned the fix, and because the *conclusion* survives on a
+> different and worse ground: those tests still do not run, since **`ci.yml` has
+> never passed — 0 successes across 260 all-time runs**, with `rust-tests` at
+> 0/20 on all three platforms because the crypto tests need a keychain the
+> runner does not have. That is now addressed by setting
+> `PERSONAS_ALLOW_FALLBACK_KEY=1` in the job, the hatch `core/src/crypto.rs:495`
+> documents as existing "for CI, headless" and which appeared in zero workflows.
+> See [adding-a-ci-gate](./adding-a-ci-gate.md).
+
+The original finding, for the record: `ci.yml:258` ran `cargo test --manifest-path src-tauri/Cargo.toml --features desktop` with **no `--workspace`**, which selects only `personas-desktop`. **Every test named in this document — `migration_chain_is_idempotent_on_rerun`, `a_genuinely_failed_guarded_alter_is_no_longer_swallowed`, `a_blocked_group_id_drop_no_longer_takes_persona_groups_with_it`, `fresh_schema_contains_latest_migration_artifacts`, `init_db_second_launch_reopens_and_preserves_data`, and all three backup tests — lives in `personas-db` and does not run in CI.** The boot-work budget would be the ninth dark test in that crate. Adding `--workspace` to that one line is the highest-leverage change available here; without it, half 2 is a gate that runs nowhere, which is worse than no gate at all.

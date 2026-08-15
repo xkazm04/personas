@@ -210,6 +210,20 @@ jobs:
       # NOTE: RUSTC_WRAPPER is deliberately NOT set here — see the health-check
       # step below. Setting it at job level makes it un-overridable.
       SCCACHE_GHA_ENABLED: "true"
+      # A CI runner has no keychain. `resolve_master_key` refuses to invent one
+      # unless this is set, so every `crypto::tests` case aborted on all three
+      # platforms — this job has been 0/20 green.
+      #
+      # The hatch is not a workaround invented here: core/src/crypto.rs:495
+      # documents it as existing "for CI, headless", and :527 prints
+      # "set PERSONAS_ALLOW_FALLBACK_KEY=1 to allow a local fallback key" as the
+      # remedy for the exact failure. It was simply never set in any workflow —
+      # zero occurrences across .github/ before this line.
+      #
+      # Scope is a test runner only. It permits a local fallback key when the OS
+      # keychain is unavailable; it does not weaken the key derivation used by a
+      # packaged build, which never sets it.
+      PERSONAS_ALLOW_FALLBACK_KEY: "1"
     steps:
       - uses: actions/checkout@v4
 
@@ -324,6 +338,9 @@ jobs:
     env:
       # RUSTC_WRAPPER intentionally unset here — see the health-check step.
       SCCACHE_GHA_ENABLED: "true"
+      # This job also runs `cargo test`, so it hits the same keychain wall as
+      # rust-tests — see the note there. binding-drift is 5/20 green.
+      PERSONAS_ALLOW_FALLBACK_KEY: "1"
     steps:
       - uses: actions/checkout@v4
 
