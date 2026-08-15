@@ -27,8 +27,18 @@
 // scanner was absent). This one fails loudly if its own inputs go missing.
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = 'C:/Users/mkdol/dolla/personas';
+// Derived from this file's own location, NOT hardcoded.
+//
+// This read `const ROOT = 'C:/Users/mkdol/dolla/personas'` until 2026-08-15 —
+// the author's machine. On any other checkout it exits non-zero immediately,
+// and because `npm run check` is an `&&` chain with `check:corpus` at step 5 of
+// 9, that aborted the run before `tsc --noEmit`, `eslint src/` and
+// `census:check` ever executed. A gate that cannot run anywhere but one laptop
+// is not a gate, and this one was written in the same pass as the doctrine
+// paragraph telling everyone else to assert their instruments.
+const ROOT = path.resolve(fileURLToPath(new URL('.', import.meta.url)), '..', '..');
 const PATHS_DIR = path.join(ROOT, 'docs/concepts/golden-paths');
 const SPINE = path.join(ROOT, 'docs/concepts/situation-spine.json');
 const RULES = path.join(ROOT, 'scripts/census/rules.json');

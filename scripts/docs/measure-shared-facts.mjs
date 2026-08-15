@@ -14,8 +14,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = 'C:/Users/mkdol/dolla/personas';
+// Derived, not hardcoded — see scripts/census/check-corpus-integrity.mjs.
+const ROOT = path.resolve(fileURLToPath(new URL('.', import.meta.url)), '..', '..');
 
 const walk = (d, ext, acc = []) => {
   let entries;

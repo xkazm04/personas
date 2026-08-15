@@ -13,8 +13,13 @@
 // content-matching check, so it needs its own.
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = 'C:/Users/mkdol/dolla/personas';
+// Derived from this file's location — see the note in
+// scripts/census/check-corpus-integrity.mjs. This was hardcoded to the author's
+// machine, and as step 6 of `npm run check`'s `&&` chain it aborted the run
+// everywhere else.
+const ROOT = path.resolve(fileURLToPath(new URL('.', import.meta.url)), '..', '..');
 const MAP = path.join(ROOT, 'scripts/docs/feature-doc-map.json');
 
 if (!fs.existsSync(MAP)) {

@@ -646,6 +646,24 @@ pub fn run() {
                     .map_err(|e| format!("Failed to resolve app data directory: {e}"))?,
             };
 
+            // File logging must be installed BEFORE the database opens.
+            //
+            // Moved here 2026-08-15 from just after `connector_registry`. The
+            // migration chain's only receipt is `tracing::info!("Applied
+            // incremental migration …")`, and with the file layer installed at
+            // the ~5.1 s checkpoint while `db_init` runs from 0 to ~4.6 s, every
+            // one of those lines went to a sink that did not exist yet. Six days
+            // of rolling logs contain ZERO "Applied incremental migration", zero
+            // "Initializing database", and zero "Pre-migration DB backup
+            // created" — while three backup files on disk prove the backup ran
+            // three times today.
+            //
+            // That is how a migration could undo and redo itself on every launch
+            // for nine weeks without leaving a trace. `app_data_dir` is already
+            // resolved above, so this is purely an ordering change.
+            logging::add_file_layer(&app_data_dir);
+            st.checkpoint("file_logging");
+
             // Create CDC channel for reactive SQLite change notifications
             let (cdc_sender, cdc_receiver) = db::cdc::create_cdc_channel(512);
 
@@ -786,9 +804,9 @@ pub fn run() {
             // Install panic crash hook that writes to crash_logs/ before aborting
             logging::install_crash_hook(&app_data_dir);
 
-            // Enable file-based logging for production diagnostics
-            logging::add_file_layer(&app_data_dir);
-            st.checkpoint("file_logging");
+            // File logging is installed near the top of setup now, before
+            // `db_init` — see the note there. The crash hook stays here because
+            // it writes its own file and does not depend on the tracing layer.
 
             let log_dir = app_data_dir.join("logs");
 

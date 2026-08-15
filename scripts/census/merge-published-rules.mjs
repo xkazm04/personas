@@ -13,8 +13,10 @@
 // Usage: node scripts/census/merge-published-rules.mjs <path-to-golden-path.md>
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = 'C:/Users/mkdol/dolla/personas';
+// Derived, not hardcoded — see scripts/census/check-corpus-integrity.mjs.
+const ROOT = path.resolve(fileURLToPath(new URL('.', import.meta.url)), '..', '..');
 const RULES = path.join(ROOT, 'scripts/census/rules.json');
 
 const doc = process.argv[2];
@@ -29,7 +31,13 @@ if (!fs.existsSync(docPath)) {
 }
 
 const src = fs.readFileSync(docPath, 'utf8');
-const blocks = [...src.matchAll(/```json\r?\n([\s\S]*?)\r?\n```/g)].map((m) => m[1]);
+// Composers publish the rule two ways, and both are legitimate: a bare fenced
+// block, or one nested inside a blockquote (`> ```json`) when §9 presents it as
+// a quoted specification. Two composers used the blockquote form and the
+// extractor silently reported "no ```json block" — the rule was published and
+// simply never merged. Strip a leading quote marker per line before matching.
+const src_unquoted = src.replace(/^[ \t]*>[ \t]?/gm, '');
+const blocks = [...src_unquoted.matchAll(/```json\r?\n([\s\S]*?)\r?\n```/g)].map((m) => m[1]);
 if (blocks.length === 0) {
   console.error('FATAL: no ```json block in this path. A path that gates nothing must say so in prose;');
   console.error('a path that gates something must publish the rule. Neither is true here.');

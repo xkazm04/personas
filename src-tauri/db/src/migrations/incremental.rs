@@ -3162,22 +3162,21 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     // ships the schema; Stage 2 will OR-in group_id matches in the injection
     // hot path so memories authored in group context are shared with every
     // group member's prompt.
-    run_step(
-        conn,
-        IncrementalMigration {
-            id: "persona_memories_group_id",
-            description: "Add group_id column to persona_memories for group-scoped sharing",
-            already_applied: |conn| has_column(conn, "persona_memories", "group_id"),
-            apply: |conn| {
-                ddl_step(
-                    conn,
-                    "ALTER TABLE persona_memories ADD COLUMN group_id TEXT;
-                     CREATE INDEX IF NOT EXISTS idx_pm_group_id ON persona_memories(group_id);",
-                )?;
-                Ok(())
-            },
-        },
-    )?;
+    // REMOVED 2026-08-15: `persona_memories_group_id`.
+    //
+    // It added `persona_memories.group_id`, which `retire_persona_groups`
+    // (~370 lines below) drops. That step's guard is `|_conn| Ok(false)`, so it
+    // runs on EVERY launch — and because this step ran first and put the column
+    // back, the pair undid and redid each other forever. Replayed against a copy
+    // of the live 331 MB database: 186.1 ms then 181.2 ms per boot, of which
+    // 108 ms is SQLite rewriting all 6,535 rows / 37 MB of `persona_memories`,
+    // because DROP COLUMN rewrites every row. The residue after two boots is
+    // byte-identical to the start.
+    //
+    // Nothing could have caught it: the idempotency test asserts the fixed
+    // point (correctly — the schema IS stable), there is no migrations ledger,
+    // and the `tracing::info!` receipt goes to a sink installed after the
+    // migrations run.
 
     // Dev-tools project ↔ PersonaTeam binding (2026-05-22). Lets developers
     // bind a dev_projects row to a PersonaTeam (pipeline) so the project
@@ -3204,22 +3203,8 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     // to team_id: team_id is the execution-time pipeline, group_id is the
     // design-time workspace folder. Both can be set independently. Same
     // orphan-tolerance policy.
-    run_step(
-        conn,
-        IncrementalMigration {
-            id: "dev_projects_group_id",
-            description: "Add group_id column to dev_projects for workspace binding",
-            already_applied: |conn| has_column(conn, "dev_projects", "group_id"),
-            apply: |conn| {
-                ddl_step(
-                    conn,
-                    "ALTER TABLE dev_projects ADD COLUMN group_id TEXT;
-                     CREATE INDEX IF NOT EXISTS idx_dev_projects_group_id ON dev_projects(group_id);",
-                )?;
-                Ok(())
-            },
-        },
-    )?;
+    // REMOVED 2026-08-15: `dev_projects_group_id`. Same pair as the note above —
+    // it re-added a column `retire_persona_groups` drops on every launch.
 
     // Groups → Teams consolidation (ADR 2026-05-23-groups-into-teams),
     // Phase 1 — additive only. A PersonaTeam gains a "workspace" facet
@@ -3533,7 +3518,25 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         IncrementalMigration {
             id: "retire_persona_groups",
             description: "Drop persona_groups table + persona_memories/dev_projects group_id columns (Groups→Teams Phase 5)",
-            already_applied: |_conn| Ok(false),
+            // Was `|_conn| Ok(false)` — always-run. Combined with the two
+            // additive steps above (now deleted) that made this a permanent
+            // drop/re-add cycle costing ~186 ms and two full table rewrites per
+            // launch, forever.
+            //
+            // The always-run guard was not unreasonable on its own: the drops
+            // below are individually guarded and tolerate failure, so re-running
+            // was harmless in isolation. The defect was a relationship between
+            // steps 370 lines apart, which no per-step instrument can see.
+            //
+            // This is a POSTCONDITION guard: it asserts the state the step
+            // exists to reach, rather than claiming a step id was recorded
+            // (there is no ledger to record it in). Fresh installs never create
+            // these objects, so it short-circuits there too.
+            already_applied: |conn| {
+                Ok(!has_table(conn, "persona_groups")?
+                    && !has_column(conn, "persona_memories", "group_id")?
+                    && !has_column(conn, "dev_projects", "group_id")?)
+            },
             apply: |conn| {
                 // Drop dependent indexes first — SQLite DROP COLUMN refuses an
                 // indexed column. IF EXISTS keeps this safe on fresh DBs.

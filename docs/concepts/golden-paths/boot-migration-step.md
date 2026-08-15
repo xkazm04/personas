@@ -296,4 +296,50 @@ Two numbers, deliberately: the authorizer count is *statements re-prepared* (par
 - Success prints the audited totals — `Migration steps OK (124 steps, 71 phase-2 / 53 phase-1, 378 ddl_step, 54 swallowed [budget 54], 2 unguarded [allowlisted])` — so a human reading a green CI log can see it checked something, and a collapsing count is visible in the diff of a build log.
 - The Rust half fails loudly by construction, and the `assert!(!acts.is_empty())` line is the load-bearing one: an authorizer that never fires would otherwise report a perfect score of zero. It asserts the *instrument* before it asserts the *result*.
 
+### Half 0 — the census rule this section was missing
+
+Added 2026-08-15, built and validated by the `destructive-schema-change`
+composer, which measured it in this territory and handed it here rather than
+publishing it under its own leaf. It is narrower than either half above and it
+exists today, so it goes in first.
+
+**The condition.** A boot migration step whose has-this-run? probe observes ONE
+object while its body commits two or more independent DDL transactions — so a
+failure between them is recorded as completion. 27 objects (2 tables, 10
+columns, 15 indexes) currently sit behind a guard that does not name them; in
+all 15 matches the guarded object is the *first* created, which is the worst
+ordering.
+
+Precision 15/15, every match opened. The control — same head, exactly one
+`ddl_step` before the closing `Ok(())` — matches 88, and 15 + 88 = 103 against
+an anchor of 105 one-line single-probe guards. The two residuals are named
+rather than excluded: `:3264` guards on the LAST object created and re-checks
+the first (genuinely resume-safe, and the reason the `if\s+!has_` temper is
+load-bearing), and `:7371` returns the closure's tail expression rather than
+following it with `Ok(())`.
+
+Timed before adoption, per the doctrine's backtracking rule: the two tempered
+dots are lazy and anchored on a rare head, so the whole 963-file walk is **95
+ms**. Reproduced 15/1 independently.
+
+```json
+{
+  "rules": [
+    {
+      "id": "unresumable-migration-step",
+      "goldenPath": "docs/concepts/golden-paths/boot-migration-step.md",
+      "roots": ["src-tauri"],
+      "extensions": [".rs"],
+      "signal": {
+        "pattern": "already_applied:\\s*\\|conn\\|\\s*has_(?:column|table|index)\\s*\\([^()\\n]*\\)\\s*,(?:(?!already_applied:|Ok\\(\\(\\)\\)|if\\s+!has_)[\\s\\S])*?\\bddl_step\\s*\\((?:(?!already_applied:|Ok\\(\\(\\)\\)|if\\s+!has_)[\\s\\S])*?\\bddl_step\\s*\\(",
+        "flags": "g",
+        "description": "A boot migration step whose already_applied probe observes ONE object while its body commits two or more independent DDL transactions. A crash between them leaves the later objects missing and the step recorded as applied, so it never runs again. Precision 15/15, every match hand-read; in all 15 the guarded object is the FIRST created. Control (same head, exactly one ddl_step before Ok(())) = 88; 15 + 88 = 103 of a 105 anchor, with the 2 residuals named in the golden path rather than excluded. Fix: guard on the LAST object created, or fold the body into a single ddl_step, or use the conjunction-guard shape at incremental.rs:4703."
+      },
+      "baseline": { "files": 1, "matches": 15 },
+      "floor": 900
+    }
+  ]
+}
+```
+
 **One precondition neither half controls, and it is fatal.** `ci.yml:258` runs `cargo test --manifest-path src-tauri/Cargo.toml --features desktop` with **no `--workspace`**, which selects only `personas-desktop`. **Every test named in this document — `migration_chain_is_idempotent_on_rerun`, `a_genuinely_failed_guarded_alter_is_no_longer_swallowed`, `a_blocked_group_id_drop_no_longer_takes_persona_groups_with_it`, `fresh_schema_contains_latest_migration_artifacts`, `init_db_second_launch_reopens_and_preserves_data`, and all three backup tests — lives in `personas-db` and does not run in CI.** The boot-work budget would be the ninth dark test in that crate. Adding `--workspace` to that one line is the highest-leverage change available here; without it, half 2 is a gate that runs nowhere, which is worse than no gate at all.

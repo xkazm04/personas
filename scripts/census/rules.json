@@ -2508,6 +2508,74 @@
         "matches": 3
       },
       "floor": 900
+    },
+    {
+      "id": "handwritten-rebuild-shape",
+      "goldenPath": "docs/concepts/golden-paths/destructive-schema-change.md",
+      "title": "A create-copy-drop-rename whose replacement shape is written out in source instead of derived from the table it replaces — so any column the live table gained since is silently discarded by an operation that reports success",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "CREATE\\s+TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?[\"'`]?[A-Za-z_][A-Za-z0-9_]*_(?:new|tmp|temp|staging|v\\d)[\"'`]?\\s*\\((?:[^\"\\\\]|\\\\[\\s\\S])*?\\bRENAME\\s+TO\\b",
+        "flags": "gi",
+        "ignoreCommentLines": true,
+        "description": "a SQL string literal that BOTH declares a staging table's full column list AND goes on to rename it over the original — i.e. the replacement shape for a table rebuild was authored in Rust source rather than read back from the table being replaced. PROXY FOR the stack-free condition: a destructive schema migration states the replacement structure independently of the structure it is replacing, so anything the live structure gained since the migration was authored is silently discarded by an operation that reports success. SQLite cannot ALTER a CHECK, a foreign key, a NOT NULL or a primary key in place, so every one of those changes becomes create-copy-drop-rename; the copy is the whole risk. EXECUTED, not argued (node:sqlite, 2026-08-15, statements transcribed verbatim from incremental.rs and replayed against a scratch COPY of the operator's live 331 MB personas.db): the persona_triggers rebuild at :1088 copies an explicit 10-column list into a hand-written shape; the live table has 13 columns; the replay preserved all 351 rows and DESTROYED status, trigger_version and unattended_mode - 351 non-null values each - with no error. The row count was identical before and after, which is why the one integrity check any rebuild in this file performs (repoint_mcp_gateway_members_fk :262-273, a row-count assertion) cannot see this failure at all. And `INSERT INTO staging SELECT *` into a hand-written shape is worse, not better: executed, a ninth column raises 'table chat_messages_new has 8 columns but 9 values were supplied' (loud, survivable) while the SAME column count in a different ORDER copies successfully and silently transposes every value (execution_id came back holding the metadata JSON). SELECT * is sound ONLY when the staging shape descends from the source's own DDL. MEASURED 2026-08-15 at e611c326d: 7 matches in 1 file, ALL SEVEN OPENED AND CONFIRMED (precision 7/7), commentMatchesSkipped 0 - incremental.rs:395 n8n_transform_sessions, :469 and :1071 persona_triggers (twice), :2279 chat_messages, :3741 credential_rotation_policies, :6029 dev_kpi_measurements, :6935 workspace_practice_adoption (7,099 live rows). POPULATION AND PARTITION: a whole-tree Rust lexer (string/comment aware, 83,764 literals, #[cfg(test)] removed as BRACE-MATCHED RANGES) finds 20 table rebuilds - 11 written inline in incremental.rs plus one generic helper in fk_hygiene.rs serving 9 tables. Of the 11 inline, 7 hand-write the shape (this rule) and 4 derive it from `SELECT sql FROM sqlite_master` + a single `replacen` (the positive control). 7 + 4 = 11 exactly, no third population inline. THE TWELFTH SITE IS COMPLIANT FOR A REASON NEITHER PATTERN CAN EXPRESS and is deliberately not matched: fk_hygiene::recreate_with_fk (:163) also takes a hand-written `new_create_sql` from each of its 9 callers, but derives the COPY's column list from pragma_table_info and re-declares onto the staging table any column the literal never heard of (:232-259) - its own doc comment at :140-150 records that hand-written column lists 'silently DROPPED any column a later migration had added' and that deriving 'closes all nine at once'. That is the repo running this experiment and winning it, which is why the golden path's fix is to derive the shape rather than to ban the literal. WHY THE 7 ARE NOT LIVE BUGS TODAY, STATED PLAINLY: the chain runs in file order, so a column added by a later step has not been added yet when the rebuild fires. That is a property of statement ordering inside a 9,430-line function, not of the code - inserting any new step above one of these rebuilds, or a legacy database whose shape probe fires late, loses the omitted columns immediately. The class is real and the live instance count is zero; I looked for it specifically. PRECISION ANCHOR: requiring the staging table name to carry a _new/_tmp/_temp/_staging/_vN suffix is what removes the tree's one true false positive, src/commands/infrastructure/schema_vocabulary.rs:225, a #[cfg(test)] fixture string containing `create table \"doc_status\" ... ALTER TABLE old_name RENAME TO new_name` - the census engine cannot express a brace-matched #[cfg(test)] exclusion, so the anchor was chosen to avoid needing one, and NO exclude entry is required. Requiring the CREATE and the RENAME to sit inside ONE string literal (the fill `(?:[^\"\\\\]|\\\\[\\s\\S])*?` cannot cross a quote) is what separates the hand-written form from the derived form, where the CREATE arrives from sqlite_master at runtime and only the DROP/RENAME are literals. DOES NOT OVERLAP `hand-rolled-fixture-ddl` (rust-test-fixtures.md, 37/93): that rule EXCLUDES all six schema-owning files by path - initial.rs, schema.rs, incremental.rs, mod.rs, fk_hygiene.rs and db/src/lib.rs - which is exactly and only where this rule matches. The two are complements over the same CREATE TABLE token: that one owns every table declaration outside the migration chain, this one owns one shape inside it. Nor `constraintless-table-declaration` (every match here carries several NOT NULLs), nor `unatomic-sequence-rewrite` (a for-loop over UPDATEs), nor `retention-delete-by-status-allowlist` (requires a DELETE with a time cutoff), nor `blind-identity-write` (rooted at src-tauri/db/src/repos). Zero of the 93 existing rules mention DROP TABLE, DROP COLUMN, RENAME TO, already_applied, ddl_step, run_step, backup or user_version. LEGAL FIX, in order: (1) read the table's own DDL - `SELECT sql FROM sqlite_master WHERE type='table' AND name=?` - apply ONE replacen for the clause you are changing, and BAIL if the substitution changed nothing or if the token was not unique (incremental.rs:130-134 and :8244-8252 are the two spellings shipped here); (2) or route the rebuild through fk_hygiene::recreate_with_fk with narrow_to_columns_csv: None, which reconciles the column list for you; (3) assert the COLUMN SET inside the transaction before committing, not only the row count. Do NOT 'fix' a match by splitting the CREATE and the RENAME into two adjacent string literals - that defeats this signal and preserves the defect exactly; the honest fix always removes the hand-authored column list. END OF LIFE: this rule is designed to reach zero. When it does the runner fails structurally on zero-matches, BY DESIGN - DELETE the rule then, do not baseline it at 0. CONVERGENCE: no sibling repo (personas-web, brainiac, personas-cloud, vibeman, ascent) gates this. vibeman carries 15 create-copy-drop-rename migrations across 86 TypeScript migration files with hand-written shapes throughout, zero backups of any of its four SQLite stores, and a rollback endpoint that infers which tables to DROP from a 20-entry keyword map of the migration's NAME (api/migrations/route.ts:33-88) - the same condition, one stack over, with none of the protection.",
+        "$measured": "2026-08-15 @ e611c326d — 963 .rs files walked; two independent implementations (a standalone string/comment-aware Rust lexer and the census engine) returned 7/7 identically; the rule was validated in a composer-private scratch registry, then re-extracted from this document and re-run with the same result."
+      },
+      "baseline": {
+        "files": 1,
+        "matches": 7
+      },
+      "floor": 900
+    },
+    {
+      "id": "unresumable-migration-step",
+      "goldenPath": "docs/concepts/golden-paths/boot-migration-step.md",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "already_applied:\\s*\\|conn\\|\\s*has_(?:column|table|index)\\s*\\([^()\\n]*\\)\\s*,(?:(?!already_applied:|Ok\\(\\(\\)\\)|if\\s+!has_)[\\s\\S])*?\\bddl_step\\s*\\((?:(?!already_applied:|Ok\\(\\(\\)\\)|if\\s+!has_)[\\s\\S])*?\\bddl_step\\s*\\(",
+        "flags": "g",
+        "description": "A boot migration step whose already_applied probe observes ONE object while its body commits two or more independent DDL transactions. A crash between them leaves the later objects missing and the step recorded as applied, so it never runs again. Precision 15/15, every match hand-read; in all 15 the guarded object is the FIRST created. Control (same head, exactly one ddl_step before Ok(())) = 88; 15 + 88 = 103 of a 105 anchor, with the 2 residuals named in the golden path rather than excluded. Fix: guard on the LAST object created, or fold the body into a single ddl_step, or use the conjunction-guard shape at incremental.rs:4703."
+      },
+      "baseline": {
+        "files": 1,
+        "matches": 15
+      },
+      "floor": 900
+    },
+    {
+      "id": "machine-specific-path-in-tooling",
+      "goldenPath": "docs/concepts/golden-paths/adding-a-ci-gate.md",
+      "roots": [
+        "scripts",
+        ".ai"
+      ],
+      "extensions": [
+        ".mjs",
+        ".js",
+        ".cjs",
+        ".sh"
+      ],
+      "signal": {
+        "pattern": "['\"`](?:[A-Za-z]:[\\\\/]Users[\\\\/]|/Users/|/home/)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a quoted absolute path rooted in a user home directory, inside repo tooling. PROXY FOR the stack-free condition: 'an enforcement mechanism depends on state that exists only on its author's machine.' Measured 2026-08-15: 10 matches in 9 files, precision 10/10 hand-verified, agreed by three independent implementations (census engine, git grep, ripgrep). TWO OF THEM ARE INSIDE `npm run check`: scripts/census/check-corpus-integrity.mjs:31 and scripts/docs/check-doc-map-paths.mjs:17 both open with `const ROOT = 'C:/Users/mkdol/dolla/personas'`, and both correctly exit 2 when that path is absent — so on every CI runner and every foreign checkout they abort the `&&` chain at step 5 of 9, and `tsc --noEmit`, `eslint src/` and `npm run census:check` never execute. Verified by simulation: repointing ROOT at a nonexistent path prints 'FATAL: required input missing' and exits 2. THE COMPLIANT FORM IS ALREADY DOMINANT — 50 files / 53 sites derive their root from import.meta.url, process.cwd() or CLAUDE_PROJECT_DIR (positive control below), which is why this is a defect and not a house style; the fix is one line each: `const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')`. Three of the ten name C:/Users/kazda/, an account that does not exist on this machine, so those scripts are already dead where they sit — NOT excluded, because an unexplained exemption is where violations hide and deleting the scripts ratchets the count down honestly. Roots are deliberately narrow: the same pattern over the whole repo including .md/.json matches 910 times, nearly all documentation prose. BACKTRACKING: character class plus fixed alternation, no nested quantifier — 31,573 files in 8.6 s, and four adversarial 200k-character inputs in <=1 ms each. PRECONDITION (re-derive per repo): this proxy assumes tooling is Node/shell and spells a machine path as a quoted literal. A Python gate spells it Path(\"/Users/...\"), a Makefile spells it -C /home/..., and a repo whose tooling only ever receives its root as an argument has the condition in a form this pattern cannot see. DELETE THIS RULE at zero rather than baselining it — ten one-line edits reach zero."
+      },
+      "baseline": {
+        "files": 5,
+        "matches": 6
+      },
+      "floor": 120
     }
   ]
 }
