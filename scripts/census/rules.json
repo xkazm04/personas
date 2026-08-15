@@ -2175,6 +2175,28 @@
         "matches": 7
       },
       "floor": 4000
+    },
+    {
+      "id": "ungatable-step-transition",
+      "goldenPath": "docs/concepts/golden-paths/multi-step-flow.md",
+      "title": "Step transition written inline in a handler attribute, where no precondition can live",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "on(?:Click|Select)=\\{\\s*\\([^)]{0,60}\\)\\s*=>\\s*set[A-Za-z0-9_$]*(?:Step|Phase|Stage)(?:Index)?\\s*\\(",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "an onClick/onSelect whose value is an inline arrow function that immediately calls a step-pointer setter (a setter whose name ENDS in Step/Phase/Stage, optionally +Index). PROXY FOR the stack-free condition: a step transition is written as an anonymous expression at its trigger site, so there is no function body a precondition could live in — the control's own `disabled` becomes the only possible guard and every other route to the same transition (a step rail, a keyboard shortcut, a deep link, a test hook) is unguarded by construction. Measured precision 9/9 on the 2026-08-15 corpus; the earlier `contains` form scored 9/11, its two false positives being `setShowPhases(!showPhases)` (a disclosure toggle) and `setWizardOpen(true)` (opens a flow rather than moving inside one) — both eliminated by anchoring the setter name at its END. PRECONDITION (must be re-derived per repo): this repo writes step controls as JSX handler attributes containing inline arrows that call a `set*` state setter. A repo that dispatches instead (`onClick={() => goTo(i)}`) scores ZERO while the condition is present at full scale — personas-web's progress dots are exactly that shape (TourCaptionCard.tsx:69-82) and would not match. Legal destination: a NAMED transition function whose body checks preconditions, per src/features/templates/sub_n8n/reducers/navigationReducer.ts:15-35 and :73-77 — deliberately NOT a shared primitive, because all three candidates (useWizardReducer, WizardStepper, useStepProgress) are dead or lack a precondition hook (golden path Gap 2)."
+      },
+      "baseline": {
+        "files": 5,
+        "matches": 9
+      },
+      "floor": 2000
     }
   ]
 }
