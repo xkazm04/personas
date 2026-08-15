@@ -395,7 +395,21 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
             successRate = rel.success_rate * 100;
             successRateSource = 'measured';
           } else if (totalExecs > 0 && dashboard?.overall_success_rate !== undefined) {
-            successRate = dashboard.overall_success_rate;
+            // `* 100` added 2026-08-15 — this branch was off by 100x.
+            //
+            // `overall_success_rate` is computed in Rust as
+            // `total_completed as f64 / total_executions as f64`
+            // (db/src/repos/execution/metrics.rs:1453) — a 0-1 FRACTION. The
+            // `measured` branch three lines above already scales its 0-1 input
+            // by 100, which is what fixes the unit of `successRate` at 0-100.
+            // This branch assigned the raw fraction, so a proxied persona with a
+            // FLAWLESS record scored 1.0 and tripped every downstream threshold.
+            //
+            // Worth noting for the type argument: `successRateSource` is a
+            // closed union, was closed correctly, and did not prevent this. The
+            // unit lives in the number, not in the tag beside it — a closed type
+            // constrains only what it encodes.
+            successRate = dashboard.overall_success_rate * 100;
             successRateSource = 'proxy';
           } else {
             successRate = 100;

@@ -2298,6 +2298,59 @@
         "matches": 4
       },
       "floor": 4000
+    },
+    {
+      "id": "empty-sample-as-confident-zero",
+      "goldenPath": "docs/concepts/golden-paths/metric-definition.md",
+      "title": "A rate or average over an EMPTY sample is materialized as the number 0, so \"nothing has happened yet\" and \"everything failed\" render identically",
+      "roots": [
+        "src-tauri/src",
+        "src-tauri/db",
+        "src-tauri/engine",
+        "src-tauri/core"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\bif\\s+[A-Za-z0-9_.()]+\\s*>\\s*0(?:\\.0)?\\s*\\{\\s*\\n[^\\n{}]*?(?:as f64[^\\n{}]*/|/[^\\n{}]*as f64)[^\\n{}]*\\n\\s*\\}\\s*else\\s*\\{\\s*\\n\\s*0\\.0\\s*,?\\s*\\n\\s*\\}",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a `> 0` guard whose THEN branch performs an integer-to-float division (the cast may sit on either side of the slash) and whose ELSE branch is the literal 0.0. THE CONSEQUENT IS REQUIRED so the match is a METRIC and not any defensive numeric fallback: without the `as f64 ... /` requirement the pattern matches every zero-default in the tree. NOTE the cast may be on the numerator (`successful as f64 / decided as f64`) OR the denominator (`total_cost / total_executions as f64`); requiring only the first drops 7 of 34 sites, including personas.rs:1394 — found by a second independent implementation disagreeing. In Rust `if` is an EXPRESSION, so the guard is usually NOT line-initial (`let r = if n > 0 {`, `success_rate: if n > 0 {`); a statement-anchored matcher finds 3 of 34. PROXY FOR the stack-free condition: a metric over an empty sample is rendered as a confident zero, so a subject that has never been measured is indistinguishable from one that failed every measurement. Live consequence measured 2026-08-15: 19 of 78 personas have zero decided executions and render 0% success, identical to total failure; 81% of metric-named pub fields (100 bare f64 vs 23 Option<f64>) cannot express the difference. LEGAL FIX: return Option<f64> — `(decided > 0).then(|| successful as f64 / decided as f64)` — and render None as an em dash. The repo already has this signature at team_synthesis.rs:931, lab/ratings.rs:308 and (in TS) fleetHealth.ts:53, whose doc comment prescribes the rendering. CONVERGENT: brainiac's retrieval_events.rs:116-122 returns Option<f64> with the comment 'deliberately not 0.0, because no questions asked and every question failed must not render the same' plus a test named answered_rate_distinguishes_no_demand_from_total_failure; personas-cloud types the same field `number | null` to the wire at protocol.ts:88. PRECONDITION (must be re-derived per repo): this repo spells the defect as an `if n > 0 { .. } else { 0.0 }` expression. A repo using checked_div().unwrap_or(0.0), a match on the count, TS `: 0` / `?? 0` / `Math.max(1, n)`, or SQL COALESCE(x / NULLIF(y,0), 0) scores zero while the condition is present."
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/src/commands/infrastructure/system_metrics.rs",
+          "reason": "the one defensible member of this population: mem_used_percent guards `total > 0` on sysinfo's total_memory(), which is never 0 on a running host, so the else arm is unreachable rather than a no-sample rendering"
+        }
+      ],
+      "baseline": {
+        "files": 16,
+        "matches": 34
+      },
+      "floor": 500
+    },
+    {
+      "id": "unatomic-sequence-rewrite",
+      "goldenPath": "docs/concepts/golden-paths/drag-reorder.md",
+      "title": "A whole-list ordering rewrite issued one row at a time on a pooled connection, so a failure mid-loop commits a partial order",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\bfor\\s*\\([^)]{0,80}\\)\\s*in\\s+[^\\{]{0,120}\\{(?:(?!\\bfn\\b)[\\s\\S]){0,600}?\\bconn\\s*\\.\\s*execute\\s*\\(\\s*\\n?\\s*\"UPDATE\\s+\\w+\\s+SET\\s+(?:sort_order|display_order|order_index|position|step_order|ordinal|sequence|rank)\\s*=",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a `for` loop whose body reaches `conn.execute(\"UPDATE <table> SET <ordering column> = ...\")` — an N-row sequence rewrite issued as N independent statements on a POOLED connection rather than through a transaction handle. PROXY FOR the stack-free condition: the new order of a list is written as N separate atomic writes, so any failure, cancellation or crash after the first one leaves the persisted sequence in a state that is neither the old order nor the new one. EXECUTED, not argued: reproducing dev_tools.rs::reorder_goals' exact shape on SQLite with row 3 of 5 failing leaves a:0 e:0 b:1 d:1 c:2 — two duplicate order_index values, an invariant break the caller cannot detect because the command returned Err and the frontend showed a toast. The same loop wrapped in a transaction leaves the list untouched. And a duplicate is not cosmetic: the same three rows tied at the same order_index came back 'zyx' under a table scan and 'xyz' the moment an index existed, so ORDER BY <col> over a broken sequence is an unstable order, not merely a wrong one. PRECONDITION (re-derive per repo): this repo executes SQL through rusqlite, spells the pooled handle `conn` and the transaction handle `tx`, and stores list order in an integer column. A repo using a fractional/lexicographic rank rewrites ONE row per reorder and has the condition designed out — it needs no rule. A repo whose driver auto-wraps (sqlx `&mut tx`), or which sends the whole sequence as one statement (a CTE, a VALUES join, json_each), also scores zero here while being correct. DISCRIMINATION IS ON `conn` VS `tx`, NOT ON THE LOOP: the same anchors pointed at `tx.execute` inside a loop match 21 spans across 9 files in this repo (crypto.rs, personas.rs, dev_workspaces.rs, team_assignments.rs, research_lab.rs, credentials.rs, data_portability.rs, context_consolidate.rs, daily_goals.rs) — see the -positive-control rule, which exists to prove exactly that. Measured 2026-08-15 at HEAD: 3 matches in 1 file, matched spans 117/122/131 chars against a 600 bound, and the ONLY other ordering write in the tree (dev_tools.rs:7936, a single-row UPDATE inside update_milestone) is correctly not matched because it is not a sequence rewrite. LEGAL FIX: take one transaction and rewrite the whole sequence inside it — `let mut conn = pool.get()?; let tx = conn.transaction()?; for ... { tx.execute(...) } tx.commit()?;` — or better, make the rewrite unnecessary by giving new rows a fractional rank so a move touches one row. Do NOT silence a match by moving the loop into the command layer; that trades this condition for the one persistence-handle-in-command-tree counts."
+      },
+      "baseline": {
+        "files": 1,
+        "matches": 3
+      },
+      "floor": 900
     }
   ]
 }
