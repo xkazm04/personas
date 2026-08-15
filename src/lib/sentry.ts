@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/react";
 import type { SessionSummary } from "./analytics/sink";
+import { sanitizeErrorMessage } from "@/lib/utils/sanitizers/maskSensitive";
 
 // ---------------------------------------------------------------------------
 // PII patterns to scrub from messages
@@ -14,8 +15,28 @@ const URL_RE = /https?:\/\/[^\s,)}\]]+/g;
 /** Quoted strings that may contain user-generated content */
 const QUOTED_RE = /'[^']{1,200}'|"[^"]{1,200}"/g;
 
+/**
+ * Scrub before anything leaves the device.
+ *
+ * `sanitizeErrorMessage` added 2026-08-16. Until then this function had **zero
+ * credential patterns** — measured against 26 real token shapes it masked 2,
+ * and both incidentally, via the quoted-string rule. It is the one channel in
+ * the app that ships data to a third party, and it was the least protected.
+ *
+ * It survived a fix pass the day before, and the reason is worth keeping: that
+ * pass searched for a specific broken literal and corrected the three copies
+ * that had it. This redactor never had that literal, so searching for the bug
+ * could not find the module that lacked the whole mechanism. **Fixing every
+ * instance of a defect is not the same as covering every place that needs the
+ * behaviour** — the first is a search over what exists, the second needs an
+ * inventory of what should.
+ *
+ * Order matters: credentials are masked first, while the token is still intact.
+ * The URL rule below rewrites a URL to its host, which would otherwise destroy
+ * a credential in a query string before it could be recognised as one.
+ */
 function scrubPii(input: string): string {
-  return input
+  return sanitizeErrorMessage(input)
     .replace(UUID_RE, (match) => `[id:${match.slice(0, 6)}]`)
     .replace(URL_RE, (match) => {
       try {

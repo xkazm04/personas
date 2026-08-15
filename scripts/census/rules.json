@@ -2664,6 +2664,58 @@
         "matches": 11
       },
       "floor": 900
+    },
+    {
+      "id": "render-time-redaction-toggle",
+      "goldenPath": "docs/concepts/golden-paths/secret-and-pii-redaction.md",
+      "title": "A redactor is applied in a ternary whose other branch is the raw value — so the redaction is a render-layer choice a UI control can switch off, not a boundary the value had to cross.",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\?\\s*[A-Za-z_$][\\w$.?]{0,60}\\s*:\\s*(?:sanitizeErrorForDisplay|sanitizeErrorMessage|maskSensitiveJson|redactObject|scrubPii)\\s*\\(",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A ternary whose FALSE branch calls one of this app's redaction functions and whose TRUE branch is a plain identifier or member expression — i.e. the unredacted value. PROXY FOR the stack-free condition: 'a redactor is invoked as one branch of a conditional whose other branch is the raw value, so the redaction is a presentation choice made after the value already crossed the boundary.' MEASURED 2026-08-16 at bbb1a8864: 3 files / 5 matches, ALL FIVE HAND-READ (precision 5/5) — src/features/agents/sub_executions/components/list/ExecutionListRow.tsx:180,238,245 (showRaw ? execution.error_message : sanitizeErrorForDisplay(...) twice, and showRaw ? execution.input_data : maskSensitiveJson(...)); src/features/agents/sub_executions/detail/ErrorExplanationCard.tsx:45; src/features/shared/components/modals/ExecutionDetailModal/ExecutionDetailContent.tsx:167 (showRaw ? execution.output_data : maskSensitiveJson(...)). The two toggles that drive them are ExecutionList.tsx:69 + ExecutionListFilters.tsx:59-70 and ExecutionDetailContent.tsx:55 + :112-113. WHY IT IS A DEFECT AND NOT A PREFERENCE: for the ternary to typecheck, the raw string must already be in scope at the render layer — so it is in the IPC response, in the React props, in the DOM, in the devtools inspector, and at ExecutionDetailContent.tsx:166 it is ALSO handed to a copy-to-clipboard button one line above the masked render. The mask is decoration over a value that already crossed every boundary that mattered. These 5 matches are 5 of the 14 total invocations of this app's frontend sanitizers — more than a third of all frontend redaction is switchable off by a button. LEGAL FIX: stop sending the raw text. Make the IPC payload carry only the redacted string and move rawness behind a separate, explicitly-named, audited command; then the ternary is not a bad choice, it is unwriteable, because the raw value does not exist in that scope. brainiac reached the same cut independently at crates/brainiac-server/src/mcp.rs:2393, redacting a source excerpt BEFORE truncation on the way out of the API. DO NOT silence a match by hoisting the ternary into a variable, by moving the condition into the sanitizer's own arguments, or by renaming the sanitizer — all three preserve the defect exactly and merely hide it from this signal; the honest fix always removes the raw value from the scope. END OF LIFE: this rule is designed to reach zero. When it does, the runner fails structurally on zero matches BY DESIGN — DELETE the rule then, do not baseline it at 0.",
+        "$measured": "2026-08-16 @ bbb1a8864 — 4,829 files walked; validated standalone in a scratch registry unique to this composer, then re-extracted from this finished document and re-run through the real runner: 3/5 both times; 0.672 s for rule + control together."
+      },
+      "baseline": {
+        "files": 3,
+        "matches": 5
+      },
+      "floor": 3000
+    },
+    {
+      "id": "model-reply-parser-without-a-reason",
+      "goldenPath": "docs/concepts/golden-paths/structured-output-extraction.md",
+      "title": "A model reply is turned into a typed value by a parser whose failure carries no reason",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\bfn\\s+(?:parse|extract)_[a-z0-9_]*\\s*(?:<[^>]{0,60}>)?\\s*\\(\\s*(?:&\\s*(?:'[a-z]+\\s+)?)?(?:blob|text|raw|reply|answer|output|out|assistant_text|full_output|completion)\\s*:\\s*&\\s*(?:'[a-z]+\\s+)?str\\b[^)]{0,160}\\)\\s*->\\s*Option\\s*<(?=[\\s\\S]{0,700}?serde_json)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A free function named parse_*/extract_* whose first parameter is model-reply text (&str) and which deserializes JSON, returning Option<T> instead of Result<T, E>. PROXY FOR the stack-free condition: the step that turns a PAID model reply into a typed value discards the reason it failed, so no downstream layer can log, count, retry or report it. Measured 2026-08-16 at bbb1a8864: 34 matches / 22 files against 13 matches / 12 files for the Result-returning form of the same shape; all 13 Result parsers propagate a bounded head of the offending text and 0 of the 34 Option parsers do. Live consequence: the five deliberation lanes (1,488 of 1,636 headless companion_turn rows, $44.94) carry ZERO outcome_json, while the one lane whose parser feeds turn_ledger::update_outcome has recorded one {\"parse_failure\":true} row — a $0.177867 / 2,409-output-token call flagged is_error=0. PRECISION 34/34 hand-read; RECALL 34/35 (the 700-char body window misses athena_reaction.rs:650 parse_athena_decision, found by this rule's own canary). CORRECT END STATE is ~13 and falling, NOT zero: a parser with a legitimate absent case becomes Result<Option<T>, E>, which this pattern stops matching. PRECONDITION (must be re-derived per repo, do NOT port): this repo spells the defect as a Rust return type on a free function with a &str first parameter named from a small vocabulary. The same condition in TypeScript siblings wears `catch { return null }` (vibeman/parse-response.ts:31), `?? []`, `catch { return {score: 0} }` and zod `.default()` on a model field — this pattern scores ZERO on all of them. The BODY REQUIREMENT MUST BE A LOOKAHEAD: the consuming form swallows the next function's signature and silently merges two matches into one."
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/src/commands/credentials/cli_capture.rs",
+          "reason": "parse_wrangler_oauth_token reads a local CLI's own ~/.wrangler TOML config, not a paid model reply; it matches only because a sibling fn eight lines later mentions serde_json"
+        }
+      ],
+      "baseline": {
+        "files": 22,
+        "matches": 34
+      },
+      "floor": 900
     }
   ]
 }
