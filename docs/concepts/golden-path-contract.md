@@ -5,6 +5,15 @@
 > probes ([`golden-paths/`](./golden-paths/)) that between them read ~157
 > files and surfaced ~200 real defects — the sections below are the ones that
 > carried that value, plus the one the probes proved was missing.
+>
+> **This file says what a path must CONTAIN. Its companion,
+> [`golden-path-doctrine.md`](./golden-path-doctrine.md), says what a composer
+> must KNOW before writing one** — the seven type-over-gate qualifications and
+> where types cannot reach, the measurement rules (including why two agreeing
+> implementations are not evidence), why warn-level enforces nothing at either
+> gate, the census-rule requirements, and the refinements that were tested and
+> withdrawn. Read both. A brief should point at the doctrine rather than
+> restate it.
 
 ## The object
 
