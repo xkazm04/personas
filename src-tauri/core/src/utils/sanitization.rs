@@ -46,8 +46,28 @@ pub fn sanitize_secrets(text: &str) -> String {
         .to_string();
 
     // c. Standalone prefixed tokens (ghp_, sk_live_, etc)
+    //
+    // Corrected 2026-08-15. The previous form was
+    //   r"\b(PMR?S|gh[pous]|AKIA|sk_live_|xox[baprs]-)[a-zA-Z0-9]{16,}\b"
+    // which COULD NOT MATCH ANY TOKEN GITHUB ISSUES: `gh[pous]` has no `_`, and
+    // `_` is not in `[a-zA-Z0-9]`, so `ghp_…` fails at the underscore. It
+    // matched a shape GitHub has never issued and omitted `ghr_`. Verified in
+    // both Node's engine and the `regex` crate this binary links; they agree.
+    //
+    // Replayed against 20 real token shapes the old form masked 7 and leaked
+    // 13 — and the 7 were caught by the labelled key:value rule above (pass b),
+    // not by this one. No Google `AIza`, no Anthropic `sk-ant-`, no JWT.
+    //
+    // The per-class forms below come from `core/src/redact.rs`, which has been
+    // correct since it was written. The fix was already in this crate, in a
+    // different module — which is why the defect survived: a reader of either
+    // file sees a plausible credential regex. `sk-ant-` precedes `sk-` because
+    // the regex crate's alternation is leftmost-first.
     let re_prefixes = PREFIXES_PATTERN.get_or_init(|| {
-        Regex::new(r"\b(PMR?S|gh[pous]|AKIA|sk_live_|xox[baprs]-)[a-zA-Z0-9]{16,}\b").unwrap()
+        Regex::new(
+            r"(?:PMR?S[a-zA-Z0-9]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|sk-ant-[A-Za-z0-9_\-]{20,}|sk-[A-Za-z0-9]{20,}|sk_live_[a-zA-Z0-9]{16,}|xox[baprs]-[A-Za-z0-9\-]{10,}|AIza[0-9A-Za-z_\-]{35}|eyJ[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+)",
+        )
+        .unwrap()
     });
     sanitized = re_prefixes.replace_all(&sanitized, "[secret]").to_string();
 

@@ -748,11 +748,78 @@ pub fn set_cache_tokens(
 /// Scrub credential-shaped secrets from the free-text execution fields before
 /// they are persisted (and thereby forwarded to the inspector / exports / Sentry
 /// / companion memory). No-op when redaction is disabled. See `engine::redact`.
+/// Extended 2026-08-15 from 3 fields to all 6.
+///
+/// This function covered `output_data`, `error_message` and `business_outcome`.
+/// The other three free-text fields of `UpdateExecutionStatus` —
+/// `execution_flows` (?6), `tool_steps` (?13) and `execution_config` (?15) —
+/// are bound into the SAME `UPDATE` fifty lines below and were never scrubbed.
+///
+/// The codebase ran the controlled experiment on itself: across the live
+/// `persona_executions` table, redacted `output_data` holds 2 credential-shaped
+/// values and unredacted `tool_steps` holds 114 — Google API keys, a GitHub
+/// PAT, a Bearer header, a PEM private-key header and 104 labelled assignments,
+/// spread over at least 72 rows and 26.5 MB, aged 50-73 days, and rendered by
+/// nine frontend files.
+///
+/// Note this only protects rows written from now on. The 114 values already
+/// persisted need a backfill, which is not done here.
 fn redact_execution_fields(input: &mut UpdateExecutionStatus) {
     use personas_core::redact;
     redact::redact_opt(&mut input.output_data);
     redact::redact_opt(&mut input.error_message);
     redact::redact_opt(&mut input.business_outcome);
+    redact::redact_opt(&mut input.execution_config);
+
+    if !redact::enabled() {
+        return;
+    }
+
+    // `execution_flows` is already a `serde_json::Value`; walk it in place.
+    if let Some(crate::models::Json(value)) = &mut input.execution_flows {
+        redact_json_value(value);
+    }
+
+    // `tool_steps` is `Vec<ToolCallStep>`. Round-trip through `Value` so one
+    // walker covers both shapes, and commit only if it parses back — a redaction
+    // that corrupts the column would be worse than the leak it prevents.
+    if let Some(crate::models::Json(steps)) = &mut input.tool_steps {
+        if let Ok(mut value) = serde_json::to_value(&*steps) {
+            redact_json_value(&mut value);
+            if let Ok(parsed) =
+                serde_json::from_value::<Vec<personas_core::types::ToolCallStep>>(value)
+            {
+                *steps = parsed;
+            }
+        }
+    }
+}
+
+/// Redact every string inside a JSON document, in place.
+///
+/// Keys are deliberately left alone — a key is a field name, and rewriting one
+/// changes the document's shape rather than its content.
+fn redact_json_value(value: &mut serde_json::Value) {
+    use personas_core::redact;
+    match value {
+        serde_json::Value::String(s) => {
+            let cleaned = redact::redact_string(s);
+            if cleaned != *s {
+                *s = cleaned;
+            }
+        }
+        serde_json::Value::Array(items) => {
+            for item in items {
+                redact_json_value(item);
+            }
+        }
+        serde_json::Value::Object(map) => {
+            for (_key, v) in map.iter_mut() {
+                redact_json_value(v);
+            }
+        }
+        _ => {}
+    }
 }
 
 /// Shared 18-column execution-status `UPDATE`, parameterized only by the

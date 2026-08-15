@@ -195,10 +195,25 @@ mod pii {
     }
 
     /// Matches well-known service token prefixes (GitHub PATs, AWS keys, Stripe keys, etc.).
+    ///
+    /// Corrected 2026-08-15. The doc line above claimed GitHub PATs and the
+    /// pattern could not match one: the old `gh[pous]` had no `_`, and `_` is
+    /// not in `[a-zA-Z0-9]`, so `ghp_…` failed at the underscore. This is the
+    /// **Sentry** scrubber, so the blind spot applied to everything leaving the
+    /// machine. Classes for Google (`AIza`), Anthropic (`sk-ant-`) and JWTs
+    /// were absent entirely.
+    ///
+    /// Kept byte-identical with `core::utils::sanitization`; both now mirror
+    /// the per-class forms in `core/src/redact.rs`, which was correct all along.
+    /// Three copies of one pattern is the real defect — the correct version
+    /// existed in-tree the whole time and none of the copies knew.
     fn prefixed_token_re() -> &'static Regex {
         static RE: OnceLock<Regex> = OnceLock::new();
         RE.get_or_init(|| {
-            Regex::new(r"\b(PMR?S|gh[pous]|AKIA|sk_live_|xox[baprs]-)[a-zA-Z0-9]{16,}\b").unwrap()
+            Regex::new(
+                r"(?:PMR?S[a-zA-Z0-9]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|sk-ant-[A-Za-z0-9_\-]{20,}|sk-[A-Za-z0-9]{20,}|sk_live_[a-zA-Z0-9]{16,}|xox[baprs]-[A-Za-z0-9\-]{10,}|AIza[0-9A-Za-z_\-]{35}|eyJ[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+)",
+            )
+            .unwrap()
         })
     }
 
