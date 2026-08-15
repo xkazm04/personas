@@ -1902,6 +1902,28 @@
         "matches": 305
       },
       "floor": 400
+    },
+    {
+      "id": "unraced-loop-wait",
+      "goldenPath": "docs/concepts/golden-paths/background-loop.md",
+      "title": "Background loop whose time-wait is not raced against a stop signal",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\bloop\\s*\\{[ \\t]*\\r?\\n(?:[ \\t]*//[^\\n]*\\r?\\n)*[ \\t]*(?:(?:[A-Za-z_][A-Za-z0-9_]*\\s*\\.\\s*tick\\s*\\(\\s*\\)|(?:tokio::)?time::sleep\\s*\\([^;{}]{0,200}?\\))\\s*\\.\\s*await|(?:std::)?thread::sleep\\s*\\([^;{}]{0,200}?\\))\\s*;",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a `loop {` whose FIRST statement is a bare, un-raced time wait — an Interval tick, a tokio sleep, or a blocking thread::sleep awaited on its own rather than inside a `tokio::select!` that also arms a stop signal. For the whole interval nothing can reach the loop: app exit, a scheduler stop, a cancellation token and a user Stop all wait the timer out. PROXY FOR the stack-free condition 'a repeating unit of work no stop can reach'; the compliant form in this stack opens with `tokio::select!` racing the wait against a cancellation token, a shutdown receiver or an OS signal (`daemon_bin.rs:167`, `p2p/periodic.rs:94`)"
+      },
+      "baseline": {
+        "files": 12,
+        "matches": 13
+      },
+      "floor": 900
     }
   ]
 }
