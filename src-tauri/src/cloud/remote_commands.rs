@@ -264,7 +264,30 @@ pub async fn remote_command_approve(
         .persona_id
         .ok_or_else(|| AppError::Validation("Request is missing a persona".into()))?;
 
-    set_command_status(&client, &id, "executing", json!({})).await;
+    // Claim the command, don't just announce it.
+    //
+    // The `cmd.status != "pending"` check above is necessary and NOT
+    // sufficient: it reads the status, decides in Rust, and until 2026-08-16
+    // the write that followed carried no status filter. Two concurrent
+    // approvals of one request both read `pending`, both passed the check, and
+    // both reached the agent — two runs, two bills, one request. Reproduced
+    // against the real shape before fixing.
+    //
+    // `status=eq.pending` in the FILTER is what makes this exclusive, and the
+    // returned row count is what tells this caller whether it won. Losing is a
+    // normal outcome, not an error condition, so it reports the same message a
+    // late click already got.
+    let claimed = client
+        .patch_returning_count(
+            &format!("pending_commands?id=eq.{id}&status=eq.pending"),
+            &json!({ "status": "executing", "updated_at": now() }),
+        )
+        .await?;
+    if claimed == 0 {
+        return Err(AppError::Validation(
+            "This request is no longer pending".into(),
+        ));
+    }
 
     // Run locally — same path as a normal run; the engine enforces the persona's
     // own sandbox, setup gate, budget, and tool exposure.

@@ -119,25 +119,74 @@ impl SyncClient {
         path_and_query: &str,
         body: &B,
     ) -> Result<(), AppError> {
+        self.send_patch(path_and_query, body, "return=minimal").await?;
+        Ok(())
+    }
+
+    /// PATCH like [`Self::patch`], but reports how many rows actually changed.
+    ///
+    /// `patch` hardcodes `Prefer: return=minimal` and returns `Result<()>`, so
+    /// the affected-row count is structurally unavailable and **no caller can
+    /// write a compare-and-set against the cloud** — the guard clause has
+    /// nowhere to read its verdict from. That is not hypothetical: approving a
+    /// remote command read the status, checked it with a Rust `if`, and then
+    /// PATCHed unconditionally, so two concurrent approvals of one request both
+    /// passed the check and both ran the agent. Two runs, two bills, one
+    /// request.
+    ///
+    /// `return=representation` asks PostgREST for the updated rows, so a filter
+    /// that no longer matches yields an empty array and a count of 0 — the
+    /// caller loses the race and knows it. Use this whenever the PATCH's own
+    /// filter is what enforces exclusivity.
+    pub async fn patch_returning_count<B: Serialize>(
+        &self,
+        path_and_query: &str,
+        body: &B,
+    ) -> Result<usize, AppError> {
+        let resp = self
+            .send_patch(path_and_query, body, "return=representation")
+            .await?;
+        let rows: Vec<serde_json::Value> = resp
+            .json()
+            .await
+            .map_err(|e| AppError::Cloud(format!("cloud PATCH {path_and_query} decode: {e}")))?;
+        Ok(rows.len())
+    }
+
+    /// Shared PATCH request + status check for [`Self::patch`] and
+    /// [`Self::patch_returning_count`], which differ only in their `Prefer`
+    /// header and what they do with the body.
+    ///
+    /// Extracted rather than copied: the census flagged the copy immediately,
+    /// because a second `bearer_auth` + `apikey` attachment is a 23rd instance
+    /// of a credential riding a header that survives a cross-host redirect, and
+    /// a second unclassified non-2xx branch. Sharing the builder adds the new
+    /// capability without adding a new instance of either.
+    async fn send_patch<B: Serialize>(
+        &self,
+        path_and_query: &str,
+        body: &B,
+        prefer: &str,
+    ) -> Result<reqwest::Response, AppError> {
         let resp = self
             .http
             .patch(format!("{}/{}", self.rest_base, path_and_query))
             .header("apikey", &self.anon_key)
             .bearer_auth(&self.jwt)
             .header("Content-Type", "application/json")
-            .header("Prefer", "return=minimal")
+            .header("Prefer", prefer)
             .json(body)
             .send()
             .await
             .map_err(|e| AppError::Cloud(format!("cloud PATCH {path_and_query}: {e}")))?;
         if !resp.status().is_success() {
             let status = resp.status();
-            let body = resp.text().await.unwrap_or_default();
+            let text = resp.text().await.unwrap_or_default();
             return Err(AppError::Cloud(format!(
-                "cloud PATCH {path_and_query} failed: {status} {body}"
+                "cloud PATCH {path_and_query} failed: {status} {text}"
             )));
         }
-        Ok(())
+        Ok(resp)
     }
 
     /// DELETE rows matching a PostgREST path/query (e.g.
