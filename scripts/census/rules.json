@@ -1924,6 +1924,51 @@
         "matches": 13
       },
       "floor": 900
+    },
+    {
+      "id": "code-unit-monogram",
+      "goldenPath": "docs/concepts/golden-paths/entity-visual-identity.md",
+      "title": "An entity's monogram cut on a UTF-16 code unit",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\.(?:charAt\\(0\\)|slice\\(0,\\s*[12]\\)|substring\\(0,\\s*[12]\\))\\.toUpperCase\\(\\)(?!\\s*(?:\\+|\\}\\s*\\$\\{))",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A leading-character cut taken with a UTF-16 code-unit index and NOT continued (neither `+ rest` nor `}${rest}`) — i.e. a monogram, not a capitalisation. charAt(0)/slice(0,1)/slice(0,2) split any astral-plane codepoint, so an emoji-initial entity name yields a lone surrogate and renders U+FFFD. Cut with [...name][0] instead."
+      },
+      "baseline": {
+        "files": 10,
+        "matches": 10
+      },
+      "floor": 4000
+    },
+    {
+      "id": "unverified-effect-dispatch",
+      "goldenPath": "docs/concepts/golden-paths/post-write-side-effects.md",
+      "title": "A post-write notification dispatched with its delivery result discarded, so a permanently undeliverable effect is indistinguishable from a delivered one",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\blet\\s+_\\s*(?::[^=;\\n]{0,60})?=\\s*[^;\\n]{0,140}?(?:\\.\\s*emit(?:_to|_filter)?\\s*\\(|\\bemit_event(?:_bus)?\\s*\\()",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a `let _ =` binding whose right-hand side reaches a Tauri emit on the SAME statement (the fill class excludes `;` and newline, so a match can never run past its own statement into the next one). PROXY FOR the stack-free condition: a post-write notification is dispatched with no path by which a permanent delivery failure could ever be observed. Tauri's `emit` returns Err when the payload cannot be serialised — a PERMANENT, per-call-site failure, not a transient one — so `let _ =` makes 'this event has never once been delivered' look exactly like 'delivered'. Measured 2026-08-15 at HEAD a385c159d: 162 matches across 60 of 963 .rs files. TWO INDEPENDENT IMPLEMENTATIONS RECONCILE TO ONE DISAGREEMENT, AND THE DISAGREEMENT IS A FALSE POSITIVE IN THE LOOSER ONE: a line-oriented grep (`let _ = .*emit_event`) reports 163 because it matches src/engine/webhook_notifier.rs:601, `let _ = app; // reserved for future per-delivery emit_event` — a discard of an unrelated binding whose trailing COMMENT contains the token. This pattern excludes it by construction because `[^;\\n]` cannot cross the `;` after `app`; that is why the fill class is punctuation-bounded rather than a plain `.{0,140}?`. The COMPLIANT sibling form is used 39 times in 20 files (`if let Err(e) = app.emit(...) { tracing::warn!(...) }` — see the paired positive control), so this is a majority deviation from an in-repo convention that already exists and works, not a migration with no destination. NO EXCLUDE ENTRY EXISTS, DELIBERATELY: the shared helper's own body at engine/src/event_registry.rs:37 is the single most valuable match in the set, because it is `let _ = app.emit(event, payload.clone())` inside `emit_event`, and 20 further call sites inherit the discard through it — excluding the primitive would be the allowlist hiding the finding. PRECONDITION (must be re-derived per repo): this repo dispatches frontend notifications through a fallible `emit` whose Result is discardable with Rust's `let _ =` idiom, and its compliant form spells the check `if let Err`. A repo whose emitter returns void (personas-cloud's in-memory dispatcher.submit returns a bool; vibeman's eventBus.emit returns void) has the SAME condition wearing markup where there is no result to discard, and this pattern scores ZERO against it while the condition is present — there, the proxy has to become 'the emitter cannot report failure AT ALL', which is a signature property, not a call-site one. LEGAL FIX, in order: (1) change the shared helper's body to the `emit_event_bus` shape at engine/src/event_registry.rs:44-47 — return (), log the Err with tracing::warn! — which corrects 20 call sites in one edit and is the fix this rule most wants; (2) at a direct call site, `if let Err(e) = app.emit(name, &payload) { tracing::warn!(event = name, error = %e, \"...\"); }`. Do NOT silence a match by switching to try_emit_event and adding `?` — a failed notification must never fail the write that caused it (Principle 6), which is why try_emit_event has zero callers and should stay that way. Do NOT silence a match by deleting the emit."
+      },
+      "baseline": {
+        "files": 60,
+        "matches": 162
+      },
+      "floor": 700
     }
   ]
 }
