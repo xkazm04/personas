@@ -2246,6 +2246,58 @@
         "matches": 3
       },
       "floor": 400
+    },
+    {
+      "id": "ordinal-denominator-in-bar-list",
+      "goldenPath": "docs/concepts/golden-paths/proportional-bar-list.md",
+      "title": "A proportional bar's denominator is the FIRST ROW rather than a computed extremum, so the geometry silently depends on a sort the component does not own",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\b(?:const|let)\\s+(max[A-Za-z0-9_$]*)\\s*(?::[^=\\n]*)?=\\s*[A-Za-z0-9_$.]+\\s*\\[\\s*0\\s*\\][^\\n]*[\\s\\S]{0,2500}?/\\s*\\1\\b",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a binding NAMED max* assigned the FIRST ELEMENT of a collection, AND (backreference) that same binding used as a divisor within ~2500 chars. The consequent is required so the match is a DENOMINATOR and not any first row: `const topRow = rows[0]` taken for display cannot match. The name+index mismatch is the defect — the binding claims an extremum and holds an ordinal, so the bar's geometry is correct only while an ORDER BY the component never sees keeps holding (llm_spend.rs:213, metrics.rs:1383, FactoryObservabilityTab.tsx:95 — only the last is in the same file). Measured against the live database with that order inverted, one row computes width 454%, which overflow-hidden clips to an ordinary full bar with no error anywhere. Math.max(1, ...rows.map(f)) is unconditionally correct and one line. Condition proxied: the denominator is an ordinal, not an extremum. An adopting repo must re-derive this proxy for its own idiom (rows.at(0), const [first] = rows, sorted.shift(), head(rows), a backend-supplied max column)."
+      },
+      "baseline": {
+        "files": 4,
+        "matches": 4
+      },
+      "floor": 4000
+    },
+    {
+      "id": "hand-rolled-row-stagger",
+      "goldenPath": "docs/concepts/golden-paths/list-entrance-stagger.md",
+      "title": "Per-item entrance delay computed at the call site",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "animationDelay:\\s*`\\$\\{[^`+]*\\*[^`+]*`",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "An inline animationDelay whose template multiplies a loop index and carries NO additive base offset — the signature of a hand-rolled row/tile entrance cascade. The compliant entrance never writes animationDelay at a call site at all (RevealItem / UnifiedTable rowReveal own it, capped at 8x35ms and id-guarded); the compliant delayed GHOST always carries a >=120ms base offset (`${120 + i * 35}ms`, page-loading.md step 8), which the two `[^`+]` classes exclude. Every current match is a stagger with no id-guard, and three of the four have no cap."
+      },
+      "exclude": [
+        {
+          "path": "src/features/shared/components/display/UnifiedTable.tsx",
+          "reason": "the cascade primitive itself — useRowRevealEntrance is where the capped animationDelay is SUPPOSED to be computed, and DataGrid imports it rather than recomputing"
+        }
+      ],
+      "baseline": {
+        "files": 4,
+        "matches": 4
+      },
+      "floor": 4000
     }
   ]
 }
