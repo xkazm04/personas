@@ -2146,6 +2146,35 @@
         "matches": 4
       },
       "floor": 900
+    },
+    {
+      "id": "sample-derived-plot-scale",
+      "goldenPath": "docs/concepts/golden-paths/chart-component.md",
+      "title": "A plot's value scale anchored to the sample's own minimum, so the baseline moves with the data",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "=\\s*Math\\.min\\(\\s*\\.\\.\\.[A-Za-z0-9_$.]+\\s*\\)[\\s\\S]{0,160}?\\|\\|\\s*1",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "an unclamped spread-min assigned as a scale floor, paired within a few lines with a `range || 1` denominator — the two halves of a min-max autoscale. The consequent is required so the match is the SCALE and not any minimum: it excludes `return Math.min(...stamps)` (earliest timestamp), `expect(...).toBe(Math.min(...))` and `kpiPct = Math.min(...pcts)` (a worst-case value), which take the raw signal from 64% to 100% precision. A clamped floor — Math.min(...data, 0) — cannot match, because the spread must be the sole argument. Condition proxied: the vertical domain is derived from the sample instead of declared, so a flat series renders as full-amplitude volatility and two panels are not comparable. An adopting repo must re-derive this proxy for its own idiom (d3.extent, minBy, reduce)."
+      },
+      "exclude": [
+        {
+          "path": "src/features/overview/sub_director/directorScore.ts",
+          "reason": "the primitive this rule routes callers to — sparklinePoints() divides by the fixed SCORE_MAX constant and is the exemplar cited in this path's Evidence section"
+        }
+      ],
+      "baseline": {
+        "files": 7,
+        "matches": 7
+      },
+      "floor": 4000
     }
   ]
 }
