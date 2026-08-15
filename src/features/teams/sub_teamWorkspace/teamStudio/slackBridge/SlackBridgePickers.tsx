@@ -6,6 +6,7 @@ import type { CredentialMetadata } from '@/lib/types/types';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { BridgeForm } from './useTeamSlackBridge';
 
+import { isCredentialVerified } from '@/lib/credentials/healthState';
 function Field({ label, testId, children }: { label: string; testId: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1.5" data-testid={testId}>
@@ -42,7 +43,7 @@ export function SlackBridgePickers({
   const credentialOptions: ThemedSelectOption[] = slackCredentials.map((c) => ({
     value: c.id,
     label: c.name,
-    description: c.healthcheck_last_success === true ? undefined : ts.slack_bridge_credential_unverified,
+    description: isCredentialVerified(c) ? undefined : ts.slack_bridge_credential_unverified,
   }));
 
   const personaOptions: ThemedSelectOption[] = members.map((p) => ({

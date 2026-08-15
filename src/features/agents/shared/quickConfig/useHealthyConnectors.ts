@@ -2,6 +2,7 @@ import { useMemo, useEffect } from 'react';
 import { useVaultStore } from '@/stores/vaultStore';
 import { getConnectorMeta, type ConnectorMeta } from '@/lib/connectors/connectorMeta';
 
+import { readCredentialHealthState } from '@/lib/credentials/healthState';
 export interface HealthyConnector {
   name: string;
   meta: ConnectorMeta;
@@ -44,7 +45,14 @@ export function useHealthyConnectors(): HealthyConnector[] {
       // they'd never surface here under the health gate. Treat them as
       // healthy so they're attachable/scopable (e.g. the Local Database can
       // be picked + table-scoped like any external DB connector).
-      if (cred.healthcheck_last_success !== true && !connector.is_builtin) continue;
+      // The built-in escape hatch above was groping toward the general rule.
+      // "No healthcheck config" is not special to built-ins — 21 of 134
+      // connectors have none, and the three-state resolver calls that
+      // `unverifiable`: a connector that can never pass a probe, so excluding
+      // it on a failed probe hides it forever. `failed` and `untested` still
+      // exclude. See @/lib/credentials/healthState.
+      const health = readCredentialHealthState(cred);
+      if (health !== 'verified' && health !== 'unverifiable' && !connector.is_builtin) continue;
 
       seen.add(cred.service_type);
       healthy.push({

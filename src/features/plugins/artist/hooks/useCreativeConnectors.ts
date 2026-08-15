@@ -3,6 +3,7 @@ import { useVaultStore } from '@/stores/vaultStore';
 import { useSystemStore } from '@/stores/systemStore';
 import type { ConnectorInfo } from '@/stores/slices/system/artistSlice';
 
+import { isCredentialVerified } from '@/lib/credentials/healthState';
 /** Connector IDs relevant to creative work */
 const CREATIVE_CONNECTOR_IDS = [
   { serviceType: 'leonardo_ai', label: 'Leonardo AI' },
@@ -28,7 +29,7 @@ export function useCreativeConnectors() {
         id: serviceType,
         name: label,
         connected: !!cred,
-        healthy: cred?.healthcheck_last_success === true,
+        healthy: isCredentialVerified(cred),
       };
     });
     setCreativeConnectors(infos);

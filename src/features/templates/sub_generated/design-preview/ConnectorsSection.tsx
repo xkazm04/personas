@@ -12,6 +12,7 @@ import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors'
 import { DebtText } from '@/i18n/DebtText';
 
 
+import { isCredentialVerified } from '@/lib/credentials/healthState';
 interface ConnectorsSectionProps {
   result: AgentIR;
   allToolDefs: PersonaToolDefinition[];
@@ -120,7 +121,7 @@ export function ConnectorsSection({
           const isNativeCap = runnability.status === 'native';
           const linkedCred = runnability.credential;
           const hasCredential = !!linkedCred;
-          const isHealthy = linkedCred?.healthcheck_last_success === true;
+          const isHealthy = isCredentialVerified(linkedCred);
           const isUnhealthy = linkedCred?.healthcheck_last_success === false;
           const needsSetup = runnability.status === 'needs_setup';
           // The "Configure credential" affordance should render when the

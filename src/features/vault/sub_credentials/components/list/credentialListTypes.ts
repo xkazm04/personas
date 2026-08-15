@@ -1,7 +1,7 @@
 import { collectAllTags, getCredentialTags } from '@/features/vault/shared/utils/credentialTags';
 import { computeHealthScore } from '@/features/vault/shared/utils/credentialHealthScore';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
-import { parseJsonOrDefault } from '@/lib/utils/parseJson';
+import { readCredentialHealthState } from '@/lib/credentials/healthState';
 
 /** Well-known service names for quick-start buttons. Matched by connector `name`. */
 export const QUICK_START_SERVICES = ['openai', 'slack', 'github', 'linear'] as const;
@@ -9,31 +9,11 @@ export const QUICK_START_SERVICES = ['openai', 'slack', 'github', 'linear'] as c
 export type HealthFilter = 'all' | 'healthy' | 'unverifiable' | 'failing' | 'untested';
 export type SortKey = 'name' | 'type' | 'created' | 'last-used' | 'health';
 
-/**
- * Three-valued health of a credential, mirroring the backend `HealthProbeState`
- * (engine/healthcheck.rs):
- * - `verified`     — a live probe ran and passed
- * - `unverifiable` — the connector has no live probe; stored but not checkable
- * - `failed`       — a live probe ran and failed
- * - `untested`     — never probed
- */
-export type HealthState = 'verified' | 'unverifiable' | 'failed' | 'untested';
-
-/**
- * Read the typed health state from a credential. Prefers the persisted
- * `healthcheck_last_state` token (written by the backend probe path); falls back
- * to the legacy `healthcheck_last_success` boolean for credentials probed before
- * the typed state landed. Both come from persisted metadata — no re-probe.
- */
-export function readCredentialHealthState(cred: CredentialMetadata): HealthState {
-  const parsed = parseJsonOrDefault<Record<string, unknown> | null>(cred.metadata, null);
-  const token = parsed?.healthcheck_last_state;
-  if (token === 'verified' || token === 'unverifiable' || token === 'failed') {
-    return token;
-  }
-  if (cred.healthcheck_last_success === null) return 'untested';
-  return cred.healthcheck_last_success ? 'verified' : 'failed';
-}
+// Moved to `@/lib/credentials/healthState` on 2026-08-15 — five features
+// outside the vault need it, and none of them should reach inside this feature
+// to get it. Re-exported here so existing callers are untouched.
+export type { HealthState } from '@/lib/credentials/healthState';
+export { readCredentialHealthState, isCredentialVerified } from '@/lib/credentials/healthState';
 
 export function capitalize(s: string) {
   return s.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');

@@ -314,6 +314,15 @@ export function usePersonaExecution() {
 
         const status = payload.status as string;
         if (isTerminalState(status)) {
+          // `incomplete` (abandoned by a dead process) collapses to 'failed'
+          // here DELIBERATELY: this drives a transient badge that fades after
+          // 10 s, and the badge union has three arms. That is a display choice.
+          //
+          // It is not the same as the collapse in the reliability queries, where
+          // `incomplete` is omitted from 14 of 22 terminal-set tests and the
+          // result is a success rate that silently excludes lost runs — while
+          // the spend predicate counts them. Do not cite this line as precedent
+          // for that one.
           const mapped = status === 'completed' ? 'completed' : status === 'cancelled' ? 'cancelled' : 'failed';
           store.updateBackgroundExecution(execId, mapped);
           // Auto-remove after 10 seconds so the badge fades

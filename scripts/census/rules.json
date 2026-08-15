@@ -2576,6 +2576,65 @@
         "matches": 6
       },
       "floor": 120
+    },
+    {
+      "id": "autonomy-verdict-outside-the-front-door",
+      "goldenPath": "docs/concepts/golden-paths/autonomy-gating.md",
+      "title": "A 'may this run unattended' verdict computed from raw config instead of engine::autonomy",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "(?:settings(?:_repo)?::(?:get|get_by_prefix)\\s*\\([^;]{0,160}?(?:COMPANION_AUTONOMOUS_MODE|AUTONOMOUS_[A-Z0-9_]+|AUTOPILOT_MODE_PREFIX)\\b|autopilot::(?:load_modes|cap_enabled)\\s*\\(|AutopilotMode::parse\\s*\\()",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a site that answers 'may this act unattended (for this project)' from raw configuration — either a direct app_settings read naming an autonomy key, or a direct call into the per-project autopilot primitive — instead of calling engine::autonomy, the module that exists to answer it once. PROXY FOR the stack-free condition: the same autonomy question is computed in more than one place, so two subsystems can disagree about whether an unattended action is permitted, and the disagreement is invisible because both answers look reasonable in isolation. PRECISION 5/5, every match opened and confirmed; the two DIVERGENT ones are the point — overnight.rs:555,660 and pattern_miner.rs:232 treat 'this project has no autopilot row' as OFF, while autonomy::is_allowed treats it as 'follow the global flag' (autonomy.rs:24-31), so one project can be simultaneously permitted and refused for the same capability. The other two (chat.rs:182, message_triage.rs:70) are byte-for-byte re-implementations of Action::CompanionMaster; autonomy.rs:63-67 calls the first 'a thin wrapper' and it neither imports nor calls the module. The POSITIVE CONTROL is what makes this a fact rather than a taste judgement: the same verdict taken THROUGH the front door scores 24 matches across 2 files, so the two rules partition the tree's 29 autonomy verdicts 5/24 and the count measures WHERE THE DECISION IS MADE, not 'how much autonomy code exists'. RECALL is deliberately partial and one gap is named: companion::night_shift::enabled (night_shift/mod.rs:257) gates what its own key docstring calls 'the most autonomous surface in the app' by reading COMPANION_NIGHT_SHIFT, which is not an AUTONOMOUS_* key and not an Action, so it is invisible here — that key should be promoted into the Action enum, at which point this rule sees it. PRECONDITION (must be re-derived per repo): this repo HAS a single autonomy front door (engine/src/autonomy.rs) with 13 named actions and a written precedence rule. Four of the five sibling repos audited for this path have no such module at all — their equivalent condition is present at far greater scale and scores ZERO here, which is why none of them has this rule and why an adopting repo must key on its own chokepoint instead."
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/engine/src/autonomy.rs",
+          "reason": "the front door itself — it is where the raw read is supposed to happen"
+        },
+        {
+          "path": "src-tauri/engine/src/autopilot.rs",
+          "reason": "the per-project primitive the front door delegates to and re-exports"
+        },
+        {
+          "path": "src-tauri/src/commands/infrastructure/autopilot.rs",
+          "reason": "the human-facing IPC read/write surface for the mode itself: AutopilotMode::parse here validates an operator's WRITE, it is not an unattended verdict"
+        }
+      ],
+      "baseline": {
+        "files": 4,
+        "matches": 5
+      },
+      "floor": 900
+    },
+    {
+      "id": "partial-terminal-status-set",
+      "goldenPath": "docs/concepts/golden-paths/terminal-state-and-recovery.md",
+      "title": "A query asks whether a unit of work is finished by hand-writing a SUBSET of its terminal states, so work that ended in an unnamed terminal state vanishes from the answer instead of counting.",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "(?:persona_executions[^\"]{0,600}?\\bstatus\\s+IN\\s*\\(\\s*(?:'(?:completed|failed|cancelled|error|timeout)'\\s*,\\s*){0,4}'(?:completed|failed|cancelled|error|timeout)'\\s*\\)|\\bstatus\\s+IN\\s*\\(\\s*(?:'(?:completed|failed|cancelled|error|timeout)'\\s*,\\s*){0,4}'(?:completed|failed|cancelled|error|timeout)'\\s*\\)[^\"]{0,600}?persona_executions)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A `status IN ('...')` membership test bound to persona_executions (in either order - the table may be named before the test, or below it in a subquery) whose value list is drawn ONLY from {completed, failed, cancelled, error, timeout} and therefore CANNOT contain 'incomplete'. PROXY FOR the stack-free condition: a query decides whether a unit of work is finished by naming a hand-written SUBSET of its terminal states, so work that ended in an unnamed terminal state is counted as neither finished nor unfinished and simply disappears from the answer. THE OMITTED STATE IS NOT ARBITRARY: ExecutionState::TERMINAL (core/src/types.rs:41) is {completed, failed, incomplete, cancelled}, the column's CHECK constraint admits exactly {queued, running} plus those four, and 'incomplete' is the state the zombie sweep writes (db/src/repos/execution/executions.rs:1838) when work is abandoned by a dead process - so every match is a query that is blind to precisely the rows the state was created for. MEASURED 2026-08-15 at 8766c6c41 against a READ-ONLY COPY of the operator's live personas.db: 14 matches across 6 of 963 .rs files, ALL FOURTEEN OPENED AND READ (precision 14/14), commentMatchesSkipped 0. Of 2188 live executions, 20 are 'incomplete' and EVERY ONE of them was written by sweep_zombie_executions ('Execution stalled: ...'), i.e. in this database 'incomplete' means exactly 'we lost track of it' and nothing else. The 14 matches are the app's ENTIRE reliability surface: sla.rs:64 (per-persona success rate), :109 (daily reliability), :344 (SLA dashboard aggregate), :376 (P95 duration), :651 (the sla_daily rollup that OUTLIVES execution retention, so the exclusion is baked in permanently), :764 (daily-trend fresh head), :983 (get_persona_breach_signal - the consecutive-failure ALARM, which therefore cannot see an abandoned run); personas.rs:1469 (compute_trust_score's success-rate half - whose OWN FUNCTION at :1501 uses the COMPLETE set for monthly spend 32 lines later, so a lost run is billed and never counted against the score); metrics.rs:354 (get_recent_error_rate), :1022 (prompt performance), :1192 (execution dashboard); triggers.rs:1621 (get_health_map - a trigger whose last three runs were all abandoned reports 'healthy'); approval_exec_fleet.rs:71 (the fleet numbers Athena reasons about); runner/mod.rs:3030 (the guard on posting a run's output message). LIVE IMPACT, replayed: global success rate reads 89.01% under ('completed','failed'), 88.93% under ('completed','failed','cancelled') and 88.12% under the complete set - a 0.90-point spread from the choice of literal alone; 15 of 78 personas are overstated, by up to 9.1 points, and two display 100.0% while carrying lost runs. THREE MATCHES ALSO NAME A STATUS THE COLUMN CANNOT HOLD: metrics.rs:354 and triggers.rs:1621 name 'error', approval_exec_fleet.rs:71 names 'error' AND 'timeout'; the CHECK constraint admits neither, so those SUM(CASE ...) branches have always evaluated to 0 - the author believed they were being thorough. POSITIVE CONTROL: partial-terminal-status-set-positive-control, the IDENTICAL anchor requiring all four terminal values, matches 8 files-5 / matches-8 with ZERO match overlap by construction (the two value alternations are disjoint: one cannot contain 'incomplete', the other requires it). 14 + 8 = 22 accounts for EVERY positive status-membership test bound to persona_executions in the tree - there is no third population, so the partition is exact rather than a ratio. FOUR INDEPENDENT IMPLEMENTATIONS: a string/comment-aware Rust lexer, a raw-offset scanner, and the census engine all returned 14; a fourth, statement-scoped implementation returned 11 and MISSED metrics.rs:354, triggers.rs:1621 and approval_exec_fleet.rs:71, where the membership test sits in an outer SUM(CASE ...) and the table is named in a subquery BELOW it - the stricter instrument under-counted by 21% and lost exactly the three worst cases, which is why the published pattern matches in BOTH directions. CONTAMINATION: zero of the 14 sit inside a #[cfg(test)] module, verified by an independent brace-matched range scanner plus a *_tests.rs filename rule (dev_tools_backlog_tests.rs carries no #[cfg(test)] attribute at all, so a range scan alone cannot see it). Test modules here build fixtures with INSERT, not with terminal-set membership tests. BACKTRACKING: the fill is [^\"]{0,600}? - a bounded lazy quantifier over a single negated class, no nesting; full 963-file run 0.74s; matched span min 80 / median 130 / max 445 chars against an implicit bound of one Rust string literal. DOES NOT OVERLAP retention-delete-by-status-allowlist, which requires DELETE FROM and a time cutoff - verified zero match-position overlap (its executions.rs:1964 hit coincides with one of this rule's POSITIVE CONTROL matches, which is not a gate). Nor blind-identity-write / discarded-guard-verdict (write-side, about the affected-row count), nor unswept-job-registry-read (an in-memory HashMap, not SQL), nor unverified-effect-dispatch (emit). None of the 96 existing rules keys on a status membership test in a READ predicate. LEGAL FIX, one line each: add 'incomplete' (and drop 'error'/'timeout'), or better, derive the fragment from ExecutionState::TERMINAL - which exists at core/src/types.rs:41 with a coverage test at :800 that FAILS THE BUILD on an unclassified variant, and which has ZERO production references (all 6 occurrences on 5 lines sit inside its own #[cfg(test)] module). Do NOT silence a match by splitting the list across two Rust string literals, by moving it into a const &str, or by renaming the column alias - all three preserve the defect exactly and merely hide it from this signal; the honest fix always removes the hand-written subset. PRECONDITION (must be re-derived per repo): this repo executes SQL through rusqlite with statements as string literals, spells the work table 'persona_executions', and spells its abandoned state 'incomplete'. All five sibling repos (personas-web, brainiac, personas-cloud, vibeman, ascent) spell their terminal set by hand at every site, so this pattern scores a structural zero in every one of them while the condition is present at scale - and TWO of them exhibit the exact defect through a different surface: personas-web's DB admits 'incomplete' and src/lib/supabaseApi.ts:75 collapses it with `if (s === \"incomplete\") return \"failed\"`, and brainiac documents dead-vs-failed in a 15-line module doc, tests it, then collapses it at brainiac-server/src/http.rs:1417. An adopting repo must key on its own read-mapper or ORM predicate, not on this SQL shape. END OF LIFE: this rule is designed to reach zero. When it does the runner fails structurally on zero-matches, BY DESIGN - DELETE the rule then, do not baseline it at 0.",
+        "$measured": "2026-08-15 @ 8766c6c41 — 963 .rs files walked; four independent implementations, three agreeing at 14/14 and the fourth's 11 diagnosed above; every match hand-read; live counts replayed against a read-only copy of personas.db (2,188 executions, 20 incomplete, 74 boot-recovered failures)."
+      },
+      "baseline": {
+        "files": 6,
+        "matches": 14
+      },
+      "floor": 900
     }
   ]
 }
