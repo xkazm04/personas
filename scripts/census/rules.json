@@ -1969,6 +1969,112 @@
         "matches": 162
       },
       "floor": 700
+    },
+    {
+      "id": "unchecked-destination-id-assertion",
+      "goldenPath": "docs/concepts/golden-paths/navigation-destination.md",
+      "title": "A destination id is asserted into its vocabulary instead of resolved through a total function, so the compiler stops checking exactly where the value stops being trustworthy",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\bas\\s+(?:SidebarSection|HomeTab|GoalsTab|KpisTab|TeamsTab|EditorTab|DesignSubTab|OverviewTab|TemplateTab|CloudTab|SettingsTab|ApprovalsMode|DevToolsTab|AgentTab|PluginTab|ResearchLabTab|ObsidianBrainTab|TwinTab|ArtistTab|EventBusTab|CredentialNavKey|CompanionPluginTab|HeaderOverlay|FactoryL2Tab)(?![A-Za-z0-9_$\\[])",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a TypeScript `as` assertion into one of the app's 24 destination vocabularies. PROXY FOR the stack-free condition: a destination identifier crosses a boundary as an unvalidated free-form string and is then re-asserted into the vocabulary without a membership check, so the compiler stops checking exactly where the value stops being trustworthy. The compliant forms contain NO assertion: (a) a nav item whose `id` is already typed to its vocabulary (sidebarData.ts:63 homeItems, :71 overviewItems - 2 of 13 arrays), or (b) a TOTAL RESOLVER that tests membership and falls back, of which this repo has exactly one - sectionsForRoute (src/i18n/routeSections.ts:96-104), whose own comment states the hazard: 'The Record is exhaustive at compile time, but a stale/renamed persisted sidebarSection value can miss the map at runtime.' MEASURED CLASSIFICATION of the 54: 18 feed a navigation SETTER directly (SidebarLevel2.tsx:183,223,243,261,267,313 + PluginsSidebarNav.tsx:145-150 + navigateToProcess.ts:20,25,26,28 + AgentsSidebarNav.tsx:489 + useSettingsSearchEntries.tsx:121) and these ARE the app's entire L2 navigation surface per page-scaffold.md; 20 are store initial values (uiSlice.ts:379-418 et al) - the exact form uiSlice.ts:414-416 blames for a shipped blank page after 'projects' was retired from DevToolsTab; 8 cross a PROCESS boundary (main.tsx:167 localStorage at boot, applyClientAction.ts:37 + useDecisionQueue.ts:57 + athenaChatNavigation.ts:77-81 Rust IPC, GuidedTour.tsx:118 tour data, bridge.ts:311,326 HTTP harness, CredentialNavContext.tsx:50 storeBus); the rest are internal. PRECEDENT that this is not theoretical: sidebarData.ts:161-165 records that a retired 'voice' item, never in the TwinTab union, was hidden from the compiler by exactly `id as TwinTab` and 'rendered a blank page'. PRECISION: 53 of 54 are production code; 1 (uiSlice.test.ts:30, `state.headerOverlay as HeaderOverlay`) is a redundant re-assertion in a test - deliberately NOT excluded, because a single-line allowlist entry on a test file is how an exemption goes stale. PRECONDITION: this proxy works only because the destinations are closed TypeScript string unions and the compliant form carries no token. A repo whose routes are filesystem paths (personas-web: 37 page.tsx, ZERO such assertions, 9 real destination defects) or whose ids arrive from searchParams scores zero here while the condition is present at full scale; brainiac has the condition wearing a different marker entirely (a missing type parameter: `Record<string, BandKey>` drifted 5 of 14 while `Record<ConsoleModuleId, X>` drifted 0 of 42).",
+        "$falsePositiveNote": "Verified through two independently written implementations. A TypeScript-compiler AST pass counting AsExpression nodes whose `type` text is a destination vocabulary returned 52; this text matcher returns 54. BOTH disagreements were run down and the AST pass was wrong twice over: (1) it omitted HeaderOverlay and FactoryL2Tab from its vocabulary list, which is +2; (2) the text matcher additionally sees 2 matches on comment-only lines, which `ignoreCommentLines` correctly drops - and both of those comments (TwinPage.tsx:63, sidebarData.ts:164) are prose ABOUT this exact defect, the precise 35%-prose trap the engine's own docstring records from raw-web-storage. The `(?![A-Za-z0-9_$\\\\[])` tail is load-bearing: without the `\\\\[` it also matches `as SidebarSection[]` at registry.test.ts:49, an Object.keys() widening that is correct by TypeScript's design. After that tail the two implementations agree exactly at 54."
+      },
+      "baseline": {
+        "files": 19,
+        "matches": 54
+      },
+      "floor": 4000
+    },
+    {
+      "id": "shell-vehicle-nonliteral-arg",
+      "goldenPath": "docs/concepts/golden-paths/spawning-a-cli-subprocess.md",
+      "title": "A shell interpreter is spawned with an argument that is not a string literal",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "Command::new\\s*\\(\\s*\"(?:cmd|sh|bash|powershell|pwsh|zsh)\"\\s*\\)(?:(?!Command::new)[\\s\\S]){0,400}?\"(?:/[Cc]|-c|-Command)\"\\s*(?:,|\\)\\s*\\.\\s*args?\\s*\\()\\s*(?!\")[&A-Za-z_]",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a shell interpreter (cmd/sh/bash/powershell) is spawned and its command slot receives a value that is not a string literal — so a string the app did not author is parsed by a shell. Measured on Windows 2026-08-15: this is NOT made safe by passing the value as a separate argv element, because cmd.exe re-parses the built command line and expands %NAME% out of the child's environment — the same environment into which this app injects decrypted connector credentials — and Rust's MSVCRT-style \\\" escaping does not survive cmd.exe's quote parser, so an embedded double quote re-opens command chaining"
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/engine/src/verification_command.rs",
+          "reason": "the operator-shell primitive itself: its module doc (:11-13) declares the trust boundary in prose — 'The command is operator-authored (a persona verification_command parameter), so it inherits the host environment like any dev tool — it is trusted input, unlike untrusted agent output.' A declared and reviewed exception is exactly what this allowlist is for; every other shell vehicle in the tree declares nothing."
+        }
+      ],
+      "baseline": {
+        "files": 5,
+        "matches": 8
+      },
+      "floor": 900
+    },
+    {
+      "id": "env-default-conflates-unset-with-empty",
+      "goldenPath": "docs/concepts/golden-paths/environment-variable-configuration.md",
+      "title": "An environment-derived value is defaulted with `??`, so a variable SET TO THE EMPTY STRING silently defeats the default",
+      "roots": [
+        "src",
+        "scripts"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx",
+        ".mjs",
+        ".js"
+      ],
+      "signal": {
+        "pattern": "(?:import\\.meta\\.env\\.[A-Za-z_][A-Za-z0-9_]*|process\\.env(?:\\.[A-Za-z_][A-Za-z0-9_]*|\\[[^\\]\\n]{1,60}\\]))[^;\\n]{0,120}?\\?\\?",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a read of an environment-derived value whose fallback is supplied by the nullish-coalescing operator `??`. PROXY FOR the stack-free condition: \"a configuration read treats UNSET and SET-TO-EMPTY as different states, when the platform delivering the value makes them the same.\" `??` fires only on null/undefined, so an empty string flows through as if it were a deliberate choice. Both delivery mechanisms in this repo produce empty strings routinely: GitHub Actions renders an env: entry whose expression is blank (an unset secret or repository variable) as a SET, EMPTY variable, and a `.env` line `NAME=` does the same. MEASURED BY EXECUTION 2026-08-15 against the real Vite 8 pipeline on a fixture transcribing src/lib/constants/uiModes.ts:24-46 verbatim: with VITE_APP_TIER unset the build inlines `TIERS.BUILDER` (every section visible - this is what every published installer is); with VITE_APP_TIER=\"\" it inlines the literal \"\" and TIER_RANK[\"\"] is undefined, so isTierAvailable returns FALSE for starter, team AND builder - a bundle in which no tier is available at all. The obvious fix for the missing-writer bug (add `VITE_APP_TIER: ${{ vars.APP_TIER }}` to release.yml) therefore lands on the WORSE side of this operator if the variable is unset. The single match in src/ is that exact line, uiModes.ts:41. THE REPO ALREADY HOLDS THE CORRECT FORM THREE TIMES, which is why this is a defect and not a house style: src/lib/sentry.ts:180 `dsn: dsn || undefined`, src/lib/utils/platform/triggerConstants.ts:212 `(import.meta.env.VITE_WEBHOOK_BASE_URL as string|undefined) || 'http://localhost:9420'`, and src-tauri/build.rs:53 `if !val.trim().is_empty()` guarding the forward to rustc. LEGAL FIX: `||` (or an explicit `trim() === '' ? default : value` when a legitimate empty value exists), plus validation that the resulting value is a member of the allowed set - `??` alone would still admit VITE_APP_TIER=\"pro\", which the same executed fixture showed produces the identical all-hidden bundle. PRECONDITION (must be re-derived per repo): this repo delivers build-time frontend config through Vite's `import.meta.env` and build tooling through `process.env`, and writes its fallbacks inline at the read site. A repo that parses its environment once through a schema (zod, pydantic, serde/envy) has this condition in a form this pattern cannot see - and probably does not have it at all, because a schema decides unset-vs-empty once."
+      },
+      "exclude": [
+        {
+          "path": "scripts/.archived/**",
+          "reason": "retired scripts kept for reference only — they are not run by any npm script, hook or workflow, so a defaulting bug in them cannot reach a build. Cost of the exemption: a genuine env-default bug introduced in an archived script would not be counted, which is acceptable because nothing executes them."
+        }
+      ],
+      "baseline": {
+        "files": 4,
+        "matches": 4
+      },
+      "floor": 4000
+    },
+    {
+      "id": "config-value-frozen-at-compile-time",
+      "goldenPath": "docs/concepts/golden-paths/environment-variable-configuration.md",
+      "title": "A configuration value is baked into the binary by option_env!, so the shipped artifact cannot be reconfigured and a build that omitted the value is indistinguishable from one that had it",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "option_env!\\s*\\(\\s*\"[A-Z][A-Z0-9_]*\"\\s*\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a compile-time environment read. PROXY FOR the stack-free condition: \"a configuration value is resolved when the artifact is BUILT rather than when it RUNS, so the value cannot be changed by whoever installs it, and a build that omitted the value produces a binary that is silently missing a capability rather than one that reports a misconfiguration.\" In this repo the values arrive through src-tauri/build.rs:32-57, which forwards NINE names from the process environment (and from a dotenvy-loaded .env) to rustc via `cargo:rustc-env`. MEASURED 2026-08-15 by joining every reader against every writer: of those nine, .github/workflows/release.yml sets exactly THREE in its env: blocks (SENTRY_DSN at :195/:304, GCP_CLIENT_ID at :306, GCP_CLIENT_SECRET at :307). The remaining six - SUPABASE_URL, SUPABASE_ANON_KEY, GCP_DESKTOP_CLIENT_ID, GCP_DESKTOP_CLIENT_SECRET, MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET - are written ONLY by the operator's gitignored .env, so they are present in every locally-built installer and absent from every CI-built one. That is the inverse of what you want: the artifact that ships has no credentials and the artifact built on a developer's machine has the real ones frozen into it as plaintext string literals. FOUR of the eleven live matches are credential-shaped by name (GCP_CLIENT_SECRET at engine/src/google_oauth.rs:81, GCP_DESKTOP_CLIENT_SECRET at :121, MICROSOFT_CLIENT_SECRET at :141, SUPABASE_ANON_KEY at src/cloud/sync/client.rs:34 and src/commands/infrastructure/auth.rs:177), which is why this rule is a RATCHET on a number that must never rise quietly: every increment is one more secret compiled into a shipped executable. The comment filter is load-bearing and demonstrably so - src-tauri/build.rs:24 contains the literal `option_env!(\"SUPABASE_URL\")` inside a doc comment explaining the mechanism, so without ignoreCommentLines the prose about the design would be counted as an instance of it. LEGAL DESTINATION, and it already exists: engine/src/google_oauth.rs:57-64 `resolve_env_value(compile_time, runtime_keys)` layers compile-time UNDER runtime env UNDER .env files and filters an empty string out at every layer, so a build that omitted the value still resolves at runtime and a value set-but-empty never wins. Six of the eleven matches already go through it. The other five hand-roll the chain twice more, and the two hand-rolls disagree: src/cloud/sync/client.rs:22,:34 guard `!url.is_empty()` while src/commands/infrastructure/auth.rs:157,:177 do not - and auth.rs caches the result in a OnceLock, so an empty compile-time value is cached for the life of the process. PRECONDITION (must be re-derived per repo): this repo freezes config with Rust's option_env! macro fed by a build script. A repo that freezes config with a bundler define, a Next.js NEXT_PUBLIC_ inline, a Docker build-arg, or a generated constants file has the identical condition wearing different markup and scores zero here."
+      },
+      "baseline": {
+        "files": 4,
+        "matches": 11
+      },
+      "floor": 900
     }
   ]
 }

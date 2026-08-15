@@ -1778,8 +1778,23 @@ const MCP_ALLOWED_BINARIES: &[&str] = &[
 /// Shell metacharacters that must never appear in an MCP command string.
 /// Their presence suggests an injection attempt (pipes, redirects, subshells,
 /// command chaining, variable expansion, etc.).
+/// `%` and `"` were added 2026-08-15 after an executed experiment, and they are
+/// the two that actually mattered on Windows:
+///
+/// * `%VAR%` is expanded by `cmd.exe`, OUT OF THE CHILD'S ENVIRONMENT — which
+///   this app populates with decrypted credentials. Without `%` in this list a
+///   command could exfiltrate one by naming it.
+/// * `"` is Rust's MSVCRT escape character. `\"` survives std's argv quoting
+///   into `cmd /C`, which then re-parses the result — so `& echo INJECTED &`
+///   was demonstrated to CHAIN despite `&` already being rejected here.
+///
+/// The comment near the `cmd /C` call site claims the separated-argv form
+/// "prevents metacharacter interpretation by cmd.exe". That is false as stated:
+/// `cmd /C` re-parses whatever it is handed. This list is what actually holds
+/// the line, which is why its completeness is load-bearing rather than
+/// defence-in-depth.
 const SHELL_METACHARACTERS: &[char] = &[
-    '|', ';', '&', '`', '$', '(', ')', '{', '}', '<', '>', '!', '\n', '\r',
+    '|', ';', '&', '`', '$', '(', ')', '{', '}', '<', '>', '!', '\n', '\r', '%', '"',
 ];
 
 /// Validate the MCP command against the binary allowlist and reject shell

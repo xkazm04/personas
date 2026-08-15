@@ -758,8 +758,16 @@ title *and* legitimate section headings under it), and **no individual match
 appears in both**. The 7.9× ratio is the point: a signal that could not tell
 `<h1>` from `<h2>` would report 143 violations against code this path explicitly
 sanctions. Validated locally with a temporary baseline of `{files:135,
-matches:143}` (the runner's `validateRule` requires one); published without it so
+matches:143}` ~~(the runner's `validateRule` requires one)~~; published without it so
 the merger skips it. **Do not merge this block.**
+
+> **That parenthetical is out of date as of 2026-08-15.** `validateRule` now
+> recognises a `-positive-control` id and validates it *without* a baseline — and
+> **rejects** one that carries a baseline, since a baselined control would ratchet
+> against improving adoption. Four layers of the runner were fixed in turn after
+> breaking on this shape (the merger, `validateRule`, `assertRule`, and finally
+> `run-census.mjs`'s report loop, which crashed after printing FAIL and **exited
+> 0**). Controls no longer need a temporary baseline to validate.
 
 ### 2. What the census cannot do — and the Vitest case that can (specified, not built)
 
