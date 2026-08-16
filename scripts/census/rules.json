@@ -3815,6 +3815,72 @@
         "matches": 7
       },
       "floor": 4000
+    },
+    {
+      "id": "default-contradicted-by-backfill",
+      "goldenPath": "docs/concepts/golden-paths/data-normalization-migration.md",
+      "title": "A column added with a constant DEFAULT and then backfilled to something else in the same migration block — the backfill repairs the rows that exist while the DEFAULT keeps manufacturing the pre-migration shape for every row written afterwards",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "ADD\\s+COLUMN\\s+[\"'\\x60]?([A-Za-z_]\\w*)[\"'\\x60]?[^;\"]{0,120}?\\bDEFAULT\\s+(?:'[^']*'|\"[^\"]*\"|-?\\d+)(?:(?!run_step\\()[\\s\\S]){0,2600}?\\bUPDATE\\s+[\"'\\x60]?[A-Za-z_]\\w*[\"'\\x60]?\\s+SET\\s+[\"'\\x60]?\\1\\b",
+        "flags": "gi",
+        "description": "ADD COLUMN <c> ... DEFAULT <constant>, followed inside the same migration block by an UPDATE assigning that same <c>. The two statements are two different answers to 'what should this column hold' -- the DEFAULT answers it for every row written from now on, the backfill answers it for the rows already on disk -- and the step only exists because they disagree. Nothing carries the backfill's rule into the write path, so a later INSERT that omits the column silently re-creates the pre-migration shape the backfill was written to remove: the backfill is a one-shot repair against a permanent generator. The backreference (\\1) is load-bearing -- it requires the UPDATE to assign the SAME column that was just defaulted, which is what removes 95.2% of the anchor. The `(?!run_step\\()` temper stops a match crossing into the next migration step. Precision 3/3, every match hand-read and replayed against a read-only copy of the live 347 MB personas.db: incremental.rs:2175 persona_triggers.status (26 live rows drifted from `enabled`; 5 of 10 production INSERT sites omit the column), :2200 persona_memories.tier (backfill predicate `importance >= 8` against a 1..=5 trigger-enforced contract -- 0 rows promoted, ever; 0 of 6,535 memories in the `core` tier), :6693 personas.lifecycle (condition present, write path closed at personas.rs:880 via PersonaLifecycle, 0 rows drifted -- the in-file exemplar of the fix the other two need). Compliant shapes: add the column with NO default and backfill it (incremental.rs:4672, dev_tasks.updated_at), or bind the column in the canonical INSERT from a closed type. Fix = drop the DEFAULT, not add a second backfill. Anchor (every ADD COLUMN with a constant DEFAULT) = 63 across 4 files; this selects 3.",
+        "$measured": "2026-08-16 @ c47cd36fa — 963 .rs files walked; two independent implementations (a standalone brace-matched Rust scanner and the census engine) returned 3/3 identically and disagreed on the ANCHOR by exactly 2 (61 vs 63), traced to fk_hygiene.rs:959,960 sitting inside a #[cfg(test)] module the census engine cannot exclude. Validated in a composer-private scratch registry, then re-extracted from the published document and re-run with the same result. Rule + control together: 1.6 s."
+      },
+      "baseline": {
+        "files": 1,
+        "matches": 3
+      },
+      "floor": 900
+    },
+    {
+      "id": "comment-kept-cross-language-mirror",
+      "goldenPath": "docs/concepts/golden-paths/client-rule-mirroring.md",
+      "title": "A client-side VALUE re-implements a rule the Rust server owns, and the only thing holding the two implementations together is the comment that says so",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?:[Kk]eep(?:ing)?(?: the two| them| it| this| these)? in sync|[Kk]ept in sync|[Mm]ust stay in sync|[Ss]tays? in sync|in lockstep|[Mm]irrors?\\b|[Mm]irror of\\b|MUST match|[Mm]ust match|[Ee]xact port of|[Rr]ust port of|keep the two in step)[\\s\\S]{0,160}?(?:\\bRust\\b|src-tauri|\\b\\w+\\.rs\\b|\\b[A-Za-z_]\\w*::[A-Za-z_]\\w*|\\bts-rs\\b)[\\s\\S]{0,300}?\\n\\s*(?:export\\s+)?(?:const|function|async function)\\s",
+        "flags": "g",
+        "description": "A TypeScript VALUE declaration (const / function) whose own comment names a Rust symbol, Rust file or src-tauri path as the thing it must agree with. THE THREE PARTS ARE THE DISCRIMINATOR: (1) an obligation phrase, (2) a cross-language referent within 160 chars of it, (3) a value declaration within 300 chars after. Dropping (2) matches 89 files, most of them intra-client sync ('stays in sync with the row's vertical padding', 'in lockstep with concurrentCount'); dropping (3) catches prose about the backend; requiring `const`/`function` rather than `type`/`interface` is what keeps this leaf out of bridge-type-contract's territory, which owns mirrored payload SHAPES and whose rule shares 5.4% of these files. NOTE `ignoreCommentLines` is deliberately OFF: this is the only rule in the registry whose match STARTS in a comment, and the engine skips a match whose start line is comment-only, so setting it zeroes this rule out (executed: exit 1, 'matched zero files anywhere'). PROXY FOR the stack-free condition: one decision is implemented twice, in two languages, with no mechanism asserting the two agree. Measured 2026-08-16 by running both implementations of five pairs on the same input against the operator's live 347 MB database: 40 sites in 37 files, 100% precision by hand count after the five exclusions below. TWO ARE DRIFTED TODAY, both in the subset whose obligation is written only on the client -- connectorRunnability.ts:31 maps `codebase|source_code|vcs|git` to `source_control` where connector_readiness.rs:229 deliberately stopped doing so (5 of 5 distinct connector labels on 154 live persona-connector pairs normalize differently; `Codebase` is declared by 63 of 78 personas), and triggerArmState.ts:72 tests day membership before the overnight branch where trigger.rs:200-207 attributes the post-midnight tail to the previous weekday (31,878 of 35,052 representable overnight windows disagree on at least one minute; 0 of 351 live triggers configure one, so it is latent). LEGAL FIXES, all present in this repo: send the verdict on the payload (core/src/error.rs:206-215 ships category + auto_fixable + failover_eligible 'computed once via the canonical error_taxonomy helpers so Rust and TS never drift'); fetch the value at startup instead of copying it (evalFramework.ts:56-80 via lab_get_score_weights, whose comment records that the hand-kept mirror WAS the defect); generate the copy AND register the generator in scripts/run-codegen.mjs (guidance anchors: 12/12 identical to a dry run; the unregistered gen-tour-anchors.mjs is 127 anchors stale); tether to the generated union with Record<Union,T> or `satisfies Record<Union,T>` (executionState.ts:94, byomHelpers.ts:12,22 -- 7 sites in 5 files repo-wide against 165 untethered re-lists in 102 files); or, where none of those reach, put the tripwire on the side that CHANGES (core/src/types.rs:822-843 pins the exact TERMINAL/ACTIVE sets and its failure message names the TS constant to update). CONVERGENT: all 4 independent siblings hand-keep at least one such mirror. brainiac states why a codegen does not remove them (console/src/docs/facets.ts:3-5, 'the Rust enums serialize as plain strings, so the generated types give the console string') and makes both of its mirrors FAIL CLOSED (scopes.ts:12-14, 'a drift here fails closed -- it can only ever be narrower than the truth'); ascent/src/components/report/PassportHero.tsx:222-225 hand-copies 21 scoring arms only because the originals at passport.ts:272-275 are module-private consts, so the fix there is the word `export`; vibeman is the counter-example with four copies of one triage vocabulary, two live evaluators, zero tests, a CI that never runs cargo, and four measured disagreements including a conditionless rule that matches nothing in TS and everything in Rust. PRECONDITION (must be re-derived per repo): this signal keys on a property of the AUTHORS, not the code -- that they wrote the obligation down. It can only find mirrors that admit to being mirrors. A repo that hand-keeps silently scores zero while the condition is present at scale; here 165 untethered re-lists and 26 i18n label groups mirror a Rust vocabulary and say nothing, against the 37 files that do."
+      },
+      "exclude": [
+        {
+          "path": "src/api/templates/n8nTransform.ts",
+          "reason": "the match is a mirrored payload SHAPE, not a mirrored rule: the comment describes the JSON that `confirm_n8n_persona_draft` returns as `serde_json::Value`, and the declaration it precedes is an `interface`. Hand-typed mirrors of a Rust struct are owned by bridge-type-contract.md and already counted by its `ipc-payload-typed-inline` rule; this leaf owns duplicated DECISIONS"
+        },
+        {
+          "path": "src/features/plugins/artist/sub_media_studio/types.ts",
+          "reason": "same class as n8nTransform.ts — `Mirrors the Rust OverlayEnterInput` documents an `interface OverlayEntrance` whose field types are the mirror; the `const` that follows 200 chars later is unrelated to the comment. A payload shape, owned by bridge-type-contract.md"
+        },
+        {
+          "path": "src/api/overview/events.ts",
+          "reason": "this file is the COMPLIANT form and must not be counted as a violation: the comment says the source of truth lives in `events.rs::MAX_MANUAL_RETRIES` and the DLQ tab FETCHES the value on mount, so the client never holds a second definition of the rule — exactly what §2 (b) prescribes"
+        },
+        {
+          "path": "src/features/teams/sub_goals/GoalTaskTable.tsx",
+          "reason": "the comment describes what the BACKEND does ('goal_advance.rs mirrors a decomposed goal's steps into dev_goal_items by exact title') rather than declaring a client-side copy of a server rule; the client here consumes the backend's output, it does not re-derive it"
+        },
+        {
+          "path": "src/features/agents/quick-answer/triage/__tests__/triageReach.test.ts",
+          "reason": "false positive from test prose: the match is a `describe` title ('mirrors the backend gate') whose cross-language referent is the literal string 'Rust' appearing as TEST DATA in `applicabilityMatches(null, 'Rust')`. Not a declaration and not a mirror"
+        }
+      ],
+      "baseline": {
+        "files": 37,
+        "matches": 40
+      },
+      "floor": 2000
     }
   ]
 }

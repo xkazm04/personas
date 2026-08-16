@@ -184,6 +184,30 @@ swallowed the next function's signature and merged two matches into one.
 Rewriting it as a lookahead made both agree at 34 with an identical per-file
 distribution. Check that your matcher composes, not just that it counts.
 
+**A test that runs on one side of a boundary is a third copy, not a check.**
+Established by
+[`client-rule-mirroring`](./golden-paths/client-rule-mirroring.md), and it
+generalises past this repo's Rust/TS split to any two artifacts that are
+supposed to agree.
+
+> Both sides of a cross-language "parity" pair ship a `PARITY_FIXTURES` list.
+> Each asserts *its own* language's ladder against *its own* fixtures. Edit one
+> ladder and its fixtures together and **both suites stay green**. Measured:
+> the two mirrors this covers are at 100% agreement over 42 fixtures, 285 live
+> rows and 33 helper comparisons — and **their tests could not have told anyone
+> if they had drifted.**
+
+The same failure wears a second costume: **codegen guarantees that the two
+mirrors agree with each other, not that either agrees with reality.** A tour
+anchor generator emits a JSON file and a `.rs` file that are byte-consistent —
+and both are **127 anchors behind the tree**, because the generator is wired
+into nothing. A green consistency check over two artifacts from one source says
+nothing about the source.
+
+Ask of any parity instrument: *what edit would this fail on?* If the answer is
+"an edit to only one side", check whether anything actually edits only one side
+— and if the fixtures live beside the thing they test, they don't.
+
 **A vocabulary-based signal's recall is bounded by its author's word list, and
 the misses cluster on the unusual cases.** Two implementations agreed on 22
 credential-bearing headers; a third returned 20, because its credential-noun

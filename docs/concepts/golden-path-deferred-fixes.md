@@ -274,13 +274,21 @@ suppresses 0 of 2 raw listeners.
 
 - **`fleet_set_live_slots`** has no clamp and **no `require_auth`**, and the
   frontend re-pushes `0` — which means *unlimited* — on every Fleet refresh.
-- **The 37 NULL `next_trigger_at` rows** are still NULL. New damage is fixed;
-  reviving the existing schedules needs a repair sweep.
-- **114 credential-shaped values already persisted in `tool_steps`** are not
-  backfilled. The write path is fixed; the history is not. A backfill is
-  specified in `secret-and-pii-redaction.md` §7 (BEGIN IMMEDIATE, per-row
-  round-trip guard, dry-run default) and needs the affected credentials rotated
-  regardless.
+- **The `next_trigger_at` NULLs.** *Corrected 2026-08-16:* "37" is right only
+  for time-based triggers — the table is **349 of 351 NULL**, and the
+  operationally live figure is **11** (enabled + active). **A repair must not
+  simply stamp them**: `get_due` returns everything `<= now`, so any timestamp
+  in the past fires immediately. It has to go through `compute_next_trigger_at`
+  and skip invalid-timezone rows, where the NULL *is* the diagnosis.
+- **Credential-shaped values persisted in `tool_steps`.** *Corrected
+  2026-08-16:* **the figure 114 did not reproduce at any threshold.** Two
+  independent implementations agreed exactly at **41 raw / 22 after
+  classification / 6 at the strictest**, across 11 executions of 1,921. Also:
+  `tool_steps` is a **JSON TEXT column on `persona_executions`**, not a table —
+  this register said otherwise. The secrets sit *inside string values*, which
+  **neither JSON walker in the repo handles**, so the backfill specified in
+  `secret-and-pii-redaction.md` §7 needs that gap closed first. The affected
+  credentials need rotating regardless.
 - **`persona_tombstones` has no writer**, so no local delete has ever
   propagated. Enabling sync without it resurrects rows.
 
@@ -638,6 +646,87 @@ reached only by the pre-commit hook, and only when a commit stages
 (widening a SQL CHECK or a Rust enum) runs no i18n gate at all. Switching that
 one word costs nothing today, because the strict check passes at 0/0. Held only
 because it changes what can block a commit.
+
+---
+
+## 20. Triggers you switched off are still dispatchable
+
+**Where:** `src-tauri/.../triggers.rs:1590` (`get_due`); the
+`persona_triggers.status` backfill in the migration chain.
+
+**What is measured:** `status` was added `NOT NULL DEFAULT 'active'` and
+backfilled from `enabled`. **5 of 10 production INSERT sites omit `status`**, so
+the DEFAULT fills it — and `get_due` dispatches on `status`, **never on
+`enabled`**. Live drift: **26 rows** where `enabled = 0` and `status = 'active'`.
+Zero drift the other way.
+
+**The repair is narrow and the obvious version is wrong:** rebuilding `status`
+from `enabled` wholesale **flattens `paused` and `errored` into `active`**. Only
+the `enabled = 0 AND status = 'active'` predicate is safe.
+
+**The structural fix, which is not a data change:** drop the `DEFAULT` and give
+the pair one constructor. *A `NOT NULL` column with a constant `DEFAULT` is not
+a required field — it is an optional field with a hidden answer.* The repo has
+already run the controlled experiment: `set_status` withholds the boolean and is
+**1 of 1 correct**; `set_enabled` hands back both and is correct by discipline;
+the 10 raw INSERTs permit either and are **5 of 10 wrong**.
+
+**Why held:** one schema edit plus five call sites, on the dispatch path of the
+operator's live triggers.
+
+---
+
+## 21. The always-injected memory tier is empty, because its backfill tested a scale that does not exist
+
+**Where:** the `persona_memories.tier = 'core'` backfill; contract at
+`helpers.rs:426-447`.
+
+**What is measured:** the backfill selects `WHERE importance >= 8` against an
+importance scale the schema's own trigger enforces as **1..=5**. Live maximum is
+5. Result: **0 of 6,535 memories are in `core`** — the tier that is always
+injected into a prompt is empty, and **1,259 rows sit at max importance** with
+nowhere to go.
+
+**Why held:** choosing the real threshold is a decision about which memories the
+operator wants injected into every prompt. That is theirs, not a bug fix.
+
+**Adjacent, same chain:** the migration chain does **~10 ms of row-normalization
+on every launch and changes 0 rows** — eleven unconditional statements, 9.6 ms
+warm / 33.7 ms first-touch. **122 `run_step`s and exactly one can tell whether
+its rows are correct**; 113 guard on schema shape, and **54 of the 67
+row-rewriting statements sit outside any `run_step` at all**. Cost was the wrong
+instrument for finding these: they are cheap *and* wrong, which is precisely why
+nothing surfaced them.
+
+---
+
+## 22. Two connector vocabularies, and every live label normalizes differently
+
+**Where:** `src/features/.../connectorRunnability.ts:31` vs
+`src-tauri/.../connector_readiness.rs:232`.
+
+**What is measured:** `ROLE_SYNONYMS` has **25 keys** against the server's
+**21**. The server deliberately dropped `codebase | source_code | vcs | git →
+source_control` — and recorded that decision **in its own file only**. Result:
+**5 of 5 distinct connector labels across 154 live persona-connector pairs
+normalize differently on the two sides**, and `Codebase` is declared by **63 of
+78 personas**.
+
+The client's `BUILTIN_LOCAL_CONNECTORS` also hardcodes 4 names against a server
+`classify_connector` that derives **6** `ZeroConfig` entries from row metadata
+(`codebases` and `operations_database` are missed), and the client has no
+concept of the server's `GlobalProbe` class at all.
+
+**Why held:** reconciling the vocabularies changes which connectors the app
+considers ready — a live gating decision on 63 of 78 personas.
+
+**Latent sibling, worth recording before it wakes:** `triggerArmState.ts:72`
+tests day membership *before* the overnight branch, where
+`core/src/models/trigger.rs:196-208` does not. **31,878 of 35,052 (90.9%)
+representable overnight windows disagree on at least one minute** —
+`days=[Mon] 22:00→06:00` reads *sleeping* at Tue 02:00 and *armed* at Mon 02:00,
+both backwards. **0 of 351 live triggers configure a window**, so nothing is
+wrong today; the first one that does will be wrong 90% of the time.
 
 ---
 
