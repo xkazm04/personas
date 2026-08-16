@@ -507,6 +507,12 @@ Measured twice, independently, reconciling **exactly**:
   editor, Chain Studio, `CredentialEditForm`, project settings and five settings panels. Of the four
   `beforeunload` handlers in the tree, exactly one guards unsaved data; the other three flush
   analytics and storage.
+
+  > **Corrected 2026-08-16 by [debounced-autosave](./debounced-autosave.md).** Only **three** of those
+  > four handlers actually register: the storage one (`throttledStorage.ts`) is **never imported**, so
+  > at runtime the app has three `beforeunload` listeners and **zero of them flush a pending write**.
+  > Counting handlers *in the tree* over-counts the ones that *run* — the same
+  > distinction that makes a shared component with no consumers look like coverage.
 - **3 persisted drafts, 0 invalidation.** `trigger_studio_draft_v1` (`studioDraftModel.ts:51`) keeps a
   full link graph and prunes nothing; `companionStore.ts:1382` persists per-conversation drafts and its
   own `clearDraft` (`:300`) **has zero call sites repo-wide**; `ConversationComposer.tsx:48-63` keys a

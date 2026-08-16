@@ -74,37 +74,81 @@ export function useMediaStudioPersistence({
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const autosaveTimer = useRef<number | null>(null);
   const autosaveInFlight = useRef(false);
+  const autosavePending = useRef(false);
   const hydratedRef = useRef(false);
+
+  // Always-current composition, so a save that runs on teardown or after an
+  // in-flight write writes the LATEST state rather than the one captured when
+  // its timer was scheduled.
+  const latestComposition = useRef(composition);
+  latestComposition.current = composition;
+
+  const runAutosave = useCallback(() => {
+    // Coalesce rather than drop.
+    //
+    // This used to `return` when a write was in flight, with the comment "the
+    // next edit will re-queue and catch the latest state". True for every edit
+    // except the last one — and the last one is the whole point. Replayed: an
+    // edit made while a save was outstanding was NEVER written, at all.
+    if (autosaveInFlight.current) {
+      autosavePending.current = true;
+      return;
+    }
+    autosaveInFlight.current = true;
+    setStatus('saving');
+    artistAutosaveComposition(JSON.stringify(latestComposition.current))
+      .then(() => {
+        setStatus('saved');
+        setLastSavedAt(Date.now());
+      })
+      .catch((err: unknown) => {
+        setStatus('error');
+        silentCatch('autosave')(err);
+      })
+      .finally(() => {
+        autosaveInFlight.current = false;
+        if (autosavePending.current) {
+          autosavePending.current = false;
+          runAutosaveRef.current();
+        }
+      });
+  }, []);
+  const runAutosaveRef = useRef(runAutosave);
+  runAutosaveRef.current = runAutosave;
 
   // -- Autosave: debounced write on every composition change ---------------
   useEffect(() => {
     if (!enabled || !hydratedRef.current) return;
     if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
     autosaveTimer.current = window.setTimeout(() => {
-      // Prevent overlapping writes if the backend is slow — the next edit
-      // will re-queue and catch the latest state.
-      if (autosaveInFlight.current) return;
-      autosaveInFlight.current = true;
-      setStatus('saving');
-      artistAutosaveComposition(JSON.stringify(composition))
-        .then(() => {
-          setStatus('saved');
-          setLastSavedAt(Date.now());
-        })
-        .catch(
-          (err: unknown) => {
-            setStatus('error');
-            silentCatch('autosave')(err);
-          },
-        )
-        .finally(() => {
-          autosaveInFlight.current = false;
-        });
+      autosaveTimer.current = null;
+      runAutosaveRef.current();
     }, AUTOSAVE_DEBOUNCE_MS);
     return () => {
       if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
     };
   }, [composition, enabled]);
+
+  // Flush a pending write on unmount — and ONLY on unmount.
+  //
+  // Deliberately a separate effect with an empty dep array. Flushing inside the
+  // debounce effect's own cleanup is the obvious move and it is wrong: that
+  // cleanup runs on every `composition` change, so every keystroke would flush
+  // and the debounce would not exist. `useDeckControls.tsx:140` does exactly
+  // that — measured at 5 writes for 5 keystrokes inside one 400 ms window — and
+  // it reads as the most correct hand-roll in the repo until you replay it.
+  //
+  // This route is `lazy()`, so nav-away is a real unmount and the pending timer
+  // died with it.
+  useEffect(() => {
+    return () => {
+      if (autosaveTimer.current) {
+        window.clearTimeout(autosaveTimer.current);
+        autosaveTimer.current = null;
+        runAutosaveRef.current();
+      }
+    };
+  }, []);
 
   // Tick status back to idle a few seconds after a save so the UI doesn't
   // flash "saved" permanently.
