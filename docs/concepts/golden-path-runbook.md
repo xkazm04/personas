@@ -14,17 +14,34 @@ The operator has authorized continuous batching: dispatch, merge, fix, commit,
 push, dispatch again, **without waiting for approval between batches**. Do not
 ask "shall I continue" — continue.
 
-What still goes to the operator rather than being done silently:
+**No destructive applies** (operator, 2026-08-16). The app is in daily use while
+this campaign runs. A fix that changes runtime behaviour gets **written down in
+[`golden-path-deferred-fixes.md`](./golden-path-deferred-fixes.md)**, not
+applied — and the campaign keeps moving.
 
-- A change whose first run destroys data (enabling a retention delete, a
-  backfill, a schema drop).
-- A behavioural change to a security control whose current setting may be
-  deliberate (re-listing commands in `PRIVILEGED_COMMANDS`, adding auth to a
-  transport the operator uses from a terminal).
-- Anything that would break the operator's own workflow.
-- Findings about *sibling repos* — report, never edit.
+The line, concretely. Apply freely:
 
-Those are **reported and kept moving past**, not blocked on.
+- comments, documentation, corrections to published paths
+- widening a type so omission becomes spellable (`Partial<T>`)
+- adding a term to a SQL predicate that was already meant to be there
+- fixing a key so a cache stops returning another entity's value
+- deleting a helper with zero consumers whose signature is the defect
+
+Note, do not apply:
+
+- anything whose **first run deletes rows** (a retention sweep, a backfill, a
+  VACUUM, a schema drop)
+- anything that changes **what a live surface shows** while the operator is
+  watching it (redacting a terminal stream)
+- anything that changes **whether the app starts** (refusing a bad key read)
+- a **security control whose current setting may be deliberate** (re-listing
+  privileged commands, adding auth to a transport used from a terminal)
+- anything that would break the operator's own workflow
+
+Findings about *sibling repos*: report, never edit.
+
+When in doubt it is a note. A note costs a paragraph; a wrong apply costs the
+operator's working day.
 
 ## The loop
 
