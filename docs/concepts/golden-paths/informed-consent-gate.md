@@ -77,6 +77,12 @@ src-tauri/src/companion/session.rs:2174        "--dangerously-skip-permissions".
 src-tauri/src/companion/brain/oneshot.rs:185   … and 7 more
 ```
 
+> **Corrected 2026-08-16 by [agent-dispatch](./agent-dispatch.md): the count is 12, not 13**, by a
+> stated method — 25 raw occurrences, 1 in `#[cfg(test)]`, 12 in comments, **12 live** (11 hardcoded
+> + 1 parameterised). More usefully, that composer found the count is the wrong instrument
+> altogether: one of the 12 sits inside `build_cli_args`, which is referenced at **75** sites. A
+> census of the literal measures how many authors typed it, not how many runs carry it.
+
 **13 production spawn sites. Exactly one makes it a parameter** — `fleet_spawn_external_console`
 (`commands/fleet/external.rs:118-141`), which takes `skip_permissions: Option<bool>`,
 `unwrap_or(false)`s it, and writes the reasoning down at `:109-115`: *"a Fleet session runs

@@ -136,7 +136,13 @@ export function ShipDispatchModal({ vm, criterion, project, onDispatched, onClos
           <AsyncButton
             isLoading={busy}
             disabled={prompt.trim().length === 0}
-            onClick={() => void dispatch()}
+            // `dispatch()` not `void dispatch()`. AsyncButton disarms
+            // double-submit by awaiting the promise its onClick returns; `void`
+            // discards that promise, so the guard has nothing to await and the
+            // button stays live. Replayed statement-for-statement: two presses
+            // inside one commit frame produced TWO Fleet sessions; returning the
+            // promise holds it at one at every gap.
+            onClick={() => dispatch()}
             icon={<Rocket className="w-3.5 h-3.5" aria-hidden />}
             data-testid="ship-dispatch-confirm"
           >
