@@ -2926,10 +2926,55 @@
         }
       ],
       "baseline": {
-        "files": 8,
-        "matches": 10
+        "files": 7,
+        "matches": 9
       },
       "floor": 3000
+    },
+    {
+      "id": "widthless-collection-fanout",
+      "goldenPath": "docs/concepts/golden-paths/bounded-parallel-fan-out.md",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "Promise\\s*\\.\\s*all(?:Settled)?\\s*\\(\\s*(?!\\[)[A-Za-z_$][\\w$?.]{0,60}(?:\\((?:[^()\\n]{0,80})\\))?(?:[\\w$?.]{0,40})?\\s*\\.\\s*(?:map|flatMap)\\s*\\(",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A `Promise.all` / `Promise.allSettled` whose first argument is NOT a literal array and reaches a `.map(`/`.flatMap(` — i.e. a fan-out whose WIDTH IS THE COLLECTION'S LENGTH. PROXY FOR the stack-free condition 'the number of things running at once is whatever the data happened to be, and nobody chose it'. The negative lookahead `(?!\\[)` is load-bearing and is what makes this precise rather than a `Promise.all` grep: 122 of this repo's 181 combinator call sites are literal tuples `Promise.all([a(), b()])` (the 103 `Promise.all` ones span arity 2-10), which are parallel-await, are correct, and MUST NOT be counted — a raw grep over-reports by 2-4x here and in all five sibling repos. WHAT THE MATCH COSTS, executed rather than reasoned: replaying `Promise.all(xs.map(f))` verbatim over 30 items with a rejection at item #2, all 30 items had ALREADY been dispatched before the first await resolved (started=30, finished=2 at the moment the caller saw the error) — so fail-fast does not save the work, it discards the results, and swapping in `allSettled` changes nothing about what runs or what it costs. Replaying the repo's own bounded pool (src/lib/concurrency.ts:18) under the same failure is WORSE: the caller resumed at started=6 and 400ms later 30 of 30 had started, 24 of them AFTER the rejection, unobserved. PRECISION 44/44 on the stated condition, hand-verified, with TWO INDEPENDENT IMPLEMENTATIONS RECONCILING EXACTLY AT 44 (this regex, and a balanced-paren argument extractor that classifies the extracted argument as literal-tuple vs collection-fan-out); they first disagreed 44 vs 43 because the parser fed RAW source to the paren matcher and a line comment containing an apostrophe (\"persona doesn't have one\", autoAssignIcons.ts:102) opened a string that never closed — stripping comments reconciled them, and the disagreement was a bug in the instrument, not in the rule. ONE MATCH IS KNOWINGLY COMPLIANT: src/lib/icons/autoAssignIcons.ts:91 awaits inside a serial chunk loop (measured peak concurrency 5 over 78 personas). It is listed on purpose — it is textually identical to the VIOLATING src/lib/eventBridge.ts:1114 apart from where the `await` sits, and a backwards-looking heuristic that tried to separate them mis-classified two other sites. LEGAL DESTINATIONS the pattern leaves unmatched, by construction: (1) `mapWithConcurrency(items, limit, fn)` from @/lib/concurrency — 14 production call sites, counted by the positive control; (2) a literal tuple of independent calls; (3) a chunk loop whose `Promise.all` argument is a variable. PORTABILITY WARNING, earned from the convergence sweep and NOT optional to restate: this signal keys on the syntax a widthless fan-out wears IN A REPO WHOSE LIMITER IS A NAMED FUNCTION. In `ascent`, which extracted `mapPool` (src/lib/pool.ts:14, 7 call sites), the seven BOUNDED fan-outs contain no `Promise.all` token at all, so this rule reports the cohort's best-behaved repo as its worst — the metric rewards inlining the fix. An adopting repo must re-key on its own raw form and pair it with its own limiter as the control. Do NOT silence a match by hoisting the `.map(` into a variable — that is hiding, not bounding; route it through the shared pool, or bound the items at the source."
+      },
+      "exclude": [],
+      "baseline": {
+        "files": 35,
+        "matches": 43
+      },
+      "floor": 3000
+    },
+    {
+      "id": "unwired-url-open-door",
+      "goldenPath": "docs/concepts/golden-paths/external-url-opening.md",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "target=\"_blank\"|(?<![.\\w$])window\\.open\\s*\\(|@tauri-apps/plugin-shell",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "An outbound-URL affordance routed through a door this build does not implement: `target=\"_blank\"` and `window.open()` are both suppressed because no `on_new_window` handler is installed (wry-0.55.1 src/webview2/mod.rs:781 sets SetHandled(true) with no new window; measured live: window.open -> null), and `@tauri-apps/plugin-shell` has no Rust crate in Cargo.lock and no `shell:` permission in capabilities/. The only wired doors are the `open_external_url` / `open_local_path` IPC commands."
+      },
+      "baseline": {
+        "files": 40,
+        "matches": 46
+      },
+      "floor": 4000
     }
   ]
 }

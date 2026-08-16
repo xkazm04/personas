@@ -1111,7 +1111,18 @@ export async function initAllListeners(): Promise<void> {
   for (let i = 0; i < normal.length; i += bulkSize) {
     bulkBatches.push(normal.slice(i, i + bulkSize));
   }
-  await Promise.all(bulkBatches.map(attachBatch));
+  // Await each batch in turn. `Promise.all(bulkBatches.map(attachBatch))` fired
+  // every batch simultaneously, so the chunking above bounded nothing —
+  // replayed at 28 / 60 / 120 / 400 listeners, peak concurrency equalled the
+  // input length every time, against a declared cap of 16.
+  //
+  // Chunking a list and then dispatching all the chunks at once is the shape to
+  // watch for: the loop looks like the bound, and the `Promise.all` undoes it.
+  // The compliant form of the identical construction lives 40 lines away in
+  // `autoAssignIcons.ts` (measured peak 5).
+  for (const batch of bulkBatches) {
+    await attachBatch(batch);
+  }
   performance.mark("event-bridge:init:bulk:end");
   performance.measure(
     "event-bridge:init:bulk",

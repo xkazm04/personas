@@ -22,7 +22,18 @@ export async function mapWithConcurrency<T, R>(
 ): Promise<R[]> {
   const results = new Array<R>(items.length);
   let cursor = 0;
-  const width = Math.max(1, Math.min(limit, items.length));
+  // `Number.isFinite` guard added 2026-08-16. A `NaN` limit made
+  // `Math.max(1, Math.min(NaN, n))` produce `NaN`, and
+  // `Array.from({ length: NaN })` is EMPTY — so this resolved successfully
+  // having called `fn` zero times. A silent, successful no-op is the worst
+  // available failure for a fan-out: the caller gets a resolved promise and an
+  // array of holes, and nothing anywhere reports that the work did not happen.
+  //
+  // Latent in this repo today; the same silent-zero-lane failure is live in
+  // three sibling repos through a different door. Fixed at the primitive rather
+  // than at the call sites, per "prefer fixing the default over counting the
+  // callers" — this covers every present and future caller.
+  const width = Number.isFinite(limit) ? Math.max(1, Math.min(limit, items.length)) : 1;
   await Promise.all(
     Array.from({ length: width }, async () => {
       for (;;) {
