@@ -894,6 +894,57 @@ primary console.
 
 ---
 
+## 26. 168 of 194 review decisions were made by a machine, and every surface says a human made them
+
+**Where:** `reviewHelpers.ts:79-80` vs `subscription.rs:2041,2045`;
+`AutoResolvedBadge.tsx:16-33`; `manual_reviews.rs:347,583`.
+
+**What is measured:** of the **194** human-review decisions on this install,
+**168 (86.6%)** were resolved automatically. The badge built to expose exactly
+that — `AutoResolvedBadge`, whose docstring reads *"so the silent bypass of the
+human queue is no longer invisible in the UI"* — fires on **0 of 168**. The
+matcher tests `/\bauto_triage\b/`; the writer emits `auto-triaged`. A hyphen and
+a tense.
+
+`persona_manual_reviews` **has no actor column at all**, so the machine-vs-human
+bit is inferred from `reviewer_notes` — a free-text field the human it holds
+accountable can also write.
+
+**Downstream, into the ledger the fleet reads back:** **186 of 236** human-review
+team memories say *"Human approved the review …"* **and** contain
+`auto-triaged`, at **importance 7**.
+
+**Why held:** correcting the matcher makes a badge appear on 168 historical rows
+at once, changing what the operator sees across every review surface. The
+durable repair is an **actor column**, which is a schema change. And a type
+cannot help: `persona_events` fuses id and name with `format!` into a `TEXT`
+column, so both *inside a SQL string* and *inside a serialized blob* apply. **A
+type can close the vocabulary you render; it cannot supply an identity nobody
+recorded.**
+
+**Eight more surfaces, each with what a reader is misled about:**
+
+| | where | misled about |
+| --- | --- | --- |
+| D2 | `EventLogList.tsx:198-217` | **who fired it** — the slug sliced out of `source_type` resolves **0 of 4,166** times and maps 4,118 rows onto **7 distinct persona ids**, while `source_id` holds the true id and resolves 4,166/4,166. The failure branch renders the slug in `font-mono`, styled as a database id. |
+| D3 | `AuditLogTable.tsx:106` | **what happened** — the "Detail" column holds the *actor* on **5,883 of 9,803 rows (60.0%)** and the detail on 3,906. Never both. |
+| D4 | `ByomAuditLog.tsx:63,:118` | **when** — a surface labelled "Compliance trail" whose "Time" column is a **duration**; `created_at` is rendered nowhere; 50 of 4,001 rows shown with no scope notice. |
+| D5 | `SettingsHistoryTab.tsx:207`, `GitOpsVersionHistory.tsx:297` | **whether anyone was recorded** — a NULL actor makes the badge *vanish* rather than render "—". Actor is NULL on 14 of 15 rows. **All 3 siblings render an unknown actor as a state; none lets the element disappear. This is the sweep's only unanimous result, and Personas is behind it.** |
+| D6 | `ApiKeyAuditDrawer.tsx:1-6` | its own docstring promises a **persona** column that is never rendered. |
+| D7 | `team_assignments.rs:362` + 140 more sites | **the order it happened** — clock-ordered reads with no tiebreaker against live tie rates of **87.6% / 97.7% / 98.2% / 67.4%**, driven by 60 tables defaulting to `datetime('now')`. The correct form is 30 lines away in the same file. |
+| D8 | `fleet_decisions.rs:123`; `tool_execution_audit_log`, `persona_change_log`, `deployment_history` | **whether it was ever recorded** — "no entries yet" and "never wired" render as the same sentence. Two comments call `fleet_decisions` "the authoritative audit trail" and **nothing reads it**; `fleet_sessions` has 0 rows so **0 of 36 session ids resolve**. |
+| D9 | `credential_audit_log.operation` | one concept, two tokens — `oauth_token_refreshed` (201) and `credential_oauth_refreshed` (1). |
+
+**Cleared, and worth recording so nobody re-opens them:** the UTC-naive→local
+skew is **already fixed** at `formatters.ts:30`, covering 8,899 rows; the event
+colour and icon maps are exhaustive **by compile error**, being
+`Record<PersonaEventStatus, …>`; `SettingsHistoryTab` is the best audit view in
+the repo; and **Personas is alone in the fleet (0 of 5) in storing an actor as a
+stable id plus a name snapshot** — `ascent` stores a mutable GitHub login, so a
+rename rewrites its history.
+
+---
+
 ## What *was* applied, and what it changes at runtime
 
 For completeness, since "no destructive applies" is now the rule. None of these

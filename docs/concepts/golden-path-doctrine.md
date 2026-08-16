@@ -232,6 +232,15 @@ list omitted `connection-string` — and the two it missed were the ones carryin
 a database password. The words you forget to list are disproportionately the
 interesting ones.
 
+> **And its precision is bounded by the same list, from the other end.** A
+> candidate actor-attribution gate scored 4/4 precision on its violations while
+> its positive control returned **0 true positives out of 7** — the hits were
+> `parsed.username || parsed.password` and `cfg.operator || 'AND'`. The cause
+> was that `username` and `operator` went into the actor vocabulary **from
+> imagination, before reading the bindings.** Derive the word list from the
+> tree — an enum, a schema, a binding — or the same guess distorts both ends of
+> the measurement at once.
+
 **Assert the instrument before you trust the result.** A checker that silently
 measures nothing passes forever. Give every new instrument a precondition that
 fails loudly when it finds nothing to check:
@@ -423,6 +432,12 @@ possible confirmation. Always ask what the siblings agreed *to do*.
 Treat `convergence` as a hypothesis to test, never a premise to build on. Brief
 every composer accordingly. A leaf whose label finally holds is a genuine
 finding and should be reported as loudly as another failure.
+
+**`sides` is no better.** Three separate leaves have now reported
+`sides: "client"` contradicted by their own measurement, each finding the
+headline defect, the best artifact and the surviving census rule all on the
+server. Treat every spine label as authored metadata, not evidence, and correct
+it in your §12 when it does not hold.
 
 **Cost and failure are better evidence than agreement.** The two strongest
 oracle results in the corpus were both negative:
