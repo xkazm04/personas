@@ -143,7 +143,18 @@ async fn poll_once(app: &AppHandle, state: &Arc<AppState>) -> Result<(), AppErro
         if is_expired(&c.requested_at) {
             let _ = client
                 .patch(
-                    &format!("pending_commands?id=eq.{}", c.id),
+                    // Device- and status-scoped, like every other write to this
+                    // table. The fetch above already filtered by device, so this
+                    // is defence in depth against the row moving underneath the
+                    // loop — but it is also the difference between a write that
+                    // is scoped and a write that merely happens to be given
+                    // scoped input. `status=eq.pending` additionally stops the
+                    // expiry from overwriting a command the user resolved while
+                    // the poll was in flight.
+                    &format!(
+                        "pending_commands?id=eq.{}&target_device_id=eq.{device}&status=eq.pending",
+                        c.id
+                    ),
                     &json!({ "status": "expired", "resolved_at": now(), "updated_at": now() }),
                 )
                 .await;
@@ -279,7 +290,13 @@ pub async fn remote_command_approve(
     // late click already got.
     let claimed = client
         .patch_returning_count(
-            &format!("pending_commands?id=eq.{id}&status=eq.pending"),
+            // `target_device_id` belongs here too, and was missing from the
+            // first version of this claim (2026-08-16, same day): the status
+            // term makes the claim exclusive between two clicks on THIS device,
+            // and the device term is what keeps device A from claiming a command
+            // targeted at device B. They guard different things and the fetch
+            // above carries both.
+            &format!("pending_commands?id=eq.{id}&target_device_id=eq.{device}&status=eq.pending"),
             &json!({ "status": "executing", "updated_at": now() }),
         )
         .await?;
