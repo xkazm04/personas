@@ -81,6 +81,42 @@ into the ring — two edits covering all 31 streams. Consider a per-session
 
 ---
 
+## 2b. A consent modal re-grants telemetry that the user refused
+
+**`src/features/onboarding/.../FirstUseConsentModal.tsx:142` and `:149`**
+
+The modal re-opens whenever `CONSENT_VERSION` is bumped, initialises its
+telemetry checkbox with `useState(true)` — **never reading
+`isTelemetryEnabled()`** — and writes that value on Accept.
+
+Replayed across 8 scenarios x 3 storage modes: a user who opted out and then
+upgrades goes from `telemetry_enabled = "false"` to `"true"` **on one click of a
+button labelled Accept**.
+
+**It has shipped twice.** `CONSENT_VERSION` went `'1'` -> `'2'` (2026-04-04) and
+`'2'` -> `'3'` (2026-04-17, commit subject: *"fix wrong GitHub source link"*).
+**A hyperlink correction re-granted telemetry consent for everyone who had
+refused it.**
+
+Second replay result: on a storage-hostile profile the refusal evaporates
+entirely — `telemetryPreference.ts:17`'s `catch` returns `true` — and the modal
+re-asks forever, silently.
+
+Supporting measurements: `isTelemetryEnabled()` has **2 call sites in 4,829
+files**, against **21 direct `@sentry/*` importers of which 21 emit and 1
+consults it**. There is 1 `Sentry.init` and **0 `Sentry.close`**, so withdrawing
+consent mid-session tears down nothing.
+
+**Why not applied:** the fix changes what the modal shows and what a live
+consent surface does. It is small — read the stored preference into the
+initialiser — but it is the operator's call.
+
+**Shape of the fix:** initialise from `isTelemetryEnabled()`; make the storage
+read fail *closed* rather than returning `true` from its `catch`; and add a
+`Sentry.close()` on withdrawal.
+
+---
+
 ## 3. `export_credentials` exports nothing and reports success
 
 **`src-tauri/…/data_portability.rs:9560,:9582,:9604-9661`**

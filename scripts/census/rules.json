@@ -3491,6 +3491,39 @@
         "matches": 13
       },
       "floor": 4000
+    },
+    {
+      "id": "consent-bypassing-telemetry-import",
+      "goldenPath": "docs/concepts/golden-paths/first-use-consent-gate.md",
+      "title": "A module reaches the telemetry SDK directly, so the one-time consent answer cannot reach it",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "^(?![\\s\\S]*isTelemetryEnabled)[\\s\\S]*?\\bfrom\\s*['\"]@sentry/",
+        "flags": "g",
+        "ignoreCommentLines": false,
+        "description": "A module under src/ imports the telemetry SDK directly (from '@sentry/…') and the whole file never consults isTelemetryEnabled(). PROXY FOR the stack-free condition: the answer to a one-time consent question cannot reach the behaviour it governs. Measured 2026-08-16 at e3c5e0d7f: 21 files import @sentry/* ; the rule matches 19, the positive control matches 1 (main.tsx, which owns the boot gate), and 1 is the excluded chokepoint — 19 + 1 + 1 = 21, an exact partition of the anchor. PRECISION 19/19 hand-read: every matched file calls at least one emitting Sentry API (captureException / captureMessage / addBreadcrumb / metrics.count / setTag / withScope) and none consults the preference; isTelemetryEnabled() has exactly 2 call sites in 4,829 files, and Sentry.close() has 0, so a mid-session withdrawal tears down nothing. Two matched files SAY they are relying on the global (errorRegistry.ts:695 and useTranslatedError.ts:43, both 'safe before Sentry.init (no-op)') — that is the finding, not an exemption. ignoreCommentLines is FALSE on purpose: the match is file-scoped and anchored at index 0, so the comment filter would look at line 1 and drop the count for any file that grows a JSDoc header. KNOWN WEAKNESS: the control returns 1, so the negative lookahead does nearly all the discriminating — read it as evidence that the compliant form is nearly extinct, which is what the rule exists to reverse. DO NOT gate 'every emitter must check consent' instead: that is the destination-defaults trap — the fix is a consent-aware facade at src/lib/sentry.ts, and this rule ratchets callers toward it. CORRECT END STATE is 0, at which point DELETE this rule rather than baselining it at zero. PRECONDITION (re-derive per repo, do NOT port): this repo spells 'can emit telemetry' as a bare-specifier import of a JS SDK and spells the consent answer as one exported predicate. Where telemetry is a script tag, a server SDK, or a build-time integration, this pattern scores ZERO while the condition is present."
+      },
+      "exclude": [
+        {
+          "path": "src/lib/sentry.ts",
+          "reason": "the chokepoint itself — the only Sentry.init in the tree, and where the consent check belongs"
+        },
+        {
+          "path": "src/main.tsx",
+          "reason": "owns the boot gate; it is one of only two call sites of isTelemetryEnabled in 4,829 files"
+        }
+      ],
+      "baseline": {
+        "files": 19,
+        "matches": 19
+      },
+      "floor": 1500
     }
   ]
 }
