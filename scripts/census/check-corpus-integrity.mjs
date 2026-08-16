@@ -148,6 +148,7 @@ const stripCode = (s) =>
     .replace(/`[^`\n]*`/g, '');
 
 let linksChecked = 0;
+const pendingLinks = [];
 for (const f of mdFiles) {
   const src = stripCode(fs.readFileSync(f, 'utf8'));
   for (const m of src.matchAll(/\[[^\]]*\]\(([^)\s]+)\)/g)) {
@@ -158,6 +159,22 @@ for (const f of mdFiles) {
     linksChecked++;
     const resolved = path.resolve(path.dirname(f), target);
     if (!fs.existsSync(resolved)) {
+      // A link to a golden path that is a REAL spine leaf but is not written
+      // yet is a forward reference, not a dead link. The corpus is being built
+      // one leaf at a time out of 247, so a composer naming the neighbour that
+      // owns a condition is doing exactly what the doctrine asks — and the
+      // neighbour may be written next week.
+      //
+      // Distinguished rather than tolerated: the target must correspond to a
+      // slug the spine actually declares. A typo'd or invented filename still
+      // fails, which is the case this check exists for.
+      const slug = path.basename(target).replace(/\.md$/, '');
+      const isPendingLeaf =
+        resolved.startsWith(PATHS_DIR) && (slugs.has(slug) || byDoc.has(`${slug}.md`));
+      if (isPendingLeaf) {
+        pendingLinks.push(`${path.relative(ROOT, f)} -> ${slug} (leaf not written yet)`);
+        continue;
+      }
       fail(`${path.relative(ROOT, f)} links to "${m[1]}", which does not exist`);
     }
   }
@@ -192,5 +209,13 @@ if (failures.length) {
   console.error(`\ncorpus integrity FAILED — ${failures.length} problem(s):\n`);
   for (const f of failures) console.error(`  - ${f}`);
   process.exit(1);
+}
+if (pendingLinks.length) {
+  // Printed, never silent. A tolerated exception that nobody can see is how an
+  // allowlist becomes the bug — and these resolve themselves as leaves land.
+  console.log(
+    `  ${pendingLinks.length} forward reference(s) to spine leaves not yet written:`,
+  );
+  for (const l of pendingLinks) console.log(`    - ${l}`);
 }
 console.log('corpus integrity OK');
