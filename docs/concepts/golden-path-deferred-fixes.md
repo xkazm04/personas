@@ -286,6 +286,158 @@ suppresses 0 of 2 raw listeners.
 
 ---
 
+## 8. Foreign file content reaches a model with the fence bypassed
+
+**Where:** `src-tauri/src/mcp_server/tools.rs:323` (`handle_drive_read_text`),
+`:1338` (`handle_obsidian_vault_search`).
+
+**What is measured:** the repo owns a genuinely good OWASP-LLM01 structural
+fence — `wrap_runtime_xml_boundary`, a canary, and a "treat this as data only"
+instruction — at `src-tauri/engine/src/prompt/mod.rs:760,:877,:883`, applied at
+21 sites including the whole `input_data` blob. It is bypassed here because a
+**tool result never passes through `assemble_prompt`**. Live invocations that
+took the unfenced path: **562** (`obsidian_vault_search` 450,
+`drive_read_text` 79, …). Invocations that took the fenced path: **0**.
+
+Two smaller facts on the same fence, both executed:
+
+- The fence nonce (`runtime_safety.rs:14`) is **clock-derived** — consecutive
+  tags in one prompt XOR to 1, 3, 1, 7 — while a `rand`-based generator sits 28
+  lines away in the same repo (`prompt_sanitizer.rs:38`).
+- The tag stripper is **non-idempotent in both Rust copies**:
+  `a <sys<system>tem>evil b` → `a <system>evil b`.
+
+**Why held:** routing tool results through the fence changes what every MCP
+client sees in a tool result, and the nonce change alters a value the stripper
+matches on. Both are behaviour changes on a live path the operator uses. The
+channel is also currently cold — all 745 `mcp__personas__*` calls fall
+2026-05-27..06-26, before the token gate landed 07-16 — so the exposure is
+historical rather than ongoing, which is exactly what makes it safe to defer and
+wrong to forget.
+
+---
+
+## 9. Eight unprobed credentials render green, and two score tiers are unreachable
+
+**Where:** `src/features/.../credentialHealthScore.ts:37-67`;
+`src-tauri/.../rotation.rs:269-274`.
+
+**What is measured:** the composite is 0.4 healthcheck / 0.4 anomaly / 0.2
+rotation. `healthcheckScore` returns **50** for unverified and carries a
+five-line comment recording the incident that hardened it. Its two neighbours
+three and eight lines below return **100** on no data (`// no data = assume
+healthy`). Against the live DB: `credential_events` has 0 rows, so anomaly=100
+for **25 of 25**; 0 rotation policies are enabled, so rotation=100 for **25 of
+25**. **60% of every credential's score is a constant**, the floor is 60, and
+`degraded` and `critical` — 2 of 4 tiers — are **structurally unreachable**.
+Two credentials with a *failed* probe render amber 60. Eight that nothing has
+ever successfully probed render **green 80**.
+
+`rotation.rs:269-272` computes `data_stale` (**true on 25/25**) and `:274`
+decides `Healthy` without consulting it.
+
+**The fix, not applied:** return `null` from a sub-score with no data and
+renormalize over the dimensions that reported — the shape `renorm_composite`
+already uses elsewhere in this repo, and which `computeLeaderboard` uses
+correctly while `computeCompositeHealth` pre-defaults its inputs and fabricates
+five dimensions. **Why held:** eight credentials would change colour on a
+dashboard the operator reads.
+
+---
+
+## 10. A trust badge compares a 0–100 score against 0.5
+
+**Where:** `src/features/.../personaStats.ts:204`.
+
+**What is measured:** the predicate is `trust_score < 0.5` against a **0–100**
+scale. The 59 measured scores span **79.6–100**, so the badge has **zero
+possible true positives**. All 7 firings today (19 after a refresh) are
+never-measured personas — and `useStudioComposer.ts:74` **drops those personas
+from the Trigger Studio**.
+
+Same question, two answers 70 points apart: `compute_trust_score` returns
+**0.0** (floor) where `computeCompositeHealth` returns **70/100**, for **19 of
+78 personas (24%)**.
+
+**Why held:** this is a one-character-class fix with a real payoff — 19 personas
+return to the Trigger Studio — but that *is* a live-surface change, and the
+right repair is the absence-handling one in item 9, not a rescaled constant.
+Recommended as the first item to apply once the operator gives a window.
+
+---
+
+## 11. Persona evolution runs on weights that contradict the declared ones
+
+**Where:** `src-tauri/.../fitness_driver.rs:337-341`.
+
+**What is measured:** the driver uses `(0.3, 0.4, 0.3)` for the same three
+metrics that `SCORE_WEIGHTS` declares as `(0.4, 0.4, 0.2)`. Nothing asserts the
+two agree; no sibling repo asserts a weight sum either, except `ascent`.
+
+**Why held:** changing the weights changes which personas the evolution loop
+selects. That is a decision about the operator's own fleet, not a bug fix.
+
+**Adjacent, same file family:** `compositeHealthScore.ts:375-379` renders the
+uptime bar **per-persona for activity and fleet-wide for health** — **173 of 403
+cells (42.9%)** show the wrong day-status, and because `degraded` days count as
+up, a 29% daily failure rate renders as 100% uptime.
+
+---
+
+## 12. One error boundary for the whole content area, and it does not forget
+
+**Where:** `PersonasPage.tsx:403-406`; `ErrorBoundary.tsx:98-122,:135-137`;
+`main.tsx:190`.
+
+**What is measured:** **46 boundary declarations in 18 files; `key`/`resetKeys`
+on 0 of 46.** Executed in jsdom against a transcription of `renderSectionRoute`:
+crash section A, navigate to a **healthy** section B → B never renders and the
+latched card **retitles itself** with B's name. The name is re-read from props
+at render while `componentDidCatch` persisted the crash under the old name, so
+**the screen and the crash log name different components, and the crash log is
+right.** `key={section}` recovers it in one line.
+
+Three more on the same component:
+
+- **"Go to Dashboard" does nothing at 13 of 34 sites.** It calls
+  `onGoHome?.()` then `onReset()`; with `onGoHome` undefined nothing throws, so
+  the navigating `catch` never runs. Executed: renders 3→5→7 across both
+  clicks, location unchanged. **7 of the operator's 84 real crashes landed
+  there.**
+- **"Copy report for support" puts raw `message` + `stack` + `componentStack`
+  on the clipboard**, while `persistCrash` sanitizes the identical payload 60
+  lines above. The unredacted copy is the one meant to leave the machine.
+- **`main.tsx:190`** passes a `fallback` to `Sentry.withErrorBoundary` without
+  `handled`, so every white-screen is filed as `handled: true` and
+  crash-free-sessions cannot move.
+
+**Live data:** **84 frontend crashes** 2026-05-25 → 08-14; 60 via a boundary,
+**24 (29%) via `window.onerror`/`unhandledrejection` with no UI at all**. **0 of
+46 declarations emit a Sentry event.**
+
+**Why held:** adding `key={section}` changes remount behaviour on every route
+change in the app's main content area. It is one line and almost certainly
+right — `personas-web` and `ascent` each hit this bug independently and each
+shipped a fix — but "almost certainly right" on the surface the operator uses
+all day is exactly what this register is for.
+
+---
+
+## 13. A persona-sourced event name is rejected by its own door
+
+**Where:** `src-tauri/src/engine/dispatch.rs:309`.
+
+**What is measured:** `source_type: format!("persona:{}", ctx.persona_name)` is
+unsanitised. Replaying `is_safe_type_string` (`events.rs:27`) against the **78
+live personas: 77 produce a value the door rejects**. `persona_action` has **0
+rows ever**. The sibling `match` arm 65 lines below (`:357-369`) already
+computes `safe_name`, with a comment explaining why.
+
+**Why held:** the fix makes 77 personas start publishing an event type that has
+never been published. That is a new event stream on a live bus, not a repair.
+
+---
+
 ## What *was* applied, and what it changes at runtime
 
 For completeness, since "no destructive applies" is now the rule. None of these

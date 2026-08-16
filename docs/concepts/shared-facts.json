@@ -1,6 +1,6 @@
 {
-  "measuredAt": "2026-08-14",
-  "commit": "211d519bb",
+  "measuredAt": "2026-08-15",
+  "commit": "1e714f817",
   "note": "Shared facts, measured once, comments excluded. Golden-path composers MUST cite these rather than re-deriving: wave 1 produced four different command counts, three of which seeded floor assertions. \"files\" = files containing at least one hit; \"hits\" = occurrences.",
   "rust": {
     "files": 963,
@@ -11,7 +11,7 @@
   },
   "frontend": {
     "tsxFiles": 2104,
-    "tsFiles": 4829,
+    "tsFiles": 4828,
     "rawButtonFiles": 1116,
     "rawSelectFiles": 47,
     "rawInputFiles": 288,
@@ -25,7 +25,7 @@
     "warnings": 1135,
     "errors": 0,
     "filesWithFindings": 246,
-    "filesLinted": 4829,
+    "filesLinted": 4828,
     "topRules": {
       "custom/no-low-contrast-text-classes": 705,
       "custom/no-hardcoded-jsx-text": 226,

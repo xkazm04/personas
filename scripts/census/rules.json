@@ -3604,6 +3604,108 @@
         "matches": 3
       },
       "floor": 500
+    },
+    {
+      "id": "unresettable-error-boundary",
+      "goldenPath": "docs/concepts/golden-paths/error-boundary.md",
+      "title": "Error boundary declared with no way out but the button that re-runs the crash",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "<[A-Za-z0-9_]*ErrorBoundary(?![A-Za-z0-9_])(?![^>]*\\b(?:key|resetKeys?|onGoHome|onReset)\\s*=)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "An error-boundary JSX declaration whose attribute list carries NONE of key / resetKey(s) / onGoHome / onReset. PROXY FOR the stack-free condition: a boundary's latched failure state can be cleared ONLY from inside the crashed subtree's own fallback, so the boundary outlives the failure and a healthy surface inherits a stranger's crash. WHAT THE MATCH COSTS, executed rather than reasoned: renderSectionRoute (src/features/personas/sectionRouter.tsx:87-100) was transcribed VERBATIM into a jsdom render. Crash section A -> the card correctly reads 'Something unexpected happened in SectionA'. Navigate to a HEALTHY section B -> section B never renders and the SAME latched card now reads 'Something unexpected happened in SectionB', because `name` is re-read from props at render time (ErrorBoundary.tsx:135-137) while componentDidCatch already persisted the crash under the OLD name (:50) — the screen and the crash log name two different components and the crash log is right. Adding key={section} recovers section B immediately. This is not hypothetical: PersonasPage.tsx:404-406 renders {renderContent()} inside an UNKEYED div with AnimatePresence explicitly disabled (:403), and every branch of renderContent() returns <ErrorBoundary> at that one position — so 20 sub-routes plus all 10 rail sections share ONE boundary instance. Second executed cost: ErrorBoundary's 'Go to Dashboard' button calls this.props.onGoHome?.() then onReset() (:98-111); with onGoHome undefined nothing throws, the catch branch that actually navigates never runs, and the button is byte-for-byte 'Try Again' with a different label — renders went 3 -> 5 -> 7 across the two clicks with the location unchanged. 13 of the 34 shared-boundary sites are that shape, and 7 of the 84 real crashes in the operator's live frontend_crashes table (2026-05-25..2026-08-14, read from a read-only copy) landed on one of them. PRECISION 25/25 on the stated condition, every match opened: 13 Go-to-Dashboard no-ops, 9 ChartErrorBoundary sites whose primitive accepts no reset prop at all (they are true instances and cannot comply without changing the primitive — listed on purpose, because excluding them hides why the condition exists), 2 SilentErrorBoundary sites whose null fallback means there is no button to click at all, and 1 ViewerErrorBoundary, the mildest. ONE match — OverviewPage.tsx:76 — is protected today by an ANCESTOR motion.div key={overviewTab} (:68) that this tag-local pattern cannot see; it is listed on purpose, because that protection lives in an animation wrapper which a sibling file (PersonasPage.tsx:403) has already deleted for itself once. TWO INDEPENDENT IMPLEMENTATIONS RECONCILE AT 25/16 — after disagreeing at 34/19 vs 25/16, because the composer's own scratch probe files were sitting in src/ and the census was counting the instrument; the standalone scanner excluded them by name and the census did not. Deleting them made both read 25/16 for this rule and 21/2 for the control, partitioning all 46 declarations across 18 files with no remainder. KNOWN RECALL LIMIT: the attribute window is [^>]* and stops at the first '>', so a reset prop written AFTER an arrow-function prop value (which contains '=>') would be missed. No current call site has one — all 21 compliant tags pass bare identifiers — and the alternative (?:[^>]|=>)* is an ambiguous nested quantifier the doctrine forbids, so a bounded false negative was preferred to an unrunnable pattern. It is also blind to a boundary installed by a higher-order component (Sentry.withErrorBoundary at main.tsx:190), which is correct here and would not be in a repo that wraps routes that way. WHAT THIS RULE CANNOT SEE: the STRONGER requirement — no key and no resetKeys, which is 46 of 46 with ZERO compliant instances — cannot be gated at all, because a control matching zero files exits 1 by construction (scripts/census/lib/engine.mjs:264-274) and the census cannot assert an absence; that half is a TYPE (key={section} inside renderSectionRoute, one line, 10 sites correct-by-construction) and no ratchet would ever have moved it. It also cannot see that 0 of 46 boundaries produce a Sentry event, cannot see the async gap (an absence of code), and cannot see a fallback that can itself throw (which depends on where the boundary sits relative to a provider). PORTABILITY WARNING, earned from the convergence sweep: ascent wears the compliant form as resetKeys={[repo]} and personas-web as resetKey={pathname} (both would match this pattern), but brainiac wears it as key={m} on a <Suspense> ONE ELEMENT BELOW the boundary (console/app/console/page.tsx:105-106), and a Next.js App Router repo wears this whole leaf as an error.tsx FILE with no JSX tag to match at all. An adopting repo must re-key on its own idiom. Do NOT silence a match by deleting the boundary — that is how coverage goes down while the count improves, which is what the positive control exists to catch."
+      },
+      "exclude": [],
+      "baseline": {
+        "files": 16,
+        "matches": 25
+      },
+      "floor": 1800
+    },
+    {
+      "id": "inline-minted-event-name",
+      "goldenPath": "docs/concepts/golden-paths/domain-event-publication.md",
+      "title": "A domain event's routing name is typed at the emit site, so no subscriber declaration can reference the same expression",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "CreatePersonaEventInput\\s*\\{(?:(?!CreatePersonaEventInput)[\\s\\S]){0,200}?event_type\\s*:\\s*(?:\"|format!)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a persona_events publication whose event_type is a bare string literal or a format! assembled inside the CreatePersonaEventInput literal itself. The fill is bounded to 200 chars AND cannot cross into a second ctor (negative lookahead on the type name), so a match can never span two publications. PROXY FOR the stack-free condition: the identifier that routes a published fact to its consumers is authored inside the publishing call, so the producer's name and the consumer's name are two independent strings that nothing compares. It does NOT match the shorthand `event_type,` or a named binding -- taking the name from a variable, a const, or a trigger config is the compliant form and is what the positive control counts. MEASURED 2026-08-16 at b4a05049e: 12 matches in 11 files, ALL TWELVE OPENED (precision 11/12 = 92%; the one false positive is a #[cfg(test)] fixture at db/src/repos/resources/triggers.rs:3165, which the engine cannot brace-match). Scoring the 11 production names against the operator's live database: ALL 11 have 0 rows in 4,972 persona_events and 0 live consumers, and 6 of the 11 are absent from the 47-entry BUILTIN_EVENT_TYPES registry. By contrast the 51 event names minted by ONE shared function (engine/team_handoff.rs:57 handoff_event_type, which writes the same expression into both the emitter's trigger config and the receiver's listen_event_type) have a live consumer 48 of 51 times -- 94% vs 13% for everything else. The live consequence is dispatch.rs:308: `persona_action` is minted here and has never been published, because the sibling field on the same struct interpolates an unsanitised persona name that the door's validator rejects for 77 of 78 live personas. Overlap with the two nearest rules was measured, not asserted: 0 shared files and 0 overlapping match ranges with unregistered-tauri-event-name; 3 shared files and 0 overlapping ranges with unverified-effect-dispatch. RATCHET ONLY -- the fix is EventType/SourceType newtypes plus registering the name in event_vocabulary.rs (see the path's 'Prefer a type over a gate')"
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/db/src/repos/communication/events.rs",
+          "reason": "the publish primitive's own module. All 29 of its matches are #[cfg(test)] fixtures, which the census engine cannot exclude by brace-matched range (retention-and-pruning Gap 6); the module also defines the door itself, so a CreatePersonaEventInput here is either a fixture or the definition, never a call site."
+        }
+      ],
+      "baseline": {
+        "files": 11,
+        "matches": 12
+      },
+      "floor": 900
+    },
+    {
+      "id": "inline-verdict-band",
+      "goldenPath": "docs/concepts/golden-paths/scoring-and-thresholds.md",
+      "title": "A multi-band VERDICT (tone, grade, label) is decided by bare numeric boundaries written at the render site, so the band table exists only where it is drawn",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?:>=|<=|>|<)\\s*(?:0\\.\\d*[1-9]\\d*|[1-9]\\d*(?:\\.\\d+)?)\\s*\\?\\s*['\"][^'\"\\n]*['\"]\\s*:[^?;\\n${}]{0,90}?(?:>=|<=|>|<)\\s*(?:0\\.\\d*[1-9]\\d*|[1-9]\\d*(?:\\.\\d+)?)\\s*\\?",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a chained ternary mapping a number onto TWO OR MORE categorical outcomes with bare numeric boundaries written at the call site. THE SECOND COMPARISON IS THE DISCRIMINATOR: one comparison against a literal is ambiguous (a boolean test, a `.length > 60` truncation, a `> 1 ? 's' : ''` pluralization — all measured, all rejected at ~30% precision); two boundaries in one expression is a BAND TABLE. Zero is excluded from both literals so `c.red > 0 ? 'red' : c.yellow > 0 ? 'yellow'` (presence tests, not bands) does not match. The gap between the arms forbids `$`, `{` and `}` so the matcher cannot cross a template-literal interpolation — that was the one surviving false positive. PROXY FOR the stack-free condition: a band boundary lives where the pixel is drawn rather than beside the formula, so it cannot be changed in one place. Measured 2026-08-16: 52 sites in 37 files use TEN distinct three-way boundary sets to band one kind of 0-100 quality number, of which exactly one set (80/50) is the value GRADE_THRESHOLDS declares — and 6 of the 8 sites using it re-type it as literals. 43 of the 52 (83%) have no unmeasured arm in front of the ladder. Replayed against the operator's live database: banding the 59 measured personas' success rates with QuickStatsBar.tsx:50 (80/50) and VitalsLedger.tsx:177 (90/70) renders a DIFFERENT tone for 13 of them (22%). LEGAL FIX: import the shared band — GRADE_THRESHOLDS + computeGrade (compositeHealthScore.ts:133,238), whose own comment records that computeGrade was already collapsed out of three duplicates and a fourth inline; or, if the concept genuinely needs different bands, declare a named const beside the formula with a comment saying why it differs. If the payload already carries a grade, render the grade. CONVERGENT: brainiac/brainiac-server/src/console.rs:2731 imports three constants from its health registry and redefines grade_of two lines below, so 50-54 grades 'At risk' from the core and 'Critical' from the API; brainiac console/src/health/KnowledgeHealth.tsx:116 re-derives a grade the server already sent, rendering 82 as 'Watch' in the header and 'Healthy' in the chart. ascent/src/lib/maturity/model.ts is the counter-example with ZERO band disagreements and a SCORING_RUBRIC_VERSION wired into its cache key. PRECONDITION (must be re-derived per repo): this repo spells a band as a chained TypeScript conditional expression with quoted string arms. A repo using an if/else-if chain, a switch, a `.find(b => v >= b.min)` table walk, or Rust match arms will score zero while the condition is present at scale."
+      },
+      "exclude": [
+        {
+          "path": "src/features/overview/components/shared/KpiTile.tsx",
+          "reason": "the file's only match is a display truncation, not a verdict: absPct >= 1000 renders the string '999+%' and absPct < 0.1 renders '<0.1%'. Both arms are number-formatting for one delta, owned by number-and-cost-formatting.md, and neither arm picks a tone, grade or status word"
+        }
+      ],
+      "baseline": {
+        "files": 37,
+        "matches": 52
+      },
+      "floor": 2000
+    },
+    {
+      "id": "unbounded-foreign-decode",
+      "goldenPath": "docs/concepts/golden-paths/external-source-ingestion.md",
+      "title": "A byte buffer that arrived from outside the process is decoded into an in-memory value with no size bound, while a bounded decoder exists in the same tree",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "serde_json::from_(?:str|slice)\\s*(?:::\\s*<[^>]{0,120}>\\s*)?\\(\\s*&?\\s*(?:body|resp_body|response_body|raw_body|body_text|resp_text|response_text|html|page_html|feed|xml|page)\\b",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a wire buffer (an HTTP response body, an inbound webhook body, an MCP server reply, a foreign file) decoded with bare serde_json instead of engine::safe_json. PROXY FOR the stack-free condition: bytes that arrived from outside the process are decoded into an in-memory structure without any statement of how many bytes are acceptable, neither at the read nor at the decode, while a bounded decoder exists in the same tree. THE COMPLIANT DOOR: engine/src/safe_json.rs:83 from_str / :89 from_str_as run validate_limits (:37) BEFORE serde allocates - MAX_INPUT_BYTES 16 MiB (:26) and MAX_NESTING_DEPTH 128 (:31). The depth check duplicates serde_json's own default recursion limit; the SIZE cap is the load-bearing contribution. NOTE that safe_json bounds the AMPLIFICATION (a bounded text becoming a multi-hundred-MB Value), not the INTAKE - the String already exists by then. The intake half is outbound-http-call.md signal (C), measured at 144 matches and DELIBERATELY REFUSED there because a regex cannot recover the receiver's type; its named mechanism is a Clippy disallowed_methods entry on reqwest::Response::{text,json,bytes}. This rule gates the next statement, which IS expressible. MEASURED 2026-08-16 at b4a05049e: 21 matches / 9 files against 7 matches / 2 files for the bounded door (7 of 667 JSON decode sites in the tree = 1.05% adoption; the other 639 are DB columns, config files and literals, not this rule's population). PRECISION 19/21 hand-verified - the inbound webhook body (webhook.rs:469), an external MCP server's SSE reply (mcp_tools.rs:1607,:1632), the Discord and Slack API replies (discord_poller.rs:505, slack_poller.rs:1012), the Gemini OCR reply (ocr/mod.rs:283), a trigger test-fire reply (triggers.rs:1822), eleven connector-API replies (companion/jobs/connector_use.rs), and a package.json from a user-picked directory (webbuild/project.rs:77). THE TWO FALSE POSITIVES ARE #[cfg(test)] FIXTURES THE ENGINE CANNOT EXCLUDE (commands/fleet/companion_api.rs:637,:645) and they are the assertions proving CompanionAct's CLOSED ENUM refuses unknown verbs - i.e. the rule's only false positives certify the compliant pattern. They are NOT suppressed by a file-level exclude on purpose: companion_api.rs is itself a genuine ingress (it binds 0.0.0.0:17500) and an exclusion would hide a future real match there. RECALL IS DELIBERATELY PARTIAL AND MEASURED: the identifier vocabulary omits `text` and `raw`, missing 3 real sites (kpi_binding.rs:331, platforms/n8n.rs:259, mcp_server/tools.rs:243) - and `text` is the SECOND most common name this repo binds a response body to (11 of 80 .text().await bindings). Adding them takes the rule to 70 matches / 50 files at ~27% precision by pulling in the whole database-column-parse population (core/src/models/persona.rs:676,:718,:740, db/src/chain.rs:149,:434, ...). The narrow form was chosen; extend the alternation deliberately and re-measure BOTH halves. TWO INDEPENDENT IMPLEMENTATIONS AGREED ON 17 MEMBERS AND DISAGREED ON 5: a dataflow scan (identifiers bound from .text().await or declared as an axum Bytes extractor) returned 20/9, this vocabulary regex returned 19/8 with #[cfg(test)] stripped; neither sees the union of 22. LEGAL FIX, in order: (1) bound the READ - a resp.chunk() running total, the shape api_proxy.rs:957-968 already implements; (2) decode through safe_json::from_str / from_str_as; (3) better than both, decode into a CLOSED ENUM the way commands/fleet/companion_api.rs:422-443 does, where an unknown shape is a deserialization failure rather than a runtime check. DO NOT 'fix' this by renaming the identifier. END OF LIFE: designed to reach zero; the runner fails structurally on zero matches BY DESIGN - DELETE the rule then, do not baseline it at 0. PRECONDITION (re-derive per repo, do NOT port): in a Next.js repo this condition wears JSON.parse(await req.text()) or a bare await request.json() (177 such sites in the vibeman sibling); in Python it wears resp.json() with only a timeout. This pattern scores ZERO on both."
+      },
+      "baseline": {
+        "files": 9,
+        "matches": 21
+      },
+      "floor": 900
     }
   ]
 }

@@ -134,6 +134,20 @@
 > delivered **zero** of them for 51 days — which is indistinguishable, in every
 > instrument this app owns, from a healthy bus with a quiet inbox.
 >
+> > **Corrected 2026-08-16 by [domain-event-publication](./domain-event-publication.md).**
+> > The counts above are right; the causal reading is **inverted**. The bus is not
+> > failing to deliver — **nothing is publishing.** There are **0 events of any
+> > status between 2026-06-27 and 2026-07-31**, and **16 of the 31 August rows are
+> > two types whose publisher's own doc comment says they are meant to have no
+> > consumer**, so `skipped` is the correct outcome for them. A delivery-side
+> > watchdog would have fired on a healthy delivery path.
+> >
+> > **The observation this path exists for survives intact, and is strengthened:**
+> > "0 delivered since boot" and "0 delivered ever" still read identically, and now
+> > so does "0 delivered" versus "0 published". The instrument cannot separate a
+> > broken consumer from an empty producer — which is the same missing comparison,
+> > one table upstream.
+>
 > ### Sibling boundaries, settled in prose
 >
 > [**background-loop**](./background-loop.md) owns the loop's own lifecycle — the
