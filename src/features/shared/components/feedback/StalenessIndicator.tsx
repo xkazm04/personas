@@ -1,4 +1,4 @@
-import { Clock } from 'lucide-react';
+import { AlertTriangle, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -29,6 +29,30 @@ export function StalenessIndicator({ fetchedAt, hasError, label }: StalenessIndi
     const id = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(id);
   }, [fetchedAt]);
+
+  // The error arm sits ABOVE the no-timestamp guard, deliberately.
+  //
+  // It used to be below, and `!fetchedAt` returned null first — but callers
+  // stamp `fetchedAt` only on SUCCESS, so a source that has NEVER succeeded has
+  // no timestamp, and this component rendered nothing at exactly the moment it
+  // had the most to say. One live instance: the badge is mounted inside a
+  // pipeline-error banner with `hasError` hardcoded true, and drew nothing.
+  //
+  // "Never loaded" and "loaded a while ago" are different claims, and only the
+  // second one has an age. `personas-web` wrote this component independently
+  // with the arms in this order.
+  // No `title=` below: the census flagged it as a 1,109th instance of the
+  // native-tooltip rule the moment it was written. The label goes in the visible
+  // text instead, which is better anyway — a tooltip is not a disclosure if it
+  // needs a hover to read.
+  if (hasError && !fetchedAt) {
+    return (
+      <span className="inline-flex items-center gap-1 typo-caption text-status-warning">
+        <AlertTriangle className="w-3 h-3" aria-hidden="true" />
+        {label ? `${label}: ${t.common.staleness_refresh_failed}` : t.common.staleness_refresh_failed}
+      </span>
+    );
+  }
 
   if (!fetchedAt) return null;
 

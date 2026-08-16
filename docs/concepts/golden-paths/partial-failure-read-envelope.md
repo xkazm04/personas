@@ -616,6 +616,17 @@ the cohort and being broken in 32 files are simultaneously true.
 **Amended by the oracle:** clause 7 — its "LOCAL to ascent" verdict was wrong about Personas
 (§12.3).
 
+> **Corrected 2026-08-16 by [data-provenance-disclosure](./data-provenance-disclosure.md).**
+> Clause 10 is **inverted**: `personas-web` has a `StalenessIndicator` of the same name with
+> **7 render sites against our 5**, plus i18n, an error arm, and a tick that pauses while the tab
+> is hidden. Personas is not ahead on it; it is behind.
+>
+> Two composers, hours apart, swept the same five repos and reached the same wrong conclusion —
+> **because both searched for the mechanism rather than the component name.** That is the same
+> blind spot as clause 7's (a sweep keyed on prop-threading missing a store-mediated
+> implementation), arriving from the other direction. When a clause is about a *component*, search
+> the name too.
+
 > **The strongest external result is clause 4, and it is not agreement — it is the same bug written
 > twice by strangers.** `vibeman/weeklyApi.ts:70` is `.catch(() => ({ directions: [] }))`, whose
 > empty array is fed 50 lines later into `calculateFilteredAcceptanceRate` and

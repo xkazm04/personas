@@ -3094,6 +3094,39 @@
         "matches": 28
       },
       "floor": 900
+    },
+    {
+      "id": "estimate-typed-as-measurement",
+      "goldenPath": "docs/concepts/golden-paths/data-provenance-disclosure.md",
+      "title": "A value the code itself names an estimate/projection is declared as a bare `number`, identical in type to the measurements beside it — so nothing downstream can tell them apart and they compose arithmetically",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\b(?:estimated?|projected|projection|forecast|predicted|approx|synthetic|simulated)[A-Za-z0-9_]*\\s*\\??\\s*:\\s*number\\b",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A type-member declaration whose NAME begins with a non-measurement word (estimate/estimated/projected/projection/forecast/predicted/approx/synthetic/simulated) and whose ANNOTATION is a bare `number`. PROXY FOR the stack-free condition: provenance lives in the identifier, and an identifier does not survive an arithmetic operator — so an estimate and a measurement of the same quantity are the same type and will be added, averaged and rendered alike. WHAT THE MATCH COSTS, executed rather than reasoned: src-tauri/engine/src/cost.rs:84-102 declares `estimated_input_tokens: u64` (= text.len() / a CHARS_PER_TOKEN constant of 3.8), `estimated_total_cost: f64` (= those tokens x a hardcoded model->price table), `monthly_spend: f64` (a real DB read) and `budget_limit: f64` (config) as four indistinguishable numbers eighteen lines apart; ExecutionPreviewPanel.tsx:72-75 then computes `((preview.monthly_spend + preview.estimated_total_cost) / preview.budget_limit) * 100` and gates the overBudget (>100) and nearBudget (>80) warnings on the result. A MEASUREMENT AND A CHARACTER-COUNT HEURISTIC ARE SUMMED, AND THE SUM GATES TWO SAFETY WARNINGS. PRECISION 20/20 on the stated condition, every match hand-read. SIX of the eleven files are ts-rs bindings, i.e. the wire contract itself (ExecutionPreview.ts:22,26,30; ExecutionDashboardData.ts:9; NightRun.ts:29 where projectedCostUsd sits beside monthSpendUsd; PerformanceDigest.ts:46; RoutingClaim.ts:8), so the collapse happens at the boundary and every consumer inherits it. TWO INDEPENDENT IMPLEMENTATIONS RECONCILE AT 20 with identical per-file line sets: this regex, and a line-oriented member classifier that steps LEFT from every ':' over an optional '?' and an identifier and RIGHT over the annotation head, importing nothing from lib/engine.mjs. AGREEMENT IS WEAK EVIDENCE HERE AND IS REPORTED AS SUCH: both key on the same word list, so recall is bounded identically. A second-vocabulary probe (runway|eta|burnRate|heuristic|inferred|derived|assumed|allocated|extrapolated|hypothetical) returned 37 hits in 30 files of which ~4 are genuine misses -- etaMs (artist/sub_media_studio/types.ts:262), derived_quality_score (bindings/TemplatePerformance.ts:6), and burn_rate on bindings/ExecutionDashboardData.ts:9, WHICH IS THE SAME LINE AS A MATCH. True recall ~20/24 ~83%. LEGAL FIX: a newtype that withholds the dangerous freedom rather than the value -- an `Estimated<T>` / `Estimate` with a private field and no Add<f64> impl, so summing an estimate with a measurement stops compiling until somebody decides. Ship it where it is TOTAL (ExecutionPreview has ONE construction site at engine/src/cost.rs:106 and one consumer, so the wrapper reaches everything); the general form does not meet the corpus's Q3 today because src/lib/ contains no shared numeric wrapper -- see the path's Gap 2. CONVERGENT: ascent's src/lib/integrations/providers.ts:11 `type Fidelity = 'measured' | 'allocated' | 'simulated'` is persisted (prisma/schema.prisma:764) and rendered (FidelityBadge, aiShared.tsx:28) and its `allocated` arm names the proxy mechanism outright; vibeman's db/models/types.ts:26 `progress_source?: 'manual' | 'inferred' | 'hybrid'`; brainiac's DemoResult<T>{data,live}. Three repos, three domains, one shape, no shared document. WHAT THIS RULE CANNOT SEE, stated so nobody trusts it further: it does NOT see whether the PIXEL discloses -- that condition is an absence adjacent to a presence AND, in this repo, the marker and the value share a vocabulary (`e.estimated_no_trace` is a disclosure string and `preview.estimated_total_cost` is a value; both are `x.estimated*` in JSX). A render-side candidate was built, run through the real engine, and measured at 26 matches with 50% precision, FIVE of whose false positives were the disclosure strings themselves; it is refused in this path's Section 9 with the numbers. It also cannot see the Rust half (9 matches over 953 .rs files, too small to ratchet) nor a provenance union consumed by testing an untrusted arm (KPIDashboard.tsx:161, a relation between a CHECK constraint and a render, not a string). PORTABILITY WARNING: ascent -- the repo with the best provenance types in the cohort -- would score ZERO here, because it puts the estimate-ness in a sibling union rather than in the identifier. Do NOT silence a match by renaming the field to drop the estimate word: that removes the only provenance the value currently has."
+      },
+      "exclude": [
+        {
+          "path": "src/features/shared/components/display/GroupedVirtualList.tsx",
+          "reason": "estimateItemSize is a virtualizer row-height hint in CSS pixels, never a value shown to a user — a layout measurement has no provenance to disclose"
+        },
+        {
+          "path": "src/features/plugins/dev-tools/sub_context/contextMapPerf.tsx",
+          "reason": "estimateSize is the same virtualizer row-height hint, measured in pixels for layout"
+        }
+      ],
+      "baseline": {
+        "files": 11,
+        "matches": 20
+      },
+      "floor": 500
     }
   ]
 }

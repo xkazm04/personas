@@ -158,7 +158,17 @@ export function KPIDashboard({
         const ms = (kpiTrends[kpi.id] ?? []).filter(
           (m) => (m.env ?? 'production') === envFilter,
         );
-        const simulated = ms.some((m) => m.source === 'simulation');
+        // `ai-compose` added 2026-08-16. `source` is a six-arm SQL-CHECKed
+        // union and this tested one arm, so an LLM-COMPOSED measurement drew as
+        // a solid production line — indistinguishable from an evaluator run.
+        //
+        // Testing a closed union by naming the members you distrust is the
+        // failure mode: the union grew (a migration added `ai-compose`) and this
+        // comparison did not, silently and in the flattering direction. The
+        // durable form is to name the members that ARE measurements, so a new
+        // arm defaults to "not measured" rather than to "production".
+        const NOT_DIRECTLY_MEASURED = new Set(['simulation', 'ai-compose']);
+        const simulated = ms.some((m) => NOT_DIRECTLY_MEASURED.has(m.source));
         const pts = ms
           .map((m) => ({
             t: new Date(m.measured_at.replace(' ', 'T')).getTime(),

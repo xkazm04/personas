@@ -283,6 +283,18 @@ for the DST-correct schedule evaluator and for unsaved-draft guards.
 The oracle has inverted **26+** briefs, including a spine `convergence: converged`
 label that held on only one clause of three.
 
+**When a clause is about a component, search for its NAME as well as its
+mechanism.** A sweep keyed on how something is implemented is blind to a sibling
+that implemented it differently — or, worse, identically under the same name.
+
+> Two composers hours apart swept the same five repos and both concluded
+> "Personas is the only repo with a staleness indicator". `personas-web` has one
+> **with the same file name**, 7 render sites against our 5, plus i18n and an
+> error arm we lacked. Both searched for the mechanism. The same blind spot, from
+> the other direction, made a third sweep call per-panel error disclosure
+> "local to ascent" because ascent threads a prop where this repo threads a store
+> key.
+
 **Cost and failure are better evidence than agreement.** The two strongest
 oracle results in the corpus were both negative:
 - `../personas-cloud` is a *port* of this repo's scheduler, and **the port
