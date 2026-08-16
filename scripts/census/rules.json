@@ -2795,6 +2795,79 @@
         "matches": 61
       },
       "floor": 900
+    },
+    {
+      "id": "anonymous-retry-budget",
+      "goldenPath": "docs/concepts/golden-paths/retry-with-backoff.md",
+      "title": "The number of attempts an operation gets is a bare literal at the loop that spends them, so no enclosing bound can be derived from it and nothing can assert it",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\b(?:for\\s+(?:_?attempt|_?retry|_?tries|_?try_n)\\s+in\\s+[0-9][0-9_]*\\s*\\.\\.=?\\s*[0-9][0-9_]*(?:u(?:8|16|32|64)|i(?:8|16|32|64)|usize)?\\s*\\{|(?:while|if)\\s+(?:[A-Za-z_.()0-9]+\\s*[=!<>]=\\s*[^\\n&|]{0,60}&&\\s*)?(?:_?attempt|_?retry|_?tries|_?try_n)\\s*<=?\\s*[0-9][0-9_]*(?:u(?:8|16|32|64)|i(?:8|16|32|64)|usize)?\\s*(?:\\{|&&|=>))",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A retry budget spelled as a numeric LITERAL at the site that spends it: either a `for <attempt-ish> in <lit>..<lit> {` loop header, or a `while`/`if` guard comparing an attempt counter to a literal with `<` / `<=` (the guard form is restricted to `<`/`<=` deliberately — an earlier draft admitted `>` and `>=` and 6 of its 13 matches were `if attempt > 0 {` logging guards and `if max_attempts > 1 {` display guards; restricting the operator removed all six at no cost to recall). PROXY FOR the stack-free condition: the number of attempts this operation gets cannot participate in any relationship — no enclosing deadline or reaper threshold can be derived from it (the `attempts x per_attempt + sum(backoff)` arithmetic that db/src/repos/resources/automations.rs:564-593 performs is only expressible because that budget is a NAMED per-row value), no test can assert it, no operator can tune it, and the next author writes a different literal nearby. MEASURED 2026-08-16 at d74fae3c9: 8 matches across 6 of 963 .rs files, PRECISION 8/8, every match opened. THE EIGHT: engine/src/eval.rs:480 (0..2u8, LLM eval); src/engine/kpi_binding.rs:480 (0..2u8, KPI CLI call); src/commands/companion/approvals/approval_exec_fleet.rs:737 (1..=2u32); src/commands/fleet/registry.rs:767 (1..=2u32); src/commands/design/build_sessions.rs:725 (1..=6u32) and :2640 (1..=20u32); src/test_automation.rs:160 (0..3u8) AND :163 (attempt < 2) — the same construct writing its budget TWICE, three lines apart, as two different literals that must agree while nothing checks that they do, which is the single clearest argument for this rule. THE COMPLIANT DESTINATION EXISTS AND IS THE IN-REPO MAJORITY (see the paired positive control, 13 matches / 7 files): PERSIST_MAX_RETRIES (engine/src/execution_engine/persist.rs:11, used 6 times), MAX_RETRIES (commands/credentials/query_debug.rs:174), MAX_PERSIST_ATTEMPTS (engine/oauth_refresh.rs, twice), FALLBACK_PORT_ATTEMPTS, max_attempts (automation_runner.rs:60, derived from the automation's own retry_count), max_tag_attempts. So this is a 40% minority deviation from a convention the repo already keeps, not a migration with no destination. TWO INDEPENDENT IMPLEMENTATIONS AGREE EXACTLY ON THE VIOLATING COUNT (8/6) and differ by ONE on the control: a walker with brace-matched #[cfg(test)] removal returns 12 rather than 13, the extra being db/src/repos/communication/events.rs:3139 inside the cfg(test) module opening at line 1821 — 12 + 1 = 13, reconciled; the census engine matches whole file content and cannot brace-match a cfg(test) range. DECLARED RECALL GAP, stated so the gate cannot manufacture confidence: this repository's PRINCIPAL retry mechanism is not a loop at all — src/engine/mod.rs:3915 spawn_delayed_retry sleeps and then calls exec_repo::create_retry to insert a NEW persona_executions row, so the 'iteration' is a database row and no loop-shaped signal can see it. Its budget happens to be named (healing::MAX_RETRY_COUNT) so it would be compliant regardless, but an adopting repo must know the shape exists. Also not covered: TypeScript (src/features/agents/sub_deployment/hooks/useCloudHealthMonitor.ts:121 is an UNBOUNDED retry whose Math.min bounds the step INDEX rather than the attempt — a separate rule, not proposed here because the TS population is 3 sites). BACKTRACKING: the only broad fill is `[^\\n&|]{0,60}`, one bounded negated character class, no nested quantifier, no same-span alternation; full 963-file run 0.58s. ZERO MATCH-POSITION OVERLAP, verified character-by-character against anonymous-deadline (its 2,843 positions vs these 225 — it gates the bound on ONE attempt, this gates how many attempts there are; together they are the two operands of timeout-tiering's P4), unraced-loop-wait, unkeyed-billable-spawn, unverified-effect-dispatch, silent-row-skip, hand-rolled-emptiness-refusal, untimed-repo-query and process-global-caches-a-failure. LEGAL FIX, one line each: hoist to a `const MAX_*_ATTEMPTS` in the same file with a one-line reason, the way persist.rs:11-13 does. Do NOT silence a match by moving the literal into a `let` immediately above the loop — that is the same defect one line higher; the value must be a named constant a sibling bound can reference. END OF LIFE: designed to reach zero; when it does, DELETE the rule rather than baselining it at 0. PRECONDITION (must be re-derived per repo): this repo spells a retry budget as a Rust range or comparison against an integer literal. A repo on a retry library (`p-retry({retries: 3})`, tenacity's `@retry(stop=stop_after_attempt(3))`, Polly) expresses the identical condition as an inline option-object field and scores a structural ZERO here while the condition is present at full scale."
+      },
+      "baseline": {
+        "files": 6,
+        "matches": 8
+      },
+      "floor": 900
+    },
+    {
+      "id": "unauthenticated-transport-route",
+      "goldenPath": "docs/concepts/golden-paths/second-transport-exposure.md",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\.route\\(\\s*\"",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "An axum route registered on an in-app HTTP server whose router presents no credential requirement at all. Proxy for: an inbound entry point on a non-primary transport that requires no credential. The exclude list below IS the transport-classification table — every router that DOES authenticate is named here with how."
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/src/engine/management_api.rs",
+          "reason": "the only router-level auth layer in 963 Rust files: middleware::from_fn_with_state(require_api_key) + per-route scope check"
+        },
+        {
+          "path": "src-tauri/src/commands/fleet/companion_api.rs",
+          "reason": "per-handler authorize(): LAN-peer check then constant-time device-token match"
+        },
+        {
+          "path": "src-tauri/src/engine/webhook.rs",
+          "reason": "per-trigger HMAC/URL secret verified inside handle_webhook"
+        },
+        {
+          "path": "src-tauri/src/browser_bridge/mod.rs",
+          "reason": "pairing token + per-test session token checked inside each handler"
+        },
+        {
+          "path": "src-tauri/src/engine/share_link.rs",
+          "reason": "short-lived URL token is the credential"
+        },
+        {
+          "path": "src-tauri/src/companion/orchestration/mcp/mod.rs",
+          "reason": "X-Athena-Session header resolved to a live fleet session"
+        },
+        {
+          "path": "src-tauri/engine/src/pairing.rs",
+          "reason": "the pairing ceremony itself: nonce + explicit human approval is the gate, by design"
+        }
+      ],
+      "baseline": {
+        "files": 4,
+        "matches": 79
+      },
+      "floor": 900
     }
   ]
 }

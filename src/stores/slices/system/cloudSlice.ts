@@ -45,6 +45,21 @@ export interface CloudReconnectState {
 
 export const CLOUD_BACKOFF_STEPS = [5_000, 10_000, 20_000, 60_000] as const;
 
+/**
+ * How many reconnect attempts before giving up and surfacing a terminal error.
+ *
+ * Deliberately separate from `CLOUD_BACKOFF_STEPS.length`. Clamping the index
+ * into the schedule bounds the DELAY; it does not bound the number of attempts,
+ * and reading the first as the second is what left this loop retrying at 60s
+ * intervals indefinitely — 63 attempts an hour, forever, against an endpoint
+ * that was not answering.
+ *
+ * 20 attempts on the 5/10/20/60s ladder is roughly 20 minutes of trying, which
+ * is long enough to ride out a restart or a brief outage and short enough that
+ * a dead endpoint stops being polled.
+ */
+export const CLOUD_MAX_RECONNECT_ATTEMPTS = 20;
+
 export interface CloudSlice {
   // State
   cloudConfig: CloudConfig | null;

@@ -353,7 +353,15 @@ fn is_retryable_error(result: &Result<(String, u16, Vec<String>), AppError>) -> 
         Err(AppError::Execution(msg)) => {
             msg.contains("timed out")
                 || msg.contains("Failed to connect")
-                || extract_http_status(msg).is_some_and(|s| s / 100 == 5 || s == 401)
+                // 429 added 2026-08-16. It was the one status class here that
+                // the server is explicitly asking you to retry, and it was the
+                // only one omitted — 3 of 4 sibling repos that wrote down a
+                // retryable set include it, each with its own independent
+                // justification. Note the connector docs shipped to agents
+                // already claim "429 responses include a Retry-After header you
+                // must honor", while nothing in this tree reads that header;
+                // honouring it is a separate, larger change.
+                || extract_http_status(msg).is_some_and(|s| s / 100 == 5 || s == 401 || s == 429)
         }
         _ => false,
     }

@@ -340,12 +340,34 @@ pub async fn remote_command_reject(
         .await
         .ok_or_else(|| AppError::Auth("Not signed in".into()))?;
     let client = SyncClient::new(jwt)?;
-    client
-        .patch(
-            &format!("pending_commands?id=eq.{id}"),
+
+    // Scope by device and by status, exactly as `remote_command_approve` does.
+    //
+    // Until 2026-08-16 this patched `pending_commands?id=eq.{id}` with neither
+    // term. The approve path 85 lines above carries a four-line comment
+    // explaining precisely why the device term is required — the id is a
+    // listable UUID, not a per-device capability token, and row-level security
+    // scopes to the tenant and not to the device — and reject, which resolves
+    // the same row, did not carry it. A multi-device user could reject a request
+    // targeted at another of their devices.
+    //
+    // The status term makes the write idempotent: rejecting something already
+    // resolved changes nothing rather than overwriting a terminal state.
+    let device = cursor::resolve_device_id(&state.db);
+    let rejected = client
+        .patch_returning_count(
+            &format!(
+                "pending_commands?id=eq.{id}&target_device_id=eq.{device}&status=eq.pending"
+            ),
             &json!({ "status": "rejected", "resolved_at": now(), "updated_at": now() }),
         )
-        .await
+        .await?;
+    if rejected == 0 {
+        return Err(AppError::Validation(
+            "This request is no longer pending".into(),
+        ));
+    }
+    Ok(())
 }
 
 #[cfg(test)]

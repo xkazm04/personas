@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { cloudReconnectFromKeyring, cloudGetConfig } from '@/api/system/cloud';
-import { CLOUD_BACKOFF_STEPS, type CloudReconnectState } from '@/stores/slices/system/cloudSlice';
+import { CLOUD_BACKOFF_STEPS, CLOUD_MAX_RECONNECT_ATTEMPTS, type CloudReconnectState } from '@/stores/slices/system/cloudSlice';
 import { isAuthError } from '@/stores/slices/system/deployTarget';
 
 const HEALTH_POLL_INTERVAL = 30_000; // 30s between health pings when connected
@@ -116,8 +116,30 @@ export function useCloudHealthMonitor() {
 
     if (isStale(gen)) return;
 
-    // Schedule next attempt with backoff
+    // Schedule next attempt with backoff.
+    //
+    // The `Math.min` below bounds the INDEX into the schedule, not the number
+    // of attempts — those are different things, and until 2026-08-16 only the
+    // first one was bounded. Replayed: 5s, 10s, 20s, 60s, then 60s forever, at
+    // 63 attempts an hour against an endpoint that is not answering, for as
+    // long as the app stays open.
+    //
+    // A ceiling on the delay reads like a ceiling on the retry, which is why
+    // this survived review. It is the same shape as the persisted OAuth backoff
+    // whose index saturates while its attempt counter does not — see
+    // retry-with-backoff.md. Two unbounded retries in this repo, both wearing a
+    // bound that is not one.
     const nextAttempt = attempt + 1;
+    if (nextAttempt > CLOUD_MAX_RECONNECT_ATTEMPTS) {
+      useSystemStore.setState({
+        cloudReconnectState: { isReconnecting: false, attempt: nextAttempt, nextRetryAt: null },
+        // Reuse the terminal message shape already written for the auth case
+        // above, so the UI has one "we stopped trying" state rather than two.
+        cloudError:
+          'Could not reach the cloud orchestrator after several attempts. Check the connection and retry.',
+      });
+      return;
+    }
     const backoffIndex = Math.min(nextAttempt, CLOUD_BACKOFF_STEPS.length - 1);
     const delay = CLOUD_BACKOFF_STEPS[backoffIndex]!;
 
