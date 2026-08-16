@@ -3247,6 +3247,29 @@
         "matches": 45
       },
       "floor": 900
+    },
+    {
+      "id": "wholesale-inherited-child-env",
+      "goldenPath": "docs/concepts/golden-paths/credential-injection-into-child.md",
+      "title": "A child process is given env values on top of a wholesale-inherited parent environment",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "Command::new\\s*\\((?:(?!env_clear|Command::new)[\\s\\S]){0,2500}?\\.\\s*env\\s*\\(\\s*&?\\*?(?:k|key|name)\\b",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A child-process spawn region that populates the child's environment from a VARIABLE key (a map/loop binding named k / key / name -- i.e. the author programmatically decided what this child should be told) with NO .env_clear() anywhere between Command::new and that write. PROXY FOR the stack-free condition: a process hands a child a credential the child never asked for, because the child's environment is the parent's environment plus a delta instead of a set the parent chose. Precision 13/13, every match opened. The negative-tempered middle is what makes this a fact rather than a style opinion: the SAME anchor with the middle inverted to REQUIRE env_clear (the positive control) scores 2 matches in 2 files, and the two halves partition the anchor population 15/15 exactly -- so the count measures CONSTRUCTION-vs-INHERITANCE, not 'how many spawns exist' (there are 129 non-test Command::new sites in 963 files; 114 of them never touch the child's env at all and are deliberately invisible here). WHY THIS MATTERS IN THIS REPO: src/lib.rs:1744 calls std::env::set_var(\"PERSONAS_API_KEY\", &key) at startup with a never-expiring, origin-unbound key carrying the broad `proxy` scope, so every one of those children inherits a bearer token that authorizes POST /api/proxy/<any credential id> against all 25 vault credentials and POST /api/broker/mint/<id>. RECALL is deliberately partial: a spawn whose loop binding is named something other than k/key/name reads as compliant, and so does one whose env write lands more than 2500 chars after Command::new. PRECONDITION (must be re-derived per repo): this repo spawns child processes with an OS-inherited environment and puts a credential in the parent's own environment. A repo that spawns with an explicitly constructed env object, or that never mutates its own process env, has the SAME condition wearing different syntax and scores ZERO here -- which is what all five sibling repos audited for this path do (0 env_clear / 0 explicit-env spawns in personas-web, brainiac, personas-cloud, vibeman, ascent; three of them reach for subtraction -- `delete childEnv.X` -- exactly as this repo reaches for env_remove)."
+      },
+      "exclude": [],
+      "baseline": {
+        "files": 10,
+        "matches": 13
+      },
+      "floor": 900
     }
   ]
 }
