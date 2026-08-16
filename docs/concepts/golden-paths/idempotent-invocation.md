@@ -9,7 +9,8 @@
 > **Sweep size.** All **963** `.rs` files under `src-tauri` and all **4,829**
 > `.ts`/`.tsx` files under `src/`. Every `#[tauri::command]` function was
 > extracted by brace-matching its body with `#[cfg(test)]` removed as
-> **brace-matched ranges** (never a line threshold): **1,666** commands, of which
+> **brace-matched ranges** (never a line threshold): **1,666** commands (**see
+> the correction below**), of which
 > **333** are named `list_`/`get_`/`fetch_`. Every frontend invocation site was
 > counted twice — once by ripgrep, once by a TypeScript 6 AST walker resolving
 > `import { invokeWithTimeout as invoke }` aliases — and **the two disagreed, and
@@ -17,6 +18,16 @@
 > agent run were opened and read; so were `tauriInvoke.ts` (556 lines),
 > `AsyncButton.tsx`, `Button.tsx`, `create_with_idempotency`, both pollers,
 > `remote_commands.rs` and `queue.rs::admit` in full.
+>
+> **Correction, 2026-08-16 (one day after composition).** The command count
+> here is **1,661**, not 1,666. `ownership-verification` re-counted with the
+> same brace-matching but also excluded matches inside string literals and
+> comments: 1,673 raw, 12 in strings/comments, 0 in `#[cfg(test)]`. Every ratio
+> below whose denominator is the command count is therefore off by 5 in the
+> conservative direction; none of the conclusions turn on it. `filesystem-boundary.md`
+> records three different counts (1,657 / 1,661 / 1,666) from three composers —
+> **1,661 is the one with a stated method for the discrepancy**, and is the
+> number to cite.
 >
 > **Measured by execution, not by reading.** Six interleavings of *this repo's own
 > idempotency path* were replayed against real SQLite (`node:sqlite`), every
