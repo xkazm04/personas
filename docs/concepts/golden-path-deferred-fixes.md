@@ -167,6 +167,32 @@ tree except a guard rejecting `VACUUM INTO`.
 
 ---
 
+## 6b. A bare Enter starts a billable run, and key-repeat multiplies it
+
+**`src/features/agents/sub_executions/libs/useRunnerExecution.ts:119-145`**
+
+An unmodified **`Enter`** with nothing focused calls `executePersona()`
+(`:112`). No modifier, no confirmation, no cost shown. Replayed in jsdom against
+the transcribed handler: **1 press = 1 billable run; 5 key-repeats = 5 runs.**
+`e.repeat` is never consulted, and the only guard is `isExecuting`, which is
+React state and therefore one frame late.
+
+**Why not applied:** a `e.repeat` guard is strictly protective, but it changes
+how a live surface responds to the keyboard, which is the operator's call under
+the no-behaviour-change rule.
+
+**Shape of the fix:** bail on `event.repeat`; consider requiring a modifier, and
+move the in-flight guard to a ref so it is not a frame behind.
+
+**Context that makes it worse:** the app's keyboard ownership registry is
+structurally unable to win — `document` precedes `window` in the bubble path, so
+a raw `document` listener beats every rank including the highest the app uses.
+Measured: 72 of 90 global bindings are registered outside the registry, one
+`Ctrl+K` fires 3 actions, `?` opens 2 help overlays, and `exclusive: true`
+suppresses 0 of 2 raw listeners.
+
+---
+
 ## 7. Smaller, same rule
 
 - **`fleet_set_live_slots`** has no clamp and **no `require_auth`**, and the
