@@ -2716,6 +2716,85 @@
         "matches": 34
       },
       "floor": 900
+    },
+    {
+      "id": "self-disabling-money-ceiling",
+      "goldenPath": "docs/concepts/golden-paths/spend-ceilings.md",
+      "title": "A dollar ceiling applied only when it is positive — so an unconfigured one bounds nothing",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "(?:\\b(?:budget|ceiling)\\w*\\s*>\\s*0\\.0\\s*(?:&&|\\{)|\\b(?:budget|ceiling|cost_budget|max_budget)\\w*(?:[^;\\n]{0,90}?)\\.\\s*filter\\s*\\(\\s*\\|\\s*&?\\w+\\s*\\|\\s*\\*?\\w+\\s*>=?\\s*0(?:\\.0)?\\s*\\)|(?:CEILING|BUDGET|COST)_USD\\s*\\)(?:[^;]{0,220}?)\\.\\s*filter\\s*\\(\\s*\\|\\s*&?\\w+\\s*\\|\\s*\\*?\\w+\\s*>=?\\s*0(?:\\.0)?\\s*\\))",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a site that decides whether to apply a MONEY limit by testing whether the limit is greater than zero — either an inline positivity guard on a budget/ceiling identifier, or an Option chain that normalises a stored dollar ceiling's zero away with .filter(|v| *v > 0.0). PROXY FOR the stack-free condition: a limit's unconfigured value is read as 'no limit', so the protection an operator never configured is the protection that never exists, and the convention has to be re-spelled at every use site. THE FOUR SPELLINGS ARE THE POINT: `budget > 0.0 &&` (background.rs:2052, deliberation.rs:168, mod.rs:2783, run_budget.rs:198), `if budget > 0.0 {` (cli_args.rs:133, executions.rs:354), `.filter(|b| *b > 0.0)` on an IPC argument (deliberations.rs:43), and the same filter on a settings read (overnight.rs:321) — four expressions of one idea, which is what a codebase looks like when the idea has no name. PRECISION 8/8, every match opened and confirmed. THE SEVERITY IS NOT UNIFORM AND THE WORST ONE IS cli_args.rs:133: it is the ONLY per-call dollar bound this application can emit, and it declines to emit itself when the value is 0.0 — which it is, on 78 of 78 personas in the operator's live database. deliberation.rs:168 is the subtlest: line 167 resolves an absent budget to DEFAULT_COST_BUDGET_USD = 5.0, and then this guard lets a literal stored 0.0 defeat that default anyway. RECALL is deliberately partial and three gaps are named: background.rs:2510 is a fourth spelling four lines from background.rs:2052 whose binding is named `b` rather than `budget`; policy_evidence.rs:115 flattens the same ceiling with .unwrap_or(0.0), which belongs to `unknown-money-as-zero`; and executions.rs:886 does the same for a cost preview. A site whose positivity test uses a single-letter binding or an integer zero is invisible here. PRECONDITION (must be re-derived per repo): this repo denominates limits in f64 USD and spells 'no limit' as 0.0, a convention documented four times (settings_keys.rs:353,669,680; background.rs:2045) and unit-tested (chain.rs:2004). A TypeScript repo expresses the identical condition as `if (x && x > 0)` or `?? Infinity` and scores ZERO here — which is what all four billable sibling repos audited for this path do, and why none of them has this rule."
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/db/src/policy_tuning.rs",
+          "reason": "the budget AUTO-TUNER, not a gate: policy_tuning.rs:387-393 classifies an existing ceiling against observed spend to propose introduce/raise/lower, so testing the ceiling's positivity is the whole subject of the branch rather than a way of skipping a bound. Excluding it moved precision from 8/10 to 8/8."
+        }
+      ],
+      "baseline": {
+        "files": 8,
+        "matches": 8
+      },
+      "floor": 900
+    },
+    {
+      "id": "unkeyed-billable-spawn",
+      "goldenPath": "docs/concepts/golden-paths/idempotent-invocation.md",
+      "title": "A billable agent run is started with the idempotency-key argument passed as the literal None, so the same logical request arriving twice starts two runs and bills twice",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\b(?:execute_persona_inner|create_with_idempotency)\\s*\\((?:[^;]{0,900}?)\\bNone\\s*,\\s*(?:/\\*[^*\\n]{0,60}\\*/\\s*)?(?:true|false|is_simulation)\\s*,?\\s*(?://[^\\n]{0,80}\\n\\s*)?\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A call to one of the two functions that create a `persona_executions` row whose IDEMPOTENCY-KEY ARGUMENT IS THE LITERAL `None`. The slot is identified positionally and unambiguously: it is the second-to-last argument, immediately followed by the `is_simulation` boolean and the closing paren, so `None, false)` / `None, /* is_simulation */ true)` matches and `Some(idempotency_key), false)` does not. PROXY FOR the stack-free condition: a code path starts an irreversible, billable unit of work while supplying no value that identifies WHICH request asked for it, so the system cannot recognise the same request arriving a second time and the second arrival is indistinguishable from a new one. THE SHAPE IS NOT AN ACCIDENT OF THE AUTHOR: the parameter is POSITIONAL AND REQUIRED - every one of these 15 authors had to type something in that slot, and 13 typed `None`, EIGHT of them under a `/* idempotency_key */` comment naming the thing they were declining. That is why requiredness is not the fix here; see the golden path's 'Prefer a type over a gate' qualification 2. EXECUTED, not argued (node:sqlite, 2026-08-16, statements transcribed verbatim from db/src/repos/execution/executions.rs:543-583 and the partial unique index from db/src/migrations/incremental.rs:2139-2140): with NO key, two calls insert two rows and spawn two engines (`rows inserted=2, ENGINE SPAWNS=2`); with the SAME key, `ON CONFLICT(idempotency_key) WHERE idempotency_key IS NOT NULL DO NOTHING` holds the row count at 1 across all three interleavings (fresh/pre-check-hit/conflict-reread) - so the constraint works and the KEY IS THE ONLY THING MISSING. Also executed: two inserts with a NULL key both land (changes 1,1) because a NULL is not in the partial index, which is why 2,176 of 2,188 live rows are outside the guarantee and the index protects 0.55% of the table. MEASURED 2026-08-16 at 19884e1f0: 13 matches across 11 of 963 .rs files, ALL THIRTEEN OPENED AND READ (precision 13/13), commentMatchesSkipped 0. Population and partition: the 15 production sites that reach a persona_executions insert (excluding the unkeyed constructor and two pure conduits that forward their caller's parameter) split 13 violating / 2 compliant, and 13 + 2 = 15 exactly, so there is no unexamined third population. THE THIRTEEN: commands/core/use_cases.rs:639 and :700 (the team-assignment dispatch path, which is where all 11 duplicate-execution groups in the live database sit); engine/director.rs:825 and :937; engine/director_memory.rs:160; cloud/remote_commands.rs:294 - the command whose CLOUD-side double-approval was fixed on 2026-08-16 at 1ad67db14 and which still spawns the persona unkeyed, while src/lib/tauriInvoke.ts:75-77 puts it on BLOCKING_MUTATION_TIMEOUTS with the reason stated as 'No backend dedup - a post-timeout retry would run the persona a second time' (cmd.id is a perfect natural key one expression away); commands/companion/approvals/approval_exec_core.rs:29; commands/design/build_simulate.rs:330; commands/design/reviews.rs:1364; commands/teams/deliberations.rs:258; commands/testing/synthesize_review.rs:100; engine/background.rs:1561 (the dry-run trigger fire); src/lib.rs:1319 (the F7 fix-loop worker, which RE-ENTERS a persona after a quality-failed run - the one site where a redelivery is designed in). NOT EVERY MATCH IS A LIVE BUG AND THE RULE DOES NOT CLAIM SO: build_simulate.rs:330 and synthesize_review.rs:100 create simulation rows and director.rs runs once per tick; they are carried so the count is a population rather than an opinion. THE TWO COMPLIANT SITES ARE THE DOCTRINE: engine/discord_poller.rs:251 passes `format!(\"discord:{}:{}\", channel_id, msg.id)` and engine/slack_poller.rs:297 passes `format!(\"slack:{}:{}\", channel_id, msg.ts)` - keys derived from THE SOURCE'S OWN ID, therefore replay-safe across a restart. Contrast src/api/agents/executions.ts:67, `idempotencyKey ?? crypto.randomUUID()`, which mints a fresh key PER CALL and therefore dedupes nothing, under a comment claiming it self-dedups double-clicks - while src/stores/slices/agents/executionSlice.ts:408-412, one layer up the same call chain, documents that exact defect and fixes it with a request-signature key. ONE EXCLUSION, BY PATH WITH A REASON, NOT BY WEAKENING THE PATTERN: db/src/repos/execution/executions.rs is the deliberate no-dedup constructor (`create()` at :471 delegating to create_with_idempotency with None) - it is the unkeyed door itself rather than a caller that declined, and excluding it is what lets this rule reach zero when the 13 callers are keyed. TWO INDEPENDENT IMPLEMENTATIONS AGREED AT 12 AND BOTH WERE WRONG: a paren-aware argument extractor and the census engine's first draft both missed engine/background.rs:1561, whose argument list closes as `None,` newline `true, // is_simulation` newline `)` - a TRAILING LINE COMMENT INSIDE THE CALL, which ignoreCommentLines does not strip because it removes whole comment lines and not line-tail comments. The published pattern admits `(?://[^\\n]{0,80}\\n\\s*)?` before the closing paren and both implementations now return 13. A third scan, hunting 'a per-call UUID used as an idempotency key' in TypeScript, keyed on identifiers matching idempotenc|dedup|request_?id|nonce and returned 3 - MISSING src/api/agents/executions.ts:67, the single most consequential site in the document, because its binding is named `resolvedKey`. A vocabulary-based signal's recall is bounded by its author's word list and the misses cluster on the interesting cases. CONTAMINATION: zero - the reconciling implementation removed #[cfg(test)] as BRACE-MATCHED RANGES plus a *_tests.rs filename rule, the census engine does neither, and both returned the same 13; tests here build executions through init_test_db helpers rather than calling the spawn path. BACKTRACKING: the only broad fill is `(?:[^;]{0,900}?)`, a bounded lazy repetition of one negated character class with no nested quantifier and no same-span alternation; full 963-file run 0.35s. DOES NOT OVERLAP unverifiable-conflict-clause, its nearest neighbour and its complement: that rule fires on statements that HAVE a conflict clause and asks whether the author named the constraint, this one fires on call sites that supply no key so no conflict clause is reachable - verified zero match-position overlap, since its 71 matches are INSERT string literals and these 13 are Rust call expressions containing no SQL. Nor discarded-guard-verdict or blind-identity-write (both about writes to a row known to exist). Nor unfenced-work-outcome-write, its sibling at the opposite end of the same unit of work: that one guards the SETTLE, this one guards the DECISION TO START. Nor constraintless-table-declaration, which keys on nullability rather than uniqueness - the uniqueness analogue was measured and REFUSED (241 tables, 20 unique indexes, ~93% with no natural-key constraint; a gate firing 220 times is a to-do list, and most of those tables are audit logs that correctly permit repeats). LEGAL FIX, one expression each: derive a key from the request. cloud/remote_commands.rs:294 -> `Some(format!(\"remote-command:{id}\"))`; use_cases.rs:700 -> the assignment id it already holds; lib.rs:1319 -> the fix-loop request's own identity. engine/discord_poller.rs:250 is the shape to copy. Do NOT silence a match by passing `Some(Uuid::new_v4().to_string())` - that satisfies the pattern and dedupes NOTHING, and it is the exact defect this golden path's section 2(a) exists to name; do not silence it by moving the argument onto its own line or by introducing a local `let key = None;`, both of which preserve the defect. PRECONDITION (must be re-derived per repo): this repo creates executions through two Rust functions taking a positional `Option<String>` idempotency key immediately before an `is_simulation` bool. A repo on Prisma spells the identical condition as prisma.job.create({data}) with no unique key in the model, and this pattern scores a structural zero there while the condition is present at scale - personas-web and vibeman have no client-generated idempotency key anywhere and would report clean forever. END OF LIFE: this rule is designed to reach zero - all 13 are one-expression fixes - and the golden path's 'Prefer a type over a gate' proposes a Spawn { Created | Deduped } return that makes the KEY actually effective (without it, a supplied key still double-spawns while the row is queued: see deviation D1). When the count reaches 0 the runner fails structurally on zero-matches, BY DESIGN: DELETE the rule then, do not baseline it at 0.",
+        "$measured": "2026-08-16 @ 19884e1f0 — 963 .rs files walked, floor 900, run 0.35s; two independent implementations reconciled at 13/2 after a diagnosed trailing-line-comment gap; every match hand-read; six interleavings of create_with_idempotency replayed against real SQLite; live counts from a read-only copy of personas.db (2,188 executions, 12 keyed, 11 duplicate-run groups worth $9.74 in a 60s bucket)."
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/db/src/repos/execution/executions.rs",
+          "reason": "the deliberate no-dedup constructor itself — `create()` at :471 delegates to `create_with_idempotency(.., None, false)` and IS the unkeyed door, not a caller who declined the key. Excluding it is what allows this rule to reach zero once the 13 callers are keyed; the door's own removal is tracked in the golden path's type proposal instead."
+        }
+      ],
+      "baseline": {
+        "files": 11,
+        "matches": 13
+      },
+      "floor": 900
+    },
+    {
+      "id": "anonymous-deadline",
+      "goldenPath": "docs/concepts/golden-paths/timeout-tiering.md",
+      "title": "A deadline applied as a bare number at the site that applies it",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "(?<![A-Za-z0-9_$])(?:tokio::time::)?timeout\\s*\\(\\s*(?:std::time::|tokio::time::|core::time::)?Duration::from_(?:secs|millis|secs_f64|secs_f32)\\s*\\(\\s*[0-9][0-9_]*(?:\\.[0-9]+)?\\s*\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a timeout application (`tokio::time::timeout(...)` or a reqwest `.timeout(...)`) whose duration is a numeric literal written inline at the application site. PROXY FOR the stack-free condition: the bound on this operation has no name, so nothing else can reference it, no other bound can be derived from it, and no test can assert its ordering against the bound that wraps it. Compliant form: a named `const`, which the positive control counts."
+      },
+      "baseline": {
+        "files": 38,
+        "matches": 61
+      },
+      "floor": 900
     }
   ]
 }

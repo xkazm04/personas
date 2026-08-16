@@ -505,6 +505,43 @@ pub fn create_with_idempotency(
     idempotency_key: Option<String>,
     is_simulation: bool,
 ) -> Result<PersonaExecution, AppError> {
+    create_with_idempotency_reporting(
+        pool,
+        persona_id,
+        trigger_id,
+        input_data,
+        model_used,
+        use_case_id,
+        idempotency_key,
+        is_simulation,
+    )
+    .map(|(execution, _created)| execution)
+}
+
+/// As [`create_with_idempotency`], but reports whether this call CREATED the row
+/// (`true`) or deduped onto one that already existed (`false`).
+///
+/// Added 2026-08-16. The plain version returns only the row, so a caller cannot
+/// tell the two apart — and the caller that most needed to tell them apart used
+/// `execution.status != "queued"` as a proxy for "this was a dedupe". That proxy
+/// is false exactly when the dedupe fires: this function INSERTs with
+/// `status = 'queued'`, so a deduped row that has not started yet **is** queued.
+/// Both callers therefore passed the guard and both spawned an agent — one
+/// request, one returned row, two runs, two bills. The window is the whole queue
+/// wait, not a few milliseconds.
+///
+/// The distinction cannot be recovered downstream from the row alone, which is
+/// why it is returned rather than inferred.
+pub fn create_with_idempotency_reporting(
+    pool: &DbPool,
+    persona_id: &str,
+    trigger_id: Option<String>,
+    input_data: Option<String>,
+    model_used: Option<String>,
+    use_case_id: Option<String>,
+    idempotency_key: Option<String>,
+    is_simulation: bool,
+) -> Result<(PersonaExecution, bool), AppError> {
     timed_query!(
         "persona_executions",
         "persona_executions::create_with_idempotency",
@@ -517,7 +554,7 @@ pub fn create_with_idempotency(
                         execution_id = %existing.id,
                         "Returning existing execution for idempotency key (dedup)"
                     );
-                    return Ok(existing);
+                    return Ok((existing, false));
                 }
             }
 
@@ -575,12 +612,12 @@ pub fn create_with_idempotency(
                             execution_id = %existing.id,
                             "Returning existing execution after INSERT conflict (idempotency dedup race)"
                         );
-                        return Ok(existing);
+                        return Ok((existing, false));
                     }
                 }
             }
 
-            get_by_id(pool, &id)
+            get_by_id(pool, &id).map(|execution| (execution, true))
         }
     )
 }

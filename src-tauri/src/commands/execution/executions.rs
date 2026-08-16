@@ -374,7 +374,7 @@ pub(crate) async fn execute_persona_inner(
     // 4. Create execution record in DB (starts as "queued").
     //    When an idempotency_key is supplied (e.g. from a timeout-retry),
     //    this returns the existing execution instead of creating a duplicate.
-    let execution = repo::create_with_idempotency(
+    let (execution, created) = repo::create_with_idempotency_reporting(
         &state.db,
         &persona_id,
         trigger_id,
@@ -388,14 +388,25 @@ pub(crate) async fn execute_persona_inner(
     // Update pipeline context with real execution ID
     pipeline.execution_id = execution.id.clone();
 
-    // If idempotency dedup returned an already-started execution, skip the
-    // engine spawn — it's already running (or finished). Return it directly
-    // so the frontend gets the same execution ID without a duplicate spawn.
-    if execution.status != "queued" {
+    // If idempotency dedup returned an existing execution, skip the engine
+    // spawn — someone else already owns this run.
+    //
+    // This tested `execution.status != "queued"` until 2026-08-16, which is
+    // false EXACTLY when the dedupe fires: `create_with_idempotency` inserts
+    // with `status = 'queued'`, so a deduped row that has not started yet is
+    // queued. Both callers passed the guard and both spawned an agent — one
+    // request, one returned row, two runs, two bills — and the window was the
+    // entire queue wait, not a race of milliseconds. Reproduced against real
+    // SQLite with the statements transcribed verbatim.
+    //
+    // `deduped` comes from the repository, which is the only place that knows.
+    // It cannot be recovered from the row afterwards, which is why the status
+    // proxy existed and why it could not work.
+    if !created {
         tracing::info!(
             execution_id = %execution.id,
             status = %execution.status,
-            "Idempotency dedup: execution already in progress, skipping engine spawn"
+            "Idempotency dedup: execution already exists, skipping engine spawn"
         );
         pipeline.complete_stage();
         pipeline.log_summary();
