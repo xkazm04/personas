@@ -3323,6 +3323,30 @@
         "matches": 6
       },
       "floor": 900
+    },
+    {
+      "id": "start-marker-before-admission",
+      "goldenPath": "docs/concepts/golden-paths/admission-control.md",
+      "title": "The durable record says the work started, and the admission door that can still refuse it is called afterwards",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "(?:Some\\(\\s*\"running\"\\s*\\)|status\\s*=\\s*'running')(?:(?!\\bfn\\s)[\\s\\S]){0,900}?\\b[A-Za-z_][\\w:]*\\s*(?:\\r?\\n\\s*)?\\.\\s*insert_running\\s*\\(",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "$measured": "2026-08-16 @ 95555f875 — 963 .rs files walked, floor 900, rule+control run in 0.58s (3 runs); two independent implementations (a comment- and #[cfg(test)]-stripping Node scanner, and the census engine, which strips neither) returned identical membership at 7/4 on the first attempt; all 7 matches and all 12 control matches hand-read; commentMatchesSkipped 0; live consequence measured on read-only copies of personas.db (347 MB) and personas_data.db (17.5 MB) copied 2026-08-16 17:14 UTC+2 with the app running.",
+        "description": "A durable START-MARKER write — the Rust argument `Some(\"running\")` handed to a repo update/create, or a `status = 'running'` SQL literal — followed within 900 characters, WITHOUT crossing a `fn ` boundary, by a call to BackgroundJobManager::insert_running, the admission door that can still refuse the work. PROXY FOR the stack-free condition: a unit of work is recorded in a durable store as having started, and the decision that can still refuse it is taken afterwards, so a refusal leaves a permanent record of work that never ran — in the one state nothing sweeps. MEASURED 2026-08-16 at 95555f875: 7 matches across 4 of 963 .rs files, ALL SEVEN OPENED AND READ (precision 7/7). THE SEVEN, each with its refusal path: task_executor.rs:553->:568 (dev_tools_execute_task — `?` propagates and the dev_tasks row stays 'running'), :735->:750 (dev_tools_start_batch's spawned closure — a BARE `return`, so the batch reports nothing at all), :1412->:1427 (run_one_task_for_auto — returns the string \"failed\" to a JoinSet that discards it, and never touches the row); idea_scanner.rs:459->:464 and :1297->:1300, kpi_scan.rs:528->:531, use_case_scan.rs:252->:255 (all four: `repo::create_scan(.., Some(\"running\"))?` then `X_JOBS.insert_running(..)?`, so a refusal strands a dev_scans row). LIVE CONSEQUENCE, from read-only copies of the operator's databases rather than from reading: dev_scans holds 4 rows stuck at 'running' since 2026-06-08..06-11 (66-69 days) and dev_tasks holds 2 since 2026-04-09 (129 days). THE AUTHOR ALREADY REASONED ABOUT THIS HAZARD AND STOPPED ONE LINE SHORT: idea_scanner.rs:441 carries the comment 'Resolve agents before creating any DB records to avoid orphaned \"running\" scans', 18 lines above the create-then-admit it does not prevent. THE COMPLIANT ORDERING EXISTS ONCE, IN ONE OF THE SAME FILES: dev_tools_start_auto_run (task_executor.rs:1495 door, :1500 durable ledger row) puts the door first and says why in a comment — same file, same author, same concept, one ordered correctly. LEGAL FIX, two statements swapping places: call the door before the write. Do NOT silence a match by hoisting the status write into a helper, by spelling it `Some(status_str)`, or by moving the door into a spawned task — all three preserve the defect exactly and merely hide it from this signal. TOLERANCES: the fill is tempered with (?!\\bfn\\s) so a match cannot span two function bodies; it tolerates the seven inline `//` comments that sit between the write and the door at task_executor.rs:553-568, which is why the engine (which does not strip comments) and a comment-stripping scanner agree exactly. DOES NOT OVERLAP unswept-job-registry-read, its nearest neighbour, which shares 3 of these 4 FILES and ZERO of these 7 LINES — measured by running both in one private registry: that rule's hits are kpi_scan.rs:634,650 / idea_scanner.rs:707 / use_case_scan.rs:365 / context_generation.rs:841,858 / workspace_verify.rs:322,333 / workspace_divergence.rs:324, and its subject is a READ accessor that skips the stale sweep, not a WRITE that precedes the door. Nor unfenced-work-outcome-write (a TERMINAL status + completion timestamp in SQL; this is an INITIAL status as a Rust argument — file intersection 0). Nor discarded-guard-verdict (a compare-and-set whose row count is dropped — file intersection 0). Nor unkeyed-billable-spawn (the idempotency slot on the persona lane — file intersection 0). Nor hand-rolled-emptiness-refusal / self-disabling-money-ceiling, which intersect only this rule's POSITIVE CONTROL and at different lines. PRECONDITION (must be re-derived per repo, do NOT port): this repo marks work started by passing the Rust literal Some(\"running\") to a repository function, and admits through one named door called insert_running. A Node/Prisma repo spells the identical condition `await db.job.create({data:{status:'running'}})` above a `queue.tryAcquire()`; personas-cloud spells it `db.recordEventDispatch(...)` six lines above `dispatcher.submit(...)` (eventProcessor.ts:536,542) and commits the same defect with an idempotency row instead of a status column. This pattern scores a STRUCTURAL ZERO on both. END OF LIFE: this rule is designed to reach zero — all seven are two-statement swaps — and section 4 proposes an admit_then(...) combinator that owns both halves and makes the ordering unrepresentable. When the count reaches 0 the runner fails structurally on zero matches, BY DESIGN: DELETE the rule then, do not baseline it at 0."
+      },
+      "exclude": [],
+      "baseline": {
+        "files": 4,
+        "matches": 7
+      },
+      "floor": 900
     }
   ]
 }
