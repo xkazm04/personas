@@ -1,5 +1,13 @@
 # Golden path — Column encryption at rest
 
+> **Corrected 2026-08-16 by [vault-key-handling](./vault-key-handling.md): this document's
+> ciphertext inventory is short by 4,972 rows.** `persona_events.payload_iv` is a third
+> `(value, iv)` pair under the same master key — **138x larger than the credential vault** — and is
+> absent here. Its nonce hygiene is equally clean (4,972 distinct), so the *cipher* conclusion
+> survives unchanged; the *scope* one does not. The `_enc` claim in that section is also stronger
+> than stated: re-measured with `instr()` rather than `LIKE`, it is 0 and 0.
+
+
 > Situation node: `integrations-security/vault-security/column-encryption-at-rest` ·
 > [situation spine](../situation-spine.md) · recurrence 19 · risk **HIGH** ·
 > sides: **server** · convergence: **mixed** ·
