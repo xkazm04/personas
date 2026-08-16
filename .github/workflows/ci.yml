@@ -18,6 +18,11 @@ jobs:
   # ─── Job 0: Conventional commit lint ──────────────────────────
   commit-lint:
     runs-on: ubuntu-latest
+    # No job in this workflow had a timeout until 2026-08-16. A hung Clippy
+    # step on the macOS runner ran for SIX HOURS — GitHub's default job cap —
+    # while the run showed in_progress and nobody could tell it was dead.
+    # Four other workflows in this repo already set one; ci.yml was the outlier.
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -92,6 +97,8 @@ jobs:
   # ─── Job A: Frontend lint, typecheck, and tests ─────────────
   frontend-checks:
     runs-on: ubuntu-latest
+    # See the note on commit-lint's timeout-minutes.
+    timeout-minutes: 30
     permissions:
       contents: read
       pull-requests: write
@@ -204,6 +211,8 @@ jobs:
           - os: ubuntu-24.04
             label: linux
     runs-on: ${{ matrix.os }}
+    # See the note on commit-lint's timeout-minutes.
+    timeout-minutes: 60
     env:
       # sccache: shared compilation cache backed by GitHub Actions cache.
       # Skips recompiling unchanged crates — typical speedup: 50-70%.
@@ -310,6 +319,8 @@ jobs:
   # ─── Job C: Check generated command names are fresh ─────────
   command-name-drift:
     runs-on: ubuntu-latest
+    # See the note on commit-lint's timeout-minutes.
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -335,6 +346,8 @@ jobs:
     # with `--features desktop`, which pulls xcap -> pipewire -> libspa, and
     # libspa does not build against 22.04's system headers.
     runs-on: ubuntu-24.04
+    # See the note on commit-lint's timeout-minutes.
+    timeout-minutes: 45
     env:
       # RUSTC_WRAPPER intentionally unset here — see the health-check step.
       SCCACHE_GHA_ENABLED: "true"
