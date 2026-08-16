@@ -117,6 +117,47 @@ read fail *closed* rather than returning `true` from its `catch`; and add a
 
 ---
 
+## 2c. A delete confirmation understates what it deletes by 65x
+
+**`src/features/overview/sub_memories/components/MemoriesPageDense.tsx:388`**
+
+The dialog reads *"This permanently deletes all **100** memories"*. The 100 is
+`memories.length` — the **page size** (`memorySlice.ts:112` fetches with
+`limit = 100`). `delete_all_memories` runs
+`DELETE FROM persona_memories WHERE tier != 'core'` — **6,535 rows**.
+
+The true total is destructured in the *same component* at `:57` and rendered in
+its own header at `:194`. Three numbers for one question, 194 lines apart.
+
+Two aggravating facts: there are **0 core-tier rows**, so the exemption protects
+nothing; and this is the one of three memory-delete doors that **leaves the 5,158
+KNN vectors behind** (`db/src/repos/core/memories.rs:1052`).
+
+**Why not applied:** changing what a destructive confirmation says is a change to
+a live surface, and the right number depends on whether the exemption should
+stay.
+
+**Shape of the fix:** render `memoriesTotal`, already in scope at `:57`.
+
+---
+
+## 2d. A public command returns live cloud tokens in plaintext
+
+**`src-tauri/…/cli_capture.rs:818`** — `cli_capture_run`
+
+Absent from both `PRIVILEGED_COMMANDS` (192) and `CLOUD_COMMANDS` (50), and its
+in-body `require_auth` is the documented no-op. It returns the live `gh` /
+`gcloud` / `aws` token in plaintext.
+
+**0 production UI callers** — the only caller is the test-automation bridge. So
+the exposure is latent, and closing it costs nothing a user would notice.
+
+**Why not applied:** it is an authorization change, which is the operator's call
+under the standing rule — and it is entangled with deferred item 4, since the
+in-body guard it would rely on cannot fail.
+
+---
+
 ## 3. `export_credentials` exports nothing and reports success
 
 **`src-tauri/…/data_portability.rs:9560,:9582,:9604-9661`**
