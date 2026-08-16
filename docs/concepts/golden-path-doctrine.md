@@ -98,6 +98,25 @@ not, all measured:
    the value entered.** A type authenticates nothing when the untrusted value
    crosses a serialization boundary before the type exists.
 
+   > **Reached independently from the other direction**, hours later, by
+   > [`selective-per-item-verdicts`](./golden-paths/selective-per-item-verdicts.md):
+   > a discriminated union makes three of its four deviations fail to compile,
+   > and **cannot touch the fourth**, because the per-item verdicts live as a
+   > JSON array inside a `TEXT` column. Untrusted input arriving and structured
+   > output departing hit the same wall. **No type reaches inside a serialized
+   > blob** — in either direction, and the storage shape is upstream of every
+   > type you could add above it.
+
+5. **Across a build boundary** — established by
+   [`compile-time-env-embedding.md`](./golden-paths/compile-time-env-embedding.md).
+   Items 1–4 are *spatial*: the value is somewhere the type system does not
+   look. This one is **temporal** — by the time the question is asked, the other
+   side of the boundary is gone. **The discriminator is whether the mechanism is
+   allowed to fail:** `env!` *does* reach across, because an absent variable is a
+   compile error. `option_env!` and `import.meta.env` do not, because absence is
+   a legal value. Measured: **2 of `build.rs`'s 9 forwarded names actually
+   arrived** in the binary.
+
 If the honest answer is that no type reaches the condition, say so. That is a
 finding, not a failure — and it is the case where a census rule genuinely earns
 its place.
@@ -331,11 +350,20 @@ engine's `publish(&DbPool)` signature makes impossible at all 33 sites.
 
 ### The `convergence` label is not evidence — the field is now closed
 
-**Nine spine leaves carrying `convergence: converged` have been tested. Nine
-failed.** The ninth (`embedded-terminal-session`) failed hardest: **zero of five
+**Ten spine leaves carrying `convergence: converged` have been tested. Ten
+failed.** The ninth (`embedded-terminal-session`) failed because **zero of five
 siblings has a PTY or an xterm-class emulator at all**, so the label pointed at
 a 5/5 silence — and its direction was backwards, since Personas is the only repo
 with the problem and owns the fleet's best answer to it.
+
+The tenth failed in a new way, and it is the one to remember: **the fleet
+converged on the *disease*.** Not one of six repos can report its own git
+commit, branch, build timestamp, or build profile at runtime — zero, six times,
+across three languages and four build systems, including two that are handed the
+value for free and don't take it. **Perfect agreement on an omission is evidence
+that the situation is universal and evidence *against* an answer existing to
+adopt.** An oracle that only counts agreement will read that as the strongest
+possible confirmation. Always ask what the siblings agreed *to do*.
 
 Treat `convergence` as a hypothesis to test, never a premise to build on. Brief
 every composer accordingly. A leaf whose label finally holds is a genuine

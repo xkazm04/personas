@@ -14,7 +14,9 @@ npm run lint             # ESLint
 npm run test             # Vitest (2,400+ tests)
 npm run test:rust        # Rust unit tests (app_lib, --features desktop)
 npm run test:rust:crates # Rust unit tests for the extracted crates only
-npx vite build           # Production frontend build
+npx vite build           # Vite ONLY — bypasses all 13 codegen tasks. Run
+                         # `node scripts/run-codegen.mjs prebuild` first, or
+                         # use `npm run build` (which does it for you).
 node scripts/i18n/check-coverage.mjs   # i18n coverage report (CI gate)
 ```
 
@@ -317,8 +319,8 @@ function MyComponent() {
 
 The 500KB+ monolithic locale bundles were retired in May 2026. Today:
 
-1. `src/i18n/locales/<lang>.json` — authoritative human-edited locale files (English is the source; non-English files are partial, with translation teams catching up asynchronously).
-2. `scripts/i18n/split-locales.mjs` — runs in `vite buildStart` (and is also wired into `predev`/`prebuild` via `scripts/run-codegen.mjs`). Splits each non-English locale into `src/i18n/section-locales/<lang>/<section>.json` and emits `src/i18n/generated/enSectionStrings.ts` (English sections stored as parse-on-demand JSON strings).
+1. `src/i18n/locales/<lang>.json` — authoritative human-edited locale files (English is the source). **Measured 2026-08-16: 19,112 keys × 13 locales, 0 missing / 0 extra / 0 untranslated.** The "non-English files are partial, translation teams catching up asynchronously" posture this line described until then was retired by the **Translation completeness — no gaps (ENFORCED)** section below; the catalogs are complete and the gate keeps them that way.
+2. `scripts/i18n/split-locales.mjs` — wired into `predev`/`prebuild` via `scripts/run-codegen.mjs`. **It has NOT run in `vite buildStart` since 2026-05-10** (`split-locales` appears nowhere in `vite.config.ts`; the `catalog-codegen` buildStart plugin was removed, see `vite.config.ts:40-49`). This line claimed it did until 2026-08-16, and combined with the `npx vite build` entry above it described a workflow that silently ships stale translations. Splits each non-English locale into `src/i18n/section-locales/<lang>/<section>.json` and emits `src/i18n/generated/enSectionStrings.ts` (English sections stored as parse-on-demand JSON strings).
 3. `src/i18n/useTranslation.ts` discovers section JSON via `import.meta.glob('./section-locales/*/*.json', { eager: false })`, so each section becomes its own async chunk. The `t` value is a `Proxy` that triggers section loading on first property access.
 4. `src/i18n/routeSections.ts` — declares which sections each `SidebarSection` (home/overview/personas/…) needs. The active route's sections preload eagerly; everything else loads on demand. `BASE_SECTIONS` (common, chrome, sidebar, toasts, errors, error_registry, empty_states, status_tokens, process_labels) always preload.
 5. `src/main.tsx` `preloadPersistedLocaleBeforeMount()` — kicks off section loads for the persisted locale + persisted sidebar route before React mounts, so non-English users avoid an English-first-paint flash. Bounded by a 1.2s timeout.

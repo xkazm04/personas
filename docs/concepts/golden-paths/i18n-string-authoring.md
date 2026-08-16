@@ -254,6 +254,18 @@ correctly and nothing else does all of them together:
   component** with `label: t.overview.activity.col_started`. This is step 4 done right: the
   constants are shaped exactly like the frozen ones in §7.D, but they resolve at render.
 - `:219` — `tokenLabel(t, 'thinking', e.thinking_level)` for a backend token.
+
+  > **Corrected 2026-08-16 by
+  > [translation-completeness](./translation-completeness.md).** The *call* is
+  > exemplary and stays the model to copy. The *catalog behind it is short an
+  > arm*: `thinking.xhigh` is missing, so this line — the one this section names
+  > as the site to copy — renders the raw token on screen, in all 14 locales.
+  > The same concept **is** translated everywhere else under
+  > `models.effort_xhigh`. Doing every step right does not save you when the
+  > enumeration is incomplete, because every completeness gate in this repo
+  > compares the locale catalogs **to each other** and an absence punched
+  > identically through all 14 is invisible by construction. 36 such arms are
+  > missing across 10 of 24 token categories; 13 are live.
 - `:278` — `tx(t.overview.activity.showing, { count: rows.length, total: … })`: one key, one
   interpolation, translator-reorderable.
 - `:289`, `:296-297` — `ariaLabel`, `title` and `aria-label` all through `t`.

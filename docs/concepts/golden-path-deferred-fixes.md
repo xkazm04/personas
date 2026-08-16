@@ -359,10 +359,17 @@ Same question, two answers 70 points apart: `compute_trust_score` returns
 **0.0** (floor) where `computeCompositeHealth` returns **70/100**, for **19 of
 78 personas (24%)**.
 
-**Why held:** this is a one-character-class fix with a real payoff — 19 personas
+**Why held:** this is a one-character-class fix with a real payoff — personas
 return to the Trigger Studio — but that *is* a live-surface change, and the
 right repair is the absence-handling one in item 9, not a rescaled constant.
 Recommended as the first item to apply once the operator gives a window.
+
+> **Sharpened 2026-08-16 by `selective-per-item-verdicts`.** The picker
+> exclusion is **three** predicates, not one, and the real cost is **38 of 78
+> personas (49%) silently absent** — not 19. The `< 0.5` comparison is confirmed
+> as a **unit bug** (the column is 0–100, minimum real value 58.5), so it fires
+> only for the rows sitting at exactly 0. It is also the **only** threshold
+> comparison of its kind in 4,829 files, which is why nothing else caught it.
 
 ---
 
@@ -518,6 +525,119 @@ lefthook runs no Rust test, and `npm run check` runs no Rust test.
 safe — but it needs one `cargo` run to confirm the manifest fix actually clears
 the loader error on this machine, and `cargo` is unavailable in this campaign's
 session. Filed here rather than guessed at.
+
+---
+
+## 17. A batch review apply is all-or-nothing, and a crash halfway is unrecoverable
+
+**Where:** `src-tauri/src/commands/core/memories.rs:874`, status flip at `:901`.
+
+**What is measured:** `apply(proposal_id)` archives every entry in a proposal or
+none. Replayed verbatim against the operator's real 11-entry proposal: apply
+touches **11 of 11 and archives 52 memories**; discard touches 0 of 11; **there
+is no third call.** A crash before entry 5 leaves `status='applied'`, **33
+memories archived, 6 never run, and nothing recording which** — and because the
+status flips *before* the loop, the CAS refuses the retry. The `errors:
+Vec<String>` it accumulates has no consumer.
+
+The command also has **zero UI**: its four wrappers appear in 3 of 4,829 files
+(the api module and two bindings), none of them in `features`, `stores`, or
+`hooks`.
+
+**Why held:** repairing this means changing when the status flips and adding
+per-entry progress — a write-path change to the memory archive, which is the
+operator's own data. The correct shape is already in the same database:
+`dev_ideas` stores the identical concept as **N rows** and carries a rejection
+reason on **23 of 24 rejections (96%)**, against **0 of 208** for the JSON-array
+shape.
+
+---
+
+## 18. Rejecting two items makes the other six unapprovable
+
+**Where:** `MessageDetailModal.tsx:858-859,:949`; `ReviewFocusFlow.tsx:181-185`;
+`ReviewDetailPanel.tsx:319-336`; `AthenaVerdictCard.tsx:111`.
+
+**What is measured:** the app renders per-item review controls, collects
+per-item verdicts, and then stores **one status for the batch**. Live: **258
+per-item verdicts across three stores, 0 recoverable as per-item facts.**
+
+- `MessageDetailModal` holds `useState<Record<string, DecisionVerdict>>` next to
+  an `onApprove: () => void` — the verdicts are **discarded entirely**. Approve
+  is `disabled` when any child is rejected, so **rejecting 2 of 8 means you
+  cannot approve the other 6.**
+- `ReviewFocusFlow` **derives** the batch verdict as `anyAccepted ? approve :
+  reject`. One accept out of eight approves the batch — and
+  `manual_reviews.rs:337-357` then writes a team `decision` memory at
+  **importance 7** recording that outcome. A correct learning loop over a lossy
+  verdict amplifies the loss.
+- `ReviewDetailPanel` flattens the verdict map into a `"Decisions:\n+ label"`
+  string in `reviewer_notes`, stripping ids and omitting undecided items.
+- `AthenaVerdictCard.tsx:111` sends `reason: i.reason` for flipped items, so an
+  accept→reject flip persists **Athena's argument for accepting** as the
+  rejection reason.
+
+**Also expired, not just lossy:** `companion_approval` holds **8 batches / 50
+verdicts**, all `pending`, and replaying `load_pending`'s freshness predicate
+shows **8 of 8 past the 24h consent window** — permanently unappliable.
+`persona_memory_review_proposal` holds 4 proposals / 24 entries, all
+`pending_review` with `decided_at` NULL, aged **37–98 days**.
+
+**Why held:** every one of these is a live review surface the operator uses, and
+the repair is a storage-shape change (N rows, not a JSON array in a `TEXT`
+column) rather than a patch. Worth noting that the fleet is **ahead** here:
+across 9 sibling review surfaces, **9 of 9 store N rows**, **0 have an
+all-or-nothing batch-apply endpoint**, and **0 of 4 flip a batch status before
+the loop.**
+
+---
+
+## 19. The locale catalogs are perfect and the app still renders English
+
+**Where:** `useTranslation.ts:234-240`; `check-route-sections.mjs:115`;
+`LlmCallsTable.tsx:219`; `lefthook.yml:78`.
+
+**What is measured:** **19,112 keys × 13 locales — 0 missing, 0 extra, 0
+untranslated**, 65/65 error-registry prefixes, every check green. Three
+absences ship underneath that, and none of them is a translation gap:
+
+1. **Delivery ≠ catalog — 26 (section, route) pairs, 17 sections, 121 files.**
+   The `t` Proxy deliberately does not load on access (a render-storm fix) and
+   `check-route-sections.mjs:115` asserts **union** membership, not *route*
+   membership. Sharpest case: `home`, the default landing route, declares
+   `cockpit` (**2 keys**) while `CockpitPanel.tsx:141` reads `t.overview.cockpit`
+   (**86 keys**, translated in every locale, never fetched). It is
+   **order-dependent** — visiting Overview once makes it evaporate, so manual QA
+   cannot reproduce it.
+2. **Domain ≠ catalog — 36 missing token arms across 10 of 24 categories, 13 of
+   them live.** `generating` and `pending` fire on essentially every run.
+   `severity.warning` renders a correctly-coloured amber chip whose text is the
+   literal word `warning`. `thinking.xhigh` renders raw at `LlmCallsTable.tsx:219`
+   — the exact line `i18n-string-authoring.md` §6 names as "the one site to
+   copy" — while the same concept *is* translated in 14 locales under
+   `models.effort_xhigh`.
+3. **`t.kpis.measurement_source`: 5 arms against a 6-arm CHECK with a live
+   writer** (`repos/dev_tools.rs:7100` inserts `'ai-compose'`).
+
+**The physics, and why a stricter check cannot help:** every completeness gate
+here compares the locale catalogs **to each other**. That is a *symmetry* check,
+so an absence punched identically through all 14 catalogs is invisible **by
+construction**. Replicated: all three repos in the fleet that gate locale-vs-locale
+parity are carrying a live enum-vs-catalog gap right now, and all three boards
+are green.
+
+**Why held:** adding 36 token arms means running the translate pipeline across 13
+locales — a large generated diff on the operator's source of truth, and not
+something to do inside a doc campaign. The delivery gap needs a change to
+`routeSections.ts` that alters what preloads on the landing route.
+
+**One free gate change, recommended and not applied:** `lefthook.yml:78` runs
+the *default* (warn-only) coverage mode on pre-push, as does CI. Strict mode is
+reached only by the pre-commit hook, and only when a commit stages
+`src/i18n/locales/*.json` — so the edit that *creates* an incompleteness
+(widening a SQL CHECK or a Rust enum) runs no i18n gate at all. Switching that
+one word costs nothing today, because the strict check passes at 0/0. Held only
+because it changes what can block a commit.
 
 ---
 

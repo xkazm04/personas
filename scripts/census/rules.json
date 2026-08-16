@@ -3731,6 +3731,90 @@
         "matches": 2
       },
       "floor": 3000
+    },
+    {
+      "id": "staged-verdict-map-collapsed",
+      "goldenPath": "docs/concepts/golden-paths/selective-per-item-verdicts.md",
+      "title": "A component stages a per-item verdict map over a batch whose commit cannot carry it",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "useState<\\s*Record<\\s*string\\s*,\\s*(?:[A-Za-z_$][A-Za-z0-9_$]{0,40}Verdict|'(?:accept|approve|reject)[a-z]{0,4}'|\"(?:accept|approve|reject)[a-z]{0,4}\")",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A React component holding a STAGING MAP of per-item verdicts keyed by item id - useState<Record<string, SomethingVerdict>> or useState<Record<string, 'accepted'|'rejected'|...>>. PROXY FOR the stack-free condition: a human is offered a verdict per item over a batch, and the call that commits it has no parameter that can carry more than one verdict, so the reviewer's partial judgement is destroyed at the boundary with a success toast. MEASURED 2026-08-16 at 2a874e692: 3 matches across 3 of 4829 .ts/.tsx files under src, EVERY ONE OPENED AND CONFIRMED (precision 3/3 on the stated condition, and 3/3 on the stricter 'is this a defect' question). THE POPULATION PARTITIONS EXACTLY: the raw anchor matches 4 files, and 3 violating + 1 compliant (AthenaVerdictCard.tsx, excluded below and counted by the positive control) = 4. THE THREE: (1) ReviewDetailPanel.tsx:96 Record<string,'accepted'|'rejected'|null> - the map is flattened at :319-323 and again at :332-336 into `Decisions:\\n+ {label}\\n- {label}` and appended to reviewer_notes, DISCARDING d.id and OMITTING every undecided item, so 'I rejected 3 and never looked at 2' and 'there were only 3' write the same string; pressing Reject still writes the '+' lines for accepted items, so the prose contradicts the status stored beside it. (2) ReviewFocusFlow.tsx:80 - same flatten via buildVerdictNotes (:141-156), plus decideAndAdvance (:174-186) DERIVES the batch verdict as `anyAccepted ? onApprove : onReject`, so ONE accept out of eight approves the whole batch and manual_reviews.rs:337-357 then writes a team `decision` memory at importance 7 saying the human approved it. (3) MessageDetailModal.tsx:876 - the worst: the props are `onApprove: () => void` / `onReject: () => void` (:858-859) and handleResolveReview (:311-322) calls resolveReviewRow(review, status) with NO notes, so childVerdicts is DISCARDED ENTIRELY, not even as prose; and :949 disables Approve when any child is rejected (title, hardcoded English: 'Clear rejections before approving the whole review'), so a reviewer who rejects 2 of 8 CANNOT approve the other 6. MEASURED LIVE against a read-only copy of the operator's personas.db (347 MB, copied 2026-08-16 21:20 with the app running, never opened for write, deleted after): 47 of 194 persona_manual_reviews rows carry a context_data.decisions[] array holding 184 sub-decisions in batches of 1 to 8; ZERO reviewer_notes rows in the entire table contain a 'Decisions:' block, and ZERO human-review memories do either (0 of the 10 matching persona_memories rows, 0 of the 237 matching team_memories rows; 16 rows tree-wide do match the string and all 16 are session-capture/ADR memories from unrelated writers) - so the per-item control has been rendered for 184 items and has produced no durable verdict at all (35 of the 47 batches were auto-triaged with one LLM verdict for the batch, 9 went through dispatch_review_action's suggested-action door, 3 were resolved with empty notes). THE CONTRAST IS IN THE SAME DATABASE: dev_ideas stores the identical concept as N ROWS with a per-row status and a per-row rejection_reason, and 23 of its 24 rejections carry one (96%) against 0 of 208 for the JSON-array shape. TWO INDEPENDENT IMPLEMENTATIONS AGREE EXACTLY ON THE ANCHOR (4 matches / 4 files, identical membership and line numbers) AND DISAGREED ON THE PARTITION (3/1 vs 2/2): implementation #2 is a structural counter that blanks comments, strings, template literals and regex literals then extracts each useState type argument by ANGLE-BRACKET BALANCING and each per-item commit by BRACE BALANCING; it credited MessageDetailModal.tsx:932 as a per-item commit, and hand-verification resolved it against #2 - :932 is `decisions.map((decision) => (<FocusedDecisionCard ... />))`, a JSX RENDER LOOP, so the census control (which requires `=> ({`, an object literal, and cannot match JSX's `=> (<`) is the more precise instrument. AGREEING ON A COUNT IS NOT SOUNDNESS: these agreed on 4 and still disagreed about what the 4 were. ZERO MATCH-LEVEL OVERLAP with `verdict-write-outside-door` (human-review-queue.md, 6 files / 8 matches) - re-measured by re-running its committed pattern, not assumed: it keys on a verdict wrapper imported from @/api/** or updateKpi({status}), and all three of my files route CORRECTLY through src/lib/decisions/rowWrites.ts. It asks whether the write went through the door; this asks whether the door could carry what the reviewer decided. Also 0% match overlap with `inline-verdict-band` (score bands, not human verdicts - a name collision), `snapshot-replace-rollback`, and `absent-entity-count-as-zero`; `unregistered-key-handler` and `hand-rolled-disabled-state` each share MessageDetailModal.tsx (1 of my 3 files, 33%) at unrelated lines, 0 shared matches. DISCLOSED RECALL GAP, exactly where the doctrine predicts: the anchor is a VOCABULARY keyed on the map's value TYPE NAME, so it cannot see a `Set<string>` of accepted ids (ImprovePopover.tsx:41, KnowledgeTree.tsx:83, ArxivSearchModal.tsx:23 - a two-valued verdict where absence IS the rejection, which is this leaf's P2 failure with no name to grep), a useReducer, a map lifted into a zustand slice, or the SERVER half of the leaf: apply_persona_memory_review_proposal(proposal_id) (commands/core/memories.rs:874) is all-or-nothing over a stored 11-entry batch that archives 52 memories in one click, and it has NO client staging map because it has NO CLIENT AT ALL (referenced in exactly 3 of 4829 files: src/api/overview/memories.ts and two generated bindings). True recall over surfaces carrying this condition is about 4 of 8. LEGAL DESTINATIONS the pattern leaves unmatched by construction, both of which exist in this tree: (1) the compliant commit - AthenaVerdictCard.tsx:111 `batch.items.map((i) => ({ ideaId: i.ideaId, verdict: effective(i), reason: i.reason }))` into dev_tools_apply_triage_verdicts(approval_id, overrides: Vec<TriageOverride>) where TriageOverride carries a THIRD verdict, `skip`, documented as 'leave this idea exactly as it is' (commands/companion/backlog_triage.rs:73-83); (2) a per-item map that MIRRORS DURABLE ROWS rather than staging a decision - PracticeRolloutModal.tsx:52 Record<string, AdoptionState>, seeded from listWorkspaceAdoption and written through on every change (7,099 live rows). A staging buffer and a mirror are indistinguishable in the type system and behave oppositely on navigation, and this pattern does not understand the difference - it misses the mirror only because AdoptionState is not spelled 'Verdict'. PRECONDITION (must be re-derived per repo): this repo expresses a per-item verdict UI as a React component holding a Record keyed by item id. A repo whose reviewer state is a Vue ref, a checkbox array in a form POST, or a server-rendered multi-select scores a structural zero here while carrying the condition at scale - measured in the sibling checkouts, where 9 such surfaces exist and NONE would match: brainiac ReviewWorklist.tsx:182 uses useState<ReadonlySet<string>>, ascent PracticeApply.tsx:47 a Set seeded to all candidates, vibeman's refactor wizard a zustand slice with no persist middleware. Do NOT silence a match by widening the value type to `string`, by moving the map into a store, or by deleting the per-item controls while leaving the batch payload - the honest fixes are to make the commit take Array<{id, verdict, reason}> (the golden path's section 4) or to store the sub-items as rows."
+      },
+      "exclude": [
+        {
+          "path": "src/features/overview/sub_manual-review/components/backlog/AthenaVerdictCard.tsx",
+          "reason": "the compliant form and this leaf's reference implementation - its map is committed AS A MAP (batch.items.map(i => ({ ideaId, verdict, reason })) at :111) into a door whose parameter is Vec<TriageOverride>, so the per-item verdict reaches the backend; it is the positive control below, and this exemption failing is how the gate reports that its own reference implementation was deleted"
+        },
+        {
+          "path": "**/__tests__/**",
+          "reason": "test files legitimately construct a staged verdict map to assert the collapse"
+        }
+      ],
+      "baseline": {
+        "files": 3,
+        "matches": 3
+      },
+      "floor": 4000
+    },
+    {
+      "id": "version-only-build-stamp",
+      "goldenPath": "docs/concepts/golden-paths/compile-time-env-embedding.md",
+      "title": "A durable or transmitted record is stamped with the compile-time version as its ONLY build identity, so two materially different builds of the same version are indistinguishable in the record",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "(?:\\b(?:release|version|app_version|saved_by)\\s*:\\s*(?:Some\\(\\s*)?|\"version\"\\s*:\\s*|\\bconst\\s+[A-Z_]*VERSION[A-Z_]*\\s*:\\s*&(?:'static\\s+)?str\\s*=\\s*)env!\\s*\\(\\s*\"CARGO_PKG_VERSION\"\\s*\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "the compile-time crate version written into a struct field, a serialized JSON key, or a transmitted protocol constant, as that record's whole build identity. PROXY FOR the stack-free condition: \"an artifact, telemetry event or protocol handshake claims to identify the build that produced it, and names only a value that many materially different builds share.\" MEASURED BY EXECUTION 2026-08-16 against the real artifacts on disk, not by reading source: src-tauri/target/release/personas-desktop.exe (137.6 MiB) contains the literal 'desktop-full' ZERO times and carries no git sha, no build timestamp and no feature list, so the ONLY way to determine which cargo feature set produced it was to grep it for third-party crate names left behind by the optional dependencies (quinn 247 occurrences and mdns 114 => the p2p feature was on; fastembed 10, sqlite-vec 41, onnxruntime 2 => ml was on). dist/assets/*.js (1,399 chunks, 30.9 MiB) survives with ZERO occurrences of the string 'import.meta.env' - every build-time value is fully inlined - and BUILD_MAX_TIER is minified away, so the bundle cannot report which of build:starter/build:team/build:builder produced it, and dist/index.html carries no version, no tier and no date. Both Sentry inits set release from this same version constant (src-tauri/src/main.rs:87, src/lib/sentry.ts:202) and NEITHER sets Sentry's `dist` field, which exists precisely to separate builds within one release - so a crash from tauri:dev:lite, tauri:build:stable, a starter bundle and a builder bundle all arrive tagged 1.1.0 with nothing to tell them apart. THE FIX IS A TYPE, NOT MORE CALL SITES: one BuildIdentity struct constructed once from the version PLUS the compiled feature set (a cfg!-derived list; there are currently ZERO cfg!(feature=..) tests in 963 .rs files) PLUS a build.rs-forwarded commit sha, ts-rs-exported so the frontend and every export bundle carry the same shape. Every match below then becomes a field of one value instead of a hand-written version string. PRECONDITION (must be re-derived per repo): this proxy keys on Rust's env!(\"CARGO_PKG_VERSION\") and on struct-field / JSON-key / associated-const syntax. A repo that stamps identity from package.json at bundle time (NEXT_PUBLIC_APP_VERSION), from a Docker label, or from an npm-injected npm_package_version scores ZERO here while the same condition is present - measured across five sibling repos on 2026-08-16, NONE of the five can report its own commit sha, branch, build timestamp or build profile at runtime, so the condition is fleet-wide and only the markup is local."
+      },
+      "baseline": {
+        "files": 11,
+        "matches": 13
+      },
+      "floor": 900
+    },
+    {
+      "id": "unverifiable-catalog-lookup",
+      "goldenPath": "docs/concepts/golden-paths/translation-completeness.md",
+      "title": "A catalog lookup keyed by an open runtime value, with the compiler's check waived by a cast and a silent fallback",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\bt\\??\\.[A-Za-z_0-9.]+\\s+as\\s+Record<\\s*string\\s*,\\s*string\\s*>",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a cast of a translation-catalog expression to Record<string, string>, which deletes the generated key type and reopens the key space to any runtime value. PROXY FOR the stack-free condition: a display label is resolved from the catalog by a key that is open at runtime with the compiler's check explicitly waived, so an absent arm is invisible BOTH to the type system AND to every locale-vs-locale parity gate (the arm is missing identically in all 14 locales, and a parity check is a symmetry check), and surfaces as a raw machine token or as the wrong language. All 8 raw matches were read at source; the miss renders a RAW TOKEN at 4 (KpiDetailModal.tsx:302->:320 `sourceLabels[m.source] ?? m.source`, KpiDetailModal.tsx:315 `[m.env] ?? m.env`, LabProgress.tsx:74 `?? phase.key`, DesignHub.tsx:56->:74 `?? tab.labelKey`) and FROZEN ENGLISH at 3 (connectorLicensing.ts:55 `?? LICENSE_TIER_META[tier].label`, connectorRoles.ts:146 `?? r.label`, connectorRoles.ts:231 `?? pg.label`). Both flavours are the same condition: the lookup can miss and the miss is silent. LIVE DEFECT, not hypothetical: en.kpis.measurement_source has 5 arms against the 6-arm CHECK that migration widen_kpi_measurement_source_with_ai_compose (src-tauri/db/src/migrations/incremental.rs:8232,:8255) installed, and there IS a live writer at src-tauri/db/src/repos/dev_tools.rs:7100 (VALUES (?1,?2,?3,'ai-compose',...)), so an AI-composed KPI measurement renders the literal string `ai-compose` in all 14 languages. THIS IS THE REPO'S OWN PRESCRIPTION, NEVER MECHANIZED: src/i18n/CONTRACT.md I4 says 'Do not bypass the type with `as any` or `t[\"section\"]?.[\"key\"]`' and its module rubric (:118-119) says 'Grep for `t as any`, `t[\"...\"]`, or string-indexed access into `t`' — a manual instruction. Measured: `t as any` = 0 sites and `t['literal']` = 0 sites, so two of the rubric's three greps describe extinct conditions and only this one is live. PRECISION on the stated condition: 8/8, every match hand-verified; 7/8 are defects after excluding the one legitimate open-domain instance below. PRECONDITION (measured, must be re-derived per repo): this repo CLOSES its key space with a codegen'd type (src/i18n/generated/types.ts from scripts/i18n/gen-types.mjs), so reopening it requires an explicit cast a regex can find. A repo whose catalog is typed Record<string,string> to begin with has nothing to cast and scores ZERO while the condition is universal. Measured in BOTH other localizing repos in the sweep, and they fail this pattern in two different ways: personas-web performs the identical erasure at a PROP DECLARATION (GuideCategoryGrid.tsx:21-22 `categories: Record<string, string>`), carrying an 11-member guide domain against a 10-arm catalog that renders English in 13 languages behind a gate reporting 100%; politicas performs NO erasure at all, because next-intl's t() already takes a string, so the lookup is a bare template literal (`t(\\`rels.${row.rel}\\`)` at PermalinkPage.tsx:185 and 5 more sites) — carrying a 17-arm KG_EDGE_RELS domain (lib/analysis/kg-verdict.ts:25-58) against a 13-arm catalog in BOTH locales, with live writers. THREE repos, three stacks, same enum-vs-catalog gap, three green boards — and this regex would find it in exactly one of them. Re-derive the proxy; the condition is universal and its costume is not. DELIBERATELY NOT MATCHED: `map[value as SomeUnion]` (25 matches/19 files, only ~24% resolve a label — the rest index icon/colour/config maps, declined on precision) and plain computed indexes like t.agents.health_proposals[labelKey] (141 matches/74 files, mostly CORRECT because labelKey is a typed union that IS checked). LEGAL FIX, in order: (1) delete the cast and type the catalog map from the DOMAIN rather than from en.json — `Record<KpiMeasurementSource, string>` where the union is the ts-rs binding — which makes the missing arm a compile error at codegen time; (2) where no binding exists, resolve through tokenLabel(t, category, token) (src/i18n/tokenMaps.ts:35), which centralises the fallback and DEV-warns once per unmapped token; (3) add a domain-parity test copying src/i18n/__tests__/chainStopReasons.parity.test.ts, asserting SET EQUALITY (toEqual on sorted arrays), not containment."
+      },
+      "exclude": [
+        {
+          "path": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts",
+          "reason": "the one legitimate instance of the eight: connector categories are USER-DEFINED, so the domain is genuinely open and catalog completeness is impossible by construction rather than by omission. Its own comment says so at :131-132 and it falls back to capitalize(cat) — a humanizing transform — not to a machine token. This is the correct shape for an open domain and is the precedent §4 step 1 points at; counting it would ratchet the right answer."
+        }
+      ],
+      "baseline": {
+        "files": 5,
+        "matches": 7
+      },
+      "floor": 4000
     }
   ]
 }
