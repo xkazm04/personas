@@ -945,6 +945,79 @@ rename rewrites its history.
 
 ---
 
+## 27. Ctrl-C on `npm run dev` can delete 793 tracked files
+
+**Where:** `scripts/i18n/split-locales.mjs:56`.
+
+**What is measured:** the script `rmSync`s `src/i18n/section-locales/` **before**
+the write loop. Executed against a scratch copy: killed at READY+320 ms, **the
+directory does not exist** and all 793 tracked JSON files are gone. An
+uninterrupted run takes 2,760 ms — so the 60-second codegen watchdog is *not*
+the trigger. **A Ctrl-C on `npm run dev` in that window is.**
+
+Recovery is `git checkout` and the loss is bounded, so this is a papercut
+rather than a disaster — but it is worth knowing, because the same `rmSync` also
+makes the file's own `writeIfChanged` guard **dead for 793 of its 794 calls**.
+`renameSync` appears **0 times across all 150 tooling files**; write-to-temp-then-
+rename is the standard fix and nothing in this repo uses it.
+
+**Why held:** it is a real fix to a real hazard, but it is a change to the
+codegen path the operator runs every time they start the app, and a botched
+version of it is worse than the hazard.
+
+---
+
+## 28. Five generators are wired into nothing, and four of them are stale right now
+
+**Where:** `scripts/docs/gen-tour-anchors.mjs`; `src-tauri/tauri.android.conf.json`;
+`.claude/codebase-context.md`; `docs/refactor/catalog-curation.md`.
+
+**What is measured:** **19 generators, 14 registered, 5 wired into nothing. All
+1,617 committed artifacts of the registered 14 are byte-fresh; 4 of the 5
+unregistered ones are stale.** Every generator was executed into an
+`fs`-interception harness and diffed against the committed bytes — **1,823
+FRESH, 6 STALE, 32 unmeasurable** out of 1,861.
+
+**Registration is the whole variable.** Same headers, same blind `writeFileSync`,
+same absence of a drift check on both sides of the line. The rival hypothesis
+was tested and predicts nothing: a compare-before-write guard gives 1 fresh with
+a dead guard, 1 fresh with a live guard, 1 fresh with `--check`, and 1 **stale**
+with `--check`. Registration predicts freshness **14/14 vs 1/4**.
+
+**The sharpest instance is a loop that punishes the model for the generator's
+staleness.** `gen-tour-anchors.mjs` is registered nowhere and both its artifacts
+are stale: **127 anchors present in the tree are absent from the allow-list**
+(101 testids + 26 prefixes), and 4 in the list no longer exist. That list is
+**enforced** at `companion/tours.rs:98` **and spliced into the composition prompt**
+at `tours.rs:331` — so the model is told the 127 do not exist, and is then
+rejected for not using them.
+
+**Also measured:** `tauri.android.conf.json` sets
+`beforeBuildCommand: "npx vite build"`, four directories from the
+`vite.config.ts:46-49` comment warning against exactly that — **0 of 14 codegen
+tasks run on the Android profile.** `.claude/codebase-context.md` is stale at
+**64,787 bytes against 448,823**, because its input `context-map.json` is now
+written by a different tool on a different trigger.
+`scripts/skills/scan-agents-to-skills.mjs:403-405` skips existing outputs unless
+`--force`, so its staleness is **structurally unreachable**.
+
+**Why held:** regenerating a stale artifact is a large mechanical diff on files
+the operator's tooling reads, and the tour-anchor regeneration in particular
+changes what the composition model is allowed to emit. The registration fix
+itself is small and safe, but it should land with the regeneration, not before
+it.
+
+**Two answers worth importing, both from siblings:** `brainiac`'s
+`committed_document_is_current` check runs **as a unit test rather than a
+workflow step** — and gets a fourth property right that a port would miss, being
+**EOL-insensitive**, which matters here because git smudges to CRLF. And
+`ascent` has **zero** committed generated artifacts at all, because
+`prisma generate` runs on `postinstall` into `node_modules`. **2 of 4 siblings
+landed on "don't commit it"**, and Personas reaches that state for exactly one
+artifact — the only one whose freshness is *guaranteed* rather than asserted.
+
+---
+
 ## What *was* applied, and what it changes at runtime
 
 For completeness, since "no destructive applies" is now the rule. None of these

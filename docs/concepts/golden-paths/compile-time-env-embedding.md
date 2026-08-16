@@ -315,6 +315,15 @@ by `build.rs` of which **2 arrived in this binary** · 100 `import.meta.env` rea
 them `DEV`) · **1** `define` entry · 13 codegen tasks writing 15 artifacts · 34 committed generated
 files · **2** drift checks · **0** atomic writes in build tooling · **0** `cfg!(feature = …)` tests.
 
+> **Three of those figures corrected 2026-08-17 by
+> [codegen-task-registration](./codegen-task-registration.md), which enumerated and executed the
+> whole registry.** The registry holds **14** tasks, not 13 — this line read a *preset's* length as
+> the registry's. There are **19 generators** writing **1,861** committed artifacts, not 34; and
+> **3** drift checks, not 2 — the third (`check-command-contract.mjs:231-250`) is the only one that
+> runs locally inside `npm run check`, the other two being CI-only on a red pipeline whose own
+> binding-drift job documents itself as *"5/20 green"*. `0` atomic writes still holds: `renameSync`
+> is absent from all 150 tooling files.
+
 - **`src-tauri/build.rs:1-21` — copy this comment, not just this code.** The `TS_RS_EXPORT_DIR`
   forwarding is the repo's one worked example of a build-time value that *silently failed to arrive*,
   diagnosed and fixed, with the reasoning left in place: the `[env]` table *"does NOT reliably
@@ -509,6 +518,15 @@ a kill leaves a mixture of new and stale sections. Those 793 files are the only 
 in the repo that are **not compiled**: `src/i18n/useTranslation.ts` loads them through
 `import.meta.glob` at run time. `tsc` cannot see an emptied one and `cargo` cannot either; the failure
 surfaces as a missing translation section in a shipped app.
+
+> **Corrected 2026-08-17 by [codegen-task-registration](./codegen-task-registration.md), which
+> executed the kill instead of reasoning about it — and the real behaviour is worse than "a
+> mixture".** `split-locales.mjs:56` `rmSync`s the whole directory *before* the write loop, so
+> there are no stale sections left to mix with. Killed at READY+320 ms against a scratch copy:
+> **the directory does not exist and 793 tracked files are gone.** An uninterrupted run takes
+> 2,760 ms, so the 60 s codegen watchdog is not the trigger — **a Ctrl-C on `npm run dev` is.**
+> Three states, not two: untouched / 0-byte / **absent**. The same `rmSync` also makes the file's
+> own `writeIfChanged` guard dead for 793 of its 794 calls.
 
 **E3 — 2 drift checks for 34 committed generated artifacts.** `ci.yml:336`
 (`commandNames.generated.ts` + `commandNames.overrides.ts`) and `ci.yml:432` (`src/lib/bindings/`).

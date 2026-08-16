@@ -662,7 +662,9 @@ Dry-run diff (writes captured in memory; `git status` confirmed the repo was unt
 | anchors present in the tree but **absent from the allow-list** | | **127** |
 | anchors in the allow-list that **no longer exist** in the tree | | **4** |
 
-`grep` for the generator across `package.json`, `scripts/run-codegen.mjs` (8 registered tasks),
+`grep` for the generator across `package.json`, `scripts/run-codegen.mjs` (**14** registered tasks;
+this line said 8 until 2026-08-17, when [codegen-task-registration](./codegen-task-registration.md)
+enumerated the registry),
 `.github/workflows/` and `lefthook.yml` returns **nothing**. Its two sibling generators are both
 registered and both byte-fresh. The repo's real anchor-drift gate
 (`src/stores/slices/system/__tests__/tourAnchors.test.ts`) walks the live `TOUR_REGISTRY` against the

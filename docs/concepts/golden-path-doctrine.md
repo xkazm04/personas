@@ -225,6 +225,23 @@ Ask of any parity instrument: *what edit would this fail on?* If the answer is
 "an edit to only one side", check whether anything actually edits only one side
 — and if the fixtures live beside the thing they test, they don't.
 
+**A diff-shaped gate cannot see an absence.** Third earning case, same shape as
+the two above: `git diff --quiet` over a generated directory exits **0** for an
+untracked file *and* for an orphan — a file whose generator has stopped
+projecting it. **29 orphan bindings** accumulated that way, **26 still imported**
+and **22 still the declared return type of a live `invoke`**, including one
+naming a type that exists nowhere in 963 `.rs` files. Only an **inventory of
+what should exist** finds them; the repo's own unused-bindings script *protects*
+26 of the 29, because they are imported.
+
+**Test the rival hypothesis before publishing the discriminator.** A composer
+proposed *registration* as what separates fresh generated artifacts from stale
+ones, then measured the obvious alternative — a compare-before-write guard — and
+found it predicts nothing (1 fresh with a dead guard, 1 fresh with a live guard,
+1 fresh with `--check`, **1 stale with `--check`**). Registration predicted
+**14/14 versus 1/4**. A discriminator that was never raced against its rival is a
+correlation with a story attached.
+
 **A vocabulary-based signal's recall is bounded by its author's word list, and
 the misses cluster on the unusual cases.** Two implementations agreed on 22
 credential-bearing headers; a third returned 20, because its credential-noun

@@ -14,7 +14,7 @@ npm run lint             # ESLint
 npm run test             # Vitest (2,400+ tests)
 npm run test:rust        # Rust unit tests (app_lib, --features desktop)
 npm run test:rust:crates # Rust unit tests for the extracted crates only
-npx vite build           # Vite ONLY — bypasses all 13 codegen tasks. Run
+npx vite build           # Vite ONLY — bypasses all 14 codegen tasks. Run
                          # `node scripts/run-codegen.mjs prebuild` first, or
                          # use `npm run build` (which does it for you).
 node scripts/i18n/check-coverage.mjs   # i18n coverage report (CI gate)
@@ -127,7 +127,9 @@ src-tauri/
 
   > **`--workspace` and `--features desktop` are load-bearing; this line omitted both until 2026-08-14.** Without them **zero** bindings regenerate — CI documents exactly this at `.github/workflows/ci.yml:385-386` and runs the full form itself. Following the old instruction produced no output, no diff, and nothing to commit, which is indistinguishable from "already up to date".
   >
-  > **The drift job cannot catch that for a NEW type.** `git diff --quiet src/lib/bindings/` (`ci.yml:391`) exits **0** for an untracked file — verified directly. A new binding is untracked by definition, so the one case this gate exists for is the one it cannot see. Two independent failures pointing the same way is why 19 orphan bindings accumulated (types whose Rust source is gone; ts-rs never deletes, so there is no diff to notice).
+  > **The drift job could not catch that for a NEW type — FIXED 2026-08-14 at `ci.yml:426-431`, with the verification in the comment.** `git diff --quiet src/lib/bindings/` exits **0** for an untracked file, so a new binding — untracked by definition — was invisible to the one gate that existed for it. That hole is closed; the text above described the pre-fix state until 2026-08-17.
+  >
+  > **What the fix does not reach: orphans.** Measured 2026-08-17 by three independent implementations (48 / 31 / **29**; the loosest was wrong by 19 because macro-generated derives have no literal `enum` line). **29 orphan bindings** — types whose Rust source is gone. ts-rs never deletes, so an orphan produces **no diff and no untracked file**, which makes it invisible to a diff-shaped gate by construction. **26 are still imported and 22 are still the declared return type of a live `invoke`** — including `invoke<VaultStatus>("vault_status")` against a Rust fn returning `serde_json::Value`, with no `VaultStatus` type anywhere in 963 `.rs` files. Only an inventory of what *should* exist finds these; `scripts/check-unused-bindings.sh` exits 1 with 98 findings today and *protects* 26 of the 29 because they are imported.
 - CI verifies via `git diff --quiet src/lib/bindings/` — a missing regen fails the build at `.github/workflows/ci.yml`'s binding-drift job.
 - New Tauri commands additionally need `node scripts/generate-command-names.mjs` (or just `npm run dev`/`npm run build` which trigger `predev`/`prebuild`).
 
