@@ -438,6 +438,89 @@ never been published. That is a new event stream on a live bus, not a repair.
 
 ---
 
+## 14. The app kills the process 60 seconds after the terminal starts waiting for you
+
+**Where:** `src-tauri/.../stale.rs:1182` (`DOZE_AFTER_SECS = 60`);
+`src/features/.../fleetAttention.ts:103`; `FleetTerminalOverlay.tsx:260`.
+
+**What is measured:** the doze sweep is **always on, with no toggle**, and it
+targets `Stale`/`AwaitingInput`. `needsLiveAttention()` is
+`state === 'awaiting_input'` — **the exact predicate the grid uses to mount a
+live, focusable terminal.** So the condition that makes the app show you a
+usable terminal is the condition that makes it free the process behind it, 60
+seconds later.
+
+At t=61s the output ring still replays, the cursor still blinks
+(`cursorBlink: true`), and every keystroke returns
+`Err("session writer dropped")` into `silentCatch`. The only visual delta is a
+`w-3 h-3` moon glyph in the tile header. `fleetTerminalManager.ts` has **17
+`silentCatch` and 0 `toastCatch`** — while the app's *own* writes to the same
+PTY all use `toastCatch`.
+
+**Why held:** raising or gating `DOZE_AFTER_SECS` changes how long the operator's
+Fleet children stay resident, which is a resource decision about their machine.
+The cheap half — routing `fleetTerminalManager`'s keystroke/paste/resize
+failures to `toastCatch` like every other writer to the same PTY — is a live
+surface change on a path they use daily.
+
+**Same file family, same rule:**
+
+- **`registry.rs:750-851` returns `Ok` before the submit confirms**, and
+  `useFleetOverlayActions.ts:148-153` raises a success toast on it.
+- **A paste ending in a blank line submits itself**, plus a Right-arrow and a
+  second Enter on retry; **2 of 3 Windows paste routes bypass bracketed paste**
+  (`fleetTerminalManager.ts:240`, `commands.rs:91`).
+- **`persist.rs:165-166` restores every session at `120×32`**, discarding stored
+  dimensions, and `registry.rs:888-889` writes stored dims before the
+  master-exists check.
+- **`FleetTerminalPane.tsx:43`** hard-codes `bg-[#0a0a0c]` against a shipped
+  `LIGHT_THEME` (9 sites).
+
+---
+
+## 15. Arbitrary stdin to a permission-skipping child is a Public-tier command
+
+**Where:** the Fleet IPC surface — **37 of 38 commands are Public tier.**
+
+**What is measured:** the one privileged command is `fleet_remove_session`.
+`fleet_write_input` — which writes arbitrary stdin to a child spawned with
+`--dangerously-skip-permissions` (12 spawn sites pass that flag, one of them
+inside `build_cli_args`, referenced at 75 sites) — is **not** privileged.
+Destroying a session is guarded; driving one is not.
+
+**Also on disk:** **6 `fleet-mcp-*` temp dirs created, 0 removed by the app.**
+Windows itself deleted 4 token files at 04:49 on two consecutive days, 7.2–7.9
+days after creation, leaving all 6 directories behind. The surviving tokens are
+**dead** (the registry is a process-memory `OnceLock`), but the **ACL carries two
+non-owner Modify ACEs**. `fleet_sessions` holds 0 rows while 26 sessions ran in
+5 days; what actually survives is **2.55 GB in `~/.claude/projects`**, owned by
+Claude Code rather than this app.
+
+**Why held:** re-listing a command as privileged is exactly the class the runbook
+names — a security control whose current setting may be deliberate, on a
+transport the operator drives from a terminal. Changing it could break their own
+workflow mid-session.
+
+---
+
+## 16. Four correct performance gates that execute in zero places
+
+**Where:** `src-tauri/src/commands/fleet/bench.rs`, comment at `:42-46`.
+
+**What is measured:** this is the best-designed gate instrument found in the
+repo — four *relative-invariant* performance gates, which is the shape that
+survives a machine change. Its own comment routes them to CI because of a
+`0xC0000139` loader failure. **That failure's fix is documented in this repo's
+own `CLAUDE.md` and shipped as `npm run test:rust`.** Meanwhile CI is red,
+lefthook runs no Rust test, and `npm run check` runs no Rust test.
+
+**Why held:** wiring them in is a gate change, not a behaviour change, and is
+safe — but it needs one `cargo` run to confirm the manifest fix actually clears
+the loader error on this machine, and `cargo` is unavailable in this campaign's
+session. Filed here rather than guessed at.
+
+---
+
 ## What *was* applied, and what it changes at runtime
 
 For completeness, since "no destructive applies" is now the rule. None of these

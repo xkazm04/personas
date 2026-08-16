@@ -73,6 +73,15 @@ it. The ladder is not merely bypassed: it is structurally unable to win. A `docu
 every rank in it, including the highest one the app uses, because `document` precedes `window` in
 the DOM's bubble path.**
 
+> **Bounded 2026-08-16 by [embedded-terminal-session](./embedded-terminal-session.md).**
+> The claim holds for **bubble-phase** listeners, which is all 90 of the ones counted here — but
+> it is not universal, and the exception matters. Read out of the vendored `@xterm/xterm@6.0.0`
+> bundle: `_keyDown` ends in `cancel(e, true)`, which is `preventDefault()` **and**
+> `stopPropagation()`. **A focused terminal already beats every bubble-phase listener in this app,
+> registry or not.** The only handlers that can preempt it are the **2 capture-phase**
+> registrations in the tree. So the ladder's real ceiling is one phase higher than this section
+> says, and the population that can override a focused surface is 2, not 72.
+
 ```
 src/lib/keyboard/AppKeyboardProvider.tsx:31-42   the priority ladder, as a doc-comment table
                                         :83      ONE window listener fans out to the registry

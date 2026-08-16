@@ -3706,6 +3706,31 @@
         "matches": 21
       },
       "floor": 900
+    },
+    {
+      "id": "capture-phase-key-preemption",
+      "goldenPath": "docs/concepts/golden-paths/embedded-terminal-session.md",
+      "title": "A keyboard listener registered in the CAPTURE phase takes the keystroke before the focused element can see it — so a control that owns the keyboard (a terminal, an editor, an IME) is pre-empted with no way to object.",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "addEventListener\\s*\\(\\s*['\"]key(?:down|up|press)['\"]\\s*,[^,()\\n]{0,80},\\s*(?:true|\\{[^}\\n]{0,80}capture\\s*:\\s*true)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A keyboard listener registered with the capture flag, so it runs on the way DOWN to the focused element instead of on the way back up. PROXY FOR the stack-free condition: 'an application surface takes a keystroke before the element it was typed into can see it.' MEASURED 2026-08-16 at b4a05049e: 2 files / 2 matches, BOTH HAND-READ (precision 2/2). Sites: src/features/plugins/fleet/sub_monitor/MonitorView.tsx:94 (window keydown, capture, e.stopPropagation() on Escape — this surface renders a LIVE PTY terminal at :149, so Escape can never reach the running claude child from it); src/features/vault/shared/vector/ingest/IngestDirectoryPicker.tsx:42 (window keydown, capture, whose own comment says 'Stop Escape from propagating to parent VectorKbModal' — capture-on-window is the wrong instrument for that goal, because it also pre-empts the picker's own focused text input). WHY IT IS A DEFECT AND NOT A PREFERENCE: verified against the vendored emulator rather than assumed — @xterm/xterm 6.0.0's _keyDown ends in cancel(e, true), which is preventDefault() PLUS stopPropagation(), so a focused terminal already wins every BUBBLE-phase listener in this app whether or not that listener went through the keyboard registry. The capture phase is therefore the only mechanism by which an application surface can take a key away from a running child process, and one of these two sites does exactly that. LEGAL FIX: drop the capture flag and let the focused element decline the key first; if a surface genuinely must pre-empt focus, keep the flag and write the reason plus the surfaces it pre-empts in a comment on the line above (the census strips comment lines, so a documented exemption still counts — use an `exclude` entry with a prose reason instead). DO NOT silence a match by moving the flag into a variable, by switching to a framework capture modifier, or by re-registering on a nested container — all three preserve the pre-emption. RELATIONSHIP TO unregistered-key-handler (focus-management.md, 72/72): same anchor, 100% file overlap, ZERO condition overlap — that rule counts whether a listener went through the app's keyboard registry, and the registry (AppKeyboardProvider.tsx:83) itself registers in the bubble phase with no capture option, so its prescribed fix cannot express what these two sites want and would silently flip which side of a contested key wins. END OF LIFE: this rule is designed to reach zero. When it does, the runner fails structurally on zero matches BY DESIGN — DELETE the rule then, do not baseline it at 0.",
+        "$measured": "2026-08-16 @ b4a05049e — 4,829 files walked; two independent implementations agree that the complete anchor population is 74 (2 capture + 72 bubble), which also reconciles unregistered-key-handler's 72 (74 minus its 2 excluded AppKeyboardProvider listeners). Validated in a composer-private scratch registry (ets-rules-final.json), fault-injected 8 ways (all 8 fire), then re-extracted from this finished document and re-run through the real runner: 2/2 both times; 2.1 s for rule and control together."
+      },
+      "exclude": [],
+      "baseline": {
+        "files": 2,
+        "matches": 2
+      },
+      "floor": 3000
     }
   ]
 }
