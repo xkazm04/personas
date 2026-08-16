@@ -3415,6 +3415,30 @@
         "matches": 169
       },
       "floor": 900
+    },
+    {
+      "id": "unconsulted-tail-pin",
+      "goldenPath": "docs/concepts/golden-paths/live-log-stream-view.md",
+      "title": "An effect pins a scroll container to the bottom on every new chunk without consulting whether the reader was at the bottom — so reading back through a running log yanks the viewport away mid-sentence.",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "useEffect\\(\\s*\\(\\s*\\)\\s*=>\\s*\\{(?:(?!shouldAutoScroll|atBottomRef|isAtBottom|AtBottomRef|userScrolledUp|stuckToBottom|stickToBottom|nearBottom|followTail)[\\s\\S]){0,400}?[\\w$.?]+\\.scrollTop\\s*=\\s*[\\w$.?]+\\.scrollHeight",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A React effect body that reaches an `x.scrollTop = y.scrollHeight` assignment without any stickiness identifier appearing between the effect's opening brace and the assignment. PROXY FOR the stack-free condition: 'a view moves the reader's viewport to the newest content on every arrival, without first measuring whether the reader was at the newest content.' MEASURED 2026-08-16 at 17d059b1f: 13 files / 13 matches, ALL THIRTEEN HAND-READ (precision 13/13) — the guards present at these sites are `miniPlayerExpanded` (ExecutionMiniPlayer.tsx:181), `isExpanded` (TerminalStrip.tsx:58) and a bare `if (ref.current)` at the other eleven, none of which is a position measurement. Sites: src/features/agents/executionPlayer/ExecutionMiniPlayer.tsx:180; src/features/onboarding/components/ExecutionStep.tsx:37; src/features/overview/sub_observability/components/AiHealingStreamOverlay.tsx:104; src/features/plugins/artist/sub_blender/CreativeStudioPanel.tsx:269; src/features/plugins/dev-tools/sub_context/ScanOverlay.tsx:22; src/features/plugins/dev-tools/sub_runner/TaskOutputPanel.tsx:15; src/features/plugins/gitlab/components/JobRow.tsx:18; src/features/plugins/obsidian-brain/sub_revitalize/RevitalizeProgress.tsx:18; src/features/shared/components/terminal/TerminalStrip.tsx:57 (a SHARED component); src/features/templates/sub_generated/adoption/chronology/commandCenterParts.tsx:35; src/features/vault/sub_catalog/components/autoCred/helpers/autoCredErrorConfig.ts:19 (useAutoScrollRef — a REUSABLE HOOK whose whole body is the defect); src/features/vault/sub_catalog/components/autoCred/steps/AutoCredBrowser.tsx:49; src/features/vault/sub_databases/tabs/ChatTab.tsx:49. WHY IT IS A DEFECT AND NOT A PREFERENCE: measured over the operator's real corpus of 2,998 runs, the median gap between consecutive stream lines is 0.36 s and p90 is 4.91 s, so a reader who scrolls up to re-read is returned to the bottom before finishing a sentence; the running log is unreadable by construction. CONVERGENCE: this is physics, not house taste — personas-web (ExecutionOutput.tsx:53-56,125-141, 24 px threshold) and vibeman (CompactTerminal.tsx:244-249,1074-1086, 50 px) independently arrived at the identical three-part shape this repo already has in src/features/shared/components/terminal/TerminalBody.tsx:86-93,260-274 (10 px + a sticky ref + a jump-to-latest affordance). LEGAL FIX: promote src/features/plugins/companion/useChatScroll.ts into shared/ as a `useStickyBottom()` that returns containerProps carrying BOTH the ref and the onScroll handler, so the bare element is never handed out and the unguarded pin becomes unwriteable. DO NOT silence a match by moving the assignment into a helper function outside the effect, by renaming the stickiness ref, or by adding an unrelated `if` — all three preserve the defect exactly; the honest fix always adds a distance-from-bottom measurement read at the assignment. END OF LIFE: this rule is designed to reach zero. When it does, the runner fails structurally on zero matches BY DESIGN — DELETE the rule then, do not baseline it at 0.",
+        "$measured": "2026-08-16 @ 17d059b1f — 4,829 files walked; validated standalone in a scratch registry unique to this composer (rules-live-log-stream-view-probe.json), then re-extracted from this finished document and re-run through the real runner: 13/13 both times; 0.718 s for rule and control together."
+      },
+      "baseline": {
+        "files": 13,
+        "matches": 13
+      },
+      "floor": 3000
     }
   ]
 }
