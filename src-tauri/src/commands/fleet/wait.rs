@@ -172,8 +172,28 @@ impl WaitHandle {
             let mut ring = self.output.lock().unwrap_or_else(|e| e.into_inner());
             let screen = ring.render_screen(self.rows, self.cols).join("\n");
             let snap = ring.snapshot();
+            // Walk forward to a char boundary before slicing.
+            //
+            // `snap[snap.len() - RAW_TAIL_CAP..]` is a BYTE index into a UTF-8
+            // string, and terminal output is full of multi-byte glyphs. It
+            // panicked three times on this machine — twice on 2026-08-05, once
+            // on 08-06 — on `'─'` and `'❯'`, both 3 bytes.
+            //
+            // The task holding this is detached (`fleet/registry.rs:753`), so
+            // the panic vanished: the Enter-submit confirmation and its retry
+            // were silently skipped while `write_text_line` had already returned
+            // `Ok(())`. Nothing upstream could tell.
+            //
+            // The identical class was fixed in `eval.rs` seven weeks earlier —
+            // but that pass searched for a literal this site never contained,
+            // which is the doctrine's "fix the class, not the instances" with
+            // dates on both sides.
             let tail = if snap.len() > RAW_TAIL_CAP {
-                snap[snap.len() - RAW_TAIL_CAP..].to_string()
+                let mut start = snap.len() - RAW_TAIL_CAP;
+                while start < snap.len() && !snap.is_char_boundary(start) {
+                    start += 1;
+                }
+                snap[start..].to_string()
             } else {
                 snap
             };
