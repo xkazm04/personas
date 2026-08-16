@@ -34,7 +34,17 @@ function riskBadge(hasHighRisk: boolean, labels: { review: string; reviewTooltip
   );
 }
 
-const HIGH_RISK_APPS = new Set(['desktop_docker']);
+// `desktop_terminal` added 2026-08-16. Its capability set is
+// `ProcessSpawn + FileRead + FileWrite + EnvRead` over bash/sh/zsh/powershell/cmd
+// — a strict superset of anything else on this screen — and it was rendering
+// with the SAFE badge, because this set named exactly one app.
+//
+// A risk badge that enumerates the risky items, rather than deriving risk from
+// the capabilities each app actually requests, is a list someone has to remember
+// to update. It was not updated, and the item it missed is the one that can run
+// arbitrary commands. Deriving the badge from the capability set is the real fix
+// and is filed in informed-consent-gate.md §8; this closes the live gap now.
+const HIGH_RISK_APPS = new Set(['desktop_docker', 'desktop_terminal']);
 
 export function DesktopDiscoveryStep({
   apps,

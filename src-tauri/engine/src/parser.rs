@@ -781,10 +781,20 @@ pub fn parse_usage_limit(text: &str) -> Option<personas_core::error_taxonomy::Us
     use personas_core::error_taxonomy::{UsageLimitInfo, UsageLimitScope};
 
     let lower = text.to_lowercase();
+    // `quota exceeded` added 2026-08-16. `is_session_limit_error`, three lines
+    // up in this same file, has always included it; this function did not — and
+    // that single phrase is the difference between a durable `RetryAt` scheduled
+    // at the provider's own reset time (20 live retries, 50% success) and
+    // `CreateIssue` forever.
+    //
+    // Two predicates over the same vocabulary, adjacent in one file, disagreeing
+    // by one token. This is the leaf's whole thesis in miniature: the recovery a
+    // failure gets is decided by which predicate happened to see it.
     let mentions_limit = lower.contains("usage limit")
         || lower.contains("weekly limit")
         || lower.contains("hour limit")
-        || lower.contains("session limit");
+        || lower.contains("session limit")
+        || lower.contains("quota exceeded");
     if !mentions_limit {
         return None;
     }

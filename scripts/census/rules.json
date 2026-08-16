@@ -3044,6 +3044,56 @@
         "matches": 105
       },
       "floor": 500
+    },
+    {
+      "id": "unconsented-irreversible-door",
+      "goldenPath": "docs/concepts/golden-paths/informed-consent-gate.md",
+      "title": "A feature component reaches an irreversible IPC door and the file contains no consent step at all",
+      "roots": [
+        "src/features"
+      ],
+      "extensions": [
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "^(?![\\s\\S]*(?:ConfirmDialog|ConfirmDestructiveModal|useConfirmDestructive|useConfirmClick|UnsavedChangesModal|useUnsavedGuard|window\\.confirm|\\bconfirm\\s*\\(|confirm[A-Z]\\w*|Confirm[A-Z]\\w*|setConfirming|pendingDelete|requireTypedConfirmation))[\\s\\S]*?import\\s*\\{[^}]*?\\b(?:delete|remove|revoke|purge|wipe|clearAll)[A-Z][A-Za-z0-9_$]*[^}]*?\\}\\s*from\\s*['\"]@/api/",
+        "flags": "g",
+        "ignoreCommentLines": false,
+        "description": "A rendering component under src/features imports an irreversible IPC door from @/api (deleteX / removeX / revokeX / purgeX / wipeX / clearAllX) and the whole file contains NO confirmation affordance of any kind. PROXY FOR the stack-free condition: an operation the user cannot undo is reachable from the UI without them being asked. Measured 2026-08-16 at 4f5621830: the anchor (an irreversible @/api import in a feature .tsx) matches 18 files; 12 have no consent step, 6 do — the positive control partitions the anchor exactly, 12 + 6 = 18. PRECISION 12/12 hand-read (each reaches a live delete_/revoke_ Tauri command from a click path with no dialog: LifecyclePage.tsx:120 deletes every trigger on a project in a loop; FleetPairDevice.tsx:75 un-pairs a device; ByomApiKeyManager.tsx:180 deletes a stored provider key). SCOPE is deliberately src/features/**.tsx: store slices, hooks and lib helpers legitimately carry no dialog, and including them took precision from 12/12 to 13/62. ignoreCommentLines is FALSE on purpose — the match is file-scoped and anchored at index 0, so the comment filter would look at line 1 and drop the count for any file that grows a JSDoc header. DO NOT key on the verb at the call site instead: an onClick-anchored variant of this rule scored ~3/17 because removeChip / removeRow / removeField edit unsaved form state. CORRECT END STATE is 0, at which point DELETE this rule rather than baselining it at zero. PRECONDITION (re-derive per repo, do NOT port): this repo spells irreversibility as a named import from a generated Tauri command wrapper. In a Next.js app it is fetch(..., {method:'DELETE'}) or a useDeleteMutation hook; in a Rust TUI it is a repo call; this pattern scores ZERO on all of them."
+      },
+      "baseline": {
+        "files": 12,
+        "matches": 12
+      },
+      "floor": 1500
+    },
+    {
+      "id": "privately-reclassified-failure",
+      "goldenPath": "docs/concepts/golden-paths/failure-recovery-strategy.md",
+      "title": "A recovery-bearing failure class re-decided by substring-matching a message, outside the shared taxonomy",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "(?:\\bif\\b|\\|\\||&&|;|\\{|=|\\breturn\\b)[ \\t\\r\\n]{0,40}[A-Za-z_][A-Za-z0-9_.]{0,40}(?:\\(\\))?(?:\\.\\s*to_(?:lower|ascii_lower)case\\(\\))?\\.\\s*contains\\(\\s*\"[^\"\\n]{0,30}(?:timed out|timeout|rate limit|usage limit|session limit|quota exceeded|too many requests|overloaded|service unavailable)[^\"\\n]{0,30}\"\\s*\\)",
+        "flags": "gi",
+        "ignoreCommentLines": true,
+        "description": "In a BRANCH or BINDING position (the match must open with if / || / && / ; / { / = / return), a substring test against one of the failure-class words that core/src/error_taxonomy.rs owns - timed out, timeout, rate limit, usage limit, session limit, quota exceeded, too many requests, overloaded, service unavailable. PROXY FOR the stack-free condition: the class of a failure - which is what decides whether the system retries, falls back, degrades, escalates or gives up - is re-derived from prose at the call site instead of from a structured discriminator or from the one module that owns the taxonomy, so N private vocabularies exist, they diverge, and nothing fails when one of them is wrong. THE BRANCH-POSITION TEMPERING IS THE WHOLE RULE: the untempered form scores 39 matches of which 10 (26%) are assert!(x.contains(\"timed out\")) inside #[cfg(test)] modules the census engine cannot exclude; requiring the match to open with a statement/branch delimiter rather than an open paren or comma removes all 10 and costs 2 true positives (runner/mod.rs:2854 behind a closure pipe, stale.rs:935 behind a paren) - a declared recall gap in the conservative direction. PRECISION 27/27, every match opened. LIVE COST, measured against the operator's database rather than reasoned: error_taxonomy.rs:4 calls itself the single source of truth for error classification and there are EIGHT independent classifiers in the tree; two of them (parser.rs:764 is_session_limit_error and parser.rs:780 parse_usage_limit, three lines apart) already differ by one phrase - 'quota exceeded' is in the first and not the second - and that one phrase is the difference between a durable retry at the provider's reset (50% success across 20 live retries) and a permanent CreateIssue with no retry at all. PRECONDITION (must be re-derived per repo): this repo has ONE module declared as the owner of failure classification, excluded below; a repo with no such module, or one that classifies from a structured status field the way brainiac/crates/brainiac-gateway/src/resilience.rs:209-222 does (zero .contains on an error message outside its tests), scores ZERO here and must re-derive its own proxy for the same condition."
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/core/src/error_taxonomy.rs",
+          "reason": "the shared taxonomy itself — the one module allowed to own this vocabulary, and the destination every other match should be routed to"
+        }
+      ],
+      "baseline": {
+        "files": 14,
+        "matches": 28
+      },
+      "floor": 900
     }
   ]
 }
