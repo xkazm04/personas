@@ -232,6 +232,17 @@ The runner is `scripts/census/`. A rule is a **ratchet**, not a verdict.
   to you — sibling composers share the scratchpad directory and have overwritten
   each other's files. Then **re-extract the rule from the finished document and
   re-run it**; the numbers must be identical.
+- **A composer must NOT run the full registry** (`npm run census` /
+  `census:check`). Validate only your own rule and its control, in your private
+  scratch registry. The orchestrator runs the full-registry check on merge —
+  which is also the only place a *rise* in someone else's rule is meaningful.
+
+  > Earned 2026-08-16: all three composers of one batch stalled at exactly this
+  > step, having written complete documents. The census was healthy; the cause
+  > was three agents each running a multi-minute **silent** command
+  > concurrently on one machine, starving each other past a 600-second
+  > no-output watchdog. The most expensive thing a composer does is the step
+  > that proves its rule, and doing it in parallel is what breaks it.
 - **The census cannot express "must be zero"** by construction — a rule with
   zero matches fails structurally. If a condition should reach zero, say so, and
   say the rule must be **deleted** at that point rather than baselined at 0.
