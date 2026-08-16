@@ -112,7 +112,11 @@ something, not from reading it:
   changes with the query plan, so it reproduces on one machine and not another.
 
 Copy the live SQLite files before querying them; never open the live file for
-write while the app is running.
+write while the app is running. **Then delete your copy when you are done** —
+`personas.db` is 331 MB, composers never cleaned up, and the shared scratchpad
+reached 20 GB across 176 stale copies on a drive that was 93% full. That is a
+throughput limit, not just tidiness: disk is what caps how many composers can
+run at once.
 
 **Measure statements, not lines.** The unit for a guard is the statement WITH
 its consequent.
