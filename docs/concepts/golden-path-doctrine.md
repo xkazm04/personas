@@ -76,7 +76,7 @@ The fix was deleting the helper. See [entity-draft-editing](./golden-paths/entit
 
 ### Where types cannot reach
 
-Before proposing a type, check that it reaches the code. Three places it does
+Before proposing a type, check that it reaches the code. Four places it does
 not, all measured:
 
 1. **Inside a SQL string literal.** `engine/platforms/deploy.rs` INSERTed a
@@ -90,6 +90,13 @@ not, all measured:
 3. **In an ambient environment variable.** Five Claude spawns inherit
    API-account auth from the environment; four of them run a loop named
    `env_removals` that *looks* like the guard and strips something else.
+4. **On the far side of a serialization boundary.** Established by
+   [`ownership-verification.md`](./golden-paths/ownership-verification.md) §5.4:
+   the value a newtype would protect is unforgeable *in Rust* and forgeable *on
+   the wire*. The defect is not that a Rust caller can build a `String` — it is
+   that a JSON body can. **A newtype at the Rust boundary is downstream of where
+   the value entered.** A type authenticates nothing when the untrusted value
+   crosses a serialization boundary before the type exists.
 
 If the honest answer is that no type reaches the condition, say so. That is a
 finding, not a failure — and it is the case where a census rule genuinely earns
@@ -298,6 +305,41 @@ that implemented it differently — or, worse, identically under the same name.
 > the other direction, made a third sweep call per-panel error disclosure
 > "local to ascent" because ascent threads a prop where this repo threads a store
 > key.
+
+### A sibling that shares your ancestor is not a second opinion
+
+**Before counting a sibling as corroboration, check its lineage.** Two of the
+five checkouts contain *ports* of this repo's code. A port agreeing with its
+original is one data point wearing two coats, and it inflates the very number
+the oracle exists to deflate.
+
+> `external-source-ingestion` reported `personas-cloud/packages/shared/src/prompt.ts`
+> as independent reinvention proving that a structural prompt fence is physics.
+> It is a port: same numbered docstring, same six tag names, same eleven
+> zero-width codepoints, the same magic constant `0x517cc1b7` (a 32-bit
+> truncation of ours), canary string identical word-for-word. Removing it takes
+> the count from *1 of 5 siblings* to **0 of 4 independent siblings**, and the
+> fence ships as strongly-reasoned and externally **untested**.
+
+The tell is textual, not structural: identical comments, identical constants,
+identical error strings. Structure can converge; prose cannot.
+
+The reverse also happens and is worth reporting. A port that *gained* something
+the original cannot express is strong evidence for the missing thing — the same
+cloud port publishes into `persona_events` **inside a transaction**, which this
+engine's `publish(&DbPool)` signature makes impossible at all 33 sites.
+
+### The `convergence` label is not evidence — the field is now closed
+
+**Nine spine leaves carrying `convergence: converged` have been tested. Nine
+failed.** The ninth (`embedded-terminal-session`) failed hardest: **zero of five
+siblings has a PTY or an xterm-class emulator at all**, so the label pointed at
+a 5/5 silence — and its direction was backwards, since Personas is the only repo
+with the problem and owns the fleet's best answer to it.
+
+Treat `convergence` as a hypothesis to test, never a premise to build on. Brief
+every composer accordingly. A leaf whose label finally holds is a genuine
+finding and should be reported as loudly as another failure.
 
 **Cost and failure are better evidence than agreement.** The two strongest
 oracle results in the corpus were both negative:
