@@ -3173,6 +3173,35 @@
         "matches": 6
       },
       "floor": 4000
+    },
+    {
+      "id": "ledger-field-addressed-by-string-key",
+      "goldenPath": "docs/concepts/golden-paths/oauth-connect-flow.md",
+      "title": "A credential-ledger field is read or written by string key instead of through the typed record that owns it — so two writers of the same fact can disagree and nothing relates them.",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\"(?:oauth_refresh_count|oauth_last_refresh_at|oauth_predicted_lifetime_secs|oauth_refresh_backoff_until|oauth_refresh_fail_count|needs_reauth|needs_reauth_at|healthcheck_last_state|healthcheck_last_success|healthcheck_last_success_at|healthcheck_last_tested_at|healthcheck_results|usage_count|last_used_at|anomaly_score|anomaly_tolerance)\"",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A CredentialLedger field name spelled as a quoted string literal outside the module that declares it — i.e. the credential's OAuth/health/usage ledger addressed as data rather than through the typed record. PROXY FOR the stack-free condition: a record's fields are addressed by name-as-data rather than through the type that owns them, so two writers of the same fact can disagree and nothing relates them. LEGAL DESTINATION: personas_core::models::CredentialLedger (core/src/models/credential_ledger.rs:68) plus cred_repo::update_ledger(pool, id, |l| ...) — the typed methods record_oauth_refresh (:268), clear_needs_reauth (:262), mark_needs_reauth (:256), clear_refresh_backoff (:250), increment_refresh_backoff (:234), is_in_refresh_backoff (:224), resolve_tolerance (:202) already exist. MEASURED 2026-08-16 at 7b42f9333: 6 files / 16 matches, ALL SIXTEEN HAND-OPENED, precision 16/16, and the control below reports 24 compliant matches in 4 files (a 1.5:1 partition of the same anchor, disjoint by construction). WHY IT IS A DEFECT AND NOT STYLE: (a) record_oauth_refresh() writes exactly the six fields that oauth_refresh.rs:588-607 writes by hand and it has ZERO callers in 963 .rs files, so the typed record is complete, correct and bypassed; (b) two paths that both mean 'reset the failure counter' write DIFFERENT VALUES - cli_capture.rs:875 writes Number(0) while clear_refresh_backoff() writes None, and serde(skip_serializing_if=Option::is_none) then drops the key, so a reader asking .is_some() sees two different worlds; (c) the same habit put oauth_token_expires_at in TWO stores (a credential_fields row AND the metadata blob) written by three different functions with no single writer - measured on the operator's live vault, the two copies already disagree on 2 of 2 OAuth credentials, by 17.6us and 20.0us. NOTE THE DELIBERATE OMISSION of oauth_token_expires_at from this pattern: that literal names a credential_fields ROW as well as a ledger field, so including it adds 9 matches of mixed provenance and drops precision from 16/16 to 13/25. The one key too ambiguous for the pattern is the one key too ambiguous for the system. TWO SUB-CLASSES, both violating, different legal fixes: 12 matches name a field that EXISTS on CredentialLedger (fix: call the typed method), 4 name a key that does NOT (healthcheck_last_state, healthcheck_last_tested_at - they land in the flattened `custom` map; fix: add the typed field, which is connection-health-check.md 7.E's own prescription). PRECONDITION (must be re-derived per repo): this repo carries a per-entity JSON ledger as a serde struct with snake_case fields and a #[serde(flatten)] catch-all, and writes patches as serde_json::Map with &str keys. A repo whose ledger is columns, or whose keys are enum variants, has the same condition wearing markup this pattern cannot see. DO NOT silence a match by building the key from a constant or by splitting the literal - both preserve the defect and hide it; the honest fix always goes through the type.",
+        "$measured": "2026-08-16 @ 7b42f9333 — 963 .rs files walked; validated standalone in a scratch registry unique to this composer, counts reproduced independently by ripgrep's Rust regex engine, then re-extracted from this finished document and re-run: identical. Runtime 0.39 s for both rules."
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/core/src/models/credential_ledger.rs",
+          "reason": "the type itself — its serde attributes and doc comments legitimately spell every field name, and one method body (record_oauth_refresh) calls another by name. Excluding the file rather than pattern-matching around it keeps the rule readable, at the stated cost that a stray string-keyed write added INSIDE the ledger module would be invisible."
+        }
+      ],
+      "baseline": {
+        "files": 6,
+        "matches": 16
+      },
+      "floor": 900
     }
   ]
 }
