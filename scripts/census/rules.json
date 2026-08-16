@@ -2975,6 +2975,29 @@
         "matches": 46
       },
       "floor": 4000
+    },
+    {
+      "id": "asserted-definition-blob",
+      "goldenPath": "docs/concepts/golden-paths/untrusted-definition-validation.md",
+      "title": "A definition stored as a blob on an entity is turned into app state by a type assertion",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\bJSON\\.parse\\s*\\(\\s*[A-Za-z_$][A-Za-z0-9_$]*(?:\\??\\.[A-Za-z_$][A-Za-z0-9_$]*)+\\s*(?:\\?\\?[^)]{0,40})?\\)\\s*as\\s+(?!unknown\\b|any\\b|const\\b)[A-Z][A-Za-z0-9_]*",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "JSON.parse of a blob field on an entity or IPC record, asserted straight into a named type — the cast IS the validation. PROXY FOR the stack-free condition: a definition the app did not author becomes app state without being reconstructed against a closed vocabulary. Measured 2026-08-16 at 629a914af: 16 matches / 15 files, against 26 matches / 25 files for the compliant form (`: unknown = JSON.parse(`) — same anchor, disjoint by construction, 319 JSON.parse occurrences total in 4,829 files. PRECISION 15/16 hand-read (each parses a model-composed spec, an imported definition, an outside-CLI ingest blob, or a persona design_context; the one borderline is useEngineCapabilities.ts:60). RECALL is deliberately partial: requiring a MEMBER-EXPRESSION argument excludes the localStorage-hydration arm by construction (0 file overlap with raw-web-storage, verified) at the cost of missing the three n8n file/paste/URL import hooks, which bind the text to a local first. Widening to any expression gives 68 matches at ~44% precision. THE ARGUMENT MATCH MUST NOT BE A CONSUMING WILDCARD: a `[\\s\\S]{0,300}?` window slid across statement boundaries and flagged lib/channel/teamBridge.ts:42 — the exemplar of the COMPLIANT pattern — as a violation. CORRECT END STATE is 0, at which point DELETE this rule rather than baselining it at zero. PRECONDITION (re-derive per repo, do NOT port): this repo spells the defect as a TS type assertion on a parsed JSON blob column. In Rust it wears serde_json::Value + .get(), in Python a Pydantic model never fed the body, in Next.js `(await res.json()) as T` — this pattern scores ZERO on all three."
+      },
+      "baseline": {
+        "files": 15,
+        "matches": 16
+      },
+      "floor": 4000
     }
   ]
 }
