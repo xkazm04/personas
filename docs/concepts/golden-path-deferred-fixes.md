@@ -730,6 +730,170 @@ wrong today; the first one that does will be wrong 90% of the time.
 
 ---
 
+## 23. Two of your credentials expired months ago and the app renders them amber
+
+**Where:** `src-tauri/.../rotation.rs:482`, `:755`; `credentialHealthScore.ts:57`;
+`AnomalyScorePanel.tsx:6-17`; `credentials.rs:464-467` vs `crud.rs:271`.
+
+**Live exposure, stated plainly:** **`gmail` and `google_calendar`** hold OAuth
+grants that expired **75 and 98 days ago**. `needs_reauth` has been `true` since
+2026-06-09 and 2026-05-17, their backoff windows expired 68 and 91 days ago,
+they carry **49 and 21 consecutive refresh failures**, and the last successful
+refresh for either was **2026-06-02**. Their rotation policies are disabled and
+**67 days past due**, and the UI offers no control to re-enable one. They render
+**amber, not red** — and **20 of their 60 points come from the disabling
+itself.** (Shape and location only; no value was read or printed.)
+
+**Why the app cannot act:**
+
+- **`rotate` replaces nothing.** It runs a healthcheck and, on success, stamps
+  `last_rotated_at = now`. The secret is byte-identical afterwards. There is **no
+  revoke verb for a credential the app holds** — six commands revoke grants the
+  app *issues*, zero revoke one it *holds* — so the only operation against a
+  held credential is `delete`.
+- **6 of the 11 `rotation_type` values the engine can supply are rejected by the
+  database.** `credential_rotation_history` CHECKs a different closed set from
+  `credential_rotation_policies.policy_type`; the intersection is **two words**.
+  `oauth_keepalive` — the only type the app auto-provisions, and the type of
+  both live policy rows — is one of the six.
+- **All 11 `record_rotation` call sites are `let _ =`**, so that rejection has
+  been invisible since the constraint was written. Replayed: the history INSERT
+  is refused, discarded, and `mark_rotated` stamps *rotated today, next due
+  tomorrow* anyway.
+- **Disabling a rotation policy RAISES the health score by +20**, because
+  `Remediation::Disable` sets `policy_enabled: false` and `rotationSubScore`
+  then returns 100. Eight lines above it, `healthcheckScore` answers the
+  identical question correctly, with the incident in its comment.
+- **Delete truncates the audit ledger** — `credentials.rs:464-467` runs before
+  `crud.rs:271` writes the delete row. Measured: **391.4 surviving rows per
+  living credential, 1.3 per deleted one.**
+- **21 of 25 credentials exceed the app's own 90-day default. 0 policies
+  enabled. 0 rotations ever.**
+
+**Why held:** every repair here touches the operator's real credentials, and
+re-enabling a rotation policy would start acting on them. **The two expired
+Google grants need re-authorising by hand** — that is the action, and it is
+theirs.
+
+**Worth knowing:** the fleet's answer to "how do you rotate" is *"you don't; you
+mint and revoke."* `brainiac` and `ascent` independently implement the lifecycle
+as `create`/`list`/`revoke`/`resolve` **with no update verb at all**. Personas is
+the only repo that built the verb the others declined to build, and built it
+hollow.
+
+---
+
+## 24. Every run in the app's history records $0 and zero tokens
+
+**Where:** `src-tauri/engine/src/parser.rs:340-341`.
+
+**What is measured:** the parser reads `total_input_tokens` /
+`total_output_tokens` from the **top level** of the CLI `result` line. Against
+**314 real result lines** in the operator's own transcripts, those fields are
+present **0 of 314 times**. `usage.input_tokens` is present **314 of 314**. The
+two cache fields six lines below (`:347-350`) already consult `usage` first —
+and they carry **648,406,049** and **26,029,682** tokens.
+
+The consequence chain, each link measured: `persona_executions.input_tokens =
+output_tokens = 0` on **2,188 of 2,188 rows**, against **$2,036.26** of actual
+spend → `runner/mod.rs:2908-2912` writes `Some(0)` → **0 of 90,813 spans carry a
+token value** → `TraceSummary.tsx:61` has rendered "0 tokens" for every run in
+the app's history → `TraceSummary.tsx:90` gates `CostBreakdownBar` off, so that
+component — 91 lines and 8 strings translated into 14 locales — **has never
+rendered.**
+
+`parser.rs:1105`'s own fixture supplies the field the real producer omits, so
+the test is green.
+
+**Why held:** it is a one-field-name fix, and it changes what every cost surface
+in the app displays, immediately, for the operator who is watching them. It is
+also the single highest-value item in this register: it restores a spend figure
+that is currently $0 against two thousand dollars of real usage.
+
+**Same instrument, same rule:**
+
+- **`runner/mod.rs:2527`** formats a span name as
+  `format!("Protocol: {:?}", std::mem::discriminant(&protocol_msg))` —
+  **15,603 spans (17.2%)** are named `Discriminant(N)` and render raw. The
+  variant names are matched three lines below at `:2545-2556`.
+- **Coverage inverts with need:** completed runs **1,928 of 1,928** traced;
+  failed **132 of 238**; incomplete **0 of 20**. All 126 misses are out-of-band
+  deaths (74 app restarts, 20 panics, 12 ceiling kills, 20 zombie sweeps),
+  because the trace lives in a `Mutex<SpanStore>` until `finalize()` — and
+  **three of the four `traces::save` calls are `let _ =`, on exactly the failure
+  paths.**
+- **880 of 2,942 trace rows (29.9%) name an execution that no longer exists.** A
+  foreign key is not the fix: `persona_tool_usage` *has* `ON DELETE CASCADE` and
+  orphaned 980 rows anyway.
+
+**The tree itself is sound and worth saying so:** 90,813 spans across 2,942
+traces with **0 dangling parents, 0 self-parents, 0 parse failures, 0 negative
+durations**, exactly one root per trace, and three independent tables agreeing
+on **1,919 of 1,919** executions. The instrument is good; every number written
+onto it is zero.
+
+---
+
+## 25. A model-supplied string can reach `DROP TABLE`, and the approval that guarded it is switched off
+
+**Where:** `src-tauri/.../connector_use.rs:1443-1469`
+(`personas_database.execute_mutation`); `approval_autopilot.rs:10-49`;
+`connectors.rs:215-223`.
+
+**What is measured:** the guard on a model-supplied statement is
+`lower.starts_with(v)` over `["create","insert","update","delete","drop",
+"alter","replace"]` plus `!contains(';')`, then `conn.execute(trimmed, [])`.
+**No row cap, no timeout, no busy-timeout, no cancellation, no audit row** — and
+`drop` and `alter` are in the *permitted* verb list.
+
+Its stated safety argument was the approval gate. The sibling capability's own
+comment at `connectors.rs:215-223` reasons about prompt injection and concludes
+*"Requiring approval puts a human in front of the raw query."* On 2026-08-10
+`approval_autopilot.rs` removed the human for every `use_connector` write under
+autonomous mode — and this install's `app_settings` has
+**`companion_autonomous_mode = "true"`**. Nothing pointed the capability at the
+change that dissolved its own argument.
+
+**So: a model-supplied string reaches a write statement with nothing human
+between.** It is **latent today** — 0 `use_connector` rows across 120 approvals,
+0 `db_query:execute` audit rows, 0 saved queries. The path has never run.
+
+**Scope, corrected:** it reaches `personas_data.db` (68 tables, **0 encrypted
+columns**, 1,779 conversation turns), *not* the credential database. The only
+thing separating them is one hand-written `ATTACH` deny-list with **zero
+tests** — and a read-only handle was measured still able to attach and read a
+second file.
+
+**Why held:** the runbook names this class exactly — a security control whose
+current setting may be deliberate. Autonomous mode is a feature the operator
+turned on. **The decision is theirs**, and it is the one item in this register
+worth deciding sooner rather than later.
+
+**The narrower fix, if any is wanted:** open the model's lane on a **read-only
+pool** (`OpenFlags::SQLITE_OPEN_READ_ONLY`). Measured: it refuses DELETE, DROP,
+INSERT, UPDATE, CREATE, CREATE TRIGGER, VACUUM, ANALYZE and journal-mode changes
+**including the ones the classifier gets wrong** — and unlike `PRAGMA query_only
+= ON`, it cannot be turned off from inside a statement.
+
+**The human console, by contrast, is the best in six codebases** and is worth
+not disturbing: a tokenizing classifier, stacked-statement refusal, an
+`ATTACH`/`DETACH`/`VACUUM INTO` deny-list that survives separator tricks, and
+500 rows / 8 MB / 60 s with interrupt-and-await.
+
+**Smaller items on the same surface:** `validate_ddl_only` (`db_query.rs:410`)
+has zero call sites and admits `CREATE TRIGGER … BEGIN DELETE …; END` — deferred
+DML through a DDL allowlist. `classify_db_query` (`db_schema.rs:164`) is
+registered, privileged, typed, and has **zero callers**, while `safeModeUtils.ts`
+re-implements it and diverges on 2 of 47. `query_debug.rs:79` redacts 21
+sensitive columns; `execute_db_query` — **including the lane where a model wrote
+the SQL** — returns rows verbatim. `MutationConfirmBanner.tsx:41` truncates the
+statement it is asking you to approve at **200 characters**. And
+`ConsoleTab.tsx:35` destructures the query hook **without `cancelQuery`**, so
+the full cancellation stack that exists end-to-end is unreachable from the
+primary console.
+
+---
+
 ## What *was* applied, and what it changes at runtime
 
 For completeness, since "no destructive applies" is now the rule. None of these

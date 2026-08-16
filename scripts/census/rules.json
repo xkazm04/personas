@@ -3881,6 +3881,64 @@
         "matches": 40
       },
       "floor": 2000
+    },
+    {
+      "id": "discarded-lifecycle-write",
+      "goldenPath": "docs/concepts/golden-paths/credential-rotation-and-revocation.md",
+      "title": "A credential-lifecycle write - the row that records a rotation, a policy state change, or a revocation - is evaluated for its side effect alone, so a REJECTED write is indistinguishable from a performed one",
+      "roots": [
+        "src-tauri/src"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\blet\\s+_\\s*=\\s*(?:\\b[A-Za-z_]\\w*\\s*::\\s*){0,4}\\b(?:record_rotation|mark_rotated|disable_policy|disable_policies_for_credential|schedule_failed_retry|update_ledger|revoke)\\s*\\(",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A call to one of the seven functions that record or perform a credential-lifecycle transition - record_rotation / mark_rotated / disable_policy / disable_policies_for_credential / schedule_failed_retry (the rotation ledger and clock), update_ledger (the anomaly + healthcheck evidence every downstream verdict reads), revoke (the app's only kill-switch primitive) - bound to `let _ =`, so its Result is discarded. PROXY FOR the stack-free condition: a lifecycle event's record is written best-effort, so the belief the system forms ('this key was rotated', 'this key is dead') is created by a statement whose failure nobody can observe. THE `let _ =` BINDING IS THE DISCRIMINATOR AND THE PARTITION IS EXHAUSTIVE: the positive control below is the identical vocabulary in the identical roots with the binding negated, so every anchor occurrence lands in exactly one of the two rules and 22 + 7 = 29 is the whole surface. THE DECISIVE PAIR IS IN ONE FILE: engine/rotation.rs contributes 21 rule matches and 1 control match (:1382, `if let Err(e) = rotation_repo::disable_policies_for_credential(...) { tracing::warn!(...) }`) - same file, same module, opposite posture, three lines apart in cost - so the rule discriminates on whether the RESULT IS CONSUMED, not on 'files about rotation'. WHY IT IS A DEFECT AND NOT STYLE, MEASURED BY EXECUTION 2026-08-17 against a read-only copy of the operator's live database: credential_rotation_history.rotation_type carries CHECK(rotation_type IN ('scheduled','manual','token_refresh','suspicious','anomaly')). The engine can supply ELEVEN distinct values and SIX ARE REJECTED BY THE DATABASE - oauth_keepalive, on_suspicious, on_member_departure (all three arrive as &policy.policy_type, whose own CHECK is a DIFFERENT closed set), anomaly_remediation (rotation.rs:824), and event:{cron_schedule,expiration_threshold,healthcheck_failure} (rotation.rs:1103). Each rejected INSERT was replayed individually against the real table. oauth_keepalive is THE ONLY POLICY TYPE THE APP AUTO-PROVISIONS (rotation.rs:1327, :1393) and both live policy rows carry it. Replaying evaluate_due_rotations' success branch for that policy: the history INSERT is refused, `let _ =` at :475 discards the refusal, and mark_rotated at :482 stamps last_rotated_at=now and next_rotation_at=now+interval anyway - so the policy claims a rotation that has no record and did not change the secret. Also dead as a consequence: detect_anomalies at :775-777 guards on h.rotation_type == 'anomaly_remediation', a value the table cannot hold. LEGAL FIX: `if let Err(e) = ... { tracing::warn!(credential_id = %id, error = %e, \"...\"); }` - three lines, keeps the sweep going, and ALREADY EXISTS IN THIS FILE at rotation.rs:1382. The durable fix is a closed RotationKind enum with a total From<PolicyType>, which makes the six rejected values unspellable. DO NOT silence a match by widening the CHECK constraint (that leaves two disagreeing vocabularies and only moves the failure), by hoisting the call into a helper whose caller ignores it, or by adding a tracing line without consuming the Result. EXTERNAL WARRANT - THE CONDITION WAS INDEPENDENTLY REINVENTED, IN ANOTHER LANGUAGE, AND ITS AUTHOR WROTE DOWN WHY: ../brainiac console/app/console/modules/keys/Keys.tsx:30-45 refuses to swallow a failed revoke - 'A swallowed revoke is dangerous: the operator believes a compromised key is dead when it is still active.' - keeping the confirm dialog open and surfacing the error. Same statement, no shared document. The self-critique of the earlier swallowed-error version is preserved at brainiac docs/harness/refactor-bughunt-2026-07-14/con-keys.md:9. RELATIONSHIP TO ITS NEAREST NEIGHBOUR: unledgered-credential-provisioning asks whether a ledger write EXISTS near a provisioning call; this asks whether a lifecycle write's FAILURE IS OBSERVABLE. They are complementary and measured DISJOINT - 0 shared matches - and following that path's prescription with `let _ = audit_log::insert(...)` satisfies it while violating this one. Overlap measured against TWELVE neighbour rules through the real engine: ZERO shared matches with every one of them (unledgered-credential-provisioning, unverified-effect-dispatch, discarded-sync-watermark-write, blind-identity-write, discarded-guard-verdict, silent-row-skip, discarded-timezone-parse, unfenced-work-outcome-write, ledger-field-addressed-by-string-key, secret-as-bare-string-field, undiscriminated-credential-rejection, process-global-caches-a-failure). The `let _ =` family already has two accepted members partitioned by destination vocabulary (.emit for unverified-effect-dispatch; cursor|watermark|checkpoint for discarded-sync-watermark-write); this is the third and the three vocabularies are disjoint by construction. KNOWN BLIND SPOTS, equal on both halves so the partition stays unbiased: (a) the vocabulary is a word list, so a future expire_policy / retire_credential / quarantine_key is invisible until added - the list was taken from the repository layer's actual export set rather than from intuition; (b) `.ok()`, `.unwrap_or_default()`, `if let Ok(_)` and a match arm that drops Err are all equivalent swallows and none is matched; (c) `let _ = ` is assumed in rustfmt normal form - verified, zero occurrences of `let  _`, `let _  =` or `let _=` in either matching file. PRECONDITION (must be re-derived per repo): this signal keys on seven Rust function names and one Rust idiom. A repo that swallows with a catch block, a discarded promise, a Go `_ = f()`, or a decorator that logs-and-continues has the same condition wearing something this pattern cannot see. END OF LIFE: this rule is designed to reach zero. When it does the runner fails structurally on a zero-match rule BY DESIGN - DELETE the rule then, do not baseline it at 0.",
+        "$measured": "2026-08-17 @ f432a4ef3 - 564 .rs files walked under src-tauri/src; 22 matches in 2 files, ALL 22 HAND-OPENED, precision 22/22; commentMatchesSkipped 0. Membership reproduced by a structurally independent walker (own traversal, own URL-safe comment stripper, own brace-matched #[cfg(test)] exclusion). The two implementations DISAGREED TWICE and both disagreements were findings: first at 30 vs 29, because the pattern lacked a word boundary and `revoke` matched the suffix of `fleet_companion_revoke` (fixed with \\b); then on a LINE NUMBER while agreeing on every count, because the verifier's test-module stripper replaced blocks with spaces rather than newlines and management_api.rs has a #[cfg(test)] at :236 - it reported :567 where grep -n says :583. Re-extracted from the finished document by parsing its own fenced blocks and re-run through the real runner: identical (22/2, 7/5, 564, floor 500, exit 0). Wall time 1.5-1.7 s for both rules including node startup. The full registry was NOT run."
+      },
+      "baseline": {
+        "files": 2,
+        "matches": 22
+      },
+      "floor": 500
+    },
+    {
+      "id": "adhoc-statement-verb-vocabulary",
+      "goldenPath": "docs/concepts/golden-paths/sql-console.md",
+      "title": "A second SQL statement-verb vocabulary, hand-written outside the classifier that owns the decision",
+      "roots": [
+        "src-tauri",
+        "src"
+      ],
+      "extensions": [
+        ".rs",
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?=(?:[\"'](?:SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|REPLACE|TRUNCATE|MERGE|UPSERT|PRAGMA|ATTACH|DETACH|VACUUM|EXPLAIN|WITH|VALUES|ANALYZE|SHOW|DESCRIBE|DESC|GRANT|REVOKE|BEGIN|COMMIT|ROLLBACK|SAVEPOINT|RELEASE)[\"'][ \\t\\r\\n]{0,20}[,|][ \\t\\r\\n]{0,20}){0,12}[\"'](?:SELECT|DROP|ALTER|TRUNCATE|MERGE|UPSERT|PRAGMA|ATTACH|DETACH|VACUUM|EXPLAIN|SAVEPOINT|ROLLBACK|COMMIT)[\"'])(?:[\"'](?:SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|REPLACE|TRUNCATE|MERGE|UPSERT|PRAGMA|ATTACH|DETACH|VACUUM|EXPLAIN|WITH|VALUES|ANALYZE|SHOW|DESCRIBE|DESC|GRANT|REVOKE|BEGIN|COMMIT|ROLLBACK|SAVEPOINT|RELEASE)[\"'][ \\t\\r\\n]{0,20}[,|][ \\t\\r\\n]{0,20}){2,}[\"'](?:SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|REPLACE|TRUNCATE|MERGE|UPSERT|PRAGMA|ATTACH|DETACH|VACUUM|EXPLAIN|WITH|VALUES|ANALYZE|SHOW|DESCRIBE|DESC|GRANT|REVOKE|BEGIN|COMMIT|ROLLBACK|SAVEPOINT|RELEASE)[\"']",
+        "flags": "gi",
+        "ignoreCommentLines": true,
+        "description": "A run of three or more quoted SQL statement-verb literals — a hand-written vocabulary used to CLASSIFY a caller-authored statement — in a file that is not the classifier that owns the decision. PROXY FOR the stack-free condition: a second, independent decision about what kind of statement a caller-authored string is. Measured 2026-08-17 at f432a4ef3: 2 matches / 2 files violating (connector_use.rs:1453 the model-mutation verb list; safeModeUtils.ts:9 the client mirror), against 5 matches / 2 files for the compliant form (db_query.rs 3 = the one classifier's three arms; sqlTokenizers.ts 2 = a highlighting lexer that decides nothing). 2+5=7 = the anchor's entire raw population, so rule and control PARTITION it. PRECISION 2/2 hand-read; both are section-7 deviations. RECALL is deliberately partial: requiring THREE OR MORE verbs makes a single-verb check invisible, so connector_use.rs:1390 (starts_with(\"select\")) and validate_ddl_only's starts_with(\"CREATE \") are missed — both real instances. Widening to two verbs gives 13 matches / 9 files at 46% precision by pulling in every create/update/delete CRUD-AUDIT enum in the tree; the narrow form was chosen for precision and the trade is stated in the golden path so nobody 'fixes' it. THE LOOKAHEAD IS LOAD-BEARING: it requires at least one verb that is ONLY a SQL statement keyword, which is what excludes the audit enums. THE WHITESPACE BOUNDS MUST BE SYMMETRIC AND >= 20: an asymmetric {0,8}/{0,12} pair split one matches! arm across a leading-pipe continuation line and counted ONE vocabulary as TWO — caught by a second tokenising implementation that disagreed by exactly 1. CORRECT END STATE is 0, at which point DELETE this rule rather than baselining it at zero. PRECONDITION (re-derive per repo, do NOT port): in Next.js the condition wears sqlNormalized.startsWith('SELECT') plus a sibling deny-regex (measured twice in ../vibeman); in Python a re.match(r'^\\s*select', sql, re.I). This pattern scores ZERO on both."
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/src/engine/db_query.rs",
+          "reason": "the primitive itself — the one classifier that owns the read/write decision for every door onto this database (is_mutation :383, is_sqlite_read :360, and the CTE_MUTATION_VERBS list :290). Everything else in the repo should be calling this or the classify_db_query IPC command that wraps it."
+        },
+        {
+          "path": "src/features/vault/sub_databases/sqlTokenizers.ts",
+          "reason": "a syntax-highlighting lexer for the SQL editor, not a gate: SQL_KEYWORDS/SQL_FUNCTIONS/REDIS_COMMANDS decide a CSS class and nothing else, and its only consumer is SqlEditor.tsx. Deliberately NOT merged with the classifier — a highlighter wants recall, a classifier wants precision."
+        }
+      ],
+      "baseline": {
+        "files": 2,
+        "matches": 2
+      },
+      "floor": 4000
     }
   ]
 }

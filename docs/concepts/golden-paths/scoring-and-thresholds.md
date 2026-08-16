@@ -820,12 +820,20 @@ declares, and **6 of those 8 sites re-type it as literals** rather than importin
 the first comparison, so `null` coerces and `0` bands as the worst. The 9 that do
 (`FactoryOverviewTab.tsx:91`'s `errs === null ? 'unmeasured'` is the cleanest) are the shape to copy.
 
-### D10 — `data_stale` computed, shipped, and consulted by nobody · **25 of 25 live**
+### D10 — `data_stale` is read in three places and licenses a different conclusion in each · **25 of 25 live**
 
 `rotation.rs:269-272` computes it; `:274` decides `Remediation::Healthy` without it;
 `AnomalyScore.data_stale` crosses ts-rs; `credentialHealthScore.ts` never reads it. **`true` on all
-25 live credentials.** The field that could separate "the ledger says healthy" from "the ledger has
-not been written in 10 minutes" is present at every hop and read at none.
+25 live credentials.**
+
+> **Corrected 2026-08-17 by
+> [credential-rotation-and-revocation](./credential-rotation-and-revocation.md).**
+> This section's heading said "consulted by nobody", and that is **wrong twice**:
+> `rotation.rs:755` acts on the flag, and `AnomalyScorePanel.tsx:29` renders it. The narrow claims
+> survive — `:274` really does decide without it, and `credentialHealthScore.ts` really never reads
+> it — but the generalisation from two call sites to "nobody" was not measured. The corrected
+> finding is sharper than the original: **one flag, three readers, three different conclusions
+> licensed**, which is a harder defect to see than a field nobody uses.
 
 ### D11 — A threshold mirror with zero readers · **6 of 7 exports**
 
@@ -1159,6 +1167,14 @@ rendered path is the IPC one and is correct. **Two implementations agreeing woul
 this; opening the enum definition did.** The latent hazard is real and is noted in D12: the
 snake_case form has a ts-rs binding of its own, so it *can* reach the frontend, where the same
 lookup would silently return 50 for every arm.
+
+> **Corrected 2026-08-17 by
+> [credential-rotation-and-revocation](./credential-rotation-and-revocation.md): the hazard is not
+> latent. It is shipped.** `AnomalyScorePanel.tsx:6-17` renders an emerald **"Healthy"** chip for a
+> credential the engine classified at `Disable` level. It compiles because the lookup is typed
+> `Record<string, …>` — the same widening that `translation-completeness` found disarming an
+> exhaustive union one leaf over. "Latent" was the right call on the evidence I had and the wrong
+> conclusion; I checked the path I had replayed and not the second consumer.
 
 **12.5 — The convergence oracle found a sibling ahead of this repo on the leaf's central question,
 which the brief did not anticipate.** `ascent/src/lib/maturity/model.ts` + `scoring/engine.ts` own

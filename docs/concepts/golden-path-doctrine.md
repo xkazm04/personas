@@ -83,6 +83,18 @@ not, all measured:
    `name` column into `persona_triggers` that has never existed; the compiler
    was content, and GitHub deploy failed 100% of the time. At 6 of 10 INSERT
    sites in that path the column is a word in a string.
+
+   > **Sharpened by [`sql-console`](./golden-paths/sql-console.md): when the
+   > untrusted value IS the program, constrain the executor, not the value.**
+   > The earning case above had a *developer* write the string, so a test could
+   > in principle catch it. Where a user or a model writes it **at runtime**
+   > there is nothing to compile and no fixture to assert. Every answer that
+   > tries to validate the string is a classifier, and every classifier measured
+   > in the fleet has been wrong somewhere. The answers that hold move down a
+   > layer — a read-only handle, or a row-level policy where the engine decides.
+   > Measured: a `SQLITE_OPEN_READ_ONLY` pool refuses the statements the
+   > hand-written classifier lets through, and unlike `PRAGMA query_only = ON`
+   > it cannot be switched off from inside a statement.
 2. **Through a `OnceLock` or other global.** `db/src/memory_recall.rs:47` hands
    the second pool to nine functions without it passing through a parameter. No
    parameter-level type discipline reaches a value that never crosses a
@@ -156,6 +168,11 @@ soundness.** Disagreement is a finding. But so is false agreement:
   focus-*navigation* handlers). Hand-verification found the true count was zero.
 - A first pass undercounted by 47% because path-qualified Rust types
   (`&crate::UserDbPool`) did not match its pattern.
+
+- A third pair **agreed on the finding and disagreed on where it is.** Both
+  reported the same count and the same defect; one placed a site 16 lines early,
+  because its `#[cfg(test)]` stripper ate newlines. Agreement on *what* is not
+  agreement on *where*, and a `file:line` is the part a reader acts on.
 
 Hand-verify a sample regardless of whether the implementations agree.
 
@@ -367,6 +384,20 @@ the oracle exists to deflate.
 The tell is textual, not structural: identical comments, identical constants,
 identical error strings. Structure can converge; prose cannot.
 
+**The effective independent cohort is smaller than five, and how much smaller
+depends on the leaf.** Two later sweeps measured it:
+
+- A credential sweep found `personas-web`'s rotation overview **self-declares as
+  a port** and is demo-gated over a 5-row literal, and `personas-cloud` shares
+  this repo's table, column and env-var vocabulary verbatim. **Cohort 5 → 2
+  independent**, and 2 of its 3 apparent convergences evaporated.
+- A tracing sweep found `personas-cloud` and `personas-web` are **one system** —
+  same package name, shared `@dac-cloud/shared` contract. **Cohort 5 → 4**, for
+  every leaf.
+
+Establish the cohort *before* reporting a ratio. "3 of 5" and "3 of 2" are
+different findings, and only one of them is arithmetic.
+
 The reverse also happens and is worth reporting. A port that *gained* something
 the original cannot express is strong evidence for the missing thing — the same
 cloud port publishes into `persona_events` **inside a transaction**, which this
@@ -374,7 +405,7 @@ engine's `publish(&DbPool)` signature makes impossible at all 33 sites.
 
 ### The `convergence` label is not evidence — the field is now closed
 
-**Ten spine leaves carrying `convergence: converged` have been tested. Ten
+**Eleven spine leaves carrying `convergence: converged` have been tested. Eleven
 failed.** The ninth (`embedded-terminal-session`) failed because **zero of five
 siblings has a PTY or an xterm-class emulator at all**, so the label pointed at
 a 5/5 silence — and its direction was backwards, since Personas is the only repo
