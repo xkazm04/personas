@@ -183,7 +183,26 @@ export function useStatusPageData() {
     });
   }, [executionDashboard, slaStats, healingIssues]);
 
-  const globalScore = useMemo(() => computeGlobalScore(entries), [entries]);
+  // A score computed over a partial read is not a lower-confidence score — it is
+  // a WRONG one, and wrong in the flattering direction.
+  //
+  // Every sub-score is `100 − problems × k`, so a source that fails to deliver
+  // bad news scores as good news. Replayed against a copy of the live database
+  // (78 personas, 59 SLA rows, 205 healing rows): with both sources healthy the
+  // page reads 79 / DEGRADED; **with the healing fetch rejected it reads 84 /
+  // HEALTHY** — a failed read raised the score five points and flipped the
+  // verdict. With the SLA fetch rejected it reads 65 while every one of the 78
+  // rows correctly carries `grade: 'unknown'`.
+  //
+  // So suppress the number when either source did not answer. `globalScore` is
+  // already `number | null` and every consumer already handles null, because the
+  // sibling `globalUptime` has excluded no-data entries since it was written —
+  // fourteen lines away, same author. Nullability, not discipline, is what
+  // propagated that fix.
+  const globalScore = useMemo(
+    () => (slaError || healingError ? null : computeGlobalScore(entries)),
+    [entries, slaError, healingError],
+  );
 
   const globalUptime = useMemo(() => computeGlobalUptime(entries), [entries]);
 

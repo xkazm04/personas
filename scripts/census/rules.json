@@ -2998,6 +2998,29 @@
         "matches": 16
       },
       "floor": 4000
+    },
+    {
+      "id": "read-failure-as-empty-value",
+      "goldenPath": "docs/concepts/golden-paths/partial-failure-read-envelope.md",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\b(?:list|get|fetch|load|read|count|search|probe|resolve|[a-z][A-Za-z0-9_$]{1,20}(?:List|Get|Fetch|Load|Read|Count|Search|Probe))[A-Za-z0-9_$]{0,32}\\([^()]{0,160}\\)\\s{0,4}\\.\\s{0,2}catch\\s*\\(\\s*(?:silentCatchNull\\b|\\(?\\s*[A-Za-z_$][\\w$]*(?:\\s*:\\s*unknown)?\\s*\\)?\\s*=>\\s*(?:\\{[^{}]{0,240}?return\\s+(?:\\[\\s*\\]|0(?![.\\d])|null\\b)|\\[\\s*\\]|0(?![.\\d])|null\\b))",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A call to a READ-named function (list|get|fetch|load|read|count|search|probe|resolve, or a camelCase namespaced form like githubListRepos / cloudListTriggers / companionListPendingApprovals) whose `.catch(` handler RESOLVES TO an empty collection, a zero, or a null — including the bare `.catch(silentCatchNull)` form. PROXY FOR the stack-free condition: 'the source failed' and 'the source has none' are delivered to the caller as THE SAME VALUE, so every count, rate, empty-state and nothing-to-do verdict computed downstream is reasoning about a world nobody observed, and no later code can recover the distinction. WHAT THE MATCH COSTS, executed rather than reasoned: the Status page's global health aggregate was replayed verbatim (get_sla_dashboard's SQL from db/src/repos/communication/sla.rs:332-490 plus computeCompositeHealth and computeGlobalScore) against a READ-ONLY COPY of the operator's live 347MB personas.db over 78 real personas / 59 SLA rows / 205 healing rows. With both sources healthy the header renders 'Score 79/100 DEGRADED'. With getSlaDashboard REJECTED it renders 'Score 65/100 DEGRADED' while ALL 78 persona rows correctly render grade:'unknown' — zero personas have data and the number above them is 65. With listHealingIssues REJECTED the score RISES to 84 and the verdict chip flips to HEALTHY, because 179 open healing issues stop being subtracted: A FAILED READ IS RENDERED AS GOOD NEWS. PRECISION 68/68 on the stated condition, every match hand-read; ~66/68 on 'this is a defect' (ProjectsLayer.tsx:104 getProjectFavicon->null and useAiSearch.ts:65 are arguably correct product decisions and are LISTED ON PURPOSE, because separating them needs knowledge of what the surface does with the value, which no matcher has). TWO INDEPENDENT IMPLEMENTATIONS RECONCILE AT 68: this regex (68 in 32 files) and a balanced-paren parser that classifies ALL 825 `.catch(` sites in the tree by what the handler resolves to (void 704 / empty 85 / value 36) and then filters to read-named callees (69 in 33 files). The one disagreement is src/features/agents/sub_health/useHealthCheck.ts:406, whose handler body contains a nested {…} that `[^{}]{0,240}` cannot cross — a KNOWN, DELIBERATE recall miss: the first draft used a permissive [\\s\\S]{0,240}? window which escaped the .catch's closing paren and matched an unrelated `return null;` four lines later (AgentCredentialDemands.tsx:39), so one false positive was traded for one false negative. RECALL is bounded by the verb vocabulary exactly as the doctrine predicts: of the 85 empty-resolving catches, 16 have a callee outside the word list and 6 of those are genuine reads (memorySkillContexts, memorySkillCoverage, skillVersionTimeline, artistDefaultSaveDir, companionMcpResolveRequest, githubCheckPermissions) -> true recall ~68/74 ~92%. LEGAL DESTINATIONS the pattern leaves unmatched by construction: (1) letting the read reject and settling it at the wave with a named per-source error (settleAndReport, src/hooks/overview/useExecutionDashboardPipeline.ts:62-90); (2) catching into a TAGGED outcome rather than an empty value (src/lib/eventBridge.ts:169-175 `tryAttach` -> AttachOutcome, six lines); (3) pushing to a skipped-sensor list (findings/sweep.ts:88). WHAT THIS RULE CANNOT SEE, stated so nobody trusts it further: it does NOT see the aggregate — computeGlobalScore, the worst defect in this path, contains no .catch and matches nothing; the aggregate half is a TYPE (score: number|null), not a ratchet. It also cannot see `let xs = []; try { xs = await listX() } catch {}` — the same defect hoisted — which belongs to swallowed-error-telemetry's bindingless-catch-on-io (a DIFFERENT condition: no error binding, therefore no telemetry; all 68 sites here DO call silentCatch and are invisible to it by construction). PORTABILITY WARNING, earned from the convergence sweep: vibeman wears this identical condition as `.then(r => r.ok ? r.json() : { directions: [] }).catch(() => ({ directions: [] }))` at src/app/features/reflector/sub_Weekly/lib/weeklyApi.ts:66-74, feeding calculateFilteredAcceptanceRate and calculateTrend fifty lines later — a real percentage and a real week-over-week arrow built from a failed HTTP read. This pattern matches NONE of it. An adopting repo must re-key on its own read idiom. Do NOT silence a match by hoisting the read into a try/catch or by widening the return type to `T[] | undefined` and then `?? []` at the consumer — that is moving the lie, not removing it."
+      },
+      "exclude": [],
+      "baseline": {
+        "files": 32,
+        "matches": 68
+      },
+      "floor": 3000
     }
   ]
 }
