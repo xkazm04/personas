@@ -122,10 +122,21 @@ The census fails on a **rise** (a new violation) and on a **silent drop**
 allowed — record the justification in the commit; a ratchet that can only move
 down will be gamed the first time moving up is right.
 
-## When a composer stalls
+## When a composer stalls — or dies
 
-It stalls *after* writing its document, at the validation step. The document is
-complete. Do not re-dispatch:
+It stalls *after* writing its document, at the validation step. **The same is
+true when the session usage limit kills it**: on 2026-08-17 three composers
+reported `failed` with an API error, and all three had complete documents on
+disk — 1,127 / 1,230 / 1,177 lines, each ending at §12 as the contract
+requires. Only the report-back turn was lost.
+
+**So: always check the disk before re-dispatching.** Re-running a composer that
+already finished costs a full measurement pass and produces a second, different
+set of numbers for the same leaf. What is lost with the report is the
+composer's own §12 narration — recover it by reading §0 and §12 out of the
+document, which is where the contract puts it.
+
+The document is complete. Do not re-dispatch:
 
 1. `node scripts/census/merge-published-rules.mjs <path>` — the merger reads
    blockquoted fences too.
