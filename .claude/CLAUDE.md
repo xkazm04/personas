@@ -252,7 +252,7 @@ First adopter is `/research`; cross-skill adoption is the next step. If you're a
 
 The active-runs ledger is intent coordination; these are the **never-lose-work** guarantees that protect the working tree even when intent coordination fails. On 2026-05-09 a parallel session ran `git stash` to clean its tree before commit and silently swept five files (one untracked) of an in-flight `/research` run; recovery worked but only because the tracked files were in the stash and the untracked file was reproducible from conversation context. Don't assume the next stash victim will be that lucky.
 
-1. **Never `git stash` work that isn't yours.** Not even with `--keep-index`. Stash sweeps the entire working tree — including untracked files (with `-u`) and other sessions' in-flight edits — into a hidden state most agents won't think to look for. If your commit step needs a clean stage, use `git add <path>` per file (NOT `git add -A`/`git add .`/`git add -u`); leave everything else alone. The architect skill's "[Coexist with uncommitted work](./skills/architect/skill.md)" pattern is the canonical reference; mirror its discipline in any new skill.
+1. **Never `git stash` work that isn't yours.** Not even with `--keep-index`. Stash sweeps the entire working tree — including untracked files (with `-u`) and other sessions' in-flight edits — into a hidden state most agents won't think to look for. If your commit step needs a clean stage, use `git add <path>` per file (NOT `git add -A`/`git add .`/`git add -u`); leave everything else alone. The architect skill's "[Coexist with uncommitted work](./skills/architect/SKILL.md)" pattern is the canonical reference; mirror its discipline in any new skill.
 
 2. **Use `git worktree` for ALL multi-file work.** When your planned scope is more than a single file, do not work on `master` next to other sessions — create a worktree:
    ```bash
@@ -502,6 +502,27 @@ When you add a new feature area, add an entry to `feature-doc-map.json` in the s
 ### The Stop hook — three independent checks per turn
 
 `.claude/settings.json` registers a Stop hook that runs `node scripts/docs/check-doc-sync.mjs` before every turn ends. The script:
+
+> ### ⚠️ MEASURED 2026-08-17: THIS HOOK HAS NEVER FIRED. NOT RARELY — NEVER.
+>
+> The backward transcript walk breaks on `evt.type === 'user' && evt.message?.role === 'user'`
+> (`check-doc-sync.mjs:98`) — and **a tool result is that exact shape**. Verified twice on
+> different transcripts: 18,908 of 20,322 such events (93.0%) in a 100-transcript replay,
+> and 2,606 of 2,910 (89.6%) in this session's own log. So in any turn that used a tool,
+> the walk terminates at the most recent tool result and never reaches the `tool_use`
+> blocks behind it. Replayed over 100 real transcripts: **477 turns edited files, 2,367
+> file-edits, 0 visible to the hook — 0.00%.** Direct invocation exits 0, 12 times out of 12.
+>
+> **The same bug sits on the same line of `check-golden-path-touch.mjs:85`.**
+>
+> So every dismissal recorded against this hook was a dismissal of a message it never sent,
+> and the per-session enforcement this section describes has been documentation only. The
+> rule below is still the rule — update the coupled surfaces in the same turn — but it is
+> currently held up by nothing. **Not fixed here on purpose**: repairing the walk switches
+> a silent hook into one that fires on most turns, which changes the operator's workflow
+> and is theirs to schedule. Registered with the fix in
+> [`golden-path-deferred-fixes.md`](../docs/concepts/golden-path-deferred-fixes.md);
+> derivation in [`documentation-sync.md`](../docs/concepts/golden-paths/documentation-sync.md).
 
 1. Walks the current turn's transcript for `Edit` / `Write` / `MultiEdit` / `NotebookEdit` calls.
 2. Filters out skip patterns (tests, generated bindings, i18n, docs themselves, migrations, template/connector seeds).

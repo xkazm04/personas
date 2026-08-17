@@ -5155,6 +5155,28 @@
         "matches": 9
       },
       "floor": 800
+    },
+    {
+      "id": "nested-activation-target",
+      "goldenPath": "docs/concepts/golden-paths/external-operation-explorer.md",
+      "title": "An activating control nested inside another activating control",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "<button(?![A-Za-z0-9_-])(?:\"[^\"]*\"|'[^']*'|`[^`]*`|\\{(?:[^{}]|\\{(?:[^{}]|\\{(?:[^{}]|\\{[^{}]*\\})*\\})*\\})*\\}|[^<>{}\"'`])*(?<![/-])>(?:(?!</button>|<button(?![A-Za-z0-9_-]))[\\s\\S]){0,2500}?<(?:button(?![A-Za-z0-9_-])|Button(?![A-Za-z0-9_-])|a\\s(?:=>|[^<>]){0,200}href)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A <button> whose body opens another activator (<button>, <Button>, <a href>) before its own </button>. Invalid HTML: the inner control is not independently reachable by keyboard in several AT/browser combinations, and it survives only on an e.stopPropagation() no test covers. The opening tag is matched with strings and {…} attribute expressions treated as OPAQUE — a bare `>` inside className={cond ? 'a' : 'b'} or onClick={() => i > n} is arithmetic, never a tag close. Fix: make the row a <div> with the affordances as siblings, or hoist the inner control out."
+      },
+      "baseline": {
+        "files": 6,
+        "matches": 7
+      },
+      "floor": 1500
     }
   ]
 }

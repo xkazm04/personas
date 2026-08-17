@@ -3840,3 +3840,520 @@ The repo already wrote the correct doctrine once, with its reasoning, at
 `src-tauri/src/daemon/lock.rs:29-32`: *"No PID-based liveness check. Heartbeat freshness is the sole
 liveness indicator."* Nothing else follows it.
 Detail: [`os-process-reconciliation.md`](./golden-paths/os-process-reconciliation.md) §0, §7.1-§7.7, §9.
+
+## 89. `cargo deny` — MERGED INTO #106, with two additions and one denominator correction
+
+**Superseded by [#106](#106-cargo-deny-check-has-never-rendered-a-verdict--the-engine-floats-the-policy-is-frozen-and-the-fleet-already-has-the-fix)**, which owns this fix and carries the fuller
+account. Recorded here rather than deleted because the two were measured **independently,
+hours apart, by two composers in the same wave** — same file, same line
+(`deny.toml:19:17`), same value (`unmaintained = "warn"`), same tool version (cargo-deny
+**v0.20.2**), same diagnosis of `--locked` pinning the lockfile and not the version, same
+observation that `audit.yml` never gets there. **Two artifacts arriving at one set of
+numbers by different routes is what verification looks like**, and it is worth more than
+either entry alone.
+
+Three things this pass adds:
+
+1. **The `audit.yml` step would report success even if it ran.** `audit.yml:44` is
+   `cargo deny check 2>&1 | tee security-results/cargo-deny.txt`, and the step has no
+   `shell:` key — so it runs under GitHub's default `/usr/bin/bash -e {0}`, **without
+   `pipefail`**, and `tee`'s exit status becomes the step's. Verified from the `shell:`
+   lines in that job's own log, where the repo's plain `run:` steps show `-e {0}` and only
+   the `dtolnay/rust-toolchain` composite (which sets `shell: bash`) shows
+   `-e -o pipefail`. So the fix in #106 must **also** remove the pipe or add
+   `set -o pipefail`; otherwise repairing `deny.toml` converts a red gate into a green one
+   that still checks nothing. *(Note the near-miss: the general rule "a pipe erases the
+   exit code" is **false for a step that sets `shell: bash`** and true for one that does
+   not. The condition is the shell, and the shell is not visible at the pipe.)*
+2. **The documentation asserts the gate works.** `docs/development/build.md:212` lists
+   `cargo-deny` among the CI gates with no qualification. Corrected in this pass
+   (documentation only).
+3. **Denominator correction to #106.** It states the `audit.yml` step is `skipped` on
+   **"23 of 23 lifetime"** runs. Measured step-by-step across all 23: the workflow has 23
+   runs, **all `failure`** — but the cargo-deny step **exists in only 18 of them**
+   (2026-04-20 onward) and is `skipped` in **all 18**; the 5 runs from 2026-03-16 to
+   2026-04-13 have no such step at all (verified by listing their step names). The
+   conclusion is unchanged — a step that does not exist also renders no verdict — but
+   *"skipped 23 of 23"* is not what the API says, and a later reader auditing the claim
+   would find 5 runs that contradict it. **Same conclusion, different denominator, two
+   independent implementations: report the disagreement rather than the prettier number.**
+
+## 99. CI compiles the 331,560-line `app_lib` crate and never runs or lints it — every Rust step fails fast at `personas-db`
+
+**Where:** `.github/workflows/ci.yml:298` (`cargo test --workspace … --features desktop`),
+`:306` (`cargo clippy --workspace … -- -D warnings`).
+
+Step-level from run `32025966929`, Windows leg, 2026-08-17 (same shape on Linux):
+`cargo test` ran `personas_core` (**760 passed / 0 failed**) then `personas_db`
+(**808 passed / 10 failed**, 1,571 s) and stopped — cargo's default fail-fast.
+`personas-desktop (lib test)` **compiled** (the log carries its *"generated 159 warnings"*
+summary) and was **never executed**. `cargo clippy` died at `personas-db` with **3
+`clippy::sort_by_key` errors**, so `personas-engine` and `personas-desktop` were never
+linted either.
+
+By crate: `personas-desktop` 564 files / **331,560 lines / 63.2%** of the Rust — tested by
+nothing, linted by nothing; `personas-engine` 129 / 61,184 / 11.7% — not reached.
+
+This also **retires the standing diagnosis of the job's redness.** The prescription in
+[`adding-a-ci-gate.md`](./golden-paths/adding-a-ci-gate.md) attributes it to the keyring
+`unwrap()` and prescribes `PERSONAS_ALLOW_FALLBACK_KEY: "1"`. **That fix has landed**
+(`ci.yml:235`, `:356`) and the job is still red for three independent reasons, none of them
+the keyring: 10 genuine `personas-db` test failures, 3 clippy errors, and #89.
+
+**Fix (not applied — the 10 failures are real code and `--no-fail-fast` changes exit
+semantics for every consumer):** fix the 10 `personas-db` tests and 3 clippy findings
+first; then split clippy and cargo-deny into their own jobs (already prescribed) **and**
+add `--no-fail-fast` to the test step so one crate's failure stops reporting the other four
+as unknown. Consider a per-crate matrix leg, which also parallelises the 1,571 s wall.
+
+Detail: [`local-build-troubleshooting.md`](./golden-paths/local-build-troubleshooting.md) §7.B ·
+[`crate-layering.md`](./golden-paths/crate-layering.md) §7.A.
+
+## 100. The ORT architecture sniffer is correct only because of COFF member ordering, and its three failure arms all block `tauri dev`
+
+**Where:** `scripts/ensure-ort-cache.mjs:144-172` (`sniffLibArchitecture`), consumed at
+`:334`, `:370` and `:430-433`.
+
+The function reads the machine word of the **first non-metadata member** of the COFF
+archive. Parsed byte by byte on the live cache
+(`%LOCALAPPDATA%\ort.pyke.io\dfbin\aarch64-pc-windows-msvc\C09BFF…27DE\onnxruntime\lib\onnxruntime.lib`,
+2,124 B): **7 members — 2 linker metadata (`/`), 3 long-form objects reporting `0xAA64`,
+and 2 short-form import members** (SIG1 `0x0000`, SIG2 `0xFFFF`, machine field `0x0`). It
+returns `arm64` because MSVC's `lib.exe` emitted the long-form members first. Replaying the
+shipped algorithm confirms it: `arm64`.
+
+If a future archiver emits a short-import member first, the sniffer returns
+`unknown-0x0000`, which is `!== expectedMachine` at all three call sites: it invalidates a
+valid sentinel (`:359`), wipes and re-downloads a correct 321 MB cache (`:369-377`), and
+then **`fatal()`s at `:431-433` on the freshly correct library** — so the guard that
+protects `npm run tauri:dev` becomes the thing that blocks it, on a machine whose cache was
+never wrong.
+
+**Fix (not applied — build tooling whose first run touches a cache `tauri dev` depends
+on):** skip short-import members explicitly (`w0 === 0x0000 && w1 === 0xFFFF`), then read
+the first long-form member; or scan **all** object members and require unanimity, returning
+a distinct `mixed` verdict if they disagree. Either is ~6 lines. The unanimity form is
+strictly better because it would also detect a genuinely mixed archive, which is the exact
+upstream defect this script exists for.
+
+Detail: [`local-build-troubleshooting.md`](./golden-paths/local-build-troubleshooting.md) §0.4, §6.
+
+## 101. 98.6% of the vendored ONNX Runtime cache is debug symbols nothing links against
+
+**Where:** `scripts/ensure-ort-cache.mjs:422` — `copyTree(innerLibDir, libDir(target))`.
+
+The script copies Microsoft's entire `lib/` directory out of the release zip. On disk:
+`onnxruntime.pdb` **317,247,488 B**, `onnxruntime_providers_shared.pdb` 405,504 B,
+against `onnxruntime.dll` 11,785,760 B, `onnxruntime.lib` **2,124 B** and
+`onnxruntime_providers_shared.{dll,lib}` 23,338 B. **317.7 MB of 321.8 MB is two `.pdb`
+files** — MSVC debug symbols for a prebuilt DLL, on every developer machine, re-downloaded
+in full after every `npm run clean:ort`.
+
+**Fix (not applied):** filter `.pdb` in the `copyTree` call (a predicate argument, ~3
+lines), and note it in the sentinel so an existing fat cache is recognised rather than
+silently kept. `npm run clean:ort` then costs ~12 MB to restore instead of ~322 MB.
+
+Detail: [`local-build-troubleshooting.md`](./golden-paths/local-build-troubleshooting.md) §7.F.
+
+## 102. Two materialized Tauri configs on disk describe a program that stopped existing 161 days ago
+
+**Where:** `src-tauri/gen/android/app/src/main/assets/tauri.conf.json` and
+`src-tauri/gen/android/app/build/intermediates/assets/universalDebug/mergeUniversalDebugAssets/tauri.conf.json`
+(both untracked; `git ls-files src-tauri/gen` = 40 files, neither among them).
+
+They are the output of a `tauri android` run on **2026-03-09** — a full deep merge of
+`tauri.conf.json` + `tauri.android.conf.json` + Tauri's own defaults, **87 leaf paths**
+against the canonical config's 43. **A materialized merge is indistinguishable from a
+source of truth**: same schema, same shape, strictly more complete. Measured against HEAD:
+`version` `0.1.6` vs `1.1.0`; `app.withGlobalTauri` `false` vs **`true`** (added
+2026-05-09); `app.security.assetProtocol` `{scope: [], enable: false}` vs a 7-entry scope
+with `enable: true` (added 2026-04-15); `bundle.resources` absent (added 2026-07-26);
+`nsis.customLanguageFiles` absent (added 2026-04-09); `devCsp` a March policy. The canonical
+config has **30 commits** since. Reconstructing the canonical file at `7d6e67ad0` reproduces
+the merged content exactly, which is what dates it.
+
+Consequence already in the corpus:
+[`tauri-permissions-and-csp.md`](./golden-paths/tauri-permissions-and-csp.md) reads this
+artifact as *"the empirical proof of the platform merge"* and counts its `csp`/`devCsp`
+pair among 7 live CSP surfaces. The **merge mechanism** it demonstrates is sound; the
+**values** are not live, and re-running `tauri android` would produce four different
+strings.
+
+**Fix (not applied — an Android toolchain may hold the directory, and deleting build output
+is a runtime-affecting action):** remove `src-tauri/gen/android/**/tauri.conf.json` as part
+of a `clean:android` rung, and add an assertion that no script or document reads a config
+under `gen/`. The general rule — *a generated full materialization must carry its own
+provenance or be treated as unreadable* — is the reusable part.
+
+Detail: [`tauri-config-variants.md`](./golden-paths/tauri-config-variants.md) §0, §7.A.
+
+## 103. `check-tauri-configs.mjs` reads 3 of 5 tracked configs because its input set is a hardcoded literal
+
+**Where:** `scripts/check-tauri-configs.mjs:17-18`, `:21-24`.
+
+`CANONICAL` + `OVERLAYS` are three string literals, so all five assertions in the file
+(JSON parse, `$schema` parity, overlay-key surface, cargo-feature existence, CSP
+script-directive ban) run over three files. `tauri.android.conf.json` and
+`.tauri-scraper-dev.conf.json` are never opened, and two further configurations are
+generated at launch (`scripts/dev/tauri-dev-test.mjs:27-36`,
+`scripts/test/launch-isolated.mjs:154-170`) — **5 tracked files, 7 configurations, 3
+examined.** `docs/development/build.md:21` and `:46` repeat the number three.
+
+The fix is a **type, not a gate**: discover configs by reading the directory and filtering
+on the `tauri*.conf.json` shape, classify into canonical / profile / platform, and give each
+class its own `ALLOWED_OVERLAY_KEYS`. That makes an unexamined config unrepresentable. It
+cannot be a flat widening of the existing allowlist: `tauri.android.conf.json` legitimately
+overrides 5 keys outside it and **illegitimately** overrides `beforeBuildCommand` (to
+`npx vite build`, which runs 0 of 14 codegen tasks) — so `beforeBuildCommand` must be on no
+allowlist. Add an exit-2 precondition when fewer than 4 configs are discovered.
+
+**Not applied** — it is a security-relevant gate whose first run fails the tree (the
+android config's `'unsafe-eval'` and its missing `$schema` both trip existing assertions),
+and the same enumeration is prescribed from the security side by
+[`tauri-permissions-and-csp.md`](./golden-paths/tauri-permissions-and-csp.md) §9. Landing it
+once, for both reasons, is better than landing it twice.
+
+Detail: [`tauri-config-variants.md`](./golden-paths/tauri-config-variants.md) §7.B, §9.
+
+## 104. The host-triple drift detector runs only on the dev path, and the error it detects is a build error
+
+**Where:** `scripts/run-codegen.mjs:78-79` — `host-check` is in the `predev` preset and not
+in `prebuild`.
+
+`tauri.conf.json:9-10` wires `beforeDevCommand: "npm run dev"` (→ `predev`) and
+`beforeBuildCommand: "npm run build"` (→ `prebuild`). So `scripts/check-build-cache.mjs` —
+whose entire purpose is to catch the contamination that produces
+`lld-link: error: machine type x64 conflicts with arm64` — never runs on `npm run build`,
+`npm run tauri:build`, `tauri:build:lite`, `tauri:build:stable`, or any of the three tier
+bundles. **A link error only happens during a link.** `docs/development/build.md:84`
+documents the asymmetry, so it is deliberate; it is simply on the wrong side. Cost of the
+fix: one `rustc -vV` per build.
+
+Smaller, same file: `build.md:98-100` says the marker is written *"after each successful
+run"* of the build. It is written at `check-build-cache.mjs:66`, **before** cargo starts —
+so it records *the host the last `predev` saw*, not *the host of the last successful build*.
+The guard still holds (a drifting run exits 1 at `:62` without writing), but a reader
+debugging a contaminated tree will reason from the wrong meaning.
+
+**Not applied** — adding a task to `prebuild` changes whether `npm run build` can fail, and
+a false positive would block every build on the machine.
+
+Detail: [`local-build-troubleshooting.md`](./golden-paths/local-build-troubleshooting.md) §7.E.
+
+## 105. Both Stop hooks are dead: a tool result is shaped exactly like the human message they stop at
+
+**From:** [`documentation-sync`](./golden-paths/documentation-sync.md) §0, §7.A.
+
+`scripts/docs/check-doc-sync.mjs:95-108` and `scripts/docs/check-golden-path-touch.mjs:81-95`
+carry byte-equivalent transcript walks. Both break on
+`evt.type === 'user' && evt.message?.role === 'user'`, described in their own comments as
+"the most recent user message". **A tool result is recorded as exactly that shape**: across
+the 100 transcripts in `~/.claude/projects/C--Users-mkdol-dolla-personas/`, **18,908 of
+20,322** such events (93.0%) are tool results and only **1,414** are human messages. Every
+`Edit` is immediately followed by its own `tool_result`, so the walk hits a boundary before
+it reaches a single `tool_use`.
+
+Executed, not read — replayed over every turn of every transcript, and the hook itself
+invoked on twelve of them:
+
+| | |
+|---|---:|
+| turns (delimited by genuine human messages) | 1,414 |
+| turns that edited >=1 file | **477** |
+| ...in which the hook's walk saw >=1 edit | **0** (0.00%) |
+| file-edits in those turns | **2,367** |
+| ...visible to the hook | **0** (0.00%) |
+| direct invocation on 12 real transcripts (up to 209 edits each) | **exit 0, 12 of 12** |
+
+`:117`'s `if (edited.size === 0) process.exit(0)` is therefore not one of two silent-pass
+paths (as [`adding-a-ci-gate`](./golden-paths/adding-a-ci-gate.md) §7 P10 records) — it is
+**the** path, on every turn, since the three-target hook landed in `d584207f7` on
+2026-05-16. The doc-sync reminder and the golden-path-touch reminder have both never fired.
+
+The fix is one clause in each file — treat the event as a boundary only when its content is
+not a tool result:
+
+```js
+if (evt.type === 'user' && evt.message?.role === 'user') {
+  const c = evt.message.content;
+  if (Array.isArray(c) && c.some((b) => b.type === 'tool_result')) continue;
+  break;
+}
+```
+
+**Not applied.** It converts two hooks that have never spoken into two hooks that speak on
+most turns, immediately, inside the operator's live sessions — including this campaign's
+own, where `check-golden-path-touch.mjs` would begin nagging every composer. That is a
+change to what a live surface shows while the operator is watching it. Fix it deliberately,
+with the noise expected.
+
+Two companions in the same document, both cheap once the above lands and both requiring a
+judgement call rather than a mechanical edit: the satisfaction conditions at
+`:120`/`:121`/`:125` are directory prefixes while the message names an exact file
+(**45.7% precision** over 761 real co-edit commits), and `feature-doc-map.json` covers
+**2,883 of 4,304** source files (**33.0% unmapped**), which no check measures.
+
+## 106. `cargo deny check` has never rendered a verdict — the engine floats, the policy is frozen, and the fleet already has the fix
+
+**From:** [`supply-chain-policy`](./golden-paths/supply-chain-policy.md) §0, §7.A, §12.3.
+
+`src-tauri/deny.toml` has one commit (`4c42aacb0`, 2026-04-09) and has never been edited.
+`.github/workflows/ci.yml:310` installs the policy engine with
+`cargo install cargo-deny --locked` — **`--locked` pins cargo-deny's own lockfile, not its
+version** — so the runner fetches whatever is current. On 2026-08-17 that is **v0.20.2**,
+and it refuses the config:
+
+```
+error[unexpected-value]: expected '["all", "workspace", "transitive", "none"]'
+   |- src-tauri/deny.toml:19:17
+19 | unmaintained = "warn"
+[ERROR] failed to deserialize config from 'src-tauri/deny.toml'
+Process completed with exit code 1
+```
+
+Elapsed from the step's `##[endgroup]` to the error, from the log timestamps of job
+`95375460599`: **21 ms**, across **0 of 1,010** packages. Before `if: always()` landed in
+`6cd8a87f0` (2026-08-13) the step was `skipped` instead — sampled at 2026-04-27, 07-07,
+07-13, 07-17, 07-24, 07-29, 08-04 and 08-10: `skipped`, 8 of 8, all three platforms. The
+weekly path is shut too: `audit.yml`'s cargo-deny step is `skipped` on **23 of 23** lifetime
+runs, because `scripts/security-audit.sh` fails first and nothing there is `if: always()`.
+
+**Do not hand-edit the policy — port it.** `../brainiac/deny.toml` (written 2026-07-30,
+refined 2026-08-05, same author, four months later) answers every defect here: `[graph]`
+declares `all-features = true` and `exclude-dev = false`; `unmaintained = "all"` is the
+modern enum; `yanked = "deny"`; the `ignore` list carries a dated per-advisory entry with a
+reachability analysis and a removal condition; the license allow-list is annotated
+crate-by-crate and marked "derived from `cargo deny list`, not from a template"; `[bans]`
+names two real crate bans with reasons. Its workflow installs cargo-deny as a prebuilt
+binary and — the part that matters most here — **runs `npm audit` off `package-lock.json`
+with no `npm ci` at all**, which is exactly what would have kept this repo's weekly audit
+alive through the lockfile desync. `brainiac`'s security workflow is 39 runs, **12 green**;
+this repo's two supply-chain paths are 350 runs, **0 green**.
+
+**Not applied.** `yanked = "warn"` vs `"deny"` and `vulnerability = "deny"` are policy
+decisions that may be deliberate, and repairing the config turns a check that examines
+nothing into one that will report real findings across 1,010 crates during a working day.
+It should be repaired *and expected to be red* on first run — `deny.toml`'s own header in
+brainiac says it: *"this file describes the dependency tree as it ACTUALLY is. It is not a
+place to make a red check green."*
+
+Two adjacent items from the same document, both also unapplied: the lockfile carries **one**
+git source (`pumper-core` @ `rev 7e13f31`) against a policy of
+`unknown-git = "deny", allow-git = []`, and whether the check would even see it depends on a
+feature resolution `[graph]` never declares (`default = []`, 38 `optional = true` across four
+manifests). And `src-tauri/gen/android/gradle/wrapper/gradle-wrapper.properties` names
+`gradle-8.14.3-bin.zip` with **no `distributionSha256Sum`**, beside a tracked 59,203-byte
+`gradle-wrapper.jar` whose sha256
+(`e996d452d2645e70c01c11143ca2d3742734a28da2bf61f25c82bdc288c9e637`) is recorded nowhere in
+the repository — adding the pin changes whether an Android build starts.
+
+## 107. The bundle budget fails at 6.33x, has never been observed, and 60 MB of source maps carrying full TypeScript ship inside every installer
+
+**From:** [`bundle-size-budget`](./golden-paths/bundle-size-budget.md) §0, §7.A, §7.B.
+
+`node scripts/check-bundle-budget.mjs` at `cc27be561`, run directly and its exit code read
+without a pipe: **exit 1**. Total **31,642.1 KB** against the 5,000 KB ceiling declared at
+`scripts/lib/bundle-budget.mjs:12` — **6.33x** — plus three chunks over the 850 KB per-chunk
+ceiling (`vendor-three` 1,008.7, `index` 913.9, `en` 896.6). The ratchet file
+`scripts/bundle-baseline.json` is timestamped **2026-03-14** at `totalKB: 4720`: five months
+and 6.7x behind. Nobody has seen this, because `ci.yml` is **327 runs, 0 successes** and the
+budget step's `dist/` never exists there.
+
+Two things must be decided together, which is why this is a note and not a fix:
+
+1. **The metric is wrong in both directions.** **793 of the 1,400 chunks — 16,869.5 KB,
+   53.3% of the total — are per-locale catalogs** (13 locales x 61 sections), of which a
+   user loads at most one; roughly **49.2%** of the budgeted number is bytes no single user
+   can fetch, and the May 2026 section-locale split (a genuine improvement) is most of what
+   pushed the gate over. Meanwhile the gate reads `dist/assets/*.js` only and therefore
+   observes **28.4%** of `dist/` — missing 60,623.3 KB of `.map`, 865.6 KB of `.css`,
+   1,944.0 KB of `.png` and 16,414.0 KB elsewhere, against a directory total of
+   **111,489.1 KB across 3,133 files** (two implementations, `fs.statSync` and PowerShell
+   `Measure-Object`, agreeing to 0.1 KB).
+2. **The source maps ship.** `vite.config.ts:84` `sourcemap: "hidden"` emits them;
+   `tauri.conf.json` sets `frontendDist: "../dist"`; there is no `.taurignore`; and
+   `tauri-codegen-2.6.2/src/embedded_assets.rs:127-140` walks the tree filtering
+   **directories only** ("compress all files encountered"). Each map carries
+   `sourcesContent` — the `index` map alone holds **302 sources and 2,268,612 bytes** of
+   original TypeScript. `release.yml:365-370` uploads them to Sentry and never deletes them.
+   **`../personas-web/next.config.ts:113-117` already does the right thing**, with the
+   reason in the comment: `sourcemaps: { deleteSourcemapsAfterUpload: true }` —
+   *"Delete source maps after upload so they don't ship to the client"*. Port that, or emit
+   maps outside `frontendDist`.
+
+**Not applied.** Both halves change what the shipped installer contains, and re-baselining is
+a decision about what the ceiling should mean rather than an edit. Two smaller companions
+from the same document: `binary-size-report.mjs:121` exempts the `.exe` from the 100 MB
+budget while the local release binary is **144,254,976 B (137.6 MB)**, and `.baseline/` has
+never been created so every size delta renders as `—`; and `npm run check:assets` reports
+**12,831 KB -> 3,849 KB (70%)** of free PNG savings while being wired into no workflow, no
+hook and not `npm run check`.
+
+---
+
+## 108. One purge orphaned 100% of the vector store, and nothing in the tree can find an orphan
+
+**Where:** `src-tauri/db/src/repos/core/memories.rs:1638-1660` (`spawn_delete_memory_embeddings`),
+`:1928` (`gc_archived_memory_embeddings`), `:2008` (`backfill_memory_embeddings`);
+`src-tauri/db/src/migrations/schema.rs:525`;
+`src-tauri/src/commands/credentials/vector_kb.rs:1410-1516` (`reconcile_orphaned_kb_records`).
+
+**What is measured** (2026-08-17, against the purge backup and the live files,
+two independent implementations in exact agreement — a cross-`ATTACH` SQL join
+and a bespoke JS `Set` difference):
+
+| | `persona_memories` | vectors | orphan vectors |
+| --- | ---: | ---: | ---: |
+| pre-purge (`purge-backup-2026-08-17/personas.db`) | 6,535 | 5,158 | **0** |
+| post-purge (live) | **0** | **5,158** | **5,158 (100%)** |
+
+`personas_data.db` is **byte-identical** in the backup and live (17,502,208 B):
+the purge never touched it. A third check — comparing the vector id *sets* —
+confirms all 5,158 ids are present in both, so no cleanup ran late.
+
+**Why it happened, and it is structural rather than an oversight.**
+`persona_memories.persona_id REFERENCES personas(id) ON DELETE CASCADE` is
+enforced by SQLite *inside `personas.db`*. The vector's key,
+`persona_memory_embedding_meta.memory_id`, is a bare `TEXT` column in
+`personas_data.db`. A cascade is a database-engine feature; it stops at the
+file. Of the **8 doors that delete a memory**, 3 call the vector companion
+(`batch_delete`, `merge`, the archive path) and 5 do not — including the
+`crud_delete!` macro, `delete_non_code`/`delete_all`, the `fk_hygiene`
+migration, and the FK cascade, which *cannot*.
+
+**And no sweep runs in the direction that would find it.** Every reconciliation
+here is relational → vector: `gc_archived_memory_embeddings` enumerates
+`tier = 'archive'` rows in the main DB, `backfill_memory_embeddings` enumerates
+memories. `reconcile_orphaned_kb_records` — the one bidirectional reconciler —
+compares two *relational* tables (`knowledge_bases` ↔ `persona_credentials`) and
+only ever touches the vector store via `drop_index(kb_id)` for a `kb_id` it read
+off a relational row. **No code in 963 `.rs` files enumerates the vector store
+and asks whether each vector still has a parent.** An orphan is by definition
+absent from the relational side, so a relational-first sweep cannot see one.
+
+**The cleanup is behind a cargo feature; the data is not.**
+`delete_memory_embeddings`, `gc_archived_memory_embeddings`,
+`spawn_delete_memory_embeddings` and `reconcile_orphaned_kb_records` are all
+`#[cfg(feature = "ml")]`. `npm run tauri:dev:lite` — the documented daily
+default — builds `desktop`. **In a lite build the app cannot delete a single
+vector, ever, and the boot reconciler does not run.** Tree-wide: 230 cleanup
+function declarations, **3** behind a cargo feature, all 3 these.
+
+**Cost, not correctness.** `memories.rs:1639` says an orphan is *"inert for
+recall"*, and for correctness it is (KNN ids are lifted from the authoritative
+table; a missing row drops out — `memory_recall.rs:343-346`). But the KNN
+`LIMIT k` is applied **before** the intersection, and `k` is sized against live
+candidates (`k = candidates.len()*4, min 128`), never against the orphan
+population. Recall degrades in proportion to orphan share, silently, with no
+error anywhere.
+
+**Why held:** the fix's first run **deletes rows** — 5,158 of them on this
+machine. Standing rule.
+
+**The safe first step, which deletes nothing:** count both sides at boot and log
+the difference *even when it is zero*. `reconcile_orphaned_kb_records:1513` logs
+only when `cleaned > 0` and has therefore never printed a line here — a
+reconciler whose only output is silence is indistinguishable from one that never
+ran.
+
+**The sibling did not take the exception.** `brainiac/migrations/0001_init.sql:104-109`
+declares `memory_embeddings.memory_id uuid NOT NULL REFERENCES memories(id) ON DELETE CASCADE`
+— same logical relationship, same database, real foreign key. Orphaning is
+unrepresentable there, which is why that repo has no reconciler, no GC sweep and
+no feature gate. One independent witness, and it inverts our practice.
+
+Detail: [`vector-kb-ingestion.md`](./golden-paths/vector-kb-ingestion.md) §0, §7.1-7.2, §12.2.
+
+---
+
+## 109. A blank form fires a fabricated URL at somebody else's API, on your credential
+
+**Where:** `src/features/vault/shared/playground/RequestBuilder.tsx:50`
+(`resolved.replace('{'+key+'}', encodeURIComponent(val || key))`), `:40-58`,
+`:37`; `src/features/vault/shared/playground/BuilderParams.tsx:93-98`;
+`src/lib/credentials/catalogApiEndpoints.ts`.
+
+**What is measured** (2026-08-17; the catalog counted two ways — a textual
+constructor count and an evaluation of the module — in exact agreement):
+
+- The baked catalog holds **71 connectors / 472 endpoints / 504 parameters**
+  (248 `path`, 256 `query`), of which **309 declare `required: true`**.
+- `ApiParameter.required` and `ApiParameter.schema_type` are read in **exactly
+  one file** — `EndpointRow.tsx:108`/`:110-111`, a read-only detail panel — and
+  in **zero** files that build a request. The fire button
+  (`RequestBuilder.tsx:85-92`) is `disabled={isSending || !path.trim()}`.
+- Replaying `RequestBuilder`'s own `resolvedPath` verbatim against the real
+  catalog: **209 of 209** endpoints with a path parameter turn a blank-but-
+  touched form into a syntactically valid, entirely fabricated URL.
+  `/{project}/_apis/pipelines` fires as `/project/_apis/pipelines`.
+- 61 query parameters declared `required: true` ship with empty values
+  (`api-version=`), because `resolvedPath` filters on `q.key.trim()` only.
+- `schema_type` is `"string"` on **504 of 504** parameters — the constructor
+  defaults it and no call site overrides it, so the declared type carries zero
+  bits.
+- `request_body.schema_json` is `null` on **120 of 120** catalog endpoints, so
+  `RequestBuilder.tsx:37`'s body prefill is dead for the catalog; for a
+  user-imported OpenAPI spec it prefills the **schema** as if it were the
+  payload.
+
+**Why this is worse than a validation gap.** The request succeeds
+syntactically and fails semantically, against a third party, with the user's
+stored credential attached. A 404 from `/repos/owner/repo` is indistinguishable
+from a real 404, so the user debugs the API instead of the form.
+
+**Why held:** deleting the `|| key` fallback and adding a `missingRequired`
+term to the fire button's `disabled` changes what a live surface does while the
+operator is using it — a request that fires today would stop firing. Standing
+rule. The change is small and correct; it should be the first item applied when
+the campaign resumes destructive applies.
+
+Detail: [`external-operation-explorer.md`](./golden-paths/external-operation-explorer.md) §0, §7.1-7.4.
+
+---
+
+## 110. One of two OCR backends can be cancelled, and the reason the other one needs it is written in the first one's comment
+
+**Where:** `src-tauri/src/commands/ocr/mod.rs:476` (`run_claude_ocr`), `:182`
+(`run_gemini_ocr`), `:37-50` (the cancellation registry),
+`src/features/plugins/drive/ocr/DriveOcrDrawer.tsx:100-102`, `:110-113`;
+`src-tauri/src/lib.rs:2726-2731`.
+
+**What is measured** (2026-08-17):
+
+- **`operation_id` is a parameter on 2 of 4 OCR entry points** — both Gemini
+  commands have it, neither Claude command does. `cancelInFlight()` in the
+  drawer therefore does nothing on the Claude path, and `run_claude_ocr` retains
+  no child handle, sets no `kill_on_drop`, and runs `wait_with_output()` to
+  completion. The Gemini path's own comment states the motive: *"instead of
+  silently paying for a Gemini call whose result we'll throw away."*
+- **Cancellation is detected by substring-matching an English string.**
+  `DriveOcrDrawer.tsx:112`: `if (!msg.includes("OCR cancelled"))`. Producer is
+  `AppError::Internal("OCR cancelled".into())`. Reword the Rust string and a
+  deliberate user cancel starts raising an error toast, in a 14-locale app.
+- **All 8 OCR commands are unauthenticated at both layers.** `grep -n ocr
+  src-tauri/src/ipc_auth.rs` returns nothing (none is in `PRIVILEGED_COMMANDS`),
+  and the in-body guard is `require_auth_sync`, which is
+  `Ok(())` (`ipc_auth.rs:477-479`). `ocr_with_gemini` takes
+  **`api_key: String` from the renderer**. Mitigating: the frontend has zero
+  call sites for `ocr_with_gemini`/`ocr_with_claude` — only the two
+  `ocr_drive_file_*` wrappers, which resolve the key server-side from the vault.
+- **3 of 8 commands are unreachable.** `list_ocr_documents` (`:658`),
+  `get_ocr_document` (`:664`), `delete_ocr_document` (`:673`) carry
+  `#[tauri::command]` and appear in neither `generate_handler!` (`lib.rs:2726-2731`
+  registers five) nor `commandNames.generated.ts`. Their repository layer is
+  fully written. **Every OCR run writes an `ocr_documents` row nothing can read.**
+- **An empty extraction is stored as a success.** Gemini via
+  `.unwrap_or_default()` on the candidates chain (`:286-294`), Claude via
+  `String::from_utf8_lossy(&output.stdout).trim()` on an exit-0 run with no
+  stdout. `GeminiCandidate` (`:104-107`) does not deserialize `finishReason`, so
+  a `SAFETY` block, a `RECITATION` block and a `MAX_TOKENS` truncation are all
+  indistinguishable from an empty page.
+- **`ocr_documents` holds 0 rows in the purge backup**, and that table was not in
+  the purge cascade. The surface has never run — which is why none of the above
+  has been shaken out.
+
+**Why held:** wiring cancellation to the Claude path means killing a spawned
+child, and registering the three CRUD commands changes the IPC surface. Both
+change runtime behaviour. Standing rule.
+
+Detail: [`ocr-extraction.md`](./golden-paths/ocr-extraction.md) §0, §7.1-7.4, §7.9.

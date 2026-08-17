@@ -480,6 +480,22 @@ time. That is adoption pressure, not enforcement. Do not confuse the two.
 
 The runner is `scripts/census/`. A rule is a **ratchet**, not a verdict.
 
+- **The census cannot express a condition at 0% or at 100% prevalence, and both
+  refusals are structural.** At 0% the rule matches nothing and the runner fails
+  it as broken — correct, because there is nothing to ratchet down. At 100% the
+  *positive control* has nothing to match, and a control that returns zero is
+  indistinguishable from one whose pattern is wrong. Measured 2026-08-17 on
+  three separate leaves in one wave: `retrieval-grounding-preview`'s violating
+  form scored **0 files** against a compliant form at 24 sites (extinct);
+  `os-process-reconciliation`'s control scored **0** because `start_time()`
+  occurs **0 times in 963 `.rs` files** (the compliant form does not exist here);
+  and `supply-chain-policy`'s unpinned-`uses:` rule was **56/56 hand-verified
+  precision and unshippable**, because there is not one pinned `uses:` in this
+  repo *or in any sibling*.
+  **Say which of the two it is, and prove it.** "The control returns zero
+  because the compliant form does not exist in this tree" is a finding worth
+  publishing; "the control returns zero" alone is indistinguishable from a
+  broken pattern, and a later reader cannot tell them apart.
 - **Check the existing rules first** and name the ones you checked. The corpus
   is crowded enough that a reasoned decline is a respectable §9. One gate was
   declined purely for 83% file-overlap with an existing rule; that was correct.

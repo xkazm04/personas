@@ -12,7 +12,7 @@ characters: 10 (broad roster, adapted from /uat)
 > **code quality** of the AI plumbing · **business value** (UAT Character method,
 > scoped to outputs) · **model optimization** (benchmark same input × models). This
 > vault is the durable memory; each `scan`/`run` builds on the last.
-> Engine: [`.claude/skills/tiger/skill.md`](../.claude/skills/tiger/skill.md) ·
+> Engine: [`.claude/skills/tiger/skill.md`](../.claude/skills/tiger/SKILL.md) ·
 > Per-app config: [[config]] · Sibling: `/uat` (`uat/`).
 
 ## Headline (init, 2026-06-20)
