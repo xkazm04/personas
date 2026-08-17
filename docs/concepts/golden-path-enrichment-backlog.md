@@ -114,3 +114,67 @@ These are physics-grade (convergence on a *defect*), and the first is live.
 - Universal-core leaves (`swallowed-error-telemetry`, `commit-path-gates`, etc.)
   use `## The one way` instead of `## Principle`; three field-test agents had to
   handle both. Either normalize the heading or document the two styles.
+
+---
+
+## v2 full-scope additions (2026-08-17)
+
+The v2 run scanned the **full applicable corpus** (204 leaves, 9 domain shards ×
+3 repos) with per-leaf independence flagging. It reconfirmed C1/C2 and every v1
+flow-back, and added these — full evidence in each repo's
+`docs/field-report-v2/<domain>.md`. **Both convergent defects are now confirmed
+at shard depth in all four repos**, and the corpus physics itself is validated:
+**pumper (independent Rust, zero lineage) holds 58 corpus clauses with 0
+self-match** — physics that survives transplant into an unrelated stack.
+
+**Fixes a documented personas defect:**
+
+- **F11 — derive-next-fire-at-tick.** pumper derives a schedule's next fire time
+  *at tick* rather than storing it at write, which makes "NULL = gone"
+  **structurally impossible** — the architectural fix for the corpus's own
+  **349-NULL-`next_trigger_at`** defect. `refines` scheduled-trigger-firing.
+- **F12 — checksummed forward-only migration ledger.** pumper's `_sqlx_migrations`
+  makes editing an already-applied migration a boot-time checksum error, an
+  immutability property `run_incremental` **structurally cannot have**
+  (`schema-change` already notes personas lacks a ledger). `built-elsewhere`.
+- **F13 — a gate that asserts its own instrument before reporting health.**
+  politicas' four-state ledger was built explicitly to avoid "gates running
+  green while checking nothing" — the **C2 fix**, and it adds a `satisfied`
+  fourth state (met-by-a-named-mechanism-with-a-re-runnable-command), earned
+  because gates-written-from-a-principle scored 0 true positives. `refines` the
+  meta-protocol.
+- **F14 — structural LLM chokepoint by visibility, not convention.** pumper makes
+  the metering bypass a **compile error** (`EngineSet::claude` is `pub(crate)`)
+  plus an inventory test. `refines` headless-model-call P6.
+
+**Net-new practices (no corpus leaf):**
+
+- **F15 — automatic pre-migration WAL-consistent backup** (`VACUUM INTO` before
+  the migrator, gated by a pure decision fn returning named outcomes,
+  retention-bounded, unit-tested). `absent`.
+- **F16 — WASM operator-plugin sandbox** (fresh Store + fuel + memory cap + empty
+  Linker). `refines` untrusted-definition-validation.
+- **F17 — civic-data provenance cluster** (politicas): content-fingerprinted
+  claim receipts that self-announce staleness; a tamper-evident audit chain that
+  distinguishes empty-from-erased; blindness-disclosure as a typed detector
+  state. `refines` data-provenance-disclosure / audit-trail-view / anomaly-marker.
+- **F18 — "named, never hidden" withheld-payload gate** (gravitone): prove a
+  model plan did not reason about material it was deliberately not given. `absent`.
+- **F19 — migration DDL carries the prior migration's post-mortem** (pumper 0020
+  cites 0004's sentinel that silently disabled dedup over 3,367 rows). `absent`.
+- **F20 — retention as a pin-graph reachability veto** ("age alone is not
+  permission"; preview == executor). `refines` retention-and-pruning.
+- **F21 — durable transactional outbox + DLQ + replay** (pumper). `refines`
+  post-write-side-effects.
+
+**APPLY-lane defects found in the sibling repos (reported, not fixed — sibling
+repos, and their maintainers' call):**
+
+- pumper — **`credential-injection-into-child` (med-high, security):** engines
+  spawn child processes inheriting the full unsanitized env (API keys, Sentry
+  DSN, webhook secrets) while running a model over untrusted scraped content; no
+  `.env_clear()`. The corpus's own physics, violated in an independent repo.
+- pumper — webhook HMAC secrets stored plaintext at rest; spend ceiling defaults
+  to unlimited (`budget_usd: Option`, `None` = unlimited).
+- gravitone — unauthenticated money-spending `/api/imaging/*` routes with no
+  ceiling (held: single-operator today).
