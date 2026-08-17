@@ -15880,6 +15880,13 @@ export type Translations = {
       orb_unread_open: string;
       orb_unread_dismiss: string;
       orb_quick_input_expand: string;
+      global_hotkey_title: string;
+      global_hotkey_desc: string;
+      global_hotkey_enable: string;
+      global_hotkey_disable: string;
+      global_hotkey_active: string;
+      global_hotkey_in_app_only: string;
+      global_hotkey_failed: string;
     };
     artist_gallery: {
       loading_viewer: string;

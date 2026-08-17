@@ -4,6 +4,7 @@ import { ROUTE_DECISION_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeybo
 import { useSystemStore } from '@/stores/systemStore';
 import { useCompanionStore } from '../companionStore';
 import { explainDecision, runDecisionOption } from '../decision/resolveDecision';
+import { useGlobalVoiceHotkey } from '../useGlobalVoiceHotkey';
 import { useHoldToTalk } from '../useHoldToTalk';
 import { AthenaOrb } from './AthenaOrb';
 import { OrbQuickInputBar } from './OrbQuickInputBar';
@@ -69,12 +70,34 @@ export default function AthenaOrbLayer() {
     }
   }, [orbEnabled, setState]);
 
-  // Global hotkey: Cmd/Ctrl+Shift+A summons Athena and starts a voice turn
-  // (press again to send; Esc to cancel). With the orb disabled it toggles
-  // the chat panel instead. The listener is always mounted (this effect runs
-  // before the render-time early return), so the shortcut works even while
-  // Athena is dormant.
+  // Hotkey: Cmd/Ctrl+Shift+A summons Athena and starts a voice turn (press
+  // again to send; Esc to cancel). With the orb disabled it toggles the chat
+  // panel instead. The listener is always mounted (this effect runs before the
+  // render-time early return), so the shortcut works even while Athena is
+  // dormant.
   const { talking, start, stop, abort, supported } = talk;
+
+  // The one behaviour, shared by both scopes the chord is reachable from: the
+  // in-app keyboard registry below, and the OS-level accelerator registered in
+  // `useGlobalVoiceHotkey`. Extracted rather than duplicated so the two can
+  // never drift into doing subtly different things on the same keys.
+  const summonVoice = useCallback(() => {
+    if (!orbEnabled) {
+      const cur = useCompanionStore.getState().state;
+      setState(cur === 'open' ? 'collapsed' : 'open');
+      return;
+    }
+    if (talking) {
+      stop();
+      return;
+    }
+    if (useCompanionStore.getState().state !== 'minimized') {
+      setState('minimized');
+    }
+    if (supported) start();
+  }, [orbEnabled, setState, talking, stop, supported, start]);
+
+  useGlobalVoiceHotkey(summonVoice);
 
   const disarm = useCallback(() => {
     const leader = leaderRef.current;
@@ -143,19 +166,7 @@ export default function AthenaOrbLayer() {
       const mod = e.ctrlKey || e.metaKey;
       if (mod && e.shiftKey && (e.key === 'a' || e.key === 'A')) {
         e.preventDefault();
-        if (!orbEnabled) {
-          const cur = useCompanionStore.getState().state;
-          setState(cur === 'open' ? 'collapsed' : 'open');
-          return true;
-        }
-        if (talking) {
-          stop();
-          return true;
-        }
-        if (useCompanionStore.getState().state !== 'minimized') {
-          setState('minimized');
-        }
-        if (supported) start();
+        summonVoice();
         return true;
       }
       if (e.key === 'Escape' && talking) {

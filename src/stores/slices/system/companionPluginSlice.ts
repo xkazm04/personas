@@ -170,6 +170,17 @@ export interface CompanionPluginSlice {
   /** Selected local whisper model id (e.g. `base.en`). Null until chosen. */
   companionSttModelId: string | null;
   /**
+   * When true, Athena's push-to-talk chord is also registered as an OS-level
+   * accelerator, so voice works while the user is focused in another
+   * application. The chord itself is fixed to the same Cmd/Ctrl+Shift+A the
+   * in-app handler in `AthenaOrbLayer` already uses — one chord, two scopes.
+   *
+   * Off by default, deliberately: claiming a system-wide chord can take it
+   * away from whatever app the user was already using it in, so it is opt-in
+   * rather than something that silently happens on upgrade.
+   */
+  companionGlobalHotkeyEnabled: boolean;
+  /**
    * Recall synthesis: when true, dense recall (above ~5K tokens) is
    * folded through a one-shot Claude call into a focused briefing
    * before reaching Athena's chat session. Adds runtime Claude-call
@@ -248,6 +259,7 @@ export interface CompanionPluginSlice {
   setCompanionOrbPos: (p: OrbPosition) => void;
   setCompanionSttEngine: (e: CompanionSttEngine) => void;
   setCompanionSttModelId: (id: string | null) => void;
+  setCompanionGlobalHotkeyEnabled: (enabled: boolean) => void;
   setCompanionRecallSynthesisEnabled: (v: boolean) => void;
   setCompanionAutonomousMode: (v: boolean) => void;
   setCompanionFleetBoldness: (v: FleetBoldnessLevel) => void;
@@ -281,6 +293,7 @@ export const createCompanionPluginSlice: StateCreator<
   companionOrbPos: { x: 1, y: 0.82 },
   companionSttEngine: 'browser',
   companionSttModelId: null,
+  companionGlobalHotkeyEnabled: false,
   companionRecallSynthesisEnabled: false,
   companionAutonomousMode: false,
   companionFleetBoldness: 'bold',
@@ -312,6 +325,8 @@ export const createCompanionPluginSlice: StateCreator<
   setCompanionOrbPos: (companionOrbPos) => set({ companionOrbPos }),
   setCompanionSttEngine: (companionSttEngine) => set({ companionSttEngine }),
   setCompanionSttModelId: (companionSttModelId) => set({ companionSttModelId }),
+  setCompanionGlobalHotkeyEnabled: (companionGlobalHotkeyEnabled) =>
+    set({ companionGlobalHotkeyEnabled }),
   setCompanionRecallSynthesisEnabled: (companionRecallSynthesisEnabled) =>
     set({ companionRecallSynthesisEnabled }),
   setCompanionAutonomousMode: (companionAutonomousMode) =>

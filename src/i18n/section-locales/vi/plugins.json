@@ -2922,7 +2922,14 @@
     "action_label_apply_pattern": "Áp dụng các mẫu đã duyệt vào một repo",
     "action_label_evaluate_pattern": "Kiểm tra mức tuân thủ mẫu trong một repo",
     "action_label_run_pattern_harvest": "Thu thập thực hành từ một repo",
-    "action_label_skill_sync": "Đồng bộ một skill giữa các dự án"
+    "action_label_skill_sync": "Đồng bộ một skill giữa các dự án",
+    "global_hotkey_active": "Hoạt động ở bất kỳ đâu trên máy tính",
+    "global_hotkey_desc": "Nói chuyện với Athena bằng giọng nói ngay cả khi ứng dụng khác đang mở, không chỉ khi cửa sổ Personas ở phía trước.",
+    "global_hotkey_disable": "Tắt phím tắt toàn hệ thống",
+    "global_hotkey_enable": "Bật phím tắt toàn hệ thống",
+    "global_hotkey_failed": "Một ứng dụng khác đã dùng phím tắt đó nên không thể bật.",
+    "global_hotkey_in_app_only": "Chỉ hoạt động khi Personas ở phía trước",
+    "global_hotkey_title": "Nói từ bất kỳ đâu"
   },
   "artist_gallery": {
     "loading_viewer": "Đang tải trình xem…",

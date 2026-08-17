@@ -2922,7 +2922,14 @@
     "action_label_apply_pattern": "Aplikovat přijaté vzory v repozitáři",
     "action_label_evaluate_pattern": "Ověřit dodržování vzorů v repozitáři",
     "action_label_run_pattern_harvest": "Vytěžit praktiky z repozitáře",
-    "action_label_skill_sync": "Synchronizovat skill napříč projekty"
+    "action_label_skill_sync": "Synchronizovat skill napříč projekty",
+    "global_hotkey_active": "Funguje kdekoli v počítači",
+    "global_hotkey_desc": "Mluvte s Athenou i když je vpředu jiná aplikace, ne jen když je okno Personas aktivní.",
+    "global_hotkey_disable": "Vypnout systémovou zkratku",
+    "global_hotkey_enable": "Zapnout systémovou zkratku",
+    "global_hotkey_failed": "Tuto zkratku už používá jiná aplikace, proto ji nelze zapnout.",
+    "global_hotkey_in_app_only": "Funguje jen když je Personas vpředu",
+    "global_hotkey_title": "Mluvte odkudkoli"
   },
   "artist_gallery": {
     "loading_viewer": "Načítání prohlížeče…",

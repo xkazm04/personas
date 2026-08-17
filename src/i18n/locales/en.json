@@ -15873,7 +15873,14 @@
       "orb_unread_more": "+{count} more",
       "orb_unread_open": "Open chat",
       "orb_unread_dismiss": "Mark as read",
-      "orb_quick_input_expand": "Open the full chat"
+      "orb_quick_input_expand": "Open the full chat",
+      "global_hotkey_title": "Talk from anywhere",
+      "global_hotkey_desc": "Reach Athena by voice while another app has focus, not just when the Personas window is in front.",
+      "global_hotkey_enable": "Enable system-wide shortcut",
+      "global_hotkey_disable": "Disable system-wide shortcut",
+      "global_hotkey_active": "Works anywhere on your computer",
+      "global_hotkey_in_app_only": "Works only while Personas is in front",
+      "global_hotkey_failed": "Another app is already using that shortcut, so it could not be enabled."
     },
     "artist_gallery": {
       "loading_viewer": "Loading viewer…",

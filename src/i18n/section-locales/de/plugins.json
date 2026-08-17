@@ -2922,7 +2922,14 @@
     "action_label_apply_pattern": "Übernommene Muster in einem Repo anwenden",
     "action_label_evaluate_pattern": "Muster-Einhaltung in einem Repo prüfen",
     "action_label_run_pattern_harvest": "Praktiken aus einem Repo gewinnen",
-    "action_label_skill_sync": "Skill projektübergreifend synchronisieren"
+    "action_label_skill_sync": "Skill projektübergreifend synchronisieren",
+    "global_hotkey_active": "Funktioniert überall auf deinem Computer",
+    "global_hotkey_desc": "Sprich per Sprache mit Athena, auch wenn eine andere App im Vordergrund ist, nicht nur bei aktivem Personas-Fenster.",
+    "global_hotkey_disable": "Systemweites Tastenkürzel deaktivieren",
+    "global_hotkey_enable": "Systemweites Tastenkürzel aktivieren",
+    "global_hotkey_failed": "Eine andere App belegt dieses Tastenkürzel bereits, daher konnte es nicht aktiviert werden.",
+    "global_hotkey_in_app_only": "Funktioniert nur bei aktivem Personas-Fenster",
+    "global_hotkey_title": "Von überall sprechen"
   },
   "artist_gallery": {
     "loading_viewer": "Viewer wird geladen…",

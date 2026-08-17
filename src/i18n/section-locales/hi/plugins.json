@@ -2922,7 +2922,14 @@
     "action_label_apply_pattern": "रिपो में अपनाए गए पैटर्न लागू करें",
     "action_label_evaluate_pattern": "रिपो में पैटर्न अनुपालन सत्यापित करें",
     "action_label_run_pattern_harvest": "रिपो से प्रैक्टिस एकत्र करें",
-    "action_label_skill_sync": "प्रोजेक्ट्स के बीच स्किल सिंक करें"
+    "action_label_skill_sync": "प्रोजेक्ट्स के बीच स्किल सिंक करें",
+    "global_hotkey_active": "आपके कंप्यूटर पर कहीं भी काम करता है",
+    "global_hotkey_desc": "दूसरा ऐप सामने होने पर भी Athena से आवाज़ में बात करें, सिर्फ़ Personas विंडो सामने होने पर नहीं।",
+    "global_hotkey_disable": "सिस्टम-व्यापी शॉर्टकट बंद करें",
+    "global_hotkey_enable": "सिस्टम-व्यापी शॉर्टकट चालू करें",
+    "global_hotkey_failed": "कोई दूसरा ऐप पहले से यह शॉर्टकट इस्तेमाल कर रहा है, इसलिए इसे चालू नहीं किया जा सका।",
+    "global_hotkey_in_app_only": "सिर्फ़ तब काम करता है जब Personas सामने हो",
+    "global_hotkey_title": "कहीं से भी बात करें"
   },
   "artist_gallery": {
     "loading_viewer": "viewer लोड हो रहा है…",

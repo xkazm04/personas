@@ -35,6 +35,9 @@ pub mod stt;
 pub mod templates;
 pub mod tours;
 pub mod voice;
+/// Desktop-only: the global accelerator plugin has no mobile counterpart.
+#[cfg(feature = "desktop")]
+pub mod voice_hotkey;
 
 use std::panic::AssertUnwindSafe;
 use std::sync::Arc;

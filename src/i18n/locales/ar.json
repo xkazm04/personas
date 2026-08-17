@@ -15579,7 +15579,14 @@
       "action_label_apply_pattern": "تطبيق الأنماط المعتمدة في مستودع",
       "action_label_evaluate_pattern": "التحقق من الالتزام بالأنماط في مستودع",
       "action_label_run_pattern_harvest": "استخلاص الممارسات من مستودع",
-      "action_label_skill_sync": "مزامنة مهارة عبر المشاريع"
+      "action_label_skill_sync": "مزامنة مهارة عبر المشاريع",
+      "global_hotkey_active": "يعمل في أي مكان على جهازك",
+      "global_hotkey_desc": "تحدّث إلى أثينا صوتياً حتى عندما يكون تطبيق آخر في المقدمة، وليس فقط عندما تكون نافذة Personas أمامك.",
+      "global_hotkey_disable": "تعطيل الاختصار على مستوى النظام",
+      "global_hotkey_enable": "تفعيل الاختصار على مستوى النظام",
+      "global_hotkey_failed": "هناك تطبيق آخر يستخدم هذا الاختصار بالفعل، لذا تعذّر تفعيله.",
+      "global_hotkey_in_app_only": "يعمل فقط عندما يكون Personas في المقدمة",
+      "global_hotkey_title": "تحدّث من أي مكان"
     },
     "artist_gallery": {
       "loading_viewer": "جارٍ تحميل العارض…",
