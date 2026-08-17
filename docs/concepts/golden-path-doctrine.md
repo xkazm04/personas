@@ -511,6 +511,15 @@ the server at all. The label is not noise; it has one systematically wrong
 value, and it is the one that would have narrowed the brief away from where the
 answer lives.
 
+**And the correction is not always "it was both".** On the seventh contradiction
+there was **no client half to report at all** — the exemplar, all nine
+deviations, the census rule, its control and its floor were server-side Rust,
+and the frontend's only contribution was rendering whatever order the SQL
+returned. The one client-side instance of that leaf's condition in the entire
+sweep came from a *sibling* repo, so a client-scoped brief would have found that
+and nothing at home. Sometimes `"client"` is incomplete; sometimes it is simply
+**inverted**. Say which.
+
 **One label has finally held, and it is worth as much as the failures.**
 [`ai-draft-preview-apply`](./golden-paths/ai-draft-preview-apply.md) tested
 `convergence: mixed` and confirmed it — two clauses physics, one silence. It is

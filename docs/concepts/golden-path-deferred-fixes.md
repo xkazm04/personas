@@ -1560,6 +1560,92 @@ refuses to fabricate deltas.
 
 ---
 
+## 41. 370 items are waiting on you and the badge can see 56
+
+**Where:** `db/src/repos/dev_tools.rs:1352-1375` (`pending_counts`);
+`db/src/repos/execution/healing.rs:1571`; `src/engine/background.rs:815-836` +
+`manual_reviews.rs:542-600,:578`; `db/src/audit_incidents_promoter.rs:38-44`.
+
+**What is measured**, replaying `pending_counts` verbatim against the live DB:
+
+```
+badge sees:  goal_acceptance 2 · manual_reviews 0 · ideas 54 · practices 0
+             · policy_proposals 0 · promotion_proposals 0            =  56
+unregistered: healing 179 · incidents 99 · kpis 21 · memory proposals 4
+             · approvals 8 · backlog 3                               = 314  (84.9%)
+```
+
+**Two of the badge's six entries name tables that have never held a row.** The
+registry is a third dead, and the dead third is the third somebody remembered to
+add.
+
+| queue | waiting | oldest | has a human ever drained it? |
+| --- | ---: | ---: | --- |
+| `persona_healing_issues` | **179** | 82 d | **never — 0 of 205**; all 26 resolutions `auto_fixed=1`, mean 247 s |
+| `audit_incidents` | **99** | 74 d | **never acknowledged** — `acknowledged_at` NULL on **164 of 164** |
+| `dev_ideas` | 54 | **131 d** | yes — 182 decided, **96% of rejections carry a reason** |
+| `dev_kpis` | 21 | 66 d | yes — 44 decided |
+| `companion_approval` | 8 | 6 d | **65 of 106 resolved within 2 s**, 59 within 1 s, min 0 |
+| memory proposals | 4 | **98 d** | **never** — `decided_at` NULL on 4/4 |
+| backlog items | 3 | 79 d | **never** — `reminded_count` 0 on all three |
+
+**The two queues sitting at zero are the two the badge can see.** Visibility and
+drain are the same variable.
+
+**The sharpest finding is a composition defect, not a bug.** Auto-triage refuses
+high/critical **by policy** — `subscription.rs:1893-1895` says *"HIGH/critical
+severity is left for a human"*. `gc_stale_pending` does not read severity at
+all. So the 7-day sweep inherits exactly the population the other policy
+protected:
+
+```
+severity taken by each door:   low  medium  high  critical
+  auto-triage (T+60min)         49      93     6         0
+  gc_stale_pending  (T+7d)       2       1    17         0   <- 85% HIGH
+  human                          2       3    17         4
+```
+
+**17 of the 20 swept rows were `high`, and 13 carry a parked `assignment_id`** —
+thirteen team assignments still sitting at `awaiting_review`. **Two
+individually-correct policies compose into a third nobody wrote.** All 148
+auto-triages fired at ≥60 minutes, **51 of them inside the first tick after
+it**: the human's window is one hour.
+
+**Smaller, same rule:**
+
+- `INSERT OR IGNORE` on `UNIQUE (persona_id, execution_id)` means healing dedups
+  an **execution**, not a problem: **179 open rows carry 4 distinct titles**
+  ("Transient process failure" ×107).
+- `gc_stale_pending` writes `'resolved'` as a **raw SQL string literal**,
+  bypassing both `ManualReviewStatus` and `validate_transition`.
+- **Dead columns with no writer:** `workspace_knowledge.superseded_by` 0/1,306 ·
+  `dev_ideas.verify_state` 0/236 · `dev_ideas.dedup_key` 22/236 ·
+  `companion_backlog_item.reminded_count` 0/3.
+- **`workspace_knowledge.confidence` does not discriminate**: adopted mean
+  **0.797**, rejected mean **0.779**. Populated on 1,304 rows and predicts
+  nothing about the outcome.
+- **No rejection-reason column on `workspace_knowledge`** — 118 rejections, 0
+  reasons — and **no producer anywhere reads `dev_ideas.rejection_reason`**, so
+  "rejection is knowledge" is unimplemented on both sides.
+
+**Why held:** every item changes a schema, a live surface, or resolves rows.
+
+**The type that would close the largest piece, not applied:** add `AgedOut` to
+`ManualReviewStatus` and take the raw string away. The memory writer's `match`
+stops compiling until somebody decides whether ageing out should teach the model
+anything (**today it does**), and `react_to_review_decision`'s `Approved |
+Resolved` gate stops compiling until somebody decides whether ageing out resumes
+the assignment (**it must, or the 13 stay parked**). It also makes 20 of the 168
+machine decisions in item 26 derivable **without a new column**.
+
+**The fleet's best idea, worth importing:** `brainiac` surfaces the oldest item's
+age against a 48-hour SLO and **halts publishing when the queue stalls** —
+*"Silence beats confident staleness."* It also carries the only stated failure
+direction in the fleet for this leaf: *"A queue nobody works turns the whole
+intake into theatre — and the proposers keep filing."*
+
+---
+
 ## What *was* applied, and what it changes at runtime
 
 For completeness, since "no destructive applies" is now the rule. None of these
