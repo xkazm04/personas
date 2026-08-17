@@ -463,9 +463,44 @@ The runner is `scripts/census/`. A rule is a **ratchet**, not a verdict.
 Check prescriptive clauses against the sibling checkouts: `../personas-web`,
 `../brainiac`, `../personas-cloud`, `../vibeman`, `../ascent`.
 
-A practice independently reinvented in a repo with different people and
-constraints is **physics**. One with no trace elsewhere is **local calibration**
-and must be labelled a house convention, not doctrine.
+### What the oracle is for — settled by the operator, 2026-08-17
+
+**It is a source of raw material, not a validator.** The sweep supplies
+candidate practices; **the composer's own engineering judgment adjudicates
+them**. That judgment is the reconciliation layer, and it is the point of the
+whole exercise — a scan discovers procedures and recurring shapes, and a
+composer reading as an expert software engineer forges them into a path whose
+quality can exceed what any one author, including this repo's, would have
+written unaided.
+
+This is why the corpus keeps producing verdicts like *"the fleet converged on
+the disease"* and *"the fleet converged on not having the problem"*. Those are
+not failures of the oracle. **They are the reconciliation layer working** — the
+sweep counted, and the judgment overruled the count.
+
+Three consequences, and they are binding:
+
+1. **Never defer to a vote.** A clause supported by 5 of 5 siblings and unsound
+   on its merits is unsound. Say so, and say that the fleet agrees with it.
+2. **A sibling's absence is not evidence a practice is unnecessary.** It may only
+   mean one author had not yet needed it there. Report the silence; do not read
+   it as a verdict.
+3. **"Personas is ahead of the fleet" is the most self-flattering shape a finding
+   can take, and it is worth stating anyway** — it identifies where the operator
+   has already solved something, which is exactly what a later path should copy
+   rather than reinvent. State it *as* self-comparison.
+
+**The concrete illustration is `vibeman`**, and it is a neat one: it is
+simultaneously this repo's **ancestor** (dated twice, on two independent leaves)
+**and a project tracked inside Personas itself**. Every repo in the cohort was
+created by the same person. The app under study tracks its own ancestor as a
+row in its own database. There is no outside view available from inside the
+cohort — so the outside view has to come from the reading, not from the counting.
+
+**A practice independently reinvented is a *candidate*, not a proof.** One with
+no trace elsewhere is **local calibration** and must be labelled a house
+convention rather than doctrine — that half stands unchanged, because a silence
+does not depend on who wrote the code.
 
 **A check cannot distinguish an absence from a deliberate identity.** Earned by
 [`model-and-effort-selection`](./golden-paths/model-and-effort-selection.md),
@@ -634,8 +669,9 @@ taking the count for granted.
 
 ### The confound, stated plainly: all six repos have one author
 
-Raised by [`node-canvas`](./golden-paths/node-canvas.md), and it is the most
-important limitation of this instrument.
+Raised by [`node-canvas`](./golden-paths/node-canvas.md), **confirmed by the
+operator the same day**, and it is the most important limitation of this
+instrument.
 
 **Independence has always meant independent *code*, never independent
 *judgment*.** Every repo in the cohort was written by the same operator. When
@@ -643,8 +679,9 @@ five codebases agree, the sweep has observed one engineer reaching for the same
 answer five times — which is real evidence about the answer's *ergonomics under
 these constraints*, and much weaker evidence that it is physics.
 
-This does not retire the oracle; it re-weights its outputs, and the weighting
-was already implicit in the next rule:
+This does not retire the oracle; per the section head above, the oracle was
+never the validator. It re-weights the outputs, and the weighting was already
+implicit in the next rule:
 
 - **Agreement is the weakest signal the oracle produces.** Report it, label it
   as one author's repeated choice, and do not promote it to physics on count
