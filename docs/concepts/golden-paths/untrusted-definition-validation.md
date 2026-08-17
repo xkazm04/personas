@@ -723,7 +723,13 @@ this one does not.
 `jsonschema = "0.28"` (`src-tauri/Cargo.toml:208`) has **one** call site in the workspace:
 `engine/mcp_tools.rs:1704`, inside `validate_arguments_against_schema` (`:1695`), which validates **our
 outgoing arguments** against **a remote MCP server's advertised schema**. It protects the server, not the
-app. It fails open twice — `:1699-1702` (no schema → `Ok(())`) and `:1706-1711` (the server's schema is
+app.
+
+> **Corrected 2026-08-17 by [schema-driven-form](./schema-driven-form.md): the crate has one call site,
+> but the helper wrapping it has FOUR callers** — `mcp_tools.rs:1193`, `:1197`, `:1534`, `:1539`. The
+> conclusion below is unaffected (all four are the same outbound direction), and the distinction is worth
+> keeping: *"the crate is called once"* and *"the validation runs once"* are different claims, and only
+> the first one was measured. It fails open twice — `:1699-1702` (no schema → `Ok(())`) and `:1706-1711` (the server's schema is
 itself invalid → `warn!` → `Ok(())`).
 
 Nothing else uses it. Not the portability bundle, not the four `result.json` ingests, not the tour spec,

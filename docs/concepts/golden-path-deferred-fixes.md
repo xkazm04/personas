@@ -2056,6 +2056,55 @@ claim-time reaping, and `ascent`'s lease instead of a reaper.
 
 ---
 
+## 50. 37 fields declared sensitive render as visible controls
+
+**Where:** `credentials.rs:104-108`; the connector field declarations;
+`McpToolInputForm.tsx:26,:41`; `ToolDetail.tsx:63`.
+
+**What is measured:** **`sensitive` is set on 184 of 196 live connector field
+declarations. It decides encryption at rest in Rust — and it appears in no
+TypeScript type and in no renderer.** **37 declared-sensitive fields render as
+visible controls.** The app's own connector form rebuilds 7 keys and **cannot
+emit the flag at all**, so a field created through the UI cannot say it is
+secret.
+
+**Thirteen field-declaration formats, no two agreeing.** Of the nine with a
+closed control-kind vocabulary, **0 of 36 pairs are identical** and 8 pairs are
+fully disjoint. The identifier is `key` ×6, `id` ×4, `name` ×2, and an object
+key ×1. **Exactly one format's union is generated** — `ParamType`, ts-rs from
+Rust — and it is the only renderer that cannot drift.
+
+**The declaration and the renderers disagree in both directions.**
+`AdoptionQuestion` declares 3 types; one renderer renders 8 and another renders
+3, with five tokens existing in neither the type nor the other renderer — and
+the Rust binding types the questions `any`.
+
+**8 of 11 payloads from the MCP tool form are rejected by the schema that
+rendered the form.** Over 123 real schemas: **123 `enum`s become free-text
+inputs, 123 `format`s are ignored, and 369 `required` marks produce 0
+enforcement** — the submit gate is `disabled={executing}`. And all 162 parsed
+`persona_tool_definitions.input_schema` rows are **byte-identical**
+`{"type":"object","properties":{},"additionalProperties":true}`.
+
+**Hostile input, executed:** `properties: 'a,b,c'` renders **five inputs
+labelled 0–4**; `properties: {a: null}` throws uncaught.
+
+**Why held:** honouring `sensitive` in the renderers changes what is displayed
+for 37 live credential fields, and enforcing `required` changes whether a form
+can be submitted. Both are right and both are live-surface changes.
+
+**Two corrections to my own brief, worth keeping.** `deny_unknown_fields` is the
+**wrong instrument here** — no format in this leaf has a closed key set to
+enforce. And `Record<string, …>` widening *is* present in the form layer, but on
+the **declaration**, not the values; the value bags disarm nothing.
+
+**The composer disproved one of its own predictions** — a `key`/`name` collision
+it expected to be live is latent, 0 instances — and its masking instrument
+produced a clean false result until an assertion killed it, which is what
+surfaced the `sensitive` gap.
+
+---
+
 ## What *was* applied, and what it changes at runtime
 
 For completeness, since "no destructive applies" is now the rule. None of these

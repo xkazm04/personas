@@ -4427,6 +4427,29 @@
         "matches": 152
       },
       "floor": 900
+    },
+    {
+      "id": "declared-field-type-literal-chain",
+      "goldenPath": "docs/concepts/golden-paths/schema-driven-form.md",
+      "title": "A form control is chosen by comparing a declaration's own `type`/`kind` to a string literal, so the recognised vocabulary is hand-maintained beside the renderer instead of derived from the declaration",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\b(?:field|fld|f|question|q|param|parameter|prop|def|input|requirement)\\s*(?:\\?\\.|\\.)\\s*(?:type|kind|fieldType|inputType)\\s*===\\s*(['\"`])(?:text|textarea|long_text|password|url|email|select|multiselect|multi_select|boolean|bool|number|integer|float|string|json|checkbox|toggle|radio|date|cron|enum|source_definition|connector_ref|devtools_project|directory_picker|key-value-list|choice|css|regex)\\1",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A schema-driven form picks its control by === against a control-kind literal. PROXY FOR the stack-free condition: the set of field types a renderer recognises is written by hand next to the renderer, not derived from the declaration, so declaration and renderer drift in both directions and an unrecognised type falls silently into the chain's last arm. Measured 2026-08-17 at 50d736f6c: 13 files / 42 matches / 37 distinct sites, against 4 files / 4 matches for the exhaustive-switch form on the same anchor. Vocabulary DERIVED FROM THE TREE (the union members of the 13 field-declaration types + the 11 declared type tokens in the 594-field seeded recipe catalog), never invented. RECEIVER LIST is also derived, from the `.map((X) =>` bindings over declared field arrays; `entry`/`item`/`answer` were in the first draft FROM IMAGINATION and produced the only false positives (BrowserLogEntry, ReasoningTrace, execution-summary rows are log records, not declarations) and were dropped, taking precision to 13/13 files hand-read. SITE overlap with data-decided-secret-masking (credential-capture-form) is 2 of 37 (5.4% of mine, 50% of theirs), at EditFormFields.tsx:44 and AutoCredReview.tsx:107, where one expression chooses both the widget and the masking; the conditions differ (masking-decided-by-data vs vocabulary-not-derived) and neither subsumes the other. All 73 src-rooted rules were run site-by-site against the final pattern; the other 72 overlap at zero sites. RECALL is deliberately partial: a chain over a LOCAL copy of the declared type (`const propType = (prop.type as string) || 'string'` then `propType === 'boolean'`, McpToolInputForm.tsx:41,:63) is invisible, as is a switch whose default arm is a silent fallback (StructuredField.tsx:62) and an `includes` form (:43). Widening the receiver to any identifier gives 31 files / 97 matches at under 50% precision. CORRECT END STATE is 0, at which point DELETE this rule rather than baselining it at zero. PRECONDITION (re-derive per repo, do NOT port): this repo spells the defect as a TS `===` against a control-kind literal. In Rust it wears `match raw_type { _ => None }` (engine/src/recipe_parameters.rs:66-77); in a JSON-Schema renderer `(prop.type as string) || 'string'`; in vibeman an if-chain ending `return null` (PropsControl.tsx:43). This pattern scores ZERO on all three."
+      },
+      "baseline": {
+        "files": 13,
+        "matches": 42
+      },
+      "floor": 4000
     }
   ]
 }

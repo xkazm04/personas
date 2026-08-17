@@ -501,6 +501,16 @@ the oracle exists to deflate.
 The tell is textual, not structural: identical comments, identical constants,
 identical error strings. Structure can converge; prose cannot.
 
+**And establish the DIRECTION, not just the relatedness.** The campaign had been
+treating `vibeman` as an independent sibling and, where lineage was suspected,
+assuming this repo was the ancestor. [`schema-driven-form`](./golden-paths/schema-driven-form.md)
+dated it: **`vibeman`'s repo predates Personas by 7 months and the relevant file
+by 18 days — Personas ported *from* vibeman.** That inverts what the borrowed
+code is evidence *of*: an ancestor's choice is a constraint this repo inherited,
+not a peer's independent agreement, and a defect shared with it may be
+imported rather than convergent. Check commit dates on the file, not just the
+repo.
+
 **The effective independent cohort is smaller than five, and how much smaller
 depends on the leaf.** Two later sweeps measured it:
 
