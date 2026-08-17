@@ -2500,6 +2500,526 @@ of green `npm run check`.**
 
 ---
 
+## 58. The backfill receipt collapses four different zeros into one
+
+**Where:** `src-tauri/src/commands/execution/scheduler.rs:94-107` (`BackfillResult`),
+`:221` (the population, computed and dropped), `:229,247,318` (`skipped_duplicate`,
+computed and logged), `src/features/schedules/libs/useScheduleActions.ts:283-295`
+(the consumer).
+
+**What is measured:** `BackfillResult` carries `slots_enqueued`, `capped`,
+`slot_times` and `failures`. It does **not** carry the window's population
+(`slots.len()` before truncation, known at `:221`) or the number of slots skipped
+as already-published (`skipped_duplicate`, incremented at `:247` and delivered
+only to `tracing::info!` at `:318`). The UI branches on `slotsEnqueued > 0` and
+otherwise renders one message — so *"nothing was due"*, *"all 47 were already
+replayed"* and *"every slot was refused by a ceiling"* are the same sentence with
+opposite next actions.
+
+The `skipped_duplicate` half is already on record as
+[`backfill-migration`](./golden-paths/backfill-migration.md) §7 D6. The
+*population* half is new, and it matters because the same document's
+`unfinishable-backfill-receipt` rule cites this struct as its **exemplar of the
+compliant shape** — one field short of committing the defect the rule names.
+
+**Fix:** `pub slots_in_window: u32` + `pub skipped_duplicate: u32`, one
+construction site (`:323-331`), one `export_bindings` regen, one UI branch.
+
+**Why held:** it changes an IPC contract and a live toast.
+
+---
+
+## 59. Three replay anchors, two truncation directions, one boolean
+
+**Where:** `src-tauri/core/src/scheduler.rs:181-242` (`compute_slots_in_range`,
+interval arm at `:231-237`); `src-tauri/src/engine/background.rs:2292-2354`
+(`compute_missed_backfill_slots`) and `:2678-2681` (the drain);
+`src-tauri/src/commands/execution/scheduler.rs:221-224` (the truncate);
+`src/features/schedules/libs/useCronPreview.ts:226-250`
+(`generateIntervalFireTimes`).
+
+**What is measured:** the same interval cadence is walked from **three different
+anchors** — `last_triggered_at` (auto catch-up), the **user's window `start`**
+(on-demand replay), and `next_trigger_at` (the calendar, and the engine itself
+via `next_interval_at`). For cron they converge; for interval the on-demand
+replay publishes slots at a phase the engine has never used.
+
+And the two bounded paths drop **opposite ends** of an over-long gap:
+`slots.truncate(100)` on an ascending vector keeps the **oldest** 100;
+`missed.drain(..(len - extras))` keeps the **newest**. Both report the same
+`capped: bool`, and neither states a direction. A user who opens the app after a
+week away and presses *Run backfill* on an hourly job replays the **week-old**
+hundred and drops the sixty-eight nearest to now.
+
+**Fix:** `phase_anchor: Option<DateTime<Utc>>` as an explicit parameter of
+`compute_slots_in_range` (the compiler visits both call sites), and a named
+direction on the bound (`keep_newest` / `keep_oldest`) rather than a `Vec` method
+deciding it.
+
+**Why held:** it changes which slots a live replay publishes.
+
+---
+
+## 60. The replay apparatus cannot be reached, and its idempotence depends on which branch built the payload
+
+**Where:** `src-tauri/src/engine/background.rs:2614-2789` (the auto-catch-up
+branch), `:2575-2592` and `:2855-2858` (the miss ledger);
+`src/features/triggers/sub_triggers/TriggerAddForm.tsx:225` and
+`configs/buildTriggerConfig.ts:62-66` (the authoring control);
+`src-tauri/src/commands/execution/scheduler.rs:277-279` +
+`src-tauri/db/src/repos/communication/events.rs:539-548` (the dedup key).
+
+**What is measured**, against the 2026-08-17 purge backup (351 triggers —
+historical, not reproducible against the live database):
+
+- **0 of 351 triggers set `max_backfill`.** `backfill_cap > 1` has never been
+  true, so the ~175-line auto-catch-up branch has never executed. The control
+  that sets it is rendered **only in cron mode** while the writer emits it for
+  both, so an interval schedule is silently pinned to fire-once.
+- **`schedule_missed_runs` holds 0 rows** and `schedule.missed.offline` appears
+  0 times in 4,972 `persona_events`. `record_and_emit_missed_runs` runs *after*
+  the `mark_triggered` CAS, so every reason a schedule accumulates misses —
+  disabled persona, over budget, outside the active window, unparseable zone — is
+  also a reason the miss is never recorded. **You only learn what you missed at
+  the moment you stop missing it.**
+- The on-demand replay's dedup reads `backfill_slot` + `fired_at` **out of the
+  event payload**, and those keys exist only in the *synthesized* payload. A
+  trigger carrying an explicit `config.payload` takes the other branch and is
+  invisible to the dedup — every press republishes every slot. Latent today
+  (**0 of 351 triggers set `config.payload`**), live the first time one does.
+
+**Fix:** render the `max_backfill` control in both modes; record misses on the
+skip paths as well as the fire path; and move the dedup key out of the payload
+into a `slot_at` column with a `UNIQUE(source_id, slot_at)` partial index — which
+also deletes a full decrypt of the trigger's event history on every press.
+
+**Why held:** the first two change a live authoring surface and write rows; the
+third is a schema migration.
+
+---
+
+## 61. A calendar day with no zone: 36 of 46 runs plotted under the wrong day on the operator's own machine
+
+**Where:** `src/features/schedules/components/ScheduleRowHistoryPanel.tsx:157-186`
+(`bucketByDay`); `src/lib/types/timeRange.ts:33-40`; and 16 further sites — the
+full inventory is the `zoneless-day-bucket` census rule
+(15 files / 18 matches).
+
+**What is measured, by replaying the function verbatim** against the operator's
+50 real executions at three host offsets:
+
+| host | buckets mis-labelled | runs under a label that is not their local day | runs dropped |
+|---|---|---|---|
+| `UTC` | 0 of 14 | 0 of 50 | 0 |
+| `Europe/Prague` (UTC+2) | 14 of 14 | **36 of 46** | **4 of 50** |
+| `Asia/Tokyo` (UTC+9) | 14 of 14 | 36 of 46 | 4 of 50 |
+
+`bucketByDay` builds its axis from **host-local midnight** (`:161`), keys the
+buckets by **UTC date** (`:165`), and labels them back in **host-local**
+(`:166`). Identical code, identical data, exactly correct on the machine a CI job
+runs on. `timeRange.ts:33` holds the same split-brain in a shared helper, so a
+"calendar month" range starts a day early on any positive offset.
+
+Separately, the calendar itself places every fire in the **viewer's** zone
+(`ev.time.getHours()`, `dayKey`) while the schedule's own `agent.timezone` — used
+correctly to compute the instant — is never rendered; the chip beside the cron
+expression shows the **app display preference** instead. Across 4,801 client
+files, `timeZone:` is passed to a formatter in **3**.
+
+**Fix:** a `dayKeyIn(instant, timeZone)` / `hourIn(instant, timeZone)` helper over
+`Intl.DateTimeFormat`, with `timeZone` **required and undefaulted**, then migrate
+the 18 sites; and render the schedule's zone on the calendar axis.
+
+**Why held:** adding the helper is safe; migrating the call sites changes what
+several live charts show.
+
+---
+
+## 62. The release tag is pushed before any installer exists — 11 tags, 0 releases
+
+**Where:** `.github/workflows/release.yml:146-154` (the `version` job's
+"Commit and tag" step) and `:208` (`build: needs: [version, frontend]`).
+
+**What is measured** (Actions API + `git tag` + Releases API, 2026-08-17):
+
+| | |
+| --- | ---: |
+| tags on `origin` | **11** |
+| GitHub Releases published | **0** |
+| `release.yml` runs all-time | 30 |
+| …concluded `success` | **0** |
+
+Per-job outcome of the most recent run (`2026-07-16`, the run that produced tag
+`v1.1.0`): `bump-version` **success**, `frontend` **success**, all **four**
+platform `build` legs **failure**, `updater-manifest` skipped. The version bump
+reached `master` and the tag reached `origin`; nothing was built. Eight of the
+eleven tags were authored by `github-actions[bot]`. The workflow's own header
+comment says this left "5 tags … with zero releases behind them"; it is now 11.
+
+The consequence is not cosmetic: `tauri.conf.json:61-65` points every installed
+copy's updater at `releases/latest/download/latest.json`, and the release list is
+empty.
+
+**Fix:** move commit + tag + `git push --tags` into a final job that
+`needs: build`, and pass the computed version to the platform jobs as a job
+output rather than as a committed file. Where Tauri forces the version into the
+working tree before the bundle is built (`CARGO_PKG_VERSION` is embedded), write
+it to a detached candidate ref that is never pushed until every leg has produced
+an artifact.
+
+**Why held:** it changes what the release workflow does to `origin`, and the
+operator may want to cut a release by hand before the reorder lands.
+
+---
+
+## 63. `ci-gate` validates one commit and the pipeline builds another
+
+**Where:** `.github/workflows/release.yml:43-70` (`ci-gate`, queries
+`?head_sha=${{ github.sha }}`) versus `:85-90` (the `version` job checks out
+`ref: master`) and `:156-171` (`resolve`).
+
+On a `workflow_dispatch` from a ref that is not `master`'s tip — or when `master`
+advances between dispatch and execution — the commit whose CI conclusion was
+checked is **not** the commit that gets tagged and built. On the
+`pull_request: types: [closed]` path the gap is structural: `github.sha` is the
+merge-test commit and the checkout is `master`.
+
+Note this is currently masked by a larger problem (item 62's sibling finding:
+`ci.yml` has concluded `success` **0 times in 324 runs**, so `ci-gate` cannot
+pass at all on the publish path). The ref hole becomes live the moment `ci.yml`
+goes green.
+
+**Fix:** resolve the SHA once inside `ci-gate`, emit it as a job output, and have
+`version` check that SHA out explicitly instead of `master`.
+
+**Why held:** it changes which commit a release is built from.
+
+---
+
+## 64. The bundled resource directory is a superset of its declaration — 22 undeclared skills
+
+**Where:** `scripts/sync-system-skills.mjs:40-50`;
+`tauri.conf.json:129-131` (`"resources": {"resources/skills": "skills"}`);
+`src-tauri/.gitignore:24-25`.
+
+**What is measured** on this checkout, by two independent implementations (node
+`readdirSync` set-difference; `comm -13` over two sorted `ls` outputs):
+
+| | count |
+| --- | ---: |
+| system skills declared (Rust `SYSTEM_SKILLS`) | 5 |
+| system skills declared (JS `SYSTEM_SKILLS`) | 5 |
+| directories present in `src-tauri/resources/skills` | **27** |
+| **undeclared directories that would be bundled** | **22** |
+| bytes declared / undeclared | 145,620 / **87,391** (37.5% of the payload) |
+
+The 22 are the single-lens `scan-*` skills retired 2026-08-04. The sync script
+does `rmSync(dst); cpSync(src, dst)` **per declared name**, so nothing removes an
+entry whose name has left the list; it then logs `mirrored 5/5 system skill(s)`,
+which reads as complete. The destination is gitignored (`resources/skills/*` with
+`!resources/skills/.gitkeep`, 1 tracked file), so the surplus produces **no diff
+and no untracked file** — the same blindness that let 29 orphan ts-rs bindings
+accumulate.
+
+**Fix:** `rmSync(dstRoot, {recursive: true, force: true})` before the copy loop,
+so the destination is rebuilt from the declaration on every run. Plus the
+inventory assertion specified in
+[`bundling-native-assets` §9](./golden-paths/bundling-native-assets.md).
+
+**Why held:** the first run deletes files from the operator's working tree, and
+the app resolves system skills from that directory at runtime
+(`skill_files.rs:265-291`) — a mid-session sweep would change what a running app
+can dispatch.
+
+---
+
+## 65. The canvas resolves an agent's action target against a ten-day-old cache, and accepts two projects that no longer exist
+
+**Path:** [`canvas-state-persistence`](./golden-paths/canvas-state-persistence.md) §7.1 / §7.2 ·
+**Files:** `src-tauri/src/companion/canvas.rs:641-666`, `:327-345`
+
+`resolve_scene_slug` validates a project slug against the **published snapshot**
+(`mastermind.scene.v1`) rather than `dev_projects`, deliberately — `:636-637`:
+*"Validating against the same snapshot she read keeps the vocabulary closed."*
+That is right about hallucination and silent about staleness. Replayed against
+the operator's own database (2026-08-17 purge backup **and** the live file,
+identical): the snapshot was last written **2026-08-07T08:29:23.228Z**,
+`freshness_note` renders **"published 248 hours ago"**, it carries **14
+projects of which 2 no longer have a `dev_projects` row**
+(`ai-bookkeeper`, `ai-paralegal`), and both are **ACCEPTED** by
+`resolve_scene_slug` while `resolve_canvas_target` in the same module
+**REFUSES** them.
+
+**Fix:** (a) a `SCENE_STALE_AFTER_HOURS` constant, with `load_scene` returning
+`None` past it so every surface falls through to the honest `no_scene_line()` it
+already has; (b) a `dev_projects` existence probe in `resolve_scene_slug` before
+it returns `Ok(p.slug)`, refusing with the same "name real alternatives" shape
+the miss branch already uses. Structurally better: have `resolve_scene_slug`
+return the same `CanvasTarget` as `resolve_canvas_target`, so the compiler
+forbids a snapshot-resolved slug reaching an action door.
+
+**Why held:** changes what Athena will answer and which `compose_canvas_panel`
+calls succeed, while the operator is using her. A horizon that is too short
+silently blanks the canvas digest out of the system prompt.
+
+---
+
+## 66. Nothing has ever deleted a canvas layout entry — 2 of 8 saved positions point at deleted projects
+
+**Path:** [`canvas-state-persistence`](./golden-paths/canvas-state-persistence.md) §7.3 / §7.4 ·
+**Files:** `src/features/teams/sub_mastermind/lib/layoutStore.ts`, `LinkLayer.tsx:26`
+
+Measured twice, by two implementations sharing no code (one parses the JSON
+document and walks its keys; one never parses it and differences UUID-shaped
+tokens out of the raw `TEXT` against the id list) — they agree exactly:
+**8 persisted positions, 2 dangling (25%)**. Not a consequence of the purge;
+`dev_projects` was never in the cascade. `savePositions` has no per-key delete,
+`saveHidden` can only remove a slug the user can still see, and nothing anywhere
+reconciles the document against `dev_projects`. `LinkLayer.tsx:26` renders an
+unresolvable link as `null`, which also hides the label pill that is the only way
+to open its editor — replayed: 1 link with a dead endpoint → 0 rendered, 1
+retained forever.
+
+**Fix:** reconcile on hydrate, once the live entity list is available — prune
+dead ids and write the pruned document back. Copy
+`ascent/src/components/launch/mergeStars.ts:11-18` including its guard: an
+**empty** authoritative list means the fetch failed, not that everything was
+deleted, so no-op rather than prune.
+
+**Why held:** the first run **deletes rows** from the operator's persisted layout.
+If the entity list is momentarily empty or partially loaded, it deletes the board.
+
+---
+
+## 67. A finished background turn discards 80% of the chat history the user paged in
+
+**Path:** [`streaming-chat-transcript`](./golden-paths/streaming-chat-transcript.md) §7.1 / §7.2 ·
+**Files:** `src/features/plugins/companion/companionStore.ts:808`,
+`chat/athenaChatStream.ts:158-162`, `chat/athenaChatSend.ts:103-111`,
+`chat/AthenaChatProposals.tsx:40-41`
+
+`setMessages: (messages) => set({ messages })` is a bare whole-list assignment,
+and five call sites feed it `companionListRecentMessages(50, …)`. Executed
+against the real reducers: open (50 rows) → four "load earlier" pages (250) →
+**one finished backend turn → 50**. **200 of 250 rows discarded (80.0%)**, on a
+turn the user never requested. The store already has the merge half —
+`prependMessages` (`:811-818`) dedupes by id. `personas-web/src/stores/`
+`eventStore.ts:91-117` fixed exactly this and its comment names the failure.
+
+Separately, the same handler tears the streaming bubble down (`:148`, `:151`)
+**before** fetching its replacement (`:158`), whose only failure arm is
+`.catch(silentCatch(…))` — so a failed refetch makes the turn disappear with no
+bubble, no row and no error. The user-send path is the control: it has a real
+`catch` calling `setSendError`.
+
+**Fix:** replace `setMessages` with `mergeMessages(incoming)` (dedupe by id,
+preserve locally-known rows, sort, **cap** — the cap is not optional; without it
+the fix converts data loss into an unbounded array) plus an explicit
+`resetMessages()` for the two sites that legitimately want a clean slate. Deleting
+`setMessages` from the store interface makes the clobber **not compile**.
+
+**Why held:** changes what the transcript shows on every turn while the operator
+is talking to Athena, and a merge with a wrong key duplicates or drops bubbles in
+the surface she is watching.
+
+---
+
+## 68. Two loading states in the chat transcript, and the canvas cold-load, render literally nothing
+
+**Path:** [`streaming-chat-transcript`](./golden-paths/streaming-chat-transcript.md) §7.3 ·
+[`canvas-state-persistence`](./golden-paths/canvas-state-persistence.md) §7.5 ·
+**Files:** `chat/AthenaChatBody.tsx:116-120`, `:121-126`,
+`src/features/teams/sub_mastermind/MastermindPage.tsx:860`
+
+`feedback/LoadingSpinner` returns `null` without a `label` and an `sr-only`
+`<span role="status">` with one (`LoadingSpinner.tsx:12-21`). The transcript's
+"an earlier page is in flight" indicator is `<LoadingSpinner size="sm" />` inside
+a wrapper carrying **`aria-hidden="true"`**, so it is invisible to sighted users
+*and* would suppress the `sr-only` escape hatch even if a label were added. The
+Mastermind canvas's entire cold-load branch is `<LoadingSpinner label={…} />` —
+a blank bordered rectangle for the whole hydrate + first-passport window, with
+two i18n keys naming a state nobody can see.
+
+**Fix:** a geometry-matched ghost under the permanent chrome per
+[`page-loading`](./golden-paths/page-loading.md). Population-wide this is the
+152 + 4 standalone sites [`inline-busy-state`](./golden-paths/inline-busy-state.md)
+`:157` already assigns to `page-loading`'s leaf.
+
+**Why held:** changes what a live surface shows.
+
+---
+
+## 69. Reload during first-run onboarding closes every door back into the flow
+
+[`first-run-onboarding`](./golden-paths/first-run-onboarding.md) §7.A.
+`onboardingStepCompleted` is persisted (`systemStore.ts:85`) while
+`onboardingActive` and `onboardingStep` are not (`onboardingSlice.ts:160-161`).
+A reload is not a dismiss, so `onboardingDismissedAtStep` stays `null`; the
+footer replay icon needs it non-null (`DesktopFooter.tsx:466`), the Home CTA
+needs `personas.length === 0` (`WelcomeGetStarted.tsx:41`), and step 4 of 5
+(`adopt`) creates a persona. Complete four steps, reload, and the flow is
+unreachable from all three entry points with its progress intact on disk.
+
+**Fix:** add `onboardingActive` + `onboardingStep` to `systemStore`'s
+`partialize`; widen `canResume` to
+`!completed && (dismissedAtStep != null || anyStepCompleted)`.
+**Why held:** changes what a live surface shows, on next launch, for the operator.
+
+---
+
+## 70. 14 locales, and the only code that reads the OS locale is the crash screen
+
+[`first-run-onboarding`](./golden-paths/first-run-onboarding.md) §7.F.
+`navigator.language` occurs exactly twice in 4,397 production files, both in
+`main.tsx` serving `ERROR_BOUNDARY_COPY` (`:56-75`). The app-locale initializer
+is `language: 'en'` (`i18nStore.ts:103`), and
+`preloadPersistedLocaleBeforeMount()` returns at `main.tsx:175` when the
+persisted locale is `en` — which on a first run it always is, so the 1.2 s
+section-preload race never starts on the run that needs it. A first-run
+non-English user gets English until they find a picker labelled in English.
+
+**Fix:** in `readPersistedLocale()`, when `personas-i18n-storage` is absent,
+narrow `navigator.language` through the existing `isLocaleCode` and return it.
+**Why held:** changes the language every existing user's app opens in.
+
+---
+
+## 71. The app does not record which tour you were in
+
+[`guided-tour-step`](./golden-paths/guided-tour-step.md) §7.A.
+`PersistedTourState` (`tourSlice.ts:1143-1153`) has a per-tour map and no
+active-tour pointer; hydration hardcodes `getting-started` (`:1318`, `:1379`).
+Replayed against a synthetic blob: a user at step 6 of the 9-step
+`teams-orchestration` tour, after a reload, lands on `getting-started` step 0
+with zero progress carried, while the Teams record sits unread in
+`guided-tour-state`. `TourLauncher` cannot recover it either (`:25` only ever
+launches `getting-started`/`-simple`).
+
+**Fix:** add `activeTourId` to `PersistedTourState`, bump `TOUR_STATE_VERSION`
+4 → 5. **Why held:** the version bump discards every user's existing tour
+progress, and the pointer changes what the footer launcher opens.
+
+---
+
+## 72. The tour-anchor generator is blind to three authoring forms, and running it today narrows the allow-list
+
+[`guided-tour-step`](./golden-paths/guided-tour-step.md) §7.B.
+`gen-tour-anchors.mjs`'s six regexes require an anchor in attribute position, so
+they cannot see a `const` map value (`ObsidianBrainPage.tsx:33-38`), a ternary
+arm (`DailyGoalsModal.tsx:140`), or an aliased prop
+(`StudioChatInput.tsx:172` — `inputTestId`, whose capital `T` defeats the
+`testId="…"` regex). Measured: the manifest is **127 behind** (101 testids + 26
+prefixes, reproducing `client-rule-mirroring` §7 D5 exactly) **and 4 ahead** —
+`daily-goals-create`, `studio-chat-input`, `companion-strip-`, `mm-category-`
+are committed and no longer derivable. Live cost: the whole Obsidian Brain
+tour's six panel anchors are absent from the manifest, so
+`dynamicTours.ts:144` refuses any Athena-composed tour that names one.
+
+**Fix:** teach the generator the three forms, add `--check`, regenerate both
+artifacts. **Why held:** regenerating changes what Athena is permitted to
+compose, in both directions, and the removal half is a silent narrowing —
+it wants a human reading the diff.
+
+---
+
+## 73. Nothing verifies that a commit landed, and `git commit --only` is prescribed 9 times after being measured unsound
+
+[`parallel-session-coordination`](./golden-paths/parallel-session-coordination.md) §0, §7 D1, §9.
+
+Executed in a throwaway `git init` repo with **no hooks and no concurrency**: `git commit -- <p>`
+and `git commit --only <p>` both commit the **working tree**, not the index (Q1/Q2), so a
+sibling's *unstaged* edits to a file in your pathspec ride in under your message. They do scope
+the file *set* correctly (Q3) — which is what makes them convincing. An isolated
+`GIT_INDEX_FILE` scopes the set, takes the staged content, and survives a sibling `git add`
+landing mid-flight (Q4/Q5). `git diff --cached --stat` before `git commit` is a TOCTOU check:
+the guard read 1 file and the commit shipped 2 (Q6).
+
+Three things are owed and none is applied:
+
+1. **`.claude/CLAUDE.md:277`** attributes the pathspec failure to *"lefthook's partial-commit
+   handling"* and concludes *"there is no reliable pathspec-scoping incantation"*. The mechanism
+   is plain git and the conclusion is too strong — the correct statement is that no *pathspec*
+   form is reliable and `GIT_INDEX_FILE` is. **Why held:** CLAUDE.md is loaded into every session
+   in this repo; rewriting it mid-campaign changes what running composers believe.
+2. **Nine prescriptions of the defeated form** across `perfect/SKILL.md:206,226,335,398`,
+   `code-review:29`, `guide-sync:47`, `prototype:55`, `sentry:59`, `mvp/state/calibration.md:11`
+   — four of which claim `--only` *"bypasses the shared index entirely"* and one of which calls
+   it *"safe by construction"*. Ratcheted by the `defeated-pathspec-commit` census rule at
+   **6 files / 11 matches** so the count cannot rise while the text is corrected.
+3. **A `post-commit` readback**, specified in §9 (three lines comparing `git log -1 --format=%s`
+   against the subject the caller passed). `lefthook.yml` has no `post-commit` hook and **zero of
+   53 skill documents** instruct a readback, against 26 `git commit` instructions. **Why held:**
+   installing a hook changes what happens every time the operator types `git commit`. Note also
+   that a `post-commit` hook's exit code is ignored by git, so this is a loud **detector**, never
+   a gate.
+
+The working answer is already in the repo — `.claude/skills/mvp/state/calibration.md:54` — where
+it has held for four consecutive runs across eight concurrent builders in five repositories. It
+never travelled because a per-run calibration log is not where anyone looks for a project rule.
+
+---
+
+## 74. `npm run test` reports a pass rate over a denominator that can shrink silently — 11 files, 153 tests
+
+[`frontend-test-lane`](./golden-paths/frontend-test-lane.md) §0, §7 D0, §9.
+
+Executed: the default lane's `include` claims **402** files; the JSON run report accounts for
+**391**; the eleven in the gap carry **153 `it`/`test` calls** and the run's entire stdout for
+533 seconds was two jsdom canvas warnings. Re-run directly, four of them together produce
+`[vitest-pool]: Failed to start forks worker` after 60 s (`Test Files no tests`, exit 1); one run
+alone passes 11/11 in 67.69 s, of which **environment 24.17 s + import 26.79 s + setup 12.55 s =
+94%** and tests are 3.23 s. Same fixed per-file cost puts eight files' *first* `it()` at
+3.32–3.37 s against the framework's 5,000 ms default — the lane holding 3,738 tests is the only
+one of five that sets no `testTimeout`, while the 7-test and 6-test lanes each set 30,000 ms.
+
+Related and separate: `vitest.integration.config.ts` **cannot load its own config** —
+`src/test/integration/` does not exist, so `npm run test:integration:cli` exits 1 without running
+anything; it is on no hook and in no workflow. And of five lanes, only `test:evals` (six files)
+is on a git hook at all; the 3,738-test lane runs in CI only.
+
+**Fix:** (a) a claimed-vs-executed reconciliation in CI beside `npm run test` — four lines, and
+it converts a shrinking denominator into a named list; (b) `scripts/check-test-lanes.mjs` on
+pre-push (loads every `vitest*.config.ts`, asserts non-empty and pairwise-disjoint includes and
+an explicit `testTimeout`, with an exit-2 guard if it finds fewer than 3 configs); (c) hoist the
+module import into `beforeAll` so transform is charged to `hookTimeout`, *then* set an explicit
+`testTimeout`. **Why held:** (a) and (b) add gates to CI and pre-push, and (c) changes the
+suite's timing characteristics under the operator's own hooks. Raising `testTimeout` alone would
+delete the only visible symptom and is explicitly not the fix.
+
+---
+
+## 75. Three of the five buckets under `src/features/shared/` are governed and documented by nothing
+
+[`shared-component-boundary`](./golden-paths/shared-component-boundary.md) §0, §7 D2/D3/D4, §9.
+
+`.claude/CLAUDE.md:141-159` offers three destinations for a new component — the catalog,
+`shared/chrome/`, or the owning feature. The tree has **five** buckets. `shared/glyph/` is **50
+files with 9 restricted-shape imports across 8 of them** (`@/stores/themeStore`,
+`@/features/agents/…`, `@/features/templates/…`, `@/features/vault/…`), and it is in no
+documentation, no catalog, and outside `eslint.config.js:172`'s `files:` glob; `shared/dispatch/`
+and `shared/charts/` are in the same position. **If the boundary rule's glob covered
+`src/features/shared/**` minus `chrome/`, its anchor would be 22 sites, not 13.**
+
+Three smaller items in the same territory:
+
+- **`.claude/CLAUDE.md:146` says "~115 primitives"; the generated `CATALOG.md` says 128.** A
+  generated count and a hand-maintained count of the same set, with no gate.
+- **8 of 128 catalog rows carry a fragment of the component's own source as its description** —
+  `useShakeError | the .`, `useAsyncFieldValidation | link .`,
+  `EstimatedProgressBar | if (progress < 75) return 'hsl(var(primary) / 0.`. Fixed per row by a
+  `@catalog` JSDoc tag plus `npm run gen:catalog`.
+- **The rule's `@/stores/*` + `@/stores/**` globs cannot match the bare barrel `@/stores`.**
+  Measured: zero barrel imports in the catalog today, so this is a latent hole with a two-line
+  fix — but the barrel form is dominant elsewhere (10 of 10 plugin shells), so the first one
+  written in a primitive would be invisible to ESLint. The published census rule already catches
+  it, at an unchanged baseline.
+
+**Why held:** all four are edits to `.claude/CLAUDE.md`, `eslint.config.js` or eight source
+files, in a checkout five concurrent composers have loaded; the CLAUDE.md and lint-config edits
+in particular change what every running session and the operator's editor believe.
+
+---
+
 ## What *was* applied, and what it changes at runtime
 
 For completeness, since "no destructive applies" is now the rule. None of these

@@ -143,7 +143,7 @@ src-tauri/
 ### Reusing shared components — check the catalog before building UI
 
 > **Before you write any UI, check whether a shared component already exists.**
-> The project has **~115 reusable, domain-agnostic primitives** under `src/features/shared/components/`,
+> The project has **128 reusable, domain-agnostic primitives** (recounted 2026-08-17 from the generated catalog; this line said ~115, a figure from the 2026-06-18 curation that has drifted by 13) under `src/features/shared/components/`,
 > catalogued in **[`src/features/shared/components/CATALOG.md`](../src/features/shared/components/CATALOG.md)**
 > (auto-generated, always fresh — the durable UI reference bundle). The #1 source of UI
 > drift is new code re-implementing a spinner / empty state / button / modal / tooltip /
@@ -223,12 +223,12 @@ as either half of the table above. The real spinners live inside `Button`
 (`Button.tsx:230,:237`) and `AsyncButton` (`AsyncButton.tsx:85`), which is
 deliberate.
 
-> ⚠️ `CATALOG.md`'s `LoadingSpinner` row still reads "Canonical loading
-> spinner… Use for any full-element loading state", which is wrong on both
-> halves. That text is **not** a `@catalog` tag on the component — it is
-> hardcoded in the `CURATED` map at `scripts/docs/gen-shared-catalog.mjs:56`,
-> so regenerating the catalog will not fix it. Correcting that line is an owed
-> follow-up in the shared-components territory.
+> ✅ **The `CATALOG.md` `LoadingSpinner` warning that stood here is RESOLVED** —
+> corrected 2026-08-13 in `ddeb19cc0`. Both the `CURATED` map
+> (`scripts/docs/gen-shared-catalog.mjs:57`) and the generated row now read
+> "RENDERS NOTHING. Spinners are disabled app-wide…". Verified 2026-08-17. The
+> owed follow-up this block described no longer exists — the stale artifact was
+> **this paragraph**, which outlived by four days the defect it named.
 
 ### Error Handling
 - `toastCatch()` from `src/lib/silentCatch.ts` for user-facing errors (Sentry + toast)
@@ -274,7 +274,13 @@ The active-runs ledger is intent coordination; these are the **never-lose-work**
 
    For periodic batch cleanup of worktrees other sessions left behind, run `npm run clean:worktrees` — it lists every worktree with age / dirty / merged status and (with `--force`) removes the ones that are clean + merged + stale. See [`docs/development/build-cache.md`](../docs/development/build-cache.md).
 
-5. **`git commit -- <pathspec>` does NOT reliably scope the commit when lefthook is installed.** Measured 2026-08-13 with four agents on one checkout: an agent used `git commit -- <paths>` precisely to avoid sweeping a sibling's work, and it swept three pre-staged files anyway (lefthook's partial-commit handling re-stages). `git commit --only <paths>` did hold. Two agents also lost a staged index entirely between `git add` and `git commit` — a sibling's activity cleared it, the commit silently became a no-op, and only `git reflog` showed the commit never happened. **`git commit --only` does not hold either.** Measured again later the same day: a sibling's commit landed between staging and committing, `--only` printed "no changes added to commit" and silently no-oped, and all 12 staged files were swept into the sibling's commit — whose own deliverable then did not make it in. **There is no reliable pathspec-scoping incantation while another agent commits to the same worktree.** What actually works: (a) verify `git log --oneline -1` is YOUR message after every commit — this is the only step that detects the failure at all; (b) recover by amending rather than resetting, since the content is present and only the attribution is wrong; and (c) for multi-file work, use a real `git worktree`, which is the only structural fix. A commit that didn't happen looks exactly like one that did if you only read the hook output.
+5. **`git commit -- <pathspec>` does NOT reliably scope the commit when lefthook is installed.** Measured 2026-08-13 with four agents on one checkout: an agent used `git commit -- <paths>` precisely to avoid sweeping a sibling's work, and it swept three pre-staged files anyway (lefthook's partial-commit handling re-stages). `git commit --only <paths>` did hold. Two agents also lost a staged index entirely between `git add` and `git commit` — a sibling's activity cleared it, the commit silently became a no-op, and only `git reflog` showed the commit never happened. **`git commit --only` does not hold either.** Measured again later the same day: a sibling's commit landed between staging and committing, `--only` printed "no changes added to commit" and silently no-oped, and all 12 staged files were swept into the sibling's commit — whose own deliverable then did not make it in. ~~**There is no reliable pathspec-scoping incantation while another agent commits to the same worktree.**~~ **CORRECTED 2026-08-17 — that conclusion was too strong, and the mechanism named above is the wrong one.** Driven through a **throwaway `git init` repo with no hooks, no concurrency and no second agent**, both `git commit -- <paths>` and `git commit --only <paths>` *do* scope the file set correctly — and both commit the **WORKING TREE, not the index**. That is the real defect, and it needs no lefthook to bite: a sibling's *unstaged* edit to a file inside your pathspec rides in under your message. The 2026-08-13 incidents are still real; the diagnosis ("lefthook's partial-commit handling re-stages") was not what produced them.
+
+  **A technique that passes all three tests does exist, and this repo already had it.** An isolated index — `IDX=$(mktemp); cp .git/index "$IDX"; GIT_INDEX_FILE="$IDX" git add <your paths>; GIT_INDEX_FILE="$IDX" git commit -m …` — scopes the file set, commits *staged content* rather than the worktree, and is untouched by a sibling `git add` into `.git/index`. It has held for **four consecutive runs across eight concurrent builders** in `/mvp`'s own calibration log (`.claude/skills/mvp/state/calibration.md:54`) and no `SKILL.md` mentions it, which is why nobody carried it across. Census rule `defeated-pathspec-commit` now flags the 11 places that still prescribe the defeated form — four of which claim it "bypasses the shared index entirely", and one of which calls it "safe by construction".
+
+  **Untested gap, stated rather than papered over:** `GIT_INDEX_FILE` and lefthook have not been exercised *together* here. Full derivation, seven fault-injection cases and the remaining gaps are in [`docs/concepts/golden-paths/parallel-session-coordination.md`](../docs/concepts/golden-paths/parallel-session-coordination.md).
+
+  Still true regardless of which technique you use: (a) verify `git log --oneline -1` is YOUR message after every commit — this is the only step that detects the failure at all; (b) recover by amending rather than resetting, since the content is present and only the attribution is wrong; and (c) for multi-file work, use a real `git worktree`, which is the only structural fix. A commit that didn't happen looks exactly like one that did if you only read the hook output. Note also that `git diff --cached --stat` is a **TOCTOU** check, not a guarantee — measured reading 1 file while the commit shipped 2.
 
 6. **The scratchpad directory is shared between sibling agents.** Two agents wrote their commit message to the same generic filename (`msg1.txt`) and one overwrote the other between `Write` and `git commit -F`. Use a unique filename per agent, or pass the message inline.
 

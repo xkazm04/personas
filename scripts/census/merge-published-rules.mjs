@@ -32,7 +32,22 @@ import { extractPublishedRules } from './lib/instruments/extractFences.mjs';
 const ROOT = path.resolve(fileURLToPath(new URL('.', import.meta.url)), '..', '..');
 const RULES = path.join(ROOT, 'scripts/census/rules.json');
 
-const doc = process.argv[2];
+// ONE path per invocation, and it REFUSES extras rather than ignoring them.
+// Measured 2026-08-17: an orchestrator passed two documents, this script read
+// argv[2] and silently dropped the second — merging one rule, printing
+// "merged 1 rule(s)", exiting 0. The second document's fully validated rule and
+// positive control were simply not registered, and nothing said so. A silent
+// partial success is worse than a failure: it is a failure wearing a green exit
+// code. Looping over the extras would also be defensible, but the merge is not
+// atomic across files (rules.json is rewritten per document), so a mid-loop
+// failure would leave a half-merged registry. Refusing is the honest shape.
+const docArgs = process.argv.slice(2);
+if (docArgs.length > 1) {
+  console.error(`FATAL: ${docArgs.length} paths given; this script merges ONE document per run.`);
+  console.error('Run it once per document — extras are refused rather than silently ignored.');
+  process.exit(2);
+}
+const doc = docArgs[0];
 if (!doc) {
   console.error('usage: merge-published-rules.mjs <golden-path.md>');
   process.exit(2);
