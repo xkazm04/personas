@@ -901,3 +901,45 @@ best available argument for §2 (b), and it is worth more than five siblings nod
 - ***"the recovery commit for the stash incident itself swept 18 pre-staged files"*** —
   confirmed verbatim in `cli-coordination.md:176`, and Q6 now supplies the mechanism that made
   it inevitable rather than unlucky.
+
+---
+
+## 13. Field incident, 2026-08-17, hours after this document was written
+
+The orchestrator's `git push` of the commit that **contains this document** failed with
+exit 1:
+
+```
+ ! [remote rejected] master -> master (cannot lock ref 'refs/heads/master':
+   is at 313dc6a846… but expected de274d14db…)
+```
+
+**The work was already published.** A sibling session pushed `master` during the **487
+seconds** this push spent in pre-push hooks (typecheck 290 s, golden-path census 178 s),
+and because both sessions share one checkout and one branch, the sibling's push carried
+the orchestrator's commit with it. The remote then advanced once more, to the sibling's
+own `fecbacb42`. By the time the rejection printed, the ref the push wanted to move had
+been moved twice by someone else.
+
+Three things this adds to §2, all measured rather than reasoned:
+
+1. **A failed push does not mean unpublished work.** The compare-and-swap failed on the
+   *ref value*, not on the *content*. All five of the orchestrator's commits were
+   already ancestors of `origin/master`.
+2. **Comparing `HEAD` to `origin/master` is not the check.** Run at the moment of
+   failure it read `local 313dc6a84 / remote fecbacb42 / ahead 1` — which looks like
+   divergence and is not. `origin/master` is a **local cache** that a failed push leaves
+   at whatever the last fetch saw. The honest check is an explicit fetch followed by an
+   **ancestry test per commit**: `git merge-base --is-ancestor <sha> origin/master`.
+   That is the push-side analogue of §2's `git log --oneline -1` readback, and it is
+   owed for exactly the same reason — the failure mode is a **green-looking wrong
+   answer**, not an error.
+3. **The hook duration is the race window.** 487 seconds is not a hook cost, it is an
+   *exposure*: every second of pre-push validation is a second in which the ref you are
+   about to move can move. Nothing here is wrong with the hooks — but a session that
+   treats push as instantaneous will keep being surprised by this, and the longer the
+   repo's gates get, the wider the window opens.
+
+The correct response was to do **nothing but verify**. No re-push, no pull, no rebase,
+no reset — the desired state already held, and every one of those commands would have
+been an edit to shared history in service of a problem that did not exist.
