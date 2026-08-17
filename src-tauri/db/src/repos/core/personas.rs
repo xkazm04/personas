@@ -1665,10 +1665,17 @@ pub fn duplicate(pool: &DbPool, source_id: &str) -> Result<(Persona, Duplication
             rows.filter_map(|r| r.ok()).collect()
         };
         for (trigger_type, config) in &source_triggers {
+            // `status` MUST be written alongside `enabled`. It is
+            // `NOT NULL DEFAULT 'active'`, so omitting it here wrote every
+            // duplicated trigger as `enabled=0, status='active'` — which the
+            // Triggers badge reads as OFF and which BOTH dispatch predicates
+            // (`get_due`, `get_enabled_by_type`) read as ON. That is the exact
+            // drifted shape found on live installs, and this loop is a
+            // guaranteed producer of it: one drifted row per copied trigger.
             tx.execute(
                 "INSERT INTO persona_triggers
-                 (id, persona_id, trigger_type, config, enabled, last_triggered_at, next_trigger_at, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, 0, NULL, NULL, ?5, ?5)",
+                 (id, persona_id, trigger_type, config, enabled, status, last_triggered_at, next_trigger_at, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, 0, 'disabled', NULL, NULL, ?5, ?5)",
                 params![uuid::Uuid::new_v4().to_string(), new_id, trigger_type, config, now],
             )?;
             summary.triggers_copied += 1;

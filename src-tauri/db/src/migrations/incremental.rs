@@ -2343,6 +2343,112 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added unattended_mode column to persona_triggers (UAT P5 destructive-action gate)");
     }
 
+    // -- Widen persona_triggers.trigger_type to the whole TriggerKind vocabulary --
+    //
+    // The CHECK admitted six members while the Add-trigger menu offered ten, so
+    // `file_watcher`, `clipboard`, `app_focus` and `composite` could not be
+    // stored on ANY install — including all six one-click quick templates,
+    // three natural-language-parser branches, and two alias maps that
+    // *manufacture* two of the four from LLM/template shorthand. The engine has
+    // always had the dispatch loops (`engine/src/{file_watcher,clipboard_monitor,
+    // app_focus}.rs`, `src/engine/composite.rs`, each reading
+    // `get_enabled_by_type` for its own kind) and `TriggerConfig::from_raw` has
+    // always had the arms; the column was the only thing refusing, and it
+    // refused with an anonymous `CHECK constraint failed`.
+    //
+    // The member list comes from `TriggerKind::sql_check_list()`, the same
+    // source the base schema is resolved from — so this step also becomes the
+    // automatic rebuild whenever a future kind is added: the guard below
+    // compares the stored DDL against the enum rather than against a literal.
+    //
+    // SQLite cannot ALTER a CHECK, so this is the standard 12-step rebuild.
+    let trigger_table_sql: String = conn
+        .prepare(
+            "SELECT COALESCE(sql, '') FROM sqlite_master WHERE type='table' AND name='persona_triggers'",
+        )?
+        .query_row([], |row| row.get::<_, String>(0))
+        .unwrap_or_default();
+
+    let missing_kinds: Vec<&str> = personas_core::models::TriggerKind::ALL
+        .iter()
+        .map(|k| k.as_str())
+        .filter(|name| !trigger_table_sql.contains(&format!("'{name}'")))
+        .collect();
+
+    if !trigger_table_sql.is_empty() && !missing_kinds.is_empty() {
+        // FK enforcement OFF for the swap: with foreign_keys=ON the
+        // `DROP TABLE persona_triggers` fires ON DELETE SET NULL on
+        // persona_executions.trigger_id and ON DELETE CASCADE on
+        // pending_trigger_fires / composite_trigger_fires. Same discipline as
+        // the 'chain' and 'event_listener' rebuilds above. The guard re-enables
+        // FK on scope exit.
+        let _fk_guard = crate::FkDisabledGuard::new(conn).map_err(AppError::Database)?;
+        // Explicit column list on BOTH sides (never `SELECT *`): a positional
+        // copy across two independently-authored shapes shifts values into the
+        // wrong columns if a legacy DB's column order drifted.
+        let sql = format!(
+            "DROP TABLE IF EXISTS persona_triggers_new;
+            CREATE TABLE persona_triggers_new (
+                id                TEXT PRIMARY KEY,
+                persona_id        TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+                trigger_type      TEXT NOT NULL CHECK(trigger_type IN ({check_list})),
+                config            TEXT,
+                enabled           INTEGER NOT NULL DEFAULT 1,
+                status            TEXT NOT NULL DEFAULT 'active',
+                last_triggered_at TEXT,
+                next_trigger_at   TEXT,
+                trigger_version   INTEGER NOT NULL DEFAULT 0,
+                use_case_id       TEXT,
+                unattended_mode   TEXT NOT NULL DEFAULT 'auto',
+                created_at        TEXT NOT NULL,
+                updated_at        TEXT NOT NULL
+            );
+            INSERT INTO persona_triggers_new
+                (id, persona_id, trigger_type, config, enabled, status, last_triggered_at,
+                 next_trigger_at, trigger_version, use_case_id, unattended_mode,
+                 created_at, updated_at)
+                SELECT id, persona_id, trigger_type, config, enabled, status, last_triggered_at,
+                       next_trigger_at, trigger_version, use_case_id, unattended_mode,
+                       created_at, updated_at
+                FROM persona_triggers;
+            DROP TABLE persona_triggers;
+            ALTER TABLE persona_triggers_new RENAME TO persona_triggers;
+            CREATE INDEX IF NOT EXISTS idx_ptr_persona      ON persona_triggers(persona_id);
+            CREATE INDEX IF NOT EXISTS idx_ptr_next_trigger ON persona_triggers(next_trigger_at);
+            CREATE INDEX IF NOT EXISTS idx_ptr_enabled      ON persona_triggers(enabled);
+            CREATE INDEX IF NOT EXISTS idx_ptr_status       ON persona_triggers(status);
+            CREATE INDEX IF NOT EXISTS idx_pt_use_case      ON persona_triggers(use_case_id);",
+            check_list = personas_core::models::TriggerKind::sql_check_list(),
+        );
+        ddl_step(conn, &sql)?;
+        tracing::info!(
+            added = ?missing_kinds,
+            "Widened persona_triggers.trigger_type CHECK to the full TriggerKind vocabulary"
+        );
+    }
+
+    // -- Repair enabled/status drift written by this tree -------------------------
+    // `status` was added as `NOT NULL DEFAULT 'active'`, so every INSERT that
+    // wrote `enabled` WITHOUT naming `status` produced `enabled=0,
+    // status='active'` — a row the UI badge reads as OFF and the two dispatch
+    // predicates (`get_due`, `get_enabled_by_type`, both keyed on `status`) read
+    // as ON. Persona duplication was a guaranteed producer: it copies every
+    // trigger with `enabled=0` and no status. The writers are fixed; this
+    // reconciles rows they already wrote. Only touches rows where the two
+    // genuinely disagree, and always believes the column the *user* toggled.
+    let drifted = conn.execute(
+        "UPDATE persona_triggers
+            SET status = 'disabled', updated_at = ?1
+          WHERE enabled = 0 AND status = 'active'",
+        rusqlite::params![chrono::Utc::now().to_rfc3339()],
+    )?;
+    if drifted > 0 {
+        tracing::info!(
+            rows = drifted,
+            "Reconciled persona_triggers rows that read 'off' in the UI and 'active' to the dispatcher"
+        );
+    }
+
     // -- Pending trigger fires (the 'approval' unattended-mode hold, UAT P5) ------
     // When a scheduler-fired trigger is in `approval` mode, its fire is HELD here
     // instead of publishing the event; a human approves/rejects, and on approval

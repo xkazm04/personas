@@ -6122,11 +6122,46 @@ fn import_bundle(
                 for t in &p.triggers {
                     let tid = uuid::Uuid::new_v4().to_string();
                     let enabled_i = if t.enabled { 1i32 } else { 0i32 };
+                    // Arm time-based triggers on import, and write `status`
+                    // explicitly. This INSERT named neither, so (a) an imported
+                    // schedule was written `next_trigger_at` NULL and could
+                    // never become due, and (b) an imported DISABLED trigger got
+                    // `status` from the column default 'active' — off in the UI
+                    // and on to both dispatch predicates.
+                    let parsed_cfg = crate::db::models::TriggerConfig::from_raw(
+                        &t.trigger_type,
+                        t.config.as_deref(),
+                    );
+                    let next_trigger_at = personas_core::scheduler::compute_next_from_config(
+                        &parsed_cfg,
+                        chrono::Utc::now(),
+                        personas_core::cron::seed_hash(&tid),
+                    );
+                    if next_trigger_at.is_none()
+                        && personas_core::models::TriggerKind::from_wire(&t.trigger_type)
+                            .is_some_and(|k| k.is_time_based())
+                    {
+                        result.warnings.push(format!(
+                            "Persona '{}' trigger ({}): {}",
+                            p.name,
+                            t.trigger_type,
+                            personas_core::validation::trigger::unschedulable_error(
+                                &t.trigger_type,
+                                t.config.as_deref(),
+                            )
+                            .message
+                        ));
+                        continue;
+                    }
                     if let Err(e) = tx.execute(
                         "INSERT INTO persona_triggers
-                         (id, persona_id, trigger_type, config, enabled, use_case_id, created_at, updated_at)
-                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
-                        rusqlite::params![tid, new_id, t.trigger_type, t.config, enabled_i, t.use_case_id, now],
+                         (id, persona_id, trigger_type, config, enabled, status, use_case_id, next_trigger_at, created_at, updated_at)
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
+                        rusqlite::params![
+                            tid, new_id, t.trigger_type, t.config, enabled_i,
+                            if t.enabled { "active" } else { "disabled" },
+                            t.use_case_id, next_trigger_at, now
+                        ],
                     ) {
                         result.warnings.push(format!(
                             "Persona '{}' trigger ({}): {}",

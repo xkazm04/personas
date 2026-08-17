@@ -84,7 +84,13 @@ CREATE INDEX IF NOT EXISTS idx_pt_tool    ON persona_tools(tool_id);
 CREATE TABLE IF NOT EXISTS persona_triggers (
     id                TEXT PRIMARY KEY,
     persona_id        TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
-    trigger_type      TEXT NOT NULL CHECK(trigger_type IN ('manual', 'schedule', 'polling', 'webhook', 'chain', 'event_listener')),
+    -- {{TRIGGER_TYPE_CHECK}} is substituted at bootstrap from
+    -- personas_core::models::TriggerKind::sql_check_list() -- see
+    -- `resolved_schema()` below. It used to be a literal six-value list while
+    -- the Add-trigger menu offered ten, so file_watcher / clipboard / app_focus
+    -- / composite triggers could not be stored on ANY install, and the failure
+    -- surfaced as an anonymous "Something went wrong."
+    trigger_type      TEXT NOT NULL CHECK(trigger_type IN ({{TRIGGER_TYPE_CHECK}})),
     config            TEXT,
     enabled           INTEGER NOT NULL DEFAULT 1,
     last_triggered_at TEXT,
@@ -1624,3 +1630,49 @@ CREATE INDEX IF NOT EXISTS idx_cli_session_read_audit_persona
     ON cli_session_read_audit(persona_id, read_at DESC);
 
 "#;
+
+/// Marker replaced with the trigger-type vocabulary before the schema is
+/// applied. Declared as a const so the substitution and the template cannot
+/// drift apart by a typo.
+pub(super) const TRIGGER_TYPE_CHECK_MARKER: &str = "{{TRIGGER_TYPE_CHECK}}";
+
+/// [`SCHEMA`] with every marker resolved. **This — not `SCHEMA` — is what runs.**
+///
+/// The only marker today is the `persona_triggers.trigger_type` `CHECK`, whose
+/// member list comes from `personas_core::models::TriggerKind`. Deriving it
+/// means the narrowest gate in the trigger-wiring surface (the storage
+/// constraint) can no longer be narrower than the menu the user is offered —
+/// which it was, by four members, on every install this app has ever had.
+pub(super) fn resolved_schema() -> String {
+    SCHEMA.replace(
+        TRIGGER_TYPE_CHECK_MARKER,
+        &personas_core::models::TriggerKind::sql_check_list(),
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use personas_core::models::TriggerKind;
+
+    #[test]
+    fn schema_carries_the_marker_and_no_literal_trigger_vocabulary() {
+        assert!(
+            SCHEMA.contains(TRIGGER_TYPE_CHECK_MARKER),
+            "the persona_triggers CHECK must stay a marker, not a hand-written list"
+        );
+    }
+
+    #[test]
+    fn resolved_schema_admits_every_trigger_kind() {
+        let sql = resolved_schema();
+        assert!(!sql.contains(TRIGGER_TYPE_CHECK_MARKER), "marker not substituted");
+        for kind in TriggerKind::ALL {
+            assert!(
+                sql.contains(&format!("'{}'", kind.as_str())),
+                "resolved schema CHECK does not admit {}",
+                kind.as_str()
+            );
+        }
+    }
+}

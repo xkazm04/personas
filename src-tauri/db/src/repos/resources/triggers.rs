@@ -21,6 +21,52 @@ pub fn validate_config(trigger_type: &str, config: Option<&str>) -> Result<(), A
     validate_check(tv::validate_config(trigger_type, config))
 }
 
+/// Every door-side validator, in one place.
+///
+/// `create`/`update` used to run only `validate_config`, while
+/// `validate_polling_url` (the SSRF guard) and
+/// `validate_schedule_has_cron_or_interval` (the "this schedule can never fire"
+/// preflight) lived ONLY in the `create_trigger` IPC command — so every other
+/// creation path (template adoption, build sessions, n8n import, data import,
+/// team handoff, chain wiring) bypassed both. Calling them here makes the repo
+/// the door rather than one of several.
+pub fn validate_all(trigger_type: &str, config: Option<&str>) -> Result<(), AppError> {
+    let mut errors = tv::validate_config(trigger_type, config);
+    errors.extend(tv::validate_polling_url(trigger_type, config));
+    errors.extend(tv::validate_schedule_has_cron_or_interval(
+        trigger_type,
+        config,
+    ));
+    validate_check(errors)
+}
+
+/// Compute `next_trigger_at`, refusing rather than writing a **born-dead** row.
+///
+/// A trigger whose kind is time-based (`schedule`, `polling`) and whose
+/// `next_trigger_at` is NULL is invisible to `get_due` forever — it renders
+/// `armed` and never runs. Nothing in the app can currently tell the user that,
+/// so the only honest outcome is to refuse at creation with a message naming
+/// the reason. For every other kind a NULL is correct (they are woken by a
+/// webhook, an event, a chain, a file, the clipboard, …), so this returns
+/// `Ok(None)` for them.
+fn arm_or_refuse(
+    trigger_type: &str,
+    parsed_cfg: &TriggerConfig,
+    plaintext_config: Option<&str>,
+    seed: u64,
+) -> Result<Option<String>, AppError> {
+    let next = scheduler::compute_next_from_config(parsed_cfg, chrono::Utc::now(), seed);
+    let time_based = personas_core::models::TriggerKind::from_wire(trigger_type)
+        .is_some_and(|k| k.is_time_based());
+    if next.is_none() && time_based {
+        validate_check(vec![tv::unschedulable_error(
+            trigger_type,
+            plaintext_config,
+        )])?;
+    }
+    Ok(next)
+}
+
 /// Encrypt sensitive fields in a trigger config JSON string before writing to DB.
 /// Returns an error if encryption fails -- secrets must never be stored in plaintext.
 pub fn encrypt_config(config: &str) -> Result<String, AppError> {
@@ -98,7 +144,7 @@ pub fn create(pool: &DbPool, mut input: CreateTriggerInput) -> Result<PersonaTri
     timed_query!("persona_triggers", "persona_triggers::create", {
         input.trigger_type = normalize_trigger_type(&input.trigger_type).to_string();
         validate_trigger_type(&input.trigger_type)?;
-        validate_config(&input.trigger_type, input.config.as_deref())?;
+        validate_all(&input.trigger_type, input.config.as_deref())?;
 
         // Chain triggers: reject configurations that would create a cycle.
         // A parse failure here used to be silently swallowed, which let a
@@ -126,13 +172,17 @@ pub fn create(pool: &DbPool, mut input: CreateTriggerInput) -> Result<PersonaTri
         let encrypted_config = input.config.as_deref().map(encrypt_config).transpose()?;
 
         // Compute next_trigger_at from plaintext config so it can be written
-        // atomically in the same transaction as the INSERT.
+        // atomically in the same transaction as the INSERT — and REFUSE if a
+        // time-based trigger comes out with none, rather than writing a row
+        // that can never become due. Nothing downstream reports that state, so
+        // the door is the only place a user can be told.
         let parsed_cfg = TriggerConfig::from_raw(&input.trigger_type, input.config.as_deref());
-        let next_trigger_at = scheduler::compute_next_from_config(
+        let next_trigger_at = arm_or_refuse(
+            &input.trigger_type,
             &parsed_cfg,
-            chrono::Utc::now(),
+            input.config.as_deref(),
             personas_core::cron::seed_hash(&id),
-        );
+        )?;
         let invalid_timezone = scheduler::invalid_schedule_timezone(&parsed_cfg);
 
         // Fix 4a: for schedule / polling / webhook source triggers, auto-create a
@@ -349,7 +399,21 @@ pub fn update(
             .unwrap_or(&existing.trigger_type);
 
         if let Some(ref cfg) = input.config {
-            validate_config(effective_type, Some(cfg.as_str()))?;
+            // Same door as `create`: the SSRF guard and the schedule-timing
+            // preflight used to run only in the `update_trigger` IPC command,
+            // so every other update path skipped them.
+            validate_all(effective_type, Some(cfg.as_str()))?;
+            // …and refuse to edit a live trigger INTO a dead one. Checked
+            // before the write, on the caller's plaintext config, so a refusal
+            // leaves the stored row untouched. (The post-write recompute below
+            // is what would otherwise silently NULL `next_trigger_at`.)
+            let candidate = TriggerConfig::from_raw(effective_type, Some(cfg.as_str()));
+            arm_or_refuse(
+                effective_type,
+                &candidate,
+                Some(cfg.as_str()),
+                personas_core::cron::seed_hash(id),
+            )?;
         }
 
         // Chain triggers: reject configurations that would create a cycle.
@@ -1862,6 +1926,29 @@ pub fn set_enabled(pool: &DbPool, id: &str, enabled: bool) -> Result<(), AppErro
             "UPDATE persona_triggers SET enabled = ?1, status = ?2, updated_at = ?3 WHERE id = ?4",
             params![enabled as i32, status, now, id],
         )?;
+        drop(conn);
+
+        // Re-arm on enable. A time-based trigger that was created disabled (the
+        // persona-duplication path does exactly this) carries
+        // `next_trigger_at = NULL`; switching it on without recomputing leaves
+        // it invisible to `get_due` forever, so the user turns it on and
+        // nothing happens. Only fills a NULL — an already-armed trigger keeps
+        // its slot so toggling does not shift the cadence.
+        if enabled {
+            let trigger = get_by_id(pool, id)?;
+            let time_based = personas_core::models::TriggerKind::from_wire(&trigger.trigger_type)
+                .is_some_and(|k| k.is_time_based());
+            if time_based && trigger.next_trigger_at.is_none() {
+                if let Some(next) = scheduler::compute_next_trigger_at(&trigger, chrono::Utc::now())
+                {
+                    let conn2 = pool.get()?;
+                    conn2.execute(
+                        "UPDATE persona_triggers SET next_trigger_at = ?1 WHERE id = ?2",
+                        params![next, id],
+                    )?;
+                }
+            }
+        }
         Ok(())
     })
 }
@@ -2113,6 +2200,170 @@ mod tests {
         test_fixtures::create_test_persona(pool, "Trigger Test Agent", "You handle triggers.")
     }
 
+    // -- "not born dead": creation either arms the trigger or refuses by name --
+
+    /// The four kinds the `CHECK` used to reject — every one of which the
+    /// Add-trigger menu offered, all six quick templates targeted, and the
+    /// engine has always had a dispatch loop for.
+    #[test]
+    fn every_trigger_kind_in_the_menu_can_actually_be_stored() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+
+        // One minimally-valid config per kind. `schedule`/`polling` must arm,
+        // so they carry timing; the rest are woken by something else.
+        let cases: &[(personas_core::models::TriggerKind, Option<&str>)] = &[
+            (personas_core::models::TriggerKind::Manual, None),
+            (
+                personas_core::models::TriggerKind::Schedule,
+                Some(r#"{"cron":"0 9 * * *"}"#),
+            ),
+            (
+                personas_core::models::TriggerKind::Polling,
+                // A public IP LITERAL, deliberately: `validate_polling_url`
+                // resolves hostnames, and a unit test must not depend on DNS.
+                // (TEST-NET ranges are rejected as documentation addresses.)
+                Some(r#"{"url":"https://93.184.216.34/feed","interval_seconds":300}"#),
+            ),
+            (
+                personas_core::models::TriggerKind::Webhook,
+                Some(r#"{"webhook_secret":"abc123"}"#),
+            ),
+            (personas_core::models::TriggerKind::Chain, Some("{}")),
+            (
+                personas_core::models::TriggerKind::EventListener,
+                Some(r#"{"listen_event_type":"demo.event"}"#),
+            ),
+            (
+                personas_core::models::TriggerKind::FileWatcher,
+                Some(r#"{"watch_paths":["/tmp"],"events":["create"]}"#),
+            ),
+            (
+                personas_core::models::TriggerKind::Clipboard,
+                Some(r#"{"content_type":"text","interval_seconds":5}"#),
+            ),
+            (
+                personas_core::models::TriggerKind::AppFocus,
+                Some(r#"{"interval_seconds":3}"#),
+            ),
+            (
+                personas_core::models::TriggerKind::Composite,
+                Some(r#"{"conditions":[{"event_type":"a"},{"event_type":"b"}],"operator":"AND","window_seconds":300}"#),
+            ),
+        ];
+        assert_eq!(
+            cases.len(),
+            personas_core::models::TriggerKind::ALL.len(),
+            "a TriggerKind was added without a storability case here"
+        );
+
+        for (kind, config) in cases {
+            let created = create(
+                &pool,
+                CreateTriggerInput {
+                    persona_id: persona.id.clone(),
+                    trigger_type: kind.as_str().to_string(),
+                    config: config.map(String::from),
+                    enabled: Some(true),
+                    use_case_id: None,
+                },
+            )
+            .unwrap_or_else(|e| panic!("{} could not be stored: {e}", kind.as_str()));
+            assert_eq!(created.trigger_type, kind.as_str());
+            assert_eq!(created.status, "active");
+            assert!(created.enabled);
+            if kind.is_time_based() {
+                assert!(
+                    created.next_trigger_at.is_some(),
+                    "{} was created without a next fire time",
+                    kind.as_str()
+                );
+            }
+        }
+    }
+
+    /// The whole point: a creation that would produce a row `get_due` can never
+    /// return is refused, and the refusal names the reason.
+    #[test]
+    fn creating_an_unschedulable_time_based_trigger_is_refused_by_name() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+
+        let attempt = |trigger_type: &str, config: Option<&str>| {
+            create(
+                &pool,
+                CreateTriggerInput {
+                    persona_id: persona.id.clone(),
+                    trigger_type: trigger_type.to_string(),
+                    config: config.map(String::from),
+                    enabled: Some(true),
+                    use_case_id: None,
+                },
+            )
+        };
+
+        // A schedule with an unresolvable timezone — the `"local"` sentinel
+        // that put 16 rows on the operator's install into a permanent NULL.
+        let err = attempt(
+            "schedule",
+            Some(r#"{"cron":"0 9 * * *","timezone":"local"}"#),
+        )
+        .expect_err("a schedule that cannot be armed must be refused");
+        let msg = err.to_string();
+        assert!(
+            msg.contains(personas_core::validation::trigger::UNSCHEDULABLE_PREFIX),
+            "refusal did not use the registry-matchable prefix: {msg}"
+        );
+        assert!(msg.contains("local"), "refusal did not name the value: {msg}");
+
+        // A schedule with no timing at all.
+        assert!(attempt("schedule", Some("{}")).is_err());
+        assert!(attempt("schedule", None).is_err());
+
+        // Polling with a URL but no interval — nothing would ever fetch it.
+        assert!(attempt("polling", Some(r#"{"url":"https://93.184.216.34/feed"}"#)).is_err());
+
+        // Nothing was written by any of the refusals.
+        assert!(get_by_persona_id(&pool, &persona.id).unwrap().is_empty());
+
+        // …and the kinds that legitimately have no next fire time are NOT
+        // refused: a NULL there is correct, not a defect.
+        assert!(attempt("manual", None).is_ok());
+        assert!(attempt("chain", Some("{}")).is_ok());
+    }
+
+    /// `enabled` and `status` are two encodings of one fact; the badge reads
+    /// one and both dispatch predicates read the other. Duplication used to
+    /// write them contradicting each other on every copied row.
+    #[test]
+    fn duplication_does_not_produce_enabled_status_drift() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+        create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: persona.id.clone(),
+                trigger_type: "schedule".into(),
+                config: Some(r#"{"cron":"0 9 * * *"}"#.into()),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        let (copy, _summary) = crate::repos::core::personas::duplicate(&pool, &persona.id).unwrap();
+        for t in get_by_persona_id(&pool, &copy.id).unwrap() {
+            assert_eq!(
+                t.enabled,
+                t.status == "active",
+                "copied trigger {} reads {:?} to the UI and {:?} to the dispatcher",
+                t.id,
+                t.enabled,
+                t.status
+            );
+        }
+    }
+
     /// Exhaustive classification gate for `AUTO_LISTENER_SOURCE_TYPES`.
     ///
     /// The const itself is a `&[&str]`, so Rust can't exhaustiveness-check
@@ -2261,13 +2512,16 @@ mod tests {
         let pool = init_test_db().unwrap();
         let persona = create_test_persona(&pool);
 
-        // Create a trigger with a past next_trigger_at
+        // Create a trigger with a past next_trigger_at. The config carries a
+        // cron because `create` now REFUSES a schedule it cannot arm — this
+        // fixture used to pass `None`, i.e. it constructed exactly the
+        // born-dead row the door now rejects.
         let trigger = create(
             &pool,
             CreateTriggerInput {
                 persona_id: persona.id.clone(),
                 trigger_type: "schedule".into(),
-                config: None,
+                config: Some(r#"{"cron":"0 * * * *"}"#.into()),
                 enabled: Some(true),
                 use_case_id: None,
             },

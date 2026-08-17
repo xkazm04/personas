@@ -7,6 +7,7 @@ use tauri::State;
 use crate::db::models::{SessionStatus, UpdateN8nSessionInput};
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::resources::n8n_sessions as session_repo;
+use crate::db::repos::resources::triggers as trigger_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
@@ -151,11 +152,27 @@ pub fn create_persona_atomically(
     let mut triggers_created = 0u32;
     if let Some(ref triggers) = draft.triggers {
         for trigger_draft in triggers {
-            let valid_types = ["manual", "schedule", "polling", "webhook"];
-            let trigger_type = if valid_types.contains(&trigger_draft.trigger_type.as_str()) {
-                trigger_draft.trigger_type.clone()
-            } else {
-                "manual".to_string()
+            // The whole storable vocabulary, from the single source. This was a
+            // hand-written 4-member list that silently rewrote everything else
+            // — including `event_listener`, `chain` and every ambient kind —
+            // into `manual`, i.e. into a trigger that only fires when a human
+            // presses Run. An import that quietly turns an automation into a
+            // button is worse than one that refuses.
+            let normalized = trigger_repo::normalize_trigger_type(&trigger_draft.trigger_type);
+            let trigger_type = match personas_core::models::TriggerKind::from_wire(normalized) {
+                Some(kind) => kind.as_str().to_string(),
+                None => {
+                    entity_errors.push(EntityError {
+                        entity_type: "trigger".into(),
+                        entity_name: trigger_draft.trigger_type.clone(),
+                        error: format!(
+                            "Unknown trigger type '{}'. Must be one of: {}",
+                            trigger_draft.trigger_type,
+                            personas_core::validation::trigger::VALID_TRIGGER_TYPES.join(", ")
+                        ),
+                    });
+                    continue;
+                }
             };
 
             let trigger_id = uuid::Uuid::new_v4().to_string();
@@ -165,13 +182,50 @@ pub fn create_persona_atomically(
                 .and_then(|c| serde_json::to_string(c).ok());
             let trigger_enabled = 1i32;
 
+            // Arm time-based triggers at insert. This INSERT never named
+            // `next_trigger_at`, so an imported schedule/polling trigger was
+            // written NULL and `get_due` skipped it forever — imported, shown as
+            // armed, dead. Refuse the row instead of importing a corpse.
+            let parsed_cfg = crate::db::models::TriggerConfig::from_raw(
+                &trigger_type,
+                trigger_config.as_deref(),
+            );
+            let next_trigger_at = personas_core::scheduler::compute_next_from_config(
+                &parsed_cfg,
+                chrono::Utc::now(),
+                personas_core::cron::seed_hash(&trigger_id),
+            );
+            if next_trigger_at.is_none()
+                && personas_core::models::TriggerKind::from_wire(&trigger_type)
+                    .is_some_and(|k| k.is_time_based())
+            {
+                entity_errors.push(EntityError {
+                    entity_type: "trigger".into(),
+                    entity_name: trigger_draft
+                        .use_case_id
+                        .clone()
+                        .unwrap_or_else(|| trigger_type.clone()),
+                    error: personas_core::validation::trigger::unschedulable_error(
+                        &trigger_type,
+                        trigger_config.as_deref(),
+                    )
+                    .message,
+                });
+                continue;
+            }
+
             match tx.execute(
                 "INSERT INTO persona_triggers
-                 (id, persona_id, trigger_type, config, enabled, use_case_id, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
+                 (id, persona_id, trigger_type, config, enabled, status, use_case_id, next_trigger_at, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
                 params![
                     trigger_id, persona_id, trigger_type, trigger_config,
-                    trigger_enabled, trigger_draft.use_case_id, now,
+                    trigger_enabled,
+                    // `status` is what BOTH dispatch predicates read; omitting it
+                    // let the NOT NULL DEFAULT 'active' contradict an imported
+                    // enabled=0 row — off in the UI, on to the engine.
+                    if trigger_enabled == 1 { "active" } else { "disabled" },
+                    trigger_draft.use_case_id, next_trigger_at, now,
                 ],
             ) {
                 Ok(_) => triggers_created += 1,

@@ -1,18 +1,49 @@
 use super::contract::{ValidationError, ValidationRule};
+use crate::models::TriggerKind;
 
+/// The wire spellings of every storable trigger type, **derived from
+/// [`TriggerKind`]** — the single source. Never spell a trigger type here (or
+/// anywhere else) as a literal; call `TriggerKind::X.as_str()` so a rename is
+/// one edit. Membership agreement with `TriggerKind::ALL` is asserted by
+/// `valid_trigger_types_matches_all` in the test module below.
 pub const VALID_TRIGGER_TYPES: &[&str] = &[
-    "schedule",
-    "polling",
-    "webhook",
-    "manual",
-    "chain",
-    "event_listener",
-    "file_watcher",
-    "clipboard",
-    "app_focus",
-    "composite",
+    TriggerKind::Manual.as_str(),
+    TriggerKind::Schedule.as_str(),
+    TriggerKind::Polling.as_str(),
+    TriggerKind::Webhook.as_str(),
+    TriggerKind::Chain.as_str(),
+    TriggerKind::EventListener.as_str(),
+    TriggerKind::FileWatcher.as_str(),
+    TriggerKind::Clipboard.as_str(),
+    TriggerKind::AppFocus.as_str(),
+    TriggerKind::Composite.as_str(),
 ];
+
+/// Floor for the cadence of the two *scheduled* kinds (`schedule`, `polling`),
+/// which each cost a network call or an execution per tick.
+///
+/// It is deliberately NOT applied to the ambient kinds. `clipboard` and
+/// `app_focus` poll a local OS handle every few seconds by design — the form
+/// writes 5s and 3s respectively (`buildTriggerConfig.ts`) and
+/// `engine/src/{clipboard_monitor,app_focus}.rs` are built for that cadence.
+/// Applying the 60s floor to them (which this validator did for every trigger
+/// type until 2026-08-17) makes every clipboard/app-focus trigger the form can
+/// produce unsavable.
 pub const MIN_INTERVAL_SECONDS: i64 = 60;
+
+/// Floor for the ambient kinds (`clipboard`, `app_focus`) — a local poll, but
+/// still not a spin loop.
+pub const MIN_AMBIENT_INTERVAL_SECONDS: i64 = 1;
+
+/// The interval floor that applies to `trigger_type`.
+fn min_interval_for(trigger_type: &str) -> i64 {
+    match TriggerKind::from_wire(trigger_type) {
+        Some(TriggerKind::Clipboard) | Some(TriggerKind::AppFocus) => {
+            MIN_AMBIENT_INTERVAL_SECONDS
+        }
+        _ => MIN_INTERVAL_SECONDS,
+    }
+}
 
 /// Bounds for a composite trigger's look-back `window_seconds`. The composite
 /// engine loads every event inside this window on every tick, so an unbounded
@@ -91,13 +122,14 @@ pub fn validate_config(trigger_type: &str, config: Option<&str>) -> Vec<Validati
             }
         };
         if let Some(parsed) = parse_result {
+            let min_interval = min_interval_for(trigger_type);
             if let Some(interval) = parsed.get("interval_seconds") {
                 match interval.as_i64() {
-                    Some(n) if n < MIN_INTERVAL_SECONDS => {
+                    Some(n) if n < min_interval => {
                         errors.push(ValidationError::new(
                             "config.interval_seconds",
                             "range",
-                            format!("interval_seconds must be at least {MIN_INTERVAL_SECONDS}"),
+                            format!("interval_seconds must be at least {min_interval}"),
                         ));
                     }
                     Some(_) => {}
@@ -251,6 +283,73 @@ pub fn validate_schedule_has_cron_or_interval(
     vec![]
 }
 
+/// Stable prefix of the "born dead" refusal, so the frontend error registry can
+/// match it without depending on the reason text. Keep in step with the rule in
+/// `src/lib/errors/errorRegistry.ts` and `src/i18n/useTranslatedError.ts`.
+pub const UNSCHEDULABLE_PREFIX: &str = "This trigger would never fire";
+
+/// The refusal a creation path raises when a **time-based** trigger
+/// (`TriggerKind::is_time_based`) parses cleanly but
+/// `scheduler::compute_next_from_config` still returns `None` — meaning the row
+/// would be written with `next_trigger_at IS NULL`, which `get_due` skips
+/// forever. That is the single largest way a trigger is born dead in this app
+/// (37 of the operator's 351 live rows), and it is silent: the row renders
+/// `armed` and simply never runs.
+///
+/// The message NAMES the reason, so a refused creation tells the user what to
+/// change instead of "Something went wrong."
+pub fn unschedulable_error(trigger_type: &str, config: Option<&str>) -> ValidationError {
+    let parsed: Option<serde_json::Value> = config
+        .map(str::trim)
+        .filter(|c| !c.is_empty())
+        .and_then(|c| serde_json::from_str(c).ok());
+
+    let get_str = |key: &str| -> Option<String> {
+        parsed
+            .as_ref()?
+            .get(key)?
+            .as_str()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(String::from)
+    };
+    let has_interval = parsed
+        .as_ref()
+        .and_then(|v| v.get("interval_seconds"))
+        .and_then(|v| v.as_i64())
+        .is_some_and(|n| n > 0);
+
+    let reason = if trigger_type == TriggerKind::Polling.as_str() {
+        if has_interval {
+            "its polling interval could not be read as a positive number of seconds".to_string()
+        } else {
+            "it has no polling interval, so nothing ever schedules the next fetch".to_string()
+        }
+    } else {
+        // schedule
+        let cron = get_str("cron").or_else(|| get_str("cron_expression"));
+        match (cron, get_str("timezone"), has_interval) {
+            (Some(_), Some(tz), _) => format!(
+                "its timezone \"{tz}\" is not a valid IANA zone name (for example \"Europe/Prague\"), so the cron expression cannot be resolved to a wall-clock time"
+            ),
+            (Some(expr), None, _) => format!(
+                "its cron expression \"{expr}\" has no future fire time"
+            ),
+            (None, _, true) => "its interval could not be read as a positive number of seconds"
+                .to_string(),
+            (None, _, false) => {
+                "it declares neither a cron expression nor an interval, so there is no next run to schedule".to_string()
+            }
+        }
+    };
+
+    ValidationError::new(
+        "config",
+        "unschedulable",
+        format!("{UNSCHEDULABLE_PREFIX}: {reason}."),
+    )
+}
+
 pub fn validate_polling_url(trigger_type: &str, config: Option<&str>) -> Vec<ValidationError> {
     if trigger_type != "polling" {
         return vec![];
@@ -281,6 +380,99 @@ pub fn validate_polling_url(trigger_type: &str, config: Option<&str>) -> Vec<Val
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn valid_trigger_types_matches_all() {
+        // The two lists are the ONLY places the vocabulary's membership is
+        // written down. This asserts they agree — a variant added to
+        // `TriggerKind` (and therefore to `TriggerKind::ALL`) but not to
+        // `VALID_TRIGGER_TYPES` fails here, and vice versa.
+        let from_enum: Vec<&str> = TriggerKind::ALL.iter().map(|k| k.as_str()).collect();
+        assert_eq!(
+            from_enum, VALID_TRIGGER_TYPES,
+            "VALID_TRIGGER_TYPES drifted from TriggerKind::ALL"
+        );
+    }
+
+    #[test]
+    fn every_kind_round_trips_through_the_wire() {
+        for kind in TriggerKind::ALL {
+            assert_eq!(
+                TriggerKind::from_wire(kind.as_str()),
+                Some(*kind),
+                "{} did not round-trip",
+                kind.as_str()
+            );
+            assert!(validate_trigger_type(kind.as_str()).is_empty());
+        }
+        assert_eq!(TriggerKind::from_wire("nope"), None);
+    }
+
+    #[test]
+    fn sql_check_list_covers_the_whole_vocabulary() {
+        let list = TriggerKind::sql_check_list();
+        for kind in TriggerKind::ALL {
+            assert!(
+                list.contains(&format!("'{}'", kind.as_str())),
+                "CHECK list is missing {}",
+                kind.as_str()
+            );
+        }
+        // Exactly one quoted member per kind — no stragglers.
+        assert_eq!(list.matches('\'').count(), TriggerKind::ALL.len() * 2);
+    }
+
+    #[test]
+    fn only_schedule_and_polling_are_time_based() {
+        // `is_time_based` decides whether a NULL `next_trigger_at` is a defect
+        // or simply not applicable, so it must track
+        // `scheduler::compute_next_from_config`, which returns Some(_) for
+        // exactly these two.
+        for kind in TriggerKind::ALL {
+            let expected =
+                matches!(kind, TriggerKind::Schedule | TriggerKind::Polling);
+            assert_eq!(kind.is_time_based(), expected, "{}", kind.as_str());
+        }
+    }
+
+    #[test]
+    fn ambient_kinds_keep_their_sub_minute_cadence() {
+        // The Add-trigger form writes 5s (clipboard) and 3s (app_focus); the
+        // 60s floor is for the two kinds that cost a network call or an
+        // execution per tick. Applying it to the ambient kinds made every
+        // clipboard/app_focus trigger the form can produce unsavable.
+        assert!(validate_config("clipboard", Some(r#"{"interval_seconds": 5}"#)).is_empty());
+        assert!(validate_config("app_focus", Some(r#"{"interval_seconds": 3}"#)).is_empty());
+        assert!(validate_config("clipboard", Some(r#"{"interval_seconds": 0}"#)).len() == 1);
+
+        // …and the floor still holds where it matters.
+        assert_eq!(
+            validate_config("polling", Some(r#"{"interval_seconds": 5}"#)).len(),
+            1
+        );
+        assert_eq!(
+            validate_config("schedule", Some(r#"{"interval_seconds": 5}"#)).len(),
+            1
+        );
+    }
+
+    #[test]
+    fn unschedulable_error_names_the_reason() {
+        let bad_tz = unschedulable_error(
+            "schedule",
+            Some(r#"{"cron": "0 9 * * *", "timezone": "local"}"#),
+        );
+        assert_eq!(bad_tz.rule, "unschedulable");
+        assert!(bad_tz.message.starts_with(UNSCHEDULABLE_PREFIX));
+        assert!(bad_tz.message.contains("local"));
+        assert!(bad_tz.message.contains("IANA"));
+
+        let no_timing = unschedulable_error("schedule", Some("{}"));
+        assert!(no_timing.message.contains("neither a cron expression nor an interval"));
+
+        let no_interval = unschedulable_error("polling", Some(r#"{"url": "https://x.test"}"#));
+        assert!(no_interval.message.contains("no polling interval"));
+    }
 
     #[test]
     fn schedule_validator_skips_non_schedule_types() {
