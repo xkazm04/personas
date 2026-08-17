@@ -827,7 +827,25 @@ hollow.
 
 ---
 
-## 24. Every run in the app's history records $0 and zero tokens
+## 24. Every run in the app's history records zero tokens (~~and $0~~ — see correction)
+
+> **CORRECTED 2026-08-17 — the $0 half of this entry is FALSE, and the entry falsified
+> itself in its own text.** Measured against the pre-purge backup by the
+> `billing-account-auth` composer: `cost_usd` is populated in **1,970 of 2,188 rows,
+> summing to $2,036.2571**. The "$2,036.26 of actual spend" this entry cites *as the
+> uncaptured amount* **is that column's own sum** — the number was read out of the
+> ledger that was being called empty. `llm_spend.rs:100-101` reads `usage.input_tokens`
+> and populates 85 of 89 rows.
+>
+> **The token half stands and is the real defect.** `input_tokens`/`output_tokens` are
+> 0 on 2,188 of 2,188 rows, while `cache_read_tokens` carries 585 — because the cache
+> reads have a `usage`-first fallback six lines below and the token reads do not. Every
+> consequence below that depends on *tokens* (the `Some(0)` write, the 0-of-90,813
+> spans, "0 tokens" in `TraceSummary`, the dead `CostBreakdownBar`) is unaffected.
+>
+> The lesson is the entry's shape, not its arithmetic: **a headline that generalises
+> two findings into one ("$0 *and* zero tokens") inherits the weaker one's truth value
+> and hides that it did.** Written down in the doctrine.
 
 **Where:** `src-tauri/engine/src/parser.rs:340-341`.
 
@@ -3017,6 +3035,201 @@ Three smaller items in the same territory:
 **Why held:** all four are edits to `.claude/CLAUDE.md`, `eslint.config.js` or eight source
 files, in a checkout five concurrent composers have loaded; the CLAUDE.md and lint-config edits
 in particular change what every running session and the operator's editor believe.
+
+---
+
+## 76. `verify_document` verifies against the key printed inside the file it is checking
+
+**From:** [`document-signing`](./golden-paths/document-signing.md) §0, §7.A, §7.B.
+
+`src/commands/signing/mod.rs:196-198` calls
+`identity::verify_signature(&sidecar.signer.public_key, &file_bytes, &sidecar.signature)`.
+Both arguments come from `input.sidecar_json`, pasted into a textarea
+(`DriveVerifyDialog.tsx:132-139`). There is no call to
+`peer_id_from_public_key_b64` (which `identity.rs:81-86` documents as **MUST**
+for untrusted pairs) and no `get_trusted_peer` lookup. A forged sidecar made with
+a fresh keypair returns `valid: true`, and `DriveVerifyDialog.tsx:213-217` renders
+the sidecar's own `display_name` next to a green "Valid signature".
+
+Measured: **5 verification call sites; this is the only one that neither binds
+id↔key nor consults the trust store.** `bundle.rs:571-599` ignores the embedded
+key entirely and verifies against the stored one; `enclave.rs:222-244` binds and
+then checks `trusted_peers`; `p2p/protocol.rs:277-303` binds and hard-rejects.
+`enclave.rs:222-228`'s comment enumerates three siblings that do this check — and
+does not mention this one.
+
+**Fix:** (a) bind `peer_id_from_public_key_b64(sidecar.signer.public_key)` against
+`sidecar.signer.peer_id`; (b) look the id up in `trusted_peers`, honour
+`is_revoked()`, verify against the **stored** key; (c) add a `signer_trusted`
+field to `VerifyDocumentResult` — the sibling verifiers both return two booleans
+and this one returns one, so the UI has no vocabulary for "valid but unknown".
+
+**Why held:** changes what a security surface reports. Fixing (a)+(b) without (c)
+turns today's false green into a permanent red, because `trusted_peers` holds
+**0 rows** and there is no adoption path from a sidecar (§8.3) — so this must land
+as one coherent change, with the UI state and an adopt-this-key step, not as a
+one-line patch.
+
+---
+
+## 77. Two sensitive-path denylists miss the Windows location they name, and guard the wrong door
+
+**From:** [`document-signing`](./golden-paths/document-signing.md) §7.D, §7.E, §7.F.
+
+Two findings against `path_safety.rs:45-75` / `src/api/signing/index.ts:63-80`:
+
+1. **Both miss `%APPDATA%\gcloud\application_default_credentials.json`** — the
+   real Windows location of the credentials the list names. Only the POSIX
+   `~/.config/gcloud/` spelling is enumerated, in a codebase whose build
+   documentation is Windows-first.
+2. **`is_sensitive_credential_path` is applied to `sign_document` and not to
+   `read_sidecar_file` / `write_sidecar_file`** (`mod.rs:301`, `:313`) — and
+   `sign_document` returns only a hash and a signature, while `read_sidecar_file`
+   returns the file's contents. The denylist guards the door that leaks least.
+
+Both read/write doors *are* meaningfully constrained — `.json` only, and
+`resolve_and_guard` canonicalises then blocks system prefixes, the app-data
+directory (so `master.key` and `personas.db` are out of reach) and anything
+outside `$HOME`. The residue is arbitrary `.json` read/write under the user's home,
+including `~/.claude/settings.json`.
+
+Also measured, and **not** a defect to fix: a 22-fixture differential test of the
+two mirrored lists found **7 disagreements, all of them Rust-broader**. There is
+no fixture TS blocks and Rust allows. The drift is safe today — by luck, since
+nothing tests the parity claim at `path_safety.rs:39-40`.
+
+**Why held:** a security control whose current scope may be deliberate; widening
+a denylist can refuse files the operator legitimately signs.
+
+---
+
+## 78. The nine signing commands do not exist in the default dev build, and the UI does not know
+
+**From:** [`document-signing`](./golden-paths/document-signing.md) §7.H.
+
+`commands/mod.rs:18` and nine `#[cfg(feature = "p2p")]` attributes at
+`lib.rs:2708-2726` gate the whole signing surface behind `p2p`, which is in
+`desktop-full` only (`Cargo.toml:61-62`). `tauri:build:lite` / `tauri:dev:lite`
+build `desktop` — and `.claude/CLAUDE.md` says *"Default to `tauri:dev:lite` for
+daily work."*
+
+The frontend has **no capability guard**: `useSigning` and all three dialogs in
+`src/features/plugins/drive/signing/` render unconditionally, so in a lite build
+the buttons are present and every `invoke` fails with an unknown-command error.
+Shipped installers use `tauri.conf.json` → `desktop-full`, so production is
+unaffected.
+
+**Fix:** surface the compiled feature set to the renderer and gate the signing
+entry points on it, the way other optional surfaces are gated.
+
+**Why held:** changes what a live surface shows.
+
+---
+
+## 79. The billing-account control is a 3-name denylist over a ≥17-name namespace
+
+**From:** [`billing-account-auth`](./golden-paths/billing-account-auth.md) §0, §7.A, §7.B.
+
+`CLI_SUBSCRIPTION_RESERVED_ENV` (`engine/src/cli_process.rs:36-40`) holds
+`ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_BASE_URL`. The documented
+credential-resolution order for the Claude CLI continues past those three:
+`ANTHROPIC_PROFILE` (selects a different org/workspace, and outranks the layer
+below it), the five Workload-Identity-Federation variables, and
+`ANTHROPIC_CONFIG_DIR` (which chooses *which profile store on disk* is read) —
+plus the Bedrock/Vertex switches, which move billing to another vendor entirely.
+
+**Measured: 14 such names, 0 occurrences across every `.rs`, `.ts`, `.tsx`,
+`.mjs`, `.json`, `.toml` and `.md` file in the repository.** Any of them present
+in the environment the app inherited at launch reaches every spawned child
+untouched. The three that *are* listed are the three that produce a visible
+symptom ("Credit balance is too low"); the ones that silently bill a different
+valid account produce none.
+
+Second half: the vault-injection guard at `engine/runner/credentials.rs:904`
+checks the composed env **name** against the same list, but a vault credential's
+field key is operator-chosen free-form text. The repo's own test pins this —
+`credentials.rs:1187-1188`, *"A sibling non-reserved field still injects — the
+guard is selective."*
+
+**Fix:** derive the list from the vendor's documented resolution order with a
+dated provenance comment (§8.5), and convert the injection guard from a denylist
+to an allowlist of names a credential may bind to.
+
+**Why held:** changes what the app strips from the operator's own environment,
+and could break a deliberate local setup. This is explicitly the runbook's
+"security control whose current setting may be deliberate".
+
+---
+
+## 80. Six spawn sites bill an unpinned account, three behind a loop that looks like the guard
+
+**From:** [`billing-account-auth`](./golden-paths/billing-account-auth.md) §0.1, §0.2, §7.C.
+
+Hand-verified, each opened: `artist/mod.rs:676`, `standards_scan.rs:225`,
+`revitalize.rs:249`, `project_tracking/consolidator.rs:354`, `ocr/mod.rs:579`,
+`ocr/mod.rs:596` spawn the Claude CLI without `force_subscription_auth` or a
+`CLI_SUBSCRIPTION_RESERVED_ENV` loop.
+
+**Three of them run `for key in &cli_args.env_removals { cmd.env_remove(key); }`**
+— which strips `CLAUDECODE`, `CLAUDE_CODE` and three `DISABLE_PROMPT_CACHING*`
+names (`cli_args.rs:184-199`) and **no auth variable at all.** A reviewer looking
+for "does this strip the environment" finds a strip loop.
+
+Separately, `src/companion/athena_reaction.rs` calls `force_subscription_auth` at
+`:567` and applies `env_overrides` at `:579-580` — inverting the contract stated
+at `cli_process.rs:44` (*"Call AFTER applying any env overrides so nothing can
+re-introduce them"*). **Latent, not live**: no `ANTHROPIC_*` override is emitted
+today, so nothing is currently re-introduced. The next override added makes it
+live silently. Two independent implementations found this site and only this site.
+
+**Fix:** route all six through `spawn_headless_claude` — whose own comment
+(`cli_process.rs:305-310`) already claims it *"closes that gap for every caller,
+with no opt-out"* — and move the strip inside the constructor so ordering cannot
+be got wrong (see that path's §9.1).
+
+**Why held:** touches the money path on six live code paths at once.
+
+---
+
+## 81. Token counts are zero in 2,188 of 2,188 executions — and this corrects item 24
+
+**From:** [`billing-account-auth`](./golden-paths/billing-account-auth.md) §7.D, §12.1.
+
+Measured against `purge-backup-2026-08-17/personas.db`:
+
+| column | rows > 0 | of |
+|---|---:|---:|
+| `cost_usd` | **1,970** | 2,188 |
+| `cache_read_tokens` | **585** | 2,188 |
+| `input_tokens` | **0** | 2,188 |
+| `output_tokens` | **0** | 2,188 |
+
+`SUM(cost_usd)` = **$2,036.2571**.
+
+**This overturns item 24's headline.** That entry records *"every run records
+$0"* and cites "$2,036.26 of actual spend" as the figure the ledger failed to
+capture. The $2,036.26 **is the sum of the ledger column itself** — cost is
+recorded, in 1,970 of 2,188 rows. The broken half is tokens.
+
+The cause is six lines of `engine/src/parser.rs`: `total_cost_usd` (`:339`),
+`total_input_tokens` (`:340`) and `total_output_tokens` (`:341`) are read
+top-level with no `usage` fallback, while the cache-token reads immediately below
+(`:346-370`) consult `usage` first — and those are the ones with data. **Within a
+single struct literal, the fields that consult `usage` are populated and the
+fields that do not are zero.**
+
+Confirmed by a second parser of the same event:
+`db/src/repos/llm_spend.rs:100-101` reads `usage.input_tokens` and its table has
+**85 of 89 rows populated**.
+
+**Fix:** give `:340-341` the same `usage`-first fallback the cache fields already
+have.
+
+**Why held:** one line per field and non-destructive, but it changes what a live
+cost surface displays while the operator is watching it. Also note the
+consequence while it is unfixed: any spend ceiling denominated in **tokens**
+compares against zero on every row and can never fire (cost-denominated ceilings
+are unaffected).
 
 ---
 

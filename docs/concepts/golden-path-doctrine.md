@@ -373,6 +373,34 @@ spine yields under 200 leaves or the link scan finds none.
   attribute at all**, so only a filename rule sees it.
 - Never print a secret value. Shape, location, count only — not even a prefix.
 
+### A headline that conjoins two findings inherits the weaker one's truth value
+
+Measured 2026-08-17. Deferred-fix **#24** was titled *"Every run in the app's
+history records $0 **and** zero tokens"*. The token half is true and severe —
+`input_tokens`/`output_tokens` are 0 on 2,188 of 2,188 rows. The money half is
+**false**: `cost_usd` is populated on 1,970 of those same rows, summing to
+$2,036.2571.
+
+The tell was inside the entry the whole time. It cited *"against **$2,036.26** of
+actual spend"* as the amount the app had failed to capture — and that figure **is
+the sum of the column being called empty**. The entry read its refutation out of
+the database, wrote it down, and drew the opposite conclusion.
+
+Two rules:
+
+1. **Conjoined headlines are unfalsifiable in practice.** "$0 and zero tokens"
+   reads as one finding, so a later reader who confirms the token half considers
+   the entry confirmed. **Split a claim per column, per table, per mechanism** —
+   one finding, one headline, one number that can be checked on its own.
+2. **A number you cite as the size of a gap must come from outside the gap.**
+   If the "uncaptured" total is computed from the field you say is uncaptured,
+   you have measured the thing you are claiming does not exist. Name the source
+   of every headline number: which table, which column, which query.
+
+The register entry stands, retitled, with the money half struck and the token
+half intact — because deleting it would lose the real defect along with the
+wrong one.
+
 ### A citation is a claim about a namespace, and the namespace is usually implicit
 
 Measured 2026-08-17, sweeping the corpus for citations to files that no longer
