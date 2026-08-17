@@ -1193,6 +1193,21 @@ leaf.** That is a real result and it narrows the blast radius considerably — t
 behind `#[requires(privileged)]` IPC or behind the companion's approval machinery. Which is why §0 is
 about the approval machinery.
 
+> **"Zero take a query string" is FALSE, corrected 2026-08-17 by
+> [inbound-endpoint-surface](./inbound-endpoint-surface.md).** Four handlers in that file take
+> `Query<…>` — `patterns_index` (`:202`), `patterns_consult` (`:232`), `list_kpis` (`:620`) and
+> `list_use_cases` (`:1118`) — and **the module's own header documents one of them**
+> (`//! GET /kpis/{project_id}?status=proposed`, `dev_tools_http.rs:21`).
+>
+> **The conclusion above nevertheless holds, and that is the instructive part.** All four parameters
+> land in `repos/dev_tools.rs` calls that bind `?1`/`?2`, and `resolve_scope` reads them as
+> workspace/project ids — so no caller-authored SQL reaches this leaf, exactly as stated.
+> **A false premise whose conclusion survives is the hardest kind to notice, because nothing
+> downstream ever contradicts it**, and this one was carried forward into a later brief as fact.
+> The app-wide query surface is **7 axum `Query<…>` extractors** plus one hand-rolled
+> `url.query_pairs()` parser in the OAuth callback — and the hand-rolled one is the only query
+> surface in the app carrying an authentication value.
+
 **4. "The doctrine's first place types cannot reach is *inside a SQL string literal*. This leaf is
 that hazard's home. Test whether the console's own queries are checkable at all." — confirmed, and
 the honest answer is worse than the doctrine's, in a way that changes the prescription.** In the

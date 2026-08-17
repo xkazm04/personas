@@ -705,7 +705,7 @@ both replace a sentence with something a machine reads.
 | `POST /dev-tools/export-context-map` | → `write_context_map_artifacts` — **rewrites `context-map.json` and `CLAUDE.md` on disk** |
 | `POST /dev-tools/retire-contexts`, `/dedupe-contexts`, `/dedupe-context-groups`, `/prune-nonsource-contexts`, `/merge-context-groups`, `/consolidate-contexts` | Six destructive context mutations |
 | `POST /dev-tools/kpi-decision`, `/kpi-update`, `/kpi-rebind`, `/use-case-decision`, `/patterns/propose`, `/kpi-sim/ingest` | Six write doors into the Factory data model |
-| `GET /dev-tools/projects`, `/contexts/…`, `/kpis/…`, `/use-cases/…`, `/patterns/…` (15 reads) | **Verified live: 200, 11,672 bytes, no credential** |
+| `GET /dev-tools/projects`, `/contexts/…`, `/kpis/…`, `/use-cases/…`, `/patterns/…` (**13 GET-serving paths and 19 POST-serving — 32 method handlers on 31 registrations**; this cell said "15 reads" until 2026-08-17, understating the write side, corrected by [inbound-endpoint-surface](./inbound-endpoint-surface.md)) | **Verified live: 200, 11,672 bytes, no credential** |
 | `POST /fleet/hooks/{event}` (`hooks.rs:37`) | Mutates fleet session state from an unauthenticated body; the URL path is the event selector |
 | `POST /project-tracking/cli-event` (`push.rs:54`) | Injects an event and forces an out-of-cadence consolidator run (LLM spend), debounced at 5 min/project |
 

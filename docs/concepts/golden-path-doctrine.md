@@ -194,6 +194,17 @@ had the broken form.
 When you fix a defect class, enumerate the places that need the behaviour, not
 the places that exhibit the bug.
 
+**A false premise whose conclusion survives is the hardest kind to notice.**
+`sql-console` §12.3 reported *"all 31 `.route(` registrations enumerated; zero
+take a query string"* and concluded the unauthenticated transport does not reach
+its leaf. **Four of those handlers take `Query<…>`** — and the module's own
+header documents one of them. The conclusion was still right, for a reason the
+premise never mentioned: every parameter binds as `?1`/`?2`. So nothing
+downstream ever contradicted the false half, and a later brief carried it
+forward as fact. **When a measurement supports a conclusion you already believe,
+that is when to re-run it** — a wrong number that agrees with you is invisible
+until someone measures the same thing for a different reason.
+
 **Agreement between two implementations is not soundness — and composition is
 where it breaks.** Beyond the earlier cases, one pair agreed on a total of 34
 and disagreed on *membership*, because a consuming regex (`-> Option<[\s\S]{0,700}?serde_json`)

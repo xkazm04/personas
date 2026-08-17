@@ -1394,6 +1394,172 @@ device filter its sibling documents as essential (`remote_commands.rs:377`).
 
 ---
 
+## 37. One unlabelled checkbox above a 25-row page selects 78 — or 1,306
+
+**Where:** `PersonaOverviewPage.tsx:180-182,:307-309`; `DataGrid` header control
+at `:257-277`; `KnowledgeTree.tsx:197-204`.
+
+**What is measured**, executed three ways on the operator's own data:
+
+| surface | rows the user can **see** | ids the action receives | |
+| --- | ---: | ---: | --- |
+| **Agents → All Personas**, one click on the header checkbox | **25** | **78** selected → **77** sent to `bulk_delete_personas` | **3.12×** |
+| **Knowledge Library**, same click, standing inside one branch | 25 on the page / 107 in the branch | **1,306** | **52.2×** |
+| **Overview → Reviews**, three scrolled pages then one row verdict | 40 after reload | **120** iterated, **40** called, **80 silently reported approved** | — |
+
+**Nothing here is a count bug.** Every number rendered is arithmetically
+correct about the thing it names. The defect is that **the number and the action
+are computed from two different derivations of one selection, and only one of
+them was ever reconciled with reality.**
+
+The Agents control is a bare 16-pixel `<div onClick>` with a tick inside — **no
+label, no count, no `role`, no `aria-checked`, no text of any kind** — sitting
+directly above a body that is `data.slice((page-1)*25, …)`. Its `onSelectAll` is
+`new Set(filteredData.map(p => p.id))`: the whole filtered set, every page.
+
+**And those are the same 77 ids** that item 31 measured as **15,958 rows across
+20 tables**. Put the two findings together and the sentence is: *a control with
+no text on it, whose scope is 3.12× what is visible, is the front door to the
+largest destructive operation in the product.*
+
+**Why held:** labelling the control and reconciling the two derivations both
+change a destructive front door mid-use. This is the item where a careless fix
+is worse than the defect.
+
+---
+
+## 38. The trending shelf is sorted by a counter that is zero for 90% of installs
+
+**Where:** `db/src/repos/communication/reviews.rs:607-645`;
+`commands/design/template_adopt.rs:604`.
+
+**What is measured:** `increment_adoption_count` bumps a counter and writes an
+audit row in one transaction, both keyed on `test_case_name` — **the display
+name**. Its two callers disagree about what they pass: one passes the display
+name, the other passes the **slug**, from a variable whose own tracing field one
+line above reads `template_id = %template_name`.
+
+Replayed over all **160** real adoptions on this install:
+
+- **144 (90.0%) would match zero rows** — a silent no-op, `.ok()` swallowing the
+  miss.
+- The **same 144** have `adoption_log.source_review_id` NULL — *the app's own
+  record of the miss*, written 59 days ago by different code than my replay,
+  which rules out "the catalog changed since".
+- The nine templates the operator adopted **17 times each** — `code-reviewer`,
+  `docs-steward`, `release-manager`, `security-sentinel`, `solution-architect` —
+  all read **`adoption_count = 0`**.
+- Of the 16 that *did* resolve, **7 now read 0 again** with `last_adopted_at`
+  NULL.
+- Total `adoption_count` across all 113 seed rows today: **9**.
+
+`TrendingCarousel` sorts by `adoption_count DESC`. **The shelf is ordered by a
+number that is zero for 90% of what was installed.**
+
+**Also on this leaf:** of nine shipped catalogs, **two record which version an
+installed copy came from** — one writes the answer into a file nothing reads,
+the other writes the same constant into all 316 rows. And **22 stale skill
+directories sit in `src-tauri/resources/skills` right now**, retired 2026-08-04,
+already copied into `target/debug/skills` and mapped into the installer.
+
+**Why held:** correcting the key changes what the gallery shows and would make
+counters jump on 144 historical adoptions.
+
+---
+
+## 39. Three loopback ports, 116 routes, 82 needing no credential
+
+**Where:** enumerated from the OS, read-only, during composition.
+
+**What is listening on this machine right now**, all one process:
+
+```
+127.0.0.1:9420    webhook + management + pairing      34 routes
+127.0.0.1:17400   local_http (5 nested routers)       36 routes
+127.0.0.1:17320   test-automation bridge              46 routes
+                                                     ---
+                                                     116 routes
+```
+
+**82 of the 116 require no credential of any kind. One body-size limit exists in
+the whole application and it covers three of the 116. One audit table exists and
+it holds one row, written thirteen months ago to a route that no longer
+exists.**
+
+`local_http` on :17400 carries **zero `.layer(` calls** on the listener or on any
+router mounted into it — no auth, no CORS, no body limit, no timeout, no audit.
+There is no single place a fix could be applied.
+
+**The finding that changes how this surface can ever be audited:** which of two
+route tables port 9420 serves **is decided by a startup race**.
+`background.rs:869-888` calls `start_webhook_server_with_management` when
+`try_state::<Arc<AppState>>()` resolves and silently falls back to
+`start_webhook_server` — **3 routes instead of 34** — when it does not. Nothing
+logs which one you got; the only observable difference is that `/api/personas`
+answers **404 instead of 401**. **The route table is not a property of the
+source, it is a property of a particular boot.** No static artifact can be
+correct about this port.
+
+**A version that is wrong by a major release:** `test_automation.rs:939` answers
+`"version":"0.2.0"` while the app is **1.1.0** in `tauri.conf.json`,
+`package.json` and `Cargo.toml` alike. The correct mechanism —
+`env!("CARGO_PKG_VERSION")` — is **already used twice in this tree**, on two MCP
+`initialize` handlers. The identity answer exists on two routes; the three routes
+whose whole job is identity type it in by hand.
+
+**Why held:** adding auth or a body cap to a live loopback transport the operator
+drives from a terminal is the runbook's named class. The version constant is a
+one-line fix and is the safest thing here.
+
+---
+
+## 40. Nine tile positions show a number that is not true, across ≥7,318 renders
+
+**Where:** `SLADashboard.tsx:138`; `TraceSummary.tsx:63`;
+`useObservabilityData.ts:98`; `inspectorShared.tsx:40-41`.
+
+**What is measured — the population first:** **299 metric-tile render sites in 71
+files, resolving to 68 distinct component definitions under 45 names.** `Stat`
+alone names 12 different components; `StatCard` names 6. Plus **52 hand-rolled
+inline tiles** in 45 files. Adoption swings **6.1× on the denominator** —
+22.7% against card-shaped tile sites, **3.7%** for the one catalogued primitive
+against every labelled number on a card.
+
+**Nine tile positions are showing a false number right now, across at least
+7,318 individual renders**, because the token columns are permanently zero (item
+24). **585 of those executions carry cache tokens > 0** — positive proof the
+traffic happened.
+
+**The discriminator, raced against its rival and inverted.** The expected cause
+was call-site carelessness; only **10 of 299** sites use `?? 0`. The structural
+cause: **of 81 `label / value` contracts, 6 (7.4%) can express "not measured" —
+and neither designated primitive is among them.** `StatCard.value: ReactNode`
+renders `null` as *nothing*; `KpiTile` does `<Numeric>{value ?? ''}</Numeric>` →
+an empty string.
+
+**The guard is per-tile, not per-grid, found twice independently.**
+`SLADashboard.tsx:74-88` guards the Success-rate tile with a seven-line comment
+— *"a red 0.0% falsely screams total failure when the truth is no data"* — and
+renders `"—"`. **The Avg-latency tile beside it renders `"0ms"`** at the default
+30-day window. `TraceSummary.tsx:52` guards Cost → `-`; twelve lines down, `:63`
+renders Tokens as `0` on **2,942 of 2,942**. And `useObservabilityData.ts:98`
+returns `'0'` for an unmeasured success rate, **rendered green**, thirteen lines
+above a comment refusing to fabricate a *delta* on exactly those grounds.
+
+**The type experiment is already in the repo, one folder apart:**
+`KpiTrend.invertColor` is **required** → 4/4 correct polarity;
+`StatCard.delta.direction` is permitted → hardcoded up-is-green at every site.
+
+**Why held:** every change here alters a number on a dashboard the operator
+reads. The real fix is item 24, upstream.
+
+**Cleared, and worth recording:** the two cost tiles **agree exactly** on
+2,062/2,062 paired runs — `SUM(cost_usd)` is **$2,036.26** and is *correct*.
+Only tokens are zero. `Numeric` is not the defect. `computeTrends` correctly
+refuses to fabricate deltas.
+
+---
+
 ## What *was* applied, and what it changes at runtime
 
 For completeness, since "no destructive applies" is now the rule. None of these
