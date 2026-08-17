@@ -5106,6 +5106,55 @@
         "matches": 43
       },
       "floor": 900
+    },
+    {
+      "id": "unreplayed-stream-attach",
+      "goldenPath": "docs/concepts/golden-paths/snapshot-plus-stream.md",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\b(?:useTauriEvent|useTypedTauriEvent)\\s*[<(]",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A backend stream attached through a hook that neither buffers events arriving before listen() resolves nor reports how many it dropped. Proxy for: a stream attachment whose pre-attach window is neither buffered nor counted."
+      },
+      "exclude": [
+        {
+          "path": "src/hooks/useTauriEvent.ts",
+          "reason": "the primitive itself — its two definitions are the anchor, not call sites"
+        }
+      ],
+      "baseline": {
+        "files": 20,
+        "matches": 34
+      },
+      "floor": 4000
+    },
+    {
+      "id": "leaked-owned-exec-dir",
+      "goldenPath": "docs/concepts/golden-paths/agent-workspace-isolation.md",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "CliProcessDriver::spawn_temp(?:_no_stderr)?\\s*\\([^;]{0,300};(?:(?!cleanup_dir|\\.finish\\s*\\()[\\s\\S]){0,2500}?(?:\\?\\s*;|return\\s+Err)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A CliProcessDriver that OWNS its temp workspace (spawn_temp sets owns_exec_dir: true) reaching an early return before any cleanup_dir()/finish() — the directory is abandoned. Proxy for: a directory whose removal is a caller's obligation rather than a value's lifetime."
+      },
+      "baseline": {
+        "files": 7,
+        "matches": 9
+      },
+      "floor": 800
     }
   ]
 }

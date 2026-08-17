@@ -3725,3 +3725,118 @@ broken literal finds every copy of that literal and nothing else.**
 - **`teams/sub_teamMemory/components/timeline/MemoryTimeline.tsx:132`** —
   `` key={`manual-${i}`} `` over an array built by interleaving and then reversing, so inserting a
   run group above renumbers every manual group below it.
+
+---
+
+## 96. `npm run clean:worktrees` finds 19.79 GB of app-created worktrees and prints "Nothing to remove"
+
+> Numbers 96–98 were appended by the wave-2026-08-17-B composer in one atomic append.
+> If a sibling composer claimed the same numbers concurrently, renumber — the entries
+> are self-contained and order-independent.
+
+Three directories sit in `.claude/worktrees/` on the operator's machine — `athena-dev-515e976a`
+(5.34 GB), `athena-dev-afc86f6c` (5.44 GB), `athena-dev-fe5c433a` (9.00 GB). All three were created
+by the **app**, not by a CLI session: `dev_mode::create_dev_worktree`
+(`src-tauri/src/companion/dev_mode.rs:662-673`). None is registered in `git worktree list
+--porcelain`; none has a `.git` file.
+
+Measured 2026-08-17 by running the GC twice:
+
+```
+node scripts/worktree-gc.mjs                    →  0 removable · reclaims ~0.00 GB · "Nothing to remove."
+node scripts/worktree-gc.mjs --include-orphans  →  3 removable · reclaims ~19.79 GB
+```
+
+`package.json:81` maps `clean:worktrees` to the first form. `removable` (`worktree-gc.mjs:200`)
+requires `dirty === 0 && merged && age > DAYS`, and an orphan has `dirty === null` and
+`merged === null`, so it can only be reclaimed through the separate `INCLUDE_ORPHANS` branch
+(`:188-195`, gated at `:43`).
+
+**Root cause:** `dev_mode::prune_worktree` (`:920-928`) runs `git worktree remove <path>` **without
+`--force`**, which git refuses for a worktree holding untracked files — and every one of these holds
+`node_modules`. The failure is swallowed. A later `git worktree prune` (`worktree-gc.mjs:283`, or
+`scripts/test/longitudinal.mjs:66`, which runs one unconditionally) drops the registry entry, and the
+directory becomes an orphan. **Four of the five `worktree remove` sites in the tree already pass
+`--force`** (`approval_exec_dev.rs:861-864`, `workspace.rs:405-408`, `:422-426`, `:684-687`); the one
+on the success path does not.
+
+**Fix, not applied:** (a) `--force` in `prune_worktree`, and surface its failure rather than
+discarding it; (b) make `--include-orphans` the default in `scripts/worktree-gc.mjs` with an
+`--exclude-orphans` opt-out. Both change what a destructive script does, so both are deferred.
+Detail: [`agent-workspace-isolation.md`](./golden-paths/agent-workspace-isolation.md) §0, §7.1, §7.2.
+
+---
+
+## 97. `CliProcessDriver` declares it owns a temp directory and has no `Drop` — one call site leaks on 100% of runs
+
+`src-tauri/engine/src/cli_process.rs:529-547` — `spawn_temp` creates `%TEMP%/<prefix>-<uuid>` and
+sets `owns_exec_dir: true`. The only code honouring that flag is `cleanup_dir()` (`:700-705`),
+reachable from `finish()` (`:708-712`) or an explicit call. `kill()` does not call it. `?` does not
+call it. **There is no `Drop` impl** (all 25 `impl Drop for` sites in `src-tauri/` enumerated; no
+child-owning struct has one).
+
+Measured: **14 construction sites; 9 reach an early return before any cleanup** (census rule
+`leaked-owned-exec-dir`, 7 files / 9 matches, precision 9/9 hand-verified). One of them —
+`src-tauri/engine/src/cli_capabilities.rs:68` — calls `driver.kill().await` at `:72` and `:97` and
+**never** calls `finish()` or `cleanup_dir()` on any path.
+
+Confirmed on disk, 2026-08-17, by enumerating all 87,149 `%TEMP%` entries and bucketing by creator
+prefix: `personas-capprobe-*` = **132 directories**; every other owning-driver prefix
+(`personas-auto-triage`, `personas-llm-eval`, `personas-test-coord`, `personas-test-exec`,
+`build-cap`, `build-prose`, `build-clarify`, `build-test`, `test-summary`,
+`personas-genome-critique`, `personas-assignment-match`, `personas-assignment-decompose`) = **0**.
+One site out of fourteen leaks, and it leaks every time.
+
+**Fix, not applied:** `impl Drop for CliProcessDriver { fn drop(&mut self) { self.cleanup_dir(); } }`.
+`cleanup_dir` is already `&self`, `owns_exec_dir`-guarded and idempotent. The repo has the pattern
+twice already (`build_session/runner.rs:109-146` `SessionExecDir`; `cli_mcp_config.rs:348-351`
+`SidecarScrubGuard`) and neither has ever appeared on disk. Deferred because a `Drop` impl changes
+what runs when a live app's handles go out of scope. Interim, lower-risk half: add
+`driver.cleanup_dir()` after the `kill()` at `cli_capabilities.rs:97`.
+Detail: [`agent-workspace-isolation.md`](./golden-paths/agent-workspace-isolation.md) §7.4, §7.5, §9.1.
+
+---
+
+## 98. Boot recovery declares 74 executions failed without ever asking whether the process is alive — and there is nothing it could ask with
+
+`src-tauri/src/engine/mod.rs:703-733`. `recover_stale_executions` takes every `running` row and writes
+`status: Failed, error_message: "App restarted while execution was running"`. There is no liveness
+check in the loop.
+
+Measured against the 2026-08-17 purge backup: **74 of 2,188 executions** carry that marker (3.4%).
+*(Historical — those rows were deleted from the live database by the authorized purge on 2026-08-17;
+the reference file is `%APPDATA%\com.personas.desktop\purge-backup-2026-08-17\personas.db`.)*
+
+There is nothing it could check with, and that is the deeper defect. Interrogating **all 244 tables**
+with `PRAGMA table_info` finds exactly **one** column holding an OS process id —
+`build_sessions.cli_pid` (`db/src/migrations/schema.rs:1489`) — with **12 rows and 0 non-null**; its
+three writers (`build_session/mod.rs:196`, `runner.rs:1921`, `events.rs:80`) all write `None` or
+`Some(None)`, and no site in 963 `.rs` files writes a real pid into it. `fleet_sessions` has no pid
+column at all (`incremental.rs:6603-6631`) and rehydration restores `child_pid: None`
+(`fleet/persist.rs:174`). Every other process registry is in memory.
+
+Meanwhile the children survive: `tokio::process::Child` does not kill on drop (this repo says so at
+`companion/brain/oneshot.rs:52-53` and `commands/fleet/external.rs:189-190`), no child-owning struct
+has a `Drop`, only **17 of 112** OS-command construction sites set `kill_on_drop(true)`, and the app's
+sole exit hook (`lib.rs:3755-3763`) stops Bun dev servers and nothing else. So a row can say `Failed`
+while its `claude` child is still running, still writing to the workspace, still spending tokens.
+
+And PID reuse is unguarded where a pid *is* used: **`start_time()` and `run_time()` appear zero times
+in 963 `.rs` files**, and of the four `sysinfo` process lookups in the tree, three act on the process
+(`.kill()`, `.is_some()`) without reading a single identity field and **zero** read one first
+(`fleet/headless.rs:67`, `fleet/process_scan.rs:133`, `dev_tools/competitions.rs:990`). The strongest
+identity check in the codebase is on the **frontend**
+(`FleetProcessScanner.tsx:65-75`: `p.pid === pid && p.cmd === target.cmd && p.cwd === target.cwd`).
+
+**Fix, not applied:** (a) `recover_stale_executions` writes an *unproven* state with a
+`state_reason` a human can act on, rather than `Failed` — the shape `fleet/persist.rs:263-299`
+already uses; (b) `kill_on_drop(true)` on the child-owning spawn sites that are not deliberately
+outliving the app; (c) register the five uncovered registries with the `RunEvent::Exit` hook;
+(d) either populate `build_sessions.cli_pid` with a `(pid, start_time)` identity or drop the column;
+(e) a CI check asserting no `*pid*` column exists without a sibling freshness column (it would report
+exactly one finding today); (f) correct the stale `sysinfo` comment at `Cargo.toml:136-138`, which
+says the app "never enumerate[s] processes" while `process_scan.rs:60-62` enumerates the whole table.
+The repo already wrote the correct doctrine once, with its reasoning, at
+`src-tauri/src/daemon/lock.rs:29-32`: *"No PID-based liveness check. Heartbeat freshness is the sole
+liveness indicator."* Nothing else follows it.
+Detail: [`os-process-reconciliation.md`](./golden-paths/os-process-reconciliation.md) §0, §7.1-§7.7, §9.
