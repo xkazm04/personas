@@ -11,6 +11,17 @@
  *    a `>` outside `(?:=>|[^<>])`. If your delimiter is `<` or `>`, list `=>`,
  *    `>=`, `<=` before you run."
  *
+ * KNOWN LIMITATION (measured 2026-08-17 by two Mode-2 batches independently):
+ * this matches OPEN TAGS. It does not descend into attribute-expression bodies
+ * — `onPointerDown={(e) => { … }}` and nested JSX inside a prop (`icon={<X/>}`)
+ * are invisible to it. Two consequences observed: (1) a composer's control regex
+ * built on `[^<>]` returned 0 against a known-true site because the arrow body
+ * contains `>`; (2) the instrument silently counted every component tag when
+ * called with a bare string instead of the `{names}` shape — thirteen rows of
+ * plausible identical numbers. The guarantee is generic-safe tag DETECTION, not
+ * whole-file JSX parsing, and not protection against being invoked wrongly.
+ * Verify a sample; a `{names}`-shaped call is required.
+ *
  * Three independent composers hit this. The direction of the error is what
  * makes it expensive: a tag that closes early under-reports exactly the
  * CAREFULLY-TYPED call sites — the ones a reviewer is least likely to suspect

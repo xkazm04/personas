@@ -4616,6 +4616,56 @@
         "matches": 3
       },
       "floor": 4000
+    },
+    {
+      "id": "document-scoped-drag-loop",
+      "goldenPath": "docs/concepts/golden-paths/scroll-and-resize-affordances.md",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?:document|window)\\s*\\.\\s*addEventListener\\s*\\(\\s*['\"](?:pointer|mouse|touch)move['\"]",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a continuous-drag move listener attached straight to document or window. PROXY FOR the stack-free condition: a drag's subscription lifetime is bound to the gesture completing rather than to the element that owns the gesture, so the listener outlives an interrupted drag and the affordance owns no teardown of its own. The compliant expression of the same gesture is element-scoped pointer capture, which the browser tears down on lostpointercapture."
+      },
+      "baseline": {
+        "files": 9,
+        "matches": 9
+      },
+      "floor": 4000
+    },
+    {
+      "id": "ungated-plugin-destination-write",
+      "goldenPath": "docs/concepts/golden-paths/plugin-surface-shell.md",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\bsetPluginTab\\s*\\(\\s*['\"\\w]",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a write that lands the user on a plugin surface. PROXY FOR the stack-free condition: a plugin's own enable/disable state is consulted by the chrome that lists plugins and by nothing that mounts one, so every arrival door is a bypass of the gate the product presents to the user."
+      },
+      "exclude": [
+        {
+          "path": "src/test/automation/bridge.ts",
+          "reason": "the test-automation IPC bridge deliberately drives every destination without the UI; gating it would defeat the harness."
+        }
+      ],
+      "baseline": {
+        "files": 14,
+        "matches": 21
+      },
+      "floor": 4000
     }
   ]
 }
