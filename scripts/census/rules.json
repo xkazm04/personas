@@ -5085,6 +5085,27 @@
         "matches": 12
       },
       "floor": 4000
+    },
+    {
+      "id": "unflagged-string-truncation",
+      "goldenPath": "docs/concepts/golden-paths/tool-result-contract.md",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "format!\\s*\\(\\s*\"\\{[^\"}]{0,40}\\}(?:\\.\\.\\.|\\u2026|\\[truncated[^\"]{0,60})\"",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A string truncation whose ONLY record of the cut is an ellipsis spliced into the payload. The caller gets a String and cannot ask whether anything was removed, so a downstream redactor, parser or size check sees a value that looks whole. Prefer (String, bool) — personas_engine::tool_outcome::cap_output is the shape."
+      },
+      "baseline": {
+        "files": 37,
+        "matches": 43
+      },
+      "floor": 900
     }
   ]
 }
