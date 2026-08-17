@@ -1,6 +1,6 @@
 ---
 name: research
-version: 1.2
+version: 1.4
 description: Extract actionable improvements for a project from external sources (video, blog, article, raw text). Scores ideas against the codebase, buckets into Code / Template / Credential, and persists findings to an Obsidian memory vault.
 argument-hint: "[source or question]"
 category: Maintenance
@@ -269,6 +269,37 @@ entire normative contract that produced both shipped findings. Budget the same w
 Phase 2.5 — two or three focused fetches, not a crawl. A 404 on a guessed subpath is cheap;
 guess from the overview's own links rather than from convention.
 
+**An aggregator listing is not the source either — and the word floor will NOT catch it.**
+Distinct trap from the landing page above. Directory and marketplace sites that index
+artifacts hosted elsewhere (skills.sh, plugin/skill registries, awesome-lists, package
+pages, "SKILL.md viewers") render a *rewritten summary* of the artifact, often behind a
+"Show more" toggle that WebFetch cannot expand. What comes back is fluent, adequately
+long, and sails past the <300-word check — while being a paraphrase of the thing you were
+asked to evaluate. Every finding downstream would then be scored against prose the author
+never wrote.
+
+**When the source URL is an aggregator listing for a git-hosted artifact, resolve it to
+the repository before Phase 3.** The listing names the owner/repo; find the real path with
+one call rather than guessing:
+
+```bash
+gh api repos/<owner>/<repo>/git/trees/main?recursive=1 --jq '.tree[].path' | grep -i <artifact-slug>
+gh api repos/<owner>/<repo>/contents/<path> --jq '.content' | base64 -d > .research-cache/<slug>.md
+```
+
+Guessing the path costs a 404 (run 2026-08-13 assumed `skills/<name>/SKILL.md`; the file
+was at `plugins/business-analytics/skills/<name>/SKILL.md`). The tree listing is one call
+and is never wrong. **Fetch every file the artifact splits itself across** — that run's
+SKILL.md was 770 words and pointed at a `references/details.md` carrying another 1,241,
+including all three layout patterns and every worked example.
+
+Tells that a page is a listing rather than the artifact: an installs/stars counter, a
+"Repository:" field, a security-audit badge, a `<slug>` in the URL path that looks like
+`<owner>/<repo>/<artifact>`, or fetched text that describes the content in the third
+person ("The skill covers…", "the full content appears truncated"). Treat any of those as
+a hard signal to go to the repo. `.research-cache` cleanup (Phase 2a) applies to files
+fetched this way too.
+
 ### 2c. Raw text
 Use as-is.
 
@@ -347,6 +378,43 @@ From the source text, extract 5-15 distinct ideas. Each idea must be:
 - A concrete technique, pattern, tool, or recommendation (not opinions or filler)
 - Grounded in a specific quote or timestamp from the source
 - Standalone enough to be evaluated independently
+
+### Compare mode — read the source as a checklist to FAIL, not a menu to shop
+
+When the invocation frames the run as a comparison against an existing module
+("compare X with our implementation of Y", "does this skill help our design",
+"what does this have that we don't") — usually with an explicit *don't adopt it*
+— the default generative reading produces almost nothing. Against a mature
+module, "what could we take from this?" returns ideas already built, and the run
+drifts toward padding the finding count with things the catch table would have
+covered.
+
+**Invert the question. Go principle by principle through the source and ask
+"which of these do we FAIL?"** Extraction is then per-principle rather than
+per-idea: every Do/Don't, every checklist item, every troubleshooting entry
+becomes one candidate whose verdict is `catch` (we honor it, cite where),
+`fail` (a real finding), or `n/a` (different domain — say so, don't score it).
+
+Two things fall out of this that the generative reading misses:
+
+- **The findings come from the source's least glamorous material.** Run
+  2026-08-13 (kpi-dashboard-design vs the KPI module) drew both accepted
+  findings from a one-word checklist bullet ("Time-bound") and an ASCII layout
+  diagram — while the source's SQL, its dashboards and its Streamlit code, the
+  parts that *look* like the substance, were entirely inapplicable. A generative
+  reading gravitates to the code blocks and finds nothing.
+- **The catch table IS the deliverable, and must be stated as such up front.**
+  That run closed 2 findings against 13 catches (~1:6, catch-dominant even by
+  the listicle row's standard). Leading with "your module is ahead of this
+  source on 13 of 15 points, and here are the 2 it isn't" is the honest answer
+  to what was actually asked. Do not bury it under the findings.
+
+Where the source's advice is *worse* than what the repo already does, say so
+and keep the repo's shape — an outside checklist is not automatically the
+higher authority. That run declined the source's "cap the dashboard at 5-7
+KPIs" in favor of surfacing the ranking the schema already stored, because a
+cap hides KPIs while a ranking does not. Record the reasoning; a future run
+re-reading the same source should not have to re-litigate it.
 
 For each idea, capture:
 - `title` — short imperative phrase (<60 chars)
@@ -461,6 +529,21 @@ When the finding spans multiple feature areas (e.g. an execution-runtime change 
 **Step 4 — Drop if redundant.** If the gap doesn't actually exist (the codebase already does this), drop the idea.
 
 **Step 4b — Read backgrounded tool output even when you re-ran it scoped.** A grep that times out and gets backgrounded is usually slow *because it covered more ground*. Re-run it scoped to stay unblocked, but read the original when it lands: on run 2026-08-12 the wide version contained one reference the scoped re-run had missed, which turned a single-module finding into a documented three-instance pattern and then into a shipped-template consequence. A superseded background result is not redundant.
+
+**Step 4c — A capped grep proves presence, never absence.** Any claim of the form
+"the codebase does not have X" must come from an **uncapped** search — no `head -N`, no
+`| head`, no `head_limit` — or from a count (`grep -c`, `output_mode: "count"`). Ripgrep
+and grep emit in path order, not relevance order, so a cap silently truncates exactly the
+file whose name matches your concept: on run 2026-08-17 a `head -8` over `src-tauri/src/`
+reported "no tray icon" because `src/tray.rs` sorted *after* eight `commands/**` matches
+on the word "s**tray**". The run then told the user a subsystem was missing when it was
+present, with the same confidence as its load-bearing claims.
+
+This is the mirror of Step 4b and is easy to miss right after obeying it: that run read
+its backgrounded wide grep to corroborate one absence claim, then made a second absence
+claim one tool call later from a capped result without routing it through the same
+discipline. Presence claims are safe to cap — one hit is one hit. Absence claims are not.
+Before writing "zero hits" into Phase 7, re-run uncapped.
 
 **Step 5 — Grounding check (per finding, before Phase 7).** Every code finding that will be presented as `High` must carry at least one `file_path:line` citation produced by a Read or Grep **in this session** — the line that proves the gap exists (or the host surface the change attaches to). If you can't produce that citation within budget, downgrade to `Medium` + `unverified` per the Phase 4 scoring-honesty rule; don't fabricate an anchor from the context map's file list.
 
