@@ -27,6 +27,7 @@ import { BaseModal } from '@/features/shared/components/modals';
 import { RegistryTab } from '@/features/plugins/dev-tools/sub_skills/registry/RegistryTab';
 import { SkillInfoModal } from '@/features/plugins/dev-tools/sub_skills/SkillInfoModal';
 import { SkillsOverviewPanel } from '@/features/plugins/dev-tools/sub_skills/SkillsOverviewPanel';
+import { useTranslation } from '@/i18n/useTranslation';
 
 import { useQuickDispatch } from './quickDispatch';
 import { QuickDispatchLedger } from './QuickDispatchLedger';
@@ -40,6 +41,8 @@ export function SkillsWorkbench({ slug, initialMode, onClose }: {
   initialMode?: WorkbenchMode;
   onClose: () => void;
 }) {
+  const { t, tx } = useTranslation();
+  const d = t.plugins.dev_tools;
   const wb = useSkillsWorkbench(slug);
   const [mode, setMode] = useState<WorkbenchMode | null>(initialMode ?? null);
   // Registry's skill-name click opens the shared metadata modal; Manage's lives
@@ -59,22 +62,22 @@ export function SkillsWorkbench({ slug, initialMode, onClose }: {
 
   return (
     <BaseModal isOpen onClose={onClose} titleId="skills-workbench-title" size="6xl" portal staggerChildren={false}>
-      <span id="skills-workbench-title" className="sr-only">Skills — {wb.projectName}</span>
+      <span id="skills-workbench-title" className="sr-only">{tx(d.skills_workbench_title, { name: wb.projectName })}</span>
       <div className="flex flex-col h-[calc(100dvh-160px)] min-h-[520px] max-h-[760px]">
         {mode === null ? (
           <>
             <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10 bg-primary/[0.04] flex-shrink-0">
               <Wand2 className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
-              <span className="typo-title truncate">Skills — {wb.projectName}</span>
+              <span className="typo-title truncate">{tx(d.skills_workbench_title, { name: wb.projectName })}</span>
               <span className="ml-auto flex-shrink-0"><WorkbenchCounts counts={wb.counts} /></span>
             </div>
             <div className="flex-1 min-h-0 grid grid-cols-2 gap-4 p-6">
               {/* ── Manage half — enters the full skills board ──────────── */}
               <ChoiceCard
                 icon={Puzzle}
-                title="Manage skills"
-                body="The full skills board: your library beside this repo's skills, with coverage, usage, memory bindings, adopt and share."
-                meta={`${wb.adopt.items.length} to adopt · ${wb.share.items.length} to share`}
+                title={d.skills_workbench_manage_title}
+                body={d.skills_workbench_manage_body}
+                meta={tx(d.skills_workbench_manage_meta, { adopt: wb.adopt.items.length, share: wb.share.items.length })}
                 onClick={() => setMode('manage')}
                 testid="skills-workbench-choose-manage"
               />
@@ -82,7 +85,7 @@ export function SkillsWorkbench({ slug, initialMode, onClose }: {
               {/* ── Dispatch half — live quick-dispatch ledger in place ─── */}
               <div className="relative flex flex-col gap-2 p-5 min-h-0 rounded-card border border-primary/12 bg-secondary/[0.15]">
                 <div className="flex items-start gap-2">
-                  <CardTitle icon={Rocket} title="Dispatch a skill" />
+                  <CardTitle icon={Rocket} title={d.skills_workbench_dispatch_title} />
                   {/* the aimed path: skill × context-group registry */}
                   <button
                     type="button"
@@ -90,12 +93,12 @@ export function SkillsWorkbench({ slug, initialMode, onClose }: {
                     className="ml-auto flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive border border-primary/15 typo-caption text-foreground/70 hover:text-foreground hover:border-primary/35 hover:bg-primary/[0.06] transition-colors focus-ring"
                     data-testid="skills-workbench-choose-dispatch"
                   >
-                    Open the registry
+                    {d.skills_workbench_open_registry}
                     <ArrowRight className="w-3 h-3" aria-hidden />
                   </button>
                 </div>
                 <p className="typo-caption text-foreground/60 leading-snug" style={{ fontWeight: 400 }}>
-                  One click runs a skill via Fleet — it picks its own context. The registry aims at a specific group.
+                  {d.skills_workbench_dispatch_body}
                 </p>
                 <div className="flex-1 min-h-0 overflow-y-auto mt-1">
                   <QuickDispatchLedger model={quick} busySkill={busySkill} onDispatch={dispatchQuick} />
@@ -113,10 +116,12 @@ export function SkillsWorkbench({ slug, initialMode, onClose }: {
                 data-testid="skills-workbench-back"
               >
                 <ChevronLeft className="w-3.5 h-3.5" aria-hidden />
-                Skills
+                {d.skills_title}
               </button>
               <span className="typo-caption text-foreground/30">/</span>
-              <span className="typo-caption font-medium text-foreground">{mode === 'dispatch' ? 'Registry' : 'Manage'}</span>
+              <span className="typo-caption font-medium text-foreground">
+                {mode === 'dispatch' ? d.skills_workbench_crumb_registry : d.skills_workbench_crumb_manage}
+              </span>
               <span className="typo-label text-foreground/40 truncate">· {wb.projectName}</span>
               <span className="ml-auto flex-shrink-0"><WorkbenchCounts counts={wb.counts} /></span>
             </div>

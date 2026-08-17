@@ -229,7 +229,14 @@ pub fn patch_credential_metadata(
     repo::patch_metadata_atomic(&state.db, &id, patch_obj)
 }
 
+/// Enumerate everything that breaks if this credential is deleted.
+///
+/// Privileged for the same reason `delete_credential` below is: this is an
+/// impact preview over a *secret*, listing the personas, rotation policies and
+/// event triggers bound to it. A preview must never be cheaper to obtain than
+/// the action it previews, or reconnaissance costs less than the attack.
 #[tauri::command]
+#[requires(privileged)]
 pub fn credential_blast_radius(
     state: State<'_, Arc<AppState>>,
     id: String,

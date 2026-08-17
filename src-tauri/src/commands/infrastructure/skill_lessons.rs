@@ -304,6 +304,8 @@ pub fn mine_skill_lessons(pool: &DbPool, workspace_id: &str) -> Result<Vec<Knowl
             dedup_key: Some(format!("miner:skill-lesson:{}:{key}", row.skill)),
             confidence: Some(if row.is_redesign { 0.7 } else { 0.55 }),
             extends: None,
+            layer: None,
+            evidence: Vec::new(),
         });
     }
     Ok(out)

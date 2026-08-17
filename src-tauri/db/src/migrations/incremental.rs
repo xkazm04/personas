@@ -158,6 +158,123 @@ fn rebuild_executions_table_with_incomplete_status(conn: &Connection) -> Result<
     Ok(())
 }
 
+/// Count foreign keys on `table` whose parent table does not exist.
+///
+/// SQLite resolves FK targets lazily: `REFERENCES nonexistent(id)` succeeds at
+/// `CREATE TABLE` and only raises `no such table: main.nonexistent` on the first
+/// `INSERT` under `foreign_keys = ON`. `PRAGMA foreign_key_check` is blind to it
+/// on an EMPTY child table — which a table whose every insert fails always is —
+/// so this is the probe that actually sees the defect.
+fn dangling_fk_count(conn: &Connection, table: &str) -> Result<i64, AppError> {
+    let count = conn
+        .prepare(&format!(
+            "SELECT COUNT(*) FROM pragma_foreign_key_list('{}') fk
+              WHERE fk.\"table\" NOT IN (SELECT name FROM sqlite_master WHERE type = 'table')",
+            table.replace('\'', "''"),
+        ))?
+        .query_row([], |r| r.get(0))?;
+    Ok(count)
+}
+
+/// Repoint `mcp_gateway_members`' two foreign keys at the real credentials
+/// table. They shipped as `REFERENCES credentials(id)`; the table is
+/// `persona_credentials`, so every `add_member` INSERT raised `no such table:
+/// main.credentials` and the whole gateway-membership feature has never once
+/// worked. SQLite cannot alter a foreign key in place, so the table is rebuilt.
+///
+/// Follows the `rebuild_executions_table_with_incomplete_status` shape:
+///   - `foreign_keys` OFF in AUTOCOMMIT, before the transaction opens — the
+///     pragma is a documented no-op while a transaction is active.
+///   - recreate from the table's OWN stored DDL with only the FK target
+///     rewritten, so the column set/order is byte-identical to whatever the
+///     live table has and `SELECT *` copies cleanly regardless of any later
+///     `ALTER … ADD COLUMN`.
+///   - replay the index/trigger DDL `DROP TABLE` takes with it.
+///   - assert the row count survives, INSIDE the transaction, so a short copy
+///     rolls back instead of committing data loss. (The table is empty on every
+///     install today — because nothing could ever insert into it — but a
+///     rebuild that assumes emptiness is a rebuild that eats rows the day the
+///     assumption stops holding.)
+fn repoint_mcp_gateway_members_fk(conn: &Connection) -> Result<(), AppError> {
+    let create_sql: Option<String> = conn
+        .query_row(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='mcp_gateway_members'",
+            [],
+            |r| r.get(0),
+        )
+        .optional()?;
+    let Some(create_sql) = create_sql else {
+        return Ok(());
+    };
+
+    let fixed = create_sql.replace(
+        "REFERENCES credentials(id)",
+        "REFERENCES persona_credentials(id)",
+    );
+    if fixed == create_sql {
+        // The stored DDL is not the shape this migration knows how to rewrite
+        // (a hand-edited database, or a future shape). Log rather than abort:
+        // the residue is EXACTLY the state every install is in today, so
+        // continuing is not a regression, while a boot abort would strand the
+        // user with an app that will not start and no in-product restore path.
+        tracing::error!(
+            table = "mcp_gateway_members",
+            "repoint_mcp_gateway_members_fk: stored DDL has an unexpected shape; the \
+             dangling foreign key stays and gateway membership remains broken",
+        );
+        return Ok(());
+    }
+
+    // `mcp_gateway_members` first appears as the table name in
+    // `CREATE TABLE IF NOT EXISTS mcp_gateway_members`; no column name contains
+    // the token, so the first replacement is the one we want.
+    let staged = fixed.replacen("mcp_gateway_members", "mcp_gateway_members_new", 1);
+
+    // Index/trigger DDL to replay after the rename. Auto-indexes (PK / UNIQUE)
+    // carry a NULL `sql` and are recreated implicitly from the new shape.
+    let aux_sql: Vec<String> = {
+        let mut stmt = conn.prepare(
+            "SELECT sql FROM sqlite_master
+              WHERE tbl_name='mcp_gateway_members'
+                AND type IN ('index','trigger')
+                AND sql IS NOT NULL",
+        )?;
+        let rows = stmt.query_map([], |r| r.get::<_, String>(0))?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?
+    };
+
+    let _fk_guard = crate::FkDisabledGuard::new(conn).map_err(AppError::Database)?;
+
+    let mut batch = String::new();
+    batch.push_str("DROP TABLE IF EXISTS mcp_gateway_members_new;\n");
+    batch.push_str(&staged);
+    batch.push_str(";\n");
+    batch.push_str("INSERT INTO mcp_gateway_members_new SELECT * FROM mcp_gateway_members;\n");
+    batch.push_str("DROP TABLE mcp_gateway_members;\n");
+    batch.push_str("ALTER TABLE mcp_gateway_members_new RENAME TO mcp_gateway_members;\n");
+    for s in &aux_sql {
+        batch.push_str(s);
+        batch.push_str(";\n");
+    }
+
+    let tx = conn.unchecked_transaction()?;
+    let before: i64 = tx.query_row("SELECT COUNT(*) FROM mcp_gateway_members", [], |r| r.get(0))?;
+    tx.execute_batch(&batch)?;
+    let after: i64 = tx.query_row("SELECT COUNT(*) FROM mcp_gateway_members", [], |r| r.get(0))?;
+    if after != before {
+        // `tx` drops un-committed here, rolling the whole rebuild back.
+        tracing::error!(
+            before,
+            after,
+            "repoint_mcp_gateway_members_fk: row count changed during rebuild; rolling back",
+        );
+        return Err(AppError::Database(rusqlite::Error::InvalidQuery));
+    }
+    tx.commit()?;
+    Ok(())
+}
+
 /// Incremental migrations for columns added after the initial schema.
 /// Uses "ADD COLUMN ... IF NOT EXISTS" equivalent via PRAGMA table_info check.
 pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
@@ -1760,9 +1877,20 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             reason          TEXT,
             created_at      TEXT NOT NULL DEFAULT (datetime('now'))
         );
-        CREATE INDEX IF NOT EXISTS idx_pe_execution ON policy_events(execution_id);
-        CREATE INDEX IF NOT EXISTS idx_pe_persona   ON policy_events(persona_id);
-        CREATE INDEX IF NOT EXISTS idx_pe_created   ON policy_events(created_at DESC);",
+        -- Index names are GLOBAL in SQLite, not per-table. `idx_pe_persona` and
+        -- `idx_pe_created` already belong to persona_executions (schema.rs:130
+        -- and :132), which runs first — so `IF NOT EXISTS` matched the existing
+        -- NAME and these two statements were silent no-ops. policy_events had no
+        -- index on either column; EXPLAIN QUERY PLAN against the live database
+        -- confirmed `SCAN policy_events`. Renamed 2026-08-14.
+        --
+        -- `has_index(conn, name)` (line 76) cannot detect this class: it matches
+        -- on name alone, so it reports an index as present when the name belongs
+        -- to a different table. Hardening it to `has_index_on(conn, table, name)`
+        -- is an owed follow-up recorded in docs/concepts/golden-paths/index-design.md.
+        CREATE INDEX IF NOT EXISTS idx_pe_execution         ON policy_events(execution_id);
+        CREATE INDEX IF NOT EXISTS idx_policy_events_persona ON policy_events(persona_id);
+        CREATE INDEX IF NOT EXISTS idx_policy_events_created ON policy_events(created_at DESC);",
     )?;
 
     // -- saved_views: view_type + view_config columns ------
@@ -3034,22 +3162,21 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     // ships the schema; Stage 2 will OR-in group_id matches in the injection
     // hot path so memories authored in group context are shared with every
     // group member's prompt.
-    run_step(
-        conn,
-        IncrementalMigration {
-            id: "persona_memories_group_id",
-            description: "Add group_id column to persona_memories for group-scoped sharing",
-            already_applied: |conn| has_column(conn, "persona_memories", "group_id"),
-            apply: |conn| {
-                ddl_step(
-                    conn,
-                    "ALTER TABLE persona_memories ADD COLUMN group_id TEXT;
-                     CREATE INDEX IF NOT EXISTS idx_pm_group_id ON persona_memories(group_id);",
-                )?;
-                Ok(())
-            },
-        },
-    )?;
+    // REMOVED 2026-08-15: `persona_memories_group_id`.
+    //
+    // It added `persona_memories.group_id`, which `retire_persona_groups`
+    // (~370 lines below) drops. That step's guard is `|_conn| Ok(false)`, so it
+    // runs on EVERY launch — and because this step ran first and put the column
+    // back, the pair undid and redid each other forever. Replayed against a copy
+    // of the live 331 MB database: 186.1 ms then 181.2 ms per boot, of which
+    // 108 ms is SQLite rewriting all 6,535 rows / 37 MB of `persona_memories`,
+    // because DROP COLUMN rewrites every row. The residue after two boots is
+    // byte-identical to the start.
+    //
+    // Nothing could have caught it: the idempotency test asserts the fixed
+    // point (correctly — the schema IS stable), there is no migrations ledger,
+    // and the `tracing::info!` receipt goes to a sink installed after the
+    // migrations run.
 
     // Dev-tools project ↔ PersonaTeam binding (2026-05-22). Lets developers
     // bind a dev_projects row to a PersonaTeam (pipeline) so the project
@@ -3076,22 +3203,8 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     // to team_id: team_id is the execution-time pipeline, group_id is the
     // design-time workspace folder. Both can be set independently. Same
     // orphan-tolerance policy.
-    run_step(
-        conn,
-        IncrementalMigration {
-            id: "dev_projects_group_id",
-            description: "Add group_id column to dev_projects for workspace binding",
-            already_applied: |conn| has_column(conn, "dev_projects", "group_id"),
-            apply: |conn| {
-                ddl_step(
-                    conn,
-                    "ALTER TABLE dev_projects ADD COLUMN group_id TEXT;
-                     CREATE INDEX IF NOT EXISTS idx_dev_projects_group_id ON dev_projects(group_id);",
-                )?;
-                Ok(())
-            },
-        },
-    )?;
+    // REMOVED 2026-08-15: `dev_projects_group_id`. Same pair as the note above —
+    // it re-added a column `retire_persona_groups` drops on every launch.
 
     // Groups → Teams consolidation (ADR 2026-05-23-groups-into-teams),
     // Phase 1 — additive only. A PersonaTeam gains a "workspace" facet
@@ -3405,7 +3518,25 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         IncrementalMigration {
             id: "retire_persona_groups",
             description: "Drop persona_groups table + persona_memories/dev_projects group_id columns (Groups→Teams Phase 5)",
-            already_applied: |_conn| Ok(false),
+            // Was `|_conn| Ok(false)` — always-run. Combined with the two
+            // additive steps above (now deleted) that made this a permanent
+            // drop/re-add cycle costing ~186 ms and two full table rewrites per
+            // launch, forever.
+            //
+            // The always-run guard was not unreasonable on its own: the drops
+            // below are individually guarded and tolerate failure, so re-running
+            // was harmless in isolation. The defect was a relationship between
+            // steps 370 lines apart, which no per-step instrument can see.
+            //
+            // This is a POSTCONDITION guard: it asserts the state the step
+            // exists to reach, rather than claiming a step id was recorded
+            // (there is no ledger to record it in). Fresh installs never create
+            // these objects, so it short-circuits there too.
+            already_applied: |conn| {
+                Ok(!has_table(conn, "persona_groups")?
+                    && !has_column(conn, "persona_memories", "group_id")?
+                    && !has_column(conn, "dev_projects", "group_id")?)
+            },
             apply: |conn| {
                 // Drop dependent indexes first — SQLite DROP COLUMN refuses an
                 // indexed column. IF EXISTS keeps this safe on fresh DBs.
@@ -4787,6 +4918,30 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // MUST stay in `run_incremental` (phase 2). `mcp_gateway_members` is created
+    // in `ensure_composite_fires_table`, which `initial::run` calls in phase 1 —
+    // i.e. BEFORE this function, despite sitting BELOW it in this file. A
+    // rebuild placed in that tail would run before the table it rebuilds exists
+    // and silently no-op. That inversion is what produced the bug being fixed
+    // here in the first place.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "mcp_gateway_members.credentials_fk",
+            description: "Repoint mcp_gateway_members foreign keys from the phantom \
+                          `credentials` table to `persona_credentials`",
+            already_applied: |conn| {
+                // Nothing to repair if the table is absent (it is created in
+                // phase 1, so this is only reachable on an unusual database).
+                if !has_table(conn, "mcp_gateway_members")? {
+                    return Ok(true);
+                }
+                Ok(dangling_fk_count(conn, "mcp_gateway_members")? == 0)
+            },
+            apply: repoint_mcp_gateway_members_fk,
+        },
+    )?;
+
     Ok(())
 }
 
@@ -4882,30 +5037,40 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             enabled                 INTEGER NOT NULL DEFAULT 1,
             sort_order              INTEGER NOT NULL DEFAULT 0,
             created_at              TEXT NOT NULL DEFAULT (datetime('now')),
-            FOREIGN KEY (gateway_credential_id) REFERENCES credentials(id) ON DELETE CASCADE,
-            FOREIGN KEY (member_credential_id) REFERENCES credentials(id) ON DELETE CASCADE,
+            -- The credentials table is `persona_credentials`. `credentials`
+            -- does not exist and never has; SQLite resolves FK targets lazily,
+            -- so this CREATE succeeded and every INSERT raised `no such table:
+            -- main.credentials` under `foreign_keys = ON` instead. Existing
+            -- installs are repaired by `repoint_mcp_gateway_members_fk` at the
+            -- end of `run_incremental` (phase 2).
+            FOREIGN KEY (gateway_credential_id) REFERENCES persona_credentials(id) ON DELETE CASCADE,
+            FOREIGN KEY (member_credential_id) REFERENCES persona_credentials(id) ON DELETE CASCADE,
             UNIQUE (gateway_credential_id, member_credential_id)
         );
         CREATE INDEX IF NOT EXISTS idx_mcp_gateway_members_gw ON mcp_gateway_members(gateway_credential_id);
         CREATE INDEX IF NOT EXISTS idx_mcp_gateway_members_member ON mcp_gateway_members(member_credential_id);"
     )?;
 
-    // -- JIT OAuth scaffolding on executions -----------------------------------
-    // Scaffolding only -- the runner pause/resume integration is deferred until
-    // an integration test harness exists. See `.planning/handoffs/2026-04-08-
-    // mcp-gateway-arcade.md` Phase B for the full wiring plan. These columns let
-    // us persist a pending-auth URL per execution so the frontend can surface
-    // it without needing an in-memory-only registry (which loses state on reload).
-    // The AwaitingAuth execution STATE is intentionally NOT added to the
-    // ExecutionState lifecycle macro yet -- that's a cross-cutting change that
-    // should land with the runner integration, not before it.
-    for stmt in &[
-        "ALTER TABLE executions ADD COLUMN pending_auth_url TEXT;",
-        "ALTER TABLE executions ADD COLUMN pending_auth_started_at TEXT;",
-        "ALTER TABLE executions ADD COLUMN pending_auth_credential_id TEXT;",
-    ] {
-        let _ = ddl_step(conn, stmt); // ignore duplicate column errors on re-run
-    }
+    // -- JIT OAuth scaffolding on executions: REMOVED 2026-08-13 ---------------
+    // Three `ALTER TABLE executions ADD COLUMN pending_auth_{url,started_at,
+    // credential_id}` statements lived here, swallowed by `let _ = ddl_step(…)`.
+    // There is no `executions` table (it is `persona_executions`), so all three
+    // failed on every boot of every install since 2026-04-08 and the columns
+    // have never existed anywhere.
+    //
+    // Deleted rather than corrected to `persona_executions`, decided from what
+    // the code reads: `pending_auth_url` / `pending_auth_started_at` /
+    // `pending_auth_credential_id` have ZERO readers and ZERO writers anywhere
+    // in the tree — no Rust, no TypeScript, no SQL. The feature that actually
+    // shipped, `PendingAuthModal.tsx`, takes its `credential_id` / `tool_name` /
+    // `authorize_url` from the `AppError::AuthorizationRequired` error envelope
+    // (`extractPendingAuthDetails`), which needs no persistence at all, and the
+    // `AwaitingAuth` execution state the columns were scaffolding for was never
+    // added to the `ExecutionState` lifecycle. Correcting the table name would
+    // have added three permanently-NULL columns to the hottest table in the app.
+    // If the runner pause/resume integration is ever built (see
+    // `.planning/handoffs/2026-04-08-mcp-gateway-arcade.md` Phase B), it adds
+    // its own guarded `run_step` against `persona_executions` at that time.
 
     // -- Lab: Consensus (stochastic multi-run agreement) ----------------------
     ddl_step(
@@ -7019,43 +7184,11 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
-    // -- companion_tours: Athena-composed guided tours (Generative Tours) ----
-    // One row per composed tour; steps stored as validated JSON in the
-    // frontend `TourStepDef` shape. `manifest_hash` records which anchor
-    // manifest the tour was proven against so upgrades can re-prove and mark
-    // drifted tours 'stale' instead of letting them break mid-play.
-    run_step(
-        conn,
-        IncrementalMigration {
-            id: "companion_tours.table",
-            description: "Persist Athena-composed guided tours (Generative Tours) with manifest-hash staleness tracking.",
-            already_applied: |conn| has_table(conn, "companion_tours"),
-            apply: |conn| {
-                ddl_step(
-                    conn,
-                    "CREATE TABLE IF NOT EXISTS companion_tours (
-                        id            TEXT PRIMARY KEY,
-                        topic         TEXT NOT NULL,
-                        title         TEXT NOT NULL,
-                        description   TEXT NOT NULL DEFAULT '',
-                        icon          TEXT NOT NULL DEFAULT 'Sparkles',
-                        color         TEXT NOT NULL DEFAULT 'violet',
-                        steps_json    TEXT NOT NULL,
-                        status        TEXT NOT NULL DEFAULT 'ready',
-                        manifest_hash TEXT,
-                        created_at    TEXT NOT NULL DEFAULT (datetime('now')),
-                        updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
-                    );",
-                )?;
-                ddl_step(
-                    conn,
-                    "CREATE INDEX IF NOT EXISTS idx_companion_tours_created
-                        ON companion_tours(created_at DESC);",
-                )?;
-                Ok(())
-            },
-        },
-    )?;
+    // -- companion_tours ----------------------------------------------------
+    // MOVED 2026-08-15 to COMPANION_SCHEMA in db/src/lib.rs. This file's
+    // migrations run against the MAIN database; every companion_tours query
+    // executes on `&UserDbPool`, so the table was being created in one store
+    // and read from the other. See the note at its new definition.
 
     // -- incident_diagnoses: Autonomous NOC v1 root-cause diagnoses ----------
     // One row per audit incident (UNIQUE incident_id). Written by the
@@ -7426,6 +7559,76 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+
+    // -- Pattern fabric v2: the three-layer model ----------------------------
+    // (docs/concepts/pattern-fabric.md v2) Principle → Manifestation →
+    // Evidence. `layer` classifies a knowledge row's place in that hierarchy:
+    //   'principle'     — universal, language-free direction; the only layer
+    //                     the topic tree and the graph canvas carry.
+    //   'manifestation' — a principle applied to one stack/seam (Tauri IPC,
+    //                     browser fetch, tokio reads); parent = governing_id.
+    //   NULL            — not yet reclassified (the pre-v2 corpus). NULL is
+    //                     deliberate: guessing a layer at migration time would
+    //                     fake the review the restructuring panels exist to
+    //                     do, so legacy rows stay honestly unclassified until
+    //                     a panel (or a human) rules on them.
+    if !has_column(conn, "workspace_knowledge", "layer").unwrap_or(true) {
+        let _ = ddl_step(
+            conn,
+            "ALTER TABLE workspace_knowledge ADD COLUMN layer TEXT
+                 CHECK (layer IN ('principle','manifestation'));",
+        );
+    }
+    // Evidence as first-class rows, not markdown fused into detail_md. This
+    // is what lets MULTIPLE projects stack references under one manifestation
+    // (cross-language improvement flow), lets the verify lane REFRESH proof
+    // (verified_at) instead of only scoring adherence, and makes evidence
+    // aging visible instead of fossilized prose. `project_id` has no FK on
+    // purpose — deleting a project leaves provenance readable, same posture
+    // as workspace_knowledge.origin_project_id.
+    let _ = ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS workspace_knowledge_evidence (
+            id           TEXT PRIMARY KEY,
+            knowledge_id TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
+            project_id   TEXT,
+            refs         TEXT NOT NULL DEFAULT '[]',
+            quote        TEXT,
+            source       TEXT NOT NULL CHECK (source IN ('harvest','verify','manual')),
+            recorded_at  TEXT NOT NULL,
+            verified_at  TEXT
+        );",
+    );
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_wke_knowledge
+            ON workspace_knowledge_evidence(knowledge_id);",
+    );
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_wke_project
+            ON workspace_knowledge_evidence(project_id);",
+    );
+
+    // `team_assignment_steps.execution_id` is the only one of seven children of
+    // `persona_executions` whose FK column has no index, and it carries
+    // ON DELETE SET NULL — so every delete of an execution row makes SQLite scan
+    // the whole child table to find referents.
+    //
+    // Measured by ablation on a copy of the live database: the FK cascade was
+    // 97% of a 31.8 s delete (FTS was 5%). Adding this index took the same
+    // delete from 26,016 ms to 1,066 ms — 24x.
+    //
+    // This matters beyond general slowness: execution retention has never
+    // actually deleted a row (see retention-and-pruning.md), so the day that is
+    // fixed, the hourly cleanup tick suddenly deletes ~1,776 rows. Without this
+    // index that is a ~26 s app-wide write stall on a local SQLite file. The
+    // index must therefore land BEFORE any retention change, not with it.
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_tas_execution
+            ON team_assignment_steps(execution_id);",
+    );
     Ok(())
 }
 
@@ -9007,5 +9210,224 @@ mod tests {
             .query_row("SELECT COUNT(*) FROM skills", [], |r| r.get(0))
             .unwrap();
         assert_eq!(rows, 1, "user skill row was lost");
+    }
+
+    // -- Dangling foreign-key targets ----------------------------------------
+
+    /// The static gate proposed in `docs/concepts/golden-paths/schema-change.md`
+    /// ("The missing gate", difference set C), as a runtime assertion over the
+    /// database the real chain actually builds.
+    ///
+    /// SQLite resolves foreign-key targets LAZILY: `REFERENCES nonexistent(id)`
+    /// succeeds at `CREATE TABLE` and only raises `no such table:
+    /// main.nonexistent` on the first `INSERT` under `foreign_keys = ON`. And
+    /// `PRAGMA foreign_key_check` is structurally blind to it on an EMPTY child
+    /// table — which a table whose every insert fails always is — so
+    /// `migration_chain_is_idempotent_on_rerun`'s FK assertion passes straight
+    /// over the defect. This query is what sees it.
+    ///
+    /// `mcp_gateway_members` -> `credentials` shipped 2026-04-08 and made the
+    /// whole gateway-membership feature dead on arrival on every install.
+    #[test]
+    fn no_foreign_key_points_at_a_missing_table() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+
+        let mut stmt = conn
+            .prepare(
+                "SELECT m.name, fk.\"table\"
+                   FROM sqlite_master m
+                   JOIN pragma_foreign_key_list(m.name) fk
+                  WHERE m.type = 'table'
+                    AND fk.\"table\" NOT IN (
+                          SELECT name FROM sqlite_master WHERE type = 'table')",
+            )
+            .unwrap();
+        let dangling: Vec<(String, String)> = stmt
+            .query_map([], |r| Ok((r.get(0)?, r.get(1)?)))
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+
+        // Assert the instrument before the result: a database with no tables
+        // would produce an empty list and a false pass.
+        let table_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert!(
+            table_count > 200,
+            "only {table_count} tables in the fresh schema — the chain did not run, \
+             so this test proves nothing"
+        );
+        let fk_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master m
+                   JOIN pragma_foreign_key_list(m.name) fk
+                  WHERE m.type = 'table'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert!(
+            fk_count > 50,
+            "only {fk_count} foreign keys found — the pragma join is broken, not the schema"
+        );
+
+        assert!(
+            dangling.is_empty(),
+            "foreign keys point at tables that do not exist (child -> phantom parent): {dangling:?}. \
+             Every INSERT into those children fails at runtime under foreign_keys = ON."
+        );
+    }
+
+    /// The behavioural half: the gateway-membership feature must actually work.
+    /// `add_member`'s INSERT is the statement that has been raising
+    /// `no such table: main.credentials` since 2026-04-08.
+    #[test]
+    fn mcp_gateway_members_accepts_an_insert_under_foreign_keys_on() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+
+        let fk_on: i64 = conn
+            .query_row("PRAGMA foreign_keys", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(fk_on, 1, "test connection has FK enforcement off — proves nothing");
+
+        conn.execute_batch(
+            "INSERT INTO persona_credentials
+                (id, name, service_type, encrypted_data, iv, created_at, updated_at)
+             VALUES ('gw', 'Gateway', 'mcp_gateway', 'x', 'y', '2026-01-01', '2026-01-01'),
+                    ('mem', 'Member', 'mcp', 'x', 'y', '2026-01-01', '2026-01-01');",
+        )
+        .unwrap();
+
+        conn.execute(
+            "INSERT INTO mcp_gateway_members
+                (id, gateway_credential_id, member_credential_id, display_name, enabled, sort_order)
+             VALUES ('m1', 'gw', 'mem', 'Member', 1, 0)",
+            [],
+        )
+        .expect("adding a gateway member must succeed");
+
+        // The FK must also be live, not merely non-dangling.
+        let orphan = conn.execute(
+            "INSERT INTO mcp_gateway_members
+                (id, gateway_credential_id, member_credential_id, display_name, enabled, sort_order)
+             VALUES ('m2', 'gw', 'does-not-exist', 'Ghost', 1, 0)",
+            [],
+        );
+        assert!(
+            orphan.is_err(),
+            "a member row referencing a missing credential was accepted — the FK is not enforced"
+        );
+
+        // ON DELETE CASCADE must reach through the repointed parent.
+        conn.execute("DELETE FROM persona_credentials WHERE id = 'gw'", [])
+            .unwrap();
+        let left: i64 = conn
+            .query_row("SELECT COUNT(*) FROM mcp_gateway_members", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(left, 0, "deleting the gateway credential did not cascade");
+    }
+
+    /// The upgrade path: a database that already carries the broken shape must
+    /// be repaired on its next boot, and must keep any rows it somehow holds.
+    /// Rows are inserted with FK enforcement off, because with it on the broken
+    /// table cannot be written to at all — which is the whole bug.
+    #[test]
+    fn legacy_mcp_gateway_members_fk_is_repaired_without_losing_rows() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+
+        // Rebuild the table in its as-shipped (broken) shape.
+        {
+            let _guard = crate::FkDisabledGuard::new(&conn).unwrap();
+            conn.execute_batch(
+                "DROP TABLE mcp_gateway_members;
+                 CREATE TABLE IF NOT EXISTS mcp_gateway_members (
+                     id                      TEXT PRIMARY KEY,
+                     gateway_credential_id   TEXT NOT NULL,
+                     member_credential_id    TEXT NOT NULL,
+                     display_name            TEXT NOT NULL,
+                     enabled                 INTEGER NOT NULL DEFAULT 1,
+                     sort_order              INTEGER NOT NULL DEFAULT 0,
+                     created_at              TEXT NOT NULL DEFAULT (datetime('now')),
+                     FOREIGN KEY (gateway_credential_id) REFERENCES credentials(id) ON DELETE CASCADE,
+                     FOREIGN KEY (member_credential_id) REFERENCES credentials(id) ON DELETE CASCADE,
+                     UNIQUE (gateway_credential_id, member_credential_id)
+                 );
+                 CREATE INDEX IF NOT EXISTS idx_mcp_gateway_members_gw ON mcp_gateway_members(gateway_credential_id);
+                 CREATE INDEX IF NOT EXISTS idx_mcp_gateway_members_member ON mcp_gateway_members(member_credential_id);
+                 INSERT INTO persona_credentials
+                     (id, name, service_type, encrypted_data, iv, created_at, updated_at)
+                 VALUES ('gw', 'Gateway', 'mcp_gateway', 'x', 'y', '2026-01-01', '2026-01-01'),
+                        ('mem', 'Member', 'mcp', 'x', 'y', '2026-01-01', '2026-01-01');
+                 INSERT INTO mcp_gateway_members
+                     (id, gateway_credential_id, member_credential_id, display_name, enabled, sort_order)
+                 VALUES ('legacy', 'gw', 'mem', 'Legacy member', 1, 3);",
+            )
+            .unwrap();
+        }
+        assert_eq!(
+            dangling_fk_count(&conn, "mcp_gateway_members").unwrap(),
+            2,
+            "fixture did not reproduce the broken shape"
+        );
+
+        // Next launch.
+        run_incremental(&conn).expect("repair migration must not abort boot");
+
+        assert_eq!(
+            dangling_fk_count(&conn, "mcp_gateway_members").unwrap(),
+            0,
+            "the dangling foreign keys were not repaired"
+        );
+        let (display, sort): (String, i64) = conn
+            .query_row(
+                "SELECT display_name, sort_order FROM mcp_gateway_members WHERE id = 'legacy'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .expect("the pre-existing member row was destroyed by the rebuild");
+        assert_eq!(display, "Legacy member");
+        assert_eq!(sort, 3, "column order was not preserved by the rebuild");
+
+        // Indexes survive the DROP/RENAME.
+        assert!(has_index(&conn, "idx_mcp_gateway_members_gw").unwrap());
+        assert!(has_index(&conn, "idx_mcp_gateway_members_member").unwrap());
+
+        // And the guard holds: a replay must not rebuild again.
+        run_incremental(&conn).expect("replay after repair must be a no-op");
+        assert_eq!(dangling_fk_count(&conn, "mcp_gateway_members").unwrap(), 0);
+    }
+
+    /// The three `pending_auth_*` columns were deleted, not corrected to
+    /// `persona_executions`, because nothing reads or writes them. Pin that:
+    /// if the JIT-OAuth runner integration is ever built it must add its own
+    /// guarded step rather than resurrecting the swallowed ALTERs.
+    #[test]
+    fn pending_auth_scaffolding_columns_are_gone() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        for col in [
+            "pending_auth_url",
+            "pending_auth_started_at",
+            "pending_auth_credential_id",
+        ] {
+            assert!(
+                !has_column(&conn, "persona_executions", col).unwrap(),
+                "{col} is back on persona_executions with no reader — \
+                 add the reader in the same change or drop the column"
+            );
+        }
+        assert!(
+            !has_table(&conn, "executions").unwrap(),
+            "an `executions` table now exists; the deleted ALTERs targeted it by mistake \
+             and the comment explaining the deletion needs revisiting"
+        );
     }
 }

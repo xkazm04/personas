@@ -14,6 +14,10 @@ use crate::engine::scheduler as sched_logic;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::validation::open_log_file_safely;
+// Both log-reading commands below mask on READ. The historical files predate
+// the sink fix in engine/src/logger.rs and still contain plaintext credentials;
+// `[STDOUT]` lines are precisely where they landed.
+use personas_core::utils::sanitization::sanitize_secrets;
 use crate::AppState;
 use personas_macros::requires;
 
@@ -370,7 +374,7 @@ pub(crate) async fn execute_persona_inner(
     // 4. Create execution record in DB (starts as "queued").
     //    When an idempotency_key is supplied (e.g. from a timeout-retry),
     //    this returns the existing execution instead of creating a duplicate.
-    let execution = repo::create_with_idempotency(
+    let (execution, created) = repo::create_with_idempotency_reporting(
         &state.db,
         &persona_id,
         trigger_id,
@@ -384,14 +388,25 @@ pub(crate) async fn execute_persona_inner(
     // Update pipeline context with real execution ID
     pipeline.execution_id = execution.id.clone();
 
-    // If idempotency dedup returned an already-started execution, skip the
-    // engine spawn — it's already running (or finished). Return it directly
-    // so the frontend gets the same execution ID without a duplicate spawn.
-    if execution.status != "queued" {
+    // If idempotency dedup returned an existing execution, skip the engine
+    // spawn — someone else already owns this run.
+    //
+    // This tested `execution.status != "queued"` until 2026-08-16, which is
+    // false EXACTLY when the dedupe fires: `create_with_idempotency` inserts
+    // with `status = 'queued'`, so a deduped row that has not started yet is
+    // queued. Both callers passed the guard and both spawned an agent — one
+    // request, one returned row, two runs, two bills — and the window was the
+    // entire queue wait, not a race of milliseconds. Reproduced against real
+    // SQLite with the statements transcribed verbatim.
+    //
+    // `deduped` comes from the repository, which is the only place that knows.
+    // It cannot be recovered from the row afterwards, which is why the status
+    // proxy existed and why it could not work.
+    if !created {
         tracing::info!(
             execution_id = %execution.id,
             status = %execution.status,
-            "Idempotency dedup: execution already in progress, skipping engine spawn"
+            "Idempotency dedup: execution already exists, skipping engine spawn"
         );
         pipeline.complete_stage();
         pipeline.log_summary();
@@ -628,7 +643,19 @@ pub fn get_execution_log(
         let mut content = String::new();
         use std::io::Read;
         match file.read_to_string(&mut content) {
-            Ok(_) => Ok(Some(content)),
+            // REDACTION AT THE SINK IS NOT REDACTION AT THE SURFACE.
+            //
+            // `ExecutionLogger::log` was fixed on 2026-08-14 to mask secrets as
+            // they are written, and its own doc says "masks NEW writes only".
+            // This command reads the HISTORICAL file — 3,018 files / 410 MB on
+            // the operator's machine, measured to contain GitHub PAT shapes,
+            // Google API key shapes, a PEM private key and a JWT — and returned
+            // it verbatim. `ExecutionLogViewer.tsx` puts a CopyButton on the
+            // result, so the whole raw log could be copied to the clipboard.
+            //
+            // Masking on read closes the reachable path without touching the
+            // files on disk, which remain the operator's to purge.
+            Ok(_) => Ok(Some(sanitize_secrets(&content))),
             Err(_) => Ok(None),
         }
     } else {
@@ -673,7 +700,7 @@ pub fn get_execution_log_lines(
                 .filter_map(|l| l.ok())
                 .filter_map(|line| {
                     line.find("[STDOUT] ")
-                        .map(|pos| line[pos + 9..].to_string())
+                        .map(|pos| sanitize_secrets(&line[pos + 9..]))
                 })
                 .skip(skip)
                 .take(max_lines)
@@ -686,7 +713,7 @@ pub fn get_execution_log_lines(
             let mut ring = VecDeque::with_capacity(max_lines + 1);
             for line in reader.lines().filter_map(|l| l.ok()) {
                 if let Some(pos) = line.find("[STDOUT] ") {
-                    ring.push_back(line[pos + 9..].to_string());
+                    ring.push_back(sanitize_secrets(&line[pos + 9..]));
                     if ring.len() > max_lines {
                         ring.pop_front();
                     }

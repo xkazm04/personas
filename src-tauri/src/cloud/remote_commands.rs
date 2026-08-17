@@ -143,7 +143,18 @@ async fn poll_once(app: &AppHandle, state: &Arc<AppState>) -> Result<(), AppErro
         if is_expired(&c.requested_at) {
             let _ = client
                 .patch(
-                    &format!("pending_commands?id=eq.{}", c.id),
+                    // Device- and status-scoped, like every other write to this
+                    // table. The fetch above already filtered by device, so this
+                    // is defence in depth against the row moving underneath the
+                    // loop — but it is also the difference between a write that
+                    // is scoped and a write that merely happens to be given
+                    // scoped input. `status=eq.pending` additionally stops the
+                    // expiry from overwriting a command the user resolved while
+                    // the poll was in flight.
+                    &format!(
+                        "pending_commands?id=eq.{}&target_device_id=eq.{device}&status=eq.pending",
+                        c.id
+                    ),
                     &json!({ "status": "expired", "resolved_at": now(), "updated_at": now() }),
                 )
                 .await;
@@ -264,7 +275,36 @@ pub async fn remote_command_approve(
         .persona_id
         .ok_or_else(|| AppError::Validation("Request is missing a persona".into()))?;
 
-    set_command_status(&client, &id, "executing", json!({})).await;
+    // Claim the command, don't just announce it.
+    //
+    // The `cmd.status != "pending"` check above is necessary and NOT
+    // sufficient: it reads the status, decides in Rust, and until 2026-08-16
+    // the write that followed carried no status filter. Two concurrent
+    // approvals of one request both read `pending`, both passed the check, and
+    // both reached the agent — two runs, two bills, one request. Reproduced
+    // against the real shape before fixing.
+    //
+    // `status=eq.pending` in the FILTER is what makes this exclusive, and the
+    // returned row count is what tells this caller whether it won. Losing is a
+    // normal outcome, not an error condition, so it reports the same message a
+    // late click already got.
+    let claimed = client
+        .patch_returning_count(
+            // `target_device_id` belongs here too, and was missing from the
+            // first version of this claim (2026-08-16, same day): the status
+            // term makes the claim exclusive between two clicks on THIS device,
+            // and the device term is what keeps device A from claiming a command
+            // targeted at device B. They guard different things and the fetch
+            // above carries both.
+            &format!("pending_commands?id=eq.{id}&target_device_id=eq.{device}&status=eq.pending"),
+            &json!({ "status": "executing", "updated_at": now() }),
+        )
+        .await?;
+    if claimed == 0 {
+        return Err(AppError::Validation(
+            "This request is no longer pending".into(),
+        ));
+    }
 
     // Run locally — same path as a normal run; the engine enforces the persona's
     // own sandbox, setup gate, budget, and tool exposure.
@@ -317,12 +357,34 @@ pub async fn remote_command_reject(
         .await
         .ok_or_else(|| AppError::Auth("Not signed in".into()))?;
     let client = SyncClient::new(jwt)?;
-    client
-        .patch(
-            &format!("pending_commands?id=eq.{id}"),
+
+    // Scope by device and by status, exactly as `remote_command_approve` does.
+    //
+    // Until 2026-08-16 this patched `pending_commands?id=eq.{id}` with neither
+    // term. The approve path 85 lines above carries a four-line comment
+    // explaining precisely why the device term is required — the id is a
+    // listable UUID, not a per-device capability token, and row-level security
+    // scopes to the tenant and not to the device — and reject, which resolves
+    // the same row, did not carry it. A multi-device user could reject a request
+    // targeted at another of their devices.
+    //
+    // The status term makes the write idempotent: rejecting something already
+    // resolved changes nothing rather than overwriting a terminal state.
+    let device = cursor::resolve_device_id(&state.db);
+    let rejected = client
+        .patch_returning_count(
+            &format!(
+                "pending_commands?id=eq.{id}&target_device_id=eq.{device}&status=eq.pending"
+            ),
             &json!({ "status": "rejected", "resolved_at": now(), "updated_at": now() }),
         )
-        .await
+        .await?;
+    if rejected == 0 {
+        return Err(AppError::Validation(
+            "This request is no longer pending".into(),
+        ));
+    }
+    Ok(())
 }
 
 #[cfg(test)]

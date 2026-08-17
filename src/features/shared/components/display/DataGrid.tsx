@@ -1,3 +1,23 @@
+/**
+ * @catalog Paginated table — page-size selector, row selection + bulk-action toolbar, row drag; caller-owned sort. Else use UnifiedTable.
+ *
+ * One of the three shared table primitives (see the tables golden path,
+ * `docs/concepts/golden-paths/tables.md`). Reach for `DataGrid` **only** when
+ * you need page-based pagination, checkbox row selection with a floating
+ * bulk-action toolbar, or HTML5 row drag — `UnifiedTable` has none of those.
+ * Everything else belongs on `UnifiedTable`, which in turn has what this one
+ * lacks: virtualization, `groupBy`, column resize, sort persistence, keyboard
+ * row nav, scroll restoration and infinite scroll. Slash-path taxonomies go to
+ * `FacetedDecisionTable`, which wraps this component.
+ *
+ * **Sorting is caller-owned here** — pass `sortKey` + `sortDirection` + `onSort`
+ * (unlike `UnifiedTable`, which sorts internally).
+ *
+ * Cold load is handled for you: pass the real in-flight `isLoading` flag and
+ * the grid renders the calm delayed ghost rows under its permanent column
+ * header, then ripples rows in via the shared id-guarded entrance. Don't build
+ * a skeleton, an empty state, a pagination bar or a row cascade around it.
+ */
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Inbox, X } from 'lucide-react';
@@ -48,11 +68,25 @@ export interface DataGridProps<T> {
   pageSizeOptions?: number[];
   /** Callback when user changes page size via the selector */
   onPageSizeChange?: (size: number) => void;
-  /** Loading state */
+  /**
+   * In-flight fetch flag. Drives the calm delayed ghost rows, which render only
+   * while `isLoading && data.length === 0` — so a refetch with rows on screen
+   * changes nothing, and the empty state is unreachable until the fetch settles.
+   */
   isLoading?: boolean;
+  /**
+   * Already-translated screen-reader announcement for the loading state.
+   * Defaults to the generic translated `shared.grid_loading`.
+   */
   loadingLabel?: string;
   /** Empty state */
   emptyIcon?: React.ComponentType<{ className?: string }>;
+  /**
+   * **Always pass an already-translated, surface-specific title** ("No
+   * credentials yet", not "No data") — omitting it falls back to the generic
+   * translated `shared.grid_no_data`, which is a last resort, not a default
+   * worth shipping.
+   */
   emptyTitle?: string;
   emptyDescription?: string;
   /** Optional per-row className (e.g. highlight animations) */
@@ -122,9 +156,9 @@ export function DataGrid<T>({
   pageSizeOptions = [10, 25, 50, 100],
   onPageSizeChange,
   isLoading = false,
-  loadingLabel = 'Loading...',
+  loadingLabel,
   emptyIcon: EmptyIcon,
-  emptyTitle = 'No data',
+  emptyTitle,
   emptyDescription,
   getRowClassName,
   getRowProps,
@@ -308,7 +342,7 @@ export function DataGrid<T>({
            them invisible for fast fetches, and a refetch with rows on screen
            never reaches this branch (data stays visible). */
         <div role="status" aria-live="polite">
-          <span className="sr-only">{loadingLabel}</span>
+          <span className="sr-only">{loadingLabel ?? t.shared.grid_loading}</span>
           <div aria-hidden="true">
             {Array.from({ length: 6 }).map((_, r) => (
               <div
@@ -330,7 +364,10 @@ export function DataGrid<T>({
           <div className="w-10 h-10 rounded-xl bg-secondary/30 border border-primary/10 flex items-center justify-center mb-3">
             <Icon className="w-5 h-5 text-foreground/90" />
           </div>
-          <p className="typo-heading text-foreground">{emptyTitle}</p>
+          {/* No hardcoded English fallback: an untranslated default leaks into
+              all 14 locales. `shared.grid_no_data` is the shared translated
+              last resort — always pass a specific `emptyTitle` instead. */}
+          <p className="typo-heading text-foreground">{emptyTitle ?? t.shared.grid_no_data}</p>
           {emptyDescription && (
             <p className="typo-body text-foreground mt-1 max-w-xs">{emptyDescription}</p>
           )}

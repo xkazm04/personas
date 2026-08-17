@@ -45,10 +45,32 @@ export interface KnowledgeItemView {
   durability: Durability | null;
   governingId: string | null;
   evidenceCount: number | null;
+  /** Three-layer classification (pattern-fabric v2): 'principle' |
+   *  'manifestation' | null while the pre-v2 corpus awaits its ruling. */
+  layer: KnowledgeLayerView;
+  /** Full evidence/detail markdown — the detail surfaces render it; list
+   *  surfaces ignore it. */
+  detailMd: string | null;
 }
+
+export type KnowledgeLayerView = 'principle' | 'manifestation' | null;
 
 export type Abstraction = 'macro' | 'meso' | 'micro';
 export type Durability = 'durable' | 'situational' | 'mechanical';
+
+/**
+ * A DIRECTION — the doctrine tier of the inverted library (2026-08-11
+ * distillation): a macro item that states how things should be done, with its
+ * governed evidence underneath. `governing_id === null` is load-bearing: a
+ * macro item that is itself governed (legacy macro-labeled harvest items, and
+ * doctrines the topic roll-up nested under a same-topic sibling) is evidence,
+ * not a direction — without this the direction count reads 208 instead of the
+ * ~105 items that actually top the governance tree. Every surface that lists
+ * knowledge is built from directions first; techniques are what you drill
+ * into, not what you meet.
+ */
+export const isDirection = (i: Pick<KnowledgeItemView, 'abstraction' | 'governingId'>): boolean =>
+  i.abstraction === 'macro' && i.governingId === null;
 
 export function viewFromRow(row: WorkspaceKnowledge): KnowledgeItemView {
   let layers: string[] = [];
@@ -87,6 +109,8 @@ export function viewFromRow(row: WorkspaceKnowledge): KnowledgeItemView {
     // JSON number, so narrow it here rather than letting `bigint` leak into the
     // view model (counts here are single/double digits — no precision at risk).
     evidenceCount: row.evidence_count != null ? Number(row.evidence_count) : null,
+    layer: (row.layer as KnowledgeLayerView) ?? null,
+    detailMd: row.detail_md ?? null,
   };
 }
 

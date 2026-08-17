@@ -32,7 +32,27 @@ export const getAutomation = (id: string) =>
 export const createAutomation = (input: CreateAutomationInput) =>
   invoke<PersonaAutomation>("create_automation", { input });
 
-export const updateAutomation = (id: string, input: UpdateAutomationInput) =>
+/**
+ * Update an automation. **Send only the fields you intend to change.**
+ *
+ * `Partial<>` is load-bearing, not a convenience. `UpdateAutomationInput`'s
+ * generated type declares every field REQUIRED (`string | null`), because ts-rs
+ * emits `Option<Option<T>>` as `T | null | null` and TypeScript collapses that
+ * to `T | null` with no `?`. So a caller writing type-correct code was FORCED to
+ * name every field, and the only value available was `null` — which for the ten
+ * fields carrying `#[serde(default, deserialize_with = "double_option")]` means
+ * CLEAR, not "leave alone". The generated type made data loss mandatory.
+ *
+ * On the wire, omission is the correct spelling of "leave alone": the
+ * double_option fields have `#[serde(default)]`, and serde maps a missing plain
+ * `Option<T>` to `None`. Verified against
+ * `src-tauri/core/src/models/automation.rs:250-279`.
+ *
+ * The real fix is `#[ts(optional)]` on those Rust fields so the generated type
+ * says `field?: T | null`; that needs a binding regen. Until then this signature
+ * is what stops the loss. See docs/concepts/golden-paths/partial-update-semantics.md.
+ */
+export const updateAutomation = (id: string, input: Partial<UpdateAutomationInput>) =>
   invoke<PersonaAutomation>("update_automation", { id, input });
 
 export const deleteAutomation = (id: string) =>

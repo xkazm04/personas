@@ -109,7 +109,7 @@ pub fn list_members(
                 json_extract(c.metadata, '$.healthcheck_last_state'),
                 json_extract(c.metadata, '$.healthcheck_last_tested_at')
          FROM mcp_gateway_members m
-         INNER JOIN credentials c ON c.id = m.member_credential_id
+         INNER JOIN persona_credentials c ON c.id = m.member_credential_id
          WHERE m.gateway_credential_id = ?1
          ORDER BY m.sort_order ASC, m.created_at ASC",
     )?;
@@ -177,4 +177,82 @@ pub fn set_member_enabled(
         ],
     )?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::init_test_db;
+
+    fn credential(pool: &DbPool, id: &str, name: &str, service_type: &str) {
+        pool.get()
+            .unwrap()
+            .execute(
+                "INSERT INTO persona_credentials
+                    (id, name, service_type, encrypted_data, iv, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, 'x', 'y', '2026-01-01', '2026-01-01')",
+                params![id, name, service_type],
+            )
+            .unwrap();
+    }
+
+    /// The whole feature chain — `GatewayMembersModal` -> `mcpGateways.ts` ->
+    /// `commands::credentials::mcp_gateways` -> here — shipped 2026-04-08 and
+    /// never once worked. Two independent phantom references to a `credentials`
+    /// table that does not exist (the real one is `persona_credentials`) broke
+    /// it at both ends: the FK on `mcp_gateway_members` failed every INSERT with
+    /// `no such table: main.credentials`, and `list_members`' JOIN failed to
+    /// prepare. This test drives add -> list -> toggle -> remove end to end.
+    #[test]
+    fn add_list_and_remove_a_gateway_member() {
+        let pool = init_test_db().unwrap();
+        credential(&pool, "gw", "My Gateway", "mcp_gateway");
+        credential(&pool, "mem", "Linear MCP", "linear");
+
+        let id = add_member(&pool, "gw", "mem", "Linear", 0).expect("add_member must succeed");
+        assert!(!id.is_empty());
+
+        let members = list_members(&pool, "gw").expect("list_members must succeed");
+        assert_eq!(members.len(), 1);
+        assert_eq!(members[0].member_credential_id, "mem");
+        assert_eq!(members[0].member_label, "Linear MCP");
+        assert_eq!(members[0].member_service_type, "linear");
+        assert!(members[0].enabled);
+
+        set_member_enabled(&pool, "gw", "mem", false).unwrap();
+        assert!(!list_members(&pool, "gw").unwrap()[0].enabled);
+
+        assert_eq!(list_gateways_containing(&pool, "mem").unwrap(), vec!["gw"]);
+
+        remove_member(&pool, "gw", "mem").unwrap();
+        assert!(list_members(&pool, "gw").unwrap().is_empty());
+    }
+
+    /// The UNIQUE constraint carries the idempotency `add_member` documents.
+    #[test]
+    fn add_member_is_idempotent_on_the_same_pair() {
+        let pool = init_test_db().unwrap();
+        credential(&pool, "gw", "My Gateway", "mcp_gateway");
+        credential(&pool, "mem", "Linear MCP", "linear");
+
+        add_member(&pool, "gw", "mem", "Linear", 0).unwrap();
+        add_member(&pool, "gw", "mem", "Linear", 0).unwrap();
+        assert_eq!(list_members(&pool, "gw").unwrap().len(), 1);
+    }
+
+    /// Deleting a credential must take its membership rows with it — the
+    /// `ON DELETE CASCADE` that the phantom FK target made inoperative.
+    #[test]
+    fn deleting_a_member_credential_cascades() {
+        let pool = init_test_db().unwrap();
+        credential(&pool, "gw", "My Gateway", "mcp_gateway");
+        credential(&pool, "mem", "Linear MCP", "linear");
+        add_member(&pool, "gw", "mem", "Linear", 0).unwrap();
+
+        pool.get()
+            .unwrap()
+            .execute("DELETE FROM persona_credentials WHERE id = 'mem'", [])
+            .unwrap();
+        assert!(list_members(&pool, "gw").unwrap().is_empty());
+    }
 }

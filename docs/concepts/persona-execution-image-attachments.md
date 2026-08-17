@@ -2,7 +2,7 @@
 
 > **Status:** Proposal. No implementation in flight.
 > **Source:** `/research` run 2026-05-09 ([Claude + CapCut for Editors — Matt Loui](https://www.youtube.com/watch?v=8oIFBQ9BhVU))
-> **Related:** [per-persona-claude-code-skills.md](./per-persona-claude-code-skills.md) — these two concepts compose well for creator/visual personas.
+> **Related:** `per-persona-claude-code-skills.md` *(pruned in efc57998c)* — these two concepts compose well for creator/visual personas.
 
 ---
 
@@ -220,7 +220,7 @@ only sequencing. Reconsider when:
   wants PDF attachments, an audio-summarization persona that wants WAV
   attachments. At ≥2 distinct file-type demands, jump from Approach A to
   Approach C directly.
-- **The `[per-persona-claude-code-skills](./per-persona-claude-code-skills.md)`
+- **The ``per-persona-claude-code-skills.md` *(pruned in efc57998c)*`
   concept ships.** Skills + image attachments together are what unlock
   high-quality creator personas. Either alone is partial.
 - **Claude Code adds first-class image inputs to the `-p` mode CLI flag
@@ -248,7 +248,7 @@ only sequencing. Reconsider when:
 
 ## Cross-references
 
-- [per-persona-claude-code-skills.md](./per-persona-claude-code-skills.md) —
+- `per-persona-claude-code-skills.md` *(pruned in efc57998c)* —
   sister concept. Skills teach the persona "how to use Remotion correctly";
   attachments give the persona "this specific reference image". They compose
   well: a Remotion-skilled persona with a reference image attachment can

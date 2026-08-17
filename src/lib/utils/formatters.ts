@@ -1,5 +1,24 @@
 import type { PersonaMemoryCategory } from '@/lib/types/frontendTypes';
+import { useI18nStore } from '@/stores/i18nStore';
 import type { LucideIcon } from 'lucide-react';
+
+/**
+ * The active UI language, read at call time.
+ *
+ * Every locale-aware formatter below used to default to `'en'` and rely on
+ * callers passing `useTranslation().language`. Measured 2026-08-14, that
+ * instruction ran at ~96% non-compliance: of 197 value-driven `<Numeric>` sites
+ * only 8 passed it, and of 27 direct `formatCost` callers only 4 did. The result
+ * was en-US separators in a 14-locale app — `1.50` where seven of those locales
+ * want `1,50`.
+ *
+ * Read from the store rather than a hook so plain (non-React) callers get it too.
+ * Components re-render on language change through `useTranslation`, and
+ * `<Numeric>` binds the hook directly for that reason; this default covers the
+ * call sites a hook cannot reach. An explicit `language` argument still wins, so
+ * a fixed-locale export preview remains expressible.
+ */
+const activeLanguage = (): string => useI18nStore.getState().language;
 import { CheckCircle2, XCircle, AlertTriangle, Pause, Clock, Loader2, HelpCircle } from 'lucide-react';
 
 /**
@@ -104,11 +123,11 @@ export function formatCost(
   opts?: { precision?: 2 | 4 | 'auto'; language?: string },
 ): string {
   const precision = opts?.precision ?? 2;
-  const language = opts?.language ?? 'en';
-  // Costs are USD-denominated (LLM provider currency); only number
-  // formatting is locale-aware (decimal separator, grouping). UI callers
-  // should pass `language` from useTranslation() so non-English locales
-  // see e.g. "0,0042 $" in fr-FR instead of "$0.0042".
+  const language = opts?.language ?? activeLanguage();
+  // Costs are USD-denominated (LLM provider currency); only number formatting
+  // is locale-aware (decimal separator, grouping), so fr-FR reads "0,0042 $".
+  // This comment used to instruct callers to pass `language` themselves — an
+  // instruction 23 of 27 direct callers did not follow. The default now does it.
   const fmt = (amount: number, digits: number) =>
     getNumberFormat(language, {
       style: 'currency',
@@ -296,7 +315,7 @@ export function formatPercent(
   opts?: { fromRatio?: boolean; precision?: number; language?: string },
 ): string {
   if (value == null || Number.isNaN(value)) return '—';
-  const { fromRatio = false, precision = 1, language = 'en' } = opts ?? {};
+  const { fromRatio = false, precision = 1, language = activeLanguage() } = opts ?? {};
   const ratio = fromRatio ? value : value / 100;
   return getNumberFormat(language, {
     style: 'percent',
@@ -314,7 +333,7 @@ export function formatCount(
   opts?: { language?: string; precision?: number },
 ): string {
   if (value == null || Number.isNaN(value)) return '—';
-  const { language = 'en', precision } = opts ?? {};
+  const { language = activeLanguage(), precision } = opts ?? {};
   return getNumberFormat(language, {
     minimumFractionDigits: precision,
     maximumFractionDigits: precision ?? 2,
@@ -343,7 +362,7 @@ export function formatCompactNumber(
   opts?: { language?: string; precision?: number; threshold?: number },
 ): string {
   if (value == null || Number.isNaN(value)) return '—';
-  const { language = 'en', precision = 1, threshold = 10_000 } = opts ?? {};
+  const { language = activeLanguage(), precision = 1, threshold = 10_000 } = opts ?? {};
   if (Math.abs(value) < threshold) {
     return getNumberFormat(language, { maximumFractionDigits: 0 }).format(value);
   }
@@ -364,7 +383,7 @@ export function compactWithTitle(
 ): { display: string; title: string } {
   return {
     display: formatCompactNumber(value, opts),
-    title: formatCount(value, { language: opts?.language ?? 'en', precision: 0 }),
+    title: formatCount(value, { language: opts?.language ?? activeLanguage(), precision: 0 }),
   };
 }
 
@@ -417,6 +436,8 @@ export function formatNumeric(
 
 import type { SimpleStatus } from './designTokens';
 import { SIMPLE_MODE } from './designTokens';
+
+
 
 /**
  * Map a granular status string to one of three simple levels.

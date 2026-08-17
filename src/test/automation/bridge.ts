@@ -1601,10 +1601,15 @@ const bridge: TestBridge = {
    * harness to poll for terminal exec status before capturing
    * artifacts (so we never see `status=running` in the per-scenario
    * JSON reports).
+   *
+   * `callerPersonaId` is not optional: `get_execution` declares it (executions.rs:109)
+   * and passes it to `verify_execution_owner`. Omitting it made every call fail
+   * at the Tauri argument boundary, so this harness method never worked — it has
+   * no call sites, which is why nothing surfaced it.
    */
-  async getExecution(id: string) {
+  async getExecution(id: string, callerPersonaId: string) {
     try {
-      const execution = await invoke<unknown>('get_execution', { id });
+      const execution = await invoke<unknown>('get_execution', { id, callerPersonaId });
       return { success: true, execution };
     } catch (e: unknown) {
       return { success: false, error: unpackError(e) };

@@ -298,11 +298,27 @@ async fn run_out_of_cadence_for_project(
         .to_string();
     let snapshot = TickSnapshot::from_events(project_name, &events);
 
+    // Stamp the watermark BEFORE the await, not after.
+    //
+    // `run_for_project` performs an LLM consolidation, so it can take many
+    // seconds. Reading the clock afterwards advanced the watermark past
+    // everything created *during* that call — events that were never in
+    // `events`, and that the next tick will therefore never look at. Not a
+    // delay: a permanent skip, sized by however long the model took.
+    //
+    // This is the weaker of the two correct forms. The durable fix is to
+    // advance from OBSERVED DATA — the max timestamp among the events actually
+    // consumed — which is what four of the six watermarks in this repo already
+    // do, and which cannot skip a row by construction. That needs the events to
+    // carry a timestamp through `TickSnapshot`; filed in
+    // sync-reconciliation-and-conflicts.md.
+    let consumed_through = chrono::Utc::now();
+
     consolidator::run_for_project(&handle.pool, &sub, snapshot, Some(&handle.app_handle))
         .await?;
 
     // Advance the watermark (mirrors scheduler::run_project) so the next
     // push/tick consolidates only the NEW slice instead of overlapping ranges.
-    subscription::update_last_pulse_at(&handle.pool, &sub.project_id, chrono::Utc::now())?;
+    subscription::update_last_pulse_at(&handle.pool, &sub.project_id, consumed_through)?;
     Ok(())
 }

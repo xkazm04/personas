@@ -54,7 +54,7 @@ const CURATED = {
   Button: 'Canonical button — variants (primary/secondary/ghost/danger/accent), sizes, icons. Never style a raw <button>.',
   AsyncButton: 'Button that shows a spinner + disables itself while an async onClick is in flight.',
   CopyButton: 'Copy-to-clipboard button with built-in copied feedback. Use instead of raw navigator.clipboard.writeText.',
-  LoadingSpinner: 'Canonical loading spinner with size + a11y label. Use for any full-element loading state.',
+  LoadingSpinner: 'RENDERS NOTHING. Spinners are disabled app-wide; this survives for import compatibility and emits an sr-only role="status" only when given `label`. Never use it as a visual loading state — for a SURFACE use a calm delayed ghost (docs/design/overview-loading.md), for an ACTION use Button/AsyncButton, which render real spinners by design.',
   ConfirmDialog: 'Confirm/cancel dialog for destructive or irreversible actions.',
   ErrorBanner: 'User-facing error display — inline / banner / panel variants with retry + dismiss.',
   SuspenseFallback: 'Standard fallback for React.lazy/Suspense boundaries.',

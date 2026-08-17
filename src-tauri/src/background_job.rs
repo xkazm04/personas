@@ -219,7 +219,18 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
         let jobs = self.lock()?;
         if let Some(existing) = jobs.get(job_id) {
             if existing.status == "running" {
-                return Err(AppError::Validation("Job is already running".into()));
+                // `RateLimited`, not `Validation`. This is a CAPACITY refusal —
+                // the job is busy, the caller did nothing wrong, and trying again
+                // later is the correct response. The app's own taxonomy maps
+                // `Validation` to `(Misconfigured, retryable = false)`
+                // (`tool_outcome.rs:113`), so every caller of these three functions
+                // was told a transient "come back later" was a permanent
+                // misconfiguration. `RateLimited` is already `retryable = true`
+                // and already mirrored on the frontend.
+                //
+                // Two literals; 22 call sites corrected without touching one of
+                // them. Fixing the primitive beats counting the callers.
+                return Err(AppError::RateLimited("Job is already running".into()));
             }
         }
         Ok(())
@@ -237,7 +248,8 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
         self.evict_stale(&mut jobs);
         if let Some(existing) = jobs.get(&job_id) {
             if existing.status == "running" {
-                return Err(AppError::Validation("Job is already running".into()));
+                // Capacity refusal, not caller error — see the note in `ensure_not_running`.
+                return Err(AppError::RateLimited("Job is already running".into()));
             }
         }
         jobs.insert(
@@ -388,7 +400,8 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
             let mut jobs = self.lock()?;
             if let Some(existing) = jobs.get(job_id) {
                 if existing.status == "running" {
-                    return Err(AppError::Validation("Job is already running".into()));
+                    // Capacity refusal, not caller error — see the note in `ensure_not_running`.
+                return Err(AppError::RateLimited("Job is already running".into()));
                 }
             }
             let entry = jobs.entry(job_id.to_string()).or_default();

@@ -27,6 +27,7 @@ import { useVaultStore } from '@/stores/vaultStore';
 
 import { useUnifiedInbox } from './useUnifiedInbox';
 
+import { isCredentialVerified } from '@/lib/credentials/healthState';
 export interface CockpitSummary {
   /** Display name, email local-part, or null if no user is loaded. */
   greetingName: string | null;
@@ -86,7 +87,7 @@ export function useCockpitSummary(): CockpitSummary {
     const name =
       user?.display_name ?? (user?.email ? user.email.split('@')[0] ?? null : null);
     const activePersonas = personas.filter((p) => p.enabled !== false);
-    const okCreds = credentials.filter((c) => c.healthcheck_last_success === true);
+    const okCreds = credentials.filter((c) => isCredentialVerified(c));
     const todayPoint = executionDashboard?.daily_points?.at(-1);
     const needsMe = inbox.filter(
       (i) => i.kind === 'approval' || i.severity === 'critical',

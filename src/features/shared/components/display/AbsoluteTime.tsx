@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react';
-import { formatRelativeTime } from '@/lib/utils/formatters';
+import { formatRelativeTime, normalizeTimestamp } from '@/lib/utils/formatters';
 import { Tooltip } from './Tooltip';
 
 /**
@@ -43,7 +43,19 @@ export const AbsoluteTime = memo(function AbsoluteTime({
 }: AbsoluteTimeProps) {
   const ms = useMemo(() => {
     if (timestamp == null) return NaN;
-    return typeof timestamp === 'number' ? timestamp : Date.parse(timestamp);
+    // `normalizeTimestamp` is load-bearing, and its absence here was a live
+    // correctness bug on every non-UTC machine. SQLite's datetime('now') yields
+    // "YYYY-MM-DD HH:MM:SS" — UTC with NO timezone marker — and Date.parse
+    // reads a designator-less, space-separated string as LOCAL time. Executed
+    // on the operator's own box (Europe/Prague): "2026-08-14 12:34:56" parsed
+    // to 10:34:56Z, so every one of this component's 37 call sites rendered two
+    // hours off, and a just-written row displayed in the FUTURE.
+    //
+    // The helper already existed, already handled this, and already documented
+    // it ("a row written 'now' can read '2h ago' for a UTC+2 viewer") — and
+    // RelativeTime already imported it. Only this component skipped it. Eighth
+    // instance this wave of the better answer existing, unused.
+    return typeof timestamp === 'number' ? timestamp : Date.parse(normalizeTimestamp(timestamp));
   }, [timestamp]);
 
   if (Number.isNaN(ms)) return <span className={className}>{fallback}</span>;

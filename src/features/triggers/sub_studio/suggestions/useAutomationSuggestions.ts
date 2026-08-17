@@ -83,7 +83,11 @@ export function useAutomationSuggestions(onRouteCommitted?: () => void) {
       // its exclusion tag would let its own traffic feed future evidence.
       await acceptAutomationSuggestion(s.id, created.id);
       await updateTrigger(created.id, s.personaId, {
-        trigger_type: null, config: null, enabled: true, next_trigger_at: null,
+        // `enabled` only. `next_trigger_at` used to be passed as null here,
+        // which is a double_option — so this cleared the fire time at the same
+        // moment it enabled the trigger. Every accepted suggestion was armed
+        // and disarmed in one call.
+        enabled: true,
       });
 
       addToast(st.ghost_accepted_toast, 'success');

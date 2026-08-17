@@ -38,6 +38,7 @@ use crate::engine::prompt;
 use crate::engine::types::StreamLineType;
 use crate::error::AppError;
 use crate::AppState;
+use personas_macros::requires;
 
 // ---------------------------------------------------------------------------
 // Background job state for creative sessions
@@ -251,7 +252,13 @@ pub fn artist_import_asset(
 /// hostile row can never make us remove an arbitrary path. A file that is
 /// already gone is tolerated; a real filesystem error is surfaced before the DB
 /// row is touched, so we never orphan the file by dropping its row.
+///
+/// Privileged: this unlinks a file from disk and drops a row whose delete
+/// cascades to `artist_tags`. Every other file-touching artist command
+/// (transcription, the ffmpeg surface, composition persistence) is already
+/// gated; this one was the gap.
 #[tauri::command]
+#[requires(privileged)]
 pub fn artist_delete_asset(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     let pool = &state.db;
 

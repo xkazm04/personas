@@ -18,7 +18,15 @@ export interface AutomationSlice {
   // Actions
   fetchAutomations: (personaId: string) => Promise<void>;
   createAutomation: (input: CreateAutomationInput) => Promise<PersonaAutomation | null>;
-  updateAutomation: (id: string, input: UpdateAutomationInput) => Promise<void>;
+  /**
+   * Update an automation. Pass ONLY the fields being changed — omission means
+   * "leave alone", `null` on a `double_option` field means CLEAR. `Partial<>` is
+   * what makes "leave alone" expressible at all; the generated
+   * `UpdateAutomationInput` marks every field required, which previously forced
+   * callers to pass `null` for all sixteen and silently erased data.
+   * See docs/concepts/golden-paths/partial-update-semantics.md.
+   */
+  updateAutomation: (id: string, input: Partial<UpdateAutomationInput>) => Promise<void>;
   deleteAutomation: (id: string) => Promise<void>;
   triggerAutomation: (id: string, inputData?: string) => Promise<AutomationRun | null>;
   testAutomation: (id: string) => Promise<AutomationRun | null>;

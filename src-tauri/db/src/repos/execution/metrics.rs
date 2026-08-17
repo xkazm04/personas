@@ -1657,7 +1657,7 @@ pub fn get_anomaly_drilldown(
                 let mut stmt = conn.prepare_cached(
             "SELECT r.id, r.credential_id, c.name, r.rotation_type, r.status, r.detail, r.created_at
              FROM credential_rotation_history r
-             LEFT JOIN credentials c ON c.id = r.credential_id
+             LEFT JOIN persona_credentials c ON c.id = r.credential_id
              WHERE r.created_at BETWEEN ?1 AND ?2
              ORDER BY r.created_at"
         )?;
@@ -2367,5 +2367,39 @@ mod tests {
         let summary = get_summary(&pool, Some(30), None).unwrap();
         assert_eq!(summary.total_executions, 0);
         assert_eq!(summary.active_personas, 0);
+    }
+
+    /// The credential-rotation leg of the drill-down joined a table named
+    /// `credentials`, which does not exist (it is `persona_credentials`), so
+    /// `prepare_cached` failed and the whole drill-down errored out. A prepare
+    /// failure is not visible until the statement is actually run, which is why
+    /// this test exercises the function rather than asserting on schema.
+    #[test]
+    fn anomaly_drilldown_prepares_the_credential_rotation_join() {
+        let pool = init_test_db().unwrap();
+        {
+            let conn = pool.get().unwrap();
+            conn.execute_batch(
+                "INSERT INTO persona_credentials
+                    (id, name, service_type, encrypted_data, iv, created_at, updated_at)
+                 VALUES ('c1', 'GitHub token', 'github', 'x', 'y', '2026-01-01', '2026-01-01');
+                 INSERT INTO credential_rotation_history
+                    (id, credential_id, rotation_type, status, detail, created_at)
+                 VALUES ('r1', 'c1', 'manual', 'success', 'rotated', '2026-01-02T09:00:00');",
+            )
+            .unwrap();
+        }
+
+        let data = get_anomaly_drilldown(&pool, "2026-01-02", "error_rate", 0.5, 0.1, 400.0, None)
+            .expect("drill-down must not fail on the credential-rotation join");
+
+        assert!(
+            data.correlated_events
+                .iter()
+                .any(|e| e.event_type == "credential_rotation"
+                    && e.label.contains("GitHub token")),
+            "the rotation event did not come back with its credential name: {:?}",
+            data.correlated_events
+        );
     }
 }

@@ -133,16 +133,26 @@ console.log('\nCase 3b: all four surfaces touched — clean');
 // Case 4: source with marketing target but NO onboarding coupling
 //         + doc touched → marketing still fires (exit 2)
 // ────────────────────────────────────────────────────────────────────────
-console.log('\nCase 4: deployment source + doc (no onboarding) — marketing still fires');
+console.log('\nCase 4: deployment source + doc — marketing fires, and so does agents onboarding');
 {
   const r = runHook([
-    { tool: 'Edit', path: 'src/features/deployment/components/cloud/foo.tsx' },
+    // Was 'src/features/deployment/...' — a directory that DOES NOT EXIST. The
+    // fixture passed anyway because these paths are synthetic, so this case
+    // asserted the hook fires for a file nobody can edit. The feature actually
+    // lives at src/features/agents/sub_deployment/ (verified: that directory
+    // holds UnifiedDeploymentDashboard.tsx and the components/cloud/ panels the
+    // deployment doc describes), and the map glob was repaired to match.
+    { tool: 'Edit', path: 'src/features/agents/sub_deployment/components/cloud/foo.tsx' },
     { tool: 'Edit', path: 'docs/features/deployment/README.md' },
   ]);
   expect('exit code is 2 (marketing pending)', r.code === 2, `got ${r.code}`);
   expect('NO feature-doc nag', !r.stderr.includes('Doc-sync reminder'));
-  expect('NO onboarding nag', !r.stderr.includes('Onboarding-tour reminder'));
-  expect('marketing nag fires alone', r.stderr.includes('Marketing-guide reminder'));
+  // Deployment lives UNDER src/features/agents/, so it is also covered by the
+  // personas entry, which declares onboarding flows. This assertion previously
+  // read "NO onboarding nag" and only held because the fixture path was fake.
+  // The overlap is real and correct: editing this file does touch both areas.
+  expect('onboarding nag fires (deployment is under agents/)', r.stderr.includes('Onboarding-tour reminder'));
+  expect('marketing nag fires', r.stderr.includes('Marketing-guide reminder'));
   expect('mentions module "deployment"', r.stderr.includes('module "deployment"'));
 }
 

@@ -115,11 +115,45 @@ pub fn is_privileged_command(command: &str) -> bool {
 /// The IPC token monkey-patch has a race condition on Windows WebView2 where
 /// the native bridge may not forward `Headers` objects before the patch fires.
 pub const PRIVILEGED_COMMANDS: &[&str] = &[
+    // Promoted 2026-08-13: each already carried #[requires(privileged)] but was
+    // absent from this list, which for an async command is ZERO enforcement.
+    // Verified before listing: none opens a native file dialog (the documented
+    // WebView2 header-forwarding failure at the Data Portability note below),
+    // and none is a boot-path call. tauriInvoke attaches x-ipc-token to every
+    // invoke, so listing is safe for user-initiated commands.
+    "add_mcp_gateway_member",
+    "remove_mcp_gateway_member",
+    "set_mcp_gateway_member_enabled",
+    "cli_capture_save",
+    "refresh_credential_cli_now",
+    "deploy_automation",
+    "n8n_create_workflow",
+    "n8n_activate_workflow",
+    "n8n_deactivate_workflow",
+    "n8n_trigger_webhook",
+    "github_create_patch_release",
+    "invoke_tool_direct",
+    "probe_mcp_server",
+    "openapi_parse_from_url",
+    "openapi_playground_test",
+    "dry_run_trigger",
+    "simulate_use_case",
+    "set_use_case_enabled",
+    "set_use_case_generation_settings",
+    "rename_event_listeners",
+    "cloud_sync_set_enabled",
+    "discover_connector_resources",
+    "execute_persona",
     // Credentials -- Write/Delete CRUD (reads are public)
     "create_credential",
     "update_credential",
     "patch_credential_metadata",
     "delete_credential",
+    // Impact preview for `delete_credential` — enumerates the personas,
+    // rotation policies and event triggers bound to a secret. A preview must
+    // cost at least what the action costs; it was Public while the delete was
+    // privileged, which made reconnaissance cheaper than the attack.
+    "credential_blast_radius",
     "create_credential_event",
     "update_credential_event",
     "delete_credential_event",
@@ -343,10 +377,34 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "artist_save_composition",
     "artist_load_composition",
     "artist_autosave_composition",
+    // ...and the destructive members of the same surface, which were the only
+    // artist commands left ungated: `artist_delete_asset` unlinks a file from
+    // disk and drops a row whose delete cascades to `artist_tags`;
+    // `artist_clear_autosave` destroys the user's unsaved composition.
+    "artist_delete_asset",
+    "artist_clear_autosave",
+    // Drive -- the managed-sandbox recursive-destroy primitive. `resolve_safe`
+    // constrains WHAT it can address; this entry constrains WHO may call it.
+    // A second call on a `.trash/` path hard-deletes.
+    "drive_delete",
+    // Fleet -- `Registry::remove` drops ANY session row, including one holding
+    // a live PTY child (the liveness-checked variant is `forget_dead`).
+    // Removing a live row orphans a running Claude Code process.
+    "fleet_remove_session",
+    // Auth -- clears the RFC 6749 §10.12 OAuth CSRF nonce. Not a CSRF bypass
+    // (the callback fails closed when no nonce is pending) but a denial of
+    // login, and it releases the "sign-in already in progress" interlock.
+    "clear_pending_oauth",
+    // Scraper -- destroys a saved scrape config together with its cron
+    // schedule. No undo.
+    "scraper_delete_config",
     // Persona icon generation -- decrypts a vault credential and spends the
     // user's image-gen API key, so it must be privileged like other secret-using
     // commands (its sibling `list_image_gen_credentials` is read-only metadata).
     "generate_persona_icon",
+    // ...and its delete counterpart, which removes the icon file AND runs an
+    // unscoped `UPDATE personas SET icon = ''` over every persona using it.
+    "delete_persona_icon",
     // Network -- Persona bundle export/import (file + clipboard) + share link
     // + enclave seal. Every entry here reads/writes a caller-supplied file
     // path, clipboard payload, or persona secret bundle, and all but
@@ -703,6 +761,12 @@ static CLOUD_COMMANDS_SET: LazyLock<HashSet<&'static str>> =
 /// Read-only config/status checks (cloud_get_config, cloud_status,
 /// gitlab_get_config) are public to allow startup without auth.
 pub const CLOUD_COMMANDS: &[&str] = &[
+    // Promoted 2026-08-13 — same reasoning as the PRIVILEGED block above.
+    "remote_command_approve",
+    "remote_command_reject",
+    "cloud_sync_persona",
+    "cloud_adopt_deployment",
+    "cloud_sync_now",
     "cloud_connect",
     "cloud_reconnect_from_keyring",
     "cloud_disconnect",
@@ -787,7 +851,11 @@ mod tests {
         assert_eq!(command_tier("greet"), AuthTier::Public);
         assert_eq!(command_tier("get_auth_state"), AuthTier::Public);
         assert_eq!(command_tier("list_personas"), AuthTier::Public);
-        assert_eq!(command_tier("execute_persona"), AuthTier::Public);
+        // execute_persona was asserted Public here purely because it was
+        // missing from PRIVILEGED_COMMANDS — a description of the drift, not a
+        // requirement. Its own #[requires(privileged)] attribute is the stated
+        // intent, and it spends money. Promoted 2026-08-13.
+        assert_eq!(command_tier("execute_persona"), AuthTier::Privileged);
     }
 
     #[test]
@@ -981,6 +1049,166 @@ mod tests {
              call (require_privileged_sync hard-requires the wrapper's \
              thread-local flag, which the wrapper only sets for commands on \
              this list) — add each one to PRIVILEGED_COMMANDS above."
+        );
+    }
+
+    // ── Async annotation drift ──────────────────────────────────────────
+    //
+    // The sibling test above walks `require_privileged_sync` CALL SITES, so it
+    // only ever sees sync commands. That blind spot is not cosmetic: for a sync
+    // command, annotated-but-unlisted fails closed on every call and someone
+    // notices. For an ASYNC command it is ZERO enforcement — `require_privileged`
+    // merely checks the session token exists at boot and returns Ok(()), and
+    // `require_auth` / `require_auth_sync` are unconditional Ok(()). So an async
+    // command can carry `#[requires(privileged)]`, be absent from the list, and
+    // be silently public.
+    //
+    // This test walks the ANNOTATIONS instead — both tiers, sync and async.
+
+    /// Commands annotated but not listed as of 2026-08-13, with the reason each
+    /// is tolerated. **This list may only shrink.** A new annotated-but-unlisted
+    /// command fails the test; removing an entry means either listing the command
+    /// or deleting a wrong annotation.
+    ///
+    /// Deliberately NOT bulk-listed: adding a name to PRIVILEGED_COMMANDS makes
+    /// the command fail closed without a session token, so a wrong entry breaks a
+    /// live feature. Each OWED entry needs its UI call path verified first.
+    const DRIFT_BASELINE: &[(&str, &str)] = &[
+        // — read-only; the annotation is arguably the wrong tier —
+        ("list_mcp_gateway_members", "read-only listing"),
+        ("count_event_listeners", "read-only count"),
+        ("get_use_case_cascade", "read-only read"),
+        ("github_list_repos", "read-only listing"),
+        ("n8n_list_workflows", "read-only listing"),
+        ("cloud_sync_status", "read-only status"),
+        ("github_check_permissions", "read-only probe"),
+        ("get_simulation_artefacts", "read-only read"),
+        ("remote_command_list_pending", "read-only listing"),
+        ("cloud_get_config", "read-only config read"),
+        ("cloud_diagnose", "read-only diagnostic"),
+        ("cloud_status", "read-only status"),
+        ("gitlab_get_config", "read-only config read"),
+        ("gitlab_deployment_status", "read-only status"),
+        ("list_deployment_history_all", "read-only listing"),
+        // — sensitive writes that SHOULD be listed; verify the UI call path
+        //   carries the IPC token before listing, or the feature breaks —
+        ("import_portability_bundle_from_path", "OWED: bulk import"),
+        // — deliberate exclusions, documented at ipc_auth.rs:396: the wrapper
+        //   already gates these and listing them would double-guard —
+        ("export_credentials", "deliberate: wrapper-level gate, see :396"),
+        ("import_credentials", "deliberate: wrapper-level gate, see :396"),
+        ("export_full", "deliberate: wrapper-level gate, see :396"),
+        ("import_portability_bundle", "deliberate: wrapper-level gate, see :396"),
+        ("get_api_proxy_metrics", "OWED: verify tier"),
+        // — deliberate exclusions (ipc_auth.rs:245-252): the wrapper x-ipc-token
+        //   check fails intermittently on Windows WebView2 when the renderer
+        //   BATCHES several privileged invokes during page init. Their bodies call
+        //   async require_privileged, which verifies init and emits an audit trace
+        //   but does NOT authorize — audit depth, not access control. —
+        ("execute_api_request", "deliberate: WebView2 batched-invoke race, see :245"),
+        ("save_api_definition", "deliberate: WebView2 batched-invoke race, see :245"),
+        // — OPERATOR DECISION REQUIRED —
+    ];
+
+    fn scan_annotations(dir: &std::path::Path, found: &mut Vec<(String, String)>) {
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            return;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                scan_annotations(&path, found);
+            } else if path.extension().and_then(|e| e.to_str()) == Some("rs") {
+                let Ok(text) = std::fs::read_to_string(&path) else {
+                    continue;
+                };
+                let lines: Vec<&str> = text.lines().collect();
+                for (i, line) in lines.iter().enumerate() {
+                    let tier = if line.contains("#[requires(privileged)]") {
+                        "privileged"
+                    } else if line.contains("#[requires(cloud)]") {
+                        "cloud"
+                    } else {
+                        continue;
+                    };
+                    for probe in lines.iter().skip(i + 1).take(5) {
+                        let trimmed = probe.trim();
+                        let rest = trimmed
+                            .strip_prefix("pub async fn ")
+                            .or_else(|| trimmed.strip_prefix("pub fn "));
+                        if let Some(rest) = rest {
+                            let name: String = rest
+                                .chars()
+                                .take_while(|c| c.is_alphanumeric() || *c == '_')
+                                .collect();
+                            if !name.is_empty() {
+                                found.push((name, tier.to_string()));
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn every_requires_annotation_is_listed_or_baselined() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut found = Vec::new();
+        scan_annotations(&root, &mut found);
+
+        // Assert the INSTRUMENT before the result. A walk that silently matched
+        // nothing would otherwise report perfect compliance — the exact failure
+        // shape this repo keeps shipping (golden-path-contract.md section 9).
+        assert!(
+            found.len() > 150,
+            "expected well over 150 `#[requires(...)]` annotations, found {} — the \
+             source walk is broken, not the codebase suddenly clean",
+            found.len()
+        );
+
+        let baselined: std::collections::HashSet<&str> =
+            DRIFT_BASELINE.iter().map(|(n, _)| *n).collect();
+
+        let mut unlisted: Vec<String> = found
+            .iter()
+            .filter(|(name, _)| {
+                !PRIVILEGED_COMMANDS.contains(&name.as_str())
+                    && !CLOUD_COMMANDS.contains(&name.as_str())
+                    && !baselined.contains(name.as_str())
+            })
+            .map(|(name, tier)| format!("{name} (#[requires({tier})])"))
+            .collect();
+        unlisted.sort();
+        unlisted.dedup();
+        assert!(
+            unlisted.is_empty(),
+            "These commands carry a `#[requires(...)]` attribute but appear in \
+             neither PRIVILEGED_COMMANDS nor CLOUD_COMMANDS. For an ASYNC command \
+             that is ZERO enforcement, not a missing signal. Add each to the \
+             correct list, or remove the wrong annotation:\n  {}",
+            unlisted.join("\n  ")
+        );
+
+        // The baseline may only shrink: an entry now listed, or no longer
+        // annotated, is stale and must be deleted from it.
+        let annotated: std::collections::HashSet<&str> =
+            found.iter().map(|(n, _)| n.as_str()).collect();
+        let stale: Vec<&str> = DRIFT_BASELINE
+            .iter()
+            .map(|(n, _)| *n)
+            .filter(|n| {
+                !annotated.contains(n)
+                    || PRIVILEGED_COMMANDS.contains(n)
+                    || CLOUD_COMMANDS.contains(n)
+            })
+            .collect();
+        assert!(
+            stale.is_empty(),
+            "DRIFT_BASELINE entries are resolved (listed, or no longer annotated). \
+             Delete them — the baseline may only shrink:\n  {}",
+            stale.join("\n  ")
         );
     }
 }

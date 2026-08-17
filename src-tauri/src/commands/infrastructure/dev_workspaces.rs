@@ -11,7 +11,7 @@ use tauri::State;
 
 use crate::db::models::{
     DevProject, DevWorkspace, PracticeContextRollup, WorkspaceConsultStats, WorkspaceImportItem,
-    WorkspaceKnowledge, WorkspacePatternEdge, WorkspacePlaybook, WorkspacePlaybookPattern,
+    WorkspaceKnowledge, WorkspaceKnowledgeEvidence, WorkspacePatternEdge, WorkspacePlaybook, WorkspacePlaybookPattern,
     WorkspacePracticeAdoption,
 };
 use crate::db::repos::dev_workspaces as repo;
@@ -285,6 +285,90 @@ pub fn dev_tools_workspace_knowledge_decide_bulk(
 
 /// Derive `governing_id` across a workspace: within each topic, the macro
 /// doctrine adopts its instances. Runs after ingest and on demand.
+// ── pattern-fabric v2: evidence + structure doors ───────────────────────
+
+/// Evidence rows for one knowledge item (pattern-fabric v2), newest first.
+#[tauri::command]
+pub fn dev_tools_workspace_evidence_list(
+    state: State<'_, Arc<AppState>>,
+    knowledge_id: String,
+) -> Result<Vec<WorkspaceKnowledgeEvidence>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_knowledge_evidence(&state.db, &knowledge_id)
+}
+
+/// Add one evidence row (source defaults to 'manual' — the human door; the
+/// harvest ingest and the verify lane write their own sources internally).
+#[tauri::command]
+pub fn dev_tools_workspace_evidence_add(
+    state: State<'_, Arc<AppState>>,
+    knowledge_id: String,
+    project_id: Option<String>,
+    refs: Vec<String>,
+    quote: Option<String>,
+) -> Result<WorkspaceKnowledgeEvidence, AppError> {
+    require_auth_sync(&state)?;
+    repo::add_knowledge_evidence(
+        &state.db,
+        &knowledge_id,
+        project_id.as_deref(),
+        &refs,
+        quote.as_deref(),
+        "manual",
+    )
+}
+
+#[tauri::command]
+pub fn dev_tools_workspace_evidence_delete(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    repo::delete_knowledge_evidence(&state.db, &id)
+}
+
+/// Patch body for `set_structure`. A bare `Option<Option<T>>` command arg
+/// CANNOT express "clear" over IPC: serde matches an explicit JSON `null`
+/// at the OUTER option first, collapsing it to "leave alone" — the P2 pilot
+/// hit exactly this (5 promoted principles silently kept their governors).
+/// The `double_option` deserializer restores the three states: field absent
+/// = leave alone, `null` = clear, value = set.
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct KnowledgeStructurePatch {
+    #[serde(default, deserialize_with = "double_option")]
+    layer: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
+    governing_id: Option<Option<String>>,
+}
+
+fn double_option<'de, T, D>(de: D) -> Result<Option<Option<T>>, D::Error>
+where
+    T: serde::Deserialize<'de>,
+    D: serde::Deserializer<'de>,
+{
+    serde::Deserialize::deserialize(de).map(Some)
+}
+
+/// Set a knowledge row's place in the three-layer hierarchy. Nullable-patch
+/// semantics per `KnowledgeStructurePatch` (omit = leave alone, explicit
+/// null = clear); setting/clearing the parent keeps the mirrored `governs`
+/// edge in sync.
+#[tauri::command]
+pub fn dev_tools_workspace_knowledge_set_structure(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    patch: KnowledgeStructurePatch,
+) -> Result<WorkspaceKnowledge, AppError> {
+    require_auth_sync(&state)?;
+    repo::set_knowledge_structure(
+        &state.db,
+        &id,
+        patch.layer.as_ref().map(|o| o.as_deref()),
+        patch.governing_id.as_ref().map(|o| o.as_deref()),
+    )
+}
+
 #[tauri::command]
 pub fn dev_tools_workspace_roll_up_doctrine(
     state: State<'_, Arc<AppState>>,

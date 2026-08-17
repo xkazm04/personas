@@ -10,6 +10,7 @@ use crate::engine::crypto::SecureString;
 use crate::engine::event_registry::event_name;
 use crate::error::AppError;
 use crate::AppState;
+use personas_macros::requires;
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -652,7 +653,16 @@ pub async fn get_auth_state(
 }
 
 /// Clear a stale pending OAuth state that blocks new login attempts.
+///
+/// Privileged: `pending_oauth_state` is the RFC 6749 §10.12 CSRF nonce. An
+/// unauthorised clear is not a CSRF bypass — the callback fails closed on
+/// `(None, _)` below — but it *is* a denial of login (a completed Google
+/// sign-in comes back and is rejected as "unsolicited"), and it releases the
+/// "an OAuth sign-in is already in progress" interlock that exists to stop a
+/// second flow overwriting the first flow's nonce.
+/// Attribute is audit-only (async); the `PRIVILEGED_COMMANDS` entry gates it.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn clear_pending_oauth(state: tauri::State<'_, Arc<AppState>>) -> Result<(), AppError> {
     let mut auth = state.auth.write().await;
     auth.pending_oauth_state = None;

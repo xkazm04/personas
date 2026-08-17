@@ -15,7 +15,7 @@ import type { DevProject } from '@/lib/bindings/DevProject';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { KnowledgeStatusChip } from '@/features/plugins/dev-tools/sub_workspaces/centerShared';
-import { reviewValue, STATUS_RANK, type KnowledgeItemView } from './libraryModel';
+import { isDirection, reviewValue, STATUS_RANK, type KnowledgeItemView } from './libraryModel';
 
 const KIND_VALUES: KnowledgeKind[] = ['pattern', 'pitfall', 'decision', 'howto', 'fact'];
 /**
@@ -178,6 +178,10 @@ export default function KnowledgeTree({
             i.status === 'observed' || i.status === 'proposed' ? 0 : 1;
           const byPending = pending(a) - pending(b);
           if (byPending !== 0) return byPending;
+          // Directions before techniques within the same review tier — the
+          // inverted library opens on doctrine, and evidence is drilled into.
+          const byTier = (isDirection(a) ? 0 : 1) - (isDirection(b) ? 0 : 1);
+          if (byTier !== 0) return byTier;
           const byValue = (reviewValue(a) - reviewValue(b)) * dir;
           return byValue !== 0 ? byValue : a.updatedAt.localeCompare(b.updatedAt) * dir;
         }
@@ -302,7 +306,16 @@ export default function KnowledgeTree({
       // between scanning a list of labels and reading a list of claims.
       render: (r) => (
         <span className="flex flex-col gap-0.5 min-w-0">
-          <span className="typo-body text-foreground truncate">{r.title}</span>
+          <span className="flex items-center gap-1.5 min-w-0">
+            {isDirection(r) && (
+              <span className="typo-label flex-shrink-0 rounded-pill border border-primary/30 bg-primary/10 px-1.5 py-px text-primary">
+                {tw.direction_badge}
+              </span>
+            )}
+            <span className={`typo-body truncate ${isDirection(r) ? 'font-medium text-foreground' : 'text-foreground'}`}>
+              {r.title}
+            </span>
+          </span>
           <span className="typo-caption text-foreground/70 line-clamp-2">{r.statement}</span>
         </span>
       ),

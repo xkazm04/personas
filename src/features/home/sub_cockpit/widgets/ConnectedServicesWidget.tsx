@@ -12,6 +12,7 @@ import { DebtText } from '@/i18n/DebtText';
 
 
 
+import { readCredentialHealthState } from '@/lib/credentials/healthState';
 /**
  * Connected services — credentials in the vault + how many personas reference
  * each one + a health pill (ok / warn / unknown). Click navigates to the
@@ -107,11 +108,13 @@ export function ConnectedServicesWidget({ config, title }: CockpitWidgetProps) {
         <ul className="flex-1 space-y-1 overflow-y-auto">
           {rows.map((c) => {
             const used = usageByCredentialId.get(c.id) ?? 0;
-            const status = c.healthcheck_last_success === true
-              ? 'ok'
-              : c.healthcheck_last_success === false
-                ? 'warn'
-                : 'unknown';
+            // `unverifiable` (the connector has no live probe) reads as
+            // `unknown` here rather than `warn` — it is not a failure, and
+            // showing it as one is what the three-state resolver exists to
+            // prevent. See @/lib/credentials/healthState.
+            const health = readCredentialHealthState(c);
+            const status =
+              health === 'verified' ? 'ok' : health === 'failed' ? 'warn' : 'unknown';
             return (
               <li key={c.id}>
                 <button

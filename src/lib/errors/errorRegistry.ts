@@ -74,7 +74,7 @@ const ERROR_RULES: ErrorRule[] = [
   },
   // ── Network & connectivity ──────────────────────────────────────────
   {
-    match: 'NetworkOffline',
+    match: /NetworkOffline|Network offline:/,
     error: {
       message: 'You appear to be offline.',
       suggestion: 'Check your internet connection and try again.',
@@ -169,7 +169,7 @@ const ERROR_RULES: ErrorRule[] = [
     },
   },
   {
-    match: 'RateLimited',
+    match: /RateLimited|Rate limited:/,
     error: {
       message: 'You\'ve hit a rate limit.',
       suggestion: 'Wait a few seconds before retrying.',
@@ -486,7 +486,7 @@ const ERROR_RULES: ErrorRule[] = [
 
   // ── Database / connection ───────────────────────────────────────────
   {
-    match: 'NotFound',
+    match: /NotFound|Not found:/,
     error: {
       message: 'The requested item could not be found.',
       suggestion: 'It may have been deleted. Refresh and try again.',

@@ -93,6 +93,8 @@ const OUTPUT_CONTRACT = `OUTPUT CONTRACT — write \`practice-harvest/runs/<YYYY
       "dedup_key": "harvest:<stable-slug>",        // optional; the app derives one from the title if omitted
       "confidence": 0.7,                           // optional 0..1
       "extends": "<pattern-id>"                    // optional: the EXISTING pattern this item refines (id from existing_practices in snapshot.json). Use when your finding sharpens or specializes canon rather than proposing something new — it links your item to its parent and, on adoption, files it under the parent's topic.
+      "layer": "manifestation",                    // optional: principle | manifestation. A PRINCIPLE is universal and language-free; a MANIFESTATION applies one to this stack/seam. Omit when unsure - never guess.
+      "evidence": [ { "refs": ["src/path/file.ts:120"], "quote": "the guard comment or excerpt" } ]  // structured proof rows - PREFERRED over prose citations inside detail_md
     }
   ],
   "coverage": {                                    // REQUIRED — see COVERAGE below

@@ -210,7 +210,6 @@
         "src/features/personas/**",
         "src/features/agents/**",
         "src-tauri/src/commands/core/personas.rs",
-        "src-tauri/src/commands/core/agent_ir.rs",
         "src-tauri/core/src/models/persona.rs",
         "src-tauri/core/src/models/agent_ir.rs"
       ],
@@ -243,16 +242,15 @@
       "doc": "docs/features/execution/README.md",
       "sourceGlobs": [
         "src-tauri/src/commands/execution/**",
-        "src-tauri/src/engine/runner.rs",
         "src-tauri/src/engine/background.rs",
         "src-tauri/engine/src/bus.rs",
-        "src-tauri/src/engine/scheduler.rs",
+        "src-tauri/core/src/scheduler.rs",
         "src-tauri/core/src/cron.rs",
         "src-tauri/db/src/chain.rs",
         "src-tauri/src/engine/dispatch.rs",
         "src-tauri/src/companion/prompt.rs",
         "src-tauri/engine/src/cli_process.rs",
-        "src-tauri/src/engine/parser.rs",
+        "src-tauri/engine/src/parser.rs",
         "src-tauri/core/src/trace.rs",
         "src-tauri/engine/src/cost.rs",
         "src-tauri/src/engine/automation_runner.rs",
@@ -367,7 +365,7 @@
       "doc": "docs/features/overview/README.md",
       "sourceGlobs": [
         "src/features/overview/**",
-        "src/features/shared/components/layout/SystemLoadFooterIcon.tsx",
+        "src/features/shared/chrome/SystemLoadFooterIcon.tsx",
         "src/features/shared/components/layout/systemLoad.ts",
         "src-tauri/src/commands/infrastructure/system_metrics.rs"
       ],
@@ -388,11 +386,8 @@
     {
       "doc": "docs/features/monitor.md",
       "sourceGlobs": [
-        "src/features/monitor/**",
         "src/features/fleet/monitor/**",
-        "src/features/shared/components/layout/ProcessActivityIndicator.tsx",
-        "src/features/shared/components/layout/FleetActivityStrip.tsx",
-        "src/features/shared/components/layout/monitor/**"
+        "src/features/shared/chrome/FleetActivityStrip.tsx"
       ]
     },
     {
@@ -498,7 +493,7 @@
       "sourceGlobs": [
         "src/features/scraper/**",
         "src-tauri/src/commands/infrastructure/scraper.rs",
-        "src-tauri/src/engine/scraper.rs"
+        "src-tauri/engine/src/scraper.rs"
       ]
     },
     {
@@ -513,7 +508,7 @@
     {
       "doc": "docs/features/deployment/README.md",
       "sourceGlobs": [
-        "src/features/deployment/**",
+        "src/features/agents/sub_deployment/**",
         "src/api/system/cloud.ts",
         "src-tauri/src/cloud/**"
       ],
@@ -522,7 +517,6 @@
     {
       "doc": "docs/features/sharing/README.md",
       "sourceGlobs": [
-        "src/features/sharing/**",
         "src-tauri/src/commands/network/**",
         "src-tauri/src/engine/bundle.rs",
         "src-tauri/src/engine/share_link.rs",
@@ -546,8 +540,7 @@
       "sourceGlobs": [
         "src/features/teams/**",
         "src-tauri/src/commands/teams/**",
-        "src-tauri/src/db/repos/core/teams.rs",
-        "src-tauri/src/db/repos/core/groups.rs",
+        "src-tauri/db/src/repos/resources/teams.rs",
         "src-tauri/db/src/repos/orchestration/**",
         "src-tauri/src/engine/team_assignment_orchestrator.rs",
         "src-tauri/src/engine/team_assignment_matching.rs"
@@ -580,18 +573,17 @@
       "doc": "docs/features/live-roadmap/live-roadmap.md",
       "sourceGlobs": [
         "src/features/home/sub_releases/**",
-        "src-tauri/src/commands/infrastructure/live_roadmap.rs"
+        "src-tauri/src/commands/live_roadmap.rs"
       ],
       "marketingModule": "home"
     },
     {
       "doc": "docs/features/radio.md",
       "sourceGlobs": [
-        "src/features/radio/**",
+        "src/features/plugins/radio/**",
         "src-tauri/src/radio/**",
         "src-tauri/src/commands/radio.rs",
-        "src-tauri/data/radio_stations.json",
-        "public/radio.html"
+        "src-tauri/data/radio_stations.json"
       ]
     },
     {

@@ -1,0 +1,817 @@
+{
+  "slice": "client-agents",
+  "sliceNote": "src/features/agents/** (496 ts/tsx incl. tests, ~380 source) + src/features/personas/** (5 files). src/features/simple-mode/** DOES NOT EXIST in this repo — 'Simple mode' survives only as tier-conditional branches inside agents/personas surfaces (useTier / isStarter), which is captured as the 'Tier-gated UI variant' situation below.",
+  "situations": [
+    {
+      "name": "Draft-vs-saved entity editing",
+      "definition": "A developer needs an editing surface that holds a local mutable copy of a persisted entity, knows what changed against a baseline, and reconciles the two after every write.",
+      "recurrence": 9,
+      "convergence": "mixed",
+      "owner": "src/features/agents/sub_editor/libs/EditorDocument.tsx",
+      "dimensions": ["ui", "function", "code-quality", "resilience"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "editing",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/sub_editor/hooks/useEditorDraft.ts:17",
+        "src/features/agents/sub_editor/libs/PersonaDraft.ts:73",
+        "src/features/agents/components/QuickEditPanel.tsx:26",
+        "src/features/agents/sub_design/libs/useDesignTabState.ts:46",
+        "src/features/agents/sub_use_cases/libs/useCapabilityToggle.ts:41"
+      ],
+      "risk": "high",
+      "note": "The editor has a real answer (PersonaDraft + baseline + compile-time-exhaustive key groups); every other surface re-derives its own ad-hoc draft, and QuickEditPanel even re-implements the model_profile decode. Divergence here is what makes 'saved' lie."
+    },
+    {
+      "name": "Debounced autosave",
+      "definition": "A developer needs edits to persist automatically N ms after typing stops, with per-section dirty tracking, cancel-on-navigate, and an honest saving/saved/error indicator.",
+      "recurrence": 6,
+      "convergence": "mixed",
+      "owner": "src/features/agents/sub_editor/libs/useTabSection.ts",
+      "dimensions": ["function", "ui", "resilience", "code-quality"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "editing",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/sub_editor/libs/useTabSection.ts:58",
+        "src/features/agents/sub_editor/libs/useEditorSave.ts:191",
+        "src/features/agents/quick-answer/triage/deck/useDeckControls.tsx:134"
+      ],
+      "risk": "high",
+      "note": "useTabSection is the canonical answer but only the editor uses it; the triage deck hand-rolls its own debounce+flush-on-unmount. The hard part is never the timer — it's the guards (empty required field, corrupt persisted blob, entity switched mid-flight) that decide whether the save is allowed to run at all."
+    },
+    {
+      "name": "Cross-entity stale-async guard",
+      "definition": "A developer starts async work for entity A and must decide, when it resolves, whether entity A is still the one on screen — and what to do if it isn't.",
+      "recurrence": 16,
+      "convergence": "diverged",
+      "owner": "src/lib/personas/personaToken.ts",
+      "dimensions": ["function", "resilience", "code-quality", "ui"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "async-lifecycle",
+      "crossCutting": false,
+      "examples": [
+        "src/lib/personas/personaToken.ts:34",
+        "src/features/agents/sub_editor/libs/useEditorSave.ts:117",
+        "src/features/agents/sub_tool_runner/libs/useToolRunner.ts:34",
+        "src/features/agents/sub_executions/libs/useBulkRerun.ts:141",
+        "src/features/agents/sub_deployment/hooks/useCloudHealthMonitor.ts:32",
+        "src/features/agents/sub_model_config/hooks/useEffectiveConfig.ts:20",
+        "src/features/agents/sub_design/libs/useDesignTabState.ts:83",
+        "src/features/agents/sub_lab/use-cases/useUseCaseExecution.ts:42"
+      ],
+      "risk": "high",
+      "note": "THE worst divergence in the slice: six independent mechanisms for one problem — capturePersonaToken, createLatestWins tokens, a synchronously-updated personaIdRef, a generation counter, a `let cancelled` closure flag, and derived `isThisPersonasExecution` equality. Every one carries a comment describing the production bug it was written for. 27 files use the bare `let cancelled = false` form."
+    },
+    {
+      "name": "Unsaved-changes navigation guard",
+      "definition": "A developer must intercept a navigation/entity switch while edits are pending and offer save-and-go / discard-and-go without losing either the edits or the destination.",
+      "recurrence": 3,
+      "convergence": "converged",
+      "owner": "src/features/agents/sub_editor/hooks/usePersonaSwitchGuard.ts",
+      "dimensions": ["function", "ui", "resilience"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "editing",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/sub_editor/hooks/usePersonaSwitchGuard.ts:13",
+        "src/features/agents/sub_editor/libs/EditorDocument.tsx:140",
+        "src/features/agents/sub_editor/hooks/useEditorDraft.ts:67"
+      ],
+      "risk": "high",
+      "note": "Low recurrence, high consequence. The subtle part is the pending-switch state living in the store (pendingSelectPersonaId) so the draft reset effect can distinguish 'user switched' from 'store replaced the object after an autosave round-trip' — getting that wrong wiped undo history and clobbered keystrokes."
+    },
+    {
+      "name": "Undo/redo over persisted operations",
+      "definition": "A developer needs Ctrl+Z to reverse an edit that has already been written to the backend, not just an in-memory state swap.",
+      "recurrence": 2,
+      "convergence": "converged",
+      "owner": "src/features/agents/sub_editor/libs/EditorDocument.tsx",
+      "dimensions": ["function", "resilience", "ui"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "editing",
+      "crossCutting": true,
+      "examples": [
+        "src/features/agents/sub_editor/libs/EditorDocument.tsx:220",
+        "src/features/agents/sub_editor/libs/useEditorSave.ts:117"
+      ],
+      "risk": "high",
+      "note": "Qualifies on consequence, not count. Two documented near-misses live in the code: moving baseline without persisting made the header read 'All saved' over a DB that still held the redone value, and an unguarded undo after an entity switch wrote A's fields into B."
+    },
+    {
+      "name": "Persisted JSON blob decode",
+      "definition": "A developer must read and write a schemaless JSON string column (model_profile, design_context, structured_prompt, sample_input, messages) from the client without destroying it when it fails to parse.",
+      "recurrence": 12,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["function", "resilience", "code-quality", "security"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "persistence",
+      "crossCutting": true,
+      "examples": [
+        "src/features/agents/sub_editor/libs/PersonaDraft.ts:88",
+        "src/features/agents/sub_editor/libs/PersonaDraft.ts:146",
+        "src/features/agents/components/QuickEditPanel.tsx:14",
+        "src/features/agents/sub_connectors/libs/useUnfulfilledCredentials.ts:124",
+        "src/features/agents/sub_health/useHealthCheck.ts:97",
+        "src/features/agents/sub_use_cases/libs/useCaseDetailHelpers.ts:47"
+      ],
+      "risk": "high",
+      "note": "35 JSON.parse call sites across 27 files, four different failure policies: silent `{}` default, silent `''`, parseJsonOrDefault, and the only correct one (checkModelProfileIntegrity → warn + SUPPRESS autosave so the reset defaults can't overwrite recoverable bytes). Anything less loses user data on the next debounced save."
+    },
+    {
+      "name": "Provider secret capture",
+      "definition": "A developer needs a field where the user types an API key/auth token for a model provider, and must decide where that secret lands.",
+      "recurrence": 4,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["security", "function", "ui"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "credentials",
+      "crossCutting": true,
+      "examples": [
+        "src/features/agents/sub_model_config/components/CustomModelConfigForm.tsx:86",
+        "src/features/agents/sub_editor/libs/useEditorSave.ts:42",
+        "src/features/agents/sub_model_config/components/ProviderCredentialField.tsx:37",
+        "src/features/agents/sub_connectors/components/connectors/CredentialPicker.tsx:22"
+      ],
+      "risk": "high",
+      "note": "Three destinations for one class of secret: (a) PersonaDraft.authToken → JSON.stringify → persona.model_profile column via the DEBOUNCED autosave, (b) an app-setting key via useAppSetting, (c) an encrypted vault credential linked by id. Only (c) is the vault. All three use the same PasswordToggleField, so the UI gives the user no signal which one they're in."
+    },
+    {
+      "name": "Model and provider picker",
+      "definition": "A developer needs the user to choose a model (and provider, and effort) for a persona, use case, lab run, or A/B compare.",
+      "recurrence": 7,
+      "convergence": "diverged",
+      "owner": "src/lib/models/modelCatalog.ts",
+      "dimensions": ["ui", "function", "cost"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "configuration",
+      "crossCutting": true,
+      "examples": [
+        "src/features/agents/sub_model_config/components/ModelSelector.tsx:66",
+        "src/features/agents/sub_use_cases/libs/useCaseDetailHelpers.ts:21",
+        "src/features/agents/sub_lab/libs/usePanelRunState.ts:17",
+        "src/features/agents/sub_model_config/components/CustomModelConfigForm.tsx:28"
+      ],
+      "risk": "medium",
+      "note": "THREE catalogs of the same models: modelCatalog's ALL_MODELS/ANTHROPIC_MODELS, ModelSelector's private ModelDef[] (which carries hardcoded per-1K prices), and useCaseDetailHelpers' MODEL_OPTIONS (which alone knows about Qwen). A model added in one is invisible in the other two, and the price strings drift silently."
+    },
+    {
+      "name": "Effective config resolution",
+      "definition": "A developer must show the value that will actually be used after a cascade (global default → persona → use case → run override) and where each level came from.",
+      "recurrence": 6,
+      "convergence": "mixed",
+      "owner": "src/features/agents/sub_model_config/hooks/useEffectiveConfig.ts",
+      "dimensions": ["function", "ui", "cost"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "configuration",
+      "crossCutting": true,
+      "examples": [
+        "src/features/agents/sub_model_config/hooks/useEffectiveConfig.ts:10",
+        "src/features/agents/sub_use_cases/libs/useCaseDetailHelpers.ts:47",
+        "src/features/agents/sub_model_config/components/ModelSelector.tsx:242"
+      ],
+      "risk": "medium",
+      "note": "Backend resolve (resolveEffectiveConfig IPC) and frontend resolve (resolveEffectiveModel over the model_profile string) coexist and can disagree; the inheritance badge is a third representation. Hard because the cascade is authoritative in Rust but must be previewed before save."
+    },
+    {
+      "name": "Spend ceiling controls",
+      "definition": "A developer needs to expose the limits that stop an agent run from costing unbounded money or time — budget, turns, timeout, concurrency.",
+      "recurrence": 5,
+      "convergence": "mixed",
+      "owner": "src/features/agents/sub_model_config/components/BudgetControls.tsx",
+      "dimensions": ["cost", "function", "ui", "security"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "money",
+      "crossCutting": true,
+      "examples": [
+        "src/features/agents/sub_model_config/components/BudgetControls.tsx:13",
+        "src/features/agents/sub_editor/libs/PersonaDraft.ts:12",
+        "src/features/agents/sub_editor/libs/useEditorSave.ts:73",
+        "src/features/agents/sub_tool_runner/libs/useToolRunner.ts:23"
+      ],
+      "risk": "high",
+      "note": "Real money. The default-timeout comment records that ~16.6 min was 'effectively no timeout' and a top source of unexpected cloud bills. Every ceiling is enforced somewhere different — draft field, IPC Promise.race, engine — with no single place that states what the ceilings are."
+    },
+    {
+      "name": "Quantity display formatting",
+      "definition": "A developer needs to render a cost, token count, percentage, or duration so the same number reads identically everywhere in the app.",
+      "recurrence": 20,
+      "convergence": "mixed",
+      "owner": "src/lib/utils/formatters.ts",
+      "dimensions": ["ui", "code-quality", "cost"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "data-display",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/sub_executions/libs/useReplayState.ts:5",
+        "src/features/agents/sub_model_config/components/ModelSelector.tsx:207",
+        "src/features/agents/sub_executions/components/ActiveChainsBadge.tsx:5",
+        "src/features/agents/executionPlayer/ExecutionMiniPlayer.tsx:102"
+      ],
+      "risk": "medium",
+      "note": "Two shared answers exist (lib/utils/formatters + shared display/Numeric, 27 files) yet the same file often uses one and hand-rolls the other — useReplayState re-exports the shared formatCost on line 13 while defining its own formatMs on line 5. Cost precision alone appears as toFixed(2), (3), (4) and a conditional 4-or-3."
+    },
+    {
+      "name": "Long-running job progress",
+      "definition": "A developer must show a user that a multi-minute agent run is alive and roughly how far along it is, when the backend emits lines rather than percentages.",
+      "recurrence": 9,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["ui", "function", "performance"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "execution",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/sub_executions/libs/useRunnerState.ts:85",
+        "src/features/agents/executionPlayer/ExecutionMiniPlayer.tsx:65",
+        "src/features/agents/sub_glyph/useGlyphLayoutState.ts:28",
+        "src/features/agents/components/matrix/useLifecycle.ts:81"
+      ],
+      "risk": "medium",
+      "note": "Progress is INFERRED differently everywhere: regex phase detection over terminal lines, traceProgress over spans, tested/total counters from a Tauri event, petal-state derivation from cell statuses, and a fake stepper that just advances on a timer. Plus a silence/stuck detector (60s/120s) that only the main runner has."
+    },
+    {
+      "name": "Live log stream surface",
+      "definition": "A developer must render an append-only stream of backend output lines with classification, auto-scroll, fullscreen and copy, while it is still growing.",
+      "recurrence": 6,
+      "convergence": "mixed",
+      "owner": "src/features/shared/components/terminal/TerminalBody.tsx",
+      "dimensions": ["ui", "performance", "function"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "execution",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/sub_executions/libs/useRunnerState.ts:37",
+        "src/features/agents/sub_lab/use-cases/useUseCaseExecution.ts:55",
+        "src/features/agents/components/matrix/useLifecycle.ts:101"
+      ],
+      "risk": "medium",
+      "note": "The main runner reads output straight from the store (no local copy, explicitly commented); the use-case panel copies it into local state and clears it on scope change; the build lifecycle appends formatted marker lines into a third store array. Same stream, three ownership models."
+    },
+    {
+      "name": "Snapshot-plus-stream reconciliation",
+      "definition": "A developer opens a detail view for an entity that is still running: they must fetch its current state AND subscribe to live updates without dropping events that land during the fetch.",
+      "recurrence": 5,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["function", "resilience", "performance"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "async-lifecycle",
+      "crossCutting": true,
+      "examples": [
+        "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:62",
+        "src/features/agents/sub_executions/libs/useRunnerState.ts:149",
+        "src/features/agents/components/matrix/useLifecycle.ts:81"
+      ],
+      "risk": "high",
+      "note": "Only useTraceData actually solves it (a bounded ring buffer armed before the fetch, flushed exactly once, capped at the backend's own MAX_SPANS). The other two just filter by id and silently lose anything emitted in the fetch window. Its own comment points at a fourth implementation in hooks/realtime/createSingletonListener."
+    },
+    {
+      "name": "Background polling lifecycle",
+      "definition": "A developer needs to poll a backend status endpoint on an interval, and must decide when it starts, stops, backs off, and whether a hidden window keeps paying for it.",
+      "recurrence": 7,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["performance", "resilience", "cost", "function"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "async-lifecycle",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/sub_executions/components/ActiveChainsBadge.tsx:37",
+        "src/features/agents/sub_deployment/hooks/useCloudHealthMonitor.ts:134",
+        "src/features/agents/sub_connectors/libs/useConnectorStatuses.ts:141"
+      ],
+      "risk": "medium",
+      "note": "Four different disciplines: visibilitychange-gated setInterval, a self-rescheduling setTimeout chain with exponential backoff + generation counter + auth-error terminal state, an effect that fires on state change with a keyed dedupe map, and plain setInterval with no gating. Only one of the seven stops when the window is hidden."
+    },
+    {
+      "name": "Cancel an in-flight job",
+      "definition": "A developer needs a Stop button that actually stops a running agent/build/test/cohort and leaves the UI in a truthful terminal state.",
+      "recurrence": 8,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["function", "resilience", "cost", "ui"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "execution",
+      "crossCutting": true,
+      "examples": [
+        "src/features/agents/sub_executions/libs/useRunnerExecution.ts:76",
+        "src/features/agents/sub_executions/libs/useBulkRerun.ts:232",
+        "src/features/agents/sub_tool_runner/libs/useToolRunner.ts:93",
+        "src/features/agents/sub_lab/libs/usePanelRunState.ts:38",
+        "src/features/agents/components/matrix/useLifecycle.ts:356"
+      ],
+      "risk": "high",
+      "note": "Cancel means five things here: IPC cancel + disconnect + synthesise a [SUMMARY] line; flip a ref so workers stop dequeuing (in-flight promises keep running and keep costing); Promise.race a 120s timeout that abandons but cannot stop; cancel + clear id; cancel server-side + delete the placeholder entity + navigate away. No AbortController anywhere except the health digest scheduler."
+    },
+    {
+      "name": "Bulk re-run cohort",
+      "definition": "A developer needs to re-execute N past runs with bounded concurrency and report what got better, worse, or cost more.",
+      "recurrence": 3,
+      "convergence": "converged",
+      "owner": "src/features/agents/sub_executions/libs/useBulkRerun.ts",
+      "dimensions": ["function", "cost", "performance", "resilience"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "execution",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/sub_executions/libs/useBulkRerun.ts:190",
+        "src/features/agents/sub_connectors/libs/useConnectorStatuses.ts:160",
+        "src/features/agents/components/allPersonas/PersonaOverviewPage.tsx:127"
+      ],
+      "risk": "high",
+      "note": "One good implementation (worker pool of 3, idempotency keys, latest-wins token, regression/recovery diffing) and two weaker cousins — connector test-all fans out unbounded via Promise.all, batch home-team move is deliberately sequential for event ordering. The canonical answer should say which of the three shapes applies when."
+    },
+    {
+      "name": "Partial-failure write reporting",
+      "definition": "A developer issues one user action that writes several backend entities and must tell the user exactly which parts landed and which did not.",
+      "recurrence": 6,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["function", "resilience", "ui"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "mutations",
+      "crossCutting": true,
+      "examples": [
+        "src/features/agents/sub_editor/libs/EditorDocument.tsx:140",
+        "src/features/agents/components/matrix/useLifecycle.ts:284",
+        "src/features/agents/components/allPersonas/PersonaOverviewPage.tsx:146",
+        "src/features/agents/sub_design/libs/useDesignTabState.ts:173"
+      ],
+      "risk": "high",
+      "note": "Four vocabularies for the same shape: TabSaveError{failedTabs,savedTabs}, PromoteResult{connectors_needing_setup,entity_errors}, an ok/failed tally in a toast, and applyWarnings/failedOperations/retryFailed. Each carries a comment about a time the UI claimed success it hadn't earned; a shared 'partial result' type would have prevented all four."
+    },
+    {
+      "name": "Optimistic mutation with rollback",
+      "definition": "A developer wants a toggle/link/decision to feel instant, so they paint the new state before the IPC returns and must undo it correctly on failure.",
+      "recurrence": 6,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["ui", "function", "resilience"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "mutations",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/sub_connectors/libs/useConnectorStatuses.ts:213",
+        "src/features/agents/components/matrix/useLifecycle.ts:142",
+        "src/features/agents/sub_use_cases/libs/useCapabilityToggle.ts:47"
+      ],
+      "risk": "high",
+      "note": "Rollback fidelity varies: the connector link restores the exact prior row plus an inline linkError; the build test transitions optimistically with NO rollback path; the capability toggle doesn't paint optimistically at all and instead blocks on a refetch. Nothing shares a revert helper."
+    },
+    {
+      "name": "Destructive action confirmation",
+      "definition": "A developer must gate an irreversible action behind a dialog that first shows what else it will take down with it.",
+      "recurrence": 7,
+      "convergence": "mixed",
+      "owner": "src/features/shared/components/overlays/ConfirmDestructiveModal.tsx",
+      "dimensions": ["ui", "function", "resilience"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "overlays",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/sub_use_cases/libs/useCapabilityToggle.ts:80",
+        "src/features/agents/components/allPersonas/PersonaOverviewPage.tsx:317",
+        "src/features/agents/components/matrix/useLifecycle.ts:356",
+        "src/features/agents/sub_editor/hooks/useEditorDraft.ts:80"
+      ],
+      "risk": "high",
+      "note": "The interesting half is the CASCADE PREVIEW (fetch getUseCaseCascade, skip the dialog when the blast radius is zero) — only useCapabilityToggle does it. Also note the recorded bug where a delete dialog left open across an entity switch would have deleted the wrong entity: confirmation state must be entity-scoped."
+    },
+    {
+      "name": "Human decision queue",
+      "definition": "A developer must present everything across the app that is waiting on a human verdict as one reviewable queue, and write each verdict back to its own backend.",
+      "recurrence": 4,
+      "convergence": "converged",
+      "owner": "src/features/agents/quick-answer/triage/useUnifiedTriage.ts",
+      "dimensions": ["ui", "function", "resilience", "code-quality"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "review-queue",
+      "crossCutting": true,
+      "examples": [
+        "src/features/agents/quick-answer/triage/useUnifiedTriage.ts:1",
+        "src/features/agents/quick-answer/triage/deck/useDeckControls.tsx:103",
+        "src/features/agents/components/matrix/useLifecycle.ts:215"
+      ],
+      "risk": "high",
+      "note": "Exceptionally well-reasoned single owner (six fused sources, adapters in, dispatch out, bounded skip ledger, 30s single-act undo, decision-conflict detection). Worth codifying precisely because the design decisions — remove-not-advance-index, skip sorts last, one undoable act — are non-obvious and each fixes a real desync."
+    },
+    {
+      "name": "Keyboard shortcut ownership",
+      "definition": "A developer adds a keyboard shortcut to a surface and must decide who wins when a modal, a deck, a route and the command palette all want the same key.",
+      "recurrence": 14,
+      "convergence": "diverged",
+      "owner": "src/lib/keyboard/AppKeyboardProvider.tsx",
+      "dimensions": ["ui", "function", "code-quality"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "interaction",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/quick-answer/triage/deck/useDeckControls.tsx:101",
+        "src/features/agents/sub_executions/libs/useRunnerExecution.ts:119",
+        "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:56",
+        "src/features/agents/components/QuickEditPanel.tsx:49"
+      ],
+      "risk": "medium",
+      "note": "A real priority ladder exists (route 10, palette 90, BaseModal 80, deck 70) and only 4 files in this slice use it; ~30 files attach raw window/element keydown listeners instead. The Enter-to-execute handler carries a 15-line hand-written 'is this an interactive element' exclusion list that nothing else shares."
+    },
+    {
+      "name": "Searchable entity picker",
+      "definition": "A developer needs an overlay that lets the user find and pick one or more existing entities (credential, event, connector, schedule, channel, persona, icon) to attach to what they're configuring.",
+      "recurrence": 11,
+      "convergence": "diverged",
+      "owner": "src/features/shared/components/forms/Listbox.tsx",
+      "dimensions": ["ui", "function"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "overlays",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:51",
+        "src/features/agents/sub_connectors/components/connectors/CredentialPicker.tsx:22",
+        "src/features/agents/sub_connectors/components/automation/AutomationSetupModal.tsx:28"
+      ],
+      "risk": "medium",
+      "note": "The composer family builds its own portal+AnimatePresence+Esc/Cmd-Enter shell with a hand-picked z-[10050] to sit above BaseModal's portal base, while sibling pickers use BaseModal+Listbox. The z-index comment is the tell: two overlay systems that must be manually kept in stacking order."
+    },
+    {
+      "name": "Modal dialogs",
+      "definition": "A developer needs a focus-trapped, escapable overlay panel.",
+      "recurrence": 26,
+      "convergence": "mixed",
+      "owner": "src/lib/ui/BaseModal.tsx",
+      "dimensions": ["ui"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "overlays",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/sub_connectors/components/automation/AutomationSetupModal.tsx:28",
+        "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:81"
+      ],
+      "risk": "low",
+      "note": "Documented elsewhere. 22 BaseModal consumers vs 4 hand-rolled `fixed inset-0` overlays in this slice despite the custom/enforce-base-modal rule."
+    },
+    {
+      "name": "Data tables",
+      "definition": "A developer needs a sortable, selectable, paginated table with loading and empty states.",
+      "recurrence": 10,
+      "convergence": "mixed",
+      "owner": "src/features/shared/components/display/UnifiedTable.tsx",
+      "dimensions": ["ui", "performance"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "lists",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/components/allPersonas/PersonaOverviewPage.tsx:291"
+      ],
+      "risk": "low",
+      "note": "Documented elsewhere. Note for whoever owns it: this slice reaches for DataGrid, not UnifiedTable (2 uses), and still hand-rolls 8 raw `<table>` surfaces — the two shared table primitives are themselves an unresolved fork."
+    },
+    {
+      "name": "Route chunk loading",
+      "definition": "A developer lazy-loads a route/section and must cover the fetch-and-evaluate gap without a blank flash.",
+      "recurrence": 25,
+      "convergence": "converged",
+      "owner": "src/features/shared/components/layout/RouteChunkSkeleton.tsx",
+      "dimensions": ["ui", "performance", "resilience"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "navigation",
+      "crossCutting": false,
+      "examples": [
+        "src/features/personas/PersonasPage.tsx:42",
+        "src/features/personas/PersonasPage.tsx:301"
+      ],
+      "risk": "low",
+      "note": "Documented elsewhere. Worth carrying forward from here: lazyRetry (not raw React.lazy) — a rejected import promise is cached forever and bricked the section until reload."
+    },
+    {
+      "name": "Multi-source fan-out feed",
+      "definition": "A developer must assemble one chronological list from several independent backend queries, each of which may fail on its own.",
+      "recurrence": 5,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["function", "performance", "resilience", "ui"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "lists",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/sub_activity/ActivityTab.tsx:43",
+        "src/features/agents/quick-answer/triage/useUnifiedTriage.ts:36",
+        "src/features/personas/PersonasPage.tsx:134"
+      ],
+      "risk": "medium",
+      "note": "Three failure disciplines for the same shape: Promise.all with a per-call .catch returning [], Promise.allSettled with a label array, and staged waves with a 100ms yield to avoid an IPC stampede. ActivityTab also over-fetches (100 global events, filtered client-side to one persona) — the fan-out shape hides N+1-ish waste."
+    },
+    {
+      "name": "List view state",
+      "definition": "A developer needs search + status/health/tag filters + sort + grouping over a collection, kept consistent with the rows actually shown.",
+      "recurrence": 8,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["ui", "function", "performance"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "lists",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/components/allPersonas/PersonaOverviewPage.tsx:48",
+        "src/features/agents/sub_activity/ActivityTab.tsx:117",
+        "src/features/agents/sub_lab/libs/usePanelRunState.ts:45"
+      ],
+      "risk": "low",
+      "note": "One surface has a typed AgentListViewConfig preset + a dedicated filters hook; others keep 5 loose useStates and an inline useMemo chain. The recurring subtle bit nobody shares: pruning selection when the filter changes, and refusing to let a multi-select fall to empty."
+    },
+    {
+      "name": "Bulk selection and batch bar",
+      "definition": "A developer needs checkbox multi-select across rows plus an action bar that operates on the selection and reports per-item outcomes.",
+      "recurrence": 5,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["ui", "function", "resilience"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "lists",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/components/allPersonas/PersonaOverviewPage.tsx:170",
+        "src/features/agents/sub_executions/libs/useBulkRerun.ts:190",
+        "src/features/agents/sub_connectors/libs/useConnectorStatuses.ts:160"
+      ],
+      "risk": "medium",
+      "note": "Set<string> + toggle + selectAll + prune-on-filter-change is retyped in each place. The batch bars then diverge again on whether selection survives the action and how partial failure is reported."
+    },
+    {
+      "name": "Span tree and waterfall",
+      "definition": "A developer must render a nested trace (spans, subagents, chain steps) as a collapsible tree with a proportional timeline and per-node cost.",
+      "recurrence": 4,
+      "convergence": "mixed",
+      "owner": "src/features/agents/sub_executions/detail/inspector/traceInspectorTypes.ts",
+      "dimensions": ["ui", "performance", "function"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "observability",
+      "crossCutting": true,
+      "examples": [
+        "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:182",
+        "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:142",
+        "src/features/agents/sub_executions/libs/useRunnerState.ts:85"
+      ],
+      "risk": "medium",
+      "note": "The perf discipline here is worth codifying: tree build deliberately does NOT depend on the collapsed set, only the visible-set derivation does, and a loop replaces Math.max(...spans) at the 10k-span ceiling. The chain/replay/subagent views don't inherit any of it."
+    },
+    {
+      "name": "Version diff view",
+      "definition": "A developer must show what changed between two versions of a prompt, config, or output, inline and readably.",
+      "recurrence": 5,
+      "convergence": "diverged",
+      "owner": "src/features/agents/sub_lab/shared/labPrimitives.ts",
+      "dimensions": ["ui", "performance", "function"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "data-display",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/sub_lab/shared/DiffViewer.tsx:12",
+        "src/features/agents/sub_lab/shared/DiffViewer.tsx:30",
+        "src/features/agents/sub_design/libs/useDesignTabState.ts:107"
+      ],
+      "risk": "medium",
+      "note": "diffStrings is a token-level DP with an explicit MAX_DP_CELLS bail-out; a separate execution comparison offloads to a web worker; the design tab computes a semantic change summary instead. Three cost models for 'show me the delta', none named as alternatives of one decision."
+    },
+    {
+      "name": "Schema-driven input form",
+      "definition": "A developer must render editable fields from a runtime-described schema (use-case input_schema, tool parameters, automation conditions) with defaults, samples, and validation.",
+      "recurrence": 6,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["ui", "function", "code-quality"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "forms",
+      "crossCutting": true,
+      "examples": [
+        "src/features/agents/sub_lab/use-cases/useUseCaseExecution.ts:21",
+        "src/features/agents/sub_connectors/components/automation/AutomationSetupModal.tsx:88",
+        "src/features/agents/sub_executions/libs/useRunnerState.ts:164"
+      ],
+      "risk": "medium",
+      "note": "Every consumer re-derives field values from `sample_input ?? field.default ?? ''` and falls back to a raw JSON textarea when no schema exists. No shared renderer, no shared validation, and the fallback path is where the JSON-editor situation below leaks in."
+    },
+    {
+      "name": "Freeform JSON payload editor",
+      "definition": "A developer needs the user to hand-author a JSON input payload for a run, with parse errors surfaced before anything is dispatched.",
+      "recurrence": 4,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["ui", "function", "resilience"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "forms",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/sub_executions/libs/useRunnerExecution.ts:51",
+        "src/features/agents/sub_lab/use-cases/useUseCaseExecution.ts:84",
+        "src/features/agents/sub_executions/libs/useRunnerState.ts:164"
+      ],
+      "risk": "medium",
+      "note": "Same three lines retyped: try/JSON.parse/catch → setJsonError(SyntaxError message) → return. Divergence is in what happens to invalid-but-unsaved text on entity switch, and whether the rerun-prefill path re-pretty-prints or passes raw."
+    },
+    {
+      "name": "Credential readiness resolution",
+      "definition": "A developer must answer 'does this agent have the credentials it needs to run' by matching declared tool requirements against what the vault holds.",
+      "recurrence": 5,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["function", "security", "ui", "resilience"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "credentials",
+      "crossCutting": true,
+      "examples": [
+        "src/features/agents/sub_editor/libs/usePersonaReadiness.ts:42",
+        "src/features/agents/sub_connectors/libs/useConnectorStatuses.ts:46",
+        "src/features/agents/sub_connectors/libs/useUnfulfilledCredentials.ts:77"
+      ],
+      "risk": "high",
+      "note": "Three matchers with THREE DIFFERENT SEMANTICS in the same feature: usePersonaReadiness matches service_type only (so a category-shaped requirement always reads 'missing'), useConnectorStatuses indexes service_type PLUS connectorCategoryTags, useUnfulfilledCredentials filters on both AND first honours the design_context link. The header badge and the connectors tab can therefore disagree about the same persona."
+    },
+    {
+      "name": "Entity health grading",
+      "definition": "A developer must reduce a pile of signals into a score, a grade band, and a coloured badge the user can act on.",
+      "recurrence": 7,
+      "convergence": "diverged",
+      "owner": "src/features/agents/sub_health/useHealthCheck.ts",
+      "dimensions": ["ui", "function", "code-quality"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "observability",
+      "crossCutting": true,
+      "examples": [
+        "src/features/agents/sub_health/useHealthCheck.ts:49",
+        "src/features/agents/sub_connectors/libs/useConnectorStatuses.ts:244",
+        "src/features/agents/components/allPersonas/PersonaOverviewPage.tsx:298",
+        "src/features/agents/sub_editor/libs/usePersonaReadiness.ts:34"
+      ],
+      "risk": "medium",
+      "note": "useHealthCheck does it properly (documented penalty weights, cutoffs imported from the ONE GRADE_THRESHOLDS, deterministic content-hashed issue ids so a re-check doesn't invalidate outstanding fix proposals). Connector readiness, row accent colours, completeness rings and quality badges each invent their own bands."
+    },
+    {
+      "name": "AI proposal selective apply",
+      "definition": "A developer must show what an LLM proposes to change to an entity, let the user accept a SUBSET, and apply only that.",
+      "recurrence": 6,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["ui", "function", "resilience", "cost"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "review-queue",
+      "crossCutting": true,
+      "examples": [
+        "src/features/agents/sub_design/libs/useDesignTabState.ts:138",
+        "src/features/agents/components/matrix/useLifecycle.ts:259",
+        "src/features/agents/quick-answer/triage/useUnifiedTriage.ts:36"
+      ],
+      "risk": "high",
+      "note": "The selection model differs per surface: design keeps four parallel index/name Sets (tools, triggers, channels, subscriptions) applied via applyCompilation; promote sends excludedCapabilityIds (inverted polarity); triage decides whole items. Getting the polarity wrong silently ships capabilities the user declined."
+    },
+    {
+      "name": "Multi-phase flow state machine",
+      "definition": "A developer must drive a surface through a named sequence of phases (idle → analyzing → preview → applying → done/error) shared between a backend session and the UI.",
+      "recurrence": 6,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["function", "ui", "code-quality", "resilience"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "flows",
+      "crossCutting": true,
+      "examples": [
+        "src/features/agents/components/matrix/useLifecycle.ts:125",
+        "src/features/agents/sub_design/libs/useDesignTabState.ts:57",
+        "src/features/agents/sub_connectors/components/automation/AutomationSetupModal.tsx:40",
+        "src/features/agents/sub_glyph/useGlyphLayoutState.ts:50"
+      ],
+      "risk": "medium",
+      "note": "Phase lives in the Zustand store for builds, in a compiler hook for design, in a local hook for automations. Every one guards transitions with string comparisons and each has to re-read state fresh from the store because closures go stale across a Suspense remount — the comment in useLifecycle says exactly that."
+    },
+    {
+      "name": "Tier-gated UI variant",
+      "definition": "A developer must render a simplified surface for one product tier and the full one for another, from a single component tree.",
+      "recurrence": 6,
+      "convergence": "mixed",
+      "owner": "src/hooks/utility/interaction/useTier.ts",
+      "dimensions": ["ui", "function", "security"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "navigation",
+      "crossCutting": true,
+      "examples": [
+        "src/features/agents/executionPlayer/ExecutionMiniPlayer.tsx:33",
+        "src/features/personas/PersonasPage.tsx:247",
+        "src/features/agents/sub_editor/components/EditorTabBar.tsx:101"
+      ],
+      "risk": "medium",
+      "note": "This is where the missing `simple-mode` slice actually lives. Three gate shapes: a whole alternate component (SimpleExecutionView), a route-level isSectionGated check that renders Home so a forbidden surface never mounts, and a per-tab minTier filter. The gate is presentational only — the underlying data is still fetched."
+    },
+    {
+      "name": "Session-scoped local persistence",
+      "definition": "A developer needs half-finished user input or a view preference to survive an unmount/remount that the user didn't intend as a discard.",
+      "recurrence": 4,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["function", "ui", "resilience"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "persistence",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/quick-answer/triage/deck/useDeckControls.tsx:129",
+        "src/features/agents/quick-answer/triage/useUnifiedTriage.ts:93",
+        "src/features/agents/sub_design/libs/useDesignTabState.ts:111"
+      ],
+      "risk": "medium",
+      "note": "The triage surface reasons it through (localStorage chosen for synchronous rehydrate-before-first-paint, keyed by SOURCE id not card id so a poll can't eat an answer, debounced write flushed on unmount, merge-on-write so two writers can't clobber). Other surfaces just drop state on persona switch. The recurring question — what is legitimately discardable — is never asked twice the same way."
+    },
+    {
+      "name": "Drag-to-resize panel",
+      "definition": "A developer needs a splitter the user can drag to resize a terminal/panel, bounded and cleaned up.",
+      "recurrence": 3,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["ui", "performance"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "interaction",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/sub_executions/libs/useRunnerExecution.ts:158",
+        "src/features/agents/sub_lab/use-cases/useUseCaseExecution.ts:113",
+        "src/features/agents/executionPlayer/ExecutionMiniPlayer.tsx:31"
+      ],
+      "risk": "low",
+      "note": "Near-identical 20-line blocks with different bounds (120-900 vs 120-700) and different rigour — only the runner coalesces to rAF and only the runner removes its document listeners on unmount. Cheap, obvious extraction that nobody has done."
+    },
+    {
+      "name": "Entity visual identity",
+      "definition": "A developer needs a persona/connector rendered as an icon + colour, consistently, in a row, a chip, a modal, and a canvas.",
+      "recurrence": 9,
+      "convergence": "diverged",
+      "owner": "src/features/agents/components/PersonaIcon.tsx",
+      "dimensions": ["ui", "code-quality"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "data-display",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/components/QuickEditPanel.tsx:65",
+        "src/features/agents/sub_editor/libs/PersonaDraft.ts:115",
+        "src/features/agents/sub_connectors/components/connectors/CredentialPicker.tsx:7"
+      ],
+      "risk": "low",
+      "note": "PersonaIcon / PersonaAvatar / IconSelector / PopupIconSelector / PersonaIconPickerModal / MiniSigil / PersonaCrest / ComposerBrandIcon / GlyphSigilCanvas all answer 'draw this entity'. Service-type icon mapping is re-switched inline (CredentialPicker.channelIcon) rather than sourced from the connector catalog."
+    },
+    {
+      "name": "Error surfacing policy",
+      "definition": "A developer catches a failure and must choose between a toast, an inline banner, a per-row error field, a logged breadcrumb, or an appended info-severity issue.",
+      "recurrence": 90,
+      "convergence": "mixed",
+      "owner": "src/lib/silentCatch.ts",
+      "dimensions": ["function", "ui", "resilience", "code-quality"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "errors",
+      "crossCutting": true,
+      "examples": [
+        "src/features/agents/sub_health/useHealthCheck.ts:1",
+        "src/features/agents/sub_use_cases/libs/useCapabilityToggle.ts:61",
+        "src/features/agents/sub_tool_runner/libs/useToolRunner.ts:114",
+        "src/features/agents/sub_executions/components/ActiveChainsBadge.tsx:32"
+      ],
+      "risk": "medium",
+      "note": "silentCatch in 84 files, toastCatch in 32, raw addToast in 24, InlineErrorBanner in 2, resolveErrorTranslated in ZERO — the documented i18n error-registry bridge is unused across the whole slice, so user-facing error text here is untranslated. Also: Tauri rejects with structured AppError objects, so String(err) renders '[object Object]' and only 4 files use extractMessage."
+    },
+    {
+      "name": "Background completion notification",
+      "definition": "A developer must tell the user something they started finished, when they may have navigated away from the surface that started it.",
+      "recurrence": 3,
+      "convergence": "mixed",
+      "owner": "src/api/system/system.ts",
+      "dimensions": ["ui", "function"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "notifications",
+      "crossCutting": true,
+      "examples": [
+        "src/features/agents/components/matrix/useLifecycle.ts:170",
+        "src/features/agents/sub_connectors/libs/useConnectorStatuses.ts:200",
+        "src/features/agents/components/matrix/useLifecycle.ts:284"
+      ],
+      "risk": "low",
+      "note": "The canonical answer needs a rule the code discovered the hard way: report the DIFF, not the count ('2 recovered, 1 regressed' beat 'tested 5 connectors'), and never claim 'ready to use' when the promote result lists connectors still needing setup. Notification bodies here are also hardcoded English, bypassing i18n."
+    },
+    {
+      "name": "Expand-in-place detail row",
+      "definition": "A developer needs a row/card that reveals its detail inline on click without navigating, and must decide what loads on expand.",
+      "recurrence": 50,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["ui", "performance"],
+      "proposedDomain": "frontend",
+      "proposedSubdomain": "lists",
+      "crossCutting": false,
+      "examples": [
+        "src/features/agents/sub_new_persona/capabilityView/CapabilityRow.tsx:13",
+        "src/features/agents/sub_design/components/ConversationMessageList.tsx:46",
+        "src/features/agents/sub_executions/components/ActiveChainsBadge.tsx:24",
+        "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:142"
+      ],
+      "risk": "low",
+      "note": "50 files carry their own `const [expanded, setExpanded]`. Two real decisions hide inside: whether expansion triggers a fetch (usePanelRunState fetches results on expandedRunId) and whether the collapsed set is stored as ids so it survives a data refresh — most store a boolean that resets."
+    }
+  ]
+}

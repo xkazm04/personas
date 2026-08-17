@@ -186,12 +186,19 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
         session_encrypted_data = await encryptWithSessionKey(JSON.stringify(split.fields));
       }
 
+      // `metadata` was hardcoded to `null` here for EVERY caller of this slice
+      // action. It is the one field in `UpdateCredentialInput` declared
+      // `Option<Option<String>>` with `double_option`, so a null is not "leave
+      // alone" — it is CLEAR, and it wiped the whole blob on any update.
+      //
+      // The remaining nulls are genuinely inert and kept as-is: `name`,
+      // `serviceType` and `sessionEncryptedData` are plain `Option<T>`, where a
+      // null deserializes to `None` = leave alone. `encryptedData` is the same,
+      // and `iv` carries `skip_deserializing` so it could never be set from IPC.
+      // Dropping the destructive one is the entire fix.
       const updated = await updateCredential(id, {
         name: input.name ?? null,
         serviceType: input.service_type ?? null,
-        encryptedData: null,
-        iv: null,
-        metadata: null,
         sessionEncryptedData: session_encrypted_data ?? null,
         oauthSessionRef,
       });

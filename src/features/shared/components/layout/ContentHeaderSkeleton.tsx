@@ -5,7 +5,8 @@ import { IS_MOBILE } from '@/lib/utils/platform/platform';
  *
  * Renders the exact page-header chrome — identical padding, border, brand
  * tint, sticky positioning, and the icon / title / subtitle / actions slot
- * geometry — with pulsing placeholder bars in place of text.
+ * geometry — with calm, static placeholder bars in place of text (never
+ * pulsing: `docs/design/overview-loading.md` law 3).
  *
  * Use it as (part of) a Suspense fallback so the header paints in the very
  * first frame while the lazy route chunk and its data are still in flight.
@@ -25,7 +26,10 @@ interface ContentHeaderSkeletonProps {
   showActions?: boolean;
   /** Render the large subtitle bar. Most headers carry a subtitle. */
   showSubtitle?: boolean;
-  /** Static, non-pulsing bars — the golden-pattern default (`docs/design/overview-loading.md`), so the header frame doesn't blink while a route chunk loads. */
+  /**
+   * @deprecated No-op — calm is now the only treatment. Accepted so the existing
+   * call sites keep compiling; drop it when you next touch them.
+   */
   calm?: boolean;
 }
 
@@ -33,10 +37,9 @@ export function ContentHeaderSkeleton({
   showIcon = false,
   showActions = false,
   showSubtitle = true,
-  calm = false,
 }: ContentHeaderSkeletonProps) {
-  const bar = calm ? 'bg-primary/[0.06]' : 'bg-primary/10 animate-pulse';
-  const barStrong = calm ? 'bg-primary/[0.06]' : 'bg-primary/15 animate-pulse';
+  const bar = 'bg-primary/[0.06]';
+  const barStrong = 'bg-primary/[0.06]';
   return (
     <div
       aria-hidden="true"

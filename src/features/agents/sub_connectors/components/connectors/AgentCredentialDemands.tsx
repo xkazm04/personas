@@ -8,6 +8,7 @@ import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useUnfulfilledCredentials, type UnfulfilledCredential } from '../../libs/useUnfulfilledCredentials';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { isCredentialVerified } from '@/lib/credentials/healthState';
 export function AgentCredentialDemands() {
   const { t, tx } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
@@ -175,7 +176,7 @@ function DemandCard({
                 >
                   <Key className="w-3 h-3 text-emerald-400/60" />
                   <span className="typo-caption text-foreground flex-1 truncate">{cred.name}</span>
-                  {cred.healthcheck_last_success === true && (
+                  {isCredentialVerified(cred) && (
                     <CheckCircle2 className="w-3 h-3 text-emerald-400/60" />
                   )}
                   {cred.healthcheck_last_success === false && (

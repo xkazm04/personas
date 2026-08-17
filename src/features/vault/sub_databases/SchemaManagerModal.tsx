@@ -55,13 +55,9 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
       return;
     }
     try {
+      // Name only — `metadata: null` CLEARS the blob (double_option).
       const updatedRaw = await credApi.updateCredential(credential.id, {
         name: trimmed,
-        serviceType: null,
-        encryptedData: null,
-        iv: null,
-        metadata: null,
-        sessionEncryptedData: null,
       });
       const updated = toCredentialMetadata(updatedRaw);
       useVaultStore.setState((s) => ({

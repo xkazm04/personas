@@ -164,7 +164,32 @@ hkdf = "0.12"
 hex = "0.4"
 # Fleet mobile-companion pairing QR (pure-Rust, zero-dep encoder).
 qrcodegen = "1.8"
-open = "5"
+# `shellexecute-on-windows` added 2026-08-16 — this is a security fix, not a
+# preference.
+#
+# Without it, `open` 5.3.3 launches a URL on Windows by building
+# `cmd /c start "" "<url>"` (src/windows.rs:10-18) — so the URL is parsed by
+# cmd.exe before anything else sees it. Replayed with `echo` substituted for
+# `start`:
+#
+#   https://a/x"&echo INJECTED_AMP&"          -> a second command executed
+#   https://host/?k=%PERSONAS_API_KEY%        -> the process environment was
+#                                                substituted into the URL
+#
+# The second is the dangerous one here, because `lib.rs:1744` sets
+# `PERSONAS_API_KEY` — the broad, non-expiring system key — process-wide at
+# startup. A URL containing a `%VAR%` reference is expanded by cmd.exe and the
+# value travels to whatever host the URL names.
+#
+# `sanitizeExternalUrl` blocks the quote, but only by accident: it returns
+# `new URL().href`, which percent-encodes `"`. It does not touch `%VAR%`, and
+# neither does `url::Url::parse` — a percent-var is a legal URL. So no
+# validation layer fixes this; the launcher does. With this feature `open` calls
+# `ShellExecuteW` directly and cmd.exe never sees the string.
+#
+# This matters because a model-emitted `OPEN_URL:` reaches an OS handler with no
+# sanitizer at all (see external-url-opening.md).
+open = { version = "5", features = ["shellexecute-on-windows"] }
 url = "2"
 urlencoding = "2"
 sentry = { version = "0.34", default-features = false, features = [

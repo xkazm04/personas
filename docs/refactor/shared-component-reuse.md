@@ -16,8 +16,9 @@ the **audit** (what's actually being reinvented, with counts), and the **backlog
 
 | Instead of hand-rolling… | Use | Import |
 |---|---|---|
-| `<div className="animate-spin">` / local Spinner | `LoadingSpinner` | `@/features/shared/components/feedback/LoadingSpinner` |
-| a "no data / nothing here" block | `EmptyState` | `@/features/shared/components/feedback/EmptyState` |
+| a busy state on a control the user just pressed | `AsyncButton` (renders a **real** spinner) | `@/features/shared/components/buttons/AsyncButton` |
+| a loading state for a surface fetching data | a calm delayed ghost — `UnifiedTable`'s `isLoading` for lists, `RouteChunkSkeleton` for lazy chunks | see [`docs/design/overview-loading.md`](../design/overview-loading.md) |
+| a "no data / nothing here" block | `ScenarioEmptyState` (default export; conventionally imported as `EmptyState`) | `@/features/shared/components/feedback/ScenarioEmptyState` |
 | `<button className="…">` with styling | `Button` / `AsyncButton` | `@/features/shared/components/buttons/Button` |
 | `navigator.clipboard.writeText(…)` + feedback | `CopyButton` / `useCopyToClipboard` | `@/features/shared/components/buttons/CopyButton` |
 | `fixed inset-0` backdrop + escape handling | `BaseModal` / `ConfirmDialog` | `@/features/shared/components/modals` (re-exports `@/lib/ui/BaseModal`) |
@@ -31,6 +32,30 @@ the **audit** (what's actually being reinvented, with counts), and the **backlog
 | label + input + error wrapper | `FormField` | `@/features/shared/components/forms/FormField` |
 | custom tab strip | `PanelTabBar` / `SegmentedTabs` | `@/features/shared/components/layout/PanelTabBar` |
 | grouped content panel | `SectionCard` + `SectionHeader` | `@/features/shared/components/layout/SectionCard` |
+
+> ### ⚠️ `LoadingSpinner` is NOT on this table, and that is deliberate
+>
+> **`feedback/LoadingSpinner` renders `null`.** Spinners are disabled app-wide
+> ([`LoadingSpinner.tsx:12-21`](../../src/features/shared/components/feedback/LoadingSpinner.tsx));
+> the component survives for import compatibility and emits an `sr-only`
+> `role="status"` only when you pass `label`. **Never render it as a busy
+> branch** — `{busy ? <LoadingSpinner/> : <Icon/>}` makes the icon disappear and
+> puts nothing in its place.
+>
+> Until 2026-08-13 the row above told you to replace `animate-spin` with it,
+> directly contradicting the "Spinners — LEAVE" decision recorded 40 lines
+> further down. That contradiction is the documented cause of both defect
+> classes it produced: invisible busy states at ~75 action controls, and
+> ~184 files under `src/features/**` hand-rolling `animate-spin` because the
+> shared answer visibly did nothing. **Loading has two opposite answers, never
+> one** — see the two doctrine documents named in the table above.
+>
+> Still-wrong copies of the old advice, owed to other territories:
+> `CATALOG.md`'s `LoadingSpinner` row ("Canonical loading spinner… Use for any
+> full-element loading state"). Note it is **not** fixable by regenerating —
+> the string is hardcoded in the `CURATED` map at
+> `scripts/docs/gen-shared-catalog.mjs:56`, which takes priority over any
+> `@catalog` tag.
 
 Already enforced by custom ESLint rules: `custom/enforce-base-modal` (raw modal
 overlays), `custom/no-direct-white-colors`, `custom/no-raw-*-classes` (design
@@ -57,9 +82,15 @@ tokens), `custom/role-button-requires-keydown`.
   passthrough to absorb the 13 bespoke-format ones. **Caveat:** the original "131"
   count over-counted — many `toLocaleString()` hits are on **numbers** (e.g.
   NetworkDashboard) → those are the Numeric backlog, not dates.
-- ⏸️ **Spinners — LEAVE (design decision 2026-05-24).** `LoadingSpinner` is an
-  intentional no-op ("spinners disabled app-wide"); inline `Loader2` is accepted.
-  Not migrating — converting to the no-op would silently strip 141 loaders.
+- ⏸️ **Spinners — LEAVE (design decision 2026-05-24, restated 2026-08-13).**
+  `LoadingSpinner` is an intentional no-op ("spinners disabled app-wide");
+  inline `Loader2` **on an action control** is accepted and correct. Not
+  migrating — converting to the no-op would silently strip 141 loaders. **This
+  is the authoritative statement in this file**; the quick-reference table above
+  used to contradict it and has been corrected. The residual work is not a
+  migration *to* `LoadingSpinner` but a split of the ~184 `animate-spin` files
+  into the two doctrines (surface → ghost, action → `AsyncButton`), tracked in
+  [`docs/concepts/golden-paths/inline-busy-state.md`](../concepts/golden-paths/inline-busy-state.md).
 
 ## 2. Audit — what's being reinvented (2026-05-24 scan of `src/features/*`, excl. `shared/`)
 
@@ -68,12 +99,16 @@ tokens), `custom/role-button-requires-keydown`.
 | Raw `<button>` w/ styling | ~2,154 across 737 files | pipeline `AssignmentsPanel` (21), langfuse `ManagedStackPanel` (14), overview `MessageDetailModal` (14) | Real but huge — migrate opportunistically + via the `Button` adoption, not a big-bang. |
 | Numeric formatting (`toFixed`/`toLocaleString`) | ~240 across 100+ files | settings `NetworkDashboard` (8), overview `PredictiveAlerts` (8) | High ROI, easy — swap to `Numeric`. |
 | Date/time formatting | ~131 across 40+ files | settings `PeerDetailDrawer`, overview `MetricsCharts` | Swap to `RelativeTime` (add an absolute-mode if needed). |
-| Loading spinners (`animate-spin`, no `LoadingSpinner`) | 141 files | plugins (49), agents (25), vault (18) | Mixed — inline `Loader2` in buttons is fine; full-element loaders should use `LoadingSpinner`. |
+| Loading spinners (`animate-spin`, no `LoadingSpinner`) | 141 files (re-measured 2026-08-13: **184** under `src/features/**`, 176 outside `shared/components/`) | plugins (49), agents (25), vault (18) | Split by situation, **not** by "use `LoadingSpinner`" — it renders `null`. Inline `Loader2` **in a button** is correct (prefer `AsyncButton`, which owns it). A **full-element / surface** loader is the one that must go — replace it with a calm delayed ghost, never with `LoadingSpinner`. |
 | Copy-to-clipboard (`navigator.clipboard.writeText`) | ~31 across 21 files | settings `BundleExportDialog` (4), dev-tools `PrBridge` (4) | Clean swap to `CopyButton`/`useCopyToClipboard`. **Best ESLint-rule candidate.** |
 | Custom modal overlays (`fixed inset-0`) | ~20 files | glyph `ComposerPickerShell`, cockpit `DecisionDrawer` | Mostly already `BaseModal`; ~4 real one-offs. |
 | Raw checkbox/radio as toggle | ~6 | triggers `Toolbar`, fleet `FleetBroadcastModal` | Low volume; swap to `AccessibleToggle`. |
 
-**Highest ROI migrations:** `Numeric` (240), `CopyButton` (31, cleanest), full-element `LoadingSpinner` swaps. Buttons (2,154) are a long-tail opportunistic migration, not a single task.
+**Highest ROI migrations:** `Numeric` (240), `CopyButton` (31, cleanest), and
+full-element loaders → **calm delayed ghosts** (*not* `LoadingSpinner` — the
+original wording here said "`LoadingSpinner` swaps", which would have swapped a
+visible loader for nothing). Buttons (2,154) are a long-tail opportunistic
+migration, not a single task.
 
 ### Adoption status (Phase 3)
 
@@ -113,7 +148,8 @@ header comments), so they now precisely flag *only* genuine display/badge reimpl
 
 | Rank | Action | Spread | Proposed | Effort |
 |---|---|---|---|---|
-| 1 | **Consolidate the two `EmptyState`s** — `display/EmptyState` (SVG variants, 4 uses) + `feedback/EmptyState` (icon variants, 21 uses) | 2 files / 25 uses | one `feedback/EmptyState` supporting both icon + SVG modes; re-export from display/ | M ⚠️ *coordinate — a `/prototype overview empty-states` session is touching this; do after it lands* |
+| 1 | ~~**Consolidate the two `EmptyState`s**~~ — **WITHDRAWN 2026-06-18**, superseded by §5 below, which reviewed the empty-state cluster and deliberately kept the components distinct. *(This row also named two paths that do not exist: there is no `display/EmptyState` and no `feedback/EmptyState`. The real components are `feedback/ScenarioEmptyState`, `display/EmptyIllustration`, `display/ChartEmptyState`, `display/IllustratedEmptyState`.)* | — | — | — |
+| 1b | **Name a canonical generic empty state, or state that there isn't one.** The four shared components above cover *scenario*, *compact-generic*, *chart* and *illustrated* — and **12 feature-local `*EmptyState` components** grew anyway (`PersonaOverviewEmptyState`, `EditorEmptyState`, `LabEmptyState`, `DashboardEmptyState`, `MemoryEmptyState`, `TwinEmptyState`, `EmptyStateView`, `EmptyStates`, two `EmptyState`s in research-lab/templates, plus the two `emptyStatePrototype/` variants). Audit them against `ScenarioEmptyState` before extracting anything new. | 12 files | — | M |
 | 2 | **Extract a `PanelShell` / `DetailPanel`** (header+icon+body+actions+close) | ~100 bespoke `*Panel.tsx` | `layout/PanelShell` | L |
 | 3 | **Extract a `ContentCard` / `FeatureCard`** (icon+title+badges+body+actions) | ~69 bespoke `*Card.tsx` | `layout/ContentCard` (or expand `SectionCard`) | L |
 | 4 | **Extract `FilterToolbar`** (search + dropdowns + actions row) | ~15 `*Filters.tsx`/`*Toolbar.tsx` | `overlays/FilterToolbar` (FilterBar exists, underused) | M |
@@ -154,9 +190,10 @@ To improve a component's catalog row, add a `@catalog <one-line>` JSDoc tag to i
 
 | Family | Use… | …for |
 |---|---|---|
-| **Empty states** | `feedback/EmptyState` | first-run / scenario empties (preset `variant`s + generic icon/title/action; convenience `NoResults`, `InboxZero`) |
+| **Empty states** | `feedback/ScenarioEmptyState` | first-run / scenario empties (preset `variant`s **and** a fully generic icon/title/subtitle/action mode; convenience `NoResults`, `InboxZero`). **Default export** — call sites import it as `EmptyState`, which is why this family used to be documented under a `feedback/EmptyState` path that does not exist |
 | | `display/EmptyIllustration` | a compact, generic "nothing here" block (double-ring icon + heading + CTA) |
 | | `display/ChartEmptyState` | an empty **chart panel** (inline area/bar/trace/healing SVGs + glow title) |
+| | `display/IllustratedEmptyState` | a dashboard/widget empty with an animated inline SVG motif (chart / todos / stream / routines / heatmap) |
 | **Status / badge** | `display/StatusBadge` | a semantic status pill (resolve token via `tokenLabel()`) |
 | | `display/StatusDot` | an accessibility-first state dot (shape-coded for colorblind safety) |
 | | `display/Badge` | a generic tag / count pill (not status) |

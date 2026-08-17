@@ -1,0 +1,781 @@
+{
+  "slice": "server-commands",
+  "surveyNotes": {
+    "scale": "1650 #[tauri::command] fns across 299 files in src-tauri/src/commands; 1666 entries in the single tauri::generate_handler![] list in src-tauri/src/lib.rs:1805; 1034 generated ts-rs binding files in src/lib/bindings.",
+    "guardCoverage": "235 of ~1650 commands carry the #[requires(...)] proc-macro (162 privileged, 54 cloud, 19 auth). The rest either call require_auth_sync/require_auth by hand in the body or carry no guard call at all.",
+    "authRegistry": "PRIVILEGED_COMMANDS / CLOUD_COMMANDS in src-tauri/src/ipc_auth.rs are hand-maintained string lists that must agree with the macro annotations; a drift-guard test exists but only for SYNC commands."
+  },
+  "situations": [
+    {
+      "name": "Exposing a new IPC command",
+      "definition": "A developer needs a new backend operation callable from React and must complete the whole registration ritual, not just write the function.",
+      "recurrence": 1650,
+      "convergence": "converged",
+      "owner": "src-tauri/src/lib.rs (tauri::generate_handler![] at :1805) + scripts/generate-command-names.mjs",
+      "dimensions": ["function", "code-quality", "security"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "ipc-surface",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/src/lib.rs:1805",
+        "src-tauri/src/commands/core/personas.rs:31",
+        "scripts/generate-command-names.mjs:22",
+        "src/lib/tauriInvoke.ts:11"
+      ],
+      "risk": "medium",
+      "note": "Four coupled artifacts (fn, mod.rs re-export, generate_handler entry, generated CommandName union) with no single generator; forgetting the handler entry compiles cleanly and silently omits the command."
+    },
+    {
+      "name": "Auth tier assignment",
+      "definition": "Deciding whether a new command is Public / Privileged / Cloud, and getting that decision recorded in the two places that must agree.",
+      "recurrence": 235,
+      "convergence": "diverged",
+      "owner": "src-tauri/src/ipc_auth.rs",
+      "dimensions": ["security", "resilience", "function"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "ipc-authorization",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/src/ipc_auth.rs:117",
+        "src-tauri/src/ipc_auth.rs:705",
+        "src-tauri/src/ipc_auth.rs:966",
+        "src-tauri/src/commands/execution/executions.rs:117"
+      ],
+      "risk": "high",
+      "note": "Two independent sources of truth (the #[requires] annotation and the hand-written PRIVILEGED_COMMANDS list). A sync privileged command missing from the list fails CLOSED on every call — this shipped live twice (get_provider_usage_stats 2026-07-14, the seven persona-bundle commands). A drift test covers sync only; async commands can be annotated and unlisted with no signal at all."
+    },
+    {
+      "name": "Applying the auth guard",
+      "definition": "How the guard call actually gets into a command body — declaratively or by hand.",
+      "recurrence": 1650,
+      "convergence": "diverged",
+      "owner": "src-tauri/macros/src/lib.rs",
+      "dimensions": ["security", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "ipc-authorization",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/macros/src/lib.rs:57",
+        "src-tauri/src/commands/core/personas.rs:32",
+        "src-tauri/src/commands/communication/events.rs:29",
+        "src-tauri/src/commands/teams/teams.rs:19",
+        "src-tauri/src/commands/fleet/commands.rs:27"
+      ],
+      "risk": "high",
+      "note": "Three coexisting styles: #[requires(level)] macro (235), manual require_auth_sync(&state)? as the first body statement (hundreds), and no guard at all (whole subdomains — fleet/*, dev_tools_http, drive). Nothing detects the third case, and 'no guard' is indistinguishable from 'deliberately public'."
+    },
+    {
+      "name": "Argument validation at the door",
+      "definition": "Checking a command's inputs before they reach a repo or the filesystem, and turning failures into a shape the UI can render per-field.",
+      "recurrence": 40,
+      "convergence": "mixed",
+      "owner": "src-tauri/core/src/validation/contract.rs (ValidationError + check())",
+      "dimensions": ["function", "ui", "security", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "input-validation",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/core/src/validation/contract.rs:37",
+        "src-tauri/src/commands/core/personas.rs:104",
+        "src-tauri/src/commands/tools/triggers.rs:38",
+        "src-tauri/src/commands/communication/events.rs:41",
+        "src-tauri/src/commands/recipes/crud.rs:66",
+        "src-tauri/src/commands/infrastructure/settings.rs:47"
+      ],
+      "risk": "medium",
+      "note": "A proper contract layer exists (field/rule/message, ts-rs exported so the frontend can mirror it) but only personas/triggers/memories/chat use it. Everywhere else validation is an inline `if bad { return Err(AppError::Validation(format!(...))) }`, which collapses the field identity the UI needs."
+    },
+    {
+      "name": "Nullable-field patch semantics",
+      "definition": "Expressing 'leave this field alone' vs 'set this field to NULL' in an update command.",
+      "recurrence": 85,
+      "convergence": "mixed",
+      "owner": null,
+      "dimensions": ["function", "code-quality", "ui"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "mutation-shape",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/src/commands/core/personas.rs:129",
+        "src-tauri/src/commands/core/personas.rs:160",
+        "src-tauri/src/commands/infrastructure/dev_tools.rs:84",
+        "src-tauri/src/commands/credentials/crud.rs:137"
+      ],
+      "risk": "medium",
+      "note": "The Option<Option<T>> idiom is used consistently for the semantics but inconsistently for the shape: some commands take one Update*Input struct (update_persona), others take 16 flat Option<Option<T>> parameters (dev_tools_update_project). The flat form has no ts-rs binding, so the frontend hand-writes the arg object and a rename silently no-ops."
+    },
+    {
+      "name": "Returning typed errors to the UI",
+      "definition": "Getting a backend failure across IPC in a form the frontend can branch on (retryable? credential problem? not found?) rather than a string.",
+      "recurrence": 2041,
+      "convergence": "mixed",
+      "owner": "src-tauri/core/src/error.rs (AppError + its Serialize impl)",
+      "dimensions": ["ui", "resilience", "function", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "error-contract",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/core/src/error.rs:11",
+        "src-tauri/core/src/error.rs:160",
+        "src-tauri/src/commands/fleet/commands.rs:27",
+        "src-tauri/src/commands/credentials/oauth.rs:32",
+        "src-tauri/src/commands/infrastructure/setup.rs:12"
+      ],
+      "risk": "medium",
+      "note": "AppError serializes a rich envelope (error/kind/category/auto_fixable/failover_eligible, plus details for AuthorizationRequired) and sanitizes paths. But 75 command sites across 22 files — the entire fleet subdomain, parts of oauth, auto_cred_browser, setup — return Result<T, String> instead, which reaches the UI as a bare string with no kind, no category, no sanitization."
+    },
+    {
+      "name": "Choosing the error variant",
+      "definition": "Picking which AppError variant a failure should be, so it lands in the right frontend category and the right retry/failover behaviour.",
+      "recurrence": 500,
+      "convergence": "mixed",
+      "owner": "src-tauri/core/src/error.rs:112 (AppError::category)",
+      "dimensions": ["resilience", "ui", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "error-contract",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/core/src/error.rs:112",
+        "src-tauri/src/commands/credentials/crud.rs:48",
+        "src-tauri/src/commands/network/bundle.rs:25",
+        "src-tauri/src/commands/infrastructure/settings.rs:79"
+      ],
+      "risk": "medium",
+      "note": "AppError::Internal and AppError::External are string passthroughs that fall back to a message-sniffing classifier. They are the default reach for anything ambiguous, which routes real rate limits / auth failures through a regex ladder instead of the typed table."
+    },
+    {
+      "name": "Paginated list command",
+      "definition": "Returning a bounded slice of a large table to the UI along with enough information to know whether more exists.",
+      "recurrence": 183,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["performance", "ui", "function"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "list-queries",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/src/commands/communication/events.rs:33",
+        "src-tauri/src/commands/communication/events.rs:49",
+        "src-tauri/src/commands/execution/executions.rs:43",
+        "src-tauri/src/commands/execution/executions.rs:61",
+        "src-tauri/src/commands/core/personas.rs:242"
+      ],
+      "risk": "medium",
+      "note": "Four incompatible shapes coexist: bare Vec<T> with an Option<i64> limit, Vec<T> with limit+offset, a PaginatedEvents{items,has_more} wrapper, and a separate count_* command the UI must call alongside. Only some clamp the limit server-side; most trust whatever the renderer sends."
+    },
+    {
+      "name": "Bounding an unbounded result",
+      "definition": "Preventing one command from returning a payload large enough to hurt the WebView heap or the IPC bridge.",
+      "recurrence": 25,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["performance", "resilience", "cost"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "payload-limits",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/src/background_job.rs:24",
+        "src-tauri/src/background_job.rs:33",
+        "src-tauri/src/commands/drive.rs:36",
+        "src-tauri/src/commands/ocr/mod.rs:36",
+        "src-tauri/src/commands/infrastructure/settings.rs:14",
+        "src-tauri/src/commands/core/personas.rs:251",
+        "src-tauri/src/commands/execution/executions.rs:59"
+      ],
+      "risk": "medium",
+      "note": "Every site invents its own cap and its own truncation-marker convention (MAX_LINES, MAX_LINE_BYTES, MAX_READ_BYTES, MAX_OCR_FILE_BYTES, MAX_SETTING_VALUE_SIZE, MAX_PARAMETERS_JSON_SIZE, ACTIVITY_LIST_WINDOW_DAYS). Nothing tells a new command author that a cap is expected at all."
+    },
+    {
+      "name": "Bulk / batch command variant",
+      "definition": "Replacing N sequential IPC calls with one command that operates on a list of ids, and deciding what a partial failure returns.",
+      "recurrence": 21,
+      "convergence": "mixed",
+      "owner": null,
+      "dimensions": ["performance", "ui", "function"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "mutation-shape",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/src/commands/core/personas.rs:68",
+        "src-tauri/src/commands/infrastructure/settings.rs:105",
+        "src-tauri/src/commands/core/personas.rs:879",
+        "src-tauri/src/commands/credentials/rotation.rs:83"
+      ],
+      "risk": "medium",
+      "note": "Some bulk commands return a per-id outcome enum (BulkDeleteOutcome: deleted/protected/failed), others return a bare bool or Vec and swallow which rows failed. There is no shared BulkResult<T> so each new bulk command re-decides the partial-failure contract."
+    },
+    {
+      "name": "Long-running command with progress",
+      "definition": "Kicking off work that outlives one IPC round-trip and keeping the UI informed of status, output lines, and completion.",
+      "recurrence": 40,
+      "convergence": "mixed",
+      "owner": "src-tauri/src/background_job.rs (BackgroundJobManager)",
+      "dimensions": ["ui", "performance", "resilience", "function"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "background-jobs",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/src/background_job.rs:102",
+        "src-tauri/src/commands/credentials/nl_query.rs:10",
+        "src-tauri/src/commands/design/template_adopt.rs:12",
+        "src-tauri/src/commands/infrastructure/kpi_scan.rs:31",
+        "src-tauri/src/commands/infrastructure/setup.rs:29",
+        "src-tauri/src/commands/design/build_sessions.rs:104"
+      ],
+      "risk": "medium",
+      "note": "A good generic manager exists (TTL eviction, tail ring, line clamping, cancel token, snapshot) and ~12 modules use it — but setup.rs, build_sessions.rs, standards_scan.rs and others hand-roll the same lifecycle with their own statics and event payloads."
+    },
+    {
+      "name": "Streaming to the frontend",
+      "definition": "Choosing the transport for incremental output from a running backend operation.",
+      "recurrence": 89,
+      "convergence": "diverged",
+      "owner": "src-tauri/engine/src/event_registry.rs (emit_event)",
+      "dimensions": ["ui", "performance", "function"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "realtime-transport",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/engine/src/event_registry.rs:37",
+        "src-tauri/src/commands/design/build_sessions.rs:4",
+        "src-tauri/src/commands/design/build_sessions.rs:110",
+        "src-tauri/src/commands/infrastructure/setup.rs:108",
+        "src-tauri/src/commands/credentials/nl_query.rs:124",
+        "src-tauri/src/commands/design/n8n_transform/job_state.rs:143"
+      ],
+      "risk": "medium",
+      "note": "Three mechanisms with no stated rule for picking one: global app.emit broadcast events (89 sites), a per-invocation tauri::ipc::Channel<Value> (3 sites, build_sessions), and a poll-a-snapshot command (54 *_status/*_snapshot commands). Broadcast events are global — a second window sees another window's job output — while Channel is scoped; the choice is being made by copy-paste."
+    },
+    {
+      "name": "Event-name declaration",
+      "definition": "Naming a Rust→React event so the listener on the other side can be found and kept in sync.",
+      "recurrence": 89,
+      "convergence": "mixed",
+      "owner": "src-tauri/core/src/events.rs (event_names! macro / event_name module)",
+      "dimensions": ["code-quality", "ui", "function"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "realtime-transport",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/core/src/events.rs:32",
+        "src-tauri/src/commands/design/reviews.rs:252",
+        "src-tauri/src/commands/infrastructure/settings.rs:20",
+        "src-tauri/src/commands/infrastructure/standards_scan.rs:136",
+        "src-tauri/src/commands/companion/fleet_bridge.rs:2013",
+        "src-tauri/src/commands/infrastructure/task_executor.rs:1323"
+      ],
+      "risk": "low",
+      "note": "Mostly converged on the central event_name table (~150 names), but module-local const escapes exist (SETTINGS_CHANGED_EVENT, STANDARDS_SCAN_STATUS, PROACTIVE_EVENT, RADIO_STATE_EVENT) plus two raw string literals. The TS mirror in src/lib/eventRegistry.ts is manually kept in step."
+    },
+    {
+      "name": "Cancelling an in-flight operation",
+      "definition": "Letting the user stop a command's work that is already running on a detached task or child process.",
+      "recurrence": 30,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["ui", "resilience", "function", "performance"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "background-jobs",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/src/commands/credentials/db_schema.rs:16",
+        "src-tauri/src/commands/ocr/mod.rs:50",
+        "src-tauri/src/commands/execution/lab.rs:39",
+        "src-tauri/src/background_job.rs:62",
+        "src-tauri/src/commands/communication/observability/prompt_lab.rs:15",
+        "src-tauri/src/commands/design/analysis.rs:348"
+      ],
+      "risk": "high",
+      "note": "Four incompatible mechanisms: AppState.process_registry (domain+run_id, kills the child PID), BackgroundJobManager's per-entry CancellationToken, module-local LazyLock<Mutex<HashMap<id, CancellationToken>>> statics, and bare AtomicBool flags. Only OCR handles the reused-operation_id race; the others silently cancel the wrong run when an id repeats. Tauri invoke has no cancellation, so cancel is always a second command that must find the first one's handle."
+    },
+    {
+      "name": "Panic isolation for spawned work",
+      "definition": "Making sure a panic inside a command's detached task surfaces as a job error rather than a silently-stuck UI.",
+      "recurrence": 29,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["resilience", "ui", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "background-jobs",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/src/commands/execution/lab.rs:28",
+        "src-tauri/src/commands/infrastructure/setup.rs:17",
+        "src-tauri/src/commands/artist/ffmpeg.rs:22",
+        "src-tauri/src/commands/design/reviews.rs:13",
+        "src-tauri/src/commands/credentials/vector_kb.rs:26"
+      ],
+      "risk": "medium",
+      "note": "26 byte-identical copies of `fn extract_panic_message`, each paired with its own catch_unwind + its own 'emit an error status' recovery. The pattern is well understood and completely uncodified; a new background command that omits it leaves the job pinned at 'running' forever."
+    },
+    {
+      "name": "Spawning the Claude CLI from a command",
+      "definition": "Running an LLM/CLI subprocess on behalf of an IPC call, streaming its stdout, parsing a structured artifact out, and recording its spend.",
+      "recurrence": 30,
+      "convergence": "diverged",
+      "owner": "src-tauri/src/commands/credentials/ai_artifact_flow.rs (spawn_ai_artifact_task) — partial",
+      "dimensions": ["function", "cost", "resilience", "performance"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "llm-invocation",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/src/commands/credentials/ai_artifact_flow.rs:1",
+        "src-tauri/src/commands/credentials/ai_artifact_flow.rs:139",
+        "src-tauri/src/commands/recipes/crud.rs:226",
+        "src-tauri/src/commands/credentials/shared.rs:8",
+        "src-tauri/src/commands/execution/lab.rs:19",
+        "src-tauri/src/commands/design/analysis.rs:369"
+      ],
+      "risk": "medium",
+      "note": "ai_artifact_flow explicitly generalises the 'AI generates a structured artifact' lifecycle and has 5 adopters — but engine::cli_process::run_claude_cli, CliProcessDriver::spawn_cwd, run_claude_prompt_text_inner, fleet::headless and task_executor are four more entry points doing the same thing with different timeout, cancellation, and spend-recording behaviour. Model selection is also per-site (CREDENTIAL_TASK_MODEL is a private const in credentials/shared.rs)."
+    },
+    {
+      "name": "Recording LLM spend",
+      "definition": "Attributing the token cost of a command-initiated model call to a source/persona/project so the spend ledger stays honest.",
+      "recurrence": 15,
+      "convergence": "mixed",
+      "owner": "src-tauri/src/db/repos/llm_spend (SpendCtx + observe_line)",
+      "dimensions": ["cost", "function", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "llm-invocation",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/src/commands/credentials/ai_artifact_flow.rs:68",
+        "src-tauri/src/commands/credentials/ai_artifact_flow.rs:328",
+        "src-tauri/src/commands/infrastructure/context_generation.rs:1303",
+        "src-tauri/src/commands/core/persona_icon_gen.rs:199"
+      ],
+      "risk": "medium",
+      "note": "SpendCtx/observe_line is the intended path but it is opt-in per call site (ArtifactSpend is an Option). Any of the other CLI-spawn entry points can — and several do — run a model with no ledger entry, so the cost dashboard under-reports by however many sites forgot."
+    },
+    {
+      "name": "File-path arguments from the UI",
+      "definition": "Accepting a path from the renderer and being sure it cannot reach outside the intended sandbox before touching disk.",
+      "recurrence": 110,
+      "convergence": "diverged",
+      "owner": "src-tauri/src/engine/path_safety.rs (validate_file_access_path) — barely adopted",
+      "dimensions": ["security", "resilience", "function"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "filesystem-boundary",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/src/commands/ocr/mod.rs:16",
+        "src-tauri/src/commands/signing/mod.rs:301",
+        "src-tauri/src/commands/drive.rs:376",
+        "src-tauri/src/commands/credentials/vector_kb.rs:274",
+        "src-tauri/src/commands/credentials/foraging.rs:779",
+        "src-tauri/src/commands/execution/executions.rs:16",
+        "src-tauri/src/commands/credentials/api_proxy.rs:17",
+        "src-tauri/core/src/validation/mod.rs:36"
+      ],
+      "risk": "high",
+      "note": "The single worst divergence in the slice. At least six independent path guards exist (path_safety::validate_file_access_path with extension allowlists, drive::resolve_safe canonicalising against a managed root, vector_kb::validate_path_safety, foraging::is_safe_path_component, validation::open_log_file_safely, api_proxy::validate_credential_id) and only two files use the shared one. ~110 commands take a raw path/root_path/project_root String and most write or read it with no guard at all — the ipc_auth privileged list is being used as a substitute (artist_*, network bundle export) because the path itself is unchecked."
+    },
+    {
+      "name": "Writing a caller-supplied file",
+      "definition": "Persisting an export, composition, or report to a path the user picked, without torn writes or clobbering.",
+      "recurrence": 30,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["resilience", "security", "function"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "filesystem-boundary",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/src/commands/network/bundle.rs:32",
+        "src-tauri/src/commands/obsidian_brain/mod.rs:62",
+        "src-tauri/src/commands/drive.rs:959",
+        "src-tauri/src/commands/infrastructure/context_map_export.rs:72"
+      ],
+      "risk": "medium",
+      "note": "obsidian_brain implements atomic temp-file+rename with a full rationale comment; everyone else calls std::fs::write directly (219 raw fs calls in the commands tree). Same problem, one solved instance, no shared helper."
+    },
+    {
+      "name": "Ownership verification on a scoped entity",
+      "definition": "Confirming the row a command is about to read or mutate actually belongs to the parent the caller claims.",
+      "recurrence": 10,
+      "convergence": "mixed",
+      "owner": null,
+      "dimensions": ["security", "function"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "ipc-authorization",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/src/commands/execution/executions.rs:21",
+        "src-tauri/src/commands/execution/executions.rs:104",
+        "src-tauri/src/commands/tools/triggers.rs:101"
+      ],
+      "risk": "high",
+      "note": "Two local helpers exist (verify_execution_owner, ensure_trigger_owned) and both are explicitly documented as 'so a new command can't skip it' — but they are per-file and the caller supplies the parent id, so the check only guards against confused-deputy, not against a renderer that just sends the right parent id. Most other id-scoped commands (memories, tools, recipes, team members) have no equivalent check."
+    },
+    {
+      "name": "Secrets crossing the IPC boundary",
+      "definition": "Getting a credential value from the renderer into the vault (or keeping it from ever coming back out) without it sitting in plaintext on the bridge.",
+      "recurrence": 12,
+      "convergence": "converged",
+      "owner": "src-tauri/src/commands/credentials/crud.rs + AppState.session_key",
+      "dimensions": ["security", "function"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "secret-handling",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/src/commands/credentials/crud.rs:41",
+        "src-tauri/src/commands/credentials/crud.rs:62",
+        "src-tauri/src/commands/credentials/crud.rs:75",
+        "src-tauri/src/commands/credentials/api_proxy.rs:165"
+      ],
+      "risk": "high",
+      "note": "Well-solved where it is solved: session-RSA-encrypted payloads, server-side OAuth session-ref redemption so tokens never cross IPC, and refusal to trust a client-asserted healthcheck_passed. But the pattern lives entirely inside credentials/crud.rs — a new command that needs a secret has nothing to copy from and no rule telling it these three protections exist."
+    },
+    {
+      "name": "Redacting sensitive output",
+      "definition": "Stripping secrets, paths, and PII out of anything a command emits toward the UI or a log.",
+      "recurrence": 8,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["security", "ui", "resilience"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "secret-handling",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/src/commands/credentials/query_debug.rs:42",
+        "src-tauri/src/commands/credentials/auto_cred_browser.rs:368",
+        "src-tauri/src/commands/infrastructure/settings.rs:22",
+        "src-tauri/core/src/error.rs:144",
+        "src-tauri/src/commands/fleet/wait.rs:24"
+      ],
+      "risk": "high",
+      "note": "Four unrelated redaction strategies: column-name matching (query_debug), held-literal substitution (auto_cred_browser), key-only event payloads (settings-changed deliberately omits the value because settings hold secrets), and path-regex sanitization on three AppError variants only. The fleet wait diagnostics document a privacy boundary in prose. No shared redactor, so each new surface re-derives what counts as sensitive."
+    },
+    {
+      "name": "Audit logging a sensitive command",
+      "definition": "Leaving a durable record that a privileged operation happened, by whom, and to what.",
+      "recurrence": 10,
+      "convergence": "mixed",
+      "owner": "src-tauri/src/db/repos/resources/audit_log",
+      "dimensions": ["security", "function", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "ipc-authorization",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/src/commands/credentials/crud.rs:87",
+        "src-tauri/src/commands/credentials/crud.rs:193",
+        "src-tauri/src/commands/infrastructure/settings.rs:6",
+        "src-tauri/src/ipc_auth.rs:501"
+      ],
+      "risk": "medium",
+      "note": "Three parallel audit trails (credential audit_log, settings_audit_log, provider audit log) plus tracing-only 'audit' from require_privileged. Whether a new privileged command needs an audit row is decided ad hoc; the ipc_auth guard's tracing::debug is not a durable record."
+    },
+    {
+      "name": "Post-write side effects",
+      "definition": "Running the cache invalidation, cloud sync, readiness recompute, and downstream provisioning a successful mutation implies — without blocking the response.",
+      "recurrence": 41,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["function", "resilience", "performance"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "mutation-shape",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/src/commands/core/personas.rs:166",
+        "src-tauri/src/commands/core/personas.rs:181",
+        "src-tauri/src/commands/credentials/crud.rs:94",
+        "src-tauri/src/commands/credentials/crud.rs:198",
+        "src-tauri/src/commands/credentials/crud.rs:122"
+      ],
+      "risk": "medium",
+      "note": "update_persona fires two detached tokio tasks (session-pool invalidation, cloud upsert); update_credential fires four (healthcheck probe, readiness recompute, rotation auto-provision, oauth expiry seed). All are fire-and-forget with swallowed errors and no retry, so a failed side effect is invisible. Nothing enumerates 'what must happen after a persona changes' — each command author rediscovers the list."
+    },
+    {
+      "name": "Multi-row write atomicity",
+      "definition": "Making a command that touches several tables either fully apply or fully not.",
+      "recurrence": 15,
+      "convergence": "mixed",
+      "owner": null,
+      "dimensions": ["function", "resilience"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "mutation-shape",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/src/commands/core/use_cases.rs:527",
+        "src-tauri/src/commands/core/data_portability.rs:5929",
+        "src-tauri/src/commands/credentials/crud.rs:85",
+        "src-tauri/src/commands/credentials/foraging.rs:748"
+      ],
+      "risk": "high",
+      "note": "Transactions are opened at the command layer in a handful of places (use_cases, data_portability, foraging) and pushed down into the repo in others (repo::create_with_fields explicitly transacts 'to prevent orphaned rows'). Mixing the two means a command that composes several repo calls has no transaction at all and can half-apply — which is exactly the failure repo::create_with_fields was written to avoid."
+    },
+    {
+      "name": "Idempotent re-invocation",
+      "definition": "Making a repeated call — from a double-click, a retry after an IPC timeout, or a replayed event — not do the work twice.",
+      "recurrence": 6,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["resilience", "function", "cost", "ui"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "mutation-shape",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/src/commands/execution/executions.rs:154",
+        "src-tauri/src/commands/execution/executions.rs:371",
+        "src-tauri/src/commands/companion/chat_cards.rs:219",
+        "src-tauri/src/commands/companion/approvals/approval_exec_fleet.rs:1824",
+        "src/lib/tauriInvoke.ts:52",
+        "src/lib/tauriInvoke.ts:71"
+      ],
+      "risk": "high",
+      "note": "Only execute_persona takes an idempotency_key; everything else relies on a UI guard or nothing. The frontend documents the hazard precisely — an invokeWithTimeout rejection does NOT cancel the backend, so any timed-out mutating command that the user retries runs twice — and works around it with a hand-maintained BLOCKING_MUTATION_TIMEOUTS allowlist of three commands. Every other long mutating command is exposed."
+    },
+    {
+      "name": "Poll-a-snapshot command",
+      "definition": "Giving the UI a way to recover the current state of a background job after a remount, a missed event, or a cold start.",
+      "recurrence": 54,
+      "convergence": "mixed",
+      "owner": "src-tauri/src/background_job.rs (get_task_snapshot / JobSnapshot)",
+      "dimensions": ["ui", "resilience", "function"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "background-jobs",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/src/commands/credentials/nl_query.rs:124",
+        "src-tauri/src/commands/design/template_adopt.rs:176",
+        "src-tauri/src/commands/design/n8n_transform/job_state.rs:143",
+        "src-tauri/src/commands/credentials/schema_proposal.rs:130",
+        "src-tauri/src/commands/design/reviews.rs:968"
+      ],
+      "risk": "medium",
+      "note": "Where BackgroundJobManager is used the snapshot is generic (BackgroundTaskSnapshot<Extras>); elsewhere each job invents its own *_status return shape. There is no stated rule about whether a job needs a snapshot command at all, so event-only jobs lose their state on any remount."
+    },
+    {
+      "name": "Rate-limiting a command",
+      "definition": "Stopping a caller — or a runaway trigger — from invoking an expensive command in a loop.",
+      "recurrence": 3,
+      "convergence": "diverged",
+      "owner": "src-tauri/src/engine/rate_limiter.rs (AppState.rate_limiter)",
+      "dimensions": ["resilience", "cost", "performance", "security"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "throttling",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/src/commands/communication/events.rs:66",
+        "src-tauri/src/commands/communication/events.rs:202",
+        "src-tauri/src/lib.rs:397"
+      ],
+      "risk": "medium",
+      "note": "A real rate limiter lives on AppState and is consulted by exactly two commands (publish_event and one sibling) plus webhook intake. Every other command — including LLM-spawning and outbound-HTTP ones — is unthrottled. ipc_auth even notes rate limiting as a future use for the `state` it currently discards."
+    },
+    {
+      "name": "Tier / plan gating",
+      "definition": "Refusing or degrading a command when the user's tier does not include the capability or has exhausted its allowance.",
+      "recurrence": 4,
+      "convergence": "diverged",
+      "owner": "AppState.tier_config",
+      "dimensions": ["function", "cost", "ui", "security"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "throttling",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/src/commands/communication/events.rs:66",
+        "src-tauri/src/commands/execution/scheduler.rs:37",
+        "src-tauri/src/commands/infrastructure/tier_usage.rs:72",
+        "src-tauri/src/lib.rs:401"
+      ],
+      "risk": "medium",
+      "note": "tier_config is read in four places and there is no require_tier() guard analogous to require_privileged. Tier enforcement is effectively a frontend concern with three backend spot-checks, which means the IPC surface is the bypass."
+    },
+    {
+      "name": "Feature-flag gating a command",
+      "definition": "Compiling a command in only for certain build features (desktop / ml / p2p / scraper / test-automation) and keeping the registration list consistent with it.",
+      "recurrence": 101,
+      "convergence": "mixed",
+      "owner": "src-tauri/src/lib.rs (generate_handler + its structural guard test at :3796)",
+      "dimensions": ["function", "resilience", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "ipc-surface",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/src/lib.rs:3796",
+        "src-tauri/src/lib.rs:1875",
+        "src-tauri/src/commands/mod.rs:18",
+        "src-tauri/src/commands/testing/mod.rs:1"
+      ],
+      "risk": "high",
+      "note": "Rust silently applies a stack of #[cfg] attributes to the next item, so a duplicated cfg line deletes the command that was supposed to be under the first one — this shipped, removing 15 network commands from the IPC surface with no compiler, clippy, or test signal. A source-text guard test now covers commands::network only; every other cfg-gated family is unguarded. The frontend also needs a matching capability check or it calls a command that does not exist in this build."
+    },
+    {
+      "name": "ts-rs binding export",
+      "definition": "Getting a Rust payload type into src/lib/bindings so the frontend has a real type instead of an `any`.",
+      "recurrence": 225,
+      "convergence": "mixed",
+      "owner": "src-tauri/build.rs (TS_RS_EXPORT_DIR) + `cargo test export_bindings`",
+      "dimensions": ["code-quality", "function", "ui"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "type-contract",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/src/commands/communication/events.rs:109",
+        "src-tauri/src/commands/credentials/mcp_tools.rs:16",
+        "src-tauri/core/src/validation/contract.rs:9",
+        "src-tauri/src/commands/drive.rs:25"
+      ],
+      "risk": "medium",
+      "note": "225 #[ts(export)] types are declared inline inside command modules while the rest live in db::models — no rule says which. A command whose arguments are flat parameters (rather than an input struct) exports nothing at all, so the call shape is only checked by the hand-written TS wrapper. Regeneration is a separate manual `cargo test export_bindings` step that CI verifies after the fact."
+    },
+    {
+      "name": "IPC payload field naming",
+      "definition": "Deciding whether a payload crosses the bridge as snake_case or camelCase, consistently with what the React side reads.",
+      "recurrence": 225,
+      "convergence": "mixed",
+      "owner": null,
+      "dimensions": ["code-quality", "ui", "function"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "type-contract",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/src/commands/communication/events.rs:110",
+        "src-tauri/src/commands/credentials/mcp_tools.rs:17",
+        "src-tauri/src/commands/core/personas.rs:211",
+        "src/lib/tauriInvoke.ts:32"
+      ],
+      "risk": "medium",
+      "note": "181 of 225 exported types carry #[serde(rename_all = \"camelCase\")]; the other 44 do not, and hand-built serde_json::json! payloads (e.g. the cloud-sync body in update_persona) mix conventions inside a single file. Tauri also camelCases command *arguments* automatically, which is a third, invisible rule."
+    },
+    {
+      "name": "Exposing an operation on a second transport",
+      "definition": "Making the same backend capability reachable from something other than the app's own webview — a local HTTP API, an MCP tool, a webhook, a test harness.",
+      "recurrence": 12,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["security", "function", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "ipc-surface",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/src/commands/infrastructure/dev_tools_http.rs:1",
+        "src-tauri/src/commands/infrastructure/dev_tools_http.rs:71",
+        "src-tauri/src/engine/management_api.rs:74",
+        "src-tauri/src/commands/fleet/companion_api.rs:63",
+        "src-tauri/src/commands/credentials/mcp_tools.rs:32",
+        "src-tauri/src/commands/testing/mod.rs:1"
+      ],
+      "risk": "high",
+      "note": "At least 12 axum routers re-expose command-layer functions (management_api, dev_tools_http, companion_api, fleet hooks, webhook, share_link, browser_bridge, MCP, test_automation, local_http). None of them go through ipc_auth — dev_tools_http states outright that it relies on the underlying command being unauthenticated on IPC. So the tier a command was assigned in PRIVILEGED_COMMANDS means nothing on these paths, and the two surfaces drift independently."
+    },
+    {
+      "name": "Process-global command state",
+      "definition": "Holding mutable state that must survive between two IPC calls (an in-flight job, a debounce, a cache, a registry).",
+      "recurrence": 40,
+      "convergence": "diverged",
+      "owner": "AppState (src-tauri/src/lib.rs:369) — but routinely bypassed",
+      "dimensions": ["code-quality", "resilience", "performance"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "command-state",
+      "crossCutting": false,
+      "examples": [
+        "src-tauri/src/lib.rs:369",
+        "src-tauri/src/commands/fleet/registry.rs:493",
+        "src-tauri/src/commands/credentials/db_schema.rs:16",
+        "src-tauri/src/commands/drive.rs:81",
+        "src-tauri/src/commands/design/connector_readiness.rs:357",
+        "src-tauri/src/commands/companion/fleet_bridge.rs:172"
+      ],
+      "risk": "medium",
+      "note": "AppState is the sanctioned home and has ~25 fields, yet ~40 module-local OnceLock<Mutex<HashMap>>/LazyLock statics exist alongside it (fleet_bridge alone has eight). The statics are untestable, invisible to any shutdown path, and each re-decides its own poisoning policy (some `.unwrap_or_else(|e| e.into_inner())`, some `if let Ok(...)` which silently no-ops)."
+    },
+    {
+      "name": "TTL-cached read command",
+      "definition": "Avoiding a repeated expensive computation when the UI polls a read command on mount and after every mutation.",
+      "recurrence": 8,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["performance", "ui", "cost"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "command-state",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/src/commands/drive.rs:70",
+        "src-tauri/src/commands/design/connector_readiness.rs:357",
+        "src-tauri/src/lib.rs:404",
+        "src-tauri/src/lib.rs:395",
+        "src-tauri/src/commands/obsidian_brain/graph.rs:98"
+      ],
+      "risk": "low",
+      "note": "Five independent TTL caches with five different TTLs and five different invalidation stories (drive 5s, gitlab config 60s, tier usage, connector probe, vault index). None is invalidated by the mutation that makes it stale — they all just wait out the TTL."
+    },
+    {
+      "name": "Command naming & module placement",
+      "definition": "Choosing a command's name and which file it lives in, given a flat global namespace of ~1,650 names.",
+      "recurrence": 1650,
+      "convergence": "mixed",
+      "owner": "src-tauri/src/commands/mod.rs",
+      "dimensions": ["code-quality", "function"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "ipc-surface",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/src/commands/mod.rs:1",
+        "src-tauri/src/commands/infrastructure/dev_tools.rs:1",
+        "src-tauri/src/commands/fleet/commands.rs:27",
+        "src-tauri/src/commands/core/personas.rs:33",
+        "src-tauri/src/lib.rs:1811"
+      ],
+      "risk": "low",
+      "note": "The registered name is the bare fn name, so the namespace is global and flat. Some families prefix (fleet_*, dev_tools_*, artist_*, cloud_*, gitlab_*, drive_*, lab_*), core CRUD does not (list_personas, create_trigger). Single files reach 70 commands (dev_tools.rs) and 500KB (data_portability.rs) before splitting, and the split then needs `pub use x::*` re-exports purely to keep lib.rs paths resolving."
+    },
+    {
+      "name": "Concurrent-edit conflict",
+      "definition": "Handling two writers updating the same row when the second one's form was loaded before the first one saved.",
+      "recurrence": 3,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["function", "resilience", "ui"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "mutation-shape",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/src/commands/core/personas.rs:160",
+        "src-tauri/src/commands/obsidian_brain/conflict.rs:26",
+        "src-tauri/src/commands/core/data_portability.rs:1530"
+      ],
+      "risk": "medium",
+      "note": "No update command on the IPC surface takes an expected version / updated_at — every write is last-writer-wins. Real conflict machinery exists but only where two *systems* sync (obsidian three-way compare, portability ImportConflict), never for two UI panels or two app windows editing the same persona."
+    },
+    {
+      "name": "Cloud-auth degraded mode",
+      "definition": "Deciding what a cloud-dependent command does when the user is signed out, offline, or holding only a cached profile.",
+      "recurrence": 54,
+      "convergence": "converged",
+      "owner": "src-tauri/src/ipc_auth.rs:508 (require_cloud_auth)",
+      "dimensions": ["resilience", "ui", "function", "security"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "ipc-authorization",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/src/ipc_auth.rs:508",
+        "src-tauri/src/ipc_auth.rs:705",
+        "src-tauri/src/ipc_auth.rs:426"
+      ],
+      "risk": "medium",
+      "note": "One of the cleanest patterns here: require_cloud_auth distinguishes 'offline with cached profile' from 'not signed in' and returns different user-facing messages. The open question is which reads stay public for startup — the CLOUD_COMMANDS list carries per-entry prose arguing individual exemptions (smee_relay_list, gitlab_get_config) with no stated rule."
+    },
+    {
+      "name": "Windows WebView2 header race",
+      "definition": "Getting the IPC session token attached to a privileged call when the renderer fires it before the invoke monkey-patch lands.",
+      "recurrence": 8,
+      "convergence": "mixed",
+      "owner": "src-tauri/src/ipc_auth.rs:633 (generate_ipc_auth_script) + src/lib/tauriInvoke.ts",
+      "dimensions": ["resilience", "security", "ui"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "ipc-authorization",
+      "crossCutting": true,
+      "examples": [
+        "src-tauri/src/ipc_auth.rs:633",
+        "src-tauri/src/ipc_auth.rs:209",
+        "src-tauri/src/ipc_auth.rs:367",
+        "src/lib/tauriInvoke.ts:84"
+      ],
+      "risk": "high",
+      "note": "The workaround is to REMOVE commands from PRIVILEGED_COMMANDS and rely on the weaker in-body async require_privileged (which does not check the validation flag at all). At least eight commands — execute_api_request, discover_connector_resources, the data-portability four — are downgraded this way, each with a paragraph of justification. The security tier is being set by a platform timing bug."
+    }
+  ]
+}

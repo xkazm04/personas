@@ -1488,6 +1488,43 @@ CREATE TABLE IF NOT EXISTS companion_chat_card (
 );
 CREATE INDEX IF NOT EXISTS idx_companion_chat_card_pending
     ON companion_chat_card(conversation_id, status, created_at DESC);
+
+-- companion_tours: Athena-composed guided tours (Generative Tours).
+-- One row per composed tour; steps stored as validated JSON in the frontend
+-- `TourStepDef` shape. `manifest_hash` records which anchor manifest the tour
+-- was proven against, so upgrades can re-prove and mark drifted tours 'stale'
+-- instead of letting them break mid-play.
+--
+-- Moved here 2026-08-15 from migrations/incremental.rs. Its DDL ran against
+-- the MAIN database while all four of its statements execute on
+-- `&UserDbPool` (companion/tours.rs:223,258,302,379). Verified on the live
+-- files: the table existed in personas.db with 0 rows, and
+-- `SELECT count(*) FROM companion_tours` against personas_data.db returned
+-- "no such table". The feature shipped 2026-07-30 and never wrote a row.
+--
+-- It compiled because DbPool and UserDbPool are the same type behind two
+-- aliases, so the store a handle points at is not a fact the compiler holds.
+-- Nothing else caught it either: no test asserts persistence, and
+-- `compose_tour` pays for a Claude call BEFORE it fails.
+--
+-- The empty table left behind in personas.db on existing installs is
+-- deliberately not dropped — it holds no rows and dropping it would be a
+-- destructive migration to reclaim nothing.
+CREATE TABLE IF NOT EXISTS companion_tours (
+    id            TEXT PRIMARY KEY,
+    topic         TEXT NOT NULL,
+    title         TEXT NOT NULL,
+    description   TEXT NOT NULL DEFAULT '',
+    icon          TEXT NOT NULL DEFAULT 'Sparkles',
+    color         TEXT NOT NULL DEFAULT 'violet',
+    steps_json    TEXT NOT NULL,
+    status        TEXT NOT NULL DEFAULT 'ready',
+    manifest_hash TEXT,
+    created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_companion_tours_created
+    ON companion_tours(created_at DESC);
 "#;
 
 /// Seed all built-in local credentials if they don't already exist.
@@ -1878,12 +1915,75 @@ fn seed_example_scrape_config(conn: &rusqlite::Connection) -> Result<(), AppErro
 // Available to this crate's own tests AND, via the `test-support` feature, to
 // the desktop crate's — `cfg(test)` does not cross a crate boundary, and ~72
 // test modules over there build their fixtures with this.
+/// Path to a fully-migrated, fully-seeded database built **once per test
+/// process**, which [`init_test_db`] copies per call.
+///
+/// WHY (2026-08-13). This fixture has ~576 call sites. Each one used to run the
+/// entire migration chain from scratch — the initial schema, 124 `run_step`s,
+/// 378 `ddl_step` calls and three seed functions — against a temp file on disk.
+/// Measured, that is ~24 CPU-minutes of pure schema setup per suite before a
+/// single assertion executes, and cargo's default `--test-threads` is the core
+/// count, so it lands on every core at once. Two concurrent suites made a
+/// developer machine unusable.
+///
+/// Building the chain once and copying the resulting file is orders of
+/// magnitude cheaper: a copy is a few milliseconds against seconds for the
+/// chain.
+///
+/// Safe because the standard pragma set does **not** enable WAL, so a database
+/// is a single self-contained file with no `-wal`/`-shm` sidecar to tear; the
+/// building connection is dropped before any copy is taken.
+#[cfg(any(test, feature = "test-support"))]
+fn migrated_template() -> Result<std::path::PathBuf, AppError> {
+    use std::sync::OnceLock;
+    static TEMPLATE: OnceLock<Result<std::path::PathBuf, String>> = OnceLock::new();
+
+    TEMPLATE
+        .get_or_init(|| {
+            // One template per process — the pid keeps concurrent cargo test
+            // binaries (and parallel harness runs) off each other's file.
+            let path = std::env::temp_dir()
+                .join(format!("personas_test_template_{}.db", std::process::id()));
+            let _ = std::fs::remove_file(&path); // stale template from a crashed run
+
+            let build = || -> Result<(), AppError> {
+                let conn = rusqlite::Connection::open(&path)?;
+                apply_standard_pragmas(&conn)?;
+                migrations::run(&conn)?;
+                migrations::run_incremental(&conn)?;
+                seed_builtin_tools(&conn)?;
+                seed_builtin_connectors(&conn)?;
+                seed_builtin_shared_events(&conn)?;
+                // Drop before the first copy: an open handle can leave the
+                // rollback journal on disk, and a copy taken then is torn.
+                drop(conn);
+                Ok(())
+            };
+
+            match build() {
+                Ok(()) => Ok(path),
+                Err(e) => {
+                    let _ = std::fs::remove_file(&path);
+                    Err(format!("could not build the test-database template: {e}"))
+                }
+            }
+        })
+        .clone()
+        .map_err(AppError::Internal)
+}
+
 #[cfg(any(test, feature = "test-support"))]
 pub fn init_test_db() -> Result<DbPool, AppError> {
     use std::time::Duration;
 
-    // Use a unique temp file for each test to avoid in-memory connection issues with r2d2.
+    // Copy the once-built template rather than re-running the migration chain.
+    // A unique file per test (not `:memory:`) because r2d2 hands out multiple
+    // connections and each in-memory connection would get its own empty
+    // database.
+    let template = migrated_template()?;
     let tmp = std::env::temp_dir().join(format!("personas_test_{}.db", uuid::Uuid::new_v4()));
+    std::fs::copy(&template, &tmp).map_err(AppError::Io)?;
+
     let manager = SqliteConnectionManager::file(&tmp);
     let pool = Pool::builder()
         .max_size(2)
@@ -1891,13 +1991,15 @@ pub fn init_test_db() -> Result<DbPool, AppError> {
         .connection_customizer(Box::new(SqlitePragmaCustomizer))
         .build(manager)?;
 
-    let conn = pool.get()?;
-    migrations::run(&conn)?;
-    migrations::run_incremental(&conn)?;
-    seed_builtin_tools(&conn)?;
-    seed_builtin_connectors(&conn)?;
-    seed_builtin_shared_events(&conn)?;
-    drop(conn);
+    // Prove the copy is usable before handing it to a test: a torn or truncated
+    // copy would otherwise surface as a baffling failure in whichever assertion
+    // touched the database first.
+    {
+        let conn = pool.get()?;
+        conn.query_row("SELECT COUNT(*) FROM sqlite_master", [], |r| {
+            r.get::<_, i64>(0)
+        })?;
+    }
     Ok(pool)
 }
 

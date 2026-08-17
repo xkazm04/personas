@@ -231,6 +231,15 @@ pub async fn artist_load_autosave(app: AppHandle) -> Result<Option<CompositionLo
 
 /// Delete the autosave file — used after a user explicitly opens or saves,
 /// so the next session doesn't restore a stale state.
+///
+/// Privileged via `PRIVILEGED_COMMANDS` only: this is the destructive member
+/// of a family whose other three commands (`artist_save_composition`,
+/// `artist_load_composition`, `artist_autosave_composition`) are already
+/// listed, and an unauthorised clear costs the user their unsaved work. It
+/// carries no `#[requires]` attribute for the same reason its siblings don't —
+/// there is no `state` parameter for the macro to derive the guard from, and
+/// adding one purely to satisfy the macro on an *async* command would buy
+/// nothing: the async guard cannot enforce. The list entry is the gate.
 #[tauri::command]
 pub async fn artist_clear_autosave(app: AppHandle) -> Result<(), AppError> {
     let path = autosave_path(&app)?;

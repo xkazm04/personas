@@ -1,0 +1,1024 @@
+{
+  "slice": "server-platform",
+  "situations": [
+    {
+      "name": "Typed error taxonomy",
+      "definition": "A developer needs to add or classify a fallible outcome so it crosses the IPC boundary as a structured, categorized, machine-branchable error rather than a string.",
+      "recurrence": 21,
+      "convergence": "converged",
+      "owner": "src-tauri/core/src/error.rs",
+      "dimensions": ["function", "resilience", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "errors",
+      "crossCutting": true,
+      "hasGate": false,
+      "examples": [
+        "src-tauri/core/src/error.rs:11",
+        "src-tauri/core/src/error.rs:112",
+        "src-tauri/core/src/error_taxonomy.rs:25",
+        "src/lib/errorTaxonomy.ts:1"
+      ],
+      "risk": "medium",
+      "note": "Rust AppError kind/category and the TS mirror src/lib/errorTaxonomy.ts must stay in lockstep; nothing checks that today (grep of scripts/.github/lefthook finds no parity gate), so a new variant can silently classify as Unknown on the frontend."
+    },
+    {
+      "name": "Secret and PII redaction",
+      "definition": "A developer is about to persist, log, or ship somewhere a string that may contain a credential or personal data, and needs the canonical scrubber for that egress point.",
+      "recurrence": 4,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["security", "resilience", "performance"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "redaction",
+      "crossCutting": false,
+      "hasGate": false,
+      "examples": [
+        "src-tauri/core/src/redact.rs:97",
+        "src-tauri/core/src/utils/sanitization.rs:22",
+        "src-tauri/src/main.rs:156",
+        "src-tauri/core/src/error.rs:144"
+      ],
+      "risk": "high",
+      "note": "FOUR independent implementations with four different pattern sets and thresholds: trace-persistence redaction (entropy sweep, kill-switchable), audit-log sanitize_secrets, Sentry pii::scrub, and IPC error-path stripping. A pattern added to one does not reach the others; a secret leaking through the weakest one is unrecoverable."
+    },
+    {
+      "name": "Encrypting a secret at rest",
+      "definition": "A developer needs to store a credential, token, or trigger config in SQLite such that the row is useless without the machine's master key.",
+      "recurrence": 8,
+      "convergence": "converged",
+      "owner": "src-tauri/core/src/crypto.rs",
+      "dimensions": ["security", "function"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "vault",
+      "crossCutting": true,
+      "hasGate": false,
+      "examples": [
+        "src-tauri/core/src/crypto.rs:1302",
+        "src-tauri/core/src/crypto.rs:1350",
+        "src-tauri/core/src/crypto.rs:1687",
+        "src-tauri/src/commands/credentials/crud.rs:1"
+      ],
+      "risk": "high",
+      "note": "Three near-identical entry points (encrypt_for_db / encrypt_field / encrypt_trigger_config) with different nonce-return shapes; nothing prevents a new sensitive column from being written in plaintext."
+    },
+    {
+      "name": "Master key sourcing policy",
+      "definition": "A developer is deciding where the 32-byte encryption key comes from on a given platform and what happens when the OS keychain is unavailable.",
+      "recurrence": 6,
+      "convergence": "converged",
+      "owner": "src-tauri/core/src/crypto.rs",
+      "dimensions": ["security", "resilience"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "vault",
+      "crossCutting": false,
+      "hasGate": false,
+      "examples": [
+        "src-tauri/core/src/crypto.rs:497",
+        "src-tauri/core/src/crypto.rs:463",
+        "src-tauri/core/src/crypto.rs:478",
+        "src-tauri/core/src/crypto.rs:764"
+      ],
+      "risk": "high",
+      "note": "Fail-closed with three env escape hatches (PERSONAS_ALLOW_FALLBACK_KEY, PERSONAS_MIGRATE_LEGACY_KEY, DPAPI wrapping). Two documented bug-hunt findings came from the doc comment and the runtime branch having diverged; only Rust unit tests defend it, and they need --features desktop or the mobile stub compiles instead."
+    },
+    {
+      "name": "In-memory secret lifetime",
+      "definition": "A developer holds a plaintext secret in process memory and needs it zeroized, un-swappable, and non-printable in Debug output.",
+      "recurrence": 3,
+      "convergence": "converged",
+      "owner": "src-tauri/core/src/crypto.rs",
+      "dimensions": ["security", "code-quality"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "vault",
+      "crossCutting": false,
+      "hasGate": false,
+      "examples": [
+        "src-tauri/core/src/crypto.rs:221",
+        "src-tauri/core/src/crypto.rs:287",
+        "src-tauri/core/src/crypto.rs:319",
+        "src-tauri/core/src/crypto.rs:373"
+      ],
+      "risk": "high",
+      "note": "SecureString / EncryptedToken / ProtectedKey are the three primitives; nothing stops a new code path from binding a raw String. Memory-locking has three platform variants plus a no-op stub."
+    },
+    {
+      "name": "IPC command authorization",
+      "definition": "A developer adds a Tauri command and must decide its auth tier and wire the guard so the frontend cannot invoke privileged work without the session token.",
+      "recurrence": 12,
+      "convergence": "mixed",
+      "owner": "src-tauri/src/ipc_auth.rs",
+      "dimensions": ["security", "function"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "ipc",
+      "crossCutting": true,
+      "hasGate": false,
+      "examples": [
+        "src-tauri/src/ipc_auth.rs:1",
+        "src-tauri/macros/src/lib.rs:57",
+        "src-tauri/src/lib.rs:1805",
+        "scripts/check-literal-parity.mjs:1"
+      ],
+      "risk": "high",
+      "note": "Two mechanisms coexist — the wrap_invoke_handler privileged-command HashSet and the #[requires(level)] proc-macro. Nothing asserts a new sensitive command was added to the set; check-literal-parity.mjs was a one-off audit and is wired to no npm script, hook, or workflow."
+    },
+    {
+      "name": "SSRF-safe outbound HTTP",
+      "definition": "A developer makes an HTTP request to a host influenced by user or credential data and needs the client that cannot reach loopback, RFC1918, CGNAT, or cloud-metadata.",
+      "recurrence": 11,
+      "convergence": "converged",
+      "owner": "src-tauri/core/src/http_clients.rs",
+      "dimensions": ["security", "performance"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "networking",
+      "crossCutting": false,
+      "hasGate": false,
+      "examples": [
+        "src-tauri/core/src/http_clients.rs:17",
+        "src-tauri/core/src/http_clients.rs:28",
+        "src-tauri/core/src/http_clients.rs:38",
+        "src-tauri/core/src/url_safety.rs:22"
+      ],
+      "risk": "high",
+      "note": "Three shared LazyLock clients where picking the wrong one is a silent SSRF hole; HTTP_ALLOW_PRIVATE is legal at exactly one call site by comment only. A previously divergent private-IP predicate in engine::ssrf_safe_dns was folded in after it drifted."
+    },
+    {
+      "name": "Command input validation",
+      "definition": "A developer accepts a user-supplied id, name, or free-text field at the IPC boundary and needs the canonical whitelist/strip before it reaches SQL, a path, or storage.",
+      "recurrence": 9,
+      "convergence": "converged",
+      "owner": "src-tauri/core/src/validation/mod.rs",
+      "dimensions": ["security", "function"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "validation",
+      "crossCutting": false,
+      "hasGate": false,
+      "examples": [
+        "src-tauri/core/src/validation/mod.rs:16",
+        "src-tauri/core/src/validation/mod.rs:38",
+        "src-tauri/core/src/validation/persona.rs:1",
+        "src-tauri/core/src/validation/trigger.rs:1"
+      ],
+      "risk": "medium",
+      "note": "The module is `#![allow(dead_code)] // Used by commands as needed` — validation is opt-in per command with no mechanism telling a new command author which helper applies."
+    },
+    {
+      "name": "Feature-flagged compilation",
+      "definition": "A developer adds code that must only compile in some build profiles (desktop / ML / P2P / test-automation / scraper) and has to declare and forward the Cargo feature correctly.",
+      "recurrence": 569,
+      "convergence": "mixed",
+      "owner": "src-tauri/Cargo.toml",
+      "dimensions": ["function", "performance", "cost"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "build-features",
+      "crossCutting": false,
+      "hasGate": true,
+      "examples": [
+        "src-tauri/Cargo.toml:31",
+        "src-tauri/src/lib.rs:1",
+        "src-tauri/core/src/crypto.rs:566",
+        "scripts/check-tauri-configs.mjs:90"
+      ],
+      "risk": "medium",
+      "note": "569 cfg sites across 95 files, and each feature must be re-declared and forwarded into personas-core/-db/-engine. Missing the forward silently compiles a stub (crypto's mobile keychain path). check-tauri-configs only validates that a config's feature NAME exists; CI compiles only `desktop`, so `ml`/`p2p`/`scraper`/`daemon`/`ollama` paths are never built by any gate."
+    },
+    {
+      "name": "Crate layering discipline",
+      "definition": "A developer decides which workspace crate a new module belongs in so the dependency graph stays acyclic and rustc can parallelize.",
+      "recurrence": 5,
+      "convergence": "converged",
+      "owner": "src-tauri/core/src/lib.rs",
+      "dimensions": ["code-quality", "performance"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "workspace",
+      "crossCutting": false,
+      "hasGate": false,
+      "examples": [
+        "src-tauri/core/src/lib.rs:1",
+        "src-tauri/Cargo.toml:1",
+        "src-tauri/core/src/limits.rs:1",
+        "src-tauri/core/src/drive_root.rs:1"
+      ],
+      "risk": "medium",
+      "note": "\"personas-core may not depend on any other Personas crate\" is prose in a doc comment. Enforced only by whether cargo happens to fail; several modules (limits, drive_root, ipc_gauge) exist purely to break a back-edge and would silently re-form it if someone re-imported."
+    },
+    {
+      "name": "Compile-time env embedding",
+      "definition": "A developer needs a build-time constant (OAuth client id, Sentry DSN, Supabase key) baked into the shipped binary from .env.",
+      "recurrence": 9,
+      "convergence": "converged",
+      "owner": "src-tauri/build.rs",
+      "dimensions": ["security", "function"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "build",
+      "crossCutting": false,
+      "hasGate": false,
+      "examples": [
+        "src-tauri/build.rs:32",
+        "src-tauri/build.rs:51",
+        "src-tauri/src/main.rs:77",
+        ".env.example:1"
+      ],
+      "risk": "high",
+      "note": "Explicit forward-list; adding an option_env! read without adding the key here silently ships an empty value. rerun-if-env-changed was added only after swatinem/rust-cache made a stale cached build script ship a rotated secret's old value."
+    },
+    {
+      "name": "ts-rs binding export",
+      "definition": "A developer adds #[derive(TS)] to a Rust struct and needs the generated TypeScript to land in exactly one committed location.",
+      "recurrence": 6,
+      "convergence": "converged",
+      "owner": "src-tauri/build.rs",
+      "dimensions": ["code-quality", "function"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "codegen",
+      "crossCutting": true,
+      "hasGate": true,
+      "examples": [
+        "src-tauri/build.rs:20",
+        ".github/workflows/ci.yml:363",
+        "scripts/build/run-rust-tests.mjs:205",
+        "src-tauri/core/src/error_taxonomy.rs:23"
+      ],
+      "risk": "medium",
+      "note": "The export dir has been silently wrong three separate ways (.cargo/config.toml [env] not reaching proc-macro expansion; CI missing --workspace so ~200 core types went unchecked; run-rust-tests spawning exes from repo root so ts-rs dumped 419 files into a gitignored dir). The gate is real but has repeatedly checked nothing."
+    },
+    {
+      "name": "Codegen task registration",
+      "definition": "A developer adds a generated artifact and needs it to run on every dev/build without serializing the startup path or hanging it.",
+      "recurrence": 13,
+      "convergence": "converged",
+      "owner": "scripts/run-codegen.mjs",
+      "dimensions": ["function", "performance"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "codegen",
+      "crossCutting": false,
+      "hasGate": false,
+      "examples": [
+        "scripts/run-codegen.mjs:22",
+        "scripts/run-codegen.mjs:70",
+        "package.json:30",
+        "scripts/check-tiers.mjs:19"
+      ],
+      "risk": "low",
+      "note": "One flat explicit registry, per-task 60s timeout, Promise.allSettled. Trap: predev and prebuild have DIFFERENT task lists (checksums vs host-check) and any path bypassing npm (check-tiers spawning vite directly) must re-run codegen itself."
+    },
+    {
+      "name": "Source-derived codegen",
+      "definition": "A developer needs one language's artifact generated from another language's source so the two can never drift by hand.",
+      "recurrence": 7,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["code-quality", "resilience"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "codegen",
+      "crossCutting": true,
+      "hasGate": true,
+      "examples": [
+        "scripts/generate-command-names.mjs:21",
+        "scripts/generate-guidance-anchors.mjs:1",
+        "scripts/skills/gen-scan-match-rules.mjs:1",
+        "scripts/generate-template-checksums.mjs:1"
+      ],
+      "risk": "medium",
+      "note": "Every generator hand-rolls a bespoke regex over source text — no shared parse layer. generate-command-names.mjs matches `invoke_handler\\(tauri::generate_handler!\\[` while lib.rs:1805 actually reads `wrap_invoke_handler(tauri::...` — it works only because one string is a substring of the other; check-command-contract.mjs matches the wrapped form. A wrapper rename breaks them differently."
+    },
+    {
+      "name": "Cross-artifact drift gate",
+      "definition": "A developer has two artifacts that must agree (Rust handler vs TS union, Rust events vs TS registry, error keys vs locale keys) and needs a check that fails when they don't.",
+      "recurrence": 6,
+      "convergence": "mixed",
+      "owner": null,
+      "dimensions": ["code-quality", "resilience"],
+      "proposedDomain": "quality",
+      "proposedSubdomain": "parity-gates",
+      "crossCutting": true,
+      "hasGate": true,
+      "examples": [
+        "scripts/check-command-contract.mjs:1",
+        "scripts/check-event-registry.mjs:1",
+        "scripts/i18n/check-error-registry-parity.mjs:1",
+        ".github/workflows/ci.yml:285"
+      ],
+      "risk": "medium",
+      "note": "Two shapes coexist: regenerate-and-git-diff (bindings, command names) vs independent re-derivation (contracts, event registry). The errorTaxonomy Rust↔TS mirror — arguably the most consequential pair — has NO gate of either shape."
+    },
+    {
+      "name": "Adding a custom lint rule",
+      "definition": "A developer wants a repo convention machine-enforced in TS/TSX and needs to author, register, severity-tune, and test an ESLint rule.",
+      "recurrence": 21,
+      "convergence": "converged",
+      "owner": "eslint.config.js",
+      "dimensions": ["code-quality", "ui"],
+      "proposedDomain": "quality",
+      "proposedSubdomain": "lint",
+      "crossCutting": true,
+      "hasGate": true,
+      "examples": [
+        "eslint-rules/no-silent-catch.cjs:37",
+        "eslint.config.js:40",
+        "src/test/eslint-rules/customRules.test.ts:46",
+        "eslint-rules/enforce-base-modal.cjs:1"
+      ],
+      "risk": "low",
+      "note": "21 rule files; customRules.test.ts covers only 12 (`ruleTester.run` count). Nine rules — including the newest ones — have zero regression coverage, so a regex edit can silently stop matching."
+    },
+    {
+      "name": "Lint severity posture",
+      "definition": "A developer decides whether a new convention lands as error (blocking) or warn (advisory migration) and how the existing ~10k-warning baseline stays non-blocking.",
+      "recurrence": 21,
+      "convergence": "mixed",
+      "owner": "eslint.config.js",
+      "dimensions": ["code-quality", "cost"],
+      "proposedDomain": "quality",
+      "proposedSubdomain": "lint",
+      "crossCutting": false,
+      "hasGate": false,
+      "examples": [
+        "eslint.config.js:95",
+        "lefthook.yml:20",
+        "eslint.config.js:138",
+        "eslint.config.js:171"
+      ],
+      "risk": "medium",
+      "note": "Only 3 of 21 custom rules are error-level. Pre-commit runs `--quiet --max-warnings 99999`, so warn-level rules gate nothing at all — 'ESLint enforces it' in CLAUDE.md is true for 3 rules and aspirational for 18."
+    },
+    {
+      "name": "Git hook design",
+      "definition": "A developer wants a check to run automatically before commit or push without breaking the flow of concurrent CLI sessions sharing one tree.",
+      "recurrence": 8,
+      "convergence": "converged",
+      "owner": "lefthook.yml",
+      "dimensions": ["code-quality", "resilience", "performance"],
+      "proposedDomain": "quality",
+      "proposedSubdomain": "hooks",
+      "crossCutting": false,
+      "hasGate": true,
+      "examples": [
+        "lefthook.yml:15",
+        "lefthook.yml:37",
+        "lefthook.yml:53",
+        "package.json:93"
+      ],
+      "risk": "medium",
+      "note": "Hard constraints stated at the top: <5s pre-commit, never stash/mutate the tree. Glob-scoped jobs (i18n) only fire when locale files are staged, so the value-translation gate never runs on a commit that adds English-only JSX."
+    },
+    {
+      "name": "Adding a CI gate",
+      "definition": "A developer wants a check enforced on the merge/push path and must place it in the right job, on the right runner, with the right feature flags.",
+      "recurrence": 20,
+      "convergence": "mixed",
+      "owner": ".github/workflows/ci.yml",
+      "dimensions": ["resilience", "code-quality", "cost"],
+      "proposedDomain": "quality",
+      "proposedSubdomain": "ci",
+      "crossCutting": false,
+      "hasGate": true,
+      "examples": [
+        ".github/workflows/ci.yml:26",
+        ".github/workflows/ci.yml:251",
+        ".github/workflows/ci.yml:210",
+        ".github/workflows/ci.yml:363"
+      ],
+      "risk": "high",
+      "note": "This file is a museum of gates that ran green while checking nothing: commit-lint died on `origin/..HEAD` on every push; `cargo test` aborted pre-compile without --features desktop; binding-drift skipped ~200 types without --workspace; an sccache outage took the whole Rust lane offline for weeks. The recurring failure mode is a gate that errors or no-ops instead of failing."
+    },
+    {
+      "name": "Secret-leak scanning",
+      "definition": "A developer needs staged changes checked for credentials before they leave the machine, plus a way to triage historical hits.",
+      "recurrence": 3,
+      "convergence": "converged",
+      "owner": "scripts/secret-scan.mjs",
+      "dimensions": ["security"],
+      "proposedDomain": "quality",
+      "proposedSubdomain": "supply-chain",
+      "crossCutting": false,
+      "hasGate": true,
+      "examples": [
+        "scripts/secret-scan.mjs:22",
+        ".gitleaks.toml:11",
+        "lefthook.yml:26",
+        ".gitleaksignore:1"
+      ],
+      "risk": "high",
+      "note": "The gate exits 0 with a hint when gitleaks is not installed — a silently-passing control by design, and it is the ONLY secret scan in the repo (no CI leg). A fresh clone on a machine without gitleaks has zero leak protection."
+    },
+    {
+      "name": "Supply-chain policy",
+      "definition": "A developer adds or bumps a dependency and needs the license, advisory, source-registry, and duplication policy applied.",
+      "recurrence": 5,
+      "convergence": "converged",
+      "owner": "src-tauri/deny.toml",
+      "dimensions": ["security", "cost"],
+      "proposedDomain": "quality",
+      "proposedSubdomain": "supply-chain",
+      "crossCutting": false,
+      "hasGate": true,
+      "examples": [
+        "src-tauri/deny.toml:18",
+        ".github/workflows/ci.yml:263",
+        ".github/workflows/audit.yml:1",
+        "renovate.json:1"
+      ],
+      "risk": "medium",
+      "note": "cargo-deny is a per-push gate for Rust; the npm side (security-audit.sh) runs only on a weekly cron, and CodeQL covers javascript-typescript only — Rust SAST is clippy plus deny by explicit decision."
+    },
+    {
+      "name": "Windows loader and toolchain traps",
+      "definition": "A developer runs Rust tests or a build on Windows and hits a failure that is the loader or a mislabeled prebuilt artifact, not their code.",
+      "recurrence": 5,
+      "convergence": "converged",
+      "owner": "scripts/build/run-rust-tests.mjs",
+      "dimensions": ["resilience", "performance"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "build",
+      "crossCutting": false,
+      "hasGate": false,
+      "examples": [
+        "scripts/build/run-rust-tests.mjs:92",
+        "scripts/ensure-ort-cache.mjs:1",
+        "scripts/check-build-cache.mjs:1",
+        "scripts/build/inspect-pe-imports.mjs:1"
+      ],
+      "risk": "medium",
+      "note": "Three distinct self-healing workarounds (comctl32 v6 post-link manifest, ORT aarch64 tarball swap, host-triple drift marker). CI runs Rust tests only via raw `cargo test` on Linux, so the Windows lane is untested by any gate — the trap it works around went undetected precisely because CI never sees it."
+    },
+    {
+      "name": "Bundling native assets",
+      "definition": "A developer ships a non-Rust artifact (ONNX runtime, skill files, models, icons) with the installer and must guarantee the app can find it at runtime.",
+      "recurrence": 4,
+      "convergence": "mixed",
+      "owner": "src-tauri/tauri.conf.json",
+      "dimensions": ["function", "resilience", "cost"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "packaging",
+      "crossCutting": false,
+      "hasGate": false,
+      "examples": [
+        "src-tauri/tauri.conf.json:1",
+        "scripts/verify-onnxruntime-bundling.mjs:1",
+        "scripts/sync-system-skills.mjs:1",
+        "scripts/run-codegen.mjs:67"
+      ],
+      "risk": "medium",
+      "note": "The ONNX verifier had to become linking-aware (reads the PE import table) after hard-requiring a DLL false-failed every static build. Tauri validates bundle.resources paths in DEV too, so a resource dir that only prebuild creates breaks a fresh clone's `tauri dev` — solved by adding sync-system-skills to predev."
+    },
+    {
+      "name": "Tier-gated build variants",
+      "definition": "A developer gates a feature behind a product tier and needs all three frontend bundles to still compile and tree-shake correctly.",
+      "recurrence": 3,
+      "convergence": "converged",
+      "owner": "scripts/check-tiers.mjs",
+      "dimensions": ["function", "cost"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "build-features",
+      "crossCutting": true,
+      "hasGate": true,
+      "examples": [
+        "scripts/check-tiers.mjs:14",
+        ".github/workflows/ci.yml:141",
+        "src/hooks/utility/interaction/useTier.ts:1",
+        "package.json:76"
+      ],
+      "risk": "medium",
+      "note": "The gate proves each tier COMPILES, not that gating is correct — a feature leaking into starter passes. Ordering is load-bearing: check:tiers writes dist/ so it must run before the canonical build that later steps read."
+    },
+    {
+      "name": "Tauri config overlays",
+      "definition": "A developer needs a build variant (lite/stable/android) that differs from the canonical Tauri config in a controlled, minimal way.",
+      "recurrence": 4,
+      "convergence": "converged",
+      "owner": "scripts/check-tauri-configs.mjs",
+      "dimensions": ["function", "code-quality"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "packaging",
+      "crossCutting": false,
+      "hasGate": true,
+      "examples": [
+        "scripts/check-tauri-configs.mjs:21",
+        "src-tauri/tauri.conf.json:1",
+        "src-tauri/tauri.lite.conf.json:1",
+        "src-tauri/tauri.stable.conf.json:1"
+      ],
+      "risk": "low",
+      "note": "Allowed overlay surface is exactly two keys (build.features, bundle.targets) with an explicit expand-intentionally comment. tauri.android.conf.json is NOT in the checked overlay list."
+    },
+    {
+      "name": "Tauri capability permissions",
+      "definition": "A developer uses a Tauri plugin API and must declare its permission in the right capability file for the right platforms.",
+      "recurrence": 2,
+      "convergence": "converged",
+      "owner": "src-tauri/capabilities/default.json",
+      "dimensions": ["security", "function"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "packaging",
+      "crossCutting": false,
+      "hasGate": false,
+      "examples": [
+        "src-tauri/capabilities/default.json:8",
+        "src-tauri/capabilities/mobile.json:6",
+        ".github/workflows/ci.yml:251",
+        "src-tauri/Cargo.toml:31"
+      ],
+      "risk": "high",
+      "note": "Coupled to Cargo features in a non-obvious way: default.json names `updater:default`, whose plugin is an optional dep enabled only by `desktop`, so any cargo command without that feature aborts in tauri-build before compiling. That coupling silently disabled CI's entire Rust test job."
+    },
+    {
+      "name": "Content Security Policy scope",
+      "definition": "A developer adds a remote origin (image CDN, media stream, embed, telemetry endpoint) and must widen the webview CSP and asset-protocol scope for it.",
+      "recurrence": 2,
+      "convergence": "converged",
+      "owner": "src-tauri/tauri.conf.json",
+      "dimensions": ["security", "ui"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "packaging",
+      "crossCutting": true,
+      "hasGate": false,
+      "examples": [
+        "src-tauri/tauri.conf.json:1",
+        "src-tauri/capabilities/default.json:1",
+        "scripts/check-tauri-configs.mjs:21"
+      ],
+      "risk": "high",
+      "note": "Two hand-maintained ~1KB single-line CSP strings (prod + dev) that must be kept in sync by eye; no script validates them, no gate catches a prod/dev divergence, and a missing directive fails only at runtime in a packaged build."
+    },
+    {
+      "name": "Release and version pipeline",
+      "definition": "A developer cuts a release and needs version files, tag, changelog, four platform builds, and updater artifacts to move together.",
+      "recurrence": 4,
+      "convergence": "converged",
+      "owner": ".github/workflows/release.yml",
+      "dimensions": ["resilience", "function"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "release",
+      "crossCutting": false,
+      "hasGate": true,
+      "examples": [
+        ".github/workflows/release.yml:16",
+        ".github/workflows/release.yml:79",
+        "scripts/bump-version.mjs:1",
+        "scripts/generate-changelog.mjs:1"
+      ],
+      "risk": "high",
+      "note": "Publishing is opt-in after auto-tagging left 5 tags with no releases behind them. Version lives in four files that must agree; the tag-collision guard exists because a rollback stranded every subsequent run 45 minutes into platform builds."
+    },
+    {
+      "name": "Installer acceptance testing",
+      "definition": "A developer needs proof that the packaged installer actually installs, launches, and finds its runtime deps on a clean machine.",
+      "recurrence": 3,
+      "convergence": "mixed",
+      "owner": ".github/workflows/installer-test.yml",
+      "dimensions": ["resilience", "function"],
+      "proposedDomain": "quality",
+      "proposedSubdomain": "release",
+      "crossCutting": false,
+      "hasGate": false,
+      "examples": [
+        ".github/workflows/installer-test.yml:1",
+        "scripts/test-installer.ps1:1",
+        "scripts/verify-onnxruntime-bundling.mjs:1",
+        ".github/workflows/release.yml:296"
+      ],
+      "risk": "medium",
+      "note": "Runs AFTER release, not before it — a broken installer is discovered post-publish. Promotion to a pre-release gate is a tracked step in the e2e-smoke ADR. macOS leg is smoke-only because the app is unsigned/un-notarized."
+    },
+    {
+      "name": "Live UI test automation",
+      "definition": "A developer wants an external driver to click through the real running desktop app rather than a mocked DOM.",
+      "recurrence": 4,
+      "convergence": "converged",
+      "owner": "src-tauri/src/test_automation.rs",
+      "dimensions": ["function", "resilience"],
+      "proposedDomain": "quality",
+      "proposedSubdomain": "e2e",
+      "crossCutting": true,
+      "hasGate": false,
+      "examples": [
+        "src-tauri/src/test_automation.rs:1",
+        ".github/workflows/e2e-smoke.yml:1",
+        "scripts/dev/tauri-dev-test.mjs:1",
+        "scripts/mcp-server/index.mjs:1"
+      ],
+      "risk": "medium",
+      "note": "Two activation paths (compile-time feature → :17320, env var → custom port) plus an MCP bridge. The only CI leg is `continue-on-error: true` with explicit promotion criteria never met, so this is enforcement-free today."
+    },
+    {
+      "name": "Writing a Rust unit test",
+      "definition": "A developer adds a #[cfg(test)] module and needs it to actually build and run under the repo's feature flags and platform quirks.",
+      "recurrence": 514,
+      "convergence": "mixed",
+      "owner": "scripts/build/run-rust-tests.mjs",
+      "dimensions": ["code-quality", "resilience"],
+      "proposedDomain": "quality",
+      "proposedSubdomain": "rust-tests",
+      "crossCutting": false,
+      "hasGate": true,
+      "examples": [
+        "src-tauri/core/src/redact.rs:175",
+        "src-tauri/core/src/limits.rs:96",
+        "scripts/build/run-rust-tests.mjs:179",
+        ".github/workflows/ci.yml:258"
+      ],
+      "risk": "medium",
+      "note": "514 test modules / ~14.6k #[test]. Local (npm run test:rust, --lib only, manifest fixup) and CI (raw cargo test, all targets) run DIFFERENT commands, so the two lanes can disagree about what passes. Feature-name qualification differs between the two lanes too."
+    },
+    {
+      "name": "Rust test fixtures and DBs",
+      "definition": "A developer needs a database, temp directory, or process-global env var for a test without leaking state into the next test.",
+      "recurrence": 12,
+      "convergence": "diverged",
+      "owner": "src-tauri/db/src/lib.rs",
+      "dimensions": ["code-quality", "resilience"],
+      "proposedDomain": "quality",
+      "proposedSubdomain": "rust-tests",
+      "crossCutting": false,
+      "hasGate": false,
+      "examples": [
+        "src-tauri/db/src/lib.rs:1882",
+        "src-tauri/db/src/repos/execution/test_runs.rs:310",
+        "src-tauri/src/commands/core/data_portability.rs:11819",
+        "src-tauri/src/companion/brain/episodic.rs:1"
+      ],
+      "risk": "medium",
+      "note": "Three coexisting strategies: init_test_db (unique temp FILE, because r2d2 breaks with :memory:), ad-hoc Connection::open_in_memory in 9 files, and a hand-rolled mutex around PERSONAS_HOME because env vars are process-global. No shared fixture crate; each area reinvents setup()."
+    },
+    {
+      "name": "Frontend test lane selection",
+      "definition": "A developer writes a test and must choose which of six runner configurations it belongs to, and whether any gate will run it.",
+      "recurrence": 6,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["code-quality", "cost"],
+      "proposedDomain": "quality",
+      "proposedSubdomain": "test-lanes",
+      "crossCutting": true,
+      "hasGate": true,
+      "examples": [
+        "vitest.config.ts:1",
+        "vitest.evals.config.ts:1",
+        "vitest.cli.config.ts:1",
+        "playwright.config.ts:1"
+      ],
+      "risk": "medium",
+      "note": "Six configs (unit/jsdom, cli, e2e, evals, integration, playwright). CI runs only `npm run test` (unit) — cli/integration/e2e configs have no gate at all; evals run on pre-push only. Placement decides whether a test is ever executed by anything."
+    },
+    {
+      "name": "Persisted settings contract",
+      "definition": "A developer adds a user-configurable app setting and needs its key, default, unit, and validation to have one canonical home.",
+      "recurrence": 15,
+      "convergence": "converged",
+      "owner": "src-tauri/db/src/settings_keys.rs",
+      "dimensions": ["function", "code-quality"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "settings",
+      "crossCutting": true,
+      "hasGate": true,
+      "examples": [
+        "src-tauri/db/src/settings_keys.rs:1",
+        "src-tauri/db/src/settings_keys.rs:28",
+        "src-tauri/core/src/redact.rs:34",
+        "src-tauri/core/src/limits.rs:66"
+      ],
+      "risk": "low",
+      "note": "The strongest convention in the slice: every key pairs with a <KEY>_DEFAULT, units live in the key name, and validate_key/validate_value are enforced inside the repo setter so internal callers can't bypass. Runtime-gated rather than CI-gated."
+    },
+    {
+      "name": "Environment-variable configuration",
+      "definition": "A developer adds an env-var escape hatch (feature toggle, test port, override URL, migration opt-in) and needs it discoverable and consistently parsed.",
+      "recurrence": 40,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["function", "security", "code-quality"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "config",
+      "crossCutting": false,
+      "hasGate": false,
+      "examples": [
+        "src-tauri/core/src/crypto.rs:463",
+        "src-tauri/core/src/run_budget.rs:41",
+        "src-tauri/src/test_automation.rs:1",
+        ".env.example:1"
+      ],
+      "risk": "high",
+      "note": "~40 distinct PERSONAS_* / provider vars read via bare std::env::var at their point of use — no registry, no type parsing convention, no doc surface, no gate. Several change SECURITY behavior (PERSONAS_ALLOW_FALLBACK_KEY, PERSONAS_MIGRATE_LEGACY_KEY, PERSONAS_BROWSER_BRIDGE_TOKEN); a documented policy already drifted from its runtime branch once here."
+    },
+    {
+      "name": "Structured logging and retention",
+      "definition": "A developer needs a runtime event recorded so it survives to a bug report, without unbounded disk growth or a boot-order dependency.",
+      "recurrence": 5,
+      "convergence": "converged",
+      "owner": "src-tauri/src/logging.rs",
+      "dimensions": ["resilience", "performance", "cost"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "observability",
+      "crossCutting": false,
+      "hasGate": false,
+      "examples": [
+        "src-tauri/src/logging.rs:41",
+        "src-tauri/src/logging.rs:33",
+        "src-tauri/src/logging.rs:91",
+        "src-tauri/core/src/limits.rs:74"
+      ],
+      "risk": "low",
+      "note": "Deferred file writer solves the real problem — the subscriber installs before the app-data dir is known, so early-boot lines would otherwise be lost or block. Retention enforced twice (on rotation and at startup) because the cap can shrink between runs."
+    },
+    {
+      "name": "Telemetry scrubbing and opt-in",
+      "definition": "A developer needs a crash or error reported to Sentry without shipping PII, credentials, or debug-build noise.",
+      "recurrence": 5,
+      "convergence": "converged",
+      "owner": "src-tauri/src/main.rs",
+      "dimensions": ["security", "resilience"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "observability",
+      "crossCutting": true,
+      "hasGate": false,
+      "examples": [
+        "src-tauri/src/main.rs:77",
+        "src-tauri/src/main.rs:94",
+        "src-tauri/src/logging.rs:74",
+        "src/lib/silentCatch.ts:1"
+      ],
+      "risk": "high",
+      "note": "Four scrub points (message, exception values, breadcrumb messages, breadcrumb data) plus a debug-build DSN kill. tracing::error! auto-becomes a Sentry issue and warn! a breadcrumb, so ANY new error log is an egress path — nothing tests that pii::scrub covers a newly logged field."
+    },
+    {
+      "name": "Execution trace instrumentation",
+      "definition": "A developer adds a phase of work that should be attributable in the execution inspector with timing and cost.",
+      "recurrence": 12,
+      "convergence": "converged",
+      "owner": "src-tauri/core/src/trace.rs",
+      "dimensions": ["performance", "cost", "ui"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "observability",
+      "crossCutting": true,
+      "hasGate": false,
+      "examples": [
+        "src-tauri/core/src/trace.rs:24",
+        "src-tauri/core/src/trace.rs:34",
+        "src-tauri/core/src/trace.rs:285",
+        "src-tauri/src/startup_timing.rs:1"
+      ],
+      "risk": "low",
+      "note": "Closed SpanType enum + MAX_SPANS eviction; a new phase means editing the enum, which forces the ts-rs binding regen. Startup timing is a separate parallel mechanism with its own OnceLock report."
+    },
+    {
+      "name": "Engine ceilings and caps",
+      "definition": "A developer bounds a runaway loop, fan-out, batch, or spend and needs the constant plus the clamping helper in the right layer.",
+      "recurrence": 8,
+      "convergence": "converged",
+      "owner": "src-tauri/core/src/limits.rs",
+      "dimensions": ["resilience", "cost", "performance"],
+      "proposedDomain": "backend",
+      "proposedSubdomain": "limits",
+      "crossCutting": false,
+      "hasGate": false,
+      "examples": [
+        "src-tauri/core/src/limits.rs:16",
+        "src-tauri/core/src/limits.rs:74",
+        "src-tauri/core/src/run_budget.rs:1",
+        "src-tauri/core/src/trace.rs:24"
+      ],
+      "risk": "medium",
+      "note": "limits.rs is the canonical home with cap_with_log for observability, but MAX_SPANS, RETENTION, and per-subsystem budget defaults live in their own modules. run_budget is warn-only today — the ceiling is documented as enforcement but does not abort."
+    },
+    {
+      "name": "Documentation sync enforcement",
+      "definition": "A developer changes user-visible behavior and must update the feature doc, the onboarding tour, and the cross-repo marketing guide in the same session.",
+      "recurrence": 3,
+      "convergence": "converged",
+      "owner": "scripts/docs/check-doc-sync.mjs",
+      "dimensions": ["code-quality"],
+      "proposedDomain": "quality",
+      "proposedSubdomain": "docs",
+      "crossCutting": true,
+      "hasGate": true,
+      "examples": [
+        "scripts/docs/check-doc-sync.mjs:1",
+        "scripts/docs/feature-doc-map.json:1",
+        ".claude/settings.json:7",
+        "scripts/docs/__tests__/check-doc-sync.test.mjs:1"
+      ],
+      "risk": "low",
+      "note": "An agent-facing Stop hook, not a CI gate — it reads the turn transcript and exits 2 with a nag, and a one-sentence dismissal satisfies it. Enforcement therefore depends on the agent choosing not to dismiss; it has its own unit tests, which most gates here do not."
+    },
+    {
+      "name": "i18n key and value gates",
+      "definition": "A developer adds a user-facing string and needs every locale to have the key AND a genuinely translated value before it ships.",
+      "recurrence": 6,
+      "convergence": "mixed",
+      "owner": "scripts/i18n/check-coverage.mjs",
+      "dimensions": ["ui", "code-quality"],
+      "proposedDomain": "quality",
+      "proposedSubdomain": "i18n",
+      "crossCutting": true,
+      "hasGate": true,
+      "examples": [
+        "scripts/i18n/check-coverage.mjs:1",
+        "scripts/i18n/check-untranslated.mjs:1",
+        "scripts/i18n/check-route-sections.mjs:1",
+        "lefthook.yml:37"
+      ],
+      "risk": "high",
+      "note": "Three layers with three different enforcement levels. Key parity: pre-commit strict + CI. Value translation: pre-commit only, NOT in CI, and glob-scoped so it never fires on a JSX-only commit. Route-section coverage — the check that caught 13 fully-translated sections rendering 100% English forever — is wired to NOTHING: no npm script, no hook, no workflow."
+    },
+    {
+      "name": "Bulk translation pipeline",
+      "definition": "A developer has a translation gap across 13 locales and needs it closed without hand-editing 13 JSON files.",
+      "recurrence": 3,
+      "convergence": "converged",
+      "owner": "scripts/i18n/translate-merge.mjs",
+      "dimensions": ["ui", "cost"],
+      "proposedDomain": "quality",
+      "proposedSubdomain": "i18n",
+      "crossCutting": false,
+      "hasGate": true,
+      "examples": [
+        "scripts/i18n/translate-extract.mjs:1",
+        "scripts/i18n/translate-merge.mjs:1",
+        "scripts/i18n/split-locales.mjs:1",
+        "package.json:95"
+      ],
+      "risk": "low",
+      "note": "Three-step extract → per-locale subagent → merge, where merge refuses any locale that dropped keys or broke a {placeholder} and asserts strict coverage before finishing. One of the few workflows in the repo whose verify step is part of the tool rather than a separate gate."
+    },
+    {
+      "name": "Locale bundle splitting",
+      "definition": "A developer needs translated strings to load as per-route lazy chunks instead of one 500KB bundle, without an English-first-paint flash.",
+      "recurrence": 4,
+      "convergence": "converged",
+      "owner": "scripts/i18n/split-locales.mjs",
+      "dimensions": ["performance", "ui"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "i18n",
+      "crossCutting": true,
+      "hasGate": false,
+      "examples": [
+        "scripts/i18n/split-locales.mjs:1",
+        "scripts/i18n/gen-types.mjs:1",
+        "scripts/run-codegen.mjs:28",
+        "scripts/i18n/check-route-sections.mjs:1"
+      ],
+      "risk": "medium",
+      "note": "The generated-artifact half is solid; the declaration half (routeSections.ts, which decides whether a section is ever fetched) has no gate, and its failure mode is silent and total — English everywhere for that feature, in every locale, with all other i18n checks green."
+    },
+    {
+      "name": "Bundle and binary size budget",
+      "definition": "A developer adds a dependency or asset and needs the shipped artifact to stay under a declared size ceiling.",
+      "recurrence": 4,
+      "convergence": "converged",
+      "owner": "scripts/lib/bundle-budget.mjs",
+      "dimensions": ["performance", "cost"],
+      "proposedDomain": "quality",
+      "proposedSubdomain": "budgets",
+      "crossCutting": true,
+      "hasGate": true,
+      "examples": [
+        "scripts/check-bundle-budget.mjs:1",
+        "scripts/lib/bundle-budget.mjs:1",
+        ".github/workflows/ci.yml:155",
+        ".github/workflows/release.yml:296"
+      ],
+      "risk": "low",
+      "note": "Budget is a single shared module consumed by both the gate and the PR-comment reporter, so the two can't disagree. Binary-size budget is separate and only runs during release."
+    },
+    {
+      "name": "Build cache hygiene",
+      "definition": "A developer's local build gets slow, huge, or mysteriously broken, and needs the right surgical clean rather than a nuclear cargo clean.",
+      "recurrence": 5,
+      "convergence": "converged",
+      "owner": "scripts/cache-budget.mjs",
+      "dimensions": ["performance", "cost"],
+      "proposedDomain": "platform",
+      "proposedSubdomain": "build",
+      "crossCutting": false,
+      "hasGate": false,
+      "examples": [
+        "scripts/cache-budget.mjs:1",
+        "scripts/clean-ort.mjs:1",
+        "scripts/check-build-cache.mjs:1",
+        "scripts/worktree-gc.mjs:1"
+      ],
+      "risk": "low",
+      "note": "Deliberately advisory — cache-budget exits 0 unconditionally and refreshes in a detached process so it can never block a build. Recovery is a documented ladder (clean:ort → clean:cache → clean:rust) rather than one command."
+    },
+    {
+      "name": "Parallel session coordination",
+      "definition": "Multiple CLI agents share one checkout on one branch and need to not clobber each other's uncommitted work.",
+      "recurrence": 4,
+      "convergence": "converged",
+      "owner": ".claude/active-runs.md",
+      "dimensions": ["resilience", "code-quality"],
+      "proposedDomain": "quality",
+      "proposedSubdomain": "workflow",
+      "crossCutting": false,
+      "hasGate": false,
+      "examples": [
+        ".claude/CLAUDE.md:1",
+        "lefthook.yml:6",
+        "scripts/worktree-gc.mjs:1",
+        ".claude/active-runs.md:1"
+      ],
+      "risk": "high",
+      "note": "Entirely prose-enforced apart from one real constraint (hooks never mutate the tree). Two documented data-loss incidents — a git stash that swept another session's five files, and a commit that swept 18 pre-staged files under a misleading message — and neither the ledger registration nor the `git diff --cached --stat` verification has any machine check."
+    },
+    {
+      "name": "Agent-facing repo contract",
+      "definition": "A developer or agent needs to know this repo's canonical build/test/lint/scan commands and hard boundaries without reading prose.",
+      "recurrence": 3,
+      "convergence": "converged",
+      "owner": ".ai/manifest.yaml",
+      "dimensions": ["code-quality"],
+      "proposedDomain": "quality",
+      "proposedSubdomain": "workflow",
+      "crossCutting": false,
+      "hasGate": true,
+      "examples": [
+        ".ai/manifest.yaml:1",
+        ".ai/doctor.mjs:1",
+        ".github/workflows/ai-conformance.yml:1",
+        "lefthook.yml:67"
+      ],
+      "risk": "medium",
+      "note": "Same command on pre-push (primary) and PR CI (backstop) — the cleanest shift-left split in the repo. But every capability is `verified: false`, and ai-conformance triggers on pull_request only while development lands directly on master, so the backstop rarely fires."
+    },
+    {
+      "name": "Duplicated CI systems",
+      "definition": "A developer adds or changes a gate and must decide whether the second, parallel CI definition also needs it.",
+      "recurrence": 2,
+      "convergence": "diverged",
+      "owner": null,
+      "dimensions": ["code-quality", "cost"],
+      "proposedDomain": "quality",
+      "proposedSubdomain": "ci",
+      "crossCutting": false,
+      "hasGate": false,
+      "examples": [
+        ".gitlab-ci.yml:1",
+        ".github/workflows/ci.yml:1",
+        ".gitlab-ci.yml:66",
+        ".github/workflows/ci.yml:260"
+      ],
+      "risk": "medium",
+      "note": "A full parallel GitLab pipeline (lint/test/security/build-check/binding-drift) duplicates the GitHub gates with materially different content — e.g. it runs `cargo clippy` without the `--features desktop` that GitHub's file documents as mandatory. Nothing keeps the two in sync and no one is told which is authoritative."
+    },
+    {
+      "name": "Theme contrast enforcement",
+      "definition": "A developer adds or edits a color token and needs every theme's text pairings to still clear WCAG AA.",
+      "recurrence": 2,
+      "convergence": "converged",
+      "owner": "scripts/check-themes.mjs",
+      "dimensions": ["ui", "code-quality"],
+      "proposedDomain": "quality",
+      "proposedSubdomain": "accessibility",
+      "crossCutting": true,
+      "hasGate": true,
+      "examples": [
+        "scripts/check-themes.mjs:1",
+        ".github/workflows/ci.yml:127",
+        "package.json:68",
+        "eslint-rules/no-low-contrast-text-classes.cjs:1"
+      ],
+      "risk": "low",
+      "note": "Hard-fails CI on four text-token pairings per theme and only warns on accent/status pairs — an unusually well-calibrated split between must-hold and advisory. Paired with a warn-level lint rule for the per-component half."
+    },
+    {
+      "name": "Shared component boundary",
+      "definition": "A developer builds a reusable UI primitive and must decide whether it belongs in the catalog and keep it free of app state.",
+      "recurrence": 3,
+      "convergence": "converged",
+      "owner": "scripts/docs/gen-shared-catalog.mjs",
+      "dimensions": ["ui", "code-quality"],
+      "proposedDomain": "quality",
+      "proposedSubdomain": "architecture",
+      "crossCutting": true,
+      "hasGate": false,
+      "examples": [
+        "eslint.config.js:171",
+        "scripts/docs/gen-shared-catalog.mjs:1",
+        "scripts/refactor/classify-shared.mjs:1",
+        "package.json:46"
+      ],
+      "risk": "low",
+      "note": "Explicitly de-gated by decision: the boundary lint is warn-only, catalog staleness no longer fails `npm run check`, and check:catalog / check:catalog-boundary exist as manual audits only. A rare case where 'no gate' is the intended posture."
+    },
+    {
+      "name": "Conventional commit format",
+      "definition": "A developer writes a commit message that the changelog generator and release tooling can parse.",
+      "recurrence": 2,
+      "convergence": "converged",
+      "owner": ".github/workflows/ci.yml",
+      "dimensions": ["code-quality"],
+      "proposedDomain": "quality",
+      "proposedSubdomain": "ci",
+      "crossCutting": false,
+      "hasGate": true,
+      "examples": [
+        ".github/workflows/ci.yml:19",
+        ".github/workflows/ci.yml:50",
+        "scripts/generate-changelog.mjs:1",
+        "CHANGELOG.md:1"
+      ],
+      "risk": "low",
+      "note": "The canonical example of a gate that ran green while checking nothing: `origin/${base_ref}..HEAD` expands to an invalid revision on push events, so the job exited 128 on every push (the primary trigger) rather than reporting a verdict."
+    }
+  ]
+}

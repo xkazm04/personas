@@ -175,16 +175,33 @@ export function renameWorkspace(id: string, name: string): void {
     ...snapshot,
     workspaces: snapshot.workspaces.map((w) => (w.id === id ? { ...w, name: trimmed } : w)),
   });
+    // Reconverge on BOTH branches, not just success.
+    //
+    // This was `.then(refreshWorkspaces).catch(toastCatch(...))`, which puts the
+    // re-read on the SUCCESS branch only. The catch toasts and restores nothing,
+    // so a rejected write left the optimistic value on screen permanently —
+    // executed: a failed delete leaves the workspace gone from the UI while it
+    // still exists in the database.
+    //
+    // Nothing repaired it later either: `ensureHydrated`'s `hydrateStarted`
+    // latch means this store re-reads the backend once per process, across six
+    // consumers, with no remount repair.
+    //
+    // The server is the arbiter, so ask it either way.
   void apiUpdateWorkspace(id, { name: trimmed })
-    .then(refreshWorkspaces)
-    .catch(toastCatch('workspaceStore:rename'));
+    .catch(toastCatch('workspaceStore:rename'))
+    .finally(() => {
+      void refreshWorkspaces().catch(silentCatch('workspaceStore:rename:refresh'));
+    });
 }
 
 export function recolorWorkspace(id: string, color: string): void {
   commit({ ...snapshot, workspaces: snapshot.workspaces.map((w) => (w.id === id ? { ...w, color } : w)) });
   void apiUpdateWorkspace(id, { color })
-    .then(refreshWorkspaces)
-    .catch(toastCatch('workspaceStore:recolor'));
+    .catch(toastCatch('workspaceStore:recolor'))
+    .finally(() => {
+      void refreshWorkspaces().catch(silentCatch('workspaceStore:recolor:refresh'));
+    });
 }
 
 /** Delete a workspace. Its projects become unassigned — never deleted. */
@@ -194,8 +211,10 @@ export function deleteWorkspace(id: string): void {
     activeId: snapshot.activeId === id ? null : snapshot.activeId,
   });
   void apiDeleteWorkspace(id)
-    .then(refreshWorkspaces)
-    .catch(toastCatch('workspaceStore:delete'));
+    .catch(toastCatch('workspaceStore:delete'))
+    .finally(() => {
+      void refreshWorkspaces().catch(silentCatch('workspaceStore:delete:refresh'));
+    });
 }
 
 /** Move a project into a workspace (or out of every one when null). A project

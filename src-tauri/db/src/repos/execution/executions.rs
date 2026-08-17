@@ -505,6 +505,43 @@ pub fn create_with_idempotency(
     idempotency_key: Option<String>,
     is_simulation: bool,
 ) -> Result<PersonaExecution, AppError> {
+    create_with_idempotency_reporting(
+        pool,
+        persona_id,
+        trigger_id,
+        input_data,
+        model_used,
+        use_case_id,
+        idempotency_key,
+        is_simulation,
+    )
+    .map(|(execution, _created)| execution)
+}
+
+/// As [`create_with_idempotency`], but reports whether this call CREATED the row
+/// (`true`) or deduped onto one that already existed (`false`).
+///
+/// Added 2026-08-16. The plain version returns only the row, so a caller cannot
+/// tell the two apart — and the caller that most needed to tell them apart used
+/// `execution.status != "queued"` as a proxy for "this was a dedupe". That proxy
+/// is false exactly when the dedupe fires: this function INSERTs with
+/// `status = 'queued'`, so a deduped row that has not started yet **is** queued.
+/// Both callers therefore passed the guard and both spawned an agent — one
+/// request, one returned row, two runs, two bills. The window is the whole queue
+/// wait, not a few milliseconds.
+///
+/// The distinction cannot be recovered downstream from the row alone, which is
+/// why it is returned rather than inferred.
+pub fn create_with_idempotency_reporting(
+    pool: &DbPool,
+    persona_id: &str,
+    trigger_id: Option<String>,
+    input_data: Option<String>,
+    model_used: Option<String>,
+    use_case_id: Option<String>,
+    idempotency_key: Option<String>,
+    is_simulation: bool,
+) -> Result<(PersonaExecution, bool), AppError> {
     timed_query!(
         "persona_executions",
         "persona_executions::create_with_idempotency",
@@ -517,7 +554,7 @@ pub fn create_with_idempotency(
                         execution_id = %existing.id,
                         "Returning existing execution for idempotency key (dedup)"
                     );
-                    return Ok(existing);
+                    return Ok((existing, false));
                 }
             }
 
@@ -575,12 +612,12 @@ pub fn create_with_idempotency(
                             execution_id = %existing.id,
                             "Returning existing execution after INSERT conflict (idempotency dedup race)"
                         );
-                        return Ok(existing);
+                        return Ok((existing, false));
                     }
                 }
             }
 
-            get_by_id(pool, &id)
+            get_by_id(pool, &id).map(|execution| (execution, true))
         }
     )
 }
@@ -748,11 +785,78 @@ pub fn set_cache_tokens(
 /// Scrub credential-shaped secrets from the free-text execution fields before
 /// they are persisted (and thereby forwarded to the inspector / exports / Sentry
 /// / companion memory). No-op when redaction is disabled. See `engine::redact`.
+/// Extended 2026-08-15 from 3 fields to all 6.
+///
+/// This function covered `output_data`, `error_message` and `business_outcome`.
+/// The other three free-text fields of `UpdateExecutionStatus` —
+/// `execution_flows` (?6), `tool_steps` (?13) and `execution_config` (?15) —
+/// are bound into the SAME `UPDATE` fifty lines below and were never scrubbed.
+///
+/// The codebase ran the controlled experiment on itself: across the live
+/// `persona_executions` table, redacted `output_data` holds 2 credential-shaped
+/// values and unredacted `tool_steps` holds 114 — Google API keys, a GitHub
+/// PAT, a Bearer header, a PEM private-key header and 104 labelled assignments,
+/// spread over at least 72 rows and 26.5 MB, aged 50-73 days, and rendered by
+/// nine frontend files.
+///
+/// Note this only protects rows written from now on. The 114 values already
+/// persisted need a backfill, which is not done here.
 fn redact_execution_fields(input: &mut UpdateExecutionStatus) {
     use personas_core::redact;
     redact::redact_opt(&mut input.output_data);
     redact::redact_opt(&mut input.error_message);
     redact::redact_opt(&mut input.business_outcome);
+    redact::redact_opt(&mut input.execution_config);
+
+    if !redact::enabled() {
+        return;
+    }
+
+    // `execution_flows` is already a `serde_json::Value`; walk it in place.
+    if let Some(crate::models::Json(value)) = &mut input.execution_flows {
+        redact_json_value(value);
+    }
+
+    // `tool_steps` is `Vec<ToolCallStep>`. Round-trip through `Value` so one
+    // walker covers both shapes, and commit only if it parses back — a redaction
+    // that corrupts the column would be worse than the leak it prevents.
+    if let Some(crate::models::Json(steps)) = &mut input.tool_steps {
+        if let Ok(mut value) = serde_json::to_value(&*steps) {
+            redact_json_value(&mut value);
+            if let Ok(parsed) =
+                serde_json::from_value::<Vec<personas_core::types::ToolCallStep>>(value)
+            {
+                *steps = parsed;
+            }
+        }
+    }
+}
+
+/// Redact every string inside a JSON document, in place.
+///
+/// Keys are deliberately left alone — a key is a field name, and rewriting one
+/// changes the document's shape rather than its content.
+fn redact_json_value(value: &mut serde_json::Value) {
+    use personas_core::redact;
+    match value {
+        serde_json::Value::String(s) => {
+            let cleaned = redact::redact_string(s);
+            if cleaned != *s {
+                *s = cleaned;
+            }
+        }
+        serde_json::Value::Array(items) => {
+            for item in items {
+                redact_json_value(item);
+            }
+        }
+        serde_json::Value::Object(map) => {
+            for (_key, v) in map.iter_mut() {
+                redact_json_value(v);
+            }
+        }
+        _ => {}
+    }
 }
 
 /// Shared 18-column execution-status `UPDATE`, parameterized only by the
@@ -1773,7 +1877,7 @@ pub fn sweep_zombie_executions(pool: &DbPool) -> Result<Vec<String>, AppError> {
                     completed_at = ?2
                  WHERE id = ?3 AND status = ?4",
                     )?;
-                    update_stmt.execute(params![
+                    let swapped = update_stmt.execute(params![
                         format!(
                             "Execution stalled: {} since {} (>{} min) — marked as zombie",
                             if is_queued { "queued" } else { "running" },
@@ -1784,6 +1888,21 @@ pub fn sweep_zombie_executions(pool: &DbPool) -> Result<Vec<String>, AppError> {
                         id,
                         status,
                     ])?;
+
+                    // The CAS above exists to avoid clobbering a row that moved
+                    // between the read and here — but the verdict was discarded,
+                    // so the id was pushed onto `surface_ids` regardless. An
+                    // execution that COMPLETED in the race window was correctly
+                    // left alone and then reported to the user as
+                    // "Execution stalled". Losing the CAS means there is nothing
+                    // to surface: skip it.
+                    if swapped == 0 {
+                        tracing::debug!(
+                            execution_id = %id,
+                            "zombie sweep: row moved between read and swap — not a zombie, not surfaced"
+                        );
+                        continue;
+                    }
 
                     // Surface to user only if there's no newer completed run for
                     // the same persona. A newer completed run means the user

@@ -55,6 +55,25 @@ pre-push:
     - name: typecheck
       run: npx tsc --noEmit
 
+    # The golden-path census. Added 2026-08-16 because it was enforced NOWHERE:
+    # `census:check` lives only inside `npm run check`, which nothing runs
+    # automatically, so a rule could rise or silently drop and the commit — and
+    # the push — went through. That is not hypothetical: the author of the
+    # census pushed past a red one on 2026-08-16 after a fix removed a match,
+    # because the pre-commit hook runs eslint and gitleaks and never asks the
+    # census anything.
+    #
+    # pre-push and not pre-commit, deliberately: the walk is ~110 rules over
+    # ~4,800 files and takes minutes, which is a pre-push cost (this hook
+    # already pays a ~218s typecheck) and an unacceptable pre-commit one.
+    #
+    # It fails on a RISE (a new violation) and on a silent DROP (usually a
+    # broken matcher, sometimes a real fix). A drop is cleared with
+    # `npm run census -- --update`, which is a deliberate act that lands in the
+    # diff — which is the entire point of a ratchet.
+    - name: golden-path-census
+      run: npm run census:check
+
     - name: i18n-coverage
       run: node scripts/i18n/check-coverage.mjs
 

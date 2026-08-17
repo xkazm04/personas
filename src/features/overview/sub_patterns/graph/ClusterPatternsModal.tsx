@@ -13,7 +13,7 @@ import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
 import { areaTheme } from '../practiceAreaTheme';
-import type { KnowledgeItemView } from '../libraryModel';
+import { isDirection, type KnowledgeItemView } from '../libraryModel';
 import type { ClusterNode, RelatedPattern } from './graphModel';
 
 /** Direction-aware label for a typed pattern edge (fabric S2). */
@@ -85,7 +85,14 @@ function PatternCard({
         }`}
       >
         <div className="flex items-start justify-between gap-3">
-          <h3 className="typo-body font-medium text-foreground">{item.title}</h3>
+          <h3 className="typo-body font-medium text-foreground flex items-center gap-1.5 min-w-0">
+            {isDirection(item) && (
+              <span className="typo-label flex-shrink-0 rounded-pill border border-primary/30 bg-primary/10 px-1.5 py-px text-primary">
+                {w.direction_badge}
+              </span>
+            )}
+            <span className="min-w-0">{item.title}</span>
+          </h3>
           <div className="flex items-center gap-2.5 flex-shrink-0">
             {onToggleBasket && (
               <button
@@ -226,7 +233,9 @@ export function ClusterPatternsModal({
   // browsable stack — filter, sort, paginate — not an endless scroll.
   const PAGE = 8;
   const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<'newest' | 'evidence' | 'title'>('newest');
+  // 'directions' is the default: the inverted library opens every stack on
+  // its doctrines (macro, evidence-heavy), techniques underneath.
+  const [sort, setSort] = useState<'directions' | 'newest' | 'evidence' | 'title'>('directions');
   const [page, setPage] = useState(0);
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -236,6 +245,11 @@ export function ClusterPatternsModal({
         )
       : [...node.items];
     filtered.sort((a, b) => {
+      if (sort === 'directions') {
+        const byTier = (isDirection(a) ? 0 : 1) - (isDirection(b) ? 0 : 1);
+        if (byTier !== 0) return byTier;
+        return (b.evidenceCount ?? 0) - (a.evidenceCount ?? 0);
+      }
       if (sort === 'evidence') return (b.evidenceCount ?? 0) - (a.evidenceCount ?? 0);
       if (sort === 'title') return a.title.localeCompare(b.title);
       return b.createdAt.localeCompare(a.createdAt);
@@ -276,11 +290,12 @@ export function ClusterPatternsModal({
               <ThemedSelect
                 value={sort}
                 options={[
+                  { value: 'directions', label: w.graph_sort_directions },
                   { value: 'newest', label: w.graph_sort_newest },
                   { value: 'evidence', label: w.graph_sort_evidence },
                   { value: 'title', label: w.graph_sort_title },
                 ]}
-                onValueChange={(v) => { setSort(v as 'newest' | 'evidence' | 'title'); setPage(0); }}
+                onValueChange={(v) => { setSort(v as 'directions' | 'newest' | 'evidence' | 'title'); setPage(0); }}
                 filterable
                 hideSearch
                 aria-label={w.graph_sort_label}

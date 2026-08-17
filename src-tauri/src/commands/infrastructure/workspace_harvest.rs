@@ -104,6 +104,15 @@ struct HarvestItem {
     /// child->parent `extends` edge at ingest; the item still lands observed.
     #[serde(default)]
     extends: Option<String>,
+    /// Three-layer model (pattern-fabric v2): 'principle' | 'manifestation'.
+    /// Optional — omitted lands NULL (unclassified), validated at the door.
+    #[serde(default)]
+    layer: Option<String>,
+    /// Structured proof rows (pattern-fabric v2): `[{"refs": ["path:line"],
+    /// "quote": "..."}]` — become workspace_knowledge_evidence rows with
+    /// source='harvest' and the run's own project id.
+    #[serde(default)]
+    evidence: Vec<repo::EvidenceCandidate>,
 }
 
 // ── prepare ─────────────────────────────────────────────────────────────────
@@ -521,6 +530,8 @@ fn ingest_one_run(
                 dedup_key,
                 confidence: it.confidence,
                 extends: it.extends,
+                layer: it.layer,
+                evidence: it.evidence,
             }
         })
         .collect();
@@ -664,7 +675,9 @@ OUTPUT CONTRACT — write `practice-harvest/runs/<YYYY-MM-DD-HHmm>-<scope-id>/re
       "applicability": {{ "layers": ["code-quality"], "languages": ["TypeScript"], "frameworks": ["React"] }}, // optional object
       "dedup_key": "harvest:<stable-slug>",        // optional; the app derives one from the title if omitted
       "confidence": 0.7,                           // optional 0..1
-      "extends": "<pattern-id>"                    // optional: the EXISTING pattern this item refines (id from existing_practices in snapshot.json)
+      "extends": "<pattern-id>",                   // optional: the EXISTING pattern this item refines (id from existing_practices in snapshot.json)
+      "layer": "manifestation",                    // optional: principle | manifestation. A PRINCIPLE is universal and language-free; a MANIFESTATION applies one to this stack/seam. Omit when unsure — never guess.
+      "evidence": [ {{ "refs": ["src/path/file.rs:120"], "quote": "the guard comment or excerpt" }} ]  // structured proof rows — PREFERRED over prose citations inside detail_md
     }}
   ],
   "coverage": {{                                    // REQUIRED
@@ -895,6 +908,10 @@ mod harvest_prompt_tests {
             "\"dedup_key\"",
             "\"confidence\"",
             "\"extends\"",
+            "\"layer\"",
+            "\"evidence\"",
+            "\"refs\"",
+            "\"quote\"",
             "\"coverage\"",
             "\"files_read\"",
             "\"files_total\"",

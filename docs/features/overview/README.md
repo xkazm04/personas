@@ -242,3 +242,14 @@ blocking on one large render:
 This complements the **L0/L1/L2 layered fetch** (`useLayeredList`,
 `docs/architecture/overview-layered-fetch.md`): layered fetch bounds how much
 data is *loaded*; progressive reveal bounds how fast loaded rows are *mounted*.
+
+## Patterns — the inverted library (2026-08-11)
+
+The knowledge library is doctrine-first: **Directions** (macro items distilled
+from the technique corpus, `kind: decision`, each governing its evidence via
+`governs` edges) are the working surface; techniques are what you drill into.
+Surfaces honor the inversion: the Library table sorts directions first within
+each review tier, badges them, and offers an altitude filter (All levels /
+Directions / Techniques); the graph's cluster stacks default to a
+"Directions first" sort with the same badge. Playbooks (the consult front
+door) reference directions, not techniques.

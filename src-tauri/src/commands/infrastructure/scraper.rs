@@ -12,6 +12,7 @@ use tauri::State;
 
 use crate::error::AppError;
 use crate::AppState;
+use personas_macros::requires;
 
 #[cfg(not(feature = "scraper"))]
 const NOT_ENABLED: &str = "The local scraper is not enabled in this build.";
@@ -80,7 +81,13 @@ pub async fn scraper_run_config(
 }
 
 /// Delete a saved scrape config.
+///
+/// Privileged: destroys a user-authored config together with its cron
+/// schedule, with no undo and no confirmation on the backend side. Sync, so
+/// `require_privileged_sync` fails closed and the drift guard keeps the
+/// `PRIVILEGED_COMMANDS` entry honest.
 #[tauri::command]
+#[requires(privileged)]
 pub fn scraper_delete_config(state: State<'_, Arc<AppState>>, id: String) -> Result<(), AppError> {
     #[cfg(feature = "scraper")]
     {

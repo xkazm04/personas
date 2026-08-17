@@ -1,5 +1,5 @@
 /**
- * @catalog TableSkeleton — grid-shaped shimmer placeholder for a 12-col table (optional header band + N body rows), with per-column bar widths sized to the real columns so the table lands before data and never jumps.
+ * @catalog TableSkeleton — grid-shaped calm placeholder for a 12-col table (optional header band + N body rows), with per-column bar widths sized to the real columns so the table lands before data and never jumps.
  *
  * Drop it inside the same card container the real table uses (border +
  * rounded-modal + bg-secondary/40) while the first page is in flight, then swap
@@ -7,12 +7,12 @@
  * so the swap produces no cumulative layout shift. A compact stacked variant
  * renders below `md` so the loading state isn't blank on mobile.
  *
- * Placeholder bars reuse the `bg-primary/10 animate-pulse` treatment of
- * `ListSkeleton` / `ContentHeaderSkeleton` / `LabResultsSkeleton` so every
- * loading surface reads as one family. (The bars are `bg-primary/10`, not the
- * container's own `bg-secondary/40`, so they stay visible against the card.)
- * **If you restyle the real table grid, nudge the column specs here so the swap
- * stays jump-free.**
+ * Placeholder bars reuse the calm `bg-primary/[0.06]` treatment of
+ * `ListSkeleton` / `ContentHeaderSkeleton` so every loading surface reads as one
+ * family — static and low-contrast, never pulsing (`docs/design/overview-loading.md`
+ * law 3). The bars sit above the container's own `bg-secondary/40`, so they stay
+ * visible against the card. **If you restyle the real table grid, nudge the
+ * column specs here so the swap stays jump-free.**
  */
 
 export interface TableSkeletonColumn {
@@ -35,7 +35,10 @@ interface TableSkeletonProps {
   rowPaddingY?: string;
   /** Vertical padding utility for the header band — match the real header. Default `'py-2.5'`. */
   headerPaddingY?: string;
-  /** Static, non-pulsing, lower-contrast bars — the golden-pattern default (see `docs/design/overview-loading.md`), so the placeholder can cross-fade to content without a pulse blink. */
+  /**
+   * @deprecated No-op — calm is now the only treatment. Accepted so the existing
+   * call sites keep compiling; drop it when you next touch them.
+   */
   calm?: boolean;
   className?: string;
 }
@@ -46,11 +49,10 @@ export function TableSkeleton({
   header = true,
   rowPaddingY = 'py-3',
   headerPaddingY = 'py-2.5',
-  calm = false,
   className,
 }: TableSkeletonProps) {
-  // Shared placeholder treatment — matches ListSkeleton / ContentHeaderSkeleton.
-  const PULSE = calm ? 'bg-primary/[0.06]' : 'bg-primary/10 animate-pulse';
+  // Shared calm placeholder treatment — matches ListSkeleton / ContentHeaderSkeleton.
+  const BAR = 'bg-primary/[0.06]';
   return (
     <div className={className} aria-hidden="true" data-testid="table-skeleton">
       {/* Desktop grid (md+) — mirrors the real 12-col table */}
@@ -58,7 +60,7 @@ export function TableSkeleton({
         <div className={`hidden md:grid grid-cols-12 gap-4 px-4 ${headerPaddingY} bg-primary/8 border-b border-primary/10`}>
           {columns.map((col, i) => (
             <div key={i} className={`${col.span} flex items-center ${col.alignRight ? 'justify-end' : ''}`}>
-              <span className={`h-2.5 w-12 rounded ${PULSE}`} />
+              <span className={`h-2.5 w-12 rounded ${BAR}`} />
             </div>
           ))}
         </div>
@@ -70,7 +72,7 @@ export function TableSkeleton({
         >
           {columns.map((col, i) => (
             <div key={i} className={`${col.span} flex items-center ${col.alignRight ? 'justify-end' : ''}`}>
-              <span className={`h-4 rounded-card ${PULSE} ${col.width ?? 'w-full max-w-[5rem]'}`} />
+              <span className={`h-4 rounded-card ${BAR} ${col.width ?? 'w-full max-w-[5rem]'}`} />
             </div>
           ))}
         </div>
@@ -83,11 +85,11 @@ export function TableSkeleton({
           className={`flex md:hidden flex-col gap-2 px-4 ${rowPaddingY} border-b border-primary/10 last:border-b-0`}
         >
           <div className="flex items-center gap-2">
-            <span className={`h-5 w-16 rounded-card ${PULSE}`} />
-            <span className={`h-3.5 w-12 rounded ${PULSE}`} />
-            <span className={`h-3.5 w-16 rounded ${PULSE} ml-auto`} />
+            <span className={`h-5 w-16 rounded-card ${BAR}`} />
+            <span className={`h-3.5 w-12 rounded ${BAR}`} />
+            <span className={`h-3.5 w-16 rounded ${BAR} ml-auto`} />
           </div>
-          <span className={`h-3 w-2/3 rounded ${PULSE}`} />
+          <span className={`h-3 w-2/3 rounded ${BAR}`} />
         </div>
       ))}
     </div>

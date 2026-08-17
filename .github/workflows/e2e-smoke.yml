@@ -57,7 +57,14 @@ jobs:
         run: npm ci
 
       - name: Cargo build (test-automation feature, debug)
-        run: cargo build --features test-automation --manifest-path src-tauri/Cargo.toml
+        # `test-automation` is declared standalone (Cargo.toml:64-69) and does NOT
+        # imply `desktop`, so this built without the desktop capability set and
+        # aborted at `Permission updater:default not found`, exit 101. Measured
+        # 2026-08-14 from the CI API: this workflow has run 38 times — 34 failure,
+        # 4 cancelled, ZERO success — and was born broken (workflow landed
+        # 2026-05-10; `updater:default` has been in capabilities since the initial
+        # commit). Three months of a red alarm nobody walked toward.
+        run: cargo build --features desktop,test-automation --manifest-path src-tauri/Cargo.toml
 
       - name: Run smoke test under xvfb
         # Non-blocking — flake patterns are still being characterized.

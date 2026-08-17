@@ -186,8 +186,14 @@ export const updateGoal = (id: string, updates: { title?: string; description?: 
 export const deleteGoal = (id: string) =>
   invoke<boolean>("dev_tools_delete_goal", { id });
 
-export const reorderGoals = (projectId: string, goalIds: string[]) =>
-  invoke<void>("dev_tools_reorder_goals", { projectId, goalIds });
+// `projectId` is accepted for call-site symmetry with the rest of this module
+// but is NOT sent: `dev_tools_reorder_goals` declares exactly one parameter,
+// `ids: Vec<String>` (commands/infrastructure/dev_tools/goals.rs:99). Tauri
+// resolves arguments by name, so the previous `{ projectId, goalIds }` payload
+// was missing `ids` entirely and every call would have been rejected at the
+// boundary. Never reached, because this has no UI call site.
+export const reorderGoals = (_projectId: string, goalIds: string[]) =>
+  invoke<void>("dev_tools_reorder_goals", { ids: goalIds });
 
 export const recordGoalSignal = (goalId: string, signalType: string, delta?: number, message?: string, sourceId?: string) =>
   safeInvoke<DevGoalSignal>({} as DevGoalSignal, "dev_tools_record_goal_signal", {
@@ -607,8 +613,10 @@ export const updateContextGroup = (id: string, updates: { name?: string; color?:
 export const deleteContextGroup = (id: string) =>
   invoke<boolean>("dev_tools_delete_context_group", { id });
 
-export const reorderContextGroups = (projectId: string, groupIds: string[]) =>
-  invoke<void>("dev_tools_reorder_context_groups", { projectId, groupIds });
+// Same argument-name mismatch as `reorderGoals` above — the command declares
+// only `ids: Vec<String>` (dev_tools/contexts.rs:81).
+export const reorderContextGroups = (_projectId: string, groupIds: string[]) =>
+  invoke<void>("dev_tools_reorder_context_groups", { ids: groupIds });
 
 // ============================================================================
 // Contexts

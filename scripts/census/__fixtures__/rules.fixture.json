@@ -1,0 +1,63 @@
+{
+  "$comment": [
+    "Fixture registry for scripts/census/self-test.mjs. Mirrors the shape of",
+    "../rules.json and is scanned by the SAME engine, so the self-test exercises",
+    "the real code path rather than a re-implementation of it.",
+    "Expected counts live in self-test.mjs and are asserted exactly."
+  ],
+  "rules": [
+    {
+      "id": "fx-storage",
+      "goldenPath": "(fixture rule — owns no real golden path; see scripts/census/self-test.mjs)",
+      "title": "fixture: web storage",
+      "roots": ["tree"],
+      "extensions": [".tsx"],
+      "signal": {
+        "pattern": "(?:\\bwindow\\s*\\.\\s*)?\\b(?:localStorage|sessionStorage)\\b",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "fixture twin of the real raw-web-storage signal"
+      },
+      "exclude": [
+        {
+          "path": "tree/excluded/Primitive.tsx",
+          "reason": "fixture stand-in for a primitive that legitimately owns the construct"
+        }
+      ],
+      "baseline": { "files": 2, "matches": 4 },
+      "floor": 4
+    },
+    {
+      "id": "fx-spinner",
+      "goldenPath": "(fixture rule — owns no real golden path; see scripts/census/self-test.mjs)",
+      "title": "fixture: spinner",
+      "roots": ["tree"],
+      "extensions": [".tsx"],
+      "signal": {
+        "pattern": "animate-spin",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "fixture twin of the real hand-rolled-spinner signal"
+      },
+      "exclude": [],
+      "baseline": { "files": 3, "matches": 4 },
+      "floor": 4
+    },
+    {
+      "id": "fx-select",
+      "goldenPath": "(fixture rule — owns no real golden path; see scripts/census/self-test.mjs)",
+      "title": "fixture: raw select",
+      "roots": ["tree"],
+      "extensions": [".tsx"],
+      "signal": {
+        "pattern": "<select(?![A-Za-z0-9_$-])",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "fixture twin of the real raw-select signal, incl. an end-of-line occurrence"
+      },
+      "exclude": [],
+      "baseline": { "files": 3, "matches": 4 },
+      "floor": 4
+    }
+  ]
+}

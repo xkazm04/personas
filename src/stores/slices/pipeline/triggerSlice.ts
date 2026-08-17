@@ -113,7 +113,17 @@ export interface TriggerSlice {
 
   // Actions
   createTrigger: (personaId: string, input: { trigger_type: string; config?: object; enabled?: boolean; use_case_id?: string | null }) => Promise<void>;
-  updateTrigger: (personaId: string, triggerId: string, updates: Record<string, unknown>) => Promise<void>;
+  /**
+   * Partial update. `Record<string, unknown>` until 2026-08-15 — which is a
+   * third spelling of the required-field defect: it deletes the type question
+   * rather than answering it, and every `as string` cast below existed only to
+   * dig back out of it. Name the fields; omitted ones are left alone.
+   */
+  updateTrigger: (
+    personaId: string,
+    triggerId: string,
+    updates: { trigger_type?: string; config?: object; enabled?: boolean },
+  ) => Promise<void>;
   deleteTrigger: (personaId: string, triggerId: string) => Promise<void>;
   fetchWebhookStatus: () => Promise<void>;
   clearTriggerError: () => void;
@@ -150,10 +160,13 @@ export const createTriggerSlice: StateCreator<PipelineStore, [], [], TriggerSlic
     set({ triggerError: null });
     try {
       await updateTrigger(triggerId, personaId, {
-        trigger_type: (updates.trigger_type as string) ?? null,
+        trigger_type: updates.trigger_type ?? null,
         config: updates.config != null ? JSON.stringify(updates.config) : null,
-        enabled: updates.enabled !== undefined ? (updates.enabled as boolean) : null,
-        next_trigger_at: null,
+        enabled: updates.enabled !== undefined ? updates.enabled : null,
+        // `next_trigger_at` was hardcoded to `null` here for every caller of
+        // this slice action, including `TriggerListItem`'s config and
+        // active-window edits. It is a double_option, so that cleared the fire
+        // time on every edit and the trigger never ran again. Omitted now.
       });
       storeBus.emit('trigger:changed', { personaId });
     } catch (err) {

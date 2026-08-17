@@ -110,10 +110,12 @@ export function useScheduleActions() {
       }
 
       await updateTrigger(agent.trigger_id, agent.persona_id, {
-        trigger_type: null,
+        // Only the field being changed. `next_trigger_at` in particular is the
+        // one double_option field here, so the `null` that used to sit in this
+        // payload cleared the column and permanently stopped the schedule —
+        // `get_due` requires it NOT NULL. Omitting the key is what makes the
+        // backend recompute it from the new cron.
         config: JSON.stringify(configObj),
-        enabled: null,
-        next_trigger_at: null,
       });
       addToast(tx(t.schedules.toast_updated_schedule, { name: agent.persona_name }), 'success');
       await fetchCronAgents();
@@ -132,10 +134,10 @@ export function useScheduleActions() {
   const toggleEnabled = useCallback(async (agent: CronAgent) => {
     try {
       await updateTrigger(agent.trigger_id, agent.persona_id, {
-        trigger_type: null,
-        config: null,
+        // Pause/resume used to be a one-way door: the resume wrote
+        // `enabled = 1` and cleared `next_trigger_at` in the same call, so the
+        // schedule reported "resumed" and never ran again.
         enabled: !agent.trigger_enabled,
-        next_trigger_at: null,
       });
       addToast(
         tx(agent.trigger_enabled ? t.schedules.toast_paused : t.schedules.toast_resumed, { name: agent.persona_name }),
@@ -193,9 +195,6 @@ export function useScheduleActions() {
       }
 
       await updateTrigger(agent.trigger_id, agent.persona_id, {
-        trigger_type: null,
-        config: null,
-        enabled: null,
         next_trigger_at: newNext,
       });
       addToast(
@@ -227,9 +226,6 @@ export function useScheduleActions() {
     try {
       const fireAt = new Date(Date.now() + delayMs).toISOString();
       await updateTrigger(agent.trigger_id, agent.persona_id, {
-        trigger_type: null,
-        config: null,
-        enabled: null,
         next_trigger_at: fireAt,
       });
       addToast(

@@ -14,7 +14,9 @@ npm run lint             # ESLint
 npm run test             # Vitest (2,400+ tests)
 npm run test:rust        # Rust unit tests (app_lib, --features desktop)
 npm run test:rust:crates # Rust unit tests for the extracted crates only
-npx vite build           # Production frontend build
+npx vite build           # Vite ONLY — bypasses all 14 codegen tasks. Run
+                         # `node scripts/run-codegen.mjs prebuild` first, or
+                         # use `npm run build` (which does it for you).
 node scripts/i18n/check-coverage.mjs   # i18n coverage report (CI gate)
 ```
 
@@ -64,7 +66,7 @@ Advisory pre-release scripts (manual, not CI-gated):
 - `npm run check` — TypeScript + ESLint (incl. the 18 custom rules)
 - `npm run check:i18n:strict` (no translation gaps — see i18n § "Translation completeness") · `npm run check:error-registry` · `npm run check:themes` · `npm run check:tauri-configs`
 - `npm run test -- --run` (Vitest)
-- If Rust changed: `cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings`, `cargo test --manifest-path src-tauri/Cargo.toml`, and `cargo test export_bindings` (then commit `src/lib/bindings/`)
+- If Rust changed: `cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings`, `cargo test --manifest-path src-tauri/Cargo.toml`, and `cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop export_bindings` (then commit `src/lib/bindings/`; without `--workspace --features desktop` **zero** bindings regenerate)
 - `node .ai/doctor.mjs` — `.ai` conformance (no hard FAILs)
 
 Then the judgment checks a linter can't make:
@@ -96,7 +98,11 @@ src/
 
 src-tauri/
 ├── src/commands/     # Tauri command handlers (IPC surface)
-├── src/db/           # SQLite schema, migrations, repository pattern
+├── ../db/            # SQLite schema, migrations, repos — an EXTRACTED CRATE at
+│                     # src-tauri/db/, not src-tauri/src/db/ (which does not
+│                     # exist; this line claimed it did until 2026-08-14).
+│                     # engine/ and core/ are extracted the same way — see
+│                     # `npm run test:rust:crates`.
 └── src/engine/       # Execution engine, scheduler, healing, crypto
 ```
 
@@ -105,7 +111,11 @@ src-tauri/
 ### State Management
 - Zustand with slice pattern in `src/stores/slices/`
 - Use `useShallow` from zustand for selective subscriptions
-- `globalThis` for singletons surviving HMR (executionBuffers, eventBus)
+- `globalThis` for singletons surviving HMR. **Corrected 2026-08-14: this line named `executionBuffers` and `eventBus`, and NEITHER IDENTIFIER EXISTS.** `executionBuffers` appears nowhere in the tree except this line and **four** source comments citing it as precedent (`fleetTerminalManager.ts`, `useScrollRestoration.ts`, `silentFailureTelemetry.ts`, `tourSlice.ts`). `eventBus` is really `globalThis.__personasEventBridge` (`src/lib/eventBridge.ts:142`). The real object behind the first name is `executionSink` (`src/lib/execution/executionSink.ts:339`) — a plain module const, not on `globalThis`.
+
+  > **Two corrections to this correction, both earned 2026-08-14.** (1) It first said "three" comments, because the grep that produced it ended in `head -3` — a measurement truncated by its own display limit and then reported as the finding. Same family as the substring-vs-structural errors catalogued elsewhere in this file: **the tool answered a different question than the one asked, and the answer looked plausible.** (2) It implied `executionSink` is the defect. It is not — it is the best answer in the repo, using a `generation` counter to make stale copies inert, re-bound at `executionSlice.ts:189-192`. The fiction inverted its meaning.
+  >
+  > Measured state of the convention: **25 `globalThis` keys, of which 13 are actually state, across 8 owners**; all 13 ship to production unguarded and 6 of the 8 owners have no test-reset hatch. `import.meta.hot` is used **zero** times in 4,829 files, and was considered and declined in writing in two repos — it is not the sanctioned alternative. The useful discriminator is **refcount vs one-way latch**, not "holds a timer". See [`docs/concepts/golden-paths/hmr-safe-singletons.md`](../docs/concepts/golden-paths/hmr-safe-singletons.md).
 
 ### Tauri IPC
 - Always use `invokeWithTimeout` from `@/lib/tauriInvoke` — never raw `invoke`
@@ -113,7 +123,13 @@ src-tauri/
 
 ### ts-rs bindings (Rust → TypeScript types)
 - **Single source of truth: `src/lib/bindings/`.** ts-rs writes here directly via `TS_RS_EXPORT_DIR`, which is forwarded to rustc by `src-tauri/build.rs` (`cargo:rustc-env=TS_RS_EXPORT_DIR=../src/lib/bindings`). The earlier `[env]` table in `src-tauri/.cargo/config.toml` did NOT reliably reach the proc-macro expansion path — the dual-tree drift (`src-tauri/bindings/` AND `src/lib/bindings/` both committed and drifting) traced to that. The build.rs route closes the gap; `src-tauri/bindings/` was retired and now appears in `src-tauri/.gitignore` to prevent any future leak. The `.cargo/config.toml` entry stays as a belt-and-suspenders backstop for tooling that calls cargo without going through the build.rs.
-- **After adding `#[derive(TS)] #[ts(export)]` to a Rust struct**, run `cargo test --manifest-path src-tauri/Cargo.toml export_bindings` from the repo root. Commit the resulting new/changed files in `src/lib/bindings/`.
+- **After adding `#[derive(TS)] #[ts(export)]` to a Rust struct**, run `cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop export_bindings` from the repo root. Commit the resulting new/changed files in `src/lib/bindings/`.
+
+  > **`--workspace` and `--features desktop` are load-bearing; this line omitted both until 2026-08-14.** Without them **zero** bindings regenerate — CI documents exactly this at `.github/workflows/ci.yml:385-386` and runs the full form itself. Following the old instruction produced no output, no diff, and nothing to commit, which is indistinguishable from "already up to date".
+  >
+  > **The drift job could not catch that for a NEW type — FIXED 2026-08-14 at `ci.yml:426-431`, with the verification in the comment.** `git diff --quiet src/lib/bindings/` exits **0** for an untracked file, so a new binding — untracked by definition — was invisible to the one gate that existed for it. That hole is closed; the text above described the pre-fix state until 2026-08-17.
+  >
+  > **What the fix does not reach: orphans.** Measured 2026-08-17 by three independent implementations (48 / 31 / **29**; the loosest was wrong by 19 because macro-generated derives have no literal `enum` line). **29 orphan bindings** — types whose Rust source is gone. ts-rs never deletes, so an orphan produces **no diff and no untracked file**, which makes it invisible to a diff-shaped gate by construction. **26 are still imported and 22 are still the declared return type of a live `invoke`** — including `invoke<VaultStatus>("vault_status")` against a Rust fn returning `serde_json::Value`, with no `VaultStatus` type anywhere in 963 `.rs` files. Only an inventory of what *should* exist finds these; `scripts/check-unused-bindings.sh` exits 1 with 98 findings today and *protects* 26 of the 29 because they are imported.
 - CI verifies via `git diff --quiet src/lib/bindings/` — a missing regen fails the build at `.github/workflows/ci.yml`'s binding-drift job.
 - New Tauri commands additionally need `node scripts/generate-command-names.mjs` (or just `npm run dev`/`npm run build` which trigger `predev`/`prebuild`).
 
@@ -148,8 +164,9 @@ src-tauri/
 
 | Don't hand-roll | Use |
 |---|---|
-| `animate-spin` / local spinner | `feedback/LoadingSpinner` |
-| "no data" block | `feedback/EmptyState` |
+| a busy state on an **action control** (a button/row affordance the user just pressed) | `buttons/AsyncButton` — it renders a **real** spinner. **Never `feedback/LoadingSpinner`, which renders `null`.** See [the spinner boundary](#the-spinner-boundary--banned-for-surfaces-required-for-actions) below |
+| a loading state for a **surface** (a region fetching its data) | a calm delayed ghost under permanent chrome — see [Cold-load / loading UX](#cold-load--loading-ux--the-standard-loading-pattern-v2) below. **A spinner is never a surface loading state in this app.** |
+| "no data" block | `feedback/ScenarioEmptyState` (default export — call sites import it as `EmptyState`), plus its `NoResults` / `InboxZero` wrappers. Chart panels → `display/ChartEmptyState`; compact generic block → `display/EmptyIllustration` |
 | styled `<button>` | `buttons/Button` / `buttons/AsyncButton` |
 | `navigator.clipboard.writeText` | `buttons/CopyButton` / `useCopyToClipboard` |
 | `fixed inset-0` modal backdrop | `modals/BaseModal` / `feedback/ConfirmDialog` (enforced by `custom/enforce-base-modal`) |
@@ -180,13 +197,45 @@ predev/prebuild, so CATALOG.md stays fresh on its own — but a stale catalog no
 longer fails `npm run check`; regeneration is a convenience, not a gate). The
 `check:catalog` / `check:catalog-boundary` scripts still exist for a manual
 staleness/boundary audit if you want one. Extraction/consolidation backlog
-(PanelShell, ContentCard, EmptyState merge, …) lives in the reuse doc above.
+(PanelShell, ContentCard, FilterToolbar, …) lives in the reuse doc above.
+
+### The spinner boundary — banned for surfaces, required for actions
+
+**These are two different situations with opposite prescriptions. Getting them
+confused is the single most common loading defect in this repo.**
+
+> **A spinner is banned for a surface loading its data. A spinner is required on
+> a control the user just pressed.**
+
+| | A **surface** loading its data | An **action** the user just triggered |
+|---|---|---|
+| Examples | a tab, page, panel, list, chart fetching on mount or on filter change | Save, Send, Retry, Test connection, row-level Approve |
+| Show | a calm geometry-matched ghost **under** the permanent chrome (see the four mechanics above) | a **real, visible spinner** on the control itself, plus `disabled` + `aria-busy` |
+| Use | `UnifiedTable` (`isLoading` + `data`) · `RouteChunkSkeleton` · a local delayed ghost | `buttons/AsyncButton` (returns-a-promise `onClick`, no state at all) or `buttons/Button loading={flag}` when the flag is externally owned |
+| Never | a spinner, `animate-pulse`, or `if (loading) return …` that replaces chrome | `useState(false)` + `try/finally`, a scalar flag for a per-row action, `onClick={() => void fn()}` (that silently disarms the double-submit guard) |
+| Doctrine | [`docs/design/overview-loading.md`](../docs/design/overview-loading.md) | [`docs/concepts/golden-paths/inline-busy-state.md`](../docs/concepts/golden-paths/inline-busy-state.md) |
+
+**`feedback/LoadingSpinner` renders `null`.** It is a compatibility shim that
+emits only an `sr-only` `role="status"` when you pass `label`. It is not a
+spinner and it is not a ghost — it is nothing. `{busy ? <LoadingSpinner/> :
+<Icon/>}` makes the icon vanish and puts nothing in its place. Do not render it
+as either half of the table above. The real spinners live inside `Button`
+(`Button.tsx:230,:237`) and `AsyncButton` (`AsyncButton.tsx:85`), which is
+deliberate.
+
+> ⚠️ `CATALOG.md`'s `LoadingSpinner` row still reads "Canonical loading
+> spinner… Use for any full-element loading state", which is wrong on both
+> halves. That text is **not** a `@catalog` tag on the component — it is
+> hardcoded in the `CURATED` map at `scripts/docs/gen-shared-catalog.mjs:56`,
+> so regenerating the catalog will not fix it. Correcting that line is an owed
+> follow-up in the shared-components territory.
 
 ### Error Handling
 - `toastCatch()` from `src/lib/silentCatch.ts` for user-facing errors (Sentry + toast)
 - `silentCatch()` for background errors (Sentry + console only)
 - `resolveError()` from `src/lib/errors/errorRegistry.ts` maps raw errors to friendly messages
-- ESLint rule `custom/no-silent-catch` warns on empty `catch {}` blocks — the next person debugging in production needs a Sentry breadcrumb, not a comment.
+- ESLint rule `custom/no-silent-catch` is **`"error"`** (`eslint.config.js:104`), not "warns" as this line said until 2026-08-14. A full run over 4,829 files returns **0 findings** — the condition is extinct, not unenforced. It is absent from the top lint rules because the gate worked.
+- **But it only sees empty `catch {}`.** Measured 2026-08-14: of **2,752** production catch sites, **760 try/catch bodies reach no error door at all** (Sentry, toast, or log) across 440 files, and only **10.6%** produce a Sentry *event*. `.catch()` sits at **99.5%** adoption against try/catch's **58.6%** — a 41-point gap in the same repo for the same concept, and the sole difference is that a lint rule visits `.catch` while nothing visits a `CatchClause` body. See [`docs/concepts/golden-paths/swallowed-error-telemetry.md`](../docs/concepts/golden-paths/swallowed-error-telemetry.md).
 
 ### Concurrent CLI sessions (active-runs ledger)
 
@@ -225,7 +274,11 @@ The active-runs ledger is intent coordination; these are the **never-lose-work**
 
    For periodic batch cleanup of worktrees other sessions left behind, run `npm run clean:worktrees` — it lists every worktree with age / dirty / merged status and (with `--force`) removes the ones that are clean + merged + stale. See [`docs/development/build-cache.md`](../docs/development/build-cache.md).
 
-5. **`git status` shows everyone's work — and so does the staged index.** Before any commit, scan `git status --porcelain` and classify each entry: yours / pre-existing drift / another session's in-flight work. Stage only yours. The 2026-05-09 stash victim was visible in `git status` to the stashing session — the missing discipline was "what's there that isn't mine?", not "what should I commit?"
+5. **`git commit -- <pathspec>` does NOT reliably scope the commit when lefthook is installed.** Measured 2026-08-13 with four agents on one checkout: an agent used `git commit -- <paths>` precisely to avoid sweeping a sibling's work, and it swept three pre-staged files anyway (lefthook's partial-commit handling re-stages). `git commit --only <paths>` did hold. Two agents also lost a staged index entirely between `git add` and `git commit` — a sibling's activity cleared it, the commit silently became a no-op, and only `git reflog` showed the commit never happened. **`git commit --only` does not hold either.** Measured again later the same day: a sibling's commit landed between staging and committing, `--only` printed "no changes added to commit" and silently no-oped, and all 12 staged files were swept into the sibling's commit — whose own deliverable then did not make it in. **There is no reliable pathspec-scoping incantation while another agent commits to the same worktree.** What actually works: (a) verify `git log --oneline -1` is YOUR message after every commit — this is the only step that detects the failure at all; (b) recover by amending rather than resetting, since the content is present and only the attribution is wrong; and (c) for multi-file work, use a real `git worktree`, which is the only structural fix. A commit that didn't happen looks exactly like one that did if you only read the hook output.
+
+6. **The scratchpad directory is shared between sibling agents.** Two agents wrote their commit message to the same generic filename (`msg1.txt`) and one overwrote the other between `Write` and `git commit -F`. Use a unique filename per agent, or pass the message inline.
+
+7. **`git status` shows everyone's work — and so does the staged index.** Before any commit, scan `git status --porcelain` and classify each entry: yours / pre-existing drift / another session's in-flight work. Stage only yours. The 2026-05-09 stash victim was visible in `git status` to the stashing session — the missing discipline was "what's there that isn't mine?", not "what should I commit?"
 
    **AND THEN** — after `git add` but BEFORE `git commit` — run `git diff --cached --stat` and check the staged file count. If it is greater than the number of files you explicitly `git add`-ed, the index already had pre-staged files from another session sitting in it; your `git add` simply layered on top. Run `git restore --staged <path>` per unrelated file before committing. The recovery commit for the 2026-05-09 stash incident itself fell into this trap: the parallel-safety codification was supposed to be 6 files; the index already held 18 pre-staged files from a concurrent clear-wins/creative session and the commit swept everything up under a misleading message. Never trust the index; always verify it matches your intent.
 
@@ -268,8 +321,8 @@ function MyComponent() {
 
 The 500KB+ monolithic locale bundles were retired in May 2026. Today:
 
-1. `src/i18n/locales/<lang>.json` — authoritative human-edited locale files (English is the source; non-English files are partial, with translation teams catching up asynchronously).
-2. `scripts/i18n/split-locales.mjs` — runs in `vite buildStart` (and is also wired into `predev`/`prebuild` via `scripts/run-codegen.mjs`). Splits each non-English locale into `src/i18n/section-locales/<lang>/<section>.json` and emits `src/i18n/generated/enSectionStrings.ts` (English sections stored as parse-on-demand JSON strings).
+1. `src/i18n/locales/<lang>.json` — authoritative human-edited locale files (English is the source). **Measured 2026-08-16: 19,112 keys × 13 locales, 0 missing / 0 extra / 0 untranslated.** The "non-English files are partial, translation teams catching up asynchronously" posture this line described until then was retired by the **Translation completeness — no gaps (ENFORCED)** section below; the catalogs are complete and the gate keeps them that way.
+2. `scripts/i18n/split-locales.mjs` — wired into `predev`/`prebuild` via `scripts/run-codegen.mjs`. **It has NOT run in `vite buildStart` since 2026-05-10** (`split-locales` appears nowhere in `vite.config.ts`; the `catalog-codegen` buildStart plugin was removed, see `vite.config.ts:40-49`). This line claimed it did until 2026-08-16, and combined with the `npx vite build` entry above it described a workflow that silently ships stale translations. Splits each non-English locale into `src/i18n/section-locales/<lang>/<section>.json` and emits `src/i18n/generated/enSectionStrings.ts` (English sections stored as parse-on-demand JSON strings).
 3. `src/i18n/useTranslation.ts` discovers section JSON via `import.meta.glob('./section-locales/*/*.json', { eager: false })`, so each section becomes its own async chunk. The `t` value is a `Proxy` that triggers section loading on first property access.
 4. `src/i18n/routeSections.ts` — declares which sections each `SidebarSection` (home/overview/personas/…) needs. The active route's sections preload eagerly; everything else loads on demand. `BASE_SECTIONS` (common, chrome, sidebar, toasts, errors, error_registry, empty_states, status_tokens, process_labels) always preload.
 5. `src/main.tsx` `preloadPersistedLocaleBeforeMount()` — kicks off section loads for the persisted locale + persisted sidebar route before React mounts, so non-English users avoid an English-first-paint flash. Bounded by a 1.2s timeout.
@@ -478,7 +531,11 @@ There is no scheduled `/guide-sync` cron — the per-session model is the entire
 ## Pre-existing Issues (Do Not Fix Unless Asked)
 
 - Git post-commit hook warning about `git_hook.py` is harmless.
-- Lint baseline (as of 2026-04-17 ship-ready pass): **0 errors, ~10,086 warnings**. The warnings are almost entirely `custom/no-raw-*-classes` (design-token migration) and `custom/no-hardcoded-jsx-text` (i18n extraction) — both are known incremental migrations. Follow CLAUDE.md's fix-as-you-touch policy; do not bulk-migrate.
+- Lint baseline — **measured 2026-08-14 at HEAD: 0 errors, 1,135 warnings across 246 of 4,829 files.** Breakdown: `custom/no-low-contrast-text-classes` **705 (62%)**, `custom/no-hardcoded-jsx-text` 226, `custom/no-raw-radius-classes` 128, `custom/no-raw-text-classes` 16, `no-restricted-imports` 13. Follow the fix-as-you-touch policy; do not bulk-migrate.
+
+  > **Corrected 2026-08-14.** This line previously read "~10,086 warnings … almost entirely `no-raw-*-classes`", a figure from the 2026-04-17 pass that went stale when `no-raw-spacing-classes` was disabled. It was wrong by ~9×, and wrong about the dominator: the whole `no-raw-*` family is **144 (12.7%)**, not "almost entirely". Five golden paths cited it as the *reason* to ship a gate at `"error"` ("a warn-level rule is invisible in a sea of 10,086"). **Re-measure before citing.**
+  >
+  > The conclusion survives on better grounds, and they don't depend on the count: `npm run check` runs `eslint src/` with **no `--max-warnings`**, so it exits 0 no matter how many warnings exist; the pre-commit hook runs `--quiet --max-warnings 99999`, and `--quiet` suppresses warnings before they can be counted. **A warn-level rule enforces nothing at either gate, by construction.** Warn-level rules still change behaviour — but through editor squiggles at authoring time, not enforcement, which is why they correlate with adoption without ever failing a build.
 - `react-hooks/rules-of-hooks` violations (conditional hooks, hooks called outside components): ~21 remain across ~7 files, at warn-level pending triage. Not a ship-blocker; fix opportunistically when touching those files.
 
 ### Historical (for context; no longer active on `master`)

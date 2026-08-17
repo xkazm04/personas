@@ -18,6 +18,11 @@ jobs:
   # ─── Job 0: Conventional commit lint ──────────────────────────
   commit-lint:
     runs-on: ubuntu-latest
+    # No job in this workflow had a timeout until 2026-08-16. A hung Clippy
+    # step on the macOS runner ran for SIX HOURS — GitHub's default job cap —
+    # while the run showed in_progress and nobody could tell it was dead.
+    # Four other workflows in this repo already set one; ci.yml was the outlier.
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -92,6 +97,8 @@ jobs:
   # ─── Job A: Frontend lint, typecheck, and tests ─────────────
   frontend-checks:
     runs-on: ubuntu-latest
+    # See the note on commit-lint's timeout-minutes.
+    timeout-minutes: 30
     permissions:
       contents: read
       pull-requests: write
@@ -107,9 +114,11 @@ jobs:
         run: npm ci
 
       - name: Typecheck + lint
+        if: always()
         run: npm run check
 
       - name: Check i18n locale keyset parity
+        if: always()
         # CLAUDE.md long claimed this was a CI gate — it wasn't until
         # build-tooling architect run 2026-05-01 wired it. Catches locale
         # files that drift from en.json's keyset (missing or extra keys),
@@ -117,6 +126,7 @@ jobs:
         run: npm run check:i18n
 
       - name: Check ERROR_KEY_MAP ↔ en.json error_registry parity
+        if: always()
         # Asserts every keyPrefix in src/i18n/useTranslatedError.ts has both
         # <prefix>_message and <prefix>_suggestion under error_registry in
         # en.json. Without these, runtime falls back to the raw error string
@@ -125,6 +135,7 @@ jobs:
         run: npm run check:error-registry
 
       - name: Check theme contrast (WCAG AA token pairings)
+        if: always()
         # Audits src/styles/globals.css for every theme: body, muted-foreground,
         # muted-foreground at the minimum caption opacity (80%), and muted text
         # must each clear AA (4.5:1) against the canvas. Fails the build on any
@@ -133,12 +144,14 @@ jobs:
         run: npm run check:themes
 
       - name: Validate Tauri config overlays
+        if: always()
         # Catches: drift in $schema across the three configs, overlays
         # touching unexpected keys (so the overlay surface stays small),
         # and feature names that don't match Cargo.toml [features].
         run: npm run check:tauri-configs
 
       - name: Validate tier builds (starter / team)
+        if: always()
         # Tier variants flip frontend gating via VITE_APP_TIER and tree-shake
         # disabled features. Validate starter + team compile here so a broken
         # tier-gate import doesn't slip through. The builder tier is NOT built
@@ -150,9 +163,11 @@ jobs:
         run: npm run check:tiers starter team
 
       - name: Build
+        if: always()
         run: npm run build
 
       - name: Check bundle size budget
+        if: always()
         # Budget lives in scripts/lib/bundle-budget.mjs (single source shared
         # with bundle-size-report.mjs): 850 KB/chunk, 5000 KB total. No flags
         # needed — the script defaults to the shared budget.
@@ -167,9 +182,11 @@ jobs:
         run: node scripts/bundle-comment.mjs
 
       - name: Check for unused bindings
+        if: always()
         run: bash scripts/check-unused-bindings.sh
 
       - name: Run frontend tests
+        if: always()
         run: npm run test -- --run
 
   # ─── Job B: Rust tests on all 3 platforms ───────────────────
@@ -194,12 +211,28 @@ jobs:
           - os: ubuntu-24.04
             label: linux
     runs-on: ${{ matrix.os }}
+    # See the note on commit-lint's timeout-minutes.
+    timeout-minutes: 60
     env:
       # sccache: shared compilation cache backed by GitHub Actions cache.
       # Skips recompiling unchanged crates — typical speedup: 50-70%.
       # NOTE: RUSTC_WRAPPER is deliberately NOT set here — see the health-check
       # step below. Setting it at job level makes it un-overridable.
       SCCACHE_GHA_ENABLED: "true"
+      # A CI runner has no keychain. `resolve_master_key` refuses to invent one
+      # unless this is set, so every `crypto::tests` case aborted on all three
+      # platforms — this job has been 0/20 green.
+      #
+      # The hatch is not a workaround invented here: core/src/crypto.rs:495
+      # documents it as existing "for CI, headless", and :527 prints
+      # "set PERSONAS_ALLOW_FALLBACK_KEY=1 to allow a local fallback key" as the
+      # remedy for the exact failure. It was simply never set in any workflow —
+      # zero occurrences across .github/ before this line.
+      #
+      # Scope is a test runner only. It permits a local fallback key when the OS
+      # keychain is unavailable; it does not weaken the key derivation used by a
+      # packaged build, which never sets it.
+      PERSONAS_ALLOW_FALLBACK_KEY: "1"
     steps:
       - uses: actions/checkout@v4
 
@@ -255,14 +288,28 @@ jobs:
         # only by `desktop`. Without it the tauri build script aborts with
         # "Permission updater:default not found" before compiling anything —
         # so this step has never actually run a test.
-        run: cargo test --manifest-path src-tauri/Cargo.toml --features desktop
+        #
+        # --workspace is ALSO required. Without it cargo tests only the root
+        # package (personas-desktop), so every test in personas-core,
+        # personas-db and personas-engine never compiles or runs. That is ~770
+        # tests in personas-db alone, including every migration and
+        # boot-safety assertion. Three independent reviews of this repo
+        # arrived at this same missing word.
+        run: cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop
 
       - name: Run Clippy
-        run: cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
+        # if: always() so a failing test step does not hide a lint regression.
+        # --workspace and --features desktop for the same reasons as above:
+        # without them clippy lints the root package only, and aborts on the
+        # updater capability before linting anything.
+        if: always()
+        run: cargo clippy --workspace --manifest-path src-tauri/Cargo.toml --features desktop -- -D warnings
 
       - name: Install cargo-deny
+        if: always()
         run: cargo install cargo-deny --locked
       - name: Check dependency policies
+        if: always()
         run: cd src-tauri && cargo deny check
 
       - name: Show sccache stats
@@ -272,6 +319,8 @@ jobs:
   # ─── Job C: Check generated command names are fresh ─────────
   command-name-drift:
     runs-on: ubuntu-latest
+    # See the note on commit-lint's timeout-minutes.
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -297,9 +346,14 @@ jobs:
     # with `--features desktop`, which pulls xcap -> pipewire -> libspa, and
     # libspa does not build against 22.04's system headers.
     runs-on: ubuntu-24.04
+    # See the note on commit-lint's timeout-minutes.
+    timeout-minutes: 45
     env:
       # RUSTC_WRAPPER intentionally unset here — see the health-check step.
       SCCACHE_GHA_ENABLED: "true"
+      # This job also runs `cargo test`, so it hits the same keychain wall as
+      # rust-tests — see the note there. binding-drift is 5/20 green.
+      PERSONAS_ALLOW_FALLBACK_KEY: "1"
     steps:
       - uses: actions/checkout@v4
 
@@ -364,9 +418,20 @@ jobs:
 
       - name: Check for binding drift
         run: |
+          # `git diff` sees TRACKED files only, so it exits 0 for a brand-new
+          # binding — verified 2026-08-14 by creating one. That is precisely the
+          # case this gate exists for: adding a command is when a NEW type
+          # appears. Untracked output must be checked separately, or the gate is
+          # green exactly when it matters.
+          NEW=$(git ls-files --others --exclude-standard src/lib/bindings/)
+          if [ -n "$NEW" ]; then
+            echo "::error::New TypeScript bindings were generated but not committed. Add them:"
+            echo "$NEW"
+            exit 1
+          fi
           if ! git diff --quiet src/lib/bindings/; then
-            echo "::error::TypeScript bindings are out of date. Run 'cargo test export_bindings' locally and commit the changes."
+            echo "::error::TypeScript bindings are out of date. Run 'cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop export_bindings' locally and commit the changes. (Without --workspace --features desktop, zero bindings regenerate — see the comment above this job.)"
             git diff src/lib/bindings/
             exit 1
           fi
-          echo "Bindings are up to date."
+          echo "Bindings are up to date (no drift, no uncommitted new types)."

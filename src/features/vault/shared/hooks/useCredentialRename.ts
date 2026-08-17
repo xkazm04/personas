@@ -45,13 +45,12 @@ export function useCredentialRename(credential: CredentialMetadata, logContext: 
       return;
     }
     try {
+      // Only `name`. The five nulls that used to sit here were not inert —
+      // `metadata` is a double_option, so an explicit null CLEARED the whole
+      // metadata blob (18 keys on a live OAuth credential, including
+      // `oauth_token_expires_at`). See the note on `updateCredential`.
       const updatedRaw = await credApi.updateCredential(credential.id, {
         name: trimmed,
-        serviceType: null,
-        encryptedData: null,
-        iv: null,
-        metadata: null,
-        sessionEncryptedData: null,
       });
       const updated = toCredentialMetadata(updatedRaw);
       useVaultStore.setState((s) => ({

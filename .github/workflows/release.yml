@@ -31,8 +31,47 @@ permissions:
   contents: write
 
 jobs:
+  # ─── Gate: a publish must not outrun CI ────────────────────────────────
+  # GitHub Actions cannot express `needs:` across workflows, so this job asks
+  # the API what CI concluded for THIS commit.
+  #
+  # It hard-fails only when `publish` is on. A build-validation run (the
+  # default) is allowed while CI is red — that is the whole point of a
+  # validation run — but it still prints the CI verdict so a red tree is never
+  # invisible. Publishing off a commit whose CI never passed is the thing this
+  # prevents.
+  ci-gate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Check CI conclusion for this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUBLISHING: ${{ inputs.publish }}
+        run: |
+          set -euo pipefail
+          SHA="${{ github.sha }}"
+          echo "Commit: $SHA  (publish=${PUBLISHING:-false})"
+          RUNS=$(gh api "repos/${{ github.repository }}/actions/workflows/ci.yml/runs?head_sha=$SHA&per_page=10"                    --jq '[.workflow_runs[] | {status,conclusion}]' 2>/dev/null || echo '[]')
+          echo "CI runs for this SHA: $RUNS"
+          CONCLUSION=$(echo "$RUNS" | jq -r 'map(select(.status=="completed")) | .[0].conclusion // "none"')
+          echo "CI conclusion: $CONCLUSION"
+          if [ "${PUBLISHING:-false}" != "true" ]; then
+            echo "::notice::Build-validation run — not gating on CI (conclusion: $CONCLUSION)."
+            exit 0
+          fi
+          if [ "$CONCLUSION" != "success" ]; then
+            echo "::error::Refusing to PUBLISH from a commit whose CI conclusion is '$CONCLUSION'."
+            echo "Run CI to green on this SHA, or re-dispatch with publish=false for a validation build."
+            exit 1
+          fi
+          echo "::notice::CI is green for this commit — publish permitted."
+
   # ─── Job 1: Resolve version + (optionally) bump, commit, tag, push ───
   version:
+    needs: ci-gate
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     outputs:

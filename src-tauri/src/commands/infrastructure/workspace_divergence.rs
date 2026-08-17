@@ -513,6 +513,8 @@ async fn run_divergence(
                 )),
                 confidence: p.confidence,
                 extends: None,
+                layer: None,
+                evidence: Vec::new(),
             }
         })
         .collect();

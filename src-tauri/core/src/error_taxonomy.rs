@@ -167,10 +167,28 @@ pub fn classify_error(error: &str, timed_out: bool, session_limit: bool) -> Erro
     // `etimedout` (Node's socket-timeout errno) is ported from the TS ladder —
     // this file is the source of truth, so the match lives here and TS mirrors
     // it. See PARITY_FIXTURES below and `errorTaxonomy.parity.test.ts`.
+    // `ceiling exceeded` added 2026-08-16 — this app's own hard timeout did not
+    // classify as a timeout.
+    //
+    // `engine/mod.rs:414` mints "Engine safety ceiling exceeded (20m). Execution
+    // forcibly terminated." That string contains none of the four patterns
+    // above, so the app's own deadline landed in `Unknown` — whose recovery is
+    // `CreateIssue` with `suggested_fix: None` and **no retry, ever**.
+    //
+    // Measured on the live database: 40 of 43 `Unknown` healing issues (93%) are
+    // that one string. The `Timeout` recovery it should have reached succeeded
+    // 72.7% of the time — the best rate of any class — while the fallthrough it
+    // actually reached succeeded 0 times because it never runs.
+    //
+    // The circularity is worth keeping in view: `healing.rs:122` sets
+    // `MAX_TIMEOUT_MS = ENGINE_MAX_EXECUTION_SECS * 1000`, so the Timeout
+    // recovery doubles a run's timeout up to exactly the ceiling whose message
+    // it then could not classify.
     if lower.contains("timed out")
         || lower.contains("timeout")
         || lower.contains("deadline")
         || lower.contains("etimedout")
+        || lower.contains("ceiling exceeded")
     {
         return ErrorCategory::Timeout;
     }

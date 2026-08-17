@@ -82,7 +82,25 @@ const INLINE_SECRET_RE =
   /(api[-_]?key|apikey|secret|token|password|passwd|auth|authorization|credential|private[-_]?key|client[-_]?secret|access[-_]?key|access[-_]?token|refresh[-_]?token|bearer|dsn|connection[-_]?string|cookie|session[-_]?id)\s*[:=]\s*([a-zA-Z0-9\-_.~%]+)/gi;
 
 // - Common token prefixes (ghp_, sk_live_, etc)
-const PREFIXED_SECRET_RE = /\b(PMR?S|gh[pous]|AKIA|sk_live_|xox[baprs]-)[a-zA-Z0-9]{16,}\b/g;
+//
+// Corrected 2026-08-15. The previous form was
+//   /\b(PMR?S|gh[pous]|AKIA|sk_live_|xox[baprs]-)[a-zA-Z0-9]{16,}\b/g
+// which COULD NOT MATCH ANY TOKEN GITHUB ISSUES: `gh[pous]` has no `_`, and `_`
+// is not in `[a-zA-Z0-9]`, so `ghp_…` fails at the underscore. It matched a
+// shape GitHub has never issued, and missed `ghr_` entirely. Two byte-identical
+// copies existed in Rust — one of them the Sentry scrubber — so the same blind
+// spot applied to everything leaving this app.
+//
+// It also carried no Google (`AIza`), Anthropic (`sk-ant-`) or JWT class.
+// Replaying the old form against 20 real token shapes masked 7 and leaked 13,
+// and the 7 were caught by the labelled key:value rule above, not by this one.
+//
+// The per-class forms below are copied from `core/src/redact.rs`, which has
+// been correct all along — the fix was already in the tree, in a different
+// module, which is why nothing noticed. `sk-ant-` precedes `sk-` because
+// alternation is leftmost-first.
+const PREFIXED_SECRET_RE =
+  /(?:PMR?S[a-zA-Z0-9]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|sk-ant-[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9]{20,}|sk_live_[a-zA-Z0-9]{16,}|xox[baprs]-[A-Za-z0-9-]{10,}|AIza[0-9A-Za-z_-]{35}|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)/g;
 
 /**
  * Strip internal file paths, IP addresses, internal hostnames, emails,

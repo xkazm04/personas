@@ -105,7 +105,10 @@ export function classifyError(error: string): ErrorCategory {
   }
 
   // Timeout
-  if (lower.includes('timed out') || lower.includes('timeout') || lower.includes('deadline') || lower.includes('etimedout')) {
+  // `ceiling exceeded` mirrors core/src/error_taxonomy.rs, which is the source
+  // of truth — the app's own 20-minute engine ceiling message contains none of
+  // the other four patterns and was classifying as Unknown. See the note there.
+  if (lower.includes('timed out') || lower.includes('timeout') || lower.includes('deadline') || lower.includes('etimedout') || lower.includes('ceiling exceeded')) {
     return 'timeout';
   }
 

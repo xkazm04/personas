@@ -46,7 +46,23 @@ try {
 }
 
 // 3. Clear operational tables (FK off so order is safe; FTS synced by triggers + force-cleared).
+// EVERY child of a table listed here must ALSO be listed, because the pragma
+// below turns foreign keys OFF — which means ON DELETE CASCADE does not fire
+// and orphans are created silently and permanently.
+//
+// Measured 2026-08-14 against the operator's live personas.db:
+// `foreign_key_check` reported 1,030 orphan rows — 980 in `persona_tool_usage`
+// (17% of the table) and 50 in `assertion_results` (47%) — every one an
+// `execution_id` pointing at a `persona_executions` row this script had
+// deleted. Confirmed by replaying the same DELETE with foreign keys ON, which
+// removed exactly 980. Both children were missing from this list; they are the
+// first two entries now.
+//
+// `cleanup_orphan_rows` cannot repair this: it keys on `persona_id` and is
+// structurally blind to an `execution_id` orphan.
 const CLEAR = [
+  // children of persona_executions — omitted until 2026-08-14, see above
+  'persona_tool_usage', 'assertion_results',
   'execution_traces', 'execution_knowledge', 'persona_execution_annotations', 'tool_execution_audit_log',
   'review_messages', 'persona_message_deliveries',
   'team_assignment_events', 'team_assignment_steps',

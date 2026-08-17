@@ -57,7 +57,11 @@ export function NewCompetitionModal({
       );
       const taskIds = result.slots.map((s) => s.task_id);
       if (taskIds.length > 0) {
-        try { await startBatchExecution(taskIds, taskIds.length); }
+        // Pass no width. `taskIds.length` set the semaphore's permit count to
+        // the number of tasks, so the semaphore could never block and every
+        // task spawned a CLI child at once — a concurrency control configured
+        // to permit exactly the concurrency it exists to limit.
+        try { await startBatchExecution(taskIds); }
         catch (e) { addToast(tx(dl.batch_start_failed, { error: e instanceof Error ? e.message : dl.unknown_error }), 'error'); }
       }
       addToast(tx(dl.competition_started_count, { count: slots.length }), 'success');

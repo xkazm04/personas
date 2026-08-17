@@ -22,6 +22,7 @@ import { UcCard } from './ucCard';
 import { MESSAGING_CATEGORY } from './ucPickerTypes';
 import { useUcPickerState } from './useUcPickerState';
 
+import { isCredentialVerified } from '@/lib/credentials/healthState';
 export type { UseCaseOption } from '../useCasePickerShared';
 
 export function UseCasePickerStep(props: UseCasePickerVariantProps) {
@@ -83,7 +84,7 @@ export function UseCasePickerStep(props: UseCasePickerVariantProps) {
                 const added = useVaultStore
                   .getState()
                   .credentials.find(
-                    (c) => c.service_type === serviceType && c.healthcheck_last_success === true,
+                    (c) => c.service_type === serviceType && isCredentialVerified(c),
                   );
                 if (added && state.quickAddCtx) {
                   state.attachChannelAndRoute(added.id, state.quickAddCtx.ucId, state.quickAddCtx.eventType);

@@ -118,8 +118,12 @@ export function toastCatch(context: string, customMessage?: string): (err: unkno
       level: "warning",
       data: { ...(stack ? { stack } : {}), errorCategory: classified.category },
     });
-    // Pass the raw error string (no "Failed to load data." prefix — it was
-    // always discarded by the renderer's friendly rewrite). The toast renderer
+    // Pass the raw error string (no "Failed to load data." prefix). NOTE: this
+    // comment used to say the prefix "was always discarded by the renderer's
+    // friendly rewrite" — true until 2026-08-14, and false now. The renderer
+    // prefers the caller's string whenever the classification is
+    // 'unclassified', which is 54 of 54 caller-authored literals. What you pass
+    // here now reaches the user. The toast renderer
     // runs the same (memoized) classification to show the friendly message,
     // suggestion, and any navigation action. A caller-supplied `customMessage`
     // still takes precedence.

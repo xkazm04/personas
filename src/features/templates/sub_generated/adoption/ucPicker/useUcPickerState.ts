@@ -33,6 +33,7 @@ import {
 } from '../useCasePickerShared';
 import { AppNotificationGlyph } from './ucAppNotificationGlyph';
 import { InAppMessageGlyph } from './ucInAppMessageGlyph';
+import { isCredentialVerified } from '@/lib/credentials/healthState';
 import {
   APP_NOTIF,
   COMMON_PERSONA_EVENTS,
@@ -99,7 +100,7 @@ export function useUcPickerState({
           (c) =>
             MESSAGING_SERVICE_TYPES.includes(c.service_type) &&
             c.service_type !== 'personas_messages' &&
-            c.healthcheck_last_success === true,
+            isCredentialVerified(c),
         )
         .map((c) => ({ id: c.id, service_type: c.service_type, name: c.name })),
     [vaultCredentials],
