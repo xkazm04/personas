@@ -1951,6 +1951,111 @@ matched".**
 
 ---
 
+## 48. Chain Studio hides 38 of your 78 personas and blames your search box
+
+**Where:** `useStudioComposer.ts:74`; `StudioRails.tsx:74,:165-167,:179,:221-223`;
+`StudioOptionCards.tsx:71-75`; `CommandPalette.tsx:229,:235,:251,:260`.
+
+**What is measured**, replayed in a jsdom harness against the live DB: **78
+personas in the table, 40 reach the DOM. 38 hidden (48.7%), and nothing on
+screen says so** — `setup 29 · low_trust 7 · disabled 2`. Driving the picker
+once per persona with that persona's **exact name** in its own search box:
+**38 of 78 return `No targets match "…"`**. Eight distinct names can never be
+found by any query. **The one sentence the surface says about emptiness names
+the query, and the query is not the cause.**
+
+**The predicate is editorial, not constitutive** — a paused persona is a
+perfectly valid chain target, and `commitLink` would succeed.
+
+**And the 40 that do show cannot be told apart.** Your data has **nine persona
+names each occurring exactly seven times, once per team**. The Studio rail
+renders icon + name; the command palette renders name + team. Same collection:
+
+| | Studio rail | Command palette |
+| --- | ---: | ---: |
+| rows offered | **40** | 78 |
+| distinct visible labels | **16** | 78 |
+| **not uniquely identified** | **28 (70.0%)** | **0** |
+
+All four colliding groups share a *description* too, so the hover tooltip cannot
+break the tie either.
+
+**Across 55 picker surfaces: 28 narrow their options, 18 disclose nothing, and
+exactly 1 publishes a number from which you could tell what is missing.**
+Onboarding — the first picker a user ever sees — fetches 12 and shows **3**. The
+command palette's caps discard **42,733 results across 807 realistic queries**;
+494 of those queries lose results, and the worst single letter discards 370.
+`GitHubRepoSelector` fetches `per_page=100`, so repo 101 is unreachable **and
+the search box only filters the fetched page**. `StationPicker` removes hidden
+stations from the list **while they are still playing**.
+
+**Three that write a bad value rather than hide a good one:**
+`CanvasShell.tsx:878` **dispatches a fleet job with an empty label** for a
+deleted group; `SlackBridgePickers.tsx:101` writes a dangling channel id with a
+**null name** into saved config; and `PersonaSelector.tsx:86-91` renders a
+deleted persona as **"All personas"** — the widest possible scope from the
+narrowest possible cause.
+
+**Why held:** every fix changes what a chooser offers, and the blocker is
+structural — **no shared primitive can express a disabled option with a reason**,
+so the right prescription has nowhere to land until that one primitive edit
+happens.
+
+**The exemplar is in the same folder as the worst picker:**
+`AddPersonaModal.tsx:82-83,:138,:232-262` computes `${availableCount} available`
+in the component that renders the list, excludes only constitutively, groups by
+team with per-group counts, and ships a **two-armed** empty state.
+
+**A correction to my own primed lead, worth keeping:** the `trust_score < 0.5`
+unit bug is real and **currently inert**. The minimum is **0**, not 58.5 — 58.5
+is the minimum *non-zero* — and the distribution is bimodal with nothing between
+0.5 and 50, so `< 0.5` and a correct `< 50` select the **identical 7 rows**.
+`'Low trust'` actually means *"never scored"*.
+
+---
+
+## 49. Pause and resume are wired to a value the database rejects
+
+**Where:** `team_assignment_orchestrator.rs:538`;
+`commands/teams/assignments.rs:196`; `core/src/models/team_assignment.rs:31,:63`.
+
+**What is measured:** the orchestrator writes the literal `"paused"`, and
+`team_assignments`' CHECK constraint **does not permit it**. Replaying the exact
+`UPDATE` against an in-memory database built from the live DDL: **rejected.**
+
+So the whole feature is dead — `pause_assignment`, `resume_team_assignment`'s
+`!= "paused"` precondition, the tick loop's paused-exit, **two IPC commands, a
+store slice and two rendered buttons.** **0 of 8,486 ledger events is
+`status_paused`.**
+
+**The type that makes this unrepresentable already exists and is wired to
+nothing.** `TeamAssignmentStatus` and `TeamAssignmentStepStatus` are closed
+enums with `as_str()` and `is_terminal()`, ts-rs-exported, whose variants match
+the live CHECK allowlists **exactly** — and they have **0 consumers across 963
+Rust and 4,828 TypeScript files**. The orchestrator hand-rolls
+`fn terminal_step_status(s: &str)` and passes **21 bare literals**.
+
+**Why held:** correcting it turns on a feature that has never run.
+
+**Adjacent, measured on the same engine:** one counter serving two caps (53
+steps, 33 of them already `done`); **149 of 326 retries (45.7%) never counted**;
+**357 of 1,301 attempts (27.4%) unreachable** because the attempt pointer is
+overwritten — the widest step duration reads **87.32 hours**; a cancel recorded
+as `"failed"`; and **22 of 36 durable job stores have never held a row**,
+including `chain_stop_reasons` (0 rows against **727** chain firings, because
+its write is gated on a `chain_trace_id` present on 3 of 2,942 traces).
+
+**Reconstruction succeeded, and that is the good news.** One real assignment —
+4 steps, 106 events, **9 auto-resume rounds over 9h57m** — recovered completely
+from three tables, including every transition, failure and cascade. It has been
+stuck at `awaiting_review` for **68 days**, and an `athena_review_resolution` at
+minute 94 named the real cause. Nothing reads it.
+
+**Two answers worth importing:** `brainiac`'s `failed`/`dead` split with
+claim-time reaping, and `ascent`'s lease instead of a reaper.
+
+---
+
 ## What *was* applied, and what it changes at runtime
 
 For completeness, since "no destructive applies" is now the rule. None of these

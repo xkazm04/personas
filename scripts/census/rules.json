@@ -4365,6 +4365,68 @@
         "matches": 5
       },
       "floor": 900
+    },
+    {
+      "id": "missing-current-entity-rendered-as-unset",
+      "goldenPath": "docs/concepts/golden-paths/entity-picker.md",
+      "title": "A picker resolves its current entity by id and renders its absence as if nothing were selected",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?<![A-Z0-9_])\\.find\\(\\s*\\(?\\s*([A-Za-z_$][\\w$]*)\\s*\\)?\\s*=>\\s*\\1\\s*\\.\\s*id\\s*===[^;{}]{1,80}?\\)\\s*\\?\\.\\s*(?:name|title|label|full_name|display_name|displayName|root_path|service_type|serviceType|slug)\\s*\\?\\?",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "An entity is looked up by id inside a collection and its identity field is read through `?.` and coalesced with `??` in the SAME expression. There is no binding, so there is nowhere an absence arm could live: a value whose row is gone renders byte-identically to `nothing is selected`. PROXY FOR the stack-free condition: a chooser is showing what is currently chosen, and it cannot tell `this entity no longer exists` from `you have not chosen`. WHY THIS IS NOT HYPOTHETICAL, MEASURED BY REPLAYING THE OPERATOR'S LIVE DATABASE: 211 distinct persona ids are recorded somewhere in it whose persona row no longer exists, against 78 that do -- 2.7 dead references per live entity -- and 332 rows in LIVE CONFIGURATION tables (not audit logs) hold an id whose row is gone. The leading `(?<![A-Z0-9_])` excludes SCREAMING_SNAKE receivers, whose members are literals in the code and therefore cannot be deleted. Consequences at three of the sites: CanvasShell.tsx:878 dispatches a fleet job with an empty group label; SlackBridgePickers.tsx:101 writes a dangling channel id with a null name into saved config; PersonaSelector.tsx:86-91 (NOT matched -- it uses the named form, see the recall note in the golden path) renders a deleted persona as `All personas`. The compliant idiom -- `.some(x => x.id === value)`, i.e. asking WHETHER the value is still in the set -- exists at 50 sites in 38 files, and only 2 files do both."
+      },
+      "exclude": [
+        {
+          "path": "src/features/shared/chrome/sidebar/Sidebar.tsx",
+          "reason": "resolves a ROUTE id against the code-determined nav registry (SIDEBAR_SECTIONS), not a fetched entity; an unknown route falling back to the Overview label is the deliberate default, not a dangling row"
+        },
+        {
+          "path": "src/hooks/navigation/useBreadcrumbTrail.ts",
+          "reason": "same shape over the nav sub-tab constants — the collection is a literal in the code, so its members cannot be deleted out from under the id"
+        }
+      ],
+      "baseline": {
+        "files": 23,
+        "matches": 24
+      },
+      "floor": 4000
+    },
+    {
+      "id": "untyped-lifecycle-transition",
+      "goldenPath": "docs/concepts/golden-paths/multi-step-orchestration.md",
+      "title": "A job/step lifecycle transition addressed by a bare string literal at the call site, so the legal state set is a convention rather than a type",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\b(?:update|set|mark|transition|advance)_[a-z0-9_]*(?:status|phase|state)\\s*\\(\\s*(?:(?![;{]|\\bfn\\s)[\\s\\S]){0,300}?\"(?:pending|queued|running|matching|awaiting_review|awaiting_action|paused|done|failed|skipped|aborted|cancelled|canceled|completed|applied|discarded|approved|proposed|expired|review|resolved|in_progress|active|stale|incomplete|dead_letter|delivered|errored|open|closed|blocked|promoted|test_complete|analyzing|initializing|transforming|spawning|streaming|claimed|dispatched|processing|succeeded|declined|rejected|archived|escalated|converging|tracking|action_running)\"",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a call to a lifecycle-transition door (update_*_status / set_*_phase / mark_*_state ...) whose argument list carries a bare double-quoted state name. PROXY FOR the stack-free condition: the set of legal states for a job or step is a convention spread across N call sites and one storage constraint that no compiler compares them against, so an invented state is caught once — at runtime, by the store, on the write. EXECUTED, not argued: `update_assignment_status`'s exact UPDATE, transcribed verbatim from team_assignments.rs:455-465 and replayed against an in-memory database built from the LIVE `CREATE TABLE`, is REJECTED for the one status the orchestrator writes that the CHECK omits — `\"paused\"` (team_assignment_orchestrator.rs:538). That single string disables two IPC commands, a store slice, two rendered buttons, the tick loop's clean-exit branch and `resume_team_assignment`'s entire precondition; 0 of 8,486 team_assignment_events is `status_paused`. The closed enums that make it unspellable (TeamAssignmentStatus, TeamAssignmentStepStatus, core/src/models/team_assignment.rs:31,:63) already exist, match the CHECK allowlists variant-for-variant, and have ZERO consumers in 963 .rs and 4,828 .ts files. PRECONDITION (re-derive per repo): this repo names its transition doors `<verb>_<noun>_status|phase|state`, spells states in lower_snake_case, and enforces them with SQLite CHECK allowlists on 23 tables. A repo whose ORM already types the column has the condition designed out and needs no rule. KNOWN IMPRECISION: 2 of the 152 matches (healing.rs:1018,:1030) sit inside a `#[cfg(test)]` module the engine cannot exclude — precision 150/152 = 98.7%.",
+        "note": "The positive control is the SAME anchor reached with a typed variant. Control 72 / violating 152 is a RATIO, not a partition: the anchor matches 331 call sites in 83 files, and the residue of 107 passes a variable or parameter in the state slot, which this rule deliberately neither praises nor blames."
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/db/src/repos/dev_tools_page_tests.rs",
+          "reason": "a test-fixture module carrying NO #[cfg(test)] attribute, so only a filename rule can see it — the doctrine's named case."
+        }
+      ],
+      "baseline": {
+        "files": 26,
+        "matches": 152
+      },
+      "floor": 900
     }
   ]
 }

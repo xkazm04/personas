@@ -591,6 +591,15 @@ D3 becomes a mechanical migration rather than a rewrite.
    `id`, `aria-*`, `required` and `disabled` through to the trigger `<button>`
    and add `role="combobox"` + `aria-expanded` + `aria-controls` +
    `aria-haspopup="listbox"`. One change unblocks the sibling path.
+
+   > **Extended 2026-08-17 by [entity-picker](./entity-picker.md): the drop is
+   > not confined to HTML attributes.** `ThemedSelectOption.description` is
+   > declared at `ThemedSelect.tsx:12` and **referenced nowhere else in the
+   > file's 282 lines — it is dropped in BOTH modes.** 12 files pass it, two of
+   > them passing `root_path`, which is the exact disambiguator for
+   > same-named projects. So the primitive silently discards the one field a
+   > caller uses to tell two identical-looking options apart, and the type
+   > invites them to keep passing it.
 2. **`filterable` mode has no keyboard model at all.** No `onKeyDown`, no
    `keydown` listener, no `role="listbox"`/`role="option"`/`aria-selected`/
    `aria-activedescendant`. Options are portalled to the end of `document.body`,

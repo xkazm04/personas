@@ -753,7 +753,7 @@ consumer crashes (E6) and its union has really lost two members** (`quality-gate
 
 **D3 — a persisted selection is never reconciled at cold boot, and the backend door that would do it has
 zero callers. Executed.** `activeProjectId` restores from localStorage; `fetchProjects`
-(`devToolsProjectSlice.ts:98-105`) sets `projects` and nothing else; **46 production files outside `src/stores/` read `activeProjectId`** and then act on a ghost id
+(`devToolsProjectSlice.ts:98-105`) sets `projects` and nothing else; **48 non-test files read `activeProjectId`** (re-measured 2026-08-17 by [entity-picker](./entity-picker.md); this path said 46) and then act on a ghost id — and there is **exactly one reconciler in the tree**, `useWorkspaceSwitch.ts:38-46`, whose header states the defect in prose
 — `ContextMapPage.tsx:180-185` alone fires `fetchGoals` / `fetchIdeas` / `fetchKpis` against it. The
 same slice's `deleteProject` (`:162-172`) *does* null it, so the in-session path is careful and the
 cross-session path is not. `useWorkspaceSwitch.ts:3-8` documents the gap and covers only the

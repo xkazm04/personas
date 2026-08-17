@@ -454,6 +454,15 @@ A practice independently reinvented in a repo with different people and
 constraints is **physics**. One with no trace elsewhere is **local calibration**
 and must be labelled a house convention, not doctrine.
 
+**A fleet-wide silence can be local to a *component*, not to the fleet.** The
+sharpest form of "converged on the disease" yet measured, by
+[`entity-picker`](./golden-paths/entity-picker.md): **0 of 3 siblings disclose a
+truncation cap in a picker — and 2 of 3 independently wrote "Showing X of Y" or
+"+N more" for tables in the same codebases.** Not "nobody knows how"; a solved
+problem that did not cross a component boundary. Before reporting a silence,
+check whether the same repo answers the same question somewhere else. If it
+does, the finding is transfer, not ignorance — and the prescription is different.
+
 **Silence is a valid result and must be reported as silence.** Do not quietly
 promote a house convention because the oracle returned nothing. Personas being
 *ahead* of all five siblings is a common and reportable outcome — it happened
