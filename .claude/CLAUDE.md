@@ -486,7 +486,7 @@ Quick reference of source → feature doc:
 | `src/features/triggers/**`, `src-tauri/src/commands/communication/**`, `engine/event_registry.rs` | `docs/features/events/README.md` |
 | `src/features/recipes/**`, `src-tauri/src/commands/recipes/**` | `docs/features/recipes/README.md` |
 | `src/features/settings/**`, `commands/credentials/external_api_keys.rs`, `engine/management_api.rs` | `docs/features/settings/README.md` |
-| `src/features/home/**`, `src/features/simple-mode/**` | `docs/features/home.md` |
+| `src/features/home/**` | `docs/features/home.md` |
 | `src/features/onboarding/**` | `docs/features/onboarding.md` |
 | `src/features/overview/**` | `docs/features/overview/README.md` |
 | `src/features/plugins/<plugin>/**`, `src-tauri/src/commands/<plugin>/**` (or `infrastructure/<plugin>.rs`) | `docs/features/<plugin>.md` (artist, companion, dev-tools, drive, obsidian-brain, research-lab, twin) |

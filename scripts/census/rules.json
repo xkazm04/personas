@@ -4803,6 +4803,70 @@
         "matches": 3
       },
       "floor": 6
+    },
+    {
+      "id": "vacuous-all-done-verdict",
+      "goldenPath": "docs/concepts/golden-paths/setup-checklist.md",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\bconst\\s+(?:all|is|has|every)[A-Za-z0-9_$]*\\s*=\\s*(?![^;\\n]{0,100}(?:\\.length|\\bhas[A-Z]|\\bsize\\b))[^;\\n]{0,100}?\\.every\\(",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "An all-done / all-ready verdict bound with .every() and no non-emptiness guard in the same statement. [].every(f) is true, so an empty collection reports 'everything is finished': a tour with no resolvable steps is badged complete, a health panel with no checks reports OK, a diagnostics run that produced no steps reads as passed."
+      },
+      "exclude": [],
+      "baseline": {
+        "files": 15,
+        "matches": 15
+      },
+      "floor": 4000
+    },
+    {
+      "id": "mount-snapshot-of-durable-state",
+      "goldenPath": "docs/concepts/golden-paths/canvas-state-persistence.md",
+      "title": "Durable state copied into component state by a mount-time initializer",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "useState\\s*(?:<[^;()]{0,140}>)?\\s*\\(\\s*(?:\\bload[A-Z][\\w$]*\\s*\\)|\\(\\s*\\)\\s*=>\\s*(?:(?!\\buseState\\b|=>)[\\s\\S]){0,200}?(?:(?:window\\s*\\.\\s*)?(?:local|session)Storage\\s*\\.\\s*getItem|\\bgetAppSetting\\s*\\(|\\bload[A-Z][\\w$]*\\s*\\())",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A useState whose INITIALIZER is a durable read — either the bare-reference form `useState(loadX)` or a lazy arrow `() => …` that reaches localStorage.getItem / sessionStorage.getItem / getAppSetting( / a load*() persistence helper within 200 chars and before any second useState. PROXY FOR the stack-free condition: durable state is copied into a component-local variable at mount, so the component owns a private copy that no later write to the durable store can reach; the two then disagree silently, and the next commit built from the stale copy serializes it back over the fresh value. THE REPO STATES THIS DEFECT IN ITS OWN WORDS at src/features/teams/sub_mastermind/lib/useLayout.ts:1-7 — 'These replace the one-shot useState(loadGroups) initializers the canvas used to open with: a snapshot taken at mount can only ever be right until someone else writes' — which is also why the bare-reference alternative is in the pattern: that is the exact form the exemplar's comment names. MEASURED 2026-08-17 at 52b0a6ba8: 16 matches across 12 of 4801 .ts/.tsx files, ALL SIXTEEN OPENED AND HAND-READ (precision 16/16). THE MOST INSTRUCTIVE MATCH IS DesktopFooter.tsx:325 AND IT IS WHY THE RULE DOES NOT EXEMPT A LISTENER: it HAS a re-sync arm at :334, window.addEventListener('storage', handler), commented 'Stay in sync when Sidebar itself changes localStorage (e.g. from another tab)' — but the HTML storage event does not fire in the document that WROTE the value, and its real co-writer Sidebar.tsx:30 is in the SAME document of a single-WebView desktop app, so the repair is inert by construction and a rule that credited it would report green on the site it most needs to see. IncidentsInbox.tsx contributes 5 of the 16 (:86 filters, :91 sort, :100 last-seen, :107 group mode, :115 collapsed groups) and its only 'subscribe' hits are an unrelated storeBus channel at :174. POSITIVE CONTROL PARTITIONS THE ANCHOR: useSyncExternalStore( returns 25 matches / 16 files, of which NINE are in this leaf's own directory (useLayout.ts x7, focusStore.ts:70, canvasActionStore.ts:205) while ZERO of the 16 violating sites are — the exemplar and the deviations do not overlap at all. SITE-LEVEL OVERLAP AGAINST ALL 178 REGISTRY RULES IS ZERO, computed with each rule's own pattern over the 12 matched files; file-level overlap with raw-web-storage is 8 of 12 and is EXPECTED AND NOT A COLLISION — that rule anchors on the localStorage identifier and counts a storage ACCESS, this anchors on useState and counts a SNAPSHOT, so they report the same lines for different defects with different fixes. LEGAL FIX: expose subscribe + a stable snapshot getter from the persistence module and bind with useSyncExternalStore (the six bindings in useLayout.ts are the template); or, where the value genuinely has no second writer, say so at the call site. DO NOT silence a match by hoisting the read into a variable above the useState, by renaming the loader, or by adding a storage-event listener — all three preserve the private copy exactly. KNOWN RECALL LIMITS, STATED: (a) a read hoisted to module scope and passed in has no useState anchor; (b) the 200-char bound drops an initializer with a long preamble; (c) useReducer with a lazy init is not covered — zero such sites exist today. PRECONDITION (re-derive per repo, do NOT port): this repo reads durable state through localStorage.getItem / getAppSetting / hand-written load*() helpers and subscribes through useSyncExternalStore. A repo whose durability idiom is redux-persist, a cookie, or a URL search param must key on its own. END OF LIFE: this rule is designed to reach zero. When it does the runner fails structurally on zero matches, BY DESIGN — DELETE the rule then, do not baseline it at 0."
+      },
+      "exclude": [
+        {
+          "path": "**/__tests__/**",
+          "reason": "test fixtures legitimately seed component state from a stubbed store"
+        },
+        {
+          "path": "**/*.test.ts",
+          "reason": "test fixtures legitimately seed component state from a stubbed store"
+        },
+        {
+          "path": "**/*.test.tsx",
+          "reason": "test fixtures legitimately seed component state from a stubbed store"
+        },
+        {
+          "path": "src/test/**",
+          "reason": "the test harness constructs storage state directly"
+        }
+      ],
+      "baseline": {
+        "files": 12,
+        "matches": 16
+      },
+      "floor": 4000
     }
   ]
 }

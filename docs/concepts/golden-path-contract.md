@@ -126,9 +126,21 @@ specified the same ratcheting-baseline mechanism independently
 analysis, three times).
 
 That mechanism lives once at **[`scripts/census/`](../../scripts/census/)**.
-Adding a gate is an entry in `scripts/census/rules.json`:
+Adding a gate is an entry in `scripts/census/rules.json`.
 
-```jsonc
+> **The fence must say exactly ` ```json `.** `extractFences.mjs:53-57` matches the
+> info string **exactly**, on purpose — accepting ` ```jsonc ` or ` ```json5 ` as a
+> prefix "would be a behaviour change dressed up as leniency", since those dialects
+> can hold comments that `JSON.parse` cannot. The consequence is silent: the merger
+> reports *"no ```json block in this path"* and the rule is simply never registered.
+> This example used ` ```jsonc ` until 2026-08-17, and a composer that copied it
+> published a fully validated rule and its positive control into a document the
+> merger could not read. Caught by a **sibling composer auditing an untracked
+> document from the same wave** — the corpus's own cross-check, not a gate. An audit
+> of all 200 published paths then found **6 documents with `jsonc`/`json5` fences and
+> 0 rules actually lost**, so this was the first and only occurrence.
+
+```json
 {
   "id": "raw-select",
   "goldenPath": "docs/concepts/golden-paths/dropdown-and-select.md",

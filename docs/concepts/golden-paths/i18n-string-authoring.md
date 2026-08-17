@@ -402,7 +402,11 @@ first would translate strings that still would not render.
 
 ### 7.C The tour that greets every new user is entirely English
 
-`src/stores/slices/system/tourSlice.ts` holds **53 tour steps** and **~350 English copy strings**
+`src/stores/slices/system/tourSlice.ts` holds **44 tour steps** and **432 English copy strings**
+(**corrected 2026-08-17** by the `guided-tour-step` composer, measured twice: the 53 was a count of
+`title:` literals, which is 44 steps *plus* 9 registry entries; the ~350 omitted the 129 sub-step
+`label`s. 432 confirms [`multi-step-flow`](./multi-step-flow.md) §7 D1 exactly — the corpus had been
+disagreeing with itself by 82 on the same object)
 (`title`, `description`, `hint`, `narration`, plus sub-step labels and hints) as plain literals in a
 module-scope array. `GuidedTour.tsx` renders them directly:
 
