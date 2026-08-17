@@ -89,8 +89,13 @@ Plus `apply_provider_env` injects per-provider env vars (OLLAMA_*, ANTHROPIC_*, 
 
 ### The companion (Athena) does NOT use `build_cli_args` — it has its own spawn + stream path
 
-Discovered in `/research` run 2026-05-23 (Athena dynamic-chat). The Athena companion is NOT one of the ~30 callers of `build_cli_args`. It spawns the `claude` CLI through its **own bespoke arg builder** at `src-tauri/src/companion/session.rs::run_cli` (~line 766) with a different flag set (`--system-prompt-file`, `--exclude-dynamic-system-prompt-sections`, `--model claude-opus-4-8` pinned [bumped from 4-7 in `/research` run 2026-05-28; NOTE this path carries NO `--effort` flag, so on Opus 4.8 — which defaults to high effort — Athena now runs at high effort by default], env `CLAUDE_CODE_FORK_SUBAGENT=1`) and its own stream loop (`session.rs:880-945`) that emits `companion://stream` events — **separate from both** the main runner's legacy-text channel and the structured `EXECUTION_EVENT` channel. Implications for `/research` findings about CLI flags or stream parsing:
+Discovered in `/research` run 2026-05-23 (Athena dynamic-chat). The Athena companion is NOT one of the ~30 callers of `build_cli_args`. It spawns the `claude` CLI through its **own bespoke arg builder** at `src-tauri/src/companion/session.rs::run_cli` (~line 766) with a different flag set (`--system-prompt-file`, `--exclude-dynamic-system-prompt-sections`, `--model claude-opus-4-8` pinned [bumped from 4-7 in `/research` run 2026-05-28], env `CLAUDE_CODE_FORK_SUBAGENT=1`) and its own stream loop (`session.rs:880-945`) that emits `companion://stream` events — **separate from both** the main runner's legacy-text channel and the structured `EXECUTION_EVENT` channel. Implications for `/research` findings about CLI flags or stream parsing:
 - A flag change in `build_cli_args` does NOT reach Athena. Companion-scoped CLI-flag findings must edit `session.rs::run_cli` directly.
+- **Athena's model AND effort come from `companion/model_routing.rs`, and that file is bench-calibrated — read it before proposing either.** Corrected in `/research` run 2026-08-17 (Chase AI Obsidian OS); earlier copies of this doc said Athena's path "carries NO `--effort` flag, so … runs at high effort by default", which is **wrong** and would misframe any cost/latency finding. `session.rs:2198-2199` pushes `--effort`, defaulting to `model_routing::MAIN.effort`. Three tiers, one source of truth, each with a measured justification from a **1,026-turn bench** (`docs/plans/athena-model-bench-report.md`):
+  - `MAIN` = `claude-opus-4-8` @ **`low`** — main conversational turns. Opus@low matched Opus@default accuracy *exactly* (93.9% over 114 runs per cell) at 16% lower p50 latency.
+  - `ASIDE` = `claude-sonnet-5` @ `medium` — status summaries, no op grammar. Not yet wired (P3b).
+  - `MICRO` = `claude-sonnet-5` @ `low` — titling, classifications, triage legs (`athena_reaction::cli_text*`). Deliberately receives NO constitution/act-doctrine: reinforcement at low effort *regressed* awareness 94→78%.
+  - The obvious "just use a cheaper model" finding is therefore usually a **catch**: the bench's own promotion candidate (Sonnet@high, 96.5%) is deliberately held back from main turns pending corpus v3 + a judge pass. `PERSONAS_ATHENA_MODEL` / `PERSONAS_ATHENA_EFFORT` are bench-only env overrides applied in `session.rs`, not in the routing table.
 - Athena's frontend stream handling is bespoke (`CompanionPanel.tsx` + `extractAssistantText`/`extractStreamPhase`/`extractAssistantTextDelta` + `operationalSteps`), NOT `useStructuredStream`. Don't assume the main-chat streaming hooks apply.
 - As of 2026-05-23, `run_cli` passes `--include-partial-messages` (token-level `text_delta` streaming) and the panel renders TodoWrite tool calls as an inline operational checklist (`OperationalThread`).
 - Companion background jobs (`companion/jobs/`) only surface as chat cards for the `connector_use` kind; `scan_codebase`/`memory_curation_run` flow to system episodes / dedicated UIs. Jobs can report intermediate progress via the `JobProgress` reporter (event-only `progress_text` on `companion://job`).
@@ -955,6 +960,55 @@ direction it targets: the writer vocabulary (the builder above) or the reader vo
 `command: String` with no `#[serde(default)]`, so a user whose Claude Desktop config holds
 any HTTP MCP server fails `import_claude_desktop_mcp_servers` for **every** server, not just
 that one. Found 2026-08-13 while scoping the writer cleanup; out of scope there (a reader).
+
+## Athena's voice stack is complete; only its REACH was ever the gap (added 2026-08-17)
+
+Mapped in `/research` run 2026-08-17 (Chase AI Obsidian OS). Any "give personas
+voice / local STT / TTS / push-to-talk" finding is a **catch** — all of it ships:
+
+| Piece | Where |
+|---|---|
+| Local on-device STT | `companion/stt/{whisper,installer,downloader,catalog}.rs` (+ a browser Web Speech engine; user picks via `companionSttEngine`) |
+| TTS | Kokoro (primary) + Pocket TTS, `sub_voice/{KokoroVoicePanel,PocketVoicePanel}.tsx` |
+| Push-to-talk | `useHoldToTalk.ts` — one instance, owned by `AthenaOrbLayer` |
+| Voice without opening the panel | `voiceTurnRequest` → always-mounted `CompanionPanel` runs the full `send()` (streaming + TTS) |
+| Answering a pending decision BY VOICE, skipping the chat turn | `useHoldToTalk.ts:108-118` → `parseSpokenDecision` |
+| Quick round-trip without the panel | `orb/OrbQuickInputBar.tsx` |
+
+**The chord is `Cmd/Ctrl+Shift+A` and it now exists in two scopes.** In-app it is
+handled on the app keyboard registry in `AthenaOrbLayer.tsx` (at
+`ROUTE_DECISION_PRIORITY`, so overlays that claim the keyboard win first). OS-wide
+it is `tauri-plugin-global-shortcut`, registered from `useGlobalVoiceHotkey.ts` via
+`companion_set_voice_hotkey` (`commands/companion/voice_hotkey.rs`, desktop-gated),
+**opt-in** behind `companionGlobalHotkeyEnabled` (default off). Both scopes call one
+extracted `summonVoice` callback — do not add a third caller that re-implements it.
+
+The frontend owns the binding and pushes it down; Rust holds no default. A finding
+that wants a *rebindable* chord needs only a keycapture UI — the Rust command already
+takes an arbitrary accelerator string.
+
+**There IS a system tray** (`src-tauri/src/tray.rs`) with the canonical
+show/unminimize/set_focus sequence at `:27-31` and `:137-147`, plus scheduler and
+clipboard-watcher toggles. Reuse that sequence for anything that needs to surface the
+window. (A grep for it is easy to *miss* — `head`-capped, path-sorted output buries
+`src/tray.rs` behind eight `commands/**` matches on the word "stray".)
+
+## `~/.claude/projects/*.jsonl` is mined for DORMANCY only (added 2026-08-17)
+
+`commands/infrastructure/skill_usage.rs` (755 LOC) already walks the Claude Code
+transcript store incrementally — per-file byte watermark in `skill_scan_state`, an
+append-only `skill_usage_events` log, plus doc reads into `doc_read_events` on the
+same pass. Commands: `skill_usage_scan:508`, `skill_usage_overview:598`,
+`skill_version_timeline:655`. `DORMANT_DAYS = 30`.
+
+It answers exactly one question: **which existing skills has nobody invoked.** The
+inverse — mine the history for recurring work that has *no* skill yet — does not
+exist (zero hits for `propose_skill|suggest_skill|skill_candidate|unskilled|recurring`).
+A finding proposing that discovery direction is real, but note it would be a **fourth**
+parallel idea source into `dev_ideas` (alongside `idea_scanner`, `static_scan`,
+`practice-harvest`) and needs its own consent story — `cli_session_awareness` gates
+transcript reads behind two explicit toggles plus a freshness cutoff, and a 30-90 day
+mining window is a wider read than that.
 
 ## Skill-tree walks are containment-guarded (added 2026-08-13)
 
