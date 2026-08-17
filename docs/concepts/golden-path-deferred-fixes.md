@@ -1732,8 +1732,29 @@ and `crash_logs/`. `connect-src` lists `asset:` and `http(s)://asset.localhost`
 in **both** policies, and the handler opens any scope-allowed absolute path with
 `Range` support and `Access-Control-Allow-Origin`. **No capability, no token, no
 audit** — the asset protocol appears in none of the manifest's 15 namespaces.
-All **16** `convertFileSrc` sites read named subdirectories; **none needs
+All **8** `convertFileSrc` call sites read named subdirectories; **none needs
 `$APPDATA`.**
+
+> **Two corrections, 2026-08-17, by [`media-viewer.md`](./golden-paths/media-viewer.md)
+> §12.1.** (1) This line read *"All **16** `convertFileSrc` sites"*. Measured twice
+> independently: **16 is the occurrence count — 8 calls + 6 import bindings + 2 comment
+> mentions — across 6 files, not 7.** (2) More importantly, **the call-site count does
+> not bound the exposure and should not be read as doing so.** `convertFileSrc` is
+> `window.__TAURI_INTERNALS__.convertFileSrc(filePath, protocol)`
+> (`@tauri-apps/api/core.js:234-236`) — a synchronous string formatter with no IPC, no
+> scope consultation and no validation. The handler serves the scope to anything in the
+> renderer that can form a URL.
+>
+> **And one addition that makes the narrowing more urgent, not less.** In every
+> **release** build the managed drive root is `app_data_dir()/drive`
+> (`commands/drive.rs:355-359`), i.e. **inside** `$APPDATA/**`. So `drive_read`'s
+> resolver — `resolve_safe`, which refuses absolute paths and `..`, canonicalises against
+> symlinks and caps reads at 50 MB — is proving containment within a directory this scope
+> publishes wholesale. `resolve_and_guard` (`path_safety.rs:244-251`) explicitly *blocks*
+> the app-data directory; `assetProtocol.scope` explicitly *allows* it. The proposed
+> `$APPDATA/drive/**` replacement is therefore not cosmetic: it is what makes
+> `resolve_safe` mean something. (Debug builds put the root at `.dev-drive/`, outside the
+> scope — so the dev build does not exhibit this and the release build does.)
 
 **And there is a live third-party origin inside that document.**
 `useYouTubePlayer.ts:61-65` appends `<script src="https://www.youtube.com/iframe_api">`
@@ -4357,3 +4378,593 @@ child, and registering the three CRUD commands changes the IPC surface. Both
 change runtime behaviour. Standing rule.
 
 Detail: [`ocr-extraction.md`](./golden-paths/ocr-extraction.md) §0, §7.1-7.4, §7.9.
+
+---
+
+## 111. A corrupt MCP config is replaced by `{}` and written back over the user's file, destroying every other registered server
+
+**Where:** `src-tauri/src/mcp_server/install.rs:85-110`.
+
+**What is measured** (2026-08-17):
+
+- `:86` — `serde_json::from_str(&content).unwrap_or(serde_json::json!({}))`.
+  A target client's config (`claude_desktop_config.json` and equivalents) that
+  fails to parse for **any** reason — a trailing comma, a half-written file, a
+  BOM, a disk hiccup — becomes an empty object.
+- `:92-101` — the `personas` entry is inserted into that empty object.
+- `:109` — `std::fs::write(&config_path, json)` **overwrites the user's file**
+  with the result. Every other MCP server they had registered is gone. No error,
+  no prompt, no backup, no `.bak`.
+- The correct branch already exists directly beside it: `:87` handles *"the file
+  is absent"* with the same `{}` and is right to. Nothing distinguishes absent
+  from unreadable.
+- This is one of **55 sites** in 42 of 963 `.rs` files where
+  `serde_json::from_str` is followed immediately by `.unwrap_or_default()` or
+  `.unwrap_or(…)`, against 147 that propagate. `brainiac` — same author, 46
+  `from_str` sites — has **zero**.
+
+**Why held:** the fix changes whether the installer runs (it must refuse), which
+is "anything that changes whether the app starts" adjacent, and it touches a file
+outside the app's own data directory. Standing rule: note, do not apply.
+
+**Fix when unheld:** `serde_json::from_str(&content).map_err(|e| …)?` and report
+*"your MCP config at `<path>` is not valid JSON; fix it or move it aside"*.
+Write to a temp file and rename, so a crash mid-write cannot truncate it either.
+
+Detail: [`raw-json-editor.md`](./golden-paths/raw-json-editor.md) §7 D1, §9.
+
+---
+
+## 112. The trigger test panel tells the user their invalid payload "will be sent as a raw string". It is not sent at all — in 14 languages
+
+**Where:** `src/i18n/locales/en.json` → `triggers.test_payload_invalid_json`,
+rendered at `src/features/triggers/sub_test/TestTab.tsx:328`.
+
+**What is measured** (2026-08-17):
+
+- The string reads *"Payload is not valid JSON — it will be sent as a raw
+  string."*
+- `TestTab.tsx:196-201`: `isInvalidJson` is computed from `JSON.parse(payload)`
+  and folded into `canFire = !!activeEventType && hasPersona && !isTesting &&
+  !isInvalidJson`. `:335` — `disabled={!canFire}`.
+- `:203-208` adds a second refusal in the handler, with a comment naming the
+  incident it prevents (*"users saw a green 'event published' with empty input"*).
+- So the payload is refused twice and never sent. **The copy describes the
+  behaviour the comment says was removed.** It is present and wrong in all 13
+  non-English locales too (the catalogs are at 0 gaps).
+
+**Why held:** correcting one `en.json` key requires the full
+`translate-extract` → per-locale subagent → `translate-merge` pipeline to keep
+`npm run check:i18n:strict` green, and it changes what a live surface shows while
+the operator is using the app. Standing rule.
+
+**Fix when unheld:** replace with *"Payload is not valid JSON — fix it before
+firing."* (`t.agents.tool_runner.invalid_json` already says exactly this for the
+same condition on a sibling surface, so the wording is settled), then run the
+translation pipeline for the one key.
+
+Detail: [`raw-json-editor.md`](./golden-paths/raw-json-editor.md) §7 D7, §5 G.
+
+---
+
+## 113. An installer is downloaded with no digest and no length check, then executed — once with `sudo`
+
+**Where:** `src-tauri/src/commands/infrastructure/setup.rs:256-315` (`download_file`),
+consumed at `:458-495` (Windows) and `:583-621` (macOS); version resolved at `:322-350`.
+
+**What is measured** (2026-08-17):
+
+- `download_file` streams the body to `%TEMP%\personas-setup\<filename>` with **no
+  staging name and no rename**, and returns the path.
+- `total_size` is read from `response.content_length()` (`:277`) and used **only** to
+  compute a progress percentage (`:301`). It is never compared against `downloaded`.
+- **No sha256, no signature, no content-type check.** `grep -niE
+  'sha256|checksum|digest' src-tauri/src/commands/infrastructure/setup.rs` returns
+  nothing.
+- The returned path is then executed: `msiexec /i <msi_path> /qn /norestart` (`:487-495`)
+  and `sudo installer -pkg <pkg_path> -target /` (`:614-621`).
+- The URL is not a fixed constant — the version comes from a runtime fetch of
+  `https://nodejs.org/dist/index.json` (`:322-350`), so the filename varies per run.
+- nodejs.org publishes `SHASUMS256.txt` beside every release. Nothing fetches it.
+
+A connection that drops at 90% yields a truncated MSI that is handed to the OS installer.
+Transport is HTTPS to `nodejs.org`, and that is the only control in the path.
+
+**Why held:** adding a verification step that can fail changes whether the operator's
+setup flow succeeds. Standing rule.
+
+Detail: [`local-model-install.md`](./golden-paths/local-model-install.md) §7.A.
+
+---
+
+## 114. Athena's two "exclusive" audio channels overlap, and the clip left speaking is the stale one
+
+**Where:** `src/features/plugins/companion/chat/athenaChatAudio.ts:62-119`;
+`src/features/plugins/companion/voicePlayback.ts:41-78`;
+`src/features/plugins/companion/chat/athenaChatVoice.ts:126-141`.
+
+**What is measured** (2026-08-17): both channel implementations were transcribed verbatim
+into a Node harness with instrumented fakes for `HTMLAudioElement` and
+`URL.createObjectURL`, and executed:
+
+| scenario | max concurrent clips | live at end |
+|---|---:|---|
+| A finishes, then B requested | 1 | — |
+| **two `playMain` inside the synthesis window** | **2** | **2** |
+| **two `playProgress` inside the synthesis window** | **2** | **2** |
+| progress in flight, reply lands (`pendingPlayback` set) | 0 | 0 |
+| **unmount during synthesis** | 1 | **1** |
+
+- Exclusivity is enforced by pausing an `HTMLAudioElement` held in a ref. **The element
+  does not exist during synthesis**, so `stopMain()`, `stopProgress()` and the unmount
+  cleanup (`:116-119`) are all no-ops against an in-flight request.
+- Ordering inverts: the **later** request resolves first and plays; the **earlier** one
+  then starts on top of it. Because the finally-guard is
+  `if (mainUrlRef.current !== url) return;`, the element still making sound is the one
+  whose blob URL is never revoked and whose handle nothing holds.
+- **1 of 4 continuations in the file re-checks after its await** — `playProgress`'s
+  `pendingPlayback` test (`:70`), which is why the cross-channel scenario passes.
+- `athenaChatVoice.ts:126-140` dispatches `playProgress(beat)` in a `for` loop with **no
+  await**, so two `PROGRESS:` lines in one streaming tick always land in the same window.
+- The file's own header states the opposite: *"Two exclusive audio channels, so Athena
+  can never talk over herself."*
+
+**The correct implementation is already in this repo**, calling the same two functions:
+`src/features/onboarding/components/useTourNarration.ts` takes a monotonic token
+(`:96`), re-checks it before constructing the element (`:101`), and bumps it in all three
+teardown paths (`:153`, `:166`, `:174`). Driven through the identical harness and the
+identical five scenarios: **0 overlaps, 0 teardown scenarios leaving audio live.**
+
+**Why held:** changes when and whether Athena speaks, on a surface in daily use.
+
+Detail: [`voice-input-and-playback.md`](./golden-paths/voice-input-and-playback.md) §0, §7.A-7.B.
+
+---
+
+## 115. Three of four microphone surfaces discard the permission error, and the two most-used ones erase it
+
+**Where:** `src/features/plugins/companion/useHoldToTalk.ts` (whole file);
+`orb/AthenaOrbLayer.tsx:49`; `CompanionFooterIcon.tsx:123`; `orb/OrbQuickInputBar.tsx:42`;
+`Composer.tsx:322-350`; `useDictation.ts:115-117, :145-149`;
+`useLocalDictation.ts:217-224, :284-290`.
+
+**What is measured** (2026-08-17): four surfaces can arm the microphone.
+
+| surface | hook | renders `error`? |
+|---|---|---|
+| `Composer.tsx` (panel composer mic) | `useSpeechInput` | **yes** — amber tint + `title={t.plugins.companion.dictate_error}` |
+| `orb/OrbQuickInputBar.tsx` | `useSpeechInput` | no |
+| `orb/AthenaOrbLayer.tsx` (floating orb) | `useHoldToTalk` | **cannot** |
+| `CompanionFooterIcon.tsx` (footer mic) | `useHoldToTalk` | **cannot** |
+
+- The string `error` appears **0 times** in `useHoldToTalk.ts`; the `HoldToTalk` interface
+  has no such member, so its two consumers cannot reach the field.
+- `useHoldToTalk.stop()` (`:65-73`) takes its `else` branch precisely when the mic never
+  went live — the permission-denied case — and calls `dictation.reset()`, which sets
+  `error` to `null` in both engines (`useDictation.ts:148`, `useLocalDictation.ts:289`).
+  **The orb path does not merely fail to show the error; it clears it.**
+- Sentry reach splits by engine, and the **default** engine is the worse half:
+  `useLocalDictation` calls `silentCatch('useLocalDictation.start.getUserMedia')` (`:218`);
+  `useDictation`'s `r.onerror` (`:115-117`) calls only `setError`, so a browser-engine
+  `not-allowed` reaches **no error door at all**.
+
+User-visible result: press and hold the orb, deny the microphone, and nothing happens,
+nothing is said, and nothing is recorded anywhere.
+
+**Why held:** rendering an error changes a live surface. **The safe half is applicable
+separately** — widening `HoldToTalk` to expose `error` is additive and type-only, and
+would let a later change render it without touching behaviour.
+
+Detail: [`voice-input-and-playback.md`](./golden-paths/voice-input-and-playback.md) §7.C.
+
+---
+
+## 116. The whisper installer pins a `win-x64` asset, on a host whose compiler reports `aarch64`
+
+**Where:** `src-tauri/src/companion/stt/installer.rs:33-51`, `:66`;
+contrast `src-tauri/src/companion/tts/sherpa_engine.rs:204-214`, `:269-283`.
+
+**What is measured** (2026-08-17):
+
+- `stt/installer.rs`'s `ENGINE_ARCHIVE_URL` is the literal
+  `…/v1.9.2/whisper-bin-x64.zip`, gated only on `cfg!(target_os = "windows")`.
+- Its own header comment says it mirrors the Kokoro installer *"exactly … the pinned
+  asset below is a win-x64 build"* — **and that is no longer true of the Kokoro
+  installer.** `sherpa_engine.rs:211-214` selects `win-arm64` or `win-x64` from
+  `cfg(target_arch)`, with a unit test (`:269-283`) asserting the URL matches the
+  compiled target and a comment stating that the shell's `PROCESSOR_ARCHITECTURE` is
+  untrustworthy under emulation.
+- On this machine both halves of that comment are demonstrable: `rustc -vV` reports host
+  **`aarch64-pc-windows-msvc`**, while the shell reports
+  **`PROCESSOR_ARCHITECTURE=AMD64`**.
+- `~/.personas/companion-stt` does not exist here, so the button has never been clicked
+  on this host.
+
+So "Install Whisper" on an arm64 build fetches an x64 binary, which runs under emulation
+without any surface saying so. Same defect class as the ORT case in
+[`bundling-native-assets.md`](./golden-paths/bundling-native-assets.md) — *a vendored
+artifact's declared architecture is a claim, not a fact* — except here the claim is the
+app's own and it is simply wrong.
+
+**Why held:** changes what an install button downloads.
+
+Detail: [`local-model-install.md`](./golden-paths/local-model-install.md) §7.C.
+
+---
+
+## 117. A failed install leaves an engine that every readiness check calls installed
+
+**Where:** `src-tauri/src/companion/tts/sherpa_engine.rs:128-202` (`extract_selected`),
+`:222-262` (`extract_engine`); `src-tauri/src/companion/stt/installer.rs:166-214`;
+readiness predicates at `tts/kokoro.rs:81-95`, `:135-140`, `tts/pocket.rs:104-107`,
+`stt/downloader.rs:78`.
+
+**What is measured** (2026-08-17):
+
+- All three extractors unpack **entry by entry directly into the live bin/model
+  directory**. There is no staging directory and no directory swap.
+- Each has a sentinel check (`found_exe` / `found_sentinel` / `extracted == 0`) that runs
+  **after** the loop. An archive whose exe unpacks first and whose DLL fails midway
+  returns `Err`, the UI shows `Failed`, and the exe is on disk.
+- **Every readiness predicate in the stack is existence, never validity**:
+  `candidate.is_file()`, `p.model.is_file() && p.voices.is_file() && p.tokens.is_file() &&
+  p.espeak_data.is_dir()`, `MODEL_FILES.iter().all(|f| dir.join(f).is_file())`,
+  `model_path(id).map(|p| p.is_file())`. Not one reads a byte. A 325,630,829-byte
+  `model.onnx` and a zero-byte `model.onnx` produce the same answer.
+- The installers' own post-install verification (*"never report success on a
+  half-extracted tree"*, `kokoro_installer.rs:150-161`) calls these same predicates — so
+  it verifies that extraction created paths, which is what extraction does.
+- Related, same file, different mechanism: `stt/downloader.rs`'s truncation guard is
+  `if let Some(expected) = total { … }` (`:206-212`), so it is **skipped whenever the
+  response is chunked and carries no `Content-Length`** — the exact case the comment
+  above it (`:201-205`) says it exists to prevent.
+
+**The repo already contains the right shape**, applied to the one artifact it does not
+download: `tts/pocket.rs::import_voice` (`:133-161`) caps the size, **verifies the format
+claim by reading the bytes** (`&wav_bytes[0..4] != b"RIFF" || &wav_bytes[8..12] != b"WAVE"`),
+then writes `.partial` and renames.
+
+**Why held:** stage-then-swap changes the install flow, and making readiness mean
+"verified" changes whether an already-installed engine is reported available at next
+launch.
+
+Detail: [`local-model-install.md`](./golden-paths/local-model-install.md) §7.B, §7.D, §7.G.
+
+---
+
+## 118. The transport engine's one rule is broken by its largest consumer
+
+**Where:** `src/features/plugins/artist/sub_media_studio/CompositionPreview.tsx:58-59`;
+contract at `hooks/useTimelinePlayback.ts:3-12`; compliant siblings at
+`BeatSidebar.tsx:39-45`, `PlaybackControls.tsx:41`, `TimelinePanel.tsx:208`.
+
+**What is measured** (2026-08-17): `useTimelinePlayback` keeps the 60 Hz clock in a ref
+and fans out via `subscribe(cb)` precisely so consumers do not put it in React state. Its
+docstring: *"storing it in state would trigger a full re-render on every rAF tick (≈60/s),
+which made the original media studio unusably laggy … Each consumer then decides whether
+to touch the DOM directly … or call a local `setState` scoped just to itself."*
+
+Four subscribers. Three comply. The fourth is
+`useEffect(() => engine.subscribe(setCurrentTime), [engine])` — **the raw clock piped
+into component state, in the one component that renders the `<video>`, every `<audio>`,
+the image-overlay map and the text-overlay map.** Eight `useMemo`s derive from it
+(`:92`, `:99`, `:106`, `:112`, `:249`, `:309`, `:317`, `:354`). The engine exists to
+prevent this line, and its largest consumer is the line.
+
+**Why held:** the fix is a real refactor of a live surface (split the timecode readout
+into its own subscriber; drive `<video>.currentTime` and opacity imperatively — `:164-168`
+already writes `style.opacity` that way and shows the shape), not a one-line change.
+
+**A type would close it permanently:** add
+`subscribeDerived<T>(select: (t: number) => T, cb: (v: T) => void)`, which calls back only
+on a change of the selected value. `engine.subscribe(setCurrentTime)` then becomes
+unspellable without writing an identity selector, which is visible in review in a way the
+current call is not.
+
+Detail: [`media-viewer.md`](./golden-paths/media-viewer.md) §7.C, §9.
+
+---
+
+## 119. The undo has 229 before-images on disk and no command that can address one of them
+
+**Where:** `src-tauri/db/src/journal.rs:27-29` (the nullable stamp),
+`src-tauri/db/src/repos/execution/change_journal.rs:216`, `:261` (both readers,
+`WHERE execution_id = ?1`), `src-tauri/src/commands/execution/journal.rs:37`
+(`undo_execution(execution_id)` — the only write door),
+`src-tauri/db/src/attribution.rs:44-52`.
+
+**What is measured** (2026-08-17, both the purge backup and the live file):
+
+- `change_journal` holds **228 rows pre-purge / 229 post-purge**. Rows with
+  `execution_id IS NOT NULL`: **0 in both**. `COUNT(DISTINCT execution_id)`:
+  **0**. Rows ever marked `undone` or `conflict`: **0**.
+- Every read and the single write filter on `execution_id = ?1`, so a row whose
+  stamp is NULL is unreachable from the entire IPC surface. The app is paying
+  the capture cost and the 14-day retention cost for a ledger with no reader.
+- The design *intends* to capture user writes — `RETENTION_DAYS_UNATTRIBUTED`
+  exists specifically to keep them (`journal.rs:279-280`) and `is_foreign_write`
+  models them as first-class (`change_journal.rs:125-127`). Capture and conflict
+  detection both know about user writes; only the addressing does not.
+- Not a regression: the Reversible Agent shipped **2026-07-30** (`048fa452f`)
+  and the last execution on this install ran **2026-06-26**, so
+  `attribution::with_execution` (`engine/mod.rs:366`, the only production
+  setter) has never wrapped a run here. `ThreadAttributionGuard` has **0**
+  production callers across 963 `.rs` files.
+
+**The fix:** close the key rather than requiring it — replace
+`execution_id: Option<String>` with a `WriteScope` enum
+(`Execution(id) | UserAction(id) | System(&'static str) | Foreign`), and land it
+**together** with a door keyed on the scope (`undo_scope(scope)`, and
+`get_execution_data_diff` generalised the same way). Half of this change is
+worse than none: a scope enum behind an execution-only door is the `<Numeric>`
+mistake — routing callers to a primitive that is still wrong by default.
+
+**Why held:** it changes the shape of a persisted column and adds an IPC
+command. Standing rule.
+
+Detail: [`undo-persisted-operation.md`](./golden-paths/undo-persisted-operation.md) §0, §7 D1, §9.
+
+---
+
+## 120. The reversibility ledger can silently become incomplete and nothing ever checks
+
+**Where:** `src-tauri/db/src/journal.rs:81-104` (`JOURNAL_DROPPED`,
+`note_journal_drop`, `journal_dropped_count`), `:287-318`
+(`spawn_journal_writer`), `:422-437` (`prune_journal`).
+
+**What is measured** (2026-08-17):
+
+- `journal_dropped_count()` is a `pub fn` with **zero callers** outside its own
+  module — no command, no metric, no health panel. The counter's own warn text
+  calls a drop *"a permanent gap in the reversibility ledger for that row"*, and
+  the only place that sentence can appear is a log file.
+- The undo receipt (`UndoExecutionResult`) reports `undone`, `conflicts` and
+  `skipped_already_processed` — and cannot report `never_captured`, because the
+  count lives in a static the repo layer cannot see.
+- A boot-time precondition assertion after `prune_journal` — *"if
+  `COUNT(*) FROM change_journal` > 0 then the count of addressable rows must be
+  > 0, else `tracing::error!`"* — would have fired every day since 2026-07-30
+  and costs one query per launch. It also fails loudly when its own
+  precondition (a non-empty journal) is absent, which is the property §9 of the
+  contract requires and a census ratchet cannot provide here (the number it
+  would ratchet is already 0).
+
+**Why held:** it adds an error-level log at boot, which changes runtime
+behaviour. Standing rule.
+
+Detail: [`undo-persisted-operation.md`](./golden-paths/undo-persisted-operation.md) §7 D7, §9.
+
+---
+
+## 121. The incidents inbox stores the failure mode and cannot group by it
+
+**Where:** `src/features/overview/sub_incidents/libs/groupIncidents.ts:5`
+(`IncidentGroupMode = 'agent' | 'severity' | 'source' | 'none'`), `:43-55`
+(`bucketFor`), `:57-63` (the docstring),
+`src/features/overview/sub_incidents/components/IncidentsInbox.tsx:75-81`
+(`groupModeLabel`), `src-tauri/db/src/migrations/incremental.rs:2686-2689` (the
+indexes).
+
+**What is measured** (2026-08-17, purge backup):
+
+- `audit_incidents.kind` is populated on **164 of 164** rows with **8 distinct
+  values**: `blocked_dependency` 66, `external` 56, `review_blocker` 20,
+  `team_member_failing` 11, `config` 7, `ambiguous_requirement` 2,
+  `missing_credential` 1, `fleet_stall` 1. Among the **99 open** rows it is the
+  most discriminating column (35 / 30 / 20 / 7 / 6 / 1).
+- It is offered as **no** grouping lens. The docstring claims `source` answers
+  *"what kind of thing is failing?"* — but `source_table` names the **producer**
+  (`execution_error`, `persona_blocker`, `team_assignments`, `circuit_breaker`,
+  `fleet`, `review_dispatch`), not the failure.
+- The spine's own words for this leaf are *"clustering terminally failed events
+  by failure mode"*. The missing lens is the only one that does that.
+- There is **no index on `kind`** — `idx_ai_status`, `idx_ai_persona`,
+  `idx_ai_severity` and `idx_ai_source` exist. The schema records the same
+  omission the UI does.
+
+**The fix:** four lines plus a key — `'kind'` in the union, a `case 'kind'` arm
+in `bucketFor`, a label resolver, an `en.json` token (then the 13-locale
+pipeline). Optionally an index on `(kind, status)`.
+
+**Why held:** it changes what a live surface shows while the operator is using
+it. Standing rule.
+
+Detail: [`dead-letter-triage.md`](./golden-paths/dead-letter-triage.md) §7 D5, §8.4.
+
+---
+
+## 122. Seven promotion doors are behind an env var set nowhere, and 77 qualifying failures never reached a human
+
+**Where:** `src-tauri/db/src/audit_incidents_promoter.rs:40-45` (`PROMOTION_ENV`
++ `fn enabled()`), and the seven promoters at `:75`, `:104`, `:144`, `:179`,
+`:212`, `:248`, `:282`.
+
+**What is measured** (2026-08-17, purge backup):
+
+- `PERSONAS_INCIDENTS_PROMOTION` appears in **21** places in the tree — one
+  `pub const`, one comparison, seven "No-op unless…" comments on the calling
+  repos, four golden paths, a `DESIGN.md`, and a 2026-06-09 audit that already
+  reported this. **Zero** of the 21 set it.
+- Replaying each promoter's own predicate against its own source table:
+  `persona_healing_issues` **72**, `policy_events` **5**, `credential_audit_log`
+  **0 of 9,830**, `healing_audit_log` **0 of 27**, `provider_audit_log` **0 of
+  4,001**, `fired_alerts` 0, `tool_execution_audit_log` 0 — **77 qualifying
+  rows**, and `SELECT COUNT(*) FROM audit_incidents WHERE source_table IN (<the
+  seven>)` = **0**.
+- Two of the predicates cannot match *even if the gate opens*:
+  `promote_credential_audit` searches `operation` for `failure|error|denied`,
+  and the entire live vocabulary is `decrypt` (9,458),
+  `oauth_token_refreshed` (201), `healthcheck` (145), `delete`, `create`,
+  `oauth_completed`, `oauth_initiated`, `update`, `field_update`,
+  `credential_oauth_refreshed` — **none containing any of the three words**.
+  `promote_healing_audit` requires `ends_with("_error")`; the one genuine
+  failure row is `ai_heal_parse_failed`.
+- All 164 existing incidents came in through the **eight** direct
+  `audit_incidents::promote` call sites in `src-tauri/src/**`, which are not
+  gated. Three of those eight discard the promotion's own result with
+  `let _ =` (`engine/mod.rs:3257`, `commands/design/reviews.rs:1415`,
+  `companion/athena_reaction.rs:1306`) — including the circuit-breaker site,
+  whose incident **is** the mitigation for not disabling a failing team member.
+
+**The fix, in order:** (1) fix the two predicates to match on the producer's
+vocabulary — this is correct whether or not the gate ever opens; (2) replace the
+env gate with a persisted app setting so admission is inspectable; (3) route the
+three `let _ =` sites through `try_promote`, which already swallows correctly
+while keeping the warn. A boot-time assertion — per promoter, *"qualifying rows
+> 0 and incidents from that source = 0"* → `tracing::error!` — would have fired
+on two sources every day since the module shipped.
+
+**Why held:** flipping admission on would create incident rows on a live
+surface, and 77 new items would land in a queue that already has 99 undrained.
+Standing rule.
+
+Detail: [`dead-letter-triage.md`](./golden-paths/dead-letter-triage.md) §0, §7 D1, D3, D7, §9.
+
+---
+
+## 123. A function named `prune` empties the whole table when its input list is empty
+
+**Where:** `src-tauri/db/src/repos/resources/cloud_webhook_watermarks.rs:48-58`.
+
+**What is measured** (2026-08-17):
+
+```rust
+/// Remove watermarks for triggers that no longer exist.
+/// Keeps only rows whose trigger_id is in the `active_ids` set.
+pub fn prune(pool: &DbPool, active_ids: &[&str]) -> Result<(), AppError> {
+    …
+    if active_ids.is_empty() {
+        let conn = pool.get()?;
+        conn.execute("DELETE FROM cloud_webhook_watermarks", [])?;
+        return Ok(());
+    }
+```
+
+- The empty-set branch is defensible in the intended case (no active triggers ⇒
+  no watermarks) and wrong in the case that occurs on a bad day: the caller's
+  enumeration of active triggers **failing and resolving to empty**, which this
+  function reads as *"delete everything"*. That is
+  [`partial-failure-read-envelope`](./golden-paths/partial-failure-read-envelope.md)'s
+  finding — a failed read degrading to an empty value — arriving at a
+  destructive door.
+- It is one of **3 of 5** whole-table wipes in `src-tauri/db/src/repos/**` that
+  return `Result<()>` and therefore discard the affected-row count SQLite
+  already handed them (the others: `alert_rules::clear_fired_alerts:305`,
+  `frontend_crashes::clear_all:91`). The compliant two —
+  `manual_reviews::delete_all:243` and `messages::delete_all:501` — return
+  `Result<usize>`. This split is the baseline of the published census rule
+  `countless-table-wipe` (3 files / 3 matches, hand-verified 3/3).
+
+**The fix:** make the empty-input case an explicit refusal
+(`return Err(AppError::Validation("prune called with an empty active set"))`)
+or require the caller to opt in (`prune(pool, active_ids, allow_empty: bool)`),
+and return `Result<usize>` from all three so the count survives.
+
+**Why held:** it changes what a live function does — a call that currently
+succeeds would start failing. Standing rule.
+
+Detail: [`maintenance-affordances.md`](./golden-paths/maintenance-affordances.md) §7 D2, D3, §9.
+
+---
+
+## 124. The one arm the failure translator most needs is gated on a phrase the engine never emits
+
+**Where:** `src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:267`
+against `src-tauri/src/engine/healthcheck.rs:1156`.
+
+**What is measured** (2026-08-17): `translateHealthcheckMessage` opens its network family
+with `if (raw.includes('request failed:'))` and nests four arms inside it — timeout, DNS,
+connection-refused, unreachable — each with a `friendly` line and a `suggestion`. The real
+probe emits `"Connection failed: {e}"`. **The only producer of `request failed:` reaching
+this translator in 963 Rust files is `credential_design.rs:284`, the LLM design door.**
+
+Producer inventory, hand-verified over every `HealthcheckResult::` call site above the
+first `#[cfg(test)]` (`healthcheck.rs:1495`): **13 sites; exactly one** — `:1143`, via
+`let msg = format!("Service returned HTTP {}", …)` at `:1142` — reaches a diagnostic arm.
+The other twelve land on the fallback, which returns `{ friendly: raw, suggestion: '' }`;
+because `friendly === raw`, `HealthcheckResultDisplay.tsx:10` then computes
+`hasDifferentRaw = false` and suppresses the *"Technical details"* disclosure as well. A
+DNS failure, a TLS failure, a timeout and an SSRF-policy rejection all render as one raw
+`reqwest` sentence with no suggestion and no disclosure.
+
+The sharpest instance: `healthcheck.rs:308` produces
+`"{tool} timed out — the tool may be unresponsive"` and the translator has a **timeout**
+arm. They cannot meet.
+
+**Why held:** the one-line form (adding `Connection failed:` to the gate) changes what a
+live surface shows on every connection failure, and the honest fix is a typed `step`/`code`
+on the IPC payload rather than a second string to classify — a cross-language contract
+change, not an edit. Registering rather than applying, per the standing no-destructive-apply
+rule.
+
+**No gate is possible in the census**, which evaluates one pattern per file and cannot
+compare a TS literal against the Rust corpus. The instrument that would work is shaped
+like `scripts/check-csp-hosts.mjs`: collect every `includes(`/`startsWith(` literal inside
+the message-classifier functions, grep the Rust tree for each, **exit 2 if it finds no
+classifier literals at all**, exit 1 on any literal with zero producers. Today it reports
+five (`request failed:`, `timed out`, `timeout`, `dns`, `connection refused`).
+
+Detail: [`connector-setup-panel.md`](./golden-paths/connector-setup-panel.md) §7.2, §9.2.
+
+---
+
+## 125. An unverifiable credential is certified with a green check on the surface that certifies it
+
+**Where:** `src-tauri/src/engine/healthcheck.rs:26-28` and `:79-85`;
+`src/features/vault/sub_credentials/components/forms/HealthcheckResultDisplay.tsx:6,:13`;
+nine prop declarations listed in the detail link.
+
+**What is measured** (2026-08-17, live database — credentials were **not** touched by the
+purge): `HealthProbeState` is `Verified | Unverifiable | Failed`, required on the wire
+type (`src/lib/bindings/HealthcheckResult.ts:5`). Its own doc comment promises
+*"this is NOT a failure — it renders neutral/muted, never a green 'healthy' check."*
+`HealthcheckResult::unverifiable` constructs `success: true`. Nine prop slots along the
+setup path re-declare the verdict as an inline `{ success: boolean; message: string } | null`
+— structurally compatible, so nothing errors — and the terminal renderer branches on the
+boolean, returning a green `CheckCircle`.
+
+**8 of 25 live credentials are `unverifiable`. 21 of 134 connectors have no
+`healthcheck_config` and can produce nothing else.** The promise is kept in
+`ConnectorStatusCard.tsx:26-34` (a neutral `ShieldQuestion`) and broken in the panel where
+the credential is created.
+
+**Two further states are unrepresentable at any layer.** Two live credentials
+(`google_calendar`, `gmail`) carry `needs_reauth: true` with grants expired **99** and
+**76** days ago; `HealthProbeState` has no `expired`/`revoked` variant, so both render as
+a generic red box — in the one surface that owns an Authorize button.
+
+**Why held:** it changes what a live surface shows for a third of the operator's vault,
+and the correct fix is a discriminated union replacing the boolean pair
+(`CliConnectionPanel.tsx:17-24` is the in-repo pattern), not a colour change.
+
+A **ratchet** is shipped meanwhile: census rule `probe-verdict-narrowed-to-boolean`,
+baseline 6 files / 9 matches, precision 9/9, zero site overlap with all 195 registered
+rules. **Delete the rule when the union lands** — the census cannot express "must be zero".
+
+Detail: [`connector-setup-panel.md`](./golden-paths/connector-setup-panel.md) §7.1, §8/G1, §9.
+
+---
+
+## 126. Three healthchecks pass for any value the user types into the field they gate
+
+**Where:** `connector_definitions` rows `kalshi`, `pubmed`, `semantic_scholar`
+(`healthcheck_config` column); gate at
+`src/features/vault/sub_catalog/components/forms/CredentialTemplateForm.tsx:188-193`.
+
+**What is measured** (2026-08-17, live `connector_definitions`, 134 rows / 196 declared
+fields): of the **113** connectors carrying a `healthcheck_config`, **4** reference no
+declared field, no `{{base64(a:b)}}` pair and no auth token in their endpoint, headers or
+body. One of the four (`arxiv`) declares no fields at all and is correctly
+unauthenticated. The other three declare an `api_key` field their probe never sends.
+
+So *"Test connection"* returns `"Connection successful (HTTP 200)"` for any value,
+including a wrong one — and because Save is gated on that success, the green tick is what
+lets a credential that will fail at first use into the vault.
+
+**Why held:** editing connector definitions is a data change to rows the app reads at
+runtime, and the durable fix is a validation over the **pair** (declared fields,
+healthcheck template) in the connector seed test, which no schema constraint can express
+and which the census cannot see — both sides are JSON columns in a database, not source
+text.
+
+Detail: [`connector-setup-panel.md`](./golden-paths/connector-setup-panel.md) §7.6, §8/G4.
