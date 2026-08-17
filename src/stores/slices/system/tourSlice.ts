@@ -387,13 +387,13 @@ const ORCHESTRATION_EVENTS_STEPS: TourStepDef[] = [
   {
     id: "trigger-types",
     title: "Trigger Types: Pull, Push & Compose",
-    description: "Triggers define when an agent activates. PULL watches for changes (schedule, polling), PUSH receives signals (webhook, event_listener), COMPOSE chains agents (chain trigger). Every agent has at least one — set when you build it on the Glyph.",
+    description: "Triggers define when an agent activates. PULL watches for changes (schedule, polling, file watcher, clipboard, app focus), PUSH receives signals (webhook, event_listener), COMPOSE combines them (chain, composite). Every agent has at least one — set when you build it on the Glyph.",
     hint: "Look at how triggers are categorized, then see them wired on the Event Canvas.",
     nav: { sidebarSection: "personas" },
     completeOn: "tour:triggers-explored",
     panelWidth: 360,
     subSteps: [
-      { id: "trigger-categories", label: "Three trigger families", hint: "Schedule/cron = Pull. Webhook/email/event_listener = Push. Chain = Compose. Each family answers \"what wakes this agent up?\"." },
+      { id: "trigger-categories", label: "Three trigger families", hint: "Schedule, polling, file watcher, clipboard and app focus = Pull. Webhook and event_listener = Push. Chain and composite = Compose. Each family answers \"what wakes this agent up?\"." },
       { id: "set-on-build", label: "Set on the Glyph", hint: "An agent's trigger is chosen during the build — the \"When\" row / Trigger sigil. Pick a schedule, a webhook, or an event to listen for; it's baked into the agent at promote time." },
       { id: "see-on-canvas", label: "See them on the canvas", hint: "The Events → Builder canvas (next step) shows every agent's triggers as a live routing graph — the clearest place to see what listens to what." },
     ],

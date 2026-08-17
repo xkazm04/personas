@@ -167,6 +167,38 @@ Design: [`docs/plans/pumper-inbuilt-feasibility.md`](../../plans/pumper-inbuilt-
 
 - `TriggerAddForm`, `TriggerTypeSelector`, and config components create typed trigger configs.
 - Config families include webhook, schedule, polling, file watcher, event listener, clipboard, app focus, and composite triggers.
+- **One vocabulary (2026-08-17).** The ten trigger types are declared once, in Rust,
+  as `personas_core::models::TriggerKind`. Everything derives from it: the door
+  validator (`VALID_TRIGGER_TYPES`), the SQL `CHECK` on
+  `persona_triggers.trigger_type` (substituted into the base schema at bootstrap
+  from `TriggerKind::sql_check_list()`), and the client menu — `TRIGGER_TYPE_OPTIONS`
+  is *generated* from the ts-rs-exported `TriggerKind` union, and the icon /
+  copy / i18n-key records are `satisfies Record<TriggerKind, …>`, so a type
+  added in Rust will not compile on the client until it has a label, an icon and
+  a config panel. **Before this, the `CHECK` admitted six while the menu offered
+  ten**, so `file_watcher`, `clipboard`, `app_focus` and `composite` triggers —
+  including all six one-click quick templates — could not be saved on any
+  install and failed with an unactionable "Something went wrong." All ten are
+  now storable, and the engine loops that dispatch them
+  (`engine/src/{file_watcher,clipboard_monitor,app_focus}.rs`,
+  `src/engine/composite.rs`) finally receive rows.
+- **A trigger is armed at creation, or refused with a reason.** `triggers::create`
+  computes `next_trigger_at` and, for the two clock-driven types (`schedule`,
+  `polling`), **refuses** rather than storing a row that would be invisible to
+  `get_due` forever. The refusal names what is wrong — a missing cron/interval,
+  a timezone that is not an IANA zone name — and the error registry renders it.
+  The same check runs on update, so a working schedule cannot be edited into a
+  dead one. Template adoption, build-session promotion, n8n import and bundle
+  import all arm their triggers the same way.
+- **The polling form writes `url`.** It used to write `endpoint`, which the
+  poller does not read — the URL validated, the Test tab reported "Reachable",
+  the row showed the hostname, and nothing was ever fetched. The URL field is
+  now always shown, including when a credential event is selected.
+- **A trigger row can say it will never fire.** Alongside `Sleeping` (outside
+  its active window), the row shows **Not scheduled** for a clock-driven trigger
+  with no next run time. The arm badge reads the `status` column — the one both
+  dispatch predicates (`get_due`, `get_enabled_by_type`) read — rather than
+  `enabled`, which neither reads.
 - `NlTriggerInput` and `nlTriggerParser.ts` translate natural-language schedule text into structured trigger config.
 - `TriggerSchedulePreview`, `RadialCountdownRing`, and `TriggerCountdown` make schedule timing visible before and after save.
 - `TriggerExecutionHistory` links a trigger back to executions it caused.

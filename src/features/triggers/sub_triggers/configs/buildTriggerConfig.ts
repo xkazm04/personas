@@ -68,11 +68,22 @@ export function buildTriggerConfig(s: TriggerFormState, t: Translations): BuildR
     const parsed = parseInt(s.interval);
     if (isNaN(parsed) || parsed < 60) return { ok: false, error: v.interval_minimum };
     config.interval_seconds = parsed;
+    // `url`, NOT `endpoint`. `TriggerConfig::Polling` (core/models/trigger.rs)
+    // declares `url` and `polling.rs` destructures it — a config carrying only
+    // `endpoint` makes the poller log "missing 'url' in config" and advance the
+    // pointer without fetching. The SSRF validator, the Test tab and the row
+    // summary all accepted `endpoint`, so every instrument that could have
+    // caught this had been taught the wrong spelling: the URL validated, the
+    // Test tab said "Reachable", the row showed the hostname, and the poller
+    // never called it. The key name comes from the reader, always.
+    if (!s.endpoint.trim()) return { ok: false, error: v.endpoint_required };
+    config.url = s.endpoint.trim();
+    // The credential-event dropdown is recorded alongside the URL rather than
+    // instead of it: `config.event_id` has no reader in the Rust engine, so
+    // choosing an event used to suppress the URL field entirely and produce a
+    // polling trigger with nothing to fetch.
     if (s.selectedEventId) {
       config.event_id = s.selectedEventId;
-    } else {
-      if (!s.endpoint.trim()) return { ok: false, error: v.endpoint_required };
-      config.endpoint = s.endpoint;
     }
   } else if (s.triggerType === 'webhook') {
     config.webhook_secret = s.hmacSecret || generateWebhookSecret();

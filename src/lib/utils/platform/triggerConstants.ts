@@ -2,15 +2,55 @@ import { Clock, Webhook, Play, Zap, Link, RefreshCw, Radio, FolderSearch, Clipbo
 import { createLogger } from "@/lib/log";
 import { en, type Translations } from '@/i18n/en';
 import type { Schedule } from '@/lib/types/schedule';
+import type { TriggerKind } from '@/lib/bindings/TriggerKind';
 
 const logger = createLogger("trigger-constants");
+
+/**
+ * The trigger-type vocabulary, re-exported from the generated Rust binding.
+ *
+ * `TriggerKind` is the ONE declaration — the SQL `CHECK`, the Rust door
+ * validator and this menu all derive from it. Everything in this file that
+ * enumerates trigger types is keyed `Record<TriggerKind, …>` so the menu is
+ * **total**: a kind added in Rust fails to compile here until it is given a
+ * label, an icon and a config panel, and a kind the store cannot accept cannot
+ * be typed at all. That is the property whose absence let the form offer four
+ * types no install has ever been able to save.
+ */
+export type { TriggerKind };
+
+/** Every storable trigger type, in menu order. Derived from `TriggerKind`. */
+export const TRIGGER_KINDS = [
+  'manual',
+  'schedule',
+  'polling',
+  'webhook',
+  'event_listener',
+  'file_watcher',
+  'clipboard',
+  'app_focus',
+  'chain',
+  'composite',
+] as const satisfies readonly TriggerKind[];
+
+/** Narrow an arbitrary string (a stored `trigger_type`) to the vocabulary. */
+export function asTriggerKind(raw: string): TriggerKind | null {
+  return (TRIGGER_KINDS as readonly string[]).includes(raw) ? (raw as TriggerKind) : null;
+}
 
 export interface TriggerTypeMeta {
   Icon: typeof Clock;
   color: string;
 }
 
-export const TRIGGER_TYPE_META: Record<string, TriggerTypeMeta> = {
+/**
+ * `satisfies Record<TriggerKind, …>` is the totality gate: a kind added in Rust
+ * fails to compile here until it has an icon, and a key outside the vocabulary
+ * is rejected as an excess property. The exported binding stays
+ * `Record<string, …>` because call sites index it with a raw stored
+ * `trigger_type`.
+ */
+const TRIGGER_TYPE_META_BY_KIND = {
   schedule: { Icon: Clock, color: 'text-amber-400' },
   polling: { Icon: RefreshCw, color: 'text-teal-400' },
   webhook: { Icon: Webhook, color: 'text-blue-400' },
@@ -21,7 +61,9 @@ export const TRIGGER_TYPE_META: Record<string, TriggerTypeMeta> = {
   clipboard: { Icon: ClipboardPaste, color: 'text-pink-400' },
   app_focus: { Icon: AppWindow, color: 'text-indigo-400' },
   composite: { Icon: Combine, color: 'text-rose-400' },
-};
+} satisfies Record<TriggerKind, TriggerTypeMeta>;
+
+export const TRIGGER_TYPE_META: Record<string, TriggerTypeMeta> = TRIGGER_TYPE_META_BY_KIND;
 
 export const DEFAULT_TRIGGER_META: TriggerTypeMeta = { Icon: Zap, color: 'text-purple-400' };
 
@@ -42,7 +84,9 @@ export interface TriggerCategoryMeta {
   color: string;
   bgColor: string;
   borderColor: string;
-  types: string[];
+  /** Members of this category. Typed to the vocabulary so a category cannot
+   *  advertise a type the store will reject. */
+  types: TriggerKind[];
 }
 
 export const TRIGGER_CATEGORIES: TriggerCategoryMeta[] = [
@@ -94,28 +138,41 @@ export function getTriggerCategoryMeta(triggerType: string): TriggerCategoryMeta
 
 /** Type option descriptor for the add form. */
 export interface TriggerTypeOption {
-  type: string;
+  type: TriggerKind;
   label: string;
   description: string;
 }
 
-export const TRIGGER_TYPE_OPTIONS: TriggerTypeOption[] = [
-  { type: 'manual', label: 'Manual', description: 'Run on demand' },                              // i18n: triggers.type_manual / triggers.desc_manual
-  { type: 'schedule', label: 'Schedule', description: 'Run on a timer or cron' },                  // i18n: triggers.type_schedule / triggers.desc_schedule
-  { type: 'polling', label: 'Polling', description: 'Check an endpoint' },                        // i18n: triggers.type_polling / triggers.desc_polling
-  { type: 'webhook', label: 'Webhook', description: 'HTTP webhook listener' },                    // i18n: triggers.type_webhook / triggers.desc_webhook
-  { type: 'event_listener', label: 'Event Listener', description: 'React to internal events' },   // i18n: triggers.type_event_listener / triggers.desc_event_listener
-  { type: 'file_watcher', label: 'File Watcher', description: 'React to file system changes' },   // i18n: triggers.type_file_watcher / triggers.desc_file_watcher
-  { type: 'clipboard', label: 'Clipboard', description: 'React to clipboard changes' },           // i18n: triggers.type_clipboard / triggers.desc_clipboard
-  { type: 'app_focus', label: 'App Focus', description: 'React to app focus changes' },           // i18n: triggers.type_app_focus / triggers.desc_app_focus
-  { type: 'chain', label: 'Chain', description: 'Trigger after another agent completes' },        // i18n: triggers.type_chain / triggers.desc_chain
-  { type: 'composite', label: 'Composite', description: 'Multiple conditions + time window' },    // i18n: triggers.type_composite / triggers.desc_composite
-];
+/**
+ * English fallback copy, one entry per kind. `satisfies Record<TriggerKind, …>`
+ * makes it total: the menu below is generated from `TRIGGER_KINDS`, so it
+ * cannot be short a member (which is how four unstorable types once sat in it
+ * unnoticed) nor carry one the store rejects.
+ */
+const TRIGGER_TYPE_COPY = {
+  manual: { label: 'Manual', description: 'Run on demand' },                              // i18n: triggers.type_manual / triggers.desc_manual
+  schedule: { label: 'Schedule', description: 'Run on a timer or cron' },                  // i18n: triggers.type_schedule / triggers.desc_schedule
+  polling: { label: 'Polling', description: 'Check an endpoint' },                        // i18n: triggers.type_polling / triggers.desc_polling
+  webhook: { label: 'Webhook', description: 'HTTP webhook listener' },                    // i18n: triggers.type_webhook / triggers.desc_webhook
+  event_listener: { label: 'Event Listener', description: 'React to internal events' },   // i18n: triggers.type_event_listener / triggers.desc_event_listener
+  file_watcher: { label: 'File Watcher', description: 'React to file system changes' },   // i18n: triggers.type_file_watcher / triggers.desc_file_watcher
+  clipboard: { label: 'Clipboard', description: 'React to clipboard changes' },           // i18n: triggers.type_clipboard / triggers.desc_clipboard
+  app_focus: { label: 'App Focus', description: 'React to app focus changes' },           // i18n: triggers.type_app_focus / triggers.desc_app_focus
+  chain: { label: 'Chain', description: 'Trigger after another agent completes' },        // i18n: triggers.type_chain / triggers.desc_chain
+  composite: { label: 'Composite', description: 'Multiple conditions + time window' },    // i18n: triggers.type_composite / triggers.desc_composite
+} satisfies Record<TriggerKind, { label: string; description: string }>;
+
+/** The Add-trigger menu — **derived from the vocabulary**, in menu order. */
+export const TRIGGER_TYPE_OPTIONS: TriggerTypeOption[] = TRIGGER_KINDS.map((type) => ({
+  type,
+  label: TRIGGER_TYPE_COPY[type].label,
+  description: TRIGGER_TYPE_COPY[type].description,
+}));
 
 // -- i18n key helpers ---------------------------------------------------
 
 /** Map trigger type to i18n key for label. Usage: t[triggerTypeI18nKey(type)] */
-export const TRIGGER_TYPE_I18N: Record<string, { label: string; desc: string }> = {
+const TRIGGER_TYPE_I18N_BY_KIND = {
   manual:         { label: 'triggers.type_manual',         desc: 'triggers.desc_manual' },
   schedule:       { label: 'triggers.type_schedule',       desc: 'triggers.desc_schedule' },
   polling:        { label: 'triggers.type_polling',        desc: 'triggers.desc_polling' },
@@ -126,7 +183,10 @@ export const TRIGGER_TYPE_I18N: Record<string, { label: string; desc: string }> 
   app_focus:      { label: 'triggers.type_app_focus',      desc: 'triggers.desc_app_focus' },
   chain:          { label: 'triggers.type_chain',          desc: 'triggers.desc_chain' },
   composite:      { label: 'triggers.type_composite',      desc: 'triggers.desc_composite' },
-};
+} satisfies Record<TriggerKind, { label: string; desc: string }>;
+
+export const TRIGGER_TYPE_I18N: Record<string, { label: string; desc: string }> =
+  TRIGGER_TYPE_I18N_BY_KIND;
 
 /** Map trigger category ID to i18n key for label/description. */
 export const TRIGGER_CATEGORY_I18N: Record<string, { label: string; desc: string }> = {
@@ -347,7 +407,10 @@ export function getTriggerTypeLabel(triggerType: string): string {
   return _labelByType.get(triggerType) ?? triggerType.charAt(0).toUpperCase() + triggerType.slice(1).replace(/_/g, ' ');
 }
 
-const _labelByType = new Map(TRIGGER_TYPE_OPTIONS.map((o) => [o.type, o.label]));
+// Keyed by `string`, not `TriggerKind`: callers pass a raw stored
+// `trigger_type`, and an unrecognised value must fall through to the Title Case
+// branch rather than being a compile error at every call site.
+const _labelByType = new Map<string, string>(TRIGGER_TYPE_OPTIONS.map((o) => [o.type, o.label]));
 
 /** Extract rate_limit from a raw config object, falling back to defaults. */
 export function extractRateLimit(config: Record<string, unknown> | null | undefined): TriggerRateLimitConfig {
@@ -374,7 +437,10 @@ export interface TriggerTemplate {
   id: string;
   label: string;
   description: string;
-  triggerType: string;
+  /** Typed to the vocabulary: until 2026-08-17 all six templates below targeted
+   *  a type the `persona_triggers` CHECK rejected, so the entire one-click
+   *  quick-start strip failed with an anonymous error. */
+  triggerType: TriggerKind;
   config: Record<string, unknown>;
 }
 

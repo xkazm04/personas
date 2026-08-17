@@ -4541,31 +4541,6 @@
       "floor": 900
     },
     {
-      "id": "vocabulary-wider-than-its-column",
-      "goldenPath": "docs/concepts/golden-paths/trigger-wiring-surface.md",
-      "title": "A wiring surface enumerates trigger types its own storage column CANNOT hold — the menu is wider than the table",
-      "roots": [
-        "src",
-        "src-tauri"
-      ],
-      "extensions": [
-        ".ts",
-        ".tsx",
-        ".rs"
-      ],
-      "signal": {
-        "pattern": "(?:[\"'](?:file_watcher|clipboard|app_focus|composite)[\"'][\\s\\S]{0,120}?[\"'](?:manual|schedule|polling|webhook|chain|event_listener)[\"']|[\"'](?:manual|schedule|polling|webhook|chain|event_listener)[\"'][\\s\\S]{0,120}?[\"'](?:file_watcher|clipboard|app_focus|composite)[\"'])",
-        "flags": "g",
-        "ignoreCommentLines": true,
-        "description": "A hand-written trigger-type vocabulary that names at least one type the persona_triggers.trigger_type CHECK constraint REJECTS, beside at least one it admits. PROXY FOR the stack-free condition: an authoring surface enumerates the members of a closed vocabulary that a layer beneath it narrows, and nothing compares the two lists. BOTH HALVES ARE LOAD-BEARING. The four rejected names (file_watcher, clipboard, app_focus, composite) are ALSO the complete membership of an unrelated closed vocabulary in this repo — the ambient-context / sensory-signal sources (engine/src/ambient_context.rs, engine/src/context_rules.rs, commands/companion/sensory.rs, bindings/ContextEvent.ts, bindings/ContextPattern.ts). Requiring one of the SIX storage-admitted names in the same 120-char window excludes every one of those, because no ambient-context site can contain manual/schedule/chain/webhook/polling/event_listener; executed, dropping that half takes the rule from 6 files to 34. BOTH WORD LISTS ARE DERIVED FROM THE TREE, never invented: the admitted six are the CHECK list at db/src/migrations/schema.rs:87 (identical in incremental.rs:472 and :1074, so this is not machine-dependent), the rejected four are VALID_TRIGGER_TYPES (core/src/validation/trigger.rs:3-14, ten) minus that CHECK. MEASURED 2026-08-17 at 6c97502d3 by two structurally independent implementations that agree on the count AND on all nine file:line sites: 6 files / 9 matches, ALL NINE OPENED BY HAND, precision 9/9 — validation/trigger.rs:4 (VALID_TRIGGER_TYPES, the widest declaration) and :33 (normalize_trigger_type, which MANUFACTURES file_watcher and app_focus from user/template aliases), triggerConstants.ts:56 and :74 (TRIGGER_CATEGORIES, the actual menu) and :264 (the client config union), studioCommit.ts:34 (FORM_COMMITTABLE_SOURCE_TYPES, the Trigger Studio's commit list), glyph/triggers.ts:43, useCasePickerShared.ts:28 (the hand-written TS mirror of normalize_trigger_type), EventsSection.tsx:32. LIVE CONSEQUENCE, executed by lifting the live CREATE TABLE into an in-memory database and attempting one INSERT per type: manual/schedule/polling/webhook/chain/event_listener ACCEPTED, file_watcher/clipboard/app_focus/composite REJECTED with 'CHECK constraint failed'. All 6 TRIGGER_TEMPLATES (the form's one-click quick-start strip) target a rejected type; three nlTriggerParser branches resolve to one; no rule in errorRegistry.ts matches a CHECK-constraint failure, so the user sees 'Something went wrong. Try again.' SIX independent copies of this one vocabulary exist at arities 10/10/10/8/6/4 and none imports a shared declaration, because PersonaTrigger.trigger_type is String in the ts-rs binding and no generated union exists to import. THE REAL FIX is a #[derive(TS)] enum whose variants are the storable set, decided in the same commit as the CHECK — see the path's 'Prefer a type over a gate'; this rule is the RATCHET that holds the line until it lands. CORRECT END STATE IS ZERO, at which point DELETE this rule rather than baselining it at zero. PRECONDITION (re-derive per repo, do NOT port): the two word lists are specific to this storage layer. An adopting repo must derive its own from its own narrowest gate — a CHECK list, an enum, a migration — and will get a different pattern for the same condition."
-      },
-      "baseline": {
-        "files": 6,
-        "matches": 9
-      },
-      "floor": 3000
-    },
-    {
       "id": "hand-synced-search-index",
       "goldenPath": "docs/concepts/golden-paths/derived-index-sync.md",
       "title": "A search index kept in step by hand at N call sites instead of by the store",

@@ -10401,7 +10401,9 @@
     "resume_relay": "Tiếp tục relay",
     "arm_state": {
       "sleeping": "Đang ngủ",
-      "sleeping_title": "Đã bật, nhưng ngoài giờ hoạt động — sẽ không kích hoạt cho đến khi cửa sổ hoạt động mở lại."
+      "sleeping_title": "Đã bật, nhưng ngoài giờ hoạt động — sẽ không kích hoạt cho đến khi cửa sổ hoạt động mở lại.",
+      "unschedulable": "Chưa lên lịch",
+      "unschedulable_title": "Đang bật nhưng không có thời điểm chạy kế tiếp — sẽ không có gì khởi chạy nó. Hãy mở trình kích hoạt và đặt biểu thức cron hoặc khoảng thời gian."
     },
     "pending_approval": {
       "approved": "Đã phê duyệt — đang chạy",
@@ -11767,7 +11769,11 @@
     "adoption_answers_rejected_message": "Một số câu trả lời trong bảng câu hỏi bị thiếu hoặc không hợp lệ.",
     "adoption_answers_rejected_suggestion": "Mở lại các câu hỏi thiết lập, hoàn thành những mục được nêu, rồi tiếp tục.",
     "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
-    "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
+    "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in.",
+    "trigger_type_not_storable_message": "Phiên bản ứng dụng này không lưu được loại trình kích hoạt đó.",
+    "trigger_type_not_storable_suggestion": "Hãy chọn loại trình kích hoạt khác. Nếu ứng dụng vừa được cập nhật, hãy khởi động lại một lần để chạy bản di trú cơ sở dữ liệu mở rộng các loại được chấp nhận.",
+    "trigger_unschedulable_message": "Trình kích hoạt này bị từ chối vì sẽ không có gì khởi chạy nó.",
+    "trigger_unschedulable_suggestion": "Lý do nằm trong chi tiết lỗi — thường là thiếu biểu thức cron hoặc khoảng thời gian, hoặc múi giờ không phải tên IANA như \"Europe/Prague\". Hãy sửa trường đó rồi lưu lại."
   },
   "empty_states": {
     "credentials_title": "Tác tử cần thông tin xác thực để chạy",

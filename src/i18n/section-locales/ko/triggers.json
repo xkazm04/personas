@@ -763,7 +763,9 @@
   "resume_relay": "릴레이 재개",
   "arm_state": {
     "sleeping": "휴면 중",
-    "sleeping_title": "활성화되어 있지만 활성 시간 외입니다 — 활성 시간이 다시 시작될 때까지 실행되지 않습니다."
+    "sleeping_title": "활성화되어 있지만 활성 시간 외입니다 — 활성 시간이 다시 시작될 때까지 실행되지 않습니다.",
+    "unschedulable": "예약 없음",
+    "unschedulable_title": "켜져 있지만 다음 실행 시각이 없어 아무것도 시작하지 않습니다. 트리거를 열어 cron 식이나 실행 간격을 설정하세요."
   },
   "pending_approval": {
     "approved": "승인됨 — 실행 중",

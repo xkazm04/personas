@@ -127,6 +127,8 @@ const ERROR_KEY_MAP: Array<{ match: string | RegExp; keyPrefix: string; category
   { match: /Schedule triggers require (?:either a non-empty cron expression or a positive interval_seconds|a config with either a cron expression or interval_seconds)/, keyPrefix: 'schedule_missing_timing', category: 'user_action' },
   { match: /Invalid trigger_type '[^']+'\. Must be one of:/, keyPrefix: 'invalid_trigger_type', category: 'recoverable' },
   { match: 'Polling URL blocked', keyPrefix: 'polling_url_blocked', category: 'user_action' },
+  { match: /This trigger would never fire:/, keyPrefix: 'trigger_unschedulable', category: 'user_action' },
+  { match: /CHECK constraint failed: trigger_type|CHECK constraint failed: persona_triggers/, keyPrefix: 'trigger_type_not_storable', category: 'system' },
   // Build-session lifecycle. The specific "disappeared while waiting" rule must
   // precede the generic "not found | disappeared" rule (mirrors ERROR_RULES).
   { match: 'Build session has no agent_ir', keyPrefix: 'build_no_agent_ir', category: 'recoverable' },

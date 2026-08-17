@@ -763,7 +763,9 @@
   "resume_relay": "恢复中继",
   "arm_state": {
     "sleeping": "休眠中",
-    "sleeping_title": "已启用，但当前不在活跃时间段内——将在活跃窗口重新开启后触发。"
+    "sleeping_title": "已启用，但当前不在活跃时间段内——将在活跃窗口重新开启后触发。",
+    "unschedulable": "未排程",
+    "unschedulable_title": "已开启，但没有下次运行时间——不会有任何东西启动它。请打开该触发器并设置 cron 表达式或间隔时间。"
   },
   "pending_approval": {
     "approved": "已批准——运行中",

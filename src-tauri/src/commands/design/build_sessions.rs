@@ -1852,7 +1852,12 @@ fn validate_triggers(ir: &crate::db::models::AgentIr) -> Result<(), AppError> {
             .as_ref()
             .map(|v| serde_json::to_string(v).unwrap_or_default());
         trigger_repo::validate_trigger_type(trigger_type)?;
-        trigger_repo::validate_config(trigger_type, config_str.as_deref())?;
+        // `validate_all`, not `validate_config`: the polling SSRF guard and the
+        // "a schedule with neither cron nor interval never fires" preflight used
+        // to run only in the create_trigger IPC command, which this path does
+        // not go through. A build could therefore promote a schedule trigger
+        // with an empty config and no one found out until it silently never ran.
+        trigger_repo::validate_all(trigger_type, config_str.as_deref())?;
     }
     Ok(())
 }
@@ -2209,13 +2214,49 @@ fn create_triggers_in_tx(
         let trigger_id = uuid::Uuid::new_v4().to_string();
         let status = "active";
 
+        // Arm the trigger in the same statement that creates it.
+        //
+        // This INSERT does not go through `trigger_repo::create` (it is inside
+        // the build transaction, alongside the use-case rows), and until
+        // 2026-08-17 it never named `next_trigger_at` — so EVERY schedule and
+        // polling trigger a build session produced was written NULL, which
+        // `get_due` skips forever. The row rendered `armed` and never ran. This
+        // is the single largest producer of the "born dead" population.
+        //
+        // `validate_triggers` (step 3) has already refused a schedule with
+        // neither cron nor interval and a polling URL that fails the SSRF
+        // guard, so a `None` here is an unresolvable timezone/cron or a polling
+        // trigger with no interval. Either way the build refuses rather than
+        // persisting a row that can never become due.
+        let parsed_cfg = crate::db::models::TriggerConfig::from_raw(
+            &trigger_type,
+            config.as_deref(),
+        );
+        let next_trigger_at = personas_core::scheduler::compute_next_from_config(
+            &parsed_cfg,
+            chrono::Utc::now(),
+            personas_core::cron::seed_hash(&trigger_id),
+        );
+        if next_trigger_at.is_none()
+            && personas_core::models::TriggerKind::from_wire(&trigger_type)
+                .is_some_and(|k| k.is_time_based())
+        {
+            return Err(AppError::Validation(
+                crate::validation::trigger::unschedulable_error(
+                    &trigger_type,
+                    config.as_deref(),
+                )
+                .message,
+            ));
+        }
+
         tx.execute(
             "INSERT INTO persona_triggers
-             (id, persona_id, trigger_type, config, enabled, status, use_case_id, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, 1, ?5, ?6, ?7, ?7)",
+             (id, persona_id, trigger_type, config, enabled, status, use_case_id, next_trigger_at, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, 1, ?5, ?6, ?7, ?8, ?8)",
             rusqlite::params![
                 trigger_id, persona_id, trigger_type, encrypted_config,
-                status, use_case_id, now,
+                status, use_case_id, next_trigger_at, now,
             ],
         ).map_err(AppError::Database)?;
 

@@ -763,7 +763,9 @@
   "resume_relay": "Lanjutkan relai",
   "arm_state": {
     "sleeping": "Tidur",
-    "sleeping_title": "Diaktifkan, tetapi di luar jam aktifnya — tidak akan dijalankan hingga jendela aktif dibuka kembali."
+    "sleeping_title": "Diaktifkan, tetapi di luar jam aktifnya — tidak akan dijalankan hingga jendela aktif dibuka kembali.",
+    "unschedulable": "Tidak terjadwal",
+    "unschedulable_title": "Aktif, tetapi tidak punya waktu jalan berikutnya — tidak ada yang akan menjalankannya. Buka pemicu ini dan tetapkan ekspresi cron atau interval."
   },
   "pending_approval": {
     "approved": "Disetujui — berjalan",

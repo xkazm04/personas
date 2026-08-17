@@ -138,5 +138,9 @@
   "adoption_answers_rejected_message": "アンケートの回答に不足または無効なものがあります。",
   "adoption_answers_rejected_suggestion": "セットアップの質問を開き直し、指摘された項目を入力してから続行してください。",
   "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
-  "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
+  "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in.",
+  "trigger_type_not_storable_message": "このバージョンのアプリでは、そのトリガータイプを保存できません。",
+  "trigger_type_not_storable_suggestion": "別のトリガータイプを選んでください。アプリを更新した直後の場合は、対応タイプを拡張するデータベース移行を実行するために一度再起動してください。",
+  "trigger_unschedulable_message": "何も起動しないトリガーになるため、作成を拒否しました。",
+  "trigger_unschedulable_suggestion": "理由はエラーの詳細に表示されています。多くは cron 式または間隔の未設定か、タイムゾーンが \"Europe/Prague\" のような IANA 名になっていないことが原因です。その項目を修正して保存し直してください。"
 }

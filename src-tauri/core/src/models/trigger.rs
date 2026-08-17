@@ -12,6 +12,121 @@ use crate::lifecycle::TriggerStatus;
 // Triggers
 // ============================================================================
 
+/// The closed vocabulary of trigger types — **the single source**.
+///
+/// Before this type existed the same closed set was re-typed by hand in six
+/// places at four different arities (10 / 10 / 10 / 8 / 6 / 4), and the
+/// narrowest of them — the `CHECK` on `persona_triggers.trigger_type` — admitted
+/// six while the Add-trigger menu offered ten. Four of the ten therefore could
+/// not be stored at all, and every attempt failed with an anonymous SQLite
+/// `CHECK constraint failed`. See
+/// `docs/concepts/golden-paths/trigger-wiring-surface.md` §0.1.
+///
+/// Everything now derives from here:
+/// - [`crate::validation::trigger::VALID_TRIGGER_TYPES`] — the door validator.
+/// - the `CHECK` on `persona_triggers.trigger_type`, substituted into the base
+///   schema at bootstrap from [`TriggerKind::sql_check_list`]
+///   (`db/src/migrations/schema.rs` carries a `{{TRIGGER_TYPE_CHECK}}` marker,
+///   not a literal list).
+/// - the client menu, via the ts-rs-exported `TriggerKind` union, which
+///   `TRIGGER_TYPE_OPTIONS` is typed **total** against.
+///
+/// **Do not add a seventh hand-written copy.** If you need the list in a new
+/// place, import it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+#[serde(rename_all = "snake_case")]
+#[ts(export)]
+pub enum TriggerKind {
+    Manual,
+    Schedule,
+    Polling,
+    Webhook,
+    Chain,
+    EventListener,
+    FileWatcher,
+    Clipboard,
+    AppFocus,
+    Composite,
+}
+
+impl TriggerKind {
+    /// Every member of the vocabulary. **THE membership list.**
+    ///
+    /// `VALID_TRIGGER_TYPES` restates the members as wire strings (it has to —
+    /// its consumers are `contains`/`join` over `&str`), but never restates a
+    /// *spelling*: each element is `TriggerKind::X.as_str()`. The two lists are
+    /// asserted equal by `valid_trigger_types_matches_all` below, so a variant
+    /// added to one and not the other fails the test suite.
+    pub const ALL: &'static [TriggerKind] = &[
+        TriggerKind::Manual,
+        TriggerKind::Schedule,
+        TriggerKind::Polling,
+        TriggerKind::Webhook,
+        TriggerKind::Chain,
+        TriggerKind::EventListener,
+        TriggerKind::FileWatcher,
+        TriggerKind::Clipboard,
+        TriggerKind::AppFocus,
+        TriggerKind::Composite,
+    ];
+
+    /// The wire spelling — the value stored in `persona_triggers.trigger_type`.
+    /// Exhaustive by construction: a new variant will not compile until it is
+    /// spelled here, which is what keeps the column, the validator, the CHECK
+    /// and the TS union from ever disagreeing about a name.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            TriggerKind::Manual => "manual",
+            TriggerKind::Schedule => "schedule",
+            TriggerKind::Polling => "polling",
+            TriggerKind::Webhook => "webhook",
+            TriggerKind::Chain => "chain",
+            TriggerKind::EventListener => "event_listener",
+            TriggerKind::FileWatcher => "file_watcher",
+            TriggerKind::Clipboard => "clipboard",
+            TriggerKind::AppFocus => "app_focus",
+            TriggerKind::Composite => "composite",
+        }
+    }
+
+    /// Parse a stored/wire value. `None` for anything outside the vocabulary —
+    /// callers must treat that as a refusal, never as a default.
+    pub fn from_wire(raw: &str) -> Option<TriggerKind> {
+        TriggerKind::ALL.iter().copied().find(|k| k.as_str() == raw)
+    }
+
+    /// True for the kinds whose next fire time the scheduler computes from the
+    /// config — i.e. the kinds for which `next_trigger_at IS NULL` means
+    /// **"this row can never become due"** rather than "not applicable".
+    ///
+    /// `manual` / `webhook` / `chain` / `event_listener` and the ambient kinds
+    /// are woken by something other than the clock, so a NULL is correct there.
+    /// Keep this in step with `crate::scheduler::compute_next_from_config_anchored`,
+    /// which is the function that actually returns the timestamp.
+    pub const fn is_time_based(self) -> bool {
+        matches!(self, TriggerKind::Schedule | TriggerKind::Polling)
+    }
+
+    /// `'manual', 'schedule', …` — the member list for the SQL `CHECK`.
+    /// The base schema carries a `{{TRIGGER_TYPE_CHECK}}` marker that is
+    /// replaced with this at bootstrap, so the constraint cannot drift from the
+    /// enum. Every member is an ASCII identifier from `as_str`, so there is
+    /// nothing to escape.
+    pub fn sql_check_list() -> String {
+        TriggerKind::ALL
+            .iter()
+            .map(|k| format!("'{}'", k.as_str()))
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+}
+
+impl std::fmt::Display for TriggerKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 /// Valid condition types for chain triggers.
 ///
 /// Determines when a chain trigger fires based on the source persona's

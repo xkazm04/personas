@@ -763,7 +763,9 @@
   "resume_relay": "Reprendre le relais",
   "arm_state": {
     "sleeping": "En veille",
-    "sleeping_title": "Activé, mais en dehors de ses heures actives — il ne se déclenchera pas avant la réouverture de la fenêtre active."
+    "sleeping_title": "Activé, mais en dehors de ses heures actives — il ne se déclenchera pas avant la réouverture de la fenêtre active.",
+    "unschedulable": "Non planifié",
+    "unschedulable_title": "Activé, mais sans prochaine exécution : rien ne le démarrera. Ouvrez le déclencheur et définissez une expression cron ou un intervalle."
   },
   "pending_approval": {
     "approved": "Approuvé — en cours",

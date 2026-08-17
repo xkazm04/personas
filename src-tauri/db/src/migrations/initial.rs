@@ -2,7 +2,7 @@ use rusqlite::Connection;
 
 use personas_core::error::AppError;
 
-use super::schema::SCHEMA;
+use super::schema::resolved_schema;
 
 /// Run the consolidated schema migration.
 /// All 11 Vibeman migrations (090--112) are merged into a single idempotent schema.
@@ -31,7 +31,10 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
     let _ = conn.execute_batch("ALTER TABLE dev_competitions ADD COLUMN baseline_json TEXT;");
     let _ = conn.execute_batch("ALTER TABLE dev_competitions ADD COLUMN worktree_base_ref TEXT;");
 
-    conn.execute_batch(SCHEMA)?;
+    // `resolved_schema()` — not the raw `SCHEMA` const — because the
+    // persona_triggers CHECK is derived from `TriggerKind` rather than spelled
+    // out. See schema.rs::resolved_schema.
+    conn.execute_batch(&resolved_schema())?;
 
     // -- Smee Relay management table ------------------------------------------
     conn.execute_batch(
