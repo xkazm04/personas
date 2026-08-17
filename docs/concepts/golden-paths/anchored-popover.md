@@ -20,6 +20,13 @@
 > [`shared-facts.json`](../shared-facts.json); everything else was measured during
 > composition. Deviations become `violating` cells.
 
+> **Post-publication note — 2026-08-17.** The `teams/sub_canvas/` tree (29 files, 3,200
+> lines) was deleted in `78e9bff68` as unreachable, so `EdgeDeleteTooltip.tsx` — the §7
+> deviation "a popover named a tooltip" — **no longer exists**. The deviation is kept
+> because the naming defect recurs and [`tooltip.md`](./tooltip.md) carries the same one
+> against a live site (`plugins/fleet/FleetFooterPopover.tsx:51`). Treat every
+> `sub_canvas` citation below as history, not as code you can open.
+
 ---
 
 ## Correction to the brief, stated first

@@ -296,7 +296,7 @@ Secondary exemplars, each for one property:
 | `teams/sub_kpis/KPIDashboard.tsx:295-300` | The only `LazyChart` `fallback` that follows `page-loading.md` exactly: reserved height, `animate-fade-in`, `animationDelay: '150ms'`, `aria-hidden`. |
 | `overview/sub_activity/MetricsCharts.tsx:15-16` | `const TOOLTIP_CONTENT = <ChartTooltipContent />;` with the comment explaining recharts' reference-identity comparison. The right instinct, written down. |
 | `overview/sub_activity/MetricsCharts.tsx:134-138` | Latency p50/p95/p99 as solid / `4 2` dashed / `2 2` dotted — **three channels**: hue, dash, and stroke width. Readable in greyscale. |
-| `overview/sub_observability/MetricsCharts.tsx:164` | Pie slices carry `label={({name, percent}) => …}` — direct labelling, so identity survives the palette being near-degenerate. |
+| `overview/sub_observability/components/MetricsCharts.tsx:164` | Pie slices carry `label={({name, percent}) => …}` — direct labelling, so identity survives the palette being near-degenerate. |
 | `settings/sub_byom/ProviderSparkline.tsx:31-32` | `Math.max(...data, 1)` / `Math.min(...data, 0)` — a **clamped** domain. One extra argument each, and the scale is pinned to zero. The cheapest correct spelling in the repo. |
 | `agents/sub_deployment/cloud/DailyBreakdownChart.tsx:57`, `:94` | `d.cost / maxCost`, `d.count / maxCount` — ratio-of-maximum, implicitly zero-floored. Honest by construction. |
 | `overview/sub_activity/AthenaUsageSection.tsx:170` | `{dailyChart.length > 1 && …}` — the short-series guard at the call site, before the chart mounts. |
@@ -373,7 +373,7 @@ auditing an unfiltered token scores a colour the app never renders.
 vision on a dark theme** — 0 of 28 pairs below ΔE 10 — and degrades gracefully.
 `CHART_COLORS_PURPLE` is not a categorical palette at all; it is eight lightness
 steps of one hue, and it is used as one at
-`overview/sub_observability/MetricsCharts.tsx:165` to fill pie `<Cell>`s.
+`overview/sub_observability/components/MetricsCharts.tsx:165` to fill pie `<Cell>`s.
 
 Contrast against the panel ground (non-text, 3:1 target):
 
@@ -387,7 +387,7 @@ Contrast against the panel ground (non-text, 3:1 target):
 claim is worth as much as a confirmed one:**
 
 - *"Something encodes meaning by hue alone."* The pie at
-  `sub_observability/MetricsCharts.tsx:164` carries
+  `sub_observability/components/MetricsCharts.tsx:164` carries
   `label={({name, percent}) => …}` — every slice is directly labelled with its name
   and percentage. Identity does not ride on colour. Likewise the latency chart
   (`sub_activity/MetricsCharts.tsx:134-138`) is dash- and width-redundant, and the
@@ -405,7 +405,7 @@ claim is worth as much as a confirmed one:**
 `CHART_COLORS[i % CHART_COLORS.length]` at `sub_activity/MetricsCharts.tsx:65`
 (stacked areas, one per persona), `:165`, `AthenaUsageSection.tsx:148`,
 `LlmSpendSection.tsx:73`, and `CHART_COLORS_PURPLE[i % …]` at
-`sub_observability/MetricsCharts.tsx:165`. With nine personas, series 0 and series 8
+`sub_observability/components/MetricsCharts.tsx:165`. With nine personas, series 0 and series 8
 are byte-identical. (The two bar-row sites are `proportional-bar-list` territory
 and are listed for completeness only.)
 

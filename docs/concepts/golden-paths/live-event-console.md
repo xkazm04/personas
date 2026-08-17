@@ -9,7 +9,7 @@
 > §2, §7, §9, §12. The quality core is unchanged: two implementations of every count, a positive
 > control, hand verification, re-extraction from the finished document.
 >
-> **Sweep size.** Both live event consoles read end to end — `sub_events/EventLogList.tsx` (487
+> **Sweep size.** Both live event consoles read end to end — `sub_events/components/EventLogList.tsx` (487
 > lines) + `libs/useEventLog.ts` (413) + `stores/slices/overview/eventSlice.ts` (69), and
 > `triggers/sub_live_stream/LiveStreamTab.tsx` (471) — plus the transport
 > (`hooks/realtime/createSingletonListener.ts`, `useEventBusListener.ts`), the CDC producer
@@ -34,7 +34,7 @@
 ## 0 The headline: this app has two live event consoles, and the flagship one stops being live the moment you filter it
 
 `src/features/triggers/sub_live_stream/LiveStreamTab.tsx` and
-`src/features/overview/sub_events/EventLogList.tsx` both subscribe to the same Tauri `event-bus`
+`src/features/overview/sub_events/components/EventLogList.tsx` both subscribe to the same Tauri `event-bus`
 channel through the same singleton listener, and render the same `PersonaEvent` rows. One of them
 is a textbook live console. The other is the one in the Overview navigation.
 

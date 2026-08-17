@@ -373,6 +373,47 @@ spine yields under 200 leaves or the link scan finds none.
   attribute at all**, so only a filename rule sees it.
 - Never print a secret value. Shape, location, count only — not even a prefix.
 
+### A citation is a claim about a namespace, and the namespace is usually implicit
+
+Measured 2026-08-17, sweeping the corpus for citations to files that no longer
+exist. **Three instruments, three confident wrong answers, before a right one:**
+
+| pass | answer | why it was wrong |
+|---|---:|---|
+| repo-relative resolution | ~600 dangling across most docs | `src/repos/x.rs` is **crate**-relative (`src-tauri/db/`), not repo-relative |
+| + crate roots | still hundreds | most were **sibling-repo and upstream-Tauri** citations from oracle sweeps — `src/manager/webview.rs` is tauri's own source |
+| + "did this repo ever delete it" | 5 | the corpus cites UI files as `teams/sub_canvas/…`, dropping the `src/features/` prefix, so the resolver never saw them |
+| + prefix tolerance, then hand-verified | **8 real, 1 false positive** | the false positive was `lib/analytics.ts` — a **personas-web** citation that collided with a same-named file this repo deleted years earlier |
+
+Every intermediate answer was plausible, none was flagged by anything, and each
+would have been reported as a finding. The failure is one failure repeated: **a
+path in prose carries no namespace, so the resolver supplies one, and the
+resolver's guess is invisible in its output.** The count looks like a
+measurement of the corpus; it is a measurement of your prefix list.
+
+Three rules follow, and they generalize past citations to any string-shaped
+identifier — a table name, an import specifier, a command name:
+
+1. **Enumerate the namespaces before the first count.** In this repo that is
+   at least: repo root, `src/`, `src/lib/`, `src/features/`, `src-tauri/src/`,
+   and the three extracted crates. A path that resolves under none of them is
+   not automatically dangling.
+2. **A corpus that sweeps siblings contains citations that are correct and
+   unresolvable here.** Distinguish "gone" from "elsewhere" with a
+   *positive* oracle — `git log --diff-filter=D` proves this repo once had the
+   file — not with `fs.existsSync`, which only proves you did not find it.
+3. **Hand-verify the final set, not a sample of an intermediate one.** The last
+   pass was 9 items; opening all 9 took one command and turned up the one false
+   positive, plus the fact that three of the eight had **moved** rather than
+   died — a different correction entirely (fix the path, keep the claim).
+
+The confirmation worth copying: the `stateless-disclosure-control` baseline had
+already moved **59 → 57 matches and 56 → 54 files**, which is exactly the two
+soft matches `expandable-row.md` named by filename. Two independent artifacts
+agreeing on the same two sites is what verification looks like — and note that
+it also proved the precision *improved by deletion*, which is not progress. See
+that document's post-publication note.
+
 ---
 
 ## 3. The severity fact

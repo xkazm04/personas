@@ -7,6 +7,12 @@
 > repos `../personas-web` and `../brainiac/console`, and the installed
 > `react-markdown@10.1.0` source in `node_modules`.
 
+> **Post-publication note — 2026-08-17.** D3 counted **2** bare `<ReactMarkdown>`
+> renderers. One of them, `teams/sub_canvas/components/nodes/StickyNoteNode.tsx:150`, was
+> deleted with the unreachable `sub_canvas` tree in `78e9bff68`. **D3 is now a population
+> of 1** — `plugins/obsidian-brain/sub_browse/BrowsePanel.tsx:291`. The finding did not get
+> better; its population got smaller, and by deletion rather than by fix.
+
 ## Headline: the brief's P0 premise did not survive measurement
 
 The commissioning brief asked me to treat this as the security leaf of the UI layer and

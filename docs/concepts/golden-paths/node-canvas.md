@@ -47,6 +47,15 @@
 > **Settles:** what a node canvas is allowed to let a user draw, what it owes them about what they
 > drew, and what has to be true before an edge on a canvas means anything at all.
 
+> **Post-publication note — 2026-08-17.** This leaf had **two** implementations. One of
+> them — `teams/sub_canvas/`, the @xyflow/react trigger/event-chaining board (29 files, a
+> 27-action reducer, an optimizer, a dry-run debugger) — was deleted in `78e9bff68` after
+> `npm run orphans` put its transitive closure at 0; `TeamCanvas.tsx` had documented it as
+> orphaned and it shipped anyway. **The Mastermind canvas survives and is out of bounds for
+> deletion** (operator, 2026-08-17). Citations below to `teams/sub_canvas/**` — including
+> `teamConstants.tsx:15-16` — are history. The §12.1 finding that this repo's canvas is
+> *inherited, not authored* is unaffected: it was about provenance, not reachability.
+
 ---
 
 ### Sibling boundaries, settled in prose
