@@ -1,4 +1,24 @@
 import type { PersonaTrigger } from '@/lib/types/types';
+import { asTriggerKind, type TriggerKind } from '@/lib/utils/platform/triggerConstants';
+
+/**
+ * The kinds whose next fire time the scheduler computes from the config. For
+ * these and only these, `next_trigger_at === null` means "this row can never
+ * become due"; for every other kind a null is correct, because something other
+ * than the clock wakes them.
+ *
+ * This restates the Rust predicate `TriggerKind::is_time_based`
+ * (`core/src/models/trigger.rs`) — a hand-kept cross-language mirror, declared
+ * as one deliberately. Two things bound the drift: the members are tethered to
+ * the generated `TriggerKind` union, so a renamed or removed kind fails to
+ * compile here; and the tripwire is on the side that changes — the Rust test
+ * `only_schedule_and_polling_are_time_based` pins the predicate to exactly
+ * these two and names this file when it fails. The fact itself cannot ride on
+ * the payload: it is a property of the KIND, not of the row.
+ */
+const TIME_BASED_KINDS: ReadonlySet<TriggerKind> = new Set(
+  ['schedule', 'polling'] satisfies readonly TriggerKind[],
+);
 
 /**
  * Client-side mirror of the Rust `ActiveWindow` (src-tauri/.../db/models/trigger.rs).
@@ -17,7 +37,7 @@ export interface TriggerActiveWindow {
   timezone?: string;
 }
 
-export type TriggerArmState = 'disabled' | 'sleeping' | 'armed';
+export type TriggerArmState = 'disabled' | 'unschedulable' | 'sleeping' | 'armed';
 
 function parseActiveWindow(configStr: string | null | undefined): TriggerActiveWindow | null {
   if (!configStr) return null;
@@ -78,14 +98,36 @@ export function isWithinActiveWindow(aw: TriggerActiveWindow, now: Date): boolea
 }
 
 /**
- * Three-state arm status for a trigger row:
- * - `disabled` — the user toggled it off.
- * - `sleeping` — enabled, but its active-window constraint excludes "now"; it
- *   won't fire until the window reopens. (Previously indistinguishable from off.)
- * - `armed`    — enabled and currently eligible to fire.
+ * Arm status for a trigger row:
+ * - `disabled`      — switched off.
+ * - `unschedulable` — a time-based trigger with no `next_trigger_at`. `get_due`
+ *   requires `next_trigger_at IS NOT NULL`, so this row can never become due no
+ *   matter how long you wait. It used to render as `armed`.
+ * - `sleeping`      — on, but its active-window constraint excludes "now"; it
+ *   won't fire until the window reopens.
+ * - `armed`         — on, schedulable, and currently eligible to fire.
+ *
+ * **This reads `status`, not `enabled`** — deliberately. They are two encodings
+ * of one fact, and the two dispatch predicates that decide whether a trigger
+ * runs (`get_due` and `get_enabled_by_type`) both test `status`. Reading
+ * `enabled` here meant the badge answered a different question from the engine:
+ * on rows where the columns had drifted apart, the row said OFF while the event
+ * bus still dispatched it. `enabled` remains the toggle's own optimistic value
+ * and is still honoured — a row is `disabled` if EITHER says so, so a pending
+ * toggle never reads as armed.
+ *
+ * `armed` is still a claim this function cannot fully substantiate: it cannot
+ * see whether an `event_listener`'s event type is ever published, or whether
+ * the owning persona is switched off. Those need backend answers and are
+ * tracked as the "will this fire?" instrument gap.
  */
 export function getTriggerArmState(trigger: PersonaTrigger, now: Date = new Date()): TriggerArmState {
-  if (!trigger.enabled) return 'disabled';
+  const statusDisabled = typeof trigger.status === 'string' && trigger.status !== 'active';
+  if (statusDisabled || !trigger.enabled) return 'disabled';
+
+  const kind = asTriggerKind(trigger.trigger_type);
+  if (kind && TIME_BASED_KINDS.has(kind) && !trigger.next_trigger_at) return 'unschedulable';
+
   const aw = parseActiveWindow(trigger.config);
   if (aw && aw.enabled && aw.days.length > 0 && !isWithinActiveWindow(aw, now)) return 'sleeping';
   return 'armed';

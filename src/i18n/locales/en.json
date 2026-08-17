@@ -10262,7 +10262,9 @@
     },
     "arm_state": {
       "sleeping": "Sleeping",
-      "sleeping_title": "Enabled, but outside its active hours — it won't fire until the active window reopens."
+      "sleeping_title": "Enabled, but outside its active hours — it won't fire until the active window reopens.",
+      "unschedulable": "Not scheduled",
+      "unschedulable_title": "On, but it has no next run time — nothing will ever start it. Open the trigger and set a cron expression or an interval."
     },
     "pending_approval": {
       "title": "Awaiting your approval",
@@ -11997,7 +11999,11 @@
     "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
     "adoption_answers_rejected_message": "Some questionnaire answers are missing or not valid.",
     "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in.",
-    "adoption_answers_rejected_suggestion": "Reopen the setup questions and complete the ones named, then continue."
+    "adoption_answers_rejected_suggestion": "Reopen the setup questions and complete the ones named, then continue.",
+    "trigger_unschedulable_message": "This trigger was refused because nothing would ever start it.",
+    "trigger_unschedulable_suggestion": "The reason is in the error detail — usually a missing cron expression or interval, or a timezone that is not an IANA zone name like \"Europe/Prague\". Fix that field and save again.",
+    "trigger_type_not_storable_message": "This app version cannot store that trigger type.",
+    "trigger_type_not_storable_suggestion": "Pick a different trigger type. If the app was just updated, restart it once so the database migration that widens the accepted types can run."
   },
   "empty_states": {
     "credentials_title": "Your agents need credentials to run",

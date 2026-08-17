@@ -10401,7 +10401,9 @@
     "resume_relay": "恢复中继",
     "arm_state": {
       "sleeping": "休眠中",
-      "sleeping_title": "已启用，但当前不在活跃时间段内——将在活跃窗口重新开启后触发。"
+      "sleeping_title": "已启用，但当前不在活跃时间段内——将在活跃窗口重新开启后触发。",
+      "unschedulable": "未排程",
+      "unschedulable_title": "已开启，但没有下次运行时间——不会有任何东西启动它。请打开该触发器并设置 cron 表达式或间隔时间。"
     },
     "pending_approval": {
       "approved": "已批准——运行中",
@@ -11767,7 +11769,11 @@
     "adoption_answers_rejected_message": "问卷中有些答案缺失或无效。",
     "adoption_answers_rejected_suggestion": "重新打开设置问题，补全列出的项目，然后继续。",
     "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
-    "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
+    "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in.",
+    "trigger_type_not_storable_message": "当前应用版本无法保存该触发器类型。",
+    "trigger_type_not_storable_suggestion": "请改选其他触发器类型。如果应用刚刚更新过，请重启一次，让扩展可用类型的数据库迁移得以运行。",
+    "trigger_unschedulable_message": "该触发器已被拒绝，因为没有任何东西会启动它。",
+    "trigger_unschedulable_suggestion": "原因见错误详情——通常是缺少 cron 表达式或间隔时间，或者时区不是 \"Europe/Prague\" 这类 IANA 名称。修正该字段后重新保存。"
   },
   "empty_states": {
     "credentials_title": "您的智能体需要凭证才能运行",

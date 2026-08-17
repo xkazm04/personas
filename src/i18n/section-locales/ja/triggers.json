@@ -763,7 +763,9 @@
   "resume_relay": "リレーを再開",
   "arm_state": {
     "sleeping": "スリープ中",
-    "sleeping_title": "有効ですが、アクティブ時間外です — アクティブウィンドウが再開するまで実行されません。"
+    "sleeping_title": "有効ですが、アクティブ時間外です — アクティブウィンドウが再開するまで実行されません。",
+    "unschedulable": "未スケジュール",
+    "unschedulable_title": "オンですが次回実行時刻がありません。何も起動しません。トリガーを開いて cron 式または間隔を設定してください。"
   },
   "pending_approval": {
     "approved": "承認済み — 実行中",

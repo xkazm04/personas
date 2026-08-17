@@ -10401,7 +10401,9 @@
     "resume_relay": "Lanjutkan relai",
     "arm_state": {
       "sleeping": "Tidur",
-      "sleeping_title": "Diaktifkan, tetapi di luar jam aktifnya — tidak akan dijalankan hingga jendela aktif dibuka kembali."
+      "sleeping_title": "Diaktifkan, tetapi di luar jam aktifnya — tidak akan dijalankan hingga jendela aktif dibuka kembali.",
+      "unschedulable": "Tidak terjadwal",
+      "unschedulable_title": "Aktif, tetapi tidak punya waktu jalan berikutnya — tidak ada yang akan menjalankannya. Buka pemicu ini dan tetapkan ekspresi cron atau interval."
     },
     "pending_approval": {
       "approved": "Disetujui — berjalan",
@@ -11767,7 +11769,11 @@
     "adoption_answers_rejected_message": "Beberapa jawaban kuesioner belum diisi atau tidak valid.",
     "adoption_answers_rejected_suggestion": "Buka kembali pertanyaan penyiapan, lengkapi yang disebutkan, lalu lanjutkan.",
     "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
-    "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
+    "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in.",
+    "trigger_type_not_storable_message": "Versi aplikasi ini tidak dapat menyimpan tipe pemicu tersebut.",
+    "trigger_type_not_storable_suggestion": "Pilih tipe pemicu lain. Jika aplikasi baru saja diperbarui, mulai ulang sekali agar migrasi basis data yang memperluas tipe yang diterima dapat berjalan.",
+    "trigger_unschedulable_message": "Pemicu ini ditolak karena tidak akan pernah ada yang menjalankannya.",
+    "trigger_unschedulable_suggestion": "Alasannya ada di detail galat — biasanya ekspresi cron atau interval yang belum diisi, atau zona waktu yang bukan nama IANA seperti \"Europe/Prague\". Perbaiki kolom tersebut lalu simpan lagi."
   },
   "empty_states": {
     "credentials_title": "Agen Anda membutuhkan kredensial untuk berjalan",

@@ -36,17 +36,20 @@ export function PollingConfig({
           </ThemedSelect>
         </TriggerFieldGroup>
       )}
-      {!selectedEventId && (
-        <TriggerFieldGroup label={t.triggers.endpoint_url}>
-          <input
-            type="text"
-            value={endpoint}
-            onChange={(e) => setEndpoint(e.target.value)}
-            placeholder={t.triggers.polling_endpoint_placeholder}
-            className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
-          />
-        </TriggerFieldGroup>
-      )}
+      {/* The URL is ALWAYS required, including when a credential event is
+          chosen. This field used to be hidden by `!selectedEventId`, but
+          `config.event_id` has no reader in the engine — picking an event
+          produced a polling trigger with nothing to fetch, which the poller
+          skipped silently on every tick. */}
+      <TriggerFieldGroup label={t.triggers.endpoint_url}>
+        <input
+          type="text"
+          value={endpoint}
+          onChange={(e) => setEndpoint(e.target.value)}
+          placeholder={t.triggers.polling_endpoint_placeholder}
+          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
+        />
+      </TriggerFieldGroup>
     </>
   );
 }

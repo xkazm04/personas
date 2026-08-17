@@ -10401,7 +10401,9 @@
     "resume_relay": "Возобновить ретрансляцию",
     "arm_state": {
       "sleeping": "Спящий режим",
-      "sleeping_title": "Включён, но вне активного расписания — не сработает до открытия следующего активного окна."
+      "sleeping_title": "Включён, но вне активного расписания — не сработает до открытия следующего активного окна.",
+      "unschedulable": "Без расписания",
+      "unschedulable_title": "Включён, но времени следующего запуска нет — его ничто не запустит. Откройте триггер и задайте выражение cron или интервал."
     },
     "pending_approval": {
       "approved": "Одобрено — выполняется",
@@ -11767,7 +11769,11 @@
     "adoption_answers_rejected_message": "Некоторые ответы анкеты отсутствуют или недопустимы.",
     "adoption_answers_rejected_suggestion": "Откройте вопросы настройки заново, заполните указанные и продолжите.",
     "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
-    "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
+    "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in.",
+    "trigger_type_not_storable_message": "Эта версия приложения не может сохранить такой тип триггера.",
+    "trigger_type_not_storable_suggestion": "Выберите другой тип триггера. Если приложение только что обновилось, перезапустите его один раз, чтобы выполнилась миграция базы данных, расширяющая список допустимых типов.",
+    "trigger_unschedulable_message": "Триггер отклонён: его ничто и никогда не запустило бы.",
+    "trigger_unschedulable_suggestion": "Причина указана в деталях ошибки — обычно это отсутствующее выражение cron или интервал либо часовой пояс, не являющийся именем IANA, например \"Europe/Prague\". Исправьте это поле и сохраните снова."
   },
   "empty_states": {
     "credentials_title": "Вашим агентам нужны учётные данные для работы",

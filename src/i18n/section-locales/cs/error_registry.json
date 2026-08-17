@@ -138,5 +138,9 @@
   "adoption_answers_rejected_message": "Některé odpovědi v dotazníku chybí nebo nejsou platné.",
   "adoption_answers_rejected_suggestion": "Otevřete znovu úvodní otázky, doplňte uvedené položky a pokračujte.",
   "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
-  "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
+  "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in.",
+  "trigger_type_not_storable_message": "Tato verze aplikace neumí uložit takový typ spouštěče.",
+  "trigger_type_not_storable_suggestion": "Zvolte jiný typ spouštěče. Pokud byla aplikace právě aktualizována, jednou ji restartujte, aby proběhla migrace databáze, která rozšiřuje povolené typy.",
+  "trigger_unschedulable_message": "Tento spouštěč byl odmítnut, protože by ho nikdy nic nespustilo.",
+  "trigger_unschedulable_suggestion": "Důvod najdete v detailu chyby – obvykle chybí výraz cron nebo interval, případně časové pásmo není název IANA jako \"Europe/Prague\". Opravte toto pole a uložte znovu."
 }

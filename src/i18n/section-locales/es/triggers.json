@@ -763,7 +763,9 @@
   "resume_relay": "Reanudar relay",
   "arm_state": {
     "sleeping": "En espera",
-    "sleeping_title": "Activado, pero fuera de su horario activo — no se disparará hasta que se abra de nuevo la ventana activa."
+    "sleeping_title": "Activado, pero fuera de su horario activo — no se disparará hasta que se abra de nuevo la ventana activa.",
+    "unschedulable": "Sin programar",
+    "unschedulable_title": "Activo, pero no tiene próxima ejecución: nada lo iniciará. Abre el disparador y define una expresión cron o un intervalo."
   },
   "pending_approval": {
     "approved": "Aprobado — ejecutando",

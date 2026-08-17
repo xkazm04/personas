@@ -10401,7 +10401,9 @@
     "resume_relay": "Relay fortsetzen",
     "arm_state": {
       "sleeping": "Ruhend",
-      "sleeping_title": "Aktiviert, aber außerhalb der aktiven Zeiten — wird nicht ausgelöst, bis das aktive Zeitfenster wieder öffnet."
+      "sleeping_title": "Aktiviert, aber außerhalb der aktiven Zeiten — wird nicht ausgelöst, bis das aktive Zeitfenster wieder öffnet.",
+      "unschedulable": "Nicht geplant",
+      "unschedulable_title": "Aktiv, aber ohne nächste Laufzeit – nichts wird ihn starten. Öffne den Auslöser und lege einen Cron-Ausdruck oder ein Intervall fest."
     },
     "pending_approval": {
       "approved": "Genehmigt — wird ausgeführt",
@@ -11767,7 +11769,11 @@
     "adoption_answers_rejected_message": "Einige Antworten im Fragebogen fehlen oder sind ungültig.",
     "adoption_answers_rejected_suggestion": "Öffnen Sie die Einrichtungsfragen erneut, ergänzen Sie die genannten Punkte und fahren Sie fort.",
     "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
-    "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
+    "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in.",
+    "trigger_type_not_storable_message": "Diese App-Version kann diesen Auslösertyp nicht speichern.",
+    "trigger_type_not_storable_suggestion": "Wähle einen anderen Auslösertyp. Wenn die App gerade aktualisiert wurde, starte sie einmal neu, damit die Datenbankmigration laufen kann, die die zulässigen Typen erweitert.",
+    "trigger_unschedulable_message": "Dieser Auslöser wurde abgelehnt, weil ihn nie etwas starten würde.",
+    "trigger_unschedulable_suggestion": "Der Grund steht in den Fehlerdetails – meist ein fehlender Cron-Ausdruck oder ein fehlendes Intervall oder eine Zeitzone, die kein IANA-Name wie \"Europe/Prague\" ist. Korrigiere dieses Feld und speichere erneut."
   },
   "empty_states": {
     "credentials_title": "Ihre Agenten benötigen Zugangsdaten",

@@ -431,7 +431,17 @@ mod tests {
         for kind in TriggerKind::ALL {
             let expected =
                 matches!(kind, TriggerKind::Schedule | TriggerKind::Polling);
-            assert_eq!(kind.is_time_based(), expected, "{}", kind.as_str());
+            assert_eq!(
+                kind.is_time_based(),
+                expected,
+                "{} changed its time-based classification. This predicate is \
+                 mirrored on the client in \
+                 src/features/triggers/sub_triggers/triggerArmState.ts \
+                 (TIME_BASED_KINDS) — update that set in the same change, or \
+                 the badge will stop telling the user their trigger can never \
+                 fire.",
+                kind.as_str()
+            );
         }
     }
 

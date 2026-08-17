@@ -10401,7 +10401,9 @@
     "resume_relay": "Reprendre le relais",
     "arm_state": {
       "sleeping": "En veille",
-      "sleeping_title": "Activé, mais en dehors de ses heures actives — il ne se déclenchera pas avant la réouverture de la fenêtre active."
+      "sleeping_title": "Activé, mais en dehors de ses heures actives — il ne se déclenchera pas avant la réouverture de la fenêtre active.",
+      "unschedulable": "Non planifié",
+      "unschedulable_title": "Activé, mais sans prochaine exécution : rien ne le démarrera. Ouvrez le déclencheur et définissez une expression cron ou un intervalle."
     },
     "pending_approval": {
       "approved": "Approuvé — en cours",
@@ -11767,7 +11769,11 @@
     "adoption_answers_rejected_message": "Certaines réponses du questionnaire sont manquantes ou invalides.",
     "adoption_answers_rejected_suggestion": "Rouvrez les questions de configuration, complétez celles qui sont indiquées, puis continuez.",
     "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
-    "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
+    "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in.",
+    "trigger_type_not_storable_message": "Cette version de l'application ne peut pas enregistrer ce type de déclencheur.",
+    "trigger_type_not_storable_suggestion": "Choisissez un autre type de déclencheur. Si l'application vient d'être mise à jour, redémarrez-la une fois pour que la migration de base de données qui élargit les types acceptés puisse s'exécuter.",
+    "trigger_unschedulable_message": "Ce déclencheur a été refusé car rien ne le démarrerait jamais.",
+    "trigger_unschedulable_suggestion": "La raison figure dans le détail de l'erreur : le plus souvent une expression cron ou un intervalle manquant, ou un fuseau horaire qui n'est pas un nom IANA comme \"Europe/Prague\". Corrigez ce champ puis enregistrez à nouveau."
   },
   "empty_states": {
     "credentials_title": "Vos agents ont besoin d'identifiants pour fonctionner",

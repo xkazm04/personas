@@ -763,7 +763,9 @@
   "resume_relay": "Obnovit relay",
   "arm_state": {
     "sleeping": "Spí",
-    "sleeping_title": "Povoleno, ale mimo aktivní hodiny — nespustí se, dokud se aktivní okno znovu neotevře."
+    "sleeping_title": "Povoleno, ale mimo aktivní hodiny — nespustí se, dokud se aktivní okno znovu neotevře.",
+    "unschedulable": "Bez plánu",
+    "unschedulable_title": "Zapnuto, ale bez času dalšího spuštění – nic ho nespustí. Otevřete spouštěč a nastavte výraz cron nebo interval."
   },
   "pending_approval": {
     "approved": "Schváleno — probíhá",

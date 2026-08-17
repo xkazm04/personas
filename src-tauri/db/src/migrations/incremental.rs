@@ -2376,51 +2376,88 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .collect();
 
     if !trigger_table_sql.is_empty() && !missing_kinds.is_empty() {
+        // The replacement shape is derived from the table's OWN stored DDL, not
+        // hand-written here — the `widen_kpi_measurement_source_with_ai_compose`
+        // / `rebuild_executions_table_with_incomplete_status` discipline. The
+        // two earlier persona_triggers rebuilds in this file (:469, :1071) DID
+        // hand-write their column lists, and replaying the second one against a
+        // copy of the operator's live database destroyed `status`,
+        // `trigger_version` and `unattended_mode` — 351 non-null values each —
+        // while preserving the row count exactly, so no row-count assertion
+        // could have caught it. This step runs at the END of the chain, where
+        // the live shape is not knowable from this file, which is precisely
+        // when a hand-written list is most wrong.
+        //
+        // Only the CHECK's member list changes, so one `replacen` over the
+        // stored DDL does the whole job, and `SELECT *` is then sound because
+        // the staging shape descends from the source's own DDL.
+        let open_paren = trigger_table_sql
+            .find("CHECK(trigger_type IN (")
+            .map(|i| i + "CHECK(trigger_type IN (".len());
+        let (start, end) = match open_paren
+            .and_then(|s| trigger_table_sql[s..].find(')').map(|e| (s, s + e)))
+        {
+            Some(pair) => pair,
+            None => {
+                // Not the shape this step was written against. Bail loudly
+                // rather than build a table that silently keeps the old
+                // constraint (or mangles a different clause).
+                return Err(AppError::Validation(
+                    "persona_triggers.trigger_type CHECK is not in the expected shape — refusing to rebuild"
+                        .into(),
+                ));
+            }
+        };
+        let widened = format!(
+            "{}{}{}",
+            &trigger_table_sql[..start],
+            personas_core::models::TriggerKind::sql_check_list(),
+            &trigger_table_sql[end..],
+        );
+        // Re-point the CREATE at a staging name. `persona_triggers` occurs once
+        // as the table name; the FK clause references `personas`, which does
+        // not contain the token.
+        let staged = widened.replacen("persona_triggers", "persona_triggers_kinds_new", 1);
+        if staged == widened {
+            return Err(AppError::Validation(
+                "persona_triggers rebuild could not re-point its CREATE at a staging name".into(),
+            ));
+        }
+
+        // Index/trigger DDL to replay after the rename — dropping the table
+        // drops them with it. Auto-indexes have a NULL `sql`.
+        let aux_sql: Vec<String> = {
+            let mut stmt = conn.prepare(
+                "SELECT sql FROM sqlite_master
+                 WHERE tbl_name='persona_triggers'
+                   AND type IN ('index','trigger')
+                   AND sql IS NOT NULL",
+            )?;
+            let rows = stmt.query_map([], |r| r.get::<_, String>(0))?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)?
+        };
+
         // FK enforcement OFF for the swap: with foreign_keys=ON the
         // `DROP TABLE persona_triggers` fires ON DELETE SET NULL on
         // persona_executions.trigger_id and ON DELETE CASCADE on
-        // pending_trigger_fires / composite_trigger_fires. Same discipline as
-        // the 'chain' and 'event_listener' rebuilds above. The guard re-enables
+        // pending_trigger_fires / composite_trigger_fires. The guard re-enables
         // FK on scope exit.
         let _fk_guard = crate::FkDisabledGuard::new(conn).map_err(AppError::Database)?;
-        // Explicit column list on BOTH sides (never `SELECT *`): a positional
-        // copy across two independently-authored shapes shifts values into the
-        // wrong columns if a legacy DB's column order drifted.
-        let sql = format!(
-            "DROP TABLE IF EXISTS persona_triggers_new;
-            CREATE TABLE persona_triggers_new (
-                id                TEXT PRIMARY KEY,
-                persona_id        TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
-                trigger_type      TEXT NOT NULL CHECK(trigger_type IN ({check_list})),
-                config            TEXT,
-                enabled           INTEGER NOT NULL DEFAULT 1,
-                status            TEXT NOT NULL DEFAULT 'active',
-                last_triggered_at TEXT,
-                next_trigger_at   TEXT,
-                trigger_version   INTEGER NOT NULL DEFAULT 0,
-                use_case_id       TEXT,
-                unattended_mode   TEXT NOT NULL DEFAULT 'auto',
-                created_at        TEXT NOT NULL,
-                updated_at        TEXT NOT NULL
-            );
-            INSERT INTO persona_triggers_new
-                (id, persona_id, trigger_type, config, enabled, status, last_triggered_at,
-                 next_trigger_at, trigger_version, use_case_id, unattended_mode,
-                 created_at, updated_at)
-                SELECT id, persona_id, trigger_type, config, enabled, status, last_triggered_at,
-                       next_trigger_at, trigger_version, use_case_id, unattended_mode,
-                       created_at, updated_at
-                FROM persona_triggers;
-            DROP TABLE persona_triggers;
-            ALTER TABLE persona_triggers_new RENAME TO persona_triggers;
-            CREATE INDEX IF NOT EXISTS idx_ptr_persona      ON persona_triggers(persona_id);
-            CREATE INDEX IF NOT EXISTS idx_ptr_next_trigger ON persona_triggers(next_trigger_at);
-            CREATE INDEX IF NOT EXISTS idx_ptr_enabled      ON persona_triggers(enabled);
-            CREATE INDEX IF NOT EXISTS idx_ptr_status       ON persona_triggers(status);
-            CREATE INDEX IF NOT EXISTS idx_pt_use_case      ON persona_triggers(use_case_id);",
-            check_list = personas_core::models::TriggerKind::sql_check_list(),
-        );
-        ddl_step(conn, &sql)?;
+
+        let mut batch = String::new();
+        batch.push_str("DROP TABLE IF EXISTS persona_triggers_kinds_new;\n");
+        batch.push_str(&staged);
+        batch.push_str(";\n");
+        batch
+            .push_str("INSERT INTO persona_triggers_kinds_new SELECT * FROM persona_triggers;\n");
+        batch.push_str("DROP TABLE persona_triggers;\n");
+        batch.push_str("ALTER TABLE persona_triggers_kinds_new RENAME TO persona_triggers;\n");
+        for s in &aux_sql {
+            batch.push_str(s);
+            batch.push_str(";\n");
+        }
+        ddl_step(conn, &batch)?;
         tracing::info!(
             added = ?missing_kinds,
             "Widened persona_triggers.trigger_type CHECK to the full TriggerKind vocabulary"

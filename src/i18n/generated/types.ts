@@ -10269,6 +10269,8 @@ export type Translations = {
     arm_state: {
       sleeping: string;
       sleeping_title: string;
+      unschedulable: string;
+      unschedulable_title: string;
     };
     pending_approval: {
       title: string;
@@ -12004,6 +12006,10 @@ export type Translations = {
     adoption_answers_rejected_message: string;
     _comment_adoption_answers_rejected_suggestion: string;
     adoption_answers_rejected_suggestion: string;
+    trigger_unschedulable_message: string;
+    trigger_unschedulable_suggestion: string;
+    trigger_type_not_storable_message: string;
+    trigger_type_not_storable_suggestion: string;
   };
   empty_states: {
     credentials_title: string;

@@ -10401,7 +10401,9 @@
     "resume_relay": "রিলে পুনরায় চালু করুন",
     "arm_state": {
       "sleeping": "নিষ্ক্রিয়",
-      "sleeping_title": "সক্ষম, তবে সক্রিয় সময়ের বাইরে — সক্রিয় উইন্ডো পুনরায় না খোলা পর্যন্ত এটি চালু হবে না।"
+      "sleeping_title": "সক্ষম, তবে সক্রিয় সময়ের বাইরে — সক্রিয় উইন্ডো পুনরায় না খোলা পর্যন্ত এটি চালু হবে না।",
+      "unschedulable": "সময়সূচি নেই",
+      "unschedulable_title": "চালু আছে, কিন্তু পরবর্তী চালানোর সময় নেই — কিছুই এটি শুরু করবে না। ট্রিগারটি খুলে একটি cron এক্সপ্রেশন বা ব্যবধান নির্ধারণ করুন।"
     },
     "pending_approval": {
       "approved": "অনুমোদিত — চলছে",
@@ -11767,7 +11769,11 @@
     "adoption_answers_rejected_message": "প্রশ্নমালার কিছু উত্তর অনুপস্থিত বা বৈধ নয়।",
     "adoption_answers_rejected_suggestion": "সেটআপ প্রশ্নগুলো আবার খুলুন, উল্লিখিত উত্তরগুলো পূরণ করুন, তারপর এগিয়ে যান।",
     "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
-    "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
+    "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in.",
+    "trigger_type_not_storable_message": "অ্যাপের এই সংস্করণ ওই ট্রিগার ধরন সংরক্ষণ করতে পারে না।",
+    "trigger_type_not_storable_suggestion": "অন্য একটি ট্রিগার ধরন বেছে নিন। অ্যাপ সবেমাত্র আপডেট হয়ে থাকলে একবার পুনরায় চালু করুন, যাতে গ্রহণযোগ্য ধরনগুলি বাড়ানোর ডেটাবেস মাইগ্রেশন চলতে পারে।",
+    "trigger_unschedulable_message": "এই ট্রিগারটি প্রত্যাখ্যান করা হয়েছে, কারণ কিছুই কখনও এটি চালু করত না।",
+    "trigger_unschedulable_suggestion": "কারণটি ত্রুটির বিবরণে আছে — সাধারণত cron এক্সপ্রেশন বা ব্যবধান অনুপস্থিত, অথবা টাইমজোনটি \"Europe/Prague\"-এর মতো IANA নাম নয়। ওই ফিল্ডটি ঠিক করে আবার সংরক্ষণ করুন।"
   },
   "empty_states": {
     "credentials_title": "এজেন্ট চালাতে শংসাপত্র দরকার",
