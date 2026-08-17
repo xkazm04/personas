@@ -4450,6 +4450,36 @@
         "matches": 42
       },
       "floor": 4000
+    },
+    {
+      "id": "hardcoded-model-choice-label",
+      "goldenPath": "docs/concepts/golden-paths/model-and-effort-selection.md",
+      "title": "A model-tier or reasoning-effort option whose display label is a hardcoded literal instead of a catalogue key",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?:value|id)\\s*:\\s*(['\"])(?:low|medium|high|xhigh|haiku|sonnet|opus)\\1\\s*,\\s*label\\s*:\\s*['\"]",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "an option object whose value is one of the app's SEVEN closed model/effort tokens (the four EFFORT_LEVELS from src/lib/models/modelCatalog.ts:72 plus the three tier slugs from ANTHROPIC_MODELS at :16-20) and whose display label is a string literal typed right there. PROXY FOR the stack-free condition: a closed model/effort vocabulary is re-declared at a choice surface with a hardcoded label instead of being imported from the catalogue that owns it. PRECISION 20/20, every match opened. The COMPLIANT form is the same option shape with `labelKey: 'models.effort_<id>'` (modelCatalog.ts:83-88), whose template-literal type makes a label that is not an i18n key for a real level fail to compile; the positive control counts exactly that and scores 4. 20 + 4 = 24 is the COMPLETE population of option objects in 4,829 files that pair one of these seven tokens with a display label, so the rule partitions its own population rather than reporting a ratio. WHY IT MATTERS beyond i18n: the five surfaces that render an effort level produce ELEVEN distinct English strings for FOUR values (Low/Medium/High/xhigh, Low/Medium/High/MISSING, Low/Medium/High/Max, Fast/Balanced/Deep/Max, and the raw token), so a support answer naming a level is ambiguous, and the arity drifts too - status_tokens.thinking has 3 arms against EFFORT_LEVELS' 4 in 14 of 14 locales. EXCLUDE: src/stores/themeStore.ts, where low/mid/high is a DISPLAY BRIGHTNESS scale - the only homonym in 4,829 files, and its four matches are correct code. RECALL is deliberately partial: a list using `name:` or `title:` instead of `label:`, or ordering the keys label-first, reads as compliant; ModelRoutingSection.tsx:91-94 renders the bare token straight into an <option> with no label key at all and is invisible here; and the vocabulary is derived from the tree (modelCatalog.ts) rather than imagined, which is what keeps the brightness homonym the only false positive. PRECONDITION (must be re-derived per repo): this repo exposes a CLOSED, SEVEN-VALUE model/effort vocabulary to the user AND owns a catalogue module with i18n-keyed options. A repo with free-text model inputs (ascent: two <input> fields, zero option lists) or no model UI at all (brainiac, personas-cloud) scores ZERO here while the condition is absent, and a repo with hardcoded option lists and no catalogue (vibeman: 2 lists, 6 inline English labels) scores zero because the token set differs. Four of five sibling repos audited for this path would report a clean run.",
+        "note": "Zero of the 20 matched lines is matched by any of the 165 baselined rules (0.0% exact-line overlap, measured with the final pattern). The nearest neighbour, frozen-ui-copy-constant, requires a TWO-WORD label and therefore matches the Qwen rows of the same array while structurally unable to match the Anthropic ones."
+      },
+      "exclude": [
+        {
+          "path": "src/stores/themeStore.ts",
+          "reason": "DARK_BRIGHTNESS_LEVELS / LIGHT_BRIGHTNESS_LEVELS use low/mid/high as a DISPLAY BRIGHTNESS scale, not a reasoning-effort level. A genuine homonym in this repo's vocabulary and the only one in 4,829 files; the four matches there are correct code."
+        }
+      ],
+      "baseline": {
+        "files": 5,
+        "matches": 20
+      },
+      "floor": 2000
     }
   ]
 }

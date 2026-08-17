@@ -454,6 +454,17 @@ A practice independently reinvented in a repo with different people and
 constraints is **physics**. One with no trace elsewhere is **local calibration**
 and must be labelled a house convention, not doctrine.
 
+**A check cannot distinguish an absence from a deliberate identity.** Earned by
+[`model-and-effort-selection`](./golden-paths/model-and-effort-selection.md),
+and it is the sharpest form yet of the symmetry problem
+[`translation-completeness`](./golden-paths/translation-completeness.md) named:
+when `en = "xhigh"` and `ko = "xhigh"`, the untranslated-string check reads the
+match as a **deliberate do-not-translate term** — a brand, a protocol name, a
+unit. **A machine token is shaped exactly like a proper noun.** The same
+structure appears wherever a checker infers intent from equality: an unchanged
+value and an intentionally-identical value are the same bytes. If your
+instrument's negative case is "these agree", say what else agreeing looks like.
+
 **A fleet-wide silence can be local to a *component*, not to the fleet.** The
 sharpest form of "converged on the disease" yet measured, by
 [`entity-picker`](./golden-paths/entity-picker.md): **0 of 3 siblings disclose a

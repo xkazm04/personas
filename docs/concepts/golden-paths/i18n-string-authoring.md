@@ -261,7 +261,16 @@ correctly and nothing else does all of them together:
   > arm*: `thinking.xhigh` is missing, so this line — the one this section names
   > as the site to copy — renders the raw token on screen, in all 14 locales.
   > The same concept **is** translated everywhere else under
-  > `models.effort_xhigh`. Doing every step right does not save you when the
+  > `models.effort_xhigh` — **which is itself only PARTLY true, amended
+  > 2026-08-17 by [model-and-effort-selection](./model-and-effort-selection.md):
+  > `models.effort_xhigh` is the raw token in `en`, `ko` and `vi`, and `"Xhigh"`
+  > in `id`. English is the source of truth, so the escape hatch this note points
+  > at is broken for the default-locale user.** The root cause is worth more than
+  > the correction: when `en = "xhigh"` and `ko = "xhigh"`,
+  > `check-untranslated.mjs` reads the match as a deliberate do-not-translate
+  > term. **A locale check cannot tell a missing translation from a proper noun,
+  > and a machine token is shaped like one.** Doing every step right does not
+  > save you when the
   > enumeration is incomplete, because every completeness gate in this repo
   > compares the locale catalogs **to each other** and an absence punched
   > identically through all 14 is invisible by construction. 36 such arms are

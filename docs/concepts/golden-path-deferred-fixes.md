@@ -2105,6 +2105,81 @@ surfaced the `sensitive` gap.
 
 ---
 
+## 51. All 78 personas run at one model and one effort, and the UI shows neither
+
+**Where:** `runner/mod.rs:352`; `config_merge.rs:45-56`;
+`PersonaConfigPanel.tsx:13-19,:227-233`; `cli_args.rs:300-303`;
+`athena_reaction.rs:551-554`; `compareHelpers.ts:22-24`.
+
+**What is measured:** the app offers **3 model tiers × 4 effort levels**.
+Replayed over your 78 live personas, **all 78 resolve to one cell:
+`claude-sonnet-4-6 @ medium`.** 74 arrive there by falling through a six-layer
+cascade into a hardcoded constant; 4 name the same value the constant would
+give. **Five of the six layers have never held a value** — `global_model_profile`
+absent from a 32-row `app_settings`, `default_model_profile` NULL on 8/8 teams,
+`model_profile` NULL on 74/78, 0 routing rules, `model_preference` NULL on
+316/316. Effort is set on **0 of 78**, and `thinking_level` holds **one distinct
+value across 1,004 populated rows**.
+
+**The floor works, and the cross-tab proves it.** Every run with
+`model_profile = null` used `claude-opus-4-8[1m]` — **141 of 141** — costing
+**$193.24 over 152 rows in 37 hours**, and stopping dead on 2026-06-14, the day
+the floor landed. **569 executions since, 100% sonnet.**
+
+**But the UI shows neither value.** The Configuration tab has **no effort row at
+all** — `EffectiveModelConfig` has no `effort` field, so effort has **1**
+resolution layer where model has 6. And for 74 personas the Model cell renders
+`--`, with a header comment explaining that as *"the accurate state for personas
+that inherit the CLI default"* — **which stopped being true on 2026-06-14.** The
+panel models the cascade and not the terminal constant, so it describes a fixed
+leak as still leaking.
+
+**Three places the effort is silently wrong, not merely absent:**
+
+- `cli_args.rs:300-303` — the resume builder pins `DEFAULT_EFFORT` and emits **no
+  `--model`**, while its comment claims it *"keeps continued sessions on the same
+  effort policy as their initial run"*. Its signature takes only a session id, so
+  it cannot.
+- `athena_reaction.rs:551-554` — the replayed argv contains **`--effort medium …
+  --effort low`**, twice. An assertion that `effort_count == 1` exists *inside*
+  the builder, one frame below the violation.
+- `oneshot.rs:171-189` — all 8 `call_claude_text` callers drop their tier's
+  bench-chosen effort, and `MICRO`/`ASIDE` document `None` as *the model's
+  default (high)*, so the omission lands **above** the chosen level.
+
+**A 1,000× unit error in a price comparison:** `compareHelpers.ts:22-24` states
+per-**million** prices as `/1K`, and **two of the three numbers are wrong at
+source**; `pricing.ts:8-10` re-types the same two errors.
+
+**Why held:** wiring effort through changes what every persona actually runs at
+and what it costs.
+
+**The app's own defaults contradict its own bench, narrowly.**
+`BUILD_TURN_EFFORT = "xhigh"` was set with no reference to the only measurement
+in the repo — which found quality *inverting* above medium on long-form work.
+The honest scope: that bench's build arm was descoped as invalid, so the finding
+is that two defaults were chosen without consulting the one measurement, not
+that they are provably wrong. `provider/claude.rs:232-235` already records the
+question as open, in writing.
+
+**Personas is ahead of the entire fleet on one thing:** **0 of 5 siblings record
+the effort a run used.** `ascent` has the knob *and* a six-read-site recording
+layer, and they never meet. Two more 0-of-5 silences: nobody carries model and
+effort as one value (`TurnTier` is the only such type anywhere), and nobody
+names the effort default.
+
+**And a correction to a correction of mine.** I recorded that `thinking.xhigh`
+renders raw *while the same concept is translated in all 14 locales under
+`models.effort_xhigh`*. **That escape hatch is itself broken** — `models.effort_xhigh`
+is the raw token in **en, ko and vi**, and `"Xhigh"` in `id`. English is the
+source of truth, so it is broken for the default-locale user. The root cause is
+the more useful half: when `en = "xhigh"` and `ko = "xhigh"`, the untranslated
+check reads the match as a deliberate do-not-translate term. **A locale check
+cannot tell a missing translation from a proper noun, and a machine token is
+shaped like one.**
+
+---
+
 ## What *was* applied, and what it changes at runtime
 
 For completeness, since "no destructive applies" is now the rule. None of these
