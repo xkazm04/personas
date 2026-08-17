@@ -607,13 +607,26 @@ What the mechanism genuinely cannot do, as distinct from what nobody has done.
    This is why the type-vocabulary check (D3, D4) cannot be folded into an
    existing job and needs its own hook.
 
-3. **`{staged_files}` is the staged content only when the tree is clean.** A
-   partial commit (`git add -p`, or `git commit --only <path>` with unrelated
-   working-tree edits) hands the linter the *working-tree* file, not the staged
-   blob. lefthook 2.x can stash to fix this; `lefthook.yml:8-9` explicitly
-   forbids that — *"hooks NEVER stash, restore, or rewrite the working tree
-   (concurrent CLIs share the tree)"* — which is the correct trade for this
-   repository and a genuine, accepted hole in what pre-commit verifies.
+3. **`{staged_files}` and partial commits under lefthook 2.1.9 — this was
+   inverted, corrected 2026-08-17 by a second composer who measured it in an
+   isolated repo.** lefthook does **not** hand the linter the working-tree file
+   on a partial commit; it **writes `.git/info/lefthook-unstaged.patch`, checks
+   out the index content over the working tree for the hook's duration, and
+   re-applies the patch after** — so the hook sees the **staged blob**, and
+   `git commit --only <path>` *does* scope correctly **single-threaded** (a
+   plain-hook control read the dirty working-tree value; lefthook read the
+   staged one). The `lefthook.yml:8-9` "never stash" line describes the repo's
+   own *jobs*, not this built-in index-isolation, which is not a stash.
+
+   **The real hazard is the concurrent-writer case, and it is worse than a stale
+   read.** When a sibling session writes the same file mid-hook, lefthook's
+   `git apply --check` fails on re-apply, **lefthook aborts the commit and
+   destroys the sibling's write**, then advises *"Stage all changes with
+   `git add -A` and try again"* — the exact command the parallel-safety
+   primitives forbid. This mechanism explains the 2026-05-09 and 2026-08-13
+   incidents more precisely than *"`git commit --only` does not scope"* (which,
+   single-threaded, it does): the loss is lefthook's index-isolation colliding
+   with a concurrent writer, not git's pathspec handling.
 
 4. **The census cannot see the commit path's own configuration.** Measured
    here and it is the reason §9 declines: every file that decides what runs at

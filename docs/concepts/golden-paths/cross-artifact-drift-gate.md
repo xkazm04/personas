@@ -2,471 +2,526 @@
 
 > Situation node: `platform-delivery/gates-and-conventions/cross-artifact-drift-gate` ·
 > [situation spine](../situation-spine.md) · recurrence 6 · risk **medium** ·
-> sides: **server** · convergence: **mixed** ·
-> dimensions: **code-quality · resilience** · `twoSided: true`.
-> Composed 2026-08-17 against `master` @ `afb295187`.
-> **Short form** (Mode 2 tiering): spine header, §0, §2 compact, §7, §9, §12.
-> The measurement core is unreduced — two implementations of every count, a
-> positive control, hand verification, and re-extraction.
+> sides **server** · convergence **mixed** (**partially upheld** — §12.1) ·
+> dimensions: **code-quality · resilience** · `twoSided: true` ·
+> spine's own framing: *"Machine-proving two artifacts that must agree still
+> agree."*
+> Composed 2026-08-17 against `master` @ `afb295187`. **Short form** per the
+> Mode-2 tiering (spine header, §0, §2 compact, §7, §9, §12). The quality core
+> — two implementations of every count, a positive control, private-registry
+> validation, re-extraction from the finished document, hand-verified precision
+> — is unchanged.
 >
-> **Sweep size.** Every gate in this repository that proves two artifacts still
-> agree: **3** regenerate-then-diff sites, **13** `check-*`/`gen-*` comparison
-> scripts, the 5 `ci.yml` jobs, `.gitlab-ci.yml`'s 7 stages, the 2 Claude Stop
-> hooks, and the golden-path index's own cross-artifact inventory. **1,033**
-> binding files in `src/lib/bindings/` reconciled against
-> `shared-facts.json#rust.files` = **963** `.rs` files by two independent
-> implementations. All five sibling checkouts swept for the same three gate
-> shapes. `cargo` was not run; the full census registry was not run.
+> **Sweep.** Every regenerate-and-compare gate in the repository: `ci.yml`'s
+> `command-name-drift` (`:320-341`) and `binding-drift` (`:344-437`),
+> `.gitlab-ci.yml`'s `check-bindings` (`:159-173`), all **10** `lefthook.yml`
+> jobs, the **9** constituents of `npm run check`, `scripts/run-codegen.mjs`'s
+> task registry, and all **165** tracked `.mjs`/`.js`/`.cjs` files under
+> `scripts/`. Artifact pairs: **1,032** files in `src/lib/bindings/` against all
+> **963** tracked `.rs` files; `commandNames.overrides.ts`'s 18 entries against
+> the same; `en.json` against the 13 sibling locales (**19,112** keys each);
+> `CATALOG.md`; the three `tauri.*.conf.json`; the corpus's own `index.json` /
+> `router.json` / `rules.json`.
+>
+> **Measured by executing, not reading.**
+> 1. `check-coverage.mjs --strict` was **run against a locales directory
+>    containing only `en.json`**. It printed an empty table and **exited 0**.
+> 2. `build-golden-path-index.mjs --check` and `check-corpus-integrity.mjs` were
+>    run **directly, never through a pipe** — a pipe replaces the exit code with
+>    the pipe's, which is how a red corpus-integrity run was pushed past once
+>    already.
+> 3. The census rule in §9 was validated in a **private scratch registry**
+>    (unique filename — sibling composers share the scratchpad) and then
+>    **re-extracted from this finished document and re-run**; the numbers are
+>    identical.
+> 4. Orphan bindings were re-measured with an instrument that **self-tests its
+>    own word-boundary matcher before trusting it** — see §12.3, where the first
+>    attempt reported `0` and the true answer is `28`.
 
 ---
 
-## 0. The headline: the drift gate that was fixed exists twice, and only one copy got the fix
+## 0. One gate in this repository actually regenerates and compares. Its exit code is discarded.
 
-`.github/workflows/ci.yml:419-437` is the repository's best cross-artifact
-gate. On 2026-08-14 it was repaired for a defect the corpus has since promoted
-to doctrine — *a diff-shaped gate cannot see an absence* — and the repair is
-exemplary: it checks `git ls-files --others --exclude-standard src/lib/bindings/`
-**before** `git diff --quiet`, with a comment naming the date it was verified
-by creating a new binding.
+A cross-artifact gate has exactly one job: take two things that are supposed to
+agree, and prove they still do. There are many pairs here. There is essentially
+one gate.
 
-`.gitlab-ci.yml:159-173` is the same job. It has **none of the three fixes**,
-and each one is independently sufficient to make it green forever:
+**165** tracked scripts under `scripts/`. **16** stamp an `AUTO-GENERATED` /
+`DO NOT EDIT` banner into a committed artifact. **5** of those 16 carry any
+affordance for asking *"is the committed copy current?"* — a `--check` mode, a
+`writeIfChanged`, or a compare-before-write. The other **11** — including
+`generate-command-names.mjs`, `i18n/gen-types.mjs`, `docs/gen-tour-anchors.mjs`,
+`generate-template-checksums.mjs`, `events/generate-connector-events.mjs` —
+can only overwrite. You cannot ask them a question; you can only run them and
+diff afterwards, which is a different and weaker thing.
 
-```yaml
-check-bindings:
-  script:
-    - cargo test --manifest-path $CARGO_MANIFEST export_bindings 2>/dev/null || true
-    - |
-      if ! git diff --quiet src/lib/bindings/; then
+And of those 5, the one that does the strongest form — regenerate in memory,
+byte-compare against the committed file, exit non-zero on a difference — is
+`scripts/census/build-golden-path-index.mjs --check`. Here is what consumes it:
+
+```js
+// scripts/census/check-corpus-integrity.mjs:227-237
+const gen = spawnSync(process.execPath,
+  [path.join(ROOT, 'scripts/census/build-golden-path-index.mjs'), '--check'], …);
+// <-- PROMOTION POINT: `if (gen.status !== 0) fail(...)` instead of logging.
+if (gen.status !== 0) {
+  console.log('  advisory: golden-path index is STALE (corpus integrity is unaffected).');
+  …
+}
 ```
 
-1. **No `--workspace`, no `--features desktop`.** `ci.yml:405-416` documents,
-   at length, that without them *"zero bindings regenerate"* — `--manifest-path`
-   alone selects only `personas-desktop`, and the crate split moved ~200
-   `#[ts(export)]` types into `personas-core`.
-2. **`2>/dev/null || true`.** `ci.yml:398-404` documents removing exactly this
-   wrapper because it *"silently masked Rust-side breakage"*.
-3. **No untracked check.** `git diff` sees tracked files only, so a brand-new
-   binding — the case the gate exists for — is invisible.
+The exit code is read, tested, and **printed**. The one gate in the repository
+that performs a true byte-comparison between a generator and its committed
+output has its verdict routed to `console.log`. The choice is deliberate and
+documented — a freshness failure inside the composition wave's own loop would
+redden that loop over a bookkeeping artifact — and it is still the case that the
+strongest instrument here is the one whose answer nothing acts on.
 
-So the GitLab copy regenerates nothing, discards the failure of regenerating
-nothing, and then diffs an unchanged tree. Three independent reasons to be
-green, stacked. It is also on a pipeline with **no remote** (`git remote -v` →
-GitHub only; `.gitlab-ci.yml` has one commit in its entire history), so it has
-never actually run — which is the only reason this is a latent hazard rather
-than a live one.
+Everything else in the repository is a **diff-shaped** gate, and a diff cannot
+see three of the four things that go wrong:
 
-**This is the generalisable finding, and it is why the leaf exists:** a
-cross-artifact gate is itself an artifact, and it drifts from its own copy. The
-2026-08-14 repair was written as a fix to *the* binding-drift gate. There were
-two.
+| what can go wrong | can `git diff` see it? | gates in this repo that can |
+|---|---|---|
+| the committed artifact is **stale** | yes, after you regenerate | `binding-drift`, `command-name-drift`, `gen-shared-catalog --check`, `gp-index --check` |
+| the artifact is **new and untracked** | **no** — `git diff --quiet` exits 0 for an untracked file | **exactly one**: `ci.yml:426-431` |
+| the artifact is an **orphan** — its generator no longer emits it | **no** — no diff, no untracked file, nothing | **two**, and neither is a gate: `check-command-contract.mjs`, `build-golden-path-index.mjs:636-662` |
+| the two artifacts **agree with each other and not with reality** | **no, by construction** | none |
 
-### Three shapes, and what each is structurally blind to
+Row 2 was closed for bindings on 2026-08-14 by adding
+`git ls-files --others --exclude-standard src/lib/bindings/` beside the diff.
+**That fix did not travel.** `.gitlab-ci.yml:159-173` is the same gate, in the
+same repository, still carrying all four of the defects `ci.yml` documents
+fixing:
 
-| shape | instances here | what it cannot see |
-| --- | ---: | --- |
-| **regenerate → `git diff`** | 3 (`ci.yml:336`, `ci.yml:432`, `.gitlab-ci.yml:167`) | a file the generator no longer emits (an **orphan**), and — without a companion `ls-files --others` — a file it newly emits. 1 of the 3 has the companion. |
-| **set comparison** (both directions) | `check-coverage.mjs:93-95`, `check-command-contract.mjs:247-262` | nothing structural — this is the shape that works. It costs an explicit inventory of both sides. |
-| **transcript / event shaped** | `check-doc-sync.mjs`, `check-golden-path-touch.mjs` | anything that happened in a turn it did not observe, and anything in a file its map does not name. |
+```yaml
+# .gitlab-ci.yml:165-173
+- cargo test --manifest-path $CARGO_MANIFEST export_bindings 2>/dev/null || true
+- |
+  if ! git diff --quiet src/lib/bindings/; then
+    …
+    exit 1
+  fi
+  echo "Bindings are up to date."
+```
 
-**And the shape that works is not the shape most gates here use.** Of 13
-comparison scripts, the two named above compute a genuine two-way difference.
-The rest assert containment in one direction, `--check` a regeneration, or read
-one artifact and validate it in isolation.
+No `--workspace` (so ~200 `#[ts(export)]` types in `personas-core` never
+regenerate). No `--features desktop` (so the tauri build script aborts on
+`Permission updater:default not found` before compiling anything). `2>/dev/null
+|| true` (the exact wrapper `ci.yml:398-403` documents removing because it
+"silently masked Rust-side breakage"). And `git diff --quiet` alone. Each of
+those four is separately sufficient to make the job print
+`Bindings are up to date.` while checking nothing.
 
-### The measured cost: 32 orphan bindings, 29 of them still referenced
+**A drift gate that drifted from its own mirror** is the leaf in one sentence.
 
-`src/lib/bindings/` holds **1,033** `.ts` files (excluding `index.ts`) against
-**963** `.rs` files. Two independent implementations of *"is this binding's
-Rust source still present?"*:
+Row 3 is where the real damage is, because nothing anywhere looks. Measured at
+`afb295187` with an instrument that self-tests its matcher (§12.3):
 
-| implementation | orphans |
-| --- | ---: |
-| 1 — the exported name must appear as a Rust `struct` / `enum` / `type` declaration | **32** |
-| 2 — build a `#[derive(… TS …)]` inventory (989 types), set-difference | **49** |
-| **agreed by both** | **32** |
-| implementation-1-only | **0** |
+> **31 of 1,032 files in `src/lib/bindings/` have no Rust definition site.
+> 28 are still referenced from `src/`. 23 are still the declared return type of
+> a live `invoke<>`.**
 
-The sound answer is **32**. Implementation 2's extra 17 are its own false
-positives: its `#[derive(...)]`-to-declaration window misses types with
-intervening `#[ts(...)]` attributes. Spot-verified by hand: `VaultStatus`,
-`OAuthProvider`, `RotationPolicy` and `StartPhase` each have **0** Rust
-declarations in 963 files.
+ts-rs never deletes. A type whose Rust source is removed leaves its `.ts` file
+behind forever, and that file produces **no diff and no untracked file** — so
+`binding-drift`, even fully repaired, is blind to it by construction. The
+repo's own `scripts/check-unused-bindings.sh` exits 1 with 98 findings and
+*protects* 26 of these, because they are imported. Among them:
+`invoke<VaultStatus>("vault_status")` against a Rust function returning
+`serde_json::Value`, with no `VaultStatus` type in any of 963 `.rs` files.
 
-**29 of the 32 are still referenced from `src/` outside the bindings
-directory** — `VaultStatus` alone at 17 sites. One of the 32 (`serde_json/JsonValue.ts`)
-is a legitimate ts-rs emission for `serde_json::Value` with no Rust struct of
-that name, so the true defect count is **31**.
+The same shape one layer over: **`src/lib/commandNames.overrides.ts` declares 18
+"planned or dead" commands, and 18 of 18 name a Rust function that does not
+exist.** Measured by indexing `fn <name>` over all 963 tracked `.rs` files. The
+file's own header says *"when a command is implemented … remove it from this
+list"*, which describes a maintenance ritual for a list that has drifted to
+100% dead. `command-name-drift` (`ci.yml:320-341`) diffs this very file and
+passes, because the file is not *stale* — it is *wrong*, and a diff cannot tell
+those apart.
 
-ts-rs never deletes. So an orphan produces **no diff and no untracked file**,
-which makes it invisible to a diff-shaped gate by construction — and the repo's
-own `check-unused-bindings.sh` *protects* the ones that are imported, because
-being imported is its definition of used. **Only an inventory of what should
-exist finds these.**
+Row 4 is the deepest one and the corpus has already named it: **codegen
+guarantees that the two mirrors agree with each other, not that either agrees
+with reality.** The tour-anchor generator emits a JSON file and a `.rs` file
+that are byte-consistent and 127 anchors behind the tree, because it is wired
+into nothing. Both halves pass every check you could write over the pair.
 
 ---
 
 ## 2. The one way (compact)
 
-**A gate that proves two artifacts agree must compare two inventories, not two
-revisions — because a diff can only see what one side still declares.**
-Concretely: (a) build the **complete set** on each side and compute the
-difference in **both directions**, the way `scripts/i18n/check-coverage.mjs:93-95`
-computes `missing` *and* `extra` and makes extras always fatal; (b) if you must
-use `git diff`, pair it with `git ls-files --others --exclude-standard` for the
-new-file direction **and** an explicit inventory for the orphan direction —
-`ci.yml:426-431` does the first and nothing here does the second; (c) generate
-the comparison's inputs from the source of truth rather than from a hand-written
-list, because a list is a third artifact that drifts with the other two
-([`client-rule-mirroring`](./client-rule-mirroring.md)); (d) **assert the
-instrument**: fail loudly when either inventory is empty or below a floor, since
-a comparison of two empty sets passes forever
-(`check-corpus-integrity.mjs:62,78,84`); (e) put the gate where a verdict is
-produced — this repository's binding-drift job lives in a workflow that is
-**0-for-320** and its copy lives in a pipeline with no remote, so both correct
-gates have produced zero verdicts; and (f) **if the gate itself has a second
-copy, the copies are now a cross-artifact pair too** — either delete one or
-gate their agreement.
+**Prove freshness by regenerating and comparing — never by diffing — and pair
+every comparison with an inventory of what should exist, because a diff is
+blind to an absence.** Concretely: give the generator a `--check` mode that
+builds its output in memory and byte-compares it against the committed file,
+make the artifact deterministic (sorted keys, no timestamps, no commit hashes,
+LF) so that comparison is a byte test rather than a heuristic, and **register
+that `--check` in more than one place** — registration, not a
+compare-before-write guard, is what predicts whether a generated artifact is
+fresh (14/14 versus 1/4). Then act on its exit code: an advisory that only
+prints is a measurement, not a gate, and the difference is the whole of §0.
+When you must fall back to `git diff`, always write
+`git ls-files --others --exclude-standard <dir>` beside it — a diff exits 0 for
+a brand-new file, which is exactly the case a drift gate exists for — and know
+that even the pair cannot see an orphan: for that you need the *inventory*
+direction, walking the committed artifacts and asking which no longer have a
+source, which is the only way the 31 orphan bindings and the 18 dead command
+overrides are findable at all. And before you trust any of it, **give the
+instrument a precondition that fails loudly when it finds nothing to compare** —
+because a parity checker handed an empty set reports perfect agreement, which is
+the failure mode §7-A demonstrates by execution and §9 ratchets.
 
-If you can only do one thing: **enumerate what should exist.** Every other
-clause is an optimisation on a comparison that can, in principle, see an
-absence. A diff cannot, at any level of care.
+Two things this does **not** buy you, and you must say so rather than imply
+otherwise. A gate over two artifacts generated from **one** source can only
+prove the copy is current; it says nothing about whether the source is right —
+the tour-anchor pair is byte-consistent and 127 anchors stale. And a parity test
+that ships its fixtures beside the artifact it tests is a **third copy, not a
+check**: edit the ladder and its fixtures together and both suites stay green.
+Ask of every drift instrument, *what edit would this fail on?* — and if the
+answer is "an edit to only one side", verify that something in the world
+actually edits only one side.
 
 ---
 
-## 7. Deviations
+## 7. Deviations found
 
-### D1 — The binding-drift gate exists twice and one copy has none of its fixes · read, 3 defects
+### A. A parity gate that reports perfect agreement over an empty set — proven by execution
 
-§0. `.gitlab-ci.yml:165-172` versus `.github/workflows/ci.yml:398-437`. The
-GitHub copy is the exemplar; the GitLab copy is what the exemplar looked like
-before 2026-08-14, preserved in a file that has been edited **zero** times
-since it was created (`git log --oneline -- .gitlab-ci.yml` → one commit,
-`6f34676f9`). Not applied: whether the answer is deleting `.gitlab-ci.yml`,
-mirroring to GitLab, or porting its unique jobs to Actions is a hosting
-decision, and the file also carries this repository's only secret-detection
-engine ([`secret-leak-scanning` §7 D3](./secret-leak-scanning.md)).
+`scripts/i18n/check-coverage.mjs` is the repository's most-wired cross-artifact
+gate: `en.json` against 13 sibling locales, run at **pre-commit** (`lefthook.yml:37-39`,
+`--strict`), at **pre-push** (`:77-78`), and in **CI** (`ci.yml:120-126`). It is
+the gate behind the operator's non-negotiable *"no English mixed into a
+non-English UI"* rule.
 
-### D2 — 32 orphan bindings, 29 still referenced, and no gate can see them · measured two ways
+It resolves its inputs with `readdirSync(LOCALES_DIR)` (`:71`) and guards
+exactly one thing (`:75-78`): that `en.json` is present.
 
-§0. The corrected numbers are **32 / 29** where the campaign's prior record
-says 29 / 26 (§12.1). `git diff --quiet src/lib/bindings/` exits 0 for every
-one of them, forever, because the file is tracked and unchanged. The
-`git ls-files --others` companion added at `ci.yml:426-431` closes the
-*new-file* direction and cannot touch this one — the two directions need
-different instruments, and only one has been built.
+Copy `en.json` alone into an empty `src/i18n/locales/`, run the strictest form,
+and:
 
-### D3 — The two instruments that decide what "this repository" means disagree · read, one directory apart
+```
+$ node scripts/i18n/check-coverage.mjs --strict
+i18n coverage check — 19112 keys in en.json
 
-`scripts/docs/measure-shared-facts.mjs:26` skips
-`['node_modules', 'target', '.git', 'worktrees', 'dist']`.
-`scripts/census/lib/engine.mjs:19` skips
-`['node_modules', '.git', 'dist', 'target', 'coverage']` — **no `worktrees`,
-no `.claude`**.
-
-Measured consequence, executed: a census rule rooted at `"."` walks
-`.claude/worktrees/agent-*/` and `.claude/worktrees/athena-dev-*/` — **five
-untracked, gitignored full copies of the repository** on this machine, **zero**
-on a clean clone. A candidate rule scoped that way returned 148 matches across
-59 files, of which the majority were duplicates of three real files. Two
-measurement instruments in the same repository, written for the same corpus,
-one directory apart, disagree about the repository's own boundary — and only
-one of them is used by the 172 rules that gate every push.
-
-**Not applied.** Adding `.claude` or `worktrees` to `ALWAYS_SKIP_DIRS` changes
-what 172 live rules see, which is a runtime behaviour change; under the
-campaign's no-destructive-applies rule it is written down, not shipped. It is
-also the reason [`commit-path-gates` §9](./commit-path-gates.md#9-the-missing-gate--a-reasoned-decline-with-the-numbers-that-produced-it)
-declines its rule and why §9 below declines this one.
-
-### D4 — Seven census rules cannot be re-derived from the document that owns them · read, enforced allowlist
-
-`scripts/census/build-golden-path-index.mjs:128-136` names them and why: four
-publish the rule in a ` ```jsonc ` fence the merger does not read
-(`raw-react-lazy`, `local-empty-state`, `deferred-read-then-write`,
-`silent-row-skip`) and three publish no fence at all (`raw-web-storage`,
-`hand-rolled-spinner`, `raw-select`, all wave-1).
-
-This is the leaf's own condition applied to the corpus: `rules.json` and the
-golden-path documents are two artifacts that must agree, and for seven entries
-the doctrine's verification instruction — *"re-extract the fence and confirm the
-rule count"* — returns **zero**, which is exactly what a lost rule reads like.
-
-**The handling is the exemplar and should be copied.** The allowlist is
-**bidirectional and fatal in both directions** (`:634-651`): an unlisted miss
-fails, *and* a listed entry that starts extracting fails. Every entry carries a
-prose reason. That is the shape §2 clause (a) asks for, implemented on the
-corpus's own metadata. Three of the four `jsonc` blocks need one character;
-`silent-row-skip`'s does not parse at all.
-
-### D5 — Three drift gates are registered only in a gitignored file · read
-
-`scripts/docs/check-doc-sync.mjs`, `scripts/docs/check-golden-path-touch.mjs`
-and `scripts/build/guard-concurrent-cargo.mjs` are registered in
-`.claude/settings.json` — two `Stop` hooks and one `PreToolUse` hook, verified
-by reading it. `.gitignore:70` (`.claude/*`, with an allowlist beneath that
-does not include `settings.json`) means **the registration cannot travel in a
-commit**. A fresh clone has three fewer gates than the documentation describes,
-and nothing reports the difference.
-[`golden-path-recall.md` §3](../golden-path-recall.md) names this for its own
-hook; the measurement here is that it is now true of three, and it is itself a
-cross-artifact drift — between the documented gate set and the installable one.
-
-### D6 — `check-doc-sync.mjs` exits 0 silently when its own map is unreadable · read
-
-`scripts/docs/check-doc-sync.mjs:132-135`:
-
-```js
-try { map = JSON.parse(fs.readFileSync(MAP_PATH, 'utf8')); }
-catch { process.exit(0); }
+Lang  | Keys   | Missing | Extra
+------|--------|---------|------
+$ echo $?
+0
 ```
 
-No message, no exit code, nothing. Rename `feature-doc-map.json` and the doc-sync
-gate becomes a no-op that reports success forever. Contrast
-`check-golden-path-touch.mjs:126-129`, which does the same thing and **writes a
-line to stderr first**, under an eight-line comment arguing why absence is not a
-finding for an advisory hook. The line is the entire difference between an
-outage and a decision.
+**Thirteen locale files gone, `--strict`, exit 0, empty table.** Nothing in the
+output distinguishes that from the real tree, which also exits 0 (19,112 keys ×
+13 locales, 0 missing / 0 extra — CLAUDE.md's figure, re-verified here).
 
-### D7 — The corpus's own freshness check is advisory, and it is red right now · executed
+This is the contract's fail-loud requirement stated as a live instance:
+*"a gate that no-ops is worse than no gate, because it manufactures
+confidence."* And it is not one script's oversight — §9 measures **17 of 28**
+enumerate-and-can-fail scripts in this repository with the same hole.
 
-`node scripts/census/build-golden-path-index.mjs --check` → **exit 1** (drift),
-because this batch added documents the index had not seen.
-`check-corpus-integrity.mjs:203-241` deliberately does **not** propagate that
-exit code — the source carries a `PROMOTION POINT` marker and a written
-promotion condition (`:213-214`). That is the right call for a check that runs
-inside the composition wave's own loop, and it is recorded here because it is
-the one place in this repository where an advisory cross-artifact check
-**states its own promotion criteria in the source**. Regenerating (no `--check`)
-brings it to **193 docs · 28,068 citations · 2,924 distinct files · 0 docs with
-no citations**.
+**A cleared claim, recorded because a cleared claim is worth as much.** The
+directory walk is *also* this gate's best property: because it enumerates rather
+than reading a hardcoded list, a brand-new untracked `pt.json` **is** picked up
+and shape-checked. That is the inventory shape §2 asks for, arrived at
+independently, and the sibling sweep found the same design in `personas-web`'s
+`check-i18n-coverage.mjs:41-47`. The defect is the missing floor, not the walk.
 
-### D8 — Cleared claims
+### B. The untracked-file fix did not travel to the second copy of the same gate
 
-- **"`ci.yml:336`'s command-name drift check has the same untracked hole."**
-  No. Both its targets (`commandNames.generated.ts`, `commandNames.overrides.ts`)
-  are tracked files the generator overwrites; it cannot emit a third. And its
-  companion, `scripts/check-command-contract.mjs:247-262`, is genuinely
-  **two-directional** — `missing from generated` *and* `stale in generated`,
-  plus `staleOverrides` and `unknownFrontend`, with a six-entry allowlist
-  carrying a written reason. It is the second exemplar in this repository.
-- **"The i18n coverage check is one-way."** No — `check-coverage.mjs:93-95`
-  computes `missing` and `extra` from both key sets and makes extras always
-  fatal. (Its *sibling* in `personas-web` is one-way; see §12.3.)
-- **"Nothing checks that generated bindings are used."**
-  `scripts/check-unused-bindings.sh` exists and runs in `ci.yml:186`. It is not
-  a drift gate — it asks "is this imported?", which is why it **protects** 29 of
-  the 32 orphans rather than finding them.
+Detail in §0. `ci.yml:426-431` is the only gate in the repository that pairs
+`git diff` with `git ls-files --others`. `.gitlab-ci.yml:159-173` is the same
+gate with none of the four repairs. Nothing compares the two CI definitions, and
+they are themselves a cross-artifact pair that must agree.
 
----
+### C. 31 orphan bindings, 28 imported, 23 the return type of a live `invoke`
 
-## 9. The missing gate — a reasoned decline, with the numbers
+Full list in the instrument output; the shape is in §0. Two independent
+implementations (mine and a second sweep run separately this session) agree on
+**31**, and on **23** invoked. They differ by one on "still imported" — 28
+against 27 — a definitional difference over type-only re-exports, not a matcher
+disagreement.
 
-**No census rule is published for this leaf.** There is deliberately no fenced
-JSON block below; there is nothing for
-`scripts/census/merge-published-rules.mjs` to ingest, and that absence is the
-finding.
+The three genuinely unreferenced ones (`StartPhase`,
+`TemplateAdoptConfirmResult`, `TemplateAdoptStartResult`) are the *easy* case.
+The other 28 are the hard one: they are imported, so
+`scripts/check-unused-bindings.sh` — the one instrument that walks this
+directory — **protects** them. An orphan that is still used looks exactly like a
+binding that is working.
 
-**The condition a signal would be a proxy for**, stack-free: *a verification
-that two artifacts still agree, implemented with an instrument that can only
-observe one of them changing.*
+### D. 18 of 18 `commandNames.overrides.ts` entries are dead, and the gate over that file passes
 
-**Candidate A — "a `git diff`-shaped drift check with no untracked companion."**
-This is exactly the right rule for this leaf. It is not expressible.
+Detail in §0. Note the mechanism: `command-name-drift` regenerates
+`commandNames.generated.ts` and diffs **both** it and `commandNames.overrides.ts`
+(`ci.yml:336`). But `generate-command-names.mjs` does not *write* the overrides
+file — it is hand-maintained. So the gate diffs a hand-written file against
+itself and always passes. **A gate can only prove the property its generator
+produces**, and half of what this one diffs has no generator.
 
-- Rooted at `["."]`, extensions `.yml/.yaml`, walk **85** files, file-anchored
-  `^(?![\s\S]*ls-files[^\n]*--others)[\s\S]*?git\s+diff\s+--(?:quiet|exit-code)`:
-  **3 matches / 3 files** — `.gitlab-ci.yml` and **two copies of it inside
-  `.claude/worktrees/`**. One true site, two machine-dependent duplicates. The
-  baseline would be 3 here and 1 on a clean clone (D3).
-- Rooted at `[".github"]`, walk **10** files: **0 matches**, because `ci.yml`
-  carries the companion and the file-anchored lookahead therefore exempts the
-  whole file — including its *other* diff site at `:336`. A rule that matches
-  zero files fails structurally (`engine.mjs:264-274`), correctly.
-- **The one true violating site is `.gitlab-ci.yml`, a repository-root file.**
-  `walkFiles` (`engine.mjs:53-70`) takes directories; the only root that
-  reaches the repository root is `"."`, which is the machine-dependent case
-  above. There is no roots/extensions combination that sees `.gitlab-ci.yml`
-  and not five untracked repository copies.
+### E. Eleven of sixteen generators cannot answer whether their output is current
 
-That is the same wall [`tauri-permissions-and-csp`](./tauri-permissions-and-csp.md)
-hit from the other side — *when the population is not the same on two
-checkouts, the answer is a different instrument, not a cleverer pattern* —
-reached here for a different reason (untracked worktrees rather than generated
-Android configs).
+Counts in §0. This condition already has a census rule —
+`unverifiable-generated-artifact` (10 files / 10 matches, → `codegen-task-registration.md`) —
+and that path owns it. Recorded here only because it is the upstream cause of
+this leaf: a gate that must first run a generator that can only overwrite is
+forced into the diff shape, with all of the diff shape's blindness.
 
-**Candidate B — "a comparison script that reports one direction only."**
-Roots `["scripts"]`, extensions `.mjs/.sh/.js/.cjs`, walk **166** files.
-Anchor `\bmissing\b`: **195 matches / 52 files**. File-anchored to those with no
-`orphan|extra|unused|stale|unknown|obsolete|dangling`: **30 matches / 30
-files**; the compliant half returns **22**. Hand-checked, and rejected: the
-anchor is not selective for *comparison scripts*. `bundle-comment.mjs`,
-`build/inspect-pe-imports.mjs` and `connectors/seed-supabase-catalog.mjs` are
-all in the violating set and none of them compares two artifacts — they use the
-word "missing" in an error string. Narrowing to `check-*`/`verify-*` filenames
-is not possible: the census `exclude` list is a subtractive path glob, so
-restricting a 166-file walk to 13 files needs ~150 exclusions, each requiring a
-prose reason, each becoming a `stale-exclude` failure the moment a script is
-added. Estimated precision well under 50 %; not shipped.
+### F. The corpus's own tooling is the freshest instance, and it is the well-behaved one
 
-**Why both failed for the same underlying reason.** Candidate A's true site is
-in a file the instrument cannot reach; candidate B's true sites cannot be
-separated from lookalikes by content. Both are the census asking the wrong
-question: **it counts occurrences of a thing that is present, and every finding
-in §7 is an absence** — a missing untracked check, a missing Rust declaration,
-a missing registration, a missing message before an exit. The doctrine states
-this directly (*"the census cannot assert an ABSENCE"*), and this leaf is the
-purest instance of it in the corpus so far, because absence *is* its subject.
+Run directly, never through a pipe, at `afb295187`:
 
-**The instrument this leaf needs**, specified so it can be written:
-`scripts/check-generated-inventory.mjs`, registered at **pre-push** (where a
-verdict is actually produced — see [`commit-path-gates` §0](./commit-path-gates.md)),
-which for each generated directory:
+```
+node scripts/census/build-golden-path-index.mjs --check   ; exit=0
+node scripts/census/check-corpus-integrity.mjs            ; exit=0
+```
 
-1. builds the **should-exist** set from the source of truth — for
-   `src/lib/bindings/`, every Rust type carrying `#[derive(… TS …)]` with
-   `#[ts(export)]`, extracted with
-   `scripts/census/lib/instruments/extractRustStrings.mjs` and
-   `stripCfgTest.mjs` so the two implementations that already exist do not
-   become a third;
-2. builds the **does-exist** set by walking the directory;
-3. fails on **both** differences — a missing binding (already covered by
-   `ci.yml`) and an **orphan** (covered by nothing, 32 today);
-4. **exits 2 if either set is below a floor**, because a comparison of two
-   empty sets passes forever — the assertion `check-csp-hosts.mjs` exists
-   because of and `check-corpus-integrity.mjs:62,78,84` implements;
-5. carries an allowlist that is **fatal in both directions**, entries with
-   prose reasons — the shape `build-golden-path-index.mjs:634-651` already
-   ships for the seven unextractable rules (D4).
+Both green **now**. Earlier in this same session, with a parallel composition
+wave publishing documents, `--check` exited **1** — the index was stale against
+a tree that had gained new paths minutes before. Both measurements were correct
+when taken, and the pair is the argument for §0's point: the instrument works,
+it detects real staleness within minutes, and its verdict is `console.log`.
 
-Its positive control is written and CI-gated — in a sibling.
-`brainiac/console/src/design/focus-contract.test.ts:140` asserts
-`expect(found.map(rel).sort()).toEqual(Object.keys(ALLOWED_NATIVE).sort())` —
-**set equality, not containment**, so it fails both when a new unlisted control
-appears and when an allowlist entry's file is gone, and `:143-146` requires each
-entry to carry a >15-character written reason. That is the shape, and it is the
-only one of its kind in six repositories.
+`build-golden-path-index.mjs` is otherwise the model to copy and the reason §2
+is written the way it is: deterministic output (sorted keys, no timestamps, no
+commit hashes, LF), a real `--check` byte comparison, **three** registration
+points, its own floors, and a cross-artifact inventory that exits 2. It is the
+only artifact in the repository whose freshness is over-determined rather than
+hoped for.
 
 ---
 
-## 10. Convergence — `mixed` is the closest a label has come, and it still fails
+## 9. The missing gate
 
-Swept across all five siblings for the three shapes:
+The condition §7-A demonstrates — **a gate that treats "found nothing" and
+"looked at nothing" as the same success** — is countable, partitions its
+population cleanly, and is the precondition every other gate in this document
+silently assumes. Ratchet it.
 
-| repo | regenerate→diff | untracked companion | two-way parity | orphan/inventory |
-| --- | :---: | :---: | :---: | --- |
-| personas | **3** | **1 of 3** | 2 | **0** |
-| personas-web | 0 | 0 | 1 gated (one-way) + 1 ungated | **2, both wired to nothing** |
-| brainiac | 2 (`cargo fmt --check`, eval-vs-baseline) | 0 | 2 (CI-gated) | **1, CI-gated** |
-| personas-cloud | 0 | 0 | 0 | 0 |
-| vibeman | 0 | 0 | 1 (lockfile↔manifest) | 0 |
-| ascent | 0 | 0 | 0 | 0 |
+**Overlap, measured at the SITE level against the FINAL pattern** — not at file
+level and not against a draft, both of which understate (§12.8 records that I
+published an estimate here before measuring it, and the estimate was wrong).
+The two neighbours sharing `roots` were run in the same registry as this rule
+and their match sets intersected:
 
-**`git diff --quiet` / `git diff --exit-code`: 0 occurrences in all five
-siblings. `git ls-files --others --exclude-standard`: 0 in all five.** The
-pattern that dominates this repository is absent from the entire fleet — so
-Personas is alone on the regenerate-then-diff shape, and the "diff-shaped gate
-is blind" defect is not *reachable* in four of the five, because there is no
-diff-shaped gate to be blind. **brainiac is the one repo where the trap is
-live**: `cargo fmt --all --check` and its eval-vs-committed-baseline compare
-(`.github/workflows/ci.yml:36`, `:46-52`) both lack an untracked companion, and
-its two-hop generated chain — `crates/brainiac-server/src/main.rs:441` writes
-`openapi.json`, `console/package.json:13` turns that into
-`src/lib/api-schema.d.ts`, **both tracked, neither regenerated-and-diffed
-anywhere** — is the fleet's largest ungated cross-artifact pair.
+| against | shared sites | of 17 |
+|---|---|---|
+| `unverifiable-generated-artifact` (roots `scripts`, same extensions — keys on a generated-banner emitter with no `--check`) | **0** | 0% |
+| `machine-specific-path-in-tooling` (roots `scripts`, `.ai` — keys on a hardcoded home directory) | **1** (`scripts/studio-mk-live.mjs`) | 6% |
+| its own positive control | **0** | 0% — a clean partition, confirmed empirically rather than assumed |
 
-**The label is `mixed`, and `mixed` is the closest any spine convergence label
-has come to holding. It still fails**, because the mixture is the wrong way
-round on every clause:
+`unverifiable-generated-artifact` returning **0** shared sites is the
+informative one: the two conditions looked adjacent (same roots, same
+extensions, both about scripts that cannot answer a question) and are in fact
+disjoint — one is about *emitting* an artifact you cannot verify, the other
+about *reading* an input set you cannot distinguish from empty. Also checked and
+non-overlapping by roots: `comment-kept-cross-language-mirror` (roots `src`),
+`unlooking-lint-rule` (roots `eslint-rules`).
 
-- on the **diff shape**, Personas is alone (a 5/5 silence, not a mixture);
-- on the **inventory shape**, Personas has **zero** and two siblings have
-  three between them — this repo is *behind*, and the label's direction is
-  backwards here;
-- on **wiring**, the fleet converged on the disease: `personas-web` owns two
-  working orphan detectors and runs **neither**.
-  `scripts/check-guide-content.mjs:93-99` is a true bidirectional three-way
-  invariant whose own header (`:15`) says *"Designed to run zero-dep in CI"* —
-  and it is in no CI, no hook, and is invoked by nothing but a human typing the
-  path. `scripts/i18n/check-guide-translations.mjs:132,157,184` is a four-state
-  classifier (`stale`/`missing`/`orphaned`/`fresh`) with hash-based staleness
-  and a `--strict` release gate, with **zero call sites in the repository**.
+**Validated in a private scratch registry, then re-extracted from this finished
+document and re-run. Identical both times: 17 files / 17 matches, positive
+control 11 files / 13 matches, 167 files walked, floor 120.** The gate and the
+control together partition 28 of the 167 walked files — every script that
+enumerates a directory *and* can exit non-zero — into 17 that never refuse an
+empty enumeration and 11 that do.
 
-So a single enum field carries three verdicts here — silence, behind, and
-built-but-unwired — which is the same structural objection the doctrine records
-against `converged`: **a label that splits by clause cannot be an enum value.**
+```json
+{
+  "id": "gate-without-empty-input-guard",
+  "goldenPath": "docs/concepts/golden-paths/cross-artifact-drift-gate.md",
+  "roots": ["scripts", ".ai"],
+  "extensions": [".mjs", ".js", ".cjs"],
+  "signal": {
+    "pattern": "^(?![\\s\\S]*(?:\\.length\\s*(?:===?\\s*0|<\\s*\\d)|!\\w+\\.length|\\.size\\s*(?:===?\\s*0|<\\s*\\d))[\\s\\S]{0,220}?process\\.exit\\(\\s*[1-9])(?=[\\s\\S]*process\\.exit\\(\\s*[1-9])[\\s\\S]*?\\b(?:readdirSync|globSync)\\s*\\(",
+    "flags": "g",
+    "description": "A script that enumerates a directory and can exit non-zero, but never refuses an EMPTY enumeration — so 'found nothing' and 'looked at nothing' both exit 0. Proxy for the contract's fail-loud requirement; the earning case is check-coverage.mjs reporting 0 missing / 0 extra with 13 of 14 locales absent."
+  },
+  "baseline": { "files": 17, "matches": 17 },
+  "floor": 120
+}
+```
 
-**Lineage, applied.** No sibling shares gate configuration with this repo. The
-`personas-web`/`ascent` tooling lineage (two byte-identical dev-inspector
-scripts) does not touch this leaf. brainiac is a separate Rust service and its
-inventory assertion is a genuine independent reinvention **with a different
-mechanism** (a vitest set-equality assertion rather than a shell diff), which
-the doctrine weights above simple agreement. Effective independent cohort: **5**.
+```json
+{
+  "id": "gate-without-empty-input-guard-positive-control",
+  "goldenPath": "docs/concepts/golden-paths/cross-artifact-drift-gate.md",
+  "roots": ["scripts", ".ai"],
+  "extensions": [".mjs", ".js", ".cjs"],
+  "signal": {
+    "pattern": "(?=[\\s\\S]*\\b(?:readdirSync|globSync)\\s*\\()(?=[\\s\\S]*process\\.exit\\(\\s*[1-9])[\\s\\S]*?(?:\\.length\\s*(?:===?\\s*0|<\\s*\\d)|!\\w+\\.length|\\.size\\s*(?:===?\\s*0|<\\s*\\d))[\\s\\S]{0,220}?process\\.exit\\(\\s*[1-9]",
+    "flags": "g",
+    "description": "POSITIVE CONTROL — the compliant form: the same enumerate-and-can-fail scripts that DO refuse an empty input set (check-csp-hosts.mjs, check-corpus-integrity.mjs, check-doc-map-paths.mjs, build-golden-path-index.mjs, …). Partitions the same 28-file population as the gate above."
+  },
+  "floor": 120
+}
+```
+
+**Which condition the signal is a proxy for**, so an adopting repo can re-derive
+its own: *a verification instrument whose input set can be empty without that
+being an error.* The proxy here keys on `readdirSync`/`globSync` + a non-zero
+`process.exit` + the absence of an emptiness test, which is this repository's
+Node idiom. In another stack the same condition wears different clothes — a
+`glob.glob()` with no `assert files`, a `WalkDir` with no `ensure!(!paths.is_empty())`,
+a test suite whose collector silently matches zero tests. **Key on the semantic
+condition, not on this markup**; the portability test found four §9 signals that
+scored zero true positives in a sibling because they keyed on the shape a
+deviation happened to wear in one repo.
+
+**Precision, hand-verified, both arms.** All 6 of the checker-named violating
+sites were opened and confirmed:
+
+- `i18n/check-coverage.mjs:71-78` — guards only that `en.json` exists; §7-A
+  executes the consequence.
+- `check-bundle-budget.mjs:39-45` — catches a *missing* `dist/assets/`, but an
+  **empty** one gives `files = []` and every budget passes trivially. CI runs it
+  with `if: always()`, so it also runs after a failed build.
+- `check-command-contract.mjs`, `check-literal-parity.mjs`,
+  `verify-onnxruntime-bundling.mjs`, `.ai/doctor.mjs` — same shape.
+
+All 3 checker-named control sites confirmed carrying the idiom:
+`check-corpus-integrity.mjs:75-84` (`leaves.length < 200` → exit 2,
+`pathFiles.length === 0` → exit 2), `check-csp-hosts.mjs:152-159`,
+`check-doc-map-paths.mjs:45-47`.
+
+**Two independent implementations, zero disagreement** on the guard test: a
+whole-text regex, and a statement-with-consequent scan that requires a non-zero
+exit within a 6-line window of the emptiness test. Both returned the same 17/11
+split.
+
+**Known recall gap, stated rather than chased.** The `process.exit(\s*[1-9]`
+arm misses a script that fails via `process.exit(code)`, a ternary, or
+`process.exitCode`. `.ai/doctor.mjs:122` is `process.exit(fails > 0 ? 1 : 0)` —
+it is in the violating set only because it *also* has a literal exit elsewhere.
+Widening the arm would add recall and cost precision (`throw new Error` appears
+in every helper). The doctrine's rule applies: a vocabulary-bounded signal's
+recall is bounded by its author's list, and the honest move is to publish the
+bound.
+
+**Not gateable by the census, and named as such.** The three largest findings in
+this document are absences — 31 orphan bindings, 18 dead command overrides, and
+`.gitlab-ci.yml`'s green-when-broken clone. The census ratchets a count of
+something *present*; it cannot say "no committed binding lacks a source" or
+"these two CI definitions agree". Those need the **inventory** direction, and
+this repository already has two of them (`check-command-contract.mjs`,
+`build-golden-path-index.mjs:636-662`) — neither wired to fail. The specified
+follow-up is one line each: promote `check-corpus-integrity.mjs:232` from
+`console.log` to `fail()` once the composition wave pauses (the source already
+marks the spot), and add the orphan direction to
+`scripts/check-unused-bindings.sh`, which today walks the same directory for the
+opposite question.
 
 ---
 
-## 12. Corrections
+## 12. Corrections to the brief
 
-### 12.1 — To the campaign's own orphan-binding record
+**§12.1 — `convergence: mixed` is *partially upheld*, which makes it the second
+spine convergence label to survive.** Swept across all five siblings, and the
+result splits by clause exactly as `mixed` predicts:
 
-The corpus records **29 orphan bindings, 26 still imported, 22 still the
-declared return type of a live `invoke`** (`.claude/CLAUDE.md`, and
-[doctrine §2](../golden-path-doctrine.md#2-measurement-rules)), from three
-implementations that returned 48 / 31 / 29.
+- **The `git diff`-exits-0-on-untracked hole does not exist anywhere else — and
+  not because anyone solved it.** Zero uses of `git diff --exit-code`,
+  `git diff --quiet`, `git status --porcelain` or `git ls-files --others` in any
+  gate, hook, or workflow across all five repos. **No sibling built a
+  codegen-drift gate at all.** The hole is absent by luck, not design, and this
+  is a 5/5 silence.
+- **The inventory shape was independently reinvented.** `personas-web`'s
+  `check-i18n-coverage.mjs:41-47` uses `readdirSync` over the locale directory
+  for the same reason this repo's does, so a new locale file is picked up by
+  construction. Same mechanism, same rationale, no shared document — physics,
+  with the one-author discount.
+- **The strongest form is `brainiac`'s and it is better than ours.**
+  `crates/brainiac-server/src/openapi.rs:425-440` — `committed_document_is_current`
+  regenerates the OpenAPI document from its `utoipa` annotations and asserts
+  byte-equality (EOL-normalized) against the committed `openapi.json`, as a
+  **Rust unit test**, wired into `cargo test --workspace` at `ci.yml:40`. It
+  needs no git, no `--check` flag, and no separate CI job, and it cannot be
+  routed to `console.log`. **That is the answer this leaf should adopt**, and it
+  is the reverse of the usual finding: a sibling is ahead.
+- **And `brainiac` supplies the counter-evidence in the same breath.**
+  `console/package.json:13` declares `gen:api` (`openapi.json` →
+  `api-schema.d.ts`) and it appears in **no** CI file. Seven agent-instruction
+  files ask for the regeneration; zero machines check it. **A gate on rung 1
+  makes the whole chain feel covered** — the same illusion `command-name-drift`
+  produces here by diffing a file half of which has no generator (§7-D).
 
-Re-measured 2026-08-17 by two fresh implementations: **32 orphans** (agreed by
-both; implementation-1-only = 0), of which **29 are still referenced from
-`src/`** outside the bindings directory. One of the 32
-(`serde_json/JsonValue.ts`) is a legitimate ts-rs emission with no Rust struct
-of that name, so **31** is the defect count.
+So: physics on the inventory shape, silence on the diff hole, and a sibling
+ahead on the strongest mechanism. `mixed` holds, and it holds for reasons the
+label could not have contained.
 
-The direction of the correction matters more than the size: the number has gone
-**up** by 3 while the campaign has been publishing it as a static fact. Nothing
-deletes an orphan, so this count is monotone increasing until an inventory gate
-exists — which is §9's whole argument. The `22 still the declared return type
-of a live invoke` figure was not re-measured here and is carried forward
-unverified.
+**§12.2 — `sides: "server"` with `twoSided: true` is internally contradictory,
+and `server` is right.** The spine object carries both. Every artifact pair,
+every gate, every deviation and the census rule are server-side or
+build-tooling; the frontend's only contribution is *being* one half of a pair
+(`src/lib/bindings/`, the locales) and it does not participate in the checking.
+`twoSided: true` describes the *artifacts*, not the *situation*, and reading it
+as the latter would have scoped this brief toward a client half that does not
+exist.
 
-### 12.2 — To the brief
+**§12.3 — my first orphan measurement reported `0 still imported` and the answer
+is `28`, and the cause is a hazard the doctrine already records.** The
+instrument was `new RegExp("\\bName\\b")` written inline in `node -e '…'` under
+MSYS. A backslash level was lost, the pattern became `<BACKSPACE>Name<BACKSPACE>`,
+and it matched nothing — while `String.includes` on the same string returned
+`true`. **The failure was silent, produced a clean round number, and agreed with
+no prior claim**, so nothing about the output looked wrong; it was caught only by
+hand-checking one name (`GitLabJob`, imported at `src/api/system/gitlab.ts:9`
+and the declared type of an `invoke` at `:100`). The doctrine's mechanic —
+*"regex patterns go in a file, never in bash argv and never in a heredoc; MSYS
+mangles backslashes; a heredoc once collapsed `\b` into a literal backspace"* —
+is now earned twice, in two different shells, and the rewritten instrument
+**asserts its own matcher against a known-good line before trusting it**.
 
-- **"The CI binding-drift job `git diff --quiet` exits 0 for an untracked file
-  — FIXED at `ci.yml:426-431`."** Confirmed, and **incomplete in the way that
-  matters**: the gate exists twice and the fix landed in one copy.
-  `.gitlab-ci.yml:165-172` still has the pre-fix form, plus two further defects
-  `ci.yml` also documents having removed (§0). "Fixed" is true of the gate the
-  fixer was looking at.
+**§12.4 — a second implementation reported `16 of 18` dead command overrides;
+the answer is `18 of 18`, and the difference is a substring match.** The two
+survivors were `dev_tools_move_context`, which matches the *different* function
+`dev_tools_move_context_to_group` (`contexts.rs:194`), and
+`dev_tools_cancel_task`, which matches `dev_tools_cancel_task_execution`
+(`task_executor.rs:859`). Both "alive" verdicts were substring-for-structure
+errors. I made the identical mistake in the same session in the other direction:
+my first checker-name pattern matched `generate-template-checksums.mjs` because
+`checksums` contains `check`. **Two implementations disagreeing is the finding;
+which one is right still has to be settled by hand.**
 
-- **"29 orphan bindings persist that no diff-shaped gate can see."**
-  **32** (§12.1), and the mechanism is confirmed exactly.
+**§12.5 — the brief said "the corpus's own new tooling is your freshest
+evidence", and it is — but not in the direction implied.** The implication was
+that fresh tooling would be the instructive *failure*. It is the instructive
+*success*: `build-golden-path-index.mjs` is the only artifact in the repository
+whose freshness is over-determined — deterministic bytes, a real `--check`,
+three registration points, its own floors, and an inventory that exits 2. The
+finding is not that it is broken; it is that **the repository's single best
+drift instrument has its verdict routed to `console.log`**, and the source file
+marks the exact line where that would change.
 
-- **"`check-doc-sync.mjs` and the new `check-golden-path-touch.mjs` are the
-  pattern."** They are a pattern, and it is a *third* shape, not the two-way
-  comparison this path prescribes — they key on a **turn's edit set**, so what
-  they cannot see is any edit outside the transcript and any file outside
-  `feature-doc-map.json`. Both also carry the leaf's own defect in miniature:
-  `check-doc-sync.mjs:132-135` exits 0 **silently** when its map is unreadable
-  (D6), and both are registered only in a gitignored file (D5).
+**§12.6 — two of my own measurements moved during composition and both are
+reported at the commit they were taken.** `gp-index --check` exited **1**
+mid-session and **0** at `afb295187`, because a parallel composition wave was
+publishing paths and then regenerated the index. Neither reading is wrong; the
+gate is doing its job on a minutes-scale clock. Reporting only the later one
+would have understated how fast this pair drifts.
 
-### 12.3 — A sibling claim re-scoped
+**§12.7 — this composer did not write the batch's first leaf.**
+`docs/concepts/golden-paths/commit-path-gates.md` (973 lines) was found finished
+on disk, written by a parallel session minutes earlier. Per the runbook —
+*"always check the disk before re-dispatching"* — it was left untouched, and the
+measurements this session took against that leaf are reported upward rather than
+edited into another session's in-flight file. One of them **contradicts** the
+published document's Gap 3; the detail is in the report, not here, because a
+correction owed to a path belongs in that path.
 
-An earlier sweep in this batch reported `personas-web/scripts/check-i18n-coverage.mjs:89`
-as one-way (`Object.keys(expected)` — the English baseline only, so an extra key
-in a target locale is structurally invisible). That is a finding **about
-`personas-web`**, and it does not transfer: this repository's
-`scripts/i18n/check-coverage.mjs:93-95` computes `missing` **and** `extra` from
-both sets and makes extras fatal in default mode. Two files with nearly the same
-name, opposite verdicts. Recorded because the sweep that produced the sibling
-finding was keyed on the mechanism, and the doctrine's warning applies —
-*search for the NAME as well as the mechanism*, then check which repo you are
-in before generalising.
+**§12.8 — I published an overlap number before measuring it, and it was wrong.**
+The first draft of §9 asserted *"site overlap with `unverifiable-generated-artifact`:
+2 of 17"*. That figure was an estimate from reading the two patterns, not a
+measurement. Both rules were then run in one registry and their match sets
+intersected: the true answer is **0 of 17**. The doctrine's rule —
+*measure overlap at the SITE level, against the FINAL pattern* — exists because
+a composer once published a clean overlap table computed at file level against
+an intermediate draft, and found afterwards that its finished rule matched the
+same 5 declarations in the same 2 files as an existing rule. I reproduced the
+*shape* of that error (an unmeasured number in a published table) and caught it
+only by running the comparison the doctrine mandates. **The correction moves the
+decision the same way it would have moved it wrongly** — 0% overlap is a
+stronger case for the rule than 12% — which is precisely why an unmeasured
+number that supports your conclusion has to be measured.
 
-### 12.4 — A regeneration this composition performed
-
-Running `node scripts/census/build-golden-path-index.mjs --check` returned
-**exit 1** (expected — this batch added documents), and the subsequent
-non-`--check` run **wrote `index.json` and `router.json`**. That is a
-deterministic regeneration of two generated artifacts, the same one
-`merge-published-rules.mjs` performs at the end of every merge, and it is
-recorded rather than hidden: a composer that quietly writes a generated file is
-indistinguishable from one that did not, which is the failure mode this entire
-document is about.
+**§12.9 — the re-extraction round-trip found nothing wrong, and that is the
+point of running it.** The rule was validated in a private scratch registry,
+then extracted back out of this finished document with the same
+`extractPublishedRules` instrument `merge-published-rules.mjs` uses, and re-run:
+2 fenced blocks, 2 rules, 0 skipped, 0 unparseable, and identical counts
+(17/17, 11/13, 167 walked). A lost rule looks exactly like a rule nobody wrote,
+and a CRLF rewrite has silently produced that state in this corpus before.

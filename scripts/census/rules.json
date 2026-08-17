@@ -4758,6 +4758,29 @@
         "matches": 18
       },
       "floor": 1500
+    },
+    {
+      "id": "gate-without-empty-input-guard",
+      "goldenPath": "docs/concepts/golden-paths/cross-artifact-drift-gate.md",
+      "roots": [
+        "scripts",
+        ".ai"
+      ],
+      "extensions": [
+        ".mjs",
+        ".js",
+        ".cjs"
+      ],
+      "signal": {
+        "pattern": "^(?![\\s\\S]*(?:\\.length\\s*(?:===?\\s*0|<\\s*\\d)|!\\w+\\.length|\\.size\\s*(?:===?\\s*0|<\\s*\\d))[\\s\\S]{0,220}?process\\.exit\\(\\s*[1-9])(?=[\\s\\S]*process\\.exit\\(\\s*[1-9])[\\s\\S]*?\\b(?:readdirSync|globSync)\\s*\\(",
+        "flags": "g",
+        "description": "A script that enumerates a directory and can exit non-zero, but never refuses an EMPTY enumeration — so 'found nothing' and 'looked at nothing' both exit 0. Proxy for the contract's fail-loud requirement; the earning case is check-coverage.mjs reporting 0 missing / 0 extra with 13 of 14 locales absent."
+      },
+      "baseline": {
+        "files": 17,
+        "matches": 17
+      },
+      "floor": 120
     }
   ]
 }
