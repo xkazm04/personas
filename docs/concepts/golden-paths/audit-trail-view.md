@@ -339,7 +339,13 @@ needs a column. (d) **Render the recorded time on every row**, relative with the
 `title=` (`SettingsHistoryTab.tsx:212-217` is the pattern), and **never label a column with a
 time-word unless it holds a time**. (e) **Order by the clock and then by the primary key**,
 and page with a keyset cursor over that composite — `team_assignments.rs:392` is the reference;
-a clock is not a key and `datetime('now')` is a second. (f) **Type the label map against the
+a clock is not a key and `datetime('now')` is a second. **Qualified 2026-08-17 by
+[findings-triage-queue](./findings-triage-queue.md): …for a HISTORY. A queue a human works
+through ranks by NEED first.** That path's positive control certifies
+`dev_tools.rs:3841` — `ORDER BY created_at DESC, id DESC LIMIT` — which is `triage_ideas`, the
+flagship findings queue in this repo, **54 deep with a 131-day tail** while `impact` is populated
+on 236 of 236 rows. Correct by this clause and wrong for its purpose: following both paths
+naively makes a stale queue *tidier*. (f) **Type the label map against the
 writer's enum** so a new variant is a compile error, the way `EVENT_STATUS_COLORS` is
 `Record<PersonaEventStatus, …>`; if the label lives in the i18n catalog and cannot be typed,
 add the catalog-vs-enum check as a test, and **never build a filter dropdown from a

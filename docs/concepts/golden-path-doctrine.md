@@ -76,7 +76,7 @@ The fix was deleting the helper. See [entity-draft-editing](./golden-paths/entit
 
 ### Where types cannot reach
 
-Before proposing a type, check that it reaches the code. Four places it does
+Before proposing a type, check that it reaches the code. Six places it does
 not, all measured:
 
 1. **Inside a SQL string literal.** `engine/platforms/deploy.rs` INSERTed a
@@ -102,7 +102,17 @@ not, all measured:
 3. **In an ambient environment variable.** Five Claude spawns inherit
    API-account auth from the environment; four of them run a loop named
    `env_removals` that *looks* like the guard and strips something else.
-4. **On the far side of a serialization boundary.** Established by
+4. **A thing that was never declared.** Added by
+   [`findings-triage-queue`](./golden-paths/findings-triage-queue.md), and it
+   generalises the orphan-bindings case. `pending_counts` is six hand-written
+   `COUNT(*)` string literals covering **56 of 370 items waiting on a human**;
+   the other **314 (84.9%) are in queues nobody registered**, and two of the six
+   registered tables have never held a row. **No signature is short a parameter
+   and no enum is short a variant** — the failure is nobody calling anything.
+   Only an **inventory of what should exist**, compared against the registry,
+   finds it. Same shape as an orphan binding, which produces no diff *and* no
+   untracked file.
+5. **On the far side of a serialization boundary.** Established by
    [`ownership-verification.md`](./golden-paths/ownership-verification.md) §5.4:
    the value a newtype would protect is unforgeable *in Rust* and forgeable *on
    the wire*. The defect is not that a Rust caller can build a `String` — it is
@@ -119,9 +129,9 @@ not, all measured:
    > blob** — in either direction, and the storage shape is upstream of every
    > type you could add above it.
 
-5. **Across a build boundary** — established by
+6. **Across a build boundary** — established by
    [`compile-time-env-embedding.md`](./golden-paths/compile-time-env-embedding.md).
-   Items 1–4 are *spatial*: the value is somewhere the type system does not
+   Items 1–5 are *spatial*: the value is somewhere the type system does not
    look. This one is **temporal** — by the time the question is asked, the other
    side of the boundary is gone. **The discriminator is whether the mechanism is
    allowed to fail:** `env!` *does* reach across, because an absent variable is a
