@@ -158,6 +158,15 @@ The census fails on a **rise** (a new violation) and on a **silent drop**
 allowed — record the justification in the commit; a ratchet that can only move
 down will be gamed the first time moving up is right.
 
+**A drop has three causes and the census cannot tell them apart.** The matcher
+broke; the code was fixed; or **the code was deleted**. Only the middle one is
+progress. Measured 2026-08-17: deleting the unreachable `sub_canvas` tree moved
+`stateless-disclosure-control` from 59→57 matches, and that ratchet step is
+byte-identical to the one a real fix produces. So `--update` obliges you to say
+**which of the three** in the commit — and if it was deletion, to say so in the
+path document too, because a later reader finds only the number. Same discipline
+as a rise, for the same reason.
+
 ## When a composer stalls — or dies
 
 It stalls *after* writing its document, at the validation step. **The same is
