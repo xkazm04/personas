@@ -539,7 +539,7 @@ the parser. Three further limits, all measured:
 | **A confirmation that truncates the payload** | `MutationConfirmBanner.tsx:41` — `pendingMutation.length > 200 ? slice(0, 200) + '...'`, inside a `max-h-20` `<pre>`. The one human gate in this path shows a prefix of the program it is asking about. |
 | **A capability whose safety rests on an approval that another file can switch off** | `connectors.rs:214-224` reasons carefully about prompt injection and concludes *"Requiring approval puts a human in front of the raw query"*. `approval_autopilot.rs:10-49` removed that human for every `use_connector` write under autonomous mode, deliberately and with its own careful note — and nothing pointed the connector at it. Same shape as [second-transport-exposure](./second-transport-exposure.md) §7.H: **a borrowed control leaves no reference the deleter can follow.** |
 | **Shipping the mechanical link and then hand-writing the mirror** | `classify_db_query` is registered, privileged, has a typed wrapper, and has **zero callers**; `safeModeUtils.ts` re-implements it and diverges on `DROP`/`ALTER` inside a CTE. This is [client-rule-mirroring](./client-rule-mirroring.md)'s subject with the excuse removed — there was no boundary problem to solve. |
-| **Redacting on the door you were worried about** | `query_debug.rs` masks 21 sensitive column names and truncates every value to 200 chars. `execute_db_query` — including the ChatTab lane, where a **model** wrote the SQL — returns `QueryResult` verbatim. Two model-driven query doors, opposite redaction policies. |
+| **Redacting on the door you were worried about** | `query_debug.rs` masks **27** sensitive column names and truncates every value to 200 chars. `execute_db_query` — including the ChatTab lane, where a **model** wrote the SQL — returns `QueryResult` verbatim. Two model-driven query doors, opposite redaction policies. |
 | **A cancellation stack with no button** | `IN_FLIGHT_QUERIES` + `CancellationToken` + `get_interrupt_handle` + a `cancel_db_query` IPC command + `useDbQueryRunner.cancelQuery` — all correct, all wired, and `ConsoleTab.tsx:35` destructures the hook **without** `cancelQuery`. The saved-query editor renders the button; the primary console does not. |
 | **Auditing the remote door and not the local one** | `log_decrypt(…, "db_query:execute", …)` fires only after the `personas_database` early return. The door onto the app's own memory store — the one with no encrypted columns — is the one with no ledger. |
 | **An unbounded model-facing read** | `personas_db_execute_select` caps at 200 rows *after* fetching, and has no timeout, no busy timeout, no cancellation and no interrupt handle — against a pool the whole companion runtime shares. The console lane 60 lines away has all four. |
@@ -782,9 +782,14 @@ Three findings in one 40-line function.
 
 ### 7.D — P1: the AI-debug lane redacts results and the AI-chat lane does not
 
-`query_debug.rs:79` `sanitize_query_result` masks 21 sensitive column names, truncates every other
+`query_debug.rs:79` `sanitize_query_result` masks **27** sensitive column names, truncates every other
 value to 200 chars at a UTF-8 boundary, caps at 5 rows and reports `rows_omitted` honestly. It is
 applied to exactly one of the eight doors.
+
+> **Count corrected 2026-08-17 by [telemetry-scrubbing](./telemetry-scrubbing.md)** — this path said
+> 21 in two places. It also measured what the list would cost if the match were loosened:
+> `contains()` matching would `[REDACTED]` **130 of 2,570 live columns**, mostly `input_tokens`,
+> `is_sensitive`, `content_hash`, `tags` and `authors`. A wider allowlist is not free.
 
 `ChatTab.tsx:170` — where a **model** authored the SQL and the human pressed Run — calls
 `executeDbQuery` and renders the raw `QueryResult`. So do both human editors. There is no redaction

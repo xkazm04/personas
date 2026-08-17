@@ -1243,6 +1243,94 @@ real panel written to go with it.
 
 ---
 
+## 34. An MCP tool result would hand a model your GitHub token
+
+**Where:** `src-tauri/src/mcp_server/tools.rs:1812` (`personas_result`), and
+`:1667`, `:1844-1852`.
+
+**What is measured:** `personas_result` selects `output_data` **and
+`tool_steps`** from `persona_executions` and returns them `to_string_pretty` to
+the connected MCP client — which forwards tool results to a model provider.
+Searching the whole module for a redactor returns **0 hits across 3,243 lines,
+33 handlers and 149 `row.get` calls.**
+
+What is in `tool_steps` on this machine, measured on a read-only copy: **1,921
+rows / 26.5 MB**, containing **1 GitHub PAT, 7 Google-API-key-shaped strings, 1
+PEM `BEGIN … PRIVATE KEY` header**, plus 14,736 POSIX home paths, 1,515
+`DOMAIN\user` strings and 1,032 email addresses.
+
+**The door is unlocked and currently unopened.** No `~/.claude/mcp.json`,
+`~/.cursor/mcp.json`, or project `.mcp.json` exists here, so nothing is
+connected. `brainiac` redacts at exactly this door (`mcp.rs:2393`).
+
+**Why held:** adding redaction changes what every MCP tool result contains — and
+the operator may be relying on that content. But this is the **first item in
+this register where a credential would actually leave the machine**, so it
+belongs near the top of any fix list.
+
+**The structural reason it happened, which generalises:** *a module that never
+called a redactor never appeared in any search for redactors.* Every audit of
+this repo's redaction has enumerated the redactors and traced their callers. A
+3,243-line transport with zero redactors is invisible to that method. The fix is
+an **inventory of egress channels**, not a better regex.
+
+---
+
+## 35. Sentry's scrubber visits 5 of 14 field families, and the biggest producer has no call site
+
+**Where:** `src/lib/sentry.ts:215-260`;
+`src/lib/utils/sanitizers/maskSensitive.ts:81-82`;
+`sanitizeErrorForDisplay.ts:86`.
+
+**What is measured:** `beforeSend` visits **5 of 14 field families** (2 of the 5
+are deletions); the Rust hook visits 6 — **and they disagree on which.** Rust
+scrubs `breadcrumb.data`; the frontend does not.
+
+**The dominant producer has no call site at all.** `breadcrumbsIntegration` is an
+SDK *default* — `console`, `dom`, `fetch`, `xhr`, `history` all on, because
+`sentry.ts` passes no `integrations` array. Its console handler emits
+`data: { arguments }` carrying **the same text as `message`**, so all **295
+console-bound log statements** (79 direct `console.*` in 32 files + 216
+`log.*`/`logger.*` in 103 files) ship **one scrubbed and one unscrubbed copy of
+every line**. `fetch`/`xhr` breadcrumbs carry no `.message` at all.
+
+**A redaction marker printed beside the surviving secret.** `INLINE_SECRET_RE`
+lists `authorization` in its keyword alternation and captures
+`([a-zA-Z0-9\-_.~%]+)` after the separator — so for `Authorization: Bearer
+eyJ…` it binds **`Bearer`** as the value and emits `Authorization: [secret]
+eyJ…`. **4 of 6 auth-header forms leak**, cross-checked in Node `RegExp` and
+CPython `re`. Rust's `bearer_re` masks 6 of 6.
+
+**This is in a file the campaign edited, and the campaign's fix did not cover
+it.** Commit `1e714f817` corrected the *token-prefix* regex directly below this
+one and left `INLINE_SECRET_RE` untouched. That is this corpus's own doctrine
+biting its author: *fixing every instance of a defect is not the same as
+covering every place that needs the behaviour.* The leak predates the fix; what
+the fix did not do is make the adjacent rule correct.
+
+**And detection triggers disclosure:** `sanitizeErrorForDisplay.ts:86` — the "we
+found a secret" branch **logs the raw string**.
+
+**Inert on this machine today, and not because of a control:** there are **0
+DSN-shaped strings** in the release exe, the debug exe, or all 1,399 `dist`
+chunks; the running process matches the **debug** binary, so
+`cfg!(debug_assertions)` forces `dsn: None`. Only the release workflow supplies
+a DSN. **The clipboard channel is live in every build.**
+
+**Why held:** every change here alters what leaves the machine or what a
+developer sees in a console, and the correct fix is a whole-record walk plus an
+egress inventory rather than another pattern.
+
+**The convergence result is unusually pointed:** the single sibling that appeared
+to corroborate our scrubber is **our own child** — `personas-web/src/lib/sentry-pii.ts`
+is a textual port of `sentry.ts`, identical regex literals and comment prose. On
+a cohort of 4 independent siblings the honest count is **0 of 4**. But the port
+**gained** coverage of `contexts`, `extra`, `tags`, `frame.vars` and
+`breadcrumb.data`, plus a redact-on-overflow depth cap — so **the fix here is
+taking our own code back.**
+
+---
+
 ## What *was* applied, and what it changes at runtime
 
 For completeness, since "no destructive applies" is now the rule. None of these
@@ -1261,3 +1349,13 @@ delete data; several do change behaviour, all in the conservative direction:
 
 The Rust ones are compile-verified by CI but **not runtime-verified** — cargo is
 unavailable in the campaign's session.
+
+**One applied change has since been audited and found incomplete.** Commit
+`1e714f817` corrected the credential **token-prefix** regex — measured as
+masking 2 of 13 real token shapes before and 13 of 13 after, with 0 false
+positives, across four copies. That result stands. What it did not do is examine
+`INLINE_SECRET_RE`, the rule **directly above it in the same file**, which binds
+`Bearer` as the value of an `Authorization` header and therefore prints
+`[secret]` beside a surviving token — see item 35. The campaign's own doctrine
+predicted this exact miss and the campaign made it anyway: **a search for the
+broken literal finds every copy of that literal and nothing else.**

@@ -4053,6 +4053,36 @@
         "matches": 30
       },
       "floor": 4000
+    },
+    {
+      "id": "unscrubbed-telemetry-side-field",
+      "goldenPath": "docs/concepts/golden-paths/telemetry-scrubbing.md",
+      "title": "A value is attached to a Sentry record through a field this app's own beforeSend/beforeBreadcrumb never visits, so it leaves the device exactly as written while a sibling field of the same record is scrubbed",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "Sentry\\.addBreadcrumb\\(\\{(?:(?!addBreadcrumb)[\\s\\S]){0,400}?\\bdata\\s*:|\\b(?:Sentry|scope)\\.set(?:Extra|Extras|Context)\\s*\\(|Sentry\\.capture(?:Exception|Message)\\(\\s*[^,)]{1,80},\\s*\\{",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "Three JavaScript shapes that put a value on a Sentry record somewhere other than `message` or `exception.value`: a breadcrumb literal carrying `data:`, a setExtra/setExtras/setContext call, and a captureException/captureMessage whose second argument is an object (tags/extra/contexts). PROXY FOR the stack-free condition: 'a value is attached to a telemetry record through a field the record's own egress filter does not visit, so it leaves the device exactly as written while a sibling field of the same record is scrubbed.' WHY IT IS A DEFECT AND NOT A PREFERENCE, executed rather than reasoned: the shipping beforeSend (src/lib/sentry.ts:215-253) was transcribed verbatim and run over a fully populated event. It visits message, exception.values[].value and breadcrumbs[].message; it deletes user.{email,ip_address,username} and request.{headers,data}. Result per field - message mask, tags mask (short ids only), contexts LEAK (react.componentStack), extra LEAK, request.url LEAK, breadcrumbs[].data LEAK. beforeBreadcrumb (:255-260) touches .message only. So every match below lands in a field nothing scrubs. MEASURED 2026-08-17 at 2a874e692: 12 files / 19 matches, ALL NINETEEN HAND-READ. The five that carry unbounded runtime text are the ones to fix first - src/lib/silentCatch.ts:78,115,143 (data:{stack}, three doors, ~1,659 call sites behind them), src/lib/silentFailureTelemetry.ts:198 (data:summary carrying top[].lastMessage, which is THE SAME STRING silentCatch already shipped scrubbed in its own breadcrumb message minutes earlier), src/lib/personas/templates/templateOverlays.ts:57,300,313 (data:{path, error: err.message}), src/features/templates/sub_generated/generation/useCreateTemplateSnapshot.ts:47 (a model-authored JSON excerpt guarded by a local two-pattern scrubber whose non-capturing group makes its own $1 replacement emit the literal \"$1\"), src/lib/execution/middleware/analyticsMiddleware.ts:26 (execution_id - a key this application's OWN policy at src-tauri/src/main.rs:296 classifies as sensitive and DELETES from breadcrumb data on the Rust side). The remainder carry ids, categories and counts: roadmapItems.ts:40,53, useTranslatedError.ts:44, errorRegistry.ts:696, systemStore.ts:153, storeTypes.ts:118, useOnboardingState.ts:147, useAutoUpdater.ts:127, silentFailureTelemetry.ts:164, useCreateTemplateSnapshot.ts:48. Precision on the STATED condition is 19/19 by construction, verified by executing the hook; the rule asserts coverage, not harm, and its title says so. KNOWN AND DELIBERATE LIMIT: the DOMINANT producer of this condition has no call site at all and this rule cannot see it. @sentry/browser's breadcrumbsIntegration is a DEFAULT integration (sdk.js getDefaultIntegrations) with console/dom/fetch/xhr/history all true, and sentry.ts passes no integrations array; its console handler emits data:{arguments} carrying THE SAME TEXT as message, so all 295 console-bound log statements in this app (79 direct console.* in 32 files plus 216 log.*/logger.* in 103 files, all funnelled through src/lib/log.ts:20-41) produce one scrubbed and one unscrubbed copy of every line, and its fetch/xhr handlers emit data:{method,url,status_code} with NO .message for the hook to act on. LEGAL FIX: make beforeSend walk the whole record. personas-web/src/lib/sentry-pii.ts:88-195 already does exactly this and is a PORT OF THIS REPO'S OWN sentry.ts (identical regex literals, identical comment prose) that gained contexts/extra/tags/frame.vars/breadcrumb.data and a redact-on-overflow depth cap - port it back and add request.url, which both hooks in the six-repo fleet miss identically. DO NOT silence a match by moving the value into the breadcrumb message, by renaming the local variable, or by hoisting the object literal into a const - the first collides with structured-logging.md's unqueryable-log-record prescription and the other two preserve the defect exactly. END OF LIFE: once beforeSend walks the record every match here becomes correct by construction; the runner then fails structurally on zero matches BY DESIGN - DELETE this rule at that point, do not baseline it at 0.",
+        "$measured": "2026-08-17 @ 2a874e692 — 4,829 files walked; validated standalone in a scratch registry unique to this composer (rules-telemetry-scrubbing-probe.json), fault-injected 8 ways plus one real violation appended to src/lib/log.ts (12/19 -> 13/20, exit 1, reverted clean), then re-extracted from this finished document and re-run through the real runner: identical. 1.096 s for rule and control together."
+      },
+      "exclude": [
+        {
+          "path": "src/lib/sentry.ts",
+          "reason": "the hook's own module — its scope.setExtras at :168 carries the session-summary counters beforeSend was written to allow, and a rule that reports the file it tells you to fix is a to-do list rather than a ratchet"
+        }
+      ],
+      "baseline": {
+        "files": 12,
+        "matches": 19
+      },
+      "floor": 3000
     }
   ]
 }
