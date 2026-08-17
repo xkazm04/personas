@@ -1092,6 +1092,157 @@ reviewed."*
 
 ---
 
+## 31. "Delete 77 agents" touches 15,958 rows across 20 tables
+
+**Where:** `PersonaOverviewActions.tsx:113`; `storage.rs:99` +
+`StorageUsageSection.tsx:81`; `skill_files.rs:1054`.
+
+**What is measured**, replayed against read-only copies of the live DBs — the
+two largest measured **twice**, by child-count subquery and by an actual
+`DELETE` on a throwaway copy with `PRAGMA foreign_keys = ON`, agreeing per
+table:
+
+| the button says | the action touches | ratio |
+| --- | --- | --- |
+| **Delete 77 agents** | **15,958 rows across 20 tables** — every one of your 6,535 memories and all 2,188 executions | **207×** |
+| **Remove 2,188 finished runs** | 2,188 + **5,015 cascade rows in 4 tables** + 4,376 FTS + 944 nulled | **3.29×** |
+| deletes all **100** memories | **6,535** | 65× (already item 2c) |
+| Skills install: **16 files removed** | **0** — `copy_dir_recursive` cannot delete | — |
+| "Export Credentials" → **"Exported!"** | **0 of 25** written | — |
+
+**The finding that generalises, and it is not the numbers.** The brief asked
+whether preview and action share a code path. The repo's **best-engineered**
+preview shares the *literal SQL string* — one `where_clause` variable feeding
+both the `COUNT` and the `DELETE` — and is still wrong by 3.29×. **Sharing the
+predicate is not sharing the effect.** A count preview cannot see a cascade.
+
+**Denominator:** 1,585 commands · 104 mutating · 19 preview doors · 5 paired ·
+**1** carrying a state token · **0 of 69 confirmation strings naming a
+cascade.**
+
+**Why held:** every fix here changes a confirmation dialog on a destructive
+action — the exact surface where a wrong change is worst. `storage.rs:99` also
+has a dry-run mode with **zero callers** that could be wired instead of
+rewriting the count.
+
+**Two siblings are ahead and say how:** `brainiac` computes its preview
+*through the enforcement path* (`scoped_tx`), which makes divergence
+unrepresentable; `ascent` states cascade and downstream effects in the copy and
+**pins the wording with a test**. Personas is alone in six repos in having a
+preview *token* (`apply_bundle_import`'s `preview_id` + mandatory hash) — the
+mechanism exists and covers one door.
+
+---
+
+## 32. 1,356 of 1,585 commands are Public, and the tier tracks which folder the file is in
+
+**Where:** `ipc_auth.rs`; `executions.rs:420` + `engine/src/prompt/cli_args.rs:107`;
+`oauth.rs:595-597`; `management_api.rs:386-392`.
+
+**What is measured — asked versus used, on all four grant surfaces:**
+
+| surface | asked | used |
+| --- | ---: | ---: |
+| IPC tier | **229 of 1,585 gated (14.4%)** | nothing measures what a command exercises |
+| persona tool grants | **210 edges** | **9 ever exercised — 4.3%** |
+| management-API keys | 1,029 keys, 2 scope sets | **1** recorded request |
+| `BrokerGrant` (records *which* grant authorized a use) | 3 arms, correct, unit-tested | **0 rows**, against **9,431** decrypt audit rows naming no grant |
+| OAuth `credential_fields.scopes` | 9 scope strings | **0 production readers** |
+
+**The discriminator was raced against its rivals before publication.** Module
+membership predicts the privileged tier at **9.77×** (75.3% vs 7.7%); the best
+behavioural marker reaches 4.71×; **spawning a subprocess predicts it at 0.99×
+— the base rate.** The tier tracks which folder the file is in, not what the
+command can do. Fleet confirms it by hand: 38 commands, 1 gated, and that one
+deletes a registry row.
+
+**Named, since you asked for it:** the live `google_calendar` grant holds
+**`https://www.googleapis.com/auth/calendar.events`** — a *write* scope — and no
+named site in the tree writes a calendar event (one endpoint, a GET). But the
+generic proxy at `api_proxy.rs:551` reaches **any path under the connector base
+with a caller-supplied method**, so the scope is the capability surface and the
+endpoint list is decoration. That is why the *grant* is what would need
+narrowing, not the endpoint list.
+
+**Also:** selecting Gmail alone requests **6 scopes across 3 Google products**.
+`oauth.rs:595-597` does `scopes.extend(extra_scopes)` under a comment 200 lines
+above asserting the server list is *"the single source of truth"* and the
+frontend *"delegates scope selection to the backend"* — it does not;
+`workspaceProviders.ts:32-79` keeps its own list and asks for `drive` where the
+server default asks for `drive.file`.
+
+**The tool grant is decorative in the execution lane:** the persona's tool list
+is rendered into the *prompt*, and the spawn gets `--dangerously-skip-permissions`
+and never sees it. `--allowedTools` exists at 2 sites, neither an execution
+lane. `http_request` is granted to **61 of 78 personas with 0 invocations**;
+`Bash` accounts for **29,303 uses (77.3% of all tool use)** and has no grantable
+edge at all.
+
+**Why held:** re-tiering commands, narrowing an OAuth grant, or requiring
+`--allowedTools` all change what the operator's app is permitted to do
+mid-session. The runbook names this class explicitly.
+
+**One gate is ready and deliberately not wired.** A prototype extension to
+`check-command-contract.mjs` (Rule 5, three directions, with preconditions
+modelled on the repo's own) was built and run: it is **red today (exit 1)** on
+five allowlist entries naming commands that are not registered
+(`github_create_patch_release`, `openapi_parse_from_url`,
+`openapi_parse_from_content`, `openapi_generate_connector`, `create_execution`),
+and exits 1 on all four induced faults. **Wiring it would turn `npm run check`
+red immediately**, which is a workflow change, not a fix. The prototype is in
+the session scratchpad.
+
+**Adjacent, and the reason the gate matters:** `ipc_auth.rs` has **23 commands
+declaring a tier nothing enforces** (all async ⇒ zero enforcement) and **33
+enforcing one nothing declares.** The test that would catch this exists at
+`:1149-1211`, runs nowhere, and its `DRIFT_BASELINE` is **set-equal to the drift
+set in both directions** — zero headroom, and it omits the direction that is red
+today.
+
+---
+
+## 33. 21 of 21 tab strips ship a dangling `aria-controls`
+
+**Where:** `SegmentedTabs.tsx:124,:41,:176-182` vs `PanelTabBar.tsx:86`;
+`DraftEditStep.tsx:129`; `PrototypeTabs.tsx`, `TwinVariantTabs.tsx`.
+
+**What is measured:** two tab-strip primitives sit in one folder, differ on one
+line, and score **2/2 versus 0/21**. `PanelTabBar` **withholds**
+`aria-controls` unless the caller passes `idPrefix` — both its callers passed it
+and built a real `role="tabpanel"`. `SegmentedTabs` emits `aria-controls`
+**unconditionally**, at a `useId()`-derived prefix **the caller cannot obtain**,
+so all 21 call sites ship a dangling reference — and
+`segmentedTabPanelProps`, the helper that would resolve it, has **zero
+consumers**. Same repo, same folder, same authors, same concept: the corpus's
+cleanest in-repo controlled experiment for *withholding beats requiring*.
+
+`role="tabpanel"` appears **4 times in the entire tree** against 34 tab strips.
+
+**A keyboard trap, and it is the only one in six repos:**
+`DraftEditStep.tsx:129` uses a roving `tabIndex` with **no arrow-key handler**,
+leaving **2 of 3 tabs unreachable from the keyboard.** Four sibling repos have
+zero.
+
+**Executed in jsdom, one tab round trip:** a half-typed draft is **destroyed**
+and the fetch **re-issued** — while **`scrollTop = 640` survives**. The content
+resets and the scroll does not, which is exactly backwards, and inverts three of
+the four things the brief expected to leak.
+
+**Two A/B switchers are still shipping**, both self-labelled *"throwaway
+scaffolding"*, born 2026-04-25 — **114 days**, 3 render sites — and
+`TwinVariantTabs` has since grown `localStorage` persistence.
+
+**The fix is four characters** and is not applied: make `idPrefix` **required**
+on `SegmentedTabs`. Its current default is not a neutral fallback — it is a value
+that makes the correct completion *impossible*. Necessary and not sufficient:
+`DecisionModeTabs.tsx:61` already passes `idPrefix` and still has no panel,
+which is why the census rule gates the **panel**, not the prop.
+
+**Why held:** requiring a prop is a compile break at 21 sites, and each needs a
+real panel written to go with it.
+
+---
+
 ## What *was* applied, and what it changes at runtime
 
 For completeness, since "no destructive applies" is now the rule. None of these

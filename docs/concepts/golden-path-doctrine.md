@@ -319,6 +319,16 @@ The runner is `scripts/census/`. A rule is a **ratchet**, not a verdict.
 - **Check the existing rules first** and name the ones you checked. The corpus
   is crowded enough that a reasoned decline is a respectable §9. One gate was
   declined purely for 83% file-overlap with an existing rule; that was correct.
+- **Measure overlap at the SITE level, against the FINAL pattern.** A composer
+  measured its overlap at *file* level against an *intermediate* draft of its own
+  pattern, published a clean table, then re-checked and found the finished rule
+  matched **the same 5 declarations in the same 2 files with a byte-identical
+  baseline** as an existing rule — 100% site overlap, nothing to merge. File
+  overlap understates; an intermediate pattern measures a rule you did not ship.
+  The decline was worth more than the rule would have been: extending the
+  neighbour's verb list by 19 verbs found **zero** additional sites, which
+  established that *every* destructive door in the tree already reports a
+  quantity and the five that cannot are all exports.
 - **A positive control is mandatory.** Same anchors pointed at the COMPLIANT
   form, id ending `-positive-control`, and **no `baseline`** — the merger skips
   controls and `validateRule` rejects one that carries a baseline. A control
