@@ -12379,7 +12379,10 @@
     "yes": "Có",
     "no": "Không",
     "delete_confirm_question": "Xóa {name}?",
-    "tag_input_placeholder": "Nhập thẻ và nhấn Enter..."
+    "tag_input_placeholder": "Nhập thẻ và nhấn Enter...",
+    "outcome_breakdown": "Tổng {runs} lần chạy · {completed} hoàn tất · {failed} thất bại",
+    "outcome_of_runs": "trong {terminal} đã mang lại giá trị",
+    "outcome_pending": "lần chạy, chưa có kết quả"
   },
   "execution_status": {
     "completed": "Hoàn thành",

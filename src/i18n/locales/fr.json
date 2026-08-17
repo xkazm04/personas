@@ -12379,7 +12379,10 @@
     "yes": "Oui",
     "no": "Non",
     "delete_confirm_question": "Supprimer {name} ?",
-    "tag_input_placeholder": "Saisir un tag et appuyer sur Entrée..."
+    "tag_input_placeholder": "Saisir un tag et appuyer sur Entrée...",
+    "outcome_breakdown": "{runs} exécutions au total · {completed} terminées · {failed} en échec",
+    "outcome_of_runs": "sur {terminal} ont apporté de la valeur",
+    "outcome_pending": "exécutions, aucun résultat pour l'instant"
   },
   "execution_status": {
     "completed": "Terminé",

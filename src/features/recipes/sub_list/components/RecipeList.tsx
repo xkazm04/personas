@@ -1,10 +1,12 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { BookOpen, X } from 'lucide-react';
 import { RecipePageFlipLoader } from '../../shared/RecipePageFlipLoader';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import type { RecipeExecutionResult } from '@/lib/bindings/RecipeExecutionResult';
+import type { RecipeOutcomeTally } from '@/lib/bindings/RecipeOutcomeTally';
 import { RecipeCard } from './RecipeCard';
 import { useToastStore } from '@/stores/toastStore';
+import { silentCatch } from '@/lib/silentCatch';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { RecipeBookIllustration } from '../../shared/RecipeBookIllustration';
@@ -24,6 +26,26 @@ export function RecipeList({ recipes, search, loading, onEdit, onPlayground, onD
   const { t } = useTranslation();
   const [quickTestResults, setQuickTestResults] = useState<Record<string, RecipeExecutionResult | null>>({});
   const [quickTestLoading, setQuickTestLoading] = useState<Record<string, boolean>>({});
+  const [outcomes, setOutcomes] = useState<Record<string, RecipeOutcomeTally>>({});
+
+  // Run outcomes are card enrichment, not the card itself: the list renders
+  // immediately and badges appear when this lands. Deliberately no loading
+  // state — a fetch must never hide already-rendered rows, and a recipe with
+  // no runs is absent from the response anyway, so "no badge" is the resting
+  // state for most of the grid rather than a gap worth ghosting.
+  useEffect(() => {
+    let cancelled = false;
+    recipeApi
+      .getRecipeOutcomeTallies()
+      .then((tallies) => {
+        if (cancelled) return;
+        setOutcomes(Object.fromEntries(tallies.map((tally) => [tally.recipeId, tally])));
+      })
+      .catch(silentCatch('RecipeList.getRecipeOutcomeTallies'));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleQuickTest = useCallback(async (id: string) => {
     const recipe = recipes.find((r) => r.id === id);
@@ -92,6 +114,7 @@ export function RecipeList({ recipes, search, loading, onEdit, onPlayground, onD
               onPlayground={onPlayground}
               onDelete={onDelete}
               onQuickTest={handleQuickTest}
+              outcome={outcomes[recipe.id]}
             />
 
             {/* Quick test loading */}

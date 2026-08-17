@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { BookOpen, Play, Settings, Pencil, Trash2, Search, Cog, Sparkles, ArrowLeftRight, Eye, type LucideIcon } from 'lucide-react';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
+import type { RecipeOutcomeTally } from '@/lib/bindings/RecipeOutcomeTally';
 import { parseTags } from '@/features/recipes/shared/recipeParseUtils';
 import { useTranslation } from '@/i18n/useTranslation';
+import { RecipeOutcomeBadge } from './RecipeOutcomeBadge';
 
 interface RecipeCardProps {
   recipe: RecipeDefinition;
@@ -10,6 +12,9 @@ interface RecipeCardProps {
   onPlayground: (id: string) => void;
   onDelete: (id: string) => void;
   onQuickTest?: (id: string) => void;
+  /** Run outcomes for this recipe. Absent until the tally fetch lands, and
+   *  permanently absent for a recipe that has never run. */
+  outcome?: RecipeOutcomeTally;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -54,7 +59,7 @@ function getCategoryStyle(category: string | null): string {
   return CATEGORY_COLORS[category.toLowerCase()] ?? 'bg-zinc-500/15 text-zinc-400 border-zinc-500/25';
 }
 
-export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest }: RecipeCardProps) {
+export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest, outcome }: RecipeCardProps) {
   const { t, tx } = useTranslation();
   const tags = parseTags(recipe.tags);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -170,6 +175,12 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
             </div>
           )}
         </div>
+
+        {outcome && (
+          <div className="ml-auto min-w-0">
+            <RecipeOutcomeBadge tally={outcome} />
+          </div>
+        )}
       </div>
     </div>
   );

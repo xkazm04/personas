@@ -121,5 +121,8 @@
   "yes": "Да",
   "no": "Нет",
   "delete_confirm_question": "Удалить {name}?",
-  "tag_input_placeholder": "Введите тег и нажмите Enter..."
+  "tag_input_placeholder": "Введите тег и нажмите Enter...",
+  "outcome_breakdown": "Всего запусков: {runs} · завершено: {completed} · с ошибкой: {failed}",
+  "outcome_of_runs": "из {terminal} принесли результат",
+  "outcome_pending": "запусков, результатов пока нет"
 }

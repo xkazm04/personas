@@ -121,5 +121,8 @@
   "yes": "हां",
   "no": "नहीं",
   "delete_confirm_question": "{name} हटाएं?",
-  "tag_input_placeholder": "टैग टाइप करें और Enter दबाएं..."
+  "tag_input_placeholder": "टैग टाइप करें और Enter दबाएं...",
+  "outcome_breakdown": "कुल {runs} रन · {completed} पूर्ण · {failed} विफल",
+  "outcome_of_runs": "{terminal} में से मूल्य दिया",
+  "outcome_pending": "रन, अभी कोई परिणाम नहीं"
 }

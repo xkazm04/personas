@@ -12379,7 +12379,10 @@
     "yes": "Ja",
     "no": "Nein",
     "delete_confirm_question": "{name} löschen?",
-    "tag_input_placeholder": "Tag eingeben und Enter drücken..."
+    "tag_input_placeholder": "Tag eingeben und Enter drücken...",
+    "outcome_breakdown": "{runs} Läufe insgesamt · {completed} abgeschlossen · {failed} fehlgeschlagen",
+    "outcome_of_runs": "von {terminal} lieferten Mehrwert",
+    "outcome_pending": "Läufe, noch keine Ergebnisse"
   },
   "execution_status": {
     "completed": "Abgeschlossen",

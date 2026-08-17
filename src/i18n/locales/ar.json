@@ -12379,7 +12379,10 @@
     "yes": "نعم",
     "no": "لا",
     "delete_confirm_question": "حذف {name}؟",
-    "tag_input_placeholder": "اكتب الوسم واضغط Enter..."
+    "tag_input_placeholder": "اكتب الوسم واضغط Enter...",
+    "outcome_breakdown": "{runs} تشغيل إجمالاً · {completed} مكتمل · {failed} فاشل",
+    "outcome_of_runs": "من {terminal} حقّقت قيمة",
+    "outcome_pending": "تشغيل، لا نتائج بعد"
   },
   "execution_status": {
     "completed": "مكتمل",

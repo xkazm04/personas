@@ -12379,7 +12379,10 @@
     "yes": "예",
     "no": "아니오",
     "delete_confirm_question": "{name}을(를) 삭제할까요?",
-    "tag_input_placeholder": "태그를 입력하고 Enter를 누르세요..."
+    "tag_input_placeholder": "태그를 입력하고 Enter를 누르세요...",
+    "outcome_breakdown": "총 {runs}회 실행 · {completed}건 완료 · {failed}건 실패",
+    "outcome_of_runs": "{terminal}건 중 성과 달성",
+    "outcome_pending": "회 실행, 아직 결과 없음"
   },
   "execution_status": {
     "completed": "완료됨",

@@ -12379,7 +12379,10 @@
     "yes": "Ya",
     "no": "Tidak",
     "delete_confirm_question": "Hapus {name}?",
-    "tag_input_placeholder": "Ketik tag dan tekan Enter..."
+    "tag_input_placeholder": "Ketik tag dan tekan Enter...",
+    "outcome_breakdown": "Total {runs} kali jalan · {completed} selesai · {failed} gagal",
+    "outcome_of_runs": "dari {terminal} memberikan nilai",
+    "outcome_pending": "kali jalan, belum ada hasil"
   },
   "execution_status": {
     "completed": "Selesai",

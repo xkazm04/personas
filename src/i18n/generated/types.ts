@@ -12668,6 +12668,9 @@ export type Translations = {
       run_now: string;
       run_now_toast: string;
     };
+    outcome_pending: string;
+    outcome_of_runs: string;
+    outcome_breakdown: string;
   };
   recipe_shared: {
     schema_parse_error: string;

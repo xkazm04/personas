@@ -12379,7 +12379,10 @@
     "yes": "Ano",
     "no": "Ne",
     "delete_confirm_question": "Smazat {name}?",
-    "tag_input_placeholder": "Napište štítek a stiskněte Enter..."
+    "tag_input_placeholder": "Napište štítek a stiskněte Enter...",
+    "outcome_breakdown": "Celkem {runs} spuštění · {completed} dokončeno · {failed} selhalo",
+    "outcome_of_runs": "z {terminal} přineslo hodnotu",
+    "outcome_pending": "spuštění, zatím žádné výsledky"
   },
   "execution_status": {
     "completed": "Dokončeno",

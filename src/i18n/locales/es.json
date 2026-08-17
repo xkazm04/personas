@@ -12379,7 +12379,10 @@
     "yes": "Sí",
     "no": "No",
     "delete_confirm_question": "¿Eliminar {name}?",
-    "tag_input_placeholder": "Escribe una etiqueta y pulsa Intro..."
+    "tag_input_placeholder": "Escribe una etiqueta y pulsa Intro...",
+    "outcome_breakdown": "{runs} ejecuciones en total · {completed} completadas · {failed} fallidas",
+    "outcome_of_runs": "de {terminal} aportaron valor",
+    "outcome_pending": "ejecuciones, aún sin resultados"
   },
   "execution_status": {
     "completed": "Completado",

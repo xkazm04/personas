@@ -12661,7 +12661,10 @@
       "applied_toast": "Applied recipe: {name}",
       "run_now": "Run now",
       "run_now_toast": "Opening {name} in the recipe playground"
-    }
+    },
+    "outcome_pending": "runs, no outcomes yet",
+    "outcome_of_runs": "of {terminal} delivered value",
+    "outcome_breakdown": "{runs} runs total · {completed} completed · {failed} failed"
   },
   "recipe_shared": {
     "schema_parse_error": "Could not read this recipe's input fields — the stored schema is malformed.",

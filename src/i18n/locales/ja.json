@@ -12379,7 +12379,10 @@
     "yes": "はい",
     "no": "いいえ",
     "delete_confirm_question": "{name}を削除しますか？",
-    "tag_input_placeholder": "タグを入力してEnterを押してください..."
+    "tag_input_placeholder": "タグを入力してEnterを押してください...",
+    "outcome_breakdown": "合計 {runs} 回実行 · {completed} 件完了 · {failed} 件失敗",
+    "outcome_of_runs": "{terminal} 件中で成果あり",
+    "outcome_pending": "回実行、まだ結果なし"
   },
   "execution_status": {
     "completed": "完了",
