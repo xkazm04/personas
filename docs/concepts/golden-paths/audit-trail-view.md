@@ -93,6 +93,17 @@ kind** — so "who decided this" is not recorded at all, and the one surface tha
 answer it infers the answer from a free-text field that a human is also allowed to type
 into. The bit that establishes accountability is forgeable by the party it holds accountable.
 
+> **Placed upstream 2026-08-17 by
+> [ai-draft-preview-apply](./ai-draft-preview-apply.md).** This section reads the missing column
+> as a *reader-side* defect. It is not — **no apply path in the repo has ever stamped an actor**,
+> so there is nothing for the reader to read. Measured across the whole schema: **24 surfaces write
+> a model-authored artifact and 4 record that a model wrote it.** `companion_approval` is a second
+> store with the identical shape (120 rows, no actor column, `human_review_id` NULL on all 120,
+> **65 of 106 resolved within 2 seconds**, median 0). The two tables that *did* add one column —
+> `dev_ideas.model` at 214/236 and `workspace_knowledge.provenance` at **1,304 of 1,306** — answer
+> the question completely. **Attribution has no primitive in this repo, and no backfill can
+> recover it.**
+
 ### And the record the app learns from says the opposite of the record it stores
 
 `manual_reviews::update_status` writes a team memory on every resolve

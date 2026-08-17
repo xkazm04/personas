@@ -450,11 +450,21 @@ Treat `convergence` as a hypothesis to test, never a premise to build on. Brief
 every composer accordingly. A leaf whose label finally holds is a genuine
 finding and should be reported as loudly as another failure.
 
-**`sides` is no better.** Three separate leaves have now reported
-`sides: "client"` contradicted by their own measurement, each finding the
-headline defect, the best artifact and the surviving census rule all on the
-server. Treat every spine label as authored metadata, not evidence, and correct
-it in your §12 when it does not hold.
+**`sides` is worse — stop using it for scoping.** **Four** separate leaves have
+now reported `sides: "client"` contradicted by their own measurement, and every
+one of the four found the headline defect, the best artifact **and** the
+surviving census rule on the *server*. At 4 of 4 the field is not merely
+unreliable, it is **anti-correlated with where the answer lives**. Several of
+those nodes carry `twoSided: true` in the same object, so the contradiction is
+internal to the spine. Do not narrow a brief by `sides`; report the correction
+in §12.
+
+**One label has finally held, and it is worth as much as the failures.**
+[`ai-draft-preview-apply`](./golden-paths/ai-draft-preview-apply.md) tested
+`convergence: mixed` and confirmed it — two clauses physics, one silence. It is
+the first spine convergence label the corpus has upheld, and it came from a
+composer that measured the cohort first (3 independent, not 5) rather than
+taking the count for granted.
 
 **Cost and failure are better evidence than agreement.** The two strongest
 oracle results in the corpus were both negative:

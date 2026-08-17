@@ -63,6 +63,12 @@ operator's working day.
    "
    ```
 
+   The command prints `sides` and `convergence` for orientation. **Neither is
+   evidence.** Twelve `convergence: converged` labels have been tested and
+   eleven failed; `sides: "client"` has been contradicted by measurement on 4 of
+   4 leaves that checked it, each finding the real answer on the server. Never
+   narrow a brief with either — brief the composer to *test* the label.
+
 2. **Dispatch.** One Opus composer per leaf. Every brief must carry: the
    doctrine pointer, the validation protocol (below), primed leads from adjacent
    paths, the §9 CI calibration, and the standing rules. **Prime each brief with

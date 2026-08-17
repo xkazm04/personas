@@ -1018,6 +1018,80 @@ artifact — the only one whose freshness is *guaranteed* rather than asserted.
 
 ---
 
+## 29. A model rewrites the prompt after you have seen the preview
+
+**Where:** `ChronologyAdoptionView.tsx:1190-1220` → `template_adopt.rs:2075`;
+`build_sessions.rs:2626`.
+
+**What is measured:** the adoption view fires `adjustAdoptionDraft(sessionId)`
+from a `useEffect` **while the preview is on screen**. That command runs a
+**600-second Claude rewrite** over `build_sessions.agent_ir`, and
+`promote_build_draft` then re-reads that row. **Nothing re-hydrates the
+client** — and **no adoption surface renders `system_prompt` at all**; its only
+occurrence in the 1,900-line view is the placeholder
+`"You are a helpful AI assistant."`.
+
+The command returns `AdoptionAdjustResult { adjusted, divergence, model, note }`
+— a type referenced in **1 of 4,829 files** (its own wrapper) — and the call site
+**discards it**. The evidence that the artifact changed is computed and thrown
+away.
+
+**Preview versus written, replayed over 10 real promotions:** **19 previewed
+triggers → 44 written (2.3×)**; **37 previewed subscriptions → 31 written.** It
+errs in both directions, and nothing reconciles the counts.
+
+**The discriminator, which the framing "regenerated / re-fetched / mutated"
+would have missed:** two sibling repos regenerate on apply *safely*, because
+their regeneration is explicitly model-free. **The question is whether a model
+runs between the render and the write.**
+
+**Why held:** removing the mid-preview rewrite changes what adoption produces,
+and re-hydrating the client changes what the operator sees mid-flow. This is the
+flagship authoring path.
+
+---
+
+## 30. 24 surfaces write model-authored artifacts; 4 record that a model wrote them
+
+**Where:** `db/src/repos/dev_tools.rs:1254-1261` (`goal_summary`);
+`TeamSynthesisPanel.tsx:28` → `team_synthesis.rs:581,619`;
+`useCreateTemplateActions.ts:89`; `TrainingStudio.tsx:111,:160`.
+
+**What is measured:** across the whole schema — **78 personas (at least 73
+model-drafted) with `trust_origin='builtin'` on 77; 351 triggers, 44 of them
+from an LLM IR, recording nothing; 16 goals** whose provenance is a prose
+footer. Against that, the two tables that added **one column** answer the
+question completely: `dev_ideas.model` at **214 of 236**, and
+`workspace_knowledge.provenance` at **1,304 of 1,306**, with exactly 2 human.
+
+**And where provenance does exist, the read path removes it.**
+`goal_summary()` replayed over all 188 `dev_goals`: **16 of 16 model-derived
+goals stripped**, including **both rows queued right now** — 2 of 2
+model-authored, 0 of 2 showing it.
+
+**Six "generate is apply" surfaces have no gate at all.** `TeamSynthesisPanel`
+creates a team **and N live personas** from one prompt with no preview step.
+
+**Two smaller ones worth not losing:** `useCreateTemplateActions.ts:89`
+**silently discards the user's edits** on the snapshot-recovery path — `updateDraft`
+writes `draft` while the save reads `designResultJson`. And
+`TrainingStudio.tsx:111` computes `aiDrafted: true`, then `:160` persists the
+record without it.
+
+**Why held:** adding provenance is a schema change on 20 tables, and **no
+backfill can recover what was never recorded** — which is exactly why it belongs
+in this register rather than being deferred silently.
+
+**Convergence is unusually clear here, on a measured cohort of 3 (not 5):**
+provenance on the applied artifact is **physics, 3 of 3** — `brainiac` has a DB
+trigger *refusing* adoption without an origin; `vibeman` has `DbIdea.model`;
+`ascent` has `Scan.engineProvider`. **Personas is 4 of 24.** The sharpest line in
+the sweep is a *fixed* bug in `ascent`: *"Apply the repo we actually PREVIEWED,
+never whatever the dropdown reads now… would land content the user never
+reviewed."*
+
+---
+
 ## What *was* applied, and what it changes at runtime
 
 For completeness, since "no destructive applies" is now the rule. None of these
