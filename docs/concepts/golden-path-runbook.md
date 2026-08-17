@@ -64,16 +64,52 @@ operator's working day.
    ```
 
    The command prints `sides` and `convergence` for orientation. **Neither is
-   evidence.** Twelve `convergence: converged` labels have been tested and
-   eleven failed; `sides: "client"` has been contradicted by measurement on 4 of
-   4 leaves that checked it, each finding the real answer on the server. Never
-   narrow a brief with either — brief the composer to *test* the label.
+   evidence** — the doctrine's label ledgers carry the current tested/failed
+   counts (they moved twice while hardcoded numbers sat in this file, which is
+   why this line no longer states them). Never narrow a brief with either —
+   brief the composer to *test* the label.
 
 2. **Dispatch.** One Opus composer per leaf. Every brief must carry: the
    doctrine pointer, the validation protocol (below), primed leads from adjacent
    paths, the §9 CI calibration, and the standing rules. **Prime each brief with
    what neighbouring paths measured** — the corpus feeding itself leads is what
    makes later batches sharper than earlier ones.
+
+## Mode 2 — the batched tail (from 2026-08-17, corpus ≥175)
+
+The per-leaf mode above was right for the head of the distribution; its cost is
+O(leaves × whole-context) and the remaining leaves are recurrence ≤20. From
+here, dispatch **batches of 2–3 leaves per composer, within one subdomain**
+(they share the same code and the same adjacents), with three changes:
+
+**Tiering.** `risk: high` → full contract. `risk: medium` with recurrence ≥9 →
+full contract. Everything else → **short form**: the spine-node header block,
+§0 headline, §2 the-one-way (compact), §7 deviations, §9 rule-or-decline,
+§12 corrections — target 350–500 lines. **The quality core is tier-independent
+and untouched**: two implementations of every count, positive control,
+private-registry validation, re-extraction from the finished document,
+site-level overlap against final patterns, hand-verified precision. What the
+short form drops is prose (steps, anti-pattern catalogs, mandated primitives),
+never measurement.
+
+**Priming replaces neighbour-reading.** Composers no longer read adjacent paths
+in full. Instead: (a) the brief carries index digests of the adjacents —
+`node -e "const i=require('./docs/concepts/golden-paths/index.json'); for (const l of ['<leaf>', …]) { const d=i.docs[l]; console.log('##', l, '\n', d.headline, '\n§2:', d.oneWay, '\nrules:', d.ruleIds.join(', ')) }"`;
+(b) once the composer has scoped its subject files, it runs
+`node scripts/census/build-golden-path-index.mjs --prime <files…>` and treats
+the output as the corpus's prior claims — **verify on use, never re-derive, and
+never trust**: a primed claim you contradict is a §12 correction owed to the
+path that carries it. Open a full neighbour document only when correcting it.
+
+**Shared instruments and facts.** Import measurement primitives from
+`scripts/census/lib/instruments/` (one of the two required implementations may
+be the library; the second stays bespoke — disagreement still surfaces). Cite
+`docs/concepts/shared-facts.json` facts by id and re-verify with the recorded
+`instrument` — one command, not a re-derivation. See
+[`golden-path-recall.md`](./golden-path-recall.md) for the artifact contracts.
+
+Everything else — standing authorization, no destructive applies, verify by
+exit code, stall/death recovery, commit discipline — is unchanged.
 
 3. **On each report**: merge the rule, apply only fixes you can verify, correct
    any claim the composer overturned *in the published path that carries it*,
