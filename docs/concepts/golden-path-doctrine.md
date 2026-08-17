@@ -373,6 +373,34 @@ spine yields under 200 leaves or the link scan finds none.
   attribute at all**, so only a filename rule sees it.
 - Never print a secret value. Shape, location, count only — not even a prefix.
 
+### A reconciliation is a claim. It needs its own check.
+
+The protocol says two implementations, and that **the disagreement is the
+finding**. Measured 2026-08-17, there is a way to satisfy the letter of that and
+lose all of its value: **invent a mechanism that would explain the gap, then
+publish both numbers as though the invention had verified them.**
+
+`rate-limiting.md` §12.6 recorded 135 connector seeds from implementation A and
+134 from B, and resolved it as *"one row's metadata uses a different raw-string
+form… **Both.** 135 connectors, 134 parseable blobs."* There is no such row:
+`metadata: Some(…)` is 134 and `None` is 0. A was off by one because its
+`BuiltinConnector {` pattern also matched **`pub struct BuiltinConnector {`** —
+the type declaration, not a seed. B was simply right, and a fabricated cause
+carried a wrong number into two downstream sections and a §9 script's floor.
+
+- **Two implementations disagreeing is evidence that one of them is wrong.** The
+  default resolution is to find which. "Both are right, they measure different
+  things" is the *rarer* case and it owes the same standard of proof as any
+  other claim: name the rows, open them, count them.
+- **A resolution that makes the disagreement disappear without either number
+  moving should be distrusted on sight.** It is the shape of an explanation
+  fitted to a result.
+- The composer that caught this then made **the identical off-by-one** on the
+  sibling generated file minutes later, and caught it only because it had just
+  written the correction. Knowing a trap is not the same as being immune to it —
+  which is the argument for hand-opening matches rather than reasoning about
+  them.
+
 ### A headline that conjoins two findings inherits the weaker one's truth value
 
 Measured 2026-08-17. Deferred-fix **#24** was titled *"Every run in the app's

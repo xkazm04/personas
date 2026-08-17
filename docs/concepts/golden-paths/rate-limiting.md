@@ -590,7 +590,7 @@ doctrine's fourth place types cannot reach:
    numeric rate, assert `rate_limit_rpm` is present. Today it reports **9 findings of 135**. Its
    fail-loud precondition is mandatory and specific: **exit 2 if it parses fewer than 120 metadata
    blobs**, because a change to the raw-string delimiter silently drops rows from the JSON parse (it
-   already reads 134 of 135 — see §12.6).
+   already reads 134 of 134 — see §12.6, where the "135" was an off-by-one).
 2. **Every `RateLimiter::check` call site must consume its `Err` payload.** Not regexable across the
    five refusal shapes, but it is exactly seven sites: a hand-maintained assertion in a Rust unit test
    listing the seven `file:line`s and their refusal kind would catch the eighth being added as a
@@ -695,7 +695,7 @@ implicit framing: this is not a fleet-wide omission — the ancestor repo reads 
 | count | impl A | impl B | cause | which is right |
 |---|---:|---:|---|---|
 | `AppError::RateLimited` construction sites | 12 | 15 | B matched `RateLimited(_) =>` **match arms** in `error.rs:115`, `error.rs:195`, `tool_outcome.rs:108`. A filtered `=>` by hand. | **A (12)** |
-| connector seed rows | 135 | 134 | A counted `BuiltinConnector {` struct literals; B counted `metadata: Some(r##"…"##)` blobs it could JSON-parse. One row's metadata uses a different raw-string form. | **Both.** 135 connectors, 134 parseable blobs. Reported separately, and it is why §9.3's script needs a floor. |
+| connector seed rows | 135 | 134 | ~~One row's metadata uses a different raw-string form.~~ **CORRECTED 2026-08-17 — that cause was FABRICATED.** There is no such row: `metadata: Some(...)` is 134 and `None` is 0. Implementation A was off by one because its `BuiltinConnector {` pattern also matched **`pub struct BuiltinConnector {`** at `builtin_connectors.rs:4` — the type declaration, not a seed. | ~~**Both.** 135 connectors, 134 parseable blobs.~~ **B was simply right: 134.** This row is kept as a worked example of the worst way to resolve a disagreement — inventing a mechanism that would explain it, and then publishing *both* numbers as if the invention had verified them. Two implementations disagreeing is evidence that **one of them is wrong**; a reconciliation is a claim and needs its own check. The composer that found this then made the identical off-by-one on the sibling generated file (124 against a true 123) and caught it only because it had just written this correction. |
 | `RateLimiter::check` call sites | 6 (reading) | 7 (scripted) | The hand pass missed `tool_runner.rs:187` because it is `rl.check`, not `state.rate_limiter.check`. | **B (7)** |
 | connectors stating a rate in prose | 7 (concept-name regex) | 7 (numeric-rate regex) | Two *different* detectors, 5 in the intersection, **9 in the union**. Neither is a superset of the other. | **9**, and the fact that two plausible regexes over the same text agreed on a total and disagreed on membership is why both are reported. |
 

@@ -5267,6 +5267,49 @@
         "matches": 3
       },
       "floor": 900
+    },
+    {
+      "id": "invented-stream-envelope-fixture",
+      "goldenPath": "docs/concepts/golden-paths/model-output-streaming.md",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "r#*\"\\{\"type\":\"(?:result|assistant|user|system|rate_limit_event|stream_event)\"",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A Claude CLI stream-json envelope written as an inline Rust string literal. The fixture is invented by the same author as the parser, so it can only assert what the parser already assumes — and it did: parser.rs:1105 and provider/claude.rs:402 both pin `total_input_tokens` at the envelope's top level, a field the CLI has emitted 0 times in 2,811 observed result lines."
+      },
+      "baseline": {
+        "files": 14,
+        "matches": 67
+      },
+      "floor": 900
+    },
+    {
+      "id": "fabricated-json-on-parse-failure",
+      "goldenPath": "docs/concepts/golden-paths/raw-json-editor.md",
+      "title": "An unparseable stored JSON document is silently replaced by a fabricated one",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "serde_json::from_str(?:::<[^>]{0,120}>)?\\s*\\((?:[^()]|\\((?:[^()]|\\([^()]*\\))*\\)){0,240}\\)\\s*\\.\\s*(?:unwrap_or_default\\s*\\(\\s*\\)|unwrap_or\\s*\\()",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "serde_json::from_str(...) immediately followed by .unwrap_or_default() or .unwrap_or(<expr>) — the SILENT substitutions only. .unwrap_or_else is deliberately NOT matched, because 17 of this repo's 29 unwrap_or_else arms emit tracing::warn! in the closure and are a legitimate announced degradation; the 12 that do not are a KNOWN, DELIBERATE recall miss, traded to keep precision on the stated condition at 55/55. PROXY FOR the stack-free condition: 'the document is corrupt' and 'the document is empty' reach every downstream reader as the same value. MEASURED 2026-08-17 at master: 55 matches / 42 files, against 640 serde_json::from_str call sites in 963 .rs files (8.6%) and 147 matches / 94 files for the compliant control (propagate with ? or .map_err). 0 of the 55 are inside #[cfg(test)] — verified with a brace-matched stripCfgTest pass, so no exclude is needed and none is declared. WHAT THE MATCH COSTS, hand-opened: mcp_server/install.rs:86 replaces an unparseable claude_desktop_config.json with {} and then WRITES THE RESULT BACK over the user's file (install.rs:109), destroying every other registered MCP server, with no error and no backup; companion/jobs/mod.rs:468 turns a job's params_json into {} and dispatches the handler with no parameters; design/template_adopt.rs:1980 turns the base IR into Value::Null so base_system_prompt becomes \"\" and the model is asked to refine an empty prompt; resources/automation_suggestions.rs:114 silently empties the evidence list a reviewer reads. PRECISION on the stated condition is 55/55 (every match hand-read). PRECISION on 'this is a defect' is lower and is stated honestly: 4 of 6 in the hand-opened sample. The 2 defensible ones are LISTED ON PURPOSE — core/src/models/persona.rs:676 (the column is documented advisory at :672-674) and engine/webhook_notifier.rs:388 (falls back to the ORIGINAL string, losing nothing) — because separating them needs knowledge of what the column means, which no matcher has. THE PAREN WINDOW MUST NEST TWO DEEP: from_str(&r.get::<_, String>(2)?) is a real argument shape in this tree (bench/athena_validate.rs:56) and a flat [^()]{0,240} misses it. CONVERGENCE, measured the same day: brainiac has 46 serde_json::from_str sites across 7 crates and ZERO matches for this pattern — the same author's other Rust codebase propagates every one; vibeman has exactly 1. That is an INVERSION, not agreement, and it is the strongest evidence in this document that the practice is wrong rather than merely untidy. LEGAL DESTINATIONS the pattern leaves unmatched by construction: (1) propagate — `?` or `.map_err(AppError::from)?`; (2) degrade OUT LOUD — .unwrap_or_else(|e| { tracing::warn!(error = %e, \"...\"); default }), which db/src/repos/resources/triggers.rs:658,866 and engine/src/optimizer.rs:159 already do; (3) .ok() into an Option, which keeps 'we did not get it' representable. CORRECT END STATE is not zero — some columns are genuinely advisory — so this rule RATCHETS; it must not be deleted at 0."
+      },
+      "baseline": {
+        "files": 42,
+        "matches": 55
+      },
+      "floor": 500
     }
   ]
 }
