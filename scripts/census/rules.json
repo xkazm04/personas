@@ -4666,6 +4666,98 @@
         "matches": 21
       },
       "floor": 4000
+    },
+    {
+      "id": "unchecked-closed-set-default",
+      "goldenPath": "docs/concepts/golden-paths/schema-inexpressible-invariant.md",
+      "title": "A closed-set column is declared TEXT NOT NULL DEFAULT '<token>' with no CHECK, so the legal value set exists only in the writer's head and the default is the one answer nobody chose.",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\b(?:[a-z_]*(?:status|state|phase|kind|type|mode|tier|severity|category|source|role|scope|direction|visibility|origin|level))\\s+TEXT\\s+NOT\\s+NULL\\s+DEFAULT\\s+'[a-z][a-z0-9_]*'(?![\\s\\S]{0,160}?CHECK\\s*\\()",
+        "flags": "gi",
+        "ignoreCommentLines": true,
+        "description": "A column whose NAME declares a closed vocabulary (status/state/phase/kind/type/mode/tier/severity/category/source/role/scope/direction/visibility/origin/level), declared TEXT NOT NULL with a DEFAULT drawn from that vocabulary, and no CHECK within 160 characters. PROXY FOR the stack-free condition: a value set that the store will not refuse a non-member of, so the invariant lives only in whichever writer happened to be correct — and, because the column is NOT NULL DEFAULT, an omitting writer is given the default silently, which makes 'which rows chose this' unanswerable. EXECUTED, not argued: the acceptance of every literal this repo's SQL writes was probed against a throwaway table carrying only the relevant CHECK, built from the LIVE DDL, with a legal/illegal positive control that exits 2 if it stops discriminating. Anchor: 167 declarations of this shape; this rule takes 130 and its positive control takes the other 37, so the two partition the anchor exactly.",
+        "note": "Disclosed imprecision: 6 of 130 sites are DDL inside test fixtures, which the runner cannot exclude. Site-level overlap against all 87 registered src-tauri/.rs rules: unresumable-migration-step 3 lines (2.3%), default-contradicted-by-backfill 2 lines (1.5%); no merge warranted."
+      },
+      "baseline": {
+        "files": 11,
+        "matches": 130
+      },
+      "floor": 900
+    },
+    {
+      "id": "stringly-typed-transition-door",
+      "goldenPath": "docs/concepts/golden-paths/status-transition-rules.md",
+      "title": "The door that writes a row's lifecycle status accepts it as &str, so the legal state set is a convention the compiler never sees and every caller re-derives it.",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\bfn\\s+(?:update|set|mark|transition|advance|apply)_[a-z0-9_]*(?:status|phase|state)\\s*(?:<[^>]{0,80}>)?\\s*\\((?:[^)]{0,400}?)\\b(?:new_|next_|target_)?(?:status|phase|state)\\s*:\\s*&\\s*(?:'[a-z]+\\s+)?str\\b",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A lifecycle-transition function DECLARATION (update_/set_/mark_/transition_/advance_/apply_ + status|phase|state) whose state parameter is a bare string slice. PROXY FOR the stack-free condition: the single write door for a row's lifecycle takes an unconstrained value, so the legal state set is enforced nowhere the compiler can see it and the store is the first thing that ever objects. EXECUTED, not argued: pause_assignment's exact value was replayed against the live team_assignments DDL and REFUSED by the CHECK ('paused' is not among queued/running/awaiting_review/done/failed/aborted), while 'running' and 'awaiting_review' were accepted - and the value never appears as a SQL literal anywhere, because it crosses this parameter as a &str and binds as ?1. Anchor: 24 doors of this shape; this rule takes 15 and its positive control takes the enum-typed remainder.",
+        "note": "COMPLEMENTARY TO untyped-lifecycle-transition (multi-step-orchestration), not overlapping: measured at SITE level against the FINAL pattern over all 87 registered src-tauri/.rs rules, overlap with that rule is 0 lines. It counts the 152 places the convention is exercised; this counts the 15 places it can be abolished. THIS RULE CAN REACH ZERO - every site is a mechanical signature change. Delete it at 1 rather than baselining at 0 (the census cannot express must-be-zero)."
+      },
+      "baseline": {
+        "files": 12,
+        "matches": 15
+      },
+      "floor": 900
+    },
+    {
+      "id": "uncustomized-connection-pool",
+      "goldenPath": "docs/concepts/golden-paths/connection-pool-pragmas.md",
+      "title": "A pool built as Pool::builder().max_size(N).build(manager) in one chain, which by construction can carry no connection customizer — so its connections run on rusqlite's defaults, foreign_keys OFF included.",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "Pool::builder\\(\\)\\s*\\.max_size\\(\\s*\\d+\\s*\\)\\s*\\.build\\(",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "An r2d2 builder chain that reaches .build( with nothing but .max_size() in between, so it provably attaches neither a connection_customizer nor a connection_timeout. PROXY FOR the stack-free condition: a connection pool configured differently from the one production uses, so anything it proves is proved under different rules. CONCRETELY HERE: rusqlite's default is foreign_keys = OFF while every production pool runs STANDARD_PRAGMAS with foreign_keys = ON, so a fixture on such a pool cannot observe a cascade or an FK violation - which is the connection-side half of foreign-key-policy's '21 FK constraints that no test can ever observe'. Precision is 100% by construction: the terminating .build( is what makes the absence provable rather than heuristic. Anchor: 59 Pool::builder() sites; 3 are production and all 3 carry the customizer.",
+        "note": "THIS RULE CAN REACH ZERO - every site should be calling init_test_db()/init_test_user_db(), which go through SqlitePragmaCustomizer. Delete it at 1 rather than baselining at 0 (the census cannot express must-be-zero). Site-level overlap against all 87 registered src-tauri/.rs rules: untimed-repo-query 6 lines (0.1% of theirs); optional-store-handle, the nearest conceptual neighbour, shares 0 sites."
+      },
+      "baseline": {
+        "files": 45,
+        "matches": 48
+      },
+      "floor": 900
+    },
+    {
+      "id": "inline-dev-build-gate",
+      "goldenPath": "docs/concepts/golden-paths/dev-only-diagnostics.md",
+      "title": "A build-flag decision is taken inline at a JSX render site instead of being declared on the surface's catalog entry and resolved by the one gate resolver, so the set of surfaces hidden in production cannot be enumerated",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\{\\s*import\\.meta\\.env\\.DEV\\s*(?:&&|\\?)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "An `import.meta.env.DEV` gate opened inside a JSX brace — `{DEV && …}` or `{DEV ? … : …}` — i.e. a build-flag decision taken at the point of rendering. PROXY FOR the stack-free condition: 'the decision to hide a diagnostic is taken where it renders rather than declared on the artifact that describes the surface, so the set of things a production build hides cannot be enumerated, tested or reviewed.' THE DESTINATION EXISTS AND IS USED: `NavGates.devOnly` resolved by the single total function `passesGates(gates, {isDev, isTierVisible})` at src/lib/navigation/registry.ts:154 (tested at registry.test.ts:142-154), plus per-catalog `devOnly?: boolean` fields at sidebarData.ts:27 (8 entries, one filter at :326), PluginsSidebarNav.tsx:44 (3 entries, one `gate<T>` helper at :115-117), EditorTabBar.tsx:15 and CredentialTypePicker.tsx:25 — so this is a ratchet toward a mechanism this repo already built, not an aspiration. MEASURED 2026-08-17 at 6c97502d3: 15 files / 18 matches, REPRODUCED BYTE-IDENTICAL at c7c153b57 after a concurrent session deleted 21 .tsx files (walked 2104 -> 2083, matches unchanged), ALL EIGHTEEN HAND-READ AND TABULATED in the golden path's section 7 D2. PRECISION 18/18 ON THE STATED CONDITION — the rule asserts COVERAGE, not harm, and the title says so. Severity varies and is a human judgement the pattern cannot make: TWO of the eighteen gate a CAPABILITY rather than a readout (FleetSettingsPage.tsx:213 hides FleetPairDevice and, inside it, the only call site of revokeCompanionDevice in src/, so a production user who paired in a dev build cannot revoke — see cross-device-pairing.md; and TemplateSearchFilterRow.tsx:120 hides AdminToolsDropdown's duplicate-cleanup and two backfills). TWO are deliberate WEIGHT decisions with correct comments (App.tsx:390 FleetGridLayer, DesktopFooter.tsx:572) and are still matches, because a weight decision belongs in the foldable module-scope form at App.tsx:46-50, not in a render brace. SIX are one copy-pasted 'seed a mock row' button repeated across CronAgentsPage/EventLogList/KnowledgeGraphDashboard/ManualReviewList/MessageList and schedules, whose labels cost 12 i18n keys x 14 locales = 168 translated strings shipped in every production bundle (counted, 0 missing). THE CONTROL PARTITIONS THE ANCHOR rather than reporting a ratio: raw `import.meta.env.DEV` occurrences in .tsx split into 18 in a JSX brace (this rule), 8 `devOnly` declarations (the positive control, the destination), and the remainder in control-flow positions this rule deliberately does not claim. 19 HAND-WRITTEN FAULT INJECTIONS were run against this exact pattern and all pass: it matches `{DEV && <X/>}`, `{ DEV && (`, `{DEV ? <A/> : <B/>}`, a compound `{DEV && cond && (`, and a newline before `&&`; it does NOT match `!td.devOnly || DEV` (the compliant resolver, x3 real sites), `devOnly: true`, `if (item.devOnly && !isDev)`, `passesGates(...)`, `if (DEV) {`, `if (!DEV) return;`, `const isDev = DEV;`, the module-scope foldable `const X = DEV ? lazy(...) : null`, the spread `...(DEV ? [{...}] : [])`, `{DEV && ...}` on PROD/MODE, or `{ dev: DEV }` in an object literal. WHY NOT GATE THE OBVIOUS THING INSTEAD: a rule on `DEV ||` (a build flag widened by a runtime value, which is this leaf's most severe defect, App.tsx:226) scores 1/5 = 20% PRECISION, because three of its four false positives are `!x.devOnly || DEV` — the exact compliant form this path prescribes. The syntactic shape of the resolver and the defect are identical and the discriminator is semantic. That defect is filed as a TYPE fix instead (delete the unconditional `window.__PERSONAS_TEST_MODE__` injection at src-tauri/src/lib.rs:589-601 so it carries the same cfg as the port decision at :1556-1583), which removes the class rather than counting it. WHAT THIS RULE CANNOT SEE, stated so nobody trusts it further: it cannot see the gate's REASON, so it cannot separate a capability gate from a readout gate — that judgement is the golden path's section 4 step 6 and needs a human. It cannot see the 8 declarative sites in .ts files (sidebarData.ts, registry.ts) because the extension list is .tsx only; that is deliberate, since the condition is about render position. It cannot see Rust `#[cfg(debug_assertions)]` (20 files) — feature-flagged-compilation.md owns that half. It CANNOT see whether a foldable form actually removed a chunk from the production bundle; that is an absence and needs the bundle checker specified in the golden path's Gaps 2. IT DOES NOT REACH ZERO: some render-position gates will always be right for a surface with no catalog entry to hang a flag on (Gaps 1), so do NOT delete this rule at zero — re-baseline it after each migration wave. DO NOT silence a match by hoisting the flag to `const isDev = import.meta.env.DEV` and writing `{isDev && ...}`: that is personas-web's error.tsx:28,86 exactly, it centralises the READ and leaves the DECISION at the render site, and it preserves the defect while defeating the pattern. PORTABILITY WARNING, earned from the convergence sweep: 0 of 3 independent siblings has a declarative dev-gate mechanism and 2 of the 3 have no in-app diagnostics at all, so this pattern would score ZERO in brainiac and personas-cloud while the condition is absent, and would also score zero in a repo that spells the gate as a `<DevOnly>` component, a Vue `v-if`, or a template conditional. Re-derive the signal per repo; only the condition travels."
+      },
+      "exclude": [],
+      "baseline": {
+        "files": 15,
+        "matches": 18
+      },
+      "floor": 1500
     }
   ]
 }

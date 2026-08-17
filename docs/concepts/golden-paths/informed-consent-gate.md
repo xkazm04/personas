@@ -339,8 +339,14 @@ to a server.
   never stated on any user-facing surface.
 - **C4's sub-result, which changes the severity of §7.A: where a consent banner exists, the
   error-telemetry SDK boots before it — 0 of 2.** `personas-web/sentry.client.config.ts:3` →
-  `src/lib/sentry.ts:18` calls `Sentry.init({...})` unconditionally at module scope, exactly as
-  `main.tsx:304` does here; only the bespoke `Sentry.metrics.count` helper is consent-gated. So
+  `src/lib/sentry.ts:18` calls `Sentry.init({...})` unconditionally at module scope. **Corrected
+  2026-08-17 by [usage-analytics](./usage-analytics.md): `main.tsx:304` here is NOT the same shape —
+  it is `if (isTelemetryEnabled()) initSentry(…)`, a real gate, with the actual `Sentry.init` at
+  `sentry.ts:200` inside it.** The conclusion survives on a sharper mechanism, and the mechanism
+  changes the fix: `isTelemetryEnabled()` is `!== "false"`, so on a fresh install (key absent) the
+  gate **defaults open** — telemetry is on not because the init is ungated but because the gate's
+  default is the wrong way round. Don't move the init; flip the default. Only the bespoke
+  `Sentry.metrics.count` helper is *additionally* consent-gated. So
   §7.A is **not a Personas mistake — it is the shape the mistake takes in every repo that ships a
   consent banner over a client SDK**, and the fix is the same in both. `brainiac` is the honest
   third answer: it declines to have a banner *by argued decision*, choosing cookieless analytics
