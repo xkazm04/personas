@@ -3233,6 +3233,370 @@ are unaffected).
 
 ---
 
+## 82. `custom/enforce-base-modal` is warn-level, scores 0/8 precision and 0/19 recall, and `CLAUDE.md` calls it "enforced"
+
+**From:** [`modal-stacking`](./golden-paths/modal-stacking.md) §0, §7 D1/D3/D6, §12.1.
+
+Four separate defects, none applied:
+
+- **Severity.** `eslint.config.js:95` sets the rule to `"warn"`, so per doctrine §3 it enforces
+  nothing at either gate. `.claude/CLAUDE.md`'s reuse table describes it as *"(enforced by
+  `custom/enforce-base-modal`)"* on the row for `fixed inset-0` modal backdrop. **Held because I
+  am not permitted to edit `CLAUDE.md`; recorded here so the next session with that authority can
+  correct the word and the claim together.**
+- **The signal is anti-correlated with the defect.** The rule anchors on `role="dialog"`
+  (`eslint-rules/enforce-base-modal.cjs:63-73`). Executed over its entire anchor population (the
+  16 files containing that attribute): **8 reports, and all 8 opened by hand are anchored popovers
+  or an inline notice** — `FindingBadge.tsx:210`, `WarningBadge.tsx:107`, `DataLinksPopover.tsx:80`,
+  `DeployPopover.tsx:55`, `ImprovePopover.tsx:91`, `StandardsScan.tsx:111`,
+  `passportWidgets.tsx:187`, `DemoNotice.tsx:23`. Converting any of them to `BaseModal` would be a
+  regression. Meanwhile the **19 files that do hand-paint a full-viewport modal backdrop carry zero
+  `role="dialog"`**, so recall is 0. Replacing the signal changes what every running editor reports.
+- **Satisfied by an import, not by use.** `importsBaseModal` accepts any import source *containing*
+  the substring `BaseModal`, and accepts `source === '@/features/shared'` — a barrel import of
+  anything (`:40-48`). A file can import `BaseModal`, never render it, hand-roll a dialog, and pass.
+- **`BaseModal`'s `containerClassName` silently discards the depth-derived z-index.**
+  `style={containerClassName ? undefined : { zIndex: overlayZIndex }}` (`lib/ui/BaseModal.tsx:278`).
+  All 8 call sites noticed and wrote a z-index by hand; the values do not compose — `z-40` is
+  *below* `Z_INDEX_BASE` (50), `TemplateDetailModal.tsx:145` passes `absolute` rather than `fixed`,
+  and `FirstUseConsentModal.tsx:158` / `ResourcePicker.tsx:187` both pass `z-[9999]`.
+
+**Fix:** (a) merge the computed `zIndex` into `style` unconditionally instead of replacing it;
+(b) replace the rule's signal with the published census signal (`fixed inset-0` + dimming paint in
+the same class string) or retire the rule in favour of the census rule alone; (c) correct the
+`CLAUDE.md` row. Related and larger: `portal: boolean` should become a closed `layer` union so
+`Z_INDEX_BASE` (50) and `Z_INDEX_PORTAL_BASE` (10000) stop being reachable only as a pair — three
+overlays (`TestReportModal.tsx:68`, `ComposerPickerShell.tsx:89`, `ucPreviewModal.tsx:21`) exist
+solely to escape that gap and each names the constant in a comment.
+
+**Why held:** (a) changes what 8 live modals paint; (b) changes what every running session's editor
+reports; (c) is a `CLAUDE.md` edit this session is not authorised to make.
+
+---
+
+## 83. Five doors send OS notifications, 52 of 57 sites are hardcoded English, and the coverage gate counts its own source
+
+**From:** [`desktop-notification`](./golden-paths/desktop-notification.md) §0, §7 D2/D4/D6/D10, §8 G2/G3.
+
+- **`lib/harness/verifier.ts:74-83`** — `notificationCoverageGate()` is
+  `grep -rn "notifyProcessComplete" src/ … | wc -l`, `required: false`. The pipe replaces grep's
+  exit code, and the pattern counts **prose**: of 13 current matches, 8 are feature-list strings in
+  `lib/harness/scenario-parser.ts:359-415`, one is the gate's own `command` string, one is the
+  helper's `export function` line, one is an import — **1 real call site out of 13**. Because two
+  counted mentions live in the gate's own file, the number **cannot reach zero** even if every
+  caller is deleted.
+- **`lib/utils/platform/osNotification.ts`** — a fifth notification door using the raw Web
+  `Notification` API, bypassing the Tauri capability allowlist (`capabilities/default.json:13-16`
+  covers only the plugin). Three silent `return`s (`:18`, `:21`, `:23`), zero error doors, and
+  **all 6 call sites `void` the promise**. Two of the six are the user-facing half of credential
+  remediation (`remediationExecutor.ts:54`, `:70`). Its `requestNotificationPermission()` export
+  (`:9-14`) has **zero callers**.
+- **`send_app_notification` cannot report failure.** `notifications.rs:1161-1163` returns `()`,
+  `send` logs `tracing::warn!` and drops (`:1543-1547`), and the wrapper is `invoke<void>`
+  (`api/system/system.ts:113`). A denied notification and a delivered one are the same value at
+  every layer, so no caller can fall back.
+- **`usePipelineNotifications.ts:86-99`** requests OS permission on mount, before any pipeline has
+  finished, and caches the result in a ref that is never re-read — a later grant is invisible until
+  remount.
+- **31 Rust send sites cannot be localized where they are.** `src-tauri/src/notifications.rs` has
+  zero matches for `locale`/`i18n`/`translat`; 24 of 31 titles are bare English literals and the
+  other 7 are `format!` templates with English skeletons.
+
+**Fix:** (a) delete `requestNotificationPermission()` (zero consumers) and route the six
+`sendOsNotification` callers to `notifyProcessComplete`, which writes the in-app record
+*outside* its `try` and therefore needs no failure signal; (b) widen `send_app_notification` to
+`Result<(), AppError>`; (c) replace the harness gate with the published census rule; (d) the
+structural item — emit a key + params from Rust and resolve in the frontend listener, so the 31
+backend notifications become localizable at all.
+
+**Why held:** (a) and (b) change behaviour and a public IPC signature across 22 call sites;
+(d) is an architecture change; (c) touches a harness file other sessions read. The only change
+this campaign's rules would authorise — deleting the zero-consumer
+`requestNotificationPermission()` — is held because it shares a file with six live call sites in a
+checkout five composers have loaded.
+
+---
+
+## 84. Three persona version-history mechanisms; the declared-canonical one is dead, the best one has no foreign key and is not in the orphan sweep
+
+Found by [`definition-version-history`](./golden-paths/definition-version-history.md).
+All counts from `purge-backup-2026-08-17/personas.db` unless stated.
+
+**(a) `persona_versions` is a fully built, structurally unreachable subsystem.**
+`incremental.rs:1963` created it under *"replaces prompt-only versioning"*, with a
+child table, a one-shot `INSERT OR IGNORE` backfill guarded by
+`if !has_persona_versions`, a 110-line repo module (`db/src/repos/lab/versions.rs`,
+3 `pub fn`), a core model (`core/src/models/lab.rs:644`), a ts-rs binding exported
+at `src/lib/bindings/index.ts:640`, and an entry in the boot orphan scrub
+(`db/src/lib.rs:460`). **Zero call sites, zero binding importers, zero rows in
+both databases.** Meanwhile all five production writers still write
+`persona_prompt_versions`, which gained five columns *after* the replacement
+shipped. Because the backfill is one-shot, the two tables can never converge.
+
+*The fix:* delete `db/src/repos/lab/versions.rs`, the `pub mod versions;` at
+`db/src/repos/lab/mod.rs:11`, `PersonaVersion` and its binding, and the
+`"persona_versions"` entry in `ORPHAN_TABLES`. Leave both tables — they are empty
+and dropping a table is destructive.
+*Why held:* removing a `#[derive(TS)] #[ts(export)]` model changes what
+`export_bindings` emits, and cargo is unavailable in the campaign's session. This
+is a zero-consumer deletion in spirit but not one the session can verify.
+
+**(b) `persona_change_log.persona_id` has no foreign key and is absent from the
+boot orphan sweep.** `incremental.rs:1215` declares it `TEXT NOT NULL` with no
+`REFERENCES`; `cleanup_orphan_rows`' `ORPHAN_TABLES` (`db/src/lib.rs:437-448`)
+lists twelve tables and does not include it — while it *does* include
+`persona_versions`, which has never held a row. The purge on 2026-08-17 produced
+no orphans only because `persona_change_log` was empty: its writer landed
+2026-07-27 and the newest `personas.updated_at` anywhere is 2026-07-14, so **no
+persona has been updated since the writer existed.**
+*The fix:* decide the policy (cascade like `persona_prompt_versions`, or survive
+and get swept) and implement one of them.
+*Why held:* adding the FK is a table rebuild; adding the table to `ORPHAN_TABLES`
+is a boot-time `DELETE` — both are destructive first runs.
+
+**(c) `personas::update` writes the version row on its own connection, before the
+validation that can reject the edit.** `db/src/repos/core/personas.rs:935` calls
+`create_prompt_version_if_changed(pool, …)` — its own connection, its own
+`BEGIN IMMEDIATE`/`COMMIT` (`metrics.rs:99,122`) — and eight `validate_*` calls,
+two encryption calls and a lifecycle parse sit between it and the `UPDATE` at
+`:1178`. Any of them returning `Err` leaves a committed version of a value the
+persona never took. The same function does it correctly 250 lines later
+(`write_diff(&tx, …)`, `:1186`).
+*Why held:* moving the write into the transaction changes when history is written
+for every persona edit.
+
+**(d) The only diff-gated door reads one of the two payload columns.**
+`create_prompt_version_if_changed` compares `structured_prompt` only, and its
+caller gates the whole call on `if let Some(ref new_sp) = input.structured_prompt`
+(`personas.rs:929`). Since the client sends the diff, a system-prompt-only edit
+never reaches the writer. Evidence: **16 of 25 rows have `system_prompt IS NULL`**,
+0 have `structured_prompt IS NULL`, and one writer (`lab.rs:632`) inserts the
+literal `NULL` into that column.
+*Why held:* widening the gate changes how many version rows a save produces.
+
+**(e) Twelve tables declare a per-parent sequence column with no constraint.**
+Ratcheted by the census rule `unconstrained-sequence-column` (12 matches / 4
+files, hand-verified 10/12) rather than fixed — adding `UNIQUE(persona_id,
+version_number)` to `persona_prompt_versions` is a table rebuild.
+
+---
+
+## 85. The trigger "Test fire" button takes a different, shorter, more privileged path than a real fire — and `trigger_id` is NULL in 2,188 of 2,188 executions
+
+Found by [`manual-test-fire`](./golden-paths/manual-test-fire.md).
+
+**(a) The two paths diverge.** A real fire publishes an event
+(`engine/background.rs:2906`, `source_type: "trigger"`, `source_id:
+Some(trigger.id)`) which the event bus turns into a run. The Test-fire button
+(`TriggerDetailDrawer.tsx:84` → `useTriggerOperations.ts:131`) calls
+`executePersona(pid, triggerId)` directly. The manual path therefore skips
+`mark_triggered`, the `unattended_mode == "approval"` hold
+(`background.rs:2878-2903`), the `unattended_mode == "dry_run"` →
+`is_simulation` conversion (`background.rs:1552-1570`), the trigger rate-limit
+key, the active-hours window, `synthesize_trigger_fired_payload`, and the event
+fan-out. **Pressing "Test fire" on an approval-mode trigger runs it**, where the
+schedule would have held it for a human.
+
+**(b) The event bus discards the trigger id it is holding.** At
+`background.rs:1561` and `:1572` both `exec_repo::create*` calls pass
+`trigger_id: None` — three lines after `event.source_id` was read and resolved to
+a trigger to decide `dry_run`. `persona_executions.trigger_id` is declared
+`REFERENCES persona_triggers(id) ON DELETE SET NULL` and is **NULL in 2,188 of
+2,188 rows** across an install that held 351 triggers. `listExecutionsByTrigger`
+— the trigger drawer's own Activity panel — reads exactly that column.
+
+**(c) `is_simulation` is set by no test control a user presses.**
+`execute_persona` passes `false` (`executions.rs:169`); five callers pass `true`
+and none is a saved-automation test button. **0 of 2,188 rows carry the flag**, so
+the three `COALESCE(is_simulation, 0) = 0` metric exclusions, the
+`ExecutionList.tsx:133,137` filter and the `ExecutionListRow.tsx:77` badge have
+never had an input.
+
+*Why held:* every one of (a)–(c) changes what a live surface shows or what a live
+control does while the operator is using it.
+
+**(d) The idempotency key on the repo's most-used spawn door is per-attempt.**
+`src/api/agents/executions.ts:68` — `idempotencyKey ?? crypto.randomUUID()` — with
+a comment asserting it provides "self-dedup against a concurrent duplicate
+(double-click, double-fire, React re-invoke)". A fresh UUID cannot collide, so
+both the client in-flight map (`tauriInvoke.ts:336`) and the server's
+`get_by_idempotency_key` pre-check are inert. Of 20 call sites, one passes an
+explicit key and it passes a UUID too (`chatSlice.ts:244`). This inverts
+[`idempotent-invocation`](./golden-paths/idempotent-invocation.md) §2 at the
+single door that most needs it.
+*Why held:* deriving a real key changes dedup behaviour on the live run path —
+including, deliberately, refusing a second run the operator may currently expect
+to get.
+
+**(e) `test_automation_webhook` skips the `is_runnable()` gate its production twin
+applies.** `automations.rs:164` checks it before `invoke_automation`; `:214`
+calls the same function without it, and fires a real outbound webhook.
+
+---
+
+## 86. `feedback/LoadingSpinner` renders `null` and is used as a control's busy state at 68 sites in 50 files
+
+Found by [`manual-test-fire`](./golden-paths/manual-test-fire.md) §9 while
+gating its own headline control.
+
+`{flag ? <LoadingSpinner .../> : <Icon .../>}` makes the icon vanish and puts
+nothing in its place — the shim emits only an `sr-only` `role="status"`, and only
+when passed a `label`, which none of these 68 sites does. Measured over `src/`
+(4,801 files): **68 violating sites in 50 files**, against **66 compliant
+`Button`/`AsyncButton` `loading` props in 52 files** — the repo is at roughly
+50/50 on one concern. The broader anchor is **247 `<LoadingSpinner` renders across
+178 files**. Two independent implementations disagreed in both directions (68 vs
+65; 4 multi-line-formatted sites invisible to a line matcher, 1 fragment-wrapped
+site invisible to the JSX matcher), so the true population is **at least 69**.
+
+The structural fix is Q5 — **delete the shim**, which makes the bad state
+unspellable. *Why held:* 178 files across every feature area, in a checkout
+several composers have loaded, and the sites that pass a `label` do provide a
+screen-reader announcement that a naive deletion would remove. Ratcheted by the
+census rule `null-spinner-busy-state` until the retirement lands.
+
+`CATALOG.md`'s `LoadingSpinner` row still describes it as *"Canonical loading
+spinner… Use for any full-element loading state"*, and that text is hardcoded in
+the `CURATED` map at `scripts/docs/gen-shared-catalog.mjs:56`, so regenerating the
+catalog will not fix it — as `CLAUDE.md` already notes.
+
+---
+
+## 90. `AppError::RateLimited` cannot carry the retry-after it is handed, so 8 of 12 sites format it into English
+
+From [`rate-limiting`](./golden-paths/rate-limiting.md) §7.E / §9.2.
+`RateLimiter::check` returns `Err(retry_after_secs)` — a correct sliding-window
+figure computed from the oldest in-window timestamp. Of its **7** call sites,
+**one** (`management_api.rs:544-549`) puts that number where a machine can read
+it (`header::RETRY_AFTER`); five interpolate it into a sentence and one
+(`smee_relay.rs:526`) calls `.is_err()` and drops both the number and the event.
+`AppError::RateLimited(String)` is the reason: the only field available is prose,
+so **8 of 12 construction sites reach for `format!`, and 0 of 12 carry a
+structured retry-after**. The single frontend consumer,
+`src/lib/utils/apiError.ts:112`, therefore hardcodes `5000` ms.
+
+**The fix (not applied — a 12-site type change across the IPC boundary):** make it
+a struct variant, `RateLimited { message: String, retry_after_secs: Option<u64> }`.
+`RateLimited("…".into())` then stops compiling at all 12 sites and each author
+must answer the question while holding the number. `core/src/error.rs:160-215`
+gains one `serialize_field`; `apiError.ts:112` becomes
+`err.retry_after_secs ?? 5000`. Held against the doctrine's seven qualifications
+in that path's §9.2 — Q2 is why the field must stay `Option` (the six
+mutual-exclusion sites have no meaningful retry-after) and Q5 is why the fix is
+withholding the free-text constructor rather than adding a field beside it.
+
+**Companion, same edit window:** a third variant. Today `RateLimited` names three
+different refusals — **5 frequency, 1 capacity, 6 mutual exclusion** — a direct
+arithmetic consequence of commit `17d059b1f`, which correctly applied
+[`admission-control`](./golden-paths/admission-control.md) §7.A's prescription.
+The prescription was right; its price is that `ErrorCategory::RateLimit` now
+covers two disjoint populations and `healing.rs:303-324` tells an operator to
+*"reduce execution frequency or upgrade your plan"* when they clicked a button
+twice. `InflightGuard` already exists as the primitive; only the error kind is
+missing.
+
+## 91. The trigger rate-limit form writes a policy no code on either side reads
+
+From [`rate-limiting`](./golden-paths/rate-limiting.md) §7.A / §7.B.
+`RateLimitControls.tsx` is a shipped, user-reachable form (TriggerListItem →
+`TriggerDetailDrawer.tsx:45`) persisting
+`{ max_per_window, window_seconds, max_concurrent, cooldown_seconds }` into a
+trigger's `config`. **Rust readers: zero** — `"rate_limit"` as a config key
+appears in none of 963 `.rs` files, and `core/src/models/trigger.rs`, the sole
+parser of trigger config, contains no `rate` / `throttl` / `cooldown` /
+`concurren` identifier at all. **TypeScript enforcer: zero callers** —
+`recordTriggerFiring` (`triggerSlice.ts:198`) and `recordTriggerComplete`
+(`:257`) are never invoked in 4,829 files.
+
+Consequence: `triggerRateLimits` is permanently `{}`, so the **`rate-limits` tab**
+(`TriggersPage.tsx:151` → `RateLimitDashboard.tsx`) renders three counters —
+running, queued, throttled — that are structurally zero, and a throttle bar
+that is structurally 0 %. The one non-zero number counts triggers whose *config*
+carries a limit. **The surface reports configuration and calls it throttling.**
+
+**Not applied**: wiring the server side changes what a live surface does *and*
+requires answering a question this leaf deliberately does not own — whether a
+throttled scheduled fire is **dropped or deferred**, which is
+`admission-control`'s. Deleting the dead client-side limiter is the cheap half
+and is also deferred, because `RateLimitDashboard` would then need an honest
+empty state rather than a silent zero.
+
+## 92. 135 connectors, one rate limit: `rate_limit_rpm` is read and never written
+
+From [`rate-limiting`](./golden-paths/rate-limiting.md) §7.D.
+`api_proxy.rs:251` parses `rate_limit_rpm` out of connector metadata and falls
+back to `DEFAULT_RATE_LIMIT = 60`. **The string `rate_limit_rpm` occurs exactly
+twice in the tree — lines 250 and 254 of `api_proxy.rs`, i.e. the reader and its
+docstring.** Zero of the 135 `BuiltinConnector` seed rows declare it, so every
+credential in the app shares one 60 req/min bucket.
+
+Nine of those seeds state a real limit in the `llm_usage_hint` prose shipped to
+the model. The two that matter: **arXiv** documents *"max 1 request per 3 seconds.
+arXiv will block IPs that exceed this"* (20/min) and **Semantic Scholar**
+documents 100 req/5 min without a key (20/min). The default is **3× more
+permissive than a documented policy whose stated penalty is an IP block.**
+
+**Not applied**: a seed change alters what the running app enforces against live
+third parties. The fix is nine `"rate_limit_rpm": N` entries, and the check that
+keeps it true is specified in that path's §9.3 — a script over
+`builtin_connectors.rs` that flags a connector documenting a rate without
+declaring one, **with an exit-2 floor at 120 parsed metadata blobs**, because the
+JSON parse already reaches 134 of 135 rows and a delimiter change would silently
+drop more.
+
+## 93. A 429 from the TTS sidecar is reported as the user's mistake
+
+From [`rate-limiting`](./golden-paths/rate-limiting.md) §7.H. One line.
+`src/companion/tts/pocket.rs:473-478` recognises HTTP 429 from the local Pocket
+TTS service and returns
+`AppError::Validation("Pocket TTS service is at capacity (queue full) — try again in a moment")`.
+`Validation` → `ErrorCategory::Validation` → severity **Low**
+(`error_taxonomy.rs:399`), `is_failover_eligible` **false**, `retryable` **false**
+(`tool_outcome.rs:113`). The minted message contains none of `rate limit` /
+`too many requests` / `quota exceeded` / `usage limit` / `429`, so the string
+ladder at `error_taxonomy.rs:151-158` cannot recover the classification either.
+The module's own header (`pocket.rs:21`) says the service *"replies 429 under
+overload, so no client-side semaphore is needed"* — the design is deliberate and
+the type contradicts it. Same class as item 90's companion and as
+`admission-control` §7.A. **Not applied** because it changes a retry decision at
+runtime; it is otherwise a one-token edit.
+
+## 94. `cap_with_log` — the helper that makes a truncation attributable — has one caller in 963 files
+
+From [`engine-caps-and-ceilings`](./golden-paths/engine-caps-and-ceilings.md)
+§7.A. `personas_core::limits::cap_with_log(label, requested, cap)`
+(`core/src/limits.rs:75`) clips a value and emits a `tracing::debug!` naming which
+cap fired and by how much. It is unit-tested, it lives in the crate every other
+crate depends on, and it is called at **`src/engine/background.rs:2607` and
+nowhere else**. Against it: ~440 ceiling applications by other means — 199
+`.take(<literal>)`, 99 `.take(<NAMED>)`, 17 `.truncate(…)`, 8 `.chunks(…)`,
+144 SQL `LIMIT <literal>`. A log macro appears within four lines of **2 of 304**
+anonymous applications.
+
+**Not applied**: 440 call sites is a campaign, not an edit, and a `debug!` per
+site is a log-volume decision the operator should make. The census rule
+`magic-collection-ceiling` (baseline 53 matches / 34 files, positive control
+51 / 32) ratchets the anonymous half so the population stops growing meanwhile.
+
+## 95. Four multi-row reads pick their survivors by rowid
+
+From [`engine-caps-and-ceilings`](./golden-paths/engine-caps-and-ceilings.md)
+§7.E. Of 323 `LIMIT` clauses inside `SELECT … FROM` literals, **223 of the 228
+multi-row ones carry an `ORDER BY` (97.8 %)** — this repo is close to perfect on
+this axis. The five that do not: `memories.rs:1937` (an arbitrary N archived
+memories), `digest.rs:382` (an arbitrary 10 of the broken credentials),
+`skill_files.rs:195` and `companion/prompt.rs:902` (**the same
+`SELECT … FROM dev_projects LIMIT 5` written twice in two modules, one of them
+feeding the companion's prompt** — a user with six projects has one the companion
+cannot see, and which one depends on insertion order), and `dispatch.rs:785`,
+which is correct by design (an ambiguity probe: *is there more than one match*).
+
+**Not applied**: adding an `ORDER BY` changes which rows a live surface and a live
+prompt receive. Four one-line edits, each needing a decision about what "the top
+5 projects" should mean.
+
+---
+
 ## What *was* applied, and what it changes at runtime
 
 For completeness, since "no destructive applies" is now the rule. None of these
@@ -3270,3 +3634,94 @@ positives, across four copies. That result stands. What it did not do is examine
 `[secret]` beside a surviving token — see item 35. The campaign's own doctrine
 predicted this exact miss and the campaign made it anyway: **a search for the
 broken literal finds every copy of that literal and nothing else.**
+
+---
+
+## 87. A cell grid's coordinate is destroyed one layer above the renderer, and five of fourteen rosters have no zero-state
+
+**From:** [`matrix-and-cell-grid`](./golden-paths/matrix-and-cell-grid.md) §7-A/§7-D/§7-I,
+[`member-roster`](./golden-paths/member-roster.md) §7-E.
+
+- **`src-tauri`-free, frontend-only.** `db/src/repos/…` untouched by every item here.
+- **`overview/sub_health/libs/compositeHealthScore.ts:44,375-384`** — `dailyStatuses: DayStatus[]`
+  drops the `date` its own input type declares at `:314` and its own doc comment names at `:312`.
+  Widen to `Array<{ date: string; status: DayStatus }>`, pad with the real missing dates instead
+  of `unshift('no-data')`, then key `StatusPageView.tsx:145` by `d.date`. One producer, one
+  consumer, two test references — a two-site widening that removes the position-keying, the
+  interior-gap misalignment and the meaningless `"Day N"` label at once. **Not applied: it
+  changes what the status page renders in every row.**
+- **`overview/sub_health/components/StatusPageView.tsx:166-175,190`** — six hardcoded English
+  strings (`"Success Rate"`, `"Latency (p95)"`, `"Cost Anomalies"`, `` `${n} detected` ``,
+  `` `${n} open` ``, `` `Day ${index+1}: …` ``) plus a `DebtText` marker, in a 14-locale app. The
+  `title=` at `:190` is also the strip's only readout and is keyboard-unreachable.
+- **`plugins/dev-tools/sub_skills/registry/RegistryHeatmap.tsx`** — the model exposes `loading`
+  (`registryTypes.ts:68`) and **neither the heatmap nor `RegistryTab` renders anything for it**,
+  so the workspace matrix cold-loads as a bare frame. Also `:144` and `:161` use `animate-pulse`
+  as a busy state on a control the user just pressed; `buttons/Button loading` is the mandated
+  form.
+- **Five roster surfaces call `.map` over members with no length guard and no empty state** —
+  `TeamStudioSplitVariant.tsx:186`, `BlueprintPreview.tsx:44`, `PresetPreviewModal.tsx:133`,
+  `PresetProcessBlueprint.tsx:53`, `PresetQuestionnaireForm.tsx:134`. Three more render nothing
+  at all (`JudgePanel.tsx:94`, `ConversationSidebar.tsx:136`, `TeamList.tsx:443`). **As of the
+  2026-08-17 purge every one of the app's 8 teams has zero members**
+  (`persona_team_members` 64 → 0, `persona_id … ON DELETE CASCADE`), so this is now the *default*
+  state, not an edge case. `PresetPreviewModal.tsx:124` renders a heading counter reading
+  `(0/0)` above nothing.
+- **`overview/sub_certification/components/JudgePanel.tsx:97`** — `key={… ?? Math.random()}`, the
+  only `Math.random()` React key in 2,083 `.tsx` files. `JudgePersona` declares both fallback
+  fields nullable, so the row remounts on every parent render. The fix is not a better key: a
+  verdict with neither a persona id nor a role should render as one aggregate row.
+- **`teams/sub_teamWorkspace/BlueprintPreview.tsx:46,60,75`** (+ `useAutoTeam.ts:260`) — the key
+  is `` `${member.persona_id}-${i}` `` and both mutations take the index, so removing member 0
+  changes every following row's key and remounts the role `<input>` mid-edit. `BlueprintMember`
+  already carries `persona_id`.
+- **`teams/sub_teamWorkspace/teamStudio/boardShared.tsx:89`** — `PersonaChip` returns `null` for
+  an absent persona, so each of the **1,488** `team_assignment_steps` rows whose
+  `assigned_persona_id` the purge set to NULL now renders with no actor at all. The only real
+  fallback in the tree is `team_synthesis.rs:918-920`'s `"(persona removed)"`, which is a
+  hardcoded English literal minted behind IPC and therefore outside the i18n system — it needs a
+  `status_tokens` token resolved client-side.
+- **`resources/teams.rs:381-384`** — the comment describes a `UNIQUE(team_id, persona_id)`
+  constraint that the schema does not declare; the hand-rolled `SELECT EXISTS` guard is a
+  read-then-write race. Measured 0 duplicates in 64 pre-purge rows. **A schema change; not
+  applied.**
+
+## 88. Ordering keys: a manufactured tie, a half-composite cursor, and two comparators that never return zero
+
+**From:** [`chronological-feed`](./golden-paths/chronological-feed.md) §7-A/B/C/D/E/G, §10.
+
+- **`fleet/monitor/channels/mergedFeed.tsx:42`** — sorts the channel items on `at` alone while
+  its sibling `useLensFeed.ts:67` sorts the *same items* on `(at, id)` and documents why.
+  Measured against the 2026-08-17 backup, **45.2% of `team_channel_messages` rows share their
+  `at` with another row (worst tie 7)**, so within a tied second the live overlay's order — and
+  which items survive the `LIVE_FEED_WINDOW = 600` cut — is decided by the order the user's teams
+  happen to be listed in. One `|| b.item.id.localeCompare(a.item.id)`. **Not applied: it changes
+  what a live surface shows while the operator is watching it.**
+- **`db/src/repos/communication/events.rs:1319`** — `search()` orders `(created_at DESC, id DESC)`
+  at `:1335` and bounds with a **timestamp-only** `where_lte("created_at", until)`. That is the
+  Event Log's "load older" path. The composite form exists 100 lines away at
+  `get_recent_after:439`. Latent today (`persona_events` ties at 0.0% raw) and not latent for any
+  consumer that truncates the key.
+- **`src/commands/teams/team_channel.rs:174-176,242-244,299-301,361-363`** — the cursor predicate
+  applies `strftime(…)` to the column, so no index on `created_at` can serve it and every page is
+  a scan. Correct semantics, non-sargable shape.
+- **`plugins/twin/sub_channels/ContactThread.tsx:49`** and **`SentReplies.tsx:47`** —
+  `(a, b) => (a.occurred_at < b.occurred_at ? 1 : -1)` never returns 0, which is not a consistent
+  total order. The compliant three-way form is already in the tree at `sceneStore.ts:69`.
+  `twin_communications` holds 0 rows, so no user has seen it.
+- **`fleet/monitor/channels/conversationModel.ts:39-41`** — `dayKeyOf` is `at.slice(0,10)`, a
+  **UTC** calendar day, while `dayLabel` (`:45-53`) computes **local** midnight. At UTC+2 the day
+  separator lands at 02:00 local and the first two hours of each local day are filed under the
+  previous day's header. `grouping.ts:34-39` (`timeGroupKey`) already computes local boundaries
+  and is used by three other feeds.
+- **`overview/sub_activity/components/GlobalExecutionList.tsx:161`** — returns unsorted by default
+  and defers to the SQL `ORDER BY e.created_at DESC`, while the sticky day headers bucket on
+  `started_at || created_at` (`:264`). Rows whose two timestamps straddle a bucket boundary land
+  under the wrong header.
+- **`messages.rs:60`** and **`executions.rs:253`** — `OFFSET` paging on `created_at` alone. Latent
+  at 0.0–0.1% on the operator's data because those writers use nanosecond `to_rfc3339()`; the fix
+  is `, id DESC` before considering a move to the keyset form at `manual_reviews.rs:632-676`.
+  **A query change; not applied.**
+- **`teams/sub_teamMemory/components/timeline/MemoryTimeline.tsx:132`** —
+  `` key={`manual-${i}`} `` over an array built by interleaving and then reversing, so inserting a
+  run group above renumbers every manual group below it.

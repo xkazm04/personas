@@ -169,7 +169,7 @@ src-tauri/
 | "no data" block | `feedback/ScenarioEmptyState` (default export — call sites import it as `EmptyState`), plus its `NoResults` / `InboxZero` wrappers. Chart panels → `display/ChartEmptyState`; compact generic block → `display/EmptyIllustration` |
 | styled `<button>` | `buttons/Button` / `buttons/AsyncButton` |
 | `navigator.clipboard.writeText` | `buttons/CopyButton` / `useCopyToClipboard` |
-| `fixed inset-0` modal backdrop | `modals/BaseModal` / `feedback/ConfirmDialog` (enforced by `custom/enforce-base-modal`) |
+| `fixed inset-0` modal backdrop | `modals/BaseModal` / `feedback/ConfirmDialog` — ~~enforced by `custom/enforce-base-modal`~~ **not enforced; corrected 2026-08-17.** That rule is `"warn"` (`eslint.config.js:95`), and warn-level enforces nothing at either gate. Worse, it does not *detect* this either: driven over its whole anchor it reports **8 sites at precision 0/8** (all anchored popovers or an inline notice — converting them would be a regression) and **recall 0/19** (the 19 hand-painted modal files carry no `role="dialog"`, which is what it keys on). It is also satisfied by a bare *import*. Its own `RuleTester` fixtures contain no `fixed inset-0`, so no fixture could ever have failed. Census rule `hand-painted-modal-backdrop` covers the real condition at **19 files / 20 matches, precision 20/20**; adoption is 129 `<BaseModal>` : 20 hand-painted = **86.6%**. See [`modal-stacking.md`](../docs/concepts/golden-paths/modal-stacking.md). |
 | `title=` / custom tooltip | `display/Tooltip` |
 | `new Date().toLocaleString()` / "ago" | `display/RelativeTime` |
 | `.toFixed()` / `.toLocaleString()` for display | `display/Numeric` |

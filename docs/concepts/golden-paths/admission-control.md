@@ -34,6 +34,24 @@
 > **Settles:** where the decision to let work in is taken, what type the answer has, whether it is
 > taken before or after the work leaves a trace, and what a refused caller is told.
 
+> **Post-publication note — 2026-08-17: parts of this document went stale BECAUSE ITS
+> OWN FIX WAS APPLIED.** Re-measured by the `rate-limiting` composer:
+>
+> - Commit `17d059b1f` converted **only** `background_job.rs`. Those three sites are
+>   `AppError::RateLimited` today (`:233`, `:252`, `:404`); the other eight remain
+>   `Validation`. Any "eight of them are not" count below is now a **partial** count —
+>   the construction-site population has grown to **12: 5 frequency, 1 capacity, 6 mutual
+>   exclusion**. A path whose recommendation gets adopted must expect its own numbers to
+>   move, and the corpus has no mechanism that notices when they do.
+> - The claim that the webhook path returns 429 **with the exact seconds in a header** is
+>   wrong: `webhook.rs:349` uses `no_headers()` and the seconds are prose inside the JSON
+>   body. The correctly-headed `Retry-After` in that file is on the **422** branch
+>   (`:438-441`) — a real header on the wrong status, beside a real status with no header.
+> - The deeper finding this path implies but does not state: `AppError::RateLimited(String)`
+>   **cannot carry a retry-after at all** — it is a newtype over a message, so 8 of 12
+>   sites format the interval into English prose. Registered as deferred-fix #90 with a
+>   struct-variant type fix that makes the compiler the gate at all 12 sites.
+
 ---
 
 ## 0. The headline

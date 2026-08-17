@@ -4910,6 +4910,181 @@
         "matches": 13
       },
       "floor": 100
+    },
+    {
+      "id": "hand-painted-modal-backdrop",
+      "goldenPath": "docs/concepts/golden-paths/modal-stacking.md",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "fixed inset-0[^\"'`\\n]*(?:bg-black\\/|bg-background\\/[0-9]|bg-secondary\\/[0-9]|backdrop-blur|surface-blur)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A full-viewport dimming layer painted directly on the `fixed inset-0` element — the hand-rolled modal backdrop. BaseModal never emits this shape (its container carries no paint; the scrim is a separate `absolute inset-0` child), so a match is an overlay built outside the modal host: no stack depth, no Escape arbitration, no focus trap, no focus restore."
+      },
+      "baseline": {
+        "files": 19,
+        "matches": 20
+      },
+      "floor": 1800
+    },
+    {
+      "id": "english-literal-os-notification",
+      "goldenPath": "docs/concepts/golden-paths/desktop-notification.md",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?:sendAppNotification|sendOsNotification|notifyFleetAwaiting)\\s*\\(\\s*(?:[A-Za-z_$][\\w$.]{0,40}\\s*\\?\\s*)?['\"`][A-Z]",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "An OS-notification door called with an English string literal as its title. The text leaves the app into the OS notification centre, where nothing can re-render it — so a literal here is permanently untranslated for 13 of 14 locales."
+      },
+      "exclude": [
+        {
+          "path": "**/__tests__/**",
+          "reason": "unit-test fixtures — a literal title in a test asserts the IPC wrapper resolves, it is not a user-facing notification"
+        },
+        {
+          "path": "**/*.test.ts",
+          "reason": "unit-test fixtures — a literal title in a test asserts the IPC wrapper resolves, it is not a user-facing notification"
+        }
+      ],
+      "baseline": {
+        "files": 6,
+        "matches": 18
+      },
+      "floor": 4000
+    },
+    {
+      "id": "unconstrained-sequence-column",
+      "goldenPath": "docs/concepts/golden-paths/definition-version-history.md",
+      "roots": [
+        "src-tauri/db/src/migrations"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\b(?:version_number|order_index|run_number|ordinal|sequence|seq|rev|position|step_index)\\s+INTEGER(?:(?!CREATE\\s+TABLE|UNIQUE|PRIMARY\\s+KEY\\s*\\()[^;]){0,3000}?\\)\\s*;",
+        "flags": "g",
+        "description": "A per-parent monotonic sequence column (version_number, order_index, rev, seq, ordinal, position, sequence, run_number, step_index) declared in a CREATE TABLE whose remaining body contains no UNIQUE(...) and no table-level PRIMARY KEY(...). Readers resolve 'the latest' with ORDER BY <col> DESC LIMIT 1, which is not merely wrong on a duplicate but plan-dependent, so it reproduces on one machine and not another. Enforce the sequence in the schema and allocate it inside the INSERT (skill_usage.rs:200-201 is the reference)."
+      },
+      "baseline": {
+        "files": 4,
+        "matches": 12
+      },
+      "floor": 6
+    },
+    {
+      "id": "stringify-decided-equality",
+      "goldenPath": "docs/concepts/golden-paths/version-diff-view.md",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "JSON\\s*\\.\\s*stringify\\s*\\((?:[^()]|\\((?:[^()]|\\([^()]*\\))*\\)){0,200}\\)\\s*(?:!==|===|!=|==)\\s*JSON\\s*\\.\\s*stringify\\s*\\(|(?:const|let)\\s+[A-Za-z_$][\\w$]*\\s*=\\s*JSON\\s*\\.\\s*stringify\\s*\\((?:(?!JSON\\s*\\.\\s*stringify)[\\s\\S]){0,160}?(?:const|let)\\s+[A-Za-z_$][\\w$]*\\s*=\\s*JSON\\s*\\.\\s*stringify\\s*\\((?:(?!JSON\\s*\\.\\s*stringify)[\\s\\S]){0,240}?(?:!==|===)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "Object equality decided by JSON.stringify on both sides, in the inline form or the paired-const form. Key order is insertion order in JS and survives a JSON.parse round trip, so a value read from the database and an object literal of the same shape compare unequal. Replayed: two semantically identical payloads whose nested keys were serialized in a different order report as changed. Compare key-by-key, or serialize both sides through one canonicalizing stringifier. The paired-const alternative is load-bearing: it is the only one that sees comparisonHelpers.ts:85, the diff kernel behind execution comparison."
+      },
+      "baseline": {
+        "files": 5,
+        "matches": 6
+      },
+      "floor": 4000
+    },
+    {
+      "id": "null-spinner-busy-state",
+      "goldenPath": "docs/concepts/golden-paths/manual-test-fire.md",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\?\\s*<LoadingSpinner(?:\\s[^>]{0,120})?/>\\s*:\\s*<",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A control's busy state rendered as <LoadingSpinner/> in the consequent of a ternary whose alternate is another element — almost always an icon. feedback/LoadingSpinner renders null (it emits only an sr-only role=status when passed a label), so the icon vanishes and nothing takes its place while the action is in flight. Use buttons/AsyncButton (returns-a-promise onClick) or buttons/Button loading={flag}, whose spinners are real (Button.tsx:230,237; AsyncButton.tsx:85). Doctrine: inline-busy-state.md."
+      },
+      "baseline": {
+        "files": 50,
+        "matches": 68
+      },
+      "floor": 4000
+    },
+    {
+      "id": "magic-collection-ceiling",
+      "goldenPath": "docs/concepts/golden-paths/engine-caps-and-ceilings.md",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\.\\s*(?:iter|into_iter|iter_mut|values|values_mut|keys|drain|flatten|rev)\\s*\\(\\s*\\)\\s*\\.\\s*take\\s*\\(\\s*\\d+\\s*\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A collection is truncated to an integer literal. PROXY FOR the stack-free condition: a bound on how much work or data flows on is written as an unnamed number, so nothing can relate it to the ceiling it must respect and nothing reports what was dropped. The iter()-family receiver is what buys precision — it excludes .chars().take(N) display truncations (id-generation.md's leaf, 0 site overlap with truncated-uuid-id) at the cost of missing .filter(..).take(N) chains: it finds 53 of the 65 literal collection ceilings two independent scanners agree exist. Precision hand-verified 10/10. LEGAL FIX: name the bound as a const with a doc comment stating what it must be smaller than, and apply it through personas_core::limits::cap_with_log(label, requested, cap) so the clip is attributable — that helper exists, is unit-tested, and has ONE caller in 963 files (background.rs:2607). PRECONDITION (re-derive per repo): this repo bounds work with Rust iterator .take(); a repo using slicing, a paginator or a query builder has the same condition wearing markup this pattern cannot see."
+      },
+      "baseline": {
+        "files": 34,
+        "matches": 53
+      },
+      "floor": 700
+    },
+    {
+      "id": "feed-item-ordered-by-the-renderers-clock",
+      "goldenPath": "docs/concepts/golden-paths/chronological-feed.md",
+      "title": "A feed item's ORDERING key is minted from the rendering device's clock, then ranked against sibling items whose keys came from the database",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\b(?:created_at|createdAt|started_at|startedAt|occurred_at|occurredAt|at)\\s*:\\s*new Date\\(\\)\\.toISOString\\(\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "An object literal assigns a FEED-ORDERING field (created_at / createdAt / started_at / startedAt / occurred_at / occurredAt / at) from the renderer's own clock. PROXY FOR the stack-free condition (this path's P4): an item's position in a shared timeline is established by the rendering device rather than by the authority that timestamped its neighbours, so the list compares two clocks. MEASURED 2026-08-17 at de274d14d: 12 matches across 10 of 4,801 walked .ts/.tsx files, after three fixture excludes. HAND-VERIFIED PRECISION 9/12 (all twelve opened); the three false positives are one class -- a CONTAINER's own createdAt (memoryActions.ts:123, ChronologyAdoptionView.tsx:1108, plan-builder.ts:47) rather than an item's ordering key. POSITIVE CONTROL (same fields, assigned from another record's server timestamp) returns 46 matches in 27 files, so the compliant form outnumbers the violating one 3.8:1 on the same anchor and the pattern is discriminating on PROVENANCE, not on the field name. WHY IT IS A DEFECT: replayed against the 2026-08-17 purge backup, persona_events.created_at ties at 0.0% over 4,972 rows (nanosecond to_rfc3339 writer), so a client-minted sibling key does not merely tie -- it lands at an arbitrary point in a totally-ordered stream, and useRealtimeEvents.ts:245 / emitDeploymentEvent.ts:53 push exactly such rows into the store useEventLog.ts:237-245 ranks. teamSlice.ts:186 mints created_at for an optimistic persona_team_members row whose server read is 'ORDER BY created_at ASC' (teams.rs:347), so an optimistic member's roster position is decided by the renderer's clock. LEGAL FIX: echo the server-assigned key back on confirm, or render the optimistic item OUTSIDE the ranked list until it has one. DO NOT silence a match by switching to Date.now() or to a monotonic counter -- that changes the type without changing whose clock it is. ZERO OVERLAP with clock-ordered-history-read-without-tiebreak (audit-trail-view.md), which is rooted in src-tauri/.rs and anchors on SQL text; that rule and this one are the two ends of the same key and neither can see the other's half. PRECONDITION (re-derive per repo): this proxy assumes optimistic rows are built as inline object literals in the frontend. A repo whose optimistic updates go through a normalizer, a mutation cache, or a server-echo scores a structural zero here while carrying the condition at scale."
+      },
+      "exclude": [
+        {
+          "path": "src/test/automation/bridge.ts",
+          "reason": "the test-automation harness bridge fabricates fixture rows for the MCP driver; they never enter a rendered feed"
+        },
+        {
+          "path": "src/features/plugins/dev-tools/sub_overview/__tests__/overviewHelpers.test.ts",
+          "reason": "vitest fixture minting synthetic activity rows to assert the bucketing helper; a fixture clock is the point of the test"
+        },
+        {
+          "path": "src/stores/slices/overview/__tests__/personaHealthSlice.bundle.test.ts",
+          "reason": "vitest fixture; the bundle test mints a synthetic row to assert slice wiring, not ordering"
+        }
+      ],
+      "baseline": {
+        "files": 10,
+        "matches": 12
+      },
+      "floor": 4000
     }
   ]
 }

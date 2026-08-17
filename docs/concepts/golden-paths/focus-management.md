@@ -93,7 +93,8 @@ backstop (`globals.css:763-768`). Six mechanics, two stacks, no shared document.
 
 Focus is owned by a primitive, never by a feature. If the surface is an overlay,
 render it with `BaseModal` and stop — it captures the trigger, moves focus in on the
-next frame, cycles Tab inside the panel and restores focus on close, and
+next frame, cycles Tab inside the panel and restores focus on close **provided it stays
+mounted** (see the correction under §2.3 — the restore is an effect body, not a cleanup), and
 re-implementing any of that on top of it is a bug, not hardening. If the surface is a
 list of peer controls — a tab strip, a segmented toggle, a row list, a listbox — it is
 **one** tab stop with arrow keys inside it, and the group must own both the roving
@@ -180,6 +181,18 @@ See Gap 4 — it has zero adopters and cannot deliver the pattern.
    `if (!isOpen) return null` above the `<BaseModal>`, the effect never runs and focus
    lands on `<body>`. Render `<BaseModal isOpen={open}>` unconditionally and let it
    handle the closed case. (9 sites get this wrong — see Deviations.)
+
+   > **Corrected 2026-08-17 by the `modal-stacking` composer, and the two counts do not
+   > agree.** Its pass found **96 of 129 render sites (74.4%)** pass a bare `isOpen` and are
+   > unmounted to close — an order of magnitude past the 9 recorded here. **Do not simply
+   > replace one number with the other**: this clause counted sites it opened and judged to
+   > lose focus, and that pass counted every render site matching the unmount shape. Those
+   > are different populations and only one of them has been hand-verified. What is settled
+   > is the mechanism and its direction: the restore lives in an effect *body* keyed on
+   > `isOpen` (`BaseModal.tsx:229-233`), not in a cleanup, so an unmount skips it entirely —
+   > and both `personas-web` and `ascent` put the same restore in the cleanup. **This is the
+   > one clause where Personas is behind the fleet**, which the corpus should not soften.
+   > Re-measuring the two definitions against each other is owed.
 4. **Group: pick the primitive, do not hand-roll the group.**
    Horizontal tabs → `PanelTabBar` or `SegmentedTabs`. Record list → `UnifiedTable`.
    Vertical option list → copy `IssuesList.tsx:52-68`.
