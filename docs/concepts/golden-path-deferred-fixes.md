@@ -13,6 +13,39 @@ Ordered by consequence.
 
 ---
 
+> ## ⚠ The live-data baseline behind these numbers was deleted on 2026-08-17
+>
+> The operator authorized a purge of all personas and triggers. It ran, and the
+> declared `ON DELETE CASCADE` graph took **20,342 rows across 25 tables** with
+> it — including **all 78 personas, all 351 triggers, all 6,535 memories, all
+> 2,188 executions and all 5,720 tool-usage rows**. `PRAGMA foreign_key_check`
+> went from 1,030 violations to **0**, because the violating rows were themselves
+> in the cascade set.
+>
+> **Every live count in this register and in the corpus was true when measured
+> and is now historical.** They are not withdrawn — a defect is not fixed by
+> deleting the rows that exhibited it — but they can no longer be reproduced
+> against the live database.
+>
+> **The reference state is the backup**, at
+> `%APPDATA%\com.personas.desktop\purge-backup-2026-08-17\` (`personas.db`,
+> 347,054,080 B, verified intact after the purge). Any future re-measurement of
+> a claim in this register must run against **that file**, not against the live
+> database.
+>
+> **A composer measuring the live database today will find zero rows nearly
+> everywhere.** That is the purge, not a fix. Do not report a defect as resolved,
+> converged, or extinct on the strength of an empty table.
+>
+> What survives and is still live-measurable: the team layer (383 assignments,
+> 8,486 assignment events, 1,491 channel messages, 347 team memories), all audit
+> and trace tables as orphans (2,942 traces, 9,830 credential-audit rows, 4,001
+> provider-audit rows), 25 credentials, 1,031 API keys, 134 connector
+> definitions, 14 projects, 1,306 knowledge items, and the 4,972 `persona_events`
+> whose persona pointer was `SET NULL` rather than deleted.
+
+---
+
 ## 1. A failed key read regenerates the key and destroys the vault
 
 **`src-tauri/core/src/crypto.rs:629`**

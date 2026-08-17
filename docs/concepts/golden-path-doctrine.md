@@ -169,6 +169,28 @@ something, not from reading it:
   `order_index` values give an *unstable* order, not merely a wrong one — it
   changes with the query plan, so it reproduces on one machine and not another.
 
+> ## ⚠ Measure against the 2026-08-17 backup, not the live database
+>
+> On 2026-08-17 the operator authorized a purge of all personas and triggers.
+> The declared cascade graph took **20,342 rows across 25 tables** — all 78
+> personas, all 351 triggers, all 6,535 memories, all 2,188 executions.
+>
+> **The corpus's entire live-data baseline is now in a backup file**, at
+> `%APPDATA%\com.personas.desktop\purge-backup-2026-08-17\personas.db`
+> (347,054,080 B, verified intact). Copy **that** file, not the live one, when
+> re-measuring any claim the corpus already carries, or when a leaf's subject is
+> persona/trigger/execution/memory data.
+>
+> **The live database is still the right source for anything created after the
+> purge** — and for the team layer, credentials, connectors, projects, knowledge
+> and audit tables, none of which were deleted.
+>
+> **The trap is specific and it will fire.** A composer that copies the live
+> database and finds zero rows will be tempted to report a defect as fixed,
+> converged, or extinct. It is none of those. *A defect is not resolved by
+> deleting the rows that exhibited it.* If a table you expected to hold data
+> holds none, check the date before you draw a conclusion.
+
 Copy the live SQLite files before querying them; never open the live file for
 write while the app is running. **Then delete your copy when you are done** —
 `personas.db` is 331 MB, composers never cleaned up, and the shared scratchpad
