@@ -971,8 +971,19 @@ smoothed.
   tunable batch size, per-batch rows-affected, terminal stats, and the design
   statement at `:16-19`: *"the 'missing embedding' query IS the resume point, and
   each batch autocommits (no wrapping transaction), so an interrupted run simply
-  continues where it stopped."* That is Gap 2's answer, built. Nothing in
-  Personas is chunked.
+  continues where it stopped."* That is Gap 2's answer, built.
+
+  > **“Nothing in Personas is chunked” is FALSE, corrected 2026-08-17 by
+  > [backfill-migration](./backfill-migration.md).** `backfill_memory_embeddings`
+  > plus its driver at `lib.rs:1086-1101` is chunked, tunable, resumable, carries
+  > the design statement in its own comment, and has **fully converged**
+  > (5,158/5,158, id-exact, 0 orphan). It was missed because it lives in `repos/`
+  > rather than `migrations/` and sits behind `#[cfg(feature = "ml")]`. **Gap 2's
+  > scoped form — nothing in *the chain* is chunked (§ line 654) — is correct and
+  > stands.** The generalisation from “not in the chain” to “not in the repo” is the
+  > error. Worth recording: that path's convergence sweep reproduced the same
+  > false negative independently, by finding the *other* embedding backfill — two
+  > passes agreeing because both searched the same wrong directory.
 
 **Convergence on the problem, not the solution — the strongest result in the
 sweep.** Clause C5 (a widened stored vocabulary vs its display vocabulary) is

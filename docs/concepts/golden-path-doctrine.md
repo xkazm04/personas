@@ -199,6 +199,24 @@ Hand-verify a sample regardless of whether the implementations agree.
 **Beware the measurement truncated by its own display limit.** A grep ending in
 `head -3` reported "three source comments"; the real count was four.
 
+**A `GROUP BY` that omits the scope key the code scopes by produces a false
+positive hand-verification cannot find.** Earned by
+[`backfill-migration`](./golden-paths/backfill-migration.md), caught before
+publication: a query grouped 9 labels as spanning ≥2 contexts and was about to
+contradict a code comment. The function is scoped by `project_id`; replayed
+*per project* it is **13 of 14 projects at zero and one project at one**. Every
+row in the result set was real — the aggregation was the lie, so opening the
+rows would have confirmed it. **It also agreed with the composer's thesis**,
+which is the condition under which a measurement most needs re-running. Check
+that your `GROUP BY` carries every key the code carries.
+
+**Two passes can agree because both searched the same wrong place.** The
+"nothing in Personas is chunked" claim was reproduced independently by a
+convergence sweep that found the *other* embedding backfill — because both looked
+in `migrations/` and the answer lives in `repos/`, behind a cargo feature.
+Agreement between two searches over the same scope is not evidence about what
+lies outside it.
+
 **Fixing every instance of a defect is not the same as covering every place
 that needs the behaviour.** The first is a search over what exists; the second
 needs an inventory of what should. They differ exactly on the module that never

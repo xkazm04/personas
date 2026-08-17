@@ -1888,6 +1888,69 @@ panel that is scrolled wrong and re-collapsed.
 
 ---
 
+## 47. A backfill destroyed the evidence that would have shown whether it worked
+
+**Where:** `incremental.rs:5771-5772`; `lib.rs:1092`; `memories.rs:2016-2021`;
+`reviews.rs:1880`.
+
+**What is measured:** **14 backfill operations. Eight are buttons the user can
+press. Exactly one can tell its caller it finished — and that one has never
+run.** 3 of 14 are bounded, 1 is chunked, **0 write down that they ran**. There
+is no ledger, and `PRAGMA user_version` is 0 in both databases.
+
+**`backfill_lab_tool_calls` destroyed its own evidence.** It calls the fill and
+then `drop_legacy_tool_calls_columns` — **not in one transaction**,
+unconditionally, through twelve `let _ = ddl_step`. Its guard is
+`SELECT COUNT(*) FROM lab_tool_calls > 0`, **a latch that closes on the first
+row**. Live: 259 rows, 58/58 arena results covered, 1 orphan — and the source
+columns are gone, so **completeness is now unanswerable in principle.**
+
+The correct shape is **7,400 lines earlier in the same file**:
+`clear_legacy_credential_blobs` destroys only after proving every key is
+present, and `assert_credential_blob_invariant` re-checks on every boot. Both
+shapes, one repo.
+
+**The chunked backfill terminates on the value a total outage returns.**
+`Ok(0) => break`, against a counter that counts successes only and warns
+per-row failures uncounted. Live it *has* converged (5,158/5,158, id-exact, 0
+orphan) — which is the good outcome **and the outcome a dead embedder is
+indistinguishable from.** Its sibling one directory away returns
+`ReembedResult { embedded, skipped, available }` and separates all three.
+
+**One backfill re-reads 417,798 rows on every launch after convergence** —
+391.91 ms per batch × 81 batches = 31.7 s of re-scanning, and **392 ms every
+launch thereafter**, which is 40× the entire migration chain's unconditional
+set.
+
+**`reviews.rs:1880` has never run: 113 of 113.** Its receipt is discarded at
+`useGalleryActions.ts:220`. `scheduler.rs` computes `skipped_duplicate` and
+drops it at the boundary. `SetupPanel.tsx:98-100` raises a success toast on a
+four-way zero.
+
+**Why held:** running or repairing a backfill is the one class of change that is
+unrecoverable, and several of these need a decision about what "complete" means
+before they can be fixed.
+
+**What is genuinely good here, and worth not breaking:** **13 of 14 are
+re-runnable, 12 of them by querying the destination.** That is an unforced
+convention with no counterpart in the fleet. And `backfill_schedule` is the
+repo's complete answer — a cap probed at +1, a version CAS claimed *before* any
+read, destination-derived dedup, a mid-pass ceiling that halts, and a receipt
+carrying `failures`, `capped` and the enqueued fire times. **0 of 4,972 events
+carry `backfill_slot`, and 0 of 351 triggers configure `max_backfill`, so it has
+never had a candidate.** The best instrument in the leaf has never fired —
+the same anti-correlation between guard quality and usage the corpus has now
+measured on four leaves.
+
+**The fleet's one lead worth importing:** `brainiac` is the only repo where an
+incomplete fill makes a **reader refuse** — born-incomplete, drain, flip
+`is_active`, and both serving doors bail. Against that, three near-universal
+omissions: **0 of 5 claim a bulk pass**, **0 of 5 gate a destroy on
+proven-complete**, and **0 of 5 distinguish "0 already done" from "0 nothing
+matched".**
+
+---
+
 ## What *was* applied, and what it changes at runtime
 
 For completeness, since "no destructive applies" is now the rule. None of these
