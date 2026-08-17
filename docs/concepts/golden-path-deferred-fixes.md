@@ -1646,6 +1646,184 @@ intake into theatre — and the proposers keep filing."*
 
 ---
 
+## 42. The asset protocol publishes the vault key and the database to the WebView
+
+**Where:** `tauri.conf.json` `assetProtocol.scope`; `protocol/asset.rs:29-120`;
+`useYouTubePlayer.ts:61-65`; `tauri.conf.json:15` (`withGlobalTauri`).
+
+**What is measured:** `assetProtocol.scope` includes `$APPDATA/**` —
+`%APPDATA%\com.personas.desktop` — which holds **`master.key` (358 B)**,
+`personas.db` (347 MB), `personas_data.db`, two full database backups, `logs/`
+and `crash_logs/`. `connect-src` lists `asset:` and `http(s)://asset.localhost`
+in **both** policies, and the handler opens any scope-allowed absolute path with
+`Range` support and `Access-Control-Allow-Origin`. **No capability, no token, no
+audit** — the asset protocol appears in none of the manifest's 15 namespaces.
+All **16** `convertFileSrc` sites read named subdirectories; **none needs
+`$APPDATA`.**
+
+**And there is a live third-party origin inside that document.**
+`useYouTubePlayer.ts:61-65` appends `<script src="https://www.youtube.com/iframe_api">`
+to the **top-level** `document.head`. That origin gets `window.__TAURI__`,
+`window.__IPC_TOKEN`, all 1,585 app commands, and `fetch('http://asset.localhost/…')`.
+`withGlobalTauri: true` was added for a hidden `radio` WebviewWindow **that no
+longer exists**, and `window.__TAURI__` has **0 occurrences in 4,829 `src/`
+files.**
+
+**Why held:** narrowing `assetProtocol.scope` or flipping `withGlobalTauri`
+changes what the WebView may load — the runbook's named out-of-bounds class.
+Both are small and both are strongly indicated.
+
+---
+
+## 43. The dev CSP is never applied, and the gate this campaign added validates it
+
+**Where:** `tauri.conf.json` `devCsp`; `scripts/check-csp-hosts.mjs:139-141`.
+
+**What is measured:** `PROXY_DEV_SERVER = cfg!(all(dev, mobile))`, and `csp()`
+is only reached through `get_asset` → the `tauri://` protocol. **In desktop dev
+the webview navigates straight to Vite, which emits no CSP header, and
+`index.html` has no `<meta>` fallback.** Confirmed from build outputs already on
+disk: 10× `cargo:dev=true` under `target/debug`, `cargo:dev=false` under
+`target/release`. So `npm run tauri:dev:lite` runs with **no policy at all** —
+not a permissive one. `devCsp` is live on exactly one configuration,
+`tauri android dev`, and the Android config declares none, so it inherits the
+desktop string verbatim.
+
+**This is an audit of this campaign's own work.** `check-csp-hosts.mjs` — a gate
+I added and wired into `npm run check` — **fails the build when a fetch host is
+missing from `devCsp`**, enforcing an allowlist that governs nothing on the
+platform the operator develops on. The gate is not wrong about hosts; it is
+pointed at the inert half of a two-policy split.
+
+**Related, and it inverts a supposition of mine:** the packaged `connect-src`
+contains **no loopback host at all**, so from a packaged build the 116 loopback
+routes of item 39 are unreachable by `fetch` — an undocumented real control. In
+dev they are reachable **because there is no policy**, not because the policy
+allows one. And CSP matches host strings, so `http://localhost:*` would never
+have matched `http://127.0.0.1:17400` — the spelling all 8 of this repo's own
+address literals use.
+
+**Why held:** deleting `devCsp` so `csp()` falls back is one line and the
+strongest fix in that document. It changes what the WebView may load.
+
+**Also measured:** two capability files grant **120 of Tauri's 193** plugin
+commands to one window, and Tauri's ACL gates **0 of this app's 1,585** IPC
+commands because `src-tauri/permissions/` does not exist. `capabilities/mobile.json`
+has **no `windows` clause**, so 112 commands reach every Android window present
+and future. **6 of 15** desktop entries and **5 of 9** mobile entries contribute
+nothing. `check:tauri-configs` reads **3 of 5** config files and **1 of 3**
+authored CSP strings — and **the only banned-token hit in the repository is in
+the one file it does not open.** A **fifth, git-tracked** Tauri config
+(`.tauri-scraper-dev.conf.json`) enables the 46-route test-automation bridge and
+is referenced by no script, doc, CI job or hook. A **fourth** version string
+lives at `gen/android/.../tauri.conf.json`: **0.1.6**, against 1.1.0 everywhere
+else.
+
+---
+
+## 44. A persona is 17% of its own prompt
+
+**Where:** `runner/mod.rs:973,1014,1042,1062,1065,1089`;
+`prepared_run_cache.rs:93-136`; `MEMORY_SYSTEM_PREAMBLE`.
+
+**What is measured**, by transcribing `assemble_prompt_with_skills` into a
+harness and replaying it over **1,433 reconstructed production prompts
+(107,020,554 bytes actually sent)**, calibrated against the byte count the
+runner writes into its own logs:
+
+| source | share |
+| --- | ---: |
+| **appended by the runner after `assemble_prompt` returns** | **44.54%** |
+| static text compiled into the binary | 34.36% |
+| **persona-authored text** | **10.75%** |
+| input data (fenced) | 6.16% |
+| everything else | 3.80% |
+
+Median real prompt **68,462 bytes**; **26,722 bytes are byte-identical on every
+execution**. The transcription reproduces `assemble_prompt` byte-for-byte — 0 of
+1,433 overshoot, and the 2 executions that took no runner append reconstruct
+with a delta of **exactly 0**.
+
+**The 44.54% is appended below the security canary, below `## EXECUTE NOW`, and
+outside the reach of the fence, which is `pub(super)`.** Eight append sites.
+**1,031 of 6,535 memory rows (15.8%) already contain a triple-backtick fence**
+injected raw — latent, but durable, because a memory is re-injected forever.
+
+**The memory budget drops 93% of what it selects.** 3,767 of 4,052 candidates
+discarded; **1.5% of candidate bytes survive**; **2,456 memories (37.6%)
+individually exceed the entire 6,000-character budget.** The "N omitted" log
+line appears in **0 of 2,982 logs**. And `prepared_run_cache.rs` is a **second
+memory renderer with no budget at all**, whose cache key omits `name`,
+`description` and `parameters` — rename a persona and get the old prompt for
+five minutes.
+
+**Nothing records what was sent.** 0 rows anywhere; 2,942 `prompt_assembly`
+spans whose only metadata key is `is_resume`; `chat_session_context.system_prompt_hash`
+exists on a table with 0 rows. **0 of 78 personas assemble byte-identically
+twice**, and memory selection drifts for 5 of 59 personas over 7 days with zero
+data change.
+
+**Two things the prompt says that are false:** `MEMORY_SYSTEM_PREAMBLE` (1,785
+bytes, in 100% of prompts) tells the model its memories live in a table named
+`memories` — **which does not exist** — with tiers `working → active`, omitting
+`core` and `archive`. And `FANOUT_DIRECTIVE` promises `--max-budget-usd` bounds
+cost, which **0 of 78** personas set. Separately, **27 of 78 personas ship
+unresolved `{{placeholders}}`**.
+
+**Why held:** every item changes what is sent to a model on the operator's live
+personas.
+
+---
+
+## 45. A table primitive decides whether to window from a number that defaults to zero
+
+**Where:** `UnifiedTable.tsx:446,:523,:674`; `DataGrid.tsx:155,:227-231`;
+`MemoriesPageDense.tsx:356`; `LlmCallsTable.tsx:178,:315`.
+
+**What is measured:** `rowHeight = 0` and `const useVirtual = rowHeight > 0`, so
+omitting the prop maps **every row into the DOM**. **12 of 22 call sites never
+pass it.** Executed in jsdom over real row counts:
+
+| rows | `rowHeight` omitted | `rowHeight=40` | ratio |
+| ---: | --- | --- | ---: |
+| 100 (Memories as it ships) | 99 ms / 801 elements | 29 ms / 186 | 3× |
+| 500 (Memories while searching) | 510 ms / 4,001 | 29 / 186 | 17× |
+| **6,535 (every memory)** | **4,463 ms / 52,281 elements** | 29 / 186 | **155×** |
+| 9,803 (whole audit log) | 4,517 ms / 49,016 | 23 / 117 | 201× |
+
+The windowed branch mounts **23 rows at every N**. Element counts are exact; the
+milliseconds are jsdom's, with no layout and no paint, so they are a **lower
+bound**.
+
+**The worst real list is `MemoriesPageDense` over 6,535 rows** — the largest
+user-facing collection, and the only surface whose windowing was *removed on
+purpose*.
+
+**Three props are accepted, typed, and silently inert without `rowHeight`:**
+`scrollRestoreKey`, `onEndReached`, `groupBy`.
+
+**And windowing does not touch the second defect.** `LlmCallsTable` passes
+`rowHeight` and is still wrong: it sorts **client-side over the loaded window**.
+Replayed on 2,188 real executions sorted by cost descending, the top row reads
+**$2.53** at page 1 and **$3.76** at the client's 500-row ceiling, against a
+corpus max of **$7.16** — **0 of the true top 10 are present at any page.** On
+append, **50 of 50 rendered rows move**; the control with no sort moves 0.
+
+**The fix is a default, not a type:** default `rowHeight` to the density's row
+height and `pageSize` to 25, the way `FacetedDecisionTable.tsx:105` already
+does. One line per primitive, reaching all 12 sites with no call-site edit —
+**and the census rule should then be deleted, not baselined at 0.**
+
+**Why held:** it changes how every table in the app renders.
+
+**Also:** `CredentialIntelligence.tsx:48` fetches 500 audit rows for a
+credential holding **3,813**, and the tab label reads "500" — the cleanest proof
+that bounding the render and disclosing the corpus are separate obligations.
+**27 of 54** `.slice(0,N).map()` files disclose nothing at all, including the
+command palette silently dropping search matches.
+
+---
+
 ## What *was* applied, and what it changes at runtime
 
 For completeness, since "no destructive applies" is now the rule. None of these
@@ -1664,6 +1842,15 @@ delete data; several do change behaviour, all in the conservative direction:
 
 The Rust ones are compile-verified by CI but **not runtime-verified** — cargo is
 unavailable in the campaign's session.
+
+**A second applied change has been audited and found pointed at the wrong
+half.** `scripts/check-csp-hosts.mjs`, added by this campaign and wired into
+`npm run check`, fails the build when a frontend fetch host is missing from
+`devCsp` — and **`devCsp` is never applied on desktop** (item 43). The gate is
+correct about hosts and is enforcing an allowlist that governs nothing on the
+platform the operator develops on. It cost two false starts to get the host
+extraction right, and none of that work established that the policy it guards is
+live. **Verify the artifact is load-bearing before hardening it.**
 
 **One applied change has since been audited and found incomplete.** Commit
 `1e714f817` corrected the credential **token-prefix** regex — measured as

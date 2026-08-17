@@ -4245,6 +4245,80 @@
         "matches": 10
       },
       "floor": 900
+    },
+    {
+      "id": "blanket-default-permission-grant",
+      "goldenPath": "docs/concepts/golden-paths/tauri-permissions-and-csp.md",
+      "title": "A Tauri capability grants a plugin's ENTIRE default permission set instead of the named commands the app actually calls",
+      "roots": [
+        "src-tauri/capabilities"
+      ],
+      "extensions": [
+        ".json"
+      ],
+      "signal": {
+        "pattern": "\"[a-z][a-z0-9-]*(?::[a-z0-9-]+)?:default\"",
+        "flags": "g",
+        "ignoreCommentLines": false,
+        "description": "A permission identifier ending in ':default' inside a Tauri capability file — a request for a plugin's whole default bundle rather than the commands this app calls. THE EXTENT IS NOT VISIBLE AT THE CALL SITE and is a property of the plugin version, not of this app: resolved against src-tauri/gen/schemas/acl-manifests.json on 2026-08-17, 'core:default' alone grants 92 commands (all 22 core:menu, all 12 core:tray, 28 core:window verbs, core:image:from_path, core:webview:internal_toggle_devtools) and is 92 of the 120 that capabilities/default.json grants in total. WHY THIS IS A DEFECT AND NOT STYLE, measured: 6 of default.json's 15 entries have a MARGINAL CONTRIBUTION OF ZERO — core:app:default and core:event:default are already inside core:default; the three notification:allow-* are already inside notification:default; core:window:allow-is-maximized is already inside core:default. The file reads as least privilege (five hand-picked core:window:allow-* verbs at the bottom) and is not, because line 10 already opened the door. A blanket grant SILENTLY VOIDS every narrow grant beside it. ignoreCommentLines is false deliberately: JSON has no comments, and the engine's comment heuristic keys on '//', '*' and '/*', none of which can begin a line in a well-formed capability file. THE COMPLIANT DOOR: a named command grant, '<ns>:allow-<command>' — see capabilities/default.json:20-24 (core:window:allow-minimize / allow-toggle-maximize / allow-close / allow-start-dragging) and the positive control below, which counts exactly that form. MEASURED 2026-08-17 at 9fdede67c: 13 matches across 2 files (default.json:10,11,12,13,17,18,19 = 7; mobile.json:7,8,9,10,14,15 = 6) against 11 matches for the compliant named form (default.json:14,15,16,20,21,22,23,24 = 8; mobile.json:11,12,13 = 3). ANCHOR ACCOUNTS EXACTLY: the two 'permissions' arrays hold 15 + 9 = 24 identifiers; 13 blanket + 11 named = 24, no residue, and the two populations are MUTUALLY EXCLUSIVE BY CONSTRUCTION since an id cannot end in both ':default' and ':allow-x'. PRECISION 13/13 hand-read against the manifest, every one resolving to a multi-command bundle (core 92, notification 16, updater 4, dialog 3, core:app 8, core:event 4, deep-link 1). NO EXCLUDE ENTRIES: neither file has a legitimate blanket grant, and an unexplained exemption is how an allowlist becomes a place violations hide. ROOTS ARE DELIBERATELY src-tauri/capabilities AND NOT src-tauri: a .json rule rooted at src-tauri also walks gen/android/**/tauri.conf.json and gen/schemas/*.json, which are gitignored build outputs whose presence varies by machine — the baseline would be machine-dependent and an exclude naming them would be a stale-exclude structural failure on a clean clone (see section 8 gap 4). LEGAL FIX: replace '<ns>:default' with the '<ns>:allow-<command>' entries the app calls, verified by resolving the file against gen/schemas/acl-manifests.json and checking each entry's marginal contribution is non-zero. DO NOT 'fix' a match by moving it into the other capability file. END OF LIFE: designed to reach zero. The runner fails structurally on zero matches BY DESIGN — DELETE this rule then, do not baseline it at 0. PRECONDITION (re-derive per repo, do NOT port): the stack-free condition is 'a grant naming a whole bundle instead of the operations performed'; in a browser extension that is '<all_urls>' in permissions, in AWS IAM it is \"Action\": \"s3:*\", in Kubernetes RBAC it is verbs: [\"*\"]. This regex scores ZERO on all three."
+      },
+      "baseline": {
+        "files": 2,
+        "matches": 13
+      },
+      "floor": 2
+    },
+    {
+      "id": "prompt-extended-outside-its-assembler",
+      "goldenPath": "docs/concepts/golden-paths/prompt-assembly.md",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "format!\\(\\s*\"\\{(?:prompt|prompt_text|base_prompt|system_prompt)\\}",
+        "flags": "g",
+        "description": "An assembled model prompt is re-bound by interpolation after the function that owns its untrusted-content fence has returned. `wrap_runtime_xml_boundary` / `sanitize_runtime_variable` are `pub(super)` inside `engine::prompt`, so text added at one of these sites CANNOT be fenced even in principle — it is appended raw, after the runtime canary."
+      },
+      "baseline": {
+        "files": 3,
+        "matches": 8
+      },
+      "floor": 800
+    },
+    {
+      "id": "unbounded-shared-table-render",
+      "goldenPath": "docs/concepts/golden-paths/long-list-rendering.md",
+      "title": "A shared table primitive is handed a data-length collection with no bound on how many rows may enter the DOM",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "<(?:UnifiedTable|DataGrid)(?:<(?:[^<>]|<[^<>]*>)*>)?(?:(?!\\browHeight\\b|\\bpageSize\\b|\\bsimplified\\b)(?:=>|>=|<=|[^<>])){0,4000}?/>",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A render of one of the two shared table primitives whose opening tag names NO bound on how many rows enter the DOM - no rowHeight (UnifiedTable's windowing switch), no pageSize (DataGrid's page slice), no simplified (which forces DataGrid to 5). PROXY FOR the stack-free condition: a list container is handed a collection whose length is decided by data and is never told how many of those rows may render, so the surface's cost is a function of how successful the product has been. THE DEFAULTS ARE THE DEFECT: UnifiedTable.tsx:446 is `rowHeight = 0` and :523 is `const useVirtual = rowHeight > 0`, so silence selects the branch at :674 that maps EVERY row into the DOM with no scroll container of its own; DataGrid.tsx:155 is `pageSize = 0` and :227-231 is `if (effectivePageSize <= 0) return data`. This is the contract's fifth section-9 failure mode - a primitive with a mandatory-but-forgettable argument - reproduced at a second primitive. MEASURED 2026-08-17 at e21dfeb0d: 12 files / 12 matches across 2,104 .tsx files under src. THE POPULATION PARTITIONS EXACTLY: the anchor (any render of either primitive) matches 22 sites in 20 files = 12 violating + 10 compliant (the positive control, 9 files, one of which carries two renders) + the 2 primitives themselves, excluded below. MEASURED BY EXECUTION, not by reading: UnifiedTable's two body branches (:638-694) were transcribed statement-for-statement into a jsdom 29.1.1 + React 19.2.6 harness using the real @tanstack/react-virtual 3.13.26 and the repo's own useVirtualList verbatim, and driven over rows from a READ-ONLY COPY of the operator's live 347 MB personas.db (copied 2026-08-17 08:54 UTC with the app running, never opened for write, deleted after). Same rows, same columns, differing only in whether rowHeight was passed, median of 5 after warm-up: 100 rows -> 99.1 ms / 801 DOM elements vs 28.8 ms / 186; 500 -> 509.5 ms / 4,001 vs 29.2 / 186; 1,306 -> 1,324.3 ms / 10,449 vs 32.7 / 186; 2,188 -> 1,878.0 ms / 17,505 vs 28.3 / 186; 4,974 -> 2,517.0 ms / 24,871 vs 20.9 / 117; 6,535 (every memory the operator has) -> 4,462.6 ms and 52,281 DOM elements vs 28.7 ms and 186; 9,803 (the whole credential audit log) -> 4,517.2 ms / 49,016 vs 22.5 / 117. That is 3x to 201x wall time and 4x to 419x DOM elements, and the windowed branch mounts 23 rows at EVERY N. The DOM counts are exact and portable; the milliseconds are jsdom's, which performs no layout or paint, so they are a LOWER BOUND on a real engine. rowHeight ALSO SILENTLY GATES THREE UNRELATED PROPS - executed: with rowHeight omitted the component renders no scroll container, so scrollRestoreKey cannot bind (:532 attaches the ref only on the virtual branch at :639), useEndReached has no node to watch (:537), and the groupBy sticky-header path is unreachable (:527, `grouped = !!groupBy && useVirtual`). The source says so at :529-531: 'No-op when scrollRestoreKey is undefined or the table isn't virtualized'. No call site trips that today, so it is a loaded trap rather than a live defect. PRECISION hand-verified 12/12 on the stated condition, every match opened and tabulated with its data source in section 7 D1: ToolPerformancePanel.tsx:208 (bounded upstream at DEFAULT_LIMIT = 8), RecipeOverviewTab.tsx:63 (a recipe's input schema), PairedDevicesPanel.tsx:171, DatabaseListView.tsx:116 (25 db credentials - and the DataGrid whose four siblings all pass a pageSize), ProjectManagerPage.tsx:490 (14 projects), ActivityList.tsx:174 (listExecutions(personaId, 50) merged with reviews and memories; the top persona holds 292 memories), LabVersionsTable.tsx:325, RunHistoryView.tsx:118 (list_eval_runs takes NO limit), GroundingTable.tsx:73, AthenaSpendSection.tsx:141, RemoteJobsPanel.tsx:122, and SurfaceRenderer.tsx:312 - the last of which renders a table whose ROW COUNT COMES OUT OF A LANGUAGE MODEL, the one input in this app nobody bounds by reviewing the code. On the stricter question 'can this exceed a viewport on the operator's data today' it is 8 of 12; the four bounded-upstream sites are kept in deliberately, because the condition is that the CALL SITE names no bound and each is one product decision away from being long. TWO INDEPENDENT IMPLEMENTATIONS AGREED ON THE ANCHOR (22 sites in 20 files) AND ON THE PARTITION (12 violating / 10 compliant) - after disagreeing twice, and both disagreements were matcher bugs, not facts. Implementation #1, a standalone brace-matching JSX scanner, first reported only 2 of 17 UnifiedTable sites as virtualized because a TSX generic argument (`<UnifiedTable<PersonaEvent>`) closed the opening tag at its own `>` and truncated every prop list; and this census pattern first missed ToolPerformancePanel.tsx:208 entirely because a prop value contains `errPct >= 10` and the `>` in `>=` fell outside the `(?:=>|[^<>])` unit. Both were found by cross-checking the two counts, neither by reading. ZERO SITE OVERLAP with all 157 committed rules, re-measured by re-running each of the 76 rules whose roots and extensions can reach src/**/*.tsx and intersecting at file:line - not assumed. NO RULE IN THE REGISTRY KEYS ON WINDOWING, PAGING, LOAD-MORE, SCROLL RESTORATION OR ROW COUNTS AT ALL; this territory was entirely ungated. The largest FILE overlap is 5 of 12 with typo-token-overpainted (824 files) and native-title-tooltip (571 files), which reach 17% and 12% of the .tsx tree - co-location, not duplication. The nearest neighbours by subject are at 0 files AND 0 sites: hand-rolled-row-stagger (list-entrance-stagger.md) owns the cascade's timing, call-site-text-match (filtering-and-search.md) owns the predicate, stateless-disclosure-control (expandable-row.md) owns the disclosure control, absent-entity-count-as-zero (aggregate-count-display.md) owns the number. DISCLOSED RECALL GAP, and it contains this document's own second headline: the pattern asks whether a bound is NAMED ON THIS ELEMENT, not whether the list is bounded and certainly not whether what the list claims is true, so it CANNOT SEE LlmCallsTable.tsx, which passes rowHeight={52} and scores COMPLIANT while declaring four sortable columns (:178,:231,:245,:259) with a persisted tableId (:315) over a window paged 50 at a time to a client ceiling of 500 (overviewSlice.ts:149-150) and appended by onEndReached (:319). Replayed against the operator's real 2,188 executions with the cost column sorted descending: the top row reads $2.5254 at page 1 and $3.7646 at the client's own 500-row ceiling, against a corpus maximum of $7.1604, with 0 of the true top 10 present AT EVERY PAGE; and when page 2 lands, 50 of 50 rendered rows change position, the largest displacement is 49 rows, and the row at mid-viewport drops 13 - against a control with no client sort where 0 of 50 move. It equally cannot see MemoriesPageDense.tsx:356, which hand-rolls its list outside both primitives and renders 100 of 6,535 memories (500 while searching) from memorySlice.ts:111 with offset literal 0 and no row 101 - a surface whose windowing was DELIBERATELY REMOVED, per MemoriesPage.tsx:5-8: 'the earlier Baseline virtualized-list layout ... were retired'. True recall over surfaces carrying this condition is about 12 of 30-plus and it misses the two worst, which is the honest thing to say about a signal keyed on a PROP'S PRESENCE when half the condition is a RELATION between an ordering and a paging key (section 8 Gap 1). It also cannot see the 66 `.slice(0, N).map(` render caps in 54 files, half of which disclose nothing, nor the 162 distinct list-container component names across 175 definitions of which only these 22 call sites go through a primitive that HAS a bound to set - 12.6%. PRECONDITION (must be re-derived per repo): this repo expresses a list container as a JSX element and a bound as a prop on it. A repo whose list is a Vue <n-data-table>, a server-rendered template loop, a React Native FlatList without windowSize, or a Blazor <Virtualize> scores a structural zero here while carrying the condition at scale - measured in the sibling checkouts, where 3 of the 4 UI repos have NO virtualization at all and a fourth declares react-virtuoso in package.json and imports it at zero sites. Do NOT silence a match by passing `rowHeight={0}` or `pageSize={0}` to mean 'unbounded' without also writing down why, and do NOT silence it by moving the table off the shared primitive - that is what happened to Memories and it made the tree worse while every count would have improved. THE HONEST FIX IS THE DEFAULT, NOT THE CALL SITES: default rowHeight to the density's real row height (44 comfortable / 36 compact, values that already exist in densityTokens) and DataGrid's pageSize to 25 the way FacetedDecisionTable.tsx:105 already does for its three consumers - one line per primitive, reaching all 12 sites with no call-site edit. WHEN THAT LANDS THIS RULE SHOULD BE DELETED, not baselined at 0."
+      },
+      "exclude": [
+        {
+          "path": "src/features/shared/components/display/UnifiedTable.tsx",
+          "reason": "the primitive itself - it defines rowHeight = 0 at :446 and branches on it at :523, so it necessarily contains the anchor without being a call site; excluding it is what keeps the rule counting consumers rather than the definition"
+        },
+        {
+          "path": "src/features/shared/components/display/DataGrid.tsx",
+          "reason": "the primitive itself - pageSize = 0 at :155 and the page slice at :227-231; same reason as UnifiedTable, and note that a third file, FacetedDecisionTable.tsx, is deliberately NOT excluded because it is a genuine consumer that forwards its own pageSize = 25 default and therefore belongs in the positive control"
+        }
+      ],
+      "baseline": {
+        "files": 12,
+        "matches": 12
+      },
+      "floor": 1500
     }
   ]
 }

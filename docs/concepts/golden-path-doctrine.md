@@ -340,6 +340,29 @@ The runner is `scripts/census/`. A rule is a **ratchet**, not a verdict.
 - **Check the existing rules first** and name the ones you checked. The corpus
   is crowded enough that a reasoned decline is a respectable §9. One gate was
   declined purely for 83% file-overlap with an existing rule; that was correct.
+- **The census cannot ratchet a population whose membership varies by machine.**
+  Earned by [`tauri-permissions-and-csp`](./golden-paths/tauri-permissions-and-csp.md):
+  the natural rule (an unsafe token in any Tauri config) has an anchor of **3
+  files on this machine and 1 on a clean clone**, because
+  `src-tauri/gen/android/**/tauri.conf.json` exists only after `tauri android`
+  ran and is gitignored. The baseline is machine-dependent **and** excluding
+  `src-tauri/gen/**` is itself a stale-exclude failure on a clean clone, since
+  **0 tracked `.json` files exist there**. No roots/extensions combination sees
+  the source config and not its generated copies — they share a basename. When
+  the population is not the same on two checkouts, the answer is a different
+  instrument, not a cleverer pattern.
+- **Enumerate the operators that contain your delimiters.** Two matcher bugs in
+  one leaf, each caught only because two implementations disagreed: a TSX generic
+  (`<UnifiedTable<PersonaEvent>`) closed a scanner's opening tag at its own `>`,
+  reporting 2 of 17 virtualized when the truth was 6; then a census pattern
+  missed a real site because `errPct >= 10` puts a `>` outside
+  `(?:=>|[^<>])`. If your delimiter is `<` or `>`, list `=>`, `>=`, `<=` before
+  you run.
+- **A CRLF rewrite makes the merger see zero fenced blocks.** One composer's
+  Python edit silently converted its finished document to CRLF; the fence
+  extractor then found nothing. Caught before publication. **A lost rule looks
+  exactly like a rule nobody wrote** — so after any programmatic edit to a
+  finished path, re-extract the fence and confirm the rule count.
 - **Measure overlap at the SITE level, against the FINAL pattern.** A composer
   measured its overlap at *file* level against an *intermediate* draft of its own
   pattern, published a clean table, then re-checked and found the finished rule
@@ -496,20 +519,26 @@ Treat `convergence` as a hypothesis to test, never a premise to build on. Brief
 every composer accordingly. A leaf whose label finally holds is a genuine
 finding and should be reported as loudly as another failure.
 
-**`sides` is worse — stop using it for scoping.** **Six** separate leaves have
-now reported `sides: "client"` contradicted by their own measurement, and every
-one of the four found the headline defect, the best artifact **and** the
-surviving census rule on the *server*. At 4 of 4 the field is not merely
-unreliable, it is **anti-correlated with where the answer lives**. Several of
-those nodes carry `twoSided: true` in the same object, so the contradiction is
-internal to the spine. Do not narrow a brief by `sides`; report the correction
-in §12.
+**`sides` — the ledger, kept honestly.** **Seven** leaves have reported
+`sides: "client"` contradicted; **two** have upheld it (`bulk-selection-actions`,
+`long-list-rendering`, both with the same structural reason — *the server never
+sees the DOM*). `sides: "both"` has been tested once and held. `sides: "server"`
+has been tested once and held. So the field is **not noise, and the failure is
+specific to one value** — but that value is the majority of the spine, and it is
+the one that would narrow a brief away from where the answer lives. **Do not
+scope by it; test it and report.**
 
-**The failure is specific to `"client"`, which is worth knowing.** `sides: both`
-has been tested and **held** — a leaf whose client half was not derivable from
-the server at all. The label is not noise; it has one systematically wrong
-value, and it is the one that would have narrowed the brief away from where the
-answer lives.
+The finding that earned the rule: the first four contradictions each put the
+headline defect, the best artifact **and** the surviving census rule on the
+*server*, which made the field look anti-correlated with where the answer lives.
+Several of those nodes carry `twoSided: true` in the same object, so the
+contradiction is internal to the spine.
+
+**Where it holds, it holds for a structural reason worth knowing.** Both
+upholdings are leaves about the DOM — *the server never sees the DOM* — and the
+`both` upholding was a leaf whose client half was not derivable from the server
+at all. When the label survives, name the mechanism; that is what distinguishes
+a correct label from a lucky one.
 
 **And the correction is not always "it was both".** On the seventh contradiction
 there was **no client half to report at all** — the exemplar, all nine

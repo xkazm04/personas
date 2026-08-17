@@ -225,7 +225,7 @@ never resets, and does not run at all when the filtered set has the same length.
 | `agents/components/allPersonas/PersonaOverviewPage.tsx:291-307` | 25 | search / status / health / connector / favorite |
 | `vault/sub_credentials/components/list/CredentialList.tsx:145-153` | 25 | search / tags / health / category |
 | `triggers/sub_live_stream/LiveStreamTab.tsx:441-456` | 20 | status / type |
-| `vault/sub_databases/DatabaseListView.tsx:116` | 25 (default) | `typeFilter` (`:73`) |
+| `vault/sub_databases/DatabaseListView.tsx:116` | **none — this cell read “25 (default)” until 2026-08-17.** It passes no `pageSize`, and `DataGrid`'s default is **0**, which means *render everything* ([long-list-rendering](./long-list-rendering.md)) | `typeFilter` (`:73`) |
 | `shared/components/display/FacetedDecisionTable.tsx:190-199` | 25 (default) | **its own** search box (`:210-214`) and group rail (`:124-127`) — the sharpest case, since the primitive owns both the control and the `data`, and still cannot reach the page |
 | ↳ `BacklogTable.tsx` · `DispatchTable.tsx` · `KnowledgeTree.tsx` | | inherited from the above |
 
