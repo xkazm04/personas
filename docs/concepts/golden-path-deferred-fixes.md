@@ -2385,6 +2385,15 @@ production chain; only the reason *string* is unread. This repo already ships
 
 ## 55. 64 credential bindings would fail to resolve right now
 
+> **RE-VERIFIED 2026-08-17 — still open, and the missing side is the opposite one.**
+> Backup against live: `personas` **78 → 1**, `persona_credentials` **25 → 25**,
+> `connector_definitions` **134 → 134**. The purge removed personas and left every
+> credential and connector standing, so the binding that fails to resolve is missing its
+> **persona**, not its credential. The parse defect itself is untouched code and the next
+> persona created re-enters it. **Do not read the changed row counts as a fix** — this is
+> the same trap the corpus has now recorded four times today. The Gmail grant named below
+> is still live and now 76 days expired (measured 75 one day earlier; the two agree).
+
 **Where:** `core/src/models/persona.rs:711,:458,:485`;
 `engine/runner/credentials.rs:455-480`; `connector_readiness.rs:263`.
 

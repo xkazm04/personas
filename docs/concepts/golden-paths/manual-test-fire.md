@@ -17,6 +17,21 @@
 >
 > Row-derived numbers are historical as of 2026-08-17 and unreproducible.
 
+> **Post-publication note — 2026-08-17: `null-spinner-busy-state` under-reports by ~35%.**
+> Measured hours after publication by the `connector-setup-panel` composer: the baseline
+> (50 files / 68 matches) **misses 27 files / 30 matches** written in the Prettier-wrapped
+> `? (` form and 6 more in the `&&` form. Among the missed sites is
+> `ConnectionTestSection.tsx:43` — **the repo's primary "Test connection" button**, which is
+> this leaf's own subject. Same repo, same defect, invisible because of where the formatter
+> put a line break.
+>
+> **The baseline is NOT wrong and has not been re-based here.** It is the count of one
+> spelling, and widening an anchor owes a full re-validation and a fresh precision figure —
+> a rule quietly widened between waves is not reproducible. The suggested pattern is in
+> [`connector-setup-panel.md`](./connector-setup-panel.md) §12.3; adopting it is owed work,
+> not a silent edit. Same disposition as [`live-log-stream-view.md`](./live-log-stream-view.md)'s
+> recall limit, recorded the same day for the same reason.
+
 ---
 
 ## §0 Headline

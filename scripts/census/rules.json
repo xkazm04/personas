@@ -5200,6 +5200,52 @@
         "matches": 3
       },
       "floor": 1000
+    },
+    {
+      "id": "probe-verdict-narrowed-to-boolean",
+      "goldenPath": "docs/concepts/golden-paths/connector-setup-panel.md",
+      "title": "A connection verdict re-declared as {success, message} at the panel boundary",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\?\\s*:\\s*\\{\\s*success\\s*:\\s*boolean\\s*[;,]\\s*message\\s*:\\s*string\\s*[;,]?\\s*\\}\\s*\\|\\s*null",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "An optional-and-nullable connection/test verdict prop typed as an inline {success, message} pair instead of the wire type, which erases HealthProbeState."
+      },
+      "baseline": {
+        "files": 6,
+        "matches": 9
+      },
+      "floor": 4000
+    },
+    {
+      "id": "failure-written-as-empty-list",
+      "goldenPath": "docs/concepts/golden-paths/connector-sourced-options.md",
+      "title": "A rejected fetch handled by writing the empty list into state, with nothing recording that it failed",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "catch\\s*(?:\\(\\s*[^)]{0,60}\\)|\\{)(?![\\s\\S]{0,240}?(?:set[A-Za-z]{0,20}(?:Error|Failed|Kind)|addToast|toastCatch|reportError|setStatus))[^}]{0,200}?\\bset[A-Z][\\w$]*\\s*\\(\\s*\\[\\s*\\]\\s*\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A catch handler whose only state write is an empty array, and which sets no error/failure identity anywhere in the handler. The rejection becomes indistinguishable from an empty result."
+      },
+      "baseline": {
+        "files": 44,
+        "matches": 49
+      },
+      "floor": 4000
     }
   ]
 }
