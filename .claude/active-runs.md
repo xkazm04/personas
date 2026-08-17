@@ -7,10 +7,13 @@
 - **Paths:** `.claude/skills/prototype/SKILL.md` · `C:/Users/kazda/Documents/Obsidian/personas/{Research,Lessons,Patterns}/` · `.claude/active-runs.md`
 - **Status:** started
 
-### agent-plugins-open-standard — /research code: Agent Plugins 1.0.0 open standard (agent-plugins.org) — session opus-5[1m]
-- **[2026-08-13] Status:** started
-- **Source:** https://agent-plugins.org/ (spec + schemas)
-- **Paths (best guess):** src-tauri/engine/src/cli_mcp_config.rs · src-tauri/src/engine/mcp_tools.rs · src-tauri/src/mcp_server/** · src-tauri/src/commands/fleet/pty.rs · Obsidian personas/{Research,Lessons}/ · .claude/active-runs.md
+### research-chase-obsidian-claude-os — /research (focus: code) on "This Claude Code x Obsidian Agentic OS Will Be The New Meta" (Chase AI) — session opus-5[1m] — **COMPLETE**
+- 2026-08-17. Commits: `962f9d2de` recipe outcome tallies wired to the recipe card · `ca60536d7` OS-level push-to-talk accelerator · `800e6bd20` codebase-stack corrections · `78d1e457e` skill(research) v1.4 (standalone).
+- Findings: 2 accepted (both shipped), 1 declined to `Patterns/descoped-reopenable.md`, **12 already-existed catches** — a product-demo source, so the catch table was the deliverable. Real gaps: (1) `get_recipe_outcome_tallies` was implemented + registered + ts-rs-exported with **zero callers anywhere** (not even in `docs/development/ipc-orphans.md`, which it postdates); (2) Athena's entire voice stack was reachable only while the Personas window had focus — no `tauri-plugin-global-shortcut` existed.
+- Gates: tsc clean · eslint 0 · `cargo check --features desktop` 0 errors at the **213-warning baseline, unchanged** · vitest companion+stores **715/715**, structural+i18n 29/29 · i18n strict **19,106 × 14 at 0/0** with real translations (untranslated-value hook green). **NOT live-app verified** — no running instance was driven; the hotkey has never been pressed on a real desktop.
+- **NOTE FOR OTHER SESSIONS — `.claude/codebase-stack.md` carried a wrong fact about Athena.** It said her spawn path passes no `--effort` and therefore runs at high effort. Wrong: `session.rs:2198-2199` pushes `--effort` from `companion/model_routing.rs::MAIN.effort` = **`low`**. `model_routing.rs` is one source of truth for model AND effort across three bench-calibrated tiers — read it before proposing any Athena cost/latency change. Corrected in `800e6bd20`.
+- **Second note:** ts-rs exports `i64` as TS `bigint` while serde_json puts plain numbers on the wire. `RecipeOutcomeBadge` normalizes with `Number()` at the boundary; any new consumer of an i64-bearing binding needs the same.
+- Release log: not offered to the operator before session end (Phase 12 unchanged).
 
 ### research-kpi-dashboard-design — /research: wshobson kpi-dashboard-design skill vs our KPI module — session opus-5[1m] — **COMPLETE**
 - 2026-08-13. Compare-only run (skill NOT adopted). Commits: `a9fe81180` unpaced verdict + both target_date sources closed · `7d64d41d5` tier assigned by the scan + tier-ordered dashboard · `1904088cf` feature-doc sync · `79a41d840` codebase-stack facts.
@@ -302,6 +305,13 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### agent-plugins-open-standard - /research code: Agent Plugins 1.0.0 (agent-plugins.org) - session opus-5[1m] - **COMPLETE**
+- 2026-08-13. Commits: `ee97789bc` skill-tree symlink containment (5 walks: copy/hash/scan/ref-listing/export; classify_skill_entry rejects symlinks incl. Windows junctions and non-regular files; MAX_SKILL_DIR_DEPTH=8); `50714e4ee` one typed model for the 8 mcpServers writers (personas_core::mcp_config); `b2690c5c8` skill(research) v1.2 (standalone).
+- Gates: cargo check --features desktop clean at the existing warning baseline; personas-core mcp_config 4/4; personas-engine cli_mcp_config 4/4; app_lib skill_files 20/20; data_portability 52/52. NOT live-app verified.
+- **Deliberate non-change:** HTTP MCP entries still serialize as `"http"`, not the spec-canonical `streamable-http`, pinned at `personas_core::mcp_config::MCP_HTTP_TYPE`. Third-party readers (Claude Code / Cursor / Claude Desktop) accept `"http"` and the live Fleet-Athena and browser-bridge paths are verified on it, so changing it needs a live CLI test, not a compile.
+- **NOTE FOR OTHER SESSIONS:** any new `mcpServers` writer must go through `personas_core::mcp_config::McpServer`; do not hand-roll a ninth `json!` literal. Any new `.claude/skills/` walk must go through `skill_files::classify_skill_entry`.
+- Latent bug found, NOT fixed (out of accepted scope): `engine/src/desktop_discovery.rs:404` `ClaudeMcpServerEntry.command` has no `#[serde(default)]`, so one HTTP server in a user's Claude Desktop config fails the import of every server.
 
 ### research-claude-md-12-rules — /research: 12 CLAUDE.md rules for long-running agents (Better Stack) — session opus-5[1m] — **COMPLETE**
 - 2026-08-12. Focus: code. 4 findings / 11 already-existed catches. Commits: `585926b09` standards ruleset (perf + deps + type-strictness rules, new `performance` category w/ allowlist) · `ffa336ac5` codebase-init CLAUDE.md rule classes + size budget · `55e1ebd9c` shared memory char budget applied to the CLAUDE.md projection (`ACTIVE_MEM_BUDGET_CHARS` promoted out of the runner) · `d6092fb65` opt-in engine gates surfaced in the environment doctor + template adoption honesty · `730192642` skill(research) v1.1.
