@@ -873,6 +873,10 @@ Reported because a path that lists only defects mis-sets priors:
   (`src/features/cloud/RemoteApprovalPrompt.tsx:149-152`), and no autopilot. Its one asymmetry is
   that `remote_command_reject` omits the device filter its sibling documents as essential
   (`remote_commands.rs:344-347` vs `:240-248`) — self-DoS only, same tenant.
+  **Cleared 2026-08-17 by [cross-device-pairing](./cross-device-pairing.md): the device filter is
+  now present, at `remote_commands.rs:377`.** The asymmetry is closed and the door is now
+  symmetric on both approve and reject. Recorded rather than quietly dropped — a register that
+  only accumulates is a register nobody trusts.
 - **The daemon is not shipped.** `daemon = ["desktop-full"]` (`Cargo.toml:90`) appears in **no**
   `tauri*.conf.json`, no `package.json` script and no workflow. It remains a zero-auth full
   execution runtime on the live DB and keychain if anyone builds it — `daemon/runtime.rs:202` calls

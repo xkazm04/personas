@@ -427,12 +427,20 @@ depends on the leaf.** Two later sweeps measured it:
   a port** and is demo-gated over a 5-row literal, and `personas-cloud` shares
   this repo's table, column and env-var vocabulary verbatim. **Cohort 5 → 2
   independent**, and 2 of its 3 apparent convergences evaporated.
-- A tracing sweep found `personas-cloud` and `personas-web` are **one system** —
-  same package name, shared `@dac-cloud/shared` contract. **Cohort 5 → 4**, for
-  every leaf.
+- A tracing sweep found `personas-cloud` and `personas-web` sharing a
+  `@dac-cloud/shared` contract and reported them as **one system**. A later
+  sweep found that link **gone**. Both measurements were right when taken.
 
-Establish the cohort *before* reporting a ratio. "3 of 5" and "3 of 2" are
-different findings, and only one of them is arithmetic.
+**Establish the cohort per leaf, at the time you measure it.** "3 of 5" and
+"3 of 2" are different findings and only one of them is arithmetic — and the
+cohort is not a constant, either across leaves or across weeks.
+
+**A sibling that consumes your decision is not a second opinion; it is a
+dependent.** A second exclusion criterion beside lineage, earned by
+[`cross-device-pairing`](./golden-paths/cross-device-pairing.md):
+`personas-web` was disqualified **twice over** — a port *and* a reader of this
+repo's trust store (`supabaseApi.ts:371` selects `synced_devices`). A downstream
+consumer agreeing with its upstream is not evidence about the upstream.
 
 The reverse also happens and is worth reporting. A port that *gained* something
 the original cannot express is strong evidence for the missing thing — the same
@@ -441,8 +449,15 @@ engine's `publish(&DbPool)` signature makes impossible at all 33 sites.
 
 ### The `convergence` label is not evidence — the field is now closed
 
-**Eleven spine leaves carrying `convergence: converged` have been tested. Eleven
-failed.** The ninth (`embedded-terminal-session`) failed because **zero of five
+**Thirteen spine leaves carrying `convergence: converged` have been tested.
+Thirteen failed**, in at least six distinct modes — silence; the fleet converged
+on the *disease*; the fleet converged on *not having the problem*; the label's
+direction was backwards; the only corroborator was our own port; and, most
+recently, **convergence on a weaker substitute with the leaf's own clauses
+pointing opposite ways** — 0 of 4 siblings derive a peer identifier from its key
+(so the fleet converged on what this repo does *not* do), while on freshness and
+revocation reach the fleet is *ahead*. **A single enum field cannot carry a verdict
+that splits by clause.** The ninth (`embedded-terminal-session`) failed because **zero of five
 siblings has a PTY or an xterm-class emulator at all**, so the label pointed at
 a 5/5 silence — and its direction was backwards, since Personas is the only repo
 with the problem and owns the fleet's best answer to it.
@@ -460,7 +475,7 @@ Treat `convergence` as a hypothesis to test, never a premise to build on. Brief
 every composer accordingly. A leaf whose label finally holds is a genuine
 finding and should be reported as loudly as another failure.
 
-**`sides` is worse — stop using it for scoping.** **Four** separate leaves have
+**`sides` is worse — stop using it for scoping.** **Six** separate leaves have
 now reported `sides: "client"` contradicted by their own measurement, and every
 one of the four found the headline defect, the best artifact **and** the
 surviving census rule on the *server*. At 4 of 4 the field is not merely
@@ -468,6 +483,12 @@ unreliable, it is **anti-correlated with where the answer lives**. Several of
 those nodes carry `twoSided: true` in the same object, so the contradiction is
 internal to the spine. Do not narrow a brief by `sides`; report the correction
 in §12.
+
+**The failure is specific to `"client"`, which is worth knowing.** `sides: both`
+has been tested and **held** — a leaf whose client half was not derivable from
+the server at all. The label is not noise; it has one systematically wrong
+value, and it is the one that would have narrowed the brief away from where the
+answer lives.
 
 **One label has finally held, and it is worth as much as the failures.**
 [`ai-draft-preview-apply`](./golden-paths/ai-draft-preview-apply.md) tested

@@ -4083,6 +4083,28 @@
         "matches": 19
       },
       "floor": 3000
+    },
+    {
+      "id": "peer-credential-compared-by-value",
+      "goldenPath": "docs/concepts/golden-paths/cross-device-pairing.md",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\b(?:token|secret|passcode|fingerprint|api_key)\\b\\s*==\\s*|\\.get\\(\\s*&?\\s*(?:token|secret|passcode|api_key)\\b[^)]{0,24}\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A credential presented by a remote party is resolved to a trusted identity by ordinary value equality or a hash-map lookup, in a tree that already owns three constant-time primitives (ct_eq, constant_time_eq, hmac verify_slice). Proxy for: a peer-authentication comparison whose timing depends on the secret. The positive control counts the compliant form of the same decision."
+      },
+      "exclude": [],
+      "baseline": {
+        "files": 2,
+        "matches": 2
+      },
+      "floor": 900
     }
   ]
 }

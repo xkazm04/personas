@@ -1331,6 +1331,69 @@ taking our own code back.**
 
 ---
 
+## 36. The pairing surface guards unpair and leaves confirm unarmed
+
+**Where:** `IncomingPairingPanel.tsx:72-80`; `FleetSettingsPage.tsx:213`;
+`companion/remote_jobs.rs:29`; `core/src/models/identity.rs:52`.
+
+**First, the reassuring measurement**, because it was asked for: **no
+cross-device pairing material on this machine is readable by another account.**
+`personas.db` — which holds `owned_devices`, `local_identity` and `app_settings`
+— carries a **single ACE: your account, FullControl**. The Ed25519 private key
+lives in the OS keyring, not on disk. The `fleet-mcp-*` temp dirs do carry two
+non-owner Modify ACEs inherited from `%LOCALAPPDATA%\Temp`, but **four of six
+are empty** and the two survivors hold one 206-byte `mcp.json` whose only
+credential is a loopback MCP session token. **No device token, peer key, or
+group anchor has ever been written to a temp directory.**
+
+**Everything on this leaf is latent.** Five trust anchors, five schemes, all
+empty: `owned_devices` 0 · `remote_jobs` 0 · `trusted_peers` 0 ·
+`discovered_peers` 0 · `fleet_companion_devices` absent from the 32-row
+`app_settings`. Nothing has ever been paired by any of seven ceremonies.
+
+**Which is exactly why it is here.** The defects worth recording:
+
+- **The repo guards its destructive action and not its trust-granting one.**
+  `IncomingPairingPanel`'s confirm is an **unarmed primary button**, while
+  `RemoteApprovalPrompt` and `PairApprovalModal` both arm at 450 ms — and
+  **unpair** sits behind a two-step confirm.
+- **`import.meta.env.DEV` gates the pairing panel *and the revoke button with
+  it*** (`FleetSettingsPage.tsx:213`), and the revoke `silentCatch`es its own
+  failure.
+- **A comment names a bound that was deleted.** `companion/remote_jobs.rs:29`
+  cites `AUTOAPPROVE_ALLOWLIST` as a live constraint: **10 mentions across 6
+  files, 0 declarations**, removed 2026-08-10. `second-transport-exposure` §7.H
+  reported this on 2026-08-16 and it is **still open**.
+- **`identity.rs:52` says the `Manual→Verified` handshake "is not yet wired."
+  It shipped**, as `protocol.rs` v2. Nothing connected the two.
+- **Revocation does not reach an in-flight session.** `forget_owned_device` is a
+  bare `DELETE`; `disconnect_peer` is uncalled; `REMOTE_TURN_TIMEOUT` is 27
+  minutes; and `mdns.rs:82` caches trust for 30 s while
+  `invalidate_trusted_peer_cache()` has **no caller on the revoke path**.
+- **`device_group_id` is HKDF'd into an AES-256 key and is also plaintext** in
+  two tables, returned by a Public IPC command, serialized to the client on
+  every device row, and sent in `PairRequest` **before the human confirms**.
+  Latent only because `SyncKey::derive` has zero callers.
+
+**Why held:** arming a confirm button, ungating a revoke control, and deleting a
+dead allowlist reference are all small — but they change a trust ceremony on a
+feature the operator has never used, and the correct order is to fix the
+ceremony *before* the first pairing, not during one.
+
+**The strange structural fact worth keeping:** **102 of the tree's 394 `nonce`
+mentions live inside `p2p/`** — and P2P is behind a cargo feature that is **not
+in the running binary**. The running debug build contains **0** occurrences of
+the handshake protocol strings, the QUIC bind message, and `_personas._tcp`; the
+release build contains 1, 1, 1, 12 and 247 `quinn`. **The app's entire freshness
+apparatus lives in the transport that isn't there**, and every reachable trust
+path has zero verifier-contributed freshness except the cloud ceremony.
+
+**Cleared, and recorded as cleared:** `remote_command_reject` now carries the
+device filter its sibling documents as essential (`remote_commands.rs:377`).
+`second-transport-exposure` §7.I is corrected in place.
+
+---
+
 ## What *was* applied, and what it changes at runtime
 
 For completeness, since "no destructive applies" is now the rule. None of these
