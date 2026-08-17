@@ -139,6 +139,16 @@ not, all measured:
    a legal value. Measured: **2 of `build.rs`'s 9 forwarded names actually
    arrived** in the binary.
 
+   > **The same boundary, approached from the other side**, by
+   > [`view-state-persistence`](./golden-paths/view-state-persistence.md): a
+   > persisted value's **writer and reader are different builds of the same
+   > program**. No type spans them, because the type the writer used may no
+   > longer exist when the reader runs — and the JSON round trip strips what
+   > little was left. Measured: **51 members removed from 18 view-state unions
+   > across 156 revisions, 27 of them from unions persisted across restart**,
+   > against **five** hand-written repair arms. The compiler is satisfied at both
+   > ends and the value in between is from a program that no longer exists.
+
 If the honest answer is that no type reaches the condition, say so. That is a
 finding, not a failure — and it is the case where a census rule genuinely earns
 its place.

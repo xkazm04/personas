@@ -1824,6 +1824,70 @@ command palette silently dropping search matches.
 
 ---
 
+## 46. A removed tab name in localStorage crashes Settings on every launch
+
+**Where:** `SettingsPage.tsx:74`; `devToolsProjectSlice.ts:98-105`;
+`UnifiedTable.tsx:44-61,:478-486`.
+
+**What is measured:** `tabComponents[tab]` with **no fallback**. A persisted
+`settingsTab` outside its current union renders `undefined` and React throws
+*"Element type is invalid… got: undefined"* — and **nothing rewrites the stored
+value, so it re-crashes on boot 2 and boot 3**. `SettingsTab` really did lose
+`quality-gates` and `config`. `TriggersPage.tsx:118` is the identical construct
+with `?? DEFAULT` and degrades correctly.
+
+**The population behind it:** **51 members have been removed from the 18
+view-state unions across 156 revisions, and 27 of those removals were from the
+10 unions persisted across restart.** There are **five** hand-written repair
+arms.
+
+**Why this is the doctrine's build boundary from the other side:** a persisted
+value's **writer and reader are different builds of the same program**. No type
+spans them — the type the writer used may not exist when the reader runs — and
+the JSON round trip strips what little was left. The compiler is satisfied at
+both ends.
+
+**Why held:** the fix is a fallback plus a rewrite-on-repair, and a wrong version
+of it silently discards a setting the operator chose. **If Settings ever fails
+to open, this is the first thing to check** — clearing `settingsTab` from
+localStorage recovers it.
+
+**Two more that persist and shouldn't:**
+
+- **`devToolsProjectSlice.ts:98-105`** never reconciles `activeProjectId` on
+  fetch, so **46 production files can act on a ghost id**. The server already
+  performs that check, and its frontend door `getActiveProject` has **zero call
+  sites.**
+- **`UnifiedTable.tsx:44-61`** — a persisted sort key naming a deleted column
+  silently unsorts **and is rewritten to disk on every mount**, so it never
+  self-heals.
+
+**Memories that hide data from you:** `monitorCollapsedGroups`,
+`homeHiddenSections`, `collapsedSourceKinds` and `incidents:collapsed-groups`
+are **never pruned** — a group that vanishes and later returns comes back
+**collapsed**, on a choice made months ago that is no longer visible anywhere.
+
+**Work the app loses:** **58 of 119 `<textarea>` files have no home for the text
+beyond `useState`** — no backend door, no storage write. Personas is
+nevertheless *ahead* of the whole fleet here: draft persistence has 7 hits
+across six repos and all seven are ours.
+
+**And the scroll inversion has a structural cause, not a tab cause.** A scroll
+offset lives on a DOM node whose lifetime is set by CSS layout; everything else
+lives in a component whose lifetime is set by a conditional. So the offset
+survives *any* swap under a shared scroller and the content survives *none* —
+**520 scroll-container occurrences against 3 explicit resets**, one of which is
+inside the primitive itself. The repo's own `useScrollRestoration` fixes it in
+both directions and is used at **4 sites, only 3 of which pass a key**.
+
+**A primed lead of mine inverted, worth recording:** the loading doctrine's
+module-scoped cache was generalised to 14 named sites — **81 module caches
+exist, 80 hold fetched data and 0 hold view state.** "Keep the data warm" was
+adopted; "keep the view" was not. Those surfaces now paint instantly into a
+panel that is scrolled wrong and re-collapsed.
+
+---
+
 ## What *was* applied, and what it changes at runtime
 
 For completeness, since "no destructive applies" is now the rule. None of these
