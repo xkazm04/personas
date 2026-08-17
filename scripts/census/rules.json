@@ -99,8 +99,8 @@
         }
       ],
       "baseline": {
-        "files": 182,
-        "matches": 248
+        "files": 180,
+        "matches": 246
       },
       "floor": 2500
     },
@@ -283,8 +283,8 @@
         "description": "ONE object literal that holds BOTH an English `label:` string AND a colour utility class. PROXY FOR the stack-free condition \"the human-readable name of a closed-vocabulary member is authored at the same site as its presentation, so it can never be translated and the vocabulary has no single home\". PRECONDITION (measured, must be re-derived per repo): this repo writes badge/status config as flat single-level object entries on one line, with the key spelled `label` and colours as Tailwind utilities. Where a repo formats those entries across lines with nested objects, or names the key `title`/`text`, or uses CSS-in-JS, this pattern scores ZERO while the condition is present at full scale — the same failure the portability test measured for `tables.md` and `form-field-and-validation.md`. Sibling evidence that the CONDITION is universal but the SHAPE is not: personas-web's shared badge is `label: \"Queued\"` beside `bgColor` at StatusBadge.tsx:11 (would match), brainiac's is a separate `STATUS_LABEL` table with the colour resolved through band() at kb-data.ts:42 (would NOT match, same defect). Legal destinations: `tokenLabel(t, category, token)` for the label + `STATUS_PALETTE` / `StatusBadge variant` for the colour."
       },
       "baseline": {
-        "files": 38,
-        "matches": 241
+        "files": 37,
+        "matches": 237
       },
       "floor": 4000
     },
@@ -555,8 +555,8 @@
         "description": "a Tailwind font-weight utility written next to a typo-* token inside one class string. PROXY FOR the stack-free condition: a call site tries to patch one property of a composite token with a utility that the cascade discards, so the authored intent is silently dropped and the code reads as if it were honoured. Verified from source, not inferred: typography.css is imported at globals.css:3 with no layer(), every real .typo-* tier declares font-weight (17 rules checked; only the .typo-rtl / .typo-hero-shine modifiers do not), and unlayered declarations beat every @layer utilities declaration regardless of order or specificity. The token file states the failure twice in its own comments - 'typo-caption font-semibold is silently a no-op' (typography.css:161-162) and 'typo-label font-bold is silently a no-op' (:190-191) - as does Design.md section 2. PRECONDITION: this repo ships semantic type tokens as UNLAYERED CSS classes alongside layered Tailwind utilities. A repo whose type tokens are React components, or are themselves inside @layer utilities, has the same condition wearing different markup and must re-derive the proxy. The legal fix is to move up a token (typo-caption -> typo-title -> typo-heading), never to add a font-* utility."
       },
       "baseline": {
-        "files": 824,
-        "matches": 2005
+        "files": 812,
+        "matches": 1979
       },
       "floor": 2000
     },
@@ -584,8 +584,8 @@
         }
       ],
       "baseline": {
-        "files": 361,
-        "matches": 815
+        "files": 358,
+        "matches": 808
       },
       "floor": 4000
     },
@@ -1190,8 +1190,8 @@
         }
       ],
       "baseline": {
-        "files": 55,
-        "matches": 78
+        "files": 54,
+        "matches": 77
       },
       "floor": 4000
     },
@@ -1407,8 +1407,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 571,
-        "matches": 1108
+        "files": 566,
+        "matches": 1098
       },
       "floor": 2000
     },
@@ -1480,8 +1480,8 @@
         }
       ],
       "baseline": {
-        "files": 46,
-        "matches": 47
+        "files": 43,
+        "matches": 44
       },
       "floor": 4000
     },
@@ -1828,8 +1828,8 @@
         }
       ],
       "baseline": {
-        "files": 87,
-        "matches": 123
+        "files": 86,
+        "matches": 122
       },
       "floor": 4000
     },
@@ -2094,8 +2094,8 @@
         "$comment": "Recall is deliberately partial: it cannot see a toggle whose button lives in a child component while the state lives in the parent, nor a non-button disclosure. Both are stated in the golden path rather than papered over."
       },
       "baseline": {
-        "files": 56,
-        "matches": 59
+        "files": 54,
+        "matches": 57
       },
       "floor": 2000
     },
@@ -3544,8 +3544,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 30,
-        "matches": 40
+        "files": 29,
+        "matches": 39
       },
       "floor": 3000
     },
@@ -3680,8 +3680,8 @@
         }
       ],
       "baseline": {
-        "files": 37,
-        "matches": 52
+        "files": 36,
+        "matches": 51
       },
       "floor": 2000
     },

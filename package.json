@@ -46,6 +46,7 @@
     "gen:catalog": "node scripts/docs/gen-shared-catalog.mjs",
     "check:catalog": "node scripts/docs/gen-shared-catalog.mjs --check",
     "check:catalog-boundary": "node scripts/refactor/classify-shared.mjs --check",
+    "orphans": "node scripts/analysis/orphan-modules.mjs",
     "census": "node scripts/census/check-corpus-integrity.mjs && node scripts/census/run-census.mjs",
     "census:check": "node scripts/census/run-census.mjs --check",
     "census:test": "node scripts/census/self-test.mjs",

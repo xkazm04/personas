@@ -8,11 +8,6 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import Sidebar from '@/features/shared/chrome/sidebar/Sidebar';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
-// Deep import, NOT the sub_canvas barrel: the barrel re-exports the whole
-// canvas module graph (incl. @xyflow/react runtime via edges/nodes), which
-// dragged the entire feature into this eagerly-loaded page's chunk. The
-// context file itself has zero heavy deps.
-import { CanvasDragProvider } from '@/features/teams/sub_canvas/libs/CanvasDragContext';
 import { CredentialNavProvider } from '@/features/vault/shared/hooks/CredentialNavContext';
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
@@ -371,46 +366,44 @@ export default function PersonasPage() {
   };
 
   return (
-    <CanvasDragProvider>
-      <CredentialNavProvider>
-        <div className="flex flex-col h-full w-full min-w-0 bg-background text-foreground overflow-hidden" style={{ contain: 'layout style' }}>
-          {/* Background effects — blur removed (causes WebView2 compositor freeze on ARM64).
-              transform-gpu + backface-hidden isolate each layer onto its own GPU
-              texture so it rasters ONCE. Without isolation these full-screen layers
-              share a paint layer with hover-repainting content, so every pointer-move
-              re-rasterizes the 1px grid gradient — and at fractional Windows DPI
-              (125%/150%) a CSS 1px line maps to non-integer device pixels, so each
-              re-raster shimmers, most visibly as a flickering seam at the top/right
-              edges. Isolation is a lightweight 2D layer promotion, unlike the
-              backdrop-blur removed above. */}
-          <div className="absolute inset-0 transform-gpu backface-hidden bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
-          <div className="absolute inset-0 transform-gpu backface-hidden bg-gradient-to-b from-background/0 via-background/0 to-background/80 pointer-events-none" />
+    <CredentialNavProvider>
+      <div className="flex flex-col h-full w-full min-w-0 bg-background text-foreground overflow-hidden" style={{ contain: 'layout style' }}>
+        {/* Background effects — blur removed (causes WebView2 compositor freeze on ARM64).
+            transform-gpu + backface-hidden isolate each layer onto its own GPU
+            texture so it rasters ONCE. Without isolation these full-screen layers
+            share a paint layer with hover-repainting content, so every pointer-move
+            re-rasterizes the 1px grid gradient — and at fractional Windows DPI
+            (125%/150%) a CSS 1px line maps to non-integer device pixels, so each
+            re-raster shimmers, most visibly as a flickering seam at the top/right
+            edges. Isolation is a lightweight 2D layer promotion, unlike the
+            backdrop-blur removed above. */}
+        <div className="absolute inset-0 transform-gpu backface-hidden bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
+        <div className="absolute inset-0 transform-gpu backface-hidden bg-gradient-to-b from-background/0 via-background/0 to-background/80 pointer-events-none" />
 
-          {/* Main layout */}
-          <div className="relative z-10 flex flex-1 overflow-hidden">
-            <Sidebar />
+        {/* Main layout */}
+        <div className="relative z-10 flex flex-1 overflow-hidden">
+          <Sidebar />
 
-            {/* Content area */}
-            <div id="main-content" role="main" className={`flex-1 flex flex-col ${IS_MOBILE ? 'overflow-x-hidden' : 'overflow-x-auto'} overflow-y-hidden ${IS_MOBILE ? '' : 'pb-8'}`}>
-              {error && (
-                <ErrorBanner
-                  message={error}
-                  variant="banner"
-                  onRetry={runStartup}
-                  onDismiss={() => setError(null)}
-                />
-              )}
-              {/* AnimatePresence disabled — testing if framer-motion layout measurement causes freeze */}
-              <div className="flex-1 flex flex-col w-full min-w-0 overflow-y-hidden">
-                {renderContent()}
-              </div>
+          {/* Content area */}
+          <div id="main-content" role="main" className={`flex-1 flex flex-col ${IS_MOBILE ? 'overflow-x-hidden' : 'overflow-x-auto'} overflow-y-hidden ${IS_MOBILE ? '' : 'pb-8'}`}>
+            {error && (
+              <ErrorBanner
+                message={error}
+                variant="banner"
+                onRetry={runStartup}
+                onDismiss={() => setError(null)}
+              />
+            )}
+            {/* AnimatePresence disabled — testing if framer-motion layout measurement causes freeze */}
+            <div className="flex-1 flex flex-col w-full min-w-0 overflow-y-hidden">
+              {renderContent()}
             </div>
           </div>
-
-          {/* Desktop footer bar */}
-          <DesktopFooter />
         </div>
-      </CredentialNavProvider>
-    </CanvasDragProvider>
+
+        {/* Desktop footer bar */}
+        <DesktopFooter />
+      </div>
+    </CredentialNavProvider>
   );
 }
