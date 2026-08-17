@@ -381,9 +381,20 @@ spine yields under 200 leaves or the link scan finds none.
 
 `npm run check` runs `eslint src/` with **no `--max-warnings`**, so it exits 0
 no matter how many warnings exist. The pre-commit hook runs
-`--quiet --max-warnings 99999`, and `--quiet` suppresses warnings *before* they
-can be counted. **A warn-level rule enforces nothing at either gate, at any
-count, by construction.**
+`--quiet --max-warnings 99999`. **A warn-level rule enforces nothing at either
+gate, at any count, by construction.**
+
+> **Mechanism corrected 2026-08-17 by
+> [`commit-path-gates`](./golden-paths/commit-path-gates.md), which
+> fault-injected the gate three ways.** `--quiet` does **not** suppress warnings
+> *before they can be counted* — run `--quiet --max-warnings 0` and it exits
+> **1**. What `--quiet` suppresses is the *printing*; the count still happens,
+> and `--max-warnings` still trips on it. **The disarming token is `99999`, not
+> `--quiet`.** The conclusion is unchanged and the fix sharpens: enforcement here
+> costs a number, not a flag — lower `99999`, and `--quiet` can stay (or go, to
+> restore the developer's warning output at zero cost to the exit code). The
+> earlier wording is a case of the same error it warns against: a mechanism
+> asserted from plausibility, not from running the command.
 
 This matters because five golden paths once cited a warning count as the *reason*
 to ship a gate at `"error"` ("a warn-level rule is invisible in a sea of
