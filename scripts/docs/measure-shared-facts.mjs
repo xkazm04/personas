@@ -123,45 +123,128 @@ const lintBaseline = () => {
   }
 };
 
-const facts = {
-  measuredAt: new Date().toISOString().slice(0, 10),
-  commit: execSync('git rev-parse --short HEAD', { cwd: ROOT }).toString().trim(),
-  note:
-    'Shared facts, measured once, comments excluded. Golden-path composers MUST ' +
-    'cite these rather than re-deriving: wave 1 produced four different command ' +
-    'counts, three of which seeded floor assertions. "files" = files containing ' +
-    'at least one hit; "hits" = occurrences.',
-  rust: {
-    files: rs.length,
-    // Attribute counts use countAttr (line must BEGIN with the attribute), not
-    // a substring match — see the note above countAttr. The previous substring
-    // count reported 1,666 here by counting five string literals in this repo's
-    // own checkers as if they were commands.
-    tauriCommands: countAttr(rs, '#[tauri::command').hits,
-    requiresPrivileged: countAttr(rs, '#[requires(privileged)]').hits,
-    requiresCloud: countAttr(rs, '#[requires(cloud)]').hits,
-    requiresAuth: countAttr(rs, '#[requires(auth)]').hits,
-  },
-  frontend: {
-    tsxFiles: tsx.length,
-    tsFiles: ts.length,
-    // \b, not [\s>]: this scans LINE BY LINE (to skip comments), and in
-    // multi-line JSX the character after the tag is a newline the line scan
-    // cannot see. `[\s>]` silently under-counted 1,119 files as 167.
-    rawButtonFiles: count(tsx, /<button\b/g).files,
-    rawSelectFiles: count(tsx, /<select\b/g).files,
-    rawInputFiles: count(tsx, /<input\b/g).files,
-    rawTableFiles: count(tsx, /<table\b/g).files,
-    animateSpinFiles: count(tsx, /animate-spin/g).files,
-    animatePulseFiles: count(tsx, /animate-pulse/g).files,
-    webStorageFiles: count(ts, /\b(localStorage|sessionStorage)\b/g).files,
-    setIntervalFiles: count(ts, /\bsetInterval\(/g).files,
-  },
-  lint: lintBaseline(),
+// ─────────────────────────────────────────────────────────── schema v2
+//
+// The file this writes is a LEDGER, not a snapshot. v1 was a bare tree of
+// numbers, and a bare number cannot say how it was obtained — which is exactly
+// the gap that let the Tauri-command count be published wrong three times in a
+// row, each correction confident and each still wrong. In v2 every fact carries
+// the INSTRUMENT that reproduces it, so the contract can be "re-verify, never
+// re-derive" rather than "trust the number".
+//
+// This script therefore MERGES rather than overwrites. It owns the verify:cheap
+// facts below and nothing else: `lineage`, `spineLabels`, `meta`, and any
+// hand-added fact it does not measure are read from disk and written back
+// untouched. Before this change the script would have silently flattened all of
+// them back to v1 on its next run — a generator that destroys the hand-written
+// half of the artifact it maintains.
+const CHEAP = [
+  ['rust.files', rs.length,
+    "walk of src-tauri/ for .rs; node_modules, target, .git, worktrees, dist excluded"],
+  // Attribute counts use countAttr (line must BEGIN with the attribute), not a
+  // substring match — see the note above countAttr. The previous substring count
+  // reported 1,666 by counting five string literals in this repo's own checkers.
+  ['rust.tauriCommands', countAttr(rs, '#[tauri::command').hits,
+    "countAttr(): src-tauri/**/*.rs lines whose TRIMMED text BEGINS with `#[tauri::command`, comment lines excluded"],
+  ['rust.requiresPrivileged', countAttr(rs, '#[requires(privileged)]').hits,
+    "countAttr(): src-tauri/**/*.rs lines whose TRIMMED text BEGINS with `#[requires(privileged)]`, comment lines excluded"],
+  ['rust.requiresCloud', countAttr(rs, '#[requires(cloud)]').hits,
+    "countAttr(): src-tauri/**/*.rs lines whose TRIMMED text BEGINS with `#[requires(cloud)]`, comment lines excluded"],
+  ['rust.requiresAuth', countAttr(rs, '#[requires(auth)]').hits,
+    "countAttr(): src-tauri/**/*.rs lines whose TRIMMED text BEGINS with `#[requires(auth)]`, comment lines excluded"],
+  ['frontend.tsxFiles', tsx.length,
+    "walk of src/ for .tsx; node_modules, target, .git, worktrees, dist excluded"],
+  ['frontend.tsFiles', ts.length,
+    "walk of src/ for .ts + .tsx; node_modules, target, .git, worktrees, dist excluded"],
+  // \b, not [\s>]: this scans LINE BY LINE (to skip comments), and in multi-line
+  // JSX the character after the tag is a newline the line scan cannot see.
+  // `[\s>]` silently under-counted 1,119 files as 167.
+  ['frontend.rawButtonFiles', count(tsx, /<button\b/g).files,
+    "count(): src/**/*.tsx lines matching /<button\\b/g, comment-only lines excluded; reports FILES with >=1 hit"],
+  ['frontend.rawSelectFiles', count(tsx, /<select\b/g).files,
+    "count(): src/**/*.tsx lines matching /<select\\b/g, comment-only lines excluded; reports FILES with >=1 hit"],
+  ['frontend.rawInputFiles', count(tsx, /<input\b/g).files,
+    "count(): src/**/*.tsx lines matching /<input\\b/g, comment-only lines excluded; reports FILES with >=1 hit"],
+  ['frontend.rawTableFiles', count(tsx, /<table\b/g).files,
+    "count(): src/**/*.tsx lines matching /<table\\b/g, comment-only lines excluded; reports FILES with >=1 hit"],
+  ['frontend.animateSpinFiles', count(tsx, /animate-spin/g).files,
+    "count(): src/**/*.tsx lines matching /animate-spin/g, comment-only lines excluded; reports FILES with >=1 hit"],
+  ['frontend.animatePulseFiles', count(tsx, /animate-pulse/g).files,
+    "count(): src/**/*.tsx lines matching /animate-pulse/g, comment-only lines excluded; reports FILES with >=1 hit"],
+  ['frontend.webStorageFiles', count(ts, /\b(localStorage|sessionStorage)\b/g).files,
+    "count(): src/**/*.{ts,tsx} lines matching /\\b(localStorage|sessionStorage)\\b/g, comment-only lines excluded; reports FILES with >=1 hit"],
+  ['frontend.setIntervalFiles', count(ts, /\bsetInterval\(/g).files,
+    "count(): src/**/*.{ts,tsx} lines matching /\\bsetInterval\\(/g, comment-only lines excluded; reports FILES with >=1 hit"],
+];
+
+const OUT = path.join(ROOT, 'docs/concepts/shared-facts.json');
+const today = new Date().toISOString().slice(0, 10);
+const commit = execSync('git rev-parse --short HEAD', { cwd: ROOT }).toString().trim();
+
+let existing = {};
+try { existing = JSON.parse(fs.readFileSync(OUT, 'utf8')); } catch { /* first run */ }
+if (existing.meta?.schema !== 2) {
+  // A v1 file on disk is not merged into — it has no instruments to preserve
+  // and no lineage/spineLabels to protect. Say so rather than silently
+  // discarding half a file nobody realised was there.
+  console.warn('note: shared-facts.json on disk is not schema 2; writing a fresh v2 skeleton.');
+}
+const out = {
+  meta: existing.meta ?? { schema: 2, note: 'Shared facts. Cite by id; re-verify with the instrument on use, never re-derive.' },
+  facts: { ...(existing.facts ?? {}) },
+  ...(existing.lineage ? { lineage: existing.lineage } : {}),
+  ...(existing.spineLabels ? { spineLabels: existing.spineLabels } : {}),
 };
 
-fs.writeFileSync(
-  path.join(ROOT, 'docs/concepts/shared-facts.json'),
-  JSON.stringify(facts, null, 2) + '\n',
-);
-console.log(JSON.stringify(facts, null, 2));
+const deltas = [];
+const upsert = (id, value, instrumentRule, verify = 'cheap') => {
+  const prev = out.facts[id];
+  const changed = prev && JSON.stringify(prev.value) !== JSON.stringify(value);
+  if (changed) deltas.push({ id, from: prev.value, to: value, since: prev.measuredAt });
+  out.facts[id] = {
+    ...(prev ?? {}),
+    value,
+    instrument: prev?.instrument ?? `node scripts/docs/measure-shared-facts.mjs -> facts['${id}'] (${instrumentRule})`,
+    measuredAt: today,
+    commit,
+    leaf: prev?.leaf ?? 'measure-shared-facts.mjs',
+    verify,
+    ...(changed
+      ? { note: `${prev.note ? prev.note + ' ' : ''}Was ${JSON.stringify(prev.value)} at ${prev.commit} (${prev.measuredAt}); re-measured ${JSON.stringify(value)} at ${commit} (${today}).` }
+      : (prev?.note ? { note: prev.note } : {})),
+  };
+};
+
+for (const [id, value, rule] of CHEAP) upsert(id, value, rule);
+
+const lint = lintBaseline();
+if (lint.error) {
+  // A failed eslint run must NOT be written as a zero. Everything downstream
+  // would cite the zero as "the tree is clean".
+  console.warn(`note: lint facts left UNCHANGED — ${lint.error}`);
+} else {
+  upsert('lint.warnings', lint.warnings, 'npx eslint src --ext .ts,.tsx -f json -> sum of warningCount');
+  upsert('lint.errors', lint.errors, 'npx eslint src --ext .ts,.tsx -f json -> sum of errorCount');
+  upsert('lint.filesWithFindings', lint.filesWithFindings, 'npx eslint src --ext .ts,.tsx -f json -> files with warningCount + errorCount > 0');
+  upsert('lint.filesLinted', lint.filesLinted, 'npx eslint src --ext .ts,.tsx -f json -> result count');
+  upsert('lint.topRules', lint.topRules, 'npx eslint src --ext .ts,.tsx -f json -> messages grouped by ruleId, top 6');
+}
+
+// Sorted keys so a no-op run produces a byte-identical file and a real change
+// produces a diff that is only the change.
+out.facts = Object.fromEntries(Object.keys(out.facts).sort().map((k) => [k, out.facts[k]]));
+
+fs.writeFileSync(OUT, JSON.stringify(out, null, 2) + '\n');
+
+console.log(`shared-facts: ${Object.keys(out.facts).length} facts at ${commit}`);
+if (deltas.length === 0) {
+  console.log('  no value changed');
+} else {
+  console.log(`  ${deltas.length} value(s) changed:`);
+  for (const d of deltas) {
+    console.log(`    ${d.id}: ${JSON.stringify(d.from)} -> ${JSON.stringify(d.to)}  (last measured ${d.since})`);
+  }
+}
+if (out.lineage || out.spineLabels) {
+  console.log(`  preserved: ${[out.lineage && 'lineage', out.spineLabels && 'spineLabels'].filter(Boolean).join(', ')}`);
+}

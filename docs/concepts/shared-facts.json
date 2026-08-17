@@ -1,38 +1,345 @@
 {
-  "measuredAt": "2026-08-15",
-  "commit": "1e714f817",
-  "note": "Shared facts, measured once, comments excluded. Golden-path composers MUST cite these rather than re-deriving: wave 1 produced four different command counts, three of which seeded floor assertions. \"files\" = files containing at least one hit; \"hits\" = occurrences.",
-  "rust": {
-    "files": 963,
-    "tauriCommands": 1661,
-    "requiresPrivileged": 168,
-    "requiresCloud": 56,
-    "requiresAuth": 19
+  "meta": {
+    "schema": 2,
+    "note": "Shared facts for golden-path composers. THE CONTRACT: (1) CITE BY ID — write `shared-facts.json#rust.tauriCommands`, never a bare number, so a reader can find where it came from. (2) RE-VERIFY WITH THE INSTRUMENT ON USE, NEVER RE-DERIVE — wave 1 produced four different Tauri-command counts, three of which seeded §9 floor assertions, and the 'authoritative' correction was itself wrong twice more; the `instrument` field exists so you run the same measurement rather than inventing a fifth. (3) A fact older than ~30 commits, or contradicted by your own measurement, MUST be re-measured and updated with a delta note naming the old value and its date. A stale fact that AGREES with you is invisible until someone measures the same thing for a different reason. 'files' = files containing at least one hit; 'hits' = occurrences. Comment-only lines are excluded everywhere.",
+    "verifyLevels": {
+      "cheap": "a command in this repo reproduces it in seconds-to-minutes; run it before citing",
+      "db": "needs a READ-ONLY COPY of the live SQLite file (never open the live file for write; delete the copy afterwards — the scratchpad reached 20 GB across 176 stale copies on a drive at 93% full)",
+      "manual": "established by reading and reasoning, not by a command; re-earn it the same way"
+    },
+    "regenerate": "node scripts/docs/measure-shared-facts.mjs   (rewrites every verify:cheap fact in place; preserves lineage, spineLabels, and any fact it does not measure)"
   },
-  "frontend": {
-    "tsxFiles": 2104,
-    "tsFiles": 4828,
-    "rawButtonFiles": 1116,
-    "rawSelectFiles": 47,
-    "rawInputFiles": 288,
-    "rawTableFiles": 31,
-    "animateSpinFiles": 184,
-    "animatePulseFiles": 101,
-    "webStorageFiles": 96,
-    "setIntervalFiles": 77
+  "facts": {
+    "frontend.animatePulseFiles": {
+      "value": 101,
+      "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['frontend.animatePulseFiles'] (count(): src/**/*.tsx lines matching /animate-pulse/g, comment-only lines excluded; reports FILES with >=1 hit)",
+      "measuredAt": "2026-08-17",
+      "commit": "2ee130c3e",
+      "leaf": "measure-shared-facts.mjs",
+      "verify": "cheap",
+      "note": "A surface loading state must never be animate-pulse (docs/design/overview-loading.md). This counts the population, not the violations."
+    },
+    "frontend.animateSpinFiles": {
+      "value": 184,
+      "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['frontend.animateSpinFiles'] (count(): src/**/*.tsx lines matching /animate-spin/g, comment-only lines excluded; reports FILES with >=1 hit)",
+      "measuredAt": "2026-08-17",
+      "commit": "2ee130c3e",
+      "leaf": "measure-shared-facts.mjs",
+      "verify": "cheap",
+      "note": "NOT a violation count. A spinner is REQUIRED on an action control and BANNED on a loading surface, and this instrument cannot tell the two apart."
+    },
+    "frontend.rawButtonFiles": {
+      "value": 1116,
+      "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['frontend.rawButtonFiles'] (count(): src/**/*.tsx lines matching /<button\\b/g, comment-only lines excluded; reports FILES with >=1 hit)",
+      "measuredAt": "2026-08-17",
+      "commit": "2ee130c3e",
+      "leaf": "button.md",
+      "verify": "cheap",
+      "note": "\\b, NOT [\\s>]: the scan is line-by-line (to skip comments) and in multi-line JSX the character after the tag is a newline the line scan cannot see. [\\s>] silently reported 167 files instead of 1,119. button.md measured 217 files rendering <Button> against this population — a 5.2:1 ratio, not the 19:1 its hypothesis claimed, because the hypothesis counted only the deep-path import and missed the barrel (155 files)."
+    },
+    "frontend.rawInputFiles": {
+      "value": 288,
+      "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['frontend.rawInputFiles'] (count(): src/**/*.tsx lines matching /<input\\b/g, comment-only lines excluded; reports FILES with >=1 hit)",
+      "measuredAt": "2026-08-17",
+      "commit": "2ee130c3e",
+      "leaf": "measure-shared-facts.mjs",
+      "verify": "cheap"
+    },
+    "frontend.rawSelectFiles": {
+      "value": 47,
+      "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['frontend.rawSelectFiles'] (count(): src/**/*.tsx lines matching /<select\\b/g, comment-only lines excluded; reports FILES with >=1 hit)",
+      "measuredAt": "2026-08-17",
+      "commit": "2ee130c3e",
+      "leaf": "dropdown-and-select.md",
+      "verify": "cheap",
+      "note": "entity-picker.md enumerated the same population THREE ways and settled it at 64 sites in 47 files, resolving its brief's 47 against the census's 46. File counts and SITE counts are different questions; this is the file count."
+    },
+    "frontend.rawTableFiles": {
+      "value": 31,
+      "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['frontend.rawTableFiles'] (count(): src/**/*.tsx lines matching /<table\\b/g, comment-only lines excluded; reports FILES with >=1 hit)",
+      "measuredAt": "2026-08-17",
+      "commit": "2ee130c3e",
+      "leaf": "tables.md",
+      "verify": "cheap"
+    },
+    "frontend.setIntervalFiles": {
+      "value": 77,
+      "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['frontend.setIntervalFiles'] (count(): src/**/*.{ts,tsx} lines matching /\\bsetInterval\\(/g, comment-only lines excluded; reports FILES with >=1 hit)",
+      "measuredAt": "2026-08-17",
+      "commit": "2ee130c3e",
+      "leaf": "polling-loop.md",
+      "verify": "cheap"
+    },
+    "frontend.tsFiles": {
+      "value": 4829,
+      "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['frontend.tsFiles'] (walk of src/ for .ts + .tsx; node_modules, target, .git, worktrees, dist excluded)",
+      "measuredAt": "2026-08-17",
+      "commit": "2ee130c3e",
+      "leaf": "measure-shared-facts.mjs",
+      "verify": "cheap",
+      "note": "Was 4828 at 1e714f817 (2026-08-15); re-measured 4829 at 2ee130c3e (2026-08-17), +1. This is the denominator of nearly every frontend claim in the corpus: a drift of one file changes no conclusion, a drift of a hundred would."
+    },
+    "frontend.tsxFiles": {
+      "value": 2104,
+      "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['frontend.tsxFiles'] (walk of src/ for .tsx; node_modules, target, .git, worktrees, dist excluded)",
+      "measuredAt": "2026-08-17",
+      "commit": "2ee130c3e",
+      "leaf": "measure-shared-facts.mjs",
+      "verify": "cheap",
+      "note": "entity-picker.md reports 1,989 .tsx EXCLUDING __tests__. Both numbers are correct; they answer different questions. Say which you mean."
+    },
+    "frontend.webStorageFiles": {
+      "value": 96,
+      "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['frontend.webStorageFiles'] (count(): src/**/*.{ts,tsx} lines matching /\\b(localStorage|sessionStorage)\\b/g, comment-only lines excluded; reports FILES with >=1 hit)",
+      "measuredAt": "2026-08-17",
+      "commit": "2ee130c3e",
+      "leaf": "client-state-persistence.md",
+      "verify": "cheap",
+      "note": "The census rule raw-web-storage counts OCCURRENCES over the same population, and in its raw form is 35% prose — 153 of 439 raw matches are JSDoc and // comments ABOUT the migration away from localStorage. The rule sets ignoreCommentLines for exactly that reason."
+    },
+    "lint.errors": {
+      "value": 0,
+      "instrument": "npx eslint src --ext .ts,.tsx -f json  -> sum of errorCount (what measure-shared-facts.mjs runs; ~90s)",
+      "measuredAt": "2026-08-17",
+      "commit": "2ee130c3e",
+      "leaf": "custom-lint-rule.md",
+      "verify": "cheap"
+    },
+    "lint.filesLinted": {
+      "value": 4829,
+      "instrument": "npx eslint src --ext .ts,.tsx -f json  -> result count",
+      "measuredAt": "2026-08-17",
+      "commit": "2ee130c3e",
+      "leaf": "custom-lint-rule.md",
+      "verify": "cheap",
+      "note": "Was 4828 at 1e714f817 (2026-08-15); re-measured 4829 at 2ee130c3e, +1. A ZERO here means eslint failed to run, not that the tree is clean — the measurement script reports that case as UNMEASURED rather than emitting a triumphant 0 that everything downstream would cite."
+    },
+    "lint.filesWithFindings": {
+      "value": 246,
+      "instrument": "npx eslint src --ext .ts,.tsx -f json  -> files with warningCount + errorCount > 0",
+      "measuredAt": "2026-08-17",
+      "commit": "2ee130c3e",
+      "leaf": "custom-lint-rule.md",
+      "verify": "cheap"
+    },
+    "lint.topRules": {
+      "value": {
+        "custom/no-low-contrast-text-classes": 705,
+        "custom/no-hardcoded-jsx-text": 226,
+        "custom/no-raw-radius-classes": 128,
+        "custom/no-raw-text-classes": 16,
+        "no-restricted-imports": 13,
+        "react-hooks/exhaustive-deps": 9
+      },
+      "instrument": "npx eslint src --ext .ts,.tsx -f json  -> messages grouped by ruleId, top 6",
+      "measuredAt": "2026-08-17",
+      "commit": "2ee130c3e",
+      "leaf": "custom-lint-rule.md",
+      "verify": "cheap",
+      "note": "The whole no-raw-* family is 144 (12.7%), NOT 'almost entirely' as the stale figure claimed. no-low-contrast-text-classes alone is 62% of all warnings."
+    },
+    "lint.warnings": {
+      "value": 1135,
+      "instrument": "npx eslint src --ext .ts,.tsx -f json  -> sum of warningCount",
+      "measuredAt": "2026-08-17",
+      "commit": "2ee130c3e",
+      "leaf": "custom-lint-rule.md",
+      "verify": "cheap",
+      "note": "DO NOT CITE THIS TO ARGUE A SEVERITY. `npm run check` runs `eslint src/` with no --max-warnings so it exits 0 at any count, and the pre-commit hook runs --quiet --max-warnings 99999, where --quiet suppresses warnings before they can be counted. A warn-level rule enforces nothing at either gate, at any count, BY CONSTRUCTION. Five golden paths cited a ~10,086 figure as the REASON to ship a gate at 'error'; it was stale by ~9x and wrong about the dominator, and the conclusion survived only on the mechanism above — which needs no count at all. Cite this to describe the tree, never to justify a gate."
+    },
+    "rust.files": {
+      "value": 963,
+      "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['rust.files'] (walk of src-tauri/ for .rs; node_modules, target, .git, worktrees, dist excluded)",
+      "measuredAt": "2026-08-17",
+      "commit": "2ee130c3e",
+      "leaf": "measure-shared-facts.mjs",
+      "verify": "cheap",
+      "note": "The denominator behind 'exists nowhere in 963 .rs files'. INCLUDES #[cfg(test)] modules — strip them with scripts/census/lib/instruments/stripCfgTest.mjs if your question is about production code, and remember the filename rule that comes with it: dev_tools_backlog_tests.rs is a test file carrying no #[cfg(test)] attribute at all."
+    },
+    "rust.requiresAuth": {
+      "value": 19,
+      "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['rust.requiresAuth'] (countAttr(): src-tauri/**/*.rs lines whose TRIMMED text BEGINS with `#[requires(auth)]`, comment lines excluded)",
+      "measuredAt": "2026-08-17",
+      "commit": "2ee130c3e",
+      "leaf": "ipc-command-authorization.md",
+      "verify": "cheap"
+    },
+    "rust.requiresCloud": {
+      "value": 56,
+      "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['rust.requiresCloud'] (countAttr(): src-tauri/**/*.rs lines whose TRIMMED text BEGINS with `#[requires(cloud)]`, comment lines excluded)",
+      "measuredAt": "2026-08-17",
+      "commit": "2ee130c3e",
+      "leaf": "ipc-command-authorization.md",
+      "verify": "cheap"
+    },
+    "rust.requiresPrivileged": {
+      "value": 168,
+      "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['rust.requiresPrivileged'] (countAttr(): src-tauri/**/*.rs lines whose TRIMMED text BEGINS with `#[requires(privileged)]`, comment lines excluded)",
+      "measuredAt": "2026-08-17",
+      "commit": "2ee130c3e",
+      "leaf": "ipc-command-authorization.md",
+      "verify": "cheap",
+      "note": "A naive whole-file regex returns 258, of which 15 are prose mentioning the attribute — including `let _ = &state; // required by #[requires(privileged)] session guard`. Filtering comment lines is not enough; the line must BEGIN with the attribute."
+    },
+    "rust.tauriCommands": {
+      "value": 1661,
+      "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['rust.tauriCommands'] (countAttr(): src-tauri/**/*.rs lines whose TRIMMED text BEGINS with `#[tauri::command`, comment lines excluded)",
+      "measuredAt": "2026-08-17",
+      "commit": "2ee130c3e",
+      "leaf": "new-ipc-command.md",
+      "verify": "cheap",
+      "note": "THE MOST-CITED FACT IN THE CORPUS AND THE ONE WITH THE WORST HISTORY. Wave 1's four composers produced 1,649 / 1,657 / 1,661 / 1,666; the 'authoritative' correction published 1,666, which was also wrong. A raw grep finds 1,673: 7 are comments, and 5 are STRING LITERALS inside this repo's own command-counters (context_fingerprint.rs:184,:614 and lib.rs:3858,:3874,:3957) — the instrument was counting itself. 1,661 attribute sites = 1,658 unique fns, 3 names being #[cfg]-gated duplicates. A substring match answers 'does this text appear', never 'is this a thing'."
+    }
   },
-  "lint": {
-    "warnings": 1135,
-    "errors": 0,
-    "filesWithFindings": 246,
-    "filesLinted": 4828,
-    "topRules": {
-      "custom/no-low-contrast-text-classes": 705,
-      "custom/no-hardcoded-jsx-text": 226,
-      "custom/no-raw-radius-classes": 128,
-      "custom/no-raw-text-classes": 16,
-      "no-restricted-imports": 13,
-      "react-hooks/exhaustive-deps": 9
+  "lineage": {
+    "$note": "Which sibling checkouts are independent evidence and which are the same data point wearing two coats. Extracted from docs/concepts/golden-path-doctrine.md §5; every entry cites the section that earned it. THE COHORT IS NOT A CONSTANT — it varies by leaf and by week. One tracing sweep found personas-cloud and personas-web sharing a @dac-cloud/shared contract and reported them as ONE system; a later sweep found that link gone. Both measurements were right when taken. Establish the cohort per leaf, at the time you measure it, and report the number you used.",
+    "$checkedRepos": [
+      "../personas-web",
+      "../brainiac",
+      "../personas-cloud",
+      "../vibeman",
+      "../ascent"
+    ],
+    "$verify": "manual",
+    "siblings": {
+      "ascent": {
+        "relation": "unestablished",
+        "evidence": "No lineage finding for this repo appears in the doctrine; it is named only in the standing five-checkout oracle list. The one recorded near-miss ABOUT it is a search failure rather than a lineage one — a sweep called per-panel error disclosure 'local to ascent' because ascent threads a prop where this repo threads a store key. Search for the NAME as well as the mechanism.",
+        "source": "golden-path-doctrine.md §5 (the checkout list; 'When a clause is about a component, search for its NAME as well as its mechanism')"
+      },
+      "brainiac": {
+        "relation": "unestablished",
+        "evidence": "No lineage finding for this repo appears in the doctrine; it is named only in the standing five-checkout oracle list. Treat it as independent ONLY after checking commit dates and textual tells on the specific files your clause is about — that is the exact check the two ports below failed.",
+        "source": "golden-path-doctrine.md §5 (the checkout list; absence of a lineage finding)"
+      },
+      "personas-cloud": {
+        "relation": "port-of-personas",
+        "evidence": "packages/shared/src/prompt.ts was reported as independent reinvention proving that a structural prompt fence is physics. It is a port: same numbered docstring, same six tag names, same eleven zero-width codepoints, the same magic constant 0x517cc1b7 (a 32-bit truncation of ours), canary string identical word for word. Removing it took that finding from '1 of 5 siblings' to '0 of 4 independent siblings'. It also shares this repo's table, column and env-var vocabulary verbatim. THE TELL IS TEXTUAL, NOT STRUCTURAL — structure can converge; prose cannot.",
+        "source": "golden-path-doctrine.md §5 ('A sibling that shares your ancestor is not a second opinion')",
+        "counterEvidence": "A port that GAINED something the original cannot express is strong evidence FOR the missing thing: this cloud port publishes into persona_events INSIDE A TRANSACTION, which this engine's publish(&DbPool) signature makes impossible at all 33 sites. And the port of this repo's scheduler DROPPED the compare-and-set — the mechanism that makes the path safe lives in a WHERE clause that reads like bookkeeping, so a careful engineer did not carry it across. That is the corpus's best single argument for a type."
+      },
+      "personas-web": {
+        "relation": "port-of-personas",
+        "alsoRelation": "downstream-consumer",
+        "evidence": "Disqualified TWICE OVER. Its rotation overview SELF-DECLARES as a port and is demo-gated over a 5-row literal; and it READS this repo's trust store (supabaseApi.ts:371 selects synced_devices), so it consumes the very decision under test. A downstream consumer agreeing with its upstream is not evidence about the upstream.",
+        "source": "golden-path-doctrine.md §5 ('A sibling that shares your ancestor is not a second opinion'; 'A sibling that consumes your decision is not a second opinion; it is a dependent')",
+        "counterEvidence": "It is not uniformly behind: two composers hours apart both concluded 'Personas is the only repo with a staleness indicator', and personas-web has one WITH THE SAME FILE NAME, 7 render sites against our 5, plus i18n and an error arm we lacked. Both searched for the mechanism instead of the name."
+      },
+      "vibeman": {
+        "relation": "personas-ported-from-it",
+        "evidence": "DIRECTION, not just relatedness. vibeman's repo predates Personas by 7 months and the relevant file by 18 days: Personas ported FROM vibeman. That inverts what the borrowed code is evidence OF — an ancestor's choice is a constraint this repo inherited, not a peer's independent agreement, and a defect shared with it may be imported rather than convergent. Check commit dates on the FILE, not just the repo.",
+        "source": "golden-path-doctrine.md §5 ('And establish the DIRECTION, not just the relatedness' — earned by schema-driven-form.md)",
+        "counterEvidence": "It kept a database split it had deliberately audited — on size, cache and migration-risk grounds, never weighing integrity — and pays for it with an integrity trigger bound to a dead table and a watermark-less rollup reading 80,817,237 rows for a localhost app. Cost and failure are better evidence than agreement."
+      }
+    },
+    "measuredCohorts": [
+      {
+        "leaf": "external-source-ingestion",
+        "cohort": "0 of 4 independent (reported as 1 of 5 before lineage was checked)",
+        "source": "golden-path-doctrine.md §5"
+      },
+      {
+        "leaf": "a credential sweep",
+        "cohort": "5 -> 2 independent; 2 of its 3 apparent convergences evaporated",
+        "source": "golden-path-doctrine.md §5"
+      },
+      {
+        "leaf": "entity-picker",
+        "cohort": "3 independent, not 5",
+        "source": "golden-path-doctrine.md §5 / entity-picker.md §6"
+      },
+      {
+        "leaf": "ai-draft-preview-apply",
+        "cohort": "3 independent, established BEFORE the count was taken",
+        "source": "golden-path-doctrine.md §5"
+      }
+    ]
+  },
+  "spineLabels": {
+    "$note": "The situation spine's `convergence` and `sides` fields are HYPOTHESES TO TEST, never premises to scope a brief with. Both ledgers are extracted from docs/concepts/golden-path-doctrine.md §5. NOTE A LIVE DISCREPANCY between two current documents: golden-path-runbook.md step 1 still reads 'Twelve convergence: converged labels have been tested and eleven failed' and 'sides: client has been contradicted by measurement on 4 of 4 leaves', while the doctrine — the later document — records 13 tested / 13 failed and 7 contradicted / 2 upheld. CITE THE DOCTRINE.",
+    "$verify": "manual",
+    "convergence": {
+      "field": "convergence",
+      "verdict": "CLOSED — a hypothesis to test, never a premise to build on. Brief every composer accordingly.",
+      "tested": 13,
+      "failed": 13,
+      "labelTested": "converged",
+      "failureModes": [
+        "silence — no sibling has the practice at all",
+        "the fleet converged on the DISEASE",
+        "the fleet converged on NOT HAVING THE PROBLEM",
+        "the label's direction was backwards",
+        "the only corroborator was our own port",
+        "convergence on a weaker substitute, with the leaf's own clauses pointing opposite ways — a single enum field cannot carry a verdict that splits by clause (0 of 4 siblings derive a peer identifier from its key, so the fleet converged on what this repo does NOT do, while on freshness and revocation reach the fleet is behind)"
+      ],
+      "namedCases": [
+        {
+          "leaf": "embedded-terminal-session",
+          "finding": "ZERO of five siblings has a PTY or an xterm-class emulator at all, so the label pointed at a 5/5 silence — and its direction was backwards: Personas is the only repo with the problem and owns the fleet's best answer to it.",
+          "source": "golden-path-doctrine.md §5"
+        },
+        {
+          "leaf": "the build-provenance sweep",
+          "finding": "THE ONE TO REMEMBER. Not one of six repos can report its own git commit, branch, build timestamp or build profile at runtime — zero, six times, across three languages and four build systems, including two that are handed the value for free and don't take it. PERFECT AGREEMENT ON AN OMISSION is evidence that the situation is universal and evidence AGAINST an answer existing to adopt. An oracle that only counts agreement reads it as the strongest possible confirmation. Always ask what the siblings agreed TO DO.",
+          "source": "golden-path-doctrine.md §5"
+        },
+        {
+          "leaf": "entity-picker",
+          "finding": "A fleet-wide silence can be local to a COMPONENT, not to the fleet: 0 of 3 siblings disclose a truncation cap in a picker, and 2 of 3 independently wrote 'Showing X of Y' or '+N more' for TABLES in the same codebases. Not ignorance — a solved problem that did not cross a component boundary. Before reporting a silence, check whether the same repo answers the same question somewhere else; if it does, the finding is transfer and the prescription is different.",
+          "source": "golden-path-doctrine.md §5"
+        }
+      ],
+      "upholdings": [
+        {
+          "leaf": "ai-draft-preview-apply",
+          "label": "mixed",
+          "finding": "THE FIRST SPINE CONVERGENCE LABEL THE CORPUS HAS UPHELD — two clauses physics, one silence. It came from a composer that measured the COHORT first (3 independent, not 5) rather than taking the count for granted. A label that finally holds is a genuine finding and should be reported as loudly as another failure.",
+          "source": "golden-path-doctrine.md §5"
+        }
+      ],
+      "source": "golden-path-doctrine.md §5 — 'The `convergence` label is not evidence — the field is now closed'"
+    },
+    "sides": {
+      "field": "sides",
+      "verdict": "NOT NOISE — the failure is specific to ONE value, and that value is the majority of the spine, and it is the one that would narrow a brief away from where the answer lives. DO NOT SCOPE BY IT; test it and report.",
+      "byValue": {
+        "client": {
+          "contradicted": 7,
+          "upheld": 2
+        },
+        "both": {
+          "contradicted": 0,
+          "upheld": 1
+        },
+        "server": {
+          "contradicted": 0,
+          "upheld": 1
+        }
+      },
+      "failureModes": [
+        "The first four contradictions each put the headline defect, the best artifact AND the surviving census rule on the SERVER, which made the field look anti-correlated with where the answer lives. Several of those nodes carry twoSided: true in the same object, so the contradiction is internal to the spine.",
+        "The correction is not always 'it was both'. On the seventh contradiction there was NO CLIENT HALF TO REPORT AT ALL — the exemplar, all nine deviations, the census rule, its control and its floor were server-side Rust, and the frontend's only contribution was rendering whatever order the SQL returned. The one client-side instance of that leaf's condition in the entire sweep came from a SIBLING repo, so a client-scoped brief would have found that and nothing at home. Sometimes 'client' is incomplete; sometimes it is INVERTED. Say which."
+      ],
+      "upholdings": [
+        {
+          "leaves": [
+            "bulk-selection-actions",
+            "long-list-rendering"
+          ],
+          "label": "client",
+          "mechanism": "THE SERVER NEVER SEES THE DOM. Both upholdings are leaves about the DOM, and naming the mechanism is what distinguishes a correct label from a lucky one.",
+          "source": "golden-path-doctrine.md §5"
+        },
+        {
+          "leaves": [
+            "(one leaf; the doctrine does not name it)"
+          ],
+          "label": "both",
+          "mechanism": "Its client half was not derivable from the server at all.",
+          "source": "golden-path-doctrine.md §5"
+        }
+      ],
+      "source": "golden-path-doctrine.md §5 — '`sides` — the ledger, kept honestly'"
     }
   }
 }

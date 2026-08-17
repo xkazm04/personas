@@ -49,6 +49,7 @@
     "census": "node scripts/census/check-corpus-integrity.mjs && node scripts/census/run-census.mjs",
     "census:check": "node scripts/census/run-census.mjs --check",
     "census:test": "node scripts/census/self-test.mjs",
+    "gp:index": "node scripts/census/build-golden-path-index.mjs",
     "check": "npm run check:contracts && npm run check:tiers && npm run check:tauri-configs && npm run check:csp-hosts && npm run check:corpus && npm run check:doc-map && npm run census:check && tsc --noEmit && eslint src/",
     "lint": "eslint src/",
     "test": "vitest run",

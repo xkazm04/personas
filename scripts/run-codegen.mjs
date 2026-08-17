@@ -58,6 +58,13 @@ const TASKS = {
   // of guidance anchors) from the frontend anchorCatalog.ts so Athena's
   // point_at / compose_walkthrough validation never drifts from the catalog.
   "guidance-anchors": "scripts/generate-guidance-anchors.mjs",
+  // Rebuilds the golden-path corpus index + router
+  // (docs/concepts/golden-paths/{index,router}.json) from the 174 published
+  // paths. They are what `--prime` and the governed-paths Stop hook read; a
+  // stale router silently stops firing on files whose paths were added since.
+  // Deterministic output (no timestamps), so a no-op run rewrites the same
+  // bytes and leaves the tree clean.
+  "gp-index": "scripts/census/build-golden-path-index.mjs",
   // Mirrors the git-tracked app-owned system skills (.claude/skills/<name>)
   // into src-tauri/resources/skills (gitignored). tauri.conf's
   // bundle.resources points at that dir, and Tauri validates resource paths
@@ -68,8 +75,8 @@ const TASKS = {
 };
 
 const PRESETS = {
-  predev:   ["commands", "i18n", "i18n-split", "connectors", "shared-events", "n8n-limits", "host-check", "cache-budget", "sprites", "catalog", "scan-match", "guidance-anchors", "system-skills"],
-  prebuild: ["commands", "i18n", "i18n-split", "connectors", "shared-events", "n8n-limits", "checksums", "cache-budget", "sprites", "catalog", "scan-match", "guidance-anchors", "system-skills"],
+  predev:   ["commands", "i18n", "i18n-split", "connectors", "shared-events", "n8n-limits", "host-check", "cache-budget", "sprites", "catalog", "scan-match", "guidance-anchors", "system-skills", "gp-index"],
+  prebuild: ["commands", "i18n", "i18n-split", "connectors", "shared-events", "n8n-limits", "checksums", "cache-budget", "sprites", "catalog", "scan-match", "guidance-anchors", "system-skills", "gp-index"],
 };
 
 const TIMEOUT_MS = Number(process.env.CODEGEN_TIMEOUT_MS) || 60_000;

@@ -27,6 +27,7 @@
 // scanner was absent). This one fails loudly if its own inputs go missing.
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 // Derived from this file's own location, NOT hardcoded.
@@ -196,6 +197,47 @@ for (const r of rules) {
   if (!fs.existsSync(path.join(ROOT, r.goldenPath))) {
     fail(`census rule "${r.id}" cites goldenPath "${r.goldenPath}", which does not exist`);
   }
+}
+
+// ------------------------------------------ 4. golden-path index freshness
+// ADVISORY ONLY — this section MUST NOT change the exit code.
+//
+// Why advisory and not a gate: this checker runs inside the composition wave's
+// own loop (`npm run census` is `check-corpus-integrity && run-census`, and the
+// runbook has the orchestrator run it after every merged path). A freshness
+// failure here would redden that loop mid-wave for a bookkeeping artifact that
+// `merge-published-rules.mjs` and `predev`/`prebuild` both regenerate on their
+// own. A gate that fires on correct content is worse than no gate, because the
+// first fix anyone reaches for is to delete the gate.
+//
+// PROMOTION CONDITION, so this does not stay advisory by inertia: promote to a
+// failing check (add `--check`'s exit code to `failures`) once (a) the wave is
+// finished or paused, and (b) the artifacts have survived one full batch
+// without a spurious drift report. The one-line change is marked below.
+try {
+  const INDEX_JSON = path.join(PATHS_DIR, 'index.json');
+  const ROUTER_JSON = path.join(PATHS_DIR, 'router.json');
+  const missing = [INDEX_JSON, ROUTER_JSON].filter((p) => !fs.existsSync(p));
+  if (missing.length) {
+    console.log(
+      `  advisory: golden-path index artifact(s) absent (${missing.map((p) => path.basename(p)).join(', ')}) — ` +
+      `run \`node scripts/census/build-golden-path-index.mjs\``,
+    );
+  } else {
+    const gen = spawnSync(
+      process.execPath,
+      [path.join(ROOT, 'scripts/census/build-golden-path-index.mjs'), '--check'],
+      { cwd: ROOT, encoding: 'utf8' },
+    );
+    // <-- PROMOTION POINT: `if (gen.status !== 0) fail(...)` instead of logging.
+    if (gen.status !== 0) {
+      console.log('  advisory: golden-path index is STALE (corpus integrity is unaffected).');
+      for (const line of (gen.stderr || '').trim().split('\n')) if (line) console.log(`    ${line}`);
+    }
+  }
+} catch (err) {
+  // Never let the advisory take the checker down with it.
+  console.log(`  advisory: golden-path index freshness not checked (${err.message})`);
 }
 
 // ---------------------------------------------------------------- report
