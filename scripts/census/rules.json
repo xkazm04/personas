@@ -5246,6 +5246,27 @@
         "matches": 49
       },
       "floor": 4000
+    },
+    {
+      "id": "countless-table-wipe",
+      "goldenPath": "docs/concepts/golden-paths/maintenance-affordances.md",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "pub\\s+fn\\s+[A-Za-z_]\\w*(?:(?!\\bpub\\s+fn\\b)[^{]){0,240}->\\s*Result<\\s*\\(\\s*\\)\\s*,\\s*(?:personas_core::error::)?AppError\\s*>\\s*\\{(?:(?!\\bpub\\s+fn\\b)[\\s\\S]){0,1400}?\"DELETE\\s+FROM\\s+[A-Za-z_][A-Za-z0-9_]*\\s*\"",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A maintenance door that empties a whole table (DELETE FROM <t>, no WHERE) and returns Result<()> — it cannot tell its caller, the log, the confirm or an undo how many rows it destroyed."
+      },
+      "baseline": {
+        "files": 3,
+        "matches": 3
+      },
+      "floor": 900
     }
   ]
 }

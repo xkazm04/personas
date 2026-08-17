@@ -4977,3 +4977,58 @@ and which the census cannot see — both sides are JSON columns in a database, n
 text.
 
 Detail: [`connector-setup-panel.md`](./golden-paths/connector-setup-panel.md) §7.6, §8/G4.
+
+---
+
+## 127. Every app start overwrites nine columns of all 134 built-in connectors, and stamps `updated_at` so the edit leaves no trace
+
+**Where:** `src-tauri/db/src/lib.rs:1826-1831` (`seed_builtin_connectors`' refresh
+`UPDATE`), reached from `init_db_with_journal` at `:341-348`. Same shape at `:1864-1873`
+for `shared_event_catalog`. The operator's edit door is `update_connector`
+(`src/commands/credentials/connectors.rs:42-52`, allow-listed at `ipc_auth.rs:168`), which
+carries **no `is_builtin` guard**.
+
+**What is measured** (2026-08-17, purge backup; `connector_definitions` was **not** in the
+purge cascade, so these counts are current):
+
+- 134 rows, all `is_builtin = 1`, **1 distinct `updated_at`** — the last app start,
+  `2026-08-17T09:24:38.517217+00:00` — against **17 distinct `created_at`**.
+- The refresh writes `label, icon_url, fields, healthcheck_config, metadata, category,
+  services, events, resources, updated_at` unconditionally. It does **not** write `name`,
+  `color`, `is_builtin`, `created_at`.
+- `repos/resources/connectors.rs:228-262` lets `update_connector` write `fields`,
+  `healthcheck_config`, `services`, `events`, `metadata` — five of the nine.
+
+**Replayed verbatim** against a copy of the operator's own `slack` row, using the seeder's
+exact statement and the shipped values read out of `builtin_connectors.rs`:
+
+```text
+1. shipped row, as seeded    : Slack        | #4A154B | messaging | [{"key":"bot_token"…
+2. after the operator edits  : Slack (work) | #ff0000  | my-tools  | [{"key":"webhook_url"…
+3. after the next app start  : Slack        | #ff0000  | messaging | [{"key":"bot_token"…
+```
+
+The rename, the recategorisation and the credential-field edit are gone. The **recolour
+survives** only because `color` is the one presentation column missing from the
+hand-maintained `SET` list — an accident, not a policy. And because `updated_at` is
+rewritten by the same statement, nothing afterwards can tell that an edit ever existed.
+
+A second, app-generated writer hits the same wall:
+`src/commands/design/n8n_transform/confirmation.rs:540` sets `services` on a connector row
+and the next boot reverts it.
+
+**Why held:** this changes what a live surface shows and the current behaviour may be
+deliberate for `fields` / `healthcheck_config` (a shipped schema fix must reach existing
+installs). The durable fix is two edits, not one: (a) split the row's columns into a
+`ShippedFields` struct the seeder is handed, so an operator-owned column is not nameable
+from a seed; (b) gate the refresh on a `source_revision` / `definition_hash` written at
+seed time, or on a signature of the un-edited row. `src/engine/recipe_seed.rs:189-190` is
+the in-repo model for (b) and is the only seeder of seven that protects an edit.
+
+**Adjacent, same file, same held reason:** 16 `is_builtin = 1` recipes and 2
+`status = 'active'` shared events sit in their tables and in no shipped catalog — nothing
+computes the set difference, and the two catalog retirements that have happened are
+hand-written per-id `DELETE`s (`db/src/lib.rs:1799`, `migrations/incremental.rs:5734`).
+
+Detail: [`catalog-row-seeding.md`](./golden-paths/catalog-row-seeding.md) §0.2, §0.3,
+§0.4, §7/D1-D5.

@@ -50,6 +50,13 @@
 > resolves it. [`domain-event-publication`](./domain-event-publication.md) owns **naming the event**;
 > this owns whether it should be emitted at all.
 
+> **Post-publication note — 2026-08-17: the promoter population is 15, not 8.** Measured by
+> the `dead-letter-triage` composer: there are **fifteen** promotion doors — 7 behind
+> `PERSONAS_INCIDENTS_PROMOTION=1` and **8 direct, ungated** ones. Every "seven of the eight
+> promoters" below counts only the gated family, so the §7 D12 claim that an unset flag makes
+> the promoters no-ops is true of 7 doors and false of the other 8. The Q3 construction-site
+> count for the proposed `ProblemKey` moves with it.
+
 ---
 
 ## 0 The headline: every table in this database shaped to hold an alarm identity is empty, and every table holding live alarms is keyed on the occurrence
