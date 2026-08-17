@@ -664,6 +664,17 @@ Zero drift the other way.
 from `enabled` wholesale **flattens `paused` and `errored` into `active`**. Only
 the `enabled = 0 AND status = 'active'` predicate is safe.
 
+> **Corrected 2026-08-17 by
+> [trigger-wiring-surface](./golden-paths/trigger-wiring-surface.md): the
+> hypothesis in this entry was the wrong half.** **Every writer keeps `enabled`
+> and `status` in sync** — the 26 drifted rows carry a `datetime('now')`
+> formatting that **no Rust path in this repo produces**, so they were not
+> written by the app's own toggle. The defect is on the **read** side and it is
+> three-way: the badge reads `enabled`, `get_due` and `get_enabled_by_type` read
+> `status`, and `ParsedTrigger::is_eligible` reads **neither**. A consequence
+> this entry missed entirely: **7 disabled subscriptions are no-ops, because the
+> paired listener still delivers.**
+
 **The structural fix, which is not a data change:** drop the `DEFAULT` and give
 the pair one constructor. *A `NOT NULL` column with a constant `DEFAULT` is not
 a required field — it is an optional field with a hidden answer.* The repo has
@@ -825,6 +836,18 @@ that is currently $0 against two thousand dollars of real usage.
 - **880 of 2,942 trace rows (29.9%) name an execution that no longer exists.** A
   foreign key is not the fix: `persona_tool_usage` *has* `ON DELETE CASCADE` and
   orphaned 980 rows anyway.
+
+  > **Cause established 2026-08-17 by
+  > [derived-index-sync](./golden-paths/derived-index-sync.md), by attaching the
+  > June 3 backup — and the two numbers have DIFFERENT causes.** The 980 is a
+  > bulk cliff: `clean-env.cjs:73` sets `foreign_keys = OFF`, so a wipe orphaned
+  > rows straight through a declared `CASCADE`, and **672 of the 980 were already
+  > orphans inside that backup**. The script was fixed on 2026-08-14; **the data
+  > was not** — all 1,030 are still there, and 14 of 24 child tables remain absent
+  > from its hand-maintained list. The 880 is continuous, FK-less accumulation.
+  > Total dangling execution references: **6,880**, of which
+  > `PRAGMA foreign_key_check` can see **1,030**. Adding a `REFERENCES` clause
+  > fixes neither.
 
 **The tree itself is sound and worth saying so:** 90,813 spans across 2,942
 traces with **0 dangling parents, 0 self-parents, 0 parse failures, 0 negative
@@ -1990,8 +2013,7 @@ the search box only filters the fetched page**. `StationPicker` removes hidden
 stations from the list **while they are still playing**.
 
 **Three that write a bad value rather than hide a good one:**
-`CanvasShell.tsx:878` **dispatches a fleet job with an empty label** for a
-deleted group; `SlackBridgePickers.tsx:101` writes a dangling channel id with a
+`CanvasShell.tsx:878` was reported as **dispatching a fleet job with an empty label** for a deleted group — **refuted 2026-08-17 by [node-canvas](./golden-paths/node-canvas.md): the fallback label resolves and the payload is captured by value.** It is a real match of the picker pattern and not a live defect; `SlackBridgePickers.tsx:101` writes a dangling channel id with a
 **null name** into saved config; and `PersonaSelector.tsx:86-91` renders a
 deleted persona as **"All personas"** — the widest possible scope from the
 narrowest possible cause.
@@ -2177,6 +2199,271 @@ the more useful half: when `en = "xhigh"` and `ko = "xhigh"`, the untranslated
 check reads the match as a deliberate do-not-translate term. **A locale check
 cannot tell a missing translation from a proper noun, and a machine token is
 shaped like one.**
+
+---
+
+## 52. One Disconnect in Trigger Studio deletes every listener in the capability
+
+**Where:** `delete_subscription` / `update_subscription` — they address
+`persona_triggers` by `(persona_id, use_case_id)`.
+
+**What is measured**, by running the real `buildEventRows` over live data: **46
+subscription cables map to 77 listener deletions.** 26 of the 46 delete more
+than they name; worst case **five**. And **49 of 102 subscription *edits* would
+clobber another listener's `listen_event_type`** — 71 rows.
+
+**Why held:** it is a data-loss defect on a surface the operator uses, and the
+fix is a key change on a delete path — the class where a wrong repair is worse
+than the defect.
+
+---
+
+## 53. 325 triggers badge `armed`; 104 can ever fire
+
+**Where:** `buildTriggerConfig.ts:75`; the `persona_triggers` CHECK; `design.rs:339`.
+
+**What is measured:** of your **351** triggers, **104 can ever fire
+unattended — and the UI badges 325 of them `armed`.** 98 rows read `armed` and
+can never fire. `get_due` returns **0 rows**, and **0 even with the time bound
+removed entirely**. **0 of 2,188 executions carry a `trigger_id`.**
+
+**Four of the ten trigger types the surface offers cannot be stored.** Lifting
+the live `CREATE TABLE` into an in-memory database and attempting one INSERT per
+type: `file_watcher`, `clipboard`, `app_focus` and `composite` all fail the CHECK
+constraint — and the fresh-install schema is identical, so this is not
+machine-specific. **All six quick templates target a rejected type**, and no
+error-registry rule matches a CHECK failure, so what the user sees is
+*"Something went wrong. Try again."*
+
+**Six vocabularies for one closed set**, at arities 10 / 10 / 10 / 8 / 6 / 4 —
+and `design.rs:339` flags `event_listener`, which is **189 of 351 live rows**, as
+*"Unknown trigger type"*.
+
+**The form writes 23 config keys; the engine reads 8.** Thirteen belong to
+unstorable types; two are stored and read by nothing. `config.endpoint` is
+written where `TriggerConfig::Polling` declares `url` — and the readers that *do*
+accept `endpoint` are the SSRF guard and the Test tab, **which reports
+"Reachable"**. `config.event_id` and `config.rate_limit` (four numbers and an
+"Active" badge) have no reader at all; `recordTriggerFiring` has **0 call
+sites**.
+
+**Why held:** widening the CHECK turns on four trigger types that have never
+existed; narrowing the menu removes six templates the operator may be using.
+Either is a product decision.
+
+**The convergence result is the sharpest of the batch:** *where a scheduler
+stores a next-run timestamp beside an enabled boolean, the timestamp quietly
+becomes the real switch* — **2 of 3 siblings inverted the same way**.
+`brainiac`'s disable leaves `next_run_at` armed, so a disabled sweep **fires once
+more**, and its test covers enable→armed and never disable→disarmed.
+
+---
+
+## 54. Every table shaped to hold an alarm's identity holds zero rows
+
+**Where:** `healing.rs:185` + `fk_hygiene.rs:523`; `alert_evaluator.rs:241,:274`;
+`alertSlice.ts:431-442`; `notifications.rs:1543`; `engine/mod.rs:2777`.
+
+**What is measured:** every table in the database shaped to hold an alarm
+*identity* — a problem key, an occurrence counter, a first/last-seen pair —
+**holds zero rows**: `healing_knowledge`, `automation_suggestions`,
+`schedule_missed_runs`, `circuit_breaker_state`, `alert_rules`, `fired_alerts`,
+`budget_alert_rules`, `notification_subscriptions`. **Every table holding live
+alarms is keyed on the occurrence.** `fired_alerts` — the table named for this —
+has no dedup key, no counter, no last-fired and no resolution state, and has
+never held a row, so the app's one restart-proof cooldown has never executed.
+
+**Replayed over the same 205 healing rows:**
+
+| suppression | kept | suppressed |
+| --- | ---: | --- |
+| **deployed** `UNIQUE(persona_id, execution_id)` | 205 | **0 (0.0%)** |
+| cooldown 1 h on the problem | 175 | 14.6% |
+| cooldown 7 days | 110 | 46.3% — *and it erases the evidence* |
+| **identity** `(persona, title)` | **93** | **54.6% — and it loses nothing** |
+
+**Identity strictly dominates a cooldown at every window.** A cooldown is not a
+weaker dedupe; it is what you reach for when you failed to find an identity. And
+the repo's careful title normalizer produces **the same 75 groups as the raw
+title** on the queue that needs help — so the defect is *which columns the index
+names*, not string matching.
+
+**Two alert evaluators exist**, one in Rust and one in the frontend, racing on
+check-then-act with different snapshots — and the client one **cannot compute
+`cost_spike` at all**. Three suppression ledgers are **one-way latches with no
+expiry**: suppression until process exit, then it fires again.
+
+**Why held:** changing a dedup key changes which alarms you see.
+
+**The sentence that ties it together** is already in the source
+(`cli_mcp_config.rs:97-100`): *"There is no occurrence counter on the incident
+spine itself, so we count here."* **The only escalate-on-repetition in six
+codebases had to keep its counter in a process-global — the exact anti-pattern
+its own leaf's census rule ratchets — because the durable table has no column
+for it. One integer column closes both ends.**
+
+**Two corrections to my own register, both making this repo look better than I
+recorded.** `dev_ideas.dedup_key` at 22 of 236 is a **temporal cut, not a
+coverage gap** — all 214 unkeyed rows predate 2026-06-13 and all 22 keyed rows
+postdate 2026-07-27. And the rejection **exclusion set is read**, through a live
+production chain; only the reason *string* is unread. This repo already ships
+`REJECTED_DEDUP_WINDOW_DAYS = 90` with `brainiac`'s own phrasing.
+
+---
+
+## 55. 64 credential bindings would fail to resolve right now
+
+**Where:** `core/src/models/persona.rs:711,:458,:485`;
+`engine/runner/credentials.rs:455-480`; `connector_readiness.rs:263`.
+
+**What is measured:** a slot binding here is **a key in a JSON object in a TEXT
+column**, and the app's own typed reader of that column **fails on 63 of your 78
+personas**. `parse_design_context` errors at `connectorPipeline[0]` — the live
+data is **154 bare strings** where a struct array is declared, **0 of 154
+satisfying** — then falls to a legacy branch looking for `credential_links`
+(snake) where the data writes `credentialLinks` (camel). Every binding in the
+same envelope dies with it.
+
+**117 declared slots across 73 personas; 4 carry an explicit binding (3.4%).**
+The other 113 are guessed. **63 of 63 codebase pins are lost at parse**, and **18
+of those 63 point at a project that no longer exists**.
+
+**Nine sites bind by taking element zero of a candidate set.** There are 3
+credentials of type `codebase`, and **69 of 117 slots all resolve to the newest
+one** — so adding a fourth silently re-points all 69.
+
+**Direct answer: 64 live bindings would fail to resolve right now, and no
+surface says so.** Readiness is decoupled from the binding *by construction* —
+`has_dev_project` asks whether **any** of 14 active projects exists, never
+*which*, so the verdict cannot fail while the binding is wrong. Separately, **24
+of 78 personas have a persisted `setup_status` that disagrees with a live
+recompute** (22 over-block, 2 under-block), and **29 personas are blocked with 1
+`SetupBlocker` row in the entire database.**
+
+**One that is worth naming individually:** `Product Scout (4)` carries an
+explicit, correct, non-dangling `email` binding — pointing at the Gmail grant
+that **expired 75 days ago**. The server refuses it, the client shows it
+satisfied, **and the runtime injects it.**
+
+**Why held:** re-binding touches real credentials.
+
+**A correction to a claim inside a shipped census rule.** The
+`comment-kept-cross-language-mirror` rule's description quotes *"5 of 5 distinct
+connector labels on 154 live persona-connector pairs normalize differently"*.
+That figure measures `design_context.connectorPipeline` — a display-label array
+**the normalizer is never called with**. The corpus the resolvers actually see
+is 117 pairs / 11 labels, of which **1 of 11** normalizes differently, and that
+one is unreachable on both sides. The vocabulary split is real and the rule's
+condition is unaffected; the quantification was of the wrong corpus. **Corrected
+in the document and in `rules.json` together**, so the two do not drift.
+
+---
+
+## 56. Twenty-one derived structures, one is checked
+
+**Where:** `db/src/lib.rs:646-649` and `:409`; `companion/brain/backlog.rs:100`,
+`cockpit.rs:52`; `repos/execution/tool_usage.rs:118-126`.
+
+**What is measured:** **21 derived structures across your two databases. One is
+checked.** Of the twenty that are not, **eight are measurably diverged**, one has
+no writer at all, and the largest is 99.97% padding.
+
+**The whole reconciliation surface is `executions_fts_drift` — and its un-fixed
+twin is 209 lines away in the same file.** `lib.rs:646-649` guards the
+`kb_chunks_fts` backfill with `SELECT COUNT(*) FROM kb_chunks_fts` — which, on an
+external-content table, returns `kb_chunks` — and compares with `<`. **The
+condition is `chunk_count < chunk_count`: false at every size, forever.** It
+carries the exact defect its neighbour's comment documents having fixed, *plus*
+the `<`-versus-`!=` one that comment separately warns about. Harmless only
+because both tables are empty today.
+
+**The controlled experiment, and it is the cleanest in the corpus:** the 24 FTS
+writes in the tree partition **exactly 12/12** into trigger-declared versus
+hand-written, in **disjoint files** — and the partition predicts the divergence.
+`executions_fts` is 2,188/2,188 id-exact; `companion_fts` is 1,550/1,554, and
+the 4 missing are exactly the kinds written by producers that forgot. **Only 6 of
+11 `INSERT INTO companion_node` sites index the node.** On the shipped non-`ml`
+build that index is the *only* retrieval lane, so those nodes are **unreachable
+by any means**.
+
+**A dashboard reading a diverged rollup:** `tool_usage.rs:118-126` shows **35
+tools against 27 real, +13.3% invocations, and 8 of 25 phantom days.**
+
+**Why held:** rebuilding an index or deleting orphans is a data change.
+
+**Two corrections to my own claims, both of which made me wrong in the direction
+of alarm.** The composer measured a **41× divergence that does not exist** —
+`workspace_knowledge.evidence_count` is harvester-supplied *prevalence*, not a
+count of its evidence table. **A `<child>_count` column is not necessarily a
+count of `<child>`.** And its own first `sla_daily` pass reported "276 of 500
+day-rows disagree" and **agreed with its thesis**; replayed at the machine's real
+UTC offset it is **403 of 403 buckets exact**. `sla_daily` is the exemplar, not a
+deviation. **Every wrong offset produces a plausible disagreement.**
+
+**The strongest convergence result in the batch, 5 for 5:** every repo in the
+fleet establishes a reconciliation-and-disclosure standard **while fixing one
+incident, and never generalises it.** That is why the right instrument here is a
+registry rather than a better check.
+
+**Personas is ahead** on the boot drift check (no sibling has one) and on the
+only place in the fleet where a would-be desync **fails the operation**. It is
+**behind** `brainiac` on `GENERATED ALWAYS AS … STORED` FTS columns, which cannot
+drift at all.
+
+---
+
+## 57. Two canvases: the reachable one runs nothing, the executed one has no UI
+
+**Where:** `deriveScene.ts:76-96` vs `portfolio.rs:381-382,:425-426`;
+`CanvasShell.tsx:340-345,:436,:472-479`; `GroupLayer.tsx:224`;
+`team_handoff.rs:203-214`.
+
+**What is measured:** this repo has two node-and-edge canvases. **The one you can
+reach draws edges nothing executes and validates nothing. The one whose edges the
+engine really does compile has had no UI since 2026-05-23** — 28 of its 29 files
+are unreachable from `main.tsx`/`App.tsx`, while **55 of its 70 edges are still
+compiled into every `chain` trigger in your database.**
+
+**Executed against your real scene, the reachable canvas renders 14 nodes and 0
+edges**, for two independent reasons: `deriveEdges` keys against project *ids*
+while the producer writes *names* — **0 of 41 similarity rows resolve, 41 of 41
+resolve by name** — and the `0.5` threshold sits against a corpus **maximum of
+0.07**. Neither is distinguishable on screen from "these projects are
+unrelated".
+
+**What you can draw that the engine cannot run:** 4 edge types render as 4
+strokes; the engine distinguishes **2** — `parallel` is byte-identical to
+`sequential`. **All 70 live edges carry a hand-written label, and `label` occurs
+0 times in the compiler.** **15 of 70 drawn edges (21.4%) have no runtime
+effect.** 14 nodes have in-degree > 1, and the wiring makes them an **OR-join,
+not a join** — which independently confirms the earlier measurement that **0 of
+1,488 orchestration steps has more than one dependency.** Three layers disagree
+about one arrow and no surface reports it.
+
+**Three interaction defects, all executed:**
+
+- **The connect gesture accepts duplicates and cycles.** Over all 14 real
+  islands, twice: 364 links from 182 pairs, **182 of 182 duplicates**, cycle
+  reachable. Self-edges are prevented *incidentally*, not checked.
+- **Undo is not the inverse of Tidy.** Coordinates restore exactly — and pinned
+  islands go **8 → 14**, after which a second Tidy can move **0 of 14**. Undo
+  converts derived positions into user pins, and pins are what Tidy may not
+  move. **There is no unpin affordance.**
+- **Group delete fires on `pointerdown`** — no confirmation, no undo, not
+  abortable — in the same directory where a *reversible* action uses
+  `ConfirmDialog`.
+
+**Why held:** every one changes an editing surface mid-use.
+
+**A correction to an earlier register entry:** `CanvasShell.tsx:878` is
+confirmed as a **pattern match and refuted as a live defect** — the fallback
+label resolves and the payload is captured by value. That sharpens what an
+`entity-picker` match *means*, and I recorded it as live in item 48.
+
+**The one instrument worth building**, specified rather than shipped: an
+orphan-module inventory over the resolved import graph. ~60 lines, and its
+absence is why **28 files, ~2,300 lines and a graph library survived three months
+of green `npm run check`.**
 
 ---
 

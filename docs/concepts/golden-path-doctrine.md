@@ -199,6 +199,19 @@ Hand-verify a sample regardless of whether the implementations agree.
 **Beware the measurement truncated by its own display limit.** A grep ending in
 `head -3` reported "three source comments"; the real count was four.
 
+**A `<child>_count` column is not necessarily a count of `<child>`.** A composer
+measured a 41× divergence between a counter and its apparent child table and was
+about to publish it; the column is a harvester-supplied *prevalence*, and one
+producer writes a lesson's line count into it. Read the writer before treating a
+name as a contract.
+
+**Every wrong offset produces a plausible disagreement.** The same composer's
+first pass at a daily rollup reported "276 of 500 day-rows disagree" — and
+**agreed with its thesis**. Replayed at the machine's real UTC offset: **403 of
+403 buckets exact.** The structure it was measuring was the exemplar, not the
+deviation. When a bucketed comparison disagrees, suspect the bucket boundary
+before the data.
+
 **A `GROUP BY` that omits the scope key the code scopes by produces a false
 positive hand-verification cannot find.** Earned by
 [`backfill-migration`](./golden-paths/backfill-migration.md), caught before
@@ -512,6 +525,11 @@ the oracle exists to deflate.
 The tell is textual, not structural: identical comments, identical constants,
 identical error strings. Structure can converge; prose cannot.
 
+**Second sighting, on a different leaf:** `vibeman` commit `2953479a` created
+that repo's canvas components **fifteen hours before this repo's first commit**,
+and shared constants survive here today. Two leaves, two independent datings,
+same direction. Treat `vibeman` as an ancestor by default and prove otherwise.
+
 **And establish the DIRECTION, not just the relatedness.** The campaign had been
 treating `vibeman` as an independent sibling and, where lineage was suspected,
 assuming this repo was the ancestor. [`schema-driven-form`](./golden-paths/schema-driven-form.md)
@@ -613,6 +631,33 @@ and nothing at home. Sometimes `"client"` is incomplete; sometimes it is simply
 the first spine convergence label the corpus has upheld, and it came from a
 composer that measured the cohort first (3 independent, not 5) rather than
 taking the count for granted.
+
+### The confound, stated plainly: all six repos have one author
+
+Raised by [`node-canvas`](./golden-paths/node-canvas.md), and it is the most
+important limitation of this instrument.
+
+**Independence has always meant independent *code*, never independent
+*judgment*.** Every repo in the cohort was written by the same operator. When
+five codebases agree, the sweep has observed one engineer reaching for the same
+answer five times — which is real evidence about the answer's *ergonomics under
+these constraints*, and much weaker evidence that it is physics.
+
+This does not retire the oracle; it re-weights its outputs, and the weighting
+was already implicit in the next rule:
+
+- **Agreement is the weakest signal the oracle produces.** Report it, label it
+  as one author's repeated choice, and do not promote it to physics on count
+  alone.
+- **A silence stays strong.** Nobody solving a problem five times is evidence
+  the problem is hard or unnoticed, whoever wrote the code.
+- **Cost, failure and *inversion* stay strongest.** A sibling that tried the
+  practice and abandoned it, or that pays a measured price for its absence, is
+  evidence no shared authorship explains away.
+- **An independent reinvention with a *different mechanism* still counts.** The
+  same person choosing the same answer twice is weak; the same person arriving
+  at the same *principle* by two different routes, in two languages, having
+  forgotten the first, is not nothing — say which one you measured.
 
 **Cost and failure are better evidence than agreement.** The two strongest
 oracle results in the corpus were both negative:
