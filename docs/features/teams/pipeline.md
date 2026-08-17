@@ -1,6 +1,17 @@
 # Pipeline (Teams Canvas)
 
-Pipeline is the visual workflow canvas for composing multi-persona teams. It renders persona nodes on an `@xyflow/react`-driven graph, lets users wire connections between them, supports a dry-run debugger, and surfaces optimization suggestions. Team memory — long-running shared context across the personas in a team — is owned by `sub_teamMemory/`.
+Pipeline is where multi-persona teams are composed. Teams are assembled from **presets** or **auto-team** and configured in the **Team Studio** (roster + per-member capability toggles). Team memory — long-running shared context across the personas in a team — is owned by `sub_teamMemory/`.
+
+> **The edge-wiring node canvas is gone (deleted 2026-08-17).** `src/features/teams/sub_canvas/`
+> — the `@xyflow/react` DAG canvas with persona/sticky nodes, connection edges, the dry-run
+> debugger, the optimizer panel and the canvas assistant — was replaced by the Split Studio in the
+> 2026-05-23 `/prototype` round and had **no UI host from that day on**: 28 of its 29 files were
+> unreachable from `src/main.tsx`/`App.tsx`, and the 29th (`CanvasDragContext.tsx`) was a React
+> context provider whose `useCanvasDragRef` hook had zero callers. The whole tree (29 files,
+> 3,200 lines) is deleted. **There is no hand-drawn edge surface in this app**: an executable team
+> edge can only be created by `useAutoTeam` (the LLM blueprint applier) calling
+> `teams::create_connection`. See
+> [`docs/concepts/golden-paths/node-canvas.md`](../../concepts/golden-paths/node-canvas.md).
 
 > **For the orchestration logic** — the two execution modes (event-chain vs goal-driven assignments), how shared state reaches a running persona, and the observability/analysis layer — see **[team-orchestration.md](./team-orchestration.md)**. This README maps the UI surfaces; that doc explains the model underneath.
 
@@ -20,23 +31,7 @@ Pipeline is the visual workflow canvas for composing multi-persona teams. It ren
 | Preset team | "Preset Team" button (+ empty-state CTA) opens the in-app **`PresetStudio`** (full content area, routed by `pipelineStore.presetFlowOpen` in `TeamCanvas` — not a modal): a gallery of best-practice, pre-wired presets under `scripts/templates/_team_presets/` (e.g. the **Web Development Team**) → on pick, the **Blueprint** adoption process. Its connection graph (`PresetConnectionGraph`) is the hero and the include/exclude surface — tap a node to toggle a member; sequential vs feedback edges are distinguished, and edge event-labels reveal on hover. Adopts the selected subset in one pass. Shares the `usePresetAdoption` state machine with the Templates → Presets modal. See [templates/08-team-presets.md](../templates/08-team-presets.md) | `TeamList.tsx`, `TeamCanvas.tsx`, `presetStudio/` (`PresetStudio`, `PresetProcessHost`, `PresetProcessBlueprint`, `PresetConnectionGraph`, `PresetGalleryShowcase`), `sub_presets/usePresetAdoption.ts` |
 | Blueprint preview | Read-only render of a team blueprint | `BlueprintPreview.tsx` |
 
-> The earlier standalone, edge-wiring **xyflow canvas** (with `TeamConfigPanel` / `TeamDragPanel` / a pipeline-template gallery) is no longer the primary composition surface — teams are now assembled from presets / auto-team and operated from the **Team Studio**. The node/edge primitives in `sub_canvas/` survive as the graph mechanics behind the preset **blueprint** graph and the dry-run debugger.
-
-## sub_canvas — graph mechanics
-
-`src/features/teams/sub_canvas/` owns the graph primitives — nodes, edges, debugger, optimizer, and assistant — reused by the preset blueprint graph and dry-run debugger.
-
-| Area | Files |
-| --- | --- |
-| Nodes | `components/nodes/PersonaNode.tsx`, `StickyNoteNode.tsx`, `NodeContextMenu.tsx` |
-| Edges | `components/edges/ConnectionEdge.tsx`, `GhostEdge.tsx`, `EdgeDeleteTooltip.tsx`, `ConnectionLegend.tsx` |
-| Debugger | `components/debugger/DryRunDebugger.tsx`, `DebuggerControls.tsx`, `DebuggerStepView.tsx`, `DebuggerVariables.tsx` (driven by `libs/useDebugger.ts`, `libs/debuggerMocks.ts`, `libs/debuggerTypes.ts`) |
-| Optimizer | `components/OptimizerPanel.tsx`, `OptimizerResults.tsx` |
-| Assistant | `components/assistant/CanvasAssistant.tsx`, `AssistantInput.tsx`, `AssistantMessages.tsx` |
-| Toolbar / overlays | `components/PipelineControls.tsx`, `TeamToolbar.tsx`, `AlignmentGuides.tsx` |
-| Reducers / state | `libs/useCanvasReducer.ts`, `libs/useDerivedCanvasState.ts`, `libs/canvasActions.ts`, `libs/teamGraph.ts`, `libs/teamConstants.tsx`, `libs/CanvasDragContext.tsx` |
-
-The barrel `sub_canvas/index.ts` exports `CanvasDragProvider`, the toolbar, and the reducer hooks.
+> The earlier standalone, edge-wiring **xyflow canvas** (with `TeamConfigPanel` / `TeamDragPanel` / a pipeline-template gallery) is gone — teams are assembled from presets / auto-team and operated from the **Team Studio**. The preset **blueprint** graph is `presetStudio/PresetConnectionGraph.tsx`, a self-contained SVG surface that never depended on `sub_canvas/`; the dry-run debugger went with the canvas.
 
 ## sub_teamMemory — shared memory across a team
 
