@@ -5338,3 +5338,34 @@ wait_ms computed and logged once but exported nowhere - no event field, no DB co
 
 ### <a id="w8-sync-replication"></a> sync-replication
 Tombstone table has no producer: a full delete cascade reads persona_tombstones which zero code writes - no delete has ever propagated (cloud/sync/mod.rs:372-395) - tombstone cursor advances from a clock read with discarded Result, the exact race the same file fixes on the table path (:374/:393 vs :272-281) - cloud lane resolves conflicts by arrival order (merge-duplicates, no base, no read-back) - six streams watermark on creation time behind a 24h window: later mutations permanently invisible - status surface lacks lag-with-predicate (no tail comparison, no last-success-vs-last-attempt split).
+
+---
+
+## Hierarchy-v2 forge wave 9 deviations (2026-08-18) — platform/data tail reconciled
+
+Same contract: standards kept, gaps registered, one anchor per subject. Full detail in
+the wave-9 composer reports (session transcript).
+
+### <a id="w9-webhook-ingestion"></a> webhook-ingestion
+No replay-attack timestamp window on the direct receiver (the defence exists 900 lines away in oauth.rs and was not copied) - no dedup at the direct mint point: every accepted POST mints a fresh event - relay authenticity opt-in and FAIL-OPEN by default (unset secret = unauthenticated accept, smee_relay.rs:34-53) - relay gate hashes re-serialized JSON, not the sender's raw bytes - replay/curl-export re-deliver the body redaction placeholder while reporting success - headers logged verbatim incl. signature/sender tokens - relay dedup per-process in-memory (restart replays channel history) - three ingress mouths, three separate check stacks, no one admission door.
+
+### <a id="w9-rate-limiting"></a> rate-limiting
+Webhook 429 carries retry-after in body prose with no_headers() while the same file sets Retry-After on its 422 - the shared limiter's policy is a call-site parameter so the dashboard guesses limits from key prefixes (wrong for 3 families) - RateLimitDashboard renders three structurally-zero counters (the store's only writer has zero call sites); the user-authorable trigger rate-limit policy is read by NOTHING - egress default 60rpm exceeds documented provider limits; rate_limit_rpm declared by zero seeds - over-limit relay events dropped via .is_err() continue - warn latch has no suppressed-count.
+
+### <a id="w9-concurrency-guards"></a> concurrency-guards
+InflightGuard has no production inspection surface (len() is test-only) and no age-based reclamation - a hung holder wedges a key invisibly - daemon lock stale takeover is remove-then-create_new, not atomic replace-if-unchanged (one-leadership-bounce window, lock.rs:185-215) - oauth LOCK_MAP entries never pruned - brief correction: oauth_refresh_lock is IN-process (per-credential mutex), not cross-process.
+
+### <a id="w9-delivery-guarantees"></a> delivery-guarantees
+Claims are anonymous - no holder/timestamp/lease on claim_pending, forcing the heuristic two-snapshot reaper (= #w2-background-jobs, cited) - failure-lane escalation writes one generic prose string, defeating clustering (background.rs:1706) - the incident lane binds to a failure class that never occurs while the voluminous class routes to a verb-less parallel inbox (audit_incidents_promoter.rs).
+
+### <a id="w9-embedded-db"></a> embedded-db
+Maintenance defers forever - no staleness bound forces a pass; deferral logged at debug; blocking checkpoint with no chunk-yield - slow-query threshold is a server-calibrated uniform 100ms for a local store; pool-wait times logged but never enter the ring - journal contract set every boot, never read back (nothing checks any pragma took) - prune accounting not per-table; count-then-delete in separate statements; no referential closure, no prune ledger - extension-before-pool ordering is conventional, not structural - brief correction: pool construction + acquire_logged live in db/src/lib.rs, not core/src/pool.rs.
+
+### <a id="w9-entity-lifecycle"></a> entity-lifecycle
+Blast-radius probes use unwrap_or(0) - a FAILED probe renders as "safe to delete", and the in-file comment records this exact incident already happening (personas.rs:1933-1997) - probes narrower than their deletes (preview counts active/running rows, the cascade takes every row) - preview unguarded while the act is privileged (parity broken) - bulk-delete confirm shows the client page-size count (100) against a server predicate deleting 6,535 (= deferred-fixes 2c, cited) - risk ladder inverted: only persona delete has typed confirmation.
+
+### <a id="w9-versioning-snapshots"></a> versioning-snapshots
+unwrap_or(1) turns a failed max-version query into version 1 (failure spelled as success) + read-max-then-insert with NO UNIQUE(persona_id, version_number) - 12 such unconstrained tables per census - persona_versions is canonical-by-declaration and DEAD (0 callers, 0 rows ever) while the "replaced" table keeps gaining columns - the conditional capture door diffs only structured_prompt: system-prompt-only edits bypass capture (16/25 historical rows NULL) - demotion re-tags production to experimental, erasing the promoted-ever fact; archived exists and is never used.
+
+### <a id="w9-settings"></a> settings
+Secrets in the settings store: three API keys/tokens plaintext in app_settings while a credential vault exists (settings_keys.rs:28,34,70) - fail-open dollar ceilings (= #w2-hitl-approval, cited; contrast CHAIN_MAX_LINKS which does it right) - the two-list registry is hand-maintained with no set-equality test; the AUTONOMOUS_DELIBERATION scar (constant present, allowlist entry missing, toggle could never enable) proves the drift mode - repo-layer audit passes actor=None (all-writers coverage traded against attribution).
