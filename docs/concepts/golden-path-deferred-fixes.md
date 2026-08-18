@@ -5307,3 +5307,34 @@ video src rebinds across clip boundaries with no identity key; prior transport s
 
 ### <a id="w7-file-browsing"></a> file-browsing
 Range-select follows raw listing order, not visual order (useDrive.ts:517-533) - select-all ignores active filters; invisible selection feeds remove() (useDrive.ts:537-539) - refresh never prunes selection of externally deleted paths - bulk mutations have no aggregate report (no "moved 12 of 15, 3 failed") - vault walker skips unreadable dirs silently with no count - location/expansion not persisted across sessions - thumbnail decode failure not negatively cached.
+
+---
+
+## Hierarchy-v2 forge wave 8 deviations (2026-08-18) — LLM/backend platform cluster reconciled
+
+Same contract: standards kept, gaps registered, one anchor per subject. Full detail in
+the wave-8 composer reports (session transcript).
+
+### <a id="w8-retrieval"></a> retrieval
+Kind-scoped vector scan bypasses the embedding-model guard - after a model swap the doctrine lane serves foreign-model neighbours the main lane excludes (embeddings.rs:410-434 vs :386) - three forks of the FTS5 sanitization door (core/retrieval vs vector_kb.rs:872 vs execution search), acknowledged in-code as pending consolidation - NO retrieval evaluation exists anywhere: no labeled query set, no ranking metric; the 1.30 distance floor is calibrated by "watch the debug log" - TF-IDF sidecar lane is a hand-synced reimplementation ("keep in sync with graph.rs") - degraded mode unlabeled at the consumer; model_guard_excluded_total counter is dead code.
+
+### <a id="w8-eval-harness"></a> eval-harness
+test_runner.rs file-top comment claims the scenario cache key includes system_prompt; the implementation deliberately excludes it - a stale header stating the opposite of a load-bearing invariant (:14-16 vs :57-74) - judge-packet.mjs reads runs from one path while its instructions point the judge at another - a grid cell whose samples are all unscored renders composite 0: not-measured spelled as worst-score (evalAggregation.ts:143-151).
+
+### <a id="w8-model-routing"></a> model-routing
+Audit ledger never written: provider_audit_log.model_used NULL on 4,001/4,001 live rows; the BYOM audit UI renders '-' for every row - tier pair split at 7 call sites: .model read without .effort (call_claude_text has no effort parameter), dropped effort lands on the CLI default HIGH, above calibration - top-of-scale defaults against the repo's own benchmark (BUILD_TURN_EFFORT=xhigh where the effort guide ranked xhigh 4th of 8 at +33% spend) - policy governance is dirty-state review, no versioned diffs or approval records - model_routing_rules holds 0 rules ever; 5 of 6 resolution layers never populated.
+
+### <a id="w8-cost-metering"></a> cost-metering
+Two price tables with OPPOSITE unknown-model policies (cost.rs silently mid-tier and uncounted; config.rs zero) - get_monthly_spend(...).unwrap_or(0.0): DB error reads as $0 spent, undeclared fail-open on the unattended path (background.rs:2510) - only schedule-type triggers are budget-gated; event/webhook firings bypass (background.rs:2490) - max_budget_usd carries two units (monthly ceiling vs per-call cap) - cancelled/killed runs book Some(0.0) cost: definite-free instead of unknown - ledger drops warn-logged but never counted.
+
+### <a id="w8-pipeline-dag"></a> pipeline-dag
+Condition evaluator fails OPEN: malformed condition JSON or unknown operator silently FIRES the branch (pipeline_executor.rs:153-207), warn-log only, no persisted branch record - validation is run-start only: the editor saves cyclic graphs; no reachability or dangling-edge check (unknown members silently continue'd) - no restart resume: recovery fails running/awaiting_approval runs wholesale incl. runs parked on human gates (lib.rs:838-849; mechanism = #w2-hitl-approval) - "skipped" overloaded (blocked-by-failure vs branch-not-taken) - eight statuses as inline string literals, no enum authority - #w2-retry-backoff residual: 429 fixed 2026-08-16 but Retry-After remains unread.
+
+### <a id="w8-self-healing"></a> self-healing
+Effectiveness report has no unknown lane: attempted = confirmed + reverted; TTL-expired pendings vanish from the denominator (healing.rs:891,:903) - effectiveness cells keyed on a free detail string, not the closed category vocabulary, and carry no strategy dimension - incident promotion env-gated OFF by default (PERSONAS_INCIDENTS_PROMOTION) so the healer-gets-louder lane can be entirely dark; dedup is per-source-row not per failure signature - auto-rollback's no-qualifying-target path drops the detection silently (auto_rollback.rs:335-350, its own comment admits it).
+
+### <a id="w8-admission-queue"></a> admission-queue
+wait_ms computed and logged once but exported nowhere - no event field, no DB column; legacy replay measured p99 58-minute waits invisible to every consumer (queue.rs:367-368) - QueueFull typed Validation/retryable=false while its prose says "Try again later" (deferred fix #90 cited) - AdmitResult has exactly one call site; >=7 sibling admission lanes speak private verdict vocabularies - no aging: Low can starve under sustained Urgent, undetectably - TierConfig.max_queue_depth declared and rendered but set_max_queue_depth has zero callers (runtime bound always 10) - task_executor writes the durable running marker BEFORE asking the door; refusal strands rows (129-day-old examples live).
+
+### <a id="w8-sync-replication"></a> sync-replication
+Tombstone table has no producer: a full delete cascade reads persona_tombstones which zero code writes - no delete has ever propagated (cloud/sync/mod.rs:372-395) - tombstone cursor advances from a clock read with discarded Result, the exact race the same file fixes on the table path (:374/:393 vs :272-281) - cloud lane resolves conflicts by arrival order (merge-duplicates, no base, no read-back) - six streams watermark on creation time behind a 24h window: later mutations permanently invisible - status surface lacks lag-with-predicate (no tail comparison, no last-success-vs-last-attempt split).
