@@ -8347,7 +8347,27 @@
       "tab_techniques": "Techniken",
       "techniques_empty": "Dieses Subjekt deklariert noch keine Techniken.",
       "warnings_badge": "{count} Warnungen",
-      "warnings_title": "Korpus-Warnungen"
+      "warnings_title": "Korpus-Warnungen",
+      "graph_back_home_aria": "Zurück zur Graph-Übersicht",
+      "graph_breadcrumb_aria": "Graph-Fokus-Breadcrumb",
+      "graph_canvas_aria": "Wissenshierarchie-Graph",
+      "graph_crest_counts": "{subjects} Themen · {techniques} Techniken",
+      "laws_lens_aria": "Graph nach Gesetz filtern",
+      "laws_lens_citing": "{count} Themen",
+      "laws_lens_clear": "Gesetzfilter zurücksetzen",
+      "laws_lens_empty": "Keine Gesetze aus _laws.md erkannt.",
+      "laws_lens_label": "Gesetze",
+      "legend_aria": "Legende für Knoten-Statusring",
+      "modal_applications_empty": "Noch keine Anwendungsdokumente für diese Technik.",
+      "modal_applications_heading": "Anwendungen",
+      "modal_laws_heading": "Gesetze",
+      "open_in_subjects": "In Themen öffnen",
+      "search_kind_application": "Anwendung",
+      "search_kind_category": "Kategorie",
+      "search_kind_subject": "Thema",
+      "search_kind_technique": "Technik",
+      "search_results_aria": "Suchergebnisse der Hierarchie",
+      "shared_owner_note": "Gemeinsame Technik — verwaltet von {owner}"
     }
   },
   "matrix_v3": {

@@ -8347,7 +8347,27 @@
       "tab_techniques": "Técnicas",
       "techniques_empty": "Este sujeto aún no declara técnicas.",
       "warnings_badge": "{count} advertencias",
-      "warnings_title": "Advertencias del corpus"
+      "warnings_title": "Advertencias del corpus",
+      "graph_back_home_aria": "Volver a la vista general del grafo",
+      "graph_breadcrumb_aria": "Ruta de navegación del grafo",
+      "graph_canvas_aria": "Grafo de jerarquía de conocimiento",
+      "graph_crest_counts": "{subjects} temas · {techniques} técnicas",
+      "laws_lens_aria": "Filtrar el grafo por principio",
+      "laws_lens_citing": "{count} temas",
+      "laws_lens_clear": "Quitar filtro de principios",
+      "laws_lens_empty": "No se detectaron principios en _laws.md.",
+      "laws_lens_label": "Principios",
+      "legend_aria": "Leyenda del anillo de estado del nodo",
+      "modal_applications_empty": "Aún no hay documentos de aplicación para esta técnica.",
+      "modal_applications_heading": "Aplicaciones",
+      "modal_laws_heading": "Principios",
+      "open_in_subjects": "Abrir en Temas",
+      "search_kind_application": "Aplicación",
+      "search_kind_category": "Categoría",
+      "search_kind_subject": "Tema",
+      "search_kind_technique": "Técnica",
+      "search_results_aria": "Resultados de búsqueda de la jerarquía",
+      "shared_owner_note": "Técnica compartida — propiedad de {owner}"
     }
   },
   "matrix_v3": {

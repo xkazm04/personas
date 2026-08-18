@@ -8347,7 +8347,27 @@
       "tab_techniques": "テクニック",
       "techniques_empty": "このサブジェクトはまだテクニックを宣言していません。",
       "warnings_badge": "{count} 件の警告",
-      "warnings_title": "コーパス警告"
+      "warnings_title": "コーパス警告",
+      "graph_back_home_aria": "グラフ概要に戻る",
+      "graph_breadcrumb_aria": "グラフ フォーカスのパンくずリスト",
+      "graph_canvas_aria": "知識階層グラフ",
+      "graph_crest_counts": "サブジェクト {subjects} 件 · テクニック {techniques} 件",
+      "laws_lens_aria": "原則でグラフを絞り込む",
+      "laws_lens_citing": "サブジェクト {count} 件",
+      "laws_lens_clear": "原則フィルターを解除",
+      "laws_lens_empty": "_laws.md から解析された原則がありません。",
+      "laws_lens_label": "原則",
+      "legend_aria": "ノード状態リングの凡例",
+      "modal_applications_empty": "このテクニックの適用事例はまだありません。",
+      "modal_applications_heading": "適用事例",
+      "modal_laws_heading": "原則",
+      "open_in_subjects": "サブジェクトで開く",
+      "search_kind_application": "適用事例",
+      "search_kind_category": "カテゴリ",
+      "search_kind_subject": "サブジェクト",
+      "search_kind_technique": "テクニック",
+      "search_results_aria": "階層検索結果",
+      "shared_owner_note": "共有テクニック — 所有者: {owner}"
     }
   },
   "matrix_v3": {

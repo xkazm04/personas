@@ -4,17 +4,16 @@
 // the picker chooses WHICH repo is the knowledge source (persisted per
 // device); an empty graph renders `source.reason` as prose with the picker
 // prominent — never a spinner, never a crash.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Search } from 'lucide-react';
 
 import { IllustratedEmptyState } from '@/features/shared/components/display/IllustratedEmptyState';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
-import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 
+import { CorpusWarningsBadge } from './CorpusWarningsBadge';
 import { DocViewer } from './DocViewer';
 import {
   buildHierarchyIndex,
@@ -23,30 +22,27 @@ import {
   searchHierarchy,
   subjectMatchMap,
 } from './hierarchyModel';
+import { initialHierarchyProjectId, persistHierarchyProjectId } from './projectSource';
 import { SubjectDetail, type DetailFocus } from './SubjectDetail';
 import { SubjectRail } from './SubjectRail';
 import { useHierarchyGraph } from './useHierarchyGraph';
-
-const PROJECT_KEY = 'patterns:hierarchy-project';
 
 /** The one place a law CHIP (id-only, no href) resolves to a path. Links in
  *  markdown resolve through `resolveDocLink` instead. */
 const LAWS_FILE = 'docs/concepts/paths/_laws.md';
 
-/** Validated read of the persisted source project — a stale id (project
- *  deleted since) falls back to the first project rather than a dead view. */
-function initialProjectId(projectIds: string[]): string | null {
-  try {
-    const stored = localStorage.getItem(PROJECT_KEY);
-    if (stored && projectIds.includes(stored)) return stored;
-  } catch (err) {
-    // localStorage unavailable — fall through to the default.
-    silentCatch('patterns:hierarchyProjectRead')(err);
-  }
-  return projectIds[0] ?? null;
+/** Cross-lane navigation nudge (hierarchy graph → "Open in Subjects"): a
+ *  fresh object identity per navigation re-triggers the selection effect. */
+export interface SubjectsFocusRequest {
+  slug: string;
+  technique?: string;
 }
 
-export function SubjectsView() {
+export function SubjectsView({
+  focusSubject = null,
+}: {
+  focusSubject?: SubjectsFocusRequest | null;
+} = {}) {
   const { t, tx } = useTranslation();
   const p = t.overview.patterns_v2;
   const addToast = useToastStore((s) => s.addToast);
@@ -58,23 +54,20 @@ export function SubjectsView() {
   }, [projects.length, fetchProjects]);
 
   const projectIds = useMemo(() => projects.map((pr) => pr.id), [projects]);
-  const [projectId, setProjectId] = useState<string | null>(() => initialProjectId(projectIds));
+  const [projectId, setProjectId] = useState<string | null>(() =>
+    initialHierarchyProjectId(projectIds),
+  );
 
   // Projects can hydrate after mount — adopt the persisted/first id once real.
   useEffect(() => {
     if (projectId === null || !projectIds.includes(projectId)) {
-      setProjectId(initialProjectId(projectIds));
+      setProjectId(initialHierarchyProjectId(projectIds));
     }
   }, [projectIds, projectId]);
 
   const pickProject = useCallback((id: string) => {
     setProjectId(id);
-    try {
-      localStorage.setItem(PROJECT_KEY, id);
-    } catch (err) {
-      // Persistence is a convenience, never a blocker.
-      silentCatch('patterns:hierarchyProjectWrite')(err);
-    }
+    persistHierarchyProjectId(id);
   }, []);
 
   const { graph, loading, error, refetch } = useHierarchyGraph(projectId);
@@ -106,6 +99,17 @@ export function SubjectsView() {
     setSelectedSlug(slug);
     setFocus(null);
   }, []);
+
+  // Cross-lane nudge from the hierarchy graph ("Open in Subjects"): select the
+  // named subject (and expand the named technique). Fresh object identity per
+  // navigation re-triggers even for the same slug.
+  useEffect(() => {
+    if (!focusSubject) return;
+    setSelectedSlug(focusSubject.slug);
+    setFocus(
+      focusSubject.technique ? { kind: 'technique', technique: focusSubject.technique } : null,
+    );
+  }, [focusSubject]);
 
   // Relative-link interception: resolve against the doc the click happened in,
   // then route. An unresolvable link surfaces honestly as a one-line toast.
@@ -141,11 +145,6 @@ export function SubjectsView() {
     },
     [graph, addToast, p.link_not_in_hierarchy],
   );
-
-  // Corpus-health warnings popover.
-  const [warningsOpen, setWarningsOpen] = useState(false);
-  const warningsRef = useRef<HTMLDivElement | null>(null);
-  useClickOutside(warningsRef, warningsOpen, () => setWarningsOpen(false));
 
   const selectedSubject = useMemo(
     () => (graph && selectedSlug ? graph.subjects.find((s) => s.slug === selectedSlug) ?? null : null),
@@ -201,35 +200,7 @@ export function SubjectsView() {
           </span>
         )}
 
-        {graph && graph.warnings.length > 0 && (
-          <div ref={warningsRef} className="relative">
-            <button
-              type="button"
-              onClick={() => setWarningsOpen((o) => !o)}
-              aria-expanded={warningsOpen}
-              className="typo-caption flex items-center gap-1.5 rounded-interactive border border-status-warning/30 bg-status-warning/10 px-2 py-1 text-status-warning hover:bg-status-warning/20 transition-colors"
-            >
-              <AlertTriangle className="w-3.5 h-3.5" aria-hidden />
-              {tx(p.warnings_badge, { count: graph.warnings.length })}
-            </button>
-            {warningsOpen && (
-              <div className="absolute right-0 top-full mt-1.5 z-50 w-[420px] max-h-80 overflow-y-auto rounded-card border border-border/60 bg-background shadow-elevation-3 p-2">
-                {/* muted-ok: popover section header, structural micro-label */}
-                <h4 className="typo-label text-foreground/60 px-1.5 pb-1.5">{p.warnings_title}</h4>
-                <ul className="space-y-1">
-                  {graph.warnings.map((w, i) => (
-                    <li key={`${w.path}:${i}`} className="rounded-interactive bg-secondary/30 px-2 py-1.5">
-                      <code className="typo-caption font-mono text-foreground block truncate">
-                        {w.path}
-                      </code>
-                      <span className="typo-caption text-foreground">{w.message}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
+        {graph && <CorpusWarningsBadge warnings={graph.warnings} />}
       </div>
 
       {/* A fetch failure with a warm copy keeps the warm copy under an honest

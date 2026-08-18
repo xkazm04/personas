@@ -2122,6 +2122,26 @@
     "tab_techniques": "কৌশল",
     "techniques_empty": "এই বিষয়ে এখনও কোনো কৌশল ঘোষণা করা হয়নি।",
     "warnings_badge": "{count} সতর্কতা",
-    "warnings_title": "কর্পাস সতর্কতা"
+    "warnings_title": "কর্পাস সতর্কতা",
+    "graph_back_home_aria": "গ্রাফ ওভারভিউতে ফিরুন",
+    "graph_breadcrumb_aria": "গ্রাফ ফোকাস ব্রেডক্রাম্ব",
+    "graph_canvas_aria": "জ্ঞান-স্তরবিন্যাস গ্রাফ",
+    "graph_crest_counts": "{subjects} বিষয় · {techniques} কৌশল",
+    "laws_lens_aria": "সূত্র অনুযায়ী গ্রাফ ফিল্টার করুন",
+    "laws_lens_citing": "{count}টি বিষয়",
+    "laws_lens_clear": "সূত্র ফিল্টার সাফ করুন",
+    "laws_lens_empty": "_laws.md থেকে কোনো সূত্র পার্স হয়নি।",
+    "laws_lens_label": "সূত্র",
+    "legend_aria": "নোড স্ট্যাটাস রিং লেজেন্ড",
+    "modal_applications_empty": "এই কৌশলের জন্য এখনও কোনো প্রয়োগ-নথি নেই।",
+    "modal_applications_heading": "প্রয়োগসমূহ",
+    "modal_laws_heading": "সূত্র",
+    "open_in_subjects": "বিষয়ে খুলুন",
+    "search_kind_application": "প্রয়োগ",
+    "search_kind_category": "শ্রেণি",
+    "search_kind_subject": "বিষয়",
+    "search_kind_technique": "কৌশল",
+    "search_results_aria": "স্তরবিন্যাস অনুসন্ধান ফলাফল",
+    "shared_owner_note": "শেয়ার করা কৌশল — মালিক {owner}"
   }
 }

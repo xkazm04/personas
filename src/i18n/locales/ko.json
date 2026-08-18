@@ -8347,7 +8347,27 @@
       "tab_techniques": "기법",
       "techniques_empty": "이 주제는 아직 기법을 정의하지 않았습니다.",
       "warnings_badge": "경고 {count}개",
-      "warnings_title": "자료 모음 경고"
+      "warnings_title": "자료 모음 경고",
+      "graph_back_home_aria": "그래프 개요로 돌아가기",
+      "graph_breadcrumb_aria": "그래프 포커스 경로",
+      "graph_canvas_aria": "지식 계층 그래프",
+      "graph_crest_counts": "주제 {subjects}개 · 기법 {techniques}개",
+      "laws_lens_aria": "원칙별로 그래프 필터링",
+      "laws_lens_citing": "주제 {count}개",
+      "laws_lens_clear": "원칙 필터 지우기",
+      "laws_lens_empty": "_laws.md에서 파싱된 원칙이 없습니다.",
+      "laws_lens_label": "원칙",
+      "legend_aria": "노드 상태 링 범례",
+      "modal_applications_empty": "이 기법에 대한 적용 사례 문서가 아직 없습니다.",
+      "modal_applications_heading": "적용 사례",
+      "modal_laws_heading": "원칙",
+      "open_in_subjects": "주제에서 열기",
+      "search_kind_application": "적용 사례",
+      "search_kind_category": "카테고리",
+      "search_kind_subject": "주제",
+      "search_kind_technique": "기법",
+      "search_results_aria": "계층 검색 결과",
+      "shared_owner_note": "공유 기법 — {owner} 소유"
     }
   },
   "matrix_v3": {

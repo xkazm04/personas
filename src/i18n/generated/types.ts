@@ -8571,6 +8571,26 @@ export type Translations = {
       deviations_empty: string;
       doc_load_failed: string;
       doc_missing: string;
+      graph_canvas_aria: string;
+      graph_crest_counts: string;
+      graph_back_home_aria: string;
+      graph_breadcrumb_aria: string;
+      legend_aria: string;
+      laws_lens_label: string;
+      laws_lens_aria: string;
+      laws_lens_clear: string;
+      laws_lens_citing: string;
+      laws_lens_empty: string;
+      search_kind_category: string;
+      search_kind_subject: string;
+      search_kind_technique: string;
+      search_kind_application: string;
+      search_results_aria: string;
+      open_in_subjects: string;
+      modal_laws_heading: string;
+      modal_applications_heading: string;
+      modal_applications_empty: string;
+      shared_owner_note: string;
     };
   };
   matrix_v3: {

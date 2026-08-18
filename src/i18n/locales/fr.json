@@ -8347,7 +8347,27 @@
       "tab_techniques": "Techniques",
       "techniques_empty": "Ce sujet ne déclare encore aucune technique.",
       "warnings_badge": "{count} avertissements",
-      "warnings_title": "Avertissements du corpus"
+      "warnings_title": "Avertissements du corpus",
+      "graph_back_home_aria": "Retour à la vue d'ensemble du graphe",
+      "graph_breadcrumb_aria": "Fil d'Ariane du focus du graphe",
+      "graph_canvas_aria": "Graphe hiérarchique des connaissances",
+      "graph_crest_counts": "{subjects} sujets · {techniques} techniques",
+      "laws_lens_aria": "Filtrer le graphe par loi",
+      "laws_lens_citing": "{count} sujets",
+      "laws_lens_clear": "Effacer le filtre de lois",
+      "laws_lens_empty": "Aucune loi extraite de _laws.md.",
+      "laws_lens_label": "Lois",
+      "legend_aria": "Légende des anneaux de statut des nœuds",
+      "modal_applications_empty": "Aucun document d'application pour cette technique pour l'instant.",
+      "modal_applications_heading": "Applications",
+      "modal_laws_heading": "Lois",
+      "open_in_subjects": "Ouvrir dans Sujets",
+      "search_kind_application": "Application",
+      "search_kind_category": "Catégorie",
+      "search_kind_subject": "Sujet",
+      "search_kind_technique": "Technique",
+      "search_results_aria": "Résultats de recherche hiérarchique",
+      "shared_owner_note": "Technique partagée — détenue par {owner}"
     }
   },
   "matrix_v3": {

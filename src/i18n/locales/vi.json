@@ -8347,7 +8347,27 @@
       "tab_techniques": "Kỹ thuật",
       "techniques_empty": "Chủ đề này chưa khai báo kỹ thuật nào.",
       "warnings_badge": "{count} cảnh báo",
-      "warnings_title": "Cảnh báo kho dữ liệu"
+      "warnings_title": "Cảnh báo kho dữ liệu",
+      "graph_back_home_aria": "Quay lại tổng quan biểu đồ",
+      "graph_breadcrumb_aria": "Đường dẫn tiêu điểm biểu đồ",
+      "graph_canvas_aria": "Biểu đồ phân cấp tri thức",
+      "graph_crest_counts": "{subjects} chủ đề · {techniques} kỹ thuật",
+      "laws_lens_aria": "Lọc biểu đồ theo nguyên tắc",
+      "laws_lens_citing": "{count} chủ đề",
+      "laws_lens_clear": "Xóa bộ lọc nguyên tắc",
+      "laws_lens_empty": "Chưa phân tích được nguyên tắc nào từ _laws.md.",
+      "laws_lens_label": "Nguyên tắc",
+      "legend_aria": "Chú giải vòng trạng thái nút",
+      "modal_applications_empty": "Chưa có tài liệu ứng dụng cho kỹ thuật này.",
+      "modal_applications_heading": "Ứng dụng",
+      "modal_laws_heading": "Nguyên tắc",
+      "open_in_subjects": "Mở trong Chủ đề",
+      "search_kind_application": "Ứng dụng",
+      "search_kind_category": "Danh mục",
+      "search_kind_subject": "Chủ đề",
+      "search_kind_technique": "Kỹ thuật",
+      "search_results_aria": "Kết quả tìm kiếm phân cấp",
+      "shared_owner_note": "Kỹ thuật dùng chung — thuộc sở hữu của {owner}"
     }
   },
   "matrix_v3": {

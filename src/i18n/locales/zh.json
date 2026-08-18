@@ -8347,7 +8347,27 @@
       "tab_techniques": "技巧",
       "techniques_empty": "该主题尚未声明任何技巧。",
       "warnings_badge": "{count} 条警告",
-      "warnings_title": "语料库警告"
+      "warnings_title": "语料库警告",
+      "graph_back_home_aria": "返回图谱概览",
+      "graph_breadcrumb_aria": "图谱焦点面包屑",
+      "graph_canvas_aria": "知识层级图谱",
+      "graph_crest_counts": "{subjects} 个主题 · {techniques} 个技巧",
+      "laws_lens_aria": "按原理筛选图谱",
+      "laws_lens_citing": "{count} 个主题",
+      "laws_lens_clear": "清除原理筛选",
+      "laws_lens_empty": "未从 _laws.md 解析到任何原理。",
+      "laws_lens_label": "原理",
+      "legend_aria": "节点状态环图例",
+      "modal_applications_empty": "该技巧暂无应用文档。",
+      "modal_applications_heading": "应用",
+      "modal_laws_heading": "原理",
+      "open_in_subjects": "在主题中打开",
+      "search_kind_application": "应用",
+      "search_kind_category": "分类",
+      "search_kind_subject": "主题",
+      "search_kind_technique": "技巧",
+      "search_results_aria": "层级搜索结果",
+      "shared_owner_note": "共享技巧 — 归属于 {owner}"
     }
   },
   "matrix_v3": {

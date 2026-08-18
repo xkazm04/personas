@@ -2122,6 +2122,26 @@
     "tab_techniques": "Techniky",
     "techniques_empty": "Toto téma zatím nedeklaruje žádné techniky.",
     "warnings_badge": "{count} upozornění",
-    "warnings_title": "Upozornění korpusu"
+    "warnings_title": "Upozornění korpusu",
+    "graph_back_home_aria": "Zpět na přehled grafu",
+    "graph_breadcrumb_aria": "Drobečková navigace zaměření grafu",
+    "graph_canvas_aria": "Graf hierarchie znalostí",
+    "graph_crest_counts": "{subjects} témat · {techniques} technik",
+    "laws_lens_aria": "Filtrovat graf podle zákonitosti",
+    "laws_lens_citing": "{count} témat",
+    "laws_lens_clear": "Zrušit filtr zákonitostí",
+    "laws_lens_empty": "Ze souboru _laws.md nebyly načteny žádné zákonitosti.",
+    "laws_lens_label": "Zákonitosti",
+    "legend_aria": "Legenda stavových kroužků uzlů",
+    "modal_applications_empty": "Pro tuto techniku zatím nejsou žádné dokumenty s aplikacemi.",
+    "modal_applications_heading": "Aplikace",
+    "modal_laws_heading": "Zákonitosti",
+    "open_in_subjects": "Otevřít v Tématech",
+    "search_kind_application": "Aplikace",
+    "search_kind_category": "Kategorie",
+    "search_kind_subject": "Téma",
+    "search_kind_technique": "Technika",
+    "search_results_aria": "Výsledky hledání v hierarchii",
+    "shared_owner_note": "Sdílená technika — vlastní {owner}"
   }
 }

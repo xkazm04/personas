@@ -8564,7 +8564,27 @@
       "deviations_heading": "Deviations",
       "deviations_empty": "No registered deviations.",
       "doc_load_failed": "Could not load this document.",
-      "doc_missing": "This document does not exist in the source repository."
+      "doc_missing": "This document does not exist in the source repository.",
+      "graph_canvas_aria": "Knowledge hierarchy graph",
+      "graph_crest_counts": "{subjects} subjects · {techniques} techniques",
+      "graph_back_home_aria": "Back to the graph overview",
+      "graph_breadcrumb_aria": "Graph focus breadcrumb",
+      "legend_aria": "Node status ring legend",
+      "laws_lens_label": "Laws",
+      "laws_lens_aria": "Filter the graph by law",
+      "laws_lens_clear": "Clear law filter",
+      "laws_lens_citing": "{count} subjects",
+      "laws_lens_empty": "No laws parsed from _laws.md.",
+      "search_kind_category": "Category",
+      "search_kind_subject": "Subject",
+      "search_kind_technique": "Technique",
+      "search_kind_application": "Application",
+      "search_results_aria": "Hierarchy search results",
+      "open_in_subjects": "Open in Subjects",
+      "modal_laws_heading": "Laws",
+      "modal_applications_heading": "Applications",
+      "modal_applications_empty": "No application docs for this technique yet.",
+      "shared_owner_note": "Shared technique — owned by {owner}"
     }
   },
   "matrix_v3": {

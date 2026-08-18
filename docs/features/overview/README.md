@@ -270,6 +270,20 @@ into `golden-path-deferred-fixes.md`), and the corpus-mapped legacy docs. A
 warnings badge in the toolbar lists everything the reader skipped — corpus
 health for free.
 
+The **Graph lane** (P3, 2026-08-18) renders the same corpus as a Nexus-style
+sky: 8 category keystones on a fixed compass ring (order from
+`categories.json` — empty categories keep their spoke), subjects marching
+outward along each spoke with size ∝ technique count, and a subject's
+techniques unfolding as the third ring on focus. **Status is the node ring
+language** — dashed draft · solid forged · double reconciled · filled
+transplant-tested (legend bottom-left) — and a **Laws lens** in the toolbar
+dims everything except the subjects/techniques citing the selected law.
+Cross-subject links draw only inside a focused category (dashed to the foreign
+keystone when the far end is unfocused); clicking a technique opens its doc in
+a modal with law chips, stack-badged applications and an "Open in Subjects"
+jump, and the old workspace-practices Nexus stays reachable via the Practices
+lane's internal Library|Graph toggle.
+
 ## Patterns — the inverted library (2026-08-11)
 
 The knowledge library is doctrine-first: **Directions** (macro items distilled

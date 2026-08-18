@@ -2122,6 +2122,26 @@
     "tab_techniques": "तकनीकें",
     "techniques_empty": "इस विषय ने अभी तक कोई तकनीक घोषित नहीं की है।",
     "warnings_badge": "{count} चेतावनियाँ",
-    "warnings_title": "कॉर्पस चेतावनियाँ"
+    "warnings_title": "कॉर्पस चेतावनियाँ",
+    "graph_back_home_aria": "ग्राफ़ अवलोकन पर वापस जाएं",
+    "graph_breadcrumb_aria": "ग्राफ़ फोकस ब्रेडक्रंब",
+    "graph_canvas_aria": "ज्ञान पदानुक्रम ग्राफ़",
+    "graph_crest_counts": "{subjects} विषय · {techniques} तकनीकें",
+    "laws_lens_aria": "नियम के अनुसार ग्राफ़ फ़िल्टर करें",
+    "laws_lens_citing": "{count} विषय",
+    "laws_lens_clear": "नियम फ़िल्टर हटाएं",
+    "laws_lens_empty": "_laws.md से कोई नियम नहीं मिला।",
+    "laws_lens_label": "नियम",
+    "legend_aria": "नोड स्थिति रिंग लीजेंड",
+    "modal_applications_empty": "इस तकनीक के लिए अभी तक कोई अनुप्रयोग दस्तावेज़ नहीं।",
+    "modal_applications_heading": "अनुप्रयोग",
+    "modal_laws_heading": "नियम",
+    "open_in_subjects": "विषयों में खोलें",
+    "search_kind_application": "अनुप्रयोग",
+    "search_kind_category": "श्रेणी",
+    "search_kind_subject": "विषय",
+    "search_kind_technique": "तकनीक",
+    "search_results_aria": "पदानुक्रम खोज परिणाम",
+    "shared_owner_note": "साझा तकनीक — स्वामी {owner}"
   }
 }

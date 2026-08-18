@@ -2122,6 +2122,26 @@
     "tab_techniques": "Teknik",
     "techniques_empty": "Subjek ini belum mendeklarasikan teknik apa pun.",
     "warnings_badge": "{count} peringatan",
-    "warnings_title": "Peringatan korpus"
+    "warnings_title": "Peringatan korpus",
+    "graph_back_home_aria": "Kembali ke ringkasan graf",
+    "graph_breadcrumb_aria": "Remah roti fokus graf",
+    "graph_canvas_aria": "Graf hierarki pengetahuan",
+    "graph_crest_counts": "{subjects} subjek · {techniques} teknik",
+    "laws_lens_aria": "Filter graf berdasarkan prinsip",
+    "laws_lens_citing": "{count} subjek",
+    "laws_lens_clear": "Hapus filter prinsip",
+    "laws_lens_empty": "Belum ada prinsip yang terurai dari _laws.md.",
+    "laws_lens_label": "Prinsip",
+    "legend_aria": "Legenda cincin status simpul",
+    "modal_applications_empty": "Belum ada dokumen penerapan untuk teknik ini.",
+    "modal_applications_heading": "Penerapan",
+    "modal_laws_heading": "Prinsip",
+    "open_in_subjects": "Buka di Subjek",
+    "search_kind_application": "Penerapan",
+    "search_kind_category": "Kategori",
+    "search_kind_subject": "Subjek",
+    "search_kind_technique": "Teknik",
+    "search_results_aria": "Hasil pencarian hierarki",
+    "shared_owner_note": "Teknik bersama — dimiliki oleh {owner}"
   }
 }

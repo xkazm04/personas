@@ -5,11 +5,12 @@
 //   Applications → Evidence), read live from a managed repo's
 //   `docs/concepts/paths/**` by the Rust reader. Needs only a project id —
 //   no workspace.
-// - **Graph** / **Practices** — the pre-existing workspace practice library
-//   (DB plane), untouched: same data flow this container has carried since
-//   the library moved here from the Workspaces Atlas, now rendered through
-//   `KnowledgeLibrary`'s controlled `view` prop so the lane switch above owns
-//   what used to be its internal Library|Graph toggle.
+// - **Graph** — the hierarchy graph (P3): the same corpus rendered as a
+//   Nexus-style sky (8 category keystones → subjects → techniques). Also
+//   project-scoped, no workspace dependency.
+// - **Practices** — the pre-existing workspace practice library (DB plane),
+//   untouched, with its OWN internal Library|Graph toggle restored so the old
+//   Nexus over workspace practices stays reachable there.
 import { useEffect, useMemo, useState } from 'react';
 
 import { listWorkspaceKnowledge } from '@/api/devTools/workspaces';
@@ -28,7 +29,8 @@ import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 
-import { SubjectsView } from './hierarchy/SubjectsView';
+import HierarchyGraphHost from './hierarchy/graph/HierarchyGraphHost';
+import { SubjectsView, type SubjectsFocusRequest } from './hierarchy/SubjectsView';
 import KnowledgeLibrary from './KnowledgeLibrary';
 
 type Lane = 'subjects' | 'graph' | 'practices';
@@ -61,8 +63,10 @@ function PatternsSkeleton() {
 
 /** The pre-existing workspace-practices plane, exactly as before the lane
  *  restructure: workspace gating/skeleton and the workspace picker live HERE,
- *  so the Subjects lane never waits on (or renders) any of it. */
-function WorkspaceLane({ view }: { view: 'library' | 'graph' }) {
+ *  so the hierarchy lanes never wait on (or render) any of it. No controlled
+ *  `view` — KnowledgeLibrary's internal Library|Graph toggle is back, which
+ *  keeps the old Nexus reachable inside this lane. */
+function WorkspaceLane() {
   const { t } = useTranslation();
   const tk = t.overview.knowledge;
   const { workspaces, activeId } = useWorkspaces();
@@ -167,7 +171,6 @@ function WorkspaceLane({ view }: { view: 'library' | 'graph' }) {
           rows={rows}
           projectById={projectById}
           onChanged={() => setFetchGen((g) => g + 1)}
-          view={view}
         />
       </div>
     </>
@@ -178,6 +181,9 @@ export default function PatternsPanel() {
   const { t } = useTranslation();
   const p = t.overview.patterns_v2;
   const [lane, setLane] = useState<Lane>(initialLane);
+  // Cross-lane navigation: the graph's "Open in Subjects" hands a focus
+  // request across; a fresh object per navigation re-triggers the effect.
+  const [subjectsFocus, setSubjectsFocus] = useState<SubjectsFocusRequest | null>(null);
 
   const pickLane = (next: Lane) => {
     setLane(next);
@@ -206,9 +212,16 @@ export default function PatternsPanel() {
       </div>
 
       {lane === 'subjects' ? (
-        <SubjectsView />
+        <SubjectsView focusSubject={subjectsFocus} />
+      ) : lane === 'graph' ? (
+        <HierarchyGraphHost
+          onOpenInSubjects={(slug, technique) => {
+            setSubjectsFocus({ slug, technique });
+            pickLane('subjects');
+          }}
+        />
       ) : (
-        <WorkspaceLane view={lane === 'graph' ? 'graph' : 'library'} />
+        <WorkspaceLane />
       )}
     </div>
   );
