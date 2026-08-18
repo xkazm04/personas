@@ -1,231 +1,207 @@
-# Knowledge hierarchy recovery plan
+# Knowledge hierarchy plan — v2
 
-**Status:** ratified by the operator 2026-08-18, at the close of the 247-leaf composition
-campaign. **Executor:** the next Fable session (and its waves). This document is the
-handoff — it carries the diagnosis, the layer contract, the forging procedure, and the
-session plan. Read it before touching anything under `docs/concepts/golden-paths/`.
+**Status:** v1 ratified 2026-08-18 at the close of the 247-leaf composition campaign;
+**v2 recalibrated the same day by the operator** on three points that change the design
+(granularity, sourcing, graph freedom). **Executor:** the next Fable session and its
+waves. This document is the handoff — read it before touching anything under
+`docs/concepts/golden-paths/`.
 
 ---
 
-## 0. Verdict
+## 0. Verdict (unchanged from v1)
 
-The design was a four-layer hierarchy:
+The design was a four-layer hierarchy — **Golden Paths → Techniques → Applications →
+Evidences** — and the campaign produced 247 documents that are Applications fused with
+Evidences, labeled Golden Paths. The two upper layers were never built.
 
-> **Golden Paths** (high-level engineering situations and their best practice)
-> → **Techniques** (procedures for how to solve them)
-> → **Applications** (language/repo-specific solutions)
-> → **Evidences** (measurements, replays, incidents)
+Proofs from inside the corpus: `golden-path-doctrine.md` is the *accidental*
+transferable layer (it transplants to any sibling repo unchanged; no leaf document
+does), and **121 of 201 census rules carry an explicit "must be re-derived per repo"
+precondition clause** — the composers knew they were writing Applications; the design
+had no layer above to receive the general half.
 
-The campaign produced **247 documents that are Applications fused with Evidences**, labeled
-Golden Paths. The two upper layers were never built. This is a design failure, not a quality
-failure — the bottom layers are excellent and are the ore the upper layers get forged from.
+Root causes, still binding on this plan: (1) the layer boundary was the one ungated
+invariant, and ungated invariants flatten; (2) the spine taxonomy is surface-first;
+(3) the census rule was the mandated apex deliverable; (4) the 0%-precision lesson
+over-generalized from "never write a *gate* from principle" to "never abstract at all".
 
-Two proofs from inside the corpus:
+## 1. The v2 recalibration (operator, 2026-08-18) — three corrections to v1
 
-- **The doctrine is the accidental Golden-Path layer.** `golden-path-doctrine.md` — "a
-  reconciliation is a claim", "a diff-shaped gate is blind to an absence", "prefer a type
-  over a gate" — transplants to any sibling repo unchanged. No leaf document does. The only
-  transferable layer we produced accreted by accident, because generality had nowhere else
-  to live.
-- **121 of 201 census rules carry an explicit `PRECONDITION (must be re-derived per repo)`
-  clause.** The composers knew they were writing Applications and marked the boundary; the
-  design had no layer above to receive the general half.
+**1. Granularity: a Golden Path is a named engineering SUBJECT, not an abstract
+mechanism.** The calibration example, verbatim structure:
 
-## 1. Root causes (rank-ordered; the plan must answer each)
+| Layer | Example |
+|---|---|
+| **Golden Path** | **Table** |
+| **Techniques** | performance, pagination, sorting, UX, client/server roles |
+| **Applications** | React/Next coding approaches (and the Rust/server equivalents) |
+| **Evidence** | the manifestation in the codebase — e.g. the universal table component in Personas — **kept sparse so evidences never overflow** |
 
-1. **The layer boundary was ungated.** Every layer below had acceptance tests (two
-   implementations, positive controls, hand-verified precision). "Is this a Golden Path or
-   an Application?" had none. The corpus optimized for what was checked — the campaign's own
-   headline theme, pointed at itself.
-2. **The spine taxonomy is surface-first.** `situation-spine.json` organizes by product
-   surface (`lists-and-tables`, `overlays`, `build-profiles`). Surfaces are where
-   Applications live; problems are where Golden Paths live. One-doc-per-surface-leaf can
-   only produce Applications, and the same mechanism was measured 5–10 times across leaves
-   with no single home (measured: two rules found with "recall gaps of the same shape" by
-   different composers; four denominators that shrank by deletion, each discovered
-   separately).
-3. **The census rule was the mandated apex deliverable.** §9's rule-or-decline made a
-   repo-specific regex the crown of each document.
-4. **The 0%-precision lesson over-generalized.** "Never write a gate from a principle before
-   reading the code" (correct, measured twice) silently became "never abstract at all". The
-   fix is not abstraction-first — it is abstraction **after ≥3 measured instances**, which
-   the corpus now makes possible for the first time.
+v1's twelve-to-twenty mechanism-shaped candidates ("one authority per vocabulary", "a
+gate must see its target") were **mis-leveled** — those are cross-cutting laws, not
+subjects (see §2, "Cross-cutting laws"). A repo with 7,000+ commits across React and
+Rust spans far more than 20 subjects. **Do not pre-commit to a count; the fresh scan
+decides.** Plausible order of magnitude: 40–80.
 
-## 2. The layer contract (the piece that was missing)
+**2. Sourcing: scan again from scratch, and forge through the LLM hardening layer.**
+v1 was distillation-only from the 247 corpus. v2 has two sources and one forge:
 
-Adopt the operator's four terms verbatim. Each layer gets an acceptance test a reviewer can
-run — the absence of these tests is root cause #1.
+- The **repo names the subjects** (fresh scan, §3) — the corpus is a *secondary* input.
+- The **LLM writes the standard**: every Golden Path and Technique is authored from the
+  composer's own expert software-engineering knowledge first, then reconciled against
+  evidence. The repo's current practice is never the ceiling of the content — per the
+  operator's standing direction ("LLM as expert developer forges it into golden path as
+  its sw engineering skills can always produce code on higher quality level than me or
+  potential user"). Where the repo falls short of the forged standard, that is a
+  **deviation** registered as a gap, not a reason to lower the standard.
+- **Evidence keeps it honest**: curated pointers to the canonical manifestation,
+  confirming or contradicting the standard.
+
+**3. The graph itself is open for redesign.** The spine's surface-first shape must not
+leak into the new hierarchy — reconsider the node structure from zero if it locks the
+design (§5). The spine is demoted to a legacy index of the old corpus.
+
+## 2. Layer contract v2
+
+Acceptance tests per layer — their absence was root cause #1 and this table is the gate.
+The Table row above is the running calibration for every forge brief.
 
 | Layer | Answers | Acceptance test |
 |---|---|---|
-| **Golden Path** | *What must be true, and why.* Names an engineering situation and its governing principle. | **Transplant test:** contains zero repo identifiers, zero file paths, zero language or framework names. Hand it to an agent in a sibling repo (`brainiac`, `vibeman`, `ascent`) with NO access to Personas code — the agent must be able to recognize whether the situation exists there. **Forge criterion:** may only be created when the same mechanism has been measured in ≥3 Applications across ≥2 surfaces (or 2 Applications + 1 sibling-repo instance). A Golden Path with one Application is that Application renamed. |
-| **Technique** | *How you make it true.* A procedure with steps and decision rules; mechanism-specific but language-agnostic (may name classes of tools: a ratchet, a closed generated vocabulary, an isolated index, a partitioning control). | **Transplant test, weaker form:** an agent in a sibling repo, given only the Technique, must be able to produce a correct Application there without asking questions about Personas. Belongs to exactly one Golden Path. |
-| **Application** | *What you type here.* The repo/language-specific realization — the census rule, the exact type edit, the file:line prescription. | This is what the existing 247 documents and 201 rules already are. Test: cites real files, reproduces its baselines, hand-verified precision. Links upward to ≥1 Technique. |
-| **Evidence** | *How we know.* Measurements, replays, incidents — dated, with the instrument that produced them. | Already embedded in the 247 documents and the deferred-fixes register. Test: names its instrument, its denominator's source, and its date. Stays physically inside the Application documents; the upper layers cite downward, never restate. |
+| **Golden Path** | *What this subject is, and what a principal engineer holds true about it.* A named engineering subject (Table, Modal & overlay stack, Form, Scheduling & triggers, Streaming model output, Credential vault, Undo & history, Search, Migrations, Background jobs, Release pipeline…). | **Existence criterion:** the subject manifests in this repo (≥1 real surface or subsystem) — *this replaces v1's "≥3 measured instances" distillation rule, which wrongly bounded content by repo instances.* **Transplant test:** the body contains zero repo identifiers, file paths, or framework names — an agent in a sibling repo can use it unchanged. Evidence lives in links, never inline. |
+| **Technique** | *A named concern of its subject, with the procedure and decision rules.* (For Table: pagination, sorting, performance/virtualization, UX states, client/server responsibility split.) | Language-agnostic; transplant test applies. Belongs to one Golden Path (cross-references allowed; shared-technique nodes are a graph-design decision for session N+1, §5). |
+| **Application** | *How you realize the technique on a concrete stack.* One per stack where relevant: React/TS client, Rust backend, SQL. Census rules live here. | Cites real code; any *measured* claim keeps the full v1 discipline (two implementations, positive controls, hand-verified precision). The existing 247 documents are pre-built members of this layer. |
+| **Evidence** | *Where the practice manifests.* | **Curated and sparse by policy**: the canonical manifestation (e.g. `UnifiedTable`) plus at most a key counter-example. The 247-document corpus and the census baselines are the *deep archive behind* these pointers — linked, never restated. |
 
-**The litmus pair, from our own corpus:** `golden-path-doctrine.md` §"A reconciliation is a
-claim" passes the Golden-Path transplant test. `schedule-calendar.md` fails it in its first
-sentence. Use these as the calibration examples in every forge brief.
+**Cross-cutting laws (reclassified from v1 §8).** The nine v1 candidates — one authority
+per vocabulary; a gate must see its target; failure spelled differently from empty
+success; identity survives reordering/reuse/restart; a stored derivation names its
+recomputation; one validation door + enumerate writers; a count carries its predicate;
+deletion is not repair; everything created names its reaper — are **laws that Techniques
+cite**, not Golden Paths. They live with the doctrine (largely already written there)
+and get stable anchors so any Technique can reference them. They are real convergences,
+measured ≥3 times each; they were just the wrong *kind* of node.
 
-## 3. What survives unchanged, what changes
+**Scope of the 0%-precision lesson, settled:** it governs **gates and measured claims**
+(census rules, baselines, precision figures) — unchanged and non-negotiable. It does
+**not** govern principle content; Golden Paths and Techniques are authored from
+expertise. The two meet at the deviation record. This resolves the tension v1 papered
+over.
 
-**Keep (proven this campaign):** two independent implementations of every count; positive
-controls that partition the anchor; hand-verification of matches; verify-by-exit-code,
-never through a pipe; corrections-as-first-deliverable; the census runner and all 201 rules
-exactly as they are (they are the Application-layer enforcement and they are healthy); the
-deferred-fixes register; the doctrine; the isolated-`GIT_INDEX_FILE` commit ritual under
-parallel sessions; measurement against the 2026-08-17 pre-purge backup for any row-count
-claim.
+## 3. Two sources, one forge
 
-**Change:**
-- The 247 documents are **renamed in role, not moved on disk**: they become the
-  Application+Evidence layer. Physically moving them breaks 4,000 links and 201
-  `goldenPath` pointers in `rules.json`; instead each gets a small upward-link header
-  (see §5). A mechanical directory rename can come later, once the hierarchy is stable.
-- The word "golden path" stops referring to leaf documents. New top-layer docs own the term.
-- §9's mandate changes from "rule or decline" to "rule or decline, **and name the
-  Technique this realizes"** for future compositions.
-- The spine stays as the Application index (it is a good map of surfaces); the new
-  hierarchy is problem-first and cross-cuts it. Do not rewrite the spine.
+**Source A — the fresh scan (primary).** Enumerate the repo's engineering subjects from
+scratch:
+- Waves over the context map (16 groups / 208 contexts) naming the subjects each context
+  embodies, plus a commit-history theme pass (7,000+ commits) for subjects the map
+  under-represents (build/release, process management, parallel-session workflow).
+- **Lock-in guard:** scanners do NOT read the spine or the 247 corpus before naming
+  subjects — the old taxonomy must not shape the new inventory. The corpus is consulted
+  *after*, as a coverage cross-check (a corpus leaf with no home in the new inventory is
+  either a missed subject or an Application looking for its topic).
 
-## 4. The forging procedure (mining, not rewriting)
+**Source B — the corpus (secondary).** The 247 documents are the Application inventory,
+the deviation mine, and the evidence archive. They are mapped INTO the new graph
+(upward links), never used as its skeleton.
 
-The upper layers are **distilled from the existing corpus**, never written fresh from
-principle — that is the 0%-precision lesson applied correctly.
+**The forge — two-phase, per Golden Path:**
+1. **Expert draft** (the LLM hardening layer): write the subject's best practice and its
+   Techniques from engineering knowledge, before opening repo code. This is what keeps
+   the content at altitude — the corpus's gravity pulls toward Application detail, and
+   phase 1 is deliberately out of its reach.
+2. **Evidence reconciliation:** open the repo. Each claim gets one of three outcomes —
+   **confirmed** (link the canonical evidence), **deviation** (repo falls short of the
+   standard → registered gap in `golden-path-deferred-fixes.md` or the backlog; the
+   standard stays), or **upward lesson** (the repo teaches something the draft lacked —
+   this happens; the trigger fix and the isolated-index commit ritual are both examples
+   of repo practice exceeding textbook practice).
+3. **Transplant test:** hand the Golden Path + Techniques to an agent in a sibling repo
+   (`brainiac`, `vibeman`, `ascent`) with no Personas access; it must locate the subject
+   and sketch an Application there without questions. A failed transplant demotes or
+   revises the document.
 
-**Inputs, all machine-readable already:**
-- `docs/concepts/golden-paths/index.json` — 247 docs with headline + §2 oneWay + ruleIds digests
-- `scripts/census/rules.json` — 201 rule descriptions (each is nearly a Technique statement)
-- `docs/concepts/golden-path-deferred-fixes.md` — 127 named defects
-- The doctrine — pre-forged Golden-Path material for the meta/verification cluster
-- The §12 cross-corrections — every "same shape as" is a clustering edge
+## 4. What survives from v1 unchanged
 
-**Procedure per wave:**
-1. **Cluster** Applications by *mechanism*, not surface. Work from index digests + rule
-   descriptions, opening full documents only to resolve a doubtful membership. An
-   Application may belong to multiple clusters (a leaf usually realizes 2–4 mechanisms).
-2. **Gate the cluster map with the operator** before forging — the taxonomy is a product
-   decision (this is the step the original campaign skipped).
-3. **Forge**: for each ratified cluster, one composer writes the Golden Path (≤1 page) and
-   its Techniques (50–150 lines each), citing the member Applications and their Evidence
-   downward. The composer is an *engineer synthesizing*, not a scanner — per the operator's
-   standing direction, the forged best practice may exceed what the repo currently does;
-   the repo's current shape becomes a deviation, not the standard.
-4. **Transplant-test** every forged Golden Path and Technique against ≥1 sibling repo:
-   dispatch an agent into `brainiac` or `vibeman` with only the new document; it must
-   locate the situation (Golden Path) or produce an Application sketch (Technique) without
-   reading Personas. A failed transplant is a failed forge — revise or demote the document
-   to the layer it actually is.
-5. **Wire links** (see §5) and run the extended integrity checker.
+The diagnosis and root causes. The census and all 201 rules exactly as they are
+(Application-layer enforcement, healthy). The 247 documents stay on disk — renamed in
+role, not moved; moving breaks 4,000 links and 201 `goldenPath` pointers. The
+verification method for anything measured. The integrity-checker gating of layer
+boundaries (§5) — root cause #1 must stay answered. The isolated-`GIT_INDEX_FILE`
+commit ritual under parallel sessions. Measurement against the 2026-08-17 pre-purge
+backup for any historical row-count claim.
 
-**Expected shape** (estimate, to be confirmed by clustering): 247 Applications → **30–50
-Techniques** → **12–20 Golden Paths**.
+## 5. Graph and artifacts — designed fresh in session N+1, not inherited
 
-## 5. Artifact layout, link schema, enforcement
+Per the operator: reconsider the node hierarchy in case it locks thinking. So the graph
+design is the next session's **first deliverable**, made deliberately, with these
+constraints rather than a prescribed tree:
 
-```
-docs/concepts/
-  principles/            <- Golden Paths (new; ≤1 page each; zero repo identifiers)
-  techniques/            <- Techniques (new; 50–150 lines; language-agnostic)
-  golden-paths/          <- existing 247 docs = Applications+Evidence (path kept; role renamed)
-  golden-path-doctrine.md  <- method doctrine; source material for the verification cluster
-```
+- Four layers with machine-checkable membership and links (frontmatter or header
+  blocks) in both directions.
+- A proposal to evaluate — one folder per subject:
+  `docs/concepts/paths/<subject>/{<subject>.md, techniques/*.md, applications/*.md}` —
+  but the session may overrule it; decide shared-vs-owned Technique nodes (pagination
+  appears under Table and under Feed) explicitly at design time.
+- `docs/concepts/golden-paths/` keeps its path as the legacy archive/Application layer;
+  a mechanical rename can come later.
+- `situation-spine.json` retired as organizer; retained for corpus indexing and census
+  integrity.
+- **Extend `check-corpus-integrity.mjs`** to gate the hierarchy: Golden Path / Technique
+  bodies containing repo paths or framework names → fail; an Application without an
+  upward link (post-pilot) → fail; a Golden Path with zero evidence links → fail;
+  unresolvable links → fail. The checker cannot run the transplant test; it refuses the
+  statically checkable violations and *says* what it cannot check.
 
-Each Application gains a header block:
+## 6. Applying to contexts
 
-```markdown
-> **Layer: Application.** Realizes technique(s): [[closed-generated-vocabulary]], …
-> Golden path(s): [[one-authority-per-vocabulary]], …
-```
-
-Each Technique names exactly one Golden Path; each Golden Path lists its Techniques and
-Applications.
-
-**Extend `check-corpus-integrity.mjs` to gate the hierarchy** — this is the structural
-answer to root cause #1. New failures:
-- an Application with no upward Technique link (grandfathering: fail only for docs touched
-  after the pilot wave; a backfill wave wires the rest);
-- a Technique whose Golden Path does not exist, or that belongs to more than one;
-- a Golden Path with fewer than 3 member Applications (the forge criterion, enforced);
-- a Golden Path or Technique containing a repo path (`src/`, `src-tauri/`, `scripts/`), a
-  file:line citation, or a language name — the transplant test's cheap static half. The
-  checker cannot run the transplant itself; it can refuse the obvious violations, which is
-  exactly the "absence-blind gate" lesson: gate what is checkable, *say* what is not.
-
-## 6. Applying to contexts (the third leg)
-
-Once Techniques exist, "applying to contexts" becomes computable rather than editorial:
-
-- **Per-context scorecard:** join census match sites (the runner already knows every file
-  each rule matches) against `context-map.json` `filePaths` → for each of the app's
-  contexts: which Golden Paths are live here, through which Applications, with counts.
-  Emit as a generated artifact (`docs/concepts/context-scorecard.json` + a CSV like
-  `census-rules-report.csv`).
-- **Session loading:** a session working in context X reads the scorecard and loads only
-  the Golden Paths and Techniques live in X — the hierarchy is what makes that selective
-  loading possible at all; the flat corpus could not be loaded selectively by problem.
-- Size per-context work off the **app's** context map (the database authority), not the
-  committed Vibeman snapshot — the 5× sizing error of 2026-07-29 is the standing warning.
+Unchanged in intent, now computable: join census match sites against `context-map.json`
+`filePaths` → per-context scorecard (which subjects are live here, through which
+Applications, with counts; emitted like `census-rules-report.csv`). A session working in
+context X loads the subject bundles live in X — selective loading by subject is the
+payoff the flat corpus could not provide. Size per-context work off the app's context
+map, not the committed Vibeman snapshot (the 5× sizing error of 2026-07-29 stands as
+the warning).
 
 ## 7. Session plan
 
-**Session N+1 (first Fable session on this plan):**
-1. Ratify §2's layer contract with the operator (10 minutes of gates, then binding).
-2. Run the clustering pass over the machine-readable inputs → proposed cluster map
-   (candidate Golden Paths with member Applications). Gate with the operator.
-3. Forge **2–3 pilot clusters end-to-end** — Golden Path + Techniques + upward links on
-   their member Applications + a real transplant test against one sibling repo. Strong
-   pilot candidates: *gate integrity* (the doctrine has pre-forged most of it) and *one
-   authority per vocabulary* (the TriggerKind fix is a complete worked example).
-4. Extend the integrity checker (§5) and land it green.
+**Session N+1 (next Fable session):**
+1. Ratify this contract (§2) with the operator — the Table row is the calibration.
+2. **Design the graph** (§5) — fresh, explicitly free to break from the old shapes.
+3. **Fresh subject scan** (§3 Source A) → candidate Golden Path inventory; operator
+   gates the list. Then the corpus coverage cross-check.
+4. **Pilot: forge "Table" end-to-end** — the operator-specified worked example. Expert
+   draft → Techniques (pagination, sorting, performance, UX states, client/server
+   roles) → Applications (React: the `UnifiedTable` conventions and loading-v2 laws;
+   Rust/SQL: query shape, keyset pagination — `team_assignments.rs:392` is the repo's
+   own compliant exemplar) → sparse Evidence links → deviations registered. Then one
+   backend-native subject (e.g. **Scheduling & triggers** or **Background jobs**) to
+   prove the contract on Rust ground.
+5. Extend the integrity checker and land it green.
 
-**Sessions N+2…:** waves, as this campaign ran them — forge remaining ratified clusters,
-backfill upward links on all 247 Applications, generate the context scorecard, then a
-closing pass that re-audits the doctrine and migrates its transplantable sections into
-`principles/` where they belong.
+**Sessions N+2…:** forge waves by subject, exactly as the composition campaign ran —
+batched composers, operator-gated inventories, verify by exit code, corrections as
+first-class deliverables. Backfill upward links from the 247 Applications as their
+subjects come online. Generate the context scorecard. Closing pass: the doctrine
+donates its transplantable sections to the cross-cutting-laws anchors.
 
-## 8. Candidate Golden Paths (seed list — clustering must confirm, operator must gate)
+## 8. Anti-lock guards
 
-Extracted from convergences the campaign already measured ≥3 times each. Titles are
-problem-shaped and repo-free on purpose:
-
-1. **One authority per vocabulary** — every closed set of names has exactly one declaration
-   that generates all consumers (storage constraint, client menu, classifier,
-   translations). *Members incl.:* the TriggerKind fix, status tokens, the SQL-verb
-   vocabulary rule, connector kind menus.
-2. **A gate must be able to see its target** — enforcement level, recall against the real
-   spelling population, absence-blindness of diff-shaped checks, self-counting gates,
-   fixtures that cannot fail. *Members incl.:* enforce-base-modal, the doc-sync hook,
-   cargo-deny, binding drift, notificationCoverageGate, the eval lane.
-3. **Failure must be spelled differently from empty success.** *Members incl.:*
-   failure-written-as-empty-list, probe-verdict-narrowed-to-boolean, $0-vs-unpriced,
-   vacuous-all-done-verdict, null-spinner busy states.
-4. **Identity must survive reordering, reuse, and restart** — keys, selection, PIDs, cell
-   coordinates, ordering tie-breakers. *Members incl.:* PID-without-start-time, grid
-   identity lost above the renderer, clock-ordered reads without tiebreak, media src
-   without remount key.
-5. **A stored derivation must name its recomputation** — every scalar shadowing a
-   computation drifts. *Members incl.:* next_trigger_at, updated_at destroyed as an
-   oracle, freshness notes, denormalized counts.
-6. **One validation door, and enumerate the writers first** — the defect is in a writer
-   nobody listed, not the door everyone reads. *Members incl.:* validate_all, raw-JSON
-   editors, build-session raw SQL, seed clobbering.
-7. **A count is meaningless without its predicate** — namespace, denominator, and question
-   travel with every number. *Members incl.:* the citation-namespace sweep, 6-vs-135
-   spawn sites, conjoined headlines, the fabricated reconciliation.
-8. **Deletion is not repair** — a shrinking population must name its cause; a ratchet
-   stores the same number either way. *Members incl.:* the four deletion-shrunk
-   denominators of 2026-08-17.
-9. **Everything created names its reaper** — layouts, vectors, versions, worktrees, seeds;
-   a store that can only grow is the defect. *Members incl.:* orphaned vectors, canvas
-   layout entries, worktree GC, "nothing has ever deleted a row" ×3.
-
-Clusters 2, 7 and 8 draw heavily on the doctrine — expect the doctrine to *donate* sections
-to `principles/` rather than being duplicated.
+- The subject inventory comes from the **code**, not from the spine or the corpus;
+  those are cross-checks.
+- Census-rule availability must not shape what becomes a Technique — plenty of real
+  Techniques are absences the census structurally cannot express (measured: the 0%/100%
+  prevalence limitation), and they are Techniques all the same.
+- Evidence sparse by policy — one canonical pointer beats ten measurements; the archive
+  holds the rest.
+- The next session may overrule this document's structural proposals; the graph design
+  is its deliverable, not its inheritance. What it may not overrule: the four layers,
+  their acceptance tests, and the gated boundary.
 
 ---
 
-*Why this failed the first time, in one sentence, for the next session to keep in view:*
-**the layer boundary was the one invariant without a gate, and ungated invariants flatten**
-— the corpus optimized for exactly what its contract checked, and transferability was
-never checked.
+*The lesson v1 recorded, still in force:* **the layer boundary was the one invariant
+without a gate, and ungated invariants flatten.**
+
+*The lesson v2 adds:* **the repo names the subjects; the LLM writes the standard;
+evidence keeps it honest** — distillation alone produces a mirror of the repo, and a
+mirror cannot hold a repo to a standard higher than itself.
