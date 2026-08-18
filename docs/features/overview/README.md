@@ -243,6 +243,33 @@ This complements the **L0/L1/L2 layered fetch** (`useLayeredList`,
 `docs/architecture/overview-layered-fetch.md`): layered fetch bounds how much
 data is *loaded*; progressive reveal bounds how fast loaded rows are *mounted*.
 
+## Patterns: Subjects (knowledge hierarchy) — 2026-08-18
+
+The Patterns tab now opens on a three-way lane switch — **Subjects | Graph |
+Practices** (persisted per device; Subjects is the default). Graph and
+Practices are the pre-existing workspace practice library unchanged (the
+library's former internal Library|Graph toggle is now owned by the lane
+switch); Subjects is new: a master–detail reader over the ratified v2
+knowledge hierarchy (**Golden Paths → Techniques → Applications → Evidence**),
+read live from a managed repo's `docs/concepts/paths/**` by the Rust reader
+(`dev_tools_hierarchy_graph` / `dev_tools_hierarchy_doc`) — filesystem-truth,
+never copied into the database. A project picker in the toolbar chooses which
+managed repo is the knowledge source (persisted); a repo without a corpus
+renders the reader's own `source.reason` as an honest empty state. The left
+rail groups subjects under the 8 categories in compass order with status
+chips (draft → forged → reconciled → transplant-tested), technique/application
+counts and deviation badges; one omnibox searches subjects, techniques and
+applications (child hits surface their parent subject with a "matched in…"
+hint). The detail pane tabs through the golden path (markdown with relative
+links intercepted into in-app navigation — subject links move the rail,
+technique links open that technique, law anchors and deferred-fix anchors open
+a doc overlay), techniques (law chips with tooltips, shared-technique
+`@owner` provenance), stack-badged applications, evidence & deviations
+(copyable repo paths, counter-evidence flagged, deviation anchors deep-linking
+into `golden-path-deferred-fixes.md`), and the corpus-mapped legacy docs. A
+warnings badge in the toolbar lists everything the reader skipped — corpus
+health for free.
+
 ## Patterns — the inverted library (2026-08-11)
 
 The knowledge library is doctrine-first: **Directions** (macro items distilled

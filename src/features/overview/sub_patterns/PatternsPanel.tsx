@@ -1,13 +1,15 @@
-// Patterns — the Overview host for the workspace practice library.
+// Patterns — the Overview host for the knowledge surfaces. Three lanes
+// (persisted per device, `Subjects` default):
 //
-// The library used to live inside the Workspaces Atlas, which handed it
-// `{ workspace, rows, projectById, onChanged }` out of its own `center`
-// provider. Overview has no such provider, so this container is the library's
-// new data source: it picks the workspace (the store's persisted active one,
-// falling back to the first), fetches that workspace's knowledge rows and the
-// portfolio's project map, and hands `KnowledgeLibrary` exactly the props it
-// always took. Keeping that contract intact is deliberate — the library itself
-// is unchanged by the move.
+// - **Subjects** — the v2 knowledge hierarchy (Golden Paths → Techniques →
+//   Applications → Evidence), read live from a managed repo's
+//   `docs/concepts/paths/**` by the Rust reader. Needs only a project id —
+//   no workspace.
+// - **Graph** / **Practices** — the pre-existing workspace practice library
+//   (DB plane), untouched: same data flow this container has carried since
+//   the library moved here from the Workspaces Atlas, now rendered through
+//   `KnowledgeLibrary`'s controlled `view` prop so the lane switch above owns
+//   what used to be its internal Library|Graph toggle.
 import { useEffect, useMemo, useState } from 'react';
 
 import { listWorkspaceKnowledge } from '@/api/devTools/workspaces';
@@ -26,7 +28,23 @@ import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 
+import { SubjectsView } from './hierarchy/SubjectsView';
 import KnowledgeLibrary from './KnowledgeLibrary';
+
+type Lane = 'subjects' | 'graph' | 'practices';
+
+const LANE_KEY = 'patterns:lane';
+
+function initialLane(): Lane {
+  try {
+    const stored = localStorage.getItem(LANE_KEY);
+    if (stored === 'subjects' || stored === 'graph' || stored === 'practices') return stored;
+  } catch (err) {
+    // localStorage unavailable — default lane.
+    silentCatch('patterns:laneRead')(err);
+  }
+  return 'subjects';
+}
 
 /** Calm header-only ghost, same shape as the KnowledgeHub subtab fallback:
  *  the library's body geometry (tree + grid) is too distinctive to fake
@@ -41,7 +59,10 @@ function PatternsSkeleton() {
   );
 }
 
-export default function PatternsPanel() {
+/** The pre-existing workspace-practices plane, exactly as before the lane
+ *  restructure: workspace gating/skeleton and the workspace picker live HERE,
+ *  so the Subjects lane never waits on (or renders) any of it. */
+function WorkspaceLane({ view }: { view: 'library' | 'graph' }) {
   const { t } = useTranslation();
   const tk = t.overview.knowledge;
   const { workspaces, activeId } = useWorkspaces();
@@ -112,7 +133,7 @@ export default function PatternsPanel() {
   }
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-hidden p-4 md:p-6 gap-3">
+    <>
       {workspaces.length > 1 && (
         <div className="flex-shrink-0">
           <SegmentedTabs<string>
@@ -146,8 +167,49 @@ export default function PatternsPanel() {
           rows={rows}
           projectById={projectById}
           onChanged={() => setFetchGen((g) => g + 1)}
+          view={view}
         />
       </div>
+    </>
+  );
+}
+
+export default function PatternsPanel() {
+  const { t } = useTranslation();
+  const p = t.overview.patterns_v2;
+  const [lane, setLane] = useState<Lane>(initialLane);
+
+  const pickLane = (next: Lane) => {
+    setLane(next);
+    try {
+      localStorage.setItem(LANE_KEY, next);
+    } catch (err) {
+      // Persistence is a convenience, never a blocker.
+      silentCatch('patterns:laneWrite')(err);
+    }
+  };
+
+  return (
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden p-4 md:p-6 gap-3">
+      <div className="flex-shrink-0">
+        <SegmentedTabs<Lane>
+          tabs={[
+            { id: 'subjects', label: p.lane_subjects },
+            { id: 'graph', label: p.lane_graph },
+            { id: 'practices', label: p.lane_practices },
+          ]}
+          activeTab={lane}
+          onTabChange={pickLane}
+          ariaLabel={p.lane_switch_aria}
+          fullWidth={false}
+        />
+      </div>
+
+      {lane === 'subjects' ? (
+        <SubjectsView />
+      ) : (
+        <WorkspaceLane view={lane === 'graph' ? 'graph' : 'library'} />
+      )}
     </div>
   );
 }
