@@ -5245,3 +5245,34 @@ No rubric versioning anywhere — weight edits silently re-score history (`golde
 
 ### <a id="w5-audit-logging"></a> audit-logging
 Credential-ledger 90-day retention is a scheduled sweep, not insert-path enforcement (`background.rs:3023-3031`; `api_key_audit.rs` shows the correct form in the same binary) · `auditMiddleware.ts` is named "audit" but emits diagnostic log lines, not ledger rows — the audit/telemetry boundary blurred in code · sanitization is per-ledger, not uniform: only the credential door runs `sanitize_secrets`; `policy_events` free-text inserts unscrubbed.
+
+---
+
+## Hierarchy-v2 forge wave 6 deviations (2026-08-18) — engineering-process cluster reconciled
+
+Same contract: standards kept, gaps registered, one anchor per subject. Full detail in
+the wave-6 composer reports (session transcript).
+
+### <a id="w6-release-pipeline"></a> release-pipeline
+Tag pushed before artifacts exist (11 tags / 0 releases; = deferred fixes 62/63, cited) - ci-gate requires a workflow that is 0-for-324 all-time, so publish:true is unreachable by construction - five version literals, macros crate already diverged to 0.1.0, no drift gate - two changelogs, one abandoned (Unreleased covered 3 of 11 tags); empty changelog renders "Maintenance release." - no size ratchet; installer baseline never committed so CI deltas are always empty; budget runs on one target leg only - no previous-release-to-candidate update rehearsal.
+
+### <a id="w6-packaging"></a> packaging
+Android variant outside the drift gate - forks identifier and CSP, carries the unsafe-eval token the gate bans, invisible because no gate reads that file (check-tauri-configs.mjs:18) - no absence-side payload check (nothing asserts lite trees lack ML payloads) - no upgrade rung anywhere (fresh install + uninstall only) - uninstall acceptance asserts only binary removal - macOS/Linux cells are dispatch-only + continue-on-error - brief correction: verify-resource-scoping.mjs is connector-API listing, NOT packaging (false lead excluded).
+
+### <a id="w6-build-economics"></a> build-economics
+Only the desktop feature set builds on every change; 5 feature variants compiled by nothing routine - the crate split has no completion criterion or regression baseline (point-in-time record, not a series) - check-build-cache.mjs runs on a path that cannot produce the error it detects - cleaning ladder documented three times, three ways - 317 MB of debug symbols in a vendored cache on every dev machine, unbudgeted.
+
+### <a id="w6-codegen"></a> codegen
+Budgets are runner policy not registry data (one global timeout) - registry declares no outputs, so the task-to-artifact join is impossible - no zero-output detection (a generator writing nothing passes; one task exits 0 unconditionally by design) - unregistered generators exist and are stale (gen-tour-anchors.mjs et al.) - committed bypass: the android conf beforeBuildCommand runs 0 of the 14 tasks - no atomic writes in any generator; split-locales.mjs deletes 793 files before rewriting.
+
+### <a id="w6-quality-gates"></a> quality-gates
+lefthook.yml:10-11 comment claims a --fix the job (correctly) does not carry - stale doc, not wrong behavior - secret scan has no binding backstop: exits 0 with a hint when the scanner is absent AND no CI workflow runs one, so the D9 control is opt-in per machine - CLAUDE.md's own --quiet mechanism claim is REFUTED by fault injection: --quiet disarms only display; the 99999 threshold is the entire exit-code neutralizer (correction owed to the primitive text; the forged severity technique carries the measured truth).
+
+### <a id="w6-test-harness"></a> test-harness
+e2e-smoke red 38/38 since inception (one missing word) - a lane that never passed and nobody noticed - default lane denominator shrink: 11/402 files never start while the report says 3,737/3,738 passed - 28 of 32 Playwright specs unreachable from any named script - run-rust-tests.mjs header records the unresolved CI-matrix contradiction (bare cargo test on the platform the quirk kills).
+
+### <a id="w6-concurrent-vcs"></a> concurrent-vcs
+The intent ledger decayed past its own algorithm: 118 stale Active entries, duplicate section headings breaking the documented append anchor, current campaigns unregistered - nine skill specs still prescribe the defeated pathspec forms; GIT_INDEX_FILE appears in zero SKILL.md - zero skills instruct the post-commit log readback - three orphaned worktree directories invisible to registry-driven GC by default (--include-orphans is opt-in).
+
+### <a id="w6-codebase-scanning"></a> codebase-scanning
+parse_finding silently drops malformed protocol lines - nothing counts parse failures (standards_scan.rs:71-78) - the runner never reconciles received findings against the shipped ruleset (a rule the model skipped is silently absent) - the incremental digest ledger keys on content only, so a ruleset revision does not invalidate prior results - corpus-map has ZERO files for this subject; the census/idea-scanner legacy docs may be mapped elsewhere - check during N+2 backfill.
