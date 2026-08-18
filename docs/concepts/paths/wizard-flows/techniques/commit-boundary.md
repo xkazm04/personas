@@ -101,3 +101,16 @@ promise bends; the discipline that keeps it honest:
   question ("is this safe to delete?") no one can answer later.
 - **The count of exits is the count of cleanups.** Enumerate the ways out
   of the flow; each one either reaps or promotes, decided at design time.
+
+## Boundary — this governs transactional flows, not creative iteration
+
+The commit-gate exists because a later step depends on an earlier step's
+committed state; breaking the sequence corrupts the transaction. Where no such
+dependency exists — a *creative-iteration* pipeline whose non-linear navigation
+is a deliberate feature (revisit any stage, in any order, nothing downstream
+assumes an upstream commit) — a per-step commit gate is not a missing safeguard,
+it is the wrong shape. The discriminator is the data dependency, not the step
+count: gate a step iff a later step reads what this one commits. A
+free-navigation creative flow still has *one* real commit boundary (the explicit
+freeze/publish); that is the one to protect. Applying this technique to a
+creative pipeline and finding "no per-step gate" is a false positive.

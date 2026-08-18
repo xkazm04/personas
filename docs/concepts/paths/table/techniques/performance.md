@@ -114,3 +114,18 @@ question upstream of the rendering question.
   a full-table render.
 - Optimizing before measuring, i.e. skipping rung 0 — the ladder read
   bottom-up as a checklist instead of climbed under load.
+
+## Boundary — DOM weight is not reconciliation cost (transplant-tested 2026-08-18)
+
+Two costs hide under "performance", and conforming to one does not buy the other.
+**DOM weight** — how many elements a row allocates — is bounded by the
+windowing/column discipline above. **Reconciliation cost** — how much the view
+layer recomputes when *one* logical thing changes — is a separate claim, and a
+table that passes every rung here can still rebuild all N rows on a 1-of-N update
+because nothing shields the untouched rows from recomputation. A dynamic probe
+measured exactly this: a single row update re-ran the sort and rebuilt every row.
+The rungs are a static shape; reconciliation cost is only knowable by measuring
+recomputation under a real update.
+A "performance holds" verdict read off the pattern covers DOM weight and says
+nothing about reconciliation — assert the second with a render-count probe
+(`verified_by`), never infer it from the first.

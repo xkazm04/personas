@@ -116,3 +116,15 @@ to learn any fact.
   that enforces it.
 - Expose a test reset hatch; module state with no reaper and no hatch is
   a leak in production and a poltergeist in tests.
+
+## Boundary — the cost this eliminates is a network round-trip
+
+Warm-remount and SWR earn their complexity against a *network* fetch: the
+round-trip is the expense worth caching past an unmount. Against a cheap
+local-first store — an embedded database, a local key-value store, a synchronous
+module read — a re-read on remount costs microseconds, and a warm module cache
+adds invalidation surface for no latency saved. Scope the claim to network-backed surfaces. A local-first view
+that "re-reads on every remount" is not missing this technique; it is correctly
+declining a cache it does not need — and if one genuinely expensive operation
+exists (a live run that must survive remount), cache *that* above the component,
+not the whole read path.

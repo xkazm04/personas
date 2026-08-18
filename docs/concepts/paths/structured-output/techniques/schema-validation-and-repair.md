@@ -117,3 +117,15 @@ old-shape outputs meet new-shape validation must be survivable), and **a
 schema change resets the observability baseline** — the failure-rate step
 change it causes is signal, not noise, and comparing across it without
 marking the boundary manufactures phantom drift.
+
+## A declared schema is a claim, not an enforcement
+
+A schema constant in the source (`additionalProperties: false`, a required list,
+a type) is `evidence` that the shape is *intended* — it is not proof the runtime
+*enforces* it. A probe found a validator whose schema declared
+`additionalProperties: false` while the parser never rejected extra fields:
+static reading of the constant scored it "enforced"; only running a crafted input
+revealed the divergence. Treat the schema as satisfied only when a runnable probe
+(`verified_by`) feeds it a violating payload and observes the rejection. The gap
+between a declared schema and its runtime honoring is exactly the kind of thing a
+pattern scan cannot see and a run can.

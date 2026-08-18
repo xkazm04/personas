@@ -105,3 +105,14 @@ same idempotence. The toast is the fast path to the action, never the only
 path; otherwise missing the toast silently downgrades the user from "one
 click to fix" to "find it yourself", which is exactly the gap the ledger
 exists to close.
+
+## Boundary — centralized chrome rendering is not "out of context"
+
+The producer of a notification (the code that decides an event is worth
+surfacing) must live with the action it concerns. The *renderer* — the toast
+host / bell — correctly lives once, in shared app-shell chrome, fed by producers
+scattered across features. A scan that flags "the notification renders outside
+the feature that produced it" mistakes correct centralized rendering for a
+context leak. The invariant to check is the *producer* side: does the event carry
+its action and identity from where it originated? If yes, where the host paints
+it is an architecture decision, not a defect.
