@@ -2142,6 +2142,23 @@
     "search_kind_subject": "Chủ đề",
     "search_kind_technique": "Kỹ thuật",
     "search_results_aria": "Kết quả tìm kiếm phân cấp",
-    "shared_owner_note": "Kỹ thuật dùng chung — thuộc sở hữu của {owner}"
+    "shared_owner_note": "Kỹ thuật dùng chung — thuộc sở hữu của {owner}",
+    "adherence_col_context": "Bối cảnh",
+    "adherence_col_rules": "Quy tắc hàng đầu",
+    "adherence_col_sites": "Vị trí",
+    "adherence_heading": "Mức tuân thủ",
+    "adherence_headline": "{clean}/{applicable} bối cảnh sạch · {sites} vị trí trong {files} tệp",
+    "adherence_measured": "Đã đo",
+    "adherence_more_rules": "…và {count} quy tắc khác",
+    "adherence_no_rules": "Chưa có quy tắc census nào áp dụng cho chủ đề này — không có nghĩa là sạch.",
+    "adherence_no_scorecard": "Chưa có bảng điểm census cho repository này.",
+    "adherence_predicate": "{clean}/{applicable} bối cảnh áp dụng được là sạch · {sites} vị trí",
+    "adherence_uncontexted": "Ngoài mọi bối cảnh",
+    "context_lens_aria": "Kính lọc bối cảnh — làm mờ các chủ đề không có vị trí census trong bối cảnh đã chọn",
+    "context_lens_clear": "Xóa kính lọc bối cảnh",
+    "context_lens_empty": "Không có bối cảnh nào chứa vị trí census.",
+    "context_lens_label": "Bối cảnh",
+    "context_lens_search": "Tìm bối cảnh…",
+    "context_lens_sites": "{count} vị trí"
   }
 }

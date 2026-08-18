@@ -8367,7 +8367,24 @@
       "search_kind_subject": "Sujet",
       "search_kind_technique": "Technique",
       "search_results_aria": "Résultats de recherche hiérarchique",
-      "shared_owner_note": "Technique partagée — détenue par {owner}"
+      "shared_owner_note": "Technique partagée — détenue par {owner}",
+      "adherence_col_context": "Contexte",
+      "adherence_col_rules": "Règles principales",
+      "adherence_col_sites": "Sites",
+      "adherence_heading": "Conformité",
+      "adherence_headline": "{clean} contextes propres sur {applicable} · {sites} sites répartis sur {files} fichiers",
+      "adherence_measured": "Mesuré",
+      "adherence_more_rules": "…et {count} règles supplémentaires",
+      "adherence_no_rules": "Aucune règle census ne couvre ce sujet — l'absence n'est pas la propreté.",
+      "adherence_no_scorecard": "Aucun tableau de score census pour ce dépôt pour le moment.",
+      "adherence_predicate": "{clean} contextes applicables propres sur {applicable} · {sites} sites",
+      "adherence_uncontexted": "Hors de tout contexte",
+      "context_lens_aria": "Filtre de contexte — atténue les sujets sans site census dans un contexte choisi",
+      "context_lens_clear": "Effacer le filtre de contexte",
+      "context_lens_empty": "Aucun contexte ne comporte de sites census.",
+      "context_lens_label": "Contextes",
+      "context_lens_search": "Rechercher des contextes…",
+      "context_lens_sites": "{count} sites"
     }
   },
   "matrix_v3": {

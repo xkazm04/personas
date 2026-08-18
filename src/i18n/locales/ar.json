@@ -8367,7 +8367,24 @@
       "search_kind_subject": "موضوع",
       "search_kind_technique": "تقنية",
       "search_results_aria": "نتائج بحث التسلسل الهرمي",
-      "shared_owner_note": "تقنية مشتركة — يملكها {owner}"
+      "shared_owner_note": "تقنية مشتركة — يملكها {owner}",
+      "adherence_col_context": "السياق",
+      "adherence_col_rules": "أهم القواعد",
+      "adherence_col_sites": "المواقع",
+      "adherence_heading": "الالتزام",
+      "adherence_headline": "{clean} من أصل {applicable} سياقات نظيفة · {sites} مواقع عبر {files} ملفات",
+      "adherence_measured": "تم القياس",
+      "adherence_more_rules": "…و{count} قاعدة إضافية",
+      "adherence_no_rules": "لا توجد قواعد census تغطي هذا الموضوع بعد — الغياب لا يعني النظافة.",
+      "adherence_no_scorecard": "لا يوجد بطاقة تقييم census لهذا المستودع بعد.",
+      "adherence_predicate": "{clean} من أصل {applicable} سياقات قابلة للتطبيق نظيفة · {sites} مواقع",
+      "adherence_uncontexted": "خارج أي سياق",
+      "context_lens_aria": "عدسة السياق — تعتيم المواضيع التي لا تحتوي على مواقع census في سياق مختار",
+      "context_lens_clear": "مسح عدسة السياق",
+      "context_lens_empty": "لا توجد سياقات تحمل مواقع census.",
+      "context_lens_label": "السياقات",
+      "context_lens_search": "بحث في السياقات…",
+      "context_lens_sites": "{count} مواقع"
     }
   },
   "matrix_v3": {

@@ -6,8 +6,8 @@
 // toolbar carries the project source picker (shared persisted key with the
 // Subjects lane), the search omnibox, and the Laws lens in the slot the old
 // ProjectFilter occupied.
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { ChevronRight, Scale, Search, X } from 'lucide-react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Boxes, ChevronRight, Scale, Search, X } from 'lucide-react';
 
 import { IllustratedEmptyState } from '@/features/shared/components/display/IllustratedEmptyState';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
@@ -28,7 +28,13 @@ import {
   type HierarchyMatch,
 } from '../hierarchyModel';
 import { initialHierarchyProjectId, persistHierarchyProjectId } from '../projectSource';
+import {
+  buildContextLensEntries,
+  sitesBySubjectForContext,
+  subjectScoreMap,
+} from '../scorecardModel';
 import { useHierarchyGraph } from '../useHierarchyGraph';
+import { useHierarchyScorecard } from '../useHierarchyScorecard';
 import { categoryGraphTheme } from './categoryTheme';
 import HierarchyNexus, { type FlyTarget, type LawLensSets } from './HierarchyNexus';
 import {
@@ -281,6 +287,41 @@ export default function HierarchyGraphHost({
     };
   }, [lawId, model]);
 
+  // -- Context lens (census adherence scorecard) -------------------------------
+  // OPTIONAL signal: `adherence === null` means no census scorecard for this
+  // repo — the graph renders fully without it (no rings, lens popover explains).
+  const { scorecard } = useHierarchyScorecard(projectId);
+  const adherence = useMemo(() => subjectScoreMap(scorecard), [scorecard]);
+  const contextEntries = useMemo(
+    () => (adherence ? buildContextLensEntries(adherence) : []),
+    [adherence],
+  );
+  const [contextId, setContextId] = useState<string | null>(null);
+  const [contextOpen, setContextOpen] = useState(false);
+  const [contextQuery, setContextQuery] = useState('');
+  const contextRef = useRef<HTMLDivElement | null>(null);
+  useClickOutside(contextRef, contextOpen, () => setContextOpen(false));
+  useEffect(() => setContextId(null), [projectId]);
+  // A refreshed scorecard can drop the selected context.
+  useEffect(() => {
+    if (contextId && !contextEntries.some((c) => c.id === contextId)) setContextId(null);
+  }, [contextEntries, contextId]);
+  const contextSites = useMemo(
+    () => (adherence && contextId ? sitesBySubjectForContext(adherence, contextId) : null),
+    [adherence, contextId],
+  );
+  const selectedContext = useMemo(
+    () => contextEntries.find((c) => c.id === contextId) ?? null,
+    [contextEntries, contextId],
+  );
+  const filteredContextEntries = useMemo(() => {
+    const q = contextQuery.trim().toLowerCase();
+    if (!q) return contextEntries;
+    return contextEntries.filter(
+      (c) => c.name.toLowerCase().includes(q) || c.group.toLowerCase().includes(q),
+    );
+  }, [contextEntries, contextQuery]);
+
   // -- link interception (technique modal bodies) ------------------------------
   const handleLinkHref = useCallback(
     (currentFile: string, href: string): boolean => {
@@ -323,7 +364,7 @@ export default function HierarchyGraphHost({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
-      if (techniqueModal || docViewer || lawsOpen || searchOpen) return;
+      if (techniqueModal || docViewer || lawsOpen || searchOpen || contextOpen) return;
       if (focusSubject) {
         setFocusSubject(null);
         setHighlightTechnique(null);
@@ -336,7 +377,7 @@ export default function HierarchyGraphHost({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [techniqueModal, docViewer, lawsOpen, searchOpen, focusSubject, focusRing, nodeBySlug, layout, canvas, flyHome]);
+  }, [techniqueModal, docViewer, lawsOpen, searchOpen, contextOpen, focusSubject, focusRing, nodeBySlug, layout, canvas, flyHome]);
 
   const projectOptions = useMemo(
     () => projects.map((pr) => ({ value: pr.id, label: pr.name })),
@@ -500,6 +541,111 @@ export default function HierarchyGraphHost({
           )}
         </div>
 
+        {/* Context lens — join the census scorecard onto the sky: pick a
+            context, subjects clean (or unscanned) in it recede, dirty ones
+            carry their site counts. Composes with the Laws lens by
+            intersection (both mutes multiply in the Nexus). */}
+        <div ref={contextRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setContextOpen((o) => !o)}
+            aria-expanded={contextOpen}
+            aria-label={p.context_lens_aria}
+            className={`typo-label flex items-center gap-1.5 rounded-interactive border px-2.5 py-1 transition-colors ${
+              contextId
+                ? 'border-primary/30 bg-primary/10 text-primary'
+                : 'border-border/60 bg-secondary/50 text-foreground/70 hover:text-foreground'
+            }`}
+          >
+            <Boxes className="w-3.5 h-3.5" aria-hidden />
+            {selectedContext?.name ?? p.context_lens_label}
+            {contextId && (
+              <X
+                className="w-3 h-3"
+                aria-hidden
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setContextId(null);
+                }}
+              />
+            )}
+          </button>
+          {contextOpen && (
+            <div className="absolute right-0 top-full mt-1.5 z-50 w-[340px] rounded-card border border-border/60 bg-background shadow-elevation-3 p-1.5">
+              {adherence === null ? (
+                <p className="typo-caption text-foreground px-2 py-1.5">
+                  {p.adherence_no_scorecard}
+                </p>
+              ) : contextEntries.length === 0 ? (
+                <p className="typo-caption text-foreground px-2 py-1.5">{p.context_lens_empty}</p>
+              ) : (
+                <>
+                  <input
+                    type="search"
+                    value={contextQuery}
+                    onChange={(e) => setContextQuery(e.target.value)}
+                    placeholder={p.context_lens_search}
+                    aria-label={p.context_lens_search}
+                    className="w-full rounded-input border border-border/60 bg-secondary/40 px-2.5 py-1.5 mb-1 typo-caption text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/50"
+                  />
+                  {contextId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setContextId(null);
+                        setContextOpen(false);
+                      }}
+                      className="w-full text-left typo-caption rounded-interactive px-2 py-1.5 text-foreground hover:bg-secondary/50 transition-colors"
+                    >
+                      {p.context_lens_clear}
+                    </button>
+                  )}
+                  <div className="max-h-72 overflow-y-auto">
+                    {filteredContextEntries.length === 0 && (
+                      <p className="typo-caption text-foreground px-2 py-1.5">
+                        {p.search_no_matches}
+                      </p>
+                    )}
+                    {filteredContextEntries.map((ctx, i) => {
+                      const prev = filteredContextEntries[i - 1];
+                      const newGroup = !prev || prev.group !== ctx.group;
+                      const active = contextId === ctx.id;
+                      return (
+                        <Fragment key={ctx.id}>
+                          {newGroup && (
+                            // muted-ok: group band header, structural chrome
+                            <p className="typo-caption uppercase tracking-wide text-foreground/50 px-2 pt-2 pb-0.5">
+                              {ctx.group}
+                            </p>
+                          )}
+                          <button
+                            type="button"
+                            aria-pressed={active}
+                            onClick={() => {
+                              setContextId(active ? null : ctx.id);
+                              setContextOpen(false);
+                            }}
+                            className={`w-full flex items-center gap-2 text-left rounded-interactive px-2 py-1.5 transition-colors ${
+                              active ? 'bg-primary/10 text-primary' : 'hover:bg-secondary/50'
+                            }`}
+                          >
+                            <span className="typo-body text-foreground truncate flex-1">
+                              {ctx.name}
+                            </span>
+                            <span className="typo-caption text-foreground tabular-nums flex-shrink-0">
+                              {tx(p.context_lens_sites, { count: ctx.totalSites })}
+                            </span>
+                          </button>
+                        </Fragment>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
         {graph && !emptyGraph && (
           // muted-ok: toolbar counts readout, structural micro-label
           <span className="typo-caption text-foreground/50 whitespace-nowrap">
@@ -588,6 +734,8 @@ export default function HierarchyGraphHost({
                   focusSubject={focusSubject}
                   highlightTechnique={highlightTechnique}
                   lawLens={lawLens}
+                  adherence={adherence}
+                  contextSites={contextSites}
                   onHoverRing={setHoverRing}
                   onFocusRing={focusRingOn}
                   onFocusSubject={focusSubjectOn}

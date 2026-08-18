@@ -8367,7 +8367,24 @@
       "search_kind_subject": "বিষয়",
       "search_kind_technique": "কৌশল",
       "search_results_aria": "স্তরবিন্যাস অনুসন্ধান ফলাফল",
-      "shared_owner_note": "শেয়ার করা কৌশল — মালিক {owner}"
+      "shared_owner_note": "শেয়ার করা কৌশল — মালিক {owner}",
+      "adherence_col_context": "কনটেক্সট",
+      "adherence_col_rules": "শীর্ষ নিয়ম",
+      "adherence_col_sites": "সাইট",
+      "adherence_heading": "অনুবর্তিতা",
+      "adherence_headline": "{applicable}টি কনটেক্সটের মধ্যে {clean}টি ক্লিন · {files}টি ফাইল জুড়ে {sites}টি সাইট",
+      "adherence_measured": "পরিমাপ করা হয়েছে",
+      "adherence_more_rules": "…এবং আরও {count}টি নিয়ম",
+      "adherence_no_rules": "এই বিষয়ের জন্য এখনও কোনো census নিয়ম নেই — অনুপস্থিতি মানে পরিচ্ছন্নতা নয়।",
+      "adherence_no_scorecard": "এই রিপোজিটরির জন্য এখনও কোনো census স্কোরকার্ড নেই।",
+      "adherence_predicate": "{applicable}টি প্রযোজ্য কনটেক্সটের মধ্যে {clean}টি ক্লিন · {sites}টি সাইট",
+      "adherence_uncontexted": "কোনো কনটেক্সটের বাইরে",
+      "context_lens_aria": "কনটেক্সট লেন্স — নির্বাচিত কনটেক্সটে census সাইট নেই এমন বিষয়গুলো ম্লান করে",
+      "context_lens_clear": "কনটেক্সট লেন্স মুছুন",
+      "context_lens_empty": "কোনো কনটেক্সটে census সাইট নেই।",
+      "context_lens_label": "কনটেক্সট",
+      "context_lens_search": "কনটেক্সট খুঁজুন…",
+      "context_lens_sites": "{count}টি সাইট"
     }
   },
   "matrix_v3": {

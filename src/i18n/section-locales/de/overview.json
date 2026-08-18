@@ -2142,6 +2142,23 @@
     "search_kind_subject": "Thema",
     "search_kind_technique": "Technik",
     "search_results_aria": "Suchergebnisse der Hierarchie",
-    "shared_owner_note": "Gemeinsame Technik — verwaltet von {owner}"
+    "shared_owner_note": "Gemeinsame Technik — verwaltet von {owner}",
+    "adherence_col_context": "Kontext",
+    "adherence_col_rules": "Top-Regeln",
+    "adherence_col_sites": "Stellen",
+    "adherence_heading": "Konformität",
+    "adherence_headline": "{clean} von {applicable} Kontexten sauber · {sites} Stellen in {files} Dateien",
+    "adherence_measured": "Gemessen",
+    "adherence_more_rules": "…und {count} weitere Regeln",
+    "adherence_no_rules": "Für dieses Thema gibt es noch keine Census-Regeln — Abwesenheit bedeutet nicht Sauberkeit.",
+    "adherence_no_scorecard": "Für dieses Repository liegt noch keine Census-Bewertung vor.",
+    "adherence_predicate": "{clean} von {applicable} zutreffenden Kontexten sauber · {sites} Stellen",
+    "adherence_uncontexted": "Außerhalb jedes Kontexts",
+    "context_lens_aria": "Kontextlinse — Themen ohne Census-Stellen im gewählten Kontext abblenden",
+    "context_lens_clear": "Kontextlinse zurücksetzen",
+    "context_lens_empty": "Kein Kontext enthält Census-Stellen.",
+    "context_lens_label": "Kontexte",
+    "context_lens_search": "Kontexte durchsuchen…",
+    "context_lens_sites": "{count} Stellen"
   }
 }

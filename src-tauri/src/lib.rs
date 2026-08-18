@@ -3364,6 +3364,7 @@ pub fn run() {
             // Dev Tools -- Knowledge hierarchy (docs/concepts/paths/, read-only)
             commands::infrastructure::hierarchy_read::dev_tools_hierarchy_graph,
             commands::infrastructure::hierarchy_read::dev_tools_hierarchy_doc,
+            commands::infrastructure::hierarchy_read::dev_tools_hierarchy_scorecard,
             // System operations (trigger → built-in op automations; Chain Studio + Context Map)
             commands::infrastructure::system_ops::system_ops_list_kinds,
             commands::infrastructure::system_ops::system_ops_list_automations,

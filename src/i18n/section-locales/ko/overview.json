@@ -2142,6 +2142,23 @@
     "search_kind_subject": "주제",
     "search_kind_technique": "기법",
     "search_results_aria": "계층 검색 결과",
-    "shared_owner_note": "공유 기법 — {owner} 소유"
+    "shared_owner_note": "공유 기법 — {owner} 소유",
+    "adherence_col_context": "컨텍스트",
+    "adherence_col_rules": "주요 규칙",
+    "adherence_col_sites": "사이트",
+    "adherence_heading": "준수도",
+    "adherence_headline": "{applicable}개 컨텍스트 중 {clean}개 클린 · {files}개 파일에서 {sites}개 사이트",
+    "adherence_measured": "측정됨",
+    "adherence_more_rules": "…외 {count}개 규칙",
+    "adherence_no_rules": "이 주제를 다루는 census 규칙이 아직 없습니다 — 부재가 곧 클린함을 의미하지 않습니다.",
+    "adherence_no_scorecard": "이 저장소에 대한 census 스코어카드가 아직 없습니다.",
+    "adherence_predicate": "적용 대상 {applicable}개 컨텍스트 중 {clean}개 클린 · {sites}개 사이트",
+    "adherence_uncontexted": "컨텍스트 밖",
+    "context_lens_aria": "컨텍스트 렌즈 — 선택한 컨텍스트에 census 사이트가 없는 주제를 흐리게 표시",
+    "context_lens_clear": "컨텍스트 렌즈 지우기",
+    "context_lens_empty": "census 사이트를 가진 컨텍스트가 없습니다.",
+    "context_lens_label": "컨텍스트",
+    "context_lens_search": "컨텍스트 검색…",
+    "context_lens_sites": "사이트 {count}개"
   }
 }

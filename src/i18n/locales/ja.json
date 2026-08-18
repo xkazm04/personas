@@ -8367,7 +8367,24 @@
       "search_kind_subject": "サブジェクト",
       "search_kind_technique": "テクニック",
       "search_results_aria": "階層検索結果",
-      "shared_owner_note": "共有テクニック — 所有者: {owner}"
+      "shared_owner_note": "共有テクニック — 所有者: {owner}",
+      "adherence_col_context": "コンテキスト",
+      "adherence_col_rules": "主要ルール",
+      "adherence_col_sites": "サイト",
+      "adherence_heading": "遵守状況",
+      "adherence_headline": "{applicable}件中{clean}件のコンテキストがクリーン · {files}ファイルにわたる{sites}サイト",
+      "adherence_measured": "測定済み",
+      "adherence_more_rules": "…他{count}件のルール",
+      "adherence_no_rules": "このサブジェクトを対象とするcensusルールはまだありません — 該当がないことはクリーンであることを意味しません。",
+      "adherence_no_scorecard": "このリポジトリのcensusスコアカードはまだありません。",
+      "adherence_predicate": "対象{applicable}件中{clean}件のコンテキストがクリーン · {sites}サイト",
+      "adherence_uncontexted": "コンテキスト外",
+      "context_lens_aria": "コンテキストレンズ — 選択したコンテキストにcensusサイトがないサブジェクトを薄く表示",
+      "context_lens_clear": "コンテキストレンズをクリア",
+      "context_lens_empty": "censusサイトを持つコンテキストはありません。",
+      "context_lens_label": "コンテキスト",
+      "context_lens_search": "コンテキストを検索…",
+      "context_lens_sites": "{count}サイト"
     }
   },
   "matrix_v3": {

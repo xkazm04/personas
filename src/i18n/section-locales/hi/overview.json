@@ -2142,6 +2142,23 @@
     "search_kind_subject": "विषय",
     "search_kind_technique": "तकनीक",
     "search_results_aria": "पदानुक्रम खोज परिणाम",
-    "shared_owner_note": "साझा तकनीक — स्वामी {owner}"
+    "shared_owner_note": "साझा तकनीक — स्वामी {owner}",
+    "adherence_col_context": "संदर्भ",
+    "adherence_col_rules": "शीर्ष नियम",
+    "adherence_col_sites": "साइटें",
+    "adherence_heading": "पालन",
+    "adherence_headline": "{applicable} में से {clean} संदर्भ स्वच्छ · {files} फ़ाइलों में {sites} साइटें",
+    "adherence_measured": "मापा गया",
+    "adherence_more_rules": "…और {count} नियम",
+    "adherence_no_rules": "इस विषय को अभी तक कोई census नियम कवर नहीं करता — अनुपस्थिति स्वच्छता नहीं है।",
+    "adherence_no_scorecard": "इस रिपॉज़िटरी के लिए अभी तक कोई census स्कोरकार्ड नहीं है।",
+    "adherence_predicate": "{applicable} में से {clean} लागू संदर्भ स्वच्छ · {sites} साइटें",
+    "adherence_uncontexted": "किसी संदर्भ से बाहर",
+    "context_lens_aria": "संदर्भ लेंस — चुने गए संदर्भ में कोई census साइट न रखने वाले विषयों को मंद करें",
+    "context_lens_clear": "संदर्भ लेंस साफ़ करें",
+    "context_lens_empty": "किसी भी संदर्भ में census साइटें नहीं हैं।",
+    "context_lens_label": "संदर्भ",
+    "context_lens_search": "संदर्भ खोजें…",
+    "context_lens_sites": "{count} साइटें"
   }
 }

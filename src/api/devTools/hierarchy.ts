@@ -8,6 +8,7 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { HierarchyDoc } from "@/lib/bindings/HierarchyDoc";
 import type { HierarchyGraph } from "@/lib/bindings/HierarchyGraph";
+import type { HierarchyScorecard } from "@/lib/bindings/HierarchyScorecard";
 
 /** Read the whole hierarchy graph for one managed repo. Warm reads are served
  *  from the Rust-side whole-graph snapshot, so calling this on every mount is
@@ -21,6 +22,17 @@ export async function getHierarchyGraph(projectId: string): Promise<HierarchyGra
  *  paths). The reader is the ONE authority on the path convention — never
  *  string-concatenate a twin path in TypeScript. A valid-but-absent path
  *  resolves with `exists: false`; a rejected path rejects. */
+/** Read the census adherence scorecard (`scripts/census/context-scorecard.json`)
+ *  for one managed repo. OPTIONAL signal: an absent artifact resolves with an
+ *  honest empty (`source.present === false`, `source.reason` names the
+ *  generator command) — every consumer must render fully without it. A subject
+ *  absent from `subjects` has no census rules yet; absence is NOT cleanliness. */
+export async function getHierarchyScorecard(
+  projectId: string,
+): Promise<HierarchyScorecard> {
+  return invoke<HierarchyScorecard>("dev_tools_hierarchy_scorecard", { projectId });
+}
+
 export async function getHierarchyDoc(
   projectId: string,
   relPath: string,

@@ -8,6 +8,8 @@ import { Fragment, useMemo } from 'react';
 
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { SubjectScore } from '@/lib/bindings/SubjectScore';
+import { adherenceRatio } from '../scorecardModel';
 import { NodeLabel } from '../../graph/GraphChrome';
 import { lod } from '../../graph/useGraphCanvas';
 import { categoryGraphTheme, type CategoryGraphTheme } from './categoryTheme';
@@ -45,6 +47,15 @@ export interface HierarchyNexusProps {
   /** `ownerSubject/techniqueSlug` to pulse after a search jump. */
   highlightTechnique: string | null;
   lawLens: LawLensSets | null;
+  /** Census adherence by subject slug, or `null` when the repo carries no
+   *  scorecard. A subject ABSENT from the map gets NO ring — absence means "no
+   *  census rules yet", never cleanliness. Subject grain only: the scorecard
+   *  does not measure techniques, so technique nodes never fake a ring. */
+  adherence: ReadonlyMap<string, SubjectScore> | null;
+  /** Active Context lens: subject slug → sites inside the chosen context.
+   *  Subjects absent from the map dim; present ones carry a site badge.
+   *  Composes with the Laws lens by INTERSECTION (both mutes multiply). */
+  contextSites: ReadonlyMap<string, number> | null;
   onHoverRing: (ring: string | null) => void;
   onFocusRing: (ring: string, target: FlyTarget) => void;
   onFocusSubject: (node: SubjectNode, target: FlyTarget) => void;
@@ -94,6 +105,40 @@ function StatusRing({
   }
 }
 
+/** Adherence arc on a subject node's border — ported from the old Nexus's
+ *  CoverageRing: a faint full track plus an arc from 12 o'clock, sized just
+ *  outside the status ring (r + 5.5 clears the reconciled double ring at
+ *  r + 3). `pct` is cleanContexts / applicableContexts. */
+function CoverageRing({
+  r,
+  pct,
+  stroke,
+  width = 2,
+}: {
+  r: number;
+  pct: number;
+  stroke: string;
+  width?: number;
+}) {
+  const C = 2 * Math.PI * r;
+  return (
+    <g transform="rotate(-90)" pointerEvents="none">
+      <circle r={r} fill="none" stroke={stroke} strokeOpacity={0.15} strokeWidth={width} />
+      {pct > 0 && (
+        <circle
+          r={r}
+          fill="none"
+          stroke={stroke}
+          strokeOpacity={0.9}
+          strokeWidth={width}
+          strokeLinecap="round"
+          strokeDasharray={`${Math.max(pct, 0.02) * C} ${C}`}
+        />
+      )}
+    </g>
+  );
+}
+
 /** Body fill opacity per status — transplant-tested is the filled tier. */
 function statusFillOpacity(status: string | null): number {
   switch (status) {
@@ -119,12 +164,14 @@ export default function HierarchyNexus({
   focusSubject,
   highlightTechnique,
   lawLens,
+  adherence,
+  contextSites,
   onHoverRing,
   onFocusRing,
   onFocusSubject,
   onSelectTechnique,
 }: HierarchyNexusProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const p = t.overview.patterns_v2;
   const reducedMotion = useReducedMotion();
   // Free-zoom reveal: leaning past ~105% starts unfolding every ring's
@@ -160,6 +207,10 @@ export default function HierarchyNexus({
 
   const lensSubjectMute = (slug: string): number =>
     lawLens ? (lawLens.subjects.has(slug) ? 1 : 0.15) : 1;
+  // Context lens mute. Multiplied with the Laws lens mute, so both active at
+  // once INTERSECT: only subjects citing the law AND dirty in the context stay lit.
+  const contextMute = (slug: string): number =>
+    contextSites ? (contextSites.has(slug) ? 1 : 0.15) : 1;
 
   return (
     <g>
@@ -195,10 +246,13 @@ export default function HierarchyNexus({
         const vis = focused ? 1 : focusRing ? 0 : zoomVis;
         const kR = keystoneRadius(ring.subjects.length);
         const Icon = theme.icon;
-        // Laws lens: a keystone keeps colour if ANY of its subjects cites the law.
+        // Lenses: a keystone keeps colour if ANY of its subjects cites the law
+        // (Laws lens) / carries sites in the chosen context (Context lens).
         const ringCited =
           !lawLens || ring.subjects.some((n) => lawLens.subjects.has(n.subject.slug));
-        const ringMute = ringCited ? 1 : 0.25;
+        const ringInContext =
+          !contextSites || ring.subjects.some((n) => contextSites.has(n.subject.slug));
+        const ringMute = (ringCited ? 1 : 0.25) * (ringInContext ? 1 : 0.25);
         const title = ring.id === null ? p.category_unassigned : ring.title;
 
         return (
@@ -225,7 +279,10 @@ export default function HierarchyNexus({
                 // Under a subject drill, sibling subjects recede.
                 const subjectMute =
                   lensSubjectMute(node.subject.slug) *
+                  contextMute(node.subject.slug) *
                   (focusSubject && !isFocused ? 0.3 : 1);
+                const score = adherence?.get(node.subject.slug) ?? null;
+                const ctxSiteCount = contextSites?.get(node.subject.slug) ?? null;
                 const fillOpacity = statusFillOpacity(node.subject.status);
                 return (
                   <Fragment key={node.subject.slug}>
@@ -264,6 +321,41 @@ export default function HierarchyNexus({
                           stroke="none"
                         />
                         <StatusRing r={node.r} status={node.subject.status} stroke={theme.stroke} />
+                        {/* Adherence ring — ONLY for subjects the scorecard
+                            measures. No score → no ring: absence means "no
+                            census rules yet", never a full green arc. */}
+                        {score && (
+                          <g>
+                            <title>
+                              {tx(p.adherence_predicate, {
+                                clean: score.cleanContexts,
+                                applicable: score.applicableContexts,
+                                sites: score.sites,
+                              })}
+                            </title>
+                            <CoverageRing
+                              r={node.r + 5.5}
+                              pct={adherenceRatio(score)}
+                              stroke={theme.stroke}
+                            />
+                          </g>
+                        )}
+                        {/* Context lens site badge: how many sites THIS subject
+                            carries inside the chosen context. */}
+                        {ctxSiteCount !== null && (
+                          <text
+                            x={node.r + 7}
+                            y={-node.r - 5}
+                            textAnchor="start"
+                            fill={theme.stroke}
+                            fontSize={9}
+                            fontWeight={600}
+                            pointerEvents="none"
+                            className="select-none tabular-nums"
+                          >
+                            {ctxSiteCount}
+                          </text>
+                        )}
                         {/* Technique badge: a subject that drills deeper says so. */}
                         {node.techniques.length > 0 && !isFocused && (
                           <text

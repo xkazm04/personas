@@ -2142,6 +2142,23 @@
     "search_kind_subject": "Subjek",
     "search_kind_technique": "Teknik",
     "search_results_aria": "Hasil pencarian hierarki",
-    "shared_owner_note": "Teknik bersama — dimiliki oleh {owner}"
+    "shared_owner_note": "Teknik bersama — dimiliki oleh {owner}",
+    "adherence_col_context": "Konteks",
+    "adherence_col_rules": "Aturan teratas",
+    "adherence_col_sites": "Situs",
+    "adherence_heading": "Kepatuhan",
+    "adherence_headline": "{clean} dari {applicable} konteks bersih · {sites} situs di {files} berkas",
+    "adherence_measured": "Diukur",
+    "adherence_more_rules": "…dan {count} aturan lainnya",
+    "adherence_no_rules": "Belum ada aturan census yang mencakup subjek ini — ketiadaan bukan berarti bersih.",
+    "adherence_no_scorecard": "Belum ada kartu skor census untuk repositori ini.",
+    "adherence_predicate": "{clean} dari {applicable} konteks yang berlaku bersih · {sites} situs",
+    "adherence_uncontexted": "Di luar konteks manapun",
+    "context_lens_aria": "Lensa konteks — redupkan subjek tanpa situs census dalam konteks yang dipilih",
+    "context_lens_clear": "Hapus lensa konteks",
+    "context_lens_empty": "Tidak ada konteks yang memiliki situs census.",
+    "context_lens_label": "Konteks",
+    "context_lens_search": "Cari konteks…",
+    "context_lens_sites": "{count} situs"
   }
 }

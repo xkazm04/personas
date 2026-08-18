@@ -2142,6 +2142,23 @@
     "search_kind_subject": "Téma",
     "search_kind_technique": "Technika",
     "search_results_aria": "Výsledky hledání v hierarchii",
-    "shared_owner_note": "Sdílená technika — vlastní {owner}"
+    "shared_owner_note": "Sdílená technika — vlastní {owner}",
+    "adherence_col_context": "Kontext",
+    "adherence_col_rules": "Hlavní pravidla",
+    "adherence_col_sites": "Výskyty",
+    "adherence_heading": "Dodržování",
+    "adherence_headline": "{clean} z {applicable} kontextů čistých · {sites} výskytů napříč {files} soubory",
+    "adherence_measured": "Změřeno",
+    "adherence_more_rules": "…a dalších {count} pravidel",
+    "adherence_no_rules": "Toto téma zatím nepokrývají žádná pravidla census — absence neznamená čistotu.",
+    "adherence_no_scorecard": "Pro tento repozitář zatím neexistuje census scorecard.",
+    "adherence_predicate": "{clean} z {applicable} relevantních kontextů čistých · {sites} výskytů",
+    "adherence_uncontexted": "Mimo jakýkoli kontext",
+    "context_lens_aria": "Kontextová čočka — ztlumí témata bez výskytů census ve zvoleném kontextu",
+    "context_lens_clear": "Zrušit kontextovou čočku",
+    "context_lens_empty": "Žádný kontext neobsahuje výskyty census.",
+    "context_lens_label": "Kontexty",
+    "context_lens_search": "Hledat kontexty…",
+    "context_lens_sites": "{count} výskytů"
   }
 }

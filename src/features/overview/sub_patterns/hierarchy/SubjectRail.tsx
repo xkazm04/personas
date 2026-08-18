@@ -6,7 +6,9 @@
 import { useCallback, type KeyboardEvent } from 'react';
 import { AlertTriangle } from 'lucide-react';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { SubjectScore } from '@/lib/bindings/SubjectScore';
 
 import { HierarchyStatusChip } from './HierarchyStatusChip';
 import type { CategoryGroup, SubjectMatchInfo } from './hierarchyModel';
@@ -33,6 +35,7 @@ export function SubjectRail({
   onSelect,
   matchMap,
   loading,
+  adherence = null,
 }: {
   groups: CategoryGroup[];
   selectedSlug: string | null;
@@ -41,6 +44,9 @@ export function SubjectRail({
    *  are hidden and child hits carry a "matched in …" hint. */
   matchMap: Map<string, SubjectMatchInfo> | null;
   loading: boolean;
+  /** Census adherence by slug — OPTIONAL. Subjects absent from the map (or a
+   *  `null` map) show no badge: absence means no census rules, not cleanliness. */
+  adherence?: ReadonlyMap<string, SubjectScore> | null;
 }) {
   const { t, tx } = useTranslation();
   const p = t.overview.patterns_v2;
@@ -129,6 +135,27 @@ export function SubjectRail({
                           {subject.deviations.length}
                         </span>
                       )}
+                      {/* Census site badge — quieter than the deviation badge:
+                          muted, right-aligned, count only. Absent when the
+                          scorecard carries no rules for this subject. */}
+                      {(() => {
+                        const score = adherence?.get(subject.slug);
+                        if (!score || score.sites <= 0) return null;
+                        return (
+                          <Tooltip
+                            content={tx(p.adherence_predicate, {
+                              clean: score.cleanContexts,
+                              applicable: score.applicableContexts,
+                              sites: score.sites,
+                            })}
+                          >
+                            {/* muted-ok: census-count micro-badge, structural chrome */}
+                            <span className="ml-auto typo-caption text-foreground/40 tabular-nums flex-shrink-0">
+                              {score.sites}
+                            </span>
+                          </Tooltip>
+                        );
+                      })()}
                     </span>
                     {info && !info.direct && info.childHint && (
                       <span className="block typo-caption text-primary/70 truncate mt-0.5">

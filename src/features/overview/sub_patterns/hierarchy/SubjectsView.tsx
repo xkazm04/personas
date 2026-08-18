@@ -23,9 +23,11 @@ import {
   subjectMatchMap,
 } from './hierarchyModel';
 import { initialHierarchyProjectId, persistHierarchyProjectId } from './projectSource';
+import { subjectScoreMap } from './scorecardModel';
 import { SubjectDetail, type DetailFocus } from './SubjectDetail';
 import { SubjectRail } from './SubjectRail';
 import { useHierarchyGraph } from './useHierarchyGraph';
+import { useHierarchyScorecard } from './useHierarchyScorecard';
 
 /** The one place a law CHIP (id-only, no href) resolves to a path. Links in
  *  markdown resolve through `resolveDocLink` instead. */
@@ -71,6 +73,9 @@ export function SubjectsView({
   }, []);
 
   const { graph, loading, error, refetch } = useHierarchyGraph(projectId);
+  // OPTIONAL census signal — the whole lane renders fully without it.
+  const { scorecard } = useHierarchyScorecard(projectId);
+  const adherence = useMemo(() => subjectScoreMap(scorecard), [scorecard]);
 
   const groups = useMemo(() => (graph ? groupSubjectsByCategory(graph) : []), [graph]);
   const index = useMemo(() => (graph ? buildHierarchyIndex(graph) : []), [graph]);
@@ -245,6 +250,7 @@ export function SubjectsView({
             onSelect={selectSubject}
             matchMap={matchMap}
             loading={loading && !graph}
+            adherence={adherence}
           />
           {selectedSubject && graph && projectId ? (
             <SubjectDetail
@@ -252,6 +258,8 @@ export function SubjectsView({
               projectId={projectId}
               graph={graph}
               subject={selectedSubject}
+              scorecard={scorecard}
+              score={adherence?.get(selectedSubject.slug) ?? null}
               focus={focus}
               onLinkHref={handleLinkHref}
               onSelectSubject={selectSubject}

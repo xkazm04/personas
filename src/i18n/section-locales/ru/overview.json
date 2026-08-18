@@ -2142,6 +2142,23 @@
     "search_kind_subject": "Тема",
     "search_kind_technique": "Техника",
     "search_results_aria": "Результаты поиска по иерархии",
-    "shared_owner_note": "Общая техника — владелец: {owner}"
+    "shared_owner_note": "Общая техника — владелец: {owner}",
+    "adherence_col_context": "Контекст",
+    "adherence_col_rules": "Основные правила",
+    "adherence_col_sites": "Сайты",
+    "adherence_heading": "Соответствие",
+    "adherence_headline": "{clean} из {applicable} контекстов чисты · {sites} сайтов в {files} файлах",
+    "adherence_measured": "Измерено",
+    "adherence_more_rules": "…и ещё {count} правил",
+    "adherence_no_rules": "Ни одно правило census не охватывает эту тему — отсутствие данных не означает чистоту.",
+    "adherence_no_scorecard": "Для этого репозитория пока нет карточки census.",
+    "adherence_predicate": "{clean} из {applicable} применимых контекстов чисты · {sites} сайтов",
+    "adherence_uncontexted": "Вне контекста",
+    "context_lens_aria": "Фильтр по контексту — затемняет темы без сайтов census в выбранном контексте",
+    "context_lens_clear": "Сбросить фильтр контекста",
+    "context_lens_empty": "Ни один контекст не содержит сайтов census.",
+    "context_lens_label": "Контексты",
+    "context_lens_search": "Поиск контекстов…",
+    "context_lens_sites": "{count} сайтов"
   }
 }

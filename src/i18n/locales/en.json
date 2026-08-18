@@ -8584,7 +8584,24 @@
       "modal_laws_heading": "Laws",
       "modal_applications_heading": "Applications",
       "modal_applications_empty": "No application docs for this technique yet.",
-      "shared_owner_note": "Shared technique — owned by {owner}"
+      "shared_owner_note": "Shared technique — owned by {owner}",
+      "adherence_heading": "Adherence",
+      "adherence_headline": "{clean} of {applicable} contexts clean · {sites} sites across {files} files",
+      "adherence_predicate": "{clean} of {applicable} applicable contexts clean · {sites} sites",
+      "adherence_no_rules": "No census rules cover this subject yet — absence is not cleanliness.",
+      "adherence_no_scorecard": "No census scorecard for this repository yet.",
+      "adherence_measured": "Measured",
+      "adherence_col_context": "Context",
+      "adherence_col_sites": "Sites",
+      "adherence_col_rules": "Top rules",
+      "adherence_more_rules": "…and {count} more rules",
+      "adherence_uncontexted": "Outside any context",
+      "context_lens_label": "Contexts",
+      "context_lens_aria": "Context lens — dim subjects with no census sites in a chosen context",
+      "context_lens_clear": "Clear context lens",
+      "context_lens_search": "Search contexts…",
+      "context_lens_sites": "{count} sites",
+      "context_lens_empty": "No contexts carry census sites."
     }
   },
   "matrix_v3": {

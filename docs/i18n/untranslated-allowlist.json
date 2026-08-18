@@ -1904,6 +1904,8 @@
   "fr:overview.messages.channel_telegram",
   "fr:overview.messages_view.message_label",
   "fr:overview.messages_view.title",
+  "fr:overview.patterns_v2.adherence_col_sites",
+  "fr:overview.patterns_v2.context_lens_sites",
   "fr:overview.patterns_v2.modal_applications_heading",
   "fr:overview.patterns_v2.rail_counts",
   "fr:overview.patterns_v2.search_kind_application",

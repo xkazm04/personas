@@ -8591,6 +8591,23 @@ export type Translations = {
       modal_applications_heading: string;
       modal_applications_empty: string;
       shared_owner_note: string;
+      adherence_heading: string;
+      adherence_headline: string;
+      adherence_predicate: string;
+      adherence_no_rules: string;
+      adherence_no_scorecard: string;
+      adherence_measured: string;
+      adherence_col_context: string;
+      adherence_col_sites: string;
+      adherence_col_rules: string;
+      adherence_more_rules: string;
+      adherence_uncontexted: string;
+      context_lens_label: string;
+      context_lens_aria: string;
+      context_lens_clear: string;
+      context_lens_search: string;
+      context_lens_sites: string;
+      context_lens_empty: string;
     };
   };
   matrix_v3: {

@@ -280,6 +280,112 @@ pub struct HierarchyDoc {
 }
 
 // ---------------------------------------------------------------------------
+// Adherence scorecard wire types (P4)
+// ---------------------------------------------------------------------------
+
+/// Repo-relative location of the census adherence scorecard artifact.
+const SCORECARD_REL: &str = "scripts/census/context-scorecard.json";
+/// The command that (re)generates the scorecard — named in every empty reason
+/// so the reader knows how to recompute the derivation, not just that it is
+/// missing (derivation-names-recomputation).
+const SCORECARD_GENERATOR: &str = "node scripts/census/build-context-scorecard.mjs";
+/// How many per-context rules travel over the wire. Truncation is DISCLOSED:
+/// `ContextScore.rule_count` always carries the full count.
+const TOP_RULES_MAX: usize = 5;
+
+/// One census rule's surviving match sites inside one context.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct RuleSites {
+    pub id: String,
+    pub sites: u32,
+}
+
+/// One DIRTY context (sites > 0) for one subject. Clean-but-applicable
+/// contexts exist only as `SubjectScore::clean_contexts` — the artifact never
+/// lists them, so neither do we.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ContextScore {
+    pub id: String,
+    pub name: String,
+    /// Group NAME string (context-map group), not an id.
+    pub group: String,
+    pub sites: u32,
+    pub matched_files: u32,
+    /// Full rule count for this context — `top_rules` may be truncated.
+    pub rule_count: u32,
+    /// At most `TOP_RULES_MAX` rules, artifact order (sites desc).
+    pub top_rules: Vec<RuleSites>,
+}
+
+/// Per-subject adherence. The ratio is `clean_contexts / applicable_contexts`
+/// and BOTH numbers come from the artifact — `contexts` lists only dirty ones,
+/// so the denominator can never be derived from the array.
+///
+/// A subject ABSENT from `subjects` has no census rules yet; absence is NOT
+/// cleanliness (census coverage ≠ adherence coverage).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct SubjectScore {
+    pub slug: String,
+    /// Census rules assigned to this subject.
+    pub rules: u32,
+    /// Surviving census match sites across the repo.
+    pub sites: u32,
+    /// Distinct files with ≥1 site.
+    pub matched_files: u32,
+    /// Contexts containing ≥1 file SCANNED by any of the subject's rules.
+    pub applicable_contexts: u32,
+    /// Applicable AND zero sites.
+    pub clean_contexts: u32,
+    pub contexts: Vec<ContextScore>,
+    /// Sites in files that belong to NO context.
+    pub uncontexted_sites: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct HierarchyScorecard {
+    /// When the artifact was generated (ISO). `None` when absent.
+    pub generated_at: Option<String>,
+    /// Census rules in the generating run.
+    pub rule_count: u32,
+    /// Contexts in the context map the run joined against.
+    pub context_count: u32,
+    /// Rules that resolved to a subject.
+    pub assigned_rules: u32,
+    /// Repo-wide totals across all subjects.
+    pub total_sites: u32,
+    pub total_matched_files: u32,
+    /// Sorted by slug.
+    pub subjects: Vec<SubjectScore>,
+    /// Where the scorecard came from — `present: false` + `reason` naming the
+    /// generator command when the artifact does not exist.
+    pub source: HierarchySource,
+}
+
+impl HierarchyScorecard {
+    /// The honest empty state: no signal, and a `source` that says why.
+    fn empty(source: HierarchySource) -> Self {
+        Self {
+            generated_at: None,
+            rule_count: 0,
+            context_count: 0,
+            assigned_rules: 0,
+            total_sites: 0,
+            total_matched_files: 0,
+            subjects: Vec::new(),
+            source,
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Frontmatter parser — 1:1 port of check-corpus-integrity.mjs `parseFrontmatter`
 // ---------------------------------------------------------------------------
 
@@ -1286,6 +1392,233 @@ fn cached_graph(root: &Path) -> Result<Arc<HierarchyGraph>, AppError> {
 }
 
 // ---------------------------------------------------------------------------
+// Adherence scorecard reader (P4)
+// ---------------------------------------------------------------------------
+
+/// The artifact's shape as `build-context-scorecard.mjs` writes it. Unknown
+/// fields (`$comment`, `totals.multiContextFiles`, `inputs.unassignedRules`, …)
+/// are deliberately ignored — the wire carries only what the UI consumes.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ScorecardFile {
+    #[serde(default)]
+    generated_at: Option<String>,
+    #[serde(default)]
+    inputs: ScorecardInputs,
+    #[serde(default)]
+    totals: ScorecardTotals,
+    #[serde(default)]
+    subjects: BTreeMap<String, ScorecardSubjectRow>,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+struct ScorecardInputs {
+    #[serde(default)]
+    rule_count: u32,
+    #[serde(default)]
+    assigned_rules: u32,
+    #[serde(default)]
+    context_count: u32,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+struct ScorecardTotals {
+    #[serde(default)]
+    sites: u32,
+    #[serde(default)]
+    matched_files: u32,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ScorecardSubjectRow {
+    #[serde(default)]
+    rules: u32,
+    #[serde(default)]
+    sites: u32,
+    #[serde(default)]
+    matched_files: u32,
+    #[serde(default)]
+    applicable_contexts: u32,
+    #[serde(default)]
+    clean_contexts: u32,
+    #[serde(default)]
+    contexts: Vec<ScorecardContextRow>,
+    #[serde(default)]
+    uncontexted: ScorecardUncontexted,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+struct ScorecardUncontexted {
+    #[serde(default)]
+    sites: u32,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ScorecardContextRow {
+    id: String,
+    name: String,
+    #[serde(default)]
+    group: String,
+    #[serde(default)]
+    sites: u32,
+    #[serde(default)]
+    matched_files: u32,
+    #[serde(default)]
+    rules: Vec<RuleSites>,
+}
+
+/// Build the wire scorecard from a repo root. Absence is an honest empty whose
+/// reason NAMES the generator command; a malformed artifact is an `Err` — a
+/// file that exists but cannot be trusted must never render as "clean".
+fn build_scorecard(root: &Path) -> Result<HierarchyScorecard, AppError> {
+    let path = root.join(SCORECARD_REL);
+    let root_display = root.to_string_lossy().replace('\\', "/");
+
+    if !path.is_file() {
+        return Ok(HierarchyScorecard::empty(HierarchySource {
+            root: Some(root_display),
+            present: false,
+            reason: Some(format!(
+                "This repository has no {SCORECARD_REL} — generate it with `{SCORECARD_GENERATOR}`."
+            )),
+        }));
+    }
+
+    let raw = std::fs::read_to_string(&path)?;
+    let parsed: ScorecardFile = serde_json::from_str(&raw).map_err(|e| {
+        AppError::Validation(format!(
+            "{SCORECARD_REL} could not be parsed: {e}. Regenerate it with `{SCORECARD_GENERATOR}`."
+        ))
+    })?;
+
+    let subjects = parsed
+        .subjects
+        .into_iter()
+        .map(|(slug, row)| SubjectScore {
+            slug,
+            rules: row.rules,
+            sites: row.sites,
+            matched_files: row.matched_files,
+            applicable_contexts: row.applicable_contexts,
+            clean_contexts: row.clean_contexts,
+            contexts: row
+                .contexts
+                .into_iter()
+                .map(|c| ContextScore {
+                    id: c.id,
+                    name: c.name,
+                    group: c.group,
+                    sites: c.sites,
+                    matched_files: c.matched_files,
+                    rule_count: c.rules.len() as u32,
+                    top_rules: c.rules.into_iter().take(TOP_RULES_MAX).collect(),
+                })
+                .collect(),
+            uncontexted_sites: row.uncontexted.sites,
+        })
+        .collect();
+
+    Ok(HierarchyScorecard {
+        generated_at: parsed.generated_at,
+        rule_count: parsed.inputs.rule_count,
+        context_count: parsed.inputs.context_count,
+        assigned_rules: parsed.inputs.assigned_rules,
+        total_sites: parsed.totals.sites,
+        total_matched_files: parsed.totals.matched_files,
+        subjects,
+        source: HierarchySource {
+            root: Some(root_display),
+            present: true,
+            reason: None,
+        },
+    })
+}
+
+/// Signature of the single artifact file — mtime + length, which is enough
+/// for a file rewritten atomically by its generator.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct FileSignature {
+    mtime: SystemTime,
+    len: u64,
+}
+
+fn file_signature(path: &Path) -> Option<FileSignature> {
+    let meta = std::fs::metadata(path).ok()?;
+    Some(FileSignature {
+        mtime: meta.modified().ok()?,
+        len: meta.len(),
+    })
+}
+
+struct ScorecardCacheEntry {
+    signature: Option<FileSignature>,
+    scorecard: Arc<HierarchyScorecard>,
+    last_used: u64,
+}
+
+#[allow(clippy::type_complexity)]
+fn scorecard_cache() -> &'static Mutex<(HashMap<String, ScorecardCacheEntry>, u64)> {
+    static C: OnceLock<Mutex<(HashMap<String, ScorecardCacheEntry>, u64)>> = OnceLock::new();
+    C.get_or_init(|| Mutex::new((HashMap::new(), 0)))
+}
+
+/// Cached scorecard read — same discipline as `cached_graph`, but keyed by one
+/// file's signature instead of a tree walk. A missing artifact (`None`
+/// signature) is rebuilt every call: the empty branch is a stat + a struct.
+fn cached_scorecard(root: &Path) -> Result<Arc<HierarchyScorecard>, AppError> {
+    let key = root.to_string_lossy().replace('\\', "/");
+    let signature = file_signature(&root.join(SCORECARD_REL));
+
+    {
+        let mut guard = scorecard_cache().lock().unwrap_or_else(|p| p.into_inner());
+        let (map, tick) = &mut *guard;
+        *tick += 1;
+        let now = *tick;
+        if let Some(entry) = map.get_mut(&key) {
+            if entry.signature == signature && signature.is_some() {
+                entry.last_used = now;
+                return Ok(Arc::clone(&entry.scorecard));
+            }
+        }
+    }
+
+    let scorecard = Arc::new(build_scorecard(root)?);
+
+    {
+        let mut guard = scorecard_cache().lock().unwrap_or_else(|p| p.into_inner());
+        let (map, tick) = &mut *guard;
+        *tick += 1;
+        let now = *tick;
+        map.insert(
+            key,
+            ScorecardCacheEntry {
+                signature,
+                scorecard: Arc::clone(&scorecard),
+                last_used: now,
+            },
+        );
+        // The reaper — same cap as the graph cache, same reason.
+        while map.len() > CACHE_MAX_ROOTS {
+            let Some(victim) = map
+                .iter()
+                .min_by_key(|(_, e)| e.last_used)
+                .map(|(k, _)| k.clone())
+            else {
+                break;
+            };
+            map.remove(&victim);
+        }
+    }
+
+    Ok(scorecard)
+}
+
+// ---------------------------------------------------------------------------
 // Project → filesystem root
 // ---------------------------------------------------------------------------
 
@@ -1391,6 +1724,38 @@ pub async fn dev_tools_hierarchy_doc(
     tokio::task::spawn_blocking(move || read_doc(&root, &requested))
         .await
         .map_err(|e| AppError::Internal(format!("hierarchy doc join error: {e}")))?
+}
+
+/// Read the census adherence scorecard of a managed project.
+///
+/// Same emptiness posture as the graph: an unknown project id is an `Err`; a
+/// project with no path, a path missing on this machine, or a repo without the
+/// artifact is an honest empty whose `source.reason` names the generator
+/// command. A malformed artifact is an `Err` — never a silent "clean".
+#[tauri::command]
+pub async fn dev_tools_hierarchy_scorecard(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<HierarchyScorecard, AppError> {
+    require_auth(&state).await?;
+
+    let root = match resolve_root(&state, &project_id)? {
+        RootResolution::Ok(p) => p,
+        RootResolution::Absent(source) => return Ok(HierarchyScorecard::empty(source)),
+    };
+
+    let scorecard = tokio::task::spawn_blocking(move || cached_scorecard(&root))
+        .await
+        .map_err(|e| AppError::Internal(format!("scorecard read join error: {e}")))??;
+
+    tracing::debug!(
+        subjects = scorecard.subjects.len(),
+        total_sites = scorecard.total_sites,
+        present = scorecard.source.present,
+        "hierarchy scorecard read"
+    );
+
+    Ok((*scorecard).clone())
 }
 
 fn read_doc(root: &Path, rel: &str) -> Result<HierarchyDoc, AppError> {
@@ -1850,6 +2215,170 @@ mod tests {
         let doc = read_doc(dir.path(), "docs/concepts/paths/table/never-written.md").unwrap();
         assert!(!doc.exists);
         assert!(doc.markdown.is_empty());
+    }
+
+    // -- adherence scorecard --------------------------------------------------
+
+    /// Synthetic-but-faithful miniature of the real artifact: two subjects,
+    /// one with a dirty context carrying MORE than TOP_RULES_MAX rules (so the
+    /// truncation-with-disclosure contract is exercised), one clean-ish.
+    fn scorecard_fixture() -> tempfile::TempDir {
+        let dir = tempfile::tempdir().unwrap();
+        write(
+            &dir.path().join(SCORECARD_REL),
+            r#"{
+  "$comment": "fixture",
+  "generatedAt": "2026-08-18T18:08:03.828Z",
+  "inputs": {"ruleCount": 7, "assignedRules": 7, "contextCount": 12},
+  "totals": {"sites": 110, "matchedFiles": 30, "multiContextFiles": 1, "cleanSubjects": 0},
+  "subjects": {
+    "table": {
+      "rules": 6, "sites": 100, "matchedFiles": 25,
+      "applicableContexts": 10, "cleanContexts": 4,
+      "contexts": [
+        {"id": "c1", "name": "agents-deployment", "group": "Agent Platform",
+         "sites": 60, "matchedFiles": 15,
+         "rules": [
+           {"id": "r1", "sites": 20}, {"id": "r2", "sites": 15},
+           {"id": "r3", "sites": 10}, {"id": "r4", "sites": 8},
+           {"id": "r5", "sites": 4}, {"id": "r6", "sites": 3}
+         ]},
+        {"id": "c2", "name": "vault-ui", "group": "Security & Credentials",
+         "sites": 40, "matchedFiles": 10, "rules": [{"id": "r1", "sites": 40}]}
+      ],
+      "uncontexted": {"sites": 5, "files": 2}
+    },
+    "feed": {
+      "rules": 1, "sites": 10, "matchedFiles": 5,
+      "applicableContexts": 8, "cleanContexts": 7,
+      "contexts": [
+        {"id": "c1", "name": "agents-deployment", "group": "Agent Platform",
+         "sites": 10, "matchedFiles": 5, "rules": [{"id": "r7", "sites": 10}]}
+      ],
+      "uncontexted": {"sites": 0, "files": 0}
+    }
+  }
+}"#,
+        );
+        dir
+    }
+
+    #[test]
+    fn scorecard_parses_the_fixture_and_discloses_truncation() {
+        let dir = scorecard_fixture();
+        let sc = build_scorecard(dir.path()).expect("fixture must parse");
+
+        assert!(sc.source.present);
+        assert!(sc.source.reason.is_none());
+        assert_eq!(sc.generated_at.as_deref(), Some("2026-08-18T18:08:03.828Z"));
+        assert_eq!(sc.rule_count, 7);
+        assert_eq!(sc.assigned_rules, 7);
+        assert_eq!(sc.context_count, 12);
+        assert_eq!(sc.total_sites, 110);
+        assert_eq!(sc.total_matched_files, 30);
+
+        // BTreeMap iteration → slug order.
+        let slugs: Vec<&str> = sc.subjects.iter().map(|s| s.slug.as_str()).collect();
+        assert_eq!(slugs, vec!["feed", "table"]);
+
+        let table = sc.subjects.iter().find(|s| s.slug == "table").unwrap();
+        assert_eq!(table.rules, 6);
+        assert_eq!(table.sites, 100);
+        assert_eq!(table.matched_files, 25);
+        assert_eq!(table.applicable_contexts, 10);
+        assert_eq!(table.clean_contexts, 4);
+        assert_eq!(table.uncontexted_sites, 5);
+        assert_eq!(table.contexts.len(), 2);
+
+        // Truncation carries its disclosure: 6 rules, 5 on the wire.
+        let c1 = &table.contexts[0];
+        assert_eq!(c1.name, "agents-deployment");
+        assert_eq!(c1.group, "Agent Platform");
+        assert_eq!(c1.rule_count, 6);
+        assert_eq!(c1.top_rules.len(), TOP_RULES_MAX);
+        assert_eq!(c1.top_rules[0].id, "r1");
+        assert_eq!(c1.top_rules[0].sites, 20);
+
+        let c2 = &table.contexts[1];
+        assert_eq!(c2.rule_count, 1);
+        assert_eq!(c2.top_rules.len(), 1);
+    }
+
+    #[test]
+    fn scorecard_absence_is_an_honest_empty_naming_the_generator() {
+        let dir = tempfile::tempdir().unwrap();
+        let sc = build_scorecard(dir.path()).expect("an absent artifact is not an error");
+        assert!(!sc.source.present);
+        let reason = sc.source.reason.expect("emptiness must explain itself");
+        assert!(
+            reason.contains(SCORECARD_GENERATOR),
+            "the reason must NAME the generator command: {reason}"
+        );
+        assert!(sc.subjects.is_empty());
+        assert_eq!(sc.total_sites, 0);
+        assert!(sc.generated_at.is_none());
+    }
+
+    #[test]
+    fn scorecard_malformed_json_is_an_err_not_a_clean_reading() {
+        let dir = tempfile::tempdir().unwrap();
+        write(&dir.path().join(SCORECARD_REL), "{ this is not json");
+        let err = build_scorecard(dir.path()).expect_err("a malformed artifact must error");
+        let msg = err.to_string();
+        assert!(msg.contains(SCORECARD_REL), "{msg}");
+        assert!(msg.contains(SCORECARD_GENERATOR), "{msg}");
+    }
+
+    #[test]
+    fn scorecard_cache_reuses_an_unchanged_artifact() {
+        let dir = scorecard_fixture();
+        let a = cached_scorecard(dir.path()).unwrap();
+        let b = cached_scorecard(dir.path()).unwrap();
+        assert!(
+            Arc::ptr_eq(&a, &b),
+            "an unchanged artifact must not be re-parsed"
+        );
+    }
+
+    /// Floors, not a snapshot, against the REAL committed artifact — the same
+    /// posture as `hierarchy_reads_this_repos_real_corpus`. Census waves add
+    /// subjects; this must never redden for that.
+    #[test]
+    fn scorecard_reads_this_repos_real_artifact() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .expect("src-tauri has a parent")
+            .to_path_buf();
+        if !root.join(SCORECARD_REL).is_file() {
+            // A checkout without the artifact is legitimate; the empty case
+            // has its own test.
+            return;
+        }
+
+        let sc = build_scorecard(&root).expect("the real artifact must parse");
+        assert!(sc.source.present);
+        assert!(
+            sc.subjects.len() >= 50,
+            "only {} subjects — the artifact join is probably broken, not the census",
+            sc.subjects.len()
+        );
+        assert!(sc.total_sites > 0, "a census with zero sites everywhere is not credible");
+        assert!(sc.rule_count > 0);
+        assert!(sc.generated_at.is_some());
+        for s in &sc.subjects {
+            assert!(
+                s.clean_contexts <= s.applicable_contexts,
+                "{}: clean {} > applicable {}",
+                s.slug,
+                s.clean_contexts,
+                s.applicable_contexts
+            );
+            for c in &s.contexts {
+                assert!(c.sites > 0, "{}: context {} listed with zero sites", s.slug, c.name);
+                assert!(c.top_rules.len() <= TOP_RULES_MAX);
+                assert!(c.rule_count as usize >= c.top_rules.len());
+            }
+        }
     }
 
     #[test]

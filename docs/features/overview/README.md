@@ -284,6 +284,19 @@ a modal with law chips, stack-badged applications and an "Open in Subjects"
 jump, and the old workspace-practices Nexus stays reachable via the Practices
 lane's internal Library|Graph toggle.
 
+**Adherence** (P4, 2026-08-18) joins the census scorecard
+(`scripts/census/context-scorecard.json`, read by
+`dev_tools_hierarchy_scorecard`) onto both lanes: subject nodes in the graph
+carry a coverage-style arc showing `cleanContexts / applicableContexts`, a
+**Context lens** beside the Laws lens dims subjects with no census sites in a
+chosen context (intersecting with the Laws lens when both are active), and the
+Subjects detail's Evidence & Deviations tab gains an Adherence section — the
+headline ratio, a table of dirty contexts with their top rules, the
+uncontexted bucket, and the measurement timestamp plus the regeneration
+command. A subject absent from the scorecard has no census rules yet and is
+rendered as "no signal", never as clean; a repo without the artifact renders
+the whole feature as an honest "no census signal" affordance.
+
 ## Patterns — the inverted library (2026-08-11)
 
 The knowledge library is doctrine-first: **Directions** (macro items distilled

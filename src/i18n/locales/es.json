@@ -8367,7 +8367,24 @@
       "search_kind_subject": "Tema",
       "search_kind_technique": "Técnica",
       "search_results_aria": "Resultados de búsqueda de la jerarquía",
-      "shared_owner_note": "Técnica compartida — propiedad de {owner}"
+      "shared_owner_note": "Técnica compartida — propiedad de {owner}",
+      "adherence_col_context": "Contexto",
+      "adherence_col_rules": "Reglas principales",
+      "adherence_col_sites": "Sitios",
+      "adherence_heading": "Adherencia",
+      "adherence_headline": "{clean} de {applicable} contextos limpios · {sites} sitios en {files} archivos",
+      "adherence_measured": "Medido",
+      "adherence_more_rules": "…y {count} reglas más",
+      "adherence_no_rules": "Ninguna regla del census cubre este tema todavía — la ausencia no es limpieza.",
+      "adherence_no_scorecard": "Aún no hay un scorecard de census para este repositorio.",
+      "adherence_predicate": "{clean} de {applicable} contextos aplicables limpios · {sites} sitios",
+      "adherence_uncontexted": "Fuera de cualquier contexto",
+      "context_lens_aria": "Lente de contexto — atenúa temas sin sitios de census en un contexto elegido",
+      "context_lens_clear": "Borrar lente de contexto",
+      "context_lens_empty": "Ningún contexto tiene sitios de census.",
+      "context_lens_label": "Contextos",
+      "context_lens_search": "Buscar contextos…",
+      "context_lens_sites": "{count} sitios"
     }
   },
   "matrix_v3": {

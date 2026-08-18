@@ -8,16 +8,23 @@ import { ExternalLink } from 'lucide-react';
 import { getHierarchyDoc } from '@/api/devTools/hierarchy';
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { HierarchyDoc } from '@/lib/bindings/HierarchyDoc';
 import type { HierarchyGraph } from '@/lib/bindings/HierarchyGraph';
+import type { HierarchyScorecard } from '@/lib/bindings/HierarchyScorecard';
 import type { HierarchySubject } from '@/lib/bindings/HierarchySubject';
 import type { HierarchyTechnique } from '@/lib/bindings/HierarchyTechnique';
+import type { SubjectScore } from '@/lib/bindings/SubjectScore';
 import { silentCatch } from '@/lib/silentCatch';
 
 import { HierarchyStatusChip } from './HierarchyStatusChip';
+
+/** The command that recomputes the scorecard — derivation names recomputation.
+ *  Mirrors `SCORECARD_GENERATOR` in the Rust reader. */
+const SCORECARD_COMMAND = 'node scripts/census/build-context-scorecard.mjs';
 
 export type DetailTab = 'golden_path' | 'techniques' | 'applications' | 'evidence' | 'legacy';
 
@@ -122,6 +129,8 @@ export function SubjectDetail({
   projectId,
   graph,
   subject,
+  scorecard,
+  score,
   focus,
   onLinkHref,
   onSelectSubject,
@@ -131,6 +140,13 @@ export function SubjectDetail({
   projectId: string;
   graph: HierarchyGraph;
   subject: HierarchySubject;
+  /** The census adherence scorecard — OPTIONAL. `null` (not fetched) and
+   *  `source.present === false` (no artifact) both render as "no census
+   *  signal", never as an error and never as cleanliness. */
+  scorecard: HierarchyScorecard | null;
+  /** This subject's row in the scorecard. `null` = no census rules cover this
+   *  subject yet — absence is NOT cleanliness. */
+  score: SubjectScore | null;
   /** Cross-link navigation nudge (open tab + expand entry). */
   focus: DetailFocus | null;
   /** Intercepted markdown link: parent resolves + routes. `currentFile` is the
@@ -399,6 +415,118 @@ export function SubjectDetail({
                 </ul>
               </section>
             )}
+
+            <section>
+              {/* muted-ok: section band header, structural chrome */}
+              <h3 className="typo-label uppercase tracking-wide text-foreground/50 mb-2">
+                {p.adherence_heading}
+              </h3>
+              {!scorecard?.source.present ? (
+                <p className="typo-body text-foreground">{p.adherence_no_scorecard}</p>
+              ) : !score ? (
+                // Absence is NOT cleanliness — say so, calmly and exactly.
+                <p className="typo-body text-foreground">{p.adherence_no_rules}</p>
+              ) : (
+                <>
+                  <p className="typo-body text-foreground mb-2">
+                    {tx(p.adherence_headline, {
+                      clean: score.cleanContexts,
+                      applicable: score.applicableContexts,
+                      sites: score.sites,
+                      files: score.matchedFiles,
+                    })}
+                  </p>
+                  {score.contexts.length > 0 && (
+                    <div className="overflow-x-auto rounded-card border border-border/50">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-border/40 bg-secondary/30">
+                            {/* muted-ok: table column headers, structural chrome */}
+                            <th className="typo-caption uppercase tracking-wide text-foreground/50 text-left font-medium px-2.5 py-1.5">
+                              {p.adherence_col_context}
+                            </th>
+                            {/* muted-ok: table column header, structural chrome */}
+                            <th className="typo-caption uppercase tracking-wide text-foreground/50 text-right font-medium px-2.5 py-1.5">
+                              {p.adherence_col_sites}
+                            </th>
+                            {/* muted-ok: table column header, structural chrome */}
+                            <th className="typo-caption uppercase tracking-wide text-foreground/50 text-left font-medium px-2.5 py-1.5">
+                              {p.adherence_col_rules}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {score.contexts.map((ctx) => (
+                            <tr key={ctx.id} className="border-b border-border/30 last:border-b-0">
+                              <td className="px-2.5 py-1.5 align-top">
+                                <span className="typo-body text-foreground block truncate max-w-[220px]">
+                                  {ctx.name}
+                                </span>
+                                {/* muted-ok: group micro-label, structural chrome */}
+                                <span className="typo-caption text-foreground/50 block truncate max-w-[220px]">
+                                  {ctx.group}
+                                </span>
+                              </td>
+                              <td className="typo-body text-foreground text-right tabular-nums px-2.5 py-1.5 align-top">
+                                {ctx.sites}
+                              </td>
+                              <td className="px-2.5 py-1.5 align-top">
+                                <span className="flex flex-wrap items-center gap-1">
+                                  {ctx.topRules.map((rule) => (
+                                    <span
+                                      key={rule.id}
+                                      className="typo-caption font-mono rounded-interactive border border-border/60 bg-secondary/40 px-1.5 py-0.5 text-foreground whitespace-nowrap"
+                                    >
+                                      {rule.id}
+                                      {/* muted-ok: per-rule count micro-label, structural chrome */}
+                                      <span className="text-foreground/50"> ×{rule.sites}</span>
+                                    </span>
+                                  ))}
+                                  {ctx.ruleCount > ctx.topRules.length && (
+                                    // muted-ok: truncation disclosure micro-label
+                                    <span className="typo-caption text-foreground/50 whitespace-nowrap">
+                                      {tx(p.adherence_more_rules, {
+                                        count: ctx.ruleCount - ctx.topRules.length,
+                                      })}
+                                    </span>
+                                  )}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                          {score.uncontextedSites > 0 && (
+                            <tr className="border-t border-border/40 bg-secondary/20">
+                              <td className="typo-body text-foreground italic px-2.5 py-1.5">
+                                {p.adherence_uncontexted}
+                              </td>
+                              <td className="typo-body text-foreground text-right tabular-nums px-2.5 py-1.5">
+                                {score.uncontextedSites}
+                              </td>
+                              <td />
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </>
+              )}
+              <div className="flex items-center gap-2 flex-wrap mt-2">
+                {scorecard?.source.present && scorecard.generatedAt && (
+                  // muted-ok: measurement-provenance micro-label, structural chrome
+                  <span className="typo-caption text-foreground/50">
+                    {p.adherence_measured}{' '}
+                    <RelativeTime timestamp={scorecard.generatedAt} className="text-foreground" />
+                  </span>
+                )}
+                <span className="flex items-center gap-1">
+                  <code className="typo-code text-foreground rounded-interactive bg-secondary/40 px-1.5 py-0.5">
+                    {SCORECARD_COMMAND}
+                  </code>
+                  <CopyButton text={SCORECARD_COMMAND} tooltip={t.common.copy} />
+                </span>
+              </div>
+            </section>
 
             <section>
               {/* muted-ok: section band header, structural chrome */}
