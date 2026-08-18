@@ -5183,3 +5183,34 @@ Shared `WizardStepper` is two-state, non-interactive, and has zero live render p
 
 ### <a id="w3-toasts-notifications"></a> toasts-notifications
 No persistence tier — every toast auto-dismisses; action-required messages evaporate (`toastStore.ts:131`) · toast and notification ledger are disjoint populations with no shared identity — no toast has a durable twin · double live-region announcement (container aria-live + store announceImperative), error toasts announce raw copy then display friendly copy · hover-only timer pause — keyboard focus doesn't hold a toast (`useToastTimer.ts:68-76`) · OS tier is an unconditional focus-blind mirror with five delivery doors and 52/57 hardcoded-English strings (`notifications.rs:1543`) · second forked toast stack (`AlertToastContainer.tsx`: own vocabulary, fixed dwell, silent drop past 5, no live region) · no coalescing; ledger retention cap-only.
+
+---
+
+## Hierarchy-v2 forge wave 4 deviations (2026-08-18) — eight more subjects reconciled
+
+Same contract: standards kept, gaps registered, one anchor per subject, cited from
+frontmatter. Full detail in the wave-4 composer reports (session transcript).
+
+### <a id="w4-voice-io"></a> voice-io
+Dual "exclusive" audio channels overlap across the synthesis gap; stale clip wins, unstoppable (`athenaChatAudio.ts:62-119`; = legacy fix #114) · playback primitive hands callers the raw media element, 1 of 2 callers disciplined (`voicePlayback.ts:41-78`) · mic-denial error erased one layer up, 1 of 4 mic surfaces shows it (`useHoldToTalk.ts:64-73`; = #115) · no capture-side level meter anywhere (only playback is metered) · default STT engine is cloud-routed; disclosure lives in a docstring not beside the picker (`useSpeechInput.ts:8-18`) · tour narration cache keyed by step-id only + object URLs never revoked (`useTourNarration.ts:84,121-137`) · read-aloud renders null when unconfigured.
+
+### <a id="w4-subprocess-lifecycle"></a> subprocess-lifecycle
+Child env is inherit-then-strip, not allowlist — the denylist stays one variable behind (billing-leak history; `cli_process.rs` env_removals + `cli_args.rs`) · no spawn-time identity marker: orphan detection is name/cmdline heuristic, PIDs essentially never persisted (`build_sessions.cli_pid` 0 non-null) · `run_claude_cli` discards exit status (`let _ = child.wait()`, `cli_process.rs:479-491`); empty stdout and read failure collapse into one error · `spawn_cwd` inherits ambient working directory (`cli_process.rs:551-561`) · three cap layers count three different populations, no reconciliation.
+
+### <a id="w4-fleet-orchestration"></a> fleet-orchestration
+Slot cap is a default-off eviction hint — no Fleet spawn is ever refused or queued (`stale.rs:151` MAX_LIVE_SESSIONS=0; "spawn proceeds anyway" `:1388-1414`) · wake re-mints registry identity: resume spawns a new row + deletes the old, compensated by lineage adoption (`commands.rs:190-236`) · durable mirror is best-effort even for terminal transitions (`persist.rs:82-86`) · run membership is a 2-minute dispatch-time window; `begin_run`/`end_run` have zero frontend callers (`run.rs:29`) · harvest counts any non-terminal member "active" incl. stale stragglers (`run.rs:206-210`) · write-set/collision discipline lives in doctrine and prompts, never registered or checked at admission.
+
+### <a id="w4-prompt-assembly"></a> prompt-assembly
+Post-assembly appends: 44.5% of production prompt bytes are concatenated AFTER the assembler returns — outside budget, fence, and fingerprint (`runner/mod.rs:973,:1014,:1042`) · session cache hash digests `tool_count`, not tool identity — equal-count tool swap reuses a stale warm session (`session_pool.rs:133-148`) · unresolved `{{key}}` ships to the model as literal template syntax, warn-log only (`variables.rs:106-133`) · constitution op-grammar (89 hand-written OP lines) vs dispatcher ALLOWED_ACTIONS are two hand-maintained copies, no sync gate; cockpit widget kinds not validated at dispatch (`dispatcher.rs:1492-1523`) · no persisted record of any sent persona prompt (input_tokens 0 on all rows) while the companion side persists per-block sizes + hashes.
+
+### <a id="w4-prompt-safety"></a> prompt-safety
+Fence nonces are time^counter mixes, self-documented non-cryptographic, no re-mint-on-collision (`runtime_safety.rs:13-21`, `sleep_cycle.rs:1725-1736`) · canary has no trip protocol — nothing machine-screens output for the `[SECURITY]` marker or nonce leakage; output flows downstream regardless (`runtime_safety.rs:34-40`) · `strip_html_tags` decodes entities once AFTER stripping — not a fixpoint; once-encoded markup stored as live-looking text (`validation/mod.rs:11-27`) · no shared cross-language test-vector corpus for redaction parity; the 2026-08-15 in-file correction measured exactly this drift class.
+
+### <a id="w4-structured-output"></a> structured-output
+`parse_decision(&blob).unwrap_or_default()` spells parse failure as a default-valued LEGAL artifact — presents as team stall; 91% of headless turns cannot report a parse failure (`deliberation.rs:516,:1372`) · extraction-failed and turn-failed cross to the UI as one status string (`ai_artifact_flow.rs`) · dispatcher warnings logged, never counted/persisted — unknown-op rate untraceable; the grammar's three renderings (prompt menu / ALLOWED_ACTIONS / dispatch arms) hand-synced with no equality check.
+
+### <a id="w4-triage-queues"></a> triage-queues
+`pending_counts` roster enumerates 6 of 13 human-decision queues — 314/370 waiting items (84.9%) invisible to the badge, oldest 98 days (`db/src/repos/dev_tools.rs`; documented in legacy findings-triage-queue.md §0) · the 7-day auto-RESOLVE GC is already registered at #w2-hitl-approval (cited, not re-registered) · `useUnifiedInbox` sorts newest-first with no severity tier (acceptable for a capped quick-scan surface; noted).
+
+### <a id="w4-health-checks"></a> health-checks
+`HealthCheckStatus` (Ok/Warn/Error/Inactive/Info) has no could-not-determine member — keyring-unavailable maps to Warn (`system/health.rs:22-28`; the engine's three-state `HealthProbeState` is the honest form the system checker lacks) · live-run revocation evidence never writes the health record — `invalid_grant` logged, `mark_needs_reauth` skipped (`api_proxy.rs:924-934`) · `BinaryProbeCache` returns no timestamp — staleness TTL-bounded but never rendered · brief's `HealthCheckPanel.tsx` path does not exist (surface is `useHealthCheck.ts` + `useHealthDigestScheduler.ts`).
