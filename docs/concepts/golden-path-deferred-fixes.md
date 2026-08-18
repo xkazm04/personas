@@ -5276,3 +5276,34 @@ The intent ledger decayed past its own algorithm: 118 stale Active entries, dupl
 
 ### <a id="w6-codebase-scanning"></a> codebase-scanning
 parse_finding silently drops malformed protocol lines - nothing counts parse failures (standards_scan.rs:71-78) - the runner never reconciles received findings against the shipped ruleset (a rule the model skipped is silently absent) - the incremental digest ledger keys on content only, so a ruleset revision does not invalidate prior results - corpus-map has ZERO files for this subject; the census/idea-scanner legacy docs may be mapped elsewhere - check during N+2 backfill.
+
+---
+
+## Hierarchy-v2 forge wave 7 deviations (2026-08-18) — UI/interaction cluster reconciled
+
+Same contract: standards kept, gaps registered, one anchor per subject. Full detail in
+the wave-7 composer reports (session transcript).
+
+### <a id="w7-canvas-graph"></a> canvas-graph
+Brief correction: teams/sub_canvas reducer board (29 files incl. useCanvasReducer.ts) was deleted as orphaned in 78e9bff68 - evidence substituted with Mastermind + pattern-graph canvases - layout store never reconciles orphan entries (dead positions persist forever; 2 of 8 measured) - GroupLayer group-body drag has no travel threshold (any press-move mutates, GroupLayer.tsx:73-104) - edges render unculled and pair-keyed (CanvasShell.tsx:880-882) - no alignment guides exist anywhere, only grid snap.
+
+### <a id="w7-chat-transcript"></a> chat-transcript
+Streaming turn is a separate element swapped at settlement rather than one turn in two phases - resolved approval cards are REMOVED from the transcript instead of settling in place as the decision record (companionStore.ts:870-871) - row kinds partly sentinel-typed by string prefix (PROGRESS:, [proactive:) instead of a typed registry - jump-to-latest pill carries no unseen count - no per-thread reading-position restoration.
+
+### <a id="w7-drag-drop"></a> drag-drop
+DragHandle has role=button with no tabIndex (false affordance) - 0 of 26 drag surfaces keyboard-operable; the only live region never announces a move - ReferenceBoard onReorder(toIndex) discards dragged identity, so every reorder drag is a no-op (ReferenceBoard.tsx:186,257-262) - dev_tools.rs sequence rewrite is N unatomic commits and the stack is UI-unreachable - KanbanBoard void onItemMove discards the promise (request-shaped drop, no pending/rejection) - AssetCard handoff payload embeds a stale-able entity snapshot instead of a reference - brief correction: SortableColumnHeader is sort-toggling, not drag reorder; no live column drag-reorder exists.
+
+### <a id="w7-schema-driven-ui"></a> schema-driven-ui
+Cockpit widget kinds not validated at dispatch + registry/constitution as two hand-maintained vocabularies (cited at #w4-prompt-assembly) - CockpitWidgetProps.config is Record<string,unknown>, no per-kind validators, widgets self-defend - SurfaceSpec drop ledger is a bare integer: no per-drop reason/kind, so the emitter-improvement loop has no instrument (surfaceSpec.ts:204-211).
+
+### <a id="w7-draft-editing"></a> draft-editing
+useUnsavedGuard has 2 consumers of ~13 editing surfaces (>=11 unguarded) - BaseModal cannot refuse close, so drafts in modals are structurally unprotectable - beforeunload prompts but never saves; the one drain implementation has zero importers - 38 of 55 reseed effects keyed on the entity object clobber in-flight edits - draftChanged uses !== per key (flat drafts only, undocumented precondition) - persona switch asks before flushing where flush-first would settle it.
+
+### <a id="w7-undo-history"></a> undo-history
+No boundary-event closure: pointer-up never closes the open step; the 400ms window is the sole closer, and the target-only tag merges distinct gestures on the same clip (useMediaStudio.ts:79-100) - commit_snapshot swallows all failures: a project whose checkpoints stopped committing is indistinguishable from a protected one (versions.rs:23-34) - restore trusts the every-turn-committed invariant instead of capturing pre-restore state (versions.rs:67-84) - boot-rotating 3-set backup discards every pre-incident snapshot in ~2h11m (backup.rs; also cited under migrations) - brief correction: studioHistory.ts is session-display restoration, not the checkpoint exemplar (versions.rs + StudioVersions.tsx is).
+
+### <a id="w7-media-playback"></a> media-playback
+video src rebinds across clip boundaries with no identity key; prior transport state survives under new bytes, papered over by threshold seek-correction (CompositionPreview.tsx:366,:120-151) - the one clock consumer re-renders per tick in the component rendering the video element - the adapter seam lives inside a 734-line surface component with engine-identity branching and no extracted transport contract (RadioFooter.tsx:146-148) - switching away pauses rather than reaps the foreign frame (undeclared warm-instance policy).
+
+### <a id="w7-file-browsing"></a> file-browsing
+Range-select follows raw listing order, not visual order (useDrive.ts:517-533) - select-all ignores active filters; invisible selection feeds remove() (useDrive.ts:537-539) - refresh never prunes selection of externally deleted paths - bulk mutations have no aggregate report (no "moved 12 of 15, 3 failed") - vault walker skips unreadable dirs silently with no count - location/expansion not persisted across sessions - thumbnail decode failure not negatively cached.
