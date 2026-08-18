@@ -5032,3 +5032,58 @@ hand-written per-id `DELETE`s (`db/src/lib.rs:1799`, `migrations/incremental.rs:
 
 Detail: [`catalog-row-seeding.md`](./golden-paths/catalog-row-seeding.md) §0.2, §0.3,
 §0.4, §7/D1-D5.
+
+---
+
+## <a id="v2-pilot-deviations"></a> Hierarchy-v2 pilot deviations (2026-08-18) — the forge's first evidence-reconciliation pass
+
+The v2 forge (plan §3) writes the standard from expertise first, then reconciles against
+the repo; where the repo falls short, **the standard stays and the gap is registered
+here**. These eight came out of the two pilot subjects. Each anchor is cited from the
+owning document's `deviations:` frontmatter under `docs/concepts/paths/`.
+
+### <a id="table-no-error-state"></a> Table: the primitive has no error state
+`UnifiedTable.tsx:598-620` — the body machine is ghost/empty/rows only. A failed fetch
+that settles empty renders the settled *empty* state: "no data" asserted when the truth
+is "couldn't look". Same in `DataGrid`. Violates `failure-not-empty-success`.
+**Why held:** adding an error branch changes what live surfaces render on fetch failure.
+
+### <a id="table-default-sort-comparator"></a> Table: default sort comparator is lexicographic and untotal
+`UnifiedTable.tsx:500-515` — default `sortFn` stringifies + `localeCompare`s (numbers and
+dates sort wrong), uses `reverse()` for `desc` (inverts tie order of a stable sort), and
+appends no identity tiebreaker. **Why held:** changes visible row order app-wide.
+
+### <a id="table-forbidden-split-unguarded"></a> Table: client sort over a server-truncated window, unguarded
+`UnifiedTable.tsx:173-175` — sortable columns always sort client-side over `data` while
+`onEndReached` invites server windowing; nothing warns when both are active. The sort
+result is then a lie about the unfetched remainder. **Why held:** the guard is an API
+design decision (controlled sort state), tracked with legacy `tables.md` gap #6.
+
+### <a id="table-recent-slice-tiebreaker"></a> Table: recent-slice query lacks a tiebreaker
+`src-tauri/db/src/repos/orchestration/team_assignments.rs:358-364` — `ORDER BY created_at
+DESC LIMIT` without `id`. Tolerable only because nothing resumes from its boundary; the
+Rust application documents the graduation rule. **Why held:** cosmetic until a consumer
+pages from it.
+
+### <a id="scheduling-dup-nonfire-vocab"></a> Scheduling: non-fire reason vocabulary duplicated by hand
+`src/features/triggers/lib/eventReason.ts:17-27` hand-syncs (`"Keep in sync with"`)
+against `EventGateReason::token` in `src-tauri/src/engine/background.rs:948-989`; ts-rs
+is available but unused here. Violates `one-authority-per-vocabulary`. **Why held:**
+binding regen + consumer migration is its own change.
+
+### <a id="scheduling-tz-fallback"></a> Scheduling: cron falls back to host-local timezone silently
+`src-tauri/core/src/scheduler.rs:123-137` — a rule with no authored timezone means
+different things on different machines, logged at debug only. The path prescribes
+computing in the rule's own declared frame. **Why held:** changing the fallback shifts
+real fire times for existing triggers.
+
+### <a id="scheduling-claims-without-identity"></a> Scheduling: claims record no holder or timestamp
+`claim_pending` (admitted at `background.rs:116-122`, `1028-1038`) forces the
+two-consecutive-pass reaper heuristic instead of evidence-based reclamation. Violates
+the claims-carry-identity rule in `overlap-and-reentrancy`. **Why held:** schema change
+on a hot table.
+
+### <a id="scheduling-subscription-health-volatile"></a> Scheduling: subscription health resets on restart
+`SubscriptionHealth` (`background.rs:43-70`) is in-memory only — no persisted tick
+heartbeat, so global gap detection ("the scheduler itself was dark") does not survive a
+restart. **Why held:** new persistence surface.
