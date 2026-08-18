@@ -5214,3 +5214,34 @@ Fence nonces are time^counter mixes, self-documented non-cryptographic, no re-mi
 
 ### <a id="w4-health-checks"></a> health-checks
 `HealthCheckStatus` (Ok/Warn/Error/Inactive/Info) has no could-not-determine member — keyring-unavailable maps to Warn (`system/health.rs:22-28`; the engine's three-state `HealthProbeState` is the honest form the system checker lacks) · live-run revocation evidence never writes the health record — `invalid_grant` logged, `mark_needs_reauth` skipped (`api_proxy.rs:924-934`) · `BinaryProbeCache` returns no timestamp — staleness TTL-bounded but never rendered · brief's `HealthCheckPanel.tsx` path does not exist (surface is `useHealthCheck.ts` + `useHealthDigestScheduler.ts`).
+
+---
+
+## Hierarchy-v2 forge wave 5 deviations (2026-08-18) — eight more subjects reconciled
+
+Same contract: standards kept, gaps registered, one anchor per subject, cited from
+frontmatter. Full detail in the wave-5 composer reports (session transcript).
+
+### <a id="w5-tracing"></a> tracing
+Write-once-at-finalize durability — 0% trace coverage for reaped/crashed runs (`core/src/trace.rs` + `runner/mod.rs`; legacy D4) · no closed span-status vocabulary — cancelled/interrupted/failed collapse into strings · `Some(0)` written for never-measured tokens (`parser.rs:340-341`) · LIFO tool-span close instead of close-by-handle (`runner/mod.rs:2484-2488`) · `spans` JSON read back with `unwrap_or_default()` — corrupt column renders as empty trace (`traces.rs:58`) · synthetic-trace estimate labels per-trace not per-datum · three parallel hand-rolled JSON highlighters.
+
+### <a id="w5-observability-telemetry"></a> observability-telemetry
+Pre-boot records dropped, not buffered (`DeferredFileWriter`, `logging.rs:160-178`) · second unbounded unredacted sink: `ExecutionLogger` = 99.1% of log bytes with live credentials, no level/filter/scrub/retention (`engine/src/logger.rs`) · native crash records unsanitized and non-atomic while the frontend path sanitizes all three fields (`logging.rs:245-299`) · crash-store cap enforced only at startup, not on insert · disk accounting sums files the retention line doesn't govern (`logging.rs:413-436`) · no runtime level control and the default directive targets a stale crate root, silencing ~301 debug! calls · webview capture merges into the file, bypassing filter/scrub/remote tap · no reveal-folder or export bundle.
+
+### <a id="w5-metrics-rollups"></a> metrics-rollups
+Ordinal period split over a sparse (no zero-fill) feed — every zero-execution day shifts the comparison boundary (`periodComparison.ts:30`, `computeTrends.ts:43` vs `metrics.rs:1181-1196`) · averages of averages in trends (per-day means of successRate and p50, `computeTrends.ts:117-118`) · two day definitions in one product, one undeclared (caller-local in sla/heatmap vs UTC in overview series) · heatmap streak walk anchors UTC over local-day buckets (`metrics.rs:2202`) · empty denominator spelled 0% beside a helper that documents the None doctrine (`sla.rs:802-806`) · no effective-window echo on `MetricsChartData` (days clamped silently).
+
+### <a id="w5-alerting"></a> alerting
+**A third evaluator fires off the viewed filter** — `useObservabilityData.ts:70` evaluates rules against the tab's 30/90-day + persona-filtered window and persists real FiredAlerts (violates private-window AND one-evaluator) · scope divergence: `rule.persona_id` honored by the Rust evaluator, never read by the client one — and all loops share one 1-hour cooldown keyed on rule_id, so a wrong-scope fire silences the authority's correct one · empty-window rates coerce to 0 — every `<`/`<=` rule fires forever on an idle install; the guard test covers only the `>` direction · partial-edit validation hole (threshold-only update skips always-true re-check, `alerts.rs:65-71`) · no lifecycle beyond `dismissed`; no flap control anywhere.
+
+### <a id="w5-perf-instrumentation"></a> perf-instrumentation
+Freeze-monitor durable sink is `File::create`-truncated at every launch — the crashed session's alert records die with the relaunch that follows the crash (`freeze_monitor.rs:70`) · two time bases in one startup record (backend PROCESS_START vs WebView `__BOOT_TIME__`); the window-creation gap is attributable to neither · the frontend freeze detector is dev-only — shipped builds have no frame-gap coverage · startup report retention is one launch; no persisted history/baseline.
+
+### <a id="w5-usage-analytics"></a> usage-analytics
+Barrel re-exports raw vendor helpers beside the sink — 18 hard-wired emit sites vs 4 sink consumers (`analytics/index.ts:162`) · `TAB_DIMENSIONS` hand-list leaves 6 of 20 tab dimensions unregistered (85.2% coverage on that axis) · rollup flushes on one fallback unload event, no checkpoint, no loss accounting · activation latch written before the send — an opted-out period permanently consumes first-time milestones (`activation.ts:121-134`) · emit path never validates tab values against declared dimension values.
+
+### <a id="w5-scoring-rubrics"></a> scoring-rubrics
+No rubric versioning anywhere — weight edits silently re-score history (`goldenStandard.ts:26`, `leaderboardScoring.ts:58`) · comment-only weight sums ("sums to 1" with no assertion; `compositeHealthScore.ts:104-120` has the assertion others should copy) · `improvePlan.ts:78` sorts by priority alone, ties fall to input order · coverage undisclosed after renormalization (no "scored on N of 5 dimensions") · band boundaries inlined at render sites (`qualityScore.ts:47-57`) · kpiMath↔kpi_derivation twin gate already at #w3-data-viz.
+
+### <a id="w5-audit-logging"></a> audit-logging
+Credential-ledger 90-day retention is a scheduled sweep, not insert-path enforcement (`background.rs:3023-3031`; `api_key_audit.rs` shows the correct form in the same binary) · `auditMiddleware.ts` is named "audit" but emits diagnostic log lines, not ledger rows — the audit/telemetry boundary blurred in code · sanitization is per-ledger, not uniform: only the credential door runs `sanitize_secrets`; `policy_events` free-text inserts unscrubbed.
