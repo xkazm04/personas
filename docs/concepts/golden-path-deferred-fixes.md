@@ -5400,3 +5400,46 @@ Wiring is append-only: no orphan cleanup when a drawn edge is deleted, no edge-i
 
 ### <a id="w10-proactive-nudges"></a> proactive-nudges
 Budget day boundary is UTC while quiet windows are local wall-clock — the two policy clocks disagree by the user's offset - quiet/budget bypass is per-code-path, uncounted, not a closed class - evaluator failure is empty success (collect_all swallows per-evaluator errors with unwrap_or_default, no health record) - a budget unit is not released on failed delivery claim (spent unit lost until rollover) - efficacy modulation never reads the ignored outcome — a purely-ignored kind is never throttled - no per-kind kill switch reachable from the nudge; no default night window shipped.
+
+---
+
+## Hierarchy-v2 forge wave 11 deviations (2026-08-18) — integration + security + operator additions
+
+Same contract: standards kept, gaps registered, one anchor per subject. Full detail in
+the wave-11 composer reports (session transcript).
+
+### <a id="w11-connector-catalog"></a> connector-catalog
+Cites the registered seeder-clobber (127: boot refresh reverts operator edits, updated_at lies - 134 rows / 1 distinct updated_at) and 126 (probes green for any value, Save gated on that green). New: two intra-row consistency classes no schema expresses - (declared fields, probe template) and (declared capability, registered adapter) - both need seed-time cross-checks; the correct revision-gated refresh existed in ONE seeder of seven and never propagated.
+
+### <a id="w11-import-normalization"></a> import-normalization
+Capability tables duplicated across runtimes (platformDefinitions.ts hand-mirrors platform_rules.rs while the SAME pipeline's size caps got proper codegen) - fabricating fallback: unmapped foreign types silently mint vocabulary instead of grading unsupported (resolveNodeType) - the import receipt enumerates nothing (entity_results = empty on all 155 rows) - one adapter lives outside the table system; detection fingerprints are code not data - no export-schema version detection. Re-homing: external-source-ingestion.md fits webhook-ingestion better.
+
+### <a id="w11-templates-scaffolding"></a> templates-scaffolding
+RE-MEASURED LIVE: 10 select questions across 8 canonical templates carry a default outside their own options - the de-branding pass rewrote defaults but not option lists, answers bind by label string (fix shape: 5-line membership check in validateTemplate.ts; data fix first). Two readiness evaluators (browse badge vs commit gate) judge different declarations; readinessTier hardcodes English + raw colors. Brief correction: checksum_mismatch at the catalog door is a typed skip, not log-and-accept - the door is the honest gate; the deleted per-adoption check was the decoration.
+
+### <a id="w11-web-scraping"></a> web-scraping
+Extraction collapse laundered as success: config_run stamps ok unconditionally; a page redesign produces empty-field records counted as changed-under-ok (engine/src/scraper.rs:578-587) - the DSL has no failure semantics (no required/optional on rules) - silent key fallback re-keys a record to its URL, splitting identity - no stale/tombstone tier - LLM authoring permits the imagination path with no URL, auto-decides replace/merge, never auto-verifies against the authoring page - schedules default enabled:true; single free-text last_status; no request spacing.
+
+### <a id="w11-markdown-vault"></a> markdown-vault
+Orphan-predicate divergence: graph.rs counts orphans with no entry-point exemption while lint.rs exempts them - two surfaces disagree on any vault with index notes - mirror ledger-vs-disk gap: the skip-gate reads sync_state, never disk, so a vault-side deletion of a mirrored note is skipped forever; no reconcile pass.
+
+### <a id="w11-multi-project"></a> multi-project
+Unwatched renders as quiet: every tracking watcher failure returns Ok(empty) with a warn - an unreadable repo is indistinguishable from an idle one (watchers/git.rs:51-70) - dual project-identity registries bridged BY CANONICALIZED PATH at the push boundary (the exact join-class defect the repo's own shipDerive doctrine kills one floor down) - admission has no dedupe: one repo admitted twice mints amnesiac twins - anchor policy (fixed vs cohort-relative) not rendered with traveling scores.
+
+### <a id="w11-device-pairing"></a> device-pairing
+Scope strings unvalidated at mint (approve_pairing passes modal strings straight to create) - friction inversion on the P2P ceremony (confirm is an unarmed primary; unpair is two-step; = deferred-fixes 36, cited) - last revocation does not stop the LAN listener (:17500 keeps serving off an empty registry) - claim surface lacks fixed delay and OriginMismatch is a distinguishable code (confirms an approved-unclaimed nonce to a prober, pairing.rs:314-329).
+
+### <a id="w11-signed-artifacts"></a> signed-artifacts
+engine/bundle.rs verifies over a RE-SERIALIZED manifest (to_string_pretty of the parsed struct at :327/:405/:540) while its sibling enclave.rs fixed exactly this by preserving raw bytes - works today, breaks cross-version on the first schema addition - cites deferred-fixes entries 76/77/78 (filed by the legacy document-signing pass; anchor minting owed) - DriveVerifyDialog collapses three verdicts to two (counter-evidence).
+
+### <a id="w11-supply-chain"></a> supply-chain
+gitleaks allowlist exempts 40% of tracked files by directory glob; one dead entry; fixture regex blind to cfg(test) (matches 8 of 963 rs files vs 443 carrying tests) - extract_selected has no decompression budgets, no symlink policy, extracts direct-to-destination - restated measured: policy engine 0 verdicts in 350 runs (frozen via --locked), deep audit lane dead 23/23, update automation never enabled, 56 workflow refs unpinned, one git+https source standing against unknown-git=deny (cites #w6-quality-gates for the scanner-absent gap).
+
+### <a id="w11-p2p-networking"></a> p2p-networking
+NO reconnection policy exists: header promises auto-reconnect; max_retries is dead code, retry_count never increments, auto_connect read by nothing - a dropped peer stays dropped until a human clicks - no discoverability consent gate: the network service auto-starts unconditionally ~3s after boot in every p2p build; no enable/stop command exists - exposure is global not per-peer (one manifest served to ANY connected peer; the code comment admits it) - no reachable state; prune deletes rather than downgrades - version handling is exact-equality rejection.
+
+### <a id="w11-status-vocabulary"></a> status-vocabulary
+155 string-typed status fields vs 66 CHECK vocabularies / 88 wire unions; 0 of 26 catalog categories fully covered; validate_one_of is 1 file wide - 80 local color maps vs the palette authority in 10 files; a 3-palette fork in one feature - prefer-numeric gate recall ~3.5% - four locale policies across three timestamp modules; 13 hand-rolled timers beside the shared ticker; 28 elapsed ladders + 611 catalog strings of one four-rung vocabulary (cites #w3-i18n, #w3-design-tokens, #w2-realtime-events, #w5-alerting).
+
+### <a id="w11-job-coordination"></a> job-coordination
+BuildPhase::validate_transition checks the escape hatch BEFORE the terminal guard - Completed-to-Failed and Promoted-to-Cancelled validate; verdicts are not final (build_session.rs:69-73) - guards keyed off live states turned one stranded row into a documented system-wide deadlock (teams.rs:714-723) - terminal set scattered as SQL literals forced reusing cancelled instead of minting expired (the one-authority bill arriving) - cites #w8-pipeline-dag and #w2-background-jobs.

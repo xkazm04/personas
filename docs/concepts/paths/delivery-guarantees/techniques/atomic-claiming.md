@@ -6,7 +6,8 @@ status: forged
 laws:
   - identity-survives-reuse
   - creation-names-reaper
-shared_with: []
+shared_with:
+  - job-coordination
 ---
 
 # Atomic claiming

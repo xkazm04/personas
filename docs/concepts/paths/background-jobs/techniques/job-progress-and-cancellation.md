@@ -4,7 +4,8 @@ subject: background-jobs
 technique: job-progress-and-cancellation
 status: forged
 laws: [identity-survives-reuse, failure-not-empty-success, creation-names-reaper]
-shared_with: []
+shared_with:
+  - job-coordination
 ---
 
 # Job progress and cancellation

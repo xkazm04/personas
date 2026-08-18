@@ -4,7 +4,8 @@ subject: i18n
 technique: token-label-separation
 status: forged
 laws: [one-authority-per-vocabulary]
-shared_with: []
+shared_with:
+  - status-vocabulary
 ---
 
 # Token–label separation
