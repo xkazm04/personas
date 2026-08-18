@@ -162,3 +162,64 @@ These are cases where a sibling already fixed a defect personas' own docs record
 - **Every forged subject MUST keep a strong definitional opener.** It resolved every
   subject-boundary judgment call ("is a CSS-grid a table?", "is a localStorage record
   a scheduler?"). It is what makes the finer unit portable.
+
+---
+
+## Round 2 — full-contexts × whole-corpus coverage (2026-08-18)
+
+Exhaustive follow-up to the sampling transplant test: **104 contexts × 105 subjects**,
+pruned to **875 live cells (8%)**, all scanned (T2, 22 group-agents). **808 cells:
+706 holds · 96 partial · 1 violates · 119 n/a-confirmed.** 53 findings → 32
+problem-classes (**20 FIX applied, 33 DEFER**). Full pairing ledger + per-site detail
+in the fork scratch (`phaseC-pairing-ledger.txt`, `findings-*.json`). **142 enrichment
+candidates** surfaced; the corpus-shaping ones below.
+
+### New-law candidate (5th)
+- **externally-derived-enforcement-must-expire** (pumper `sync-replication`,
+  `datahub.rs` `expire_stale_pauses`/`pauses_are_stale`): enforcement derived from an
+  external signal must EXPIRE when that signal goes unobservable, not freeze at its
+  last value. A pause/ban/gate keyed off a feed that stops reporting must not persist
+  forever on stale evidence. Distinct from the 9; candidate anchor
+  `derived-enforcement-expires-with-its-signal`.
+
+### High-value new-techniques (by subject) — 31 total, top picks
+- **quality-gates / source-census extinction gate** (pumper): a `#[cfg(test)]` test
+  walks its own `src/`, comment/whitespace-stripped, and asserts an anti-pattern idiom
+  is *extinct*, with a floor-assertion so a truncated scan fails loudly. The
+  self-enforcing version of the census idea.
+- **quality-gates / unmeasured-as-first-class-verdict** (gravitone): a gate emits FOUR
+  verdicts (pass / violation / not-applicable / **unmeasured**), and the vacuous pass
+  is NOT counted as enforced.
+- **realtime-events / epoch-zero for backfilled bitemporal CDC** (politicas
+  `changeEvents.ts`): a versionless full-snapshot source that gains change-tracking sets
+  an epoch so the first diff doesn't emit the entire corpus as "changed".
+- **audit-logging / total-vs-chained counts beside the verifier** (politicas
+  `countReviewAudit`): return `{total, chained}` next to `verifyReviewChain()` so an
+  erased chain is distinguishable from a never-used one (empty ≠ erased).
+- **scoring-rubrics / formula-ref-as-recompute-edge** (politicas `contribution.ts`): a
+  stored derived score carries the *name* of the formula that authored it; a write-guard
+  refuses cross-ref overwrite; read surfaces render "stale, not silently wrong" when
+  store-ref ≠ code-ref. `derivation-names-recomputation` as a runtime edge.
+- **subprocess-lifecycle / kill_process_tree** + **prompt-safety / check_shim_argv** +
+  **prompt-safety / env_clear-allowlist** (pumper engine-claude): the three-part Windows
+  shim hardening (tree-kill the money-spending grandchild; measured metacharacter
+  refusal across a cmd.exe re-parse; env scrub against injection exfil).
+- **cost-metering / spend-survives-failure-channel** (pumper): the paid tier can spend
+  money and THEN fail; the error carries the spend so the ledger records it.
+- **accessibility / role-withdrawal** (gravitone): DROP `role=menu` rather than ship a
+  role whose keyboard contract isn't met — an honest-absence a11y move.
+- **app-shell / shell-owned single skip-to-content target** (politicas) instead of
+  per-page ids.
+- **observability-telemetry / outcome-independent-loss-tally** (pumper): count a
+  durability loss at the failure site, never on the 1-of-N success arm.
+
+### New problem-shapes worth a corpus deviation/technique (the DEFER design-gaps)
+`schema-drift-by-presence-not-version` (a drift gate that tests field *presence* passes a
+type change — a `gate-sees-target` instance), `hand-mirrored-wire-type-drops-additive-fields`
+(serde mirror silently drops future fields — the vocabulary-versioning law again),
+`total-zero-with-records-reads-complete` (missing `UnknownTotal` arm), `retry-classifies-nonretryable`
+(no transient/permanent split — appears in pumper webhook + politicas ingest), `backoff-without-jitter`.
+
+### Re-confirmed direct personas flow-back
+pumper's `check-doc-sync.mjs` fixing personas' never-fired Stop-hook surfaced AGAIN
+(independently, in the job-orch shard) — the drop-in reference is real and repeated.

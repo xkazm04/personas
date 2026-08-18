@@ -1,0 +1,135 @@
+
+=== PHASE C — PAIRING LEDGER (22 shards) ===
+Cells scored: 808 · holds 706 · partial 96 · violates 1 · n/a-confirmed 119
+Findings: 53 raw → 32 distinct problem_shapes
+Pairing ratio: 1.66 sites/problem
+
+=== PROBLEM CLASSES (by site count) ===
+
+[19 sites · 13FIX/6DEFER · 2 repo(s): politicas+pumper] sort-missing-id-tiebreaker  (table,triage-queues,scoring-rubrics,search,audit-logging,status-vocabulary,data-viz,data-access)
+    FIX   politicas/money-ledger-graph  features/money/components/TiesLedger.tsx:158
+    FIX   politicas/money-ledger-graph  features/money/getMoneyData.ts:132
+    FIX   politicas/money-cases-review  features/money/getMpDetail.ts:45
+    FIX   politicas/money-cases-review  features/money/getVerificationData.ts:147
+    FIX   politicas/budget-mirror  features/budget/BudgetMirrorPage.tsx:197
+    FIX   politicas/money-cases-review  features/money/getLeadDossiers.ts:131
+    FIX   politicas/budget-mirror  features/budget/mirrorData.ts:214
+    FIX   politicas/money-cases-review  lib/db/pglite/repositories/review.ts:167
+    DEFER politicas/effort-case-loop  scripts/case-loops/effort/triage.ts:351
+    DEFER politicas/law-triage-batch  scripts/case-loops/law/triage.ts:176
+    DEFER politicas/money-analysis-triage  scripts/case-loops/money/triage.ts:241
+    DEFER politicas/civicscore-leaderboard  features/civicscore/getLeaderboardData.ts:582
+    DEFER politicas/civic-kg-primitives  lib/civic/votes.ts:52
+    FIX   politicas/votetrack-kompas  features/votetrack/kompas/score.ts:112
+    FIX   politicas/votetrack-ledger  features/votetrack/record/derive.ts:322
+    FIX   politicas/votetrack-ledger  features/votetrack/record/derive.ts:488
+    FIX   politicas/lawwatch  features/lawwatch/getCollisionData.ts:510
+    FIX   politicas/lawwatch  features/lawwatch/getLawData.ts:427
+    DEFER pumper/cron-scheduler  crates/core/src/storage.rs:605
+
+[2 sites · 0FIX/2DEFER · 1 repo(s): gravitone] free-navigation-stepper-no-commit-gate  (wizard-flows)
+    DEFER gravitone/research-step  app/studio/[projectId]/Stepper.tsx:38
+    DEFER gravitone/studio-navigation  app/studio/[projectId]/StudioView.tsx:144
+
+[2 sites · 0FIX/2DEFER · 1 repo(s): gravitone] remount-refetch-no-warm-cache  (client-fetch-cache)
+    DEFER gravitone/research-step  app/_phases/research/ResearchStep.tsx:61
+    DEFER gravitone/studio-navigation  app/studio/[projectId]/StudioView.tsx:86
+
+[2 sites · 1FIX/1DEFER · 1 repo(s): politicas] unversioned-vocabulary-subset  (status-vocabulary)
+    FIX   politicas/graph-explorer  features/graph/graphLoader.ts:309
+    DEFER politicas/civic-kg-primitives  lib/kg/sourceLinks.ts:84
+
+[1 sites · 0FIX/1DEFER · 1 repo(s): gravitone] aria-role-without-keyboard-handler  (accessibility)
+    DEFER gravitone/frames-step  app/_phases/frames/parts.tsx:198-208
+
+[1 sites · 0FIX/1DEFER · 1 repo(s): gravitone] unauthenticated-spending-route  (authorization)
+    DEFER gravitone/imaging-providers  app/api/imaging/generate/route.ts:24, app/api/imaging/edit/route.ts:10, app/api/imaging/recognize/route.ts:15, app/api/frames/route.ts:33
+
+[1 sites · 0FIX/1DEFER · 1 repo(s): gravitone] budget-defaults-unlimited  (cost-metering)
+    DEFER gravitone/imaging-providers  lib/imaging/pricing.ts:1, lib/imaging/router.ts:146
+
+[1 sites · 1FIX/0DEFER · 1 repo(s): gravitone] timer-not-cleared-on-spawn-error  (subprocess-lifecycle)
+    FIX   gravitone/app-infrastructure  lib/claudeCli.ts:70
+
+[1 sites · 0FIX/1DEFER · 1 repo(s): gravitone] unhandled-rejection-misattributed-as-storage-write  (error-handling)
+    DEFER gravitone/app-infrastructure  lib/GlobalErrorBridge.tsx:28
+
+[1 sites · 0FIX/1DEFER · 1 repo(s): gravitone] non-atomic-cascade-delete  (entity-lifecycle)
+    DEFER gravitone/asset-library  app/library/LibraryAtelier.tsx:147
+
+[1 sites · 0FIX/1DEFER · 1 repo(s): gravitone] notification-render-out-of-context  (toasts-notifications)
+    DEFER gravitone/studio-navigation  app/studio/[projectId]/StudioView.tsx:164
+
+[1 sites · 0FIX/1DEFER · 1 repo(s): gravitone] vacuous-pass-counts-as-enforced  (quality-gates)
+    DEFER gravitone/script-step  app/_phases/script/gate.ts:373-379,435
+
+[1 sites · 1FIX/0DEFER · 1 repo(s): politicas] error-response-missing-no-store  (error-handling)
+    FIX   politicas/civic-feeds-verification  app/schranka/feed.json/route.ts:21; app/schranka/feed.xml/route.ts:28; app/schranka/novinky.json/route.ts:36
+
+[1 sites · 1FIX/0DEFER · 1 repo(s): politicas] catch-reaches-no-door  (error-handling)
+    FIX   politicas/admin-control  features/admin/getAdminData.ts:547,581,603,608,641,646
+
+[1 sites · 0FIX/1DEFER · 1 repo(s): politicas] backoff-without-jitter  (retry-backoff)
+    DEFER politicas/ingest-external-sources  lib/ingest/sources/dataor.ts:38
+
+[1 sites · 1FIX/0DEFER · 1 repo(s): politicas] silent-retry-no-log  (retry-backoff)
+    FIX   politicas/ingest-external-sources  lib/ingest/sources/dataor.ts:45
+
+[1 sites · 0FIX/1DEFER · 1 repo(s): politicas] parallel-vocabulary-maps-hand-synced  (design-tokens)
+    DEFER politicas/graph-explorer  features/graph/kindStyle.ts:45
+
+[1 sites · 1FIX/0DEFER · 1 repo(s): politicas] duplicated-vocabulary-derivation  (versioning-snapshots)
+    FIX   politicas/graph-explorer  features/graph/PermalinkPage.tsx:376
+
+[1 sites · 0FIX/1DEFER · 1 repo(s): politicas] hardcoded-label-bypasses-catalog  (i18n)
+    DEFER politicas/graph-explorer  features/graph/graphLoader.ts:765
+
+[1 sites · 1FIX/0DEFER · 1 repo(s): politicas] combobox-missing-activedescendant  (accessibility)
+    FIX   politicas/graph-explorer  features/graph/components/NodeSearch.tsx:107
+
+[1 sites · 0FIX/1DEFER · 1 repo(s): politicas] token-value-manual-mirror-no-parity-gate  (design-tokens)
+    DEFER politicas/landing-page  features/landing/palette.ts:9-17
+
+[1 sites · 0FIX/1DEFER · 1 repo(s): politicas] inline-copy-bypasses-catalog  (i18n)
+    DEFER politicas/civicscore-leaderboard  features/civicscore/components/ScoreHistogram.tsx:29
+
+[1 sites · 0FIX/1DEFER · 1 repo(s): pumper] retry-classifies-nonretryable  (retry-backoff)
+    DEFER pumper/webhook-delivery  crates/server/src/webhook.rs:620-628
+
+[1 sites · 0FIX/1DEFER · 1 repo(s): pumper] total-zero-with-records-reads-complete  (web-scraping)
+    DEFER pumper/eu-grants  crates/apps/cordis/src/lib.rs:560
+
+[1 sites · 0FIX/1DEFER · 1 repo(s): pumper] duplicated-vocabulary-copies  (web-scraping)
+    DEFER pumper/us-federal-grants  crates/apps/grants-common/src/lib.rs:1887
+
+[1 sites · 0FIX/1DEFER · 1 repo(s): pumper] mixed-casing-result-json  (ipc-contract)
+    DEFER pumper/grants-unified-layer  crates/apps/grants-common/src/lib.rs:164
+
+[1 sites · 0FIX/1DEFER · 1 repo(s): pumper] unsigned-bundle-import-conservatively-bounded  (signed-artifacts)
+    DEFER pumper/job-search-api  crates/server/src/routes/host_weather.rs:143-242
+
+[1 sites · 0FIX/1DEFER · 1 repo(s): pumper] hand-mirrored-wire-type-drops-additive-fields  (ipc-contract)
+    DEFER pumper/remote-engine  crates/engine-remote/src/lib.rs:261-287
+
+[1 sites · 0FIX/1DEFER · 1 repo(s): pumper] schema-drift-by-presence-not-version  (migrations)
+    DEFER pumper/search-engine  crates/engine-search/src/lib.rs:167-177
+
+[1 sites · 0FIX/1DEFER · 1 repo(s): pumper] query-parse-no-weakening-ladder  (search)
+    DEFER pumper/search-engine  crates/engine-search/src/lib.rs:680-689
+
+[1 sites · 0FIX/1DEFER · 1 repo(s): pumper] derived-index-unbounded-no-auto-cap  (embedded-db)
+    DEFER pumper/search-engine  crates/engine-search/src/lib.rs:610-671
+
+[1 sites · 0FIX/1DEFER · 1 repo(s): pumper] session-cookies-plaintext-at-rest  (credential-vault)
+    DEFER pumper/http-engine  crates/engine-http/src/lib.rs:146-182
+
+=== TOTALS ===  FIX 20 · DEFER 33
+Cross-repo problem classes (≥2 repos): 1
+
+=== ENRICHMENT (flow-back) by bucket ===
+   98  new-application
+   31  new-technique
+   11  new/better-application
+    1  counter_evidence
+    1  new-law
+  total enrichment candidates: 142
