@@ -4,7 +4,8 @@ subject: async-ui-states
 technique: action-busy-states
 status: forged
 laws: []
-shared_with: []
+shared_with:
+  - ui-controls
 ---
 
 # Action busy states

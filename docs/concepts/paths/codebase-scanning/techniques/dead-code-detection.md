@@ -6,7 +6,8 @@ status: forged
 laws:
   - gate-sees-target
   - count-carries-predicate
-shared_with: []
+shared_with:
+  - dead-code
 ---
 
 # Dead-code detection

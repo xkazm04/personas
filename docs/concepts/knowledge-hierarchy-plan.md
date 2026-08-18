@@ -1,5 +1,22 @@
 # Knowledge hierarchy plan — v2
 
+> **EXECUTION STATUS (2026-08-18, end of session N+1 — one session did N+1 and the N+2… forge
+> waves).** Every §7 deliverable landed and the ratified inventory is fully forged:
+> **105 subjects / 624 techniques / 236 applications** under `docs/concepts/paths/`, checker
+> green with the layer-purity gate on; **247/247 legacy docs mapped upward**
+> (`paths/corpus-map.json`, now `complete: true` — an unmapped legacy file is a checker
+> failure). Twelve forge waves, each: expert draft before repo code → evidence
+> reconciliation → deviations registered at `#wN-<subject>` in
+> `golden-path-deferred-fixes.md` (standards kept, nothing applied to runtime) → upward
+> lessons folded into the drafts. Graph contract at [`paths/GRAPH.md`](./paths/GRAPH.md);
+> laws at [`paths/_laws.md`](./paths/_laws.md); the ratified inventory at
+> [`paths/subject-inventory.md`](./paths/subject-inventory.md). **NOT done, by operator
+> decision, left for another session:** the live transplant test (§3 phase 3 / §5) —
+> every composer left concrete sibling-repo probes in its final report; the per-context
+> scorecard (§6); the closing pass donating doctrine sections to the `_laws.md` anchors.
+> A concurrent session has since begun the graph UI (`docs/plans/patterns-v2-ui.md`,
+> `paths/categories.json`, checker extension) on top of this.
+
 **Status:** v1 ratified 2026-08-18 at the close of the 247-leaf composition campaign;
 **v2 recalibrated the same day by the operator** on three points that change the design
 (granularity, sourcing, graph freedom). **Executor:** the next Fable session and its

@@ -4,7 +4,8 @@ subject: table
 technique: pagination
 status: forged
 laws: [identity-survives-reuse, count-carries-predicate, derivation-names-recomputation]
-shared_with: []
+shared_with:
+  - feed
 ---
 
 # Pagination

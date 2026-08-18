@@ -4,7 +4,8 @@ subject: realtime-events
 technique: outbound-fan-out
 status: forged
 laws: [derivation-names-recomputation, failure-not-empty-success, creation-names-reaper, identity-survives-reuse]
-shared_with: []
+shared_with:
+  - outbound-notifications
 ---
 
 # Outbound fan-out

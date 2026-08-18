@@ -5443,3 +5443,44 @@ NO reconnection policy exists: header promises auto-reconnect; max_retries is de
 
 ### <a id="w11-job-coordination"></a> job-coordination
 BuildPhase::validate_transition checks the escape hatch BEFORE the terminal guard - Completed-to-Failed and Promoted-to-Cancelled validate; verdicts are not final (build_session.rs:69-73) - guards keyed off live states turned one stranded row into a documented system-wide deadlock (teams.rs:714-723) - terminal set scattered as SQL literals forced reusing cancelled instead of minting expired (the one-authority bill arriving) - cites #w8-pipeline-dag and #w2-background-jobs.
+
+---
+
+## Hierarchy-v2 forge wave 12 deviations (2026-08-18) — the nine former candidates + feed + ui-controls; the inventory is complete
+
+Same contract: standards kept, gaps registered, one anchor per subject. Full detail in
+the wave-12 composer reports (session transcript). With this wave every subject in the
+ratified inventory (85 + additions = 105 folders on disk) has been forged.
+
+### <a id="w12-feed"></a> feed
+Read-position watermark is a bare timestamp on a 45%-tied second-resolution key: countUnread uses at <= lastSeenAt so a row arriving in the same second as the mark is counted read, while the composite {at,id} cursor sits 140 lines below (channelSlice.ts:60,102,318 vs :238-244) - mergedFeed drops the tiebreaker its sibling documents (§88, cited) - jump affordance is a boolean with no unseen count (#w7-chat-transcript) - re-homing applied: chronological-feed.md -> feed.
+
+### <a id="w12-ui-controls"></a> ui-controls
+CopyButton sets a native title= fallback — the exact signature inside the primitive meant to retire it (566 files / 1,099 native-title matches vs 131 Tooltip adopters) - Tooltip escape-dismiss only on the triggerFocusable branch - CopyButton copied-state has no live-region announcement - PanelTabBar aria-controls optional -> 21/21 dangling (deferred fix 33) - re-homing applied: button.md, copy-to-clipboard.md, tooltip.md, tab-strip.md -> ui-controls.
+
+### <a id="w12-docs-sync"></a> docs-sync
+The never-fired hook is fix 105 (cited); the composer's autopsy adds: 45.7% precision on prefix-shaped satisfaction; the hook's own 30-assertion test suite has fixtures with no tool_result events (fixture-as-theory-of-input); the guide-sync marker note claimed the hook "now prevents drift" dated the day the dead hook landed (hope recorded as fact in the artifact the next repair reads); 33% of source areas unmapped; 6 unregistered tour steps.
+
+### <a id="w12-session-resume"></a> session-resume
+Heartbeat not presence-gated: beat fires every 60s regardless of document.hidden, so an overnight-minimized window advances the anchor all night -> empty morning briefing (sinceLeftBriefing.ts:133-135) - one anchor, two readers, coupled by tree order (useMorningBriefing.ts:52-55 admits it in a comment) - sample-bounded count rendered as total (RUNS_SAMPLE_LIMIT=500, no "500+"; worst window measured 1,158) - no liveness mark for the briefing pipeline (nothing-shown = never-ran).
+
+### <a id="w12-diff-comparison"></a> diff-comparison
+"No structural difference" computed over a 5-of-7-field projection (DiffViewer.tsx:14-16,54) - unsorted-serialization equality at 6 sites (census rule stringify-decided-equality) - baseline picked by byte LENGTH (competitions.rs:562) - id-set difference labeled a run diff (byte-identical runs -> all added + all removed, memoryDiff.ts:50-55) - drift finding id minted per observation so dismissal never sticks and slice(-50) evicts open findings (designDrift.ts:64-66) - worker caches never evict; unbounded DP diff measured 610ms / 8,000 elements at 4k lines.
+
+### <a id="w12-time-travel-replay"></a> time-travel-replay
+The log track's timing is FABRICATED while the truth is on disk: buildTimelineLines spreads log lines evenly across duration_ms though every line carries an rfc3339 stamp the reader returns verbatim (useReplayTimeline.ts:75-85 vs logger.rs:60-62) — tempo, the thing replay exists to show, is interpolated from index - useTimelineReplay (the better seek) is orphaned, zero importers - no dead-air compression - a replay-only renderer diverged from live (own highlighter, own scroll; TerminalBody carries its own classifyLine copy) - log-load failure spelled as empty success (silentCatch -> "scrub forward").
+
+### <a id="w12-sql-console"></a> sql-console
+Client CTE verb regex omits DROP/ALTER vs the authority; classify_db_query IPC has zero callers (§25, cited) - consent banner slices the statement at 200 chars: consent to a prefix - primary Console tab omits cancelQuery; NL lane never registers a cancel token - history in-memory, index-keyed, cap 10 - NULL exports as the string 'NULL' - PRAGMA classified as read (session state reaches a pooled connection) - local-lane execute writes no audit row - counter-evidence: a model-authored execute_mutation with starts_with over 7 verbs bypasses the classifier (connector_use.rs:1443-1469).
+
+### <a id="w12-cicd-monitoring"></a> cicd-monitoring
+THE PIPELINE MONITOR HAS NO BACKEND: gitlab_list_pipelines/get_pipeline/list_pipeline_jobs/get_job_log/trigger_pipeline are UnregisteredCommand and appear in ZERO Rust files across the entire git history; the bindings were hand-planted with the frontend. As shipped: fetch failure renders the error banner AND "No pipelines yet — trigger a pipeline" together, inviting a click on a Trigger whose command does not exist - two liveness vocabularies three lines apart (created/preparing never polled) - only the selected pipeline is polled while the notifier observes the list - log null = loading forever; single log slot races on double-expand - consent inverted (rollback armed; deploy-to-production and trigger unconfirmed) - is_current is a self-declared heuristic. Brief-lesson: include commandNames.overrides.ts in ground-truth sweeps for any IPC-fronted subject.
+
+### <a id="w12-embedded-preview"></a> embedded-preview
+Origin discipline absent both ways: host dispatches on message shape only, never e.origin; both host and agent sends target '*' (StudioPage.tsx:126,155-158; preview_agent.rs:63,82) - reqId is the PROJECT id not a request id and is never read on reply; no pending table, no timeout (silence and not-found converge on null) - boot poll has no deadline (a never-healthy server leaves the tab in starting forever) and server stdio is null so nothing could attach - instrumentation degradation is silent (coarse mode indistinguishable from precise-with-missing-element) - no route rescan on turn completion.
+
+### <a id="w12-dead-code"></a> dead-code
+FRESH MEASUREMENTS: 758 orphan modules (404 test + 354 non-test; a 21-file island reachable only from an unreachable file) - 118 unused i18n keys incl. whole planner (67/67) and deliberation (51/51) sections - check-unused-bindings finds 1 while inventory finds 29 with no overlap, and is 1,034 sequential grep passes per CI run - knip's bindings ignore delegates to a gate that does not exist - purge-dead-keys --apply names but never runs its second step - census excludes have reasons but no reaper/expiry (one rot axis enforced, the other open) - brief correction: orphan-modules.mjs lives in scripts/analysis/, not scripts/build/.
+
+### <a id="w12-outbound-notifications"></a> outbound-notifications
+Two outbound stacks for the same five channel classes with three vocabularies (notifications.rs:435-593 vs webhook_notifier.rs:285-299) - the delivery ledger crosses IPC and is never rendered: an owner cannot see a dead channel without pressing Test - breaker copy-pasted 3x, each comment saying "same shape as" another - metrics per channel TYPE not per sink - unknown channel type -> Ok(()) = logged success that sent nothing (notifications.rs:493-496,559-562) - delete reaps no in-memory breaker state.
