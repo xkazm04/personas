@@ -3361,6 +3361,9 @@ pub fn run() {
             commands::infrastructure::context_audit::dev_tools_audit_contexts,
             commands::infrastructure::context_consolidate::dev_tools_repair_cross_refs,
             commands::infrastructure::context_fingerprints::dev_tools_refresh_context_fingerprints,
+            // Dev Tools -- Knowledge hierarchy (docs/concepts/paths/, read-only)
+            commands::infrastructure::hierarchy_read::dev_tools_hierarchy_graph,
+            commands::infrastructure::hierarchy_read::dev_tools_hierarchy_doc,
             // System operations (trigger → built-in op automations; Chain Studio + Context Map)
             commands::infrastructure::system_ops::system_ops_list_kinds,
             commands::infrastructure::system_ops::system_ops_list_automations,

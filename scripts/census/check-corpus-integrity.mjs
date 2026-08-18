@@ -209,7 +209,7 @@ for (const r of rules) {
 // to this one. Only that test promotes `status:` to `transplant-tested`; the purity
 // denylist below is a static floor, not the test.
 const HIER_DIR = path.join(CONCEPTS, 'paths');
-const hierStats = { subjects: 0, techniques: 0, applications: 0, mapped: 0 };
+const hierStats = { subjects: 0, categories: 0, techniques: 0, applications: 0, mapped: 0 };
 if (fs.existsSync(HIER_DIR)) {
   // Minimal YAML-subset frontmatter parser: scalars, `- item` lists, inline [a, b],
   // trailing ` # comment` stripped. Anything fancier than that in a frontmatter block
@@ -264,6 +264,39 @@ if (fs.existsSync(HIER_DIR)) {
     .filter((e) => e.isDirectory())
     .map((e) => e.name);
   hierStats.subjects = subjectDirs.length;
+
+  // categories.json — the graph's top ring (docs/plans/patterns-v2-ui.md D3).
+  //
+  // Subject frontmatter carries no group, so the graph needs one small external
+  // authority for "which spoke does this subject sit on". Gated here rather than
+  // left to the reader, because the failure it prevents is silent: a subject with
+  // no category simply never renders, and an entry for a deleted subject leaves a
+  // spoke pointing at nothing. Both are invisible in the app and obvious here.
+  const CATS = path.join(HIER_DIR, 'categories.json');
+  if (!fs.existsSync(CATS)) {
+    fail('paths/categories.json is missing — every subject needs a graph category (patterns-v2-ui.md D3)');
+  } else {
+    let cats = null;
+    try { cats = JSON.parse(fs.readFileSync(CATS, 'utf8')); }
+    catch (err) { fail(`paths/categories.json does not parse: ${err.message}`); }
+    if (cats) {
+      const ids = new Set((cats.categories ?? []).map((c) => c.id));
+      if (ids.size === 0) fail('paths/categories.json declares zero categories');
+      const orders = (cats.categories ?? []).map((c) => c.order);
+      if (new Set(orders).size !== orders.length) {
+        fail('paths/categories.json: duplicate category order values — order is the compass sequence and must be unique');
+      }
+      const assigned = cats.subjects ?? {};
+      for (const [slug, cat] of Object.entries(assigned)) {
+        if (!subjectDirs.includes(slug)) fail(`categories.json assigns "${slug}", which has no paths/${slug}/ folder`);
+        if (!ids.has(cat)) fail(`categories.json assigns "${slug}" to unknown category "${cat}"`);
+      }
+      for (const slug of subjectDirs) {
+        if (!(slug in assigned)) fail(`paths/${slug}/ has no entry in categories.json — it would not appear in the graph`);
+      }
+      hierStats.categories = ids.size;
+    }
+  }
 
   const readNode = (file, expect) => {
     const raw = fs.readFileSync(file, 'utf8');
@@ -422,7 +455,7 @@ console.log(
 );
 if (fs.existsSync(HIER_DIR)) {
   console.log(
-    `hierarchy: ${hierStats.subjects} subjects · ${hierStats.techniques} techniques · ` +
+    `hierarchy: ${hierStats.subjects} subjects (${hierStats.categories} categories) · ${hierStats.techniques} techniques · ` +
     `${hierStats.applications} applications · ${hierStats.mapped}/${pathFiles.length - Object.keys(NOT_A_PATH).length} legacy mapped · ` +
     'NOT checked statically: the live transplant test (GRAPH.md §5) — only it promotes status to transplant-tested',
   );

@@ -22,6 +22,7 @@ pub mod workspace_harvest;
 pub mod director;
 pub mod git_checkpoint;
 pub mod gitlab;
+pub mod hierarchy_read;
 pub mod idea_scanner;
 pub mod kpi_compose;
 pub mod kpi_scan;
