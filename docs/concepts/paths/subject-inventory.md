@@ -157,6 +157,34 @@ inventory deliberately stays a naming layer.
 | `dead-code` | Dead-code & orphan elimination | `quality-gates` |
 | `outbound-notifications` | Outbound notification fan-out | technique under `realtime-events` |
 
+## Corpus coverage cross-check (run after the scan; results 2026-08-18)
+
+All 247 legacy documents mapped into this inventory (**246 mapped / 1 unmapped**), full
+mapping in [`corpus-map-draft.json`](./corpus-map-draft.json). Largest receivers:
+data-access 13 · credential-vault 11 · app-shell 9 · authorization 9 · table 8.
+**16 subjects received zero legacy documents** (file-browsing, prompt-safety,
+agent-memory, agent-chaining, proactive-nudges, eval-harness, p2p-networking,
+web-scraping, markdown-vault, codebase-scanning, multi-project + 5 candidates) — the
+fresh scan found real subjects the corpus never covered, which is the v2 sourcing thesis
+confirmed. Four candidates DID receive documents and argue for promotion: docs-sync,
+session-resume, diff-comparison, sql-console.
+
+**Amendment proposals from the residue (operator decides at the gate):**
+
+1. **`status-vocabulary` (new subject)** — closed display vocabularies end to end (DB
+   CHECK → IPC token → label catalog → badge). The spine's `copy-and-vocabulary`
+   cluster (~660 combined recurrence incl. `status-and-severity-badges.md`, the one
+   unmapped file) has no home in the inventory. Strongest residue signal.
+2. **`feed` (new subject)** — GRAPH.md §3 itself uses Feed as the shared-technique
+   example; `chronological-feed.md` currently shelters under `table`.
+3. **`ui-controls` (new subject)** or an explicit widening of `form`'s charter — button,
+   copy-to-clipboard, tooltip currently scatter across form/toasts/modal-stack.
+4. **consent-gates** — first-use/informed-consent/autonomy-gating are the inverse flow
+   of hitl-approval (machine asks before acting); at minimum an owned technique there.
+5. **job-coordination** — the corpus treated claim/lease + progress + terminal-state as
+   one discipline; the inventory splits it across concurrency-guards / background-jobs /
+   pipeline-dag. Defensible either way; flagged.
+
 ## Merge decisions worth recording
 
 - **Search is one subject** — query-chip parsing, FTS5 ranking, faceting, saved views and

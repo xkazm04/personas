@@ -2,8 +2,10 @@
 
 ## Active
 
-### knowledge-hierarchy-v2-n1 — Session N+1 of docs/concepts/knowledge-hierarchy-plan.md: graph design + fresh subject scan + Table/backend pilot forge + integrity-checker extension — session fable-5 — started
-- 2026-08-18. Scope: `docs/concepts/paths/**` (new), `scripts/census/check-corpus-integrity.mjs` (extension), `docs/concepts/knowledge-hierarchy-plan.md` (status notes), this ledger. Does NOT touch `docs/concepts/golden-paths/*` bodies (legacy archive stays as-is) or `situation-spine.json`. Commits via isolated-`GIT_INDEX_FILE` ritual. Pre-existing dirty file `src/lib/bindings/SkillEntry.ts` is NOT mine — left alone.
+### knowledge-hierarchy-v2-n1 — Session N+1 of docs/concepts/knowledge-hierarchy-plan.md: graph design + fresh subject scan + Table/backend pilot forge + integrity-checker extension — session fable-5 — **COMPLETE**, commits `092c59b4a` + `83b8b28d7` (+1 wrap-up)
+- 2026-08-18. Shipped: paths/GRAPH.md graph contract (folder-per-subject, frontmatter bidirectional links, owned techniques, purity gate) · _laws.md 9 anchors · check-corpus-integrity.mjs §3.5 hierarchy gate · 71+9 subject inventory from 6 lock-in-guarded scanners · corpus cross-check 246/247 mapped (corpus-map-draft.json), 13 entries activated for table+scheduling · pilots forged two-phase: table (5 techniques, react+rust apps) and scheduling (6 techniques, rust app), 8 deviations registered in golden-path-deferred-fixes.md, 11 upward lessons. Inventory awaits OPERATOR GATE.
+- **RITUAL CORRECTION, read before your next isolated-index commit:** `cp .git/index` seeds the isolated index STALE after the ritual's own prior commit — my second commit recorded the first commit's 4 files as deleted AND reverted a 181-line checker extension, invisibly (hooks green, message right). Seed with `GIT_INDEX_FILE="$IDX" git read-tree HEAD` instead; recover by amending. CLAUDE.md primitive #5 updated with the dated correction.
+- Pre-existing dirty file `src/lib/bindings/SkillEntry.ts` is NOT mine — left alone.
 
 ### census-runner — one shared gate runner for golden-path §9 (replaces ~460 bespoke scripts) — session opus-5[1m] — **COMPLETE**, commit `7680d5b62`
 - 2026-08-13. Scope: `scripts/census/**` (new), `package.json` scripts block, `docs/concepts/golden-path-contract.md`. Deliberately does NOT touch `docs/concepts/golden-paths/*` — that is `patterns-situation-spine`'s declared territory; the note lives in the contract doc instead.
