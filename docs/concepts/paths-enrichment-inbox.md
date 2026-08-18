@@ -223,3 +223,76 @@ type change — a `gate-sees-target` instance), `hand-mirrored-wire-type-drops-a
 ### Re-confirmed direct personas flow-back
 pumper's `check-doc-sync.mjs` fixing personas' never-fired Stop-hook surfaced AGAIN
 (independently, in the job-orch shard) — the drop-in reference is real and repeated.
+
+---
+
+## Round 3 — dynamic verification lane pilot (gravitone, 2026-08-18)
+
+First run of the two dynamic lanes (measured-performance + functional/LLM exercise)
+that upgrade "holds (by pattern)" to "holds (proven by a run)". Probes committed to
+gravitone `53478cc` (local). Thesis: dynamic found what static structurally can't —
+modestly but really. The corpus-feedback items (the whole point of closing the
+one-directional loop):
+
+### CORPUS DEMOTIONS / boundary-sharpening (technique claims that don't survive a run)
+- **render-budget → SPLIT into two techniques.** The static "holds" was true only on
+  the **DOM-weight** axis (per-row element count bounded). MEASURED: a single 1-of-N
+  update rebuilds ALL N rows + re-sorts (zero memoization) — "render-budget" silently
+  implied **reconciliation efficiency**, which does not hold. A pattern scan cannot see
+  this. Corpus fix: `render-budget` (DOM weight) and `reconciliation-budget` (re-render
+  cost under a single logical update) are DIFFERENT claims and must be separate
+  techniques under the performance/perf-instrumentation subjects, each with its own
+  `verified_by` probe. This is the first demotion produced by application, exactly the
+  feedback edge the analysis flagged as missing.
+- **structured-output / schema-vs-runtime divergence.** A declared JSON-Schema constant
+  (`additionalProperties:false`) that the runtime parser never enforces reads as
+  "enforced" to a static scan. Add a technique note: a schema is a claim only if a
+  runnable probe proves the runtime honors it; `evidence:` (the schema constant) is not
+  `verified_by:` (the enforcement).
+
+### The `verified_by:` edge (operationalizing the `satisfied` state)
+Every technique whose claim is a QUANTITY (perf) or an OUTCOME (functional/LLM) should
+carry a `verified_by:` runnable command beside its `evidence:` file:line. The pilot
+produced three concrete ones (render-budget, sort-stability, edit-plan-parse probes).
+Where a perf/functional technique has no `verified_by`, that is the scan-depth gap —
+the lane fills it. A probe that FAILS is triaged BUG (→ fix + the probe is its
+regression test) or DEMOTION (→ corpus, above).
+
+### Static over-count corrected by a run
+The "gravitone 15 sort sites missing an id-tiebreaker" DEFER was over-stated: running
+all 15 shows 14 already carry the tiebreaker and the 15th sorts distinct strings
+(total order already). Dynamic enumeration + execution corrected a static count — the
+same class of error the census `count-carries-predicate` law warns about, now caught
+in the scan's own findings.
+
+---
+
+## Round 4 — deeper-fix triage demotions (2026-08-18)
+
+The 33 DEFERs were triaged (a)/(b)/(c) and the (a)-class fixed behind probes (16
+behavior-changing fixes shipped with fail-before/pass-after regression tests:
+gravitone 2 local, politicas 9 pushed, pumper 5 pushed). The (c)-class — corpus
+lessons that over-reach and were demoted by application, NOT repo bugs:
+
+- **wizard-flows / step-commit-gate** (gravitone, 2 sites) — the "steppers need a
+  per-step commit gate" claim applies to TRANSACTIONAL/data-entry wizards where later
+  steps depend on earlier commits; it must NOT fire on CREATIVE-ITERATION pipelines that
+  treat non-linear navigation as a feature. Boundary: gate the claim on "later step
+  reads earlier step's committed state".
+- **client-fetch-cache / warm-remount-and-SWR** (gravitone, 2 sites) — the cost this
+  technique eliminates is a NETWORK round-trip. Against a cheap local store (IndexedDB /
+  PGlite) a warm module cache isn't warranted. Boundary: scope the warm-remount/SWR claim
+  to network-backed surfaces, not local-first stores.
+- **toasts-notifications / render-in-context** (gravitone, 1 site) — centralized toast/
+  bell rendering in app-shell chrome is CORRECT architecture; flagging it "out-of-context"
+  is a context-scan artifact. Boundary: only fire when the in-context PRODUCER is also wrong.
+- **inline-copy-bypasses-catalog** (politicas, scan-precision) — false positive from a
+  stale CODE COMMENT; the strings already go through `t()`. The problem_shape must key on
+  rendered strings, not comments.
+- pumper: 0 demotions — every technique transplanted cleanly.
+
+Combined with round 3's **render-budget → split (DOM-weight vs reconciliation-budget)** and
+the **schema-vs-runtime** note, application produced **~6 corpus demotions/boundary-
+sharpenings** — the feedback edge (sibling application → corpus status) is now demonstrably
+live. Every one is a "possibly-damaging lesson" that a pattern scan would keep at full
+strength and that only a RUN could falsify.
