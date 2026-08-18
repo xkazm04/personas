@@ -5369,3 +5369,34 @@ unwrap_or(1) turns a failed max-version query into version 1 (failure spelled as
 
 ### <a id="w9-settings"></a> settings
 Secrets in the settings store: three API keys/tokens plaintext in app_settings while a credential vault exists (settings_keys.rs:28,34,70) - fail-open dollar ceilings (= #w2-hitl-approval, cited; contrast CHAIN_MAX_LINKS which does it right) - the two-list registry is hand-maintained with no set-equality test; the AUTONOMOUS_DELIBERATION scar (constant present, allowlist entry missing, toggle could never enable) proves the drift mode - repo-layer audit passes actor=None (all-writers coverage traded against attribution).
+
+---
+
+## Hierarchy-v2 forge wave 10 deviations (2026-08-18) — UI/agent tail reconciled
+
+Same contract: standards kept, gaps registered, one anchor per subject. Full detail in
+the wave-10 composer reports (session transcript).
+
+### <a id="w10-accessibility"></a> accessibility
+useRovingTabIndex has ZERO adopters (a standard without adoption; index-keyed signature pushes the identity rule onto consumers) - the announcer queue has no coalescing/bound/assertive-preemption and no unit test despite being pure logic - ~40 files carry scattered aria-live regions outside the one provider - deferred fix #33 (21/21 tab strips dangling aria-controls) touches name-wiring - four registered anchors cited from frontmatter (#w7-drag-drop, #w3-data-viz, #w3-toasts-notifications, #w3-design-tokens).
+
+### <a id="w10-motion"></a> motion
+MotionizedGlyph deliberately replays its entrance on every viewport re-entry while the data-row primitives implement one-shot correctly - two consumer families, opposite replay policies, only one written down (MotionizedGlyph.tsx:10-12) - motionPresets inlines durations/easings rather than referencing the token ladder (local face of #w3-design-tokens MOTION mirror) - reduced-motion global-reset trap cited at #w1-async-ui-states.
+
+### <a id="w10-guided-tours"></a> guided-tours
+Two anchor extractors disagree: six anchors pass the drift test but are absent from the manifest, so composed tours are forbidden the anchors hand-written tours use; nothing reports the disagreement - route choreography races fixed 100-400ms timers instead of observing arrival (GuidedTour.tsx:102-208) - no active-tour pointer persisted; hydration hardcodes the default tour (tourSlice.ts:1318) - a tour whose definition did not survive restart is marked 100% complete via [].every() (vacuous completion, tourSlice.ts:1493) - raw z-[9998]/z-[9999] literals unregistered with any layering authority - escape minimizes rather than exits.
+
+### <a id="w10-client-fetch-cache"></a> client-fetch-cache
+staleWhileRevalidate has no stale ceiling (any-aged entry serves) and background-refresh failure is invisible to callers - deduplicateKeyedFetch keys via naive JSON.stringify (non-canonical for objects) - the certification deferred-load guard is an ageless already-loaded latch, not a freshness window - reviewParseCache memoizes against ambient inputs outside the key (hidden-axis staleness) - hand-rolled warm slots have no invalidation door or test-reset hatch while the extracted primitive has both.
+
+### <a id="w10-terminal-multiplexing"></a> terminal-multiplexing
+Terminal stays interactive over a doze-killed process: dozing/childPid in the DTO, read by none of four host surfaces - keystroke/paste/resize failures land in silentCatch while sibling surfaces toast the same call - paste can self-submit twice (trailing-newline intent inference + two paste routes bypass bracketed paste) - write_text_line returns Ok before submit confirmation; the confirm/retry outcome dies in a detached task (registry.rs:750-851) - per-frame resize with no same-size skip rebuilds the backend screen model each change - MCP temp-dir reaper measured not to run (6 created / 0 removed).
+
+### <a id="w10-sidecar-provisioning"></a> sidecar-provisioning
+Path overrides silently fall through when unusable — a test enshrines the fallthrough (bun.rs:21-26,:111-123; same shape in kokoro.rs) - no digest rung anywhere: verification stops at advertised-length equality, which self-disables on chunked responses - the in-flight download guard REJECTS the second caller instead of joining it - four bespoke resolution implementations, no shared resolver; one has no override rung at all - no cancellation for any model download; no unified storage accounting across model stores.
+
+### <a id="w10-agent-chaining"></a> agent-chaining
+Wiring is append-only: no orphan cleanup when a drawn edge is deleted, no edge-id tagging on derived rows (team_handoff.rs) - the wiring pass is non-transactional per edge (a failed listener create leaves an emitter announcing into the void) - handoff payload forwarding is unbounded (no size cap, no truncation record, chain.rs:567-588) - unevaluable predicates fail closed but ledger as predicate_unmet (the distinction lives only in warn logs) - ledger writes best-effort + the happy-path leaf writes no completed record, so stopped-vs-stuck ambiguity survives at exactly those seams - brief correction: run conditions live in db/src/chain.rs, not engine/subscription.rs.
+
+### <a id="w10-proactive-nudges"></a> proactive-nudges
+Budget day boundary is UTC while quiet windows are local wall-clock — the two policy clocks disagree by the user's offset - quiet/budget bypass is per-code-path, uncounted, not a closed class - evaluator failure is empty success (collect_all swallows per-evaluator errors with unwrap_or_default, no health record) - a budget unit is not released on failed delivery claim (spent unit lost until rollover) - efficacy modulation never reads the ignored outcome — a purely-ignored kind is never throttled - no per-kind kill switch reachable from the nudge; no default night window shipped.
