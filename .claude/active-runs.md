@@ -2,6 +2,9 @@
 
 ## Active
 
+### knowledge-hierarchy-v2-n1 — Session N+1 of docs/concepts/knowledge-hierarchy-plan.md: graph design + fresh subject scan + Table/backend pilot forge + integrity-checker extension — session fable-5 — started
+- 2026-08-18. Scope: `docs/concepts/paths/**` (new), `scripts/census/check-corpus-integrity.mjs` (extension), `docs/concepts/knowledge-hierarchy-plan.md` (status notes), this ledger. Does NOT touch `docs/concepts/golden-paths/*` bodies (legacy archive stays as-is) or `situation-spine.json`. Commits via isolated-`GIT_INDEX_FILE` ritual. Pre-existing dirty file `src/lib/bindings/SkillEntry.ts` is NOT mine — left alone.
+
 ### census-runner — one shared gate runner for golden-path §9 (replaces ~460 bespoke scripts) — session opus-5[1m] — **COMPLETE**, commit `7680d5b62`
 - 2026-08-13. Scope: `scripts/census/**` (new), `package.json` scripts block, `docs/concepts/golden-path-contract.md`. Deliberately does NOT touch `docs/concepts/golden-paths/*` — that is `patterns-situation-spine`'s declared territory; the note lives in the contract doc instead.
 - **INDEX-CONTENTION INCIDENT, worth reading.** `git commit --only <12 paths>` printed "no changes added to commit" and silently no-oped: a sibling session's `git commit` had landed in between and swept all 12 of my staged files into THEIR commit (`f07f319d9 docs(patterns): the portability test falsified section 9`). Their own new file (`docs/concepts/research/portability-test.md`) did NOT make it in and is still untracked. Recovered by amending the message to describe the real contents → `7680d5b62`; their contract-doc section is preserved verbatim inside it. Confirms CLAUDE.md parallel-safety primitive #5 twice over — `--only` did not hold, and only `git log --oneline -1` revealed the no-op. **Check `git log --oneline -1` after every commit; a commit that didn't happen looks exactly like one that did.**

@@ -1,0 +1,5 @@
+{
+  "$comment": "Upward links for the legacy Application corpus (docs/concepts/golden-paths/*.md) into the subject graph (docs/concepts/paths/<subject>/). Contract in GRAPH.md §1/§6: entries map a legacy filename to its subject slug and optional technique. The 247 files are never edited; this map IS their upward link. While complete=false, unmapped legacy files are printed as pending, not failed. Flipping complete=true makes an unmapped legacy file a checker failure.",
+  "complete": false,
+  "entries": {}
+}
