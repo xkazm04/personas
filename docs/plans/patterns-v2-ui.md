@@ -182,7 +182,7 @@ honest and available — do not fake adherence from proxies.
 | Step | Scope | Est. |
 |---|---|---|
 | ~~P1~~ | ~~Rust reader + bindings + categories.json + checker extension~~ **SHIPPED 2026-08-18** | done |
-| P2 | Subjects master–detail + i18n section + search | 1–2 sessions (L) |
+| ~~P2~~ | ~~Subjects master–detail + i18n section + search~~ **SHIPPED 2026-08-18** (`63262b7b2`) — three-lane switch, master–detail with 5 detail tabs, link-intercepting markdown, 42-key `overview.patterns_v2` section translated ×14. The ~100-key migration OUT of `plugins.dev_tools.workspaces` was **deferred to P5** (mechanical, zero user value, and the Practices lane those keys serve may itself be retired). | done |
 | P3 | Graph re-parameterization + laws lens + technique modal | 1 session (M/L) |
 | P4 | Adherence join (blocked on context scorecard) | later |
 | P5 | Cleanup, tests, doc-sync, Practices demotion polish | 0.5 session (S) |
