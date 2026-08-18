@@ -1,6 +1,10 @@
-# Candidate Golden Path inventory — fresh scan, 2026-08-18
+# Golden Path inventory — fresh scan, 2026-08-18
 
-**Status: AWAITING OPERATOR GATE** (plan §7 step 3). Produced by six parallel scanners
+**Status: RATIFIED BY THE OPERATOR 2026-08-18** (plan §7 step 3) — all 80 scanned
+subjects approved, plus the amendments in the ratification section below (5 additions →
+**85 subjects total**). This list is the authoritative forge backlog for sessions N+2+.
+
+Produced by six parallel scanners
 (five over the context map's 16 groups / 208 contexts, one over 7,429 commits and the
 tooling surface), under the lock-in guard — no scanner read the situation spine or the
 247-document corpus. ~160 raw entries merged into **71 core subjects + 9 candidates**.
@@ -143,19 +147,46 @@ inventory deliberately stays a naming layer.
 | `codebase-scanning` | Codebase scanning & triage | `src/features/plugins/dev-tools/sub_triage/findings/sweep.ts` |
 | `multi-project` | Multi-project workspace management | `src/features/teams/sub_factory/passport/ProjectsPassportWall.tsx` |
 
-## Candidates — thin or foldable (9), operator decides
+## Former candidates — ALL APPROVED into core (operator, 2026-08-18)
 
-| slug | Subject | Fold target if rejected |
+| slug | Subject | Note |
 |---|---|---|
-| `docs-sync` | Docs-as-code synchronization | `quality-gates` |
-| `session-resume` | Session resume & "what changed while away" | `client-state` |
-| `diff-comparison` | Diff & comparison surfaces | `versioning-snapshots` |
-| `time-travel-replay` | Time-travel replay | `streaming-output` / `tracing` |
-| `sql-console` | SQL console & schema browser | `connector-catalog` |
-| `cicd-monitoring` | CI/CD pipeline monitoring | `connector-catalog` |
-| `embedded-preview` | Embedded preview & cross-frame bridge | none (drop) |
-| `dead-code` | Dead-code & orphan elimination | `quality-gates` |
-| `outbound-notifications` | Outbound notification fan-out | technique under `realtime-events` |
+| `docs-sync` | Docs-as-code synchronization | promoted with corpus coverage (documentation-sync) |
+| `session-resume` | Session resume & "what changed while away" | promoted with corpus coverage (session-delta-digest) |
+| `diff-comparison` | Diff & comparison surfaces | promoted with corpus coverage (version-diff-view) |
+| `time-travel-replay` | Time-travel replay | approved |
+| `sql-console` | SQL console & schema browser | promoted with corpus coverage |
+| `cicd-monitoring` | CI/CD pipeline monitoring | approved |
+| `embedded-preview` | Embedded preview & cross-frame bridge | approved |
+| `dead-code` | Dead-code & orphan elimination | approved |
+| `outbound-notifications` | Outbound notification fan-out | approved as subject (not folded) |
+
+## Ratification amendments (operator, 2026-08-18)
+
+**Five subjects added:**
+
+| slug | Subject | Why |
+|---|---|---|
+| `status-vocabulary` | Status vocabularies & display formatting (DB CHECK → IPC token → label catalog → badge; numbers, timestamps, untrusted content) | largest corpus residue (~660 recurrence), incl. the one unmappable doc |
+| `feed` | Feed | GRAPH.md's own shared-technique example; `chronological-feed.md` re-homes here |
+| `ui-controls` | UI controls & primitives (button, tooltip, copy-to-clipboard) | currently scattered across form/toasts/modal-stack |
+| `job-coordination` | Job coordination (claim/lease, progress, terminal states & recovery) | the corpus treated it as one discipline; restored |
+| `packaging` | Desktop packaging & installers (multi-OS, per-arch acceptance, sidecar/DLL presence) | operator addition — pulled out of `release-pipeline` where the merge pass had buried it |
+
+**Charter directives binding on the forge briefs:**
+
+- `agent-memory` covers the **whole memory system** — working/operative memory, episodic,
+  semantic/procedural tiers, decay, recall injection — not long-term storage alone.
+- `voice-io` must master **speech-to-text as fully as synthesis** — STT is not an appendix.
+- `subprocess-lifecycle` and `fleet-orchestration` must carry this app's **parallelism
+  methods** as first-class techniques (concurrent session supervision, disjoint write
+  sets, single-flight, fan-out discipline).
+- `mcp-tools` forges against the **official MCP architectural update of 2026-07-28**
+  (https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture) — the expert
+  draft should reflect that architecture, not pre-update lore.
+- `hitl-approval` owns a dedicated **consent-gates technique** (machine-asks-human
+  before acting: first-use consent, informed consent, autonomy gating) — the inverse
+  flow of review, same subject.
 
 ## Corpus coverage cross-check (run after the scan; results 2026-08-18)
 
