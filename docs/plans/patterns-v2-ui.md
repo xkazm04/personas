@@ -183,7 +183,7 @@ honest and available — do not fake adherence from proxies.
 |---|---|---|
 | ~~P1~~ | ~~Rust reader + bindings + categories.json + checker extension~~ **SHIPPED 2026-08-18** | done |
 | ~~P2~~ | ~~Subjects master–detail + i18n section + search~~ **SHIPPED 2026-08-18** (`63262b7b2`) — three-lane switch, master–detail with 5 detail tabs, link-intercepting markdown, 42-key `overview.patterns_v2` section translated ×14. The ~100-key migration OUT of `plugins.dev_tools.workspaces` was **deferred to P5** (mechanical, zero user value, and the Practices lane those keys serve may itself be retired). | done |
-| P3 | Graph re-parameterization + laws lens + technique modal | 1 session (M/L) |
+| ~~P3~~ | ~~Graph re-parameterization + laws lens + technique modal~~ **SHIPPED 2026-08-18** (`e089743a8`) — 8 keystones → status-ringed subjects → technique ring; laws lens; technique modal w/ Open-in-Subjects; old Nexus reachable in Practices. P5 debt noted by the builder: `LAWS_FILE` + `STACK_CLASSES` each duplicated in two files — fold during cleanup. | done |
 | P4 | Adherence join (blocked on context scorecard) | later |
 | P5 | Cleanup, tests, doc-sync, Practices demotion polish | 0.5 session (S) |
 
