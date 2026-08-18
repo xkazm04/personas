@@ -190,8 +190,9 @@ inventory deliberately stays a naming layer.
 
 ## Corpus coverage cross-check (run after the scan; results 2026-08-18)
 
-All 247 legacy documents mapped into this inventory (**246 mapped / 1 unmapped**), full
-mapping in [`corpus-map-draft.json`](./corpus-map-draft.json). Largest receivers:
+All 247 legacy documents mapped into this inventory (**246 mapped / 1 unmapped** at
+draft time; the final mapping is 247/247 in [`corpus-map.json`](./corpus-map.json),
+which superseded the draft). Largest receivers:
 data-access 13 · credential-vault 11 · app-shell 9 · authorization 9 · table 8.
 **16 subjects received zero legacy documents** (file-browsing, prompt-safety,
 agent-memory, agent-chaining, proactive-nudges, eval-harness, p2p-networking,
