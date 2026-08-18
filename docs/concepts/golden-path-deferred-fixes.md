@@ -5087,3 +5087,36 @@ on a hot table.
 `SubscriptionHealth` (`background.rs:43-70`) is in-memory only — no persisted tick
 heartbeat, so global gap detection ("the scheduler itself was dark") does not survive a
 restart. **Why held:** new persistence surface.
+
+---
+
+## Hierarchy-v2 forge wave 1 deviations (2026-08-18) — eight subjects reconciled
+
+Same contract as the pilot section above: the forge kept the standard; the repo's
+shortfalls are registered here, one anchor per subject, cited from each golden path's
+`deviations:` frontmatter. Full per-claim detail lives in the wave-1 composer reports
+(session transcript); the entries below are the durable register.
+
+### <a id="w1-modal-stack"></a> modal-stack
+Backdrop click not topmost-gated (`BaseModal.tsx:283` vs the `isTopmost` escape gate at `:198-203`) · `portal` boolean fuses detachment with a 9,950-unit z jump (`BaseModal.tsx:8-10`; 3 overlays exist solely to out-paint it) · focus restore unreachable for unmount-close (96/129 sites, `BaseModal.tsx:229-233`) · stack registry entries are position-only (`ModalStackContext.tsx:12-14`) · 25 literal `z-[≥1000]` across 21 files, no shared layer scale · stored-coordinate popover with no recomputation + escape listener bypassing the keyboard ladder (`sub_mastermind/lib/ListPopover.tsx`) · flip decided on assumed constant (`useAnchoredPortalPosition.ts:28`) · generic Confirm/Cancel defaults (`ConfirmDialog.tsx:77,90`).
+
+### <a id="w1-form"></a> form
+`FormField` never styles the errored control (no red border anywhere; `hint` absent from described-by) · adoption inversion: 4 FormField adopters vs 19 shadow wrappers + 120 orphan labels/49 files · `FormErrorProvider`/`validateOn` machinery has zero adopters (timing is bimodal: every-keystroke or backend-toast) · ~70 `disabled={!x.trim()}` gates; `FormActions` busy renders null spinner, no in-flight re-entry guard, hardcoded English · `KeyValueEditor.tsx:80-91` positional row identity · `ValidationError {field,rule,message}` flattened to a joined sentence in `contract.rs:37-49`, imported by zero frontend files.
+
+### <a id="w1-async-ui-states"></a> async-ui-states
+(All already documented in-repo; cross-referenced, not re-measured.) ~75 null-spinner busy controls · 177 `onClick={() => void fn()}` disarming AsyncButton · `isLoading={false}` ghost suppression citing a stale doctrine section (`EventLogList.tsx:453-478`) · reduced-motion global reset destroys the ghost-invisibility window · no shared failure-state primitive (~20/27 error surfaces render empty on failure; see `table-no-error-state`).
+
+### <a id="w1-search"></a> search
+Default FTS rung is unlabeled any-term OR (`executions.rs:190`) · ranking tiebreak ends at second-resolution `created_at`, no identity term (`executions.rs:424-426`) · all-noise input returns empty success (`executions.rs:399-401`) · palette sorts by score only, ties rest on source order (`CommandPalette.tsx:232-235` + 4 sites) · saved-view parse failure leaves the view active with filters unapplied (`useEventLog.ts:364-375`); no update/rename, no dirty marker · chips removed by array index (`useStructuredQuery.ts:145`).
+
+### <a id="w1-streaming-output"></a> streaming-output
+Unknown events dropped uncounted (`parser.rs` `_ =>`; 40% of stream lines invisible; "unhandled" = "absent") · size cap mutates then parses (`read_line_within` appends a marker producing invalid frames; 68 tool-results vanished) · invented fixtures encode the belief under test (`parser.rs:1105`, `provider/claude.rs:402`; wire shape observed 0/2,811; 33.2M tokens discarded) · `is_error` never read — 82 failed turns display "Completed" · primary frontend channel is a formatted string, not the typed event · stall signal has a producer and zero consumers (`useActivityMonitor.ts`, 60% of runs cross threshold) · 13 pin-to-tail sites without at-bottom check · `useTauriStream.cancel()` discards partial output · 13/26 line channels broadcast to zero readers.
+
+### <a id="w1-agent-memory"></a> agent-memory
+Machine correlator episodes admitted at capture, excluded only at read (`fleet_bridge.rs` writes; `episodic.rs:29-72` filters; reached 57% of episodic memory) · episodic layer has no retention horizon or caps (deliberate no-data-loss guarantee, unbounded growth) · recalled facts carry importance/confidence/sources but not age (`prompt.rs:410-413`).
+
+### <a id="w1-credential-vault"></a> credential-vault
+Flat encryption: no envelope, no AAD, no key-id on 5,008 ciphertexts (`core/src/crypto.rs:1302-1314`; rotation unrepresentable, ciphertext-swap undetected) · rotation ledger fire-and-forget: 11 `let _ = record_rotation` sites, 6/11 `rotation_type` values rejected by the CHECK, clock advances regardless (`engine/rotation.rs`) · zero upstream revocation at retirement · provenance written by 1 of 4 admission doors (0/25 live credentials carry it; `foraging.rs:735-744`) · refresh threshold has two disagreeing authorities (`oauth_refresh.rs:171-176` vs `connector_strategy.rs:600-604`) + fabricated fallback expiry (`oauth_refresh.rs:571-582`) · transient unreachability recorded as credential failure, never expires; revoked still resolves Ready · system key in env at 127/129 spawn sites; broker-token temp files permissive; lane reaper created 6 dirs, removed 0.
+
+### <a id="w1-migrations"></a> migrations
+42 remaining `let _ = ddl_step(` + 13 `let _ = execute_batch` ALTER swallows (the six-site fix did not extinguish the class) · guard-uncertainty inversion `has_column(...).unwrap_or(true)` = probe failure treated as applied (`incremental.rs:7718`) · backup never verified by opening the copy; restore path prose-only, untested (`backup.rs:8-10`) · rotation ages in boots not migration boundaries (restart storm can rotate away the only good copy) · `personas_data.db` second store has no runner, no guards, no snapshot · no convergence instruments (fresh-vs-migrated diff, chain-runs-twice, query-prepare sweep).
