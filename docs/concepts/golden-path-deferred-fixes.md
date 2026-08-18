@@ -5152,3 +5152,34 @@ OAuth refresh ladder durable but unbounded — no attempt cap, no terminal state
 
 ### <a id="w2-background-jobs"></a> background-jobs
 Roster escapes: curation scheduler + persona-jobs worker + webhook notifier run as raw spawned sleep-loops outside the unified supervisor — no panic barrier, no health row, survive `stop_loops` (`lib.rs:1434-1462`) · leadership split-brain: `heartbeat()` overwrites the lease without owner re-read, both gates fail open, `release()` has zero call sites (~90s follower blind spot; legacy loop-ownership D1/D3) · no per-tick deadline anywhere — a hung tick permanently silences its loop and nothing evaluates `last_tick_at` staleness · six pre-election boot sweeps carry no owner term (`lib.rs:815-909`) · client cancel collapses cancelling→cancelled before runner confirms (`useMediaExport.ts:144-153`) · health outcome vocabulary is success/panic only.
+
+---
+
+## Hierarchy-v2 forge wave 3 deviations (2026-08-18) — eight more subjects reconciled
+
+Same contract: standards kept, gaps registered, one anchor per subject, cited from
+frontmatter. Full detail in the wave-3 composer reports (session transcript).
+
+### <a id="w3-app-shell"></a> app-shell
+Nav registry governs 11 of ~156 destinations (~7%); the ~23 L2 tab unions have no registry/validation · `setSidebarSection` accepts never-valid ids from three arrival surfaces, persisted and replayed to `TypeError` · tier revocation silently evicts to home (`Sidebar.tsx:114-119`) · gating is uniformly hidden — no locked/upsell state was ever decided · second badge authority outside the attention registry (`useBadgeCounts.ts:36-51`) · all global overlays share one error boundary (`App.tsx:363`) · `personas://` scheme cannot name a destination.
+
+### <a id="w3-authorization"></a> authorization
+**⚠ SECURITY-RELEVANT, flag for human review:** unlisted/unannotated commands fall through to the Public tier (`ipc_auth.rs:835-843`) — no totality rule · `require_privileged` on async paths verifies boot then `Ok(())`; thread-local proof cleared before the async body runs (audit-only, per the file's own test comment `:1055-1064`) · `require_auth`/`require_auth_sync` are unconditional `Ok(())` — `#[requires(auth)]` reads as a guard and guards nothing · scope enforcement defaults to Warn indefinitely per credential (`scope_enforcement.rs:41-46`) · WebView2 header-race tier downgrades are standing classifications, not dated exceptions · `#[requires]` + `PRIVILEGED_COMMANDS` are two hand-reconciled artifacts.
+
+### <a id="w3-design-tokens"></a> design-tokens
+Derived custom themes bypass the contrast gate — "Low" themes save with an advisory badge; derived dark muted/bg measures 3.07-3.73:1 vs the 4.5:1 built-in floor (`CustomThemeCreator.tsx:243-254`) · all raw-value bans are warn-level = enforce nothing by construction · `MOTION` JS ↔ `--duration-*` CSS is a comment-only mirror (adoption 14 vs 196 raw) · brightness axis is a whole-document pixel filter that pushes light `muted-foreground@80` below AA while `check-themes.mjs` reads pre-filter declarations · `designTokens.ts:104` violates its own standard (`rounded-xl` vs `rounded-input`), shielded by path exemptions · severity-accent vocabulary duplicated 3×.
+
+### <a id="w3-client-state"></a> client-state
+sceneStore whole-family loads carry no latest-wins token though `latestWins.ts` exists · 6 of 7 persisted stores lack `version`+`migrate` (hand-rolled in merge/rehydrate) · 6 of 8 `globalThis` owners lack test-reset hatches · persist envelope hand-parsed pre-mount (`main.tsx:93/:151/:163`) · storage-key namespace fragmented: 89 module-local constants, 8 prefix conventions, no registry.
+
+### <a id="w3-i18n"></a> i18n
+Plural selection is caller-side `count === 1` at hundreds of sites (457 plural-suffix keys) — locales with 3-6 plural categories cannot be expressed, Russian-style rules wrong by construction · `tokenLabel` unknown-token path is dev-only; raw token renders silently in production (`tokenMaps.ts:40-50`) · `no-hardcoded-jsx-text` warn-level (226 standing) · no systematic domain-vs-catalog gate (the live ai-compose 6-vs-5 gap sits behind green parity boards) · `check-coverage.mjs` header still states the retired async-catch-up posture.
+
+### <a id="w3-data-viz"></a> data-viz
+`resolveMetricPercent` returns 0 for missing denominator/non-finite — "never measured" renders as "0%" (`metricIdentity.ts:48-58`) · kpiMath.ts ↔ kpi_derivation.rs and DimensionRadial ↔ score_design_result are comment-coupled mirrors with zero shared fixtures · sample-anchored sparkline scales at 32 call sites (`KpiTile.tsx:104`), with two same-named `sparklinePoints()` exports carrying opposite doctrine · hardcoded hex outside tokens (`ConfidenceArc.tsx:47-61`); `ChartEmptyState` has 0 render call sites · series stroke keyed on status makes legend swatches identical (`KPIDashboard.tsx:339`) · two exported `LazyChart` components with different jobs · no chart carries a text equivalent.
+
+### <a id="w3-wizard-flows"></a> wizard-flows
+Shared `WizardStepper` is two-state, non-interactive, and has zero live render paths (both call sites in the never-imported `CreateTemplateModal`) · `ScrapeEditorWizard.tsx:42,:88` rail/next unguarded — saved only by the modal's terminal re-check · training interview state fully ephemeral; unanswered generated questions die with the surface · corrupt persisted context removed silently (`usePersistedContext.ts:74-77`) · `n8n_transform_sessions` has no reaper; `sweep_stale_drafts` default-off · questionnaire/training keyed by array index while entities carry minted ids.
+
+### <a id="w3-toasts-notifications"></a> toasts-notifications
+No persistence tier — every toast auto-dismisses; action-required messages evaporate (`toastStore.ts:131`) · toast and notification ledger are disjoint populations with no shared identity — no toast has a durable twin · double live-region announcement (container aria-live + store announceImperative), error toasts announce raw copy then display friendly copy · hover-only timer pause — keyboard focus doesn't hold a toast (`useToastTimer.ts:68-76`) · OS tier is an unconditional focus-blind mirror with five delivery doors and 52/57 hardcoded-English strings (`notifications.rs:1543`) · second forked toast stack (`AlertToastContainer.tsx`: own vocabulary, fixed dwell, silent drop past 5, no live region) · no coalescing; ledger retention cap-only.
