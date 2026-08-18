@@ -5120,3 +5120,35 @@ Flat encryption: no envelope, no AAD, no key-id on 5,008 ciphertexts (`core/src/
 
 ### <a id="w1-migrations"></a> migrations
 42 remaining `let _ = ddl_step(` + 13 `let _ = execute_batch` ALTER swallows (the six-site fix did not extinguish the class) · guard-uncertainty inversion `has_column(...).unwrap_or(true)` = probe failure treated as applied (`incremental.rs:7718`) · backup never verified by opening the copy; restore path prose-only, untested (`backup.rs:8-10`) · rotation ages in boots not migration boundaries (restart storm can rotate away the only good copy) · `personas_data.db` second store has no runner, no guards, no snapshot · no convergence instruments (fresh-vs-migrated diff, chain-runs-twice, query-prepare sweep).
+
+---
+
+## Hierarchy-v2 forge wave 2 deviations (2026-08-18) — eight more subjects reconciled
+
+Same contract as waves above: standards kept, gaps registered, one anchor per subject,
+cited from each golden path's `deviations:` frontmatter. Full detail in the wave-2
+composer reports (session transcript).
+
+### <a id="w2-data-access"></a> data-access
+`QueryBuilder::order_by` identifier allowlist is advisory (doc-comment only, `query_builder.rs:198-204`) · ops-exclusion `NOT LIKE` predicate copy-pasted 3× in `executions.rs` (:298,:348,:420) beside its own drift warning (:1755-1767) · `row_mapper!` opt-kinds silently default missing columns, one to literal `"working"` (`macros.rs:116-127`) · `add_member` INSERT OR IGNORE returns a fresh UUID unconditionally (`mcp_gateways.rs:48`) · `sweep_zombie_executions` fires consequences regardless of CAS verdict (`executions.rs:1767-1804`) · 70 `to_string(..).unwrap_or_default()` write sites launder serialization failure to `''`.
+
+### <a id="w2-ipc-contract"></a> ipc-contract
+Two hand-rolled registration parsers, one matching by substring accident (`generate-command-names.mjs:21` vs `check-command-contract.mjs:57`) · timeout adoption backwards: 52 ad-hoc `timeoutMs` overrides vs 3 registry entries (`tauriInvoke.ts:69`) · the orphan-binding inventory gate specified in the legacy corpus is still unbuilt (29 orphans, 22 live invoke return types incl. `VaultStatus`) · `AppError::Validation(String)` collapses the code vocabulary at ~1,436 sites (one catch-all code = 99.2% of resolving sites) · `isIpcAuthFailure` branches on message prose via `includes()` (`tauriInvoke.ts:544`) beside the anchored-regex exemplar in `safeInvoke.ts`.
+
+### <a id="w2-error-handling"></a> error-handling
+Substring-ladder classification is the PRIMARY path even for app-minted messages (`error_taxonomy.rs:141-323`; 40/43 Unknown healing issues = one string) · TS classifier ladder hand-mirrored, gated only by byte-identical fixtures (`src/lib/errorTaxonomy.ts`) · two hand-synced user-facing registries (`errorRegistry.ts` ERROR_RULES + `useTranslatedError.ts` ERROR_KEY_MAP), registry stores hardcoded English · silentCatch/toastCatch emit breadcrumbs not events (~10.6% of catches produce Sentry events; 760/2,752 catch bodies reach no door) · crash capture sanitizes by denylist regex, not field allowlist (`crashPersistence.ts`).
+
+### <a id="w2-hitl-approval"></a> hitl-approval
+Pipeline approval pending state is in-memory — restart silently loses the question (`pipeline_executor.rs:716-749`) · three expiry policies for holds in one binary: manual reviews 7-day auto-RESOLVE incl. 17 high-severity bypassing the triage denylist (`background.rs:816-836`), team assignments never expire (11 parked 59-68 days), companion approvals never expire · dollar ceilings fail open (`0`/`None` = unlimited) while switches fail closed · `FirstUseConsentModal` re-ask overwrites a stored refusal (`FirstUseConsentModal.tsx:141-151`); telemetry preference read fails open (`telemetryPreference.ts:17`).
+
+### <a id="w2-realtime-events"></a> realtime-events
+CDC emits from inside transactions — rolled-back writes can be advertised (`cdc.rs`, no stage-and-release) · six event names minted as literals outside both registries (`cdc.rs::table_to_event`), invisible to `check-event-registry.mjs`; `eventRegistry.ts:5` names the wrong authority file · early-arrival buffer keeps oldest 50, sheds newest (`createSingletonListener.ts:96-99`) · outbound watermark shared across subscriptions (per-subscription cursor named in-code as "the deeper fix", `webhook_notifier.rs:653-724`); breaker strikes in-memory only; no dead-letter for passed-over events · `source_filter` wildcard is unanchored prefix (`bus.rs:308-319`).
+
+### <a id="w2-mcp-tools"></a> mcp-tools
+Stdio server has dual catalog authority: hand-built `list_tools` array vs separate dispatch match, no door-level schema validation (`mcp_server/tools.rs:722` vs `:1133`) · unknown tool returned in-band as `isError:true` instead of a protocol error (`tools.rs:1169-1181`) · one omnibus `personas:execute` scope gates all ~34 tools incl. mail/calendar/vault reads · install token has no reaper: no expiry, plaintext in shared config, re-installs accumulate live keys (`install.rs:61-81`) · blocking guidance/approval calls hold HTTP responses up to 10 min instead of the tasks-extension handle+poll shape · no per-request `_meta` version validation (2026-07-28 architecture).
+
+### <a id="w2-retry-backoff"></a> retry-backoff
+OAuth refresh ladder durable but unbounded — no attempt cap, no terminal state; live fail-counts 49/21 stopped only by a neighboring staleness filter while `needs_reauth` sits unread (`oauth_refresh.rs:49-53`) · half-open resets `consecutive_failures` to 0 so a failed probe buys 5 fresh full-admission failures (`failover.rs:395-397`) · zero jitter on ~19 backoff schedules in either language · no standard rate-limit-hint extraction outside the usage-limit parse · `automation_runner.rs` retryable set omits 429 · unbounded exponent `1 << consecutive_failures` (debug panic / release ladder-reset at 64; `healing.rs:330,:555`) · ~30 of 98 `retry_of_execution_id` rows point at completed parents.
+
+### <a id="w2-background-jobs"></a> background-jobs
+Roster escapes: curation scheduler + persona-jobs worker + webhook notifier run as raw spawned sleep-loops outside the unified supervisor — no panic barrier, no health row, survive `stop_loops` (`lib.rs:1434-1462`) · leadership split-brain: `heartbeat()` overwrites the lease without owner re-read, both gates fail open, `release()` has zero call sites (~90s follower blind spot; legacy loop-ownership D1/D3) · no per-tick deadline anywhere — a hung tick permanently silences its loop and nothing evaluates `last_tick_at` staleness · six pre-election boot sweeps carry no owner term (`lib.rs:815-909`) · client cancel collapses cancelling→cancelled before runner confirms (`useMediaExport.ts:144-153`) · health outcome vocabulary is success/panic only.
