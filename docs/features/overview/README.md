@@ -286,6 +286,17 @@ jump. (The old workspace-practices Nexus was deleted 2026-08-19; its pan/zoom
 camera and chrome live on in `sub_patterns/canvas/`, and the Playbooks rail
 moved into the Practices lane.)
 
+The Graph lane offers **three layout variants** (2026-08-19, toolbar switcher,
+persisted; Atlas is the default): **Atlas** — each category owns an angular
+sector sized to its subject count, subjects on concentric arc bands whose
+capacity is derived from real arc length, so nodes can never overlap; drilling
+a subject hides its siblings and fans techniques radially. **Board** — eight
+category columns of fixed-height pills with labels inside the pill, status as
+border language, adherence as a bottom bar, and an accordion technique drill.
+**Nexus** — the original compass-spoke sky, kept for comparison. All variants
+share the status/adherence ring language, the Laws/Context lenses, search,
+breadcrumb, and Esc walk-out.
+
 **Adherence** (P4, 2026-08-18) joins the census scorecard
 (`scripts/census/context-scorecard.json`, read by
 `dev_tools_hierarchy_scorecard`) onto both lanes: subject nodes in the graph
