@@ -14,7 +14,7 @@ evidence:
   - scripts/docs/check-doc-map-paths.mjs                       # the one LIVE machine check in the surface: 77 named nodes all resolve, wired into `npm run check` — it validates what the map names, and can never validate what the map omits
   - src-tauri/src/commands/infrastructure/doc_rot.rs           # doc-freshness scan with UNVERIFIABLE as a first-class verdict ("rendering it as clean was this detector's biggest lie"); map-first, colocation-second coupling discovery
   - .claude/guide-sync-marker.json                             # catch-up marker: lastSyncCommit + topicsUpdated + missingCoverage as honest recorded gaps — and a cautionary "the hook now prevents this drift" note written the very day the dead hook landed
-  - .claude/skills/guide-sync/SKILL.md                         # the bounded catch-up pass that reads the marker to know its range
+  - .claude/skills/guide-sync/skill.md                         # the bounded catch-up pass that reads the marker to know its range
   - .claude/CLAUDE.md                                          # the dated-correction exemplar: corrections in place with date + measurement, corrections-of-corrections, and a resolved-marker that names its verification date
   - docs/concepts/golden-paths/documentation-sync.md           # the measured autopsy: 100 transcripts replayed, 477 editing turns, 2,367 edits, 0.00% visible to the hook; satisfaction precision 45.7%; 33% of source unmapped
 counter_evidence:

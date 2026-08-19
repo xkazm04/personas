@@ -60,6 +60,30 @@ const fatal = (msg) => {
   process.exit(2);
 };
 
+/**
+ * `fs.existsSync` with the casing actually on disk.
+ *
+ * Windows and macOS are case-INSENSITIVE, Linux is not, and CI is Linux. So a
+ * citation of `.../SKILL.md` for a file named `skill.md` passes on the author's
+ * machine and fails in CI — which is exactly what happened: this gate reported
+ * clean locally and red in CI for the same commit, and the local green was the
+ * wrong one. Comparing against the parent directory's real entries makes the
+ * check mean the same thing on every platform.
+ *
+ * Falls back to `existsSync` only when the parent cannot be listed, so a
+ * permission quirk degrades to the old behaviour rather than to a false failure.
+ */
+const existsCaseExact = (abs) => {
+  if (!fs.existsSync(abs)) return false;
+  const dir = path.dirname(abs);
+  const base = path.basename(abs);
+  try {
+    return fs.readdirSync(dir).includes(base);
+  } catch {
+    return true;
+  }
+};
+
 const readFm = (abs) => {
   const split = splitDoc(fs.readFileSync(abs, 'utf8'));
   return split ? split.fmLines : null;
@@ -125,8 +149,13 @@ for (const slug of corpusSubjects) {
     // Evidence may carry a `#Lnn` or `:nn` locator; existence is asserted on
     // the file, which is the part that rots when code moves.
     const filePart = ev.split('#')[0].trim();
-    if (!fs.existsSync(path.join(ROOT, filePart))) {
-      fail(`${rel}: evidence "${ev}" does not exist in this repo`);
+    const abs = path.join(ROOT, filePart);
+    if (!existsCaseExact(abs)) {
+      // Name the case mismatch specifically. "Does not exist" sends someone
+      // hunting for a deleted file when the file is right there under another
+      // capitalisation — and on their machine it will look like the gate lied.
+      const hint = fs.existsSync(abs) ? ' (it exists with different capitalisation — CI is case-sensitive)' : '';
+      fail(`${rel}: evidence "${ev}" does not exist in this repo${hint}`);
     }
   }
 
