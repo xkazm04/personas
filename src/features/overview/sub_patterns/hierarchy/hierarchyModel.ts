@@ -221,12 +221,28 @@ function normalizePath(path: string): string | null {
   return out.join('/');
 }
 
+/** The directory a subject owns, derived from the reader-issued path of its
+ *  golden path. `docs/concepts/paths/table/table.md` → `docs/concepts/paths/table`. */
+function subjectDir(file: string): string {
+  const cut = file.lastIndexOf('/');
+  return cut < 0 ? '' : file.slice(0, cut);
+}
+
 /**
  * Resolve a relative markdown href found inside `currentFile` (a repo-relative
- * path like `docs/concepts/paths/table/table.md`) to a navigation target.
- * Returns `null` when the href is external, anchors-only, or points at nothing
- * the graph knows — callers surface that honestly (a toast), never a silent
- * no-op dressed as navigation.
+ * path the reader issued) to a navigation target. Returns `null` when the href
+ * is external, anchors-only, or points at nothing the graph knows — callers
+ * surface that honestly (a toast), never a silent no-op dressed as navigation.
+ *
+ * **Classification comes from the reader, never from a path literal.** Targets
+ * are matched against the paths the backend actually emitted (`subject.file`,
+ * `technique.file`, `application.file`) and bounded by the roots it reported
+ * (`graph.source.corpusRel` / `docRootRel`). This module used to carry its own
+ * `^docs/concepts/paths/...` regex, which made the corpus location a fact
+ * asserted in two places — so a corpus published as `knowledge/<domain>/` by a
+ * registry clone resolved every link to `null` while the UI rendered it
+ * happily. One authority per vocabulary (`_laws.md#one-authority-per-vocabulary`);
+ * the reader is that authority.
  */
 export function resolveDocLink(
   currentFile: string,
@@ -244,7 +260,8 @@ export function resolveDocLink(
   const resolved = normalizePath(joined);
   if (!resolved) return null;
 
-  // docs/concepts/paths/_laws.md#anchor → a law reference.
+  // `_laws.md#anchor` → a law reference. Matched on the filename because the
+  // laws file sits at the corpus root under every layout.
   if (/(^|\/)_laws\.md$/.test(resolved)) {
     if (anchor && graph.laws.some((l) => l.id === anchor)) {
       return { kind: 'law', law: anchor, file: resolved };
@@ -252,39 +269,43 @@ export function resolveDocLink(
     return anchor ? null : { kind: 'doc', file: resolved, anchor: null };
   }
 
-  const pathsMatch = /^docs\/concepts\/paths\/([^/]+)(?:\/(.*))?$/.exec(resolved);
-  if (pathsMatch) {
-    const subjectSlug = pathsMatch[1] as string;
-    const rest = pathsMatch[2];
-    const subject = graph.subjects.find((s) => s.slug === subjectSlug);
-    if (!subject) return null;
-    // The subject folder itself, or its golden path file.
-    if (!rest || rest === '' || rest === `${subjectSlug}.md`) {
-      return { kind: 'subject', subject: subjectSlug };
+  // Inside a subject the reader knows about?
+  const owner = graph.subjects.find((s) => {
+    const dir = subjectDir(s.file);
+    return dir !== '' && (resolved === dir || resolved.startsWith(`${dir}/`));
+  });
+
+  if (owner) {
+    const dir = subjectDir(owner.file);
+    if (resolved === dir || resolved === owner.file) {
+      return { kind: 'subject', subject: owner.slug };
     }
-    const techMatch = /^techniques\/([^/]+)\.md$/.exec(rest);
-    if (techMatch) {
-      const techSlug = techMatch[1] as string;
-      const tech = graph.techniques.find(
-        (t) => t.subject === subjectSlug && t.slug === techSlug,
-      );
-      if (tech) {
-        return { kind: 'technique', subject: subjectSlug, technique: tech.slug, file: tech.file };
-      }
-      return null;
+    const tech = graph.techniques.find((t) => t.file === resolved);
+    if (tech) {
+      return { kind: 'technique', subject: tech.subject, technique: tech.slug, file: tech.file };
     }
-    if (/^applications\//.test(rest)) {
-      const app = subject.applications.find((a) => a.file === resolved);
-      if (app) return { kind: 'application', subject: subjectSlug, file: app.file };
-      return null;
+    const app = owner.applications.find((a) => a.file === resolved);
+    if (app) {
+      return { kind: 'application', subject: owner.slug, file: app.file };
     }
-    // Some other file inside the subject folder — readable as a plain doc.
+    // A `techniques/` or `applications/` target the reader did NOT emit is a
+    // dangling reference, not a plain document — say so rather than opening a
+    // file the graph does not believe in.
+    const rest = resolved.slice(dir.length + 1);
+    if (rest.startsWith('techniques/') || rest.startsWith('applications/')) return null;
     return { kind: 'doc', file: resolved, anchor };
   }
 
-  // Anything else under docs/concepts/ the reader can serve verbatim
-  // (golden-path-deferred-fixes.md, legacy golden-paths/*, sibling notes).
-  if (resolved.startsWith('docs/concepts/') && resolved.endsWith('.md')) {
+  const corpusRel = graph.source.corpusRel;
+  const docRootRel = graph.source.docRootRel;
+
+  // Inside the corpus but naming a subject the graph does not carry.
+  if (corpusRel && resolved.startsWith(`${corpusRel}/`)) return null;
+
+  // Anything else the reader is willing to serve — the deferred-fixes register,
+  // legacy corpus docs, sibling notes. Bounded by the reader's own allowlist so
+  // the UI never offers a navigation the backend will refuse.
+  if (docRootRel && resolved.startsWith(`${docRootRel}/`) && resolved.endsWith('.md')) {
     return { kind: 'doc', file: resolved, anchor };
   }
   return null;

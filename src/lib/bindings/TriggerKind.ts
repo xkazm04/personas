@@ -12,9 +12,9 @@
  * `docs/concepts/golden-paths/trigger-wiring-surface.md` §0.1.
  *
  * Everything now derives from here:
- * - `crate::validation::trigger::VALID_TRIGGER_TYPES` — the door validator.
+ * - [`crate::validation::trigger::VALID_TRIGGER_TYPES`] — the door validator.
  * - the `CHECK` on `persona_triggers.trigger_type`, substituted into the base
- *   schema at bootstrap from `TriggerKind::sql_check_list`
+ *   schema at bootstrap from [`TriggerKind::sql_check_list`]
  *   (`db/src/migrations/schema.rs` carries a `{{TRIGGER_TYPE_CHECK}}` marker,
  *   not a literal list).
  * - the client menu, via the ts-rs-exported `TriggerKind` union, which

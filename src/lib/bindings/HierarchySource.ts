@@ -12,10 +12,25 @@ export type HierarchySource = {
  */
 root: string | null, 
 /**
- * True when `docs/concepts/paths/` was found and read.
+ * True when a corpus was found and read.
  */
 present: boolean, 
 /**
  * Human-readable reason the graph is empty. `None` when `present`.
  */
-reason: string | null, };
+reason: string | null, 
+/**
+ * Repo-relative directory the corpus was read from — `docs/concepts/paths`
+ * in a personas-shaped repo, `knowledge/<domain>` in a registry clone.
+ *
+ * **This is the frontend's only source of truth for corpus location.** It
+ * exists so no consumer has to hardcode a layout the reader already knows;
+ * duplicating it in a UI regex is the two-authorities failure
+ * (`_laws.md#one-authority-per-vocabulary`) the corpus itself documents.
+ */
+corpusRel: string | null, 
+/**
+ * Repo-relative subtree `dev_tools_hierarchy_doc` will serve documents from.
+ * Wider than `corpus_rel` so sibling notes a document links to stay readable.
+ */
+docRootRel: string | null, };

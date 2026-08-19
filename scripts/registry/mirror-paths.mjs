@@ -33,6 +33,8 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
+import { splitDoc, isTopLevelKey } from './lib/frontmatter.mjs';
+
 const ROOT = path.resolve(fileURLToPath(new URL('.', import.meta.url)), '..', '..');
 const SOURCE = path.join(ROOT, 'docs/concepts/paths');
 const DOMAIN = 'software-engineering';
@@ -93,17 +95,8 @@ try {
 
 // ---------------------------------------------------------------- transforms
 
-/**
- * Split a document into (frontmatter lines, body). Returns null when there is no
- * frontmatter block — the caller decides whether that is fatal for this file kind.
- */
-const splitDoc = (raw) => {
-  const m = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
-  if (!m) return null;
-  return { fmLines: m[1].split(/\r?\n/), body: raw.slice(m[0].length), eol: raw.includes('\r\n') ? '\r\n' : '\n' };
-};
-
-const isTopLevelKey = (line) => /^[A-Za-z_][A-Za-z0-9_-]*:/.test(line);
+// `splitDoc` / `isTopLevelKey` live in ./lib/frontmatter.mjs — shared with
+// evidence-check.mjs so the registry lane reads frontmatter one way, not two.
 
 /**
  * Remove the local-only key blocks from a frontmatter line list, returning the surviving

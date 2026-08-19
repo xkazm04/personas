@@ -187,6 +187,84 @@ cheapest moment the move will ever have.**
 >   punctuation, and OKF mandates UTF-8. Scoped the rule to the example lanes rather than
 >   mangling 965 documents.
 
+> ## ✅ P2 EXECUTED 2026-08-19 — readers rewired, both halves of the gate running
+>
+> Personas commit: see the ledger. Registry: [`09a3cdd`](https://github.com/xkazm04/ai-registry/commit/09a3cdd).
+> **The Patterns-v2 session closed before this ran, so P2 landed here rather than through it** —
+> the coordination item recorded in §4 and §5 is discharged.
+>
+> **(a) `include_str!` un-coupled.** `hierarchy_read.rs` no longer compiles the corpus into
+> the crate. `docs/concepts/paths/table/table.md` is vendored at
+> `src-tauri/src/commands/infrastructure/fixtures/table-subject.md` and `include_str!`d from
+> there, so deleting the tree at P4 fails a test instead of stopping `cargo build`. The pin
+> did not become a snapshot agreeing with itself: `fixture_tracks_the_live_subject` asserts
+> the copy is byte-identical to the live subject whenever one is reachable (whole file
+> against the personas layout, body-only against a bundle, since the published file has no
+> evidence keys).
+>
+> **(b) The reader reads a registry clone.** `discover_corpus()` finds either
+> `docs/concepts/paths/` **or** `knowledge/<domain>/` (a bundle is identified by carrying
+> `_laws.md` or `categories.json`, so an unrelated `knowledge/` folder is not mistaken for
+> one). Every emitted path, the doc-read allowlist, and the mtime cache signature now follow
+> the discovered layout instead of a literal — signing a fixed literal would have made every
+> read of a clone a permanent cache miss. Two bundles is not an error but IS a choice, so the
+> reader names the one it picked in a warning rather than deciding silently.
+> **Verified against the real clone, not a fixture:**
+> `PERSONAS_CORPUS_ROOT=…/ai-registry npm run test:rust` passes the real-corpus test.
+> `HierarchySource` gained `corpusRel` / `docRootRel`; bindings regenerated.
+>
+> **(c) The duplicate path regex is gone.** `hierarchyModel.ts:255` carried
+> `/^docs\/concepts\/paths\/([^/]+)…/` — the corpus location asserted in a second place, so
+> a bundle-published corpus resolved *every* link to `null` while the UI rendered them as
+> live. Link classification is now matched against the paths the reader actually emitted
+> (`subject.file`, `technique.file`, `application.file`) and bounded by the roots it reported.
+> Six new tests run the identical assertions against a `knowledge/software-engineering/`
+> graph; 31 pass.
+>
+> **(d) `evidence-check` — the half of the gate that cannot move.** New
+> `scripts/registry/evidence-check.mjs` + `npm run check:evidence` + a CI job that clones the
+> registry. It resolves every `evidence:`/`counter_evidence:` path against this tree (**829
+> links, all resolving**) and verifies **mirror parity as set equality, not counts** — two
+> sets can agree on size and disagree on every member. Reports
+> **105 / 624 / 236 on both sides**, which is the P4 gate-2 parity number measured rather
+> than asserted. `--require-registry` turns a missing clone from a skip into a failure so a
+> network blip cannot silently downgrade the job to half a gate.
+> **Fault-injected five ways, all firing:** a removed bundle subject → parity failure naming
+> it plus its 5 techniques and 2 applications; a re-added `evidence:` key → LEAK failure; a
+> deleted overlay → partial-mirror failure; missing clone with `--require-registry` → exit 2;
+> without it → skip printed OUT LOUD at exit 0.
+>
+> **(e) Index tooling registry-side.** `scripts/build-index.mjs` in the registry emits
+> `knowledge/<domain>/index.json` (105/624/236/9 cited laws) so a consumer can read a bundle
+> without personas. Only the *subject index* was portable: the personas generator's
+> `router.json` maps evidence globs to subjects and its law index attaches evidence, and both
+> are the evidence layer itself — a router built registry-side would be an empty file
+> pretending to be an index. Those stay in `scripts/census/build-paths-index.mjs`.
+>
+> **Two things this uncovered, both fixed rather than noted:**
+> 1. `hierarchy_reads_this_repos_real_corpus` **skipped silently** when the corpus was absent
+>    (`if !…is_dir() { return }`) — the blind-instrument failure this repo has a doctrine
+>    against, sitting inside the one test that reads real data. Absence is now tolerated only
+>    when `PERSONAS_ALLOW_NO_CORPUS` says so out loud, and `PERSONAS_CORPUS_ROOT` lets CI aim
+>    the test at a clone after the flip instead of deleting the test.
+> 2. `evidence-check` was about to become this repo's **third** frontmatter parser, in a
+>    codebase that pins two against each other with a committed fixture *because* two is
+>    already a drift risk. The pieces `mirror-paths.mjs` had were extracted to
+>    `scripts/registry/lib/frontmatter.mjs` and both scripts import them; the mirror's
+>    dry-run output is unchanged (968 files, 321 lifts, 24 + 26 rewrites).
+>
+> **Still true:** `docs/concepts/paths/` remains the authority and is byte-for-byte
+> unchanged. Nothing in personas *reads* the registry yet — P2 made it possible, P3 makes it
+> so.
+>
+> **A finding that changes P4's framing, surfaced not decided:** `xkazm04/personas` is
+> **PUBLIC**. The sidecar split therefore rests on *relevance* — evidence is noise to other
+> consumers and would couple the standard to one tree — and not on secrecy, which is how
+> §2a and rkb-profile §5 already argue it. But it also means the evidence layer can stay
+> tracked and CI-checkable in personas after P4, which is what `evidence-check` assumes.
+> **The gitignored overlays in the registry clone are a local convenience, not the archive.**
+> P4 must not delete `paths/` until the evidence layer has a tracked home here.
+
 **P0 — Registry takeover + spec (no personas changes).** Clear/relocate synthetic seed;
 add `registry.yaml` (neutral authority) + `knowledge/` lane; write the RKB profile doc IN
 the registry (from plan §5.1: OKF envelope, `x-rkb` extension, per-domain purity); port

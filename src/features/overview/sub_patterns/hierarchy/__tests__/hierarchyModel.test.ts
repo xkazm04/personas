@@ -99,7 +99,13 @@ function makeGraph(): HierarchyGraph {
     crossLinks: [],
     corpusMap: [{ legacyFile: 'tables.md', subject: 'table' }],
     warnings: [],
-    source: { root: '/repo', present: true, reason: null },
+    source: {
+      root: '/repo',
+      present: true,
+      reason: null,
+      corpusRel: 'docs/concepts/paths',
+      docRootRel: 'docs/concepts',
+    },
     counts: { subjects: 4, techniques: 1, applications: 1, evidence: 1, legacyMapped: 1 },
   };
 }
@@ -275,5 +281,75 @@ describe('resolveDocLink', () => {
 
   it('resolves an unknown technique file under a known subject to null', () => {
     expect(resolveDocLink(from, 'techniques/missing.md', graph)).toBeNull();
+  });
+});
+
+/**
+ * The same graph, published the way a registry clone publishes it. Every
+ * assertion below passed against `docs/concepts/paths/` too — that is the
+ * point. A resolver that hardcodes one layout returns `null` for all of it
+ * while the UI renders the links as though they work.
+ */
+describe('resolveDocLink across corpus layouts', () => {
+  const BUNDLE = 'knowledge/software-engineering';
+
+  function asBundle(): HierarchyGraph {
+    const g = makeGraph();
+    const move = (f: string) => f.replace('docs/concepts/paths', BUNDLE);
+    return {
+      ...g,
+      subjects: g.subjects.map((s) => ({
+        ...s,
+        file: move(s.file),
+        applications: s.applications.map((a) => ({ ...a, file: move(a.file) })),
+      })),
+      techniques: g.techniques.map((t) => ({ ...t, file: move(t.file) })),
+      source: { ...g.source, corpusRel: BUNDLE, docRootRel: 'knowledge' },
+    };
+  }
+
+  const bundle = asBundle();
+  const from = `${BUNDLE}/table/table.md`;
+
+  it('resolves a sibling subject golden path', () => {
+    expect(resolveDocLink(from, '../feed/feed.md', bundle)).toEqual({
+      kind: 'subject',
+      subject: 'feed',
+    });
+  });
+
+  it('resolves a technique to the reader-issued bundle path', () => {
+    expect(resolveDocLink(from, 'techniques/pagination.md', bundle)).toEqual({
+      kind: 'technique',
+      subject: 'table',
+      technique: 'pagination',
+      file: `${BUNDLE}/table/techniques/pagination.md`,
+    });
+  });
+
+  it('resolves an application', () => {
+    expect(resolveDocLink(from, 'applications/react-table.md', bundle)).toEqual({
+      kind: 'application',
+      subject: 'table',
+      file: `${BUNDLE}/table/applications/react-table.md`,
+    });
+  });
+
+  it('resolves a law anchor', () => {
+    expect(resolveDocLink(from, '../_laws.md#gate-sees-target', bundle)).toEqual({
+      kind: 'law',
+      law: 'gate-sees-target',
+      file: `${BUNDLE}/_laws.md`,
+    });
+  });
+
+  it('still refuses an unknown subject inside the bundle', () => {
+    expect(resolveDocLink(from, '../nope/nope.md', bundle)).toBeNull();
+  });
+
+  it('refuses a target outside the doc root the reader declared', () => {
+    // `docs/concepts/` is not readable from a registry clone, and offering it
+    // would be a navigation the backend answers with Forbidden.
+    expect(resolveDocLink(from, '../../../docs/concepts/golden-paths/tables.md', bundle)).toBeNull();
   });
 });

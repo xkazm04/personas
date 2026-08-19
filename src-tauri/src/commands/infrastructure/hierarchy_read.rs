@@ -42,10 +42,13 @@ use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
 
-/// Repo-relative location of the hierarchy corpus.
+/// Repo-relative location of the hierarchy corpus in a personas-shaped repo.
 const PATHS_REL: &str = "docs/concepts/paths";
-/// The subtree `dev_tools_hierarchy_doc` is allowed to read from.
+/// The subtree `dev_tools_hierarchy_doc` may read from in a personas-shaped repo.
 const DOC_ROOT_REL: &str = "docs/concepts";
+/// Where a Reference Knowledge Bundle lives in a registry clone. One directory
+/// per domain beneath it (`knowledge/software-engineering`, `knowledge/media-craft`).
+const BUNDLE_LANE_REL: &str = "knowledge";
 /// Summary clamp. Long enough for a real first paragraph, short enough that a
 /// subject row in the rail stays a row.
 const SUMMARY_MAX: usize = 280;
@@ -68,10 +71,21 @@ const CACHE_MAX_ROOTS: usize = 2;
 pub struct HierarchySource {
     /// Canonical repo root the reader used, when one could be resolved.
     pub root: Option<String>,
-    /// True when `docs/concepts/paths/` was found and read.
+    /// True when a corpus was found and read.
     pub present: bool,
     /// Human-readable reason the graph is empty. `None` when `present`.
     pub reason: Option<String>,
+    /// Repo-relative directory the corpus was read from — `docs/concepts/paths`
+    /// in a personas-shaped repo, `knowledge/<domain>` in a registry clone.
+    ///
+    /// **This is the frontend's only source of truth for corpus location.** It
+    /// exists so no consumer has to hardcode a layout the reader already knows;
+    /// duplicating it in a UI regex is the two-authorities failure
+    /// (`_laws.md#one-authority-per-vocabulary`) the corpus itself documents.
+    pub corpus_rel: Option<String>,
+    /// Repo-relative subtree `dev_tools_hierarchy_doc` will serve documents from.
+    /// Wider than `corpus_rel` so sibling notes a document links to stay readable.
+    pub doc_root_rel: Option<String>,
 }
 
 /// One tolerated defect. The read continued; this is what it skipped.
@@ -900,22 +914,96 @@ fn parse_laws(raw: &str) -> Vec<HierarchyLaw> {
     out
 }
 
+/// Where a corpus was found, and what subtree its documents may be served from.
+///
+/// The reader supports two layouts on purpose. `docs/concepts/paths/` is how the
+/// corpus lives inside personas today; `knowledge/<domain>/` is how a Reference
+/// Knowledge Bundle is published in a registry clone. Discovering both is what
+/// lets the authority move out of this repo without the reader changing again.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct CorpusLayout {
+    /// Repo-relative corpus directory.
+    rel: String,
+    /// Repo-relative subtree documents may be read from.
+    doc_root: String,
+    /// Set when the layout choice was ambiguous and had to be decided.
+    note: Option<String>,
+}
+
+/// Find the corpus under `root`, preferring the personas layout.
+///
+/// Returns `None` when the root carries neither layout — a legitimate state that
+/// the caller reports as an empty graph with a reason, never as an error.
+fn discover_corpus(root: &Path) -> Option<CorpusLayout> {
+    if root.join(PATHS_REL).is_dir() {
+        return Some(CorpusLayout {
+            rel: PATHS_REL.to_string(),
+            doc_root: DOC_ROOT_REL.to_string(),
+            note: None,
+        });
+    }
+
+    // Registry clone: one bundle directory per domain under `knowledge/`. A
+    // bundle is identified by the two files every bundle carries, so an
+    // unrelated `knowledge/` folder in some other repo is not mistaken for one.
+    let lane = root.join(BUNDLE_LANE_REL);
+    if !lane.is_dir() {
+        return None;
+    }
+    let mut bundles: Vec<String> = std::fs::read_dir(&lane)
+        .ok()?
+        .flatten()
+        .filter(|e| e.path().is_dir())
+        .filter(|e| e.path().join("_laws.md").is_file() || e.path().join("categories.json").is_file())
+        .filter_map(|e| e.file_name().into_string().ok())
+        .collect();
+    bundles.sort();
+    let first = bundles.first()?.clone();
+
+    // More than one bundle is not an error, but it IS a choice — and a choice a
+    // reader makes silently is a choice nobody can audit. Say which one won.
+    let note = (bundles.len() > 1).then(|| {
+        format!(
+            "{} bundles are present ({}); read \"{first}\". \
+             One project root shows one bundle.",
+            bundles.len(),
+            bundles.join(", ")
+        )
+    });
+
+    Some(CorpusLayout {
+        rel: format!("{BUNDLE_LANE_REL}/{first}"),
+        doc_root: BUNDLE_LANE_REL.to_string(),
+        note,
+    })
+}
+
 /// Build the whole graph from a repo root. Blocking; call under `spawn_blocking`.
 fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
-    let paths_dir = root.join(PATHS_REL);
     let root_display = root.to_string_lossy().replace('\\', "/");
 
-    if !paths_dir.is_dir() {
+    let Some(layout) = discover_corpus(root) else {
         return Ok(HierarchyGraph::empty(HierarchySource {
             root: Some(root_display),
             present: false,
             reason: Some(format!(
-                "This repository has no {PATHS_REL}/ folder, so it carries no knowledge hierarchy."
+                "This repository has neither a {PATHS_REL}/ folder nor a \
+                 {BUNDLE_LANE_REL}/<domain>/ bundle, so it carries no knowledge hierarchy."
             )),
+            corpus_rel: None,
+            doc_root_rel: None,
         }));
-    }
+    };
+    let corpus_rel = layout.rel.as_str();
+    let paths_dir = root.join(corpus_rel);
 
     let mut warnings: Vec<HierarchyWarning> = Vec::new();
+    if let Some(note) = &layout.note {
+        warnings.push(HierarchyWarning {
+            path: format!("{BUNDLE_LANE_REL}/"),
+            message: note.clone(),
+        });
+    }
 
     // -- categories.json ----------------------------------------------------
     let mut categories: Vec<HierarchyCategory> = Vec::new();
@@ -940,13 +1028,13 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
                 subject_category = parsed.subjects;
             }
             Err(e) => warnings.push(HierarchyWarning {
-                path: format!("{PATHS_REL}/categories.json"),
+                path: format!("{corpus_rel}/categories.json"),
                 message: format!("could not be parsed: {e} — subjects will render uncategorised"),
             }),
         }
     } else {
         warnings.push(HierarchyWarning {
-            path: format!("{PATHS_REL}/categories.json"),
+            path: format!("{corpus_rel}/categories.json"),
             message: "missing — subjects will render uncategorised".to_string(),
         });
     }
@@ -973,7 +1061,7 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
                     };
                     let Some(subject) = subject else {
                         warnings.push(HierarchyWarning {
-                            path: format!("{PATHS_REL}/corpus-map.json"),
+                            path: format!("{corpus_rel}/corpus-map.json"),
                             message: format!("entry \"{legacy_file}\" names no subject"),
                         });
                         continue;
@@ -986,7 +1074,7 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
                 }
             }
             Err(e) => warnings.push(HierarchyWarning {
-                path: format!("{PATHS_REL}/corpus-map.json"),
+                path: format!("{corpus_rel}/corpus-map.json"),
                 message: format!("could not be parsed: {e} — legacy counts will read zero"),
             }),
         }
@@ -995,12 +1083,12 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
     // -- _laws.md -----------------------------------------------------------
     let laws_path = paths_dir.join("_laws.md");
     let laws = if laws_path.is_file() {
-        read_tolerant(&laws_path, &format!("{PATHS_REL}/_laws.md"), &mut warnings)
+        read_tolerant(&laws_path, &format!("{corpus_rel}/_laws.md"), &mut warnings)
             .map(|s| parse_laws(&s))
             .unwrap_or_default()
     } else {
         warnings.push(HierarchyWarning {
-            path: format!("{PATHS_REL}/_laws.md"),
+            path: format!("{corpus_rel}/_laws.md"),
             message: "missing — technique law citations will not resolve".to_string(),
         });
         Vec::new()
@@ -1012,7 +1100,7 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
             .map_err(|e| {
                 AppError::Io(std::io::Error::new(
                     e.kind(),
-                    format!("reading {PATHS_REL}/: {e}"),
+                    format!("reading {corpus_rel}/: {e}"),
                 ))
             })?
             .flatten()
@@ -1037,12 +1125,12 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
 
     for slug in &subject_dirs {
         let dir = paths_dir.join(slug);
-        let gp_rel = format!("{PATHS_REL}/{slug}/{slug}.md");
+        let gp_rel = format!("{corpus_rel}/{slug}/{slug}.md");
         let gp_path = dir.join(format!("{slug}.md"));
 
         if !gp_path.is_file() {
             warnings.push(HierarchyWarning {
-                path: format!("{PATHS_REL}/{slug}/"),
+                path: format!("{corpus_rel}/{slug}/"),
                 message: format!("no {slug}.md golden path — subject skipped"),
             });
             continue;
@@ -1085,7 +1173,7 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
                     warnings.push(HierarchyWarning {
                         path: gp_rel.clone(),
                         message: format!(
-                            "shared technique \"{entry}\" does not resolve to {PATHS_REL}/{owner}/techniques/{tech}.md"
+                            "shared technique \"{entry}\" does not resolve to {corpus_rel}/{owner}/techniques/{tech}.md"
                         ),
                     });
                     continue;
@@ -1114,7 +1202,7 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
         for t in &on_disk {
             if !local.contains(t) {
                 warnings.push(HierarchyWarning {
-                    path: format!("{PATHS_REL}/{slug}/techniques/{t}.md"),
+                    path: format!("{corpus_rel}/{slug}/techniques/{t}.md"),
                     message: format!("exists but {slug}.md does not declare it"),
                 });
                 local.push(t.clone());
@@ -1122,7 +1210,7 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
         }
 
         for t in &local {
-            let t_rel = format!("{PATHS_REL}/{slug}/techniques/{t}.md");
+            let t_rel = format!("{corpus_rel}/{slug}/techniques/{t}.md");
             let t_path = dir.join("techniques").join(format!("{t}.md"));
             let Some(t_raw) = read_tolerant(&t_path, &t_rel, &mut warnings) else {
                 continue;
@@ -1158,7 +1246,7 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
         let mut applications: Vec<HierarchyApplication> = Vec::new();
         let app_dir = dir.join("applications");
         for f in md_files(&app_dir) {
-            let a_rel = format!("{PATHS_REL}/{slug}/applications/{f}");
+            let a_rel = format!("{corpus_rel}/{slug}/applications/{f}");
             let Some(a_raw) = read_tolerant(&app_dir.join(&f), &a_rel, &mut warnings) else {
                 continue;
             };
@@ -1254,6 +1342,8 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
             root: Some(root_display),
             present: true,
             reason: None,
+            corpus_rel: Some(layout.rel.clone()),
+            doc_root_rel: Some(layout.doc_root.clone()),
         },
         counts,
     })
@@ -1344,7 +1434,9 @@ fn cache() -> &'static Mutex<(HashMap<String, CacheEntry>, u64)> {
 /// snapshot when nothing moved.
 fn cached_graph(root: &Path) -> Result<Arc<HierarchyGraph>, AppError> {
     let key = root.to_string_lossy().replace('\\', "/");
-    let signature = tree_signature(&root.join(PATHS_REL));
+    // Signature the corpus that will actually be read. Signing a fixed literal
+    // would make every read of a registry clone a permanent cache miss.
+    let signature = discover_corpus(root).and_then(|l| tree_signature(&root.join(l.rel)));
 
     {
         let mut guard = cache().lock().unwrap_or_else(|p| p.into_inner());
@@ -1486,6 +1578,8 @@ fn build_scorecard(root: &Path) -> Result<HierarchyScorecard, AppError> {
             reason: Some(format!(
                 "This repository has no {SCORECARD_REL} — generate it with `{SCORECARD_GENERATOR}`."
             )),
+            corpus_rel: None,
+            doc_root_rel: None,
         }));
     }
 
@@ -1535,6 +1629,11 @@ fn build_scorecard(root: &Path) -> Result<HierarchyScorecard, AppError> {
             root: Some(root_display),
             present: true,
             reason: None,
+            // The scorecard is a census artifact, not a corpus read — it has no
+            // corpus location to report, and inventing one would be a lie the
+            // UI would happily render.
+            corpus_rel: None,
+            doc_root_rel: None,
         },
     })
 }
@@ -1643,6 +1742,8 @@ fn resolve_root(state: &AppState, project_id: &str) -> Result<RootResolution, Ap
                 "This project has no repository path recorded, so there is nothing to read."
                     .to_string(),
             ),
+            corpus_rel: None,
+            doc_root_rel: None,
         }));
     }
 
@@ -1654,6 +1755,8 @@ fn resolve_root(state: &AppState, project_id: &str) -> Result<RootResolution, Ap
             reason: Some(format!(
                 "The project's repository path does not exist on this machine: {raw}"
             )),
+            corpus_rel: None,
+            doc_root_rel: None,
         }));
     }
 
@@ -1696,7 +1799,9 @@ pub async fn dev_tools_hierarchy_graph(
 
 /// Fetch one document from the hierarchy corpus.
 ///
-/// `rel_path` is repo-relative and MUST stay inside `docs/concepts/`. Rejection
+/// `rel_path` is repo-relative and MUST stay inside the discovered corpus's doc
+/// root (`docs/concepts/` in a personas repo, `knowledge/` in a registry
+/// clone) — the allowlist follows the layout rather than a literal. Rejection
 /// is an `Err` (the caller asked for something it may not have); a valid path
 /// that simply is not there returns `exists: false`, because a forward
 /// reference to an unwritten neighbour is legal in this corpus and must not
@@ -1721,7 +1826,13 @@ pub async fn dev_tools_hierarchy_doc(
     };
 
     let requested = rel_path.replace('\\', "/");
-    tokio::task::spawn_blocking(move || read_doc(&root, &requested))
+    // The allowlist is whatever layout this root actually carries. A root with
+    // no corpus at all keeps the personas default, so the refusal message stays
+    // meaningful instead of naming a directory that was never involved.
+    let doc_root = discover_corpus(&root)
+        .map(|l| l.doc_root)
+        .unwrap_or_else(|| DOC_ROOT_REL.to_string());
+    tokio::task::spawn_blocking(move || read_doc(&root, &doc_root, &requested))
         .await
         .map_err(|e| AppError::Internal(format!("hierarchy doc join error: {e}")))?
 }
@@ -1758,14 +1869,14 @@ pub async fn dev_tools_hierarchy_scorecard(
     Ok((*scorecard).clone())
 }
 
-fn read_doc(root: &Path, rel: &str) -> Result<HierarchyDoc, AppError> {
+fn read_doc(root: &Path, doc_root_rel: &str, rel: &str) -> Result<HierarchyDoc, AppError> {
     let trimmed = rel.trim().trim_start_matches("./");
     if trimmed.is_empty() {
         return Err(AppError::Validation("No document path was given.".into()));
     }
-    if !(trimmed == DOC_ROOT_REL || trimmed.starts_with(&format!("{DOC_ROOT_REL}/"))) {
+    if !(trimmed == doc_root_rel || trimmed.starts_with(&format!("{doc_root_rel}/"))) {
         return Err(AppError::Forbidden(format!(
-            "Only documents under {DOC_ROOT_REL}/ can be read; refused \"{rel}\"."
+            "Only documents under {doc_root_rel}/ can be read; refused \"{rel}\"."
         )));
     }
     match Path::new(trimmed).extension().and_then(|e| e.to_str()) {
@@ -1785,11 +1896,11 @@ fn read_doc(root: &Path, rel: &str) -> Result<HierarchyDoc, AppError> {
 
     // Second gate, because `root` is the whole repo: the resolved path must
     // also sit under docs/concepts/. Belt and braces, cheap.
-    let doc_root = root.join(DOC_ROOT_REL);
+    let doc_root = root.join(doc_root_rel);
     if let Ok(canonical_doc_root) = std::fs::canonicalize(&doc_root) {
         if !resolved.starts_with(&canonical_doc_root) {
             return Err(AppError::Forbidden(format!(
-                "Path escapes {DOC_ROOT_REL}/: \"{rel}\"."
+                "Path escapes {doc_root_rel}/: \"{rel}\"."
             )));
         }
     }
@@ -1825,14 +1936,21 @@ fn read_doc(root: &Path, rel: &str) -> Result<HierarchyDoc, AppError> {
 mod tests {
     use super::*;
 
+    /// A byte copy of `table/table.md` as committed on 2026-08-18. It is
+    /// VENDORED rather than `include_str!`d from the corpus on purpose: an
+    /// `include_str!` into `docs/concepts/paths/` makes the corpus a
+    /// **compile-time dependency of the Rust crate**, so moving the authority to
+    /// a registry (or deleting the tree after the move) stops the build instead
+    /// of failing a test. `fixture_tracks_the_live_subject` below keeps this
+    /// copy honest for as long as the live file is reachable.
+    const TABLE_MD: &str = include_str!("fixtures/table-subject.md");
+
     /// THE COUPLING PIN. Two parsers implement one contract — this one and
     /// `check-corpus-integrity.mjs` — and nothing but a shared fixture stops
-    /// them diverging silently. This parses a REAL committed subject file at
-    /// compile time; if `table.md` changes shape, or this parser's tolerances
-    /// drift, the assertion below fails here rather than in the UI.
+    /// them diverging silently. If the contract shifts, or this parser's
+    /// tolerances drift, the assertions below fail here rather than in the UI.
     #[test]
     fn frontmatter_matches_committed_table_subject() {
-        const TABLE_MD: &str = include_str!("../../../../docs/concepts/paths/table/table.md");
 
         let (fm, body) = parse_frontmatter(TABLE_MD).expect("table.md must open with frontmatter");
 
@@ -1878,6 +1996,180 @@ mod tests {
             "summary should be the first prose paragraph, got: {summary}"
         );
         assert!(summary.chars().count() <= SUMMARY_MAX + 1);
+    }
+
+    /// The repo root, or whatever root `PERSONAS_CORPUS_ROOT` points at.
+    ///
+    /// The override exists so this crate's tests can be aimed at a **registry
+    /// clone** once the corpus authority moves out of personas — without it,
+    /// every real-corpus test would have to be deleted at the flip, which is the
+    /// same as deleting the only tests that read real data.
+    fn corpus_root() -> PathBuf {
+        match std::env::var_os("PERSONAS_CORPUS_ROOT") {
+            Some(v) => PathBuf::from(v),
+            None => Path::new(env!("CARGO_MANIFEST_DIR"))
+                .parent()
+                .expect("src-tauri has a parent")
+                .to_path_buf(),
+        }
+    }
+
+    /// Resolve the corpus for the real-tree tests, or explain the skip.
+    ///
+    /// **A silent skip is the failure mode this repo keeps rediscovering**: a
+    /// check that walks zero files and passes reports "clean" when it means
+    /// "blind". So absence is only tolerated when a human said so out loud via
+    /// `PERSONAS_ALLOW_NO_CORPUS`; otherwise it fails and names both the root it
+    /// looked at and the two layouts it knows.
+    fn require_corpus() -> Option<(PathBuf, CorpusLayout)> {
+        let root = corpus_root();
+        match discover_corpus(&root) {
+            Some(layout) => Some((root, layout)),
+            None => {
+                assert!(
+                    std::env::var_os("PERSONAS_ALLOW_NO_CORPUS").is_some(),
+                    "no knowledge corpus under {} — looked for {PATHS_REL}/ and                      {BUNDLE_LANE_REL}/<domain>/. Point PERSONAS_CORPUS_ROOT at a                      registry clone, or set PERSONAS_ALLOW_NO_CORPUS=1 if this                      checkout genuinely carries none.",
+                    root.display()
+                );
+                None
+            }
+        }
+    }
+
+    /// The vendored fixture is a copy, and a copy drifts. While the live subject
+    /// file is reachable, assert they are byte-identical — that is what keeps
+    /// `frontmatter_matches_committed_table_subject` a pin on reality rather
+    /// than a snapshot agreeing with itself.
+    #[test]
+    fn fixture_tracks_the_live_subject() {
+        let Some((root, layout)) = require_corpus() else {
+            return;
+        };
+        let live = root.join(&layout.rel).join("table").join("table.md");
+        if !live.is_file() {
+            // A bundle without this subject is a legitimate corpus; the pin
+            // simply has nothing to compare against here.
+            return;
+        }
+        let live_raw = std::fs::read_to_string(&live).expect("table.md must read");
+
+        // The published bundle strips evidence/counter_evidence/deviations, so a
+        // registry clone is expected to differ in exactly those keys. Compare
+        // the whole file only against the personas layout, which still carries
+        // them; elsewhere compare the body, which must never diverge.
+        if layout.rel == PATHS_REL {
+            assert_eq!(
+                live_raw.replace("
+", "
+"),
+                TABLE_MD.replace("
+", "
+"),
+                "fixtures/table-subject.md has drifted from {}. Re-copy it: the                  fixture exists to track the live file, not to replace it.",
+                live.display()
+            );
+        } else {
+            let (_, live_body) = parse_frontmatter(&live_raw).expect("live table.md frontmatter");
+            let (_, fixture_body) = parse_frontmatter(TABLE_MD).expect("fixture frontmatter");
+            assert_eq!(
+                live_body.replace("
+", "
+"),
+                fixture_body.replace("
+", "
+"),
+                "the published bundle's table.md body differs from the vendored                  fixture — the mirror changed prose, which it must never do."
+            );
+        }
+    }
+
+    /// The registry layout reads. This is the whole point of the seam: the same
+    /// reader, pointed at a bundle published as `knowledge/<domain>/`, must
+    /// produce the same shape it produces for `docs/concepts/paths/`.
+    #[test]
+    fn hierarchy_reads_a_registry_bundle_layout() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let bundle = dir.path().join(BUNDLE_LANE_REL).join("software-engineering");
+        std::fs::create_dir_all(bundle.join("table").join("techniques")).unwrap();
+        std::fs::write(bundle.join("_laws.md"), "## one-authority-per-vocabulary
+One.
+").unwrap();
+        std::fs::write(
+            bundle.join("categories.json"),
+            r#"{"categories":[{"id":"ui","title":"UI","order":1}],"subjects":{"table":"ui"}}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            bundle.join("table").join("table.md"),
+            "---
+layer: golden-path
+type: golden-path
+subject: table
+status: forged
+techniques:
+  - sorting
+---
+# Table
+
+A table.
+",
+        )
+        .unwrap();
+        std::fs::write(
+            bundle.join("table").join("techniques").join("sorting.md"),
+            "---
+layer: technique
+type: technique
+subject: table
+technique: sorting
+---
+# Sorting
+
+Sort it.
+",
+        )
+        .unwrap();
+
+        let g = build_graph(dir.path()).expect("a registry bundle must read");
+        assert!(g.source.present, "reason: {:?}", g.source.reason);
+        assert_eq!(
+            g.source.corpus_rel.as_deref(),
+            Some("knowledge/software-engineering"),
+            "the reader must report WHERE it read from — the UI has no other way to know"
+        );
+        assert_eq!(g.source.doc_root_rel.as_deref(), Some(BUNDLE_LANE_REL));
+        assert_eq!(g.counts.subjects, 1);
+        assert_eq!(g.counts.techniques, 1);
+        // Emitted paths are bundle-relative, not personas-relative. A UI that
+        // hardcoded `docs/concepts/paths/` would resolve none of these.
+        assert_eq!(
+            g.techniques[0].file,
+            "knowledge/software-engineering/table/techniques/sorting.md"
+        );
+    }
+
+    /// Two bundles is a choice, and the reader must not make it silently.
+    #[test]
+    fn hierarchy_names_the_bundle_it_picked_when_several_exist() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        for domain in ["media-craft", "software-engineering"] {
+            let b = dir.path().join(BUNDLE_LANE_REL).join(domain);
+            std::fs::create_dir_all(&b).unwrap();
+            std::fs::write(b.join("_laws.md"), "## l
+L.
+").unwrap();
+        }
+        let layout = discover_corpus(dir.path()).expect("a bundle lane resolves");
+        assert_eq!(layout.rel, "knowledge/media-craft", "first alphabetically");
+        let note = layout.note.expect("an ambiguous choice must be reported");
+        assert!(note.contains("media-craft") && note.contains("software-engineering"), "{note}");
+
+        let g = build_graph(dir.path()).expect("reads");
+        assert!(
+            g.warnings.iter().any(|w| w.message.contains("2 bundles are present")),
+            "the choice must reach the UI as a warning: {:#?}",
+            g.warnings
+        );
     }
 
     #[test]
@@ -2136,15 +2428,9 @@ mod tests {
     /// a snapshot.
     #[test]
     fn hierarchy_reads_this_repos_real_corpus() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .expect("src-tauri has a parent")
-            .to_path_buf();
-        if !root.join(PATHS_REL).is_dir() {
-            // A checkout without the corpus is a legitimate state; the empty
-            // case is covered by its own test.
+        let Some((root, layout)) = require_corpus() else {
             return;
-        }
+        };
 
         let g = build_graph(&root).expect("the real corpus must read");
         assert!(g.source.present);
@@ -2159,10 +2445,25 @@ mod tests {
             "only {} techniques parsed",
             g.counts.techniques
         );
-        assert!(g.counts.evidence >= g.counts.subjects, "every subject declares ≥1 evidence path");
+        if layout.rel == PATHS_REL {
+            // Evidence is consumer-side by construction: the published bundle
+            // carries none (rkb-profile §5), so this counts zero against a
+            // registry clone and that is the design working, not a regression.
+            assert!(
+                g.counts.evidence >= g.counts.subjects,
+                "every subject declares ≥1 evidence path"
+            );
+        }
         assert_eq!(g.categories.len(), 8, "the eight inventory categories");
         assert!(g.laws.len() >= 9, "nine cross-cutting laws");
-        assert!(!g.corpus_map.is_empty(), "the legacy map is populated");
+        if layout.rel == PATHS_REL {
+            // `corpus-map.json` maps the LEGACY golden-paths corpus onto this
+            // one. It is deliberately not published to the registry bundle (it
+            // describes one consumer's history, not the standard), so asserting
+            // it unconditionally would fail the moment the reader is aimed at a
+            // clone — and asserting it nowhere would stop guarding it here.
+            assert!(!g.corpus_map.is_empty(), "the legacy map is populated");
+        }
         assert!(
             g.cross_links.len() > 20,
             "only {} cross-links — the link matcher is probably broken",
@@ -2180,7 +2481,7 @@ mod tests {
     #[test]
     fn hierarchy_doc_reads_a_valid_document() {
         let dir = fixture_repo();
-        let doc = read_doc(dir.path(), "docs/concepts/paths/table/table.md").unwrap();
+        let doc = read_doc(dir.path(), DOC_ROOT_REL, "docs/concepts/paths/table/table.md").unwrap();
         assert!(doc.exists);
         assert!(doc.markdown.starts_with("\n# Table"), "{:?}", doc.markdown);
         assert!(
@@ -2212,7 +2513,7 @@ mod tests {
     #[test]
     fn hierarchy_doc_missing_file_is_not_an_error() {
         let dir = fixture_repo();
-        let doc = read_doc(dir.path(), "docs/concepts/paths/table/never-written.md").unwrap();
+        let doc = read_doc(dir.path(), DOC_ROOT_REL, "docs/concepts/paths/table/never-written.md").unwrap();
         assert!(!doc.exists);
         assert!(doc.markdown.is_empty());
     }
@@ -2396,7 +2697,7 @@ mod tests {
             "",
         ] {
             assert!(
-                read_doc(dir.path(), bad).is_err(),
+                read_doc(dir.path(), DOC_ROOT_REL, bad).is_err(),
                 "must refuse {bad:?}"
             );
         }
