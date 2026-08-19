@@ -815,7 +815,7 @@
    ]
   },
   {
-   "glob": "src/features/overview/sub_patterns/graph/useGraphCanvas.ts",
+   "glob": "src/features/overview/sub_patterns/canvas/useGraphCanvas.ts",
    "subject": "canvas-graph",
    "laws": [
     "identity-survives-reuse",
@@ -824,7 +824,7 @@
    ]
   },
   {
-   "glob": "src/features/overview/sub_patterns/graph/PatternGraphNexus.tsx",
+   "glob": "src/features/overview/sub_patterns/hierarchy/graph/HierarchyNexus.tsx",
    "subject": "canvas-graph",
    "laws": [
     "identity-survives-reuse",

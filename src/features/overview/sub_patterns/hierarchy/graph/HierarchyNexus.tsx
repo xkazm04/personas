@@ -10,8 +10,8 @@ import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { SubjectScore } from '@/lib/bindings/SubjectScore';
 import { adherenceRatio } from '../scorecardModel';
-import { NodeLabel } from '../../graph/GraphChrome';
-import { lod } from '../../graph/useGraphCanvas';
+import { NodeLabel } from '../../canvas/GraphChrome';
+import { lod } from '../../canvas/useGraphCanvas';
 import { categoryGraphTheme, type CategoryGraphTheme } from './categoryTheme';
 import {
   branchLayout,

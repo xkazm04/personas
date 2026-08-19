@@ -1,6 +1,6 @@
-// Shared chrome for the topic graph: zoom rail, the node info card, and the
-// SVG label primitive. Everything the sky's geometry is NOT about lives here
-// so a tweak lands once.
+// Shared chrome for the pattern skies (hierarchy graph today): zoom rail and
+// the SVG label primitive. Everything a sky's geometry is NOT about lives
+// here so a tweak lands once.
 import { Minus, Plus, RotateCcw } from 'lucide-react';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -101,15 +101,4 @@ export function NodeLabel({
       )}
     </g>
   );
-}
-
-/** Deterministic pseudo-random in [0,1) from a string — variants use it for
- *  organic jitter that must not reshuffle between renders or sessions. */
-export function hashJitter(key: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < key.length; i += 1) {
-    h ^= key.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return ((h >>> 0) % 1000) / 1000;
 }

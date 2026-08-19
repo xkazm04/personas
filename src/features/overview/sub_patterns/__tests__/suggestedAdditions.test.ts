@@ -4,7 +4,7 @@
 // stays a curator click — this fn only ever proposes.
 import { describe, expect, it } from 'vitest';
 
-import { playbookSuggestedAdditions } from '../graph/graphModel';
+import { playbookSuggestedAdditions } from '../playbooks/playbookModel';
 import type { KnowledgeItemView } from '../libraryModel';
 
 function item(id: string, status = 'adopted', title = `T-${id}`): KnowledgeItemView {

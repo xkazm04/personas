@@ -15,8 +15,8 @@ evidence:
   - src/features/teams/sub_mastermind/lib/useIslandDrag.ts       # gesture loan on a node drag: capture, 4px threshold, world conversion, commit-on-release
   - src/features/teams/sub_mastermind/lib/tidyLayout.ts          # deterministic bounded auto-layout; user-pinned positions as fixed anchors
   - src/features/teams/sub_mastermind/lib/layoutStore.ts         # one versioned layout document, v1→v2 migration, author (provenance) field
-  - src/features/overview/sub_patterns/graph/useGraphCanvas.ts   # wheel-ownership lesson (container→svg), capture-at-threshold, trailing-click suppression, LOD
-  - src/features/overview/sub_patterns/graph/PatternGraphNexus.tsx  # shared geometry for links + nodes; cross-cluster edges only in focused dimension
+  - src/features/overview/sub_patterns/canvas/useGraphCanvas.ts   # wheel-ownership lesson (container→svg), capture-at-threshold, trailing-click suppression, LOD
+  - src/features/overview/sub_patterns/hierarchy/graph/HierarchyNexus.tsx  # shared geometry for links + nodes; cross-cluster edges only in focused dimension
 counter_evidence:
   - src/features/teams/sub_mastermind/lib/GroupLayer.tsx         # group-body drag with no travel threshold — the click-vs-drag defect the standard names
 deviations:

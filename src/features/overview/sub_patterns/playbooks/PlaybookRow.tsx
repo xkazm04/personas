@@ -7,7 +7,7 @@ import { AlertTriangle, ChevronDown, Play, Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { WorkspacePlaybook } from '@/lib/bindings/WorkspacePlaybook';
 import type { WorkspacePlaybookPattern } from '@/lib/bindings/WorkspacePlaybookPattern';
-import type { StaleMember, SuggestedAddition } from './graphModel';
+import type { StaleMember, SuggestedAddition } from './playbookModel';
 import type { KnowledgeItemView } from '../libraryModel';
 
 const PHASES = ['before', 'during', 'verify'] as const;

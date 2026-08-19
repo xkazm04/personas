@@ -1,10 +1,10 @@
 // Playbooks rail — the fabric's situation layer as a curator surface
 // (pattern-fabric S3). Lists the workspace's playbooks with their phased
-// membership, drives the draft→active→retired lifecycle, hosts the "create
-// from basket" entry point, and — since a playbook silently rots when its
-// members are deprecated under it — surfaces and repairs stale memberships.
-// Deliberately an overlay rail, not a tree level: playbooks cut across
-// branches and must never pretend to be topics.
+// membership, drives the draft→active→retired lifecycle, hosts the create
+// entry point, and — since a playbook silently rots when its members are
+// deprecated under it — surfaces and repairs stale memberships. Deliberately
+// an overlay rail, not a tree level: playbooks cut across branches and must
+// never pretend to be topics.
 import { useMemo, useState } from 'react';
 import { BookOpen, SearchX, X } from 'lucide-react';
 
@@ -14,7 +14,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { ConsultStats } from '@/api/devTools/workspaces';
 import type { WorkspacePlaybook } from '@/lib/bindings/WorkspacePlaybook';
 import type { WorkspacePlaybookPattern } from '@/lib/bindings/WorkspacePlaybookPattern';
-import { playbookStaleMembers, playbookSuggestedAdditions, type PatternEdgeLike } from './graphModel';
+import { playbookStaleMembers, playbookSuggestedAdditions, type PatternEdgeLike } from './playbookModel';
 import { PlaybookRow } from './PlaybookRow';
 import type { KnowledgeItemView } from '../libraryModel';
 
@@ -28,8 +28,7 @@ export function PlaybooksPanel({
   itemById,
   edges,
   consultStats,
-  basketCount,
-  onCreateFromBasket,
+  onCreate,
   onSetStatus,
   onDelete,
   onPrune,
@@ -43,8 +42,8 @@ export function PlaybooksPanel({
   edges: readonly PatternEdgeLike[];
   /** Consult telemetry; `null` when the command is unavailable. */
   consultStats: ConsultStats | null;
-  basketCount: number;
-  onCreateFromBasket: () => void;
+  /** Open the create-playbook modal (members are picked inside it). */
+  onCreate: () => void;
   onSetStatus: (id: string, status: string) => void;
   onDelete: (id: string) => void;
   /** Repair: persist the surviving members, phases and ordinals intact. */
@@ -93,7 +92,7 @@ export function PlaybooksPanel({
   const unmatched = consultStats?.unmatched.slice(0, UNMATCHED_SHOWN) ?? [];
 
   return (
-    <div className="absolute right-3 top-3 bottom-14 z-10 w-[340px] max-w-[calc(100%-5rem)] flex flex-col rounded-card border border-border/70 bg-background/95 backdrop-blur-sm shadow-elevation-3 animate-fade-in">
+    <div className="absolute right-3 top-3 bottom-3 z-10 w-[340px] max-w-[calc(100%-5rem)] flex flex-col rounded-card border border-border/70 bg-background/95 backdrop-blur-sm shadow-elevation-3 animate-fade-in">
       <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-border/60 flex-shrink-0">
         <div className="flex items-center gap-2">
           <BookOpen className="w-4 h-4 text-primary" aria-hidden />
@@ -110,15 +109,13 @@ export function PlaybooksPanel({
         </button>
       </div>
 
-      {basketCount > 0 && (
-        <button
-          type="button"
-          onClick={onCreateFromBasket}
-          className="mx-3 mt-2.5 flex-shrink-0 typo-label rounded-interactive border border-primary/25 bg-primary/10 px-2.5 py-1.5 text-foreground hover:bg-primary/15 transition-colors"
-        >
-          {tx(w.playbooks_create_from_basket, { count: basketCount })}
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={onCreate}
+        className="mx-3 mt-2.5 flex-shrink-0 typo-label rounded-interactive border border-primary/25 bg-primary/10 px-2.5 py-1.5 text-foreground hover:bg-primary/15 transition-colors"
+      >
+        {w.playbook_create_title}
+      </button>
 
       <div className="flex-1 min-h-0 overflow-y-auto px-3 py-2.5 flex flex-col gap-2">
         {playbooks.length === 0 && (

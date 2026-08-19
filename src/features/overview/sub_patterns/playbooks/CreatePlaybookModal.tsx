@@ -1,7 +1,9 @@
-// Create a playbook from the basket — the F1 curator flow: multi-select
-// patterns across cluster modals, then name the situation they serve. Lands
-// as `draft`; activation is a separate, deliberate step.
+// Create a playbook — the F1 curator flow: pick the patterns that serve one
+// development situation, then name it. Members are chosen with an in-modal
+// searchable picker (the old cross-modal selection basket died with the topic
+// graph). Lands as `draft`; activation is a separate, deliberate step.
 import { useMemo, useState } from 'react';
+import { X } from 'lucide-react';
 
 import Button from '@/features/shared/components/buttons/Button';
 import { FormField } from '@/features/shared/components/forms/FormField';
@@ -18,12 +20,13 @@ type Phase = 'before' | 'during' | 'verify';
 
 export function CreatePlaybookModal({
   workspaceId,
-  basket,
+  candidates,
   onCreated,
   onClose,
 }: {
   workspaceId: string;
-  basket: readonly KnowledgeItemView[];
+  /** Patterns eligible for membership — the library's adopted canon. */
+  candidates: readonly KnowledgeItemView[];
   onCreated: () => void;
   onClose: () => void;
 }) {
@@ -32,6 +35,7 @@ export function CreatePlaybookModal({
   const [title, setTitle] = useState('');
   const [triggersRaw, setTriggersRaw] = useState('');
   const [summary, setSummary] = useState('');
+  const [selected, setSelected] = useState<KnowledgeItemView[]>([]);
   const [phases, setPhases] = useState<Record<string, Phase>>({});
   const [busy, setBusy] = useState(false);
 
@@ -43,18 +47,37 @@ export function CreatePlaybookModal({
     () => triggersRaw.split(',').map((s) => s.trim()).filter(Boolean),
     [triggersRaw],
   );
-  const valid = title.trim().length > 0 && triggers.length > 0 && basket.length > 0;
+  const valid = title.trim().length > 0 && triggers.length > 0 && selected.length > 0;
+
+  const selectedIds = useMemo(() => new Set(selected.map((i) => i.id)), [selected]);
+  const addOptions = useMemo(
+    () =>
+      candidates
+        .filter((c) => !selectedIds.has(c.id))
+        .map((c) => ({ value: c.id, label: c.title })),
+    [candidates, selectedIds],
+  );
+
+  const addMember = (id: string) => {
+    const item = candidates.find((c) => c.id === id);
+    if (!item || selectedIds.has(id)) return;
+    setSelected((cur) => [...cur, item]);
+  };
+
+  const removeMember = (id: string) => {
+    setSelected((cur) => cur.filter((i) => i.id !== id));
+  };
 
   const submit = async () => {
     if (!valid || busy) return;
     setBusy(true);
     try {
       const pb = await createPlaybook(workspaceId, slug, title, triggers, summary);
-      // Ordinals follow the basket's visual order within each phase.
+      // Ordinals follow the list's visual order within each phase.
       const counters: Record<Phase, number> = { before: 0, during: 0, verify: 0 };
       await setPlaybookPatterns(
         pb.id,
-        basket.map((item) => {
+        selected.map((item) => {
           const phase = phases[item.id] ?? 'during';
           const ordinal = counters[phase];
           counters[phase] += 1;
@@ -123,10 +146,22 @@ export function CreatePlaybookModal({
 
           <div>
             <span className="typo-label text-foreground/80">
-              {tx(w.playbook_members_label, { count: basket.length })}
+              {tx(w.playbook_members_label, { count: selected.length })}
             </span>
+            {addOptions.length > 0 && (
+              <div className="mt-1.5">
+                <ThemedSelect
+                  value=""
+                  options={addOptions}
+                  onValueChange={addMember}
+                  placeholder={t.common.add}
+                  filterable
+                  aria-label={t.common.add}
+                />
+              </div>
+            )}
             <ul className="mt-1.5 flex flex-col gap-1.5">
-              {basket.map((item) => (
+              {selected.map((item) => (
                 <li key={item.id} className="flex items-center gap-2">
                   <span className={`typo-caption px-1.5 py-0.5 rounded-interactive flex-shrink-0 ${areaTheme(item.topic).chip}`}>
                     {item.topic.split('/')[0]}
@@ -144,6 +179,14 @@ export function CreatePlaybookModal({
                       aria-label={w.playbook_field_phase}
                     />
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => removeMember(item.id)}
+                    aria-label={t.common.delete}
+                    className="flex-shrink-0 text-foreground/85 hover:text-foreground transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 </li>
               ))}
             </ul>

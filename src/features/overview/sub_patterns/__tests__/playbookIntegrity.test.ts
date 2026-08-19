@@ -4,7 +4,7 @@
 // adopted is no candidate at all.
 import { describe, expect, it } from 'vitest';
 
-import { playbookStaleMembers, type PatternEdgeLike } from '../graph/graphModel';
+import { playbookStaleMembers, type PatternEdgeLike } from '../playbooks/playbookModel';
 import type { KnowledgeItemView } from '../libraryModel';
 
 function item(

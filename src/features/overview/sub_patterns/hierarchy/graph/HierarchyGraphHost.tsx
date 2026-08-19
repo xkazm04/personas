@@ -17,8 +17,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 
-import { ZoomRail } from '../../graph/GraphChrome';
-import { useGraphCanvas } from '../../graph/useGraphCanvas';
+import { ZoomRail } from '../../canvas/GraphChrome';
+import { useGraphCanvas } from '../../canvas/useGraphCanvas';
 import { CorpusWarningsBadge } from '../CorpusWarningsBadge';
 import { DocViewer } from '../DocViewer';
 import {

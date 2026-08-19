@@ -5,7 +5,7 @@
 // harvesting shipped — a library that shows practices nobody harvested is
 // worse than an empty one.)
 import { useEffect, useMemo, useState } from 'react';
-import { Network, Plus, Share2, TableProperties } from 'lucide-react';
+import { BookOpen, Plus, Share2 } from 'lucide-react';
 
 import Button from '@/features/shared/components/buttons/Button';
 import {
@@ -25,8 +25,7 @@ import { PracticeDetailModal } from './PracticeDetailModal';
 import { PracticeRolloutModal } from './PracticeRolloutModal';
 import { ExtractionMenu } from './ExtractionMenu';
 import KnowledgeTree from './KnowledgeTree';
-import PatternGraphHost from './graph/PatternGraphHost';
-import { ProjectFilter } from './graph/ProjectFilter';
+import { PlaybooksRail } from './playbooks/PlaybooksRail';
 import { isDirection, nextQueueIndex, viewFromRow, type KnowledgeItemView } from './libraryModel';
 import { WorkspacePulse } from './WorkspacePulse';
 import type { Workspace } from '@/features/plugins/dev-tools/sub_workspaces/workspaceStore';
@@ -36,32 +35,24 @@ export default function KnowledgeLibrary({
   rows,
   projectById,
   onChanged,
-  view: controlledView,
 }: {
   workspace: Workspace;
   rows: WorkspaceKnowledge[];
   projectById: Map<string, DevProject>;
   onChanged: () => void;
-  /** Controlled view. When provided it overrides the internal Library|Graph
-   *  toggle AND hides the internal switcher (the host owns lane switching —
-   *  Patterns v2's `Subjects | Graph | Practices`). Absent = the internal
-   *  state path, unchanged for every other consumer. */
-  view?: 'library' | 'graph';
 }) {
   const { t, tx } = useTranslation();
   const w = t.plugins.dev_tools.workspaces;
 
-  // Library | Graph view — the graph (Nexus) is auditioning to replace the
-  // table and got its own project lens: null = whole workspace as-is.
-  const [internalView, setView] = useState<'library' | 'graph'>('library');
-  const view = controlledView ?? internalView;
   // Altitude scope — the INVERTED library: both views are built from
   // Directions (macro doctrines) by default; techniques are the evidence you
   // drill into (a direction's `governs` chips) or flip the scope to see. This
   // scopes the STRUCTURE — topic rail counts, graph clusters, rings, stats —
   // not just row order.
   const [altitude, setAltitude] = useState<'directions' | 'all' | 'techniques'>('directions');
-  const [graphProjectId, setGraphProjectId] = useState<string | null>(null);
+  // Playbooks rail (fabric S3) — a live backend feature; the rail overlays the
+  // tree so the curator can read playbooks against the library they index.
+  const [showPlaybooks, setShowPlaybooks] = useState(false);
   const [creating, setCreating] = useState(false);
   const [projecting, setProjecting] = useState(false);
   const [rollout, setRollout] = useState<WorkspaceKnowledge | null>(null);
@@ -176,33 +167,6 @@ export default function KnowledgeLibrary({
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <h2 className="typo-section-title text-foreground">{w.library_title}</h2>
-          {/* View toggle — the graph is auditioning to replace the table.
-              Hidden under a controlled `view`: the host owns lane switching. */}
-          {controlledView === undefined && (
-            <div className="flex items-center rounded-interactive border border-border/60 bg-secondary/50 p-0.5">
-              {(
-                [
-                  { id: 'library', icon: TableProperties, label: w.graph_view_library },
-                  { id: 'graph', icon: Network, label: w.graph_view_graph },
-                ] as const
-              ).map(({ id, icon: ViewIcon, label }) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setView(id)}
-                  aria-pressed={view === id}
-                  className={`typo-label flex items-center gap-1.5 rounded-interactive px-2.5 py-1 transition-colors ${
-                    view === id
-                      ? 'bg-background text-foreground shadow-elevation-1'
-                      : 'text-foreground/60 hover:text-foreground'
-                  }`}
-                >
-                  <ViewIcon className="w-3.5 h-3.5" />
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
           {hasDirections && (
             <div className="flex items-center rounded-interactive border border-border/60 bg-secondary/50 p-0.5">
               {(
@@ -230,13 +194,19 @@ export default function KnowledgeLibrary({
           )}
         </div>
         <div className="flex items-center gap-2">
-          {view === 'graph' && (
-            <ProjectFilter
-              projects={memberProjects}
-              selectedId={graphProjectId}
-              onSelect={setGraphProjectId}
-            />
-          )}
+          <button
+            type="button"
+            onClick={() => setShowPlaybooks((v) => !v)}
+            aria-pressed={showPlaybooks}
+            className={`typo-label flex items-center gap-1.5 rounded-interactive border px-2.5 py-1 transition-colors ${
+              showPlaybooks
+                ? 'border-primary/25 bg-primary/10 text-foreground'
+                : 'border-border/60 bg-secondary/50 text-foreground/70 hover:text-foreground'
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5" aria-hidden />
+            {w.playbooks_title}
+          </button>
           <ExtractionMenu
             workspace={workspace}
             memberProjects={memberProjects}
@@ -265,38 +235,32 @@ export default function KnowledgeLibrary({
         </div>
       </div>
 
-      {view === 'library' && (
-        <WorkspacePulse
-          items={items}
-          adoptions={adoptions}
-          // A digest entry is a single jump, not a review pass — open it alone.
-          onOpenPractice={(item) => openDetail(item, [item])}
-        />
-      )}
+      <WorkspacePulse
+        items={items}
+        adoptions={adoptions}
+        // A digest entry is a single jump, not a review pass — open it alone.
+        onOpenPractice={(item) => openDetail(item, [item])}
+      />
 
-      <div className="flex-1 min-h-0">
-        {view === 'graph' ? (
-          <PatternGraphHost
-            items={scopedItems}
+      <div className="relative flex-1 min-h-0">
+        <KnowledgeTree
+          items={scopedItems}
+          projectById={projectById}
+          // Review before distribute: a row opens its DETAIL, and rollout is
+          // reached from inside that modal (adopted practices only). Wiring
+          // this straight to the rollout surface skipped the review step
+          // entirely and offered to distribute practices still sitting at
+          // `observed`.
+          onRowClick={openDetail}
+          onBulkDecide={bulkDecide}
+        />
+        {showPlaybooks && (
+          <PlaybooksRail
             workspaceId={workspace.id}
-            workspaceName={workspace.name}
-            adoptions={adoptions}
-            selectedProjectId={graphProjectId}
-            projectCount={memberProjects.length}
-            // A graph node's item is a single jump, not a review pass.
+            items={items}
+            // A playbook member is a single jump, not a review pass.
             onOpenItem={(item) => openDetail(item, [item])}
-          />
-        ) : (
-          <KnowledgeTree
-            items={scopedItems}
-            projectById={projectById}
-            // Review before distribute: a row opens its DETAIL, and rollout is
-            // reached from inside that modal (adopted practices only). Wiring
-            // this straight to the rollout surface skipped the review step
-            // entirely and offered to distribute practices still sitting at
-            // `observed`.
-            onRowClick={openDetail}
-            onBulkDecide={bulkDecide}
+            onClose={() => setShowPlaybooks(false)}
           />
         )}
       </div>

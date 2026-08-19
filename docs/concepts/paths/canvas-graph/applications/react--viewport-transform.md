@@ -24,7 +24,7 @@ point under the pivot stays fixed. Every entry point routes through it: wheel
 (`:150`), double-click (`:213-216`), toolbar buttons via viewport center
 (`:218-223`), and `fit` (`:225-237`) which derives the framing transform from
 world bounds. The pattern-graph twin, `useGraphCanvas.ts`
-(`src/features/overview/sub_patterns/graph/useGraphCanvas.ts`), repeats the
+(`src/features/overview/sub_patterns/canvas/useGraphCanvas.ts`), repeats the
 same change of basis with a center-origin convention (`:96-101`) and exposes
 `project()` (`:191-197`) so HTML overlays share the authority instead of
 re-deriving it.

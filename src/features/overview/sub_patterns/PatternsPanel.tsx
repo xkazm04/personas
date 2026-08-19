@@ -8,9 +8,9 @@
 // - **Graph** — the hierarchy graph (P3): the same corpus rendered as a
 //   Nexus-style sky (8 category keystones → subjects → techniques). Also
 //   project-scoped, no workspace dependency.
-// - **Practices** — the pre-existing workspace practice library (DB plane),
-//   untouched, with its OWN internal Library|Graph toggle restored so the old
-//   Nexus over workspace practices stays reachable there.
+// - **Practices** — the pre-existing workspace practice library (DB plane):
+//   the consolidated tree plus the playbooks rail. (The old workspace-practice
+//   Nexus was retired once the hierarchy graph superseded it.)
 import { useEffect, useMemo, useState } from 'react';
 
 import { listWorkspaceKnowledge } from '@/api/devTools/workspaces';
@@ -61,11 +61,11 @@ function PatternsSkeleton() {
   );
 }
 
-/** The pre-existing workspace-practices plane, exactly as before the lane
- *  restructure: workspace gating/skeleton and the workspace picker live HERE,
- *  so the hierarchy lanes never wait on (or render) any of it. No controlled
- *  `view` — KnowledgeLibrary's internal Library|Graph toggle is back, which
- *  keeps the old Nexus reachable inside this lane. */
+/** The pre-existing workspace-practices plane: workspace gating/skeleton and
+ *  the workspace picker live HERE, so the hierarchy lanes never wait on (or
+ *  render) any of it. KnowledgeLibrary renders the library unconditionally —
+ *  the old topic-graph Nexus is gone (superseded by the hierarchy graph lane);
+ *  the playbooks rail survives as a toggleable side panel inside the library. */
 function WorkspaceLane() {
   const { t } = useTranslation();
   const tk = t.overview.knowledge;
