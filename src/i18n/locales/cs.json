@@ -12470,7 +12470,10 @@
     "yes": "Ano",
     "no": "Ne",
     "delete_confirm_question": "Smazat {name}?",
-    "tag_input_placeholder": "Napište štítek a stiskněte Enter..."
+    "tag_input_placeholder": "Napište štítek a stiskněte Enter...",
+    "outcome_breakdown": "Celkem {runs} spuštění · {completed} dokončeno · {failed} selhalo",
+    "outcome_of_runs": "z {terminal} přineslo hodnotu",
+    "outcome_pending": "spuštění, zatím žádné výsledky"
   },
   "execution_status": {
     "completed": "Dokončeno",
@@ -15683,7 +15686,14 @@
       "action_label_apply_pattern": "Aplikovat přijaté vzory v repozitáři",
       "action_label_evaluate_pattern": "Ověřit dodržování vzorů v repozitáři",
       "action_label_run_pattern_harvest": "Vytěžit praktiky z repozitáře",
-      "action_label_skill_sync": "Synchronizovat skill napříč projekty"
+      "action_label_skill_sync": "Synchronizovat skill napříč projekty",
+      "global_hotkey_active": "Funguje kdekoli v počítači",
+      "global_hotkey_desc": "Mluvte s Athenou i když je vpředu jiná aplikace, ne jen když je okno Personas aktivní.",
+      "global_hotkey_disable": "Vypnout systémovou zkratku",
+      "global_hotkey_enable": "Zapnout systémovou zkratku",
+      "global_hotkey_failed": "Tuto zkratku už používá jiná aplikace, proto ji nelze zapnout.",
+      "global_hotkey_in_app_only": "Funguje jen když je Personas vpředu",
+      "global_hotkey_title": "Mluvte odkudkoli"
     },
     "artist_gallery": {
       "loading_viewer": "Načítání prohlížeče…",
@@ -19336,7 +19346,13 @@
     "populate_lane_simulation": "Simulovaná data KPI",
     "populate_lane_simulation_detail": "Pro produkt, který ještě nebyl vydán: prochází vaše funkce jako reprezentativní uživatelé a odhaduje přijaté ukazatele KPI a zjišťuje cíle z podobných produktů. Nejdelší krok.",
     "populate_scope_empty": "Vyberte alespoň jednu věc, kterou chcete zahrnout.",
-    "populate_scope_heading": "Co tento běh zahrne"
+    "populate_scope_heading": "Co tento běh zahrne",
+    "track_unpaced": "Bez tempa",
+    "stat_unpaced": "Bez tempa",
+    "stat_unpaced_hint": "zatím nelze řídit",
+    "pace_unpaced": "Změřeno, ale bez cílového data není za čím zaostávat. Doplňte ho, aby to systém mohl řídit.",
+    "pace_unpaced_no_target": "Změřeno, ale není nastaven cíl, takže zatím není k čemu směřovat.",
+    "headline_count": "{count} hlavních"
   },
   "deliberation": {
     "agenda": "Agenda",

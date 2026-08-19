@@ -12470,7 +12470,10 @@
     "yes": "예",
     "no": "아니오",
     "delete_confirm_question": "{name}을(를) 삭제할까요?",
-    "tag_input_placeholder": "태그를 입력하고 Enter를 누르세요..."
+    "tag_input_placeholder": "태그를 입력하고 Enter를 누르세요...",
+    "outcome_breakdown": "총 {runs}회 실행 · {completed}건 완료 · {failed}건 실패",
+    "outcome_of_runs": "{terminal}건 중 성과 달성",
+    "outcome_pending": "회 실행, 아직 결과 없음"
   },
   "execution_status": {
     "completed": "완료됨",
@@ -15683,7 +15686,14 @@
       "action_label_apply_pattern": "저장소에 채택된 패턴 적용",
       "action_label_evaluate_pattern": "저장소의 패턴 준수 검증",
       "action_label_run_pattern_harvest": "저장소에서 프랙티스 수집",
-      "action_label_skill_sync": "프로젝트 간 스킬 동기화"
+      "action_label_skill_sync": "프로젝트 간 스킬 동기화",
+      "global_hotkey_active": "컴퓨터 어디서나 작동합니다",
+      "global_hotkey_desc": "Personas 창이 앞에 없어도, 다른 앱을 쓰는 중에 음성으로 Athena를 부를 수 있습니다.",
+      "global_hotkey_disable": "시스템 전체 단축키 끄기",
+      "global_hotkey_enable": "시스템 전체 단축키 켜기",
+      "global_hotkey_failed": "다른 앱이 이미 그 단축키를 사용 중이라 켤 수 없습니다.",
+      "global_hotkey_in_app_only": "Personas가 앞에 있을 때만 작동합니다",
+      "global_hotkey_title": "어디서나 말하기"
     },
     "artist_gallery": {
       "loading_viewer": "뷰어 로딩 중…",
@@ -19336,7 +19346,13 @@
     "populate_lane_simulation": "시뮬레이션된 KPI 데이터",
     "populate_lane_simulation_detail": "아직 출시되지 않은 제품의 경우: 기능을 대표 사용자로 시뮬레이션하여 채택될 KPI를 추정하고, 유사 제품에서 목표치를 조사합니다. 가장 오래 걸리는 단계입니다.",
     "populate_scope_empty": "포함할 항목을 하나 이상 선택하세요.",
-    "populate_scope_heading": "이번 실행에서 다룰 내용"
+    "populate_scope_heading": "이번 실행에서 다룰 내용",
+    "track_unpaced": "속도 미설정",
+    "stat_unpaced": "속도 미설정",
+    "stat_unpaced_hint": "아직 조정 불가",
+    "pace_unpaced": "측정되었지만 목표 날짜가 없어 뒤처짐을 판단할 수 없습니다. 날짜를 추가하면 시스템이 조정할 수 있습니다.",
+    "pace_unpaced_no_target": "측정되었지만 목표가 설정되지 않아 아직 나아갈 방향이 없습니다.",
+    "headline_count": "핵심 {count}개"
   },
   "deliberation": {
     "agenda": "안건",

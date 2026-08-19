@@ -12470,7 +12470,10 @@
     "yes": "Sí",
     "no": "No",
     "delete_confirm_question": "¿Eliminar {name}?",
-    "tag_input_placeholder": "Escribe una etiqueta y pulsa Intro..."
+    "tag_input_placeholder": "Escribe una etiqueta y pulsa Intro...",
+    "outcome_breakdown": "{runs} ejecuciones en total · {completed} completadas · {failed} fallidas",
+    "outcome_of_runs": "de {terminal} aportaron valor",
+    "outcome_pending": "ejecuciones, aún sin resultados"
   },
   "execution_status": {
     "completed": "Completado",
@@ -15683,7 +15686,14 @@
       "action_label_apply_pattern": "Aplicar patrones adoptados en un repositorio",
       "action_label_evaluate_pattern": "Verificar el cumplimiento de patrones en un repositorio",
       "action_label_run_pattern_harvest": "Extraer prácticas de un repositorio",
-      "action_label_skill_sync": "Sincronizar una skill entre proyectos"
+      "action_label_skill_sync": "Sincronizar una skill entre proyectos",
+      "global_hotkey_active": "Funciona en cualquier parte del equipo",
+      "global_hotkey_desc": "Habla con Athena por voz aunque otra app esté en primer plano, no solo con la ventana de Personas delante.",
+      "global_hotkey_disable": "Desactivar el atajo de todo el sistema",
+      "global_hotkey_enable": "Activar el atajo de todo el sistema",
+      "global_hotkey_failed": "Otra aplicación ya usa ese atajo, así que no se pudo activar.",
+      "global_hotkey_in_app_only": "Solo funciona con Personas en primer plano",
+      "global_hotkey_title": "Habla desde donde estés"
     },
     "artist_gallery": {
       "loading_viewer": "Cargando visor…",
@@ -19336,7 +19346,13 @@
     "populate_lane_simulation": "Datos de KPI simulados",
     "populate_lane_simulation_detail": "Para un producto que aún no se ha lanzado: recorre tus funcionalidades como usuarios representativos para estimar los KPI adoptados, e investiga objetivos de productos comparables. El paso más largo.",
     "populate_scope_empty": "Elige al menos un elemento para cubrir.",
-    "populate_scope_heading": "Qué cubrirá esta ejecución"
+    "populate_scope_heading": "Qué cubrirá esta ejecución",
+    "track_unpaced": "Sin ritmo definido",
+    "stat_unpaced": "Sin ritmo definido",
+    "stat_unpaced_hint": "aún no dirigible",
+    "pace_unpaced": "Medido, pero sin fecha objetivo no hay nada de lo que retrasarse. Añade una para que el sistema pueda dirigirlo.",
+    "pace_unpaced_no_target": "Medido, pero no hay objetivo definido, así que todavía no hay nada hacia lo que dirigirse.",
+    "headline_count": "{count} principales"
   },
   "deliberation": {
     "agenda": "Agenda",

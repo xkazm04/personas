@@ -12470,7 +12470,10 @@
     "yes": "Ja",
     "no": "Nein",
     "delete_confirm_question": "{name} löschen?",
-    "tag_input_placeholder": "Tag eingeben und Enter drücken..."
+    "tag_input_placeholder": "Tag eingeben und Enter drücken...",
+    "outcome_breakdown": "{runs} Läufe insgesamt · {completed} abgeschlossen · {failed} fehlgeschlagen",
+    "outcome_of_runs": "von {terminal} lieferten Mehrwert",
+    "outcome_pending": "Läufe, noch keine Ergebnisse"
   },
   "execution_status": {
     "completed": "Abgeschlossen",
@@ -15683,7 +15686,14 @@
       "action_label_apply_pattern": "Übernommene Muster in einem Repo anwenden",
       "action_label_evaluate_pattern": "Muster-Einhaltung in einem Repo prüfen",
       "action_label_run_pattern_harvest": "Praktiken aus einem Repo gewinnen",
-      "action_label_skill_sync": "Skill projektübergreifend synchronisieren"
+      "action_label_skill_sync": "Skill projektübergreifend synchronisieren",
+      "global_hotkey_active": "Funktioniert überall auf deinem Computer",
+      "global_hotkey_desc": "Sprich per Sprache mit Athena, auch wenn eine andere App im Vordergrund ist, nicht nur bei aktivem Personas-Fenster.",
+      "global_hotkey_disable": "Systemweites Tastenkürzel deaktivieren",
+      "global_hotkey_enable": "Systemweites Tastenkürzel aktivieren",
+      "global_hotkey_failed": "Eine andere App belegt dieses Tastenkürzel bereits, daher konnte es nicht aktiviert werden.",
+      "global_hotkey_in_app_only": "Funktioniert nur bei aktivem Personas-Fenster",
+      "global_hotkey_title": "Von überall sprechen"
     },
     "artist_gallery": {
       "loading_viewer": "Viewer wird geladen…",
@@ -19336,7 +19346,13 @@
     "populate_lane_simulation": "Simulierte KPI-Daten",
     "populate_lane_simulation_detail": "Für ein Produkt, das noch nicht veröffentlicht wurde: durchläuft Ihre Funktionen als repräsentative Nutzer, um die übernommenen KPI-Kennzahlen zu schätzen, und recherchiert Zielwerte aus vergleichbaren Produkten. Der längste Schritt.",
     "populate_scope_empty": "Wählen Sie mindestens einen Punkt aus, der abgedeckt werden soll.",
-    "populate_scope_heading": "Was dieser Durchlauf abdeckt"
+    "populate_scope_heading": "Was dieser Durchlauf abdeckt",
+    "track_unpaced": "Kein Tempo festgelegt",
+    "stat_unpaced": "Kein Tempo festgelegt",
+    "stat_unpaced_hint": "noch nicht steuerbar",
+    "pace_unpaced": "Gemessen, aber ohne Zieldatum gibt es nichts, wovon man zurückfallen könnte. Fügen Sie eines hinzu, damit das System steuern kann.",
+    "pace_unpaced_no_target": "Gemessen, aber es ist kein Ziel gesetzt, also gibt es noch nichts, worauf hingesteuert werden kann.",
+    "headline_count": "{count} Leitmetriken"
   },
   "deliberation": {
     "agenda": "Tagesordnung",

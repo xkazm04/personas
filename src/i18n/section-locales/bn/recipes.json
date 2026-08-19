@@ -121,5 +121,8 @@
   "yes": "হ্যাঁ",
   "no": "না",
   "delete_confirm_question": "{name} মুছে দেবেন?",
-  "tag_input_placeholder": "ট্যাগ লিখুন এবং Enter চাপুন..."
+  "tag_input_placeholder": "ট্যাগ লিখুন এবং Enter চাপুন...",
+  "outcome_breakdown": "মোট {runs} রান · {completed} সম্পন্ন · {failed} ব্যর্থ",
+  "outcome_of_runs": "{terminal}-এর মধ্যে মূল্য দিয়েছে",
+  "outcome_pending": "রান, এখনও কোনও ফলাফল নেই"
 }

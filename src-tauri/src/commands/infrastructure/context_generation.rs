@@ -1069,6 +1069,27 @@ fn stale_subtree_contexts(
     (stale, straddling)
 }
 
+/// A full rescan DELETEs every unpinned context and rebuilds the map from one
+/// LLM run's output. When that run emits far fewer contexts than the map it
+/// replaced, the result is not a fresher map — it is a poorer one, and the
+/// richer map is already gone. This is the guard: it decides whether a rescan's
+/// output is a legitimate re-shaping or a coverage collapse.
+///
+/// Pure so it is testable without a scan. Deliberately tolerant — maps
+/// legitimately shrink when contexts are merged or a tree is deleted — so it
+/// fires only on a collapse, not on ordinary churn. Below `FLOOR` the ratio is
+/// meaningless (a 3-context map dropping to 1 is noise), so small maps are
+/// never guarded.
+const COVERAGE_REGRESSION_FLOOR: usize = 20;
+const COVERAGE_REGRESSION_RATIO: f64 = 0.6;
+
+fn is_coverage_regression(prior: usize, written: usize) -> bool {
+    if prior < COVERAGE_REGRESSION_FLOOR {
+        return false;
+    }
+    (written as f64) < (prior as f64) * COVERAGE_REGRESSION_RATIO
+}
+
 async fn run_context_generation(
     app: &tauri::AppHandle,
     scan_id: &str,
@@ -1154,7 +1175,21 @@ async fn run_context_generation(
                     scan_id,
                     "[Milestone] Delta mode requested but cache is empty — running full scan and seeding cache.".to_string(),
                 );
-                None
+                // A delta rescan is the NON-DESTRUCTIVE mode: it never deletes a
+                // context. Silently escalating it to a full rescan hands the
+                // caller the exact opposite of what it asked for, and a full
+                // rescan DELETEs every unpinned context and recreates only what
+                // this one LLM run happens to emit. That is how a 117-context
+                // map became 43. Refuse instead: the caller can ask for a full
+                // scan explicitly, having been told what it costs. First scans
+                // are unaffected (`is_rescan` is false, so we never get here).
+                return Err(AppError::Validation(format!(
+                    "Delta scan requested for '{project_name}' but no file-hash cache exists, \
+                     so a delta is impossible. Refusing to silently run a FULL rescan, which \
+                     deletes every unpinned context and rebuilds the map from this run's output \
+                     alone. Re-request with delta_mode=false to accept that, or pin the contexts \
+                     worth keeping first."
+                )));
             }
         }
     } else {
@@ -1293,6 +1328,17 @@ async fn run_context_generation(
     // shared across scopes by design.
     let needs_lazy_clear = is_rescan && delta_for_prompt.is_none() && subtree.is_none();
     let mut map_cleared = false;
+    // Snapshot the map this rescan is about to replace. Pinning already protects
+    // hand-curated contexts, but nobody pins 117 of them, so in practice the
+    // whole map is unprotected. Captured BEFORE the stream loop because the lazy
+    // clear can fire from either of two branches inside it, and cheap: a few
+    // hundred rows held for the duration of one scan. See
+    // `is_coverage_regression` for what it is used for.
+    let pre_scan_contexts: Vec<crate::db::models::DevContext> = if needs_lazy_clear {
+        repo::list_contexts_by_project(pool, project_id, None).unwrap_or_default()
+    } else {
+        Vec::new()
+    };
     let mut subtree_cleared = false;
     let mut subtree_stale_ids: Vec<String> = Vec::new();
 
@@ -1705,8 +1751,31 @@ async fn run_context_generation(
         prune_unresolvable_references(app, scan_id, pool, project_id, root_path, &written_context_ids)
             .await;
 
+    // Coverage guard: did this rescan replace the map with a materially poorer
+    // one? Runs BEFORE reconcile_links so a rollback is relinked, not the
+    // collapsed map.
+    let restored = guard_coverage_regression(
+        app,
+        scan_id,
+        pool,
+        project_id,
+        &pre_scan_contexts,
+        written_context_ids.len(),
+    );
+
     // Restore the use-case slice + context-scoped KPIs the rebuild detached.
     reconcile_links(app, scan_id, pool, project_id, &link_snapshot);
+    if restored {
+        // The map on disk still describes the pre-scan state, which is now the
+        // state we rolled back to, so leaving the artifacts untouched is correct.
+        return Err(AppError::Validation(format!(
+            "Rescan produced {} context(s) against the previous map's {} — a coverage collapse, \
+             not a re-shaping. The previous map has been restored and the on-disk artifacts left \
+             untouched. Re-run when the CLI is healthy, or scan a subtree at a time.",
+            written_context_ids.len(),
+            pre_scan_contexts.len()
+        )));
+    }
 
     // Ask the detector. A whole-tree scan rebuilds the map wholesale, which is
     // exactly when a reference can start naming nothing — and the audit that
@@ -1735,6 +1804,85 @@ async fn run_context_generation(
 /// Re-attach the links a full rescan detached, keyed by context name. Never
 /// fails a scan: a reconciliation error is reported on the stream and the map
 /// still publishes.
+/// Roll the map back when a full rescan collapsed its coverage.
+///
+/// Pinning was the existing protection and it is not enough: it only helps the
+/// contexts someone thought to pin, and nobody pins a 117-context map. This
+/// catches the case pinning misses — the rescan ran, emitted far less than the
+/// map it replaced, and the richer map is already deleted.
+///
+/// Returns whether a rollback happened. Best-effort per row: a context that
+/// fails to re-create is reported and the rest still land, because a partial
+/// restore beats the collapsed map. The restored rows get FRESH ids (the
+/// originals are gone), which is exactly what a rescan does anyway, so the
+/// caller's `reconcile_links` reattaches use-cases and KPIs by name as usual.
+fn guard_coverage_regression(
+    app: &tauri::AppHandle,
+    scan_id: &str,
+    pool: &crate::db::DbPool,
+    project_id: &str,
+    pre_scan_contexts: &[crate::db::models::DevContext],
+    written: usize,
+) -> bool {
+    let prior = pre_scan_contexts.len();
+    if !is_coverage_regression(prior, written) {
+        return false;
+    }
+    CONTEXT_GEN_JOBS.emit_line(
+        app,
+        scan_id,
+        format!(
+            "[Warning] Coverage collapse: this rescan wrote {written} context(s) where the map it \
+             replaced had {prior}. Rolling the previous map back in."
+        ),
+    );
+    // Clear what this run wrote first, or the restore lands on top of it and the
+    // map ends up holding both shapes.
+    let _ = repo::clear_project_context_map(pool, project_id);
+    let mut restored = 0usize;
+    let mut failed = 0usize;
+    for c in pre_scan_contexts {
+        // Pinned contexts are never deleted by `clear_project_context_map`, so
+        // they are still in the table. Re-creating them here would give the map
+        // two rows for one context.
+        if c.pinned {
+            continue;
+        }
+        match repo::create_context(
+            pool,
+            project_id,
+            &c.name,
+            c.group_id.as_deref(),
+            c.description.as_deref(),
+            Some(c.file_paths.as_str()),
+            c.entry_points.as_deref(),
+            c.db_tables.as_deref(),
+            c.keywords.as_deref(),
+            c.api_surface.as_deref(),
+            c.cross_refs.as_deref(),
+            c.tech_stack.as_deref(),
+            c.category.as_deref(),
+            c.business_feature.as_deref(),
+        ) {
+            Ok(_) => restored += 1,
+            Err(_) => failed += 1,
+        }
+    }
+    CONTEXT_GEN_JOBS.emit_line(
+        app,
+        scan_id,
+        format!(
+            "[Milestone] Rollback complete: {restored} context(s) restored{}.",
+            if failed > 0 {
+                format!(", {failed} could not be re-created")
+            } else {
+                String::new()
+            }
+        ),
+    );
+    true
+}
+
 fn reconcile_links(
     app: &tauri::AppHandle,
     scan_id: &str,
@@ -2275,6 +2423,32 @@ fn write_harness_docs(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // The guard that turns "a full rescan silently replaced a 117-context map
+    // with 43" into a rollback. It has to fire on a collapse without firing on
+    // the ordinary churn of merging contexts, or operators will learn to ignore
+    // it — which is worse than not having it.
+    #[test]
+    fn coverage_regression_fires_only_on_a_collapse() {
+        // The case this exists for: Adamant, 117 -> 43.
+        assert!(is_coverage_regression(117, 43));
+        // Ordinary re-shaping must NOT trip it.
+        assert!(!is_coverage_regression(117, 110));
+        assert!(!is_coverage_regression(117, 71)); // 60.7%, just inside
+        assert!(is_coverage_regression(117, 70)); // 59.8%, just outside
+        // Growth is never a regression.
+        assert!(!is_coverage_regression(50, 90));
+        assert!(!is_coverage_regression(50, 50));
+        // Small maps are unguarded: the ratio is noise down there, and a young
+        // project legitimately swings from 3 contexts to 1.
+        assert!(!is_coverage_regression(19, 1));
+        assert!(!is_coverage_regression(0, 0));
+        // At the floor the guard switches on.
+        assert!(is_coverage_regression(20, 5));
+        // A scan that emitted nothing against a real map is the worst case and
+        // must always trip.
+        assert!(is_coverage_regression(285, 0));
+    }
 
     // `is_mappable_path` is the whole gate between "the model proposed a context"
     // and "that context reaches the database". It had no tests, and a too-narrow

@@ -12470,7 +12470,10 @@
     "yes": "はい",
     "no": "いいえ",
     "delete_confirm_question": "{name}を削除しますか？",
-    "tag_input_placeholder": "タグを入力してEnterを押してください..."
+    "tag_input_placeholder": "タグを入力してEnterを押してください...",
+    "outcome_breakdown": "合計 {runs} 回実行 · {completed} 件完了 · {failed} 件失敗",
+    "outcome_of_runs": "{terminal} 件中で成果あり",
+    "outcome_pending": "回実行、まだ結果なし"
   },
   "execution_status": {
     "completed": "完了",
@@ -15683,7 +15686,14 @@
       "action_label_apply_pattern": "リポジトリに採用済みパターンを適用",
       "action_label_evaluate_pattern": "リポジトリのパターン遵守を検証",
       "action_label_run_pattern_harvest": "リポジトリからプラクティスを収集",
-      "action_label_skill_sync": "スキルをプロジェクト間で同期"
+      "action_label_skill_sync": "スキルをプロジェクト間で同期",
+      "global_hotkey_active": "パソコンのどこからでも使えます",
+      "global_hotkey_desc": "Personas のウィンドウが前面になくても、他のアプリを使いながら音声で Athena に話しかけられます。",
+      "global_hotkey_disable": "システム全体のショートカットを無効にする",
+      "global_hotkey_enable": "システム全体のショートカットを有効にする",
+      "global_hotkey_failed": "そのショートカットは他のアプリが使用中のため、有効にできませんでした。",
+      "global_hotkey_in_app_only": "Personas が前面にあるときのみ使えます",
+      "global_hotkey_title": "どこからでも話しかける"
     },
     "artist_gallery": {
       "loading_viewer": "ビューアを読み込み中…",
@@ -19336,7 +19346,13 @@
     "populate_lane_simulation": "シミュレートされたKPIデータ",
     "populate_lane_simulation_detail": "まだリリースされていない製品向け: 機能を代表的なユーザーとして歩かせて採用されるKPIを推定し、比較可能な製品から目標値を調査します。最も時間のかかるステップです。",
     "populate_scope_empty": "カバーする項目を少なくとも1つ選択してください。",
-    "populate_scope_heading": "この実行でカバーする内容"
+    "populate_scope_heading": "この実行でカバーする内容",
+    "track_unpaced": "ペース未設定",
+    "stat_unpaced": "ペース未設定",
+    "stat_unpaced_hint": "まだ制御できません",
+    "pace_unpaced": "測定済みですが、目標期日がないため遅れを判定できません。日付を設定するとシステムが制御できます。",
+    "pace_unpaced_no_target": "測定済みですが、目標が設定されていないため、まだ目指す先がありません。",
+    "headline_count": "主要 {count} 件"
   },
   "deliberation": {
     "agenda": "議題",

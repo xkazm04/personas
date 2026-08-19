@@ -16,15 +16,20 @@ fn entry(id: &str) -> Option<(&'static str, &'static [&'static str])> {
 /// Build a Claude Code mcp-config (`{"mcpServers": {...}}`) for the enabled ids.
 /// Returns `None` when nothing is enabled / recognized.
 pub fn build_config(enabled: &[String]) -> Option<serde_json::Value> {
-    let mut servers = serde_json::Map::new();
-    for id in enabled {
-        if let Some((cmd, args)) = entry(id) {
-            servers.insert(id.clone(), serde_json::json!({ "command": cmd, "args": args }));
-        }
-    }
+    let servers: Vec<_> = enabled
+        .iter()
+        .filter_map(|id| {
+            entry(id).map(|(cmd, args)| {
+                (
+                    id.clone(),
+                    personas_core::mcp_config::McpServer::stdio(cmd, args.iter().copied()),
+                )
+            })
+        })
+        .collect();
     if servers.is_empty() {
         None
     } else {
-        Some(serde_json::json!({ "mcpServers": servers }))
+        Some(personas_core::mcp_config::mcp_config_json(servers))
     }
 }

@@ -340,6 +340,53 @@ fn build_environment_section(db: &crate::db::DbPool) -> HealthCheckSection {
         remediation,
     });
 
+    // 3. Opt-in engine gates. These are read from the HOST process environment
+    //    (not per-execution env), so they can only be set before Personas
+    //    launches — there is no in-app toggle, and nothing in the app sets
+    //    them. That makes them invisible: the shipped
+    //    `self-evolving-codebase-memory` template's whole session-capture
+    //    capability depends on the hooks sidecar, and with the gate unset it
+    //    adopts cleanly and then does nothing, forever. Surfacing them as Info
+    //    rather than Warn — off is a legitimate default, silence is not.
+    for (id, label, var, effect) in [
+        (
+            "gate_hooks_sidecar",
+            "Hooks Sidecar",
+            personas_engine::hooks_sidecar::SIDECAR_ENV,
+            "Claude Code session transcripts are not captured, so personas that \
+             mine sessions for memories (for example the Self-Evolving Codebase \
+             Memory template) will run and produce nothing.",
+        ),
+        (
+            "gate_claude_md_projection",
+            "Persona Memory Projection",
+            personas_engine::claude_md_projection::PROJECTION_ENV,
+            "Persona memories reach the model through the system prompt only, so \
+             they are lost when Claude Code compacts a long session.",
+        ),
+    ] {
+        let enabled = std::env::var(var).ok().as_deref() == Some("1");
+        items.push(HealthCheckItem {
+            id: id.into(),
+            label: label.into(),
+            status: HealthCheckStatus::Ok,
+            detail: Some(if enabled {
+                format!("Enabled ({var}=1)")
+            } else {
+                format!("Disabled — {var} is not set")
+            }),
+            installable: false,
+            remediation: if enabled {
+                None
+            } else {
+                Some(format!(
+                    "{effect} To enable, set {var}=1 in the environment Personas is \
+                     launched from and restart the app."
+                ))
+            },
+        });
+    }
+
     HealthCheckSection {
         id: "environment".into(),
         label: "Environment".into(),

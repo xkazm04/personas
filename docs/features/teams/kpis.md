@@ -18,9 +18,12 @@ the *next measurement* decides.
 proposals badge). Two views behind a segmented switch:
 
 - **Dashboard** — active KPIs as cards: current vs target, direction, pace
-  (on-track / off-track / met / unmeasured, computed by `kpiMath.ts` — the
-  same pace rule the P4 derivation and §10 cert use), measurement freshness,
-  and a progress bar. Click opens the **detail drawer** (measurement history +
+  (on-track / off-track / met / unmeasured / **unpaced**, computed by
+  `kpiMath.ts` — the same pace rule the P4 derivation and §10 cert use),
+  measurement freshness, and a progress bar. Rows are ordered by **tier**
+  (north star → primary → supporting) before name, so the headline metrics
+  read first; each project card counts its headline KPIs and stars an
+  off-track one in the alert band. Click opens the **detail drawer** (measurement history +
   sparkline, manual value entry, pause/resume, archive). The drawer also carries
   a **"What the system is doing"** panel (`KpiSteeringPanel`): the in-flight
   derived goal (status, progress, advancing team, ETA) plus the **outcome
@@ -152,6 +155,47 @@ keep the two in sync):
 A met target wins over every threshold/pace verdict. `kpiOffTrackReason()`
 exposes *which* of the three fired, so the UI can show the cause (and a goal's
 KPI cross-reference can explain why it exists).
+
+### "Unpaced" — the KPIs the system cannot steer (2026-08)
+
+None of the three triggers can fire without inputs. `kpi_is_off_track` returns
+false at `:58` when there is no `target_value` and at `:75` when there is no
+`target_date` + `baseline_value` — so a KPI missing either is **invisible to
+goal derivation**, and autopilot's Suggest/Full tiers do nothing for it no
+matter how badly it is doing.
+
+The dashboard used to count exactly those KPIs in the green **"On track"**
+tile, because `kpiTrack` fell through to `on-track` for "not provably
+lagging". That read as an all-clear for the one set of KPIs the loop could
+not touch. The not-off-track side is now split:
+
+| verdict | means |
+| --- | --- |
+| `on-track` | a verdict was computed and came back fine — pace math ran, or a calibrated `crit_at` is drawn and clear |
+| `unpaced` | no verdict is computable: no target, or no `target_date` + `baseline` and no `crit_at` |
+
+`unpaced` shares the muted no-verdict tone with `unmeasured` and gets its own
+tile (shown only when non-zero). **The off-track boundary is unchanged**, so
+the `kpiMath.ts` ↔ `kpi_derivation.rs` mirror still holds exactly and no
+derivation behavior moved.
+
+Both paths that produced target-less KPIs were closed in the same pass: the
+Factory **Add-KPI modal** had no target-date field at all, and the **scan
+prompt** never mentioned `target_date` in its rules while its emit template
+showed `null` — so it now carries a required-target-date rule and a concrete
+date (five weeks out) in the template.
+
+### Tier is assigned, not just stored (2026-08)
+
+`dev_kpis.tier` (`north_star` / `primary` / `supporting`) orders
+`find_derivation_candidates`, but the scan never emitted it — `KpiProposal`
+had no such field, so every scan-created KPI took the column default
+`supporting` and that ORDER BY was a no-op for them (and the Factory's
+tier-weighted health score was uniformly weighted). The scan prompt now asks
+for a tier, capped at **one north star per scan**; only `north_star` /
+`primary` are written back, so a malformed value stays at the default. On the
+dashboard an unknown or absent tier sorts as supporting rather than dropping
+the row.
 
 ## Autopilot (per-project)
 

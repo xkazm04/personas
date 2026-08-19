@@ -73,12 +73,15 @@ pub fn install_mcp_config(target: &str) {
         }
     };
 
-    let server_config = serde_json::json!({
-        "command": binary_path,
-        "args": ["--db-path", db_path.to_string_lossy()],
-        "env": { "PERSONAS_MCP_TOKEN": token },
-        "transport": "stdio"
-    });
+    // Note: this entry used to carry `"transport": "stdio"` — a key no MCP or
+    // Agent Plugins schema defines, so every reader ignored it. The typed
+    // builder emits the `"type"` discriminator these clients actually read.
+    let server_config = personas_core::mcp_config::McpServer::stdio(
+        binary_path,
+        ["--db-path".to_string(), db_path.to_string_lossy().into_owned()],
+    )
+    .with_env("PERSONAS_MCP_TOKEN", token)
+    .to_json();
 
     // Read existing config or create new
     let mut config: serde_json::Value = if config_path.exists() {

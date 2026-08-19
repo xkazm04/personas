@@ -88,6 +88,7 @@ pub fn router(app: AppHandle) -> Router {
         .route("/prune-nonsource-contexts", post(prune_nonsource_contexts))
         .route("/merge-context-groups", post(merge_context_groups))
         .route("/export-context-map", post(export_context_map))
+        .route("/export-skill-registry", post(export_skill_registry))
         .route("/consolidate-contexts", post(consolidate_contexts_route))
         .route("/repair-cross-refs", post(repair_cross_refs_route))
         .route("/use-cases/{project_id}", get(list_use_cases))
@@ -689,6 +690,41 @@ async fn export_context_map(
     Ok(Json(
         serde_json::json!({ "project_id": b.project_id, "root_path": root, "contexts": contexts }),
     ))
+}
+
+/// Write `.personas/skill-registry.json` from the CURRENT database and
+/// filesystem state, without running a scan.
+///
+/// The registry was only ever produced as a side effect of a context scan
+/// (`write_harness_docs`) or a skill install, so a project that simply wanted
+/// the offline sync surface had to pay for a full rescan to get it — and a full
+/// rescan rebuilds the whole context map, which is both expensive and, until
+/// the coverage guard landed, capable of replacing a good map with a worse one.
+/// Nothing about the registry needs a scan: it reads skill directories off disk
+/// and usage counts from the DB. This exposes the existing on-demand exporter
+/// (`dev_tools_export_skill_registry`) to the headless bridge so a terminal can
+/// refresh it directly.
+async fn export_skill_registry(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<ExportSkillRegistryBody>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let project = require_project(&s, &b.project_id)?;
+    let count = crate::commands::infrastructure::skill_registry_export::write_skill_registry(
+        &db(&s),
+        &b.project_id,
+        &project.root_path,
+    )
+    .map_err(err)?;
+    Ok(Json(serde_json::json!({
+        "project_id": b.project_id,
+        "root_path": project.root_path,
+        "skills": count,
+    })))
+}
+
+#[derive(Deserialize)]
+struct ExportSkillRegistryBody {
+    project_id: String,
 }
 
 #[derive(Deserialize)]

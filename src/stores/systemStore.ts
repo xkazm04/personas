@@ -109,6 +109,7 @@ export const useSystemStore = create<SystemStore>()(
         companionOrbPos: state.companionOrbPos,
         companionSttEngine: state.companionSttEngine,
         companionSttModelId: state.companionSttModelId,
+        companionGlobalHotkeyEnabled: state.companionGlobalHotkeyEnabled,
         companionSoundEnabled: state.companionSoundEnabled,
         companionVoiceEnabled: state.companionVoiceEnabled,
         companionVoiceEngine: state.companionVoiceEngine,

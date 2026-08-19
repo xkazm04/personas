@@ -575,7 +575,11 @@ pub fn run() {
 
         builder = builder
             .plugin(tauri_plugin_window_state::Builder::new().build())
-            .plugin(tauri_plugin_updater::Builder::new().build());
+            .plugin(tauri_plugin_updater::Builder::new().build())
+            // No accelerator is bound here — the binding is a persisted user
+            // setting and the frontend pushes it down via
+            // `companion_set_voice_hotkey` once the store hydrates.
+            .plugin(tauri_plugin_global_shortcut::Builder::new().build());
     }
 
     // Generate IPC session token for privileged command validation
@@ -2945,6 +2949,8 @@ pub fn run() {
             commands::companion::stt::companion_stt_download_model,
             commands::companion::stt::companion_stt_delete_model,
             commands::companion::stt::companion_stt_engine_status,
+            #[cfg(feature = "desktop")]
+            commands::companion::voice_hotkey::companion_set_voice_hotkey,
             commands::companion::stt::companion_stt_install_engine,
             commands::companion::consolidate::companion_run_consolidation,
             commands::companion::consolidate::companion_list_consolidation_runs,

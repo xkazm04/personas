@@ -11,6 +11,7 @@ import type { RecipeVersion } from "@/lib/bindings/RecipeVersion";
 import type { RecipeMatch } from "@/lib/bindings/RecipeMatch";
 import type { RecipeSuggestionEventType } from "@/lib/bindings/RecipeSuggestionEventType";
 import type { RecipeSuggestionStats } from "@/lib/bindings/RecipeSuggestionStats";
+import type { RecipeOutcomeTally } from "@/lib/bindings/RecipeOutcomeTally";
 
 export interface CancelResult {
   was_running: boolean;
@@ -158,6 +159,21 @@ export const logRecipeSuggestionEvent = (
  */
 export const getRecipeSuggestionStats = (window: number | null = null) =>
   invoke<RecipeSuggestionStats>("get_recipe_suggestion_stats", { window });
+
+/**
+ * Run outcomes per recipe, ordered by run count desc (backend default limit
+ * 100, clamped 1..500).
+ *
+ * Recipes that have never been run are **absent** — this reports outcomes, and
+ * a recipe with no runs has none. Read `terminal` as the denominator (queued
+ * and running rows are not outcomes yet) and `value_delivered` as the strict
+ * bar: runs whose persona self-assessed that it actually delivered its job.
+ * The backend deliberately returns raw counts rather than a pre-computed rate
+ * — what belongs in a success-rate denominator is a product judgement, so do
+ * not bake one in here either.
+ */
+export const getRecipeOutcomeTallies = (limit: number | null = null) =>
+  invoke<RecipeOutcomeTally[]>("get_recipe_outcome_tallies", { limit });
 
 // ============================================================================
 // Use Case <-> Recipe Connection

@@ -692,6 +692,28 @@ export async function companionSttEngineStatus(): Promise<SttEngineStatus> {
   return invoke<SttEngineStatus>('companion_stt_engine_status');
 }
 
+/** Accelerator bound to Athena's OS-level push-to-talk. Matches the in-app
+ *  chord handled in `AthenaOrbLayer` so the same keys work in both scopes. */
+export const COMPANION_VOICE_HOTKEY = 'CmdOrCtrl+Shift+A';
+
+/** Tauri event emitted when the OS-level push-to-talk accelerator fires. */
+export const COMPANION_HOTKEY_EVENT = 'companion://hotkey';
+
+/**
+ * Bind (or with `null`, unbind) the OS-level push-to-talk accelerator, so
+ * voice reaches Athena while the user is focused in another application.
+ *
+ * Resolves `true` when a binding is active. Rejects when the OS refuses the
+ * accelerator — most often because another application already owns it — so
+ * callers should surface the failure rather than leave the user with a key
+ * they believe is bound.
+ */
+export async function companionSetVoiceHotkey(
+  accelerator: string | null,
+): Promise<boolean> {
+  return invoke<boolean>('companion_set_voice_hotkey', { accelerator });
+}
+
 // ── Sensory toggles (Phase 2 v2 — desktop-awareness UI) ─────────────────
 
 export type SensorySource =

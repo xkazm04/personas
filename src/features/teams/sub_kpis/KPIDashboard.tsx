@@ -19,7 +19,7 @@ import { LazyChart } from '@/features/shared/charts/RechartsWrapper';
 import { paceDescriptor, kpiOffTrackReason, type PaceDescriptor } from './kpiMath';
 import { TRACK_COLOR } from './kpiMeta';
 import { AutopilotControl } from './AutopilotControl';
-import { distancePct, type DistanceGroup, type DistanceRow } from './kpiDistance';
+import { distancePct, tierRank, type DistanceGroup, type DistanceRow } from './kpiDistance';
 import { KpiSignalBoard } from './KpiSignalBoard';
 import { KpiSimControl } from './KpiSimControl';
 import { KpiSimSuggestions } from './KpiSimSuggestions';
@@ -58,6 +58,14 @@ function normValue(kpi: DevKpi, v: number): number | null {
  * which is a different (and false) claim than "no reading yet" —
  * kpiConvergence.ts documents the same 'unmeasured' exclusion rule for the
  * convergence view.
+ *
+ * Rows sort by TIER first (north_star → primary → supporting), then by name.
+ * `dev_kpis.tier` already ranks derivation precedence in
+ * `kpi_derivation.rs::find_derivation_candidates`, but this dashboard used to
+ * ignore it entirely and render every KPI as a peer — so the surface that is
+ * supposed to say "what matters here" was the one place the ranking was
+ * invisible. Recharts draws bars in data order, so tier-first order puts the
+ * headline metrics at the top of each project's card.
  */
 export function buildProjectGroups(
   paced: Array<{ kpi: DevKpi; d: PaceDescriptor }>,
@@ -73,7 +81,9 @@ export function buildProjectGroups(
     entry.rows.push(buildRow(kpi, d));
   }
   const arr = [...groups.values()];
-  for (const e of arr) e.rows.sort((a, b) => a.name.localeCompare(b.name));
+  for (const e of arr) {
+    e.rows.sort((a, b) => tierRank(a.tier) - tierRank(b.tier) || a.name.localeCompare(b.name));
+  }
   arr.sort((a, b) => a.label.localeCompare(b.label));
   return arr;
 }
@@ -123,6 +133,13 @@ export function KPIDashboard({
   const offTrack = paced.filter((p) => p.d.track === 'off-track');
   const onTrack = paced.filter((p) => p.d.track === 'on-track').length;
   const met = paced.filter((p) => p.d.track === 'met').length;
+  // Measured, but no verdict is computable (no target, or no target_date +
+  // baseline and no critical line). These used to be counted as "On track",
+  // which read as a green all-clear for KPIs goal derivation cannot even see.
+  // Surfaced as their own number so the gap is visible instead of flattering.
+  const unpaced = paced.filter((p) => p.d.track === 'unpaced').length;
+  // Literal class strings so Tailwind's JIT emits both (see Design.md).
+  const statCols = unpaced > 0 ? 'md:grid-cols-5' : 'md:grid-cols-4';
 
   // --- chart models -----------------------------------------------------
   /** One distance row per KPI — the shared model behind the grouping. */
@@ -140,6 +157,7 @@ export function KPIDashboard({
       track: d.track,
       reason: kpiOffTrackReason(kpi),
       category: kpi.category,
+      tier: kpi.tier,
     }),
     [projectName],
   );
@@ -276,7 +294,7 @@ export function KPIDashboard({
           (AnimatedCounter is a no-op when the target hasn't changed). The
           section itself ripples in once, on first data (mount of this
           branch) — a poll/refresh never replays it. */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-fade-in" style={{ animationDelay: '0ms' }}>
+      <div className={`grid grid-cols-2 ${statCols} gap-3 animate-fade-in`} style={{ animationDelay: '0ms' }}>
         <StatCard label={t.kpis.stat_active} value={<AnimatedCounter value={filtered.length} />} />
         <StatCard label={t.kpis.stat_on_track} value={<AnimatedCounter value={onTrack} />} tone="success" />
         <StatCard
@@ -285,6 +303,14 @@ export function KPIDashboard({
           tone={offTrack.length ? 'danger' : 'neutral'}
         />
         <StatCard label={t.kpis.stat_met} value={<AnimatedCounter value={met} />} tone={met ? 'success' : 'neutral'} />
+        {unpaced > 0 && (
+          <StatCard
+            label={t.kpis.stat_unpaced}
+            value={<AnimatedCounter value={unpaced} />}
+            tone="neutral"
+            hint={t.kpis.stat_unpaced_hint}
+          />
+        )}
       </div>
 
       {/* Distance to target, grouped by project, with each project's off-track

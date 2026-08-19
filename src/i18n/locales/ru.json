@@ -12470,7 +12470,10 @@
     "yes": "Да",
     "no": "Нет",
     "delete_confirm_question": "Удалить {name}?",
-    "tag_input_placeholder": "Введите тег и нажмите Enter..."
+    "tag_input_placeholder": "Введите тег и нажмите Enter...",
+    "outcome_breakdown": "Всего запусков: {runs} · завершено: {completed} · с ошибкой: {failed}",
+    "outcome_of_runs": "из {terminal} принесли результат",
+    "outcome_pending": "запусков, результатов пока нет"
   },
   "execution_status": {
     "completed": "Завершено",
@@ -15683,7 +15686,14 @@
       "action_label_apply_pattern": "Применить принятые паттерны в репозитории",
       "action_label_evaluate_pattern": "Проверить соблюдение паттернов в репозитории",
       "action_label_run_pattern_harvest": "Собрать практики из репозитория",
-      "action_label_skill_sync": "Синхронизировать навык между проектами"
+      "action_label_skill_sync": "Синхронизировать навык между проектами",
+      "global_hotkey_active": "Работает в любом месте компьютера",
+      "global_hotkey_desc": "Обращайтесь к Athena голосом, даже когда активно другое приложение, а не только окно Personas.",
+      "global_hotkey_disable": "Отключить общесистемное сочетание клавиш",
+      "global_hotkey_enable": "Включить общесистемное сочетание клавиш",
+      "global_hotkey_failed": "Это сочетание клавиш уже занято другим приложением, поэтому включить его не удалось.",
+      "global_hotkey_in_app_only": "Работает, только когда Personas на переднем плане",
+      "global_hotkey_title": "Говорите откуда угодно"
     },
     "artist_gallery": {
       "loading_viewer": "Загрузка просмотрщика…",
@@ -19336,7 +19346,13 @@
     "populate_lane_simulation": "Смоделированные данные KPI",
     "populate_lane_simulation_detail": "Для продукта, который еще не выпущен: проходит по вашим функциям от лица типичных пользователей, чтобы оценить принятые показатели KPI, и исследует целевые значения у сопоставимых продуктов. Самый долгий этап.",
     "populate_scope_empty": "Выберите хотя бы один пункт для охвата.",
-    "populate_scope_heading": "Что охватит этот запуск"
+    "populate_scope_heading": "Что охватит этот запуск",
+    "track_unpaced": "Темп не задан",
+    "stat_unpaced": "Темп не задан",
+    "stat_unpaced_hint": "пока неуправляемо",
+    "pace_unpaced": "Измерено, но без целевой даты не от чего отставать. Добавьте её, чтобы система могла этим управлять.",
+    "pace_unpaced_no_target": "Измерено, но цель не задана, поэтому пока не к чему стремиться.",
+    "headline_count": "{count} ключевых"
   },
   "deliberation": {
     "agenda": "Повестка",

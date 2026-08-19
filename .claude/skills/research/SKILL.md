@@ -1,10 +1,10 @@
 ---
 name: research
+version: 1.4
 description: Extract actionable improvements for a project from external sources (video, blog, article, raw text). Scores ideas against the codebase, buckets into Code / Template / Credential, and persists findings to an Obsidian memory vault.
 argument-hint: "[source or question]"
 category: Maintenance
 memory: vault
-version: 1.0
 ---
 # Research
 
@@ -259,10 +259,52 @@ Rules for the cleanup:
 ### 2b. Other URL
 Use `WebFetch` with a prompt asking for the article body, stripped of nav/footer/ads.
 
+**A landing page is not the source.** When the URL is the front door of a multi-page site —
+a specification, a docs set, a standard, a product's documentation tree — the overview page
+is a marketing summary and the substance lives one level down (`/specification`, `/docs`,
+`/reference`, `/schema`). Fetch the substantive subpage(s) BEFORE applying the thinness
+check below, or a rich source gets rejected as thin. Run 2026-08-13 (agent-plugins.org) hit
+this: the overview returned ~250 words of positioning, while `/specification` carried the
+entire normative contract that produced both shipped findings. Budget the same way as
+Phase 2.5 — two or three focused fetches, not a crawl. A 404 on a guessed subpath is cheap;
+guess from the overview's own links rather than from convention.
+
+**An aggregator listing is not the source either — and the word floor will NOT catch it.**
+Distinct trap from the landing page above. Directory and marketplace sites that index
+artifacts hosted elsewhere (skills.sh, plugin/skill registries, awesome-lists, package
+pages, "SKILL.md viewers") render a *rewritten summary* of the artifact, often behind a
+"Show more" toggle that WebFetch cannot expand. What comes back is fluent, adequately
+long, and sails past the <300-word check — while being a paraphrase of the thing you were
+asked to evaluate. Every finding downstream would then be scored against prose the author
+never wrote.
+
+**When the source URL is an aggregator listing for a git-hosted artifact, resolve it to
+the repository before Phase 3.** The listing names the owner/repo; find the real path with
+one call rather than guessing:
+
+```bash
+gh api repos/<owner>/<repo>/git/trees/main?recursive=1 --jq '.tree[].path' | grep -i <artifact-slug>
+gh api repos/<owner>/<repo>/contents/<path> --jq '.content' | base64 -d > .research-cache/<slug>.md
+```
+
+Guessing the path costs a 404 (run 2026-08-13 assumed `skills/<name>/SKILL.md`; the file
+was at `plugins/business-analytics/skills/<name>/SKILL.md`). The tree listing is one call
+and is never wrong. **Fetch every file the artifact splits itself across** — that run's
+SKILL.md was 770 words and pointed at a `references/details.md` carrying another 1,241,
+including all three layout patterns and every worked example.
+
+Tells that a page is a listing rather than the artifact: an installs/stars counter, a
+"Repository:" field, a security-audit badge, a `<slug>` in the URL path that looks like
+`<owner>/<repo>/<artifact>`, or fetched text that describes the content in the third
+person ("The skill covers…", "the full content appears truncated"). Treat any of those as
+a hard signal to go to the repo. `.research-cache` cleanup (Phase 2a) applies to files
+fetched this way too.
+
 ### 2c. Raw text
 Use as-is.
 
-**Sanity check:** if the resulting text is <300 words, report it's too thin to harvest meaningful ideas and stop.
+**Sanity check:** if the resulting text is <300 words **after** the subpage pass above,
+report it's too thin to harvest meaningful ideas and stop.
 
 > **Source-type agnosticism confirmed.** Runs 1-5 used YouTube videos (Phase 2a); run 6 used a blog article (Phase 2b WebFetch). Both paths produced the same downstream shape — same frontmatter, same Phase 6 rules, same output formats. The skill is source-type agnostic; do not special-case downstream phases based on whether the source came from 2a, 2b, or 2c.
 
@@ -337,6 +379,43 @@ From the source text, extract 5-15 distinct ideas. Each idea must be:
 - Grounded in a specific quote or timestamp from the source
 - Standalone enough to be evaluated independently
 
+### Compare mode — read the source as a checklist to FAIL, not a menu to shop
+
+When the invocation frames the run as a comparison against an existing module
+("compare X with our implementation of Y", "does this skill help our design",
+"what does this have that we don't") — usually with an explicit *don't adopt it*
+— the default generative reading produces almost nothing. Against a mature
+module, "what could we take from this?" returns ideas already built, and the run
+drifts toward padding the finding count with things the catch table would have
+covered.
+
+**Invert the question. Go principle by principle through the source and ask
+"which of these do we FAIL?"** Extraction is then per-principle rather than
+per-idea: every Do/Don't, every checklist item, every troubleshooting entry
+becomes one candidate whose verdict is `catch` (we honor it, cite where),
+`fail` (a real finding), or `n/a` (different domain — say so, don't score it).
+
+Two things fall out of this that the generative reading misses:
+
+- **The findings come from the source's least glamorous material.** Run
+  2026-08-13 (kpi-dashboard-design vs the KPI module) drew both accepted
+  findings from a one-word checklist bullet ("Time-bound") and an ASCII layout
+  diagram — while the source's SQL, its dashboards and its Streamlit code, the
+  parts that *look* like the substance, were entirely inapplicable. A generative
+  reading gravitates to the code blocks and finds nothing.
+- **The catch table IS the deliverable, and must be stated as such up front.**
+  That run closed 2 findings against 13 catches (~1:6, catch-dominant even by
+  the listicle row's standard). Leading with "your module is ahead of this
+  source on 13 of 15 points, and here are the 2 it isn't" is the honest answer
+  to what was actually asked. Do not bury it under the findings.
+
+Where the source's advice is *worse* than what the repo already does, say so
+and keep the repo's shape — an outside checklist is not automatically the
+higher authority. That run declined the source's "cap the dashboard at 5-7
+KPIs" in favor of surfacing the ranking the schema already stored, because a
+cap hides KPIs while a ranking does not. Record the reasoning; a future run
+re-reading the same source should not have to re-litigate it.
+
 For each idea, capture:
 - `title` — short imperative phrase (<60 chars)
 - `summary` — 1-2 sentences
@@ -358,6 +437,8 @@ Different source types produce different finding profiles. **A "low" finding cou
 | **Product demo / competitor walkthrough** | **low + many catches** — 1-3 real findings, 5-10 "already existed" catches | Run 4 (Paperclip): 2 findings, **8 already-existed catches**. Product demos of competing systems are high signal for the host-first rule because every feature demonstrated is potentially "does personas have this?". Expect the catch count to exceed the finding count. |
 | **Philosophical / forward-looking article or video** | low — 1-2 findings, mostly discovery-brief territory | Run 5 (Karpathy LLM Wiki): 2 accepted findings + 7 already-existed (the skill's own prior iteration had already implemented the core insight). Philosophical sources often produce narrow deltas against existing implementations. |
 | **Product launch article** | low-medium — 1-3 findings including at least one scaffolding-shaped finding | Run 6 (Claude Managed Agents): 2 findings, one of which became a theoretical scaffolding handoff (Option C). Launch articles frequently describe gated/preview features that fit Option C. |
+| **Specification / standard / RFC** | **medium findings + many catches**, and the findings are unusually *actionable* | Run 2026-08-13 (Agent Plugins 1.0.0): 4 findings / 6 catches, 2 shipped same-session. A mature codebase has usually built a spec's **features** (those become catches) and skipped one of its **invariants** — so **read the MUST/SHOULD/MAY table before the feature tour.** The prize on this source type is a constraint the repo never checked, not a capability it lacks. Distinct from a product-launch article: a spec has no roadmap to defer to, so nothing lands in Option C. |
+| **Best-practices listicle** ("N rules for X") | **low findings + many catches**, ~1:3 | Run 2026-08-12 (12 Rules for Claude.md): 4 findings, **11 already-existed catches**. A listicle enumerates a canonical checklist, so against a mature repo most items resolve to catches and the value is the confirmation table plus two or three genuine deltas. Do NOT stretch for parity with the list's length — a 12-rule video is not a 12-finding run. Watch for the item the repo deliberately does the *opposite* of; that is a catch with a reason, not a gap (here: "always ask clarifying questions" versus a headless engine's act-autonomously directives). |
 | **Blog post / raw text** | varies widely | Phase 2b and 2c work the same as 2a downstream; the yield depends on content density, not transport. |
 
 **If the finding count feels low, check the source type first.** If the source is a product demo and you have 7+ catches, that's a successful run, not a failed one. Surface the catch count prominently in Phase 7 as the primary metric for low-finding runs.
@@ -443,7 +524,26 @@ If the finding's premise depends on catalog count = runtime count, **the finding
 
 When the finding spans multiple feature areas (e.g. an execution-runtime change that surfaces in Overview), read both relevant docs — the framing in one is rarely sufficient for cross-area work.
 
+**Step 3b — If the finding adds a cap, budget, limit, or guard, find the existing one first.** Grep for a cap already applied to the *same material* (`budget`, `MAX_`, `LIMIT`, `truncate`, `pack_`) before choosing a mechanism. Two distinct failures this catches: (a) the cap already exists one layer down and the finding is void; (b) the cap exists but made the **opposite** design decision, so your implementation would be locally reasonable and globally inconsistent. Run 2026-08-12 hit (b) — a per-entry *truncation* with an announce-the-cut marker was written and reverted after reading `pack_by_budget`, which **skips** over-budget entries on the documented grounds that "a partial memory is worse than none". Reusing the existing packer made the change smaller and removed a duplicated constant instead of adding a competing one. Truncate-vs-skip, drop-oldest-vs-drop-lowest-ranked, and fail-vs-degrade are all decisions a codebase may have already made once.
+
 **Step 4 — Drop if redundant.** If the gap doesn't actually exist (the codebase already does this), drop the idea.
+
+**Step 4b — Read backgrounded tool output even when you re-ran it scoped.** A grep that times out and gets backgrounded is usually slow *because it covered more ground*. Re-run it scoped to stay unblocked, but read the original when it lands: on run 2026-08-12 the wide version contained one reference the scoped re-run had missed, which turned a single-module finding into a documented three-instance pattern and then into a shipped-template consequence. A superseded background result is not redundant.
+
+**Step 4c — A capped grep proves presence, never absence.** Any claim of the form
+"the codebase does not have X" must come from an **uncapped** search — no `head -N`, no
+`| head`, no `head_limit` — or from a count (`grep -c`, `output_mode: "count"`). Ripgrep
+and grep emit in path order, not relevance order, so a cap silently truncates exactly the
+file whose name matches your concept: on run 2026-08-17 a `head -8` over `src-tauri/src/`
+reported "no tray icon" because `src/tray.rs` sorted *after* eight `commands/**` matches
+on the word "s**tray**". The run then told the user a subsystem was missing when it was
+present, with the same confidence as its load-bearing claims.
+
+This is the mirror of Step 4b and is easy to miss right after obeying it: that run read
+its backgrounded wide grep to corroborate one absence claim, then made a second absence
+claim one tool call later from a capped result without routing it through the same
+discipline. Presence claims are safe to cap — one hit is one hit. Absence claims are not.
+Before writing "zero hits" into Phase 7, re-run uncapped.
 
 **Step 5 — Grounding check (per finding, before Phase 7).** Every code finding that will be presented as `High` must carry at least one `file_path:line` citation produced by a Read or Grep **in this session** — the line that proves the gap exists (or the host surface the change attaches to). If you can't produce that citation within budget, downgrade to `Medium` + `unverified` per the Phase 4 scoring-honesty rule; don't fabricate an anchor from the context map's file list.
 
@@ -714,7 +814,17 @@ If the user types `skip`, jump to 10c.
 
 ### 10b. Append to Lessons
 
-Write/append to `C:/Users/kazda/Documents/Obsidian/personas/Lessons/{YYYY-MM-DD}-research.md` (Edit-append, never Write-replace — shared-by-date file, see the 2026-04-14 iteration-log entry):
+Write/append to `C:/Users/kazda/Documents/Obsidian/personas/Lessons/{YYYY-MM-DD}-research.md` (Edit-append, never Write-replace — shared-by-date file, see the 2026-04-14 iteration-log entry).
+
+**Write it LATE, and re-read before the Phase 11 summary.** Following the Edit-append rule
+protects other sessions from you; it does not protect you from them. On 2026-08-13 a
+concurrent session `Write`-replaced this file mid-run and erased a block that had been
+correctly Edit-appended minutes earlier. Recovery was only possible because the loss
+surfaced in the same turn and the content was still in context. Two mitigations, both
+cheap: (a) write this block as late in the run as it can go, so the exposure window is
+short; (b) before printing the Phase 11 summary, re-read the Lessons file and confirm your
+block is still present — restore it by Edit-append (never Write, which would repeat the
+offense in the other direction) if it is gone.
 ```markdown
 ## Run: {timestamp} — {source title}
 

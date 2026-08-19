@@ -643,15 +643,10 @@ async fn run_creative_cli(
     // -- MCP config: wire up Blender MCP server so the CLI has real tools --
     // Keep the temp file alive for the entire function scope.
     let _mcp_config_file: Option<tempfile::NamedTempFile> = if has_blender {
-        let mcp_config = json!({
-            "mcpServers": {
-                "blender": {
-                    "command": "uvx",
-                    "args": ["blender-mcp"],
-                    "type": "stdio"
-                }
-            }
-        });
+        let mcp_config = personas_core::mcp_config::mcp_config_json([(
+            "blender",
+            personas_core::mcp_config::McpServer::stdio("uvx", ["blender-mcp"]),
+        )]);
         let mut tmp = tempfile::NamedTempFile::new().map_err(|e| {
             AppError::Internal(format!("Failed to create MCP config temp file: {e}"))
         })?;

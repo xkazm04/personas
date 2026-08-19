@@ -103,6 +103,17 @@ export function AddKpiModal({
               <Label htmlFor="kpi-target">Target{optional}</Label>
               <input id="kpi-target" value={k.target} onChange={(e) => k.setTarget(e.target.value)} inputMode="decimal" className={INPUT} />
             </div>
+            {/* Without a target date there is no pace to lag against, so the KPI
+                can never go off-track and goal derivation never sees it
+                (`kpi_derivation.rs:75`). Optional, but the modal says why. */}
+            <div>
+              <Label htmlFor="kpi-target-date">Target date{optional}</Label>
+              <input id="kpi-target-date" type="date" value={k.targetDate} onChange={(e) => k.setTargetDate(e.target.value)} className={INPUT} />
+            </div>
+            <p className="col-span-3 typo-caption text-foreground">
+              Without a target date this KPI has no pace to fall behind, so the system will never
+              derive work from it. Leave it empty only if you plan to draw a critical line instead.
+            </p>
           </div>
 
           {/* Hand off to Athena for a guided conversational setup. */}

@@ -2938,7 +2938,14 @@
     "action_label_apply_pattern": "Aplicar patrones adoptados en un repositorio",
     "action_label_evaluate_pattern": "Verificar el cumplimiento de patrones en un repositorio",
     "action_label_run_pattern_harvest": "Extraer prácticas de un repositorio",
-    "action_label_skill_sync": "Sincronizar una skill entre proyectos"
+    "action_label_skill_sync": "Sincronizar una skill entre proyectos",
+    "global_hotkey_active": "Funciona en cualquier parte del equipo",
+    "global_hotkey_desc": "Habla con Athena por voz aunque otra app esté en primer plano, no solo con la ventana de Personas delante.",
+    "global_hotkey_disable": "Desactivar el atajo de todo el sistema",
+    "global_hotkey_enable": "Activar el atajo de todo el sistema",
+    "global_hotkey_failed": "Otra aplicación ya usa ese atajo, así que no se pudo activar.",
+    "global_hotkey_in_app_only": "Solo funciona con Personas en primer plano",
+    "global_hotkey_title": "Habla desde donde estés"
   },
   "artist_gallery": {
     "loading_viewer": "Cargando visor…",

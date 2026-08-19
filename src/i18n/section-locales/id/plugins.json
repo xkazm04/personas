@@ -2938,7 +2938,14 @@
     "action_label_apply_pattern": "Terapkan pola yang diadopsi di sebuah repo",
     "action_label_evaluate_pattern": "Verifikasi kepatuhan pola di sebuah repo",
     "action_label_run_pattern_harvest": "Panen praktik dari sebuah repo",
-    "action_label_skill_sync": "Sinkronkan skill antar proyek"
+    "action_label_skill_sync": "Sinkronkan skill antar proyek",
+    "global_hotkey_active": "Berfungsi di mana saja di komputer Anda",
+    "global_hotkey_desc": "Bicara dengan Athena lewat suara meski aplikasi lain sedang aktif, bukan hanya saat jendela Personas di depan.",
+    "global_hotkey_disable": "Nonaktifkan pintasan seluruh sistem",
+    "global_hotkey_enable": "Aktifkan pintasan seluruh sistem",
+    "global_hotkey_failed": "Aplikasi lain sudah memakai pintasan itu, jadi tidak bisa diaktifkan.",
+    "global_hotkey_in_app_only": "Hanya berfungsi saat Personas di depan",
+    "global_hotkey_title": "Bicara dari mana saja"
   },
   "artist_gallery": {
     "loading_viewer": "Memuat penampil…",

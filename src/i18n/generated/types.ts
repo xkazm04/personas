@@ -12759,6 +12759,9 @@ export type Translations = {
       run_now: string;
       run_now_toast: string;
     };
+    outcome_pending: string;
+    outcome_of_runs: string;
+    outcome_breakdown: string;
   };
   recipe_shared: {
     schema_parse_error: string;
@@ -15984,6 +15987,13 @@ export type Translations = {
       orb_unread_open: string;
       orb_unread_dismiss: string;
       orb_quick_input_expand: string;
+      global_hotkey_title: string;
+      global_hotkey_desc: string;
+      global_hotkey_enable: string;
+      global_hotkey_disable: string;
+      global_hotkey_active: string;
+      global_hotkey_in_app_only: string;
+      global_hotkey_failed: string;
     };
     artist_gallery: {
       loading_viewer: string;
@@ -19448,6 +19458,12 @@ export type Translations = {
     populate_lane_simulation: string;
     populate_lane_simulation_detail: string;
     populate_scope_empty: string;
+    track_unpaced: string;
+    stat_unpaced: string;
+    stat_unpaced_hint: string;
+    pace_unpaced: string;
+    pace_unpaced_no_target: string;
+    headline_count: string;
   };
   planner: {
     nav_label: string;

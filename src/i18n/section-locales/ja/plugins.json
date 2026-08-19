@@ -2938,7 +2938,14 @@
     "action_label_apply_pattern": "リポジトリに採用済みパターンを適用",
     "action_label_evaluate_pattern": "リポジトリのパターン遵守を検証",
     "action_label_run_pattern_harvest": "リポジトリからプラクティスを収集",
-    "action_label_skill_sync": "スキルをプロジェクト間で同期"
+    "action_label_skill_sync": "スキルをプロジェクト間で同期",
+    "global_hotkey_active": "パソコンのどこからでも使えます",
+    "global_hotkey_desc": "Personas のウィンドウが前面になくても、他のアプリを使いながら音声で Athena に話しかけられます。",
+    "global_hotkey_disable": "システム全体のショートカットを無効にする",
+    "global_hotkey_enable": "システム全体のショートカットを有効にする",
+    "global_hotkey_failed": "そのショートカットは他のアプリが使用中のため、有効にできませんでした。",
+    "global_hotkey_in_app_only": "Personas が前面にあるときのみ使えます",
+    "global_hotkey_title": "どこからでも話しかける"
   },
   "artist_gallery": {
     "loading_viewer": "ビューアを読み込み中…",

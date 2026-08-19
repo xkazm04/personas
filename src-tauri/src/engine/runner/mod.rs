@@ -886,7 +886,9 @@ pub async fn run_execution(
                     // are unchanged; with no registered embedder, no task
                     // text, or any embedding failure this is exactly the
                     // value-only pack below.
-                    const ACTIVE_MEM_BUDGET_CHARS: usize = 6000;
+                    // Shared with `claude_md_projection` so the compaction-
+                    // survival copy shows exactly what this section shows.
+                    use crate::engine::memory_recall::ACTIVE_MEM_BUDGET_CHARS;
                     #[cfg(feature = "ml")]
                     let packed = {
                         let task_context = crate::engine::memory_recall::task_context_from_input(

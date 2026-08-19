@@ -12470,7 +12470,10 @@
     "yes": "Oui",
     "no": "Non",
     "delete_confirm_question": "Supprimer {name} ?",
-    "tag_input_placeholder": "Saisir un tag et appuyer sur Entrée..."
+    "tag_input_placeholder": "Saisir un tag et appuyer sur Entrée...",
+    "outcome_breakdown": "{runs} exécutions au total · {completed} terminées · {failed} en échec",
+    "outcome_of_runs": "sur {terminal} ont apporté de la valeur",
+    "outcome_pending": "exécutions, aucun résultat pour l'instant"
   },
   "execution_status": {
     "completed": "Terminé",
@@ -15683,7 +15686,14 @@
       "action_label_apply_pattern": "Appliquer les patterns adoptés dans un dépôt",
       "action_label_evaluate_pattern": "Vérifier le respect des patterns dans un dépôt",
       "action_label_run_pattern_harvest": "Extraire les pratiques d'un dépôt",
-      "action_label_skill_sync": "Synchroniser une skill entre projets"
+      "action_label_skill_sync": "Synchroniser une skill entre projets",
+      "global_hotkey_active": "Fonctionne partout sur votre ordinateur",
+      "global_hotkey_desc": "Parlez à Athena même lorsqu'une autre application est au premier plan, pas seulement quand la fenêtre Personas est active.",
+      "global_hotkey_disable": "Désactiver le raccourci système",
+      "global_hotkey_enable": "Activer le raccourci système",
+      "global_hotkey_failed": "Une autre application utilise déjà ce raccourci, il n'a donc pas pu être activé.",
+      "global_hotkey_in_app_only": "Fonctionne uniquement quand Personas est au premier plan",
+      "global_hotkey_title": "Parlez depuis n'importe où"
     },
     "artist_gallery": {
       "loading_viewer": "Chargement du visualiseur…",
@@ -19336,7 +19346,13 @@
     "populate_lane_simulation": "Données KPI simulées",
     "populate_lane_simulation_detail": "Pour un produit qui n'a pas encore été lancé : parcourt vos fonctionnalités comme des utilisateurs représentatifs pour estimer les KPI adoptés, et recherche des cibles à partir de produits comparables. L'étape la plus longue.",
     "populate_scope_empty": "Choisissez au moins un élément à couvrir.",
-    "populate_scope_heading": "Ce que cette exécution couvrira"
+    "populate_scope_heading": "Ce que cette exécution couvrira",
+    "track_unpaced": "Aucun rythme défini",
+    "stat_unpaced": "Aucun rythme défini",
+    "stat_unpaced_hint": "pas encore pilotable",
+    "pace_unpaced": "Mesuré, mais sans date cible il n'y a rien à rattraper. Ajoutez-en une pour que le système puisse le piloter.",
+    "pace_unpaced_no_target": "Mesuré, mais aucune cible n'est définie, il n'y a donc encore rien à viser.",
+    "headline_count": "{count} prioritaires"
   },
   "deliberation": {
     "agenda": "Ordre du jour",

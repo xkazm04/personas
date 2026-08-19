@@ -60,12 +60,15 @@ export function cadenceMeta(cadence: string): KpiTokenMeta {
   return CADENCE_META[cadence] ?? FALLBACK_META;
 }
 
-/** Theme color for a pace state — the ramp every KPI visual shares. */
+/** Theme color for a pace state — the ramp every KPI visual shares.
+ *  `unpaced` shares the muted no-verdict tone with `unmeasured`: in both the
+ *  system has nothing to say, and neither may borrow the on-track blue. */
 export const TRACK_COLOR: Record<KpiTrack, string> = {
   met: 'var(--status-success)',
   'on-track': 'var(--primary)',
   'off-track': 'var(--status-error)',
   unmeasured: 'var(--muted-foreground, var(--primary))',
+  unpaced: 'var(--muted-foreground, var(--primary))',
 };
 
 type Tx = (template: string, vars: Record<string, string | number>) => string;
@@ -79,6 +82,8 @@ export function paceSentence(kpi: DevKpi, t: Translations, tx: Tx): string {
       return tx(t.kpis.pace_met, { value: kpi.current_value ?? 0, unit });
     case 'unmeasured':
       return t.kpis.pace_unmeasured;
+    case 'unpaced':
+      return kpi.target_value == null ? t.kpis.pace_unpaced_no_target : t.kpis.pace_unpaced;
     case 'off-track':
       return d.daysLeft != null
         ? tx(t.kpis.pace_off_dated, {

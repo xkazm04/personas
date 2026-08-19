@@ -244,5 +244,11 @@
   "populate_lane_simulation": "Dữ liệu KPI mô phỏng",
   "populate_lane_simulation_detail": "Đối với sản phẩm chưa ra mắt: chạy qua các tính năng của bạn như những người dùng tiêu biểu để ước tính các chỉ số KPI được áp dụng, và nghiên cứu mục tiêu từ các sản phẩm tương tự. Đây là bước lâu nhất.",
   "populate_scope_empty": "Chọn ít nhất một mục để bao gồm.",
-  "populate_scope_heading": "Lần chạy này sẽ bao gồm những gì"
+  "populate_scope_heading": "Lần chạy này sẽ bao gồm những gì",
+  "track_unpaced": "Chưa đặt nhịp độ",
+  "stat_unpaced": "Chưa đặt nhịp độ",
+  "stat_unpaced_hint": "chưa thể điều hướng",
+  "pace_unpaced": "Đã đo, nhưng không có ngày mục tiêu thì không có gì để tụt lại phía sau. Hãy thêm một ngày để hệ thống có thể điều hướng.",
+  "pace_unpaced_no_target": "Đã đo, nhưng chưa đặt mục tiêu, nên chưa có gì để hướng tới.",
+  "headline_count": "{count} trọng điểm"
 }

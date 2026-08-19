@@ -1403,15 +1403,10 @@ pub async fn get_playwright_procedure(
 pub(crate) fn build_playwright_mcp_config() -> Result<tempfile::NamedTempFile, String> {
     use std::io::Write;
 
-    let config = json!({
-        "mcpServers": {
-            "playwright": {
-                "command": "npx",
-                "args": ["@playwright/mcp@latest"],
-                "type": "stdio"
-            }
-        }
-    });
+    let config = personas_core::mcp_config::mcp_config_json([(
+        "playwright",
+        personas_core::mcp_config::McpServer::stdio("npx", ["@playwright/mcp@latest"]),
+    )]);
 
     let mut tmp = tempfile::Builder::new()
         .prefix("personas_mcp_")

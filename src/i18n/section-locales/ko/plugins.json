@@ -2938,7 +2938,14 @@
     "action_label_apply_pattern": "저장소에 채택된 패턴 적용",
     "action_label_evaluate_pattern": "저장소의 패턴 준수 검증",
     "action_label_run_pattern_harvest": "저장소에서 프랙티스 수집",
-    "action_label_skill_sync": "프로젝트 간 스킬 동기화"
+    "action_label_skill_sync": "프로젝트 간 스킬 동기화",
+    "global_hotkey_active": "컴퓨터 어디서나 작동합니다",
+    "global_hotkey_desc": "Personas 창이 앞에 없어도, 다른 앱을 쓰는 중에 음성으로 Athena를 부를 수 있습니다.",
+    "global_hotkey_disable": "시스템 전체 단축키 끄기",
+    "global_hotkey_enable": "시스템 전체 단축키 켜기",
+    "global_hotkey_failed": "다른 앱이 이미 그 단축키를 사용 중이라 켤 수 없습니다.",
+    "global_hotkey_in_app_only": "Personas가 앞에 있을 때만 작동합니다",
+    "global_hotkey_title": "어디서나 말하기"
   },
   "artist_gallery": {
     "loading_viewer": "뷰어 로딩 중…",

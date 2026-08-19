@@ -321,10 +321,80 @@ fn validate_skill_name(name: &str) -> Result<(), AppError> {
     Ok(())
 }
 
+/// Maximum directory nesting walked inside one skill. A skill is SKILL.md plus
+/// a shallow tree of references; nothing legitimate goes deeper. The cap is a
+/// belt-and-suspenders backstop for cycles that survive
+/// [`classify_skill_entry`] (directory hardlinks on exotic filesystems) and for
+/// pathological trees — without it, `collect_skill_dir_files` and friends
+/// recurse until the stack overflows.
+pub(crate) const MAX_SKILL_DIR_DEPTH: usize = 8;
+
+/// What one `read_dir` entry in a skill tree may be walked as.
+pub(crate) enum SkillEntryKind {
+    Dir,
+    File,
+    /// Skipped, with a short reason suitable for a user-facing warning.
+    Rejected(&'static str),
+}
+
+/// Classify one `read_dir` entry for a skill-tree walk, rejecting anything that
+/// could read or write outside the skill directory.
+///
+/// **Why this exists.** `std::fs::read_dir` hands back entries, and both
+/// `Path::is_dir()` and `std::fs::metadata` *follow symlinks*. A skill tree is
+/// content supplied by a managed repository, which personas does not control —
+/// so `.claude/skills/notes/refs -> ~/.ssh` would otherwise be walked, read
+/// into an export bundle the user shares, and copied into the shared skill
+/// library on adopt. The containment rule this restores is the same one Agent
+/// Plugins 1.0.0 states normatively for plugin packages: a path resolved inside
+/// the package MUST stay within the package root.
+///
+/// **Why reject rather than canonicalize-and-compare.** A symlink is never
+/// legitimate skill content, so there is nothing to preserve by resolving it;
+/// rejecting outright is cheap, portable, and immune to the TOCTOU race that a
+/// resolve-then-compare check has (the link can be repointed between the check
+/// and the read). `DirEntry::file_type` reads the entry's own type without
+/// traversing, so the link itself is what gets classified.
+///
+/// Non-regular files (FIFOs, sockets, devices) are rejected for the same
+/// reason plus a practical one: reading a FIFO blocks forever. On Windows this
+/// also covers junctions, which `FileType::is_symlink` reports as symlinks.
+pub(crate) fn classify_skill_entry(entry: &std::fs::DirEntry) -> SkillEntryKind {
+    let Ok(file_type) = entry.file_type() else {
+        return SkillEntryKind::Rejected("unreadable file type");
+    };
+    if file_type.is_symlink() {
+        return SkillEntryKind::Rejected("symlink");
+    }
+    if file_type.is_dir() {
+        SkillEntryKind::Dir
+    } else if file_type.is_file() {
+        SkillEntryKind::File
+    } else {
+        SkillEntryKind::Rejected("not a regular file")
+    }
+}
+
 /// Recursively copy `src` into `dst`, returning the count of files written.
 /// Creates `dst` (and parents) as needed. Used to install a skill directory
 /// (SKILL.md + reference files, possibly nested) into a target repo.
+///
+/// Symlinks and non-regular files are skipped (see [`classify_skill_entry`]) —
+/// copying through a link would write file content from outside the source
+/// skill into the target repo. A skipped entry is warned about, never fatal:
+/// one stray link must not block installing an otherwise valid skill.
 fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<i32, AppError> {
+    copy_dir_recursive_at(src, dst, 0)
+}
+
+fn copy_dir_recursive_at(src: &Path, dst: &Path, depth: usize) -> Result<i32, AppError> {
+    if depth >= MAX_SKILL_DIR_DEPTH {
+        tracing::warn!(
+            dir = %src.display(),
+            "skill_files: skill tree deeper than {MAX_SKILL_DIR_DEPTH} — not descending further"
+        );
+        return Ok(0);
+    }
     std::fs::create_dir_all(dst)
         .map_err(|e| AppError::Internal(format!("create target dir failed: {e}")))?;
     let mut count = 0;
@@ -333,12 +403,20 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<i32, AppError> {
     for entry in read_dir.flatten() {
         let path = entry.path();
         let target = dst.join(entry.file_name());
-        if path.is_dir() {
-            count += copy_dir_recursive(&path, &target)?;
-        } else {
-            std::fs::copy(&path, &target)
-                .map_err(|e| AppError::Internal(format!("copy file failed: {e}")))?;
-            count += 1;
+        match classify_skill_entry(&entry) {
+            SkillEntryKind::Dir => count += copy_dir_recursive_at(&path, &target, depth + 1)?,
+            SkillEntryKind::File => {
+                std::fs::copy(&path, &target)
+                    .map_err(|e| AppError::Internal(format!("copy file failed: {e}")))?;
+                count += 1;
+            }
+            SkillEntryKind::Rejected(reason) => {
+                tracing::warn!(
+                    path = %path.display(),
+                    reason,
+                    "skill_files: skill entry not copied — outside-the-skill reference"
+                );
+            }
         }
     }
     Ok(count)
@@ -347,34 +425,45 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<i32, AppError> {
 /// Collect the files under a skill `dir` as a map of `relative_path -> size`,
 /// excluding the [`PROVENANCE_FILE`] sidecar. Deterministic (BTreeMap keeps
 /// paths sorted). Returns an empty map when the dir is unreadable.
+///
+/// Applies the same [`classify_skill_entry`] skip rules as
+/// `copy_dir_recursive`, and must keep doing so: this map backs
+/// [`hash_skill_dir`], so if the two walks disagreed about what counts as skill
+/// content, every installed copy would hash differently from its source and
+/// read as permanently `diverged`.
 fn collect_skill_files(dir: &Path) -> BTreeMap<String, u64> {
-    fn walk(base: &Path, cur: &Path, out: &mut BTreeMap<String, u64>) {
+    fn walk(base: &Path, cur: &Path, out: &mut BTreeMap<String, u64>, depth: usize) {
+        if depth >= MAX_SKILL_DIR_DEPTH {
+            return;
+        }
         let Ok(read_dir) = std::fs::read_dir(cur) else {
             return;
         };
         for entry in read_dir.flatten() {
             let path = entry.path();
-            if path.is_dir() {
-                walk(base, &path, out);
-            } else {
-                let fname = path.file_name().and_then(|n| n.to_str());
-                if fname == Some(PROVENANCE_FILE)
-                    || fname.is_some_and(|n| n.eq_ignore_ascii_case(LESSONS_FILE))
-                {
-                    continue;
+            match classify_skill_entry(&entry) {
+                SkillEntryKind::Dir => walk(base, &path, out, depth + 1),
+                SkillEntryKind::Rejected(_) => continue,
+                SkillEntryKind::File => {
+                    let fname = path.file_name().and_then(|n| n.to_str());
+                    if fname == Some(PROVENANCE_FILE)
+                        || fname.is_some_and(|n| n.eq_ignore_ascii_case(LESSONS_FILE))
+                    {
+                        continue;
+                    }
+                    let rel = path
+                        .strip_prefix(base)
+                        .unwrap_or(&path)
+                        .to_string_lossy()
+                        .replace('\\', "/");
+                    let size = entry.metadata().map(|m| m.len()).unwrap_or(0);
+                    out.insert(rel, size);
                 }
-                let rel = path
-                    .strip_prefix(base)
-                    .unwrap_or(&path)
-                    .to_string_lossy()
-                    .replace('\\', "/");
-                let size = entry.metadata().map(|m| m.len()).unwrap_or(0);
-                out.insert(rel, size);
             }
         }
     }
     let mut out = BTreeMap::new();
-    walk(dir, dir, &mut out);
+    walk(dir, dir, &mut out, 0);
     out
 }
 
@@ -459,7 +548,13 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
 
     for entry in read_dir.flatten() {
         let path = entry.path();
-        if !path.is_dir() {
+        // A symlinked skill entry would list (and later read) content from
+        // outside the library — see `classify_skill_entry`.
+        let kind = classify_skill_entry(&entry);
+        if matches!(kind, SkillEntryKind::Rejected(_)) {
+            continue;
+        }
+        if !matches!(kind, SkillEntryKind::Dir) {
             // Single-file skill (e.g. skill-name.md directly in skills/)
             if path.extension().and_then(|e| e.to_str()) == Some("md") {
                 let name = path
@@ -522,6 +617,9 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
         let mut ref_files = Vec::new();
         if let Ok(sub_entries) = std::fs::read_dir(&path) {
             for sub in sub_entries.flatten() {
+                if matches!(classify_skill_entry(&sub), SkillEntryKind::Rejected(_)) {
+                    continue;
+                }
                 let fname = sub.file_name().to_string_lossy().to_string();
                 if fname.to_lowercase() != "skill.md"
                     && fname != PROVENANCE_FILE
@@ -1272,6 +1370,110 @@ pub fn skill_files_write(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Create a symlink to `target` at `link`, or return false when the
+    /// platform refuses (Windows without Developer Mode / admin). Callers skip
+    /// the assertion in that case rather than failing — the guard is still
+    /// covered by the non-regular-file and depth-cap tests.
+    fn try_symlink(target: &Path, link: &Path, is_dir: bool) -> bool {
+        #[cfg(unix)]
+        {
+            let _ = is_dir;
+            std::os::unix::fs::symlink(target, link).is_ok()
+        }
+        #[cfg(windows)]
+        {
+            if is_dir {
+                std::os::windows::fs::symlink_dir(target, link).is_ok()
+            } else {
+                std::os::windows::fs::symlink_file(target, link).is_ok()
+            }
+        }
+    }
+
+    fn classify_named(dir: &Path, name: &str) -> Option<SkillEntryKind> {
+        std::fs::read_dir(dir)
+            .unwrap()
+            .flatten()
+            .find(|e| e.file_name().to_string_lossy() == name)
+            .map(|e| classify_skill_entry(&e))
+    }
+
+    #[test]
+    fn symlinked_skill_content_is_rejected_and_never_copied() {
+        let tmp = tempfile::tempdir().unwrap();
+        // `outside/` stands in for anything the skill dir must not reach —
+        // ~/.ssh, the repo's .git, a sibling project.
+        let outside = tmp.path().join("outside");
+        std::fs::create_dir_all(&outside).unwrap();
+        std::fs::write(outside.join("id_rsa"), "PRIVATE KEY").unwrap();
+
+        let source = tmp.path().join("skills").join("notes");
+        std::fs::create_dir_all(&source).unwrap();
+        std::fs::write(source.join("SKILL.md"), "---\nname: notes\n---\nbody\n").unwrap();
+
+        if !try_symlink(&outside, &source.join("refs"), true) {
+            eprintln!("skipping: platform refused symlink creation");
+            return;
+        }
+
+        // The mechanism: the walker classifies the link as a link, without
+        // traversing it. (Asserting only on the copy result would also pass if
+        // the copy failed for some unrelated reason.)
+        assert!(
+            matches!(
+                classify_named(&source, "refs"),
+                Some(SkillEntryKind::Rejected("symlink"))
+            ),
+            "a symlink inside a skill dir must classify as Rejected"
+        );
+
+        // The consequence: install does not carry the outside file across.
+        let target = tmp.path().join("installed");
+        let copied = copy_dir_recursive(&source, &target).unwrap();
+        assert_eq!(copied, 1, "only SKILL.md is skill content");
+        assert!(target.join("SKILL.md").is_file());
+        assert!(
+            !target.join("refs").join("id_rsa").exists(),
+            "content behind a symlink must not be installed"
+        );
+
+        // ...and the hash walk agrees with the copy walk, so an installed copy
+        // of a skill containing a link is not permanently `diverged`.
+        assert_eq!(
+            collect_skill_files(&source).keys().collect::<Vec<_>>(),
+            vec!["SKILL.md"],
+            "hash walk and copy walk must skip the same entries"
+        );
+    }
+
+    #[test]
+    fn skill_tree_recursion_is_depth_capped() {
+        let tmp = tempfile::tempdir().unwrap();
+        let source = tmp.path().join("deep");
+        // One level deeper than the cap allows.
+        let mut cur = source.clone();
+        for i in 0..(MAX_SKILL_DIR_DEPTH + 2) {
+            cur = cur.join(format!("l{i}"));
+        }
+        std::fs::create_dir_all(&cur).unwrap();
+        std::fs::write(cur.join("deep.md"), "too deep").unwrap();
+        std::fs::write(source.join("SKILL.md"), "---\nname: d\n---\nbody\n").unwrap();
+
+        let files = collect_skill_files(&source);
+        assert!(files.contains_key("SKILL.md"));
+        assert!(
+            !files.keys().any(|k| k.ends_with("deep.md")),
+            "walk must stop at MAX_SKILL_DIR_DEPTH instead of recursing until the stack overflows"
+        );
+
+        let target = tmp.path().join("installed");
+        assert_eq!(
+            copy_dir_recursive(&source, &target).unwrap(),
+            1,
+            "copy applies the same depth cap as the hash walk"
+        );
+    }
 
     #[test]
     fn extract_skill_category_normalizes_and_rejects() {

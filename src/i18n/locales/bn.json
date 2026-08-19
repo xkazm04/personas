@@ -12470,7 +12470,10 @@
     "yes": "হ্যাঁ",
     "no": "না",
     "delete_confirm_question": "{name} মুছে দেবেন?",
-    "tag_input_placeholder": "ট্যাগ লিখুন এবং Enter চাপুন..."
+    "tag_input_placeholder": "ট্যাগ লিখুন এবং Enter চাপুন...",
+    "outcome_breakdown": "মোট {runs} রান · {completed} সম্পন্ন · {failed} ব্যর্থ",
+    "outcome_of_runs": "{terminal}-এর মধ্যে মূল্য দিয়েছে",
+    "outcome_pending": "রান, এখনও কোনও ফলাফল নেই"
   },
   "execution_status": {
     "completed": "সম্পন্ন",
@@ -15683,7 +15686,14 @@
       "action_label_apply_pattern": "রিপোতে গৃহীত প্যাটার্ন প্রয়োগ করুন",
       "action_label_evaluate_pattern": "রিপোতে প্যাটার্ন মেনে চলা যাচাই করুন",
       "action_label_run_pattern_harvest": "রিপো থেকে প্র্যাকটিস সংগ্রহ করুন",
-      "action_label_skill_sync": "প্রকল্পগুলির মধ্যে একটি স্কিল সিঙ্ক করুন"
+      "action_label_skill_sync": "প্রকল্পগুলির মধ্যে একটি স্কিল সিঙ্ক করুন",
+      "global_hotkey_active": "আপনার কম্পিউটারের যেকোনো জায়গা থেকে কাজ করে",
+      "global_hotkey_desc": "অন্য অ্যাপ সক্রিয় থাকলেও ভয়েসে Athena-র সঙ্গে কথা বলুন, শুধু Personas উইন্ডো সামনে থাকলেই নয়।",
+      "global_hotkey_disable": "সিস্টেম-ব্যাপী শর্টকাট বন্ধ করুন",
+      "global_hotkey_enable": "সিস্টেম-ব্যাপী শর্টকাট চালু করুন",
+      "global_hotkey_failed": "অন্য একটি অ্যাপ ইতিমধ্যেই এই শর্টকাট ব্যবহার করছে, তাই এটি চালু করা যায়নি।",
+      "global_hotkey_in_app_only": "শুধু Personas সামনে থাকলে কাজ করে",
+      "global_hotkey_title": "যেকোনো জায়গা থেকে কথা বলুন"
     },
     "artist_gallery": {
       "loading_viewer": "ভিউয়ার লোড হচ্ছে…",
@@ -19336,7 +19346,13 @@
     "populate_lane_simulation": "সিমুলেটেড কেপিআই ডেটা",
     "populate_lane_simulation_detail": "এমন একটি পণ্যের জন্য যা এখনও চালু হয়নি: এটি আপনার বৈশিষ্ট্যগুলোকে প্রতিনিধিত্বমূলক ব্যবহারকারী হিসেবে চালিয়ে গৃহীত কেপিআই অনুমান করে এবং তুলনীয় পণ্য থেকে লক্ষ্যমাত্রা নিয়ে গবেষণা করে। এটি সবচেয়ে দীর্ঘ ধাপ।",
     "populate_scope_empty": "কভার করতে অন্তত একটি জিনিস বেছে নিন।",
-    "populate_scope_heading": "এই রান কী কভার করবে"
+    "populate_scope_heading": "এই রান কী কভার করবে",
+    "track_unpaced": "কোনো গতি নির্ধারিত নেই",
+    "stat_unpaced": "কোনো গতি নির্ধারিত নেই",
+    "stat_unpaced_hint": "এখনও পরিচালনাযোগ্য নয়",
+    "pace_unpaced": "পরিমাপ করা হয়েছে, তবে লক্ষ্য তারিখ ছাড়া পিছিয়ে পড়ার মতো কিছু নেই। একটি যোগ করুন যাতে সিস্টেম এটি পরিচালনা করতে পারে।",
+    "pace_unpaced_no_target": "পরিমাপ করা হয়েছে, তবে কোনো লক্ষ্য নির্ধারিত নেই, তাই এখনও এগোনোর কোনো দিক নেই।",
+    "headline_count": "{count} প্রধান"
   },
   "deliberation": {
     "agenda": "এজেন্ডা",

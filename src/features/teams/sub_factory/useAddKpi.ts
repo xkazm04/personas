@@ -44,6 +44,9 @@ export function useAddKpi({
   const [unit, setUnit] = useState('');
   const [baseline, setBaseline] = useState('');
   const [target, setTarget] = useState('');
+  // Optional, but load-bearing: no target_date means no pace, which means
+  // `kpi_derivation.rs:75` bails and the KPI can never be derived from.
+  const [targetDate, setTargetDate] = useState('');
   const [cadence, setCadence] = useState('weekly');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -81,6 +84,7 @@ export function useAddKpi({
         contextGroupId, contextId, category, measureKind: 'manual',
         unit: unit.trim() || undefined, direction,
         baselineValue: num(baseline), targetValue: num(target),
+        targetDate: targetDate || undefined,
         cadence, status: 'active',
       });
       if (tier !== 'supporting') await kpiApi.updateKpi(kpi.id, { tier });
@@ -116,7 +120,7 @@ export function useAddKpi({
     name, setName, description, setDescription, category, onCategory, tier, setTier,
     direction, setDirection, measured, setMeasured, autoKind, setAutoKind,
     connector, setConnector, derivedMetric, setDerivedMetric, unit, setUnit,
-    baseline, setBaseline, target, setTarget, cadence, setCadence,
+    baseline, setBaseline, target, setTarget, targetDate, setTargetDate, cadence, setCadence,
     busy, msg, isManual, manualReady, connectorOpts, derivedOpts,
     createManual, setupWithAi,
   };

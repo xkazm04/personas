@@ -121,5 +121,8 @@
   "yes": "是",
   "no": "否",
   "delete_confirm_question": "删除 {name}？",
-  "tag_input_placeholder": "输入标签后按 Enter..."
+  "tag_input_placeholder": "输入标签后按 Enter...",
+  "outcome_breakdown": "共 {runs} 次运行 · {completed} 次完成 · {failed} 次失败",
+  "outcome_of_runs": "{terminal} 次中产生价值",
+  "outcome_pending": "次运行，暂无结果"
 }

@@ -123,7 +123,8 @@ function ModalHeader({ kpi, projectName, onClose }: { kpi: DevKpi; projectName: 
     d.track === 'met' ? t.kpis.track_met
       : d.track === 'off-track' ? t.kpis.track_off
         : d.track === 'unmeasured' ? t.kpis.track_unmeasured
-          : t.kpis.track_on;
+          : d.track === 'unpaced' ? t.kpis.track_unpaced
+            : t.kpis.track_on;
 
   return (
     <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-primary/10 bg-secondary/10">

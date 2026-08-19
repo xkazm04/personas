@@ -52,6 +52,7 @@ desktop = [
     "dep:tauri-plugin-window-state",
     "dep:tauri-plugin-updater",
     "dep:tauri-plugin-single-instance",
+    "dep:tauri-plugin-global-shortcut",
 ]
 # Full desktop = core + ML + P2P. Used by CI and production builds.
 desktop-full = ["desktop", "ml", "p2p"]
@@ -116,6 +117,10 @@ tauri-plugin-deep-link = "2"
 tauri-plugin-window-state = { version = "2", optional = true }
 tauri-plugin-updater = { version = "2", optional = true }
 tauri-plugin-single-instance = { version = "2", features = ["deep-link"], optional = true }
+# Athena's push-to-talk reachability: an OS-level accelerator so voice works
+# while the user is focused in another app. Desktop-only — mobile has no
+# equivalent surface.
+tauri-plugin-global-shortcut = { version = "2", optional = true }
 
 async-trait = "0.1"
 serde = { version = "1", features = ["derive"] }

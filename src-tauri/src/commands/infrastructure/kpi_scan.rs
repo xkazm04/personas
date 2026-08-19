@@ -87,6 +87,13 @@ struct KpiProposal {
     description: String,
     /// technical | traffic | value | quality
     category: String,
+    /// north_star | primary | supporting. Absent → `supporting` (the column
+    /// default). Until this field existed every scan-created KPI landed as
+    /// `supporting`, which made the tier ordering in
+    /// `kpi_derivation.rs::find_derivation_candidates` a no-op for them and
+    /// flattened the Factory's tier-weighted health score.
+    #[serde(default)]
+    tier: String,
     /// codebase | connector | manual | derived
     measure_kind: String,
     /// JSON measurement procedure (shape per kind).
@@ -193,6 +200,7 @@ Rules:
 1c. PREFER a USE CASE when one is listed above and the outcome is behavioral — a use case is a slice through several contexts and is the most honest owner of an outcome like "checkout conversion" or "search latency". Set `use_case_name` to the EXACT use-case name; leave `group_name` and `context_name` empty (they are inferred from the use case). Use `context_name` only when the outcome belongs to code in exactly ONE context.
 2. `category`: technical (coverage, lint debt, build time, bundle size), quality (defect/bounce/incident rates), traffic (users, requests — connector-gated), value (conversion, revenue, retention, activation, task completion, time saved — connector-gated or simulated).
 2b. **Mix, enforced.** Of the proposals you emit: `value` (and `traffic` where the product has users) must be the MAJORITY, and `technical` must be AT MOST 2. If you find yourself with more technical proposals than value ones, you measured the repository instead of the product — go back and re-read what the product does for whoever uses it.
+2c. `tier`: `north_star` | `primary` | `supporting` — how much this metric should outrank the others when the system picks what to work on next. Emit **AT MOST ONE `north_star` per scan**, and only for the single number that best answers "is this product working?" (it will almost always be a `value` KPI; a technical KPI is never a north star). Use `primary` for the two or three pillars underneath it, and `supporting` for everything else. Do not mark everything `primary` — a flat set is the same as no ranking at all, and this field is what orders the queue of KPIs the system tries to fix.
 3. `measure_kind` + `measure_config` must be a REAL, executable procedure:
    - codebase: {{"cmd": "<command runnable in repo root>", "parse": "coverage_pct" | "count_lines" | "regex:<pattern with one capture group>" | "json_path:<dot.path>"}}
    - derived: {{"metric": "<one of: qa_bounce_rate | exec_failure_rate | incident_rate | parked_review_age_days>"}} (measured from the orchestrator's own DB)
@@ -204,11 +212,12 @@ Rules:
 4. If a traffic/value KPI needs a connector that is NOT in the vault list above, still propose it with `measure_kind: "manual"` and set `needed_connector` to the missing service name (e.g. "google_analytics", "stripe", "posthog") — the UI offers one-click onboarding for it.
 4b. Every connector-shaped KPI (current or future) MUST set `metric_type` to one of: unique_visitors, api_requests, llm_tokens, llm_cost, revenue, open_errors. The KPI is bound to the TYPE; the concrete tool is wired later and swappable. Leave metric_type empty for codebase/derived KPIs.
 5. `baseline_hint`: your measured/estimated CURRENT value when you can ground it from the repo (run the codebase command if cheap); otherwise null. `suggested_target`: ambitious but reachable in ~4-6 weeks. `direction`: "up" if higher is better, else "down".
+5b. **`target_date` is REQUIRED — always emit one, never null.** Format `YYYY-MM-DD`, and make it the date by which `suggested_target` should be reached, i.e. ~4-6 weeks out from {today} (rule 5's own horizon). This is not decoration: pace is the trigger that puts a KPI off-track, and a KPI with no target_date has no pace to fall behind, so the system can never derive work from it and it reports as having no verdict. A target without a date is a wish.
 6. `cadence`: "weekly" for codebase KPIs, "daily" only for cheap derived ones, "manual" for connector-parked ones.
 7. `rationale`: ONE sentence the user reads in the review queue — why THIS metric steers value.
 
 For each proposal emit EXACTLY ONE line that is this JSON object and nothing else on that line:
-{{"kpi_proposal": {{"group_name": "...", "name": "...", "description": "...", "category": "technical", "measure_kind": "codebase", "measure_config": {{}}, "unit": "%", "direction": "up", "baseline_hint": null, "suggested_target": 70, "target_date": null, "cadence": "weekly", "rationale": "...", "needed_connector": "", "metric_type": "", "context_name": "", "use_case_name": ""}}}}
+{{"kpi_proposal": {{"group_name": "...", "name": "...", "description": "...", "category": "technical", "tier": "supporting", "measure_kind": "codebase", "measure_config": {{}}, "unit": "%", "direction": "up", "baseline_hint": null, "suggested_target": 70, "target_date": "{target_date_hint}", "cadence": "weekly", "rationale": "...", "needed_connector": "", "metric_type": "", "context_name": "", "use_case_name": ""}}}}
 
 Finish with one line: {{"kpi_scan_summary": {{"proposals": <count>}}}}
 "#,
@@ -219,7 +228,24 @@ Finish with one line: {{"kpi_scan_summary": {{"proposals": <count>}}}}
         archived_kpis = archived_kpis,
         connectors = connectors,
         max = MAX_PROPOSALS_PER_SCAN,
+        today = today_ymd(),
+        target_date_hint = default_target_ymd(),
     )
+}
+
+/// Today as `YYYY-MM-DD`, for the prompt's target-date horizon.
+fn today_ymd() -> String {
+    chrono::Utc::now().format("%Y-%m-%d").to_string()
+}
+
+/// The default target date the prompt shows in its emit template: five weeks
+/// out, the midpoint of rule 5's "ambitious but reachable in ~4-6 weeks". A
+/// concrete date in the template matters more than the prose rule — an example
+/// showing `null` is what taught every prior scan to omit it.
+fn default_target_ymd() -> String {
+    (chrono::Utc::now() + chrono::Duration::weeks(5))
+        .format("%Y-%m-%d")
+        .to_string()
 }
 
 /// Markdown digest of the project's accepted use cases — the behavioral slices
@@ -346,9 +372,10 @@ Same rules as the project-level scan otherwise:
 - `measure_kind` + `measure_config` must be a REAL procedure: codebase (`{{"cmd","parse"}}`, and RUN it to confirm), derived (only the four catalog metrics, and only if the project is team-linked), connector (HTTPS/REST against a real API — never SQL, never a local database), or manual (a human or simulated journey check).
 - Every connector-shaped KPI sets `metric_type` to one of: unique_visitors, api_requests, llm_tokens, llm_cost, revenue, open_errors.
 - `rationale` is ONE sentence the user reads while triaging.
+- **`target_date` is REQUIRED, never null** — `YYYY-MM-DD`, ~4-6 weeks from {today}. Without it the KPI has no pace, so it can never go off-track and the system will never derive work from it.
 
 For each proposal emit EXACTLY ONE line that is this JSON object and nothing else on that line:
-{{"kpi_proposal": {{"group_name": "", "name": "...", "description": "...", "category": "value", "measure_kind": "manual", "measure_config": {{}}, "unit": "%", "direction": "up", "baseline_hint": null, "suggested_target": 80, "target_date": null, "cadence": "manual", "rationale": "...", "needed_connector": "", "metric_type": "", "context_name": "{ctx_name_hint}", "use_case_name": ""}}}}
+{{"kpi_proposal": {{"group_name": "", "name": "...", "description": "...", "category": "value", "tier": "primary", "measure_kind": "manual", "measure_config": {{}}, "unit": "%", "direction": "up", "baseline_hint": null, "suggested_target": 80, "target_date": "{target_date_hint}", "cadence": "manual", "rationale": "...", "needed_connector": "", "metric_type": "", "context_name": "{ctx_name_hint}", "use_case_name": ""}}}}
 
 `context_name` MUST be the exact context name from the heading above, on every proposal.
 
@@ -360,6 +387,8 @@ Finish with one line: {{"kpi_scan_summary": {{"proposals": <count>}}}}
         archived_kpis = archived_kpis,
         connectors = connectors,
         max = MAX_PROPOSALS_PER_CONTEXT_SCAN,
+        today = today_ymd(),
+        target_date_hint = default_target_ymd(),
         ctx_name_hint = context_block
             .lines()
             .next()
@@ -847,6 +876,23 @@ async fn run_kpi_scan(
                     use_case_id,
                 ) {
                     Ok(kpi) => {
+                        // `create_kpi` takes no tier (the column defaults to
+                        // 'supporting'), so a non-default tier is a follow-up
+                        // update — the same shape `kpi_compose.rs:224` uses.
+                        // Unknown/absent values are left at the default rather
+                        // than trusted into the column.
+                        if matches!(p.tier.as_str(), "north_star" | "primary") {
+                            if let Err(e) = repo::update_kpi(
+                                pool, &kpi.id, None, None, None, None, None, None, None, None,
+                                None, None, None, None, None, None, None, None, Some(&p.tier),
+                                /* use_case_id */ None,
+                            ) {
+                                tracing::warn!(
+                                    kpi_id = %kpi.id, tier = %p.tier,
+                                    "KPI scan: failed to apply proposed tier: {e}"
+                                );
+                            }
+                        }
                         created += 1;
                         existing.insert(p.name.to_lowercase());
                         KPI_SCAN_JOBS.emit_line(

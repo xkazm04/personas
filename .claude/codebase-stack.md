@@ -89,8 +89,13 @@ Plus `apply_provider_env` injects per-provider env vars (OLLAMA_*, ANTHROPIC_*, 
 
 ### The companion (Athena) does NOT use `build_cli_args` — it has its own spawn + stream path
 
-Discovered in `/research` run 2026-05-23 (Athena dynamic-chat). The Athena companion is NOT one of the ~30 callers of `build_cli_args`. It spawns the `claude` CLI through its **own bespoke arg builder** at `src-tauri/src/companion/session.rs::run_cli` (~line 766) with a different flag set (`--system-prompt-file`, `--exclude-dynamic-system-prompt-sections`, `--model claude-opus-4-8` pinned [bumped from 4-7 in `/research` run 2026-05-28; NOTE this path carries NO `--effort` flag, so on Opus 4.8 — which defaults to high effort — Athena now runs at high effort by default], env `CLAUDE_CODE_FORK_SUBAGENT=1`) and its own stream loop (`session.rs:880-945`) that emits `companion://stream` events — **separate from both** the main runner's legacy-text channel and the structured `EXECUTION_EVENT` channel. Implications for `/research` findings about CLI flags or stream parsing:
+Discovered in `/research` run 2026-05-23 (Athena dynamic-chat). The Athena companion is NOT one of the ~30 callers of `build_cli_args`. It spawns the `claude` CLI through its **own bespoke arg builder** at `src-tauri/src/companion/session.rs::run_cli` (~line 766) with a different flag set (`--system-prompt-file`, `--exclude-dynamic-system-prompt-sections`, `--model claude-opus-4-8` pinned [bumped from 4-7 in `/research` run 2026-05-28], env `CLAUDE_CODE_FORK_SUBAGENT=1`) and its own stream loop (`session.rs:880-945`) that emits `companion://stream` events — **separate from both** the main runner's legacy-text channel and the structured `EXECUTION_EVENT` channel. Implications for `/research` findings about CLI flags or stream parsing:
 - A flag change in `build_cli_args` does NOT reach Athena. Companion-scoped CLI-flag findings must edit `session.rs::run_cli` directly.
+- **Athena's model AND effort come from `companion/model_routing.rs`, and that file is bench-calibrated — read it before proposing either.** Corrected in `/research` run 2026-08-17 (Chase AI Obsidian OS); earlier copies of this doc said Athena's path "carries NO `--effort` flag, so … runs at high effort by default", which is **wrong** and would misframe any cost/latency finding. `session.rs:2198-2199` pushes `--effort`, defaulting to `model_routing::MAIN.effort`. Three tiers, one source of truth, each with a measured justification from a **1,026-turn bench** (`docs/plans/athena-model-bench-report.md`):
+  - `MAIN` = `claude-opus-4-8` @ **`low`** — main conversational turns. Opus@low matched Opus@default accuracy *exactly* (93.9% over 114 runs per cell) at 16% lower p50 latency.
+  - `ASIDE` = `claude-sonnet-5` @ `medium` — status summaries, no op grammar. Not yet wired (P3b).
+  - `MICRO` = `claude-sonnet-5` @ `low` — titling, classifications, triage legs (`athena_reaction::cli_text*`). Deliberately receives NO constitution/act-doctrine: reinforcement at low effort *regressed* awareness 94→78%.
+  - The obvious "just use a cheaper model" finding is therefore usually a **catch**: the bench's own promotion candidate (Sonnet@high, 96.5%) is deliberately held back from main turns pending corpus v3 + a judge pass. `PERSONAS_ATHENA_MODEL` / `PERSONAS_ATHENA_EFFORT` are bench-only env overrides applied in `session.rs`, not in the routing table.
 - Athena's frontend stream handling is bespoke (`CompanionPanel.tsx` + `extractAssistantText`/`extractStreamPhase`/`extractAssistantTextDelta` + `operationalSteps`), NOT `useStructuredStream`. Don't assume the main-chat streaming hooks apply.
 - As of 2026-05-23, `run_cli` passes `--include-partial-messages` (token-level `text_delta` streaming) and the panel renders TodoWrite tool calls as an inline operational checklist (`OperationalThread`).
 - Companion background jobs (`companion/jobs/`) only surface as chat cards for the `connector_use` kind; `scan_codebase`/`memory_curation_run` flow to system episodes / dedicated UIs. Jobs can report intermediate progress via the `JobProgress` reporter (event-only `progress_text` on `companion://job`).
@@ -517,6 +522,48 @@ When a `/research` source is a walkthrough of a **Claude Code plugin** (Superpow
 
 ---
 
+### `npx tsc --noEmit` does NOT typecheck test files
+
+Found in `/research` run 2026-08-13 (kpi-dashboard-design compare). `tsconfig.json`
+sets `exclude: ["src/test", "src/**/__tests__/**", "src/lib/harness"]`, so the
+canonical type gate — the one in `npm run check`, the PR self-review list, and CI —
+**skips every `__tests__/` file in the repo**. Vitest transpiles with esbuild and
+does not typecheck either. So there is no gate at all on test-file types.
+
+The failure mode this creates: add a required field to a shared interface, and
+every `__tests__` object literal constructing that interface is now type-broken
+while `tsc` stays green and the suite still passes (esbuild strips the types).
+The error surfaces only in an editor, for whoever opens the file next.
+
+**Rule for any change that adds a required field to a shared type:** grep
+`src/**/__tests__/` for constructors of that type and update them in the same
+change. To verify, run tsc against a temporary config that re-includes tests:
+
+```bash
+cat > .tsconfig.testcheck.json <<'EOF'
+{ "extends": "./tsconfig.json", "include": ["src"], "exclude": ["src/test", "src/lib/harness"] }
+EOF
+npx tsc --noEmit -p .tsconfig.testcheck.json; rm -f .tsconfig.testcheck.json
+```
+
+Expect pre-existing errors from other test files (e.g.
+`sub_factory/l2/ship/__tests__/shipAnnotations.test.ts` as of 2026-08-13) — grep
+the output for your own paths rather than expecting a clean exit.
+
+### A column with a DEFAULT and no writer is invisible dead configuration
+
+Same run. `dev_kpis.tier` had a migration, a `NOT NULL DEFAULT 'supporting'`, two
+live consumers (`kpi_derivation.rs`'s ORDER BY and the Factory's tier-weighted
+health), a settable UI control, and an Athena op — and was still effectively
+constant, because the KPI *scan* (which creates most KPIs) had no `tier` field in
+its proposal struct at all. Everything downstream ran correctly on a value that
+never varied.
+
+Greps for the column name find plenty of hits and look healthy; what is missing is
+a **writer on the dominant creation path**. When a `/research` finding depends on a
+column meaning something, check who WRITES it, not just who reads it — and check
+the highest-volume creator specifically.
+
 ## 5. Build & Dev Commands
 
 ```bash
@@ -799,3 +846,192 @@ src-tauri/src/commands/fleet/hook_install.rs installs SessionStart/Notification/
 SessionEnd hooks POSTing to /fleet/hooks/*; fleet/classify.rs treats a Stop hook as the confident
 DONE signal. Claude Code's native cross-session messaging (2026-08) is ABSENT on native Windows
 and cloud-routed across machines - personas' app-side channel is strictly richer.
+
+## Opt-in engine gates are shipped but NEVER armed (added 2026-08-12, /research 12-rules run)
+
+Personas has a recurring convention: ship a feature behind an opt-in env gate for a
+"bake-in window", keeping production behavior unchanged. The convention is stated
+explicitly at `db/src/audit_incidents_promoter.rs:13-18`. **There is no bake-out step, and
+as of 2026-08-12 no production code sets any of these gates** — across all of
+`src-tauri/{src,engine/src,db/src,core/src}` every reference is a doc comment, a const, or
+a reader.
+
+| Gate | Const | Feature | State |
+|---|---|---|---|
+| `PERSONAS_HOOKS_SIDECAR` | `engine/hooks_sidecar.rs:39` | Claude Code native hooks -> session-queue memory capture | never armed |
+| `PERSONAS_CLAUDE_MD_PROJECTION` | `engine/claude_md_projection.rs:33` | tiered memories -> exec_dir CLAUDE.md (survives /compact) | never armed; 6 unit tests arm it |
+| `PERSONAS_INCIDENTS_PROMOTION` | `db/src/audit_incidents_promoter.rs:40` | audit inserts -> incidents inbox (8 call sites) | **partially live** via a deliberate carve-out at `alert_evaluator.rs:268` |
+
+**Consequences for /research findings:**
+- **Never score a gated feature as live.** Grep for a setter before treating one as
+  production behavior. A module can be fully implemented, unit-tested, and wired into the
+  runner while being a complete no-op in every real execution.
+- **A gate can have downstream victims.** The shipped catalog template
+  `scripts/templates/development/self-evolving-codebase-memory.json` exists to drain the
+  hooks-sidecar queue; with the gate unset it adopts cleanly and produces nothing forever
+  (its own `error_handling` says so). When a finding touches a gated lane, grep
+  `scripts/templates/` for dependents.
+- Both engine gates now report in the environment doctor
+  (`commands/infrastructure/system/health.rs::build_environment_section`, surfaced at
+  Overview -> Health -> Environment), so their state is observable rather than silent.
+- Bake-out audit is tracked at `Patterns/descoped-reopenable.md` (2026-08-12 entry).
+
+## Memory injection: rows are capped by the repo, characters by the packer
+
+`repos::core::memories::get_for_injection_v2(pool, scope, core_limit, active_limit)` applies
+**row limits only** (`LIMIT` in SQL). The character budget is a separate, downstream step:
+`memory_recall::pack_by_budget(candidates, ACTIVE_MEM_BUDGET_CHARS, now)`.
+
+- `ACTIVE_MEM_BUDGET_CHARS = 6000` lives at `db/src/memory_recall.rs` and is shared by the
+  two surfaces that project persona memory to the model: the runner's `## Agent Memory`
+  system-prompt section and `claude_md_projection`. It was a runner-local const until
+  2026-08-12, when the projection was found to have skipped the budget entirely.
+- **`pack_by_budget` SKIPS over-budget entries rather than truncating them**, on the
+  documented grounds that "a partial memory is worse than none". Any new cap on this
+  material must follow that rule, not invent a truncating one.
+- Core tier is deliberately unbudgeted: user-pinned is sacred (MEMORY CONTRACT (1)) and is
+  bounded by `CORE_LIMIT` rows.
+- The full MEMORY CONTRACT (tiers, decay, ml task-aware recall) is the doc-comment block
+  above `pub struct PersonaMemory` in `core/src/models/memory.rs`.
+
+## Personas WRITES CLAUDE.md in three places (it is a producer, not just a consumer)
+
+A /research finding about CLAUDE.md content almost always lands on one of these, not on
+personas' own root file:
+
+1. **Managed repos, context map** - `commands/infrastructure/context_map_export.rs::render_section`
+   splices a marker-delimited `<!-- personas:context-map -->` block into `<root>/CLAUDE.md`
+   on every context scan. Everything outside the markers is preserved verbatim; copy this
+   splice pattern for any other managed-repo write.
+2. **Managed repos, conventions** - the `/codebase-init` skill Phase 2 generates
+   `.claude/CLAUDE.md` (commands, architecture, code conventions, working agreements,
+   dependency policy, performance expectations, type strictness, size budget).
+3. **Per-execution exec_dir** - `engine/claude_md_projection.rs` writes
+   `.claude/persona-memory.md` plus an `@import` line, gated (see above).
+
+`standards_ruleset.md` note: the golden ruleset is `include_str!`'d into the standards-scan
+prompt at `commands/infrastructure/standards_scan.rs:95`. `rule_key` is free-form, but
+**categories are allowlisted** at `standards_scan.rs:44` and `norm()` silently coerces an
+unlisted category to `code_quality` - adding a `## <category>` heading to the markdown
+without updating the const mis-files every finding under it without failing.
+
+## `mcpServers` blocks: one typed model, and the transport-name divergence (added 2026-08-13)
+
+Personas WRITES `mcpServers` JSON from **eight** places — three of them into a *user's own*
+client config, not just its own temp dirs:
+
+| Site | Consumer |
+|---|---|
+| `engine/src/cli_mcp_config.rs` | the per-execution `--mcp-config` sidecar (`personas-mcp`) |
+| `commands/fleet/pty.rs` | per-Fleet-session Athena MCP endpoint |
+| `browser_bridge/mod.rs` | browser-bridge HTTP endpoint |
+| `commands/artist/mod.rs` | Blender MCP for artist turns |
+| `commands/credentials/auto_cred_browser.rs` | Playwright MCP |
+| `webbuild/mcp.rs` | Studio build-turn connectors |
+| `mcp_server/install.rs` | **user's** `~/.claude/mcp.json` and `~/.cursor/mcp.json` |
+| `commands/infrastructure/system/mcp_integration.rs` | **user's** Claude Desktop config |
+
+**All eight now construct entries through `personas_core::mcp_config::McpServer` +
+`mcp_config_json`** (`/research` run 2026-08-13, commit `50714e4ee`). Before that they were
+eight `json!` literals that had drifted into five conventions for the discriminator —
+including `"transport": "stdio"` (a key no MCP or Agent Plugins schema defines, silently
+ignored by every reader) and two sites with no discriminator at all. Add new writers through
+the builder; do not hand-roll a ninth literal.
+
+**The transport-name divergence is deliberate, not an oversight.** MCP and Agent Plugins
+1.0.0 both name the modern HTTP transport `streamable-http`. Personas emits `"http"`, pinned
+at `personas_core::mcp_config::MCP_HTTP_TYPE`, because that is what Claude Code / Cursor /
+Claude Desktop accept and what the live Fleet-Athena and browser-bridge paths are verified
+working with. **Changing that constant is a wire-visible behavior change against a
+third-party reader — it needs a live CLI test, not a compile.** Reopen conditions are
+tracked at `Patterns/descoped-reopenable.md` (2026-08-13 entry).
+
+**The inbound client is a separate vocabulary and is one name behind.**
+`engine/mcp_tools.rs` dispatches on a credential's `connection_type` at three sites
+(`:437-443`, `:706-712`, `:880-895`) and accepts only `"stdio"` / `"sse"`, erroring
+otherwise. Its `"sse"` path (`:1395-1465`) is a plain HTTP POST with 2026-07-28/legacy
+dual-era negotiation — **personas already implements Streamable HTTP and files it under the
+legacy name**; the credential UI (`vault/sub_catalog/components/schemas/schemaConfigs.tsx:41-51`)
+offers those same two subtypes. A `/research` finding about MCP transports must say which
+direction it targets: the writer vocabulary (the builder above) or the reader vocabulary
+(these three match arms).
+
+**Latent, unfixed:** `engine/src/desktop_discovery.rs:404` — `ClaudeMcpServerEntry` declares
+`command: String` with no `#[serde(default)]`, so a user whose Claude Desktop config holds
+any HTTP MCP server fails `import_claude_desktop_mcp_servers` for **every** server, not just
+that one. Found 2026-08-13 while scoping the writer cleanup; out of scope there (a reader).
+
+## Athena's voice stack is complete; only its REACH was ever the gap (added 2026-08-17)
+
+Mapped in `/research` run 2026-08-17 (Chase AI Obsidian OS). Any "give personas
+voice / local STT / TTS / push-to-talk" finding is a **catch** — all of it ships:
+
+| Piece | Where |
+|---|---|
+| Local on-device STT | `companion/stt/{whisper,installer,downloader,catalog}.rs` (+ a browser Web Speech engine; user picks via `companionSttEngine`) |
+| TTS | Kokoro (primary) + Pocket TTS, `sub_voice/{KokoroVoicePanel,PocketVoicePanel}.tsx` |
+| Push-to-talk | `useHoldToTalk.ts` — one instance, owned by `AthenaOrbLayer` |
+| Voice without opening the panel | `voiceTurnRequest` → always-mounted `CompanionPanel` runs the full `send()` (streaming + TTS) |
+| Answering a pending decision BY VOICE, skipping the chat turn | `useHoldToTalk.ts:108-118` → `parseSpokenDecision` |
+| Quick round-trip without the panel | `orb/OrbQuickInputBar.tsx` |
+
+**The chord is `Cmd/Ctrl+Shift+A` and it now exists in two scopes.** In-app it is
+handled on the app keyboard registry in `AthenaOrbLayer.tsx` (at
+`ROUTE_DECISION_PRIORITY`, so overlays that claim the keyboard win first). OS-wide
+it is `tauri-plugin-global-shortcut`, registered from `useGlobalVoiceHotkey.ts` via
+`companion_set_voice_hotkey` (`commands/companion/voice_hotkey.rs`, desktop-gated),
+**opt-in** behind `companionGlobalHotkeyEnabled` (default off). Both scopes call one
+extracted `summonVoice` callback — do not add a third caller that re-implements it.
+
+The frontend owns the binding and pushes it down; Rust holds no default. A finding
+that wants a *rebindable* chord needs only a keycapture UI — the Rust command already
+takes an arbitrary accelerator string.
+
+**There IS a system tray** (`src-tauri/src/tray.rs`) with the canonical
+show/unminimize/set_focus sequence at `:27-31` and `:137-147`, plus scheduler and
+clipboard-watcher toggles. Reuse that sequence for anything that needs to surface the
+window. (A grep for it is easy to *miss* — `head`-capped, path-sorted output buries
+`src/tray.rs` behind eight `commands/**` matches on the word "stray".)
+
+## `~/.claude/projects/*.jsonl` is mined for DORMANCY only (added 2026-08-17)
+
+`commands/infrastructure/skill_usage.rs` (755 LOC) already walks the Claude Code
+transcript store incrementally — per-file byte watermark in `skill_scan_state`, an
+append-only `skill_usage_events` log, plus doc reads into `doc_read_events` on the
+same pass. Commands: `skill_usage_scan:508`, `skill_usage_overview:598`,
+`skill_version_timeline:655`. `DORMANT_DAYS = 30`.
+
+It answers exactly one question: **which existing skills has nobody invoked.** The
+inverse — mine the history for recurring work that has *no* skill yet — does not
+exist (zero hits for `propose_skill|suggest_skill|skill_candidate|unskilled|recurring`).
+A finding proposing that discovery direction is real, but note it would be a **fourth**
+parallel idea source into `dev_ideas` (alongside `idea_scanner`, `static_scan`,
+`practice-harvest`) and needs its own consent story — `cli_session_awareness` gates
+transcript reads behind two explicit toggles plus a freshness cutoff, and a 30-90 day
+mining window is a wider read than that.
+
+## Skill-tree walks are containment-guarded (added 2026-08-13)
+
+A skill tree is content supplied by a **managed repository**, which personas does not
+control. Every walk over `.claude/skills/` must go through
+`commands::infrastructure::skill_files::classify_skill_entry`, which types an entry via
+`DirEntry::file_type` (which does NOT traverse) and rejects symlinks — Windows junctions
+included — plus non-regular files. `MAX_SKILL_DIR_DEPTH` (8) caps recursion. Shipped by
+`/research` run 2026-08-13, commit `ee97789bc`, after finding that all five walks used
+`Path::is_dir()` / `fs::metadata` (both follow symlinks) with no depth cap: a link at
+`.claude/skills/<name>/refs -> ~/.ssh` was read into the shareable export bundle and
+**copied into the shared skill library on adopt**, and a self-referential link recursed to
+stack overflow.
+
+The five walks: `skill_files.rs` copy/install, hash (`collect_skill_files`), library scan
+(`scan_skills_dir`) and its reference listing; `commands/core/data_portability.rs`
+export collector (`collect_skill_dir_files`).
+
+**Invariant a new walk must preserve:** the copy walk and the hash walk must apply
+*identical* skip rules. `collect_skill_files` backs `hash_skill_dir`, so if they disagreed
+about what counts as skill content, every installed copy of a skill containing a rejected
+entry would hash differently from its source and read as permanently `diverged`. A unit
+test in `skill_files.rs` asserts this.
+
+Rejections **degrade, never fail** — a stray link warns (install) or lands in
+`export_warnings` (export) rather than blocking an otherwise valid skill.

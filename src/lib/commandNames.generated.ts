@@ -275,6 +275,7 @@ export type CommandName =
   | "companion_set_fleet_boldness"
   | "companion_set_plugin_enabled"
   | "companion_set_sensory_source_enabled"
+  | "companion_set_voice_hotkey"
   | "companion_stt_delete_model"
   | "companion_stt_download_model"
   | "companion_stt_engine_status"

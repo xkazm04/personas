@@ -12752,7 +12752,10 @@
       "applied_toast": "Applied recipe: {name}",
       "run_now": "Run now",
       "run_now_toast": "Opening {name} in the recipe playground"
-    }
+    },
+    "outcome_pending": "runs, no outcomes yet",
+    "outcome_of_runs": "of {terminal} delivered value",
+    "outcome_breakdown": "{runs} runs total · {completed} completed · {failed} failed"
   },
   "recipe_shared": {
     "schema_parse_error": "Could not read this recipe's input fields — the stored schema is malformed.",
@@ -15977,7 +15980,14 @@
       "orb_unread_more": "+{count} more",
       "orb_unread_open": "Open chat",
       "orb_unread_dismiss": "Mark as read",
-      "orb_quick_input_expand": "Open the full chat"
+      "orb_quick_input_expand": "Open the full chat",
+      "global_hotkey_title": "Talk from anywhere",
+      "global_hotkey_desc": "Reach Athena by voice while another app has focus, not just when the Personas window is in front.",
+      "global_hotkey_enable": "Enable system-wide shortcut",
+      "global_hotkey_disable": "Disable system-wide shortcut",
+      "global_hotkey_active": "Works anywhere on your computer",
+      "global_hotkey_in_app_only": "Works only while Personas is in front",
+      "global_hotkey_failed": "Another app is already using that shortcut, so it could not be enabled."
     },
     "artist_gallery": {
       "loading_viewer": "Loading viewer…",
@@ -19441,7 +19451,13 @@
     "populate_lane_kpis": "KPIs",
     "populate_lane_simulation": "Simulated KPI data",
     "populate_lane_simulation_detail": "For a product that has not shipped: walks your features as representative users to estimate the adopted KPIs, and researches targets from comparable products. The longest step.",
-    "populate_scope_empty": "Pick at least one thing to cover."
+    "populate_scope_empty": "Pick at least one thing to cover.",
+    "track_unpaced": "No pace set",
+    "stat_unpaced": "No pace set",
+    "stat_unpaced_hint": "not steerable yet",
+    "pace_unpaced": "Measured, but with no target date there is nothing to fall behind. Add one so the system can steer this.",
+    "pace_unpaced_no_target": "Measured, but no target is set, so there is nothing to steer toward yet.",
+    "headline_count": "{count} headline"
   },
   "planner": {
     "nav_label": "Plan",

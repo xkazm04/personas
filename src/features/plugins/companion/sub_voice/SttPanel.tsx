@@ -15,6 +15,7 @@ import {
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import Button from '@/features/shared/components/buttons/Button';
 import { SttCompareModal } from './SttCompareModal';
+import { GlobalHotkeyCard } from './GlobalHotkeyCard';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ActivityDot } from '@/features/shared/components/display/ActivityDot';
 import { useSystemStore } from '@/stores/systemStore';
@@ -458,6 +459,8 @@ function WhisperConfig() {
           )}
         </div>
       </SectionCard>
+
+      <GlobalHotkeyCard />
     </>
   );
 }

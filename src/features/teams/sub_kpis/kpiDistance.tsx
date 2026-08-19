@@ -23,6 +23,16 @@ export interface DistanceRow {
   reason: OffTrackReason | null;
   /** KPI category token — lets the board render its icon without the DevKpi. */
   category: string;
+  /** north_star | primary | supporting — how much this metric outranks its
+   *  siblings. Drives row order so the headline KPIs read first. */
+  tier: string;
+}
+
+/** Sort weight for a KPI tier, lowest first. Mirrors the ORDER BY in
+ *  `engine/kpi_derivation.rs::find_derivation_candidates` so the order the
+ *  dashboard shows is the order the system will actually work in. */
+export function tierRank(tier: string): number {
+  return tier === 'north_star' ? 0 : tier === 'primary' ? 1 : 2;
 }
 
 export interface DistanceGroup {
