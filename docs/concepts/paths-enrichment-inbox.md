@@ -333,3 +333,52 @@ fire-and-forget and observes rather than does these.
 These are forge candidates for the REGISTRY (the corpus's new home). Forging them is
 the migration/corpus-owner session's call; recorded here as the first evidence that
 running coverage against a NEW domain surfaces real corpus growth, not just repo fixes.
+
+---
+
+## Round 6 — LightTrack FULL coverage (2026-08-19), via the new runner
+
+First full A→B→C→D coverage run through `scripts/census/coverage/` on a NEW repo
+(LightTrack, Rust LLM-observability platform), corpus sourced from the registry.
+34 contexts → 167 live cells → 8 scan agents (155 cells: 133 holds/42 partial/1
+violates) → pairing ledger (30 problem-classes, 2 FIX/28 DEFER) → triage-with-probes.
+
+**Shipped (pushed to github.com/xkazm04/lighttrack):** 9 (a)-class fixes, each behind
+a Rust regression probe (fail-before/pass-after), 7 commits — subprocess wall-clock
+timeout+reaper, constant-time secret compare (via the repo's own `secret_eq`),
+sort-tiebreaker, structural (non-substring) status classification, a `RelayStatus`
+enum authority, `Status::ALL`-driven validators, hoisted `RECURRENCE_KEY`, revenue
+predicate-echo, trace `unpriced_spans` count. **Convergence datapoint:** the remote
+had INDEPENDENTLY made the same `secret_eq` swap — a fourth-party reinvention of a
+corpus-predicted fix.
+
+**~18 (b) decision-queue items** (auth/billing/lease/schema product calls) recorded
+for the LightTrack owner.
+
+### (c) corpus feedback
+
+- **LAW-boundary refinement — `one-authority-per-vocabulary` over-reaches at a
+  deliberate zero-dependency module boundary.** `render/md.rs::status_glyph` keeps a
+  second copy of the status vocabulary, but `render` intentionally has NO `core`
+  dependency and its `_ =>` arm degrades to a neutral `·` (distinct, not a crash),
+  documented. Proposed: the law should treat *a documented zero-dependency boundary
+  whose fallback degrades gracefully* as accepted counter-evidence, not a violation.
+  Same shape as the render-budget demotion. (This edits `_laws.md` — apex contract —
+  so it's the corpus owner's call, recorded here rather than forged directly.)
+
+### New-technique candidates — the observability-PLATFORM domain (corpus gap, confirmed)
+
+The corpus's tracing/cost subjects are EMITTER-authored (you instrument your own app);
+LightTrack is the PLATFORM others send traces to. Four concrete new-technique candidates:
+- **trace-ingestion-trust-boundary** — receiver stamps `received_at`, stamps+strips
+  `api_key_id` so attribution can't be forged, canonicalizes OTLP+SDK ids.
+- **server-owned-accounting-clock** — every budget window keys on server `received_at`,
+  not client `ts`, so a skewed client clock can't move a cap.
+- **recomputation-worthiness-classification** (Grown/Changed/unknown-digest) — decides
+  WHEN recomputing a derived verdict is worth paying for. `refines derivation-names-recomputation`.
+- **k-anonymity-over-sources-before-projection** + differencing-rate-limit — cross-tenant
+  aggregation where the push *sequence* is a side channel even when payloads are scrubbed.
+
+Plus ~40 better-application witnesses across the 8 shards (FX money-honesty, breaker
+around paid spawns, RedactionCache, dual sqlite/pg atomic-claim, judge-bias suite,
+determinism provenance) — full detail in the `findings-lighttrack-*.json`.
