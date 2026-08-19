@@ -7,6 +7,15 @@
 > The **Deviations** section is a fix backlog; it migrates to `violating` cells
 > in `workspace_practice_context_state` when this path is ingested.
 
+> **Post-publication note — 2026-08-17. The population is 247, not 252.** Every
+> `<LoadingSpinner>` count in this document was measured before `78e9bff68` deleted the
+> unreachable `teams/sub_canvas/` tree. The delta is **exactly the 5 sites that lived
+> there** — verified by re-running the count at `78e9bff68^`, which returns 252. The
+> splits below (75 busy ternaries / 152 standalone / 21 `label` / 4 `&&`-guarded) are
+> therefore historical as of that commit. **Nothing was fixed**: the corpus shrank
+> because the code was removed, which is the one reading a shrinking number must not
+> get. Same correction applies to [`idempotent-invocation.md`](./idempotent-invocation.md).
+
 ## Scope — read this before anything else
 
 This path governs **one action the user just triggered**: a save, a dispatch, a

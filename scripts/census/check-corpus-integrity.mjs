@@ -199,6 +199,213 @@ for (const r of rules) {
   }
 }
 
+// --------------------- 3.5 subject hierarchy (docs/concepts/paths/) — GRAPH.md
+// Enforces the v2 layer contract, section by section of docs/concepts/paths/GRAPH.md
+// §6. The layer boundary was the one ungated invariant in v1 and it flattened; this
+// block is the gate the plan (knowledge-hierarchy-plan.md §5) requires.
+//
+// What this CANNOT check, stated rather than implied by a green exit: the live
+// transplant test — handing a Golden Path to an agent in a sibling repo with no access
+// to this one. Only that test promotes `status:` to `transplant-tested`; the purity
+// denylist below is a static floor, not the test.
+const HIER_DIR = path.join(CONCEPTS, 'paths');
+const hierStats = { subjects: 0, categories: 0, techniques: 0, applications: 0, mapped: 0 };
+if (fs.existsSync(HIER_DIR)) {
+  // Minimal YAML-subset frontmatter parser: scalars, `- item` lists, inline [a, b],
+  // trailing ` # comment` stripped. Anything fancier than that in a frontmatter block
+  // is a contract violation anyway.
+  const parseFrontmatter = (raw) => {
+    const m = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
+    if (!m) return null;
+    const fm = {};
+    let currentKey = null;
+    for (const line of m[1].split(/\r?\n/)) {
+      const item = line.match(/^\s+-\s+(.*)$/);
+      if (item && currentKey) {
+        fm[currentKey].push(item[1].replace(/\s+#.*$/, '').trim());
+        continue;
+      }
+      const kv = line.match(/^([A-Za-z_]+):\s*(.*)$/);
+      if (!kv) continue;
+      const [, key, valRaw] = kv;
+      const val = valRaw.replace(/\s+#.*$/, '').trim();
+      if (val === '' ) { fm[key] = []; currentKey = key; }
+      else if (val === '[]') { fm[key] = []; currentKey = null; }
+      else if (val.startsWith('[')) {
+        fm[key] = val.replace(/^\[|\]$/g, '').split(',').map((s) => s.trim()).filter(Boolean);
+        currentKey = null;
+      } else { fm[key] = val; currentKey = null; }
+    }
+    return { fm, body: raw.slice(m[0].length) };
+  };
+
+  const STATUSES = new Set(['draft', 'forged', 'reconciled', 'transplant-tested']);
+  const STACKS = new Set(['react', 'rust', 'sql', 'node', 'process']);
+
+  // Layer purity (GRAPH.md §5): golden-path and technique bodies carry zero repo
+  // identifiers or stack names. Frontmatter is exempt (evidence lives there on
+  // purpose); Application bodies are exempt (citing real code is their job).
+  // This list is a FLOOR — extend it when a leak slips past; never narrow it to
+  // make a document pass.
+  const PURITY = [
+    [/\b(?:src|src-tauri|scripts|docs)\//, 'repo path'],
+    [/\.(?:tsx?|rs|mjs|cjs|jsx)\b/, 'source-file extension'],
+    [/\b(?:React|Tauri|Rust|TypeScript|JavaScript|Zustand|Tailwind|Vite|Vitest|SQLite|PostgreSQL|Postgres|Personas|UnifiedTable|ESLint|Zod)\b/, 'stack/product identifier'],
+  ];
+
+  const lawAnchors = new Set();
+  const lawsFile = path.join(HIER_DIR, '_laws.md');
+  if (fs.existsSync(lawsFile)) {
+    for (const m of fs.readFileSync(lawsFile, 'utf8').matchAll(/<a id="([^"]+)"><\/a>/g)) lawAnchors.add(m[1]);
+  }
+  if (lawAnchors.size === 0) fail('paths/_laws.md is missing or declares zero law anchors — Techniques cannot cite laws');
+
+  const subjectDirs = fs.readdirSync(HIER_DIR, { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name);
+  hierStats.subjects = subjectDirs.length;
+
+  // categories.json — the graph's top ring (docs/plans/patterns-v2-ui.md D3).
+  //
+  // Subject frontmatter carries no group, so the graph needs one small external
+  // authority for "which spoke does this subject sit on". Gated here rather than
+  // left to the reader, because the failure it prevents is silent: a subject with
+  // no category simply never renders, and an entry for a deleted subject leaves a
+  // spoke pointing at nothing. Both are invisible in the app and obvious here.
+  const CATS = path.join(HIER_DIR, 'categories.json');
+  if (!fs.existsSync(CATS)) {
+    fail('paths/categories.json is missing — every subject needs a graph category (patterns-v2-ui.md D3)');
+  } else {
+    let cats = null;
+    try { cats = JSON.parse(fs.readFileSync(CATS, 'utf8')); }
+    catch (err) { fail(`paths/categories.json does not parse: ${err.message}`); }
+    if (cats) {
+      const ids = new Set((cats.categories ?? []).map((c) => c.id));
+      if (ids.size === 0) fail('paths/categories.json declares zero categories');
+      const orders = (cats.categories ?? []).map((c) => c.order);
+      if (new Set(orders).size !== orders.length) {
+        fail('paths/categories.json: duplicate category order values — order is the compass sequence and must be unique');
+      }
+      const assigned = cats.subjects ?? {};
+      for (const [slug, cat] of Object.entries(assigned)) {
+        if (!subjectDirs.includes(slug)) fail(`categories.json assigns "${slug}", which has no paths/${slug}/ folder`);
+        if (!ids.has(cat)) fail(`categories.json assigns "${slug}" to unknown category "${cat}"`);
+      }
+      for (const slug of subjectDirs) {
+        if (!(slug in assigned)) fail(`paths/${slug}/ has no entry in categories.json — it would not appear in the graph`);
+      }
+      hierStats.categories = ids.size;
+    }
+  }
+
+  const readNode = (file, expect) => {
+    const raw = fs.readFileSync(file, 'utf8');
+    const parsed = parseFrontmatter(raw);
+    const rel = path.relative(ROOT, file);
+    if (!parsed) { fail(`${rel}: missing frontmatter block`); return null; }
+    const { fm, body } = parsed;
+    if (fm.layer !== expect) fail(`${rel}: layer "${fm.layer}" but location says "${expect}"`);
+    if (fm.status && !STATUSES.has(fm.status)) fail(`${rel}: unknown status "${fm.status}"`);
+    if (expect === 'golden-path' || expect === 'technique') {
+      for (const [re, what] of PURITY) {
+        const hit = body.match(re);
+        if (hit) fail(`${rel}: body purity — contains ${what} "${hit[0]}" (transplant test forbids it in this layer; move it to an Application or to evidence: frontmatter)`);
+      }
+    }
+    return fm;
+  };
+
+  for (const slug of subjectDirs) {
+    const dir = path.join(HIER_DIR, slug);
+    const gpFile = path.join(dir, `${slug}.md`);
+    if (!fs.existsSync(gpFile)) { fail(`paths/${slug}/ has no ${slug}.md golden path`); continue; }
+    const gp = readNode(gpFile, 'golden-path');
+    if (!gp) continue;
+    if (gp.subject !== slug) fail(`paths/${slug}/${slug}.md: subject "${gp.subject}" ≠ folder "${slug}"`);
+
+    const evidence = Array.isArray(gp.evidence) ? gp.evidence : [];
+    if (evidence.length === 0) fail(`paths/${slug}/${slug}.md: zero evidence links — a standard with no witness`);
+    for (const ev of [...evidence, ...(Array.isArray(gp.counter_evidence) ? gp.counter_evidence : [])]) {
+      if (!fs.existsSync(path.join(ROOT, ev))) fail(`paths/${slug}/${slug}.md: evidence "${ev}" does not exist`);
+    }
+
+    // techniques: frontmatter list ↔ files on disk, identical sets. Entries with an
+    // @owner suffix (e.g. pagination@table) reference another subject's technique
+    // (GRAPH.md §3) and must resolve THERE and not exist locally.
+    const techDir = path.join(dir, 'techniques');
+    const onDisk = new Set(fs.existsSync(techDir) ? fs.readdirSync(techDir).filter((f) => f.endsWith('.md')).map((f) => f.replace(/\.md$/, '')) : []);
+    const declared = Array.isArray(gp.techniques) ? gp.techniques : [];
+    const declaredLocal = new Set();
+    for (const t of declared) {
+      const shared = t.match(/^([a-z0-9-]+)@([a-z0-9-]+)$/);
+      if (shared) {
+        const [, tech, owner] = shared;
+        if (!fs.existsSync(path.join(HIER_DIR, owner, 'techniques', `${tech}.md`))) {
+          fail(`paths/${slug}/${slug}.md: shared technique "${t}" — no paths/${owner}/techniques/${tech}.md`);
+        }
+        if (onDisk.has(tech)) fail(`paths/${slug}/${slug}.md: "${t}" declared shared but paths/${slug}/techniques/${tech}.md also exists locally — one owner (GRAPH.md §3)`);
+        continue;
+      }
+      declaredLocal.add(t);
+      if (!onDisk.has(t)) fail(`paths/${slug}/${slug}.md: declares technique "${t}" but paths/${slug}/techniques/${t}.md does not exist`);
+    }
+    for (const t of onDisk) {
+      if (!declaredLocal.has(t)) fail(`paths/${slug}/techniques/${t}.md exists but ${slug}.md does not declare it — links must hold in both directions`);
+    }
+    hierStats.techniques += onDisk.size;
+
+    for (const t of onDisk) {
+      const fm = readNode(path.join(techDir, `${t}.md`), 'technique');
+      if (!fm) continue;
+      if (fm.subject !== slug) fail(`paths/${slug}/techniques/${t}.md: subject "${fm.subject}" ≠ "${slug}"`);
+      if (fm.technique !== t) fail(`paths/${slug}/techniques/${t}.md: technique "${fm.technique}" ≠ filename "${t}"`);
+      for (const law of Array.isArray(fm.laws) ? fm.laws : []) {
+        if (!lawAnchors.has(law)) fail(`paths/${slug}/techniques/${t}.md: cites unknown law "${law}"`);
+      }
+      for (const sw of Array.isArray(fm.shared_with) ? fm.shared_with : []) {
+        if (!subjectDirs.includes(sw)) fail(`paths/${slug}/techniques/${t}.md: shared_with "${sw}" is not a subject`);
+      }
+    }
+
+    const appDir = path.join(dir, 'applications');
+    if (fs.existsSync(appDir)) {
+      for (const f of fs.readdirSync(appDir).filter((f) => f.endsWith('.md'))) {
+        const fm = readNode(path.join(appDir, f), 'application');
+        hierStats.applications++;
+        if (!fm) continue;
+        if (fm.subject !== slug) fail(`paths/${slug}/applications/${f}: subject "${fm.subject}" ≠ "${slug}"`);
+        if (!STACKS.has(fm.stack)) fail(`paths/${slug}/applications/${f}: unknown stack "${fm.stack}"`);
+        if (!onDisk.has(fm.technique)) fail(`paths/${slug}/applications/${f}: technique "${fm.technique}" not in paths/${slug}/techniques/`);
+        const expectName = `${fm.stack}--${fm.technique}.md`;
+        if (f !== expectName) fail(`paths/${slug}/applications/${f}: filename should be "${expectName}" (GRAPH.md §7)`);
+      }
+    }
+  }
+
+  // corpus-map.json: upward links for the legacy 247 without editing them.
+  const mapFile = path.join(HIER_DIR, 'corpus-map.json');
+  if (!fs.existsSync(mapFile)) fail('paths/corpus-map.json is missing — the legacy corpus has no upward-link surface');
+  else {
+    const map = JSON.parse(fs.readFileSync(mapFile, 'utf8'));
+    const entries = map.entries || {};
+    for (const [legacyFile, target] of Object.entries(entries)) {
+      if (!fs.existsSync(path.join(PATHS_DIR, legacyFile))) fail(`corpus-map.json maps "${legacyFile}", which does not exist in golden-paths/`);
+      const subj = typeof target === 'string' ? target : target.subject;
+      if (!subjectDirs.includes(subj)) fail(`corpus-map.json maps "${legacyFile}" → subject "${subj}", which has no paths/${subj}/ folder`);
+    }
+    hierStats.mapped = Object.keys(entries).length;
+    if (map.complete === true) {
+      for (const f of pathFiles) {
+        if (!NOT_A_PATH[f] && !entries[f]) fail(`corpus-map.json declares complete:true but "${f}" is unmapped`);
+      }
+    }
+  }
+
+  if (subjectDirs.length === 0) {
+    console.log('  hierarchy: paths/ exists but holds no subjects yet — contract checks idle (loud, not silent).');
+  }
+}
+
 // ------------------------------------------ 4. golden-path index freshness
 // ADVISORY ONLY — this section MUST NOT change the exit code.
 //
@@ -246,6 +453,13 @@ console.log(
   `(${written.size} written, ${leaves.length - written.size} remaining) · ` +
   `${linksChecked} links · ${rules.length} census rules`,
 );
+if (fs.existsSync(HIER_DIR)) {
+  console.log(
+    `hierarchy: ${hierStats.subjects} subjects (${hierStats.categories} categories) · ${hierStats.techniques} techniques · ` +
+    `${hierStats.applications} applications · ${hierStats.mapped}/${pathFiles.length - Object.keys(NOT_A_PATH).length} legacy mapped · ` +
+    'NOT checked statically: the live transplant test (GRAPH.md §5) — only it promotes status to transplant-tested',
+  );
+}
 
 if (failures.length) {
   console.error(`\ncorpus integrity FAILED — ${failures.length} problem(s):\n`);

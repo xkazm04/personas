@@ -138,5 +138,9 @@
   "adoption_answers_rejected_message": "Faltan algunas respuestas del cuestionario o no son válidas.",
   "adoption_answers_rejected_suggestion": "Vuelve a abrir las preguntas de configuración, completa las indicadas y continúa.",
   "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
-  "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
+  "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in.",
+  "trigger_type_not_storable_message": "Esta versión de la aplicación no puede guardar ese tipo de disparador.",
+  "trigger_type_not_storable_suggestion": "Elige otro tipo de disparador. Si acabas de actualizar la aplicación, reiníciala una vez para que se ejecute la migración de la base de datos que amplía los tipos admitidos.",
+  "trigger_unschedulable_message": "Este disparador se rechazó porque nada llegaría a iniciarlo nunca.",
+  "trigger_unschedulable_suggestion": "El motivo está en el detalle del error: normalmente falta una expresión cron o un intervalo, o la zona horaria no es un nombre IANA como \"Europe/Prague\". Corrige ese campo y vuelve a guardar."
 }

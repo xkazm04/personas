@@ -2343,6 +2343,149 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added unattended_mode column to persona_triggers (UAT P5 destructive-action gate)");
     }
 
+    // -- Widen persona_triggers.trigger_type to the whole TriggerKind vocabulary --
+    //
+    // The CHECK admitted six members while the Add-trigger menu offered ten, so
+    // `file_watcher`, `clipboard`, `app_focus` and `composite` could not be
+    // stored on ANY install — including all six one-click quick templates,
+    // three natural-language-parser branches, and two alias maps that
+    // *manufacture* two of the four from LLM/template shorthand. The engine has
+    // always had the dispatch loops (`engine/src/{file_watcher,clipboard_monitor,
+    // app_focus}.rs`, `src/engine/composite.rs`, each reading
+    // `get_enabled_by_type` for its own kind) and `TriggerConfig::from_raw` has
+    // always had the arms; the column was the only thing refusing, and it
+    // refused with an anonymous `CHECK constraint failed`.
+    //
+    // The member list comes from `TriggerKind::sql_check_list()`, the same
+    // source the base schema is resolved from — so this step also becomes the
+    // automatic rebuild whenever a future kind is added: the guard below
+    // compares the stored DDL against the enum rather than against a literal.
+    //
+    // SQLite cannot ALTER a CHECK, so this is the standard 12-step rebuild.
+    let trigger_table_sql: String = conn
+        .prepare(
+            "SELECT COALESCE(sql, '') FROM sqlite_master WHERE type='table' AND name='persona_triggers'",
+        )?
+        .query_row([], |row| row.get::<_, String>(0))
+        .unwrap_or_default();
+
+    let missing_kinds: Vec<&str> = personas_core::models::TriggerKind::ALL
+        .iter()
+        .map(|k| k.as_str())
+        .filter(|name| !trigger_table_sql.contains(&format!("'{name}'")))
+        .collect();
+
+    if !trigger_table_sql.is_empty() && !missing_kinds.is_empty() {
+        // The replacement shape is derived from the table's OWN stored DDL, not
+        // hand-written here — the `widen_kpi_measurement_source_with_ai_compose`
+        // / `rebuild_executions_table_with_incomplete_status` discipline. The
+        // two earlier persona_triggers rebuilds in this file (:469, :1071) DID
+        // hand-write their column lists, and replaying the second one against a
+        // copy of the operator's live database destroyed `status`,
+        // `trigger_version` and `unattended_mode` — 351 non-null values each —
+        // while preserving the row count exactly, so no row-count assertion
+        // could have caught it. This step runs at the END of the chain, where
+        // the live shape is not knowable from this file, which is precisely
+        // when a hand-written list is most wrong.
+        //
+        // Only the CHECK's member list changes, so one `replacen` over the
+        // stored DDL does the whole job, and `SELECT *` is then sound because
+        // the staging shape descends from the source's own DDL.
+        let open_paren = trigger_table_sql
+            .find("CHECK(trigger_type IN (")
+            .map(|i| i + "CHECK(trigger_type IN (".len());
+        let (start, end) = match open_paren
+            .and_then(|s| trigger_table_sql[s..].find(')').map(|e| (s, s + e)))
+        {
+            Some(pair) => pair,
+            None => {
+                // Not the shape this step was written against. Bail loudly
+                // rather than build a table that silently keeps the old
+                // constraint (or mangles a different clause).
+                return Err(AppError::Validation(
+                    "persona_triggers.trigger_type CHECK is not in the expected shape — refusing to rebuild"
+                        .into(),
+                ));
+            }
+        };
+        let widened = format!(
+            "{}{}{}",
+            &trigger_table_sql[..start],
+            personas_core::models::TriggerKind::sql_check_list(),
+            &trigger_table_sql[end..],
+        );
+        // Re-point the CREATE at a staging name. `persona_triggers` occurs once
+        // as the table name; the FK clause references `personas`, which does
+        // not contain the token.
+        let staged = widened.replacen("persona_triggers", "persona_triggers_kinds_new", 1);
+        if staged == widened {
+            return Err(AppError::Validation(
+                "persona_triggers rebuild could not re-point its CREATE at a staging name".into(),
+            ));
+        }
+
+        // Index/trigger DDL to replay after the rename — dropping the table
+        // drops them with it. Auto-indexes have a NULL `sql`.
+        let aux_sql: Vec<String> = {
+            let mut stmt = conn.prepare(
+                "SELECT sql FROM sqlite_master
+                 WHERE tbl_name='persona_triggers'
+                   AND type IN ('index','trigger')
+                   AND sql IS NOT NULL",
+            )?;
+            let rows = stmt.query_map([], |r| r.get::<_, String>(0))?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)?
+        };
+
+        // FK enforcement OFF for the swap: with foreign_keys=ON the
+        // `DROP TABLE persona_triggers` fires ON DELETE SET NULL on
+        // persona_executions.trigger_id and ON DELETE CASCADE on
+        // pending_trigger_fires / composite_trigger_fires. The guard re-enables
+        // FK on scope exit.
+        let _fk_guard = crate::FkDisabledGuard::new(conn).map_err(AppError::Database)?;
+
+        let mut batch = String::new();
+        batch.push_str("DROP TABLE IF EXISTS persona_triggers_kinds_new;\n");
+        batch.push_str(&staged);
+        batch.push_str(";\n");
+        batch
+            .push_str("INSERT INTO persona_triggers_kinds_new SELECT * FROM persona_triggers;\n");
+        batch.push_str("DROP TABLE persona_triggers;\n");
+        batch.push_str("ALTER TABLE persona_triggers_kinds_new RENAME TO persona_triggers;\n");
+        for s in &aux_sql {
+            batch.push_str(s);
+            batch.push_str(";\n");
+        }
+        ddl_step(conn, &batch)?;
+        tracing::info!(
+            added = ?missing_kinds,
+            "Widened persona_triggers.trigger_type CHECK to the full TriggerKind vocabulary"
+        );
+    }
+
+    // -- Repair enabled/status drift written by this tree -------------------------
+    // `status` was added as `NOT NULL DEFAULT 'active'`, so every INSERT that
+    // wrote `enabled` WITHOUT naming `status` produced `enabled=0,
+    // status='active'` — a row the UI badge reads as OFF and the two dispatch
+    // predicates (`get_due`, `get_enabled_by_type`, both keyed on `status`) read
+    // as ON. Persona duplication was a guaranteed producer: it copies every
+    // trigger with `enabled=0` and no status. The writers are fixed; this
+    // reconciles rows they already wrote. Only touches rows where the two
+    // genuinely disagree, and always believes the column the *user* toggled.
+    let drifted = conn.execute(
+        "UPDATE persona_triggers
+            SET status = 'disabled', updated_at = ?1
+          WHERE enabled = 0 AND status = 'active'",
+        rusqlite::params![chrono::Utc::now().to_rfc3339()],
+    )?;
+    if drifted > 0 {
+        tracing::info!(
+            rows = drifted,
+            "Reconciled persona_triggers rows that read 'off' in the UI and 'active' to the dispatcher"
+        );
+    }
+
     // -- Pending trigger fires (the 'approval' unattended-mode hold, UAT P5) ------
     // When a scheduler-fired trigger is in `approval` mode, its fire is HELD here
     // instead of publishing the event; a human approves/rejects, and on approval

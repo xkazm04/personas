@@ -333,16 +333,29 @@ pub fn backfill_schedule(
 
 /// Build the event payload for a user-initiated backfill slot.
 ///
-/// Delegates the field synthesis to the SAME `engine::background::
-/// synthesize_trigger_fired_payload` the live scheduler's own backfill path
-/// builds on (`engine::background::synthesize_backfill_payload` layers just
-/// `backfill_slot: true` on top of that same call). This used to be a
-/// hand-copied field-by-field twin of that function with one extra key —
-/// the copy is what would silently drift if the live payload shape changed;
-/// delegating means the shared fields (trigger_id, trigger_type,
-/// target_persona_id, fired_at, cron, interval_seconds, use_case_id) can
-/// never diverge between the two backfill payload builders. Only the two
-/// marker booleans below are local to the user-initiated path.
+/// Delegates the field synthesis to `engine::background::
+/// synthesize_trigger_fired_payload`, the same builder the live fire uses. This
+/// used to be a hand-copied field-by-field twin of that function with one extra
+/// key — the copy is what would silently drift if the live payload shape
+/// changed; delegating means the shared fields (trigger_id, trigger_type,
+/// target_persona_id, fired_at, cron, interval_seconds, use_case_id) can never
+/// diverge from the live payload here. Only the two marker booleans below are
+/// local to the user-initiated path, and `user_backfill_payload_delegates_and_
+/// adds_both_markers` pins that field-by-field.
+///
+/// CORRECTED 2026-08-17 (golden-paths/backfill-window-replay.md §7 D5). This
+/// comment used to assert that the AUTO path did the same — that
+/// `engine::background::synthesize_backfill_payload` "layers just
+/// `backfill_slot: true` on top of that same call". **It does not.** That
+/// function (`background.rs:2358`) still rebuilds the map field by field, and
+/// the copy has already lost a field: the live builder matches
+/// `TriggerConfig::Polling { interval_seconds }` and the twin matches only
+/// `Schedule`. The loss is currently unreachable (the auto-backfill branch is
+/// entered only for `trigger_type == "schedule"`), and nothing pins the twin to
+/// anything. So: the delegation guarantee below is real for THIS function and
+/// does not extend to the auto path. If you add a field to the live payload,
+/// add it to `synthesize_backfill_payload` by hand — or make it delegate too,
+/// which is three lines and is the right fix.
 fn synthesize_user_backfill_payload(
     trigger: &crate::db::models::PersonaTrigger,
     cfg: &TriggerConfig,

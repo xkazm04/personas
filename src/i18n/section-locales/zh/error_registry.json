@@ -138,5 +138,9 @@
   "adoption_answers_rejected_message": "问卷中有些答案缺失或无效。",
   "adoption_answers_rejected_suggestion": "重新打开设置问题，补全列出的项目，然后继续。",
   "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
-  "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
+  "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in.",
+  "trigger_type_not_storable_message": "当前应用版本无法保存该触发器类型。",
+  "trigger_type_not_storable_suggestion": "请改选其他触发器类型。如果应用刚刚更新过，请重启一次，让扩展可用类型的数据库迁移得以运行。",
+  "trigger_unschedulable_message": "该触发器已被拒绝，因为没有任何东西会启动它。",
+  "trigger_unschedulable_suggestion": "原因见错误详情——通常是缺少 cron 表达式或间隔时间，或者时区不是 \"Europe/Prague\" 这类 IANA 名称。修正该字段后重新保存。"
 }

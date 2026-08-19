@@ -16,6 +16,12 @@
 > [`shared-facts.json`](../shared-facts.json); everything else was measured during
 > composition. Deviations become `violating` cells.
 
+> **Post-publication note — 2026-08-17.** Of the two live sites named in §2 as sitting on
+> the wrong side of the seam, one is gone: `teams/sub_canvas/components/edges/EdgeDeleteTooltip.tsx`
+> was deleted with the whole unreachable `sub_canvas` tree in `78e9bff68`.
+> `plugins/fleet/FleetFooterPopover.tsx:51` remains and is still the live example. The
+> seam argument is unaffected — it lost an illustration, not a warrant.
+
 ---
 
 ## Principle (stack-free head)

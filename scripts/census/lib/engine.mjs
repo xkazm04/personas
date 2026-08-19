@@ -144,7 +144,7 @@ function buildRegExp(signal) {
  * exits — the caller decides what is fatal (so the self-test can inspect
  * failures instead of dying on them).
  */
-export function scanRule(rule, { root }) {
+export function scanRule(rule, { root, collectScanned = false }) {
   const excludes = (rule.exclude ?? []).map((entry) => ({
     ...entry,
     regexp: patternToRegExp(entry.path),
@@ -156,6 +156,11 @@ export function scanRule(rule, { root }) {
 
   let walked = 0;
   let scanned = 0;
+  // Opt-in (`collectScanned: true`): the exact repo-relative file set that passed
+  // the exclude filter — i.e. what `scanned` COUNTS. Consumers that define
+  // "applicability" (the context scorecard) need the set, not just the number.
+  // Default behavior is byte-identical: the field is absent unless requested.
+  const scannedFiles = collectScanned ? [] : null;
   const hits = [];
   let totalMatches = 0;
   let commentMatchesSkipped = 0;
@@ -172,6 +177,7 @@ export function scanRule(rule, { root }) {
         continue;
       }
       scanned++;
+      if (scannedFiles) scannedFiles.push(rel);
 
       const source = readFileSync(abs, 'utf8');
       // Cheap pre-filter: skip the line indexing for files that cannot match.
@@ -235,6 +241,7 @@ export function scanRule(rule, { root }) {
     commentMatchesSkipped,
     hits,
     excludes: excludes.map(({ path, reason, hits: n }) => ({ path, reason, hits: n })),
+    ...(scannedFiles ? { scannedFiles } : {}),
   };
 }
 

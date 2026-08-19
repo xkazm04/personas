@@ -57,6 +57,17 @@
 > [`terminal-state-and-recovery`](./terminal-state-and-recovery.md) owns what
 > the row says when the run dies. This path owns what the *viewport* says.
 
+> **Post-publication note — 2026-08-17: this leaf's rule has an unstated recall limit.**
+> `unconsulted-tail-pin` anchors on `.scrollTop = .scrollHeight` and therefore cannot see
+> the equivalent written as `scrollTo({ top: …scrollHeight })`.
+> `useAutomationSetup.ts:238-241` is exactly that shape and is **unguarded** —
+> hand-verified by the `streaming-chat-transcript` composer, whose independent pass found
+> 22 pins of which 14 are unguarded. The baseline (13) is **not wrong**; it is the count
+> of one spelling. Stated rather than silently widened: changing the anchor is a pattern
+> change that owes a full re-validation and a fresh precision figure, and a rule whose
+> recall limit is written down is honest, while one that is quietly widened between waves
+> is not reproducible.
+
 ---
 
 ## The headline: every cap in this design is 25× to 230× too large to have ever fired, and the one thing that actually reaches the user's screen is the one thing nothing masks

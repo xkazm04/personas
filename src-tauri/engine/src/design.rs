@@ -336,7 +336,12 @@ pub fn check_feasibility(
 
     // Check trigger types are valid
     if let Some(triggers) = val.get("suggested_triggers").and_then(|v| v.as_array()) {
-        let valid_types = ["manual", "schedule", "polling", "webhook"];
+        // The single source, not a hand-written 4-member subset. The old list
+        // reported "Unknown trigger type 'event_listener'" for the type that is
+        // the majority of every install's rows and the one the template-adoption
+        // view itself emits — a design review that failed the design because the
+        // reviewer's vocabulary was six members short.
+        let valid_types = personas_core::validation::trigger::VALID_TRIGGER_TYPES;
         for trigger in triggers {
             if let Some(t_type) = trigger.get("trigger_type").and_then(|v| v.as_str()) {
                 if valid_types.contains(&t_type) {

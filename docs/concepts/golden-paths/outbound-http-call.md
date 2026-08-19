@@ -925,6 +925,13 @@ Fix: `.expect("SSRF-safe validation client")`, or route through
 
 ### 7.I — P2: `managementFetch` is a dead credential-bearing fetch that the CSP also blocks
 
+> **RESOLVED — `src/api/system/managementApiAuth.ts` no longer exists.** It was deleted in
+> `e611c326d` (golden-paths batch 26) under the standing "a helper with zero consumers whose
+> signature is the defect" allowance. The analysis below describes the tree before that
+> commit and is kept for the reasoning, not as a live citation. Note what the sequence
+> actually was: this path *named* the dead credential-bearing fetch, and a later batch
+> removed it — the corpus closing one of its own findings.
+
 `src/api/system/managementApiAuth.ts:35-44` mints a system bearer token and
 `fetch`es `http://127.0.0.1:9420`. **Zero callers.** And `127.0.0.1:9420` is not in
 `connect-src` in either `csp` or `devCsp` (`devCsp` allows `http://localhost:*`,

@@ -763,7 +763,9 @@
   "resume_relay": "Relay fortsetzen",
   "arm_state": {
     "sleeping": "Ruhend",
-    "sleeping_title": "Aktiviert, aber außerhalb der aktiven Zeiten — wird nicht ausgelöst, bis das aktive Zeitfenster wieder öffnet."
+    "sleeping_title": "Aktiviert, aber außerhalb der aktiven Zeiten — wird nicht ausgelöst, bis das aktive Zeitfenster wieder öffnet.",
+    "unschedulable": "Nicht geplant",
+    "unschedulable_title": "Aktiv, aber ohne nächste Laufzeit – nichts wird ihn starten. Öffne den Auslöser und lege einen Cron-Ausdruck oder ein Intervall fest."
   },
   "pending_approval": {
     "approved": "Genehmigt — wird ausgeführt",

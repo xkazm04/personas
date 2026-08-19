@@ -143,7 +143,7 @@ src-tauri/
 ### Reusing shared components — check the catalog before building UI
 
 > **Before you write any UI, check whether a shared component already exists.**
-> The project has **~115 reusable, domain-agnostic primitives** under `src/features/shared/components/`,
+> The project has **128 reusable, domain-agnostic primitives** (recounted 2026-08-17 from the generated catalog; this line said ~115, a figure from the 2026-06-18 curation that has drifted by 13) under `src/features/shared/components/`,
 > catalogued in **[`src/features/shared/components/CATALOG.md`](../src/features/shared/components/CATALOG.md)**
 > (auto-generated, always fresh — the durable UI reference bundle). The #1 source of UI
 > drift is new code re-implementing a spinner / empty state / button / modal / tooltip /
@@ -169,7 +169,7 @@ src-tauri/
 | "no data" block | `feedback/ScenarioEmptyState` (default export — call sites import it as `EmptyState`), plus its `NoResults` / `InboxZero` wrappers. Chart panels → `display/ChartEmptyState`; compact generic block → `display/EmptyIllustration` |
 | styled `<button>` | `buttons/Button` / `buttons/AsyncButton` |
 | `navigator.clipboard.writeText` | `buttons/CopyButton` / `useCopyToClipboard` |
-| `fixed inset-0` modal backdrop | `modals/BaseModal` / `feedback/ConfirmDialog` (enforced by `custom/enforce-base-modal`) |
+| `fixed inset-0` modal backdrop | `modals/BaseModal` / `feedback/ConfirmDialog` — ~~enforced by `custom/enforce-base-modal`~~ **not enforced; corrected 2026-08-17.** That rule is `"warn"` (`eslint.config.js:95`), and warn-level enforces nothing at either gate. Worse, it does not *detect* this either: driven over its whole anchor it reports **8 sites at precision 0/8** (all anchored popovers or an inline notice — converting them would be a regression) and **recall 0/19** (the 19 hand-painted modal files carry no `role="dialog"`, which is what it keys on). It is also satisfied by a bare *import*. Its own `RuleTester` fixtures contain no `fixed inset-0`, so no fixture could ever have failed. Census rule `hand-painted-modal-backdrop` covers the real condition at **19 files / 20 matches, precision 20/20**; adoption is 129 `<BaseModal>` : 20 hand-painted = **86.6%**. See [`modal-stacking.md`](../docs/concepts/golden-paths/modal-stacking.md). |
 | `title=` / custom tooltip | `display/Tooltip` |
 | `new Date().toLocaleString()` / "ago" | `display/RelativeTime` |
 | `.toFixed()` / `.toLocaleString()` for display | `display/Numeric` |
@@ -223,12 +223,12 @@ as either half of the table above. The real spinners live inside `Button`
 (`Button.tsx:230,:237`) and `AsyncButton` (`AsyncButton.tsx:85`), which is
 deliberate.
 
-> ⚠️ `CATALOG.md`'s `LoadingSpinner` row still reads "Canonical loading
-> spinner… Use for any full-element loading state", which is wrong on both
-> halves. That text is **not** a `@catalog` tag on the component — it is
-> hardcoded in the `CURATED` map at `scripts/docs/gen-shared-catalog.mjs:56`,
-> so regenerating the catalog will not fix it. Correcting that line is an owed
-> follow-up in the shared-components territory.
+> ✅ **The `CATALOG.md` `LoadingSpinner` warning that stood here is RESOLVED** —
+> corrected 2026-08-13 in `ddeb19cc0`. Both the `CURATED` map
+> (`scripts/docs/gen-shared-catalog.mjs:57`) and the generated row now read
+> "RENDERS NOTHING. Spinners are disabled app-wide…". Verified 2026-08-17. The
+> owed follow-up this block described no longer exists — the stale artifact was
+> **this paragraph**, which outlived by four days the defect it named.
 
 ### Error Handling
 - `toastCatch()` from `src/lib/silentCatch.ts` for user-facing errors (Sentry + toast)
@@ -252,7 +252,7 @@ First adopter is `/research`; cross-skill adoption is the next step. If you're a
 
 The active-runs ledger is intent coordination; these are the **never-lose-work** guarantees that protect the working tree even when intent coordination fails. On 2026-05-09 a parallel session ran `git stash` to clean its tree before commit and silently swept five files (one untracked) of an in-flight `/research` run; recovery worked but only because the tracked files were in the stash and the untracked file was reproducible from conversation context. Don't assume the next stash victim will be that lucky.
 
-1. **Never `git stash` work that isn't yours.** Not even with `--keep-index`. Stash sweeps the entire working tree — including untracked files (with `-u`) and other sessions' in-flight edits — into a hidden state most agents won't think to look for. If your commit step needs a clean stage, use `git add <path>` per file (NOT `git add -A`/`git add .`/`git add -u`); leave everything else alone. The architect skill's "[Coexist with uncommitted work](./skills/architect/skill.md)" pattern is the canonical reference; mirror its discipline in any new skill.
+1. **Never `git stash` work that isn't yours.** Not even with `--keep-index`. Stash sweeps the entire working tree — including untracked files (with `-u`) and other sessions' in-flight edits — into a hidden state most agents won't think to look for. If your commit step needs a clean stage, use `git add <path>` per file (NOT `git add -A`/`git add .`/`git add -u`); leave everything else alone. The architect skill's "[Coexist with uncommitted work](./skills/architect/SKILL.md)" pattern is the canonical reference; mirror its discipline in any new skill.
 
 2. **Use `git worktree` for ALL multi-file work.** When your planned scope is more than a single file, do not work on `master` next to other sessions — create a worktree:
    ```bash
@@ -274,7 +274,15 @@ The active-runs ledger is intent coordination; these are the **never-lose-work**
 
    For periodic batch cleanup of worktrees other sessions left behind, run `npm run clean:worktrees` — it lists every worktree with age / dirty / merged status and (with `--force`) removes the ones that are clean + merged + stale. See [`docs/development/build-cache.md`](../docs/development/build-cache.md).
 
-5. **`git commit -- <pathspec>` does NOT reliably scope the commit when lefthook is installed.** Measured 2026-08-13 with four agents on one checkout: an agent used `git commit -- <paths>` precisely to avoid sweeping a sibling's work, and it swept three pre-staged files anyway (lefthook's partial-commit handling re-stages). `git commit --only <paths>` did hold. Two agents also lost a staged index entirely between `git add` and `git commit` — a sibling's activity cleared it, the commit silently became a no-op, and only `git reflog` showed the commit never happened. **`git commit --only` does not hold either.** Measured again later the same day: a sibling's commit landed between staging and committing, `--only` printed "no changes added to commit" and silently no-oped, and all 12 staged files were swept into the sibling's commit — whose own deliverable then did not make it in. **There is no reliable pathspec-scoping incantation while another agent commits to the same worktree.** What actually works: (a) verify `git log --oneline -1` is YOUR message after every commit — this is the only step that detects the failure at all; (b) recover by amending rather than resetting, since the content is present and only the attribution is wrong; and (c) for multi-file work, use a real `git worktree`, which is the only structural fix. A commit that didn't happen looks exactly like one that did if you only read the hook output.
+5. **`git commit -- <pathspec>` does NOT reliably scope the commit when lefthook is installed.** Measured 2026-08-13 with four agents on one checkout: an agent used `git commit -- <paths>` precisely to avoid sweeping a sibling's work, and it swept three pre-staged files anyway (lefthook's partial-commit handling re-stages). `git commit --only <paths>` did hold. Two agents also lost a staged index entirely between `git add` and `git commit` — a sibling's activity cleared it, the commit silently became a no-op, and only `git reflog` showed the commit never happened. **`git commit --only` does not hold either.** Measured again later the same day: a sibling's commit landed between staging and committing, `--only` printed "no changes added to commit" and silently no-oped, and all 12 staged files were swept into the sibling's commit — whose own deliverable then did not make it in. ~~**There is no reliable pathspec-scoping incantation while another agent commits to the same worktree.**~~ **CORRECTED 2026-08-17 — that conclusion was too strong, and the mechanism named above is the wrong one.** Driven through a **throwaway `git init` repo with no hooks, no concurrency and no second agent**, both `git commit -- <paths>` and `git commit --only <paths>` *do* scope the file set correctly — and both commit the **WORKING TREE, not the index**. That is the real defect, and it needs no lefthook to bite: a sibling's *unstaged* edit to a file inside your pathspec rides in under your message. The 2026-08-13 incidents are still real; the diagnosis ("lefthook's partial-commit handling re-stages") was not what produced them.
+
+  **A technique that passes all three tests does exist, and this repo already had it.** An isolated index — `IDX=$(mktemp); cp .git/index "$IDX"; GIT_INDEX_FILE="$IDX" git add <your paths>; GIT_INDEX_FILE="$IDX" git commit -m …` — scopes the file set, commits *staged content* rather than the worktree, and is untouched by a sibling `git add` into `.git/index`.
+
+  > **Measured 2026-08-18: seed the isolated index with `git read-tree HEAD`, NOT `cp .git/index`.** The `cp` form has a self-inflicted footgun: after the ritual's own commit, the real `.git/index` is stale relative to the new HEAD, so the *second* isolated commit in the same session inherits that staleness and silently records your first commit's files as **deleted** — and reverts its modifications. It happened here twice in one commit: 4 new docs recorded as deleted AND a 181-line checker extension reverted, all invisible in the hook output (only `git show --stat | grep delete` surfaced it). `GIT_INDEX_FILE="$IDX" git read-tree HEAD` keeps every property the ritual was adopted for (sibling `git add` still can't touch it) and is always anchored to the commit you are building on. Recover by amending with a read-tree-seeded index; after the last commit of a session, resync the shared index with a plain `git reset` (mixed) — but only after `git diff --cached --stat` confirms nothing a sibling staged would be swept out of it. It has held for **four consecutive runs across eight concurrent builders** in `/mvp`'s own calibration log (`.claude/skills/mvp/state/calibration.md:54`) and no `SKILL.md` mentions it, which is why nobody carried it across. Census rule `defeated-pathspec-commit` now flags the 11 places that still prescribe the defeated form — four of which claim it "bypasses the shared index entirely", and one of which calls it "safe by construction".
+
+  **Untested gap, stated rather than papered over:** `GIT_INDEX_FILE` and lefthook have not been exercised *together* here. Full derivation, seven fault-injection cases and the remaining gaps are in [`docs/concepts/golden-paths/parallel-session-coordination.md`](../docs/concepts/golden-paths/parallel-session-coordination.md).
+
+  Still true regardless of which technique you use: (a) verify `git log --oneline -1` is YOUR message after every commit — this is the only step that detects the failure at all; (b) recover by amending rather than resetting, since the content is present and only the attribution is wrong; and (c) for multi-file work, use a real `git worktree`, which is the only structural fix. A commit that didn't happen looks exactly like one that did if you only read the hook output. Note also that `git diff --cached --stat` is a **TOCTOU** check, not a guarantee — measured reading 1 file while the commit shipped 2.
 
 6. **The scratchpad directory is shared between sibling agents.** Two agents wrote their commit message to the same generic filename (`msg1.txt`) and one overwrote the other between `Write` and `git commit -F`. Use a unique filename per agent, or pass the message inline.
 
@@ -486,7 +494,7 @@ Quick reference of source → feature doc:
 | `src/features/triggers/**`, `src-tauri/src/commands/communication/**`, `engine/event_registry.rs` | `docs/features/events/README.md` |
 | `src/features/recipes/**`, `src-tauri/src/commands/recipes/**` | `docs/features/recipes/README.md` |
 | `src/features/settings/**`, `commands/credentials/external_api_keys.rs`, `engine/management_api.rs` | `docs/features/settings/README.md` |
-| `src/features/home/**`, `src/features/simple-mode/**` | `docs/features/home.md` |
+| `src/features/home/**` | `docs/features/home.md` |
 | `src/features/onboarding/**` | `docs/features/onboarding.md` |
 | `src/features/overview/**` | `docs/features/overview/README.md` |
 | `src/features/plugins/<plugin>/**`, `src-tauri/src/commands/<plugin>/**` (or `infrastructure/<plugin>.rs`) | `docs/features/<plugin>.md` (artist, companion, dev-tools, drive, obsidian-brain, research-lab, twin) |
@@ -496,6 +504,27 @@ When you add a new feature area, add an entry to `feature-doc-map.json` in the s
 ### The Stop hook — three independent checks per turn
 
 `.claude/settings.json` registers a Stop hook that runs `node scripts/docs/check-doc-sync.mjs` before every turn ends. The script:
+
+> ### ⚠️ MEASURED 2026-08-17: THIS HOOK HAS NEVER FIRED. NOT RARELY — NEVER.
+>
+> The backward transcript walk breaks on `evt.type === 'user' && evt.message?.role === 'user'`
+> (`check-doc-sync.mjs:98`) — and **a tool result is that exact shape**. Verified twice on
+> different transcripts: 18,908 of 20,322 such events (93.0%) in a 100-transcript replay,
+> and 2,606 of 2,910 (89.6%) in this session's own log. So in any turn that used a tool,
+> the walk terminates at the most recent tool result and never reaches the `tool_use`
+> blocks behind it. Replayed over 100 real transcripts: **477 turns edited files, 2,367
+> file-edits, 0 visible to the hook — 0.00%.** Direct invocation exits 0, 12 times out of 12.
+>
+> **The same bug sits on the same line of `check-golden-path-touch.mjs:85`.**
+>
+> So every dismissal recorded against this hook was a dismissal of a message it never sent,
+> and the per-session enforcement this section describes has been documentation only. The
+> rule below is still the rule — update the coupled surfaces in the same turn — but it is
+> currently held up by nothing. **Not fixed here on purpose**: repairing the walk switches
+> a silent hook into one that fires on most turns, which changes the operator's workflow
+> and is theirs to schedule. Registered with the fix in
+> [`golden-path-deferred-fixes.md`](../docs/concepts/golden-path-deferred-fixes.md);
+> derivation in [`documentation-sync.md`](../docs/concepts/golden-paths/documentation-sync.md).
 
 1. Walks the current turn's transcript for `Edit` / `Write` / `MultiEdit` / `NotebookEdit` calls.
 2. Filters out skip patterns (tests, generated bindings, i18n, docs themselves, migrations, template/connector seeds).

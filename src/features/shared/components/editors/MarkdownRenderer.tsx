@@ -26,6 +26,18 @@ interface MarkdownRendererProps {
    * passes it on.
    */
   codeBlockActions?: boolean;
+  /**
+   * Opt-in interception for RELATIVE links (external `scheme:` links keep the
+   * default sanitized `target="_blank"` behavior). Without this prop a
+   * relative href fails `sanitizeExternalUrl` and renders as dead text —
+   * unchanged for every existing call site. With it, a relative link becomes
+   * clickable, the click is always prevented (a webview must never actually
+   * navigate to a repo-relative path), and the handler decides what happens.
+   * Return `true` when handled — callers that return `false` are expected to
+   * surface the miss themselves (e.g. a toast), never let it look like a
+   * working link that does nothing.
+   */
+  onLinkClick?: (href: string) => boolean;
 }
 
 /**
@@ -200,7 +212,10 @@ function filterMetaContent(content: string): string {
   return cleaned;
 }
 
-function buildComponents(codeBlockActions: boolean): Components {
+function buildComponents(
+  codeBlockActions: boolean,
+  onLinkClick?: (href: string) => boolean,
+): Components {
   return {
   // Generous top spacing on headings — markdown bodies read better when
   // each section is visually offset from the prior paragraph, not just
@@ -305,6 +320,22 @@ function buildComponents(codeBlockActions: boolean): Components {
     </td>
   ),
   a: ({ href, children }) => {
+    // Relative link + an interceptor: hand it over. Always preventDefault —
+    // a repo-relative href must never actually navigate the webview.
+    if (onLinkClick && href && !/^[a-z][a-z0-9+.-]*:/i.test(href)) {
+      return (
+        <a
+          href={href}
+          className="text-primary hover:underline"
+          onClick={(e) => {
+            e.preventDefault();
+            onLinkClick(href);
+          }}
+        >
+          {children}
+        </a>
+      );
+    }
     const safeHref = sanitizeExternalUrl(href);
     if (!safeHref) return <span className="text-primary">{children}</span>;
     return (
@@ -330,11 +361,12 @@ export function MarkdownRenderer({
   content,
   className,
   codeBlockActions = false,
+  onLinkClick,
 }: MarkdownRendererProps) {
   const filtered = useMemo(() => filterMetaContent(content), [content]);
   const components = useMemo(
-    () => buildComponents(codeBlockActions),
-    [codeBlockActions],
+    () => buildComponents(codeBlockActions, onLinkClick),
+    [codeBlockActions, onLinkClick],
   );
 
   return (

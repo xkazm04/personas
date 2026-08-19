@@ -1,7 +1,7 @@
 # Building Personas Desktop
 
 End-to-end reference for building, packaging, and releasing Personas Desktop.
-For day-to-day development workflow, see [DEVELOPMENT.md](./DEVELOPMENT.md).
+For day-to-day development workflow, see [development.md](./development.md).
 
 ## Quick reference
 
@@ -18,7 +18,7 @@ npm run tauri:build:stable     # stable: nsis + msi, full LTO
 
 # Frontend-only tier checks
 npm run check:tiers            # builds starter + team + builder bundles
-npm run check:tauri-configs    # validates the three tauri.conf.json files
+npm run check:tauri-configs    # validates 3 of the 5 tauri*.conf.json files
 ```
 
 ## The two dimensions
@@ -43,13 +43,28 @@ imports. CI also enforces this in `frontend-checks` (see `.github/workflows/ci.y
 
 ### Backend variant (Cargo features × Tauri config)
 
-Three Tauri configs in `src-tauri/`:
+**Five** tracked Tauri configs in `src-tauri/` (plus two generated at launch — see
+below). A variant must be an *overlay*: the smallest possible delta over the canonical
+config, never a fork.
 
-| File | Features | Bundle | Use |
-|------|----------|--------|-----|
-| `tauri.conf.json`        | `desktop-full` (= desktop + ml + p2p) | all targets       | canonical full build |
-| `tauri.lite.conf.json`   | `desktop`                              | nsis only         | fast Windows iteration |
-| `tauri.stable.conf.json` | `desktop-full`                         | nsis + msi        | Windows release |
+| File | Features | Bundle | Use | Read by `check:tauri-configs` |
+|------|----------|--------|-----|---|
+| `tauri.conf.json`        | `desktop-full` (= desktop + ml + p2p) | all targets       | canonical full build | ✅ canonical |
+| `tauri.lite.conf.json`   | `desktop`                              | nsis only         | fast Windows iteration | ✅ overlay |
+| `tauri.stable.conf.json` | `desktop-full`                         | nsis + msi        | Windows release | ✅ overlay |
+| `tauri.android.conf.json`| `[]` (none)                            | all targets       | `tauri android build` | ❌ |
+| `.tauri-scraper-dev.conf.json` | `desktop,scraper,test-automation` | — | **no consumer** — referenced by no npm script, doc, hook or CI job | ❌ |
+
+Two more configurations are written at launch and merged in as a second `--config`:
+`scripts/dev/tauri-dev-test.mjs` (`.tauri-devtest.gen.conf.json`, gitignored) and
+`scripts/test/launch-isolated.mjs` (a `devurl.config.json` in a throwaway data dir), both
+because `devUrl` is hardcoded in the canonical config and has no environment-variable form.
+
+`--config` is a **deep merge with whole-array replacement**, and Tauri then materializes
+its own defaults into the result. So `tauri.android.conf.json`'s `"features": []`
+*replaces* `["desktop-full"]` rather than adding to it. Anything under `src-tauri/gen/` is
+build output with no provenance — never read a claim off it.
+See [`docs/concepts/golden-paths/tauri-config-variants.md`](../concepts/golden-paths/tauri-config-variants.md).
 
 The canonical config's `security.csp` is documented per-domain in
 [`csp-inventory.md`](csp-inventory.md) — update that file in the same change
@@ -76,12 +91,19 @@ gaps in four backend modules — see the comment on the `daemon` feature in
 `scripts/run-codegen.mjs`, which runs each task **in parallel** with a per-task
 60s timeout (override via `CODEGEN_TIMEOUT_MS`). Tasks:
 
+`TASKS` has **15** entries; `predev` runs 14 and `prebuild` runs 14 (they differ by
+exactly two, below). `scripts/run-codegen.mjs` is the authoritative list — the highlights:
+
 - `commands` — extracts Tauri command names from `src-tauri/src/lib.rs` →
   `src/lib/commandNames.generated.ts`
-- `i18n` — generates types from `src/i18n/locales/en.json` → `src/i18n/generated/types.ts`
-- `connectors` — regenerates the connector seed
-- `checksums` (prebuild only) — template integrity hashes
-- `host-check` (predev only) — detects Rust host-triple drift (see below)
+- `i18n` / `i18n-split` — generated types from `src/i18n/locales/en.json`, plus the
+  per-section locale chunks
+- `connectors` / `shared-events` / `n8n-limits` / `sprites` / `catalog` /
+  `scan-match` / `guidance-anchors` / `gp-index` / `system-skills` — the rest
+- `checksums` (**prebuild only**) — template integrity hashes
+- `host-check` (**predev only**) — detects Rust host-triple drift (see below). Note the
+  asymmetry: the error it detects is a *link* error, which only happens during a build.
+- `cache-budget` — advisory disk-pressure warning; exits 0 unconditionally by design
 
 ts-rs binding generation is **not** part of this pipeline — it runs via
 `cargo test export_bindings`. The `binding-drift` job in CI catches forgotten
@@ -95,13 +117,16 @@ runs (e.g. via toolchain change, or restoring from another machine's cache)
 poisons the cache: rlibs from arch A get linked into a build for arch B,
 producing `lld-link: error: machine type x64 conflicts with arm64`.
 
-Detection: `predev` writes `src-tauri/target/.last-build-host` after each
-successful run. The next `predev` compares to `rustc -vV`'s host and fails
-loud on mismatch with the recovery command:
+Detection: the `host-check` codegen task writes `src-tauri/target/.last-build-host` at
+the end of its own run — i.e. *before* cargo starts, so it records the host the last
+`predev` saw, not the host of the last successful build. The next `predev` compares it to
+`rustc -vV`'s host and fails loud on mismatch (without updating the marker) with the
+recovery command:
 
 ```bash
+npm run ensure:ort-cache       # repairs one vendor artifact; seconds, idempotent
+npm run clean:ort              # surgical: ort + ort-sys artifacts + the vendor cache (~5 min)
 npm run clean:rust             # nuclear: full cargo clean (~10 min rebuild)
-npm run clean:ort              # surgical: just ort + ort-sys (often enough)
 ```
 
 For *size* management — `target/` is uncapped and balloons across profiles,
@@ -175,10 +200,12 @@ It:
    Windows MSVC target.
 2. Sniffs the cached `onnxruntime.lib`'s first object member to read its
    actual COFF machine field (bypassing labels).
-3. If the cache is correct for the host or absent, downloads Microsoft's
-   official ONNX Runtime 1.20.0 release for the host arch and places it
-   into pyke's expected cache slot. The `ort-sys` build script's
-   `if !lib_dir.exists()` check then short-circuits the broken download.
+3. If the cache is **already correct** for the host it exits immediately (and
+   writes a sentinel if one was missing). **If it is wrong or absent**, it
+   downloads Microsoft's official ONNX Runtime 1.20.0 release for the host
+   arch, SHA-256-verifies it, and places it into pyke's expected cache slot.
+   The `ort-sys` build script's `if !lib_dir.exists()` check then
+   short-circuits the broken download.
 4. Tracks state in a sentinel (`.personas-ort-fix-applied`) so subsequent
    runs are O(ms).
 5. Detects stale cargo artifacts: if `target/<profile>/deps/libort_sys-*.rlib`
@@ -194,9 +221,14 @@ from `target/release/` for installers.
 **Manual recovery:** `npm run ensure:ort-cache` runs the fix on demand.
 `npm run clean:ort` wipes the cache and forces a re-fix on next dev/build.
 
-**Production releases:** CI builds run on x64 `windows-latest` runners.
-Pyke's x64 tarball is correct, so the fix script is a no-op there — but
-it still runs as a guard against future regressions in either tarball.
+**Production releases: the fix does NOT run on CI.** `release.yml` builds through
+`tauri-apps/tauri-action` with `tauriScript: npx tauri` — not an `npm run`, so no
+`pre*` lifecycle hook fires on any runner. And the matrix has **two** Windows legs
+(`x86_64-pc-windows-msvc` **and `aarch64-pc-windows-msvc`**, both on `windows-latest`),
+so the arm64 leg cross-compiles against whatever pyke ships. `ensure-ort-cache.mjs` is
+host-scoped (`const target = host;`) and could not repair a cross-compile's target slot
+even if it did run. See
+[`docs/concepts/golden-paths/bundling-native-assets.md`](../concepts/golden-paths/bundling-native-assets.md).
 
 If `pretauri:dev` is bypassed (e.g. running `cargo run` directly), the
 broken binary will be re-downloaded and you'll see the link error.
@@ -209,7 +241,10 @@ See `.github/workflows/ci.yml`:
 
 - **commit-lint** — Conventional Commits format
 - **frontend-checks** — typecheck + lint + i18n parity + tier validation + bundle budget + tests
-- **rust-tests** — `cargo test` + clippy + cargo-deny on Windows / macOS / Linux
+- **rust-tests** — `cargo test` + clippy + cargo-deny on Windows / macOS / Linux.
+  ⚠ Measured 2026-08-17: all three steps currently fail. `cargo test` and `cargo clippy`
+  stop at `personas-db` (fail-fast), so `app_lib` is compiled and never run or linted;
+  `cargo deny check` dies deserializing `deny.toml`. See deferred-fixes #89 and #99.
 - **command-name-drift** — regenerates `commandNames.generated.ts`, fails on diff
 - **binding-drift** — runs `cargo test export_bindings`, fails on diff in `src/lib/bindings/`
 
@@ -226,5 +261,5 @@ see the workflow file for the promotion bar). All three exercise the same
 ## Android
 
 Hardcoded NDK linker paths were removed from `src-tauri/.cargo/config.toml`
-to keep the project portable across machines. See [ANDROID-BUILD.md](./ANDROID-BUILD.md)
+to keep the project portable across machines. See [android-build.md](./android-build.md)
 for setup.

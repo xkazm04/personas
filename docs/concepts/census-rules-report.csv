@@ -1,0 +1,202 @@
+Rule title,Categorization,Number of applied places in the personas code
+"Font-weight utility layered over a typo-* token, where the token silently wins",UI System & Primitives > Tokens & Theming,1979
+Explanatory text delivered through the native title attribute,UI System & Primitives > Overlays,1099
+"User-facing copy authored as a literal in a non-JSX module, where no translation lookup can reach it",UI System & Primitives > Copy & Vocabulary,818
+Inert-control appearance re-derived at the call site instead of taken from the disabled token,UI System & Primitives > Tokens & Theming,808
+Body-text token dimmed past the point where any WCAG floor is reachable on the light themes,UI System & Primitives > Tokens & Theming,385
+"An emptiness check on caller input open-coded into an AppError::Validation, instead of the require_non_empty helper that already exists",Backend Command & Runtime > Contract & Validation,305
+"TEXT PRIMARY KEY declared without NOT NULL, so a row's identity can be absent",Data & Persistence > Data Modeling,299
+"Generated binding field typed bigint, which the IPC transport can never deliver",Data & Persistence > Data Modeling,294
+"A log record's whole identifying content is baked into a per-occurrence message string, so it can neither be grouped nor filtered",Backend Command & Runtime > Backend Observability,288
+Hand-rolled spinner on a surface,UI System & Primitives > Empty & Loading States,246
+"A repository function reaches a SQL statement without passing through the timing wrapper, so its cost is never recorded",Data & Persistence > Query Performance,245
+Closed-vocabulary label authored beside its colour instead of resolved from the translation catalog,UI System & Primitives > Copy & Vocabulary,237
+"Exported model struct that declares no serde casing, so its wire shape is chosen by a default nobody picked",Data & Persistence > Data Modeling,198
+Direct Web Storage access outside the storage layer,Client State & Data Flow > State Management,186
+Unobservable detached task,Backend Command & Runtime > Background Work,169
+"A post-write notification dispatched with its delivery result discarded, so a permanently undeliverable effect is indistinguishable from a delivered one",Data & Persistence > Repository Access,162
+"A job/step lifecycle transition addressed by a bare string literal at the call site, so the legal state set is a convention rather than a type",Backend Command & Runtime > Job Coordination,152
+Row-set read that discards per-row mapping failures without logging,Data & Persistence > Repository Access,148
+"A history read orders by a clock column and takes a LIMIT with no unique tiebreaker, so which rows the page contains — and the order they are read back in — is not determined by the data",Product Surfaces > Monitoring Surfaces,141
+An IPC command module checks out a raw database connection instead of delegating to the layer that owns persistence,Backend Command & Runtime > Command Definition,134
+"A closed-set column is declared TEXT NOT NULL DEFAULT '<token>' with no CHECK, so the legal value set exists only in the writer's head and the default is the one answer nobody chose.",Data & Persistence > Schema Design,130
+"An IPC entry point whose REGISTRATION is build-conditional, so the command exists in some builds and not others while the frontend's type says it always exists","Platform, Build & Quality > Build Profiles",127
+A machine-authored error string pushed into user-facing state with no resolution step,Client State & Data Flow > Client Errors,122
+"I/O failure caught without binding the error, so no record of it is possible",Client State & Data Flow > Client Errors,122
+Text-match policy re-derived at the call site instead of taken from a shared matcher,Product Surfaces > Lists & Tables,121
+A #[requires(...)] tier annotation expands to a guard that CANNOT return Err — because the evidence the real gate produced does not exist where the guard runs,Backend Command & Runtime > Command Authorization,105
+Code-split boundary declared with raw React.lazy instead of lazyRetry,UI System & Primitives > Empty & Loading States,105
+"IPC command whose success payload is serde_json::Value, so ts-rs can generate no binding for it",Backend Command & Runtime > Command Definition,104
+"Error-toast copy authored at the call site, where it is neither translatable nor ever rendered",UI System & Primitives > Copy & Vocabulary,94
+"A test builds its own copy of a production table instead of getting the schema from the production builder, so it certifies a shape no user will ever have","Platform, Build & Quality > Testing & Workflow",93
+"Repository write targeted at one row by primary key whose affected-row count is discarded, so ""no such row"" is reported as success",Data & Persistence > Repository Access,82
+Unauthenticated transport route,Backend Command & Runtime > Command Definition,79
+A percentage assembled by pasting a % glyph after a locally-rounded number,UI System & Primitives > Copy & Vocabulary,77
+Global keystroke handler registered outside the app keyboard ladder,UI System & Primitives > Motion & Accessibility,72
+"An insert-or-update picks its conflict behaviour with a statement-wide INSERT OR IGNORE / INSERT OR REPLACE clause instead of naming the constraint it means to handle, so the database cannot check the author's intent",Data & Persistence > Repository Access,71
+Hand rolled module cache,Client State & Data Flow > Data Fetching,71
+Tauri event emitted under a name the shared registry does not declare,Backend Command & Runtime > Eventing,71
+"A #[tauri::command] takes a bare Option<Option<T>> argument, so ""clear this column"" collapses into ""leave it alone"" at the IPC boundary and can never be sent",Data & Persistence > Repository Access,69
+Null spinner busy state,Product Surfaces > Authoring & Catalogs,68
+Read failure as empty value,Client State & Data Flow > Data Fetching,68
+Tauri event subscription created outside the five subscription primitives,Backend Command & Runtime > Eventing,68
+A moment rendered through a locale-resolution path that cannot see the app's language,UI System & Primitives > Copy & Vocabulary,67
+Invented stream envelope fixture,AI & Agent Runtime > Model Invocation,67
+Raw <select> element instead of ThemedSelect,UI System & Primitives > Controls & Forms,63
+A deadline applied as a bare number at the site that applies it,Backend Command & Runtime > Resilience Policies,61
+"A live-UI driver binds the harness endpoint to a literal host:port instead of discovering it, so when the server takes a fallback port the driver silently drives the WRONG app instance","Platform, Build & Quality > Testing & Workflow",60
+A disclosure control that toggles hidden content without declaring aria-expanded,Product Surfaces > Lists & Tables,57
+"A labelled scalar readout (a metric tile) declares its value as a bare string/number, so ""we have not measured this"" cannot be handed to the component that decides how to render it, and every caller must invent a placeholder — of which 0 is the cheapest",Product Surfaces > Metrics & Charts,55
+An unparseable stored JSON document is silently replaced by a fabricated one,UI System & Primitives > Controls & Forms,55
+"A destination id is asserted into its vocabulary instead of resolved through a total function, so the compiler stops checking exactly where the value stops being trustworthy",UI System & Primitives > Layout & Navigation,54
+Magic collection ceiling,Backend Command & Runtime > Resilience Policies,53
+"IPC call site declares the payload shape as an inline object literal, so the wire contract has no name and nothing can compare it to the producer",Backend Command & Runtime > Contract & Validation,52
+"A multi-band VERDICT (tone, grade, label) is decided by bare numeric boundaries written at the render site, so the band table exists only where it is drawn",Product Surfaces > Metrics & Charts,51
+A money amount assembled by welding a currency glyph onto a separately-formatted number,UI System & Primitives > Copy & Vocabulary,50
+"A rejected fetch handled by writing the empty list into state, with nothing recording that it failed",Product Surfaces > Authoring & Catalogs,49
+"A pool built as Pool::builder().max_size(N).build(manager) in one chain, which by construction can carry no connection customizer — so its connections run on rusqlite's defaults, foreign_keys OFF included.",Data & Persistence > Schema Design,48
+An elapsed-since-a-moment label assembled from an English word at the call site,UI System & Primitives > Copy & Vocabulary,47
+Unwired url open door,Integrations & Credentials > External & Host Surfaces,46
+"One cycle of a periodic loop returns nothing, so the supervisor that owns the loop can time the call but can never record what the call produced.",Backend Command & Runtime > Backend Observability,45
+Anchored surface wiring its own document-level outside-press dismissal,UI System & Primitives > Overlays,44
+Unflagged string truncation,AI & Agent Runtime > Prompt & Output,43
+Widthless collection fanout,Backend Command & Runtime > Job Coordination,43
+"A form control is chosen by comparing a declaration's own `type`/`kind` to a string literal, so the recognised vocabulary is hand-maintained beside the renderer instead of derived from the declaration",UI System & Primitives > Controls & Forms,42
+Hand-rolled latest-wins counter instead of createLatestWins(),Client State & Data Flow > Data Fetching,42
+"A client-side VALUE re-implements a rule the Rust server owns, and the only thing holding the two implementations together is the comment that says so",Client State & Data Flow > State Management,40
+"A per-entity count is read out of a lookup keyed by that entity and defaulted to 0, so ""this entity is not in the map"" is rendered as ""this entity has none""",UI System & Primitives > Chrome & Feedback,39
+Feature-local empty-state component instead of ScenarioEmptyState,UI System & Primitives > Empty & Loading States,39
+Element presented as clickable that can never receive keyboard focus,UI System & Primitives > Motion & Accessibility,38
+A model reply is turned into a typed value by a parser whose failure carries no reason,AI & Agent Runtime > Prompt & Output,34
+"A rate or average over an EMPTY sample is materialized as the number 0, so ""nothing has happened yet"" and ""everything failed"" render identically",Product Surfaces > Metrics & Charts,34
+"Identifier minted by truncating a UUID, discarding the entropy that made it collision-free",Data & Persistence > Data Modeling,34
+Unreplayed stream attach,Client State & Data Flow > Data Fetching,34
+A clipboard write whose success/failure result is bound to nothing,UI System & Primitives > Chrome & Feedback,32
+A tab strip declares a tablist but the region it swaps is never declared as the panel it controls,UI System & Primitives > Layout & Navigation,30
+"A recovery-bearing failure class re-decided by substring-matching a message, outside the shared taxonomy",AI & Agent Runtime > Model Invocation,28
+Framer animation that loops forever,UI System & Primitives > Motion & Accessibility,28
+"Column given a DEFAULT without NOT NULL, so the default binds the writer and promises the reader nothing",Data & Persistence > Data Modeling,27
+A monetary amount whose value is unknown is materialized as the number zero,AI & Agent Runtime > Cost Governance,25
+Error boundary declared with no way out but the button that re-runs the crash,Client State & Data Flow > Client Errors,25
+A picker resolves its current entity by id and renders its absence as if nothing were selected,UI System & Primitives > Overlays,24
+"A credential attached to an outbound request under a header name the HTTP client does not know is sensitive, so it survives a cross-host redirect",Integrations & Credentials > External & Host Surfaces,22
+"A credential-lifecycle write - the row that records a rotation, a policy state change, or a revocation - is evaluated for its side effect alone, so a REJECTED write is indistinguishable from a performed one",Integrations & Credentials > Credential Capture,22
+"A byte buffer that arrived from outside the process is decoded into an in-memory value with no size bound, while a bounded decoder exists in the same tree",Backend Command & Runtime > Eventing,21
+Ungated plugin destination write,UI System & Primitives > Layout & Navigation,21
+A model-tier or reasoning-effort option whose display label is a hardcoded literal instead of a catalogue key,AI & Agent Runtime > Model Invocation,20
+A transient notification whose entire message is a machine-authored error string,UI System & Primitives > Chrome & Feedback,20
+"A value the code itself names an estimate/projection is declared as a bare `number`, identical in type to the measurements beside it — so nothing downstream can tell them apart and they compose arithmetically",Product Surfaces > Metrics & Charts,20
+"An arriving deep link is asserted into a navigation setter through a cast that names no vocabulary, so neither the compiler nor the vocabulary-named census rule can see the value",UI System & Primitives > Layout & Navigation,20
+Hand painted modal backdrop,UI System & Primitives > Overlays,20
+"Single-column index on a boolean column, which cannot narrow a scan but is written on every row change",Data & Persistence > Query Performance,20
+"A module reaches the telemetry SDK directly, so the one-time consent answer cannot reach it",Client State & Data Flow > Flows & Onboarding,19
+"A value is attached to a Sentry record through a field this app's own beforeSend/beforeBreadcrumb never visits, so it leaves the device exactly as written while a sibling field of the same record is scrubbed",Backend Command & Runtime > Backend Observability,19
+A view-state token is declared durable and nothing decides what happens when its vocabulary moves on,Client State & Data Flow > State Management,19
+"A build-flag decision is taken inline at a JSX render site instead of being declared on the surface's catalog entry and resolved by the one gate resolver, so the set of surfaces hidden in production cannot be enumerated",Product Surfaces > Monitoring Surfaces,18
+"A calendar day is derived from a Date with no zone named, so the boundary between two days is decided by the viewer's machine (or by UTC) rather than by the entity the day belongs to",Backend Command & Runtime > Scheduling & Triggers,18
+"A failure the user did not ask for, delivered as a transient interruption",Client State & Data Flow > Client Errors,18
+A stored setting is turned back into a bool by comparing the raw TEXT at the call site,Data & Persistence > Data Modeling,18
+A surface declares its own page-level heading instead of getting it from the one page-header primitive,UI System & Primitives > Layout & Navigation,18
+English literal os notification,UI System & Primitives > Chrome & Feedback,18
+"A persistent store's handle made optional at a boundary, so the store can be absent at runtime instead of at compile time",Data & Persistence > Schema Design,17
+"A remote call that carried a credential folds its non-2xx into an untyped message string, so no caller can tell ""the credential was rejected, re-authenticate"" from ""the service is down, retry""",Backend Command & Runtime > Command Authorization,17
+Gate without empty input guard,"Platform, Build & Quality > Gates & Conventions",17
+Live region mounted in the same render as the text it exists to announce,UI System & Primitives > Motion & Accessibility,17
+A credential-ledger field is read or written by string key instead of through the typed record that owns it — so two writers of the same fact can disagree and nothing relates them.,Integrations & Credentials > Credential Capture,16
+A definition stored as a blob on an entity is turned into app state by a type assertion,AI & Agent Runtime > Agent UX,16
+"An ownership check compares a fetched row's owner field against a value that arrived on the SAME request as the row id, so the caller supplies both halves of the comparison",Backend Command & Runtime > Command Authorization,16
+Durable state copied into component state by a mount-time initializer,Product Surfaces > Canvas & Media,16
+A model reply's JSON envelope located by a brace scan re-derived at the call site,AI & Agent Runtime > Agent UX,15
+A multi-item selection Set reaches an action without ever being reconciled against the rows currently on screen,Client State & Data Flow > Mutations & Editing,15
+"A table declaration that cannot reject anything — a CREATE TABLE whose entire column list carries no NOT NULL, so every write the real table would refuse succeeds against it","Platform, Build & Quality > Testing & Workflow",15
+"The door that writes a row's lifecycle status accepts it as &str, so the legal state set is a convention the compiler never sees and every caller re-derives it.",Data & Persistence > Schema Design,15
+Unresumable migration step,Data & Persistence > Migrations,15
+Vacuous all done verdict,Client State & Data Flow > Flows & Onboarding,15
+"A query asks whether a unit of work is finished by hand-writing a SUBSET of its terminal states, so work that ended in an unnamed terminal state vanishes from the answer instead of counting.",Backend Command & Runtime > Background Work,14
+A Tauri command that acts over a caller-supplied list of entity ids returns a type in which partial success is unrepresentable,Backend Command & Runtime > Command Definition,14
+useShallow wrapping a selector that constructs nothing,Client State & Data Flow > State Management,14
+"A billable agent run is started with the idempotency-key argument passed as the literal None, so the same logical request arriving twice starts two runs and bills twice",Backend Command & Runtime > Command Definition,13
+A child process is given env values on top of a wholesale-inherited parent environment,Backend Command & Runtime > Subprocess & Process IO,13
+"A durable or transmitted record is stamped with the compile-time version as its ONLY build identity, so two materially different builds of the same version are indistinguishable in the record","Platform, Build & Quality > Build Profiles",13
+"A handler joins the keyboard ownership ladder at a position written as a bare number, so its rank exists only in a doc comment",UI System & Primitives > Chrome & Feedback,13
+"A product-tier decision taken from an ambient boolean at a call site instead of declared on the destination, so no test can enumerate what a tier hides",Backend Command & Runtime > Command Authorization,13
+A Tauri capability grants a plugin's ENTIRE default permission set instead of the named commands the app actually calls,"Platform, Build & Quality > Packaging & Release",13
+An effect pins a scroll container to the bottom on every new chunk without consulting whether the reader was at the bottom — so reading back through a running log yanks the viewport away mid-sentence.,Backend Command & Runtime > Subprocess & Process IO,13
+Background loop whose time-wait is not raced against a stop signal,Backend Command & Runtime > Background Work,13
+Catalog boundary escape,"Platform, Build & Quality > Testing & Workflow",13
+Child process spawned without binding its lifetime to the cancellable future,Backend Command & Runtime > Background Work,13
+One-way module-scope latch guarding an unreleased registration,Client State & Data Flow > State Management,13
+A credential held in a struct field as a bare String instead of SecureString,Integrations & Credentials > Credential Capture,12
+"A domain event's routing name is typed at the emit site, so no subscriber declaration can reference the same expression",Backend Command & Runtime > Eventing,12
+A feature component reaches an irreversible IPC door and the file contains no consent step at all,AI & Agent Runtime > Agent UX,12
+"A feed item's ORDERING key is minted from the rendering device's clock, then ranked against sibling items whose keys came from the database",Product Surfaces > Lists & Tables,12
+"A LIKE pattern built from an interpolated value without escape_like, so the value's own % and _ stay live wildcards",Data & Persistence > Repository Access,12
+A search index kept in step by hand at N call sites instead of by the store,Data & Persistence > Query Performance,12
+A shared table primitive is handed a data-length collection with no bound on how many rows may enter the DOM,Product Surfaces > Lists & Tables,12
+Deferred transaction whose first statement is a SELECT that informs a later write,Data & Persistence > Repository Access,12
+The state that decides whether to raise the same alarm again lives only in process memory,Backend Command & Runtime > Scheduling & Triggers,12
+Unconstrained sequence column,Product Surfaces > Authoring & Catalogs,12
+"A configuration value is baked into the binary by option_env!, so the shipped artifact cannot be reconfigured and a build that omitted the value is indistinguishable from one that had it","Platform, Build & Quality > Build Profiles",11
+"A single-row UPDATE carrying a state guard in its WHERE clause is executed in statement position, so the affected-row count that IS the guard's verdict is dropped",Data & Persistence > Repository Access,11
+"A worker records the OUTCOME of a claimed unit of work addressing the row by identity alone, so a claimant whose claim is no longer valid overwrites whatever the current owner wrote.",Backend Command & Runtime > Job Coordination,11
+Defeated pathspec commit,"Platform, Build & Quality > Testing & Workflow",11
+"The write that records what two copies last agreed on is evaluated for its side effect alone, so a failure to persist the agreement is laundered into a confident wrong answer on the next pass",Integrations & Credentials > Vault & Secret Security,11
+"A generator stamps DO-NOT-EDIT provenance into a committed artifact but offers no way to ask whether the committed copy still matches, so the promise in the header is the only thing holding it","Platform, Build & Quality > Build Profiles",10
+A read of a human-decision queue ordered by the clock rather than by need,AI & Agent Runtime > Human Review,10
+A settings key name spelled a second time outside the registry that is supposed to own it,Data & Persistence > Data Modeling,10
+An entity's monogram cut on a UTF-16 code unit,UI System & Primitives > Tokens & Theming,10
+A capability slot is bound to a concrete credential by taking one element of a candidate set without asking how many candidates there were,Integrations & Credentials > Credential Readiness,9
+"A connection verdict re-declared as {success, message} at the panel boundary",Integrations & Credentials > Credential Readiness,9
+"A hand-rolled setTimeout delays a write that outlives the component, so the pending write is owned by the one object guaranteed to die before it lands",Client State & Data Flow > Mutations & Editing,9
+"An optimistic write's rollback restores a whole collection from a snapshot taken before the write, so every change that landed during the round trip is erased when it fires",Client State & Data Flow > Mutations & Editing,9
+Document scoped drag loop,UI System & Primitives > Layout & Navigation,9
+Job-registry read that bypasses the manager's liveness accessor,Backend Command & Runtime > Job Coordination,9
+Leaked owned exec dir,Backend Command & Runtime > Subprocess & Process IO,9
+"Step transition written inline in a handler attribute, where no precondition can live",Client State & Data Flow > Flows & Onboarding,9
+A dollar ceiling applied only when it is positive — so an unconfigured one bounds nothing,AI & Agent Runtime > Cost Governance,8
+A human verdict written without going through the one verdict door,AI & Agent Runtime > Human Review,8
+A shell interpreter is spawned with an argument that is not a string literal,Backend Command & Runtime > Subprocess & Process IO,8
+"A URL literal addressing one of this app's OWN inbound listeners by a hardcoded port, re-derived at the call site instead of asked of the module that bound it",Backend Command & Runtime > Eventing,8
+Prompt extended outside its assembler,AI & Agent Runtime > Prompt & Output,8
+"The number of attempts an operation gets is a bare literal at the loop that spends them, so no enclosing bound can be derived from it and nothing can assert it",Backend Command & Runtime > Resilience Policies,8
+"A catalog install/adopt door is called as a bare statement, so the outcome that says whether the item was actually installed is discarded and the caller proceeds — and reports — as if it was",Product Surfaces > Authoring & Catalogs,7
+"A catalog lookup keyed by an open runtime value, with the compiler's check waived by a cast and a silent fallback",UI System & Primitives > Copy & Vocabulary,7
+A create-copy-drop-rename whose replacement shape is written out in source instead of derived from the table it replaces — so any column the live table gained since is silently discarded by an operation that reports success,Data & Persistence > Migrations,7
+"A plot's value scale anchored to the sample's own minimum, so the baseline moves with the data",Product Surfaces > Metrics & Charts,7
+An activating control nested inside another activating control,Integrations & Credentials > External & Host Surfaces,7
+"The durable record says the work started, and the admission door that can still refuse it is called afterwards",Backend Command & Runtime > Job Coordination,7
+"A recovery pass rewrites the state of in-flight work selecting rows by their in-flight status alone, so it cannot tell work abandoned by a dead owner from work a live owner is still doing.",Backend Command & Runtime > Background Work,6
+"A surface starts an app-managed agent session and discards the session id it was handed, so nothing it owns can ever find, watch or stop the work it created",AI & Agent Runtime > Agent UX,6
+"An IANA zone name is parsed and the parse FAILURE is discarded, so an unrecognised zone silently becomes the host machine's local time",Backend Command & Runtime > Scheduling & Triggers,6
+Machine specific path in tooling,"Platform, Build & Quality > Gates & Conventions",6
+Stringify decided equality,Product Surfaces > Authoring & Catalogs,6
+A 'may this run unattended' verdict computed from raw config instead of engine::autonomy,AI & Agent Runtime > Cost Governance,5
+"A bulk-fill operation whose receipt is a bare numerator — the caller cannot separate 'converged' from 'not applicable' from 'unavailable' from 'every row failed', because all four arrive as the same number",Data & Persistence > Migrations,5
+"A data-movement command reports a bare bool, so it cannot say what it carried",Integrations & Credentials > Vault & Secret Security,5
+A model-invoking child process launched without pinning which account pays,AI & Agent Runtime > Model Invocation,5
+"A redactor is applied in a ternary whose other branch is the raw value — so the redaction is a render-layer choice a UI control can switch off, not a boundary the value had to cross.",Integrations & Credentials > Vault & Secret Security,5
+Raw inner html,UI System & Primitives > Copy & Vocabulary,5
+"A proportional bar's denominator is the FIRST ROW rather than a computed extremum, so the geometry silently depends on a sort the component does not own",Product Surfaces > Metrics & Charts,4
+"An environment-derived value is defaulted with `??`, so a variable SET TO THE EMPTY STRING silently defeats the default","Platform, Build & Quality > Build Profiles",4
+Per-item entrance delay computed at the call site,UI System & Primitives > Motion & Accessibility,4
+Process-lifetime cache whose stored value can be a failure,Backend Command & Runtime > Command Definition,4
+"Whether an input is masked is derived at render time from author-supplied data, with a visible fallback — instead of from the fail-secure classifier that already decided it.",Integrations & Credentials > Credential Capture,4
+A <video>/<audio>/<iframe> bound to a changing src with no key to force a remount,Product Surfaces > Canvas & Media,3
+A column added with a constant DEFAULT and then backfilled to something else in the same migration block — the backfill repairs the rows that exist while the DEFAULT keeps manufacturing the pre-migration shape for every row written afterwards,Data & Persistence > Migrations,3
+A component stages a per-item verdict map over a batch whose commit cannot carry it,AI & Agent Runtime > Human Review,3
+A credential or access grant is written to durable storage by a path that records nothing in the append-only ledger the product renders.,Integrations & Credentials > Credential Capture,3
+A foreign key that names its parent but never says what happens when that parent is deleted,Data & Persistence > Schema Design,3
+"A model's output is written to durable storage inside the same call that produced it, so there is no preview seam for a human to refuse at",AI & Agent Runtime > Agent UX,3
+A persona's readiness verdict is persisted by a statement that never mentions the structured account of what is blocking — a bare token written by something other than the resolver,Integrations & Credentials > Credential Readiness,3
+A retention DELETE whose row eligibility is a hand-written positive status list — it silently retains every status the literal does not name.,Data & Persistence > Query Performance,3
+"A settings key whose own name says it holds a credential, in a store whose value column is plain TEXT",Data & Persistence > Data Modeling,3
+"A whole-list ordering rewrite issued one row at a time on a pooled connection, so a failure mid-loop commits a partial order",UI System & Primitives > Chrome & Feedback,3
+"A zoom/scroll gesture is bound through React's synthetic onWheel and calls preventDefault — which React registers passively at the root, so the browser ignores it and scrolls the container instead",Product Surfaces > Canvas & Media,3
+An encryption call's error arm hands back the very value it was asked to protect — so losing the master key silently converts an encrypted-at-rest column into a plaintext one,Integrations & Credentials > Vault & Secret Security,3
+Countless table wipe,Client State & Data Flow > Mutations & Editing,3
+Unlooking lint rule,"Platform, Build & Quality > Gates & Conventions",3
+Verification that cannot fail,"Platform, Build & Quality > Packaging & Release",3
+"A client update payload names fields the user never edited and fills them with a literal null, so the wire carries the client's placeholder instead of the user's diff",Client State & Data Flow > Mutations & Editing,2
+"A keyboard listener registered in the CAPTURE phase takes the keystroke before the focused element can see it — so a control that owns the keyboard (a terminal, an editor, an IME) is pre-empted with no way to object.",Backend Command & Runtime > Subprocess & Process IO,2
+"A second SQL statement-verb vocabulary, hand-written outside the classifier that owns the decision",Integrations & Credentials > External & Host Surfaces,2
+Peer credential compared by value,Integrations & Credentials > External & Host Surfaces,2

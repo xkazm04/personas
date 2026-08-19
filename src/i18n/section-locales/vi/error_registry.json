@@ -138,5 +138,9 @@
   "adoption_answers_rejected_message": "Một số câu trả lời trong bảng câu hỏi bị thiếu hoặc không hợp lệ.",
   "adoption_answers_rejected_suggestion": "Mở lại các câu hỏi thiết lập, hoàn thành những mục được nêu, rồi tiếp tục.",
   "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
-  "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
+  "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in.",
+  "trigger_type_not_storable_message": "Phiên bản ứng dụng này không lưu được loại trình kích hoạt đó.",
+  "trigger_type_not_storable_suggestion": "Hãy chọn loại trình kích hoạt khác. Nếu ứng dụng vừa được cập nhật, hãy khởi động lại một lần để chạy bản di trú cơ sở dữ liệu mở rộng các loại được chấp nhận.",
+  "trigger_unschedulable_message": "Trình kích hoạt này bị từ chối vì sẽ không có gì khởi chạy nó.",
+  "trigger_unschedulable_suggestion": "Lý do nằm trong chi tiết lỗi — thường là thiếu biểu thức cron hoặc khoảng thời gian, hoặc múi giờ không phải tên IANA như \"Europe/Prague\". Hãy sửa trường đó rồi lưu lại."
 }

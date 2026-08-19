@@ -330,7 +330,16 @@ Every entry is live on `master` @ `2a874e692` and was verified by executing a ch
 scratch fixture, or by reading the file. **Nothing here was applied** — the app is in daily use
 (runbook standing rule), and every fix below changes runtime behaviour.
 
-### D1 — 26 section/route pairs render English on a cold start · 17 sections · 121 files
+### D1 — 27 section/route pairs render English on a cold start · 18 sections · 121 files
+
+> **Corrected 2026-08-17** by the `first-run-onboarding` composer. The pass below missed
+> `onboarding`, and it is the worst-shaped member of the population: 16 files plus
+> `DesktopFooter` use `t.onboarding.*` (160 refs over 174 keys), the surfaces mount **above
+> the router** at `App.tsx:367-370`, and the section is declared only on `home` — so it
+> renders English on **10 of 11 routes** in all 13 non-English locales. The two
+> implementations below agreed at 26/17 because both enumerated from the route table, and a
+> surface that mounts above the router is not in it. Agreement between two passes that share
+> a starting set is not independent confirmation.
 
 `useTranslation.ts:229-241` — the `t` Proxy's `get` trap is a **pure read**. It deliberately does
 *not* call `preloadSections`, and the comment (`:234-240`) says why: doing so caused a render storm

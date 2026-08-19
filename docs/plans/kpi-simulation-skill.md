@@ -3,7 +3,7 @@
 > Status: DESIGN (no code). Companion to [`kpi-driven-orchestration.md`](./kpi-driven-orchestration.md)
 > (P0–P6 shipped: schema, proposal scan, evaluation runner, derivation, autopilot)
 > and the passport env split (local / test / production, shipped 2026-07-23,
-> `89ae3faf5` + `0c7289409`). Method donor: [`.claude/skills/uat`](../../.claude/skills/uat/skill.md).
+> `89ae3faf5` + `0c7289409`). Method donor: [`.claude/skills/uat`](../../.claude/skills/uat/SKILL.md).
 
 ## The idea (user framing)
 

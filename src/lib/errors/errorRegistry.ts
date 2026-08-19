@@ -312,6 +312,31 @@ const ERROR_RULES: ErrorRule[] = [
       category: 'user_action',
     },
   },
+  {
+    // The "born dead" refusal. Raised by `triggers::create`/`update` when a
+    // time-based trigger would be written with no next fire time — a row
+    // `get_due` skips forever while the UI shows it as armed. The Rust side
+    // appends the specific reason after the colon; `UNSCHEDULABLE_PREFIX` in
+    // core/src/validation/trigger.rs is the contract.
+    match: /This trigger would never fire:/,
+    error: {
+      message: 'This trigger was refused because nothing would ever start it.',
+      suggestion: 'The reason is in the error detail — usually a missing cron expression or interval, or a timezone that is not an IANA zone name like "Europe/Prague". Fix that field and save again.',
+      category: 'user_action',
+    },
+  },
+  {
+    // A trigger type the storage layer rejects. Four of the ten types the UI
+    // offered were in exactly this state on every install until 2026-08-17, and
+    // the failure fell through to the generic fallback — "Something went wrong.
+    // Try again." — which is unactionable and untrue (retrying cannot work).
+    match: /CHECK constraint failed: trigger_type|CHECK constraint failed: persona_triggers/,
+    error: {
+      message: 'This app version cannot store that trigger type.',
+      suggestion: 'Pick a different trigger type. If the app was just updated, restart it once so the database migration that widens the accepted types can run.',
+      category: 'system',
+    },
+  },
   // ── Build session lifecycle (A-grade Phase 6) ────────────────────────
   // These were the C7-era "agent_ir is null" + race-condition errors.
   // Phase 3 added a 3s server-side retry which closes most of these.

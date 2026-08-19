@@ -373,6 +373,103 @@ spine yields under 200 leaves or the link scan finds none.
   attribute at all**, so only a filename rule sees it.
 - Never print a secret value. Shape, location, count only — not even a prefix.
 
+### A reconciliation is a claim. It needs its own check.
+
+The protocol says two implementations, and that **the disagreement is the
+finding**. Measured 2026-08-17, there is a way to satisfy the letter of that and
+lose all of its value: **invent a mechanism that would explain the gap, then
+publish both numbers as though the invention had verified them.**
+
+`rate-limiting.md` §12.6 recorded 135 connector seeds from implementation A and
+134 from B, and resolved it as *"one row's metadata uses a different raw-string
+form… **Both.** 135 connectors, 134 parseable blobs."* There is no such row:
+`metadata: Some(…)` is 134 and `None` is 0. A was off by one because its
+`BuiltinConnector {` pattern also matched **`pub struct BuiltinConnector {`** —
+the type declaration, not a seed. B was simply right, and a fabricated cause
+carried a wrong number into two downstream sections and a §9 script's floor.
+
+- **Two implementations disagreeing is evidence that one of them is wrong.** The
+  default resolution is to find which. "Both are right, they measure different
+  things" is the *rarer* case and it owes the same standard of proof as any
+  other claim: name the rows, open them, count them.
+- **A resolution that makes the disagreement disappear without either number
+  moving should be distrusted on sight.** It is the shape of an explanation
+  fitted to a result.
+- The composer that caught this then made **the identical off-by-one** on the
+  sibling generated file minutes later, and caught it only because it had just
+  written the correction. Knowing a trap is not the same as being immune to it —
+  which is the argument for hand-opening matches rather than reasoning about
+  them.
+
+### A headline that conjoins two findings inherits the weaker one's truth value
+
+Measured 2026-08-17. Deferred-fix **#24** was titled *"Every run in the app's
+history records $0 **and** zero tokens"*. The token half is true and severe —
+`input_tokens`/`output_tokens` are 0 on 2,188 of 2,188 rows. The money half is
+**false**: `cost_usd` is populated on 1,970 of those same rows, summing to
+$2,036.2571.
+
+The tell was inside the entry the whole time. It cited *"against **$2,036.26** of
+actual spend"* as the amount the app had failed to capture — and that figure **is
+the sum of the column being called empty**. The entry read its refutation out of
+the database, wrote it down, and drew the opposite conclusion.
+
+Two rules:
+
+1. **Conjoined headlines are unfalsifiable in practice.** "$0 and zero tokens"
+   reads as one finding, so a later reader who confirms the token half considers
+   the entry confirmed. **Split a claim per column, per table, per mechanism** —
+   one finding, one headline, one number that can be checked on its own.
+2. **A number you cite as the size of a gap must come from outside the gap.**
+   If the "uncaptured" total is computed from the field you say is uncaptured,
+   you have measured the thing you are claiming does not exist. Name the source
+   of every headline number: which table, which column, which query.
+
+The register entry stands, retitled, with the money half struck and the token
+half intact — because deleting it would lose the real defect along with the
+wrong one.
+
+### A citation is a claim about a namespace, and the namespace is usually implicit
+
+Measured 2026-08-17, sweeping the corpus for citations to files that no longer
+exist. **Three instruments, three confident wrong answers, before a right one:**
+
+| pass | answer | why it was wrong |
+|---|---:|---|
+| repo-relative resolution | ~600 dangling across most docs | `src/repos/x.rs` is **crate**-relative (`src-tauri/db/`), not repo-relative |
+| + crate roots | still hundreds | most were **sibling-repo and upstream-Tauri** citations from oracle sweeps — `src/manager/webview.rs` is tauri's own source |
+| + "did this repo ever delete it" | 5 | the corpus cites UI files as `teams/sub_canvas/…`, dropping the `src/features/` prefix, so the resolver never saw them |
+| + prefix tolerance, then hand-verified | **8 real, 1 false positive** | the false positive was `lib/analytics.ts` — a **personas-web** citation that collided with a same-named file this repo deleted years earlier |
+
+Every intermediate answer was plausible, none was flagged by anything, and each
+would have been reported as a finding. The failure is one failure repeated: **a
+path in prose carries no namespace, so the resolver supplies one, and the
+resolver's guess is invisible in its output.** The count looks like a
+measurement of the corpus; it is a measurement of your prefix list.
+
+Three rules follow, and they generalize past citations to any string-shaped
+identifier — a table name, an import specifier, a command name:
+
+1. **Enumerate the namespaces before the first count.** In this repo that is
+   at least: repo root, `src/`, `src/lib/`, `src/features/`, `src-tauri/src/`,
+   and the three extracted crates. A path that resolves under none of them is
+   not automatically dangling.
+2. **A corpus that sweeps siblings contains citations that are correct and
+   unresolvable here.** Distinguish "gone" from "elsewhere" with a
+   *positive* oracle — `git log --diff-filter=D` proves this repo once had the
+   file — not with `fs.existsSync`, which only proves you did not find it.
+3. **Hand-verify the final set, not a sample of an intermediate one.** The last
+   pass was 9 items; opening all 9 took one command and turned up the one false
+   positive, plus the fact that three of the eight had **moved** rather than
+   died — a different correction entirely (fix the path, keep the claim).
+
+The confirmation worth copying: the `stateless-disclosure-control` baseline had
+already moved **59 → 57 matches and 56 → 54 files**, which is exactly the two
+soft matches `expandable-row.md` named by filename. Two independent artifacts
+agreeing on the same two sites is what verification looks like — and note that
+it also proved the precision *improved by deletion*, which is not progress. See
+that document's post-publication note.
+
 ---
 
 ## 3. The severity fact
@@ -411,6 +508,22 @@ time. That is adoption pressure, not enforcement. Do not confuse the two.
 
 The runner is `scripts/census/`. A rule is a **ratchet**, not a verdict.
 
+- **The census cannot express a condition at 0% or at 100% prevalence, and both
+  refusals are structural.** At 0% the rule matches nothing and the runner fails
+  it as broken — correct, because there is nothing to ratchet down. At 100% the
+  *positive control* has nothing to match, and a control that returns zero is
+  indistinguishable from one whose pattern is wrong. Measured 2026-08-17 on
+  three separate leaves in one wave: `retrieval-grounding-preview`'s violating
+  form scored **0 files** against a compliant form at 24 sites (extinct);
+  `os-process-reconciliation`'s control scored **0** because `start_time()`
+  occurs **0 times in 963 `.rs` files** (the compliant form does not exist here);
+  and `supply-chain-policy`'s unpinned-`uses:` rule was **56/56 hand-verified
+  precision and unshippable**, because there is not one pinned `uses:` in this
+  repo *or in any sibling*.
+  **Say which of the two it is, and prove it.** "The control returns zero
+  because the compliant form does not exist in this tree" is a finding worth
+  publishing; "the control returns zero" alone is indistinguishable from a
+  broken pattern, and a later reader cannot tell them apart.
 - **Check the existing rules first** and name the ones you checked. The corpus
   is crowded enough that a reasoned decline is a respectable §9. One gate was
   declined purely for 83% file-overlap with an existing rule; that was correct.

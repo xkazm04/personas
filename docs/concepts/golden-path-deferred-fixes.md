@@ -827,7 +827,25 @@ hollow.
 
 ---
 
-## 24. Every run in the app's history records $0 and zero tokens
+## 24. Every run in the app's history records zero tokens (~~and $0~~ — see correction)
+
+> **CORRECTED 2026-08-17 — the $0 half of this entry is FALSE, and the entry falsified
+> itself in its own text.** Measured against the pre-purge backup by the
+> `billing-account-auth` composer: `cost_usd` is populated in **1,970 of 2,188 rows,
+> summing to $2,036.2571**. The "$2,036.26 of actual spend" this entry cites *as the
+> uncaptured amount* **is that column's own sum** — the number was read out of the
+> ledger that was being called empty. `llm_spend.rs:100-101` reads `usage.input_tokens`
+> and populates 85 of 89 rows.
+>
+> **The token half stands and is the real defect.** `input_tokens`/`output_tokens` are
+> 0 on 2,188 of 2,188 rows, while `cache_read_tokens` carries 585 — because the cache
+> reads have a `usage`-first fallback six lines below and the token reads do not. Every
+> consequence below that depends on *tokens* (the `Some(0)` write, the 0-of-90,813
+> spans, "0 tokens" in `TraceSummary`, the dead `CostBreakdownBar`) is unaffected.
+>
+> The lesson is the entry's shape, not its arithmetic: **a headline that generalises
+> two findings into one ("$0 *and* zero tokens") inherits the weaker one's truth value
+> and hides that it did.** Written down in the doctrine.
 
 **Where:** `src-tauri/engine/src/parser.rs:340-341`.
 
@@ -1714,8 +1732,29 @@ and `crash_logs/`. `connect-src` lists `asset:` and `http(s)://asset.localhost`
 in **both** policies, and the handler opens any scope-allowed absolute path with
 `Range` support and `Access-Control-Allow-Origin`. **No capability, no token, no
 audit** — the asset protocol appears in none of the manifest's 15 namespaces.
-All **16** `convertFileSrc` sites read named subdirectories; **none needs
+All **8** `convertFileSrc` call sites read named subdirectories; **none needs
 `$APPDATA`.**
+
+> **Two corrections, 2026-08-17, by [`media-viewer.md`](./golden-paths/media-viewer.md)
+> §12.1.** (1) This line read *"All **16** `convertFileSrc` sites"*. Measured twice
+> independently: **16 is the occurrence count — 8 calls + 6 import bindings + 2 comment
+> mentions — across 6 files, not 7.** (2) More importantly, **the call-site count does
+> not bound the exposure and should not be read as doing so.** `convertFileSrc` is
+> `window.__TAURI_INTERNALS__.convertFileSrc(filePath, protocol)`
+> (`@tauri-apps/api/core.js:234-236`) — a synchronous string formatter with no IPC, no
+> scope consultation and no validation. The handler serves the scope to anything in the
+> renderer that can form a URL.
+>
+> **And one addition that makes the narrowing more urgent, not less.** In every
+> **release** build the managed drive root is `app_data_dir()/drive`
+> (`commands/drive.rs:355-359`), i.e. **inside** `$APPDATA/**`. So `drive_read`'s
+> resolver — `resolve_safe`, which refuses absolute paths and `..`, canonicalises against
+> symlinks and caps reads at 50 MB — is proving containment within a directory this scope
+> publishes wholesale. `resolve_and_guard` (`path_safety.rs:244-251`) explicitly *blocks*
+> the app-data directory; `assetProtocol.scope` explicitly *allows* it. The proposed
+> `$APPDATA/drive/**` replacement is therefore not cosmetic: it is what makes
+> `resolve_safe` mean something. (Debug builds put the root at `.dev-drive/`, outside the
+> scope — so the dev build does not exhibit this and the release build does.)
 
 **And there is a live third-party origin inside that document.**
 `useYouTubePlayer.ts:61-65` appends `<script src="https://www.youtube.com/iframe_api">`
@@ -2346,6 +2385,15 @@ production chain; only the reason *string* is unread. This repo already ships
 
 ## 55. 64 credential bindings would fail to resolve right now
 
+> **RE-VERIFIED 2026-08-17 — still open, and the missing side is the opposite one.**
+> Backup against live: `personas` **78 → 1**, `persona_credentials` **25 → 25**,
+> `connector_definitions` **134 → 134**. The purge removed personas and left every
+> credential and connector standing, so the binding that fails to resolve is missing its
+> **persona**, not its credential. The parse defect itself is untouched code and the next
+> persona created re-enters it. **Do not read the changed row counts as a fix** — this is
+> the same trap the corpus has now recorded four times today. The Gmail grant named below
+> is still live and now 76 days expired (measured 75 one day earlier; the two agree).
+
 **Where:** `core/src/models/persona.rs:711,:458,:485`;
 `engine/runner/credentials.rs:455-480`; `connector_readiness.rs:263`.
 
@@ -2500,6 +2548,1085 @@ of green `npm run check`.**
 
 ---
 
+## 58. The backfill receipt collapses four different zeros into one
+
+**Where:** `src-tauri/src/commands/execution/scheduler.rs:94-107` (`BackfillResult`),
+`:221` (the population, computed and dropped), `:229,247,318` (`skipped_duplicate`,
+computed and logged), `src/features/schedules/libs/useScheduleActions.ts:283-295`
+(the consumer).
+
+**What is measured:** `BackfillResult` carries `slots_enqueued`, `capped`,
+`slot_times` and `failures`. It does **not** carry the window's population
+(`slots.len()` before truncation, known at `:221`) or the number of slots skipped
+as already-published (`skipped_duplicate`, incremented at `:247` and delivered
+only to `tracing::info!` at `:318`). The UI branches on `slotsEnqueued > 0` and
+otherwise renders one message — so *"nothing was due"*, *"all 47 were already
+replayed"* and *"every slot was refused by a ceiling"* are the same sentence with
+opposite next actions.
+
+The `skipped_duplicate` half is already on record as
+[`backfill-migration`](./golden-paths/backfill-migration.md) §7 D6. The
+*population* half is new, and it matters because the same document's
+`unfinishable-backfill-receipt` rule cites this struct as its **exemplar of the
+compliant shape** — one field short of committing the defect the rule names.
+
+**Fix:** `pub slots_in_window: u32` + `pub skipped_duplicate: u32`, one
+construction site (`:323-331`), one `export_bindings` regen, one UI branch.
+
+**Why held:** it changes an IPC contract and a live toast.
+
+---
+
+## 59. Three replay anchors, two truncation directions, one boolean
+
+**Where:** `src-tauri/core/src/scheduler.rs:181-242` (`compute_slots_in_range`,
+interval arm at `:231-237`); `src-tauri/src/engine/background.rs:2292-2354`
+(`compute_missed_backfill_slots`) and `:2678-2681` (the drain);
+`src-tauri/src/commands/execution/scheduler.rs:221-224` (the truncate);
+`src/features/schedules/libs/useCronPreview.ts:226-250`
+(`generateIntervalFireTimes`).
+
+**What is measured:** the same interval cadence is walked from **three different
+anchors** — `last_triggered_at` (auto catch-up), the **user's window `start`**
+(on-demand replay), and `next_trigger_at` (the calendar, and the engine itself
+via `next_interval_at`). For cron they converge; for interval the on-demand
+replay publishes slots at a phase the engine has never used.
+
+And the two bounded paths drop **opposite ends** of an over-long gap:
+`slots.truncate(100)` on an ascending vector keeps the **oldest** 100;
+`missed.drain(..(len - extras))` keeps the **newest**. Both report the same
+`capped: bool`, and neither states a direction. A user who opens the app after a
+week away and presses *Run backfill* on an hourly job replays the **week-old**
+hundred and drops the sixty-eight nearest to now.
+
+**Fix:** `phase_anchor: Option<DateTime<Utc>>` as an explicit parameter of
+`compute_slots_in_range` (the compiler visits both call sites), and a named
+direction on the bound (`keep_newest` / `keep_oldest`) rather than a `Vec` method
+deciding it.
+
+**Why held:** it changes which slots a live replay publishes.
+
+---
+
+## 60. The replay apparatus cannot be reached, and its idempotence depends on which branch built the payload
+
+**Where:** `src-tauri/src/engine/background.rs:2614-2789` (the auto-catch-up
+branch), `:2575-2592` and `:2855-2858` (the miss ledger);
+`src/features/triggers/sub_triggers/TriggerAddForm.tsx:225` and
+`configs/buildTriggerConfig.ts:62-66` (the authoring control);
+`src-tauri/src/commands/execution/scheduler.rs:277-279` +
+`src-tauri/db/src/repos/communication/events.rs:539-548` (the dedup key).
+
+**What is measured**, against the 2026-08-17 purge backup (351 triggers —
+historical, not reproducible against the live database):
+
+- **0 of 351 triggers set `max_backfill`.** `backfill_cap > 1` has never been
+  true, so the ~175-line auto-catch-up branch has never executed. The control
+  that sets it is rendered **only in cron mode** while the writer emits it for
+  both, so an interval schedule is silently pinned to fire-once.
+- **`schedule_missed_runs` holds 0 rows** and `schedule.missed.offline` appears
+  0 times in 4,972 `persona_events`. `record_and_emit_missed_runs` runs *after*
+  the `mark_triggered` CAS, so every reason a schedule accumulates misses —
+  disabled persona, over budget, outside the active window, unparseable zone — is
+  also a reason the miss is never recorded. **You only learn what you missed at
+  the moment you stop missing it.**
+- The on-demand replay's dedup reads `backfill_slot` + `fired_at` **out of the
+  event payload**, and those keys exist only in the *synthesized* payload. A
+  trigger carrying an explicit `config.payload` takes the other branch and is
+  invisible to the dedup — every press republishes every slot. Latent today
+  (**0 of 351 triggers set `config.payload`**), live the first time one does.
+
+**Fix:** render the `max_backfill` control in both modes; record misses on the
+skip paths as well as the fire path; and move the dedup key out of the payload
+into a `slot_at` column with a `UNIQUE(source_id, slot_at)` partial index — which
+also deletes a full decrypt of the trigger's event history on every press.
+
+**Why held:** the first two change a live authoring surface and write rows; the
+third is a schema migration.
+
+---
+
+## 61. A calendar day with no zone: 36 of 46 runs plotted under the wrong day on the operator's own machine
+
+**Where:** `src/features/schedules/components/ScheduleRowHistoryPanel.tsx:157-186`
+(`bucketByDay`); `src/lib/types/timeRange.ts:33-40`; and 16 further sites — the
+full inventory is the `zoneless-day-bucket` census rule
+(15 files / 18 matches).
+
+**What is measured, by replaying the function verbatim** against the operator's
+50 real executions at three host offsets:
+
+| host | buckets mis-labelled | runs under a label that is not their local day | runs dropped |
+|---|---|---|---|
+| `UTC` | 0 of 14 | 0 of 50 | 0 |
+| `Europe/Prague` (UTC+2) | 14 of 14 | **36 of 46** | **4 of 50** |
+| `Asia/Tokyo` (UTC+9) | 14 of 14 | 36 of 46 | 4 of 50 |
+
+`bucketByDay` builds its axis from **host-local midnight** (`:161`), keys the
+buckets by **UTC date** (`:165`), and labels them back in **host-local**
+(`:166`). Identical code, identical data, exactly correct on the machine a CI job
+runs on. `timeRange.ts:33` holds the same split-brain in a shared helper, so a
+"calendar month" range starts a day early on any positive offset.
+
+Separately, the calendar itself places every fire in the **viewer's** zone
+(`ev.time.getHours()`, `dayKey`) while the schedule's own `agent.timezone` — used
+correctly to compute the instant — is never rendered; the chip beside the cron
+expression shows the **app display preference** instead. Across 4,801 client
+files, `timeZone:` is passed to a formatter in **3**.
+
+**Fix:** a `dayKeyIn(instant, timeZone)` / `hourIn(instant, timeZone)` helper over
+`Intl.DateTimeFormat`, with `timeZone` **required and undefaulted**, then migrate
+the 18 sites; and render the schedule's zone on the calendar axis.
+
+**Why held:** adding the helper is safe; migrating the call sites changes what
+several live charts show.
+
+---
+
+## 62. The release tag is pushed before any installer exists — 11 tags, 0 releases
+
+**Where:** `.github/workflows/release.yml:146-154` (the `version` job's
+"Commit and tag" step) and `:208` (`build: needs: [version, frontend]`).
+
+**What is measured** (Actions API + `git tag` + Releases API, 2026-08-17):
+
+| | |
+| --- | ---: |
+| tags on `origin` | **11** |
+| GitHub Releases published | **0** |
+| `release.yml` runs all-time | 30 |
+| …concluded `success` | **0** |
+
+Per-job outcome of the most recent run (`2026-07-16`, the run that produced tag
+`v1.1.0`): `bump-version` **success**, `frontend` **success**, all **four**
+platform `build` legs **failure**, `updater-manifest` skipped. The version bump
+reached `master` and the tag reached `origin`; nothing was built. Eight of the
+eleven tags were authored by `github-actions[bot]`. The workflow's own header
+comment says this left "5 tags … with zero releases behind them"; it is now 11.
+
+The consequence is not cosmetic: `tauri.conf.json:61-65` points every installed
+copy's updater at `releases/latest/download/latest.json`, and the release list is
+empty.
+
+**Fix:** move commit + tag + `git push --tags` into a final job that
+`needs: build`, and pass the computed version to the platform jobs as a job
+output rather than as a committed file. Where Tauri forces the version into the
+working tree before the bundle is built (`CARGO_PKG_VERSION` is embedded), write
+it to a detached candidate ref that is never pushed until every leg has produced
+an artifact.
+
+**Why held:** it changes what the release workflow does to `origin`, and the
+operator may want to cut a release by hand before the reorder lands.
+
+---
+
+## 63. `ci-gate` validates one commit and the pipeline builds another
+
+**Where:** `.github/workflows/release.yml:43-70` (`ci-gate`, queries
+`?head_sha=${{ github.sha }}`) versus `:85-90` (the `version` job checks out
+`ref: master`) and `:156-171` (`resolve`).
+
+On a `workflow_dispatch` from a ref that is not `master`'s tip — or when `master`
+advances between dispatch and execution — the commit whose CI conclusion was
+checked is **not** the commit that gets tagged and built. On the
+`pull_request: types: [closed]` path the gap is structural: `github.sha` is the
+merge-test commit and the checkout is `master`.
+
+Note this is currently masked by a larger problem (item 62's sibling finding:
+`ci.yml` has concluded `success` **0 times in 324 runs**, so `ci-gate` cannot
+pass at all on the publish path). The ref hole becomes live the moment `ci.yml`
+goes green.
+
+**Fix:** resolve the SHA once inside `ci-gate`, emit it as a job output, and have
+`version` check that SHA out explicitly instead of `master`.
+
+**Why held:** it changes which commit a release is built from.
+
+---
+
+## 64. The bundled resource directory is a superset of its declaration — 22 undeclared skills
+
+**Where:** `scripts/sync-system-skills.mjs:40-50`;
+`tauri.conf.json:129-131` (`"resources": {"resources/skills": "skills"}`);
+`src-tauri/.gitignore:24-25`.
+
+**What is measured** on this checkout, by two independent implementations (node
+`readdirSync` set-difference; `comm -13` over two sorted `ls` outputs):
+
+| | count |
+| --- | ---: |
+| system skills declared (Rust `SYSTEM_SKILLS`) | 5 |
+| system skills declared (JS `SYSTEM_SKILLS`) | 5 |
+| directories present in `src-tauri/resources/skills` | **27** |
+| **undeclared directories that would be bundled** | **22** |
+| bytes declared / undeclared | 145,620 / **87,391** (37.5% of the payload) |
+
+The 22 are the single-lens `scan-*` skills retired 2026-08-04. The sync script
+does `rmSync(dst); cpSync(src, dst)` **per declared name**, so nothing removes an
+entry whose name has left the list; it then logs `mirrored 5/5 system skill(s)`,
+which reads as complete. The destination is gitignored (`resources/skills/*` with
+`!resources/skills/.gitkeep`, 1 tracked file), so the surplus produces **no diff
+and no untracked file** — the same blindness that let 29 orphan ts-rs bindings
+accumulate.
+
+**Fix:** `rmSync(dstRoot, {recursive: true, force: true})` before the copy loop,
+so the destination is rebuilt from the declaration on every run. Plus the
+inventory assertion specified in
+[`bundling-native-assets` §9](./golden-paths/bundling-native-assets.md).
+
+**Why held:** the first run deletes files from the operator's working tree, and
+the app resolves system skills from that directory at runtime
+(`skill_files.rs:265-291`) — a mid-session sweep would change what a running app
+can dispatch.
+
+---
+
+## 65. The canvas resolves an agent's action target against a ten-day-old cache, and accepts two projects that no longer exist
+
+**Path:** [`canvas-state-persistence`](./golden-paths/canvas-state-persistence.md) §7.1 / §7.2 ·
+**Files:** `src-tauri/src/companion/canvas.rs:641-666`, `:327-345`
+
+`resolve_scene_slug` validates a project slug against the **published snapshot**
+(`mastermind.scene.v1`) rather than `dev_projects`, deliberately — `:636-637`:
+*"Validating against the same snapshot she read keeps the vocabulary closed."*
+That is right about hallucination and silent about staleness. Replayed against
+the operator's own database (2026-08-17 purge backup **and** the live file,
+identical): the snapshot was last written **2026-08-07T08:29:23.228Z**,
+`freshness_note` renders **"published 248 hours ago"**, it carries **14
+projects of which 2 no longer have a `dev_projects` row**
+(`ai-bookkeeper`, `ai-paralegal`), and both are **ACCEPTED** by
+`resolve_scene_slug` while `resolve_canvas_target` in the same module
+**REFUSES** them.
+
+**Fix:** (a) a `SCENE_STALE_AFTER_HOURS` constant, with `load_scene` returning
+`None` past it so every surface falls through to the honest `no_scene_line()` it
+already has; (b) a `dev_projects` existence probe in `resolve_scene_slug` before
+it returns `Ok(p.slug)`, refusing with the same "name real alternatives" shape
+the miss branch already uses. Structurally better: have `resolve_scene_slug`
+return the same `CanvasTarget` as `resolve_canvas_target`, so the compiler
+forbids a snapshot-resolved slug reaching an action door.
+
+**Why held:** changes what Athena will answer and which `compose_canvas_panel`
+calls succeed, while the operator is using her. A horizon that is too short
+silently blanks the canvas digest out of the system prompt.
+
+---
+
+## 66. Nothing has ever deleted a canvas layout entry — 2 of 8 saved positions point at deleted projects
+
+**Path:** [`canvas-state-persistence`](./golden-paths/canvas-state-persistence.md) §7.3 / §7.4 ·
+**Files:** `src/features/teams/sub_mastermind/lib/layoutStore.ts`, `LinkLayer.tsx:26`
+
+Measured twice, by two implementations sharing no code (one parses the JSON
+document and walks its keys; one never parses it and differences UUID-shaped
+tokens out of the raw `TEXT` against the id list) — they agree exactly:
+**8 persisted positions, 2 dangling (25%)**. Not a consequence of the purge;
+`dev_projects` was never in the cascade. `savePositions` has no per-key delete,
+`saveHidden` can only remove a slug the user can still see, and nothing anywhere
+reconciles the document against `dev_projects`. `LinkLayer.tsx:26` renders an
+unresolvable link as `null`, which also hides the label pill that is the only way
+to open its editor — replayed: 1 link with a dead endpoint → 0 rendered, 1
+retained forever.
+
+**Fix:** reconcile on hydrate, once the live entity list is available — prune
+dead ids and write the pruned document back. Copy
+`ascent/src/components/launch/mergeStars.ts:11-18` including its guard: an
+**empty** authoritative list means the fetch failed, not that everything was
+deleted, so no-op rather than prune.
+
+**Why held:** the first run **deletes rows** from the operator's persisted layout.
+If the entity list is momentarily empty or partially loaded, it deletes the board.
+
+---
+
+## 67. A finished background turn discards 80% of the chat history the user paged in
+
+**Path:** [`streaming-chat-transcript`](./golden-paths/streaming-chat-transcript.md) §7.1 / §7.2 ·
+**Files:** `src/features/plugins/companion/companionStore.ts:808`,
+`chat/athenaChatStream.ts:158-162`, `chat/athenaChatSend.ts:103-111`,
+`chat/AthenaChatProposals.tsx:40-41`
+
+`setMessages: (messages) => set({ messages })` is a bare whole-list assignment,
+and five call sites feed it `companionListRecentMessages(50, …)`. Executed
+against the real reducers: open (50 rows) → four "load earlier" pages (250) →
+**one finished backend turn → 50**. **200 of 250 rows discarded (80.0%)**, on a
+turn the user never requested. The store already has the merge half —
+`prependMessages` (`:811-818`) dedupes by id. `personas-web/src/stores/`
+`eventStore.ts:91-117` fixed exactly this and its comment names the failure.
+
+Separately, the same handler tears the streaming bubble down (`:148`, `:151`)
+**before** fetching its replacement (`:158`), whose only failure arm is
+`.catch(silentCatch(…))` — so a failed refetch makes the turn disappear with no
+bubble, no row and no error. The user-send path is the control: it has a real
+`catch` calling `setSendError`.
+
+**Fix:** replace `setMessages` with `mergeMessages(incoming)` (dedupe by id,
+preserve locally-known rows, sort, **cap** — the cap is not optional; without it
+the fix converts data loss into an unbounded array) plus an explicit
+`resetMessages()` for the two sites that legitimately want a clean slate. Deleting
+`setMessages` from the store interface makes the clobber **not compile**.
+
+**Why held:** changes what the transcript shows on every turn while the operator
+is talking to Athena, and a merge with a wrong key duplicates or drops bubbles in
+the surface she is watching.
+
+---
+
+## 68. Two loading states in the chat transcript, and the canvas cold-load, render literally nothing
+
+**Path:** [`streaming-chat-transcript`](./golden-paths/streaming-chat-transcript.md) §7.3 ·
+[`canvas-state-persistence`](./golden-paths/canvas-state-persistence.md) §7.5 ·
+**Files:** `chat/AthenaChatBody.tsx:116-120`, `:121-126`,
+`src/features/teams/sub_mastermind/MastermindPage.tsx:860`
+
+`feedback/LoadingSpinner` returns `null` without a `label` and an `sr-only`
+`<span role="status">` with one (`LoadingSpinner.tsx:12-21`). The transcript's
+"an earlier page is in flight" indicator is `<LoadingSpinner size="sm" />` inside
+a wrapper carrying **`aria-hidden="true"`**, so it is invisible to sighted users
+*and* would suppress the `sr-only` escape hatch even if a label were added. The
+Mastermind canvas's entire cold-load branch is `<LoadingSpinner label={…} />` —
+a blank bordered rectangle for the whole hydrate + first-passport window, with
+two i18n keys naming a state nobody can see.
+
+**Fix:** a geometry-matched ghost under the permanent chrome per
+[`page-loading`](./golden-paths/page-loading.md). Population-wide this is the
+152 + 4 standalone sites [`inline-busy-state`](./golden-paths/inline-busy-state.md)
+`:157` already assigns to `page-loading`'s leaf.
+
+**Why held:** changes what a live surface shows.
+
+---
+
+## 69. Reload during first-run onboarding closes every door back into the flow
+
+[`first-run-onboarding`](./golden-paths/first-run-onboarding.md) §7.A.
+`onboardingStepCompleted` is persisted (`systemStore.ts:85`) while
+`onboardingActive` and `onboardingStep` are not (`onboardingSlice.ts:160-161`).
+A reload is not a dismiss, so `onboardingDismissedAtStep` stays `null`; the
+footer replay icon needs it non-null (`DesktopFooter.tsx:466`), the Home CTA
+needs `personas.length === 0` (`WelcomeGetStarted.tsx:41`), and step 4 of 5
+(`adopt`) creates a persona. Complete four steps, reload, and the flow is
+unreachable from all three entry points with its progress intact on disk.
+
+**Fix:** add `onboardingActive` + `onboardingStep` to `systemStore`'s
+`partialize`; widen `canResume` to
+`!completed && (dismissedAtStep != null || anyStepCompleted)`.
+**Why held:** changes what a live surface shows, on next launch, for the operator.
+
+---
+
+## 70. 14 locales, and the only code that reads the OS locale is the crash screen
+
+[`first-run-onboarding`](./golden-paths/first-run-onboarding.md) §7.F.
+`navigator.language` occurs exactly twice in 4,397 production files, both in
+`main.tsx` serving `ERROR_BOUNDARY_COPY` (`:56-75`). The app-locale initializer
+is `language: 'en'` (`i18nStore.ts:103`), and
+`preloadPersistedLocaleBeforeMount()` returns at `main.tsx:175` when the
+persisted locale is `en` — which on a first run it always is, so the 1.2 s
+section-preload race never starts on the run that needs it. A first-run
+non-English user gets English until they find a picker labelled in English.
+
+**Fix:** in `readPersistedLocale()`, when `personas-i18n-storage` is absent,
+narrow `navigator.language` through the existing `isLocaleCode` and return it.
+**Why held:** changes the language every existing user's app opens in.
+
+---
+
+## 71. The app does not record which tour you were in
+
+[`guided-tour-step`](./golden-paths/guided-tour-step.md) §7.A.
+`PersistedTourState` (`tourSlice.ts:1143-1153`) has a per-tour map and no
+active-tour pointer; hydration hardcodes `getting-started` (`:1318`, `:1379`).
+Replayed against a synthetic blob: a user at step 6 of the 9-step
+`teams-orchestration` tour, after a reload, lands on `getting-started` step 0
+with zero progress carried, while the Teams record sits unread in
+`guided-tour-state`. `TourLauncher` cannot recover it either (`:25` only ever
+launches `getting-started`/`-simple`).
+
+**Fix:** add `activeTourId` to `PersistedTourState`, bump `TOUR_STATE_VERSION`
+4 → 5. **Why held:** the version bump discards every user's existing tour
+progress, and the pointer changes what the footer launcher opens.
+
+---
+
+## 72. The tour-anchor generator is blind to three authoring forms, and running it today narrows the allow-list
+
+[`guided-tour-step`](./golden-paths/guided-tour-step.md) §7.B.
+`gen-tour-anchors.mjs`'s six regexes require an anchor in attribute position, so
+they cannot see a `const` map value (`ObsidianBrainPage.tsx:33-38`), a ternary
+arm (`DailyGoalsModal.tsx:140`), or an aliased prop
+(`StudioChatInput.tsx:172` — `inputTestId`, whose capital `T` defeats the
+`testId="…"` regex). Measured: the manifest is **127 behind** (101 testids + 26
+prefixes, reproducing `client-rule-mirroring` §7 D5 exactly) **and 4 ahead** —
+`daily-goals-create`, `studio-chat-input`, `companion-strip-`, `mm-category-`
+are committed and no longer derivable. Live cost: the whole Obsidian Brain
+tour's six panel anchors are absent from the manifest, so
+`dynamicTours.ts:144` refuses any Athena-composed tour that names one.
+
+**Fix:** teach the generator the three forms, add `--check`, regenerate both
+artifacts. **Why held:** regenerating changes what Athena is permitted to
+compose, in both directions, and the removal half is a silent narrowing —
+it wants a human reading the diff.
+
+---
+
+## 73. Nothing verifies that a commit landed, and `git commit --only` is prescribed 9 times after being measured unsound
+
+[`parallel-session-coordination`](./golden-paths/parallel-session-coordination.md) §0, §7 D1, §9.
+
+Executed in a throwaway `git init` repo with **no hooks and no concurrency**: `git commit -- <p>`
+and `git commit --only <p>` both commit the **working tree**, not the index (Q1/Q2), so a
+sibling's *unstaged* edits to a file in your pathspec ride in under your message. They do scope
+the file *set* correctly (Q3) — which is what makes them convincing. An isolated
+`GIT_INDEX_FILE` scopes the set, takes the staged content, and survives a sibling `git add`
+landing mid-flight (Q4/Q5). `git diff --cached --stat` before `git commit` is a TOCTOU check:
+the guard read 1 file and the commit shipped 2 (Q6).
+
+Three things are owed and none is applied:
+
+1. **`.claude/CLAUDE.md:277`** attributes the pathspec failure to *"lefthook's partial-commit
+   handling"* and concludes *"there is no reliable pathspec-scoping incantation"*. The mechanism
+   is plain git and the conclusion is too strong — the correct statement is that no *pathspec*
+   form is reliable and `GIT_INDEX_FILE` is. **Why held:** CLAUDE.md is loaded into every session
+   in this repo; rewriting it mid-campaign changes what running composers believe.
+2. **Nine prescriptions of the defeated form** across `perfect/SKILL.md:206,226,335,398`,
+   `code-review:29`, `guide-sync:47`, `prototype:55`, `sentry:59`, `mvp/state/calibration.md:11`
+   — four of which claim `--only` *"bypasses the shared index entirely"* and one of which calls
+   it *"safe by construction"*. Ratcheted by the `defeated-pathspec-commit` census rule at
+   **6 files / 11 matches** so the count cannot rise while the text is corrected.
+3. **A `post-commit` readback**, specified in §9 (three lines comparing `git log -1 --format=%s`
+   against the subject the caller passed). `lefthook.yml` has no `post-commit` hook and **zero of
+   53 skill documents** instruct a readback, against 26 `git commit` instructions. **Why held:**
+   installing a hook changes what happens every time the operator types `git commit`. Note also
+   that a `post-commit` hook's exit code is ignored by git, so this is a loud **detector**, never
+   a gate.
+
+The working answer is already in the repo — `.claude/skills/mvp/state/calibration.md:54` — where
+it has held for four consecutive runs across eight concurrent builders in five repositories. It
+never travelled because a per-run calibration log is not where anyone looks for a project rule.
+
+---
+
+## 74. `npm run test` reports a pass rate over a denominator that can shrink silently — 11 files, 153 tests
+
+[`frontend-test-lane`](./golden-paths/frontend-test-lane.md) §0, §7 D0, §9.
+
+Executed: the default lane's `include` claims **402** files; the JSON run report accounts for
+**391**; the eleven in the gap carry **153 `it`/`test` calls** and the run's entire stdout for
+533 seconds was two jsdom canvas warnings. Re-run directly, four of them together produce
+`[vitest-pool]: Failed to start forks worker` after 60 s (`Test Files no tests`, exit 1); one run
+alone passes 11/11 in 67.69 s, of which **environment 24.17 s + import 26.79 s + setup 12.55 s =
+94%** and tests are 3.23 s. Same fixed per-file cost puts eight files' *first* `it()` at
+3.32–3.37 s against the framework's 5,000 ms default — the lane holding 3,738 tests is the only
+one of five that sets no `testTimeout`, while the 7-test and 6-test lanes each set 30,000 ms.
+
+Related and separate: `vitest.integration.config.ts` **cannot load its own config** —
+`src/test/integration/` does not exist, so `npm run test:integration:cli` exits 1 without running
+anything; it is on no hook and in no workflow. And of five lanes, only `test:evals` (six files)
+is on a git hook at all; the 3,738-test lane runs in CI only.
+
+**Fix:** (a) a claimed-vs-executed reconciliation in CI beside `npm run test` — four lines, and
+it converts a shrinking denominator into a named list; (b) `scripts/check-test-lanes.mjs` on
+pre-push (loads every `vitest*.config.ts`, asserts non-empty and pairwise-disjoint includes and
+an explicit `testTimeout`, with an exit-2 guard if it finds fewer than 3 configs); (c) hoist the
+module import into `beforeAll` so transform is charged to `hookTimeout`, *then* set an explicit
+`testTimeout`. **Why held:** (a) and (b) add gates to CI and pre-push, and (c) changes the
+suite's timing characteristics under the operator's own hooks. Raising `testTimeout` alone would
+delete the only visible symptom and is explicitly not the fix.
+
+---
+
+## 75. Three of the five buckets under `src/features/shared/` are governed and documented by nothing
+
+[`shared-component-boundary`](./golden-paths/shared-component-boundary.md) §0, §7 D2/D3/D4, §9.
+
+`.claude/CLAUDE.md:141-159` offers three destinations for a new component — the catalog,
+`shared/chrome/`, or the owning feature. The tree has **five** buckets. `shared/glyph/` is **50
+files with 9 restricted-shape imports across 8 of them** (`@/stores/themeStore`,
+`@/features/agents/…`, `@/features/templates/…`, `@/features/vault/…`), and it is in no
+documentation, no catalog, and outside `eslint.config.js:172`'s `files:` glob; `shared/dispatch/`
+and `shared/charts/` are in the same position. **If the boundary rule's glob covered
+`src/features/shared/**` minus `chrome/`, its anchor would be 22 sites, not 13.**
+
+Three smaller items in the same territory:
+
+- **`.claude/CLAUDE.md:146` says "~115 primitives"; the generated `CATALOG.md` says 128.** A
+  generated count and a hand-maintained count of the same set, with no gate.
+- **8 of 128 catalog rows carry a fragment of the component's own source as its description** —
+  `useShakeError | the .`, `useAsyncFieldValidation | link .`,
+  `EstimatedProgressBar | if (progress < 75) return 'hsl(var(primary) / 0.`. Fixed per row by a
+  `@catalog` JSDoc tag plus `npm run gen:catalog`.
+- **The rule's `@/stores/*` + `@/stores/**` globs cannot match the bare barrel `@/stores`.**
+  Measured: zero barrel imports in the catalog today, so this is a latent hole with a two-line
+  fix — but the barrel form is dominant elsewhere (10 of 10 plugin shells), so the first one
+  written in a primitive would be invisible to ESLint. The published census rule already catches
+  it, at an unchanged baseline.
+
+**Why held:** all four are edits to `.claude/CLAUDE.md`, `eslint.config.js` or eight source
+files, in a checkout five concurrent composers have loaded; the CLAUDE.md and lint-config edits
+in particular change what every running session and the operator's editor believe.
+
+---
+
+## 76. `verify_document` verifies against the key printed inside the file it is checking
+
+**From:** [`document-signing`](./golden-paths/document-signing.md) §0, §7.A, §7.B.
+
+`src/commands/signing/mod.rs:196-198` calls
+`identity::verify_signature(&sidecar.signer.public_key, &file_bytes, &sidecar.signature)`.
+Both arguments come from `input.sidecar_json`, pasted into a textarea
+(`DriveVerifyDialog.tsx:132-139`). There is no call to
+`peer_id_from_public_key_b64` (which `identity.rs:81-86` documents as **MUST**
+for untrusted pairs) and no `get_trusted_peer` lookup. A forged sidecar made with
+a fresh keypair returns `valid: true`, and `DriveVerifyDialog.tsx:213-217` renders
+the sidecar's own `display_name` next to a green "Valid signature".
+
+Measured: **5 verification call sites; this is the only one that neither binds
+id↔key nor consults the trust store.** `bundle.rs:571-599` ignores the embedded
+key entirely and verifies against the stored one; `enclave.rs:222-244` binds and
+then checks `trusted_peers`; `p2p/protocol.rs:277-303` binds and hard-rejects.
+`enclave.rs:222-228`'s comment enumerates three siblings that do this check — and
+does not mention this one.
+
+**Fix:** (a) bind `peer_id_from_public_key_b64(sidecar.signer.public_key)` against
+`sidecar.signer.peer_id`; (b) look the id up in `trusted_peers`, honour
+`is_revoked()`, verify against the **stored** key; (c) add a `signer_trusted`
+field to `VerifyDocumentResult` — the sibling verifiers both return two booleans
+and this one returns one, so the UI has no vocabulary for "valid but unknown".
+
+**Why held:** changes what a security surface reports. Fixing (a)+(b) without (c)
+turns today's false green into a permanent red, because `trusted_peers` holds
+**0 rows** and there is no adoption path from a sidecar (§8.3) — so this must land
+as one coherent change, with the UI state and an adopt-this-key step, not as a
+one-line patch.
+
+---
+
+## 77. Two sensitive-path denylists miss the Windows location they name, and guard the wrong door
+
+**From:** [`document-signing`](./golden-paths/document-signing.md) §7.D, §7.E, §7.F.
+
+Two findings against `path_safety.rs:45-75` / `src/api/signing/index.ts:63-80`:
+
+1. **Both miss `%APPDATA%\gcloud\application_default_credentials.json`** — the
+   real Windows location of the credentials the list names. Only the POSIX
+   `~/.config/gcloud/` spelling is enumerated, in a codebase whose build
+   documentation is Windows-first.
+2. **`is_sensitive_credential_path` is applied to `sign_document` and not to
+   `read_sidecar_file` / `write_sidecar_file`** (`mod.rs:301`, `:313`) — and
+   `sign_document` returns only a hash and a signature, while `read_sidecar_file`
+   returns the file's contents. The denylist guards the door that leaks least.
+
+Both read/write doors *are* meaningfully constrained — `.json` only, and
+`resolve_and_guard` canonicalises then blocks system prefixes, the app-data
+directory (so `master.key` and `personas.db` are out of reach) and anything
+outside `$HOME`. The residue is arbitrary `.json` read/write under the user's home,
+including `~/.claude/settings.json`.
+
+Also measured, and **not** a defect to fix: a 22-fixture differential test of the
+two mirrored lists found **7 disagreements, all of them Rust-broader**. There is
+no fixture TS blocks and Rust allows. The drift is safe today — by luck, since
+nothing tests the parity claim at `path_safety.rs:39-40`.
+
+**Why held:** a security control whose current scope may be deliberate; widening
+a denylist can refuse files the operator legitimately signs.
+
+---
+
+## 78. The nine signing commands do not exist in the default dev build, and the UI does not know
+
+**From:** [`document-signing`](./golden-paths/document-signing.md) §7.H.
+
+`commands/mod.rs:18` and nine `#[cfg(feature = "p2p")]` attributes at
+`lib.rs:2708-2726` gate the whole signing surface behind `p2p`, which is in
+`desktop-full` only (`Cargo.toml:61-62`). `tauri:build:lite` / `tauri:dev:lite`
+build `desktop` — and `.claude/CLAUDE.md` says *"Default to `tauri:dev:lite` for
+daily work."*
+
+The frontend has **no capability guard**: `useSigning` and all three dialogs in
+`src/features/plugins/drive/signing/` render unconditionally, so in a lite build
+the buttons are present and every `invoke` fails with an unknown-command error.
+Shipped installers use `tauri.conf.json` → `desktop-full`, so production is
+unaffected.
+
+**Fix:** surface the compiled feature set to the renderer and gate the signing
+entry points on it, the way other optional surfaces are gated.
+
+**Why held:** changes what a live surface shows.
+
+---
+
+## 79. The billing-account control is a 3-name denylist over a ≥17-name namespace
+
+**From:** [`billing-account-auth`](./golden-paths/billing-account-auth.md) §0, §7.A, §7.B.
+
+`CLI_SUBSCRIPTION_RESERVED_ENV` (`engine/src/cli_process.rs:36-40`) holds
+`ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_BASE_URL`. The documented
+credential-resolution order for the Claude CLI continues past those three:
+`ANTHROPIC_PROFILE` (selects a different org/workspace, and outranks the layer
+below it), the five Workload-Identity-Federation variables, and
+`ANTHROPIC_CONFIG_DIR` (which chooses *which profile store on disk* is read) —
+plus the Bedrock/Vertex switches, which move billing to another vendor entirely.
+
+**Measured: 14 such names, 0 occurrences across every `.rs`, `.ts`, `.tsx`,
+`.mjs`, `.json`, `.toml` and `.md` file in the repository.** Any of them present
+in the environment the app inherited at launch reaches every spawned child
+untouched. The three that *are* listed are the three that produce a visible
+symptom ("Credit balance is too low"); the ones that silently bill a different
+valid account produce none.
+
+Second half: the vault-injection guard at `engine/runner/credentials.rs:904`
+checks the composed env **name** against the same list, but a vault credential's
+field key is operator-chosen free-form text. The repo's own test pins this —
+`credentials.rs:1187-1188`, *"A sibling non-reserved field still injects — the
+guard is selective."*
+
+**Fix:** derive the list from the vendor's documented resolution order with a
+dated provenance comment (§8.5), and convert the injection guard from a denylist
+to an allowlist of names a credential may bind to.
+
+**Why held:** changes what the app strips from the operator's own environment,
+and could break a deliberate local setup. This is explicitly the runbook's
+"security control whose current setting may be deliberate".
+
+---
+
+## 80. Six spawn sites bill an unpinned account, three behind a loop that looks like the guard
+
+**From:** [`billing-account-auth`](./golden-paths/billing-account-auth.md) §0.1, §0.2, §7.C.
+
+Hand-verified, each opened: `artist/mod.rs:676`, `standards_scan.rs:225`,
+`revitalize.rs:249`, `project_tracking/consolidator.rs:354`, `ocr/mod.rs:579`,
+`ocr/mod.rs:596` spawn the Claude CLI without `force_subscription_auth` or a
+`CLI_SUBSCRIPTION_RESERVED_ENV` loop.
+
+**Three of them run `for key in &cli_args.env_removals { cmd.env_remove(key); }`**
+— which strips `CLAUDECODE`, `CLAUDE_CODE` and three `DISABLE_PROMPT_CACHING*`
+names (`cli_args.rs:184-199`) and **no auth variable at all.** A reviewer looking
+for "does this strip the environment" finds a strip loop.
+
+Separately, `src/companion/athena_reaction.rs` calls `force_subscription_auth` at
+`:567` and applies `env_overrides` at `:579-580` — inverting the contract stated
+at `cli_process.rs:44` (*"Call AFTER applying any env overrides so nothing can
+re-introduce them"*). **Latent, not live**: no `ANTHROPIC_*` override is emitted
+today, so nothing is currently re-introduced. The next override added makes it
+live silently. Two independent implementations found this site and only this site.
+
+**Fix:** route all six through `spawn_headless_claude` — whose own comment
+(`cli_process.rs:305-310`) already claims it *"closes that gap for every caller,
+with no opt-out"* — and move the strip inside the constructor so ordering cannot
+be got wrong (see that path's §9.1).
+
+**Why held:** touches the money path on six live code paths at once.
+
+---
+
+## 81. Token counts are zero in 2,188 of 2,188 executions — and this corrects item 24
+
+**From:** [`billing-account-auth`](./golden-paths/billing-account-auth.md) §7.D, §12.1.
+
+Measured against `purge-backup-2026-08-17/personas.db`:
+
+| column | rows > 0 | of |
+|---|---:|---:|
+| `cost_usd` | **1,970** | 2,188 |
+| `cache_read_tokens` | **585** | 2,188 |
+| `input_tokens` | **0** | 2,188 |
+| `output_tokens` | **0** | 2,188 |
+
+`SUM(cost_usd)` = **$2,036.2571**.
+
+**This overturns item 24's headline.** That entry records *"every run records
+$0"* and cites "$2,036.26 of actual spend" as the figure the ledger failed to
+capture. The $2,036.26 **is the sum of the ledger column itself** — cost is
+recorded, in 1,970 of 2,188 rows. The broken half is tokens.
+
+The cause is six lines of `engine/src/parser.rs`: `total_cost_usd` (`:339`),
+`total_input_tokens` (`:340`) and `total_output_tokens` (`:341`) are read
+top-level with no `usage` fallback, while the cache-token reads immediately below
+(`:346-370`) consult `usage` first — and those are the ones with data. **Within a
+single struct literal, the fields that consult `usage` are populated and the
+fields that do not are zero.**
+
+Confirmed by a second parser of the same event:
+`db/src/repos/llm_spend.rs:100-101` reads `usage.input_tokens` and its table has
+**85 of 89 rows populated**.
+
+**Fix:** give `:340-341` the same `usage`-first fallback the cache fields already
+have.
+
+**Why held:** one line per field and non-destructive, but it changes what a live
+cost surface displays while the operator is watching it. Also note the
+consequence while it is unfixed: any spend ceiling denominated in **tokens**
+compares against zero on every row and can never fire (cost-denominated ceilings
+are unaffected).
+
+---
+
+## 82. `custom/enforce-base-modal` is warn-level, scores 0/8 precision and 0/19 recall, and `CLAUDE.md` calls it "enforced"
+
+**From:** [`modal-stacking`](./golden-paths/modal-stacking.md) §0, §7 D1/D3/D6, §12.1.
+
+Four separate defects, none applied:
+
+- **Severity.** `eslint.config.js:95` sets the rule to `"warn"`, so per doctrine §3 it enforces
+  nothing at either gate. `.claude/CLAUDE.md`'s reuse table describes it as *"(enforced by
+  `custom/enforce-base-modal`)"* on the row for `fixed inset-0` modal backdrop. **Held because I
+  am not permitted to edit `CLAUDE.md`; recorded here so the next session with that authority can
+  correct the word and the claim together.**
+- **The signal is anti-correlated with the defect.** The rule anchors on `role="dialog"`
+  (`eslint-rules/enforce-base-modal.cjs:63-73`). Executed over its entire anchor population (the
+  16 files containing that attribute): **8 reports, and all 8 opened by hand are anchored popovers
+  or an inline notice** — `FindingBadge.tsx:210`, `WarningBadge.tsx:107`, `DataLinksPopover.tsx:80`,
+  `DeployPopover.tsx:55`, `ImprovePopover.tsx:91`, `StandardsScan.tsx:111`,
+  `passportWidgets.tsx:187`, `DemoNotice.tsx:23`. Converting any of them to `BaseModal` would be a
+  regression. Meanwhile the **19 files that do hand-paint a full-viewport modal backdrop carry zero
+  `role="dialog"`**, so recall is 0. Replacing the signal changes what every running editor reports.
+- **Satisfied by an import, not by use.** `importsBaseModal` accepts any import source *containing*
+  the substring `BaseModal`, and accepts `source === '@/features/shared'` — a barrel import of
+  anything (`:40-48`). A file can import `BaseModal`, never render it, hand-roll a dialog, and pass.
+- **`BaseModal`'s `containerClassName` silently discards the depth-derived z-index.**
+  `style={containerClassName ? undefined : { zIndex: overlayZIndex }}` (`lib/ui/BaseModal.tsx:278`).
+  All 8 call sites noticed and wrote a z-index by hand; the values do not compose — `z-40` is
+  *below* `Z_INDEX_BASE` (50), `TemplateDetailModal.tsx:145` passes `absolute` rather than `fixed`,
+  and `FirstUseConsentModal.tsx:158` / `ResourcePicker.tsx:187` both pass `z-[9999]`.
+
+**Fix:** (a) merge the computed `zIndex` into `style` unconditionally instead of replacing it;
+(b) replace the rule's signal with the published census signal (`fixed inset-0` + dimming paint in
+the same class string) or retire the rule in favour of the census rule alone; (c) correct the
+`CLAUDE.md` row. Related and larger: `portal: boolean` should become a closed `layer` union so
+`Z_INDEX_BASE` (50) and `Z_INDEX_PORTAL_BASE` (10000) stop being reachable only as a pair — three
+overlays (`TestReportModal.tsx:68`, `ComposerPickerShell.tsx:89`, `ucPreviewModal.tsx:21`) exist
+solely to escape that gap and each names the constant in a comment.
+
+**Why held:** (a) changes what 8 live modals paint; (b) changes what every running session's editor
+reports; (c) is a `CLAUDE.md` edit this session is not authorised to make.
+
+---
+
+## 83. Five doors send OS notifications, 52 of 57 sites are hardcoded English, and the coverage gate counts its own source
+
+**From:** [`desktop-notification`](./golden-paths/desktop-notification.md) §0, §7 D2/D4/D6/D10, §8 G2/G3.
+
+- **`lib/harness/verifier.ts:74-83`** — `notificationCoverageGate()` is
+  `grep -rn "notifyProcessComplete" src/ … | wc -l`, `required: false`. The pipe replaces grep's
+  exit code, and the pattern counts **prose**: of 13 current matches, 8 are feature-list strings in
+  `lib/harness/scenario-parser.ts:359-415`, one is the gate's own `command` string, one is the
+  helper's `export function` line, one is an import — **1 real call site out of 13**. Because two
+  counted mentions live in the gate's own file, the number **cannot reach zero** even if every
+  caller is deleted.
+- **`lib/utils/platform/osNotification.ts`** — a fifth notification door using the raw Web
+  `Notification` API, bypassing the Tauri capability allowlist (`capabilities/default.json:13-16`
+  covers only the plugin). Three silent `return`s (`:18`, `:21`, `:23`), zero error doors, and
+  **all 6 call sites `void` the promise**. Two of the six are the user-facing half of credential
+  remediation (`remediationExecutor.ts:54`, `:70`). Its `requestNotificationPermission()` export
+  (`:9-14`) has **zero callers**.
+- **`send_app_notification` cannot report failure.** `notifications.rs:1161-1163` returns `()`,
+  `send` logs `tracing::warn!` and drops (`:1543-1547`), and the wrapper is `invoke<void>`
+  (`api/system/system.ts:113`). A denied notification and a delivered one are the same value at
+  every layer, so no caller can fall back.
+- **`usePipelineNotifications.ts:86-99`** requests OS permission on mount, before any pipeline has
+  finished, and caches the result in a ref that is never re-read — a later grant is invisible until
+  remount.
+- **31 Rust send sites cannot be localized where they are.** `src-tauri/src/notifications.rs` has
+  zero matches for `locale`/`i18n`/`translat`; 24 of 31 titles are bare English literals and the
+  other 7 are `format!` templates with English skeletons.
+
+**Fix:** (a) delete `requestNotificationPermission()` (zero consumers) and route the six
+`sendOsNotification` callers to `notifyProcessComplete`, which writes the in-app record
+*outside* its `try` and therefore needs no failure signal; (b) widen `send_app_notification` to
+`Result<(), AppError>`; (c) replace the harness gate with the published census rule; (d) the
+structural item — emit a key + params from Rust and resolve in the frontend listener, so the 31
+backend notifications become localizable at all.
+
+**Why held:** (a) and (b) change behaviour and a public IPC signature across 22 call sites;
+(d) is an architecture change; (c) touches a harness file other sessions read. The only change
+this campaign's rules would authorise — deleting the zero-consumer
+`requestNotificationPermission()` — is held because it shares a file with six live call sites in a
+checkout five composers have loaded.
+
+---
+
+## 84. Three persona version-history mechanisms; the declared-canonical one is dead, the best one has no foreign key and is not in the orphan sweep
+
+Found by [`definition-version-history`](./golden-paths/definition-version-history.md).
+All counts from `purge-backup-2026-08-17/personas.db` unless stated.
+
+**(a) `persona_versions` is a fully built, structurally unreachable subsystem.**
+`incremental.rs:1963` created it under *"replaces prompt-only versioning"*, with a
+child table, a one-shot `INSERT OR IGNORE` backfill guarded by
+`if !has_persona_versions`, a 110-line repo module (`db/src/repos/lab/versions.rs`,
+3 `pub fn`), a core model (`core/src/models/lab.rs:644`), a ts-rs binding exported
+at `src/lib/bindings/index.ts:640`, and an entry in the boot orphan scrub
+(`db/src/lib.rs:460`). **Zero call sites, zero binding importers, zero rows in
+both databases.** Meanwhile all five production writers still write
+`persona_prompt_versions`, which gained five columns *after* the replacement
+shipped. Because the backfill is one-shot, the two tables can never converge.
+
+*The fix:* delete `db/src/repos/lab/versions.rs`, the `pub mod versions;` at
+`db/src/repos/lab/mod.rs:11`, `PersonaVersion` and its binding, and the
+`"persona_versions"` entry in `ORPHAN_TABLES`. Leave both tables — they are empty
+and dropping a table is destructive.
+*Why held:* removing a `#[derive(TS)] #[ts(export)]` model changes what
+`export_bindings` emits, and cargo is unavailable in the campaign's session. This
+is a zero-consumer deletion in spirit but not one the session can verify.
+
+**(b) `persona_change_log.persona_id` has no foreign key and is absent from the
+boot orphan sweep.** `incremental.rs:1215` declares it `TEXT NOT NULL` with no
+`REFERENCES`; `cleanup_orphan_rows`' `ORPHAN_TABLES` (`db/src/lib.rs:437-448`)
+lists twelve tables and does not include it — while it *does* include
+`persona_versions`, which has never held a row. The purge on 2026-08-17 produced
+no orphans only because `persona_change_log` was empty: its writer landed
+2026-07-27 and the newest `personas.updated_at` anywhere is 2026-07-14, so **no
+persona has been updated since the writer existed.**
+*The fix:* decide the policy (cascade like `persona_prompt_versions`, or survive
+and get swept) and implement one of them.
+*Why held:* adding the FK is a table rebuild; adding the table to `ORPHAN_TABLES`
+is a boot-time `DELETE` — both are destructive first runs.
+
+**(c) `personas::update` writes the version row on its own connection, before the
+validation that can reject the edit.** `db/src/repos/core/personas.rs:935` calls
+`create_prompt_version_if_changed(pool, …)` — its own connection, its own
+`BEGIN IMMEDIATE`/`COMMIT` (`metrics.rs:99,122`) — and eight `validate_*` calls,
+two encryption calls and a lifecycle parse sit between it and the `UPDATE` at
+`:1178`. Any of them returning `Err` leaves a committed version of a value the
+persona never took. The same function does it correctly 250 lines later
+(`write_diff(&tx, …)`, `:1186`).
+*Why held:* moving the write into the transaction changes when history is written
+for every persona edit.
+
+**(d) The only diff-gated door reads one of the two payload columns.**
+`create_prompt_version_if_changed` compares `structured_prompt` only, and its
+caller gates the whole call on `if let Some(ref new_sp) = input.structured_prompt`
+(`personas.rs:929`). Since the client sends the diff, a system-prompt-only edit
+never reaches the writer. Evidence: **16 of 25 rows have `system_prompt IS NULL`**,
+0 have `structured_prompt IS NULL`, and one writer (`lab.rs:632`) inserts the
+literal `NULL` into that column.
+*Why held:* widening the gate changes how many version rows a save produces.
+
+**(e) Twelve tables declare a per-parent sequence column with no constraint.**
+Ratcheted by the census rule `unconstrained-sequence-column` (12 matches / 4
+files, hand-verified 10/12) rather than fixed — adding `UNIQUE(persona_id,
+version_number)` to `persona_prompt_versions` is a table rebuild.
+
+---
+
+## 85. The trigger "Test fire" button takes a different, shorter, more privileged path than a real fire — and `trigger_id` is NULL in 2,188 of 2,188 executions
+
+Found by [`manual-test-fire`](./golden-paths/manual-test-fire.md).
+
+**(a) The two paths diverge.** A real fire publishes an event
+(`engine/background.rs:2906`, `source_type: "trigger"`, `source_id:
+Some(trigger.id)`) which the event bus turns into a run. The Test-fire button
+(`TriggerDetailDrawer.tsx:84` → `useTriggerOperations.ts:131`) calls
+`executePersona(pid, triggerId)` directly. The manual path therefore skips
+`mark_triggered`, the `unattended_mode == "approval"` hold
+(`background.rs:2878-2903`), the `unattended_mode == "dry_run"` →
+`is_simulation` conversion (`background.rs:1552-1570`), the trigger rate-limit
+key, the active-hours window, `synthesize_trigger_fired_payload`, and the event
+fan-out. **Pressing "Test fire" on an approval-mode trigger runs it**, where the
+schedule would have held it for a human.
+
+**(b) The event bus discards the trigger id it is holding.** At
+`background.rs:1561` and `:1572` both `exec_repo::create*` calls pass
+`trigger_id: None` — three lines after `event.source_id` was read and resolved to
+a trigger to decide `dry_run`. `persona_executions.trigger_id` is declared
+`REFERENCES persona_triggers(id) ON DELETE SET NULL` and is **NULL in 2,188 of
+2,188 rows** across an install that held 351 triggers. `listExecutionsByTrigger`
+— the trigger drawer's own Activity panel — reads exactly that column.
+
+**(c) `is_simulation` is set by no test control a user presses.**
+`execute_persona` passes `false` (`executions.rs:169`); five callers pass `true`
+and none is a saved-automation test button. **0 of 2,188 rows carry the flag**, so
+the three `COALESCE(is_simulation, 0) = 0` metric exclusions, the
+`ExecutionList.tsx:133,137` filter and the `ExecutionListRow.tsx:77` badge have
+never had an input.
+
+*Why held:* every one of (a)–(c) changes what a live surface shows or what a live
+control does while the operator is using it.
+
+**(d) The idempotency key on the repo's most-used spawn door is per-attempt.**
+`src/api/agents/executions.ts:68` — `idempotencyKey ?? crypto.randomUUID()` — with
+a comment asserting it provides "self-dedup against a concurrent duplicate
+(double-click, double-fire, React re-invoke)". A fresh UUID cannot collide, so
+both the client in-flight map (`tauriInvoke.ts:336`) and the server's
+`get_by_idempotency_key` pre-check are inert. Of 20 call sites, one passes an
+explicit key and it passes a UUID too (`chatSlice.ts:244`). This inverts
+[`idempotent-invocation`](./golden-paths/idempotent-invocation.md) §2 at the
+single door that most needs it.
+*Why held:* deriving a real key changes dedup behaviour on the live run path —
+including, deliberately, refusing a second run the operator may currently expect
+to get.
+
+**(e) `test_automation_webhook` skips the `is_runnable()` gate its production twin
+applies.** `automations.rs:164` checks it before `invoke_automation`; `:214`
+calls the same function without it, and fires a real outbound webhook.
+
+---
+
+## 86. `feedback/LoadingSpinner` renders `null` and is used as a control's busy state at 68 sites in 50 files
+
+Found by [`manual-test-fire`](./golden-paths/manual-test-fire.md) §9 while
+gating its own headline control.
+
+`{flag ? <LoadingSpinner .../> : <Icon .../>}` makes the icon vanish and puts
+nothing in its place — the shim emits only an `sr-only` `role="status"`, and only
+when passed a `label`, which none of these 68 sites does. Measured over `src/`
+(4,801 files): **68 violating sites in 50 files**, against **66 compliant
+`Button`/`AsyncButton` `loading` props in 52 files** — the repo is at roughly
+50/50 on one concern. The broader anchor is **247 `<LoadingSpinner` renders across
+178 files**. Two independent implementations disagreed in both directions (68 vs
+65; 4 multi-line-formatted sites invisible to a line matcher, 1 fragment-wrapped
+site invisible to the JSX matcher), so the true population is **at least 69**.
+
+The structural fix is Q5 — **delete the shim**, which makes the bad state
+unspellable. *Why held:* 178 files across every feature area, in a checkout
+several composers have loaded, and the sites that pass a `label` do provide a
+screen-reader announcement that a naive deletion would remove. Ratcheted by the
+census rule `null-spinner-busy-state` until the retirement lands.
+
+`CATALOG.md`'s `LoadingSpinner` row still describes it as *"Canonical loading
+spinner… Use for any full-element loading state"*, and that text is hardcoded in
+the `CURATED` map at `scripts/docs/gen-shared-catalog.mjs:56`, so regenerating the
+catalog will not fix it — as `CLAUDE.md` already notes.
+
+---
+
+## 90. `AppError::RateLimited` cannot carry the retry-after it is handed, so 8 of 12 sites format it into English
+
+From [`rate-limiting`](./golden-paths/rate-limiting.md) §7.E / §9.2.
+`RateLimiter::check` returns `Err(retry_after_secs)` — a correct sliding-window
+figure computed from the oldest in-window timestamp. Of its **7** call sites,
+**one** (`management_api.rs:544-549`) puts that number where a machine can read
+it (`header::RETRY_AFTER`); five interpolate it into a sentence and one
+(`smee_relay.rs:526`) calls `.is_err()` and drops both the number and the event.
+`AppError::RateLimited(String)` is the reason: the only field available is prose,
+so **8 of 12 construction sites reach for `format!`, and 0 of 12 carry a
+structured retry-after**. The single frontend consumer,
+`src/lib/utils/apiError.ts:112`, therefore hardcodes `5000` ms.
+
+**The fix (not applied — a 12-site type change across the IPC boundary):** make it
+a struct variant, `RateLimited { message: String, retry_after_secs: Option<u64> }`.
+`RateLimited("…".into())` then stops compiling at all 12 sites and each author
+must answer the question while holding the number. `core/src/error.rs:160-215`
+gains one `serialize_field`; `apiError.ts:112` becomes
+`err.retry_after_secs ?? 5000`. Held against the doctrine's seven qualifications
+in that path's §9.2 — Q2 is why the field must stay `Option` (the six
+mutual-exclusion sites have no meaningful retry-after) and Q5 is why the fix is
+withholding the free-text constructor rather than adding a field beside it.
+
+**Companion, same edit window:** a third variant. Today `RateLimited` names three
+different refusals — **5 frequency, 1 capacity, 6 mutual exclusion** — a direct
+arithmetic consequence of commit `17d059b1f`, which correctly applied
+[`admission-control`](./golden-paths/admission-control.md) §7.A's prescription.
+The prescription was right; its price is that `ErrorCategory::RateLimit` now
+covers two disjoint populations and `healing.rs:303-324` tells an operator to
+*"reduce execution frequency or upgrade your plan"* when they clicked a button
+twice. `InflightGuard` already exists as the primitive; only the error kind is
+missing.
+
+## 91. The trigger rate-limit form writes a policy no code on either side reads
+
+From [`rate-limiting`](./golden-paths/rate-limiting.md) §7.A / §7.B.
+`RateLimitControls.tsx` is a shipped, user-reachable form (TriggerListItem →
+`TriggerDetailDrawer.tsx:45`) persisting
+`{ max_per_window, window_seconds, max_concurrent, cooldown_seconds }` into a
+trigger's `config`. **Rust readers: zero** — `"rate_limit"` as a config key
+appears in none of 963 `.rs` files, and `core/src/models/trigger.rs`, the sole
+parser of trigger config, contains no `rate` / `throttl` / `cooldown` /
+`concurren` identifier at all. **TypeScript enforcer: zero callers** —
+`recordTriggerFiring` (`triggerSlice.ts:198`) and `recordTriggerComplete`
+(`:257`) are never invoked in 4,829 files.
+
+Consequence: `triggerRateLimits` is permanently `{}`, so the **`rate-limits` tab**
+(`TriggersPage.tsx:151` → `RateLimitDashboard.tsx`) renders three counters —
+running, queued, throttled — that are structurally zero, and a throttle bar
+that is structurally 0 %. The one non-zero number counts triggers whose *config*
+carries a limit. **The surface reports configuration and calls it throttling.**
+
+**Not applied**: wiring the server side changes what a live surface does *and*
+requires answering a question this leaf deliberately does not own — whether a
+throttled scheduled fire is **dropped or deferred**, which is
+`admission-control`'s. Deleting the dead client-side limiter is the cheap half
+and is also deferred, because `RateLimitDashboard` would then need an honest
+empty state rather than a silent zero.
+
+## 92. 135 connectors, one rate limit: `rate_limit_rpm` is read and never written
+
+From [`rate-limiting`](./golden-paths/rate-limiting.md) §7.D.
+`api_proxy.rs:251` parses `rate_limit_rpm` out of connector metadata and falls
+back to `DEFAULT_RATE_LIMIT = 60`. **The string `rate_limit_rpm` occurs exactly
+twice in the tree — lines 250 and 254 of `api_proxy.rs`, i.e. the reader and its
+docstring.** Zero of the 135 `BuiltinConnector` seed rows declare it, so every
+credential in the app shares one 60 req/min bucket.
+
+Nine of those seeds state a real limit in the `llm_usage_hint` prose shipped to
+the model. The two that matter: **arXiv** documents *"max 1 request per 3 seconds.
+arXiv will block IPs that exceed this"* (20/min) and **Semantic Scholar**
+documents 100 req/5 min without a key (20/min). The default is **3× more
+permissive than a documented policy whose stated penalty is an IP block.**
+
+**Not applied**: a seed change alters what the running app enforces against live
+third parties. The fix is nine `"rate_limit_rpm": N` entries, and the check that
+keeps it true is specified in that path's §9.3 — a script over
+`builtin_connectors.rs` that flags a connector documenting a rate without
+declaring one, **with an exit-2 floor at 120 parsed metadata blobs**, because the
+JSON parse already reaches 134 of 135 rows and a delimiter change would silently
+drop more.
+
+## 93. A 429 from the TTS sidecar is reported as the user's mistake
+
+From [`rate-limiting`](./golden-paths/rate-limiting.md) §7.H. One line.
+`src/companion/tts/pocket.rs:473-478` recognises HTTP 429 from the local Pocket
+TTS service and returns
+`AppError::Validation("Pocket TTS service is at capacity (queue full) — try again in a moment")`.
+`Validation` → `ErrorCategory::Validation` → severity **Low**
+(`error_taxonomy.rs:399`), `is_failover_eligible` **false**, `retryable` **false**
+(`tool_outcome.rs:113`). The minted message contains none of `rate limit` /
+`too many requests` / `quota exceeded` / `usage limit` / `429`, so the string
+ladder at `error_taxonomy.rs:151-158` cannot recover the classification either.
+The module's own header (`pocket.rs:21`) says the service *"replies 429 under
+overload, so no client-side semaphore is needed"* — the design is deliberate and
+the type contradicts it. Same class as item 90's companion and as
+`admission-control` §7.A. **Not applied** because it changes a retry decision at
+runtime; it is otherwise a one-token edit.
+
+## 94. `cap_with_log` — the helper that makes a truncation attributable — has one caller in 963 files
+
+From [`engine-caps-and-ceilings`](./golden-paths/engine-caps-and-ceilings.md)
+§7.A. `personas_core::limits::cap_with_log(label, requested, cap)`
+(`core/src/limits.rs:75`) clips a value and emits a `tracing::debug!` naming which
+cap fired and by how much. It is unit-tested, it lives in the crate every other
+crate depends on, and it is called at **`src/engine/background.rs:2607` and
+nowhere else**. Against it: ~440 ceiling applications by other means — 199
+`.take(<literal>)`, 99 `.take(<NAMED>)`, 17 `.truncate(…)`, 8 `.chunks(…)`,
+144 SQL `LIMIT <literal>`. A log macro appears within four lines of **2 of 304**
+anonymous applications.
+
+**Not applied**: 440 call sites is a campaign, not an edit, and a `debug!` per
+site is a log-volume decision the operator should make. The census rule
+`magic-collection-ceiling` (baseline 53 matches / 34 files, positive control
+51 / 32) ratchets the anonymous half so the population stops growing meanwhile.
+
+## 95. Four multi-row reads pick their survivors by rowid
+
+From [`engine-caps-and-ceilings`](./golden-paths/engine-caps-and-ceilings.md)
+§7.E. Of 323 `LIMIT` clauses inside `SELECT … FROM` literals, **223 of the 228
+multi-row ones carry an `ORDER BY` (97.8 %)** — this repo is close to perfect on
+this axis. The five that do not: `memories.rs:1937` (an arbitrary N archived
+memories), `digest.rs:382` (an arbitrary 10 of the broken credentials),
+`skill_files.rs:195` and `companion/prompt.rs:902` (**the same
+`SELECT … FROM dev_projects LIMIT 5` written twice in two modules, one of them
+feeding the companion's prompt** — a user with six projects has one the companion
+cannot see, and which one depends on insertion order), and `dispatch.rs:785`,
+which is correct by design (an ambiguity probe: *is there more than one match*).
+
+**Not applied**: adding an `ORDER BY` changes which rows a live surface and a live
+prompt receive. Four one-line edits, each needing a decision about what "the top
+5 projects" should mean.
+
+---
+
 ## What *was* applied, and what it changes at runtime
 
 For completeness, since "no destructive applies" is now the rule. None of these
@@ -2537,3 +3664,1823 @@ positives, across four copies. That result stands. What it did not do is examine
 `[secret]` beside a surviving token — see item 35. The campaign's own doctrine
 predicted this exact miss and the campaign made it anyway: **a search for the
 broken literal finds every copy of that literal and nothing else.**
+
+---
+
+## 87. A cell grid's coordinate is destroyed one layer above the renderer, and five of fourteen rosters have no zero-state
+
+**From:** [`matrix-and-cell-grid`](./golden-paths/matrix-and-cell-grid.md) §7-A/§7-D/§7-I,
+[`member-roster`](./golden-paths/member-roster.md) §7-E.
+
+- **`src-tauri`-free, frontend-only.** `db/src/repos/…` untouched by every item here.
+- **`overview/sub_health/libs/compositeHealthScore.ts:44,375-384`** — `dailyStatuses: DayStatus[]`
+  drops the `date` its own input type declares at `:314` and its own doc comment names at `:312`.
+  Widen to `Array<{ date: string; status: DayStatus }>`, pad with the real missing dates instead
+  of `unshift('no-data')`, then key `StatusPageView.tsx:145` by `d.date`. One producer, one
+  consumer, two test references — a two-site widening that removes the position-keying, the
+  interior-gap misalignment and the meaningless `"Day N"` label at once. **Not applied: it
+  changes what the status page renders in every row.**
+- **`overview/sub_health/components/StatusPageView.tsx:166-175,190`** — six hardcoded English
+  strings (`"Success Rate"`, `"Latency (p95)"`, `"Cost Anomalies"`, `` `${n} detected` ``,
+  `` `${n} open` ``, `` `Day ${index+1}: …` ``) plus a `DebtText` marker, in a 14-locale app. The
+  `title=` at `:190` is also the strip's only readout and is keyboard-unreachable.
+- **`plugins/dev-tools/sub_skills/registry/RegistryHeatmap.tsx`** — the model exposes `loading`
+  (`registryTypes.ts:68`) and **neither the heatmap nor `RegistryTab` renders anything for it**,
+  so the workspace matrix cold-loads as a bare frame. Also `:144` and `:161` use `animate-pulse`
+  as a busy state on a control the user just pressed; `buttons/Button loading` is the mandated
+  form.
+- **Five roster surfaces call `.map` over members with no length guard and no empty state** —
+  `TeamStudioSplitVariant.tsx:186`, `BlueprintPreview.tsx:44`, `PresetPreviewModal.tsx:133`,
+  `PresetProcessBlueprint.tsx:53`, `PresetQuestionnaireForm.tsx:134`. Three more render nothing
+  at all (`JudgePanel.tsx:94`, `ConversationSidebar.tsx:136`, `TeamList.tsx:443`). **As of the
+  2026-08-17 purge every one of the app's 8 teams has zero members**
+  (`persona_team_members` 64 → 0, `persona_id … ON DELETE CASCADE`), so this is now the *default*
+  state, not an edge case. `PresetPreviewModal.tsx:124` renders a heading counter reading
+  `(0/0)` above nothing.
+- **`overview/sub_certification/components/JudgePanel.tsx:97`** — `key={… ?? Math.random()}`, the
+  only `Math.random()` React key in 2,083 `.tsx` files. `JudgePersona` declares both fallback
+  fields nullable, so the row remounts on every parent render. The fix is not a better key: a
+  verdict with neither a persona id nor a role should render as one aggregate row.
+- **`teams/sub_teamWorkspace/BlueprintPreview.tsx:46,60,75`** (+ `useAutoTeam.ts:260`) — the key
+  is `` `${member.persona_id}-${i}` `` and both mutations take the index, so removing member 0
+  changes every following row's key and remounts the role `<input>` mid-edit. `BlueprintMember`
+  already carries `persona_id`.
+- **`teams/sub_teamWorkspace/teamStudio/boardShared.tsx:89`** — `PersonaChip` returns `null` for
+  an absent persona, so each of the **1,488** `team_assignment_steps` rows whose
+  `assigned_persona_id` the purge set to NULL now renders with no actor at all. The only real
+  fallback in the tree is `team_synthesis.rs:918-920`'s `"(persona removed)"`, which is a
+  hardcoded English literal minted behind IPC and therefore outside the i18n system — it needs a
+  `status_tokens` token resolved client-side.
+- **`resources/teams.rs:381-384`** — the comment describes a `UNIQUE(team_id, persona_id)`
+  constraint that the schema does not declare; the hand-rolled `SELECT EXISTS` guard is a
+  read-then-write race. Measured 0 duplicates in 64 pre-purge rows. **A schema change; not
+  applied.**
+
+## 88. Ordering keys: a manufactured tie, a half-composite cursor, and two comparators that never return zero
+
+**From:** [`chronological-feed`](./golden-paths/chronological-feed.md) §7-A/B/C/D/E/G, §10.
+
+- **`fleet/monitor/channels/mergedFeed.tsx:42`** — sorts the channel items on `at` alone while
+  its sibling `useLensFeed.ts:67` sorts the *same items* on `(at, id)` and documents why.
+  Measured against the 2026-08-17 backup, **45.2% of `team_channel_messages` rows share their
+  `at` with another row (worst tie 7)**, so within a tied second the live overlay's order — and
+  which items survive the `LIVE_FEED_WINDOW = 600` cut — is decided by the order the user's teams
+  happen to be listed in. One `|| b.item.id.localeCompare(a.item.id)`. **Not applied: it changes
+  what a live surface shows while the operator is watching it.**
+- **`db/src/repos/communication/events.rs:1319`** — `search()` orders `(created_at DESC, id DESC)`
+  at `:1335` and bounds with a **timestamp-only** `where_lte("created_at", until)`. That is the
+  Event Log's "load older" path. The composite form exists 100 lines away at
+  `get_recent_after:439`. Latent today (`persona_events` ties at 0.0% raw) and not latent for any
+  consumer that truncates the key.
+- **`src/commands/teams/team_channel.rs:174-176,242-244,299-301,361-363`** — the cursor predicate
+  applies `strftime(…)` to the column, so no index on `created_at` can serve it and every page is
+  a scan. Correct semantics, non-sargable shape.
+- **`plugins/twin/sub_channels/ContactThread.tsx:49`** and **`SentReplies.tsx:47`** —
+  `(a, b) => (a.occurred_at < b.occurred_at ? 1 : -1)` never returns 0, which is not a consistent
+  total order. The compliant three-way form is already in the tree at `sceneStore.ts:69`.
+  `twin_communications` holds 0 rows, so no user has seen it.
+- **`fleet/monitor/channels/conversationModel.ts:39-41`** — `dayKeyOf` is `at.slice(0,10)`, a
+  **UTC** calendar day, while `dayLabel` (`:45-53`) computes **local** midnight. At UTC+2 the day
+  separator lands at 02:00 local and the first two hours of each local day are filed under the
+  previous day's header. `grouping.ts:34-39` (`timeGroupKey`) already computes local boundaries
+  and is used by three other feeds.
+- **`overview/sub_activity/components/GlobalExecutionList.tsx:161`** — returns unsorted by default
+  and defers to the SQL `ORDER BY e.created_at DESC`, while the sticky day headers bucket on
+  `started_at || created_at` (`:264`). Rows whose two timestamps straddle a bucket boundary land
+  under the wrong header.
+- **`messages.rs:60`** and **`executions.rs:253`** — `OFFSET` paging on `created_at` alone. Latent
+  at 0.0–0.1% on the operator's data because those writers use nanosecond `to_rfc3339()`; the fix
+  is `, id DESC` before considering a move to the keyset form at `manual_reviews.rs:632-676`.
+  **A query change; not applied.**
+- **`teams/sub_teamMemory/components/timeline/MemoryTimeline.tsx:132`** —
+  `` key={`manual-${i}`} `` over an array built by interleaving and then reversing, so inserting a
+  run group above renumbers every manual group below it.
+
+---
+
+## 96. `npm run clean:worktrees` finds 19.79 GB of app-created worktrees and prints "Nothing to remove"
+
+> Numbers 96–98 were appended by the wave-2026-08-17-B composer in one atomic append.
+> If a sibling composer claimed the same numbers concurrently, renumber — the entries
+> are self-contained and order-independent.
+
+Three directories sit in `.claude/worktrees/` on the operator's machine — `athena-dev-515e976a`
+(5.34 GB), `athena-dev-afc86f6c` (5.44 GB), `athena-dev-fe5c433a` (9.00 GB). All three were created
+by the **app**, not by a CLI session: `dev_mode::create_dev_worktree`
+(`src-tauri/src/companion/dev_mode.rs:662-673`). None is registered in `git worktree list
+--porcelain`; none has a `.git` file.
+
+Measured 2026-08-17 by running the GC twice:
+
+```
+node scripts/worktree-gc.mjs                    →  0 removable · reclaims ~0.00 GB · "Nothing to remove."
+node scripts/worktree-gc.mjs --include-orphans  →  3 removable · reclaims ~19.79 GB
+```
+
+`package.json:81` maps `clean:worktrees` to the first form. `removable` (`worktree-gc.mjs:200`)
+requires `dirty === 0 && merged && age > DAYS`, and an orphan has `dirty === null` and
+`merged === null`, so it can only be reclaimed through the separate `INCLUDE_ORPHANS` branch
+(`:188-195`, gated at `:43`).
+
+**Root cause:** `dev_mode::prune_worktree` (`:920-928`) runs `git worktree remove <path>` **without
+`--force`**, which git refuses for a worktree holding untracked files — and every one of these holds
+`node_modules`. The failure is swallowed. A later `git worktree prune` (`worktree-gc.mjs:283`, or
+`scripts/test/longitudinal.mjs:66`, which runs one unconditionally) drops the registry entry, and the
+directory becomes an orphan. **Four of the five `worktree remove` sites in the tree already pass
+`--force`** (`approval_exec_dev.rs:861-864`, `workspace.rs:405-408`, `:422-426`, `:684-687`); the one
+on the success path does not.
+
+**Fix, not applied:** (a) `--force` in `prune_worktree`, and surface its failure rather than
+discarding it; (b) make `--include-orphans` the default in `scripts/worktree-gc.mjs` with an
+`--exclude-orphans` opt-out. Both change what a destructive script does, so both are deferred.
+Detail: [`agent-workspace-isolation.md`](./golden-paths/agent-workspace-isolation.md) §0, §7.1, §7.2.
+
+---
+
+## 97. `CliProcessDriver` declares it owns a temp directory and has no `Drop` — one call site leaks on 100% of runs
+
+`src-tauri/engine/src/cli_process.rs:529-547` — `spawn_temp` creates `%TEMP%/<prefix>-<uuid>` and
+sets `owns_exec_dir: true`. The only code honouring that flag is `cleanup_dir()` (`:700-705`),
+reachable from `finish()` (`:708-712`) or an explicit call. `kill()` does not call it. `?` does not
+call it. **There is no `Drop` impl** (all 25 `impl Drop for` sites in `src-tauri/` enumerated; no
+child-owning struct has one).
+
+Measured: **14 construction sites; 9 reach an early return before any cleanup** (census rule
+`leaked-owned-exec-dir`, 7 files / 9 matches, precision 9/9 hand-verified). One of them —
+`src-tauri/engine/src/cli_capabilities.rs:68` — calls `driver.kill().await` at `:72` and `:97` and
+**never** calls `finish()` or `cleanup_dir()` on any path.
+
+Confirmed on disk, 2026-08-17, by enumerating all 87,149 `%TEMP%` entries and bucketing by creator
+prefix: `personas-capprobe-*` = **132 directories**; every other owning-driver prefix
+(`personas-auto-triage`, `personas-llm-eval`, `personas-test-coord`, `personas-test-exec`,
+`build-cap`, `build-prose`, `build-clarify`, `build-test`, `test-summary`,
+`personas-genome-critique`, `personas-assignment-match`, `personas-assignment-decompose`) = **0**.
+One site out of fourteen leaks, and it leaks every time.
+
+**Fix, not applied:** `impl Drop for CliProcessDriver { fn drop(&mut self) { self.cleanup_dir(); } }`.
+`cleanup_dir` is already `&self`, `owns_exec_dir`-guarded and idempotent. The repo has the pattern
+twice already (`build_session/runner.rs:109-146` `SessionExecDir`; `cli_mcp_config.rs:348-351`
+`SidecarScrubGuard`) and neither has ever appeared on disk. Deferred because a `Drop` impl changes
+what runs when a live app's handles go out of scope. Interim, lower-risk half: add
+`driver.cleanup_dir()` after the `kill()` at `cli_capabilities.rs:97`.
+Detail: [`agent-workspace-isolation.md`](./golden-paths/agent-workspace-isolation.md) §7.4, §7.5, §9.1.
+
+---
+
+## 98. Boot recovery declares 74 executions failed without ever asking whether the process is alive — and there is nothing it could ask with
+
+`src-tauri/src/engine/mod.rs:703-733`. `recover_stale_executions` takes every `running` row and writes
+`status: Failed, error_message: "App restarted while execution was running"`. There is no liveness
+check in the loop.
+
+Measured against the 2026-08-17 purge backup: **74 of 2,188 executions** carry that marker (3.4%).
+*(Historical — those rows were deleted from the live database by the authorized purge on 2026-08-17;
+the reference file is `%APPDATA%\com.personas.desktop\purge-backup-2026-08-17\personas.db`.)*
+
+There is nothing it could check with, and that is the deeper defect. Interrogating **all 244 tables**
+with `PRAGMA table_info` finds exactly **one** column holding an OS process id —
+`build_sessions.cli_pid` (`db/src/migrations/schema.rs:1489`) — with **12 rows and 0 non-null**; its
+three writers (`build_session/mod.rs:196`, `runner.rs:1921`, `events.rs:80`) all write `None` or
+`Some(None)`, and no site in 963 `.rs` files writes a real pid into it. `fleet_sessions` has no pid
+column at all (`incremental.rs:6603-6631`) and rehydration restores `child_pid: None`
+(`fleet/persist.rs:174`). Every other process registry is in memory.
+
+Meanwhile the children survive: `tokio::process::Child` does not kill on drop (this repo says so at
+`companion/brain/oneshot.rs:52-53` and `commands/fleet/external.rs:189-190`), no child-owning struct
+has a `Drop`, only **17 of 112** OS-command construction sites set `kill_on_drop(true)`, and the app's
+sole exit hook (`lib.rs:3755-3763`) stops Bun dev servers and nothing else. So a row can say `Failed`
+while its `claude` child is still running, still writing to the workspace, still spending tokens.
+
+And PID reuse is unguarded where a pid *is* used: **`start_time()` and `run_time()` appear zero times
+in 963 `.rs` files**, and of the four `sysinfo` process lookups in the tree, three act on the process
+(`.kill()`, `.is_some()`) without reading a single identity field and **zero** read one first
+(`fleet/headless.rs:67`, `fleet/process_scan.rs:133`, `dev_tools/competitions.rs:990`). The strongest
+identity check in the codebase is on the **frontend**
+(`FleetProcessScanner.tsx:65-75`: `p.pid === pid && p.cmd === target.cmd && p.cwd === target.cwd`).
+
+**Fix, not applied:** (a) `recover_stale_executions` writes an *unproven* state with a
+`state_reason` a human can act on, rather than `Failed` — the shape `fleet/persist.rs:263-299`
+already uses; (b) `kill_on_drop(true)` on the child-owning spawn sites that are not deliberately
+outliving the app; (c) register the five uncovered registries with the `RunEvent::Exit` hook;
+(d) either populate `build_sessions.cli_pid` with a `(pid, start_time)` identity or drop the column;
+(e) a CI check asserting no `*pid*` column exists without a sibling freshness column (it would report
+exactly one finding today); (f) correct the stale `sysinfo` comment at `Cargo.toml:136-138`, which
+says the app "never enumerate[s] processes" while `process_scan.rs:60-62` enumerates the whole table.
+The repo already wrote the correct doctrine once, with its reasoning, at
+`src-tauri/src/daemon/lock.rs:29-32`: *"No PID-based liveness check. Heartbeat freshness is the sole
+liveness indicator."* Nothing else follows it.
+Detail: [`os-process-reconciliation.md`](./golden-paths/os-process-reconciliation.md) §0, §7.1-§7.7, §9.
+
+## 89. `cargo deny` — MERGED INTO #106, with two additions and one denominator correction
+
+**Superseded by [#106](#106-cargo-deny-check-has-never-rendered-a-verdict--the-engine-floats-the-policy-is-frozen-and-the-fleet-already-has-the-fix)**, which owns this fix and carries the fuller
+account. Recorded here rather than deleted because the two were measured **independently,
+hours apart, by two composers in the same wave** — same file, same line
+(`deny.toml:19:17`), same value (`unmaintained = "warn"`), same tool version (cargo-deny
+**v0.20.2**), same diagnosis of `--locked` pinning the lockfile and not the version, same
+observation that `audit.yml` never gets there. **Two artifacts arriving at one set of
+numbers by different routes is what verification looks like**, and it is worth more than
+either entry alone.
+
+Three things this pass adds:
+
+1. **The `audit.yml` step would report success even if it ran.** `audit.yml:44` is
+   `cargo deny check 2>&1 | tee security-results/cargo-deny.txt`, and the step has no
+   `shell:` key — so it runs under GitHub's default `/usr/bin/bash -e {0}`, **without
+   `pipefail`**, and `tee`'s exit status becomes the step's. Verified from the `shell:`
+   lines in that job's own log, where the repo's plain `run:` steps show `-e {0}` and only
+   the `dtolnay/rust-toolchain` composite (which sets `shell: bash`) shows
+   `-e -o pipefail`. So the fix in #106 must **also** remove the pipe or add
+   `set -o pipefail`; otherwise repairing `deny.toml` converts a red gate into a green one
+   that still checks nothing. *(Note the near-miss: the general rule "a pipe erases the
+   exit code" is **false for a step that sets `shell: bash`** and true for one that does
+   not. The condition is the shell, and the shell is not visible at the pipe.)*
+2. **The documentation asserts the gate works.** `docs/development/build.md:212` lists
+   `cargo-deny` among the CI gates with no qualification. Corrected in this pass
+   (documentation only).
+3. **Denominator correction to #106.** It states the `audit.yml` step is `skipped` on
+   **"23 of 23 lifetime"** runs. Measured step-by-step across all 23: the workflow has 23
+   runs, **all `failure`** — but the cargo-deny step **exists in only 18 of them**
+   (2026-04-20 onward) and is `skipped` in **all 18**; the 5 runs from 2026-03-16 to
+   2026-04-13 have no such step at all (verified by listing their step names). The
+   conclusion is unchanged — a step that does not exist also renders no verdict — but
+   *"skipped 23 of 23"* is not what the API says, and a later reader auditing the claim
+   would find 5 runs that contradict it. **Same conclusion, different denominator, two
+   independent implementations: report the disagreement rather than the prettier number.**
+
+## 99. CI compiles the 331,560-line `app_lib` crate and never runs or lints it — every Rust step fails fast at `personas-db`
+
+**Where:** `.github/workflows/ci.yml:298` (`cargo test --workspace … --features desktop`),
+`:306` (`cargo clippy --workspace … -- -D warnings`).
+
+Step-level from run `32025966929`, Windows leg, 2026-08-17 (same shape on Linux):
+`cargo test` ran `personas_core` (**760 passed / 0 failed**) then `personas_db`
+(**808 passed / 10 failed**, 1,571 s) and stopped — cargo's default fail-fast.
+`personas-desktop (lib test)` **compiled** (the log carries its *"generated 159 warnings"*
+summary) and was **never executed**. `cargo clippy` died at `personas-db` with **3
+`clippy::sort_by_key` errors**, so `personas-engine` and `personas-desktop` were never
+linted either.
+
+By crate: `personas-desktop` 564 files / **331,560 lines / 63.2%** of the Rust — tested by
+nothing, linted by nothing; `personas-engine` 129 / 61,184 / 11.7% — not reached.
+
+This also **retires the standing diagnosis of the job's redness.** The prescription in
+[`adding-a-ci-gate.md`](./golden-paths/adding-a-ci-gate.md) attributes it to the keyring
+`unwrap()` and prescribes `PERSONAS_ALLOW_FALLBACK_KEY: "1"`. **That fix has landed**
+(`ci.yml:235`, `:356`) and the job is still red for three independent reasons, none of them
+the keyring: 10 genuine `personas-db` test failures, 3 clippy errors, and #89.
+
+**Fix (not applied — the 10 failures are real code and `--no-fail-fast` changes exit
+semantics for every consumer):** fix the 10 `personas-db` tests and 3 clippy findings
+first; then split clippy and cargo-deny into their own jobs (already prescribed) **and**
+add `--no-fail-fast` to the test step so one crate's failure stops reporting the other four
+as unknown. Consider a per-crate matrix leg, which also parallelises the 1,571 s wall.
+
+Detail: [`local-build-troubleshooting.md`](./golden-paths/local-build-troubleshooting.md) §7.B ·
+[`crate-layering.md`](./golden-paths/crate-layering.md) §7.A.
+
+## 100. The ORT architecture sniffer is correct only because of COFF member ordering, and its three failure arms all block `tauri dev`
+
+**Where:** `scripts/ensure-ort-cache.mjs:144-172` (`sniffLibArchitecture`), consumed at
+`:334`, `:370` and `:430-433`.
+
+The function reads the machine word of the **first non-metadata member** of the COFF
+archive. Parsed byte by byte on the live cache
+(`%LOCALAPPDATA%\ort.pyke.io\dfbin\aarch64-pc-windows-msvc\C09BFF…27DE\onnxruntime\lib\onnxruntime.lib`,
+2,124 B): **7 members — 2 linker metadata (`/`), 3 long-form objects reporting `0xAA64`,
+and 2 short-form import members** (SIG1 `0x0000`, SIG2 `0xFFFF`, machine field `0x0`). It
+returns `arm64` because MSVC's `lib.exe` emitted the long-form members first. Replaying the
+shipped algorithm confirms it: `arm64`.
+
+If a future archiver emits a short-import member first, the sniffer returns
+`unknown-0x0000`, which is `!== expectedMachine` at all three call sites: it invalidates a
+valid sentinel (`:359`), wipes and re-downloads a correct 321 MB cache (`:369-377`), and
+then **`fatal()`s at `:431-433` on the freshly correct library** — so the guard that
+protects `npm run tauri:dev` becomes the thing that blocks it, on a machine whose cache was
+never wrong.
+
+**Fix (not applied — build tooling whose first run touches a cache `tauri dev` depends
+on):** skip short-import members explicitly (`w0 === 0x0000 && w1 === 0xFFFF`), then read
+the first long-form member; or scan **all** object members and require unanimity, returning
+a distinct `mixed` verdict if they disagree. Either is ~6 lines. The unanimity form is
+strictly better because it would also detect a genuinely mixed archive, which is the exact
+upstream defect this script exists for.
+
+Detail: [`local-build-troubleshooting.md`](./golden-paths/local-build-troubleshooting.md) §0.4, §6.
+
+## 101. 98.6% of the vendored ONNX Runtime cache is debug symbols nothing links against
+
+**Where:** `scripts/ensure-ort-cache.mjs:422` — `copyTree(innerLibDir, libDir(target))`.
+
+The script copies Microsoft's entire `lib/` directory out of the release zip. On disk:
+`onnxruntime.pdb` **317,247,488 B**, `onnxruntime_providers_shared.pdb` 405,504 B,
+against `onnxruntime.dll` 11,785,760 B, `onnxruntime.lib` **2,124 B** and
+`onnxruntime_providers_shared.{dll,lib}` 23,338 B. **317.7 MB of 321.8 MB is two `.pdb`
+files** — MSVC debug symbols for a prebuilt DLL, on every developer machine, re-downloaded
+in full after every `npm run clean:ort`.
+
+**Fix (not applied):** filter `.pdb` in the `copyTree` call (a predicate argument, ~3
+lines), and note it in the sentinel so an existing fat cache is recognised rather than
+silently kept. `npm run clean:ort` then costs ~12 MB to restore instead of ~322 MB.
+
+Detail: [`local-build-troubleshooting.md`](./golden-paths/local-build-troubleshooting.md) §7.F.
+
+## 102. Two materialized Tauri configs on disk describe a program that stopped existing 161 days ago
+
+**Where:** `src-tauri/gen/android/app/src/main/assets/tauri.conf.json` and
+`src-tauri/gen/android/app/build/intermediates/assets/universalDebug/mergeUniversalDebugAssets/tauri.conf.json`
+(both untracked; `git ls-files src-tauri/gen` = 40 files, neither among them).
+
+They are the output of a `tauri android` run on **2026-03-09** — a full deep merge of
+`tauri.conf.json` + `tauri.android.conf.json` + Tauri's own defaults, **87 leaf paths**
+against the canonical config's 43. **A materialized merge is indistinguishable from a
+source of truth**: same schema, same shape, strictly more complete. Measured against HEAD:
+`version` `0.1.6` vs `1.1.0`; `app.withGlobalTauri` `false` vs **`true`** (added
+2026-05-09); `app.security.assetProtocol` `{scope: [], enable: false}` vs a 7-entry scope
+with `enable: true` (added 2026-04-15); `bundle.resources` absent (added 2026-07-26);
+`nsis.customLanguageFiles` absent (added 2026-04-09); `devCsp` a March policy. The canonical
+config has **30 commits** since. Reconstructing the canonical file at `7d6e67ad0` reproduces
+the merged content exactly, which is what dates it.
+
+Consequence already in the corpus:
+[`tauri-permissions-and-csp.md`](./golden-paths/tauri-permissions-and-csp.md) reads this
+artifact as *"the empirical proof of the platform merge"* and counts its `csp`/`devCsp`
+pair among 7 live CSP surfaces. The **merge mechanism** it demonstrates is sound; the
+**values** are not live, and re-running `tauri android` would produce four different
+strings.
+
+**Fix (not applied — an Android toolchain may hold the directory, and deleting build output
+is a runtime-affecting action):** remove `src-tauri/gen/android/**/tauri.conf.json` as part
+of a `clean:android` rung, and add an assertion that no script or document reads a config
+under `gen/`. The general rule — *a generated full materialization must carry its own
+provenance or be treated as unreadable* — is the reusable part.
+
+Detail: [`tauri-config-variants.md`](./golden-paths/tauri-config-variants.md) §0, §7.A.
+
+## 103. `check-tauri-configs.mjs` reads 3 of 5 tracked configs because its input set is a hardcoded literal
+
+**Where:** `scripts/check-tauri-configs.mjs:17-18`, `:21-24`.
+
+`CANONICAL` + `OVERLAYS` are three string literals, so all five assertions in the file
+(JSON parse, `$schema` parity, overlay-key surface, cargo-feature existence, CSP
+script-directive ban) run over three files. `tauri.android.conf.json` and
+`.tauri-scraper-dev.conf.json` are never opened, and two further configurations are
+generated at launch (`scripts/dev/tauri-dev-test.mjs:27-36`,
+`scripts/test/launch-isolated.mjs:154-170`) — **5 tracked files, 7 configurations, 3
+examined.** `docs/development/build.md:21` and `:46` repeat the number three.
+
+The fix is a **type, not a gate**: discover configs by reading the directory and filtering
+on the `tauri*.conf.json` shape, classify into canonical / profile / platform, and give each
+class its own `ALLOWED_OVERLAY_KEYS`. That makes an unexamined config unrepresentable. It
+cannot be a flat widening of the existing allowlist: `tauri.android.conf.json` legitimately
+overrides 5 keys outside it and **illegitimately** overrides `beforeBuildCommand` (to
+`npx vite build`, which runs 0 of 14 codegen tasks) — so `beforeBuildCommand` must be on no
+allowlist. Add an exit-2 precondition when fewer than 4 configs are discovered.
+
+**Not applied** — it is a security-relevant gate whose first run fails the tree (the
+android config's `'unsafe-eval'` and its missing `$schema` both trip existing assertions),
+and the same enumeration is prescribed from the security side by
+[`tauri-permissions-and-csp.md`](./golden-paths/tauri-permissions-and-csp.md) §9. Landing it
+once, for both reasons, is better than landing it twice.
+
+Detail: [`tauri-config-variants.md`](./golden-paths/tauri-config-variants.md) §7.B, §9.
+
+## 104. The host-triple drift detector runs only on the dev path, and the error it detects is a build error
+
+**Where:** `scripts/run-codegen.mjs:78-79` — `host-check` is in the `predev` preset and not
+in `prebuild`.
+
+`tauri.conf.json:9-10` wires `beforeDevCommand: "npm run dev"` (→ `predev`) and
+`beforeBuildCommand: "npm run build"` (→ `prebuild`). So `scripts/check-build-cache.mjs` —
+whose entire purpose is to catch the contamination that produces
+`lld-link: error: machine type x64 conflicts with arm64` — never runs on `npm run build`,
+`npm run tauri:build`, `tauri:build:lite`, `tauri:build:stable`, or any of the three tier
+bundles. **A link error only happens during a link.** `docs/development/build.md:84`
+documents the asymmetry, so it is deliberate; it is simply on the wrong side. Cost of the
+fix: one `rustc -vV` per build.
+
+Smaller, same file: `build.md:98-100` says the marker is written *"after each successful
+run"* of the build. It is written at `check-build-cache.mjs:66`, **before** cargo starts —
+so it records *the host the last `predev` saw*, not *the host of the last successful build*.
+The guard still holds (a drifting run exits 1 at `:62` without writing), but a reader
+debugging a contaminated tree will reason from the wrong meaning.
+
+**Not applied** — adding a task to `prebuild` changes whether `npm run build` can fail, and
+a false positive would block every build on the machine.
+
+Detail: [`local-build-troubleshooting.md`](./golden-paths/local-build-troubleshooting.md) §7.E.
+
+## 105. Both Stop hooks are dead: a tool result is shaped exactly like the human message they stop at
+
+**From:** [`documentation-sync`](./golden-paths/documentation-sync.md) §0, §7.A.
+
+`scripts/docs/check-doc-sync.mjs:95-108` and `scripts/docs/check-golden-path-touch.mjs:81-95`
+carry byte-equivalent transcript walks. Both break on
+`evt.type === 'user' && evt.message?.role === 'user'`, described in their own comments as
+"the most recent user message". **A tool result is recorded as exactly that shape**: across
+the 100 transcripts in `~/.claude/projects/C--Users-mkdol-dolla-personas/`, **18,908 of
+20,322** such events (93.0%) are tool results and only **1,414** are human messages. Every
+`Edit` is immediately followed by its own `tool_result`, so the walk hits a boundary before
+it reaches a single `tool_use`.
+
+Executed, not read — replayed over every turn of every transcript, and the hook itself
+invoked on twelve of them:
+
+| | |
+|---|---:|
+| turns (delimited by genuine human messages) | 1,414 |
+| turns that edited >=1 file | **477** |
+| ...in which the hook's walk saw >=1 edit | **0** (0.00%) |
+| file-edits in those turns | **2,367** |
+| ...visible to the hook | **0** (0.00%) |
+| direct invocation on 12 real transcripts (up to 209 edits each) | **exit 0, 12 of 12** |
+
+`:117`'s `if (edited.size === 0) process.exit(0)` is therefore not one of two silent-pass
+paths (as [`adding-a-ci-gate`](./golden-paths/adding-a-ci-gate.md) §7 P10 records) — it is
+**the** path, on every turn, since the three-target hook landed in `d584207f7` on
+2026-05-16. The doc-sync reminder and the golden-path-touch reminder have both never fired.
+
+The fix is one clause in each file — treat the event as a boundary only when its content is
+not a tool result:
+
+```js
+if (evt.type === 'user' && evt.message?.role === 'user') {
+  const c = evt.message.content;
+  if (Array.isArray(c) && c.some((b) => b.type === 'tool_result')) continue;
+  break;
+}
+```
+
+**Not applied.** It converts two hooks that have never spoken into two hooks that speak on
+most turns, immediately, inside the operator's live sessions — including this campaign's
+own, where `check-golden-path-touch.mjs` would begin nagging every composer. That is a
+change to what a live surface shows while the operator is watching it. Fix it deliberately,
+with the noise expected.
+
+Two companions in the same document, both cheap once the above lands and both requiring a
+judgement call rather than a mechanical edit: the satisfaction conditions at
+`:120`/`:121`/`:125` are directory prefixes while the message names an exact file
+(**45.7% precision** over 761 real co-edit commits), and `feature-doc-map.json` covers
+**2,883 of 4,304** source files (**33.0% unmapped**), which no check measures.
+
+## 106. `cargo deny check` has never rendered a verdict — the engine floats, the policy is frozen, and the fleet already has the fix
+
+**From:** [`supply-chain-policy`](./golden-paths/supply-chain-policy.md) §0, §7.A, §12.3.
+
+`src-tauri/deny.toml` has one commit (`4c42aacb0`, 2026-04-09) and has never been edited.
+`.github/workflows/ci.yml:310` installs the policy engine with
+`cargo install cargo-deny --locked` — **`--locked` pins cargo-deny's own lockfile, not its
+version** — so the runner fetches whatever is current. On 2026-08-17 that is **v0.20.2**,
+and it refuses the config:
+
+```
+error[unexpected-value]: expected '["all", "workspace", "transitive", "none"]'
+   |- src-tauri/deny.toml:19:17
+19 | unmaintained = "warn"
+[ERROR] failed to deserialize config from 'src-tauri/deny.toml'
+Process completed with exit code 1
+```
+
+Elapsed from the step's `##[endgroup]` to the error, from the log timestamps of job
+`95375460599`: **21 ms**, across **0 of 1,010** packages. Before `if: always()` landed in
+`6cd8a87f0` (2026-08-13) the step was `skipped` instead — sampled at 2026-04-27, 07-07,
+07-13, 07-17, 07-24, 07-29, 08-04 and 08-10: `skipped`, 8 of 8, all three platforms. The
+weekly path is shut too: `audit.yml`'s cargo-deny step is `skipped` on **23 of 23** lifetime
+runs, because `scripts/security-audit.sh` fails first and nothing there is `if: always()`.
+
+**Do not hand-edit the policy — port it.** `../brainiac/deny.toml` (written 2026-07-30,
+refined 2026-08-05, same author, four months later) answers every defect here: `[graph]`
+declares `all-features = true` and `exclude-dev = false`; `unmaintained = "all"` is the
+modern enum; `yanked = "deny"`; the `ignore` list carries a dated per-advisory entry with a
+reachability analysis and a removal condition; the license allow-list is annotated
+crate-by-crate and marked "derived from `cargo deny list`, not from a template"; `[bans]`
+names two real crate bans with reasons. Its workflow installs cargo-deny as a prebuilt
+binary and — the part that matters most here — **runs `npm audit` off `package-lock.json`
+with no `npm ci` at all**, which is exactly what would have kept this repo's weekly audit
+alive through the lockfile desync. `brainiac`'s security workflow is 39 runs, **12 green**;
+this repo's two supply-chain paths are 350 runs, **0 green**.
+
+**Not applied.** `yanked = "warn"` vs `"deny"` and `vulnerability = "deny"` are policy
+decisions that may be deliberate, and repairing the config turns a check that examines
+nothing into one that will report real findings across 1,010 crates during a working day.
+It should be repaired *and expected to be red* on first run — `deny.toml`'s own header in
+brainiac says it: *"this file describes the dependency tree as it ACTUALLY is. It is not a
+place to make a red check green."*
+
+Two adjacent items from the same document, both also unapplied: the lockfile carries **one**
+git source (`pumper-core` @ `rev 7e13f31`) against a policy of
+`unknown-git = "deny", allow-git = []`, and whether the check would even see it depends on a
+feature resolution `[graph]` never declares (`default = []`, 38 `optional = true` across four
+manifests). And `src-tauri/gen/android/gradle/wrapper/gradle-wrapper.properties` names
+`gradle-8.14.3-bin.zip` with **no `distributionSha256Sum`**, beside a tracked 59,203-byte
+`gradle-wrapper.jar` whose sha256
+(`e996d452d2645e70c01c11143ca2d3742734a28da2bf61f25c82bdc288c9e637`) is recorded nowhere in
+the repository — adding the pin changes whether an Android build starts.
+
+## 107. The bundle budget fails at 6.33x, has never been observed, and 60 MB of source maps carrying full TypeScript ship inside every installer
+
+**From:** [`bundle-size-budget`](./golden-paths/bundle-size-budget.md) §0, §7.A, §7.B.
+
+`node scripts/check-bundle-budget.mjs` at `cc27be561`, run directly and its exit code read
+without a pipe: **exit 1**. Total **31,642.1 KB** against the 5,000 KB ceiling declared at
+`scripts/lib/bundle-budget.mjs:12` — **6.33x** — plus three chunks over the 850 KB per-chunk
+ceiling (`vendor-three` 1,008.7, `index` 913.9, `en` 896.6). The ratchet file
+`scripts/bundle-baseline.json` is timestamped **2026-03-14** at `totalKB: 4720`: five months
+and 6.7x behind. Nobody has seen this, because `ci.yml` is **327 runs, 0 successes** and the
+budget step's `dist/` never exists there.
+
+Two things must be decided together, which is why this is a note and not a fix:
+
+1. **The metric is wrong in both directions.** **793 of the 1,400 chunks — 16,869.5 KB,
+   53.3% of the total — are per-locale catalogs** (13 locales x 61 sections), of which a
+   user loads at most one; roughly **49.2%** of the budgeted number is bytes no single user
+   can fetch, and the May 2026 section-locale split (a genuine improvement) is most of what
+   pushed the gate over. Meanwhile the gate reads `dist/assets/*.js` only and therefore
+   observes **28.4%** of `dist/` — missing 60,623.3 KB of `.map`, 865.6 KB of `.css`,
+   1,944.0 KB of `.png` and 16,414.0 KB elsewhere, against a directory total of
+   **111,489.1 KB across 3,133 files** (two implementations, `fs.statSync` and PowerShell
+   `Measure-Object`, agreeing to 0.1 KB).
+2. **The source maps ship.** `vite.config.ts:84` `sourcemap: "hidden"` emits them;
+   `tauri.conf.json` sets `frontendDist: "../dist"`; there is no `.taurignore`; and
+   `tauri-codegen-2.6.2/src/embedded_assets.rs:127-140` walks the tree filtering
+   **directories only** ("compress all files encountered"). Each map carries
+   `sourcesContent` — the `index` map alone holds **302 sources and 2,268,612 bytes** of
+   original TypeScript. `release.yml:365-370` uploads them to Sentry and never deletes them.
+   **`../personas-web/next.config.ts:113-117` already does the right thing**, with the
+   reason in the comment: `sourcemaps: { deleteSourcemapsAfterUpload: true }` —
+   *"Delete source maps after upload so they don't ship to the client"*. Port that, or emit
+   maps outside `frontendDist`.
+
+**Not applied.** Both halves change what the shipped installer contains, and re-baselining is
+a decision about what the ceiling should mean rather than an edit. Two smaller companions
+from the same document: `binary-size-report.mjs:121` exempts the `.exe` from the 100 MB
+budget while the local release binary is **144,254,976 B (137.6 MB)**, and `.baseline/` has
+never been created so every size delta renders as `—`; and `npm run check:assets` reports
+**12,831 KB -> 3,849 KB (70%)** of free PNG savings while being wired into no workflow, no
+hook and not `npm run check`.
+
+---
+
+## 108. One purge orphaned 100% of the vector store, and nothing in the tree can find an orphan
+
+**Where:** `src-tauri/db/src/repos/core/memories.rs:1638-1660` (`spawn_delete_memory_embeddings`),
+`:1928` (`gc_archived_memory_embeddings`), `:2008` (`backfill_memory_embeddings`);
+`src-tauri/db/src/migrations/schema.rs:525`;
+`src-tauri/src/commands/credentials/vector_kb.rs:1410-1516` (`reconcile_orphaned_kb_records`).
+
+**What is measured** (2026-08-17, against the purge backup and the live files,
+two independent implementations in exact agreement — a cross-`ATTACH` SQL join
+and a bespoke JS `Set` difference):
+
+| | `persona_memories` | vectors | orphan vectors |
+| --- | ---: | ---: | ---: |
+| pre-purge (`purge-backup-2026-08-17/personas.db`) | 6,535 | 5,158 | **0** |
+| post-purge (live) | **0** | **5,158** | **5,158 (100%)** |
+
+`personas_data.db` is **byte-identical** in the backup and live (17,502,208 B):
+the purge never touched it. A third check — comparing the vector id *sets* —
+confirms all 5,158 ids are present in both, so no cleanup ran late.
+
+**Why it happened, and it is structural rather than an oversight.**
+`persona_memories.persona_id REFERENCES personas(id) ON DELETE CASCADE` is
+enforced by SQLite *inside `personas.db`*. The vector's key,
+`persona_memory_embedding_meta.memory_id`, is a bare `TEXT` column in
+`personas_data.db`. A cascade is a database-engine feature; it stops at the
+file. Of the **8 doors that delete a memory**, 3 call the vector companion
+(`batch_delete`, `merge`, the archive path) and 5 do not — including the
+`crud_delete!` macro, `delete_non_code`/`delete_all`, the `fk_hygiene`
+migration, and the FK cascade, which *cannot*.
+
+**And no sweep runs in the direction that would find it.** Every reconciliation
+here is relational → vector: `gc_archived_memory_embeddings` enumerates
+`tier = 'archive'` rows in the main DB, `backfill_memory_embeddings` enumerates
+memories. `reconcile_orphaned_kb_records` — the one bidirectional reconciler —
+compares two *relational* tables (`knowledge_bases` ↔ `persona_credentials`) and
+only ever touches the vector store via `drop_index(kb_id)` for a `kb_id` it read
+off a relational row. **No code in 963 `.rs` files enumerates the vector store
+and asks whether each vector still has a parent.** An orphan is by definition
+absent from the relational side, so a relational-first sweep cannot see one.
+
+**The cleanup is behind a cargo feature; the data is not.**
+`delete_memory_embeddings`, `gc_archived_memory_embeddings`,
+`spawn_delete_memory_embeddings` and `reconcile_orphaned_kb_records` are all
+`#[cfg(feature = "ml")]`. `npm run tauri:dev:lite` — the documented daily
+default — builds `desktop`. **In a lite build the app cannot delete a single
+vector, ever, and the boot reconciler does not run.** Tree-wide: 230 cleanup
+function declarations, **3** behind a cargo feature, all 3 these.
+
+**Cost, not correctness.** `memories.rs:1639` says an orphan is *"inert for
+recall"*, and for correctness it is (KNN ids are lifted from the authoritative
+table; a missing row drops out — `memory_recall.rs:343-346`). But the KNN
+`LIMIT k` is applied **before** the intersection, and `k` is sized against live
+candidates (`k = candidates.len()*4, min 128`), never against the orphan
+population. Recall degrades in proportion to orphan share, silently, with no
+error anywhere.
+
+**Why held:** the fix's first run **deletes rows** — 5,158 of them on this
+machine. Standing rule.
+
+**The safe first step, which deletes nothing:** count both sides at boot and log
+the difference *even when it is zero*. `reconcile_orphaned_kb_records:1513` logs
+only when `cleaned > 0` and has therefore never printed a line here — a
+reconciler whose only output is silence is indistinguishable from one that never
+ran.
+
+**The sibling did not take the exception.** `brainiac/migrations/0001_init.sql:104-109`
+declares `memory_embeddings.memory_id uuid NOT NULL REFERENCES memories(id) ON DELETE CASCADE`
+— same logical relationship, same database, real foreign key. Orphaning is
+unrepresentable there, which is why that repo has no reconciler, no GC sweep and
+no feature gate. One independent witness, and it inverts our practice.
+
+Detail: [`vector-kb-ingestion.md`](./golden-paths/vector-kb-ingestion.md) §0, §7.1-7.2, §12.2.
+
+---
+
+## 109. A blank form fires a fabricated URL at somebody else's API, on your credential
+
+**Where:** `src/features/vault/shared/playground/RequestBuilder.tsx:50`
+(`resolved.replace('{'+key+'}', encodeURIComponent(val || key))`), `:40-58`,
+`:37`; `src/features/vault/shared/playground/BuilderParams.tsx:93-98`;
+`src/lib/credentials/catalogApiEndpoints.ts`.
+
+**What is measured** (2026-08-17; the catalog counted two ways — a textual
+constructor count and an evaluation of the module — in exact agreement):
+
+- The baked catalog holds **71 connectors / 472 endpoints / 504 parameters**
+  (248 `path`, 256 `query`), of which **309 declare `required: true`**.
+- `ApiParameter.required` and `ApiParameter.schema_type` are read in **exactly
+  one file** — `EndpointRow.tsx:108`/`:110-111`, a read-only detail panel — and
+  in **zero** files that build a request. The fire button
+  (`RequestBuilder.tsx:85-92`) is `disabled={isSending || !path.trim()}`.
+- Replaying `RequestBuilder`'s own `resolvedPath` verbatim against the real
+  catalog: **209 of 209** endpoints with a path parameter turn a blank-but-
+  touched form into a syntactically valid, entirely fabricated URL.
+  `/{project}/_apis/pipelines` fires as `/project/_apis/pipelines`.
+- 61 query parameters declared `required: true` ship with empty values
+  (`api-version=`), because `resolvedPath` filters on `q.key.trim()` only.
+- `schema_type` is `"string"` on **504 of 504** parameters — the constructor
+  defaults it and no call site overrides it, so the declared type carries zero
+  bits.
+- `request_body.schema_json` is `null` on **120 of 120** catalog endpoints, so
+  `RequestBuilder.tsx:37`'s body prefill is dead for the catalog; for a
+  user-imported OpenAPI spec it prefills the **schema** as if it were the
+  payload.
+
+**Why this is worse than a validation gap.** The request succeeds
+syntactically and fails semantically, against a third party, with the user's
+stored credential attached. A 404 from `/repos/owner/repo` is indistinguishable
+from a real 404, so the user debugs the API instead of the form.
+
+**Why held:** deleting the `|| key` fallback and adding a `missingRequired`
+term to the fire button's `disabled` changes what a live surface does while the
+operator is using it — a request that fires today would stop firing. Standing
+rule. The change is small and correct; it should be the first item applied when
+the campaign resumes destructive applies.
+
+Detail: [`external-operation-explorer.md`](./golden-paths/external-operation-explorer.md) §0, §7.1-7.4.
+
+---
+
+## 110. One of two OCR backends can be cancelled, and the reason the other one needs it is written in the first one's comment
+
+**Where:** `src-tauri/src/commands/ocr/mod.rs:476` (`run_claude_ocr`), `:182`
+(`run_gemini_ocr`), `:37-50` (the cancellation registry),
+`src/features/plugins/drive/ocr/DriveOcrDrawer.tsx:100-102`, `:110-113`;
+`src-tauri/src/lib.rs:2726-2731`.
+
+**What is measured** (2026-08-17):
+
+- **`operation_id` is a parameter on 2 of 4 OCR entry points** — both Gemini
+  commands have it, neither Claude command does. `cancelInFlight()` in the
+  drawer therefore does nothing on the Claude path, and `run_claude_ocr` retains
+  no child handle, sets no `kill_on_drop`, and runs `wait_with_output()` to
+  completion. The Gemini path's own comment states the motive: *"instead of
+  silently paying for a Gemini call whose result we'll throw away."*
+- **Cancellation is detected by substring-matching an English string.**
+  `DriveOcrDrawer.tsx:112`: `if (!msg.includes("OCR cancelled"))`. Producer is
+  `AppError::Internal("OCR cancelled".into())`. Reword the Rust string and a
+  deliberate user cancel starts raising an error toast, in a 14-locale app.
+- **All 8 OCR commands are unauthenticated at both layers.** `grep -n ocr
+  src-tauri/src/ipc_auth.rs` returns nothing (none is in `PRIVILEGED_COMMANDS`),
+  and the in-body guard is `require_auth_sync`, which is
+  `Ok(())` (`ipc_auth.rs:477-479`). `ocr_with_gemini` takes
+  **`api_key: String` from the renderer**. Mitigating: the frontend has zero
+  call sites for `ocr_with_gemini`/`ocr_with_claude` — only the two
+  `ocr_drive_file_*` wrappers, which resolve the key server-side from the vault.
+- **3 of 8 commands are unreachable.** `list_ocr_documents` (`:658`),
+  `get_ocr_document` (`:664`), `delete_ocr_document` (`:673`) carry
+  `#[tauri::command]` and appear in neither `generate_handler!` (`lib.rs:2726-2731`
+  registers five) nor `commandNames.generated.ts`. Their repository layer is
+  fully written. **Every OCR run writes an `ocr_documents` row nothing can read.**
+- **An empty extraction is stored as a success.** Gemini via
+  `.unwrap_or_default()` on the candidates chain (`:286-294`), Claude via
+  `String::from_utf8_lossy(&output.stdout).trim()` on an exit-0 run with no
+  stdout. `GeminiCandidate` (`:104-107`) does not deserialize `finishReason`, so
+  a `SAFETY` block, a `RECITATION` block and a `MAX_TOKENS` truncation are all
+  indistinguishable from an empty page.
+- **`ocr_documents` holds 0 rows in the purge backup**, and that table was not in
+  the purge cascade. The surface has never run — which is why none of the above
+  has been shaken out.
+
+**Why held:** wiring cancellation to the Claude path means killing a spawned
+child, and registering the three CRUD commands changes the IPC surface. Both
+change runtime behaviour. Standing rule.
+
+Detail: [`ocr-extraction.md`](./golden-paths/ocr-extraction.md) §0, §7.1-7.4, §7.9.
+
+---
+
+## 111. A corrupt MCP config is replaced by `{}` and written back over the user's file, destroying every other registered server
+
+**Where:** `src-tauri/src/mcp_server/install.rs:85-110`.
+
+**What is measured** (2026-08-17):
+
+- `:86` — `serde_json::from_str(&content).unwrap_or(serde_json::json!({}))`.
+  A target client's config (`claude_desktop_config.json` and equivalents) that
+  fails to parse for **any** reason — a trailing comma, a half-written file, a
+  BOM, a disk hiccup — becomes an empty object.
+- `:92-101` — the `personas` entry is inserted into that empty object.
+- `:109` — `std::fs::write(&config_path, json)` **overwrites the user's file**
+  with the result. Every other MCP server they had registered is gone. No error,
+  no prompt, no backup, no `.bak`.
+- The correct branch already exists directly beside it: `:87` handles *"the file
+  is absent"* with the same `{}` and is right to. Nothing distinguishes absent
+  from unreadable.
+- This is one of **55 sites** in 42 of 963 `.rs` files where
+  `serde_json::from_str` is followed immediately by `.unwrap_or_default()` or
+  `.unwrap_or(…)`, against 147 that propagate. `brainiac` — same author, 46
+  `from_str` sites — has **zero**.
+
+**Why held:** the fix changes whether the installer runs (it must refuse), which
+is "anything that changes whether the app starts" adjacent, and it touches a file
+outside the app's own data directory. Standing rule: note, do not apply.
+
+**Fix when unheld:** `serde_json::from_str(&content).map_err(|e| …)?` and report
+*"your MCP config at `<path>` is not valid JSON; fix it or move it aside"*.
+Write to a temp file and rename, so a crash mid-write cannot truncate it either.
+
+Detail: [`raw-json-editor.md`](./golden-paths/raw-json-editor.md) §7 D1, §9.
+
+---
+
+## 112. The trigger test panel tells the user their invalid payload "will be sent as a raw string". It is not sent at all — in 14 languages
+
+**Where:** `src/i18n/locales/en.json` → `triggers.test_payload_invalid_json`,
+rendered at `src/features/triggers/sub_test/TestTab.tsx:328`.
+
+**What is measured** (2026-08-17):
+
+- The string reads *"Payload is not valid JSON — it will be sent as a raw
+  string."*
+- `TestTab.tsx:196-201`: `isInvalidJson` is computed from `JSON.parse(payload)`
+  and folded into `canFire = !!activeEventType && hasPersona && !isTesting &&
+  !isInvalidJson`. `:335` — `disabled={!canFire}`.
+- `:203-208` adds a second refusal in the handler, with a comment naming the
+  incident it prevents (*"users saw a green 'event published' with empty input"*).
+- So the payload is refused twice and never sent. **The copy describes the
+  behaviour the comment says was removed.** It is present and wrong in all 13
+  non-English locales too (the catalogs are at 0 gaps).
+
+**Why held:** correcting one `en.json` key requires the full
+`translate-extract` → per-locale subagent → `translate-merge` pipeline to keep
+`npm run check:i18n:strict` green, and it changes what a live surface shows while
+the operator is using the app. Standing rule.
+
+**Fix when unheld:** replace with *"Payload is not valid JSON — fix it before
+firing."* (`t.agents.tool_runner.invalid_json` already says exactly this for the
+same condition on a sibling surface, so the wording is settled), then run the
+translation pipeline for the one key.
+
+Detail: [`raw-json-editor.md`](./golden-paths/raw-json-editor.md) §7 D7, §5 G.
+
+---
+
+## 113. An installer is downloaded with no digest and no length check, then executed — once with `sudo`
+
+**Where:** `src-tauri/src/commands/infrastructure/setup.rs:256-315` (`download_file`),
+consumed at `:458-495` (Windows) and `:583-621` (macOS); version resolved at `:322-350`.
+
+**What is measured** (2026-08-17):
+
+- `download_file` streams the body to `%TEMP%\personas-setup\<filename>` with **no
+  staging name and no rename**, and returns the path.
+- `total_size` is read from `response.content_length()` (`:277`) and used **only** to
+  compute a progress percentage (`:301`). It is never compared against `downloaded`.
+- **No sha256, no signature, no content-type check.** `grep -niE
+  'sha256|checksum|digest' src-tauri/src/commands/infrastructure/setup.rs` returns
+  nothing.
+- The returned path is then executed: `msiexec /i <msi_path> /qn /norestart` (`:487-495`)
+  and `sudo installer -pkg <pkg_path> -target /` (`:614-621`).
+- The URL is not a fixed constant — the version comes from a runtime fetch of
+  `https://nodejs.org/dist/index.json` (`:322-350`), so the filename varies per run.
+- nodejs.org publishes `SHASUMS256.txt` beside every release. Nothing fetches it.
+
+A connection that drops at 90% yields a truncated MSI that is handed to the OS installer.
+Transport is HTTPS to `nodejs.org`, and that is the only control in the path.
+
+**Why held:** adding a verification step that can fail changes whether the operator's
+setup flow succeeds. Standing rule.
+
+Detail: [`local-model-install.md`](./golden-paths/local-model-install.md) §7.A.
+
+---
+
+## 114. Athena's two "exclusive" audio channels overlap, and the clip left speaking is the stale one
+
+**Where:** `src/features/plugins/companion/chat/athenaChatAudio.ts:62-119`;
+`src/features/plugins/companion/voicePlayback.ts:41-78`;
+`src/features/plugins/companion/chat/athenaChatVoice.ts:126-141`.
+
+**What is measured** (2026-08-17): both channel implementations were transcribed verbatim
+into a Node harness with instrumented fakes for `HTMLAudioElement` and
+`URL.createObjectURL`, and executed:
+
+| scenario | max concurrent clips | live at end |
+|---|---:|---|
+| A finishes, then B requested | 1 | — |
+| **two `playMain` inside the synthesis window** | **2** | **2** |
+| **two `playProgress` inside the synthesis window** | **2** | **2** |
+| progress in flight, reply lands (`pendingPlayback` set) | 0 | 0 |
+| **unmount during synthesis** | 1 | **1** |
+
+- Exclusivity is enforced by pausing an `HTMLAudioElement` held in a ref. **The element
+  does not exist during synthesis**, so `stopMain()`, `stopProgress()` and the unmount
+  cleanup (`:116-119`) are all no-ops against an in-flight request.
+- Ordering inverts: the **later** request resolves first and plays; the **earlier** one
+  then starts on top of it. Because the finally-guard is
+  `if (mainUrlRef.current !== url) return;`, the element still making sound is the one
+  whose blob URL is never revoked and whose handle nothing holds.
+- **1 of 4 continuations in the file re-checks after its await** — `playProgress`'s
+  `pendingPlayback` test (`:70`), which is why the cross-channel scenario passes.
+- `athenaChatVoice.ts:126-140` dispatches `playProgress(beat)` in a `for` loop with **no
+  await**, so two `PROGRESS:` lines in one streaming tick always land in the same window.
+- The file's own header states the opposite: *"Two exclusive audio channels, so Athena
+  can never talk over herself."*
+
+**The correct implementation is already in this repo**, calling the same two functions:
+`src/features/onboarding/components/useTourNarration.ts` takes a monotonic token
+(`:96`), re-checks it before constructing the element (`:101`), and bumps it in all three
+teardown paths (`:153`, `:166`, `:174`). Driven through the identical harness and the
+identical five scenarios: **0 overlaps, 0 teardown scenarios leaving audio live.**
+
+**Why held:** changes when and whether Athena speaks, on a surface in daily use.
+
+Detail: [`voice-input-and-playback.md`](./golden-paths/voice-input-and-playback.md) §0, §7.A-7.B.
+
+---
+
+## 115. Three of four microphone surfaces discard the permission error, and the two most-used ones erase it
+
+**Where:** `src/features/plugins/companion/useHoldToTalk.ts` (whole file);
+`orb/AthenaOrbLayer.tsx:49`; `CompanionFooterIcon.tsx:123`; `orb/OrbQuickInputBar.tsx:42`;
+`Composer.tsx:322-350`; `useDictation.ts:115-117, :145-149`;
+`useLocalDictation.ts:217-224, :284-290`.
+
+**What is measured** (2026-08-17): four surfaces can arm the microphone.
+
+| surface | hook | renders `error`? |
+|---|---|---|
+| `Composer.tsx` (panel composer mic) | `useSpeechInput` | **yes** — amber tint + `title={t.plugins.companion.dictate_error}` |
+| `orb/OrbQuickInputBar.tsx` | `useSpeechInput` | no |
+| `orb/AthenaOrbLayer.tsx` (floating orb) | `useHoldToTalk` | **cannot** |
+| `CompanionFooterIcon.tsx` (footer mic) | `useHoldToTalk` | **cannot** |
+
+- The string `error` appears **0 times** in `useHoldToTalk.ts`; the `HoldToTalk` interface
+  has no such member, so its two consumers cannot reach the field.
+- `useHoldToTalk.stop()` (`:65-73`) takes its `else` branch precisely when the mic never
+  went live — the permission-denied case — and calls `dictation.reset()`, which sets
+  `error` to `null` in both engines (`useDictation.ts:148`, `useLocalDictation.ts:289`).
+  **The orb path does not merely fail to show the error; it clears it.**
+- Sentry reach splits by engine, and the **default** engine is the worse half:
+  `useLocalDictation` calls `silentCatch('useLocalDictation.start.getUserMedia')` (`:218`);
+  `useDictation`'s `r.onerror` (`:115-117`) calls only `setError`, so a browser-engine
+  `not-allowed` reaches **no error door at all**.
+
+User-visible result: press and hold the orb, deny the microphone, and nothing happens,
+nothing is said, and nothing is recorded anywhere.
+
+**Why held:** rendering an error changes a live surface. **The safe half is applicable
+separately** — widening `HoldToTalk` to expose `error` is additive and type-only, and
+would let a later change render it without touching behaviour.
+
+Detail: [`voice-input-and-playback.md`](./golden-paths/voice-input-and-playback.md) §7.C.
+
+---
+
+## 116. The whisper installer pins a `win-x64` asset, on a host whose compiler reports `aarch64`
+
+**Where:** `src-tauri/src/companion/stt/installer.rs:33-51`, `:66`;
+contrast `src-tauri/src/companion/tts/sherpa_engine.rs:204-214`, `:269-283`.
+
+**What is measured** (2026-08-17):
+
+- `stt/installer.rs`'s `ENGINE_ARCHIVE_URL` is the literal
+  `…/v1.9.2/whisper-bin-x64.zip`, gated only on `cfg!(target_os = "windows")`.
+- Its own header comment says it mirrors the Kokoro installer *"exactly … the pinned
+  asset below is a win-x64 build"* — **and that is no longer true of the Kokoro
+  installer.** `sherpa_engine.rs:211-214` selects `win-arm64` or `win-x64` from
+  `cfg(target_arch)`, with a unit test (`:269-283`) asserting the URL matches the
+  compiled target and a comment stating that the shell's `PROCESSOR_ARCHITECTURE` is
+  untrustworthy under emulation.
+- On this machine both halves of that comment are demonstrable: `rustc -vV` reports host
+  **`aarch64-pc-windows-msvc`**, while the shell reports
+  **`PROCESSOR_ARCHITECTURE=AMD64`**.
+- `~/.personas/companion-stt` does not exist here, so the button has never been clicked
+  on this host.
+
+So "Install Whisper" on an arm64 build fetches an x64 binary, which runs under emulation
+without any surface saying so. Same defect class as the ORT case in
+[`bundling-native-assets.md`](./golden-paths/bundling-native-assets.md) — *a vendored
+artifact's declared architecture is a claim, not a fact* — except here the claim is the
+app's own and it is simply wrong.
+
+**Why held:** changes what an install button downloads.
+
+Detail: [`local-model-install.md`](./golden-paths/local-model-install.md) §7.C.
+
+---
+
+## 117. A failed install leaves an engine that every readiness check calls installed
+
+**Where:** `src-tauri/src/companion/tts/sherpa_engine.rs:128-202` (`extract_selected`),
+`:222-262` (`extract_engine`); `src-tauri/src/companion/stt/installer.rs:166-214`;
+readiness predicates at `tts/kokoro.rs:81-95`, `:135-140`, `tts/pocket.rs:104-107`,
+`stt/downloader.rs:78`.
+
+**What is measured** (2026-08-17):
+
+- All three extractors unpack **entry by entry directly into the live bin/model
+  directory**. There is no staging directory and no directory swap.
+- Each has a sentinel check (`found_exe` / `found_sentinel` / `extracted == 0`) that runs
+  **after** the loop. An archive whose exe unpacks first and whose DLL fails midway
+  returns `Err`, the UI shows `Failed`, and the exe is on disk.
+- **Every readiness predicate in the stack is existence, never validity**:
+  `candidate.is_file()`, `p.model.is_file() && p.voices.is_file() && p.tokens.is_file() &&
+  p.espeak_data.is_dir()`, `MODEL_FILES.iter().all(|f| dir.join(f).is_file())`,
+  `model_path(id).map(|p| p.is_file())`. Not one reads a byte. A 325,630,829-byte
+  `model.onnx` and a zero-byte `model.onnx` produce the same answer.
+- The installers' own post-install verification (*"never report success on a
+  half-extracted tree"*, `kokoro_installer.rs:150-161`) calls these same predicates — so
+  it verifies that extraction created paths, which is what extraction does.
+- Related, same file, different mechanism: `stt/downloader.rs`'s truncation guard is
+  `if let Some(expected) = total { … }` (`:206-212`), so it is **skipped whenever the
+  response is chunked and carries no `Content-Length`** — the exact case the comment
+  above it (`:201-205`) says it exists to prevent.
+
+**The repo already contains the right shape**, applied to the one artifact it does not
+download: `tts/pocket.rs::import_voice` (`:133-161`) caps the size, **verifies the format
+claim by reading the bytes** (`&wav_bytes[0..4] != b"RIFF" || &wav_bytes[8..12] != b"WAVE"`),
+then writes `.partial` and renames.
+
+**Why held:** stage-then-swap changes the install flow, and making readiness mean
+"verified" changes whether an already-installed engine is reported available at next
+launch.
+
+Detail: [`local-model-install.md`](./golden-paths/local-model-install.md) §7.B, §7.D, §7.G.
+
+---
+
+## 118. The transport engine's one rule is broken by its largest consumer
+
+**Where:** `src/features/plugins/artist/sub_media_studio/CompositionPreview.tsx:58-59`;
+contract at `hooks/useTimelinePlayback.ts:3-12`; compliant siblings at
+`BeatSidebar.tsx:39-45`, `PlaybackControls.tsx:41`, `TimelinePanel.tsx:208`.
+
+**What is measured** (2026-08-17): `useTimelinePlayback` keeps the 60 Hz clock in a ref
+and fans out via `subscribe(cb)` precisely so consumers do not put it in React state. Its
+docstring: *"storing it in state would trigger a full re-render on every rAF tick (≈60/s),
+which made the original media studio unusably laggy … Each consumer then decides whether
+to touch the DOM directly … or call a local `setState` scoped just to itself."*
+
+Four subscribers. Three comply. The fourth is
+`useEffect(() => engine.subscribe(setCurrentTime), [engine])` — **the raw clock piped
+into component state, in the one component that renders the `<video>`, every `<audio>`,
+the image-overlay map and the text-overlay map.** Eight `useMemo`s derive from it
+(`:92`, `:99`, `:106`, `:112`, `:249`, `:309`, `:317`, `:354`). The engine exists to
+prevent this line, and its largest consumer is the line.
+
+**Why held:** the fix is a real refactor of a live surface (split the timecode readout
+into its own subscriber; drive `<video>.currentTime` and opacity imperatively — `:164-168`
+already writes `style.opacity` that way and shows the shape), not a one-line change.
+
+**A type would close it permanently:** add
+`subscribeDerived<T>(select: (t: number) => T, cb: (v: T) => void)`, which calls back only
+on a change of the selected value. `engine.subscribe(setCurrentTime)` then becomes
+unspellable without writing an identity selector, which is visible in review in a way the
+current call is not.
+
+Detail: [`media-viewer.md`](./golden-paths/media-viewer.md) §7.C, §9.
+
+---
+
+## 119. The undo has 229 before-images on disk and no command that can address one of them
+
+**Where:** `src-tauri/db/src/journal.rs:27-29` (the nullable stamp),
+`src-tauri/db/src/repos/execution/change_journal.rs:216`, `:261` (both readers,
+`WHERE execution_id = ?1`), `src-tauri/src/commands/execution/journal.rs:37`
+(`undo_execution(execution_id)` — the only write door),
+`src-tauri/db/src/attribution.rs:44-52`.
+
+**What is measured** (2026-08-17, both the purge backup and the live file):
+
+- `change_journal` holds **228 rows pre-purge / 229 post-purge**. Rows with
+  `execution_id IS NOT NULL`: **0 in both**. `COUNT(DISTINCT execution_id)`:
+  **0**. Rows ever marked `undone` or `conflict`: **0**.
+- Every read and the single write filter on `execution_id = ?1`, so a row whose
+  stamp is NULL is unreachable from the entire IPC surface. The app is paying
+  the capture cost and the 14-day retention cost for a ledger with no reader.
+- The design *intends* to capture user writes — `RETENTION_DAYS_UNATTRIBUTED`
+  exists specifically to keep them (`journal.rs:279-280`) and `is_foreign_write`
+  models them as first-class (`change_journal.rs:125-127`). Capture and conflict
+  detection both know about user writes; only the addressing does not.
+- Not a regression: the Reversible Agent shipped **2026-07-30** (`048fa452f`)
+  and the last execution on this install ran **2026-06-26**, so
+  `attribution::with_execution` (`engine/mod.rs:366`, the only production
+  setter) has never wrapped a run here. `ThreadAttributionGuard` has **0**
+  production callers across 963 `.rs` files.
+
+**The fix:** close the key rather than requiring it — replace
+`execution_id: Option<String>` with a `WriteScope` enum
+(`Execution(id) | UserAction(id) | System(&'static str) | Foreign`), and land it
+**together** with a door keyed on the scope (`undo_scope(scope)`, and
+`get_execution_data_diff` generalised the same way). Half of this change is
+worse than none: a scope enum behind an execution-only door is the `<Numeric>`
+mistake — routing callers to a primitive that is still wrong by default.
+
+**Why held:** it changes the shape of a persisted column and adds an IPC
+command. Standing rule.
+
+Detail: [`undo-persisted-operation.md`](./golden-paths/undo-persisted-operation.md) §0, §7 D1, §9.
+
+---
+
+## 120. The reversibility ledger can silently become incomplete and nothing ever checks
+
+**Where:** `src-tauri/db/src/journal.rs:81-104` (`JOURNAL_DROPPED`,
+`note_journal_drop`, `journal_dropped_count`), `:287-318`
+(`spawn_journal_writer`), `:422-437` (`prune_journal`).
+
+**What is measured** (2026-08-17):
+
+- `journal_dropped_count()` is a `pub fn` with **zero callers** outside its own
+  module — no command, no metric, no health panel. The counter's own warn text
+  calls a drop *"a permanent gap in the reversibility ledger for that row"*, and
+  the only place that sentence can appear is a log file.
+- The undo receipt (`UndoExecutionResult`) reports `undone`, `conflicts` and
+  `skipped_already_processed` — and cannot report `never_captured`, because the
+  count lives in a static the repo layer cannot see.
+- A boot-time precondition assertion after `prune_journal` — *"if
+  `COUNT(*) FROM change_journal` > 0 then the count of addressable rows must be
+  > 0, else `tracing::error!`"* — would have fired every day since 2026-07-30
+  and costs one query per launch. It also fails loudly when its own
+  precondition (a non-empty journal) is absent, which is the property §9 of the
+  contract requires and a census ratchet cannot provide here (the number it
+  would ratchet is already 0).
+
+**Why held:** it adds an error-level log at boot, which changes runtime
+behaviour. Standing rule.
+
+Detail: [`undo-persisted-operation.md`](./golden-paths/undo-persisted-operation.md) §7 D7, §9.
+
+---
+
+## 121. The incidents inbox stores the failure mode and cannot group by it
+
+**Where:** `src/features/overview/sub_incidents/libs/groupIncidents.ts:5`
+(`IncidentGroupMode = 'agent' | 'severity' | 'source' | 'none'`), `:43-55`
+(`bucketFor`), `:57-63` (the docstring),
+`src/features/overview/sub_incidents/components/IncidentsInbox.tsx:75-81`
+(`groupModeLabel`), `src-tauri/db/src/migrations/incremental.rs:2686-2689` (the
+indexes).
+
+**What is measured** (2026-08-17, purge backup):
+
+- `audit_incidents.kind` is populated on **164 of 164** rows with **8 distinct
+  values**: `blocked_dependency` 66, `external` 56, `review_blocker` 20,
+  `team_member_failing` 11, `config` 7, `ambiguous_requirement` 2,
+  `missing_credential` 1, `fleet_stall` 1. Among the **99 open** rows it is the
+  most discriminating column (35 / 30 / 20 / 7 / 6 / 1).
+- It is offered as **no** grouping lens. The docstring claims `source` answers
+  *"what kind of thing is failing?"* — but `source_table` names the **producer**
+  (`execution_error`, `persona_blocker`, `team_assignments`, `circuit_breaker`,
+  `fleet`, `review_dispatch`), not the failure.
+- The spine's own words for this leaf are *"clustering terminally failed events
+  by failure mode"*. The missing lens is the only one that does that.
+- There is **no index on `kind`** — `idx_ai_status`, `idx_ai_persona`,
+  `idx_ai_severity` and `idx_ai_source` exist. The schema records the same
+  omission the UI does.
+
+**The fix:** four lines plus a key — `'kind'` in the union, a `case 'kind'` arm
+in `bucketFor`, a label resolver, an `en.json` token (then the 13-locale
+pipeline). Optionally an index on `(kind, status)`.
+
+**Why held:** it changes what a live surface shows while the operator is using
+it. Standing rule.
+
+Detail: [`dead-letter-triage.md`](./golden-paths/dead-letter-triage.md) §7 D5, §8.4.
+
+---
+
+## 122. Seven promotion doors are behind an env var set nowhere, and 77 qualifying failures never reached a human
+
+**Where:** `src-tauri/db/src/audit_incidents_promoter.rs:40-45` (`PROMOTION_ENV`
++ `fn enabled()`), and the seven promoters at `:75`, `:104`, `:144`, `:179`,
+`:212`, `:248`, `:282`.
+
+**What is measured** (2026-08-17, purge backup):
+
+- `PERSONAS_INCIDENTS_PROMOTION` appears in **21** places in the tree — one
+  `pub const`, one comparison, seven "No-op unless…" comments on the calling
+  repos, four golden paths, a `DESIGN.md`, and a 2026-06-09 audit that already
+  reported this. **Zero** of the 21 set it.
+- Replaying each promoter's own predicate against its own source table:
+  `persona_healing_issues` **72**, `policy_events` **5**, `credential_audit_log`
+  **0 of 9,830**, `healing_audit_log` **0 of 27**, `provider_audit_log` **0 of
+  4,001**, `fired_alerts` 0, `tool_execution_audit_log` 0 — **77 qualifying
+  rows**, and `SELECT COUNT(*) FROM audit_incidents WHERE source_table IN (<the
+  seven>)` = **0**.
+- Two of the predicates cannot match *even if the gate opens*:
+  `promote_credential_audit` searches `operation` for `failure|error|denied`,
+  and the entire live vocabulary is `decrypt` (9,458),
+  `oauth_token_refreshed` (201), `healthcheck` (145), `delete`, `create`,
+  `oauth_completed`, `oauth_initiated`, `update`, `field_update`,
+  `credential_oauth_refreshed` — **none containing any of the three words**.
+  `promote_healing_audit` requires `ends_with("_error")`; the one genuine
+  failure row is `ai_heal_parse_failed`.
+- All 164 existing incidents came in through the **eight** direct
+  `audit_incidents::promote` call sites in `src-tauri/src/**`, which are not
+  gated. Three of those eight discard the promotion's own result with
+  `let _ =` (`engine/mod.rs:3257`, `commands/design/reviews.rs:1415`,
+  `companion/athena_reaction.rs:1306`) — including the circuit-breaker site,
+  whose incident **is** the mitigation for not disabling a failing team member.
+
+**The fix, in order:** (1) fix the two predicates to match on the producer's
+vocabulary — this is correct whether or not the gate ever opens; (2) replace the
+env gate with a persisted app setting so admission is inspectable; (3) route the
+three `let _ =` sites through `try_promote`, which already swallows correctly
+while keeping the warn. A boot-time assertion — per promoter, *"qualifying rows
+> 0 and incidents from that source = 0"* → `tracing::error!` — would have fired
+on two sources every day since the module shipped.
+
+**Why held:** flipping admission on would create incident rows on a live
+surface, and 77 new items would land in a queue that already has 99 undrained.
+Standing rule.
+
+Detail: [`dead-letter-triage.md`](./golden-paths/dead-letter-triage.md) §0, §7 D1, D3, D7, §9.
+
+---
+
+## 123. A function named `prune` empties the whole table when its input list is empty
+
+**Where:** `src-tauri/db/src/repos/resources/cloud_webhook_watermarks.rs:48-58`.
+
+**What is measured** (2026-08-17):
+
+```rust
+/// Remove watermarks for triggers that no longer exist.
+/// Keeps only rows whose trigger_id is in the `active_ids` set.
+pub fn prune(pool: &DbPool, active_ids: &[&str]) -> Result<(), AppError> {
+    …
+    if active_ids.is_empty() {
+        let conn = pool.get()?;
+        conn.execute("DELETE FROM cloud_webhook_watermarks", [])?;
+        return Ok(());
+    }
+```
+
+- The empty-set branch is defensible in the intended case (no active triggers ⇒
+  no watermarks) and wrong in the case that occurs on a bad day: the caller's
+  enumeration of active triggers **failing and resolving to empty**, which this
+  function reads as *"delete everything"*. That is
+  [`partial-failure-read-envelope`](./golden-paths/partial-failure-read-envelope.md)'s
+  finding — a failed read degrading to an empty value — arriving at a
+  destructive door.
+- It is one of **3 of 5** whole-table wipes in `src-tauri/db/src/repos/**` that
+  return `Result<()>` and therefore discard the affected-row count SQLite
+  already handed them (the others: `alert_rules::clear_fired_alerts:305`,
+  `frontend_crashes::clear_all:91`). The compliant two —
+  `manual_reviews::delete_all:243` and `messages::delete_all:501` — return
+  `Result<usize>`. This split is the baseline of the published census rule
+  `countless-table-wipe` (3 files / 3 matches, hand-verified 3/3).
+
+**The fix:** make the empty-input case an explicit refusal
+(`return Err(AppError::Validation("prune called with an empty active set"))`)
+or require the caller to opt in (`prune(pool, active_ids, allow_empty: bool)`),
+and return `Result<usize>` from all three so the count survives.
+
+**Why held:** it changes what a live function does — a call that currently
+succeeds would start failing. Standing rule.
+
+Detail: [`maintenance-affordances.md`](./golden-paths/maintenance-affordances.md) §7 D2, D3, §9.
+
+---
+
+## 124. The one arm the failure translator most needs is gated on a phrase the engine never emits
+
+**Where:** `src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:267`
+against `src-tauri/src/engine/healthcheck.rs:1156`.
+
+**What is measured** (2026-08-17): `translateHealthcheckMessage` opens its network family
+with `if (raw.includes('request failed:'))` and nests four arms inside it — timeout, DNS,
+connection-refused, unreachable — each with a `friendly` line and a `suggestion`. The real
+probe emits `"Connection failed: {e}"`. **The only producer of `request failed:` reaching
+this translator in 963 Rust files is `credential_design.rs:284`, the LLM design door.**
+
+Producer inventory, hand-verified over every `HealthcheckResult::` call site above the
+first `#[cfg(test)]` (`healthcheck.rs:1495`): **13 sites; exactly one** — `:1143`, via
+`let msg = format!("Service returned HTTP {}", …)` at `:1142` — reaches a diagnostic arm.
+The other twelve land on the fallback, which returns `{ friendly: raw, suggestion: '' }`;
+because `friendly === raw`, `HealthcheckResultDisplay.tsx:10` then computes
+`hasDifferentRaw = false` and suppresses the *"Technical details"* disclosure as well. A
+DNS failure, a TLS failure, a timeout and an SSRF-policy rejection all render as one raw
+`reqwest` sentence with no suggestion and no disclosure.
+
+The sharpest instance: `healthcheck.rs:308` produces
+`"{tool} timed out — the tool may be unresponsive"` and the translator has a **timeout**
+arm. They cannot meet.
+
+**Why held:** the one-line form (adding `Connection failed:` to the gate) changes what a
+live surface shows on every connection failure, and the honest fix is a typed `step`/`code`
+on the IPC payload rather than a second string to classify — a cross-language contract
+change, not an edit. Registering rather than applying, per the standing no-destructive-apply
+rule.
+
+**No gate is possible in the census**, which evaluates one pattern per file and cannot
+compare a TS literal against the Rust corpus. The instrument that would work is shaped
+like `scripts/check-csp-hosts.mjs`: collect every `includes(`/`startsWith(` literal inside
+the message-classifier functions, grep the Rust tree for each, **exit 2 if it finds no
+classifier literals at all**, exit 1 on any literal with zero producers. Today it reports
+five (`request failed:`, `timed out`, `timeout`, `dns`, `connection refused`).
+
+Detail: [`connector-setup-panel.md`](./golden-paths/connector-setup-panel.md) §7.2, §9.2.
+
+---
+
+## 125. An unverifiable credential is certified with a green check on the surface that certifies it
+
+**Where:** `src-tauri/src/engine/healthcheck.rs:26-28` and `:79-85`;
+`src/features/vault/sub_credentials/components/forms/HealthcheckResultDisplay.tsx:6,:13`;
+nine prop declarations listed in the detail link.
+
+**What is measured** (2026-08-17, live database — credentials were **not** touched by the
+purge): `HealthProbeState` is `Verified | Unverifiable | Failed`, required on the wire
+type (`src/lib/bindings/HealthcheckResult.ts:5`). Its own doc comment promises
+*"this is NOT a failure — it renders neutral/muted, never a green 'healthy' check."*
+`HealthcheckResult::unverifiable` constructs `success: true`. Nine prop slots along the
+setup path re-declare the verdict as an inline `{ success: boolean; message: string } | null`
+— structurally compatible, so nothing errors — and the terminal renderer branches on the
+boolean, returning a green `CheckCircle`.
+
+**8 of 25 live credentials are `unverifiable`. 21 of 134 connectors have no
+`healthcheck_config` and can produce nothing else.** The promise is kept in
+`ConnectorStatusCard.tsx:26-34` (a neutral `ShieldQuestion`) and broken in the panel where
+the credential is created.
+
+**Two further states are unrepresentable at any layer.** Two live credentials
+(`google_calendar`, `gmail`) carry `needs_reauth: true` with grants expired **99** and
+**76** days ago; `HealthProbeState` has no `expired`/`revoked` variant, so both render as
+a generic red box — in the one surface that owns an Authorize button.
+
+**Why held:** it changes what a live surface shows for a third of the operator's vault,
+and the correct fix is a discriminated union replacing the boolean pair
+(`CliConnectionPanel.tsx:17-24` is the in-repo pattern), not a colour change.
+
+A **ratchet** is shipped meanwhile: census rule `probe-verdict-narrowed-to-boolean`,
+baseline 6 files / 9 matches, precision 9/9, zero site overlap with all 195 registered
+rules. **Delete the rule when the union lands** — the census cannot express "must be zero".
+
+Detail: [`connector-setup-panel.md`](./golden-paths/connector-setup-panel.md) §7.1, §8/G1, §9.
+
+---
+
+## 126. Three healthchecks pass for any value the user types into the field they gate
+
+**Where:** `connector_definitions` rows `kalshi`, `pubmed`, `semantic_scholar`
+(`healthcheck_config` column); gate at
+`src/features/vault/sub_catalog/components/forms/CredentialTemplateForm.tsx:188-193`.
+
+**What is measured** (2026-08-17, live `connector_definitions`, 134 rows / 196 declared
+fields): of the **113** connectors carrying a `healthcheck_config`, **4** reference no
+declared field, no `{{base64(a:b)}}` pair and no auth token in their endpoint, headers or
+body. One of the four (`arxiv`) declares no fields at all and is correctly
+unauthenticated. The other three declare an `api_key` field their probe never sends.
+
+So *"Test connection"* returns `"Connection successful (HTTP 200)"` for any value,
+including a wrong one — and because Save is gated on that success, the green tick is what
+lets a credential that will fail at first use into the vault.
+
+**Why held:** editing connector definitions is a data change to rows the app reads at
+runtime, and the durable fix is a validation over the **pair** (declared fields,
+healthcheck template) in the connector seed test, which no schema constraint can express
+and which the census cannot see — both sides are JSON columns in a database, not source
+text.
+
+Detail: [`connector-setup-panel.md`](./golden-paths/connector-setup-panel.md) §7.6, §8/G4.
+
+---
+
+## 127. Every app start overwrites nine columns of all 134 built-in connectors, and stamps `updated_at` so the edit leaves no trace
+
+**Where:** `src-tauri/db/src/lib.rs:1826-1831` (`seed_builtin_connectors`' refresh
+`UPDATE`), reached from `init_db_with_journal` at `:341-348`. Same shape at `:1864-1873`
+for `shared_event_catalog`. The operator's edit door is `update_connector`
+(`src/commands/credentials/connectors.rs:42-52`, allow-listed at `ipc_auth.rs:168`), which
+carries **no `is_builtin` guard**.
+
+**What is measured** (2026-08-17, purge backup; `connector_definitions` was **not** in the
+purge cascade, so these counts are current):
+
+- 134 rows, all `is_builtin = 1`, **1 distinct `updated_at`** — the last app start,
+  `2026-08-17T09:24:38.517217+00:00` — against **17 distinct `created_at`**.
+- The refresh writes `label, icon_url, fields, healthcheck_config, metadata, category,
+  services, events, resources, updated_at` unconditionally. It does **not** write `name`,
+  `color`, `is_builtin`, `created_at`.
+- `repos/resources/connectors.rs:228-262` lets `update_connector` write `fields`,
+  `healthcheck_config`, `services`, `events`, `metadata` — five of the nine.
+
+**Replayed verbatim** against a copy of the operator's own `slack` row, using the seeder's
+exact statement and the shipped values read out of `builtin_connectors.rs`:
+
+```text
+1. shipped row, as seeded    : Slack        | #4A154B | messaging | [{"key":"bot_token"…
+2. after the operator edits  : Slack (work) | #ff0000  | my-tools  | [{"key":"webhook_url"…
+3. after the next app start  : Slack        | #ff0000  | messaging | [{"key":"bot_token"…
+```
+
+The rename, the recategorisation and the credential-field edit are gone. The **recolour
+survives** only because `color` is the one presentation column missing from the
+hand-maintained `SET` list — an accident, not a policy. And because `updated_at` is
+rewritten by the same statement, nothing afterwards can tell that an edit ever existed.
+
+A second, app-generated writer hits the same wall:
+`src/commands/design/n8n_transform/confirmation.rs:540` sets `services` on a connector row
+and the next boot reverts it.
+
+**Why held:** this changes what a live surface shows and the current behaviour may be
+deliberate for `fields` / `healthcheck_config` (a shipped schema fix must reach existing
+installs). The durable fix is two edits, not one: (a) split the row's columns into a
+`ShippedFields` struct the seeder is handed, so an operator-owned column is not nameable
+from a seed; (b) gate the refresh on a `source_revision` / `definition_hash` written at
+seed time, or on a signature of the un-edited row. `src/engine/recipe_seed.rs:189-190` is
+the in-repo model for (b) and is the only seeder of seven that protects an edit.
+
+**Adjacent, same file, same held reason:** 16 `is_builtin = 1` recipes and 2
+`status = 'active'` shared events sit in their tables and in no shipped catalog — nothing
+computes the set difference, and the two catalog retirements that have happened are
+hand-written per-id `DELETE`s (`db/src/lib.rs:1799`, `migrations/incremental.rs:5734`).
+
+Detail: [`catalog-row-seeding.md`](./golden-paths/catalog-row-seeding.md) §0.2, §0.3,
+§0.4, §7/D1-D5.
+
+---
+
+## <a id="v2-pilot-deviations"></a> Hierarchy-v2 pilot deviations (2026-08-18) — the forge's first evidence-reconciliation pass
+
+The v2 forge (plan §3) writes the standard from expertise first, then reconciles against
+the repo; where the repo falls short, **the standard stays and the gap is registered
+here**. These eight came out of the two pilot subjects. Each anchor is cited from the
+owning document's `deviations:` frontmatter under `docs/concepts/paths/`.
+
+### <a id="table-no-error-state"></a> Table: the primitive has no error state
+`UnifiedTable.tsx:598-620` — the body machine is ghost/empty/rows only. A failed fetch
+that settles empty renders the settled *empty* state: "no data" asserted when the truth
+is "couldn't look". Same in `DataGrid`. Violates `failure-not-empty-success`.
+**Why held:** adding an error branch changes what live surfaces render on fetch failure.
+
+### <a id="table-default-sort-comparator"></a> Table: default sort comparator is lexicographic and untotal
+`UnifiedTable.tsx:500-515` — default `sortFn` stringifies + `localeCompare`s (numbers and
+dates sort wrong), uses `reverse()` for `desc` (inverts tie order of a stable sort), and
+appends no identity tiebreaker. **Why held:** changes visible row order app-wide.
+
+### <a id="table-forbidden-split-unguarded"></a> Table: client sort over a server-truncated window, unguarded
+`UnifiedTable.tsx:173-175` — sortable columns always sort client-side over `data` while
+`onEndReached` invites server windowing; nothing warns when both are active. The sort
+result is then a lie about the unfetched remainder. **Why held:** the guard is an API
+design decision (controlled sort state), tracked with legacy `tables.md` gap #6.
+
+### <a id="table-recent-slice-tiebreaker"></a> Table: recent-slice query lacks a tiebreaker
+`src-tauri/db/src/repos/orchestration/team_assignments.rs:358-364` — `ORDER BY created_at
+DESC LIMIT` without `id`. Tolerable only because nothing resumes from its boundary; the
+Rust application documents the graduation rule. **Why held:** cosmetic until a consumer
+pages from it.
+
+### <a id="scheduling-dup-nonfire-vocab"></a> Scheduling: non-fire reason vocabulary duplicated by hand
+`src/features/triggers/lib/eventReason.ts:17-27` hand-syncs (`"Keep in sync with"`)
+against `EventGateReason::token` in `src-tauri/src/engine/background.rs:948-989`; ts-rs
+is available but unused here. Violates `one-authority-per-vocabulary`. **Why held:**
+binding regen + consumer migration is its own change.
+
+### <a id="scheduling-tz-fallback"></a> Scheduling: cron falls back to host-local timezone silently
+`src-tauri/core/src/scheduler.rs:123-137` — a rule with no authored timezone means
+different things on different machines, logged at debug only. The path prescribes
+computing in the rule's own declared frame. **Why held:** changing the fallback shifts
+real fire times for existing triggers.
+
+### <a id="scheduling-claims-without-identity"></a> Scheduling: claims record no holder or timestamp
+`claim_pending` (admitted at `background.rs:116-122`, `1028-1038`) forces the
+two-consecutive-pass reaper heuristic instead of evidence-based reclamation. Violates
+the claims-carry-identity rule in `overlap-and-reentrancy`. **Why held:** schema change
+on a hot table.
+
+### <a id="scheduling-subscription-health-volatile"></a> Scheduling: subscription health resets on restart
+`SubscriptionHealth` (`background.rs:43-70`) is in-memory only — no persisted tick
+heartbeat, so global gap detection ("the scheduler itself was dark") does not survive a
+restart. **Why held:** new persistence surface.
+
+---
+
+## Hierarchy-v2 forge wave 1 deviations (2026-08-18) — eight subjects reconciled
+
+Same contract as the pilot section above: the forge kept the standard; the repo's
+shortfalls are registered here, one anchor per subject, cited from each golden path's
+`deviations:` frontmatter. Full per-claim detail lives in the wave-1 composer reports
+(session transcript); the entries below are the durable register.
+
+### <a id="w1-modal-stack"></a> modal-stack
+Backdrop click not topmost-gated (`BaseModal.tsx:283` vs the `isTopmost` escape gate at `:198-203`) · `portal` boolean fuses detachment with a 9,950-unit z jump (`BaseModal.tsx:8-10`; 3 overlays exist solely to out-paint it) · focus restore unreachable for unmount-close (96/129 sites, `BaseModal.tsx:229-233`) · stack registry entries are position-only (`ModalStackContext.tsx:12-14`) · 25 literal `z-[≥1000]` across 21 files, no shared layer scale · stored-coordinate popover with no recomputation + escape listener bypassing the keyboard ladder (`sub_mastermind/lib/ListPopover.tsx`) · flip decided on assumed constant (`useAnchoredPortalPosition.ts:28`) · generic Confirm/Cancel defaults (`ConfirmDialog.tsx:77,90`).
+
+### <a id="w1-form"></a> form
+`FormField` never styles the errored control (no red border anywhere; `hint` absent from described-by) · adoption inversion: 4 FormField adopters vs 19 shadow wrappers + 120 orphan labels/49 files · `FormErrorProvider`/`validateOn` machinery has zero adopters (timing is bimodal: every-keystroke or backend-toast) · ~70 `disabled={!x.trim()}` gates; `FormActions` busy renders null spinner, no in-flight re-entry guard, hardcoded English · `KeyValueEditor.tsx:80-91` positional row identity · `ValidationError {field,rule,message}` flattened to a joined sentence in `contract.rs:37-49`, imported by zero frontend files.
+
+### <a id="w1-async-ui-states"></a> async-ui-states
+(All already documented in-repo; cross-referenced, not re-measured.) ~75 null-spinner busy controls · 177 `onClick={() => void fn()}` disarming AsyncButton · `isLoading={false}` ghost suppression citing a stale doctrine section (`EventLogList.tsx:453-478`) · reduced-motion global reset destroys the ghost-invisibility window · no shared failure-state primitive (~20/27 error surfaces render empty on failure; see `table-no-error-state`).
+
+### <a id="w1-search"></a> search
+Default FTS rung is unlabeled any-term OR (`executions.rs:190`) · ranking tiebreak ends at second-resolution `created_at`, no identity term (`executions.rs:424-426`) · all-noise input returns empty success (`executions.rs:399-401`) · palette sorts by score only, ties rest on source order (`CommandPalette.tsx:232-235` + 4 sites) · saved-view parse failure leaves the view active with filters unapplied (`useEventLog.ts:364-375`); no update/rename, no dirty marker · chips removed by array index (`useStructuredQuery.ts:145`).
+
+### <a id="w1-streaming-output"></a> streaming-output
+Unknown events dropped uncounted (`parser.rs` `_ =>`; 40% of stream lines invisible; "unhandled" = "absent") · size cap mutates then parses (`read_line_within` appends a marker producing invalid frames; 68 tool-results vanished) · invented fixtures encode the belief under test (`parser.rs:1105`, `provider/claude.rs:402`; wire shape observed 0/2,811; 33.2M tokens discarded) · `is_error` never read — 82 failed turns display "Completed" · primary frontend channel is a formatted string, not the typed event · stall signal has a producer and zero consumers (`useActivityMonitor.ts`, 60% of runs cross threshold) · 13 pin-to-tail sites without at-bottom check · `useTauriStream.cancel()` discards partial output · 13/26 line channels broadcast to zero readers.
+
+### <a id="w1-agent-memory"></a> agent-memory
+Machine correlator episodes admitted at capture, excluded only at read (`fleet_bridge.rs` writes; `episodic.rs:29-72` filters; reached 57% of episodic memory) · episodic layer has no retention horizon or caps (deliberate no-data-loss guarantee, unbounded growth) · recalled facts carry importance/confidence/sources but not age (`prompt.rs:410-413`).
+
+### <a id="w1-credential-vault"></a> credential-vault
+Flat encryption: no envelope, no AAD, no key-id on 5,008 ciphertexts (`core/src/crypto.rs:1302-1314`; rotation unrepresentable, ciphertext-swap undetected) · rotation ledger fire-and-forget: 11 `let _ = record_rotation` sites, 6/11 `rotation_type` values rejected by the CHECK, clock advances regardless (`engine/rotation.rs`) · zero upstream revocation at retirement · provenance written by 1 of 4 admission doors (0/25 live credentials carry it; `foraging.rs:735-744`) · refresh threshold has two disagreeing authorities (`oauth_refresh.rs:171-176` vs `connector_strategy.rs:600-604`) + fabricated fallback expiry (`oauth_refresh.rs:571-582`) · transient unreachability recorded as credential failure, never expires; revoked still resolves Ready · system key in env at 127/129 spawn sites; broker-token temp files permissive; lane reaper created 6 dirs, removed 0.
+
+### <a id="w1-migrations"></a> migrations
+42 remaining `let _ = ddl_step(` + 13 `let _ = execute_batch` ALTER swallows (the six-site fix did not extinguish the class) · guard-uncertainty inversion `has_column(...).unwrap_or(true)` = probe failure treated as applied (`incremental.rs:7718`) · backup never verified by opening the copy; restore path prose-only, untested (`backup.rs:8-10`) · rotation ages in boots not migration boundaries (restart storm can rotate away the only good copy) · `personas_data.db` second store has no runner, no guards, no snapshot · no convergence instruments (fresh-vs-migrated diff, chain-runs-twice, query-prepare sweep).
+
+---
+
+## Hierarchy-v2 forge wave 2 deviations (2026-08-18) — eight more subjects reconciled
+
+Same contract as waves above: standards kept, gaps registered, one anchor per subject,
+cited from each golden path's `deviations:` frontmatter. Full detail in the wave-2
+composer reports (session transcript).
+
+### <a id="w2-data-access"></a> data-access
+`QueryBuilder::order_by` identifier allowlist is advisory (doc-comment only, `query_builder.rs:198-204`) · ops-exclusion `NOT LIKE` predicate copy-pasted 3× in `executions.rs` (:298,:348,:420) beside its own drift warning (:1755-1767) · `row_mapper!` opt-kinds silently default missing columns, one to literal `"working"` (`macros.rs:116-127`) · `add_member` INSERT OR IGNORE returns a fresh UUID unconditionally (`mcp_gateways.rs:48`) · `sweep_zombie_executions` fires consequences regardless of CAS verdict (`executions.rs:1767-1804`) · 70 `to_string(..).unwrap_or_default()` write sites launder serialization failure to `''`.
+
+### <a id="w2-ipc-contract"></a> ipc-contract
+Two hand-rolled registration parsers, one matching by substring accident (`generate-command-names.mjs:21` vs `check-command-contract.mjs:57`) · timeout adoption backwards: 52 ad-hoc `timeoutMs` overrides vs 3 registry entries (`tauriInvoke.ts:69`) · the orphan-binding inventory gate specified in the legacy corpus is still unbuilt (29 orphans, 22 live invoke return types incl. `VaultStatus`) · `AppError::Validation(String)` collapses the code vocabulary at ~1,436 sites (one catch-all code = 99.2% of resolving sites) · `isIpcAuthFailure` branches on message prose via `includes()` (`tauriInvoke.ts:544`) beside the anchored-regex exemplar in `safeInvoke.ts`.
+
+### <a id="w2-error-handling"></a> error-handling
+Substring-ladder classification is the PRIMARY path even for app-minted messages (`error_taxonomy.rs:141-323`; 40/43 Unknown healing issues = one string) · TS classifier ladder hand-mirrored, gated only by byte-identical fixtures (`src/lib/errorTaxonomy.ts`) · two hand-synced user-facing registries (`errorRegistry.ts` ERROR_RULES + `useTranslatedError.ts` ERROR_KEY_MAP), registry stores hardcoded English · silentCatch/toastCatch emit breadcrumbs not events (~10.6% of catches produce Sentry events; 760/2,752 catch bodies reach no door) · crash capture sanitizes by denylist regex, not field allowlist (`crashPersistence.ts`).
+
+### <a id="w2-hitl-approval"></a> hitl-approval
+Pipeline approval pending state is in-memory — restart silently loses the question (`pipeline_executor.rs:716-749`) · three expiry policies for holds in one binary: manual reviews 7-day auto-RESOLVE incl. 17 high-severity bypassing the triage denylist (`background.rs:816-836`), team assignments never expire (11 parked 59-68 days), companion approvals never expire · dollar ceilings fail open (`0`/`None` = unlimited) while switches fail closed · `FirstUseConsentModal` re-ask overwrites a stored refusal (`FirstUseConsentModal.tsx:141-151`); telemetry preference read fails open (`telemetryPreference.ts:17`).
+
+### <a id="w2-realtime-events"></a> realtime-events
+CDC emits from inside transactions — rolled-back writes can be advertised (`cdc.rs`, no stage-and-release) · six event names minted as literals outside both registries (`cdc.rs::table_to_event`), invisible to `check-event-registry.mjs`; `eventRegistry.ts:5` names the wrong authority file · early-arrival buffer keeps oldest 50, sheds newest (`createSingletonListener.ts:96-99`) · outbound watermark shared across subscriptions (per-subscription cursor named in-code as "the deeper fix", `webhook_notifier.rs:653-724`); breaker strikes in-memory only; no dead-letter for passed-over events · `source_filter` wildcard is unanchored prefix (`bus.rs:308-319`).
+
+### <a id="w2-mcp-tools"></a> mcp-tools
+Stdio server has dual catalog authority: hand-built `list_tools` array vs separate dispatch match, no door-level schema validation (`mcp_server/tools.rs:722` vs `:1133`) · unknown tool returned in-band as `isError:true` instead of a protocol error (`tools.rs:1169-1181`) · one omnibus `personas:execute` scope gates all ~34 tools incl. mail/calendar/vault reads · install token has no reaper: no expiry, plaintext in shared config, re-installs accumulate live keys (`install.rs:61-81`) · blocking guidance/approval calls hold HTTP responses up to 10 min instead of the tasks-extension handle+poll shape · no per-request `_meta` version validation (2026-07-28 architecture).
+
+### <a id="w2-retry-backoff"></a> retry-backoff
+OAuth refresh ladder durable but unbounded — no attempt cap, no terminal state; live fail-counts 49/21 stopped only by a neighboring staleness filter while `needs_reauth` sits unread (`oauth_refresh.rs:49-53`) · half-open resets `consecutive_failures` to 0 so a failed probe buys 5 fresh full-admission failures (`failover.rs:395-397`) · zero jitter on ~19 backoff schedules in either language · no standard rate-limit-hint extraction outside the usage-limit parse · `automation_runner.rs` retryable set omits 429 · unbounded exponent `1 << consecutive_failures` (debug panic / release ladder-reset at 64; `healing.rs:330,:555`) · ~30 of 98 `retry_of_execution_id` rows point at completed parents.
+
+### <a id="w2-background-jobs"></a> background-jobs
+Roster escapes: curation scheduler + persona-jobs worker + webhook notifier run as raw spawned sleep-loops outside the unified supervisor — no panic barrier, no health row, survive `stop_loops` (`lib.rs:1434-1462`) · leadership split-brain: `heartbeat()` overwrites the lease without owner re-read, both gates fail open, `release()` has zero call sites (~90s follower blind spot; legacy loop-ownership D1/D3) · no per-tick deadline anywhere — a hung tick permanently silences its loop and nothing evaluates `last_tick_at` staleness · six pre-election boot sweeps carry no owner term (`lib.rs:815-909`) · client cancel collapses cancelling→cancelled before runner confirms (`useMediaExport.ts:144-153`) · health outcome vocabulary is success/panic only.
+
+---
+
+## Hierarchy-v2 forge wave 3 deviations (2026-08-18) — eight more subjects reconciled
+
+Same contract: standards kept, gaps registered, one anchor per subject, cited from
+frontmatter. Full detail in the wave-3 composer reports (session transcript).
+
+### <a id="w3-app-shell"></a> app-shell
+Nav registry governs 11 of ~156 destinations (~7%); the ~23 L2 tab unions have no registry/validation · `setSidebarSection` accepts never-valid ids from three arrival surfaces, persisted and replayed to `TypeError` · tier revocation silently evicts to home (`Sidebar.tsx:114-119`) · gating is uniformly hidden — no locked/upsell state was ever decided · second badge authority outside the attention registry (`useBadgeCounts.ts:36-51`) · all global overlays share one error boundary (`App.tsx:363`) · `personas://` scheme cannot name a destination.
+
+### <a id="w3-authorization"></a> authorization
+**⚠ SECURITY-RELEVANT, flag for human review:** unlisted/unannotated commands fall through to the Public tier (`ipc_auth.rs:835-843`) — no totality rule · `require_privileged` on async paths verifies boot then `Ok(())`; thread-local proof cleared before the async body runs (audit-only, per the file's own test comment `:1055-1064`) · `require_auth`/`require_auth_sync` are unconditional `Ok(())` — `#[requires(auth)]` reads as a guard and guards nothing · scope enforcement defaults to Warn indefinitely per credential (`scope_enforcement.rs:41-46`) · WebView2 header-race tier downgrades are standing classifications, not dated exceptions · `#[requires]` + `PRIVILEGED_COMMANDS` are two hand-reconciled artifacts.
+
+### <a id="w3-design-tokens"></a> design-tokens
+Derived custom themes bypass the contrast gate — "Low" themes save with an advisory badge; derived dark muted/bg measures 3.07-3.73:1 vs the 4.5:1 built-in floor (`CustomThemeCreator.tsx:243-254`) · all raw-value bans are warn-level = enforce nothing by construction · `MOTION` JS ↔ `--duration-*` CSS is a comment-only mirror (adoption 14 vs 196 raw) · brightness axis is a whole-document pixel filter that pushes light `muted-foreground@80` below AA while `check-themes.mjs` reads pre-filter declarations · `designTokens.ts:104` violates its own standard (`rounded-xl` vs `rounded-input`), shielded by path exemptions · severity-accent vocabulary duplicated 3×.
+
+### <a id="w3-client-state"></a> client-state
+sceneStore whole-family loads carry no latest-wins token though `latestWins.ts` exists · 6 of 7 persisted stores lack `version`+`migrate` (hand-rolled in merge/rehydrate) · 6 of 8 `globalThis` owners lack test-reset hatches · persist envelope hand-parsed pre-mount (`main.tsx:93/:151/:163`) · storage-key namespace fragmented: 89 module-local constants, 8 prefix conventions, no registry.
+
+### <a id="w3-i18n"></a> i18n
+Plural selection is caller-side `count === 1` at hundreds of sites (457 plural-suffix keys) — locales with 3-6 plural categories cannot be expressed, Russian-style rules wrong by construction · `tokenLabel` unknown-token path is dev-only; raw token renders silently in production (`tokenMaps.ts:40-50`) · `no-hardcoded-jsx-text` warn-level (226 standing) · no systematic domain-vs-catalog gate (the live ai-compose 6-vs-5 gap sits behind green parity boards) · `check-coverage.mjs` header still states the retired async-catch-up posture.
+
+### <a id="w3-data-viz"></a> data-viz
+`resolveMetricPercent` returns 0 for missing denominator/non-finite — "never measured" renders as "0%" (`metricIdentity.ts:48-58`) · kpiMath.ts ↔ kpi_derivation.rs and DimensionRadial ↔ score_design_result are comment-coupled mirrors with zero shared fixtures · sample-anchored sparkline scales at 32 call sites (`KpiTile.tsx:104`), with two same-named `sparklinePoints()` exports carrying opposite doctrine · hardcoded hex outside tokens (`ConfidenceArc.tsx:47-61`); `ChartEmptyState` has 0 render call sites · series stroke keyed on status makes legend swatches identical (`KPIDashboard.tsx:339`) · two exported `LazyChart` components with different jobs · no chart carries a text equivalent.
+
+### <a id="w3-wizard-flows"></a> wizard-flows
+Shared `WizardStepper` is two-state, non-interactive, and has zero live render paths (both call sites in the never-imported `CreateTemplateModal`) · `ScrapeEditorWizard.tsx:42,:88` rail/next unguarded — saved only by the modal's terminal re-check · training interview state fully ephemeral; unanswered generated questions die with the surface · corrupt persisted context removed silently (`usePersistedContext.ts:74-77`) · `n8n_transform_sessions` has no reaper; `sweep_stale_drafts` default-off · questionnaire/training keyed by array index while entities carry minted ids.
+
+### <a id="w3-toasts-notifications"></a> toasts-notifications
+No persistence tier — every toast auto-dismisses; action-required messages evaporate (`toastStore.ts:131`) · toast and notification ledger are disjoint populations with no shared identity — no toast has a durable twin · double live-region announcement (container aria-live + store announceImperative), error toasts announce raw copy then display friendly copy · hover-only timer pause — keyboard focus doesn't hold a toast (`useToastTimer.ts:68-76`) · OS tier is an unconditional focus-blind mirror with five delivery doors and 52/57 hardcoded-English strings (`notifications.rs:1543`) · second forked toast stack (`AlertToastContainer.tsx`: own vocabulary, fixed dwell, silent drop past 5, no live region) · no coalescing; ledger retention cap-only.
+
+---
+
+## Hierarchy-v2 forge wave 4 deviations (2026-08-18) — eight more subjects reconciled
+
+Same contract: standards kept, gaps registered, one anchor per subject, cited from
+frontmatter. Full detail in the wave-4 composer reports (session transcript).
+
+### <a id="w4-voice-io"></a> voice-io
+Dual "exclusive" audio channels overlap across the synthesis gap; stale clip wins, unstoppable (`athenaChatAudio.ts:62-119`; = legacy fix #114) · playback primitive hands callers the raw media element, 1 of 2 callers disciplined (`voicePlayback.ts:41-78`) · mic-denial error erased one layer up, 1 of 4 mic surfaces shows it (`useHoldToTalk.ts:64-73`; = #115) · no capture-side level meter anywhere (only playback is metered) · default STT engine is cloud-routed; disclosure lives in a docstring not beside the picker (`useSpeechInput.ts:8-18`) · tour narration cache keyed by step-id only + object URLs never revoked (`useTourNarration.ts:84,121-137`) · read-aloud renders null when unconfigured.
+
+### <a id="w4-subprocess-lifecycle"></a> subprocess-lifecycle
+Child env is inherit-then-strip, not allowlist — the denylist stays one variable behind (billing-leak history; `cli_process.rs` env_removals + `cli_args.rs`) · no spawn-time identity marker: orphan detection is name/cmdline heuristic, PIDs essentially never persisted (`build_sessions.cli_pid` 0 non-null) · `run_claude_cli` discards exit status (`let _ = child.wait()`, `cli_process.rs:479-491`); empty stdout and read failure collapse into one error · `spawn_cwd` inherits ambient working directory (`cli_process.rs:551-561`) · three cap layers count three different populations, no reconciliation.
+
+### <a id="w4-fleet-orchestration"></a> fleet-orchestration
+Slot cap is a default-off eviction hint — no Fleet spawn is ever refused or queued (`stale.rs:151` MAX_LIVE_SESSIONS=0; "spawn proceeds anyway" `:1388-1414`) · wake re-mints registry identity: resume spawns a new row + deletes the old, compensated by lineage adoption (`commands.rs:190-236`) · durable mirror is best-effort even for terminal transitions (`persist.rs:82-86`) · run membership is a 2-minute dispatch-time window; `begin_run`/`end_run` have zero frontend callers (`run.rs:29`) · harvest counts any non-terminal member "active" incl. stale stragglers (`run.rs:206-210`) · write-set/collision discipline lives in doctrine and prompts, never registered or checked at admission.
+
+### <a id="w4-prompt-assembly"></a> prompt-assembly
+Post-assembly appends: 44.5% of production prompt bytes are concatenated AFTER the assembler returns — outside budget, fence, and fingerprint (`runner/mod.rs:973,:1014,:1042`) · session cache hash digests `tool_count`, not tool identity — equal-count tool swap reuses a stale warm session (`session_pool.rs:133-148`) · unresolved `{{key}}` ships to the model as literal template syntax, warn-log only (`variables.rs:106-133`) · constitution op-grammar (89 hand-written OP lines) vs dispatcher ALLOWED_ACTIONS are two hand-maintained copies, no sync gate; cockpit widget kinds not validated at dispatch (`dispatcher.rs:1492-1523`) · no persisted record of any sent persona prompt (input_tokens 0 on all rows) while the companion side persists per-block sizes + hashes.
+
+### <a id="w4-prompt-safety"></a> prompt-safety
+Fence nonces are time^counter mixes, self-documented non-cryptographic, no re-mint-on-collision (`runtime_safety.rs:13-21`, `sleep_cycle.rs:1725-1736`) · canary has no trip protocol — nothing machine-screens output for the `[SECURITY]` marker or nonce leakage; output flows downstream regardless (`runtime_safety.rs:34-40`) · `strip_html_tags` decodes entities once AFTER stripping — not a fixpoint; once-encoded markup stored as live-looking text (`validation/mod.rs:11-27`) · no shared cross-language test-vector corpus for redaction parity; the 2026-08-15 in-file correction measured exactly this drift class.
+
+### <a id="w4-structured-output"></a> structured-output
+`parse_decision(&blob).unwrap_or_default()` spells parse failure as a default-valued LEGAL artifact — presents as team stall; 91% of headless turns cannot report a parse failure (`deliberation.rs:516,:1372`) · extraction-failed and turn-failed cross to the UI as one status string (`ai_artifact_flow.rs`) · dispatcher warnings logged, never counted/persisted — unknown-op rate untraceable; the grammar's three renderings (prompt menu / ALLOWED_ACTIONS / dispatch arms) hand-synced with no equality check.
+
+### <a id="w4-triage-queues"></a> triage-queues
+`pending_counts` roster enumerates 6 of 13 human-decision queues — 314/370 waiting items (84.9%) invisible to the badge, oldest 98 days (`db/src/repos/dev_tools.rs`; documented in legacy findings-triage-queue.md §0) · the 7-day auto-RESOLVE GC is already registered at #w2-hitl-approval (cited, not re-registered) · `useUnifiedInbox` sorts newest-first with no severity tier (acceptable for a capped quick-scan surface; noted).
+
+### <a id="w4-health-checks"></a> health-checks
+`HealthCheckStatus` (Ok/Warn/Error/Inactive/Info) has no could-not-determine member — keyring-unavailable maps to Warn (`system/health.rs:22-28`; the engine's three-state `HealthProbeState` is the honest form the system checker lacks) · live-run revocation evidence never writes the health record — `invalid_grant` logged, `mark_needs_reauth` skipped (`api_proxy.rs:924-934`) · `BinaryProbeCache` returns no timestamp — staleness TTL-bounded but never rendered · brief's `HealthCheckPanel.tsx` path does not exist (surface is `useHealthCheck.ts` + `useHealthDigestScheduler.ts`).
+
+---
+
+## Hierarchy-v2 forge wave 5 deviations (2026-08-18) — eight more subjects reconciled
+
+Same contract: standards kept, gaps registered, one anchor per subject, cited from
+frontmatter. Full detail in the wave-5 composer reports (session transcript).
+
+### <a id="w5-tracing"></a> tracing
+Write-once-at-finalize durability — 0% trace coverage for reaped/crashed runs (`core/src/trace.rs` + `runner/mod.rs`; legacy D4) · no closed span-status vocabulary — cancelled/interrupted/failed collapse into strings · `Some(0)` written for never-measured tokens (`parser.rs:340-341`) · LIFO tool-span close instead of close-by-handle (`runner/mod.rs:2484-2488`) · `spans` JSON read back with `unwrap_or_default()` — corrupt column renders as empty trace (`traces.rs:58`) · synthetic-trace estimate labels per-trace not per-datum · three parallel hand-rolled JSON highlighters.
+
+### <a id="w5-observability-telemetry"></a> observability-telemetry
+Pre-boot records dropped, not buffered (`DeferredFileWriter`, `logging.rs:160-178`) · second unbounded unredacted sink: `ExecutionLogger` = 99.1% of log bytes with live credentials, no level/filter/scrub/retention (`engine/src/logger.rs`) · native crash records unsanitized and non-atomic while the frontend path sanitizes all three fields (`logging.rs:245-299`) · crash-store cap enforced only at startup, not on insert · disk accounting sums files the retention line doesn't govern (`logging.rs:413-436`) · no runtime level control and the default directive targets a stale crate root, silencing ~301 debug! calls · webview capture merges into the file, bypassing filter/scrub/remote tap · no reveal-folder or export bundle.
+
+### <a id="w5-metrics-rollups"></a> metrics-rollups
+Ordinal period split over a sparse (no zero-fill) feed — every zero-execution day shifts the comparison boundary (`periodComparison.ts:30`, `computeTrends.ts:43` vs `metrics.rs:1181-1196`) · averages of averages in trends (per-day means of successRate and p50, `computeTrends.ts:117-118`) · two day definitions in one product, one undeclared (caller-local in sla/heatmap vs UTC in overview series) · heatmap streak walk anchors UTC over local-day buckets (`metrics.rs:2202`) · empty denominator spelled 0% beside a helper that documents the None doctrine (`sla.rs:802-806`) · no effective-window echo on `MetricsChartData` (days clamped silently).
+
+### <a id="w5-alerting"></a> alerting
+**A third evaluator fires off the viewed filter** — `useObservabilityData.ts:70` evaluates rules against the tab's 30/90-day + persona-filtered window and persists real FiredAlerts (violates private-window AND one-evaluator) · scope divergence: `rule.persona_id` honored by the Rust evaluator, never read by the client one — and all loops share one 1-hour cooldown keyed on rule_id, so a wrong-scope fire silences the authority's correct one · empty-window rates coerce to 0 — every `<`/`<=` rule fires forever on an idle install; the guard test covers only the `>` direction · partial-edit validation hole (threshold-only update skips always-true re-check, `alerts.rs:65-71`) · no lifecycle beyond `dismissed`; no flap control anywhere.
+
+### <a id="w5-perf-instrumentation"></a> perf-instrumentation
+Freeze-monitor durable sink is `File::create`-truncated at every launch — the crashed session's alert records die with the relaunch that follows the crash (`freeze_monitor.rs:70`) · two time bases in one startup record (backend PROCESS_START vs WebView `__BOOT_TIME__`); the window-creation gap is attributable to neither · the frontend freeze detector is dev-only — shipped builds have no frame-gap coverage · startup report retention is one launch; no persisted history/baseline.
+
+### <a id="w5-usage-analytics"></a> usage-analytics
+Barrel re-exports raw vendor helpers beside the sink — 18 hard-wired emit sites vs 4 sink consumers (`analytics/index.ts:162`) · `TAB_DIMENSIONS` hand-list leaves 6 of 20 tab dimensions unregistered (85.2% coverage on that axis) · rollup flushes on one fallback unload event, no checkpoint, no loss accounting · activation latch written before the send — an opted-out period permanently consumes first-time milestones (`activation.ts:121-134`) · emit path never validates tab values against declared dimension values.
+
+### <a id="w5-scoring-rubrics"></a> scoring-rubrics
+No rubric versioning anywhere — weight edits silently re-score history (`goldenStandard.ts:26`, `leaderboardScoring.ts:58`) · comment-only weight sums ("sums to 1" with no assertion; `compositeHealthScore.ts:104-120` has the assertion others should copy) · `improvePlan.ts:78` sorts by priority alone, ties fall to input order · coverage undisclosed after renormalization (no "scored on N of 5 dimensions") · band boundaries inlined at render sites (`qualityScore.ts:47-57`) · kpiMath↔kpi_derivation twin gate already at #w3-data-viz.
+
+### <a id="w5-audit-logging"></a> audit-logging
+Credential-ledger 90-day retention is a scheduled sweep, not insert-path enforcement (`background.rs:3023-3031`; `api_key_audit.rs` shows the correct form in the same binary) · `auditMiddleware.ts` is named "audit" but emits diagnostic log lines, not ledger rows — the audit/telemetry boundary blurred in code · sanitization is per-ledger, not uniform: only the credential door runs `sanitize_secrets`; `policy_events` free-text inserts unscrubbed.
+
+---
+
+## Hierarchy-v2 forge wave 6 deviations (2026-08-18) — engineering-process cluster reconciled
+
+Same contract: standards kept, gaps registered, one anchor per subject. Full detail in
+the wave-6 composer reports (session transcript).
+
+### <a id="w6-release-pipeline"></a> release-pipeline
+Tag pushed before artifacts exist (11 tags / 0 releases; = deferred fixes 62/63, cited) - ci-gate requires a workflow that is 0-for-324 all-time, so publish:true is unreachable by construction - five version literals, macros crate already diverged to 0.1.0, no drift gate - two changelogs, one abandoned (Unreleased covered 3 of 11 tags); empty changelog renders "Maintenance release." - no size ratchet; installer baseline never committed so CI deltas are always empty; budget runs on one target leg only - no previous-release-to-candidate update rehearsal.
+
+### <a id="w6-packaging"></a> packaging
+Android variant outside the drift gate - forks identifier and CSP, carries the unsafe-eval token the gate bans, invisible because no gate reads that file (check-tauri-configs.mjs:18) - no absence-side payload check (nothing asserts lite trees lack ML payloads) - no upgrade rung anywhere (fresh install + uninstall only) - uninstall acceptance asserts only binary removal - macOS/Linux cells are dispatch-only + continue-on-error - brief correction: verify-resource-scoping.mjs is connector-API listing, NOT packaging (false lead excluded).
+
+### <a id="w6-build-economics"></a> build-economics
+Only the desktop feature set builds on every change; 5 feature variants compiled by nothing routine - the crate split has no completion criterion or regression baseline (point-in-time record, not a series) - check-build-cache.mjs runs on a path that cannot produce the error it detects - cleaning ladder documented three times, three ways - 317 MB of debug symbols in a vendored cache on every dev machine, unbudgeted.
+
+### <a id="w6-codegen"></a> codegen
+Budgets are runner policy not registry data (one global timeout) - registry declares no outputs, so the task-to-artifact join is impossible - no zero-output detection (a generator writing nothing passes; one task exits 0 unconditionally by design) - unregistered generators exist and are stale (gen-tour-anchors.mjs et al.) - committed bypass: the android conf beforeBuildCommand runs 0 of the 14 tasks - no atomic writes in any generator; split-locales.mjs deletes 793 files before rewriting.
+
+### <a id="w6-quality-gates"></a> quality-gates
+lefthook.yml:10-11 comment claims a --fix the job (correctly) does not carry - stale doc, not wrong behavior - secret scan has no binding backstop: exits 0 with a hint when the scanner is absent AND no CI workflow runs one, so the D9 control is opt-in per machine - CLAUDE.md's own --quiet mechanism claim is REFUTED by fault injection: --quiet disarms only display; the 99999 threshold is the entire exit-code neutralizer (correction owed to the primitive text; the forged severity technique carries the measured truth).
+
+### <a id="w6-test-harness"></a> test-harness
+e2e-smoke red 38/38 since inception (one missing word) - a lane that never passed and nobody noticed - default lane denominator shrink: 11/402 files never start while the report says 3,737/3,738 passed - 28 of 32 Playwright specs unreachable from any named script - run-rust-tests.mjs header records the unresolved CI-matrix contradiction (bare cargo test on the platform the quirk kills).
+
+### <a id="w6-concurrent-vcs"></a> concurrent-vcs
+The intent ledger decayed past its own algorithm: 118 stale Active entries, duplicate section headings breaking the documented append anchor, current campaigns unregistered - nine skill specs still prescribe the defeated pathspec forms; GIT_INDEX_FILE appears in zero SKILL.md - zero skills instruct the post-commit log readback - three orphaned worktree directories invisible to registry-driven GC by default (--include-orphans is opt-in).
+
+### <a id="w6-codebase-scanning"></a> codebase-scanning
+parse_finding silently drops malformed protocol lines - nothing counts parse failures (standards_scan.rs:71-78) - the runner never reconciles received findings against the shipped ruleset (a rule the model skipped is silently absent) - the incremental digest ledger keys on content only, so a ruleset revision does not invalidate prior results - corpus-map has ZERO files for this subject; the census/idea-scanner legacy docs may be mapped elsewhere - check during N+2 backfill.
+
+---
+
+## Hierarchy-v2 forge wave 7 deviations (2026-08-18) — UI/interaction cluster reconciled
+
+Same contract: standards kept, gaps registered, one anchor per subject. Full detail in
+the wave-7 composer reports (session transcript).
+
+### <a id="w7-canvas-graph"></a> canvas-graph
+Brief correction: teams/sub_canvas reducer board (29 files incl. useCanvasReducer.ts) was deleted as orphaned in 78e9bff68 - evidence substituted with Mastermind + pattern-graph canvases - layout store never reconciles orphan entries (dead positions persist forever; 2 of 8 measured) - GroupLayer group-body drag has no travel threshold (any press-move mutates, GroupLayer.tsx:73-104) - edges render unculled and pair-keyed (CanvasShell.tsx:880-882) - no alignment guides exist anywhere, only grid snap.
+
+### <a id="w7-chat-transcript"></a> chat-transcript
+Streaming turn is a separate element swapped at settlement rather than one turn in two phases - resolved approval cards are REMOVED from the transcript instead of settling in place as the decision record (companionStore.ts:870-871) - row kinds partly sentinel-typed by string prefix (PROGRESS:, [proactive:) instead of a typed registry - jump-to-latest pill carries no unseen count - no per-thread reading-position restoration.
+
+### <a id="w7-drag-drop"></a> drag-drop
+DragHandle has role=button with no tabIndex (false affordance) - 0 of 26 drag surfaces keyboard-operable; the only live region never announces a move - ReferenceBoard onReorder(toIndex) discards dragged identity, so every reorder drag is a no-op (ReferenceBoard.tsx:186,257-262) - dev_tools.rs sequence rewrite is N unatomic commits and the stack is UI-unreachable - KanbanBoard void onItemMove discards the promise (request-shaped drop, no pending/rejection) - AssetCard handoff payload embeds a stale-able entity snapshot instead of a reference - brief correction: SortableColumnHeader is sort-toggling, not drag reorder; no live column drag-reorder exists.
+
+### <a id="w7-schema-driven-ui"></a> schema-driven-ui
+Cockpit widget kinds not validated at dispatch + registry/constitution as two hand-maintained vocabularies (cited at #w4-prompt-assembly) - CockpitWidgetProps.config is Record<string,unknown>, no per-kind validators, widgets self-defend - SurfaceSpec drop ledger is a bare integer: no per-drop reason/kind, so the emitter-improvement loop has no instrument (surfaceSpec.ts:204-211).
+
+### <a id="w7-draft-editing"></a> draft-editing
+useUnsavedGuard has 2 consumers of ~13 editing surfaces (>=11 unguarded) - BaseModal cannot refuse close, so drafts in modals are structurally unprotectable - beforeunload prompts but never saves; the one drain implementation has zero importers - 38 of 55 reseed effects keyed on the entity object clobber in-flight edits - draftChanged uses !== per key (flat drafts only, undocumented precondition) - persona switch asks before flushing where flush-first would settle it.
+
+### <a id="w7-undo-history"></a> undo-history
+No boundary-event closure: pointer-up never closes the open step; the 400ms window is the sole closer, and the target-only tag merges distinct gestures on the same clip (useMediaStudio.ts:79-100) - commit_snapshot swallows all failures: a project whose checkpoints stopped committing is indistinguishable from a protected one (versions.rs:23-34) - restore trusts the every-turn-committed invariant instead of capturing pre-restore state (versions.rs:67-84) - boot-rotating 3-set backup discards every pre-incident snapshot in ~2h11m (backup.rs; also cited under migrations) - brief correction: studioHistory.ts is session-display restoration, not the checkpoint exemplar (versions.rs + StudioVersions.tsx is).
+
+### <a id="w7-media-playback"></a> media-playback
+video src rebinds across clip boundaries with no identity key; prior transport state survives under new bytes, papered over by threshold seek-correction (CompositionPreview.tsx:366,:120-151) - the one clock consumer re-renders per tick in the component rendering the video element - the adapter seam lives inside a 734-line surface component with engine-identity branching and no extracted transport contract (RadioFooter.tsx:146-148) - switching away pauses rather than reaps the foreign frame (undeclared warm-instance policy).
+
+### <a id="w7-file-browsing"></a> file-browsing
+Range-select follows raw listing order, not visual order (useDrive.ts:517-533) - select-all ignores active filters; invisible selection feeds remove() (useDrive.ts:537-539) - refresh never prunes selection of externally deleted paths - bulk mutations have no aggregate report (no "moved 12 of 15, 3 failed") - vault walker skips unreadable dirs silently with no count - location/expansion not persisted across sessions - thumbnail decode failure not negatively cached.
+
+---
+
+## Hierarchy-v2 forge wave 8 deviations (2026-08-18) — LLM/backend platform cluster reconciled
+
+Same contract: standards kept, gaps registered, one anchor per subject. Full detail in
+the wave-8 composer reports (session transcript).
+
+### <a id="w8-retrieval"></a> retrieval
+Kind-scoped vector scan bypasses the embedding-model guard - after a model swap the doctrine lane serves foreign-model neighbours the main lane excludes (embeddings.rs:410-434 vs :386) - three forks of the FTS5 sanitization door (core/retrieval vs vector_kb.rs:872 vs execution search), acknowledged in-code as pending consolidation - NO retrieval evaluation exists anywhere: no labeled query set, no ranking metric; the 1.30 distance floor is calibrated by "watch the debug log" - TF-IDF sidecar lane is a hand-synced reimplementation ("keep in sync with graph.rs") - degraded mode unlabeled at the consumer; model_guard_excluded_total counter is dead code.
+
+### <a id="w8-eval-harness"></a> eval-harness
+test_runner.rs file-top comment claims the scenario cache key includes system_prompt; the implementation deliberately excludes it - a stale header stating the opposite of a load-bearing invariant (:14-16 vs :57-74) - judge-packet.mjs reads runs from one path while its instructions point the judge at another - a grid cell whose samples are all unscored renders composite 0: not-measured spelled as worst-score (evalAggregation.ts:143-151).
+
+### <a id="w8-model-routing"></a> model-routing
+Audit ledger never written: provider_audit_log.model_used NULL on 4,001/4,001 live rows; the BYOM audit UI renders '-' for every row - tier pair split at 7 call sites: .model read without .effort (call_claude_text has no effort parameter), dropped effort lands on the CLI default HIGH, above calibration - top-of-scale defaults against the repo's own benchmark (BUILD_TURN_EFFORT=xhigh where the effort guide ranked xhigh 4th of 8 at +33% spend) - policy governance is dirty-state review, no versioned diffs or approval records - model_routing_rules holds 0 rules ever; 5 of 6 resolution layers never populated.
+
+### <a id="w8-cost-metering"></a> cost-metering
+Two price tables with OPPOSITE unknown-model policies (cost.rs silently mid-tier and uncounted; config.rs zero) - get_monthly_spend(...).unwrap_or(0.0): DB error reads as $0 spent, undeclared fail-open on the unattended path (background.rs:2510) - only schedule-type triggers are budget-gated; event/webhook firings bypass (background.rs:2490) - max_budget_usd carries two units (monthly ceiling vs per-call cap) - cancelled/killed runs book Some(0.0) cost: definite-free instead of unknown - ledger drops warn-logged but never counted.
+
+### <a id="w8-pipeline-dag"></a> pipeline-dag
+Condition evaluator fails OPEN: malformed condition JSON or unknown operator silently FIRES the branch (pipeline_executor.rs:153-207), warn-log only, no persisted branch record - validation is run-start only: the editor saves cyclic graphs; no reachability or dangling-edge check (unknown members silently continue'd) - no restart resume: recovery fails running/awaiting_approval runs wholesale incl. runs parked on human gates (lib.rs:838-849; mechanism = #w2-hitl-approval) - "skipped" overloaded (blocked-by-failure vs branch-not-taken) - eight statuses as inline string literals, no enum authority - #w2-retry-backoff residual: 429 fixed 2026-08-16 but Retry-After remains unread.
+
+### <a id="w8-self-healing"></a> self-healing
+Effectiveness report has no unknown lane: attempted = confirmed + reverted; TTL-expired pendings vanish from the denominator (healing.rs:891,:903) - effectiveness cells keyed on a free detail string, not the closed category vocabulary, and carry no strategy dimension - incident promotion env-gated OFF by default (PERSONAS_INCIDENTS_PROMOTION) so the healer-gets-louder lane can be entirely dark; dedup is per-source-row not per failure signature - auto-rollback's no-qualifying-target path drops the detection silently (auto_rollback.rs:335-350, its own comment admits it).
+
+### <a id="w8-admission-queue"></a> admission-queue
+wait_ms computed and logged once but exported nowhere - no event field, no DB column; legacy replay measured p99 58-minute waits invisible to every consumer (queue.rs:367-368) - QueueFull typed Validation/retryable=false while its prose says "Try again later" (deferred fix #90 cited) - AdmitResult has exactly one call site; >=7 sibling admission lanes speak private verdict vocabularies - no aging: Low can starve under sustained Urgent, undetectably - TierConfig.max_queue_depth declared and rendered but set_max_queue_depth has zero callers (runtime bound always 10) - task_executor writes the durable running marker BEFORE asking the door; refusal strands rows (129-day-old examples live).
+
+### <a id="w8-sync-replication"></a> sync-replication
+Tombstone table has no producer: a full delete cascade reads persona_tombstones which zero code writes - no delete has ever propagated (cloud/sync/mod.rs:372-395) - tombstone cursor advances from a clock read with discarded Result, the exact race the same file fixes on the table path (:374/:393 vs :272-281) - cloud lane resolves conflicts by arrival order (merge-duplicates, no base, no read-back) - six streams watermark on creation time behind a 24h window: later mutations permanently invisible - status surface lacks lag-with-predicate (no tail comparison, no last-success-vs-last-attempt split).
+
+---
+
+## Hierarchy-v2 forge wave 9 deviations (2026-08-18) — platform/data tail reconciled
+
+Same contract: standards kept, gaps registered, one anchor per subject. Full detail in
+the wave-9 composer reports (session transcript).
+
+### <a id="w9-webhook-ingestion"></a> webhook-ingestion
+No replay-attack timestamp window on the direct receiver (the defence exists 900 lines away in oauth.rs and was not copied) - no dedup at the direct mint point: every accepted POST mints a fresh event - relay authenticity opt-in and FAIL-OPEN by default (unset secret = unauthenticated accept, smee_relay.rs:34-53) - relay gate hashes re-serialized JSON, not the sender's raw bytes - replay/curl-export re-deliver the body redaction placeholder while reporting success - headers logged verbatim incl. signature/sender tokens - relay dedup per-process in-memory (restart replays channel history) - three ingress mouths, three separate check stacks, no one admission door.
+
+### <a id="w9-rate-limiting"></a> rate-limiting
+Webhook 429 carries retry-after in body prose with no_headers() while the same file sets Retry-After on its 422 - the shared limiter's policy is a call-site parameter so the dashboard guesses limits from key prefixes (wrong for 3 families) - RateLimitDashboard renders three structurally-zero counters (the store's only writer has zero call sites); the user-authorable trigger rate-limit policy is read by NOTHING - egress default 60rpm exceeds documented provider limits; rate_limit_rpm declared by zero seeds - over-limit relay events dropped via .is_err() continue - warn latch has no suppressed-count.
+
+### <a id="w9-concurrency-guards"></a> concurrency-guards
+InflightGuard has no production inspection surface (len() is test-only) and no age-based reclamation - a hung holder wedges a key invisibly - daemon lock stale takeover is remove-then-create_new, not atomic replace-if-unchanged (one-leadership-bounce window, lock.rs:185-215) - oauth LOCK_MAP entries never pruned - brief correction: oauth_refresh_lock is IN-process (per-credential mutex), not cross-process.
+
+### <a id="w9-delivery-guarantees"></a> delivery-guarantees
+Claims are anonymous - no holder/timestamp/lease on claim_pending, forcing the heuristic two-snapshot reaper (= #w2-background-jobs, cited) - failure-lane escalation writes one generic prose string, defeating clustering (background.rs:1706) - the incident lane binds to a failure class that never occurs while the voluminous class routes to a verb-less parallel inbox (audit_incidents_promoter.rs).
+
+### <a id="w9-embedded-db"></a> embedded-db
+Maintenance defers forever - no staleness bound forces a pass; deferral logged at debug; blocking checkpoint with no chunk-yield - slow-query threshold is a server-calibrated uniform 100ms for a local store; pool-wait times logged but never enter the ring - journal contract set every boot, never read back (nothing checks any pragma took) - prune accounting not per-table; count-then-delete in separate statements; no referential closure, no prune ledger - extension-before-pool ordering is conventional, not structural - brief correction: pool construction + acquire_logged live in db/src/lib.rs, not core/src/pool.rs.
+
+### <a id="w9-entity-lifecycle"></a> entity-lifecycle
+Blast-radius probes use unwrap_or(0) - a FAILED probe renders as "safe to delete", and the in-file comment records this exact incident already happening (personas.rs:1933-1997) - probes narrower than their deletes (preview counts active/running rows, the cascade takes every row) - preview unguarded while the act is privileged (parity broken) - bulk-delete confirm shows the client page-size count (100) against a server predicate deleting 6,535 (= deferred-fixes 2c, cited) - risk ladder inverted: only persona delete has typed confirmation.
+
+### <a id="w9-versioning-snapshots"></a> versioning-snapshots
+unwrap_or(1) turns a failed max-version query into version 1 (failure spelled as success) + read-max-then-insert with NO UNIQUE(persona_id, version_number) - 12 such unconstrained tables per census - persona_versions is canonical-by-declaration and DEAD (0 callers, 0 rows ever) while the "replaced" table keeps gaining columns - the conditional capture door diffs only structured_prompt: system-prompt-only edits bypass capture (16/25 historical rows NULL) - demotion re-tags production to experimental, erasing the promoted-ever fact; archived exists and is never used.
+
+### <a id="w9-settings"></a> settings
+Secrets in the settings store: three API keys/tokens plaintext in app_settings while a credential vault exists (settings_keys.rs:28,34,70) - fail-open dollar ceilings (= #w2-hitl-approval, cited; contrast CHAIN_MAX_LINKS which does it right) - the two-list registry is hand-maintained with no set-equality test; the AUTONOMOUS_DELIBERATION scar (constant present, allowlist entry missing, toggle could never enable) proves the drift mode - repo-layer audit passes actor=None (all-writers coverage traded against attribution).
+
+---
+
+## Hierarchy-v2 forge wave 10 deviations (2026-08-18) — UI/agent tail reconciled
+
+Same contract: standards kept, gaps registered, one anchor per subject. Full detail in
+the wave-10 composer reports (session transcript).
+
+### <a id="w10-accessibility"></a> accessibility
+useRovingTabIndex has ZERO adopters (a standard without adoption; index-keyed signature pushes the identity rule onto consumers) - the announcer queue has no coalescing/bound/assertive-preemption and no unit test despite being pure logic - ~40 files carry scattered aria-live regions outside the one provider - deferred fix #33 (21/21 tab strips dangling aria-controls) touches name-wiring - four registered anchors cited from frontmatter (#w7-drag-drop, #w3-data-viz, #w3-toasts-notifications, #w3-design-tokens).
+
+### <a id="w10-motion"></a> motion
+MotionizedGlyph deliberately replays its entrance on every viewport re-entry while the data-row primitives implement one-shot correctly - two consumer families, opposite replay policies, only one written down (MotionizedGlyph.tsx:10-12) - motionPresets inlines durations/easings rather than referencing the token ladder (local face of #w3-design-tokens MOTION mirror) - reduced-motion global-reset trap cited at #w1-async-ui-states.
+
+### <a id="w10-guided-tours"></a> guided-tours
+Two anchor extractors disagree: six anchors pass the drift test but are absent from the manifest, so composed tours are forbidden the anchors hand-written tours use; nothing reports the disagreement - route choreography races fixed 100-400ms timers instead of observing arrival (GuidedTour.tsx:102-208) - no active-tour pointer persisted; hydration hardcodes the default tour (tourSlice.ts:1318) - a tour whose definition did not survive restart is marked 100% complete via [].every() (vacuous completion, tourSlice.ts:1493) - raw z-[9998]/z-[9999] literals unregistered with any layering authority - escape minimizes rather than exits.
+
+### <a id="w10-client-fetch-cache"></a> client-fetch-cache
+staleWhileRevalidate has no stale ceiling (any-aged entry serves) and background-refresh failure is invisible to callers - deduplicateKeyedFetch keys via naive JSON.stringify (non-canonical for objects) - the certification deferred-load guard is an ageless already-loaded latch, not a freshness window - reviewParseCache memoizes against ambient inputs outside the key (hidden-axis staleness) - hand-rolled warm slots have no invalidation door or test-reset hatch while the extracted primitive has both.
+
+### <a id="w10-terminal-multiplexing"></a> terminal-multiplexing
+Terminal stays interactive over a doze-killed process: dozing/childPid in the DTO, read by none of four host surfaces - keystroke/paste/resize failures land in silentCatch while sibling surfaces toast the same call - paste can self-submit twice (trailing-newline intent inference + two paste routes bypass bracketed paste) - write_text_line returns Ok before submit confirmation; the confirm/retry outcome dies in a detached task (registry.rs:750-851) - per-frame resize with no same-size skip rebuilds the backend screen model each change - MCP temp-dir reaper measured not to run (6 created / 0 removed).
+
+### <a id="w10-sidecar-provisioning"></a> sidecar-provisioning
+Path overrides silently fall through when unusable — a test enshrines the fallthrough (bun.rs:21-26,:111-123; same shape in kokoro.rs) - no digest rung anywhere: verification stops at advertised-length equality, which self-disables on chunked responses - the in-flight download guard REJECTS the second caller instead of joining it - four bespoke resolution implementations, no shared resolver; one has no override rung at all - no cancellation for any model download; no unified storage accounting across model stores.
+
+### <a id="w10-agent-chaining"></a> agent-chaining
+Wiring is append-only: no orphan cleanup when a drawn edge is deleted, no edge-id tagging on derived rows (team_handoff.rs) - the wiring pass is non-transactional per edge (a failed listener create leaves an emitter announcing into the void) - handoff payload forwarding is unbounded (no size cap, no truncation record, chain.rs:567-588) - unevaluable predicates fail closed but ledger as predicate_unmet (the distinction lives only in warn logs) - ledger writes best-effort + the happy-path leaf writes no completed record, so stopped-vs-stuck ambiguity survives at exactly those seams - brief correction: run conditions live in db/src/chain.rs, not engine/subscription.rs.
+
+### <a id="w10-proactive-nudges"></a> proactive-nudges
+Budget day boundary is UTC while quiet windows are local wall-clock — the two policy clocks disagree by the user's offset - quiet/budget bypass is per-code-path, uncounted, not a closed class - evaluator failure is empty success (collect_all swallows per-evaluator errors with unwrap_or_default, no health record) - a budget unit is not released on failed delivery claim (spent unit lost until rollover) - efficacy modulation never reads the ignored outcome — a purely-ignored kind is never throttled - no per-kind kill switch reachable from the nudge; no default night window shipped.
+
+---
+
+## Hierarchy-v2 forge wave 11 deviations (2026-08-18) — integration + security + operator additions
+
+Same contract: standards kept, gaps registered, one anchor per subject. Full detail in
+the wave-11 composer reports (session transcript).
+
+### <a id="w11-connector-catalog"></a> connector-catalog
+Cites the registered seeder-clobber (127: boot refresh reverts operator edits, updated_at lies - 134 rows / 1 distinct updated_at) and 126 (probes green for any value, Save gated on that green). New: two intra-row consistency classes no schema expresses - (declared fields, probe template) and (declared capability, registered adapter) - both need seed-time cross-checks; the correct revision-gated refresh existed in ONE seeder of seven and never propagated.
+
+### <a id="w11-import-normalization"></a> import-normalization
+Capability tables duplicated across runtimes (platformDefinitions.ts hand-mirrors platform_rules.rs while the SAME pipeline's size caps got proper codegen) - fabricating fallback: unmapped foreign types silently mint vocabulary instead of grading unsupported (resolveNodeType) - the import receipt enumerates nothing (entity_results = empty on all 155 rows) - one adapter lives outside the table system; detection fingerprints are code not data - no export-schema version detection. Re-homing: external-source-ingestion.md fits webhook-ingestion better.
+
+### <a id="w11-templates-scaffolding"></a> templates-scaffolding
+RE-MEASURED LIVE: 10 select questions across 8 canonical templates carry a default outside their own options - the de-branding pass rewrote defaults but not option lists, answers bind by label string (fix shape: 5-line membership check in validateTemplate.ts; data fix first). Two readiness evaluators (browse badge vs commit gate) judge different declarations; readinessTier hardcodes English + raw colors. Brief correction: checksum_mismatch at the catalog door is a typed skip, not log-and-accept - the door is the honest gate; the deleted per-adoption check was the decoration.
+
+### <a id="w11-web-scraping"></a> web-scraping
+Extraction collapse laundered as success: config_run stamps ok unconditionally; a page redesign produces empty-field records counted as changed-under-ok (engine/src/scraper.rs:578-587) - the DSL has no failure semantics (no required/optional on rules) - silent key fallback re-keys a record to its URL, splitting identity - no stale/tombstone tier - LLM authoring permits the imagination path with no URL, auto-decides replace/merge, never auto-verifies against the authoring page - schedules default enabled:true; single free-text last_status; no request spacing.
+
+### <a id="w11-markdown-vault"></a> markdown-vault
+Orphan-predicate divergence: graph.rs counts orphans with no entry-point exemption while lint.rs exempts them - two surfaces disagree on any vault with index notes - mirror ledger-vs-disk gap: the skip-gate reads sync_state, never disk, so a vault-side deletion of a mirrored note is skipped forever; no reconcile pass.
+
+### <a id="w11-multi-project"></a> multi-project
+Unwatched renders as quiet: every tracking watcher failure returns Ok(empty) with a warn - an unreadable repo is indistinguishable from an idle one (watchers/git.rs:51-70) - dual project-identity registries bridged BY CANONICALIZED PATH at the push boundary (the exact join-class defect the repo's own shipDerive doctrine kills one floor down) - admission has no dedupe: one repo admitted twice mints amnesiac twins - anchor policy (fixed vs cohort-relative) not rendered with traveling scores.
+
+### <a id="w11-device-pairing"></a> device-pairing
+Scope strings unvalidated at mint (approve_pairing passes modal strings straight to create) - friction inversion on the P2P ceremony (confirm is an unarmed primary; unpair is two-step; = deferred-fixes 36, cited) - last revocation does not stop the LAN listener (:17500 keeps serving off an empty registry) - claim surface lacks fixed delay and OriginMismatch is a distinguishable code (confirms an approved-unclaimed nonce to a prober, pairing.rs:314-329).
+
+### <a id="w11-signed-artifacts"></a> signed-artifacts
+engine/bundle.rs verifies over a RE-SERIALIZED manifest (to_string_pretty of the parsed struct at :327/:405/:540) while its sibling enclave.rs fixed exactly this by preserving raw bytes - works today, breaks cross-version on the first schema addition - cites deferred-fixes entries 76/77/78 (filed by the legacy document-signing pass; anchor minting owed) - DriveVerifyDialog collapses three verdicts to two (counter-evidence).
+
+### <a id="w11-supply-chain"></a> supply-chain
+gitleaks allowlist exempts 40% of tracked files by directory glob; one dead entry; fixture regex blind to cfg(test) (matches 8 of 963 rs files vs 443 carrying tests) - extract_selected has no decompression budgets, no symlink policy, extracts direct-to-destination - restated measured: policy engine 0 verdicts in 350 runs (frozen via --locked), deep audit lane dead 23/23, update automation never enabled, 56 workflow refs unpinned, one git+https source standing against unknown-git=deny (cites #w6-quality-gates for the scanner-absent gap).
+
+### <a id="w11-p2p-networking"></a> p2p-networking
+NO reconnection policy exists: header promises auto-reconnect; max_retries is dead code, retry_count never increments, auto_connect read by nothing - a dropped peer stays dropped until a human clicks - no discoverability consent gate: the network service auto-starts unconditionally ~3s after boot in every p2p build; no enable/stop command exists - exposure is global not per-peer (one manifest served to ANY connected peer; the code comment admits it) - no reachable state; prune deletes rather than downgrades - version handling is exact-equality rejection.
+
+### <a id="w11-status-vocabulary"></a> status-vocabulary
+155 string-typed status fields vs 66 CHECK vocabularies / 88 wire unions; 0 of 26 catalog categories fully covered; validate_one_of is 1 file wide - 80 local color maps vs the palette authority in 10 files; a 3-palette fork in one feature - prefer-numeric gate recall ~3.5% - four locale policies across three timestamp modules; 13 hand-rolled timers beside the shared ticker; 28 elapsed ladders + 611 catalog strings of one four-rung vocabulary (cites #w3-i18n, #w3-design-tokens, #w2-realtime-events, #w5-alerting).
+
+### <a id="w11-job-coordination"></a> job-coordination
+BuildPhase::validate_transition checks the escape hatch BEFORE the terminal guard - Completed-to-Failed and Promoted-to-Cancelled validate; verdicts are not final (build_session.rs:69-73) - guards keyed off live states turned one stranded row into a documented system-wide deadlock (teams.rs:714-723) - terminal set scattered as SQL literals forced reusing cancelled instead of minting expired (the one-authority bill arriving) - cites #w8-pipeline-dag and #w2-background-jobs.
+
+---
+
+## Hierarchy-v2 forge wave 12 deviations (2026-08-18) — the nine former candidates + feed + ui-controls; the inventory is complete
+
+Same contract: standards kept, gaps registered, one anchor per subject. Full detail in
+the wave-12 composer reports (session transcript). With this wave every subject in the
+ratified inventory (85 + additions = 105 folders on disk) has been forged.
+
+### <a id="w12-feed"></a> feed
+Read-position watermark is a bare timestamp on a 45%-tied second-resolution key: countUnread uses at <= lastSeenAt so a row arriving in the same second as the mark is counted read, while the composite {at,id} cursor sits 140 lines below (channelSlice.ts:60,102,318 vs :238-244) - mergedFeed drops the tiebreaker its sibling documents (§88, cited) - jump affordance is a boolean with no unseen count (#w7-chat-transcript) - re-homing applied: chronological-feed.md -> feed.
+
+### <a id="w12-ui-controls"></a> ui-controls
+CopyButton sets a native title= fallback — the exact signature inside the primitive meant to retire it (566 files / 1,099 native-title matches vs 131 Tooltip adopters) - Tooltip escape-dismiss only on the triggerFocusable branch - CopyButton copied-state has no live-region announcement - PanelTabBar aria-controls optional -> 21/21 dangling (deferred fix 33) - re-homing applied: button.md, copy-to-clipboard.md, tooltip.md, tab-strip.md -> ui-controls.
+
+### <a id="w12-docs-sync"></a> docs-sync
+The never-fired hook is fix 105 (cited); the composer's autopsy adds: 45.7% precision on prefix-shaped satisfaction; the hook's own 30-assertion test suite has fixtures with no tool_result events (fixture-as-theory-of-input); the guide-sync marker note claimed the hook "now prevents drift" dated the day the dead hook landed (hope recorded as fact in the artifact the next repair reads); 33% of source areas unmapped; 6 unregistered tour steps.
+
+### <a id="w12-session-resume"></a> session-resume
+Heartbeat not presence-gated: beat fires every 60s regardless of document.hidden, so an overnight-minimized window advances the anchor all night -> empty morning briefing (sinceLeftBriefing.ts:133-135) - one anchor, two readers, coupled by tree order (useMorningBriefing.ts:52-55 admits it in a comment) - sample-bounded count rendered as total (RUNS_SAMPLE_LIMIT=500, no "500+"; worst window measured 1,158) - no liveness mark for the briefing pipeline (nothing-shown = never-ran).
+
+### <a id="w12-diff-comparison"></a> diff-comparison
+"No structural difference" computed over a 5-of-7-field projection (DiffViewer.tsx:14-16,54) - unsorted-serialization equality at 6 sites (census rule stringify-decided-equality) - baseline picked by byte LENGTH (competitions.rs:562) - id-set difference labeled a run diff (byte-identical runs -> all added + all removed, memoryDiff.ts:50-55) - drift finding id minted per observation so dismissal never sticks and slice(-50) evicts open findings (designDrift.ts:64-66) - worker caches never evict; unbounded DP diff measured 610ms / 8,000 elements at 4k lines.
+
+### <a id="w12-time-travel-replay"></a> time-travel-replay
+The log track's timing is FABRICATED while the truth is on disk: buildTimelineLines spreads log lines evenly across duration_ms though every line carries an rfc3339 stamp the reader returns verbatim (useReplayTimeline.ts:75-85 vs logger.rs:60-62) — tempo, the thing replay exists to show, is interpolated from index - useTimelineReplay (the better seek) is orphaned, zero importers - no dead-air compression - a replay-only renderer diverged from live (own highlighter, own scroll; TerminalBody carries its own classifyLine copy) - log-load failure spelled as empty success (silentCatch -> "scrub forward").
+
+### <a id="w12-sql-console"></a> sql-console
+Client CTE verb regex omits DROP/ALTER vs the authority; classify_db_query IPC has zero callers (§25, cited) - consent banner slices the statement at 200 chars: consent to a prefix - primary Console tab omits cancelQuery; NL lane never registers a cancel token - history in-memory, index-keyed, cap 10 - NULL exports as the string 'NULL' - PRAGMA classified as read (session state reaches a pooled connection) - local-lane execute writes no audit row - counter-evidence: a model-authored execute_mutation with starts_with over 7 verbs bypasses the classifier (connector_use.rs:1443-1469).
+
+### <a id="w12-cicd-monitoring"></a> cicd-monitoring
+THE PIPELINE MONITOR HAS NO BACKEND: gitlab_list_pipelines/get_pipeline/list_pipeline_jobs/get_job_log/trigger_pipeline are UnregisteredCommand and appear in ZERO Rust files across the entire git history; the bindings were hand-planted with the frontend. As shipped: fetch failure renders the error banner AND "No pipelines yet — trigger a pipeline" together, inviting a click on a Trigger whose command does not exist - two liveness vocabularies three lines apart (created/preparing never polled) - only the selected pipeline is polled while the notifier observes the list - log null = loading forever; single log slot races on double-expand - consent inverted (rollback armed; deploy-to-production and trigger unconfirmed) - is_current is a self-declared heuristic. Brief-lesson: include commandNames.overrides.ts in ground-truth sweeps for any IPC-fronted subject.
+
+### <a id="w12-embedded-preview"></a> embedded-preview
+Origin discipline absent both ways: host dispatches on message shape only, never e.origin; both host and agent sends target '*' (StudioPage.tsx:126,155-158; preview_agent.rs:63,82) - reqId is the PROJECT id not a request id and is never read on reply; no pending table, no timeout (silence and not-found converge on null) - boot poll has no deadline (a never-healthy server leaves the tab in starting forever) and server stdio is null so nothing could attach - instrumentation degradation is silent (coarse mode indistinguishable from precise-with-missing-element) - no route rescan on turn completion.
+
+### <a id="w12-dead-code"></a> dead-code
+FRESH MEASUREMENTS: 758 orphan modules (404 test + 354 non-test; a 21-file island reachable only from an unreachable file) - 118 unused i18n keys incl. whole planner (67/67) and deliberation (51/51) sections - check-unused-bindings finds 1 while inventory finds 29 with no overlap, and is 1,034 sequential grep passes per CI run - knip's bindings ignore delegates to a gate that does not exist - purge-dead-keys --apply names but never runs its second step - census excludes have reasons but no reaper/expiry (one rot axis enforced, the other open) - brief correction: orphan-modules.mjs lives in scripts/analysis/, not scripts/build/.
+
+### <a id="w12-outbound-notifications"></a> outbound-notifications
+Two outbound stacks for the same five channel classes with three vocabularies (notifications.rs:435-593 vs webhook_notifier.rs:285-299) - the delivery ledger crosses IPC and is never rendered: an owner cannot see a dead channel without pressing Test - breaker copy-pasted 3x, each comment saying "same shape as" another - metrics per channel TYPE not per sink - unknown channel type -> Ok(()) = logged success that sent nothing (notifications.rs:493-496,559-562) - delete reaps no in-memory breaker state.

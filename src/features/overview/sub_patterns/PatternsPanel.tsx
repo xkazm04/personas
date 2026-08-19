@@ -1,13 +1,16 @@
-// Patterns — the Overview host for the workspace practice library.
+// Patterns — the Overview host for the knowledge surfaces. Three lanes
+// (persisted per device, `Subjects` default):
 //
-// The library used to live inside the Workspaces Atlas, which handed it
-// `{ workspace, rows, projectById, onChanged }` out of its own `center`
-// provider. Overview has no such provider, so this container is the library's
-// new data source: it picks the workspace (the store's persisted active one,
-// falling back to the first), fetches that workspace's knowledge rows and the
-// portfolio's project map, and hands `KnowledgeLibrary` exactly the props it
-// always took. Keeping that contract intact is deliberate — the library itself
-// is unchanged by the move.
+// - **Subjects** — the v2 knowledge hierarchy (Golden Paths → Techniques →
+//   Applications → Evidence), read live from a managed repo's
+//   `docs/concepts/paths/**` by the Rust reader. Needs only a project id —
+//   no workspace.
+// - **Graph** — the hierarchy graph (P3): the same corpus rendered as a
+//   Nexus-style sky (8 category keystones → subjects → techniques). Also
+//   project-scoped, no workspace dependency.
+// - **Practices** — the pre-existing workspace practice library (DB plane),
+//   untouched, with its OWN internal Library|Graph toggle restored so the old
+//   Nexus over workspace practices stays reachable there.
 import { useEffect, useMemo, useState } from 'react';
 
 import { listWorkspaceKnowledge } from '@/api/devTools/workspaces';
@@ -26,7 +29,24 @@ import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 
+import HierarchyGraphHost from './hierarchy/graph/HierarchyGraphHost';
+import { SubjectsView, type SubjectsFocusRequest } from './hierarchy/SubjectsView';
 import KnowledgeLibrary from './KnowledgeLibrary';
+
+type Lane = 'subjects' | 'graph' | 'practices';
+
+const LANE_KEY = 'patterns:lane';
+
+function initialLane(): Lane {
+  try {
+    const stored = localStorage.getItem(LANE_KEY);
+    if (stored === 'subjects' || stored === 'graph' || stored === 'practices') return stored;
+  } catch (err) {
+    // localStorage unavailable — default lane.
+    silentCatch('patterns:laneRead')(err);
+  }
+  return 'subjects';
+}
 
 /** Calm header-only ghost, same shape as the KnowledgeHub subtab fallback:
  *  the library's body geometry (tree + grid) is too distinctive to fake
@@ -41,7 +61,12 @@ function PatternsSkeleton() {
   );
 }
 
-export default function PatternsPanel() {
+/** The pre-existing workspace-practices plane, exactly as before the lane
+ *  restructure: workspace gating/skeleton and the workspace picker live HERE,
+ *  so the hierarchy lanes never wait on (or render) any of it. No controlled
+ *  `view` — KnowledgeLibrary's internal Library|Graph toggle is back, which
+ *  keeps the old Nexus reachable inside this lane. */
+function WorkspaceLane() {
   const { t } = useTranslation();
   const tk = t.overview.knowledge;
   const { workspaces, activeId } = useWorkspaces();
@@ -112,7 +137,7 @@ export default function PatternsPanel() {
   }
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-hidden p-4 md:p-6 gap-3">
+    <>
       {workspaces.length > 1 && (
         <div className="flex-shrink-0">
           <SegmentedTabs<string>
@@ -148,6 +173,56 @@ export default function PatternsPanel() {
           onChanged={() => setFetchGen((g) => g + 1)}
         />
       </div>
+    </>
+  );
+}
+
+export default function PatternsPanel() {
+  const { t } = useTranslation();
+  const p = t.overview.patterns_v2;
+  const [lane, setLane] = useState<Lane>(initialLane);
+  // Cross-lane navigation: the graph's "Open in Subjects" hands a focus
+  // request across; a fresh object per navigation re-triggers the effect.
+  const [subjectsFocus, setSubjectsFocus] = useState<SubjectsFocusRequest | null>(null);
+
+  const pickLane = (next: Lane) => {
+    setLane(next);
+    try {
+      localStorage.setItem(LANE_KEY, next);
+    } catch (err) {
+      // Persistence is a convenience, never a blocker.
+      silentCatch('patterns:laneWrite')(err);
+    }
+  };
+
+  return (
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden p-4 md:p-6 gap-3">
+      <div className="flex-shrink-0">
+        <SegmentedTabs<Lane>
+          tabs={[
+            { id: 'subjects', label: p.lane_subjects },
+            { id: 'graph', label: p.lane_graph },
+            { id: 'practices', label: p.lane_practices },
+          ]}
+          activeTab={lane}
+          onTabChange={pickLane}
+          ariaLabel={p.lane_switch_aria}
+          fullWidth={false}
+        />
+      </div>
+
+      {lane === 'subjects' ? (
+        <SubjectsView focusSubject={subjectsFocus} />
+      ) : lane === 'graph' ? (
+        <HierarchyGraphHost
+          onOpenInSubjects={(slug, technique) => {
+            setSubjectsFocus({ slug, technique });
+            pickLane('subjects');
+          }}
+        />
+      ) : (
+        <WorkspaceLane />
+      )}
     </div>
   );
 }

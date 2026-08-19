@@ -138,5 +138,9 @@
   "adoption_answers_rejected_message": "بعض إجابات الاستبيان مفقودة أو غير صالحة.",
   "adoption_answers_rejected_suggestion": "أعد فتح أسئلة الإعداد، وأكمل العناصر المذكورة، ثم تابع.",
   "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
-  "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
+  "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in.",
+  "trigger_type_not_storable_message": "لا يمكن لهذا الإصدار من التطبيق حفظ هذا النوع من المشغّلات.",
+  "trigger_type_not_storable_suggestion": "اختر نوع مشغّل آخر. إذا كان التطبيق قد حُدِّث للتو، فأعد تشغيله مرة واحدة كي تُنفَّذ ترحيلة قاعدة البيانات التي توسّع الأنواع المقبولة.",
+  "trigger_unschedulable_message": "رُفض هذا المشغّل لأنه لن يبدأ تشغيله أي شيء أبدًا.",
+  "trigger_unschedulable_suggestion": "السبب مذكور في تفاصيل الخطأ — عادةً غياب تعبير cron أو فترة زمنية، أو منطقة زمنية ليست اسمًا من IANA مثل \"Europe/Prague\". صحّح هذا الحقل ثم احفظ من جديد."
 }

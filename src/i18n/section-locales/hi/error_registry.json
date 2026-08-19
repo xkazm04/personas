@@ -138,5 +138,9 @@
   "adoption_answers_rejected_message": "प्रश्नावली के कुछ उत्तर अनुपलब्ध हैं या मान्य नहीं हैं।",
   "adoption_answers_rejected_suggestion": "सेटअप प्रश्न फिर से खोलें, बताए गए उत्तर पूरे करें, फिर आगे बढ़ें।",
   "_comment_adoption_answers_rejected_message": "Toast shown when the backend refuses a saved template setup questionnaire. Keep to one short sentence.",
-  "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in."
+  "_comment_adoption_answers_rejected_suggestion": "The recovery step for the message above. 'setup questions' = the adoption questionnaire the user filled in.",
+  "trigger_type_not_storable_message": "ऐप का यह संस्करण उस ट्रिगर प्रकार को सहेज नहीं सकता।",
+  "trigger_type_not_storable_suggestion": "कोई दूसरा ट्रिगर प्रकार चुनें। यदि ऐप अभी-अभी अपडेट हुआ है, तो उसे एक बार पुनः आरंभ करें ताकि स्वीकृत प्रकारों को बढ़ाने वाला डेटाबेस माइग्रेशन चल सके।",
+  "trigger_unschedulable_message": "यह ट्रिगर अस्वीकार कर दिया गया, क्योंकि इसे कभी कुछ भी शुरू नहीं करता।",
+  "trigger_unschedulable_suggestion": "कारण त्रुटि विवरण में है — आमतौर पर cron अभिव्यक्ति या अंतराल गायब होता है, या समय क्षेत्र \"Europe/Prague\" जैसा IANA नाम नहीं होता। उस फ़ील्ड को ठीक करें और फिर से सहेजें।"
 }

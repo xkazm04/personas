@@ -243,6 +243,60 @@ This complements the **L0/L1/L2 layered fetch** (`useLayeredList`,
 `docs/architecture/overview-layered-fetch.md`): layered fetch bounds how much
 data is *loaded*; progressive reveal bounds how fast loaded rows are *mounted*.
 
+## Patterns: Subjects (knowledge hierarchy) — 2026-08-18
+
+The Patterns tab now opens on a three-way lane switch — **Subjects | Graph |
+Practices** (persisted per device; Subjects is the default). Graph and
+Practices are the pre-existing workspace practice library unchanged (the
+library's former internal Library|Graph toggle is now owned by the lane
+switch); Subjects is new: a master–detail reader over the ratified v2
+knowledge hierarchy (**Golden Paths → Techniques → Applications → Evidence**),
+read live from a managed repo's `docs/concepts/paths/**` by the Rust reader
+(`dev_tools_hierarchy_graph` / `dev_tools_hierarchy_doc`) — filesystem-truth,
+never copied into the database. A project picker in the toolbar chooses which
+managed repo is the knowledge source (persisted); a repo without a corpus
+renders the reader's own `source.reason` as an honest empty state. The left
+rail groups subjects under the 8 categories in compass order with status
+chips (draft → forged → reconciled → transplant-tested), technique/application
+counts and deviation badges; one omnibox searches subjects, techniques and
+applications (child hits surface their parent subject with a "matched in…"
+hint). The detail pane tabs through the golden path (markdown with relative
+links intercepted into in-app navigation — subject links move the rail,
+technique links open that technique, law anchors and deferred-fix anchors open
+a doc overlay), techniques (law chips with tooltips, shared-technique
+`@owner` provenance), stack-badged applications, evidence & deviations
+(copyable repo paths, counter-evidence flagged, deviation anchors deep-linking
+into `golden-path-deferred-fixes.md`), and the corpus-mapped legacy docs. A
+warnings badge in the toolbar lists everything the reader skipped — corpus
+health for free.
+
+The **Graph lane** (P3, 2026-08-18) renders the same corpus as a Nexus-style
+sky: 8 category keystones on a fixed compass ring (order from
+`categories.json` — empty categories keep their spoke), subjects marching
+outward along each spoke with size ∝ technique count, and a subject's
+techniques unfolding as the third ring on focus. **Status is the node ring
+language** — dashed draft · solid forged · double reconciled · filled
+transplant-tested (legend bottom-left) — and a **Laws lens** in the toolbar
+dims everything except the subjects/techniques citing the selected law.
+Cross-subject links draw only inside a focused category (dashed to the foreign
+keystone when the far end is unfocused); clicking a technique opens its doc in
+a modal with law chips, stack-badged applications and an "Open in Subjects"
+jump, and the old workspace-practices Nexus stays reachable via the Practices
+lane's internal Library|Graph toggle.
+
+**Adherence** (P4, 2026-08-18) joins the census scorecard
+(`scripts/census/context-scorecard.json`, read by
+`dev_tools_hierarchy_scorecard`) onto both lanes: subject nodes in the graph
+carry a coverage-style arc showing `cleanContexts / applicableContexts`, a
+**Context lens** beside the Laws lens dims subjects with no census sites in a
+chosen context (intersecting with the Laws lens when both are active), and the
+Subjects detail's Evidence & Deviations tab gains an Adherence section — the
+headline ratio, a table of dirty contexts with their top rules, the
+uncontexted bucket, and the measurement timestamp plus the regeneration
+command. A subject absent from the scorecard has no census rules yet and is
+rendered as "no signal", never as clean; a repo without the artifact renders
+the whole feature as an honest "no census signal" affordance.
+
 ## Patterns — the inverted library (2026-08-11)
 
 The knowledge library is doctrine-first: **Directions** (macro items distilled

@@ -943,6 +943,24 @@ goes to zero — and if someone adds a seventh copy of the *narrow* six, the rul
 
 ## 9 The missing gate
 
+> **RETIRED 2026-08-17 — the rule reached zero and was DELETED, as its own
+> "END OF LIFE" clause required.** D1 was fixed at the narrowest gate: `CHECK`
+> is now derived from `personas_core::models::TriggerKind` (a `#[derive(TS)]`
+> enum, §4's T1), so the storage layer admits all ten and **there is no rejected
+> half of the word list left for the pattern to key on**. Every site the rule
+> would report today is a *compliant* single-source declaration, so it had
+> become a gate that fires only on its own fix. Per the doctrine — *"if a
+> condition should reach zero, say so, and say the rule must be DELETED at that
+> point rather than baselined at 0"* — `vocabulary-wider-than-its-column` was
+> removed from `scripts/census/rules.json` rather than re-baselined.
+>
+> The specification below is kept verbatim because it is the reasoning an
+> adopting repo needs, and because the discriminator it earned (§"why the first
+> pattern was wrong": two unrelated closed vocabularies sharing three literals)
+> is a finding about measurement, not about triggers.
+
+
+
 **Condition, stated stack-free:** *an authoring surface enumerates the members of a closed vocabulary
 that a layer beneath it narrows, and nothing compares the two lists.* An adopting repo must derive
 its own proxy — this one keys on the four literal type names this storage layer happens to reject,

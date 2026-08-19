@@ -11,45 +11,46 @@
   },
   "facts": {
     "frontend.animatePulseFiles": {
-      "value": 101,
+      "value": 96,
       "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['frontend.animatePulseFiles'] (count(): src/**/*.tsx lines matching /animate-pulse/g, comment-only lines excluded; reports FILES with >=1 hit)",
       "measuredAt": "2026-08-17",
-      "commit": "2ee130c3e",
+      "commit": "f81e2c1df",
       "leaf": "measure-shared-facts.mjs",
       "verify": "cheap",
-      "note": "A surface loading state must never be animate-pulse (docs/design/overview-loading.md). This counts the population, not the violations."
+      "note": "A surface loading state must never be animate-pulse (docs/design/overview-loading.md). This counts the population, not the violations. Was 101 at 2ee130c3e (2026-08-17); re-measured 96 at f81e2c1df (2026-08-17)."
     },
     "frontend.animateSpinFiles": {
-      "value": 184,
+      "value": 182,
       "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['frontend.animateSpinFiles'] (count(): src/**/*.tsx lines matching /animate-spin/g, comment-only lines excluded; reports FILES with >=1 hit)",
       "measuredAt": "2026-08-17",
-      "commit": "2ee130c3e",
+      "commit": "f81e2c1df",
       "leaf": "measure-shared-facts.mjs",
       "verify": "cheap",
-      "note": "NOT a violation count. A spinner is REQUIRED on an action control and BANNED on a loading surface, and this instrument cannot tell the two apart."
+      "note": "NOT a violation count. A spinner is REQUIRED on an action control and BANNED on a loading surface, and this instrument cannot tell the two apart. Was 184 at 2ee130c3e (2026-08-17); re-measured 182 at f81e2c1df (2026-08-17)."
     },
     "frontend.rawButtonFiles": {
-      "value": 1116,
+      "value": 1103,
       "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['frontend.rawButtonFiles'] (count(): src/**/*.tsx lines matching /<button\\b/g, comment-only lines excluded; reports FILES with >=1 hit)",
       "measuredAt": "2026-08-17",
-      "commit": "2ee130c3e",
+      "commit": "f81e2c1df",
       "leaf": "button.md",
       "verify": "cheap",
-      "note": "\\b, NOT [\\s>]: the scan is line-by-line (to skip comments) and in multi-line JSX the character after the tag is a newline the line scan cannot see. [\\s>] silently reported 167 files instead of 1,119. button.md measured 217 files rendering <Button> against this population — a 5.2:1 ratio, not the 19:1 its hypothesis claimed, because the hypothesis counted only the deep-path import and missed the barrel (155 files)."
+      "note": "\\b, NOT [\\s>]: the scan is line-by-line (to skip comments) and in multi-line JSX the character after the tag is a newline the line scan cannot see. [\\s>] silently reported 167 files instead of 1,119. button.md measured 217 files rendering <Button> against this population — a 5.2:1 ratio, not the 19:1 its hypothesis claimed, because the hypothesis counted only the deep-path import and missed the barrel (155 files). Was 1116 at 2ee130c3e (2026-08-17); re-measured 1103 at f81e2c1df (2026-08-17)."
     },
     "frontend.rawInputFiles": {
-      "value": 288,
+      "value": 287,
       "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['frontend.rawInputFiles'] (count(): src/**/*.tsx lines matching /<input\\b/g, comment-only lines excluded; reports FILES with >=1 hit)",
       "measuredAt": "2026-08-17",
-      "commit": "2ee130c3e",
+      "commit": "f81e2c1df",
       "leaf": "measure-shared-facts.mjs",
-      "verify": "cheap"
+      "verify": "cheap",
+      "note": "Was 288 at 2ee130c3e (2026-08-17); re-measured 287 at f81e2c1df (2026-08-17)."
     },
     "frontend.rawSelectFiles": {
       "value": 47,
       "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['frontend.rawSelectFiles'] (count(): src/**/*.tsx lines matching /<select\\b/g, comment-only lines excluded; reports FILES with >=1 hit)",
       "measuredAt": "2026-08-17",
-      "commit": "2ee130c3e",
+      "commit": "f81e2c1df",
       "leaf": "dropdown-and-select.md",
       "verify": "cheap",
       "note": "entity-picker.md enumerated the same population THREE ways and settled it at 64 sites in 47 files, resolving its brief's 47 against the census's 46. File counts and SITE counts are different questions; this is the file count."
@@ -58,7 +59,7 @@
       "value": 31,
       "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['frontend.rawTableFiles'] (count(): src/**/*.tsx lines matching /<table\\b/g, comment-only lines excluded; reports FILES with >=1 hit)",
       "measuredAt": "2026-08-17",
-      "commit": "2ee130c3e",
+      "commit": "f81e2c1df",
       "leaf": "tables.md",
       "verify": "cheap"
     },
@@ -66,33 +67,33 @@
       "value": 77,
       "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['frontend.setIntervalFiles'] (count(): src/**/*.{ts,tsx} lines matching /\\bsetInterval\\(/g, comment-only lines excluded; reports FILES with >=1 hit)",
       "measuredAt": "2026-08-17",
-      "commit": "2ee130c3e",
+      "commit": "f81e2c1df",
       "leaf": "polling-loop.md",
       "verify": "cheap"
     },
     "frontend.tsFiles": {
-      "value": 4829,
+      "value": 4801,
       "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['frontend.tsFiles'] (walk of src/ for .ts + .tsx; node_modules, target, .git, worktrees, dist excluded)",
       "measuredAt": "2026-08-17",
-      "commit": "2ee130c3e",
+      "commit": "f81e2c1df",
       "leaf": "measure-shared-facts.mjs",
       "verify": "cheap",
-      "note": "Was 4828 at 1e714f817 (2026-08-15); re-measured 4829 at 2ee130c3e (2026-08-17), +1. This is the denominator of nearly every frontend claim in the corpus: a drift of one file changes no conclusion, a drift of a hundred would."
+      "note": "Was 4828 at 1e714f817 (2026-08-15); re-measured 4829 at 2ee130c3e (2026-08-17), +1. This is the denominator of nearly every frontend claim in the corpus: a drift of one file changes no conclusion, a drift of a hundred would. Was 4829 at 2ee130c3e (2026-08-17); re-measured 4801 at f81e2c1df (2026-08-17)."
     },
     "frontend.tsxFiles": {
-      "value": 2104,
+      "value": 2083,
       "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['frontend.tsxFiles'] (walk of src/ for .tsx; node_modules, target, .git, worktrees, dist excluded)",
       "measuredAt": "2026-08-17",
-      "commit": "2ee130c3e",
+      "commit": "f81e2c1df",
       "leaf": "measure-shared-facts.mjs",
       "verify": "cheap",
-      "note": "entity-picker.md reports 1,989 .tsx EXCLUDING __tests__. Both numbers are correct; they answer different questions. Say which you mean."
+      "note": "entity-picker.md reports 1,989 .tsx EXCLUDING __tests__. Both numbers are correct; they answer different questions. Say which you mean. Was 2104 at 2ee130c3e (2026-08-17); re-measured 2083 at f81e2c1df (2026-08-17)."
     },
     "frontend.webStorageFiles": {
       "value": 96,
       "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['frontend.webStorageFiles'] (count(): src/**/*.{ts,tsx} lines matching /\\b(localStorage|sessionStorage)\\b/g, comment-only lines excluded; reports FILES with >=1 hit)",
       "measuredAt": "2026-08-17",
-      "commit": "2ee130c3e",
+      "commit": "f81e2c1df",
       "leaf": "client-state-persistence.md",
       "verify": "cheap",
       "note": "The census rule raw-web-storage counts OCCURRENCES over the same population, and in its raw form is 35% prose — 153 of 439 raw matches are JSDoc and // comments ABOUT the migration away from localStorage. The rule sets ignoreCommentLines for exactly that reason."
@@ -101,24 +102,24 @@
       "value": 0,
       "instrument": "npx eslint src --ext .ts,.tsx -f json  -> sum of errorCount (what measure-shared-facts.mjs runs; ~90s)",
       "measuredAt": "2026-08-17",
-      "commit": "2ee130c3e",
+      "commit": "f81e2c1df",
       "leaf": "custom-lint-rule.md",
       "verify": "cheap"
     },
     "lint.filesLinted": {
-      "value": 4829,
+      "value": 4801,
       "instrument": "npx eslint src --ext .ts,.tsx -f json  -> result count",
       "measuredAt": "2026-08-17",
-      "commit": "2ee130c3e",
+      "commit": "f81e2c1df",
       "leaf": "custom-lint-rule.md",
       "verify": "cheap",
-      "note": "Was 4828 at 1e714f817 (2026-08-15); re-measured 4829 at 2ee130c3e, +1. A ZERO here means eslint failed to run, not that the tree is clean — the measurement script reports that case as UNMEASURED rather than emitting a triumphant 0 that everything downstream would cite."
+      "note": "Was 4828 at 1e714f817 (2026-08-15); re-measured 4829 at 2ee130c3e, +1. A ZERO here means eslint failed to run, not that the tree is clean — the measurement script reports that case as UNMEASURED rather than emitting a triumphant 0 that everything downstream would cite. Was 4829 at 2ee130c3e (2026-08-17); re-measured 4801 at f81e2c1df (2026-08-17)."
     },
     "lint.filesWithFindings": {
       "value": 246,
       "instrument": "npx eslint src --ext .ts,.tsx -f json  -> files with warningCount + errorCount > 0",
       "measuredAt": "2026-08-17",
-      "commit": "2ee130c3e",
+      "commit": "f81e2c1df",
       "leaf": "custom-lint-rule.md",
       "verify": "cheap"
     },
@@ -133,7 +134,7 @@
       },
       "instrument": "npx eslint src --ext .ts,.tsx -f json  -> messages grouped by ruleId, top 6",
       "measuredAt": "2026-08-17",
-      "commit": "2ee130c3e",
+      "commit": "f81e2c1df",
       "leaf": "custom-lint-rule.md",
       "verify": "cheap",
       "note": "The whole no-raw-* family is 144 (12.7%), NOT 'almost entirely' as the stale figure claimed. no-low-contrast-text-classes alone is 62% of all warnings."
@@ -142,7 +143,7 @@
       "value": 1135,
       "instrument": "npx eslint src --ext .ts,.tsx -f json  -> sum of warningCount",
       "measuredAt": "2026-08-17",
-      "commit": "2ee130c3e",
+      "commit": "f81e2c1df",
       "leaf": "custom-lint-rule.md",
       "verify": "cheap",
       "note": "DO NOT CITE THIS TO ARGUE A SEVERITY. `npm run check` runs `eslint src/` with no --max-warnings so it exits 0 at any count, and the pre-commit hook runs --quiet --max-warnings 99999, where --quiet suppresses warnings before they can be counted. A warn-level rule enforces nothing at either gate, at any count, BY CONSTRUCTION. Five golden paths cited a ~10,086 figure as the REASON to ship a gate at 'error'; it was stale by ~9x and wrong about the dominator, and the conclusion survived only on the mechanism above — which needs no count at all. Cite this to describe the tree, never to justify a gate."
@@ -151,7 +152,7 @@
       "value": 963,
       "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['rust.files'] (walk of src-tauri/ for .rs; node_modules, target, .git, worktrees, dist excluded)",
       "measuredAt": "2026-08-17",
-      "commit": "2ee130c3e",
+      "commit": "f81e2c1df",
       "leaf": "measure-shared-facts.mjs",
       "verify": "cheap",
       "note": "The denominator behind 'exists nowhere in 963 .rs files'. INCLUDES #[cfg(test)] modules — strip them with scripts/census/lib/instruments/stripCfgTest.mjs if your question is about production code, and remember the filename rule that comes with it: dev_tools_backlog_tests.rs is a test file carrying no #[cfg(test)] attribute at all."
@@ -160,7 +161,7 @@
       "value": 19,
       "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['rust.requiresAuth'] (countAttr(): src-tauri/**/*.rs lines whose TRIMMED text BEGINS with `#[requires(auth)]`, comment lines excluded)",
       "measuredAt": "2026-08-17",
-      "commit": "2ee130c3e",
+      "commit": "f81e2c1df",
       "leaf": "ipc-command-authorization.md",
       "verify": "cheap"
     },
@@ -168,7 +169,7 @@
       "value": 56,
       "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['rust.requiresCloud'] (countAttr(): src-tauri/**/*.rs lines whose TRIMMED text BEGINS with `#[requires(cloud)]`, comment lines excluded)",
       "measuredAt": "2026-08-17",
-      "commit": "2ee130c3e",
+      "commit": "f81e2c1df",
       "leaf": "ipc-command-authorization.md",
       "verify": "cheap"
     },
@@ -176,7 +177,7 @@
       "value": 168,
       "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['rust.requiresPrivileged'] (countAttr(): src-tauri/**/*.rs lines whose TRIMMED text BEGINS with `#[requires(privileged)]`, comment lines excluded)",
       "measuredAt": "2026-08-17",
-      "commit": "2ee130c3e",
+      "commit": "f81e2c1df",
       "leaf": "ipc-command-authorization.md",
       "verify": "cheap",
       "note": "A naive whole-file regex returns 258, of which 15 are prose mentioning the attribute — including `let _ = &state; // required by #[requires(privileged)] session guard`. Filtering comment lines is not enough; the line must BEGIN with the attribute."
@@ -185,7 +186,7 @@
       "value": 1661,
       "instrument": "node scripts/docs/measure-shared-facts.mjs -> facts['rust.tauriCommands'] (countAttr(): src-tauri/**/*.rs lines whose TRIMMED text BEGINS with `#[tauri::command`, comment lines excluded)",
       "measuredAt": "2026-08-17",
-      "commit": "2ee130c3e",
+      "commit": "f81e2c1df",
       "leaf": "new-ipc-command.md",
       "verify": "cheap",
       "note": "THE MOST-CITED FACT IN THE CORPUS AND THE ONE WITH THE WORST HISTORY. Wave 1's four composers produced 1,649 / 1,657 / 1,661 / 1,666; the 'authoritative' correction published 1,666, which was also wrong. A raw grep finds 1,673: 7 are comments, and 5 are STRING LITERALS inside this repo's own command-counters (context_fingerprint.rs:184,:614 and lib.rs:3858,:3874,:3957) — the instrument was counting itself. 1,661 attribute sites = 1,658 unique fns, 3 names being #[cfg]-gated duplicates. A substring match answers 'does this text appear', never 'is this a thing'."

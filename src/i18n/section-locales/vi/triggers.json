@@ -763,7 +763,9 @@
   "resume_relay": "Tiếp tục relay",
   "arm_state": {
     "sleeping": "Đang ngủ",
-    "sleeping_title": "Đã bật, nhưng ngoài giờ hoạt động — sẽ không kích hoạt cho đến khi cửa sổ hoạt động mở lại."
+    "sleeping_title": "Đã bật, nhưng ngoài giờ hoạt động — sẽ không kích hoạt cho đến khi cửa sổ hoạt động mở lại.",
+    "unschedulable": "Chưa lên lịch",
+    "unschedulable_title": "Đang bật nhưng không có thời điểm chạy kế tiếp — sẽ không có gì khởi chạy nó. Hãy mở trình kích hoạt và đặt biểu thức cron hoặc khoảng thời gian."
   },
   "pending_approval": {
     "approved": "Đã phê duyệt — đang chạy",

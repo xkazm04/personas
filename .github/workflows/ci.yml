@@ -435,3 +435,33 @@ jobs:
             exit 1
           fi
           echo "Bindings are up to date (no drift, no uncommitted new types)."
+
+  # ─── Job E: the consumer-side half of the corpus gate ───────────────────────
+  # The knowledge corpus is moving to github.com/xkazm04/ai-registry, where CI
+  # checks the STANDARD: layer contract, body purity, link resolution, status
+  # vocabulary. Two checks cannot go with it, because they are claims about THIS
+  # codebase rather than about the standard — evidence resolution and mirror
+  # parity. A split gate is how gates quietly get dropped, so the other half runs
+  # here, explicitly, and fails loudly if the registry is unreachable rather than
+  # reporting "clean" when it means "blind".
+  evidence-check:
+    runs-on: ubuntu-latest
+    # See the note on commit-lint's timeout-minutes.
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Clone the knowledge registry
+        # Public repo, so no token. Shallow: the gate reads the working tree,
+        # never history.
+        run: git clone --depth 1 https://github.com/xkazm04/ai-registry.git ../ai-registry
+
+      - name: Resolve evidence and verify mirror parity
+        # --require-registry turns "no clone" from a skip into a failure. Without
+        # it a networking blip would silently downgrade this job to the evidence
+        # half only, and the parity check would be gone with nothing to say so.
+        run: node scripts/registry/evidence-check.mjs --require-registry

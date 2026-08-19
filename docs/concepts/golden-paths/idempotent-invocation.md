@@ -254,6 +254,12 @@
 > money-costing double-execution path** (D1), three more unguarded write paths on a
 > cross-device queue (D3), and eight one-to-three-line repairs.
 
+> **Post-publication note — 2026-08-17.** This document's `<LoadingSpinner>` population
+> (252) predates `78e9bff68`, which deleted the unreachable `teams/sub_canvas/` tree and
+> with it exactly 5 of those sites. **The count is 247 today**, verified against
+> `78e9bff68^` = 252. The finding is unchanged; only the denominator moved, and it moved
+> by deletion rather than by fix. See [`inline-busy-state.md`](./inline-busy-state.md).
+
 ---
 
 ## 1 Trigger

@@ -66,8 +66,8 @@
         }
       ],
       "baseline": {
-        "files": 72,
-        "matches": 186
+        "files": 74,
+        "matches": 190
       },
       "floor": 4000
     },
@@ -312,8 +312,8 @@
         }
       ],
       "baseline": {
-        "files": 72,
-        "matches": 72
+        "files": 73,
+        "matches": 73
       },
       "floor": 4000
     },
@@ -511,8 +511,8 @@
         }
       ],
       "baseline": {
-        "files": 36,
-        "matches": 42
+        "files": 38,
+        "matches": 44
       },
       "floor": 4000
     },
@@ -555,8 +555,8 @@
         "description": "a Tailwind font-weight utility written next to a typo-* token inside one class string. PROXY FOR the stack-free condition: a call site tries to patch one property of a composite token with a utility that the cascade discards, so the authored intent is silently dropped and the code reads as if it were honoured. Verified from source, not inferred: typography.css is imported at globals.css:3 with no layer(), every real .typo-* tier declares font-weight (17 rules checked; only the .typo-rtl / .typo-hero-shine modifiers do not), and unlayered declarations beat every @layer utilities declaration regardless of order or specificity. The token file states the failure twice in its own comments - 'typo-caption font-semibold is silently a no-op' (typography.css:161-162) and 'typo-label font-bold is silently a no-op' (:190-191) - as does Design.md section 2. PRECONDITION: this repo ships semantic type tokens as UNLAYERED CSS classes alongside layered Tailwind utilities. A repo whose type tokens are React components, or are themselves inside @layer utilities, has the same condition wearing different markup and must re-derive the proxy. The legal fix is to move up a token (typo-caption -> typo-title -> typo-heading), never to add a font-* utility."
       },
       "baseline": {
-        "files": 812,
-        "matches": 1979
+        "files": 815,
+        "matches": 1985
       },
       "floor": 2000
     },
@@ -1408,7 +1408,7 @@
       },
       "baseline": {
         "files": 566,
-        "matches": 1098
+        "matches": 1099
       },
       "floor": 2000
     },
@@ -1688,8 +1688,8 @@
         }
       ],
       "baseline": {
-        "files": 56,
-        "matches": 121
+        "files": 57,
+        "matches": 125
       },
       "floor": 4000
     },
@@ -1828,8 +1828,8 @@
         }
       ],
       "baseline": {
-        "files": 86,
-        "matches": 122
+        "files": 87,
+        "matches": 123
       },
       "floor": 4000
     },
@@ -1898,8 +1898,8 @@
         "description": "an emptiness test on a value whose guard consequent constructs an AppError::Validation - i.e. `require_non_empty(field, value)?` open-coded at the call site, with its own hand-written sentence. PROXY FOR the stack-free condition: a codebase owns a shared input-validation vocabulary and its call sites re-implement the vocabulary's most basic rule inline, so the rule's identity (which field, which rule id) is destroyed at the moment it is applied and only an English sentence survives. MEASURED CONSEQUENCE IN THIS REPO: 305 open-coded emptiness refusals across 135 files, against 31 real `require_non_empty(` call sites confined to 4 files (all of them on the import/export path) - a 9.8x ratio. The helper is one line, returns the identical AppError::Validation, and predates almost all 305. Each open-coded site also loses the {field, rule, message} triple that `ValidationError::new` would have produced, which is why `contract::check` reaches only 3 of 1,661 commands and why `src/lib/bindings/ValidationError.ts` has zero importers: there is nothing structured left to send. COUNTS PRODUCED TWICE, as the contract requires, by deliberately different methods: this bounded-span regex over RAW whole-file content through the real census engine reports 305 matches / 135 files / 950 walked; an independent comment-and-string-MASKED walk that pairs each emptiness test with its own guard consequent (the `{...}` block or the expression up to `;`) reports 301 / 129. The 1.3% gap is the regex's known bridging behaviour and is documented in the golden path. A FIRST attempt at the second implementation returned 17 - it split `if cond {` away from its own block, so the test and the refusal never co-occurred in one unit; recorded because that is precisely the failure the contract warns about, and the fix was to make the guard-with-its-consequent the unit rather than the statement. PRECISION audited on a systematic every-9th-file sample of 15 sites: 14/15 genuine; the one miss is src-tauri/src/commands/companion/browser_test.rs:92, where the span bridges `if x.is_empty() { return Ok(0); }` into a following, unrelated length check. PRECONDITION, which an adopting repo must re-derive: this repo spells emptiness as `.is_empty()` / `.trim().is_empty()` and spells refusal as `AppError::Validation(..)`. A repo that refuses with a schema (`zod .min(1)`), a typed extractor, or a `NonEmptyString` newtype scores zero here while being strictly MORE correct - the sibling sweep found exactly that: personas-cloud expresses the same rule declaratively in 20 zod schemas and brainiac's REST half gets it from `Path<Uuid>` with no code at all. LEGAL DESTINATION, in order of preference: (1) make it unrepresentable - a parameter newtype whose Deserialize refuses the empty case, so the command body never runs; (2) `personas_core::validation::require_non_empty(field, value)?`; (3) `ValidationError::new(field, \"required\", msg)` collected and passed to `contract::check`, which is the only form that preserves the field/rule identifiers the frontend binding was built to consume."
       },
       "baseline": {
-        "files": 135,
-        "matches": 305
+        "files": 136,
+        "matches": 306
       },
       "floor": 400
     },
@@ -2090,7 +2090,7 @@
         "pattern": "<button(?:(?!aria-expanded)(?:=>|[^<>])){0,1200}?(?:onClick(?:(?!aria-expanded)(?:=>|[^<>])){0,500}?(?:\\bset[A-Za-z0-9_$]*(?:Expand|Collaps)[A-Za-z0-9_$]*\\s*\\(\\s*(?!(?:true|false)\\s*\\))|\\bon[A-Za-z0-9_$]*(?:Expand|Collaps)[A-Za-z0-9_$]*\\b|\\btoggle[A-Za-z0-9_$]*(?:Expand|Collaps)[A-Za-z0-9_$]*\\b|\\b(?:is)?(?:Expanded|Collapsed|expanded|collapsed)\\s*[?&|])|(?:\\bset[A-Za-z0-9_$]*(?:Expand|Collaps)[A-Za-z0-9_$]*\\s*\\(\\s*(?!(?:true|false)\\s*\\))|\\bon[A-Za-z0-9_$]*(?:Expand|Collaps)[A-Za-z0-9_$]*\\b|\\btoggle[A-Za-z0-9_$]*(?:Expand|Collaps)[A-Za-z0-9_$]*\\b|\\b(?:is)?(?:Expanded|Collapsed|expanded|collapsed)\\s*[?&|])(?:(?!aria-expanded)(?:=>|[^<>])){0,500}?onClick)(?:(?!aria-expanded)(?:=>|[^<>])){0,1200}?[^=<>\\s]\\s*>",
         "flags": "g",
         "ignoreCommentLines": true,
-        "description": "a <button> opening tag that pairs an onClick with an expand/collapse-named toggle and carries no aria-expanded. PROXY FOR the stack-free condition: a control that reveals or hides content does not declare that it does, so the state survives only as a rotated chevron or a swapped label - a picture and a rename, neither of which is readable by anything not looking at the screen, and neither of which fails review because the control works perfectly for whoever tested it. PRECONDITION (must be re-derived per repo): this repo hand-rolls every disclosure from a real <button> and has no headless-UI dependency (Radix/Headless UI/Ark) that would supply the attribute; a repo using one would match zero here and must key on that library's component instead. TAG BOUNDARY: the tempered unit (?:=>|[^<>]) keeps matching inside one opening tag, and the terminator is [^=<>\\s]\\s*> rather than a bare > because a bare > is satisfied by the > of an arrow function - measured, that bug produced 5 false positives on <button onClick={() => setExpanded((v) => !v)} aria-expanded={expanded}>, where the match ended at the inner arrow and never reached the attribute that makes the site compliant. The setter arm excludes a literal true/false argument on purpose: one-way Show-more / Collapse pairs (ApiPlayground, BeatSidebar, TerminalSearchBar, MarkdownRenderer) carry the state in their label and the ARIA obligation is genuinely weaker, so they are dropped rather than counted. Bare onToggle is likewise excluded: it means toggle-anything in this repo and matched a sort header, a mic button and two multi-selects, all of which correctly use aria-pressed. Precision 57/59 verified against a second implementation (a brace-aware JSX tag parser); the 2 soft matches are DebuggerControls.tsx:106 and DebuggerVariables.tsx:38, the one-way halves of a two-button expand/collapse pair. 14 of the 56 files are expandable ROWS - this leaf's own corpus; the other 42 are section, panel and sidebar disclosures with the identical condition. Disjoint from unfocusable-click-target (focus-management.md), which owns non-button click targets and already counts this leaf's one <tr onClick> disclosure.",
+        "description": "a <button> opening tag that pairs an onClick with an expand/collapse-named toggle and carries no aria-expanded. PROXY FOR the stack-free condition: a control that reveals or hides content does not declare that it does, so the state survives only as a rotated chevron or a swapped label - a picture and a rename, neither of which is readable by anything not looking at the screen, and neither of which fails review because the control works perfectly for whoever tested it. PRECONDITION (must be re-derived per repo): this repo hand-rolls every disclosure from a real <button> and has no headless-UI dependency (Radix/Headless UI/Ark) that would supply the attribute; a repo using one would match zero here and must key on that library's component instead. TAG BOUNDARY: the tempered unit (?:=>|[^<>]) keeps matching inside one opening tag, and the terminator is [^=<>\\s]\\s*> rather than a bare > because a bare > is satisfied by the > of an arrow function - measured, that bug produced 5 false positives on <button onClick={() => setExpanded((v) => !v)} aria-expanded={expanded}>, where the match ended at the inner arrow and never reached the attribute that makes the site compliant. The setter arm excludes a literal true/false argument on purpose: one-way Show-more / Collapse pairs (ApiPlayground, BeatSidebar, TerminalSearchBar, MarkdownRenderer) carry the state in their label and the ARIA obligation is genuinely weaker, so they are dropped rather than counted. Bare onToggle is likewise excluded: it means toggle-anything in this repo and matched a sort header, a mic button and two multi-selects, all of which correctly use aria-pressed. Precision 57/59 at composition, verified against a second implementation (a brace-aware JSX tag parser); the 2 soft matches were DebuggerControls.tsx:106 and DebuggerVariables.tsx:38, the one-way halves of a two-button expand/collapse pair. BASELINE MOVED 2026-08-17: both soft matches were deleted with the unreachable sub_canvas tree (78e9bff68), taking the population 59->57 matches and 56->54 files, so precision reads 57/57 today - improved by DELETION, not by fix, and a later reader must not mistake the one for the other. 14 of the 54 files are expandable ROWS - this leaf's own corpus; the other 40 are section, panel and sidebar disclosures with the identical condition. Disjoint from unfocusable-click-target (focus-management.md), which owns non-button click targets and already counts this leaf's one <tr onClick> disclosure.",
         "$comment": "Recall is deliberately partial: it cannot see a toggle whose button lives in a child component while the state lives in the parent, nor a non-button disclosure. Both are stated in the golden path rather than papered over."
       },
       "baseline": {
@@ -2117,8 +2117,8 @@
         "description": "The semantic body-text token composited toward the canvas at 45% alpha or less. PROXY FOR the stack-free condition: TEXT HIERARCHY EXPRESSED AS ALPHA ON THE BODY-TEXT TOKEN, TUNED ON ONE THEME FAMILY AND SHIPPED TO ALL OF THEM. Computed, not asserted: on the three light themes this repo ships, text-foreground at 45% alpha measures 2.65-2.93:1 across every configuration the app can be in (canvas and card surfaces, all three brightness levels of the Appearance setting) - below the 3:1 AA-large floor as well as the 4.5:1 AA floor, so no font size rescues it. The same class measures 4.52-4.94:1 on all eight dark themes, which is why it was authored and why it survives review. 45 is the highest alpha at which the failure is unconditional; 50-60 also fail AA on every light configuration but can clear 3:1 for large text, so they are excluded to keep precision at 100% of the WCAG floor that applies. Measured precision 94.0% (23 of 385 are aria-hidden decorative marks, WCAG-exempt but still 2.4:1). PRECONDITION: this repo expresses alpha with Tailwind's /N modifier on a CSS-variable-backed colour token, and renders light themes through a global brightness(0.82) filter that lowers their contrast further. A repo whose light theme is a separate stylesheet, or that has no light theme, must re-derive the proxy - the condition is the alpha, not the slash. The legal fix is bare text-foreground with hierarchy carried by the typo-* scale, per Design.md principle 4."
       },
       "baseline": {
-        "files": 183,
-        "matches": 385
+        "files": 187,
+        "matches": 396
       },
       "floor": 4000
     },
@@ -3411,8 +3411,8 @@
         "description": "A spawn-family call in STATEMENT POSITION (preceded by ; { or }, so its JoinHandle is created and destroyed in the same statement) whose body is an INLINE async block or closure, and which contains no panic boundary (AssertUnwindSafe / catch_unwind / is_panic) within 2500 characters. PROXY FOR the stack-free condition: the only object that can report a task's abrupt death is discarded at the moment the task is created, so 'finished', 'crashed' and 'cancelled' become one observable — nothing. MEASURED 2026-08-16 at 17d059b1f over 963 .rs files: 169 matches across 86 files, commentMatchesSkipped 0. TWO INDEPENDENT IMPLEMENTATIONS — a comment/string-blanking Rust scanner with paren matching and brace-matched #[cfg(test)] exclusion, and the census engine — agree on 211 of 211 sites (ZERO membership disagreement) and on 210 of 211 classifications. AUDIT OF THE 169: 159 true production violations, 9 #[cfg(test)] sites the engine cannot exclude by range (subscription.rs:3325,3379,3393,3407 / cli_process.rs:852,882,902 / test_runner.rs:3042 / deliberation.rs:471 — carried in the baseline exactly as outcomeless-tick carries 2 and silent-row-skip carries 4), and 1 false positive (engine/mod.rs:3461, genuinely guarded 4619 chars into a 16324-char body, past the window; left in rather than excluded because an exclusion would be a claim about a body length, not about a file). PRECISION 159/169 = 94.1%; against the population the engine can reach, 159/160 = 99.4%. TWO FALSE NEGATIVES where the window spilled past a short body: db/src/embedder.rs:92, and companion/remote_jobs.rs:109 where the spill is SEMANTICALLY CORRECT — that dispatcher's callee holds the boundary (a call-graph fact no textual signal can follow; see the path's Gap 7, so any count here over-counts by however many sites push the boundary into a helper). test_automation.rs:1488 is counted as PRODUCTION (pub mod at lib.rs:43, shipped behind a cargo feature) — the first scanner's /(^|\\/)test_/ filename heuristic mis-filed it, the mirror image of the dev_tools_backlog_tests.rs hazard. CONSEQUENCE, MEASURED AGAINST THE OPERATOR'S OWN crash_logs/ DIRECTORY AND READ-ONLY COPIES OF THE LIVE DATABASES: 274 production spawn sites, 210 statement-position, 165 carrying no boundary at all (the [;{}] anchor reaches 161 of the 165 — the other 4 are spelled `let _ = spawn(..)`, listed in the path's Section 9); JoinError::is_panic() appears 3 times in 963 files and only ONE of those converts the panic into a value a caller can act on (companion/remote_jobs.rs:145, whose comment says 'instead of a task that vanishes and a job that never finishes'); 40 sites flatten the JoinError with .map_err and 7 with .ok(); ZERO use .await.unwrap(), .await.expect() or .await?. 20 persona_executions rows carry 'Internal error (panic):' — 7.8% of all 258 failed+incomplete — all with 0 tokens, 0 cost, 0 duration, 0 output. All 20 crash reports on disk are on a tokio-rt-worker thread and all 20 are panics the app SURVIVED, despite lib.rs:804 describing the hook as writing 'before aborting' (Cargo.toml:316 is panic = \"unwind\"). The 20 executions map to only 12 crash files — 8 reports (40%) lost to a one-second-resolution filename plus a truncating fs::write — and 17 of the 20 files contain zero application frames. commands/fleet/wait.rs:176 slices a String at a computed byte index and panicked 3 times inside the DETACHED task at commands/fleet/registry.rs:753, silently skipping the Enter-submit confirmation; the same defect class was closed in eval.rs by 6734382bf seven weeks earlier and this site was never enumerated. POSITIVE CONTROL: unobservable-detached-task-positive-control, the IDENTICAL anchor with the negative lookahead inverted, matches 30 files / 42 sites with ZERO overlap; 169 + 42 = 211 accounts for EVERY statement-position spawn with an inline body in the tree, so the partition is exact rather than a ratio. FAULT-INJECTED 18 WAYS, all correct, including a bound handle, handles.push(...), a `fn spawn(` definition, Command::new(..).spawn(), a function-call body, spawn_local, async { without move, CRLF, an interposed // comment, and a guard placed 3000 chars in (correctly NOT excluded). BACKTRACKING: the fill is a bounded [\\s\\S]{0,2500}? inside a ZERO-WIDTH lookahead — no nesting, no variable-length lookbehind; full 963-file run of rule + control 319 ms. OVERLAP-CHECKED against 469 match sites of the ten nearest rules (unraced-loop-wait, outcomeless-tick, unbound-child-lifetime, unpinned-billing-account-spawn, unowned-inflight-state-sweep, unverified-effect-dispatch, anonymous-deadline, silent-row-skip, unswept-job-registry-read, start-marker-before-admission): ONE collision, test_automation.rs:1486, shared with unverified-effect-dispatch (an app.emit on the line above the spawn); outcomeless-tick shares 4 files and 0 lines. LEGAL FIX: bind the handle and match on JoinError::is_panic(); or wrap the body in AssertUnwindSafe(..).catch_unwind() with a DURABLE Err arm; or move a periodic task into the subscription registry (background.rs::start_loops) and inherit run_single's boundary. Do NOT silence a match with `let _ = tokio::spawn(..)` (same discard, anchor still fires), by hoisting the body into a helper async fn so the call site has no inline block (the match disappears, the defect does not), or by adding an unused AssertUnwindSafe import near the top of the body. PRECONDITION (must be re-derived per repo): this repo spells detached work as tokio::spawn / tauri::async_runtime::spawn with an inline `async move {`. A TypeScript repo spells the identical condition as an unawaited promise, and all four TS siblings score a structural ZERO against this pattern while the condition is present at scale (vibeman 114 detached units vs 27 observed; ascent 50 vs 9). END OF LIFE: this rule is expected to FALL, not to reach zero — a population of deliberately detached tasks is correct (principle P8). If it ever does reach zero the runner fails structurally, BY DESIGN — DELETE the rule then, do not baseline it at 0."
       },
       "baseline": {
-        "files": 86,
-        "matches": 169
+        "files": 87,
+        "matches": 170
       },
       "floor": 900
     },
@@ -3463,8 +3463,8 @@
         }
       ],
       "baseline": {
-        "files": 48,
-        "matches": 71
+        "files": 50,
+        "matches": 73
       },
       "floor": 3000
     },
@@ -3877,8 +3877,8 @@
         }
       ],
       "baseline": {
-        "files": 37,
-        "matches": 40
+        "files": 38,
+        "matches": 41
       },
       "floor": 2000
     },
@@ -3954,7 +3954,7 @@
         "pattern": "ORDER BY\\s+(?:[A-Za-z_][\\w]*\\s*\\.\\s*)?(?:created_at|createdAt|updated_at|fired_at|adopted_at|resolved_at|decided_at|occurred_at|recorded_at|logged_at|at)\\s*(?:ASC|DESC)?\\s*(?:\\\\n)?\\s*LIMIT",
         "flags": "gi",
         "ignoreCommentLines": true,
-        "description": "A SQL read that sorts a recorded history by a CLOCK column and then caps it with LIMIT, with no second sort key. PROXY FOR the stack-free condition: an append-only record is read back in an order the data does not determine, so two rows written in the same clock tick can swap places between reads, and a page boundary that falls inside a tie can show a row twice or never. MEASURED 2026-08-16 at 2a874e692: 141 matches across 78 of 963 .rs files under src-tauri; 2 of the 141 sit inside a brace-matched #[cfg(test)] module (db_query.rs:3692, query_builder.rs:432) and 1 more (db_query.rs:1082) is PROSE — a user-facing help string that documents SQL syntax to the operator — so production precision on the stated condition is 138/141 (97.9%). THE POPULATION IS THIS LEAF'S OWN SUBJECT: every dedicated audit table in the app is read this way — credential_audit_log (audit_log.rs:112,235), settings_audit_log (:91,:101), api_key_audit (:52,:74), provider_audit_log (:52,:94), tool_execution_audit_log (:77,:181), healing_audit_log (:823,:828), persona_change_log (:245,:275,:301), deployment_history (:71,:115,:161,:267), credential_rotation_history (rotation.rs:293,:377) and audit_incidents (:533). WHY IT IS A DEFECT AND NOT PEDANTRY, executed against a read-only copy of the operator's live 347 MB personas.db (copied 2026-08-16 22:20 UTC with the app running, never opened for write, deleted after): 60 tables in db/src/migrations/schema.rs default their timestamp to SQLite `datetime('now')`, which is SECOND granularity with no timezone marker, and the ties are not hypothetical — team_assignment_events has 2,287 tie groups covering 7,431 of 8,486 rows (87.6%), change_journal 50 groups over 216 of 221 (97.7%), fleet_decisions 5 groups over 31 of 46 (67.4%), persona_design_reviews one group of 111 over 113 rows (98.2%). The tables written with chrono to_rfc3339() (nanosecond) tie at ~0.1%, which is exactly why this cannot be decided from the statement: the same clause is safe over one table and unordered over another, and the discriminator is in the writer, not at the read. THE REPO ALREADY OWNS THE ANSWER, 30 LINES AWAY: db/src/repos/orchestration/team_assignments.rs has three reads of the SAME table — :392 `ORDER BY e.created_at ASC, e.id ASC` behind a keyset cursor `(created_at > ?2 OR (created_at = ?2 AND id > ?3))`, :412 `ORDER BY e.created_at DESC, e.id DESC`, and :362 `ORDER BY created_at DESC` with no tiebreaker — and :362 is the one `list_team_assignment_events` serves to the UI. TWO INDEPENDENT IMPLEMENTATIONS RECONCILE AT IDENTICAL FILE MEMBERSHIP (78 files both, 0 files unique to either) AND DIFFER BY ONE MATCH (141 vs 140): implementation #2 enters from the opposite end — it blanks comments, extracts Rust string literals (normal, raw and raw-hash), finds every LIMIT and walks LEFTWARDS to the nearest ORDER BY, then parses the key list by splitting on top-level commas and classifies it structurally. Its first two drafts were BOTH wrong and both wrong quietly: draft 1 excluded newlines from its string-literal class, so every multi-line SQL literal in the repo was invisible and it reported 33/22; draft 2 used `\\\\.` after a backslash, and `.` does not match a newline, so a Rust line-continuation inside a SQL literal terminated the string early and split ORDER BY from its LIMIT. Chasing the residual disagreement is what found both. The three files still differing by one are all non-audit text (a help string, a #[cfg(test)] fixture, and a `push_str(\" ... LIMIT \")` whose bind value is appended by the next statement). ZERO MATCH-LEVEL OVERLAP with every committed rule rooted in src-tauri — measured by re-running each neighbour's own committed pattern and intersecting line sets, not assumed; all 44 reproduced their committed baselines exactly. Largest FILE-level co-occurrence is `silent-row-skip` at 21 of my 78 files (27%) with 0 shared lines, then `untimed-repo-query` 15/78 (19%) and `blind-identity-write` 14/78 (18%) — all three key on the row-mapping and instrumentation of a query, never on its sort key. `paginated-list-query.md` and `timestamp-storage.md` have NO census rule at all, so this condition is unowned. LEGAL FIX: add the table's own primary key as the final sort key — `ORDER BY created_at DESC, id DESC` — and, where the read pages, move to the keyset form at team_assignments.rs:392 rather than OFFSET. DO NOT silence a match by deleting the LIMIT (that makes the read unbounded, which is worse), by sorting client-side after the fetch (JS Array.sort is stable, so it preserves whatever arbitrary order the database returned), or by switching the writer to a higher-resolution clock without adding the key (that shrinks the tie window, it does not close it). CONVERGENT AS A CONDITION, MINORITY AS AN ANSWER: swept read-only against personas-web, brainiac, personas-cloud, vibeman and ascent — ascent uses `orderBy: [{ at: 'desc' }, { id: 'desc' }]` with the rationale written down (`at` alone isn't unique, so the id tie-breaker guarantees a stable, gap-free page boundary) and personas-cloud orders by an INTEGER PRIMARY KEY AUTOINCREMENT, while brainiac (`ORDER BY at DESC LIMIT $1 OFFSET $2` over a 3-way UNION ALL, with OFFSET paging) and vibeman (`ORDER BY created_at DESC LIMIT ?`) do not — 2 of 4. PRECONDITION (must be re-derived per repo): this repo writes SQL as Rust string literals, so the signal is a text match on the SQL itself. A repo whose reads go through an ORM builder (`orderBy: [{ at: 'desc' }]`), a query DSL, or a stored view scores a structural zero here while carrying the condition at scale — ascent's own compliant form would not match this pattern."
+        "description": "A SQL read that sorts a recorded history by a CLOCK column and then caps it with LIMIT, with no second sort key. PROXY FOR the stack-free condition: an append-only record is read back in an order the data does not determine, so two rows written in the same clock tick can swap places between reads, and a page boundary that falls inside a tie can show a row twice or never. MEASURED 2026-08-16 at 2a874e692: 141 matches across 78 of 963 .rs files under src-tauri; 2 of the 141 sit inside a brace-matched #[cfg(test)] module (db_query.rs:3692, query_builder.rs:432) and 1 more (db_query.rs:1082) is PROSE — a user-facing help string that documents SQL syntax to the operator — so production precision on the stated condition is 138/141 (97.9%). THE POPULATION IS THIS LEAF'S OWN SUBJECT: every dedicated audit table in the app is read this way — credential_audit_log (audit_log.rs:112,235), settings_audit_log (:91,:101), api_key_audit (:52,:74), provider_audit_log (:52,:94), tool_execution_audit_log (:77,:181), healing_audit_log (:823,:828), persona_change_log (:245,:275,:301), deployment_history (:71,:115,:161,:267), credential_rotation_history (rotation.rs:293,:377) and audit_incidents (:533). WHY IT IS A DEFECT AND NOT PEDANTRY, executed against a read-only copy of the operator's live 347 MB personas.db (copied 2026-08-16 22:20 UTC with the app running, never opened for write, deleted after): 60 tables in db/src/migrations/schema.rs default their timestamp to SQLite `datetime('now')`, which is SECOND granularity with no timezone marker, and the ties are not hypothetical — team_assignment_events has 2,287 tie groups covering 7,431 of 8,486 rows (87.6%), change_journal 50 groups over 216 of 221 (97.7%), fleet_decisions 5 groups over 31 of 46 (67.4%), persona_design_reviews one group of 111 over 113 rows (98.2%). The tables written with chrono to_rfc3339() (nanosecond) tie at ~0.1%, which is exactly why this cannot be decided from the statement: the same clause is safe over one table and unordered over another, and the discriminator is whichever layer LAST touched the key's resolution — usually the writer, but NOT ALWAYS. Corrected 2026-08-17 by the chronological-feed composer with a measured counterexample: persona_events ties at 0.0% AS WRITTEN and 72.1% after team_channel.rs:230 truncates the key at read time, so a read-side transformation can manufacture exactly the ties the writer avoided, and a rule that looks only at the writer's clock will clear it. THE REPO ALREADY OWNS THE ANSWER, 30 LINES AWAY: db/src/repos/orchestration/team_assignments.rs has three reads of the SAME table — :392 `ORDER BY e.created_at ASC, e.id ASC` behind a keyset cursor `(created_at > ?2 OR (created_at = ?2 AND id > ?3))`, :412 `ORDER BY e.created_at DESC, e.id DESC`, and :362 `ORDER BY created_at DESC` with no tiebreaker — and :362 is the one `list_team_assignment_events` serves to the UI. TWO INDEPENDENT IMPLEMENTATIONS RECONCILE AT IDENTICAL FILE MEMBERSHIP (78 files both, 0 files unique to either) AND DIFFER BY ONE MATCH (141 vs 140): implementation #2 enters from the opposite end — it blanks comments, extracts Rust string literals (normal, raw and raw-hash), finds every LIMIT and walks LEFTWARDS to the nearest ORDER BY, then parses the key list by splitting on top-level commas and classifies it structurally. Its first two drafts were BOTH wrong and both wrong quietly: draft 1 excluded newlines from its string-literal class, so every multi-line SQL literal in the repo was invisible and it reported 33/22; draft 2 used `\\\\.` after a backslash, and `.` does not match a newline, so a Rust line-continuation inside a SQL literal terminated the string early and split ORDER BY from its LIMIT. Chasing the residual disagreement is what found both. The three files still differing by one are all non-audit text (a help string, a #[cfg(test)] fixture, and a `push_str(\" ... LIMIT \")` whose bind value is appended by the next statement). ZERO MATCH-LEVEL OVERLAP with every committed rule rooted in src-tauri — measured by re-running each neighbour's own committed pattern and intersecting line sets, not assumed; all 44 reproduced their committed baselines exactly. Largest FILE-level co-occurrence is `silent-row-skip` at 21 of my 78 files (27%) with 0 shared lines, then `untimed-repo-query` 15/78 (19%) and `blind-identity-write` 14/78 (18%) — all three key on the row-mapping and instrumentation of a query, never on its sort key. `paginated-list-query.md` and `timestamp-storage.md` have NO census rule at all, so this condition is unowned. LEGAL FIX: add the table's own primary key as the final sort key — `ORDER BY created_at DESC, id DESC` — and, where the read pages, move to the keyset form at team_assignments.rs:392 rather than OFFSET. DO NOT silence a match by deleting the LIMIT (that makes the read unbounded, which is worse), by sorting client-side after the fetch (JS Array.sort is stable, so it preserves whatever arbitrary order the database returned), or by switching the writer to a higher-resolution clock without adding the key (that shrinks the tie window, it does not close it). CONVERGENT AS A CONDITION, MINORITY AS AN ANSWER: swept read-only against personas-web, brainiac, personas-cloud, vibeman and ascent — ascent uses `orderBy: [{ at: 'desc' }, { id: 'desc' }]` with the rationale written down (`at` alone isn't unique, so the id tie-breaker guarantees a stable, gap-free page boundary) and personas-cloud orders by an INTEGER PRIMARY KEY AUTOINCREMENT, while brainiac (`ORDER BY at DESC LIMIT $1 OFFSET $2` over a 3-way UNION ALL, with OFFSET paging) and vibeman (`ORDER BY created_at DESC LIMIT ?`) do not — 2 of 4. PRECONDITION (must be re-derived per repo): this repo writes SQL as Rust string literals, so the signal is a text match on the SQL itself. A repo whose reads go through an ORM builder (`orderBy: [{ at: 'desc' }]`), a query DSL, or a stored view scores a structural zero here while carrying the condition at scale — ascent's own compliant form would not match this pattern."
       },
       "exclude": [],
       "baseline": {
@@ -3988,8 +3988,8 @@
         }
       ],
       "baseline": {
-        "files": 10,
-        "matches": 10
+        "files": 11,
+        "matches": 11
       },
       "floor": 120
     },
@@ -4049,8 +4049,8 @@
         }
       ],
       "baseline": {
-        "files": 27,
-        "matches": 30
+        "files": 28,
+        "matches": 32
       },
       "floor": 4000
     },
@@ -4357,7 +4357,7 @@
       "signal": {
         "pattern": "\\bfn\\s+(?=[a-z0-9_]{0,60}(?:backfill|reembed|reindex))(?!spawn_)[a-z0-9_]+\\s*\\((?:[^(){}]|\\([^()]{0,120}\\)){0,600}?\\)\\s*->\\s*(?:Result\\s*<\\s*(?:\\(\\s*\\)|usize|u8|u16|u32|u64|i8|i16|i32|i64|bool)\\s*[,>]|\\(\\s*\\)\\s*\\{)",
         "flags": "g",
-        "description": "A function whose name says it fills an existing population (backfill / reembed / reindex) and whose return type is a bare numerator -- unit, or a single unsigned/signed integer, or bool. A backfill's completion is a claim about a POPULATION: how many were found, how many were handled, how many were refused and why, and whether a bound was hit. One integer cannot carry that, so 'converged', 'nothing was applicable', 'the feature is unavailable on this build' and 'every row failed' all reach the caller as the same value -- and where the caller is a loop, the terminator (0) is the value a total outage produces. Measured: 4 of the 5 matches COMPUTE the missing terms inside the loop and discard them into a tracing:: macro before returning. The lookahead is load-bearing -- it requires the fill vocabulary anywhere in the identifier, which is what selects 45 declarations out of 14,992 `fn` declarations in the tree; the return-type clause is what selects 5 of those 45. `(?!spawn_)` excludes 2 fire-and-forget spawners, for which `()` is the correct and only possible return type -- a gate that fires on correct content is worse than no gate. Test declarations are excluded structurally rather than by pattern: all 17 test-scope matches in the anchor return implicit unit (no `->` at all) and the rule requires an explicit return type. Precision 5/5, every match opened and its live population replayed against a read-only copy of the operator's 347 MB personas.db: incremental.rs:7679 backfill_lab_tool_calls -> Result<(),_> (accumulates total_inserted, logs it, returns unit; its caller then drops the source columns one line later, so its completeness is now unverifiable -- 259 rows, source gone); memories.rs:2008 backfill_memory_embeddings -> Result<usize,_> (counts successes only, per-row errors warned and uncounted, and its caller at lib.rs:1092 breaks on Ok(0) -- so a total embedder outage is indistinguishable from convergence; live 5,158/5,158 embedded, so the defect is latent); dev_workspaces.rs:1453 backfill_practice_ideas -> Result<u32,_> (unreadable practices warned, uncounted; live 22/22 converged); commands/infrastructure/dev_workspaces.rs:544 (the IPC door for the same, with zero UI consumers); obsidian_brain/mod.rs:460 obsidian_mirror_backfill_execution_knowledge -> Result<u32,_> (sums 78 per-persona helpers each of which returns 0 for four different reasons, and SetupPanel.tsx:100 renders the sum as a SUCCESS toast). Compliant shapes in the same anchor: a struct (BackfillResult{slots_enqueued,capped,failures,slot_times} scheduler.rs:94; ReembedResult{embedded,skipped,available} brain.rs:1126; ReembedCounts embeddings.rs:178; KbIngestProgress kb_ingest.rs:213), a tuple carrying the denominator ((scanned,created) triggers.rs:1416), the values themselves (Vec<DevUseCase> dev_tools.rs:7674), or a json object naming total/updated/skipped (reviews.rs:1851,1880,1988). Fix = return a struct with found / handled / skipped / failed / capped, not a second backfill.",
+        "description": "A function whose name says it fills an existing population (backfill / reembed / reindex) and whose return type is a bare numerator -- unit, or a single unsigned/signed integer, or bool. A backfill's completion is a claim about a POPULATION: how many were found, how many were handled, how many were refused and why, and whether a bound was hit. One integer cannot carry that, so 'converged', 'nothing was applicable', 'the feature is unavailable on this build' and 'every row failed' all reach the caller as the same value -- and where the caller is a loop, the terminator (0) is the value a total outage produces. Measured: 4 of the 5 matches COMPUTE the missing terms inside the loop and discard them into a tracing:: macro before returning. The lookahead is load-bearing -- it requires the fill vocabulary anywhere in the identifier, which is what selects 45 declarations out of 14,992 `fn` declarations in the tree; the return-type clause is what selects 5 of those 45. `(?!spawn_)` excludes 2 fire-and-forget spawners, for which `()` is the correct and only possible return type -- a gate that fires on correct content is worse than no gate. Test declarations are excluded structurally rather than by pattern: all 17 test-scope matches in the anchor return implicit unit (no `->` at all) and the rule requires an explicit return type. Precision 5/5, every match opened and its live population replayed against a read-only copy of the operator's 347 MB personas.db: incremental.rs:7679 backfill_lab_tool_calls -> Result<(),_> (accumulates total_inserted, logs it, returns unit; its caller then drops the source columns one line later, so its completeness is now unverifiable -- 259 rows, source gone); memories.rs:2008 backfill_memory_embeddings -> Result<usize,_> (counts successes only, per-row errors warned and uncounted, and its caller at lib.rs:1092 breaks on Ok(0) -- so a total embedder outage is indistinguishable from convergence; live 5,158/5,158 embedded, so the defect is latent); dev_workspaces.rs:1453 backfill_practice_ideas -> Result<u32,_> (unreadable practices warned, uncounted; live 22/22 converged); commands/infrastructure/dev_workspaces.rs:544 (the IPC door for the same, with zero UI consumers); obsidian_brain/mod.rs:460 obsidian_mirror_backfill_execution_knowledge -> Result<u32,_> (sums 78 per-persona helpers each of which returns 0 for four different reasons, and SetupPanel.tsx:100 renders the sum as a SUCCESS toast). Compliant shapes in the same anchor: a struct (ReembedResult{embedded,skipped,available} brain.rs:1126; ReembedCounts embeddings.rs:178; KbIngestProgress kb_ingest.rs:213), a tuple carrying the denominator ((scanned,created) triggers.rs:1416), the values themselves (Vec<DevUseCase> dev_tools.rs:7674), or a json object naming total/updated/skipped (reviews.rs:1851,1880,1988). Fix = return a struct with found / handled / skipped / failed / capped, not a second backfill.",
         "$measured": "2026-08-17 @ 50d736f6c -- 963 .rs files walked. Two independent implementations agreed exactly on the 5 violating file:line addresses AND on the 45/21 anchor: the census engine's spanning regex, and a structural counter that brace-matches every `fn` declaration, paren-matches its argument list, and parses the return type as text rather than by a regex that could span into the next declaration. Anchor partition, hand-classified: 45 declarations across 21 files = 17 test-scope (all implicit-unit, all excluded by requiring an explicit return type) + 23 production-compliant + 5 violating. Widening the vocabulary with `materialize` was measured and declined: it adds 2 violating (materialize_practice_ideas, materialize_pending_for_practice -- both internals of backfill_practice_ideas, which the rule already selects, so they count one defect three times) and 2 compliant, and the word also names per-entity construction here (materialize_persona_initial_state, materialise_reference), which is not a population pass. Validated in a composer-private scratch registry, then re-extracted from the published document and re-run with identical numbers. Rule + control together: 1.3 s."
       },
       "baseline": {
@@ -4394,8 +4394,8 @@
         }
       ],
       "baseline": {
-        "files": 23,
-        "matches": 24
+        "files": 25,
+        "matches": 26
       },
       "floor": 4000
     },
@@ -4539,31 +4539,6 @@
         "matches": 12
       },
       "floor": 900
-    },
-    {
-      "id": "vocabulary-wider-than-its-column",
-      "goldenPath": "docs/concepts/golden-paths/trigger-wiring-surface.md",
-      "title": "A wiring surface enumerates trigger types its own storage column CANNOT hold — the menu is wider than the table",
-      "roots": [
-        "src",
-        "src-tauri"
-      ],
-      "extensions": [
-        ".ts",
-        ".tsx",
-        ".rs"
-      ],
-      "signal": {
-        "pattern": "(?:[\"'](?:file_watcher|clipboard|app_focus|composite)[\"'][\\s\\S]{0,120}?[\"'](?:manual|schedule|polling|webhook|chain|event_listener)[\"']|[\"'](?:manual|schedule|polling|webhook|chain|event_listener)[\"'][\\s\\S]{0,120}?[\"'](?:file_watcher|clipboard|app_focus|composite)[\"'])",
-        "flags": "g",
-        "ignoreCommentLines": true,
-        "description": "A hand-written trigger-type vocabulary that names at least one type the persona_triggers.trigger_type CHECK constraint REJECTS, beside at least one it admits. PROXY FOR the stack-free condition: an authoring surface enumerates the members of a closed vocabulary that a layer beneath it narrows, and nothing compares the two lists. BOTH HALVES ARE LOAD-BEARING. The four rejected names (file_watcher, clipboard, app_focus, composite) are ALSO the complete membership of an unrelated closed vocabulary in this repo — the ambient-context / sensory-signal sources (engine/src/ambient_context.rs, engine/src/context_rules.rs, commands/companion/sensory.rs, bindings/ContextEvent.ts, bindings/ContextPattern.ts). Requiring one of the SIX storage-admitted names in the same 120-char window excludes every one of those, because no ambient-context site can contain manual/schedule/chain/webhook/polling/event_listener; executed, dropping that half takes the rule from 6 files to 34. BOTH WORD LISTS ARE DERIVED FROM THE TREE, never invented: the admitted six are the CHECK list at db/src/migrations/schema.rs:87 (identical in incremental.rs:472 and :1074, so this is not machine-dependent), the rejected four are VALID_TRIGGER_TYPES (core/src/validation/trigger.rs:3-14, ten) minus that CHECK. MEASURED 2026-08-17 at 6c97502d3 by two structurally independent implementations that agree on the count AND on all nine file:line sites: 6 files / 9 matches, ALL NINE OPENED BY HAND, precision 9/9 — validation/trigger.rs:4 (VALID_TRIGGER_TYPES, the widest declaration) and :33 (normalize_trigger_type, which MANUFACTURES file_watcher and app_focus from user/template aliases), triggerConstants.ts:56 and :74 (TRIGGER_CATEGORIES, the actual menu) and :264 (the client config union), studioCommit.ts:34 (FORM_COMMITTABLE_SOURCE_TYPES, the Trigger Studio's commit list), glyph/triggers.ts:43, useCasePickerShared.ts:28 (the hand-written TS mirror of normalize_trigger_type), EventsSection.tsx:32. LIVE CONSEQUENCE, executed by lifting the live CREATE TABLE into an in-memory database and attempting one INSERT per type: manual/schedule/polling/webhook/chain/event_listener ACCEPTED, file_watcher/clipboard/app_focus/composite REJECTED with 'CHECK constraint failed'. All 6 TRIGGER_TEMPLATES (the form's one-click quick-start strip) target a rejected type; three nlTriggerParser branches resolve to one; no rule in errorRegistry.ts matches a CHECK-constraint failure, so the user sees 'Something went wrong. Try again.' SIX independent copies of this one vocabulary exist at arities 10/10/10/8/6/4 and none imports a shared declaration, because PersonaTrigger.trigger_type is String in the ts-rs binding and no generated union exists to import. THE REAL FIX is a #[derive(TS)] enum whose variants are the storable set, decided in the same commit as the CHECK — see the path's 'Prefer a type over a gate'; this rule is the RATCHET that holds the line until it lands. CORRECT END STATE IS ZERO, at which point DELETE this rule rather than baselining it at zero. PRECONDITION (re-derive per repo, do NOT port): the two word lists are specific to this storage layer. An adopting repo must derive its own from its own narrowest gate — a CHECK list, an enum, a migration — and will get a different pattern for the same condition."
-      },
-      "baseline": {
-        "files": 6,
-        "matches": 9
-      },
-      "floor": 3000
     },
     {
       "id": "hand-synced-search-index",
@@ -4777,10 +4752,564 @@
         "description": "A script that enumerates a directory and can exit non-zero, but never refuses an EMPTY enumeration — so 'found nothing' and 'looked at nothing' both exit 0. Proxy for the contract's fail-loud requirement; the earning case is check-coverage.mjs reporting 0 missing / 0 extra with 13 of 14 locales absent."
       },
       "baseline": {
-        "files": 17,
-        "matches": 17
+        "files": 19,
+        "matches": 19
       },
       "floor": 120
+    },
+    {
+      "id": "zoneless-day-bucket",
+      "goldenPath": "docs/concepts/golden-paths/schedule-calendar.md",
+      "title": "A calendar day is derived from a Date with no zone named, so the boundary between two days is decided by the viewer's machine (or by UTC) rather than by the entity the day belongs to",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\.setHours\\(\\s*0\\s*,\\s*0\\s*,\\s*0\\s*,\\s*0\\s*\\)|\\.toISOString\\(\\)\\s*\\.\\s*slice\\(\\s*0\\s*,\\s*10\\s*\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "TWO spellings of 'which calendar day is this instant on', neither of which takes a zone: `.setHours(0,0,0,0)` snaps to the HOST machine's midnight, `.toISOString().slice(0,10)` snaps to UTC's. They are invisible to each other and this repo uses both, three lines apart, inside one function. PROXY FOR the stack-free condition: a day boundary — the thing that decides which bucket a moment falls in, which column it is drawn in, and which label it is filed under — is chosen by the machine the code runs on rather than by the entity whose day it is. There is no argument to forget and no `undefined` to notice: the zone is simply absent from the expression, which is why this is invisible to `host-locale-date-render` (site overlap measured: 0 of 18; file overlap 4 of 15) — that rule gates the LOCALE argument of a formatting call, this one gates the ZONE of a bucketing computation, and `LimitsSettings.tsx:77` is simultaneously compliant here (`timeZone: 'UTC'`) and violating there (locale `undefined`), which is the cleanest available proof that the two concerns are orthogonal. MEASURED 2026-08-17 at 52b0a6ba8 over 4,801 src .ts/.tsx: 18 matches in 15 files, hand-verified 14/18 on the strict condition (a calendar day a user reads or filters by) and 18/18 on the literal one; the 4 are document/filename stamps (MediaStudioPage.tsx:131, compileReport.ts:110, passportExport.ts:25, harness/executor.ts:280) carried in the baseline rather than excluded. THE CONSEQUENCE IS MEASURED, NOT ARGUED: `bucketByDay` (ScheduleRowHistoryPanel.tsx:157-186) holds BOTH spellings and was replayed verbatim against the operator's 50 real executions at three host offsets — UTC: 0 of 50 mis-plotted, 0 dropped; Europe/Prague (UTC+2) and Asia/Tokyo (UTC+9): 36 of 46 plotted under a label that is not their local calendar day, 4 of 50 dropped entirely because their UTC key names a day no bucket claims. Identical code, identical data, correct on the machine a CI job runs on. src/lib/types/timeRange.ts:33 holds the same split-brain in a shared helper (host-local `new Date(y, m-1, 1)` serialised through UTC `toISOString().slice(0,10)`, so a calendar-month range starts a day early on any positive offset). PRECONDITION (must be re-derived per repo): this repo spells a day boundary as a Date mutation or an ISO prefix, and has an entity-owned zone available to use instead (persona_triggers.config.timezone). A repo whose entities have no zone has no fix to route to. LEGAL FIX: derive the key through a formatter that names a zone — `new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(d)` yields YYYY-MM-DD in the chosen zone — and use ONE zone for keys, labels and axis. NOT LEGAL: swapping one spelling for the other; that is what produced the defect.",
+        "$measured": "2026-08-17 @ 52b0a6ba8 — 4,801 src .ts/.tsx walked. Two independent implementations agreed exactly on 15 files / 18 matches: the census engine, and a bespoke line-scanner that reports file:line:column for every match (the scanner also independently reproduced the neighbouring host-locale-date-render set at 70 sites / 54 files versus its registry baseline of 67/53 — the 3-site gap is exactly the three comment-only lines in KnowledgeAtelier.tsx that `ignoreCommentLines` drops, confirmed by running that rule with --verbose; the disagreement resolved to a known engine feature rather than a matcher bug). The `.toISOString().split('T')[0]` alternative spelling was measured and OMITTED: 0 files, 0 matches — adding a zero-recall alternative buys nothing and risks a future false positive. Positive control returns 3 files / 3 matches. Re-extracted from this document and re-run: identical."
+      },
+      "baseline": {
+        "files": 15,
+        "matches": 18
+      },
+      "floor": 4000
+    },
+    {
+      "id": "verification-that-cannot-fail",
+      "goldenPath": "docs/concepts/golden-paths/installer-acceptance-testing.md",
+      "roots": [
+        ".github"
+      ],
+      "extensions": [
+        ".yml",
+        ".yaml"
+      ],
+      "signal": {
+        "pattern": "^[ \\t]*continue-on-error:[ \\t]*true\\b",
+        "flags": "gm",
+        "ignoreCommentLines": false,
+        "description": "a CI job or step declared continue-on-error: true — it runs, it reports, and its verdict cannot change the workflow's conclusion. PROXY FOR the stack-free condition: 'a verification runs, reports, and its verdict cannot change what happens.' Measured 2026-08-17: 3 matches in 2 files, precision 3/3 hand-verified by opening every site. All three carry a soak-period promotion criterion that CANNOT BE MET: installer-test.yml:150 and :267 say 'green for 5 consecutive scheduled runs' and installer-test.yml declares no schedule: trigger at all (its on: block is workflow_run + workflow_dispatch), and neither job has appeared in any executed run — the workflow has 8 runs all-time, all conclusion `skipped`; e2e-smoke.yml:72 says 'after 5 consecutive green runs' for a workflow that is 0 successes in 38 runs. THE COMPLIANT FORM IS DOMINANT IN THE SAME FILES — `if: always()` also keeps CI going past a failure but the step's own exit code still decides the job: 16 sites in 3 files, 14 of them in ci.yml where the comment at :301 states the intent ('so a failing test step does not hide a lint regression'). That is why these 3 are a defect and not a house style. Line-anchored with the m flag and ignoreCommentLines:false ON PURPOSE — YAML comments are '#', which the engine's '//'-oriented stripper does not know; the four commented occurrences in these same two files (e2e-smoke.yml:7, installer-test.yml:139, :233, :258) would take a naive pattern to 7 matches, 43% of them prose. LEGAL FIX: delete the key and let the job fail, or convert it to `if: always()` if the intent was 'keep running past an earlier failure'. If a soak really is needed, give the criterion a DATE as well as a count, and add the trigger the criterion counts. PRECONDITION (re-derive per repo): this repo runs GitHub Actions. The same condition is spelled allow_failure: true (GitLab), catchError(buildResult:'SUCCESS') (Jenkins), `|| true` after a checker, or a warn-level lint rule under a runner with no --max-warnings — and this repo's worst instance is not spelled in YAML at all (scripts/test-installer.ps1:135-143 is a test step whose both branches print and neither throws). DELETE THIS RULE rather than baselining it at 0 if the count ever reaches zero — the census cannot express 'must be zero'.",
+        "$comment": "baseline measured 2026-08-17 at master 2a874e692; walked 10 .yml files under .github"
+      },
+      "baseline": {
+        "files": 2,
+        "matches": 3
+      },
+      "floor": 6
+    },
+    {
+      "id": "vacuous-all-done-verdict",
+      "goldenPath": "docs/concepts/golden-paths/setup-checklist.md",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\bconst\\s+(?:all|is|has|every)[A-Za-z0-9_$]*\\s*=\\s*(?![^;\\n]{0,100}(?:\\.length|\\bhas[A-Z]|\\bsize\\b))[^;\\n]{0,100}?\\.every\\(",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "An all-done / all-ready verdict bound with .every() and no non-emptiness guard in the same statement. [].every(f) is true, so an empty collection reports 'everything is finished': a tour with no resolvable steps is badged complete, a health panel with no checks reports OK, a diagnostics run that produced no steps reads as passed."
+      },
+      "exclude": [],
+      "baseline": {
+        "files": 15,
+        "matches": 15
+      },
+      "floor": 4000
+    },
+    {
+      "id": "mount-snapshot-of-durable-state",
+      "goldenPath": "docs/concepts/golden-paths/canvas-state-persistence.md",
+      "title": "Durable state copied into component state by a mount-time initializer",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "useState\\s*(?:<[^;()]{0,140}>)?\\s*\\(\\s*(?:\\bload[A-Z][\\w$]*\\s*\\)|\\(\\s*\\)\\s*=>\\s*(?:(?!\\buseState\\b|=>)[\\s\\S]){0,200}?(?:(?:window\\s*\\.\\s*)?(?:local|session)Storage\\s*\\.\\s*getItem|\\bgetAppSetting\\s*\\(|\\bload[A-Z][\\w$]*\\s*\\())",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A useState whose INITIALIZER is a durable read — either the bare-reference form `useState(loadX)` or a lazy arrow `() => …` that reaches localStorage.getItem / sessionStorage.getItem / getAppSetting( / a load*() persistence helper within 200 chars and before any second useState. PROXY FOR the stack-free condition: durable state is copied into a component-local variable at mount, so the component owns a private copy that no later write to the durable store can reach; the two then disagree silently, and the next commit built from the stale copy serializes it back over the fresh value. THE REPO STATES THIS DEFECT IN ITS OWN WORDS at src/features/teams/sub_mastermind/lib/useLayout.ts:1-7 — 'These replace the one-shot useState(loadGroups) initializers the canvas used to open with: a snapshot taken at mount can only ever be right until someone else writes' — which is also why the bare-reference alternative is in the pattern: that is the exact form the exemplar's comment names. MEASURED 2026-08-17 at 52b0a6ba8: 16 matches across 12 of 4801 .ts/.tsx files, ALL SIXTEEN OPENED AND HAND-READ (precision 16/16). THE MOST INSTRUCTIVE MATCH IS DesktopFooter.tsx:325 AND IT IS WHY THE RULE DOES NOT EXEMPT A LISTENER: it HAS a re-sync arm at :334, window.addEventListener('storage', handler), commented 'Stay in sync when Sidebar itself changes localStorage (e.g. from another tab)' — but the HTML storage event does not fire in the document that WROTE the value, and its real co-writer Sidebar.tsx:30 is in the SAME document of a single-WebView desktop app, so the repair is inert by construction and a rule that credited it would report green on the site it most needs to see. IncidentsInbox.tsx contributes 5 of the 16 (:86 filters, :91 sort, :100 last-seen, :107 group mode, :115 collapsed groups) and its only 'subscribe' hits are an unrelated storeBus channel at :174. POSITIVE CONTROL PARTITIONS THE ANCHOR: useSyncExternalStore( returns 25 matches / 16 files, of which NINE are in this leaf's own directory (useLayout.ts x7, focusStore.ts:70, canvasActionStore.ts:205) while ZERO of the 16 violating sites are — the exemplar and the deviations do not overlap at all. SITE-LEVEL OVERLAP AGAINST ALL 178 REGISTRY RULES IS ZERO, computed with each rule's own pattern over the 12 matched files; file-level overlap with raw-web-storage is 8 of 12 and is EXPECTED AND NOT A COLLISION — that rule anchors on the localStorage identifier and counts a storage ACCESS, this anchors on useState and counts a SNAPSHOT, so they report the same lines for different defects with different fixes. LEGAL FIX: expose subscribe + a stable snapshot getter from the persistence module and bind with useSyncExternalStore (the six bindings in useLayout.ts are the template); or, where the value genuinely has no second writer, say so at the call site. DO NOT silence a match by hoisting the read into a variable above the useState, by renaming the loader, or by adding a storage-event listener — all three preserve the private copy exactly. KNOWN RECALL LIMITS, STATED: (a) a read hoisted to module scope and passed in has no useState anchor; (b) the 200-char bound drops an initializer with a long preamble; (c) useReducer with a lazy init is not covered — zero such sites exist today. PRECONDITION (re-derive per repo, do NOT port): this repo reads durable state through localStorage.getItem / getAppSetting / hand-written load*() helpers and subscribes through useSyncExternalStore. A repo whose durability idiom is redux-persist, a cookie, or a URL search param must key on its own. END OF LIFE: this rule is designed to reach zero. When it does the runner fails structurally on zero matches, BY DESIGN — DELETE the rule then, do not baseline it at 0."
+      },
+      "exclude": [
+        {
+          "path": "**/__tests__/**",
+          "reason": "test fixtures legitimately seed component state from a stubbed store"
+        },
+        {
+          "path": "**/*.test.ts",
+          "reason": "test fixtures legitimately seed component state from a stubbed store"
+        },
+        {
+          "path": "**/*.test.tsx",
+          "reason": "test fixtures legitimately seed component state from a stubbed store"
+        },
+        {
+          "path": "src/test/**",
+          "reason": "the test harness constructs storage state directly"
+        }
+      ],
+      "baseline": {
+        "files": 12,
+        "matches": 16
+      },
+      "floor": 4000
+    },
+    {
+      "id": "defeated-pathspec-commit",
+      "goldenPath": "docs/concepts/golden-paths/parallel-session-coordination.md",
+      "roots": [
+        ".claude/skills"
+      ],
+      "extensions": [
+        ".md"
+      ],
+      "signal": {
+        "pattern": "git\\s+commit\\s+(?:--only|--)\\s",
+        "flags": "g",
+        "ignoreCommentLines": false,
+        "description": "an agent-facing instruction to scope a commit with a pathspec. PROXY FOR the stack-free condition: the project prescribes a technique it has already measured to be unsound. Executed in a hook-free throwaway repo, BOTH `git commit -- <p>` and `git commit --only <p>` commit the WORKING TREE rather than the index, so a sibling's unstaged edits to a file in your pathspec ride in under your message. Four of the matching sites claim the opposite in so many words (\"bypass the shared index entirely\") and one calls it \"safe by construction\"."
+      },
+      "baseline": {
+        "files": 6,
+        "matches": 11
+      },
+      "floor": 40
+    },
+    {
+      "id": "catalog-boundary-escape",
+      "goldenPath": "docs/concepts/golden-paths/shared-component-boundary.md",
+      "roots": [
+        "src/features/shared/components"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "from\\s*['\"]@/(?:stores|api|lib/bindings)(?:['\"]|/)|from\\s*['\"]@/features/(?!shared['\"/])",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a domain-agnostic catalog primitive importing app state, IPC, a generated binding, or another feature. PROXY FOR the stack-free condition: a module in a layer declared dependency-free imports from a layer above it. Mirrors eslint.config.js:189-197, which reports the same 13 sites at \"warn\" and therefore fails nothing — `npm run check` passes eslint with no --max-warnings and pre-commit passes --max-warnings 99999. Unlike the lint rule, this pattern also catches the BARE barrel forms (`@/stores`, `@/api`, `@/lib/bindings`), which the rule's `a/*` + `a/**` globs cannot match; there are zero such imports today, so the baseline is unchanged and the first one written will raise it."
+      },
+      "baseline": {
+        "files": 3,
+        "matches": 13
+      },
+      "floor": 100
+    },
+    {
+      "id": "hand-painted-modal-backdrop",
+      "goldenPath": "docs/concepts/golden-paths/modal-stacking.md",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "fixed inset-0[^\"'`\\n]*(?:bg-black\\/|bg-background\\/[0-9]|bg-secondary\\/[0-9]|backdrop-blur|surface-blur)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A full-viewport dimming layer painted directly on the `fixed inset-0` element — the hand-rolled modal backdrop. BaseModal never emits this shape (its container carries no paint; the scrim is a separate `absolute inset-0` child), so a match is an overlay built outside the modal host: no stack depth, no Escape arbitration, no focus trap, no focus restore."
+      },
+      "baseline": {
+        "files": 19,
+        "matches": 20
+      },
+      "floor": 1800
+    },
+    {
+      "id": "english-literal-os-notification",
+      "goldenPath": "docs/concepts/golden-paths/desktop-notification.md",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?:sendAppNotification|sendOsNotification|notifyFleetAwaiting)\\s*\\(\\s*(?:[A-Za-z_$][\\w$.]{0,40}\\s*\\?\\s*)?['\"`][A-Z]",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "An OS-notification door called with an English string literal as its title. The text leaves the app into the OS notification centre, where nothing can re-render it — so a literal here is permanently untranslated for 13 of 14 locales."
+      },
+      "exclude": [
+        {
+          "path": "**/__tests__/**",
+          "reason": "unit-test fixtures — a literal title in a test asserts the IPC wrapper resolves, it is not a user-facing notification"
+        },
+        {
+          "path": "**/*.test.ts",
+          "reason": "unit-test fixtures — a literal title in a test asserts the IPC wrapper resolves, it is not a user-facing notification"
+        }
+      ],
+      "baseline": {
+        "files": 6,
+        "matches": 18
+      },
+      "floor": 4000
+    },
+    {
+      "id": "unconstrained-sequence-column",
+      "goldenPath": "docs/concepts/golden-paths/definition-version-history.md",
+      "roots": [
+        "src-tauri/db/src/migrations"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\b(?:version_number|order_index|run_number|ordinal|sequence|seq|rev|position|step_index)\\s+INTEGER(?:(?!CREATE\\s+TABLE|UNIQUE|PRIMARY\\s+KEY\\s*\\()[^;]){0,3000}?\\)\\s*;",
+        "flags": "g",
+        "description": "A per-parent monotonic sequence column (version_number, order_index, rev, seq, ordinal, position, sequence, run_number, step_index) declared in a CREATE TABLE whose remaining body contains no UNIQUE(...) and no table-level PRIMARY KEY(...). Readers resolve 'the latest' with ORDER BY <col> DESC LIMIT 1, which is not merely wrong on a duplicate but plan-dependent, so it reproduces on one machine and not another. Enforce the sequence in the schema and allocate it inside the INSERT (skill_usage.rs:200-201 is the reference)."
+      },
+      "baseline": {
+        "files": 4,
+        "matches": 12
+      },
+      "floor": 6
+    },
+    {
+      "id": "stringify-decided-equality",
+      "goldenPath": "docs/concepts/golden-paths/version-diff-view.md",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "JSON\\s*\\.\\s*stringify\\s*\\((?:[^()]|\\((?:[^()]|\\([^()]*\\))*\\)){0,200}\\)\\s*(?:!==|===|!=|==)\\s*JSON\\s*\\.\\s*stringify\\s*\\(|(?:const|let)\\s+[A-Za-z_$][\\w$]*\\s*=\\s*JSON\\s*\\.\\s*stringify\\s*\\((?:(?!JSON\\s*\\.\\s*stringify)[\\s\\S]){0,160}?(?:const|let)\\s+[A-Za-z_$][\\w$]*\\s*=\\s*JSON\\s*\\.\\s*stringify\\s*\\((?:(?!JSON\\s*\\.\\s*stringify)[\\s\\S]){0,240}?(?:!==|===)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "Object equality decided by JSON.stringify on both sides, in the inline form or the paired-const form. Key order is insertion order in JS and survives a JSON.parse round trip, so a value read from the database and an object literal of the same shape compare unequal. Replayed: two semantically identical payloads whose nested keys were serialized in a different order report as changed. Compare key-by-key, or serialize both sides through one canonicalizing stringifier. The paired-const alternative is load-bearing: it is the only one that sees comparisonHelpers.ts:85, the diff kernel behind execution comparison."
+      },
+      "baseline": {
+        "files": 5,
+        "matches": 6
+      },
+      "floor": 4000
+    },
+    {
+      "id": "null-spinner-busy-state",
+      "goldenPath": "docs/concepts/golden-paths/manual-test-fire.md",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\?\\s*<LoadingSpinner(?:\\s[^>]{0,120})?/>\\s*:\\s*<",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A control's busy state rendered as <LoadingSpinner/> in the consequent of a ternary whose alternate is another element — almost always an icon. feedback/LoadingSpinner renders null (it emits only an sr-only role=status when passed a label), so the icon vanishes and nothing takes its place while the action is in flight. Use buttons/AsyncButton (returns-a-promise onClick) or buttons/Button loading={flag}, whose spinners are real (Button.tsx:230,237; AsyncButton.tsx:85). Doctrine: inline-busy-state.md."
+      },
+      "baseline": {
+        "files": 50,
+        "matches": 68
+      },
+      "floor": 4000
+    },
+    {
+      "id": "magic-collection-ceiling",
+      "goldenPath": "docs/concepts/golden-paths/engine-caps-and-ceilings.md",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\.\\s*(?:iter|into_iter|iter_mut|values|values_mut|keys|drain|flatten|rev)\\s*\\(\\s*\\)\\s*\\.\\s*take\\s*\\(\\s*\\d+\\s*\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A collection is truncated to an integer literal. PROXY FOR the stack-free condition: a bound on how much work or data flows on is written as an unnamed number, so nothing can relate it to the ceiling it must respect and nothing reports what was dropped. The iter()-family receiver is what buys precision — it excludes .chars().take(N) display truncations (id-generation.md's leaf, 0 site overlap with truncated-uuid-id) at the cost of missing .filter(..).take(N) chains: it finds 53 of the 65 literal collection ceilings two independent scanners agree exist. Precision hand-verified 10/10. LEGAL FIX: name the bound as a const with a doc comment stating what it must be smaller than, and apply it through personas_core::limits::cap_with_log(label, requested, cap) so the clip is attributable — that helper exists, is unit-tested, and has ONE caller in 963 files (background.rs:2607). PRECONDITION (re-derive per repo): this repo bounds work with Rust iterator .take(); a repo using slicing, a paginator or a query builder has the same condition wearing markup this pattern cannot see."
+      },
+      "baseline": {
+        "files": 34,
+        "matches": 53
+      },
+      "floor": 700
+    },
+    {
+      "id": "feed-item-ordered-by-the-renderers-clock",
+      "goldenPath": "docs/concepts/golden-paths/chronological-feed.md",
+      "title": "A feed item's ORDERING key is minted from the rendering device's clock, then ranked against sibling items whose keys came from the database",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\b(?:created_at|createdAt|started_at|startedAt|occurred_at|occurredAt|at)\\s*:\\s*new Date\\(\\)\\.toISOString\\(\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "An object literal assigns a FEED-ORDERING field (created_at / createdAt / started_at / startedAt / occurred_at / occurredAt / at) from the renderer's own clock. PROXY FOR the stack-free condition (this path's P4): an item's position in a shared timeline is established by the rendering device rather than by the authority that timestamped its neighbours, so the list compares two clocks. MEASURED 2026-08-17 at de274d14d: 12 matches across 10 of 4,801 walked .ts/.tsx files, after three fixture excludes. HAND-VERIFIED PRECISION 9/12 (all twelve opened); the three false positives are one class -- a CONTAINER's own createdAt (memoryActions.ts:123, ChronologyAdoptionView.tsx:1108, plan-builder.ts:47) rather than an item's ordering key. POSITIVE CONTROL (same fields, assigned from another record's server timestamp) returns 46 matches in 27 files, so the compliant form outnumbers the violating one 3.8:1 on the same anchor and the pattern is discriminating on PROVENANCE, not on the field name. WHY IT IS A DEFECT: replayed against the 2026-08-17 purge backup, persona_events.created_at ties at 0.0% over 4,972 rows (nanosecond to_rfc3339 writer), so a client-minted sibling key does not merely tie -- it lands at an arbitrary point in a totally-ordered stream, and useRealtimeEvents.ts:245 / emitDeploymentEvent.ts:53 push exactly such rows into the store useEventLog.ts:237-245 ranks. teamSlice.ts:186 mints created_at for an optimistic persona_team_members row whose server read is 'ORDER BY created_at ASC' (teams.rs:347), so an optimistic member's roster position is decided by the renderer's clock. LEGAL FIX: echo the server-assigned key back on confirm, or render the optimistic item OUTSIDE the ranked list until it has one. DO NOT silence a match by switching to Date.now() or to a monotonic counter -- that changes the type without changing whose clock it is. ZERO OVERLAP with clock-ordered-history-read-without-tiebreak (audit-trail-view.md), which is rooted in src-tauri/.rs and anchors on SQL text; that rule and this one are the two ends of the same key and neither can see the other's half. PRECONDITION (re-derive per repo): this proxy assumes optimistic rows are built as inline object literals in the frontend. A repo whose optimistic updates go through a normalizer, a mutation cache, or a server-echo scores a structural zero here while carrying the condition at scale."
+      },
+      "exclude": [
+        {
+          "path": "src/test/automation/bridge.ts",
+          "reason": "the test-automation harness bridge fabricates fixture rows for the MCP driver; they never enter a rendered feed"
+        },
+        {
+          "path": "src/features/plugins/dev-tools/sub_overview/__tests__/overviewHelpers.test.ts",
+          "reason": "vitest fixture minting synthetic activity rows to assert the bucketing helper; a fixture clock is the point of the test"
+        },
+        {
+          "path": "src/stores/slices/overview/__tests__/personaHealthSlice.bundle.test.ts",
+          "reason": "vitest fixture; the bundle test mints a synthetic row to assert slice wiring, not ordering"
+        }
+      ],
+      "baseline": {
+        "files": 10,
+        "matches": 12
+      },
+      "floor": 4000
+    },
+    {
+      "id": "unflagged-string-truncation",
+      "goldenPath": "docs/concepts/golden-paths/tool-result-contract.md",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "format!\\s*\\(\\s*\"\\{[^\"}]{0,40}\\}(?:\\.\\.\\.|\\u2026|\\[truncated[^\"]{0,60})\"",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A string truncation whose ONLY record of the cut is an ellipsis spliced into the payload. The caller gets a String and cannot ask whether anything was removed, so a downstream redactor, parser or size check sees a value that looks whole. Prefer (String, bool) — personas_engine::tool_outcome::cap_output is the shape."
+      },
+      "baseline": {
+        "files": 37,
+        "matches": 43
+      },
+      "floor": 900
+    },
+    {
+      "id": "unreplayed-stream-attach",
+      "goldenPath": "docs/concepts/golden-paths/snapshot-plus-stream.md",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\b(?:useTauriEvent|useTypedTauriEvent)\\s*[<(]",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A backend stream attached through a hook that neither buffers events arriving before listen() resolves nor reports how many it dropped. Proxy for: a stream attachment whose pre-attach window is neither buffered nor counted."
+      },
+      "exclude": [
+        {
+          "path": "src/hooks/useTauriEvent.ts",
+          "reason": "the primitive itself — its two definitions are the anchor, not call sites"
+        }
+      ],
+      "baseline": {
+        "files": 20,
+        "matches": 34
+      },
+      "floor": 4000
+    },
+    {
+      "id": "leaked-owned-exec-dir",
+      "goldenPath": "docs/concepts/golden-paths/agent-workspace-isolation.md",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "CliProcessDriver::spawn_temp(?:_no_stderr)?\\s*\\([^;]{0,300};(?:(?!cleanup_dir|\\.finish\\s*\\()[\\s\\S]){0,2500}?(?:\\?\\s*;|return\\s+Err)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A CliProcessDriver that OWNS its temp workspace (spawn_temp sets owns_exec_dir: true) reaching an early return before any cleanup_dir()/finish() — the directory is abandoned. Proxy for: a directory whose removal is a caller's obligation rather than a value's lifetime."
+      },
+      "baseline": {
+        "files": 7,
+        "matches": 9
+      },
+      "floor": 800
+    },
+    {
+      "id": "nested-activation-target",
+      "goldenPath": "docs/concepts/golden-paths/external-operation-explorer.md",
+      "title": "An activating control nested inside another activating control",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "<button(?![A-Za-z0-9_-])(?:\"[^\"]*\"|'[^']*'|`[^`]*`|\\{(?:[^{}]|\\{(?:[^{}]|\\{(?:[^{}]|\\{[^{}]*\\})*\\})*\\})*\\}|[^<>{}\"'`])*(?<![/-])>(?:(?!</button>|<button(?![A-Za-z0-9_-]))[\\s\\S]){0,2500}?<(?:button(?![A-Za-z0-9_-])|Button(?![A-Za-z0-9_-])|a\\s(?:=>|[^<>]){0,200}href)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A <button> whose body opens another activator (<button>, <Button>, <a href>) before its own </button>. Invalid HTML: the inner control is not independently reachable by keyboard in several AT/browser combinations, and it survives only on an e.stopPropagation() no test covers. The opening tag is matched with strings and {…} attribute expressions treated as OPAQUE — a bare `>` inside className={cond ? 'a' : 'b'} or onClick={() => i > n} is arithmetic, never a tag close. Fix: make the row a <div> with the affordances as siblings, or hoist the inner control out."
+      },
+      "baseline": {
+        "files": 6,
+        "matches": 7
+      },
+      "floor": 1500
+    },
+    {
+      "id": "media-element-src-without-remount-key",
+      "goldenPath": "docs/concepts/golden-paths/media-viewer.md",
+      "title": "A <video>/<audio>/<iframe> bound to a changing src with no key to force a remount",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "<(?:video|audio|iframe)(?:(?!\\bkey\\s*=)(?:=>|[^<>])){0,600}?\\bsrc\\s*=\\s*\\{(?:(?!\\bkey\\s*=)(?:=>|[^<>])){0,600}?[^=<>\\s]\\s*>",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a <video>/<audio>/<iframe> opening tag that binds src to an expression and carries no key= anywhere in the same tag. PROXY FOR: a stateful media element rebound to different media without a teardown, so currentTime / readyState / buffered ranges / paused state from the previous file survive under the new one. <img> is deliberately absent from the tag list: it holds no transport state and swaps its bitmap cleanly, so including it would flood the rule with correct code. TAG BOUNDARY: the tempered unit (?:=>|[^<>]) keeps the match inside one opening tag while tolerating an arrow function in an inline ref/handler (CompositionPreview.tsx:479 has ref={(el) => {...}} in the tag), and the terminator is [^=<>\\s]\\s*> rather than a bare > for the reason stateless-disclosure-control records: a bare > is satisfied by the > of an arrow. The key= exclusion is tempered on BOTH sides of src= so attribute order does not matter, though in this tree every compliant site happens to put key first. PARTITION: violating (3) + positive control (5) = 8 = every JSX media tag in the tree that binds src to an expression; the 9th media tag, RadioFooter.tsx:583, has no src prop at all (the stream is assigned imperatively to a ref) and is correctly outside both. Precision 3/3, every match hand-opened and confirmed to rebind src on an element that stays mounted.",
+        "$comment": "Recall is deliberately partial: it cannot see a media element whose src is assigned imperatively through a ref (RadioFooter), nor one whose tag is generated by a wrapper component. Both are stated in the golden path rather than papered over."
+      },
+      "baseline": {
+        "files": 3,
+        "matches": 3
+      },
+      "floor": 1000
+    },
+    {
+      "id": "probe-verdict-narrowed-to-boolean",
+      "goldenPath": "docs/concepts/golden-paths/connector-setup-panel.md",
+      "title": "A connection verdict re-declared as {success, message} at the panel boundary",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "\\?\\s*:\\s*\\{\\s*success\\s*:\\s*boolean\\s*[;,]\\s*message\\s*:\\s*string\\s*[;,]?\\s*\\}\\s*\\|\\s*null",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "An optional-and-nullable connection/test verdict prop typed as an inline {success, message} pair instead of the wire type, which erases HealthProbeState."
+      },
+      "baseline": {
+        "files": 6,
+        "matches": 9
+      },
+      "floor": 4000
+    },
+    {
+      "id": "failure-written-as-empty-list",
+      "goldenPath": "docs/concepts/golden-paths/connector-sourced-options.md",
+      "title": "A rejected fetch handled by writing the empty list into state, with nothing recording that it failed",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "catch\\s*(?:\\(\\s*[^)]{0,60}\\)|\\{)(?![\\s\\S]{0,240}?(?:set[A-Za-z]{0,20}(?:Error|Failed|Kind)|addToast|toastCatch|reportError|setStatus))[^}]{0,200}?\\bset[A-Z][\\w$]*\\s*\\(\\s*\\[\\s*\\]\\s*\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A catch handler whose only state write is an empty array, and which sets no error/failure identity anywhere in the handler. The rejection becomes indistinguishable from an empty result."
+      },
+      "baseline": {
+        "files": 44,
+        "matches": 49
+      },
+      "floor": 4000
+    },
+    {
+      "id": "countless-table-wipe",
+      "goldenPath": "docs/concepts/golden-paths/maintenance-affordances.md",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "pub\\s+fn\\s+[A-Za-z_]\\w*(?:(?!\\bpub\\s+fn\\b)[^{]){0,240}->\\s*Result<\\s*\\(\\s*\\)\\s*,\\s*(?:personas_core::error::)?AppError\\s*>\\s*\\{(?:(?!\\bpub\\s+fn\\b)[\\s\\S]){0,1400}?\"DELETE\\s+FROM\\s+[A-Za-z_][A-Za-z0-9_]*\\s*\"",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A maintenance door that empties a whole table (DELETE FROM <t>, no WHERE) and returns Result<()> — it cannot tell its caller, the log, the confirm or an undo how many rows it destroyed."
+      },
+      "baseline": {
+        "files": 3,
+        "matches": 3
+      },
+      "floor": 900
+    },
+    {
+      "id": "invented-stream-envelope-fixture",
+      "goldenPath": "docs/concepts/golden-paths/model-output-streaming.md",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "r#*\"\\{\"type\":\"(?:result|assistant|user|system|rate_limit_event|stream_event)\"",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A Claude CLI stream-json envelope written as an inline Rust string literal. The fixture is invented by the same author as the parser, so it can only assert what the parser already assumes — and it did: parser.rs:1105 and provider/claude.rs:402 both pin `total_input_tokens` at the envelope's top level, a field the CLI has emitted 0 times in 2,811 observed result lines."
+      },
+      "baseline": {
+        "files": 14,
+        "matches": 67
+      },
+      "floor": 900
+    },
+    {
+      "id": "fabricated-json-on-parse-failure",
+      "goldenPath": "docs/concepts/golden-paths/raw-json-editor.md",
+      "title": "An unparseable stored JSON document is silently replaced by a fabricated one",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "serde_json::from_str(?:::<[^>]{0,120}>)?\\s*\\((?:[^()]|\\((?:[^()]|\\([^()]*\\))*\\)){0,240}\\)\\s*\\.\\s*(?:unwrap_or_default\\s*\\(\\s*\\)|unwrap_or\\s*\\()",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "serde_json::from_str(...) immediately followed by .unwrap_or_default() or .unwrap_or(<expr>) — the SILENT substitutions only. .unwrap_or_else is deliberately NOT matched, because 17 of this repo's 29 unwrap_or_else arms emit tracing::warn! in the closure and are a legitimate announced degradation; the 12 that do not are a KNOWN, DELIBERATE recall miss, traded to keep precision on the stated condition at 55/55. PROXY FOR the stack-free condition: 'the document is corrupt' and 'the document is empty' reach every downstream reader as the same value. MEASURED 2026-08-17 at master: 55 matches / 42 files, against 640 serde_json::from_str call sites in 963 .rs files (8.6%) and 147 matches / 94 files for the compliant control (propagate with ? or .map_err). 0 of the 55 are inside #[cfg(test)] — verified with a brace-matched stripCfgTest pass, so no exclude is needed and none is declared. WHAT THE MATCH COSTS, hand-opened: mcp_server/install.rs:86 replaces an unparseable claude_desktop_config.json with {} and then WRITES THE RESULT BACK over the user's file (install.rs:109), destroying every other registered MCP server, with no error and no backup; companion/jobs/mod.rs:468 turns a job's params_json into {} and dispatches the handler with no parameters; design/template_adopt.rs:1980 turns the base IR into Value::Null so base_system_prompt becomes \"\" and the model is asked to refine an empty prompt; resources/automation_suggestions.rs:114 silently empties the evidence list a reviewer reads. PRECISION on the stated condition is 55/55 (every match hand-read). PRECISION on 'this is a defect' is lower and is stated honestly: 4 of 6 in the hand-opened sample. The 2 defensible ones are LISTED ON PURPOSE — core/src/models/persona.rs:676 (the column is documented advisory at :672-674) and engine/webhook_notifier.rs:388 (falls back to the ORIGINAL string, losing nothing) — because separating them needs knowledge of what the column means, which no matcher has. THE PAREN WINDOW MUST NEST TWO DEEP: from_str(&r.get::<_, String>(2)?) is a real argument shape in this tree (bench/athena_validate.rs:56) and a flat [^()]{0,240} misses it. CONVERGENCE, measured the same day: brainiac has 46 serde_json::from_str sites across 7 crates and ZERO matches for this pattern — the same author's other Rust codebase propagates every one; vibeman has exactly 1. That is an INVERSION, not agreement, and it is the strongest evidence in this document that the practice is wrong rather than merely untidy. LEGAL DESTINATIONS the pattern leaves unmatched by construction: (1) propagate — `?` or `.map_err(AppError::from)?`; (2) degrade OUT LOUD — .unwrap_or_else(|e| { tracing::warn!(error = %e, \"...\"); default }), which db/src/repos/resources/triggers.rs:658,866 and engine/src/optimizer.rs:159 already do; (3) .ok() into an Option, which keeps 'we did not get it' representable. CORRECT END STATE is not zero — some columns are genuinely advisory — so this rule RATCHETS; it must not be deleted at 0."
+      },
+      "baseline": {
+        "files": 42,
+        "matches": 55
+      },
+      "floor": 500
     }
   ]
 }

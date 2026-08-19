@@ -51,7 +51,7 @@
     "census:check": "node scripts/census/run-census.mjs --check",
     "census:test": "node scripts/census/self-test.mjs",
     "gp:index": "node scripts/census/build-golden-path-index.mjs",
-    "check": "npm run check:contracts && npm run check:tiers && npm run check:tauri-configs && npm run check:csp-hosts && npm run check:corpus && npm run check:doc-map && npm run census:check && tsc --noEmit && eslint src/",
+    "check": "npm run check:contracts && npm run check:tiers && npm run check:tauri-configs && npm run check:csp-hosts && npm run check:corpus && npm run check:evidence && npm run check:doc-map && npm run census:check && tsc --noEmit && eslint src/",
     "lint": "eslint src/",
     "test": "vitest run",
     "test:playwright": "playwright test --config=playwright.config.ts",
@@ -102,6 +102,8 @@
     "i18n:merge-chunks": "node scripts/i18n/merge-chunks.mjs",
     "i18n:purge-dead": "node scripts/i18n/purge-dead-keys.mjs",
     "check:corpus": "node scripts/census/check-corpus-integrity.mjs",
+    "check:evidence": "node scripts/registry/evidence-check.mjs",
+    "registry:mirror": "node scripts/registry/mirror-paths.mjs",
     "check:doc-map": "node scripts/docs/check-doc-map-paths.mjs"
   },
   "dependencies": {

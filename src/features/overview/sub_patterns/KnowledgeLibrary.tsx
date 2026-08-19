@@ -36,18 +36,25 @@ export default function KnowledgeLibrary({
   rows,
   projectById,
   onChanged,
+  view: controlledView,
 }: {
   workspace: Workspace;
   rows: WorkspaceKnowledge[];
   projectById: Map<string, DevProject>;
   onChanged: () => void;
+  /** Controlled view. When provided it overrides the internal Library|Graph
+   *  toggle AND hides the internal switcher (the host owns lane switching —
+   *  Patterns v2's `Subjects | Graph | Practices`). Absent = the internal
+   *  state path, unchanged for every other consumer. */
+  view?: 'library' | 'graph';
 }) {
   const { t, tx } = useTranslation();
   const w = t.plugins.dev_tools.workspaces;
 
   // Library | Graph view — the graph (Nexus) is auditioning to replace the
   // table and got its own project lens: null = whole workspace as-is.
-  const [view, setView] = useState<'library' | 'graph'>('library');
+  const [internalView, setView] = useState<'library' | 'graph'>('library');
+  const view = controlledView ?? internalView;
   // Altitude scope — the INVERTED library: both views are built from
   // Directions (macro doctrines) by default; techniques are the evidence you
   // drill into (a direction's `governs` chips) or flip the scope to see. This
@@ -169,30 +176,33 @@ export default function KnowledgeLibrary({
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <h2 className="typo-section-title text-foreground">{w.library_title}</h2>
-          {/* View toggle — the graph is auditioning to replace the table. */}
-          <div className="flex items-center rounded-interactive border border-border/60 bg-secondary/50 p-0.5">
-            {(
-              [
-                { id: 'library', icon: TableProperties, label: w.graph_view_library },
-                { id: 'graph', icon: Network, label: w.graph_view_graph },
-              ] as const
-            ).map(({ id, icon: ViewIcon, label }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setView(id)}
-                aria-pressed={view === id}
-                className={`typo-label flex items-center gap-1.5 rounded-interactive px-2.5 py-1 transition-colors ${
-                  view === id
-                    ? 'bg-background text-foreground shadow-elevation-1'
-                    : 'text-foreground/60 hover:text-foreground'
-                }`}
-              >
-                <ViewIcon className="w-3.5 h-3.5" />
-                {label}
-              </button>
-            ))}
-          </div>
+          {/* View toggle — the graph is auditioning to replace the table.
+              Hidden under a controlled `view`: the host owns lane switching. */}
+          {controlledView === undefined && (
+            <div className="flex items-center rounded-interactive border border-border/60 bg-secondary/50 p-0.5">
+              {(
+                [
+                  { id: 'library', icon: TableProperties, label: w.graph_view_library },
+                  { id: 'graph', icon: Network, label: w.graph_view_graph },
+                ] as const
+              ).map(({ id, icon: ViewIcon, label }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setView(id)}
+                  aria-pressed={view === id}
+                  className={`typo-label flex items-center gap-1.5 rounded-interactive px-2.5 py-1 transition-colors ${
+                    view === id
+                      ? 'bg-background text-foreground shadow-elevation-1'
+                      : 'text-foreground/60 hover:text-foreground'
+                  }`}
+                >
+                  <ViewIcon className="w-3.5 h-3.5" />
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
           {hasDirections && (
             <div className="flex items-center rounded-interactive border border-border/60 bg-secondary/50 p-0.5">
               {(

@@ -430,6 +430,26 @@ test('isCommentOnlyLine never swallows code containing // inside a string', () =
   ok(!isCommentOnlyLine('const a = localStorage.getItem(k);'), 'plain code');
 });
 
+test('collectScanned returns the exact post-exclude file set, and ONLY when asked', () => {
+  // The context scorecard defines "applicability" off the scanned SET, not the
+  // scanned count. The flag is opt-in: a default call must stay byte-identical
+  // (no `scannedFiles` field at all), and the opt-in set must agree with the
+  // `scanned` counter and honor excludes.
+  const rule = baseRule({
+    exclude: [{ path: 'tree/excluded/Primitive.tsx', reason: 'fixture primitive is the sanctioned owner' }],
+  });
+
+  const plain = scanRule(rule, { root: FIXTURES });
+  ok(!('scannedFiles' in plain), 'default result carries no scannedFiles field');
+
+  const collected = scanRule(rule, { root: FIXTURES, collectScanned: true });
+  eq(collected.scannedFiles.length, collected.scanned, 'scannedFiles length equals the scanned count');
+  eq(collected.walked, plain.walked, 'flag does not change walked');
+  eq(collected.matches, plain.matches, 'flag does not change matches');
+  ok(!collected.scannedFiles.includes('tree/excluded/Primitive.tsx'), 'excluded file is not in the scanned set');
+  ok(collected.scannedFiles.includes('tree/hits.tsx'), 'scanned set is repo-relative posix paths');
+});
+
 test('zero-width patterns cannot hang the scanner', () => {
   const rule = baseRule({
     id: 'zero-width',

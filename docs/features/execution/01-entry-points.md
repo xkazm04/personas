@@ -131,9 +131,22 @@ scheduler tick).
 Skipped fires advance `next_trigger_at` to the next in-window slot
 rather than piling up.
 
-**Overdue recovery**: on app startup, `recover_overdue_triggers` runs
-once and fires all triggers with past `next_trigger_at`. Prevents
-missed fires when the app was closed during the scheduled time.
+**Overdue recovery**: on app startup, `start_loops` runs one extra
+`trigger_scheduler_tick_counted` immediately (`engine/background.rs:772-786`,
+before the first subscription tick) and emits `OVERDUE_TRIGGERS_FIRED` with the
+count. Every trigger whose `next_trigger_at` is already in the past fires **one**
+slot — the current one — plus `max_backfill - 1` catch-up extras where that is
+configured (see below). Prevents missed fires when the app was closed during the
+scheduled time.
+
+> Corrected 2026-08-17 by [`backfill-window-replay`](../../concepts/golden-paths/backfill-window-replay.md)
+> §12.5. This paragraph named a function `recover_overdue_triggers` that occurs
+> **0 times in 963 `.rs` files** — there is no such symbol and there never was;
+> the sweep is an unnamed block inside `start_loops`. It also said the sweep
+> "fires all triggers with past `next_trigger_at`", which is true of *triggers*
+> and reads as though it were true of the *slots* each one missed. It is not:
+> one slot per trigger is the default, and everything older is discarded and
+> counted (see "Missed while offline" below).
 
 **Automatic backfill**: when a schedule's config sets `max_backfill > 1`,
 the scheduler tick path enumerates every cron/interval slot strictly
