@@ -229,28 +229,54 @@ if (!fs.existsSync(BUNDLE)) {
     else sidecarsMissing.push(slug);
   }
 
-  // 2c. Parity. Set equality, not counts: two sets can agree on size while
-  //     disagreeing on every member.
+  // 2c. Parity, DIRECTIONAL — and the direction is the whole point after the
+  //     authority flip (migration plan P3).
+  //
+  //     Before the flip the two sides were meant to be identical, so any
+  //     difference was a defect. After it, new work lands in the REGISTRY and is
+  //     mirrored back only when someone asks for it, so:
+  //
+  //       registry-only  → EXPECTED. Reported, never failed. Failing here would
+  //                        make the gate red every time the registry is used as
+  //                        intended, and a gate that is red for correct
+  //                        behaviour gets muted.
+  //       corpus-only    → STILL A FAILURE. The local tree carries something the
+  //                        registry does not, which means the mirror dropped it
+  //                        or someone edited a frozen tree. Both need a human.
+  //
+  //     Set difference, not counts: two collections can agree on size and
+  //     disagree on every member.
   const diff = (a, b) => a.filter((x) => !b.includes(x));
   const missing = diff(corpusSubjects, bundleSubjects);
-  const extra = diff(bundleSubjects, corpusSubjects);
-  if (missing.length) fail(`mirror parity: ${missing.length} subject(s) absent from the bundle: ${missing.join(', ')}`);
-  if (extra.length) fail(`mirror parity: ${extra.length} subject(s) in the bundle but not the corpus: ${extra.join(', ')}`);
+  const ahead = diff(bundleSubjects, corpusSubjects);
+  if (missing.length) fail(`mirror parity: ${missing.length} subject(s) in the corpus but NOT the bundle: ${missing.join(', ')} — the mirror dropped them, or a frozen tree was edited`);
+  if (ahead.length) note(`registry is ahead by ${ahead.length} subject(s): ${ahead.join(', ')} — expected after the authority flip; mirror them back with scripts/registry/mirror-paths.mjs if this repo needs them locally`);
 
   const tMissing = [...corpusTechniques].filter((x) => !bundleTechniques.has(x));
-  const tExtra = [...bundleTechniques].filter((x) => !corpusTechniques.has(x));
-  if (tMissing.length) fail(`mirror parity: ${tMissing.length} technique(s) absent from the bundle, first: ${tMissing.slice(0, 5).join(', ')}`);
-  if (tExtra.length) fail(`mirror parity: ${tExtra.length} technique(s) in the bundle only, first: ${tExtra.slice(0, 5).join(', ')}`);
+  const tAhead = [...bundleTechniques].filter((x) => !corpusTechniques.has(x));
+  if (tMissing.length) fail(`mirror parity: ${tMissing.length} technique(s) in the corpus but NOT the bundle, first: ${tMissing.slice(0, 5).join(', ')}`);
+  if (tAhead.length) note(`registry is ahead by ${tAhead.length} technique(s)`);
 
   const aMissing = [...corpusApplications].filter((x) => !bundleApplications.has(x));
-  const aExtra = [...bundleApplications].filter((x) => !corpusApplications.has(x));
-  if (aMissing.length) fail(`mirror parity: ${aMissing.length} application(s) absent from the bundle, first: ${aMissing.slice(0, 5).join(', ')}`);
-  if (aExtra.length) fail(`mirror parity: ${aExtra.length} application(s) in the bundle only, first: ${aExtra.slice(0, 5).join(', ')}`);
+  const aAhead = [...bundleApplications].filter((x) => !corpusApplications.has(x));
+  if (aMissing.length) fail(`mirror parity: ${aMissing.length} application(s) in the corpus but NOT the bundle, first: ${aMissing.slice(0, 5).join(', ')}`);
+  if (aAhead.length) note(`registry is ahead by ${aAhead.length} application(s)`);
 
-  if (sidecarsFound > 0 && sidecarsMissing.length > 0) {
+  // A subject that exists only in the registry has no local evidence yet BY
+  // DEFINITION — nothing in this tree has been cited for it. Counting it as a
+  // partial mirror would make forging in the registry look like a mirror bug.
+  const overlaysExpected = sidecarsMissing.filter((slug) => corpusSubjects.includes(slug));
+  if (sidecarsFound > 0 && overlaysExpected.length > 0) {
     fail(
-      `evidence overlays are partial: ${sidecarsFound} present, ${sidecarsMissing.length} missing ` +
-        `(${sidecarsMissing.slice(0, 5).join(', ')}). Re-run scripts/registry/mirror-paths.mjs.`,
+      `evidence overlays are partial: ${sidecarsFound} present, ${overlaysExpected.length} missing ` +
+        `(${overlaysExpected.slice(0, 5).join(', ')}). Re-run scripts/registry/mirror-paths.mjs.`,
+    );
+  }
+  const overlaysPending = sidecarsMissing.filter((slug) => !corpusSubjects.includes(slug));
+  if (overlaysPending.length > 0) {
+    note(
+      `${overlaysPending.length} registry-only subject(s) carry no local evidence yet ` +
+        `(${overlaysPending.slice(0, 5).join(', ')}) — expected until this repo cites them.`,
     );
   }
 }
@@ -301,7 +327,12 @@ if (flag('--json')) {
     for (const f of failures) console.error(`  - ${f}`);
     console.error('');
   } else {
-    console.log('\nevidence resolves; ' + (paired ? 'mirror is at parity.' : 'pair checks skipped (see note).'));
+    console.log(
+      '\nevidence resolves; ' +
+        (paired
+          ? 'the bundle carries everything this corpus does (it may carry more — see notes).'
+          : 'pair checks skipped (see note).'),
+    );
     console.log(
       'NOT checked here: layer contract, body purity, link resolution, status vocabulary — ' +
         'those are the registry\'s gate (scripts/check-bundles.mjs), by design.\n',
