@@ -4752,8 +4752,8 @@
         "description": "A script that enumerates a directory and can exit non-zero, but never refuses an EMPTY enumeration — so 'found nothing' and 'looked at nothing' both exit 0. Proxy for the contract's fail-loud requirement; the earning case is check-coverage.mjs reporting 0 missing / 0 extra with 13 of 14 locales absent."
       },
       "baseline": {
-        "files": 17,
-        "matches": 17
+        "files": 19,
+        "matches": 19
       },
       "floor": 120
     },
