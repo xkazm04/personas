@@ -296,3 +296,40 @@ the **schema-vs-runtime** note, application produced **~6 corpus demotions/bound
 sharpenings** — the feedback edge (sibling application → corpus status) is now demonstrably
 live. Every one is a "possibly-damaging lesson" that a pattern scan would keep at full
 strength and that only a RUN could falsify.
+
+---
+
+## Round 5 — LightTrack compatibility proof + corpus gaps (2026-08-19)
+
+Proved the coverage wiring end-to-end against a NEW target (LightTrack, Rust
+LLM-observability backend) sourcing the corpus from the **ai-registry clone** (not
+personas paths/). All 34 contexts mapped, 167 live cells / 3570 naive (95.3%
+pruned); the registry-sourced `subject-index.json` loaded cleanly (105 subjects,
+matched categories.json). **The registry is a valid corpus source; a new repo with
+a context-map runs unchanged.** Matrix: fork scratch `coverage-matrix-lighttrack.json`.
+Top batch subjects for LightTrack: usage-analytics, scoring-rubrics, background-jobs,
+error-handling, eval-harness, job-coordination, table, cost-metering (6-7 contexts each).
+
+### NEW-SUBJECT candidates — corpus gaps for the LLM-observability-PLATFORM domain
+LightTrack *is* the observability/eval platform (it observes and judges OTHER apps'
+LLM calls), a domain the corpus — grown from an app that *consumes* LLMs — doesn't cover:
+
+- **judge-reliability / inter-rater-calibration** — Cohen's κ, Pearson, MAE/RMSE drift
+  sentinels between judges and against gold. `eval-harness` and `scoring-rubrics` exist
+  but carry no inter-rater-reliability technique. Candidate new subject (or a technique
+  cluster under eval-harness): *how you know your judge is trustworthy over time*.
+- **observability-as-a-service (the platform, not the observed)** — `observability-telemetry`
+  describes a service instrumenting its OWN logs/crashes. It has no subject for "you are
+  the platform other apps send their traces to" (ingest contract, tenant isolation,
+  cardinality/retention economics of foreign traces). Genuine domain the corpus lacks.
+- **redaction-pipeline** — PII/secret scrubbing as a first-class pipeline stage mapped
+  weakly to `credential-vault` / `prompt-safety` / `usage-analytics`; none is a direct hit.
+  Candidate: a `redaction` subject or a cross-cutting technique.
+
+Correctly NOT gaps (subject exists, domain doesn't use it → n/a, not a corpus hole):
+streaming-output, retrieval, agent-memory, agent-chaining — LightTrack is batch/
+fire-and-forget and observes rather than does these.
+
+These are forge candidates for the REGISTRY (the corpus's new home). Forging them is
+the migration/corpus-owner session's call; recorded here as the first evidence that
+running coverage against a NEW domain surfaces real corpus growth, not just repo fixes.
