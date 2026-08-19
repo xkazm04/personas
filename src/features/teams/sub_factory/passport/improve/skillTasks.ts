@@ -82,6 +82,13 @@ export type ShareTarget =
       clonePath: string;
       /** `owner/repo`, for the commit message. */
       registryName: string;
+      /**
+       * Repo-relative usage file the app has ALREADY written (`usage/<id>.json`),
+       * to be committed alongside the skill. Absent when there is nothing to
+       * contribute. This is the piggyback: counts never earn a commit of their
+       * own, they ride one that was happening anyway.
+       */
+      usageFile?: string | null;
     };
 
 /** Branch a share commits onto. Never the default branch: a share is a proposal,
@@ -143,7 +150,9 @@ function shareToRegistryPrompt(
     "6. VERSION it as SEMVER — `version: X.Y.Z`. Carry the source's version if it already has three parts; if it has two (`1.4`), write `1.4.0`; if it has none, write `1.0.0`. Never bump during a share: sharing generalizes, it does not change the method.",
     "7. DECLARE its memory + context wiring in the same frontmatter: carry the source's `memory:` field verbatim (project | vault | none; omit if the source has none). Set `contexts: tracked` ONLY when the skill's METHOD explicitly walks the repo's context map and records per-context progress in its memory notes — otherwise omit the field entirely. This flag is a promise the app measures against; never set it speculatively.",
     '8. If a reference file is 100% specific to this repo, omit it from the registry copy and note the omission at the bottom of the registry SKILL.md.',
-    `9. Commit ONLY ${target.clonePath}/skills/${name}/ on \`${branch}\`, with a message naming the source project and what was generalized away.`,
+    target.usageFile
+      ? `9. Commit ${target.clonePath}/skills/${name}/ AND ${target.usageFile} on \`${branch}\`, with a message naming the source project and what was generalized away. The usage file was written by the app before this task started — do not edit its contents, just include it; it carries this installation's skill-invocation counts and rides this commit so counts never need one of their own.`
+      : `9. Commit ONLY ${target.clonePath}/skills/${name}/ on \`${branch}\`, with a message naming the source project and what was generalized away.`,
     '',
     'Do NOT push and do NOT open a pull request — leave the branch local. A human decides whether this becomes a proposal; merging is how this registry adopts, and an agent that pushes has made that decision for them.',
     'Do NOT modify anything else in the registry working copy: not the root registry.yaml, not another consumer\u2019s overlay, not other skills. If the working copy carries uncommitted changes you did not make, STOP and report rather than committing around them.',

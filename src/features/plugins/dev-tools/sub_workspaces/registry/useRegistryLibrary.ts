@@ -76,3 +76,22 @@ export function registryLibraryRootFor(projectId: string): string | null {
   if (!registry) return null;
   return laneRoot(registry.clonePath);
 }
+
+/**
+ * Repo-relative usage file a contributor writes into a registry.
+ *
+ * The slug rule is the registry gate's (`[a-z0-9][a-z0-9-]*`, and the filename
+ * stem must equal the `contributor` field). The Rust writer slugifies the same
+ * way and names the file from ITS result — this is only for telling the share
+ * task which path to commit, so a disagreement shows up as a missing file in the
+ * commit rather than a wrong file being written. Returns null when nothing
+ * usable survives, which is also what the writer does rather than inventing an
+ * id that could collide with another installation's.
+ */
+export function usageFileFor(contributor: string): string | null {
+  const slug = contributor
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug ? `usage/${slug}.json` : null;
+}

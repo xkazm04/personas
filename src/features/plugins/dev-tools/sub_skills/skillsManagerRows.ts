@@ -10,6 +10,7 @@
 // Dev-runner tasks through the improve engine.
 import { useMemo } from 'react';
 
+import { writeRegistryUsage } from '@/api/devTools/devTools';
 import type { SkillCoverageRow, SkillEntry, SkillUsageRow } from '@/api/devTools/devTools';
 import { skillCommand } from '@/features/teams/sub_factory/passport/improve/skillsWorkbenchData';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
@@ -17,7 +18,7 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 
-import type { RegistryLibrary } from '../sub_workspaces/registry/useRegistryLibrary';
+import { usageFileFor, type RegistryLibrary } from '../sub_workspaces/registry/useRegistryLibrary';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { isPresetSkill, presetSkillEntry, PRESET_SKILLS } from '../constants/presetSkills';
@@ -198,10 +199,29 @@ export function useSkillsManagerRows(projectId: string | null): SkillsManagerRow
     // library, which is the only place there is.
     onShare: (name) => {
       const reg = data.library.registry;
-      void data.wb?.runShare(
-        name,
-        reg ? { kind: 'registry', clonePath: reg.clonePath, registryName: reg.fullName } : { kind: 'home' },
-      );
+      if (!reg) {
+        void data.wb?.runShare(name, { kind: 'home' });
+        return;
+      }
+      // Write the usage file FIRST so the share task can include it in the one
+      // commit it was already making. Best-effort: failing to contribute counts
+      // must never block publishing a skill, so a failure drops the piggyback
+      // and the share proceeds without it.
+      const contributor = data.library.workspaceName ?? 'personas';
+      void writeRegistryUsage(reg.clonePath, contributor)
+        .then((n) => (n > 0 ? usageFileFor(contributor) : null))
+        .catch((e: unknown) => {
+          silentCatch('skillsManager registry usage')(e);
+          return null;
+        })
+        .then((usageFile) => {
+          void data.wb?.runShare(name, {
+            kind: 'registry',
+            clonePath: reg.clonePath,
+            registryName: reg.fullName,
+            usageFile,
+          });
+        });
     },
     onUse,
     onSwitchMemory: (skillName, next) => { if (projectId) void data.switchMemory(skillName, projectId, next); },

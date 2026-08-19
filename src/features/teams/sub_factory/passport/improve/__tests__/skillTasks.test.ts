@@ -82,6 +82,25 @@ describe('shareTaskPrompt — registry', () => {
   });
 });
 
+describe('shareTaskPrompt — the usage piggyback', () => {
+  it('commits the usage file alongside the skill when there is one', () => {
+    const p = shareTaskPrompt('perfect', project, { ...REGISTRY, usageFile: 'usage/dev-box.json' });
+    expect(p).toContain('usage/dev-box.json');
+    // The app wrote it; an agent editing counts would be inventing telemetry.
+    expect(p).toContain('do not edit its contents');
+  });
+
+  it('commits ONLY the skill when there is nothing to contribute', () => {
+    // The absent case must not leave a dangling instruction to commit a file
+    // that was never written — the commit would fail and take the share with it.
+    for (const usageFile of [undefined, null]) {
+      const p = shareTaskPrompt('perfect', project, { ...REGISTRY, usageFile });
+      expect(p).toContain('Commit ONLY');
+      expect(p).not.toContain('usage/');
+    }
+  });
+});
+
 describe('shareBranchName', () => {
   it('namespaces by skill so two shares do not collide', () => {
     expect(shareBranchName('perfect')).toBe('skill/perfect');

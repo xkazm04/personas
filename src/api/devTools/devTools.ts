@@ -1758,6 +1758,18 @@ export const listSkillLessons = (skillName?: string | null) =>
  * wired registry's `skills/` lane so the reflection ritual judges versions
  * against what the fleet reads, not against the machine-local home library.
  */
+/**
+ * Contribute this installation's 30-day skill-usage counts to a paired registry's
+ * `usage/` lane. WRITES the file into the working copy only — committing it is
+ * the share task's job, so counts ride along with a commit that was happening
+ * anyway instead of generating one per skill run.
+ *
+ * Aggregate per skill, never per project: the registry is public and its gate
+ * rejects paths and names. Returns the number of skills reported.
+ */
+export const writeRegistryUsage = (clonePath: string, contributor: string) =>
+  safeInvoke<number>(0, "dev_tools_write_registry_usage", { clonePath, contributor });
+
 export const exportSkillRegistry = (projectId: string, libraryRoot?: string | null) =>
   safeInvoke<number>(0, "dev_tools_export_skill_registry", { projectId, libraryRoot: libraryRoot ?? null });
 
