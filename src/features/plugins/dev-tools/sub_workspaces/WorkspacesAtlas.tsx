@@ -21,6 +21,7 @@ import {
   MembershipPanel,
   useWorkspaceCenter,
 } from './centerShared';
+import { WorkspaceRegistrySection } from './registry/WorkspaceRegistrySection';
 import { deleteWorkspace, recolorWorkspace, renameWorkspace, WORKSPACE_COLORS } from './workspaceStore';
 
 export default function WorkspacesAtlas() {
@@ -157,6 +158,15 @@ export default function WorkspacesAtlas() {
             </header>
 
             <MembershipPanel workspace={open} projects={center.projects} />
+
+            {/* Registry wiring lives at WORKSPACE level, not project level: one
+                registry serves every project in the territory, and one registry
+                can serve several workspaces. */}
+            <WorkspaceRegistrySection
+              workspace={open}
+              workspaces={center.workspaces}
+              projectById={center.projectById}
+            />
           </motion.div>
         )}
       </AnimatePresence>
