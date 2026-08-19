@@ -713,6 +713,11 @@ async fn export_skill_registry(
         &db(&s),
         &b.project_id,
         &project.root_path,
+        // No library override on the headless bridge: it has no workspace in
+        // scope, so it compares against the home library exactly as it did
+        // before registries existed. A terminal refresh must not silently claim
+        // a different library than the one it read.
+        None,
     )
     .map_err(err)?;
     Ok(Json(serde_json::json!({
