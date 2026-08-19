@@ -66,8 +66,8 @@
         }
       ],
       "baseline": {
-        "files": 74,
-        "matches": 190
+        "files": 76,
+        "matches": 194
       },
       "floor": 4000
     },
@@ -99,8 +99,8 @@
         }
       ],
       "baseline": {
-        "files": 180,
-        "matches": 246
+        "files": 181,
+        "matches": 247
       },
       "floor": 2500
     },
@@ -312,8 +312,8 @@
         }
       ],
       "baseline": {
-        "files": 73,
-        "matches": 73
+        "files": 72,
+        "matches": 72
       },
       "floor": 4000
     },
@@ -555,8 +555,8 @@
         "description": "a Tailwind font-weight utility written next to a typo-* token inside one class string. PROXY FOR the stack-free condition: a call site tries to patch one property of a composite token with a utility that the cascade discards, so the authored intent is silently dropped and the code reads as if it were honoured. Verified from source, not inferred: typography.css is imported at globals.css:3 with no layer(), every real .typo-* tier declares font-weight (17 rules checked; only the .typo-rtl / .typo-hero-shine modifiers do not), and unlayered declarations beat every @layer utilities declaration regardless of order or specificity. The token file states the failure twice in its own comments - 'typo-caption font-semibold is silently a no-op' (typography.css:161-162) and 'typo-label font-bold is silently a no-op' (:190-191) - as does Design.md section 2. PRECONDITION: this repo ships semantic type tokens as UNLAYERED CSS classes alongside layered Tailwind utilities. A repo whose type tokens are React components, or are themselves inside @layer utilities, has the same condition wearing different markup and must re-derive the proxy. The legal fix is to move up a token (typo-caption -> typo-title -> typo-heading), never to add a font-* utility."
       },
       "baseline": {
-        "files": 815,
-        "matches": 1985
+        "files": 814,
+        "matches": 1984
       },
       "floor": 2000
     },
@@ -584,8 +584,8 @@
         }
       ],
       "baseline": {
-        "files": 358,
-        "matches": 808
+        "files": 357,
+        "matches": 806
       },
       "floor": 4000
     },
@@ -736,8 +736,8 @@
         "description": "a connection-pool checkout (`state.db.get()`, `state.user_db.get()`, `user_db.get()`) inside src-tauri/src/commands/**. PROXY FOR the stack-free condition \"the transport/adapter layer acquires a persistence handle directly instead of delegating to the layer that owns data access\". The compliant shape is one line -- `repo::get_all_lean(&state.db)` (commands/core/personas.rs:44) -- which passes the POOL to the repository and never checks a connection out; the violating shape is `let conn = state.user_db.get()?;` followed by inline SQL (commands/companion/observability.rs:84-88). Measured in this repo: 134 checkouts across 46 of 299 command files; 88.1% are followed by a SQL literal or a rusqlite call within 900 chars; only 13.4% sit inside a #[cfg(test)] module; and 1,096 compliant repo:: delegations exist across 86 files, so the correct alternative is present and dominant. Convergence: all four repos in this fleet independently built this boundary and all four leak it (personas-web 6/11 routes, brainiac 20/42 SQL files outside its store crate, personas-cloud 1/8 routers) -- the condition is physics, not local taste. PRECONDITION: this proxy works because Personas' persistence handle is an r2d2 pool whose checkout is spelled `.get()` on a field ending in `db`. A repo using sqlx (`&pool` passed everywhere), an ORM session, or a DI-injected repository interface has the same condition wearing different markup and must re-derive its own proxy -- key on whatever the layer-crossing token is there, not on `.get()`. Legal destination: a function in src-tauri/db/ (the personas-db crate, 117 of 143 files already carry the SQL) called with `&state.db`."
       },
       "baseline": {
-        "files": 46,
-        "matches": 134
+        "files": 47,
+        "matches": 135
       },
       "floor": 200
     },
@@ -1190,8 +1190,8 @@
         }
       ],
       "baseline": {
-        "files": 54,
-        "matches": 77
+        "files": 53,
+        "matches": 75
       },
       "floor": 4000
     },
@@ -1385,8 +1385,8 @@
         "description": "A module-scope `let x = false` that is later set to true and never set back to false — a one-way latch. Because it lives in module scope it is re-created on every HMR module re-evaluation, so whatever it guards runs a second time; and because it has no release path, the first registration can never be undone. Where the latch guards an unreleased side effect (a document/window listener, a monkey-patch, an injected <style>, a process-lifetime registry) a second copy is SILENTLY ADDITIVE — nothing throws, the handler count just rises. PROXY FOR the stack-free condition: a one-way latch guarding a registration that is never released. Fix by refcounting the resource (acquire on first subscriber, release on last — see relativeTimeTicker.ts:44-83), by a generation token (executionSink.ts:110), or, last, by a globalThis slot (eventBridge.ts:130-146)."
       },
       "baseline": {
-        "files": 13,
-        "matches": 13
+        "files": 14,
+        "matches": 14
       },
       "floor": 4000
     },
@@ -1407,8 +1407,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 566,
-        "matches": 1099
+        "files": 565,
+        "matches": 1097
       },
       "floor": 2000
     },
@@ -1480,8 +1480,8 @@
         }
       ],
       "baseline": {
-        "files": 43,
-        "matches": 44
+        "files": 41,
+        "matches": 42
       },
       "floor": 4000
     },
@@ -1688,8 +1688,8 @@
         }
       ],
       "baseline": {
-        "files": 57,
-        "matches": 125
+        "files": 56,
+        "matches": 123
       },
       "floor": 4000
     },
@@ -1828,8 +1828,8 @@
         }
       ],
       "baseline": {
-        "files": 87,
-        "matches": 123
+        "files": 88,
+        "matches": 124
       },
       "floor": 4000
     },
@@ -1898,8 +1898,8 @@
         "description": "an emptiness test on a value whose guard consequent constructs an AppError::Validation - i.e. `require_non_empty(field, value)?` open-coded at the call site, with its own hand-written sentence. PROXY FOR the stack-free condition: a codebase owns a shared input-validation vocabulary and its call sites re-implement the vocabulary's most basic rule inline, so the rule's identity (which field, which rule id) is destroyed at the moment it is applied and only an English sentence survives. MEASURED CONSEQUENCE IN THIS REPO: 305 open-coded emptiness refusals across 135 files, against 31 real `require_non_empty(` call sites confined to 4 files (all of them on the import/export path) - a 9.8x ratio. The helper is one line, returns the identical AppError::Validation, and predates almost all 305. Each open-coded site also loses the {field, rule, message} triple that `ValidationError::new` would have produced, which is why `contract::check` reaches only 3 of 1,661 commands and why `src/lib/bindings/ValidationError.ts` has zero importers: there is nothing structured left to send. COUNTS PRODUCED TWICE, as the contract requires, by deliberately different methods: this bounded-span regex over RAW whole-file content through the real census engine reports 305 matches / 135 files / 950 walked; an independent comment-and-string-MASKED walk that pairs each emptiness test with its own guard consequent (the `{...}` block or the expression up to `;`) reports 301 / 129. The 1.3% gap is the regex's known bridging behaviour and is documented in the golden path. A FIRST attempt at the second implementation returned 17 - it split `if cond {` away from its own block, so the test and the refusal never co-occurred in one unit; recorded because that is precisely the failure the contract warns about, and the fix was to make the guard-with-its-consequent the unit rather than the statement. PRECISION audited on a systematic every-9th-file sample of 15 sites: 14/15 genuine; the one miss is src-tauri/src/commands/companion/browser_test.rs:92, where the span bridges `if x.is_empty() { return Ok(0); }` into a following, unrelated length check. PRECONDITION, which an adopting repo must re-derive: this repo spells emptiness as `.is_empty()` / `.trim().is_empty()` and spells refusal as `AppError::Validation(..)`. A repo that refuses with a schema (`zod .min(1)`), a typed extractor, or a `NonEmptyString` newtype scores zero here while being strictly MORE correct - the sibling sweep found exactly that: personas-cloud expresses the same rule declaratively in 20 zod schemas and brainiac's REST half gets it from `Path<Uuid>` with no code at all. LEGAL DESTINATION, in order of preference: (1) make it unrepresentable - a parameter newtype whose Deserialize refuses the empty case, so the command body never runs; (2) `personas_core::validation::require_non_empty(field, value)?`; (3) `ValidationError::new(field, \"required\", msg)` collected and passed to `contract::check`, which is the only form that preserves the field/rule identifiers the frontend binding was built to consume."
       },
       "baseline": {
-        "files": 136,
-        "matches": 306
+        "files": 137,
+        "matches": 307
       },
       "floor": 400
     },
@@ -2117,8 +2117,8 @@
         "description": "The semantic body-text token composited toward the canvas at 45% alpha or less. PROXY FOR the stack-free condition: TEXT HIERARCHY EXPRESSED AS ALPHA ON THE BODY-TEXT TOKEN, TUNED ON ONE THEME FAMILY AND SHIPPED TO ALL OF THEM. Computed, not asserted: on the three light themes this repo ships, text-foreground at 45% alpha measures 2.65-2.93:1 across every configuration the app can be in (canvas and card surfaces, all three brightness levels of the Appearance setting) - below the 3:1 AA-large floor as well as the 4.5:1 AA floor, so no font size rescues it. The same class measures 4.52-4.94:1 on all eight dark themes, which is why it was authored and why it survives review. 45 is the highest alpha at which the failure is unconditional; 50-60 also fail AA on every light configuration but can clear 3:1 for large text, so they are excluded to keep precision at 100% of the WCAG floor that applies. Measured precision 94.0% (23 of 385 are aria-hidden decorative marks, WCAG-exempt but still 2.4:1). PRECONDITION: this repo expresses alpha with Tailwind's /N modifier on a CSS-variable-backed colour token, and renders light themes through a global brightness(0.82) filter that lowers their contrast further. A repo whose light theme is a separate stylesheet, or that has no light theme, must re-derive the proxy - the condition is the alpha, not the slash. The legal fix is bare text-foreground with hierarchy carried by the typo-* scale, per Design.md principle 4."
       },
       "baseline": {
-        "files": 187,
-        "matches": 396
+        "files": 184,
+        "matches": 386
       },
       "floor": 4000
     },
@@ -4049,8 +4049,8 @@
         }
       ],
       "baseline": {
-        "files": 28,
-        "matches": 32
+        "files": 29,
+        "matches": 33
       },
       "floor": 4000
     },
@@ -4125,8 +4125,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 48,
-        "matches": 55
+        "files": 47,
+        "matches": 54
       },
       "floor": 3000
     },
