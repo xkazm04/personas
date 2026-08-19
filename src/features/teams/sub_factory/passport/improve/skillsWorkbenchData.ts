@@ -17,7 +17,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useImproveActivityStore } from '@/stores/improveActivityStore';
 
 import { useImprove } from './ImproveContext';
-import { adoptTaskPrompt, adoptTaskTitle, shareTaskPrompt, shareTaskTitle, type AdoptItem } from './skillTasks';
+import { adoptTaskPrompt, adoptTaskTitle, shareTaskPrompt, shareTaskTitle, type AdoptItem, type ShareTarget } from './skillTasks';
 
 /** Skill adopt/share is always resolved by Sonnet (medium thinking is the
  *  dev-runner default effort). Pinned here so the personalization/generalization
@@ -57,7 +57,9 @@ export interface SkillsWorkbench {
   /** A dispatch spawn is in flight (local optimistic guard). */
   dispatching: boolean;
   runAdopt: (name: string) => Promise<void>;
-  runShare: (name: string) => Promise<void>;
+  /** Publish a project skill into the library. `target` decides WHERE and under
+   *  which contract — omit it for the user-global library. */
+  runShare: (name: string, target?: ShareTarget) => Promise<void>;
   runDispatch: (name: string, args: string) => Promise<void>;
   /** Same skill run, but in a NEW terminal window the operator owns — the app
    *  cd's to the repo root, launches the Claude CLI there and seeds it with the
@@ -203,10 +205,10 @@ export function useSkillsWorkbench(slug: string): SkillsWorkbench | null {
     }
   }, [engine, raw, slug, sourceRootOf, addToast]);
 
-  const runShare = useCallback(async (name: string) => {
+  const runShare = useCallback(async (name: string, target?: ShareTarget) => {
     if (!engine || !raw) return;
     try {
-      const taskId = await engine.deployNow(slug, shareTaskTitle(name), shareTaskPrompt(name, raw.project), SKILL_TASK_MODEL);
+      const taskId = await engine.deployNow(slug, shareTaskTitle(name), shareTaskPrompt(name, raw.project, target), SKILL_TASK_MODEL);
       useImproveActivityStore.getState().start(`${slug}:skills`, taskId, 'deploy');
       addToast(`Claude is generalizing “${name}” into your library`, 'success');
     } catch (e) {

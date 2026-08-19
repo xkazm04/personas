@@ -60,9 +60,44 @@ export function shareTaskTitle(name: string): string {
   return `Share skill "${name}" to the library`;
 }
 
+/**
+ * Where a share lands.
+ *
+ * `home` is the pre-registry behaviour: the user-global library at
+ * `~/.claude/skills`, which nothing versions and nobody reviews.
+ *
+ * `registry` is the wired knowledge registry's working copy. It is a git repo
+ * with a published contract, so a share into it is a CONTRIBUTION, not a file
+ * copy — it lands on a branch, and the two frontmatter fields whose vocabulary
+ * differs between destinations are written in the destination's terms. Writing
+ * personas' `Development | Testing | Maintenance | Data | Other` into the
+ * registry would be silently normalized to `other` at index time, losing the
+ * categorisation without telling anyone.
+ */
+export type ShareTarget =
+  | { kind: 'home' }
+  | {
+      kind: 'registry';
+      /** Absolute path of the registry working copy. */
+      clonePath: string;
+      /** `owner/repo`, for the commit message. */
+      registryName: string;
+    };
+
+/** Branch a share commits onto. Never the default branch: a share is a proposal,
+ *  and the human decides whether it becomes a pull request. */
+export function shareBranchName(name: string): string {
+  return `skill/${name}`;
+}
+
 /** Task prompt that generalizes a project skill and publishes it into the
- *  user-global library. Runs with cwd = the SOURCE project's root. */
-export function shareTaskPrompt(name: string, project: DevProject): string {
+ *  library. Runs with cwd = the SOURCE project's root. */
+export function shareTaskPrompt(
+  name: string,
+  project: DevProject,
+  target: ShareTarget = { kind: 'home' },
+): string {
+  if (target.kind === 'registry') return shareToRegistryPrompt(name, project, target);
   return [
     `Publish the skill at .claude/skills/${name} from this repo (${project.name}) into the user-global Claude Code skills library, generalized so ANY project can adopt it.`,
     '',
@@ -76,5 +111,42 @@ export function shareTaskPrompt(name: string, project: DevProject): string {
     '8. If a reference file is 100% specific to this repo, omit it from the library copy and note the omission at the bottom of the library SKILL.md.',
     '',
     'Only write inside ~/.claude/skills/ — do not touch this repo or its application code.',
+  ].join('\n');
+}
+
+/**
+ * The registry variant. Same abstraction pass, different destination contract:
+ * the registry's closed category set, semver, and a branch + commit instead of
+ * a bare file write.
+ *
+ * It deliberately stops at the commit. Pushing and opening a pull request are
+ * outward-facing acts on a repo other people read, and "agents propose, humans
+ * adopt" is the governance model this registry is built on — an agent that
+ * pushes has quietly adopted on the human's behalf.
+ */
+function shareToRegistryPrompt(
+  name: string,
+  project: DevProject,
+  target: Extract<ShareTarget, { kind: 'registry' }>,
+): string {
+  const branch = shareBranchName(name);
+  return [
+    `Publish the skill at .claude/skills/${name} from this repo (${project.name}) into the knowledge registry ${target.registryName}, generalized so ANY project can adopt it.`,
+    '',
+    `The registry working copy is at ${target.clonePath}; its skills lane is ${target.clonePath}/skills/.`,
+    '',
+    '1. Read the skill fully (SKILL.md plus any reference files). Do NOT modify it inside this repo.',
+    `2. In the registry working copy, confirm the tree is clean, then create and check out \`${branch}\` from the default branch. If it already exists, check it out and continue on it. NEVER commit to the default branch.`,
+    `3. Write a generalized copy to ${target.clonePath}/skills/${name}/, preserving the file structure.`,
+    '4. GENERALIZE the copy — this is an LLM abstraction pass. Strip or parameterize every codebase-specific AND business-specific detail — hard-coded paths, project/product names, repo-specific commands/URLs/tool versions, domain jargon — replacing them with clearly marked placeholders (e.g. <project-root>, <test-command>) or stack- and business-neutral wording. The registry copy is read by every repo in the fleet: it must read as reusable doctrine ANY project can adopt, never as this repo\u2019s notes. Preserve the method, the step order and the quality bar exactly.',
+    "5. CATEGORIZE it using the REGISTRY's closed set — set `category:` in the copy's SKILL.md frontmatter to EXACTLY ONE of: ci-cd, testing, security, ai-native, docs, workflow, other. This is NOT the vocabulary the source repo uses; map by the skill's primary job, and use `other` only when none of the six fit. A value outside the set is normalized to `other` at index time, so an unmapped category is silently lost.",
+    "6. VERSION it as SEMVER — `version: X.Y.Z`. Carry the source's version if it already has three parts; if it has two (`1.4`), write `1.4.0`; if it has none, write `1.0.0`. Never bump during a share: sharing generalizes, it does not change the method.",
+    "7. DECLARE its memory + context wiring in the same frontmatter: carry the source's `memory:` field verbatim (project | vault | none; omit if the source has none). Set `contexts: tracked` ONLY when the skill's METHOD explicitly walks the repo's context map and records per-context progress in its memory notes — otherwise omit the field entirely. This flag is a promise the app measures against; never set it speculatively.",
+    '8. If a reference file is 100% specific to this repo, omit it from the registry copy and note the omission at the bottom of the registry SKILL.md.',
+    `9. Commit ONLY ${target.clonePath}/skills/${name}/ on \`${branch}\`, with a message naming the source project and what was generalized away.`,
+    '',
+    'Do NOT push and do NOT open a pull request — leave the branch local. A human decides whether this becomes a proposal; merging is how this registry adopts, and an agent that pushes has made that decision for them.',
+    'Do NOT modify anything else in the registry working copy: not the root registry.yaml, not another consumer\u2019s overlay, not other skills. If the working copy carries uncommitted changes you did not make, STOP and report rather than committing around them.',
+    `Do NOT touch this repo (${project.name}) — it is the source, and read-only for this task.`,
   ].join('\n');
 }

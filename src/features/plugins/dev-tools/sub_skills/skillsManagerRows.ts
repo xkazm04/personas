@@ -192,7 +192,17 @@ export function useSkillsManagerRows(projectId: string | null): SkillsManagerRow
     busy: Boolean(data.wb?.managing),
     projectName,
     onAdopt,
-    onShare: (name) => { void data.wb?.runShare(name); },
+    // A wired registry is where a share BELONGS: the library is that repo's
+    // skills lane, so publishing into `~/.claude/skills` instead would put the
+    // generalized copy somewhere the fleet never reads. Unwired keeps the home
+    // library, which is the only place there is.
+    onShare: (name) => {
+      const reg = data.library.registry;
+      void data.wb?.runShare(
+        name,
+        reg ? { kind: 'registry', clonePath: reg.clonePath, registryName: reg.fullName } : { kind: 'home' },
+      );
+    },
     onUse,
     onSwitchMemory: (skillName, next) => { if (projectId) void data.switchMemory(skillName, projectId, next); },
     onDispatch: (skill, args) => { void data.wb?.runDispatch(skill, args); },
