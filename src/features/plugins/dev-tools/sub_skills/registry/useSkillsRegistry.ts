@@ -1,10 +1,30 @@
 // Skills Registry data spine — assembles the workspace-wide coverage matrix.
 //
-// Rows = the library skill catalogue (global `~/.claude/skills` ∪ the app's
-// preset scan lenses). Columns = the projects in the active project's workspace.
-// Per (skill, project) cell: adopted? + Memory-Ledger coverage + 30d invokes +
-// whether a Fleet session is currently dispatching it there (the block-adopt
-// signal). All reads are per-project fan-out, bounded by mapWithConcurrency.
+// Rows = the library skill catalogue ∪ the app's preset scan lenses ∪ everything
+// already installed somewhere in the matrix. Columns = the projects in the active
+// project's workspace. Per (skill, project) cell: adopted? + Memory-Ledger
+// coverage + 30d invokes + whether a Fleet session is currently dispatching it
+// there (the block-adopt signal). All reads are per-project fan-out, bounded by
+// mapWithConcurrency.
+//
+// ## Which library the rows come from
+//
+// The same one the Overview tab reads: the wired knowledge registry's `skills/`
+// lane when this workspace holds a registry, and `~/.claude/skills` otherwise.
+// It used to be `~/.claude/skills` unconditionally, so on a registry-wired
+// workspace the two tabs of ONE page listed two different libraries and neither
+// said so. The workspace was already resolved here — the join was simply never
+// made.
+//
+// ## Why installed-anywhere is unioned in
+//
+// Heading the library at a registry SUBTRACTS rows: a skill that lives only in
+// `~/.claude/skills` disappears from the catalogue the moment a registry is
+// wired. For a shelf of things you might adopt that is correct. For a COVERAGE
+// matrix it is not — a skill already installed in three projects, with real
+// coverage and real invokes, would vanish from the only surface that shows
+// where it is. A matrix cannot report coverage of a row it excludes, so
+// anything present in any column earns its row regardless of library source.
 import { useEffect, useMemo, useState } from 'react';
 
 import {
@@ -17,6 +37,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 
 import { PRESET_SKILLS, presetVisual } from '../../constants/presetSkills';
+import { useRegistryLibrary } from '../../sub_workspaces/registry/useRegistryLibrary';
 import { useWorkspaces, workspaceOf } from '../../sub_workspaces/workspaceStore';
 import { parseSkillArg } from '../analytics/useSkillsAnalytics';
 import { cellKey, type RegistryCell, type RegistryColumn, type RegistryModel, type RegistrySkill } from './registryTypes';
@@ -74,6 +95,14 @@ export function useSkillsRegistry(activeProjectId: string | null, refreshTick = 
     [wsProjects],
   );
 
+  // Which library the rows come from. `useRegistryLibrary` is keyed by PROJECT
+  // and re-derives the workspace itself, so it is handed a project of the
+  // workspace resolved above rather than `activeProjectId` — with no active
+  // project the matrix still falls back to the first workspace, and the rows
+  // have to follow the columns into it.
+  const libraryProjectId = activeProjectId ?? workspace?.projectIds[0] ?? null;
+  const { libraryRoot } = useRegistryLibrary(libraryProjectId);
+
   useEffect(() => {
     let alive = true;
     setF((prev) => ({ ...prev, loading: true }));
@@ -81,7 +110,7 @@ export function useSkillsRegistry(activeProjectId: string | null, refreshTick = 
       // -- PHASE 1: the matrix's shape — library rows + adopted state. Two
       // cheap fetch groups, published immediately so the grid paints with
       // adopt/dispatch affordances while telemetry is still in flight.
-      const globalSkills = await listSkillsGlobal().catch((e) => { silentCatch('registry global')(e); return [] as SkillEntry[]; });
+      const globalSkills = await listSkillsGlobal(libraryRoot).catch((e) => { silentCatch('registry global')(e); return [] as SkillEntry[]; });
       const perInstalled = await mapWithConcurrency(wsProjects, 6, async (p) => ({
         pid: p.id,
         installed: await listSkills(p.id).catch((e) => { silentCatch('registry listSkills')(e); return [] as SkillEntry[]; }),
@@ -102,9 +131,13 @@ export function useSkillsRegistry(activeProjectId: string | null, refreshTick = 
         if (s.category) customCategory.set(s.name, s.category);
         if (s.description) descByName.set(s.name, s.description);
       }
+      // Installed-anywhere is part of the row set, not just the library — see
+      // the module header. Without it, wiring a registry silently drops every
+      // home-library skill out of the matrix, coverage and invokes included.
       const libraryNames = [...new Set([
         ...globalSkills.map((s) => s.name),
         ...PRESET_SKILLS.keys(),
+        ...perInstalled.flatMap((r) => r.installed.map((s) => s.name)),
       ])];
 
       const phase1: Fetched = {
@@ -152,7 +185,7 @@ export function useSkillsRegistry(activeProjectId: string | null, refreshTick = 
     })();
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workspace?.id, wsProjects.length, refreshTick]);
+  }, [workspace?.id, wsProjects.length, libraryRoot, refreshTick]);
 
   const columns: RegistryColumn[] = useMemo(
     () => wsProjects.map((p) => ({
