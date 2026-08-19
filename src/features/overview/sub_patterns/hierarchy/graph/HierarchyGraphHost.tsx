@@ -10,10 +10,12 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type React
 import { Boxes, ChevronRight, Scale, Search, X } from 'lucide-react';
 
 import { IllustratedEmptyState } from '@/features/shared/components/display/IllustratedEmptyState';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 
@@ -35,7 +37,11 @@ import {
 } from '../scorecardModel';
 import { useHierarchyGraph } from '../useHierarchyGraph';
 import { useHierarchyScorecard } from '../useHierarchyScorecard';
+import { computeAtlasLayout, type AtlasLayout } from './atlasLayout';
+import { boardHomeK, computeBoardLayout, type BoardLayout } from './boardLayout';
 import { categoryGraphTheme } from './categoryTheme';
+import HierarchyAtlas from './HierarchyAtlas';
+import HierarchyBoard from './HierarchyBoard';
 import HierarchyNexus, { type FlyTarget, type LawLensSets } from './HierarchyNexus';
 import {
   buildHierarchyRenderModel,
@@ -49,6 +55,33 @@ import { TechniqueModal } from './TechniqueModal';
 
 /** The one place a law CHIP (id-only, no href) resolves to a path. */
 const LAWS_FILE = 'docs/concepts/paths/_laws.md';
+
+// -- layout variants ---------------------------------------------------------
+// Three skies over the same model + host machinery: Atlas (structured radial —
+// overlap impossible by construction), Board (orthogonal columns), Nexus (the
+// original organic compass). All three return the same {keystonePos,
+// subjectPos} contract, so focus/search/breadcrumb/lenses work unchanged.
+type GraphVariant = 'atlas' | 'board' | 'nexus';
+const GRAPH_VARIANT_KEY = 'patterns:graph-variant';
+const GRAPH_VARIANTS: GraphVariant[] = ['atlas', 'board', 'nexus'];
+
+function initialGraphVariant(): GraphVariant {
+  try {
+    const stored = localStorage.getItem(GRAPH_VARIANT_KEY);
+    if (stored && (GRAPH_VARIANTS as string[]).includes(stored)) return stored as GraphVariant;
+  } catch (err) {
+    silentCatch('patterns:graphVariantRead')(err);
+  }
+  return 'atlas';
+}
+
+function persistGraphVariant(v: GraphVariant): void {
+  try {
+    localStorage.setItem(GRAPH_VARIANT_KEY, v);
+  } catch (err) {
+    silentCatch('patterns:graphVariantWrite')(err);
+  }
+}
 
 /** Search kind extended with category (categories live outside the shared
  *  index — there are 8 of them, matched by title/id locally). */
@@ -146,15 +179,29 @@ export default function HierarchyGraphHost({
 
   const { graph, loading, error, refetch } = useHierarchyGraph(projectId);
   const model = useMemo(() => (graph ? buildHierarchyRenderModel(graph) : null), [graph]);
-  const layout = useMemo(() => (model ? computeHierarchyLayout(model) : null), [model]);
   const index = useMemo(() => (graph ? buildHierarchyIndex(graph) : []), [graph]);
 
-  // -- focus state machine ---------------------------------------------------
-  const canvas = useGraphCanvas({ initialK: 0.8 });
+  // -- variant + focus state machine -------------------------------------------
+  const [variant, setVariant] = useState<GraphVariant>(initialGraphVariant);
+  const boardK = useMemo(() => boardHomeK(model?.rings.length ?? 8), [model]);
+  // `initialK` feeds `canvas.reset()` — variant-aware, so flyHome always lands
+  // on the active variant's fitted home zoom.
+  const canvas = useGraphCanvas({ initialK: variant === 'board' ? boardK : 0.8 });
   const [hoverRing, setHoverRing] = useState<string | null>(null);
   const [focusRing, setFocusRing] = useState<string | null>(null);
   const [focusSubject, setFocusSubject] = useState<string | null>(null);
   const [highlightTechnique, setHighlightTechnique] = useState<string | null>(null);
+  // The Board layout is a function of the focused subject (accordion reflow);
+  // the other two only depend on the model. Only the active variant computes.
+  const layout = useMemo(() => {
+    if (!model) return null;
+    if (variant === 'atlas') return computeAtlasLayout(model);
+    if (variant === 'board') return computeBoardLayout(model, focusSubject);
+    return computeHierarchyLayout(model);
+  }, [model, variant, focusSubject]);
+  // Focus-fly zooms per variant (subject drill / category level).
+  const subjectFocusK = variant === 'board' ? 1.4 : variant === 'atlas' ? 2.2 : 2.3;
+  const ringFocusK = variant === 'board' ? 0.9 : variant === 'atlas' ? 1.3 : 1.5;
   const [techniqueModal, setTechniqueModal] = useState<{
     node: SubjectNode;
     entry: TechniqueEntry;
@@ -176,6 +223,20 @@ export default function HierarchyGraphHost({
     canvas.reset();
   }, [canvas]);
 
+  // Switching variants resets focus + camera (flyHome at the NEW variant's
+  // home zoom — the state hasn't committed yet, so compute it here).
+  const switchVariant = useCallback(
+    (v: GraphVariant) => {
+      setVariant(v);
+      persistGraphVariant(v);
+      setFocusRing(null);
+      setFocusSubject(null);
+      setHighlightTechnique(null);
+      canvas.flyTo(0, 0, v === 'board' ? boardK : 0.8, 460);
+    },
+    [canvas, boardK],
+  );
+
   const focusRingOn = (ring: string, target: FlyTarget) => {
     if (focusRing === ring && !focusSubject) {
       flyHome();
@@ -193,7 +254,7 @@ export default function HierarchyGraphHost({
       setFocusSubject(null);
       setHighlightTechnique(null);
       const kp = layout?.keystonePos.get(node.ring);
-      if (kp) canvas.flyTo(kp.x, kp.y, 1.5);
+      if (kp) canvas.flyTo(kp.x, kp.y, ringFocusK);
       return;
     }
     setFocusRing(node.ring);
@@ -226,7 +287,7 @@ export default function HierarchyGraphHost({
   }, [model, index, query]);
 
   const goSubject = useCallback(
-    (slug: string, k = 2.3) => {
+    (slug: string, k = subjectFocusK) => {
       const node = nodeBySlug.get(slug);
       const pos = layout?.subjectPos.get(slug);
       if (!node || !pos) return null;
@@ -235,7 +296,7 @@ export default function HierarchyGraphHost({
       canvas.flyTo(pos.x, pos.y, k);
       return node;
     },
-    [nodeBySlug, layout, canvas],
+    [nodeBySlug, layout, canvas, subjectFocusK],
   );
 
   const onSearchSelect = (m: OmniboxMatch) => {
@@ -246,7 +307,7 @@ export default function HierarchyGraphHost({
       const kp = layout?.keystonePos.get(m.ring);
       setFocusRing(m.ring);
       setFocusSubject(null);
-      if (kp) canvas.flyTo(kp.x, kp.y, 1.5);
+      if (kp) canvas.flyTo(kp.x, kp.y, ringFocusK);
       return;
     }
     if (m.kind === 'subject') {
@@ -370,14 +431,14 @@ export default function HierarchyGraphHost({
         setHighlightTechnique(null);
         const node = nodeBySlug.get(focusSubject);
         const kp = node ? layout?.keystonePos.get(node.ring) : null;
-        if (kp) canvas.flyTo(kp.x, kp.y, 1.5);
+        if (kp) canvas.flyTo(kp.x, kp.y, ringFocusK);
       } else if (focusRing) {
         flyHome();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [techniqueModal, docViewer, lawsOpen, searchOpen, contextOpen, focusSubject, focusRing, nodeBySlug, layout, canvas, flyHome]);
+  }, [techniqueModal, docViewer, lawsOpen, searchOpen, contextOpen, focusSubject, focusRing, nodeBySlug, layout, canvas, flyHome, ringFocusK]);
 
   const projectOptions = useMemo(
     () => projects.map((pr) => ({ value: pr.id, label: pr.name })),
@@ -646,6 +707,21 @@ export default function HierarchyGraphHost({
           )}
         </div>
 
+        {/* Layout variant switcher — three skies, one host state machine. */}
+        <SegmentedTabs<GraphVariant>
+          tabs={[
+            { id: 'atlas', label: p.variant_atlas },
+            { id: 'board', label: p.variant_board },
+            { id: 'nexus', label: p.variant_nexus },
+          ]}
+          activeTab={variant}
+          onTabChange={switchVariant}
+          variant="segment"
+          size="sm"
+          fullWidth={false}
+          ariaLabel={p.variant_switcher_aria}
+        />
+
         {graph && !emptyGraph && (
           // muted-ok: toolbar counts readout, structural micro-label
           <span className="typo-caption text-foreground/50 whitespace-nowrap">
@@ -720,27 +796,66 @@ export default function HierarchyGraphHost({
               aria-label={p.graph_canvas_aria}
             >
               <g transform={`translate(${width / 2 + x},${height / 2 + y}) scale(${k})`}>
-                <HierarchyNexus
-                  model={model}
-                  layout={layout}
-                  k={k}
-                  crestTitle={projectName}
-                  crestSub={tx(p.graph_crest_counts, {
-                    subjects: graph.counts.subjects,
-                    techniques: graph.counts.techniques,
-                  })}
-                  hoverRing={hoverRing}
-                  focusRing={focusRing}
-                  focusSubject={focusSubject}
-                  highlightTechnique={highlightTechnique}
-                  lawLens={lawLens}
-                  adherence={adherence}
-                  contextSites={contextSites}
-                  onHoverRing={setHoverRing}
-                  onFocusRing={focusRingOn}
-                  onFocusSubject={focusSubjectOn}
-                  onSelectTechnique={(node, entry) => setTechniqueModal({ node, entry })}
-                />
+                {variant === 'atlas' ? (
+                  <HierarchyAtlas
+                    model={model}
+                    layout={layout as AtlasLayout}
+                    k={k}
+                    crestTitle={projectName}
+                    crestSub={tx(p.graph_crest_counts, {
+                      subjects: graph.counts.subjects,
+                      techniques: graph.counts.techniques,
+                    })}
+                    hoverRing={hoverRing}
+                    focusRing={focusRing}
+                    focusSubject={focusSubject}
+                    highlightTechnique={highlightTechnique}
+                    lawLens={lawLens}
+                    adherence={adherence}
+                    contextSites={contextSites}
+                    onHoverRing={setHoverRing}
+                    onFocusRing={focusRingOn}
+                    onFocusSubject={focusSubjectOn}
+                    onSelectTechnique={(node, entry) => setTechniqueModal({ node, entry })}
+                  />
+                ) : variant === 'board' ? (
+                  <HierarchyBoard
+                    model={model}
+                    layout={layout as BoardLayout}
+                    k={k}
+                    focusRing={focusRing}
+                    focusSubject={focusSubject}
+                    highlightTechnique={highlightTechnique}
+                    lawLens={lawLens}
+                    adherence={adherence}
+                    contextSites={contextSites}
+                    onFocusRing={focusRingOn}
+                    onFocusSubject={focusSubjectOn}
+                    onSelectTechnique={(node, entry) => setTechniqueModal({ node, entry })}
+                  />
+                ) : (
+                  <HierarchyNexus
+                    model={model}
+                    layout={layout}
+                    k={k}
+                    crestTitle={projectName}
+                    crestSub={tx(p.graph_crest_counts, {
+                      subjects: graph.counts.subjects,
+                      techniques: graph.counts.techniques,
+                    })}
+                    hoverRing={hoverRing}
+                    focusRing={focusRing}
+                    focusSubject={focusSubject}
+                    highlightTechnique={highlightTechnique}
+                    lawLens={lawLens}
+                    adherence={adherence}
+                    contextSites={contextSites}
+                    onHoverRing={setHoverRing}
+                    onFocusRing={focusRingOn}
+                    onFocusSubject={focusSubjectOn}
+                    onSelectTechnique={(node, entry) => setTechniqueModal({ node, entry })}
+                  />
+                )}
               </g>
             </svg>
           )}
