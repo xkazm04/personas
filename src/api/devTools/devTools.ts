@@ -1751,8 +1751,15 @@ export const listSkillLessons = (skillName?: string | null) =>
 /** Write/refresh `.personas/skill-registry.json` in the project's repo — the
  *  offline sibling/library-version snapshot the reflection contract's sync
  *  ritual reads. Called before skill dispatches. Returns the skill count. */
-export const exportSkillRegistry = (projectId: string) =>
-  safeInvoke<number>(0, "dev_tools_export_skill_registry", { projectId });
+/**
+ * Refresh a repo's `.personas/skill-registry.json` snapshot.
+ *
+ * `libraryRoot` decides which library the snapshot COMPARES AGAINST — pass the
+ * wired registry's `skills/` lane so the reflection ritual judges versions
+ * against what the fleet reads, not against the machine-local home library.
+ */
+export const exportSkillRegistry = (projectId: string, libraryRoot?: string | null) =>
+  safeInvoke<number>(0, "dev_tools_export_skill_registry", { projectId, libraryRoot: libraryRoot ?? null });
 
 /** Stamp the provenance sidecar on an already-installed skill — closes the
  *  LLM adopt lane's gap (Dev-runner writes carry no sidecar, reading as

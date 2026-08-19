@@ -931,7 +931,7 @@ pub(crate) fn refresh_skill_registry_file(state: &AppState, project_id: &str) {
         .map(|p| p.root_path);
     if let Ok(root) = root {
         if let Err(e) =
-            super::skill_registry_export::write_skill_registry(&state.db, project_id, &root)
+            super::skill_registry_export::write_skill_registry(&state.db, project_id, &root, None)
         {
             tracing::warn!(error = %e, project = %project_id, "skill_files: registry file refresh failed");
         }

@@ -39,10 +39,23 @@ fn skills_of(root: &str) -> Vec<SkillEntry> {
 type SiblingRow = (String, String, String);
 
 /// Build and write the registry file. Returns the number of skills written.
+///
+/// `library_root` is the library this snapshot COMPARES AGAINST. When the
+/// project's workspace holds a knowledge registry, that registry's `skills/`
+/// lane is the library, and the versions in this file are the versions the
+/// fleet actually reads — which is the whole point of the comparison. Passing
+/// `None` keeps the user-global library (`~/.claude/skills`), which is what
+/// every internal caller does and what the app did before registries existed.
+///
+/// This matters more than it looks: the reflection ritual in
+/// `docs/skill-standard.md` decides whether to bump a version, and whether it is
+/// BEHIND, by reading this file. Point it at the wrong library and every one of
+/// those judgements is made against a library nobody publishes from.
 pub fn write_skill_registry(
     pool: &DbPool,
     project_id: &str,
     root_path: &str,
+    library_root: Option<&str>,
 ) -> Result<usize, AppError> {
     let conn = pool.get()?;
 
@@ -79,8 +92,20 @@ pub fn write_skill_registry(
     // skills (workspaces are single-digit small; the walk is cheap). Siblings
     // on unreadable/disconnected roots simply scan empty and drop out.
     let mine = skills_of(root_path);
-    let library: std::collections::HashMap<String, SkillEntry> = global_skills_dir()
-        .map(|d| scan_skills_dir(&d))
+    let library_dir: Option<std::path::PathBuf> = match library_root
+        .map(str::trim)
+        .filter(|r| !r.is_empty())
+    {
+        Some(root) => Some(std::path::PathBuf::from(root)),
+        None => global_skills_dir(),
+    };
+    // A named library that is not on disk scans EMPTY rather than falling back
+    // to the home library. Comparing against the wrong library silently is how
+    // a skill gets "published" over a newer copy nobody looked at.
+    let library: std::collections::HashMap<String, SkillEntry> = library_dir
+        .as_deref()
+        .filter(|d| d.is_dir())
+        .map(scan_skills_dir)
         .unwrap_or_default()
         .into_iter()
         .map(|e| (e.name.clone(), e))
@@ -157,7 +182,10 @@ pub fn write_skill_registry(
             "name": project_name,
             "root_path": fwd(Path::new(root_path)),
         },
-        "library_path": global_skills_dir().map(|d| fwd(&d)),
+        "library_path": library_dir.as_deref().map(fwd),
+        // Named so the agent can tell which contract it is under: the registry
+        // lane uses semver and a closed category set, the home library neither.
+        "library_kind": if library_root.is_some() { "registry" } else { "home" },
         "skills": skills_json,
         "note": "Snapshot written by the Personas app; may be up to one scan old. \
                  Compare `version` fields (major.minor; null = unversioned, treat as 1.0) \
@@ -183,8 +211,14 @@ pub fn write_skill_registry(
 pub fn dev_tools_export_skill_registry(
     state: State<'_, Arc<AppState>>,
     project_id: String,
+    library_root: Option<String>,
 ) -> Result<usize, AppError> {
     require_auth_sync(&state)?;
     let project = repo::get_project_by_id(&state.db, &project_id)?;
-    write_skill_registry(&state.db, &project_id, &project.root_path)
+    write_skill_registry(
+        &state.db,
+        &project_id,
+        &project.root_path,
+        library_root.as_deref(),
+    )
 }

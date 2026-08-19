@@ -2233,7 +2233,7 @@ fn write_harness_docs(
     }
     // Offline skill registry for the reflection contract's sync ritual —
     // same best-effort contract (docs/skill-standard.md).
-    if let Err(e) = super::skill_registry_export::write_skill_registry(pool, project_id, root_path) {
+    if let Err(e) = super::skill_registry_export::write_skill_registry(pool, project_id, root_path, None) {
         CONTEXT_GEN_JOBS.emit_line(
             app,
             scan_id,

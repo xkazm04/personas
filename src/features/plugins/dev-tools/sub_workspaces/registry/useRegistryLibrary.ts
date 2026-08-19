@@ -15,10 +15,17 @@
 import { useSyncExternalStore } from 'react';
 
 import { registryFor, registryLinkSnapshot, subscribeRegistryLinks, type Registry } from './registryLinkStore';
-import { useWorkspaces, workspaceOf } from '../workspaceStore';
+import { useWorkspaces, workspaceOf, workspacesSnapshot } from '../workspaceStore';
 
 /** The lane a registry publishes skills in. Fixed by the registry spec. */
 const SKILLS_LANE = 'skills';
+
+/** Clone path + lane → library root. ONE definition: the hook and the non-React
+ *  resolver below both call it, because two copies of a path join is exactly the
+ *  drift that makes two surfaces disagree about which library they are reading. */
+function laneRoot(clonePath: string): string {
+  return `${clonePath.replace(/[/\\]+$/, '')}/${SKILLS_LANE}`;
+}
 
 export interface RegistryLibrary {
   /** The registry this project's workspace holds, if any. */
@@ -45,7 +52,7 @@ export function useRegistryLibrary(projectId: string | null): RegistryLibrary {
   // The clone path is joined with the lane name rather than stored as a second
   // field: the lane is part of the registry contract, not a user choice, and a
   // stored copy would be one more thing that can drift from it.
-  const libraryRoot = registry ? `${registry.clonePath.replace(/[/\\]+$/, '')}/${SKILLS_LANE}` : null;
+  const libraryRoot = registry ? laneRoot(registry.clonePath) : null;
 
   return {
     registry,
@@ -54,4 +61,18 @@ export function useRegistryLibrary(projectId: string | null): RegistryLibrary {
     libraryRoot,
     ready: registry?.state === 'paired',
   };
+}
+
+/**
+ * The same resolution without React, for dispatch helpers that run outside a
+ * component. Returns null when the project is unassigned or its workspace holds
+ * no registry — the caller then keeps the home library, which is the behaviour
+ * that predates registries.
+ */
+export function registryLibraryRootFor(projectId: string): string | null {
+  const workspace = workspaceOf(workspacesSnapshot().workspaces, projectId);
+  if (!workspace) return null;
+  const registry = registryFor(workspace.id);
+  if (!registry) return null;
+  return laneRoot(registry.clonePath);
 }

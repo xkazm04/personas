@@ -10,6 +10,7 @@
 // (`skill_files_install`: SKILL.md + reference files, provenance-stamped) — no
 // LLM, no token cost, and the workbench later reads it as installed.
 import { exportSkillRegistry, installSkill, installSystemSkill, listSkills } from '@/api/devTools/devTools';
+import { registryLibraryRootFor } from '@/features/plugins/dev-tools/sub_workspaces/registry/useRegistryLibrary';
 import { silentCatch } from '@/lib/silentCatch';
 
 import { composeMemoryBlock } from './memoryBlock';
@@ -71,7 +72,10 @@ export async function dispatchSkillToRepo(opts: DispatchSkillToRepoOpts): Promis
   // reflection's sync ritual reads current sibling/library versions;
   // best-effort like the memory block, never blocks the dispatch.
   try {
-    await exportSkillRegistry(opts.targetProjectId);
+    // Compare against the registry lane when the target's workspace holds one:
+    // the reflection ritual reads this snapshot to decide whether a skill is
+    // BEHIND, and against the wrong library that judgement is meaningless.
+    await exportSkillRegistry(opts.targetProjectId, registryLibraryRootFor(opts.targetProjectId));
   } catch (e) {
     silentCatch('dispatchSkillToRepo skill registry export')(e);
   }

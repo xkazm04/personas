@@ -140,6 +140,12 @@ export function useWorkspaces(): Snapshot {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
+/** The same snapshot, for callers that are not components. Dispatch helpers run
+ *  outside React and still need to know which workspace a project belongs to. */
+export function workspacesSnapshot(): Snapshot {
+  return getSnapshot();
+}
+
 // -- mutations (fire-and-forget: optimistic publish, then backend + refresh) --
 
 export function createWorkspace(name: string, color?: string, adoptDefaultSkills?: boolean): void {
