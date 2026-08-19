@@ -8384,7 +8384,11 @@
       "context_lens_empty": "Tidak ada konteks yang memiliki situs census.",
       "context_lens_label": "Konteks",
       "context_lens_search": "Cari konteks…",
-      "context_lens_sites": "{count} situs"
+      "context_lens_sites": "{count} situs",
+      "variant_switcher_aria": "Varian tata letak grafik",
+      "variant_atlas": "Peta",
+      "variant_board": "Papan",
+      "variant_nexus": "Pusat"
     }
   },
   "matrix_v3": {
@@ -14395,7 +14399,34 @@
       "skills_workbench_quick_empty": "Belum ada skill yang terpasang di repo ini — adopsi beberapa dari Kelola.",
       "skills_workbench_quick_group_hint": "{name} — {covered}/{units} konteks",
       "skills_workbench_quick_running": "aktif",
-      "skills_workbench_title": "Skill — {name}"
+      "skills_workbench_title": "Skill — {name}",
+      "registry": {
+        "at_commit": "pada",
+        "credential_label": "Kredensial GitHub",
+        "domains_label": "domain pengetahuan:",
+        "empty_body": "Ruang kerja ini belum memegang registry. Registry adalah milik bersama — pilih repositori yang sama di ruang kerja lain, dan keduanya akan memegang klon yang sama pada commit yang sama, alih-alih masing-masing membuat salinan sendiri.",
+        "held_by_one": "Dipegang oleh {count} ruang kerja",
+        "held_by_other": "Dipegang oleh {count} ruang kerja",
+        "leave": "Keluar dari registry",
+        "load_error": "Tidak dapat membaca repositori: {error}",
+        "no_credential": "Belum ada kredensial GitHub di Vault. Tambahkan di Vault → Kredensial; registry adalah sebuah repositori, jadi koneksinya sama seperti pekerjaan GitHub lainnya.",
+        "no_lanes": "belum ada jalur yang memuat konten",
+        "no_other_holder": "Tidak ada pemegang lain, jadi klonnya ikut terhapus.",
+        "no_project": "Ruang kerja ini belum memiliki proyek anggota. Tugas pemasangan berjalan dari direktori nyata, jadi tambahkan proyek terlebih dahulu.",
+        "others_keep_one": "{count} ruang kerja lain menyimpan klon ini — keluar tidak menghapusnya.",
+        "others_keep_other": "{count} ruang kerja lain menyimpan klon ini — keluar tidak menghapusnya.",
+        "pair": "Pasangkan registry",
+        "paired": "terpasang",
+        "path_hint": "Repositori dan jalur lokal keduanya wajib: pemindaian membaca salinan kerja ini dan repositori proyek Anda berdampingan, yang tidak bisa dilakukan lewat URL. Arahkan ke klon yang sudah ada untuk mengadopsinya. Satu klon per registry, dipakai bersama oleh setiap ruang kerja yang terhubung.",
+        "path_placeholder": "Folder lokal untuk salinan kerja registry",
+        "publishes": "menerbitkan",
+        "repo_label": "Repositori registry",
+        "repo_loading": "Membaca repositori…",
+        "repo_pick_credential_first": "Pilih kredensial terlebih dahulu",
+        "repo_private": "{name} (privat)",
+        "section_title": "Registry pengetahuan",
+        "this_workspace": "ruang kerja ini"
+      }
     },
     "doc_signing": {
       "sign_heading": "Tandatangani Dokumen",

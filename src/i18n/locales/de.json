@@ -8384,7 +8384,11 @@
       "context_lens_empty": "Kein Kontext enthält Census-Stellen.",
       "context_lens_label": "Kontexte",
       "context_lens_search": "Kontexte durchsuchen…",
-      "context_lens_sites": "{count} Stellen"
+      "context_lens_sites": "{count} Stellen",
+      "variant_switcher_aria": "Graph-Layout-Variante",
+      "variant_atlas": "Karte",
+      "variant_board": "Tafel",
+      "variant_nexus": "Netz"
     }
   },
   "matrix_v3": {
@@ -14395,7 +14399,34 @@
       "skills_workbench_quick_empty": "In diesem Repo sind noch keine Skills installiert — übernehmen Sie welche unter Verwalten.",
       "skills_workbench_quick_group_hint": "{name} — {covered}/{units} Kontexte",
       "skills_workbench_quick_running": "aktiv",
-      "skills_workbench_title": "Skills von {name}"
+      "skills_workbench_title": "Skills von {name}",
+      "registry": {
+        "at_commit": "bei",
+        "credential_label": "GitHub-Zugangsdaten",
+        "domains_label": "Wissensdomänen:",
+        "empty_body": "Dieser Arbeitsbereich hält keine Registry. Eine Registry ist gemeinsames Eigentum – wählen Sie dasselbe Repository in einem anderen Arbeitsbereich, und beide halten denselben Klon beim selben Commit, statt jeweils eine eigene Kopie abzuspalten.",
+        "held_by_one": "Gehalten von {count} Arbeitsbereich",
+        "held_by_other": "Gehalten von {count} Arbeitsbereichen",
+        "leave": "Registry verlassen",
+        "load_error": "Repositories konnten nicht gelesen werden: {error}",
+        "no_credential": "Noch keine GitHub-Zugangsdaten im Vault. Fügen Sie welche unter Vault → Zugangsdaten hinzu; die Registry ist ein Repository, die Verbindung ist also dieselbe wie für jede andere GitHub-Arbeit.",
+        "no_lanes": "noch keine Lane mit Inhalten",
+        "no_other_holder": "Kein anderer Halter, der Klon wird mit entfernt.",
+        "no_project": "Dieser Arbeitsbereich hat noch kein Mitgliedsprojekt. Die Pairing-Aufgabe läuft aus einem echten Verzeichnis – fügen Sie zuerst ein Projekt hinzu.",
+        "others_keep_one": "{count} weiterer Arbeitsbereich behält den Klon – Verlassen entfernt ihn nicht.",
+        "others_keep_other": "{count} weitere Arbeitsbereiche behalten den Klon – Verlassen entfernt ihn nicht.",
+        "pair": "Registry koppeln",
+        "paired": "gekoppelt",
+        "path_hint": "Repository und lokaler Pfad sind beide erforderlich: Ein Scan liest diese Arbeitskopie und Ihre Projekt-Repositories nebeneinander, was eine URL nicht leisten kann. Zeigen Sie auf einen vorhandenen Klon, um ihn zu übernehmen. Ein Klon pro Registry, gemeinsam genutzt von jedem verbundenen Arbeitsbereich.",
+        "path_placeholder": "Lokaler Ordner für die Registry-Arbeitskopie",
+        "publishes": "veröffentlicht",
+        "repo_label": "Registry-Repository",
+        "repo_loading": "Repositories werden gelesen…",
+        "repo_pick_credential_first": "Zuerst Zugangsdaten wählen",
+        "repo_private": "{name} (privat)",
+        "section_title": "Wissens-Registry",
+        "this_workspace": "dieser Arbeitsbereich"
+      }
     },
     "doc_signing": {
       "sign_heading": "Dokument signieren",

@@ -8384,7 +8384,11 @@
       "context_lens_empty": "没有上下文包含 census 匹配点。",
       "context_lens_label": "上下文",
       "context_lens_search": "搜索上下文…",
-      "context_lens_sites": "{count} 个匹配点"
+      "context_lens_sites": "{count} 个匹配点",
+      "variant_switcher_aria": "图布局变体",
+      "variant_atlas": "图册",
+      "variant_board": "看板",
+      "variant_nexus": "星图"
     }
   },
   "matrix_v3": {
@@ -14395,7 +14399,34 @@
       "skills_workbench_quick_empty": "此仓库尚未安装任何技能——请前往管理页采纳。",
       "skills_workbench_quick_group_hint": "{name} — {covered}/{units} 个上下文",
       "skills_workbench_quick_running": "运行中",
-      "skills_workbench_title": "技能 — {name}"
+      "skills_workbench_title": "技能 — {name}",
+      "registry": {
+        "at_commit": "位于",
+        "credential_label": "GitHub 凭据",
+        "domains_label": "知识领域：",
+        "empty_body": "此工作区尚未持有任何注册表。注册表是共享资产——在另一个工作区中选择同一个仓库，两者将共同持有同一份克隆、同一个提交，而不是各自分叉出一份副本。",
+        "held_by_one": "由 {count} 个工作区持有",
+        "held_by_other": "由 {count} 个工作区持有",
+        "leave": "离开注册表",
+        "load_error": "无法读取仓库：{error}",
+        "no_credential": "Vault 中尚无 GitHub 凭据。请在 Vault → 凭据中添加；注册表就是一个仓库，因此连接方式与其他任何 GitHub 工作相同。",
+        "no_lanes": "暂无通道包含内容",
+        "no_other_holder": "没有其他持有者，克隆将一并移除。",
+        "no_project": "此工作区尚无成员项目。配对任务需从真实目录运行，请先添加一个项目。",
+        "others_keep_one": "另有 {count} 个工作区保留该克隆——离开不会将其删除。",
+        "others_keep_other": "另有 {count} 个工作区保留该克隆——离开不会将其删除。",
+        "pair": "配对注册表",
+        "paired": "已配对",
+        "path_hint": "仓库和本地路径两者都必需：扫描需要并排读取此工作副本和你的项目仓库，而 URL 无法做到。指向已有的克隆即可直接采用。每个注册表一份克隆，由所有已接入的工作区共享。",
+        "path_placeholder": "注册表工作副本的本地文件夹",
+        "publishes": "发布",
+        "repo_label": "注册表仓库",
+        "repo_loading": "正在读取仓库…",
+        "repo_pick_credential_first": "请先选择凭据",
+        "repo_private": "{name}（私有）",
+        "section_title": "知识注册表",
+        "this_workspace": "此工作区"
+      }
     },
     "doc_signing": {
       "sign_heading": "签署文档",

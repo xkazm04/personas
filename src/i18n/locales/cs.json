@@ -8384,7 +8384,11 @@
       "context_lens_empty": "Žádný kontext neobsahuje výskyty census.",
       "context_lens_label": "Kontexty",
       "context_lens_search": "Hledat kontexty…",
-      "context_lens_sites": "{count} výskytů"
+      "context_lens_sites": "{count} výskytů",
+      "variant_switcher_aria": "Varianta rozvržení grafu",
+      "variant_atlas": "Mapa",
+      "variant_board": "Tabule",
+      "variant_nexus": "Síť"
     }
   },
   "matrix_v3": {
@@ -14395,7 +14399,34 @@
       "skills_workbench_quick_empty": "V tomto repozitáři zatím nejsou nainstalovány žádné dovednosti — adoptujte je ve Správě.",
       "skills_workbench_quick_group_hint": "{name} — {covered}/{units} kontextů",
       "skills_workbench_quick_running": "běží",
-      "skills_workbench_title": "Dovednosti — {name}"
+      "skills_workbench_title": "Dovednosti — {name}",
+      "registry": {
+        "at_commit": "na",
+        "credential_label": "Přihlašovací údaje GitHub",
+        "domains_label": "znalostní domény:",
+        "empty_body": "Tento pracovní prostor nedrží žádný registr. Registr je sdílený majetek – vyberte stejný repozitář i v jiném pracovním prostoru a oba budou držet jeden klon na jednom commitu, místo aby si každý odštěpil vlastní kopii.",
+        "held_by_one": "Drží {count} pracovní prostor",
+        "held_by_other": "Drží {count} pracovních prostorů",
+        "leave": "Opustit registr",
+        "load_error": "Repozitáře se nepodařilo načíst: {error}",
+        "no_credential": "Ve Vaultu zatím nejsou žádné přihlašovací údaje GitHub. Přidejte je ve Vault → Přihlašovací údaje; registr je repozitář, takže připojení je stejné jako u jakékoli jiné práce s GitHubem.",
+        "no_lanes": "zatím žádná dráha neobsahuje obsah",
+        "no_other_holder": "Žádný další držitel, klon zmizí s ním.",
+        "no_project": "Tento pracovní prostor zatím nemá žádný členský projekt. Úloha párování běží ze skutečného adresáře – nejprve přidejte projekt.",
+        "others_keep_one": "{count} další pracovní prostor si klon ponechá – opuštění jej neodstraní.",
+        "others_keep_other": "{count} dalších pracovních prostorů si klon ponechá – opuštění jej neodstraní.",
+        "pair": "Spárovat registr",
+        "paired": "spárováno",
+        "path_hint": "Repozitář i lokální cesta jsou povinné: sken čte tuto pracovní kopii a repozitáře vašich projektů vedle sebe, což URL neumožňuje. Ukažte na existující klon a převezměte jej. Jeden klon na registr, sdílený každým připojeným pracovním prostorem.",
+        "path_placeholder": "Místní složka pro pracovní kopii registru",
+        "publishes": "publikuje",
+        "repo_label": "Repozitář registru",
+        "repo_loading": "Načítání repozitářů…",
+        "repo_pick_credential_first": "Nejprve vyberte přihlašovací údaje",
+        "repo_private": "{name} (soukromý)",
+        "section_title": "Znalostní registr",
+        "this_workspace": "tento pracovní prostor"
+      }
     },
     "doc_signing": {
       "sign_heading": "Podepsat dokument",

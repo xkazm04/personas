@@ -8384,7 +8384,11 @@
       "context_lens_empty": "لا توجد سياقات تحمل مواقع census.",
       "context_lens_label": "السياقات",
       "context_lens_search": "بحث في السياقات…",
-      "context_lens_sites": "{count} مواقع"
+      "context_lens_sites": "{count} مواقع",
+      "variant_switcher_aria": "نمط تخطيط الرسم البياني",
+      "variant_atlas": "أطلس",
+      "variant_board": "لوحة",
+      "variant_nexus": "شبكة"
     }
   },
   "matrix_v3": {
@@ -14395,7 +14399,34 @@
       "skills_workbench_quick_empty": "لا توجد مهارات مثبتة في هذا المستودع بعد — تبنَّ بعضها من الإدارة.",
       "skills_workbench_quick_group_hint": "{name} — {covered}/{units} سياقات",
       "skills_workbench_quick_running": "مباشر",
-      "skills_workbench_title": "المهارات — {name}"
+      "skills_workbench_title": "المهارات — {name}",
+      "registry": {
+        "at_commit": "عند",
+        "credential_label": "بيانات اعتماد GitHub",
+        "domains_label": "مجالات المعرفة:",
+        "empty_body": "لا تحتفظ مساحة العمل هذه بأي سجل. السجل ملكية مشتركة — اختر المستودع نفسه في مساحة عمل أخرى وستحتفظ كلتاهما بالنسخة نفسها عند الالتزام نفسه، بدلاً من أن تنشئ كل منهما نسخة منفصلة.",
+        "held_by_one": "تحتفظ به {count} مساحة عمل",
+        "held_by_other": "تحتفظ به {count} مساحات عمل",
+        "leave": "مغادرة السجل",
+        "load_error": "تعذّرت قراءة المستودعات: {error}",
+        "no_credential": "لا توجد بعد بيانات اعتماد GitHub في Vault. أضِف واحدة من Vault ← بيانات الاعتماد؛ السجل هو مستودع، لذا فالاتصال هو نفسه المستخدم في أي عمل آخر مع GitHub.",
+        "no_lanes": "لا يحتوي أي مسار على محتوى بعد",
+        "no_other_holder": "لا يوجد مالك آخر، لذا ستُزال النسخة معه.",
+        "no_project": "لا تحتوي مساحة العمل هذه على أي مشروع عضو بعد. تعمل مهمة الاقتران من دليل حقيقي، لذا أضِف مشروعًا أولًا.",
+        "others_keep_one": "تحتفظ {count} مساحة عمل أخرى بالنسخة — المغادرة لا تحذفها.",
+        "others_keep_other": "تحتفظ {count} مساحات عمل أخرى بالنسخة — المغادرة لا تحذفها.",
+        "pair": "اقتران السجل",
+        "paired": "مقترن",
+        "path_hint": "المستودع والمسار المحلي كلاهما مطلوب: يقرأ الفحص نسخة العمل هذه ومستودعات مشاريعك جنبًا إلى جنب، وهو ما لا يتيحه عنوان URL. أشِر إلى نسخة موجودة لاعتمادها. نسخة واحدة لكل سجل، تتشاركها كل مساحة عمل متصلة.",
+        "path_placeholder": "مجلد محلي لنسخة عمل السجل",
+        "publishes": "ينشر",
+        "repo_label": "مستودع السجل",
+        "repo_loading": "جارٍ قراءة المستودعات…",
+        "repo_pick_credential_first": "اختر بيانات الاعتماد أولًا",
+        "repo_private": "{name} (خاص)",
+        "section_title": "سجل المعرفة",
+        "this_workspace": "مساحة العمل هذه"
+      }
     },
     "doc_signing": {
       "sign_heading": "توقيع مستند",

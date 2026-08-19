@@ -58,8 +58,18 @@ export interface Registry {
   defaultBranch: string;
   /** Vault credential the repo was picked with; pairing and later pulls reuse it. */
   credentialId: string;
-  /** Absolute path of the local clone. One per registry, never per workspace. */
-  clonePath: string | null;
+  /**
+    * Absolute path of the local clone — CHOSEN by the operator, not derived.
+    *
+    * A registry is two things at once: a GitHub repo (the remote everyone shares)
+    * and a working copy on this machine. Only the pair is usable: a scan skill has
+    * to read the clone and the project repos side by side, and it cannot do that
+    * against a URL. So the path is captured at wiring time rather than invented,
+    * which also lets an existing clone be adopted instead of duplicated.
+    *
+    * One per registry, never per workspace.
+    */
+  clonePath: string;
   state: PairingState;
   /** Fleet session that ran (or is running) the pairing brief. */
   sessionId: string | null;
@@ -159,6 +169,7 @@ export function linkRegistry(
   workspaceId: string,
   repo: { fullName: string; defaultBranch: string },
   credentialId: string,
+  clonePath: string,
 ): Registry {
   const s = registryLinkSnapshot();
   const id = repo.fullName;
@@ -170,7 +181,7 @@ export function linkRegistry(
     url: `https://github.com/${repo.fullName}`,
     defaultBranch: repo.defaultBranch,
     credentialId,
-    clonePath: null,
+    clonePath,
     state: 'unlinked',
     sessionId: null,
     lanes: [],
@@ -217,7 +228,8 @@ export function patchRegistry(id: string, patch: Partial<Registry>): void {
  * still an open design question, and an agent told to "set up the registry"
  * without that line will helpfully invent one.
  */
-export function pairingBrief(registry: Registry, clonePath: string): string {
+export function pairingBrief(registry: Registry): string {
+  const clonePath = registry.clonePath;
   return [
     `Pair this machine with the knowledge registry ${registry.fullName}.`,
     '',
@@ -238,10 +250,10 @@ export function pairingBrief(registry: Registry, clonePath: string): string {
  * member project. The registry clone does not exist yet, so it cannot be the
  * cwd of the session that creates it.
  */
-export async function dispatchPairing(registry: Registry, cwd: string, clonePath: string): Promise<void> {
-  patchRegistry(registry.id, { state: 'pairing', error: null, clonePath });
+export async function dispatchPairing(registry: Registry, cwd: string): Promise<void> {
+  patchRegistry(registry.id, { state: 'pairing', error: null });
   try {
-    const session = await spawnSession(cwd, ['-p', pairingBrief(registry, clonePath)]);
+    const session = await spawnSession(cwd, ['-p', pairingBrief(registry)]);
     const sessionId = typeof session === 'string' ? session : ((session as { id?: string })?.id ?? null);
     patchRegistry(registry.id, { sessionId });
   } catch (e) {

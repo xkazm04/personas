@@ -2159,6 +2159,10 @@
     "context_lens_empty": "किसी भी संदर्भ में census साइटें नहीं हैं।",
     "context_lens_label": "संदर्भ",
     "context_lens_search": "संदर्भ खोजें…",
-    "context_lens_sites": "{count} साइटें"
+    "context_lens_sites": "{count} साइटें",
+    "variant_switcher_aria": "ग्राफ़ लेआउट वैरिएंट",
+    "variant_atlas": "एटलस",
+    "variant_board": "बोर्ड",
+    "variant_nexus": "नेक्सस"
   }
 }

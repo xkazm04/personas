@@ -8384,7 +8384,11 @@
       "context_lens_empty": "Aucun contexte ne comporte de sites census.",
       "context_lens_label": "Contextes",
       "context_lens_search": "Rechercher des contextes…",
-      "context_lens_sites": "{count} sites"
+      "context_lens_sites": "{count} sites",
+      "variant_switcher_aria": "Variante de disposition du graphe",
+      "variant_atlas": "Carte",
+      "variant_board": "Tableau",
+      "variant_nexus": "Réseau"
     }
   },
   "matrix_v3": {
@@ -14395,7 +14399,34 @@
       "skills_workbench_quick_empty": "Aucune compétence installée dans ce dépôt pour l'instant — adoptez-en depuis Gérer.",
       "skills_workbench_quick_group_hint": "{name} — {covered}/{units} contextes",
       "skills_workbench_quick_running": "actif",
-      "skills_workbench_title": "Compétences — {name}"
+      "skills_workbench_title": "Compétences — {name}",
+      "registry": {
+        "at_commit": "à",
+        "credential_label": "Identifiant GitHub",
+        "domains_label": "domaines de connaissance :",
+        "empty_body": "Cet espace de travail ne détient aucun registre. Un registre est un bien partagé : choisissez le même dépôt dans un autre espace de travail et les deux détiendront le même clone, au même commit, au lieu d’en dupliquer une copie chacun.",
+        "held_by_one": "Détenu par {count} espace de travail",
+        "held_by_other": "Détenu par {count} espaces de travail",
+        "leave": "Quitter le registre",
+        "load_error": "Impossible de lire les dépôts : {error}",
+        "no_credential": "Aucun identifiant GitHub dans le Vault pour l’instant. Ajoutez-en un dans Vault → Identifiants ; le registre est un dépôt, la connexion est donc la même que pour tout autre travail GitHub.",
+        "no_lanes": "aucune voie ne contient encore de contenu",
+        "no_other_holder": "Aucun autre détenteur, le clone part avec lui.",
+        "no_project": "Cet espace de travail n’a encore aucun projet membre. La tâche d’appairage s’exécute depuis un répertoire réel : ajoutez d’abord un projet.",
+        "others_keep_one": "{count} autre espace de travail conserve le clone — le quitter ne le supprime pas.",
+        "others_keep_other": "{count} autres espaces de travail conservent le clone — le quitter ne le supprime pas.",
+        "pair": "Appairer le registre",
+        "paired": "appairé",
+        "path_hint": "Le dépôt et un chemin local sont tous deux requis : une analyse lit cette copie de travail et vos dépôts de projet côte à côte, ce qu’une URL ne permet pas. Pointez vers un clone existant pour l’adopter. Un clone par registre, partagé par chaque espace de travail connecté.",
+        "path_placeholder": "Dossier local pour la copie de travail du registre",
+        "publishes": "publie",
+        "repo_label": "Dépôt du registre",
+        "repo_loading": "Lecture des dépôts…",
+        "repo_pick_credential_first": "Choisissez d’abord un identifiant",
+        "repo_private": "{name} (privé)",
+        "section_title": "Registre de connaissances",
+        "this_workspace": "cet espace de travail"
+      }
     },
     "doc_signing": {
       "sign_heading": "Signer un document",

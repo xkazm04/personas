@@ -2159,6 +2159,10 @@
     "context_lens_empty": "Žádný kontext neobsahuje výskyty census.",
     "context_lens_label": "Kontexty",
     "context_lens_search": "Hledat kontexty…",
-    "context_lens_sites": "{count} výskytů"
+    "context_lens_sites": "{count} výskytů",
+    "variant_switcher_aria": "Varianta rozvržení grafu",
+    "variant_atlas": "Mapa",
+    "variant_board": "Tabule",
+    "variant_nexus": "Síť"
   }
 }

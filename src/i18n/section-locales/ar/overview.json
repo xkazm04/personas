@@ -2159,6 +2159,10 @@
     "context_lens_empty": "لا توجد سياقات تحمل مواقع census.",
     "context_lens_label": "السياقات",
     "context_lens_search": "بحث في السياقات…",
-    "context_lens_sites": "{count} مواقع"
+    "context_lens_sites": "{count} مواقع",
+    "variant_switcher_aria": "نمط تخطيط الرسم البياني",
+    "variant_atlas": "أطلس",
+    "variant_board": "لوحة",
+    "variant_nexus": "شبكة"
   }
 }

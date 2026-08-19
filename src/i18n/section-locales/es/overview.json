@@ -2159,6 +2159,10 @@
     "context_lens_empty": "Ningún contexto tiene sitios de census.",
     "context_lens_label": "Contextos",
     "context_lens_search": "Buscar contextos…",
-    "context_lens_sites": "{count} sitios"
+    "context_lens_sites": "{count} sitios",
+    "variant_switcher_aria": "Variante de diseño del grafo",
+    "variant_atlas": "Mapa",
+    "variant_board": "Tablero",
+    "variant_nexus": "Nexo"
   }
 }

@@ -2159,6 +2159,10 @@
     "context_lens_empty": "没有上下文包含 census 匹配点。",
     "context_lens_label": "上下文",
     "context_lens_search": "搜索上下文…",
-    "context_lens_sites": "{count} 个匹配点"
+    "context_lens_sites": "{count} 个匹配点",
+    "variant_switcher_aria": "图布局变体",
+    "variant_atlas": "图册",
+    "variant_board": "看板",
+    "variant_nexus": "星图"
   }
 }

@@ -8601,7 +8601,11 @@
       "context_lens_clear": "Clear context lens",
       "context_lens_search": "Search contexts…",
       "context_lens_sites": "{count} sites",
-      "context_lens_empty": "No contexts carry census sites."
+      "context_lens_empty": "No contexts carry census sites.",
+      "variant_atlas": "Atlas",
+      "variant_board": "Board",
+      "variant_nexus": "Nexus",
+      "variant_switcher_aria": "Graph layout variant"
     }
   },
   "matrix_v3": {
@@ -14689,7 +14693,34 @@
       "ctx_repair_confirm_title": "Apply the reference repair?",
       "ctx_repair_confirm_body": "This rewrites references in {contexts} contexts. Contexts are not versioned, so it cannot be undone from inside Personas.",
       "ctx_repair_confirm_cta": "Rewrite references",
-      "ctx_repair_applied": "Rewrote references in {contexts} contexts."
+      "ctx_repair_applied": "Rewrote references in {contexts} contexts.",
+      "registry": {
+        "section_title": "Knowledge registry",
+        "empty_body": "This workspace holds no registry. A registry is shared property — pick the same repository in another workspace and both hold the one clone, at the one commit, rather than forking a copy each.",
+        "publishes": "publishes",
+        "no_lanes": "no lanes carry content yet",
+        "domains_label": "knowledge domains:",
+        "at_commit": "at",
+        "paired": "paired",
+        "held_by_one": "Held by {count} workspace",
+        "held_by_other": "Held by {count} workspaces",
+        "this_workspace": "this workspace",
+        "leave": "Leave registry",
+        "others_keep_one": "{count} other workspace keeps the clone — leaving does not remove it.",
+        "others_keep_other": "{count} other workspaces keep the clone — leaving does not remove it.",
+        "no_other_holder": "No other holder, so the clone goes with it.",
+        "no_credential": "No GitHub credential in the Vault yet. Add one under Vault → Credentials; the registry is a repository, so the connection is the same one any other GitHub work uses.",
+        "credential_label": "GitHub credential",
+        "repo_label": "Registry repository",
+        "repo_pick_credential_first": "Pick a credential first",
+        "repo_loading": "Reading repositories…",
+        "repo_private": "{name} (private)",
+        "load_error": "Could not read repositories: {error}",
+        "path_placeholder": "Local folder for the registry working copy",
+        "path_hint": "The repo and a local path are both required: a scan reads this working copy and your project repos side by side, which a URL cannot do. Point at an existing clone to adopt it. One clone per registry, shared by every workspace wired to it.",
+        "no_project": "This workspace has no member project yet. The pairing task runs from a real directory, so add a project first.",
+        "pair": "Pair registry"
+      }
     },
     "doc_signing": {
       "sign_heading": "Sign a Document",

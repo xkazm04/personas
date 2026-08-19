@@ -2159,6 +2159,10 @@
     "context_lens_empty": "census 사이트를 가진 컨텍스트가 없습니다.",
     "context_lens_label": "컨텍스트",
     "context_lens_search": "컨텍스트 검색…",
-    "context_lens_sites": "사이트 {count}개"
+    "context_lens_sites": "사이트 {count}개",
+    "variant_switcher_aria": "그래프 레이아웃 변형",
+    "variant_atlas": "아틀라스",
+    "variant_board": "보드",
+    "variant_nexus": "넥서스"
   }
 }

@@ -8608,6 +8608,10 @@ export type Translations = {
       context_lens_search: string;
       context_lens_sites: string;
       context_lens_empty: string;
+      variant_atlas: string;
+      variant_board: string;
+      variant_nexus: string;
+      variant_switcher_aria: string;
     };
   };
   matrix_v3: {
@@ -14696,6 +14700,33 @@ export type Translations = {
       ctx_repair_confirm_body: string;
       ctx_repair_confirm_cta: string;
       ctx_repair_applied: string;
+      registry: {
+        section_title: string;
+        empty_body: string;
+        publishes: string;
+        no_lanes: string;
+        domains_label: string;
+        at_commit: string;
+        paired: string;
+        held_by_one: string;
+        held_by_other: string;
+        this_workspace: string;
+        leave: string;
+        others_keep_one: string;
+        others_keep_other: string;
+        no_other_holder: string;
+        no_credential: string;
+        credential_label: string;
+        repo_label: string;
+        repo_pick_credential_first: string;
+        repo_loading: string;
+        repo_private: string;
+        load_error: string;
+        path_placeholder: string;
+        path_hint: string;
+        no_project: string;
+        pair: string;
+      };
     };
     doc_signing: {
       sign_heading: string;

@@ -2159,6 +2159,10 @@
     "context_lens_empty": "censusサイトを持つコンテキストはありません。",
     "context_lens_label": "コンテキスト",
     "context_lens_search": "コンテキストを検索…",
-    "context_lens_sites": "{count}サイト"
+    "context_lens_sites": "{count}サイト",
+    "variant_switcher_aria": "グラフレイアウトのバリアント",
+    "variant_atlas": "アトラス",
+    "variant_board": "ボード",
+    "variant_nexus": "ネクサス"
   }
 }

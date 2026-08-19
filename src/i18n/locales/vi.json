@@ -8384,7 +8384,11 @@
       "context_lens_empty": "Không có bối cảnh nào chứa vị trí census.",
       "context_lens_label": "Bối cảnh",
       "context_lens_search": "Tìm bối cảnh…",
-      "context_lens_sites": "{count} vị trí"
+      "context_lens_sites": "{count} vị trí",
+      "variant_switcher_aria": "Biến thể bố cục đồ thị",
+      "variant_atlas": "Bản đồ",
+      "variant_board": "Bảng",
+      "variant_nexus": "Mạng"
     }
   },
   "matrix_v3": {
@@ -14395,7 +14399,34 @@
       "skills_workbench_quick_empty": "Repo này chưa cài kỹ năng nào — hãy tiếp nhận từ mục Quản lý.",
       "skills_workbench_quick_group_hint": "{name} — {covered}/{units} ngữ cảnh",
       "skills_workbench_quick_running": "đang chạy",
-      "skills_workbench_title": "Kỹ năng — {name}"
+      "skills_workbench_title": "Kỹ năng — {name}",
+      "registry": {
+        "at_commit": "tại",
+        "credential_label": "Thông tin xác thực GitHub",
+        "domains_label": "miền tri thức:",
+        "empty_body": "Không gian làm việc này chưa giữ registry nào. Registry là tài sản chung — hãy chọn cùng một kho lưu trữ ở không gian làm việc khác, khi đó cả hai cùng giữ một bản sao tại cùng một commit, thay vì mỗi bên tách ra một bản riêng.",
+        "held_by_one": "Được giữ bởi {count} không gian làm việc",
+        "held_by_other": "Được giữ bởi {count} không gian làm việc",
+        "leave": "Rời khỏi registry",
+        "load_error": "Không thể đọc các kho lưu trữ: {error}",
+        "no_credential": "Chưa có thông tin xác thực GitHub trong Vault. Hãy thêm tại Vault → Thông tin xác thực; registry là một kho lưu trữ, nên kết nối cũng giống mọi công việc GitHub khác.",
+        "no_lanes": "chưa có làn nào chứa nội dung",
+        "no_other_holder": "Không còn bên nào giữ, nên bản sao sẽ bị xóa theo.",
+        "no_project": "Không gian làm việc này chưa có dự án thành viên. Tác vụ ghép nối chạy từ một thư mục có thật, vì vậy hãy thêm một dự án trước.",
+        "others_keep_one": "{count} không gian làm việc khác vẫn giữ bản sao — rời đi không xóa nó.",
+        "others_keep_other": "{count} không gian làm việc khác vẫn giữ bản sao — rời đi không xóa nó.",
+        "pair": "Ghép nối registry",
+        "paired": "đã ghép nối",
+        "path_hint": "Cần cả kho lưu trữ lẫn đường dẫn cục bộ: quá trình quét đọc song song bản sao làm việc này và các kho dự án của bạn, điều mà một URL không làm được. Trỏ tới bản sao sẵn có để dùng lại. Mỗi registry một bản sao, dùng chung cho mọi không gian làm việc đã kết nối.",
+        "path_placeholder": "Thư mục cục bộ cho bản sao làm việc của registry",
+        "publishes": "xuất bản",
+        "repo_label": "Kho lưu trữ registry",
+        "repo_loading": "Đang đọc các kho lưu trữ…",
+        "repo_pick_credential_first": "Hãy chọn thông tin xác thực trước",
+        "repo_private": "{name} (riêng tư)",
+        "section_title": "Registry tri thức",
+        "this_workspace": "không gian làm việc này"
+      }
     },
     "doc_signing": {
       "sign_heading": "Ký tài liệu",

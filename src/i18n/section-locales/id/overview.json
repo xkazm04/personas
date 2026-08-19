@@ -2159,6 +2159,10 @@
     "context_lens_empty": "Tidak ada konteks yang memiliki situs census.",
     "context_lens_label": "Konteks",
     "context_lens_search": "Cari konteks…",
-    "context_lens_sites": "{count} situs"
+    "context_lens_sites": "{count} situs",
+    "variant_switcher_aria": "Varian tata letak grafik",
+    "variant_atlas": "Peta",
+    "variant_board": "Papan",
+    "variant_nexus": "Pusat"
   }
 }

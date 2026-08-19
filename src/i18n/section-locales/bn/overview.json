@@ -2159,6 +2159,10 @@
     "context_lens_empty": "কোনো কনটেক্সটে census সাইট নেই।",
     "context_lens_label": "কনটেক্সট",
     "context_lens_search": "কনটেক্সট খুঁজুন…",
-    "context_lens_sites": "{count}টি সাইট"
+    "context_lens_sites": "{count}টি সাইট",
+    "variant_switcher_aria": "গ্রাফ লেআউট ভ্যারিয়েন্ট",
+    "variant_atlas": "অ্যাটলাস",
+    "variant_board": "বোর্ড",
+    "variant_nexus": "নেক্সাস"
   }
 }

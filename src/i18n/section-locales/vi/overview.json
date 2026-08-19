@@ -2159,6 +2159,10 @@
     "context_lens_empty": "Không có bối cảnh nào chứa vị trí census.",
     "context_lens_label": "Bối cảnh",
     "context_lens_search": "Tìm bối cảnh…",
-    "context_lens_sites": "{count} vị trí"
+    "context_lens_sites": "{count} vị trí",
+    "variant_switcher_aria": "Biến thể bố cục đồ thị",
+    "variant_atlas": "Bản đồ",
+    "variant_board": "Bảng",
+    "variant_nexus": "Mạng"
   }
 }

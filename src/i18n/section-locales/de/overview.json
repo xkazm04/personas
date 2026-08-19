@@ -2159,6 +2159,10 @@
     "context_lens_empty": "Kein Kontext enthält Census-Stellen.",
     "context_lens_label": "Kontexte",
     "context_lens_search": "Kontexte durchsuchen…",
-    "context_lens_sites": "{count} Stellen"
+    "context_lens_sites": "{count} Stellen",
+    "variant_switcher_aria": "Graph-Layout-Variante",
+    "variant_atlas": "Karte",
+    "variant_board": "Tafel",
+    "variant_nexus": "Netz"
   }
 }

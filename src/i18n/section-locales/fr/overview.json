@@ -2159,6 +2159,10 @@
     "context_lens_empty": "Aucun contexte ne comporte de sites census.",
     "context_lens_label": "Contextes",
     "context_lens_search": "Rechercher des contextes…",
-    "context_lens_sites": "{count} sites"
+    "context_lens_sites": "{count} sites",
+    "variant_switcher_aria": "Variante de disposition du graphe",
+    "variant_atlas": "Carte",
+    "variant_board": "Tableau",
+    "variant_nexus": "Réseau"
   }
 }
