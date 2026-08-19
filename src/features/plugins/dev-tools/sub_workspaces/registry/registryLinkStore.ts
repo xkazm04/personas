@@ -36,8 +36,11 @@
 import { spawnSession } from '@/api/fleet/fleet';
 import { silentCatch } from '@/lib/silentCatch';
 
-/** The four lanes a registry can publish. Presence is what pairing reports. */
-export const LANES = ['knowledge', 'skills', 'practices', 'memory'] as const;
+/** The lanes a registry can publish. Presence is what pairing reports.
+ *  Mirrors the lane list in the registry's own root `registry.yaml` — `usage`
+ *  was added there and omitted here, so pairing reported four lanes for a repo
+ *  that publishes five. */
+export const LANES = ['knowledge', 'skills', 'practices', 'memory', 'usage'] as const;
 export type Lane = (typeof LANES)[number];
 
 export type PairingState =

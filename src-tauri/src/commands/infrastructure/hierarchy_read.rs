@@ -1728,7 +1728,52 @@ enum RootResolution {
     Absent(HierarchySource),
 }
 
-fn resolve_root(state: &AppState, project_id: &str) -> Result<RootResolution, AppError> {
+/// The override half of `resolve_root`, pure so its no-fallback rule is testable.
+///
+/// `None` means "no override given, carry on with the project". `Some(Absent)`
+/// means an override WAS given and is not usable — and the caller must stop
+/// there rather than reading the project's own corpus, which is why this returns
+/// a resolution instead of an `Option<PathBuf>` a caller could `unwrap_or`.
+fn resolve_override(root_override: Option<&str>) -> Option<RootResolution> {
+    let raw = root_override.map(str::trim).filter(|r| !r.is_empty())?;
+    let path = PathBuf::from(raw);
+    if path.is_dir() {
+        return Some(RootResolution::Ok(path));
+    }
+    Some(RootResolution::Absent(HierarchySource {
+        root: Some(raw.replace('\\', "/")),
+        present: false,
+        reason: Some(format!(
+            "The knowledge registry's working copy is not on this machine: {raw}. \
+             Pair the registry again, or point it at an existing clone."
+        )),
+        corpus_rel: None,
+        doc_root_rel: None,
+    }))
+}
+
+/// Resolve the root to read the corpus from.
+///
+/// `root_override` is how the authority moves: once a workspace is wired to a
+/// knowledge registry, the corpus the UI shows is the REGISTRY's, not the
+/// project's own `docs/concepts/paths/`. The caller supplies the clone path
+/// because the wiring lives frontend-side.
+///
+/// An override that is not a directory resolves to Absent NAMING IT, and never
+/// falls back to the project root. Reading the project's own corpus while the UI
+/// says it is showing the registry's is the same lie as a library that silently
+/// reverts to the home directory — and here it would be worse, because the two
+/// corpora are supposed to be identical and a silent fallback is exactly what
+/// would hide them drifting apart.
+fn resolve_root(
+    state: &AppState,
+    project_id: &str,
+    root_override: Option<&str>,
+) -> Result<RootResolution, AppError> {
+    if let Some(resolved) = resolve_override(root_override) {
+        return Ok(resolved);
+    }
+
     // A project id that names no row IS an error: the caller passed something
     // that does not exist, which is different from a project with no path.
     let project = repo::get_project_by_id(&state.db, project_id)?;
@@ -1775,10 +1820,11 @@ fn resolve_root(state: &AppState, project_id: &str) -> Result<RootResolution, Ap
 pub async fn dev_tools_hierarchy_graph(
     state: State<'_, Arc<AppState>>,
     project_id: String,
+    root_override: Option<String>,
 ) -> Result<HierarchyGraph, AppError> {
     require_auth(&state).await?;
 
-    let root = match resolve_root(&state, &project_id)? {
+    let root = match resolve_root(&state, &project_id, root_override.as_deref())? {
         RootResolution::Ok(p) => p,
         RootResolution::Absent(source) => return Ok(HierarchyGraph::empty(source)),
     };
@@ -1811,10 +1857,13 @@ pub async fn dev_tools_hierarchy_doc(
     state: State<'_, Arc<AppState>>,
     project_id: String,
     rel_path: String,
+    root_override: Option<String>,
 ) -> Result<HierarchyDoc, AppError> {
     require_auth(&state).await?;
 
-    let root = match resolve_root(&state, &project_id)? {
+    // Documents must come from the SAME root the graph was read from, or a link
+    // the graph issued would open a different repo's file of the same name.
+    let root = match resolve_root(&state, &project_id, root_override.as_deref())? {
         RootResolution::Ok(p) => p,
         RootResolution::Absent(source) => {
             return Err(AppError::NotFound(
@@ -1850,7 +1899,12 @@ pub async fn dev_tools_hierarchy_scorecard(
 ) -> Result<HierarchyScorecard, AppError> {
     require_auth(&state).await?;
 
-    let root = match resolve_root(&state, &project_id)? {
+    // NO root override, deliberately. The scorecard is a census artifact of THIS
+    // repo — which of the consumer's own contexts violate which subject. That is
+    // the consumer-side half of the split, exactly like evidence: the registry
+    // holds the standard, the consumer holds how it measures against it. Pointing
+    // this at a registry clone would read a scorecard about a repo of documents.
+    let root = match resolve_root(&state, &project_id, None)? {
         RootResolution::Ok(p) => p,
         RootResolution::Absent(source) => return Ok(HierarchyScorecard::empty(source)),
     };
@@ -2170,6 +2224,41 @@ L.
             "the choice must reach the UI as a warning: {:#?}",
             g.warnings
         );
+    }
+
+    #[test]
+    fn corpus_root_override_is_used_when_it_exists() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let raw = dir.path().to_string_lossy().to_string();
+        match resolve_override(Some(&raw)) {
+            Some(RootResolution::Ok(p)) => assert_eq!(p, dir.path()),
+            _ => panic!("expected Ok(root) for an existing directory"),
+        }
+    }
+
+    #[test]
+    fn a_missing_override_never_falls_back_to_the_project() {
+        // THE rule of the P3 flip. Falling back would read the project's own
+        // `docs/concepts/paths/` while the UI says it is showing the registry's
+        // — and since the two corpora are supposed to be identical, a silent
+        // fallback is exactly what would hide them drifting apart.
+        match resolve_override(Some("Z:/no/such/registry/clone")) {
+            Some(RootResolution::Absent(src)) => {
+                assert!(!src.present);
+                let reason = src.reason.expect("absence must explain itself");
+                assert!(reason.contains("no/such/registry/clone"), "{reason}");
+            }
+            _ => panic!("expected Absent for a path that is not a directory"),
+        }
+    }
+
+    #[test]
+    fn no_override_means_carry_on_with_the_project() {
+        // Blank and whitespace are "not given", not "given and empty" — the
+        // frontend sends null, but a stray "" must not become a refusal.
+        assert!(resolve_override(None).is_none());
+        assert!(resolve_override(Some("")).is_none());
+        assert!(resolve_override(Some("   ")).is_none());
     }
 
     #[test]

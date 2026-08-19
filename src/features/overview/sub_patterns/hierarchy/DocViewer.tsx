@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { getHierarchyDoc } from '@/api/devTools/hierarchy';
+import { corpusRootFor } from '@/features/plugins/dev-tools/sub_workspaces/registry/useRegistryLibrary';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { HierarchyDoc } from '@/lib/bindings/HierarchyDoc';
@@ -45,7 +46,7 @@ export function DocViewer({
     let live = true;
     setDoc(null);
     setFailed(false);
-    getHierarchyDoc(projectId, relPath)
+    getHierarchyDoc(projectId, relPath, corpusRootFor(projectId))
       .then((d) => { if (live) setDoc(d); })
       .catch((err) => {
         silentCatch('patterns:hierarchyDoc')(err);

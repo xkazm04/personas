@@ -21,6 +21,7 @@ import type { SubjectScore } from '@/lib/bindings/SubjectScore';
 import { silentCatch } from '@/lib/silentCatch';
 
 import { HierarchyStatusChip } from './HierarchyStatusChip';
+import { corpusRootFor } from '@/features/plugins/dev-tools/sub_workspaces/registry/useRegistryLibrary';
 
 /** The command that recomputes the scorecard — derivation names recomputation.
  *  Mirrors `SCORECARD_GENERATOR` in the Rust reader. */
@@ -74,7 +75,7 @@ function InlineDocBody({
     let live = true;
     setDoc(null);
     setFailed(false);
-    getHierarchyDoc(projectId, relPath)
+    getHierarchyDoc(projectId, relPath, corpusRootFor(projectId))
       .then((d) => { if (live) setDoc(d); })
       .catch((err) => {
         silentCatch('patterns:hierarchyInlineDoc')(err);

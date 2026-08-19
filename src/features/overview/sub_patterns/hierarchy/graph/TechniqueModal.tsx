@@ -17,6 +17,7 @@ import { BaseModal } from '@/lib/ui/BaseModal';
 
 import { HierarchyStatusChip } from '../HierarchyStatusChip';
 import type { SubjectNode, TechniqueEntry } from './hierarchyGraphModel';
+import { corpusRootFor } from '@/features/plugins/dev-tools/sub_workspaces/registry/useRegistryLibrary';
 
 /** Semantic stack-badge tones — same small map as the Subjects lane. */
 const STACK_CLASSES: Record<string, string> = {
@@ -75,7 +76,7 @@ export function TechniqueModal({
     let live = true;
     setDoc(null);
     setFailed(false);
-    getHierarchyDoc(projectId, tech.file)
+    getHierarchyDoc(projectId, tech.file, corpusRootFor(projectId))
       .then((d) => { if (live) setDoc(d); })
       .catch((err) => {
         silentCatch('patterns:hierarchyTechniqueDoc')(err);

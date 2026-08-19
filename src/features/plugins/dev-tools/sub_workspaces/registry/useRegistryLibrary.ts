@@ -78,6 +78,27 @@ export function registryLibraryRootFor(projectId: string): string | null {
 }
 
 /**
+ * The root the knowledge CORPUS should be read from for a project.
+ *
+ * This is the P3 flip: once a workspace is wired to a registry, the corpus the
+ * Patterns UI shows is the REGISTRY's, not the project's own
+ * `docs/concepts/paths/`. Returns null when nothing is wired, and the reader
+ * then falls back to the project root — so the flip is per-workspace and opt-in
+ * rather than a big-bang switch.
+ *
+ * The clone ROOT, not a lane: the Rust reader discovers `knowledge/<domain>/`
+ * inside it (or `docs/concepts/paths/`, for a repo shaped the old way), and it
+ * is the one authority on that layout. Naming the lane here would put the
+ * layout in two places.
+ */
+export function corpusRootFor(projectId: string | null): string | null {
+  if (!projectId) return null;
+  const workspace = workspaceOf(workspacesSnapshot().workspaces, projectId);
+  if (!workspace) return null;
+  return registryFor(workspace.id)?.clonePath ?? null;
+}
+
+/**
  * Repo-relative usage file a contributor writes into a registry.
  *
  * The slug rule is the registry gate's (`[a-z0-9][a-z0-9-]*`, and the filename

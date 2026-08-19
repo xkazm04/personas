@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { getHierarchyGraph } from '@/api/devTools/hierarchy';
+import { corpusRootFor } from '@/features/plugins/dev-tools/sub_workspaces/registry/useRegistryLibrary';
 import type { HierarchyGraph } from '@/lib/bindings/HierarchyGraph';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -25,8 +26,17 @@ export interface UseHierarchyGraph {
 }
 
 export function useHierarchyGraph(projectId: string | null): UseHierarchyGraph {
+  // Where the corpus comes from: the workspace's wired registry clone, or the
+  // project's own tree when nothing is wired. Part of the CACHE KEY, not just
+  // the request — the warm cache is keyed by project, and after the flip the
+  // same project can legitimately resolve to a different corpus. Keying on the
+  // project alone would paint the old repo's graph after a registry is wired
+  // and never revalidate it away.
+  const corpusRoot = corpusRootFor(projectId);
+  const cacheKey = projectId ? `${projectId}::${corpusRoot ?? 'self'}` : null;
+
   const [graph, setGraph] = useState<HierarchyGraph | null>(
-    projectId ? graphCache.get(projectId) ?? null : null,
+    cacheKey ? graphCache.get(cacheKey) ?? null : null,
   );
   const [loading, setLoading] = useState(projectId !== null);
   const [error, setError] = useState<string | null>(null);
@@ -44,12 +54,12 @@ export function useHierarchyGraph(projectId: string | null): UseHierarchyGraph {
     }
     const seq = ++requestSeq.current;
     // Paint warm immediately on a project switch, then revalidate.
-    setGraph(graphCache.get(projectId) ?? null);
+    setGraph(cacheKey ? graphCache.get(cacheKey) ?? null : null);
     setLoading(true);
-    getHierarchyGraph(projectId)
+    getHierarchyGraph(projectId, corpusRoot)
       .then((g) => {
         if (requestSeq.current !== seq) return;
-        graphCache.set(projectId, g);
+        if (cacheKey) graphCache.set(cacheKey, g);
         setGraph(g);
         setError(null);
         setLoading(false);
@@ -60,7 +70,7 @@ export function useHierarchyGraph(projectId: string | null): UseHierarchyGraph {
         setError(err instanceof Error ? err.message : String(err));
         setLoading(false);
       });
-  }, [projectId, gen]);
+  }, [projectId, corpusRoot, cacheKey, gen]);
 
   const refetch = useCallback(() => setGen((g) => g + 1), []);
 
