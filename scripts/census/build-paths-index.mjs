@@ -25,8 +25,21 @@ import path from 'node:path';
 import url from 'node:url';
 
 const ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '../..');
-const PATHS = path.join(ROOT, 'docs/concepts/paths');
-const OUT = path.join(ROOT, 'scripts/census');
+// Corpus source and output dir are parameterized so the index can be built from
+// EITHER personas `docs/concepts/paths/` (today's authority) OR a registry clone
+// (`ai-registry/knowledge/software-engineering/`) — same subject/technique/
+// application layout, `_laws.md`, `categories.json`. This survives the planned
+// paths/->registry move and lets coverage run against any corpus location.
+//   --corpus <dir>  or  CORPUS_DIR=<dir>   (default: personas paths/)
+//   --out <dir>     or  INDEX_OUT_DIR=<dir> (default: scripts/census)
+function argOf(flag) { const i = process.argv.indexOf(flag); return i > -1 ? process.argv[i + 1] : null; }
+const PATHS = path.resolve(argOf('--corpus') || process.env.CORPUS_DIR || path.join(ROOT, 'docs/concepts/paths'));
+const OUT = path.resolve(argOf('--out') || process.env.INDEX_OUT_DIR || path.join(ROOT, 'scripts/census'));
+if (!fs.existsSync(path.join(PATHS, '_laws.md'))) {
+  console.error(`FATAL: no _laws.md under corpus ${PATHS} — not a golden-path corpus root.`);
+  process.exit(1);
+}
+fs.mkdirSync(OUT, { recursive: true });
 
 // --- minimal frontmatter parser: scalars + `- ` lists, `[]` empty inline list.
 // The hierarchy's frontmatter is deliberately simple; this handles exactly it.
