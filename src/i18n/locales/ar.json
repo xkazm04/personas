@@ -14426,7 +14426,10 @@
         "repo_private": "{name} (خاص)",
         "section_title": "سجل المعرفة",
         "this_workspace": "مساحة العمل هذه"
-      }
+      },
+      "skills_library_unwired_body": "تأتي المهارات المؤلَّفة من سجل المعرفة الذي تحتفظ به مساحة العمل هذه. اربط سجلًا من Dev Tools ← Workspaces، في مساحة العمل التي ينتمي إليها هذا المشروع.",
+      "skills_library_unwired_title": "لا يوجد سجل متصل",
+      "skills_library_unwired_unassigned": "لا ينتمي هذا المشروع إلى أي مساحة عمل بعد. عيّنه من Dev Tools ← Workspaces ثم اربط سجلًا هناك."
     },
     "doc_signing": {
       "sign_heading": "توقيع مستند",

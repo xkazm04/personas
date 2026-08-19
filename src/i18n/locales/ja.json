@@ -14426,7 +14426,10 @@
         "repo_private": "{name}（プライベート）",
         "section_title": "ナレッジレジストリ",
         "this_workspace": "このワークスペース"
-      }
+      },
+      "skills_library_unwired_body": "作成したスキルは、このワークスペースが保持するナレッジレジストリから取得されます。Dev Tools → Workspaces で、このプロジェクトが属するワークスペースに接続してください。",
+      "skills_library_unwired_title": "レジストリが接続されていません",
+      "skills_library_unwired_unassigned": "このプロジェクトはまだどのワークスペースにも属していません。Dev Tools → Workspaces で割り当ててから、そこでレジストリを接続してください。"
     },
     "doc_signing": {
       "sign_heading": "ドキュメントに署名",

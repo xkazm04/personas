@@ -1603,9 +1603,17 @@ export interface SkillInstallPreview {
 export const listSkills = (projectId?: string | null) =>
   safeInvoke<SkillEntry[]>([], "skill_files_list", { projectId: projectId ?? null });
 
-/** List skills from the user-global library (`~/.claude/skills`). */
-export const listSkillsGlobal = () =>
-  safeInvoke<SkillEntry[]>([], "skill_files_list_global", {});
+/**
+ * List the skill LIBRARY.
+ *
+ * `libraryRoot` heads the library at a wired knowledge registry's `skills/`
+ * lane; omit it for the user-global library (`~/.claude/skills`). A named root
+ * that does not exist returns EMPTY rather than falling back to the home
+ * library — showing personal skills under a "registry" heading is worse than
+ * showing none.
+ */
+export const listSkillsGlobal = (libraryRoot?: string | null) =>
+  safeInvoke<SkillEntry[]>([], "skill_files_list_global", { libraryRoot: libraryRoot ?? null });
 
 /**
  * Install (copy) a skill into a target project's `.claude/skills`.

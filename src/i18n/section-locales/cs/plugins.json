@@ -1681,7 +1681,10 @@
       "repo_private": "{name} (soukromý)",
       "section_title": "Znalostní registr",
       "this_workspace": "tento pracovní prostor"
-    }
+    },
+    "skills_library_unwired_body": "Vlastní skilly pocházejí ze znalostního registru, který drží tento pracovní prostor. Připojte jej v Dev Tools → Workspaces, u pracovního prostoru, do něhož projekt patří.",
+    "skills_library_unwired_title": "Není připojen žádný registr",
+    "skills_library_unwired_unassigned": "Tento projekt zatím není v žádném pracovním prostoru. Přiřaďte jej v Dev Tools → Workspaces a připojte tam registr."
   },
   "doc_signing": {
     "sign_heading": "Podepsat dokument",

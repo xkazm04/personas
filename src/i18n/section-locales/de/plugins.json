@@ -1681,7 +1681,10 @@
       "repo_private": "{name} (privat)",
       "section_title": "Wissens-Registry",
       "this_workspace": "dieser Arbeitsbereich"
-    }
+    },
+    "skills_library_unwired_body": "Selbst verfasste Skills stammen aus der Wissens-Registry dieses Arbeitsbereichs. Verbinden Sie eine unter Dev Tools → Workspaces, im Arbeitsbereich, zu dem dieses Projekt gehört.",
+    "skills_library_unwired_title": "Keine Registry verbunden",
+    "skills_library_unwired_unassigned": "Dieses Projekt gehört noch zu keinem Arbeitsbereich. Ordnen Sie es unter Dev Tools → Workspaces zu und verbinden Sie dort eine Registry."
   },
   "doc_signing": {
     "sign_heading": "Dokument signieren",

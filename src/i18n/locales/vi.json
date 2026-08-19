@@ -14426,7 +14426,10 @@
         "repo_private": "{name} (riêng tư)",
         "section_title": "Registry tri thức",
         "this_workspace": "không gian làm việc này"
-      }
+      },
+      "skills_library_unwired_body": "Các skill tự soạn đến từ registry tri thức mà không gian làm việc này đang giữ. Hãy kết nối một registry trong Dev Tools → Workspaces, ở không gian làm việc chứa dự án này.",
+      "skills_library_unwired_title": "Chưa kết nối registry nào",
+      "skills_library_unwired_unassigned": "Dự án này chưa thuộc không gian làm việc nào. Hãy gán nó trong Dev Tools → Workspaces, rồi kết nối registry ở đó."
     },
     "doc_signing": {
       "sign_heading": "Ký tài liệu",

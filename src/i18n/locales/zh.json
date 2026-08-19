@@ -14426,7 +14426,10 @@
         "repo_private": "{name}（私有）",
         "section_title": "知识注册表",
         "this_workspace": "此工作区"
-      }
+      },
+      "skills_library_unwired_body": "自建技能来自该工作区持有的知识注册表。请在 Dev Tools → Workspaces 中，为此项目所属的工作区连接一个注册表。",
+      "skills_library_unwired_title": "未连接注册表",
+      "skills_library_unwired_unassigned": "此项目尚未加入任何工作区。请在 Dev Tools → Workspaces 中分配它，然后在那里连接注册表。"
     },
     "doc_signing": {
       "sign_heading": "签署文档",

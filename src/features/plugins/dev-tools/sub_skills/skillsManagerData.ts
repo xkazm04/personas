@@ -13,6 +13,7 @@ import {
   type SkillCoverageRow, type SkillEntry, type SkillUsageRow,
 } from '@/api/devTools/devTools';
 import { useSkillsWorkbench, type SkillsWorkbench } from '@/features/teams/sub_factory/passport/improve/skillsWorkbenchData';
+import { useRegistryLibrary, type RegistryLibrary } from '../sub_workspaces/registry/useRegistryLibrary';
 import { silentCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -31,8 +32,18 @@ export interface SkillsManagerData {
   /** The unified workbench (adopt/share ops, installed skills, counts) — null
    *  while the improve engine has no row for the project yet. */
   wb: SkillsWorkbench | null;
-  /** Full workspace library (~/.claude/skills), name-asc, with meta. */
+  /**
+   * The skill library, name-asc, with meta. Sourced from the wired registry's
+   * `skills/` lane when the project's workspace holds a registry, and from
+   * `~/.claude/skills` otherwise — see `library`.
+   */
   workspaceSkills: SkillEntry[];
+  /**
+   * WHERE the library above came from, and whether a registry is wired at all.
+   * Surfaces must distinguish "the registry publishes no skills" from "no
+   * registry is connected"; only this can tell them apart.
+   */
+  library: RegistryLibrary;
   /** The active project's installed skills, name-asc, with meta — the
    *  manager's own fetch (re-reads after a memory switch; the workbench hook
    *  only refetches per slug). */
@@ -82,6 +93,7 @@ export function useSkillsManagerData(activeProjectId: string | null): SkillsMana
   const { t, tx } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const wb = useSkillsWorkbench(activeProjectId ?? '');
+  const library = useRegistryLibrary(activeProjectId);
   const [workspaceSkills, setWorkspaceSkills] = useState<SkillEntry[]>([]);
   const [projectSkills, setProjectSkills] = useState<SkillEntry[]>([]);
   const [coverage, setCoverage] = useState<SkillCoverageRow[]>([]);
@@ -99,11 +111,12 @@ export function useSkillsManagerData(activeProjectId: string | null): SkillsMana
 
   useEffect(() => {
     let alive = true;
-    listSkillsGlobal()
+    // Headed at the registry lane when one is wired; the home library otherwise.
+    listSkillsGlobal(library.libraryRoot)
       .then((rows) => { if (alive) setWorkspaceSkills([...rows].sort((a, b) => a.name.localeCompare(b.name))); })
       .catch(silentCatch('skillsManager global list'));
     return () => { alive = false; };
-  }, [refreshTick]);
+  }, [refreshTick, library.libraryRoot]);
 
   useEffect(() => {
     if (!activeProjectId) { setCoverage([]); setTotalContexts(0); setProjectSkills([]); return; }
@@ -161,5 +174,5 @@ export function useSkillsManagerData(activeProjectId: string | null): SkillsMana
 
   const refresh = useCallback(() => setRefreshTick((n) => n + 1), []);
 
-  return { wb, workspaceSkills, projectSkills, installedNames, coverageBySkill, usageGlobal, usageProject, totalContexts, switchMemory, refreshTick, refresh };
+  return { wb, workspaceSkills, library, projectSkills, installedNames, coverageBySkill, usageGlobal, usageProject, totalContexts, switchMemory, refreshTick, refresh };
 }

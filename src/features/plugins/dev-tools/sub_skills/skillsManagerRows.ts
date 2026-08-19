@@ -16,6 +16,8 @@ import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboa
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
+
+import type { RegistryLibrary } from '../sub_workspaces/registry/useRegistryLibrary';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { isPresetSkill, presetSkillEntry, PRESET_SKILLS } from '../constants/presetSkills';
@@ -45,6 +47,9 @@ export interface ProjRow {
 export interface SkillsManagerVariantProps {
   ws: WsRow[];
   proj: ProjRow[];
+  /** Where the library came from — the Library panel needs this to tell an
+   *  unwired workspace apart from a registry that publishes no skills. */
+  library: RegistryLibrary;
   totalContexts: number;
   busy: boolean;
   projectName: string;
@@ -67,6 +72,7 @@ export interface SkillsManagerVariantProps {
 export interface SkillsManagerRows {
   ws: WsRow[];
   proj: ProjRow[];
+  library: RegistryLibrary;
   totalContexts: number;
   busy: boolean;
   projectName: string;
@@ -181,6 +187,7 @@ export function useSkillsManagerRows(projectId: string | null): SkillsManagerRow
   return {
     ws,
     proj,
+    library: data.library,
     totalContexts: data.totalContexts,
     busy: Boolean(data.wb?.managing),
     projectName,

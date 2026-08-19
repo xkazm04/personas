@@ -1681,7 +1681,10 @@
       "repo_private": "{name} (приватный)",
       "section_title": "Реестр знаний",
       "this_workspace": "это рабочее пространство"
-    }
+    },
+    "skills_library_unwired_body": "Собственные навыки берутся из реестра знаний, который держит это рабочее пространство. Подключите его в Dev Tools → Workspaces, в том рабочем пространстве, к которому относится проект.",
+    "skills_library_unwired_title": "Реестр не подключён",
+    "skills_library_unwired_unassigned": "Этот проект пока не входит ни в одно рабочее пространство. Назначьте его в Dev Tools → Workspaces и подключите там реестр."
   },
   "doc_signing": {
     "sign_heading": "Подписать документ",

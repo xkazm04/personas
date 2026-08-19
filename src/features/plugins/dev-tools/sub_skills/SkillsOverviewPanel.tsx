@@ -26,6 +26,7 @@ export function SkillsOverviewPanel({ projectId }: { projectId: string | null })
       <SkillsManagerBoard
         ws={rows.ws}
         proj={rows.proj}
+        library={rows.library}
         totalContexts={rows.totalContexts}
         busy={rows.busy}
         projectName={rows.projectName}

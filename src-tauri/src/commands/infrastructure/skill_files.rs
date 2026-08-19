@@ -727,14 +727,37 @@ pub fn skill_files_list(
     Ok(scan_skills_dir(&dir))
 }
 
-/// List skills from the user-global library (`~/.claude/skills`) — the
-/// source for the Fleet skill drawer's "Global library" view. Returns an
-/// empty list (not an error) when the user has no global skills yet.
+/// List the skill LIBRARY — `~/.claude/skills` by default, or a caller-supplied
+/// root when one is given. Returns an empty list (not an error) when there is
+/// nothing to read.
+///
+/// `library_root` exists so the library can be **headed against a wired
+/// knowledge registry**: a registry publishes a `skills/` lane, and when a
+/// workspace is wired to one, that lane IS the library. The caller supplies the
+/// path because the wiring lives frontend-side today; passing `None` keeps the
+/// home library, so an install with no registry behaves exactly as before.
 #[tauri::command]
 pub fn skill_files_list_global(
     state: State<'_, Arc<AppState>>,
+    library_root: Option<String>,
 ) -> Result<Vec<SkillEntry>, AppError> {
     require_auth_sync(&state)?;
+
+    if let Some(root) = library_root
+        .as_deref()
+        .map(str::trim)
+        .filter(|r| !r.is_empty())
+    {
+        let dir = PathBuf::from(root);
+        if dir.is_dir() {
+            return Ok(scan_skills_dir(&dir));
+        }
+        // A root was named and is not there. Do NOT fall back to the home
+        // library: that would render the user's personal skills while the UI
+        // says it is showing the registry's, which is worse than showing
+        // nothing. Empty and honest beats populated and wrong.
+        return Ok(Vec::new());
+    }
 
     let Some(dir) = global_skills_dir() else {
         return Ok(Vec::new());

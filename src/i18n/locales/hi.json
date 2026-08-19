@@ -14426,7 +14426,10 @@
         "repo_private": "{name} (निजी)",
         "section_title": "ज्ञान रजिस्ट्री",
         "this_workspace": "यह वर्कस्पेस"
-      }
+      },
+      "skills_library_unwired_body": "स्वयं लिखे गए स्किल इस वर्कस्पेस की ज्ञान रजिस्ट्री से आते हैं। Dev Tools → Workspaces में, उस वर्कस्पेस पर एक रजिस्ट्री कनेक्ट करें जिससे यह प्रोजेक्ट संबंधित है।",
+      "skills_library_unwired_title": "कोई रजिस्ट्री कनेक्ट नहीं है",
+      "skills_library_unwired_unassigned": "यह प्रोजेक्ट अभी किसी वर्कस्पेस में नहीं है। इसे Dev Tools → Workspaces में असाइन करें, फिर वहाँ रजिस्ट्री कनेक्ट करें।"
     },
     "doc_signing": {
       "sign_heading": "दस्तावेज़ पर हस्ताक्षर करें",

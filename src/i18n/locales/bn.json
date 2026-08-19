@@ -14426,7 +14426,10 @@
         "repo_private": "{name} (ব্যক্তিগত)",
         "section_title": "জ্ঞান রেজিস্ট্রি",
         "this_workspace": "এই ওয়ার্কস্পেস"
-      }
+      },
+      "skills_library_unwired_body": "নিজে লেখা স্কিলগুলি এই ওয়ার্কস্পেসের ধারণ করা জ্ঞান রেজিস্ট্রি থেকে আসে। Dev Tools → Workspaces-এ গিয়ে, এই প্রকল্প যে ওয়ার্কস্পেসের অন্তর্গত সেখানে একটি রেজিস্ট্রি সংযুক্ত করুন।",
+      "skills_library_unwired_title": "কোনো রেজিস্ট্রি সংযুক্ত নেই",
+      "skills_library_unwired_unassigned": "এই প্রকল্প এখনও কোনো ওয়ার্কস্পেসে নেই। Dev Tools → Workspaces-এ এটি নির্ধারণ করুন, তারপর সেখানে একটি রেজিস্ট্রি সংযুক্ত করুন।"
     },
     "doc_signing": {
       "sign_heading": "ডকুমেন্ট স্বাক্ষর করুন",

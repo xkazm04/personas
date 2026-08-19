@@ -1681,7 +1681,10 @@
       "repo_private": "{name} (privé)",
       "section_title": "Registre de connaissances",
       "this_workspace": "cet espace de travail"
-    }
+    },
+    "skills_library_unwired_body": "Les skills rédigés proviennent du registre de connaissances détenu par cet espace de travail. Connectez-en un dans Dev Tools → Workspaces, sur l’espace de travail auquel appartient ce projet.",
+    "skills_library_unwired_title": "Aucun registre connecté",
+    "skills_library_unwired_unassigned": "Ce projet n’appartient encore à aucun espace de travail. Affectez-le dans Dev Tools → Workspaces, puis connectez-y un registre."
   },
   "doc_signing": {
     "sign_heading": "Signer un document",

@@ -1681,7 +1681,10 @@
       "repo_private": "{name} (privat)",
       "section_title": "Registry pengetahuan",
       "this_workspace": "ruang kerja ini"
-    }
+    },
+    "skills_library_unwired_body": "Skill buatan sendiri berasal dari registry pengetahuan yang dipegang ruang kerja ini. Hubungkan satu di Dev Tools → Workspaces, pada ruang kerja tempat proyek ini berada.",
+    "skills_library_unwired_title": "Tidak ada registry yang terhubung",
+    "skills_library_unwired_unassigned": "Proyek ini belum berada di ruang kerja mana pun. Tetapkan di Dev Tools → Workspaces, lalu hubungkan registry di sana."
   },
   "doc_signing": {
     "sign_heading": "Tandatangani Dokumen",

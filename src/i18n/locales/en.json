@@ -14720,7 +14720,10 @@
         "path_hint": "The repo and a local path are both required: a scan reads this working copy and your project repos side by side, which a URL cannot do. Point at an existing clone to adopt it. One clone per registry, shared by every workspace wired to it.",
         "no_project": "This workspace has no member project yet. The pairing task runs from a real directory, so add a project first.",
         "pair": "Pair registry"
-      }
+      },
+      "skills_library_unwired_title": "No registry connected",
+      "skills_library_unwired_body": "Authored skills come from the knowledge registry this workspace holds. Connect one in Dev Tools → Workspaces, on the workspace this project belongs to.",
+      "skills_library_unwired_unassigned": "This project is not in a workspace yet. Assign it in Dev Tools → Workspaces, then connect a registry there."
     },
     "doc_signing": {
       "sign_heading": "Sign a Document",

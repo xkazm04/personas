@@ -157,7 +157,7 @@ function ActionIcon({ icon: Icon, title, onClick, disabled, testid }: {
   );
 }
 
-export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName, projectId, onAdopt, onShare, onUse, onSwitchMemory, onOpenContexts, onOpenInfo }: SkillsManagerVariantProps) {
+export function SkillsManagerBoard({ ws, proj, library, totalContexts, busy, projectName, projectId, onAdopt, onShare, onUse, onSwitchMemory, onOpenContexts, onOpenInfo }: SkillsManagerVariantProps) {
   const { t, tx } = useTranslation();
   const d = t.plugins.dev_tools;
   const wsSort = useSort();
@@ -370,11 +370,26 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
             </ul>
           </div>
         ))}
-        {libRows.length === 0 && (
+        {/* Authored skills come from the wired registry, so an unwired workspace
+            gets a POINTER, not an empty list — "no skills" and "no registry
+            connected" are different facts and sending the user hunting for the
+            former when it is the latter is the whole defect this avoids.
+
+            Preset skills are exempt: they are installer-bundled (SYSTEM_SKILLS)
+            and must keep working with no registry at all, which is what makes
+            the app usable before any of this is set up. */}
+        {libTab === 'custom' && !library.registry ? (
+          <div className="py-8 px-4 text-center flex flex-col items-center gap-2">
+            <p className="typo-body text-foreground">{d.skills_library_unwired_title}</p>
+            <p className="typo-caption text-foreground/70 max-w-sm">
+              {library.workspaceId ? d.skills_library_unwired_body : d.skills_library_unwired_unassigned}
+            </p>
+          </div>
+        ) : libRows.length === 0 ? (
           <p className="typo-caption text-foreground/45 py-8 text-center">
             {libTab === 'preset' ? d.skills_preset_empty : d.skills_ws_empty}
           </p>
-        )}
+        ) : null}
       </Panel>
 
       <Panel title={projectName || d.skills_project_fallback} count={proj.length} header={<HeaderRow sort={projSort} coverage />} footer={d.skills_footer_usage_coverage}>

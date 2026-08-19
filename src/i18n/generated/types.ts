@@ -14727,6 +14727,9 @@ export type Translations = {
         no_project: string;
         pair: string;
       };
+      skills_library_unwired_title: string;
+      skills_library_unwired_body: string;
+      skills_library_unwired_unassigned: string;
     };
     doc_signing: {
       sign_heading: string;
