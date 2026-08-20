@@ -345,11 +345,52 @@ writing the home dir, `.personas-skill-meta.json` sidecar with a source *path*. 
 
 **P6 — Persona agents (later stage, per operator).** Generated personas have runtime
 memory but no expert system. Connection design (sketch, to be its own plan):
-  - **Consult lane:** the runner's prompt assembly gains an optional knowledge section —
-    subjects selected by the persona's domain/use-case tags from the registry clone's
-    `index.json`-equivalent, packed under a budget exactly like memory recall (the
-    6000-char greedy-pack discipline already exists in `memory_recall.rs`). Techniques'
-    `use_when` triggers are the selection key — the same field the OKF profile adopted.
+  - ✅ **Consult lane — SHIPPED 2026-08-20** (`src-tauri/src/engine/knowledge_consult.rs`,
+    injected in `engine/runner/mod.rs` immediately after the memory block, so the agent's
+    own experience outranks generic doctrine when they disagree).
+    - **A menu of pointers, not bodies.** 1,005 forged techniques is not injectable and a
+      truncated technique reads as a complete one, so the section carries
+      subject · technique · when-to-use · file path and invites the agent to open what
+      applies. Same shrink the connector-usage sidecar already makes.
+    - Budget 2,200 chars / 12 entries, packed whole — a deliberate fraction of memory's
+      6,000, because memory is what *this* agent learned and the registry is speculative.
+    - **The registry body is fenced as untrusted content.** Anyone who can merge into a
+      shared registry writes subject names, technique names and `use_when` strings that
+      this app copies verbatim into every persona's prompt. So the body goes inside the
+      nonce'd `<untrusted_*>` boundary the runtime canary already explains, via a new
+      `prompt::wrap_untrusted_section` — the fence helpers are `pub(super)`, so text
+      appended to a finished prompt could not be fenced even in principle. The app's own
+      framing stays OUTSIDE the fence; fencing the sentence that explains the boundary
+      would tell the model to distrust it. Asserted structurally, because the failure —
+      text appended raw past the canary — looks completely normal in a diff.
+      **The census rule `prompt-extended-outside-its-assembler` is what caught this**, on
+      the first run after the code was written.
+    - Framing is also asserted: registry doctrine does not override the task or the user.
+    - The settings key is spelled **once, in Rust**. The store calls
+      `dev_tools_set_knowledge_root(path | null)` rather than writing
+      `app_settings` directly, so there is no TypeScript copy of the key name to drift —
+      and no second Rust declaration either (`knowledge_consult` re-exports
+      `settings_keys::KNOWLEDGE_REGISTRY_ROOT` rather than restating it). Both were real
+      defects on the first draft, both caught by census rules
+      (`settings-key-declared-outside-registry`, `comment-kept-cross-language-mirror`).
+    - **Graceful absence throughout**: no wiring, a stale path, an unbuilt or malformed
+      `index.json` all leave the prompt byte-for-byte unchanged.
+    - **The runner learns the path from `app_settings['knowledge_registry_root']`**, mirrored
+      from the workspace registry store's single `commit` choke point. localStorage cannot
+      be read from Rust and a 3am schedule has no window to ask. One root for now; the
+      per-project mapping is the next slice.
+  - ⚠️ **`use_when` — the designated selection key — covers 376/1005.** Measured
+    2026-08-20: 100% in `civic-intelligence`, `grant-funding`, `llm-observability` and
+    `media-generation`; **0/629 in `software-engineering`**, the bundle a coding persona
+    needs most. A slug/category fallback covers the gap and is genuinely weaker (a name is
+    not a situation), so every pick records its selector and the runner logs the split —
+    the gap is observable rather than inferred from disappointing output.
+    **Backfilling `use_when` across `software-engineering` is the highest-value next
+    step for this lane**, and needs no code change to take effect.
+    - A relevance floor came out of running the selector against the real corpus rather
+      than fixtures: without it, one shared *category* word pulled 11 irrelevant techniques
+      in behind a single genuine match. Fixtures could not have caught it; the
+      `#[ignore]`d `smoke_against_the_real_registry` test is what did.
   - **Propose-upward lane:** persona executions that surface generalizable lessons emit
     candidates through the EXISTING harvest door shape (`result.json` → governed ingest →
     human adjudication), tagged `source: persona-execution` — nothing auto-adopts.

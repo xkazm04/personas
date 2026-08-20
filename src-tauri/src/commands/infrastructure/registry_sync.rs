@@ -18,6 +18,15 @@
 //!   mid-work in a directory several sessions and both apps share, and moving it
 //!   under them is exactly the class of damage this system exists to avoid.
 //!
+//! ## Also here: pointing the runner at the clone
+//!
+//! [`dev_tools_set_knowledge_root`] is the other half of registry plumbing the
+//! frontend drives. It exists so the settings KEY NAME never has to be spelled
+//! in TypeScript: the workspace store passes a path, Rust decides where it
+//! goes. A key mirrored across two languages and held together by a comment is
+//! a key that can drift, and this one going stale means executions silently
+//! consult a registry the operator thinks they disconnected.
+//!
 //! ## Fast-forward only
 //!
 //! Never merge, never rebase, never stash. A fast-forward cannot lose work and
@@ -35,6 +44,7 @@ use ts_rs::TS;
 
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
+use crate::db::repos::core::settings as settings_repo;
 use crate::validation::require_non_empty;
 use crate::AppState;
 
@@ -186,6 +196,30 @@ fn sync_clone(clone_path: &str) -> Result<RegistrySync, AppError> {
         head,
         commits: count.parse().unwrap_or(0),
     })
+}
+
+/// Point the consult lane at a knowledge-registry working copy, or turn it off.
+///
+/// `Some(path)` records it; `None` (or a blank string) clears the key, which is
+/// what unwiring the last knowledge-publishing registry must do — a stale
+/// pointer means executions keep reading a repo the operator believes they
+/// disconnected, and nothing in the UI would show it.
+///
+/// The path is NOT validated here. It is checked at every read
+/// (`knowledge_consult::wired_root`), because a clone can be moved or deleted
+/// long after it was wired and a check at write time would prove nothing about
+/// the moment that matters.
+#[tauri::command]
+pub fn dev_tools_set_knowledge_root(
+    state: State<'_, Arc<AppState>>,
+    clone_path: Option<String>,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    let key = crate::db::settings_keys::KNOWLEDGE_REGISTRY_ROOT;
+    match clone_path.as_deref().map(str::trim).filter(|p| !p.is_empty()) {
+        Some(path) => settings_repo::set(&state.db, key, path),
+        None => settings_repo::delete(&state.db, key).map(|_| ()),
+    }
 }
 
 #[cfg(test)]

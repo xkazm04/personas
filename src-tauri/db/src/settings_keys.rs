@@ -62,6 +62,16 @@ pub const DELEGATE_BASE_URL: &str = "delegate_base_url";
 /// Active CLI engine: `"claude_code"` or `"codex_cli"`.
 pub const CLI_ENGINE: &str = "cli_engine";
 
+/// Absolute path of the knowledge-registry working copy this installation is
+/// paired with (P6 consult lane, `engine::knowledge_consult`).
+///
+/// The workspace registry section keeps its richer link state in its own store;
+/// this key exists because the RUNNER needs the path and runs with no frontend
+/// — a background or scheduled execution has no other way to learn it. Unset,
+/// blank, or pointing at a directory that no longer exists all mean the same
+/// thing: the consult lane is off and executions run exactly as before.
+pub const KNOWLEDGE_REGISTRY_ROOT: &str = "knowledge_registry_root";
+
 /// Browser-bridge pairing token — the secret the Athena Browser Bridge
 /// extension presents on its WebSocket handshake. Persisted so the extension
 /// pairs once and survives app restarts; regenerated from the Companion
@@ -727,6 +737,7 @@ const ALLOWED_KEYS: &[&str] = &[
     QWEN_MODEL,
     QWEN_CONNECTOR_TOOLS,
     CLI_ENGINE,
+    KNOWLEDGE_REGISTRY_ROOT,
     BROWSER_BRIDGE_PAIRING_TOKEN,
     EVENT_RETENTION_DAYS,
     EVENT_RETENTION_MAX_COUNT,

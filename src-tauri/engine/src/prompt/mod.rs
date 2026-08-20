@@ -118,6 +118,26 @@ fn deep_fanout_enabled(persona: &Persona) -> bool {
     false
 }
 
+/// Fence a block of externally-authored text so the runtime canary covers it.
+///
+/// The nonce'd `<untrusted_*>` boundary and the canary instruction that explains
+/// it both live inside this module and are `pub(super)`, which means text a
+/// caller appends to an already-assembled prompt cannot be fenced even in
+/// principle — it lands raw, past the canary, indistinguishable from the
+/// persona's own instructions.
+///
+/// That is fine for content the app authored and wrong for content it merely
+/// read. The knowledge-registry consult lane is the second kind: its entries
+/// come from files in a shared repository, so whoever can merge there can write
+/// into every persona's prompt. This is the door for that case — the ONLY thing
+/// it exposes is the fence, never the assembler's internals.
+///
+/// Fence the untrusted body alone. Wrapping your own heading and framing in it
+/// would tell the model to distrust the sentence that explains the boundary.
+pub fn wrap_untrusted_section(label: &str, content: &str) -> String {
+    wrap_runtime_xml_boundary(label, content)
+}
+
 /// Assemble the full prompt string from persona configuration, tools, input data,
 /// optional credential environment variable hints, and optional workspace shared instructions.
 ///

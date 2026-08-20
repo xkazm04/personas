@@ -1788,6 +1788,18 @@ export const writeRegistryUsage = (clonePath: string, contributor: string) =>
 export const syncRegistryClone = (clonePath: string) =>
   invoke<RegistrySync>("dev_tools_registry_sync", { clonePath });
 
+/**
+ * Point persona executions at a knowledge-registry working copy, or clear it.
+ *
+ * Deliberately a command rather than `setAppSetting('knowledge_registry_root')`:
+ * the settings KEY NAME then lives only in Rust, so there is no second spelling
+ * of it here to drift out of step with the registry that owns it. Pass `null`
+ * to turn the consult lane off — a stale pointer means executions keep reading
+ * a repo the operator believes they disconnected.
+ */
+export const setKnowledgeRegistryRoot = (clonePath: string | null) =>
+  invoke<void>("dev_tools_set_knowledge_root", { clonePath });
+
 export const exportSkillRegistry = (projectId: string, libraryRoot?: string | null) =>
   safeInvoke<number>(0, "dev_tools_export_skill_registry", { projectId, libraryRoot: libraryRoot ?? null });
 

@@ -31,6 +31,7 @@ use super::event_registry::event_name;
 
 use crate::db::models::{Persona, PersonaToolDefinition};
 use crate::db::repos::core::memories as mem_repo;
+use crate::db::repos::core::settings as settings_repo;
 use crate::db::repos::communication::manual_reviews as manual_review_repo;
 use crate::db::repos::resources::team_memories as team_memory_repo;
 use crate::db::repos::resources::teams as team_repo;
@@ -983,6 +984,57 @@ pub async fn run_execution(
         }
     } else {
         prompt_text // skip for session resumes -- context already loaded
+    };
+
+    // ── Organizational knowledge — the consult lane (P6) ────────────────────
+    // Memory above is what THIS agent learned; this is what the organization
+    // knows. It sits after memory deliberately: the agent's own experience
+    // outranks generic doctrine when the two disagree.
+    //
+    // Entirely absent unless a registry is wired. No setting, no clone, a stale
+    // path, an unbuilt index — every one of them leaves the prompt byte-for-byte
+    // what it was before this block existed. See knowledge_consult's module doc
+    // for why the failure posture is silence rather than an error.
+    let prompt_text = if is_session_resume {
+        prompt_text // the resumed session already carries it
+    } else {
+        use crate::engine::knowledge_consult as kc;
+        let root = settings_repo::get(&pool, kc::KNOWLEDGE_ROOT_KEY)
+            .ok()
+            .flatten()
+            .and_then(|v| kc::wired_root(Some(v)));
+        match root {
+            None => prompt_text,
+            Some(root) => {
+                let uc = input_data.as_ref().and_then(|d| d.get("_use_case"));
+                let field = |key: &str| {
+                    uc.and_then(|u| u.get(key))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or_default()
+                        .to_string()
+                };
+                let signals = kc::Signals {
+                    persona_name: persona.name.clone(),
+                    persona_description: persona.description.clone().unwrap_or_default(),
+                    template_category: persona.template_category.clone().unwrap_or_default(),
+                    use_case_title: field("title"),
+                    use_case_description: {
+                        let s = field("capability_summary");
+                        if s.is_empty() { field("description") } else { s }
+                    },
+                };
+                match kc::consult(&root, &signals) {
+                    Some((section, log)) => {
+                        logger.log(&log);
+                        format!("{prompt_text}{section}")
+                    }
+                    None => {
+                        logger.log("[KNOWLEDGE] No technique matched this execution — no section injected");
+                        prompt_text
+                    }
+                }
+            }
+        }
     };
 
     // Inject recent human-review decisions so the agent learns from past

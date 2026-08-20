@@ -2788,6 +2788,7 @@ pub fn run() {
             commands::infrastructure::skill_usage::skill_version_timeline,
             commands::infrastructure::skill_lessons::skill_lessons_list,
             commands::infrastructure::registry_sync::dev_tools_registry_sync,
+            commands::infrastructure::registry_sync::dev_tools_set_knowledge_root,
             commands::infrastructure::registry_usage::dev_tools_write_registry_usage,
             commands::infrastructure::skill_registry_export::dev_tools_export_skill_registry,
             // Doc-rot telemetry (Brainiac-adoption P2)
