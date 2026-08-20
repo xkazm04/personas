@@ -410,13 +410,36 @@ Doctrine: [`rust-unit-test-harness`](../docs/concepts/golden-paths/rust-unit-tes
 
 #### The gates that actually run
 
+> **Both of these gates are currently RED on `master`, by decision rather than
+> neglect.** `cargo fmt --check` names exactly the 8 files another session has
+> open (they were excluded from the 2026-08-20 workspace format and restored
+> byte-for-byte). `cargo clippy -- -D warnings` reports 215, of which **208 are
+> `dead_code`** — including **60 `#[tauri::command]` handlers that no
+> `generate_handler!` entry ever names**. Silencing `dead_code` would green the
+> gate in one line and hide sixty unreachable IPC commands, so it stays red
+> until the dead-code wave clears it. Run the gates and compare against those
+> numbers; do not add to them.
+
 ```bash
 cargo fmt --all --check --manifest-path src-tauri/Cargo.toml
-cargo clippy --workspace --manifest-path src-tauri/Cargo.toml --features desktop --all-targets -- -D warnings
+cargo clippy --workspace --manifest-path src-tauri/Cargo.toml --features desktop -- -D warnings
 npm run test:rust:crates          # and a targeted `cargo test -p <crate> <module>` for what you touched
 npm run census:check              # 97 of 201 census rules target src-tauri; a baseline fails on a rise AND on a silent drop
 cd src-tauri && cargo deny check
 ```
+**`--all-targets` is deliberately absent**, and this line said otherwise for a
+few hours on 2026-08-20. CI does not pass it, so CI lints neither the four
+binaries nor any test code. Measured: adding it takes the workspace from 217 to
+**437** findings, 66 of them distinct (the rest are the same dead items
+re-reported per test target) — and two of the new ones are
+`clippy::await_holding_lock`, which this workspace now declares at `warn` and
+which `-D warnings` therefore promotes to a hard error. Both are a deliberate
+`static TEST_LOCK` held across an `.await` to serialise async tests, which is
+correct code. So prescribing `--all-targets` here would have named a gate that
+fails on the repository's own sanctioned pattern. Widening CI to `--all-targets`
+is worth doing after the dead-code wave; it needs those two sites annotated
+first.
+
 `--workspace` and `--features desktop` are load-bearing on both cargo lines:
 without the feature the tauri build script aborts on the updater capability
 before compiling anything, and without `--workspace` only the root package is
