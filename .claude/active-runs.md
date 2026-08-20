@@ -1,6 +1,15 @@
 # Active Runs Ledger
 
 ## Active
+### rust-refactor-w0 — Rust backend refactor, Wave 0 (gates before any structural move) — session fable-5 Director + Opus builders — started
+- 2026-08-20. Plan: `docs/plans/rust-refactor.md` (W0-W6). This entry covers **W0 only**.
+- **Write-set (Director):** `docs/plans/rust-refactor.md`, `.github/workflows/{ci,audit}.yml`, `lefthook.yml`, `src-tauri/deny.toml`, `.claude/conventions.json`, `.claude/CLAUDE.md`, `.claude/active-runs.md`.
+- **Builder worktrees (disjoint write-sets, branches merge into master one at a time):** `rr/w0-lints` = all 5 `src-tauri/**/Cargo.toml` + new `src-tauri/clippy.toml` · `rr/w0-census` = `scripts/census/rules.json` + `scripts/census/__fixtures__/**` · `rr/w0-codegen` = `scripts/generate-command-names.mjs` + `scripts/build/*.mjs`.
+- **⚠ W0.1 (tree-wide `cargo fmt`, 3,683 files) is DEFERRED to the end of W0 and is NOT running yet.** At registration the tree held 51 staged files from a sibling session and 6 Rust files with 87 unstaged insertions (`db/src/settings_keys.rs`, `engine/src/prompt/mod.rs`, `commands/infrastructure/mod.rs`, `engine/mod.rs`, `engine/runner/mod.rs`, `lib.rs`), plus 8 Rust files differing on the unmerged `worktree-ship-ui`. A tree-wide format would sweep all of them. It will run only against a quiet tree, and the live set will be excluded and formatted in a follow-up if the tree is still live.
+- **Nothing in W0 edits any `.rs` file.** The `lib.rs` half of W0.4 (the `generate_handler_body()` test helper) is moved into W1.1, which owns `lib.rs`, precisely to avoid touching a file a sibling is editing.
+- Every commit uses the isolated-index ritual seeded with `git read-tree HEAD` (CLAUDE.md primitive 5) because the shared index is holding another session's 51 files.
+- **Status:** started.
+
 ### ship-ui-athena — Ship control panel + Athena scope-composition ops — session opus-5[1m] via /athena — **COMPLETE ON `worktree-ship-ui`, NOT MERGED**
 - 2026-08-20. Five commits on branch `worktree-ship-ui` (worktree at `.claude/worktrees/ship-ui`, node_modules junctioned): `a66686ea5` provenance + tooltip surface · `bdfb28d61` Ship control bar + certify panel + Athena briefing · `a6fae9337` canvas milestone status bar · `2d98f91e9` Athena's three Ship ops (Rust) · `5a45b0aef` tooltip conversion + census fixes + i18n×14 + feature doc.
 - **⛔ MERGE IS BLOCKED ON ANOTHER SESSION, DELIBERATELY NOT FORCED.** At 16:20 the branch overlapped **18 files that the registry/skills session had UNCOMMITTED on master** — `scripts/census/rules.json` (staged AND worktree-modified), all 14 `src/i18n/locales/*.json`, both `src/i18n/generated/*`, and `src/lib/commandNames.generated.ts`. Merging into that tree would have destroyed in-flight work, which is the 2026-05-09 stash incident wearing different clothes. **To merge later:** wait for that session's tree to be clean, then `git merge worktree-ship-ui`; expect real conflicts only in `rules.json` (two independent census `--update`s — re-run `npm run census -- --update` after merging rather than resolving by hand) and in the locale files (both sides appended keys; take both). Then `npm run check:i18n:strict`.
