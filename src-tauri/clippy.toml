@@ -1,0 +1,67 @@
+# Clippy configuration for the Personas Rust workspace.
+#
+# Every key below was verified against the toolchain actually in use here
+# (clippy 0.1.96, rustc 1.96.1) by feeding clippy a deliberately bogus key and
+# reading back the "expected one of ..." list it prints. That check matters:
+# an unrecognised key in clippy.toml is not a warning, it is a hard error that
+# fails every single crate in the workspace. Re-run that probe before adding a
+# key here, and re-run it after a toolchain bump.
+#
+# This file is discovered by walking up from each crate's manifest directory,
+# so one copy at src-tauri/ covers ., core/, db/, engine/ and macros/.
+
+# ---------------------------------------------------------------------------
+# Test-code carve-outs
+# ---------------------------------------------------------------------------
+# `unwrap_used` / `expect_used` are declared at warn in [workspace.lints]. In
+# production code that is the point. In tests it is noise: an unwrap in a test
+# IS the assertion, and forcing every fixture through a Result would make the
+# tests harder to read for no gain in safety. These two keys scope the lints to
+# non-test code, which is what makes it possible to turn them on at all.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+
+# Same argument for the output lints. `print_stdout` / `print_stderr` exist to
+# keep the desktop binary's diagnostics going through `tracing` rather than
+# straight to a stream nobody captures; a test that prints is not that problem.
+allow-print-in-tests = true
+allow-dbg-in-tests = true
+
+# ---------------------------------------------------------------------------
+# Thresholds
+# ---------------------------------------------------------------------------
+# Both values below are clippy's own defaults, written out explicitly so that
+# the number is a decision on the record rather than an unexamined inheritance.
+#
+# too-many-arguments-threshold: the workspace carries 159 `#[allow(clippy::
+# too_many_arguments)]` attributes today (50 in db, 99 in the root crate, 6 in
+# engine). 155 of them parse cleanly, and their argument counts run:
+#
+#     7 args:  3     11 args: 16     15 args:  5     21 args: 2
+#     8 args: 16     12 args:  9     16 args:  7     22 args: 3
+#     9 args: 44     13 args: 10     17 args:  3
+#    10 args: 25     14 args:  8     18 args:  3
+#
+# The median is 10 and the worst are 22 (`create_kpi` in db/src/repos/
+# dev_tools.rs, its `dev_tools_create_kpi` command wrapper, and `run_session`
+# in engine/build_session/runner.rs). The fraction still over the line for each
+# candidate threshold:
+#
+#     T=7  -> 151/155 (97.4%)      T=11 -> 50/155 (32.3%)
+#     T=8  -> 135/155 (87.1%)      T=12 -> 41/155 (26.5%)
+#     T=9  ->  91/155 (58.7%)      T=16 -> 11/155 ( 7.1%)
+#     T=10 ->  66/155 (42.6%)      T=20 ->  5/155 ( 3.2%)
+#
+# Raising the threshold does not fix a single function; it only makes some of
+# those 159 attributes deletable while the signature stays exactly as wide as
+# it was. Keeping the default at 7 means the attributes stay honest — each one
+# is a marker on a real 9-to-22-argument function that a later wave can convert
+# to a parameter struct, and the count of them is a usable progress metric.
+# Note that none of these currently emit anything: they are all suppressed at
+# the site, so this threshold has zero effect on today's warning count.
+too-many-arguments-threshold = 7
+
+# type-complexity-threshold: 23 `#[allow(clippy::type_complexity)]` attributes
+# today, all likewise suppressed at the site. Same reasoning — the default is
+# kept so that the allows keep pointing at types that genuinely want an alias.
+type-complexity-threshold = 250

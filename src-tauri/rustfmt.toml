@@ -1,0 +1,18 @@
+# rustfmt configuration for the Personas Rust workspace.
+#
+# DELIBERATELY MINIMAL. Before this file existed there was no formatting policy
+# at all, so the first `cargo fmt` will rewrite essentially every one of the
+# workspace's .rs files. That diff is only reviewable if the target style is
+# the one every Rust reader already has in their head — i.e. stock rustfmt.
+# Inventing a house style here would make a mechanical reformat look like a
+# deliberate one, and nobody could tell the two apart in review.
+#
+# `edition` is the only key set. It is not cosmetic: rustfmt defaults to 2015
+# when invoked without cargo metadata (e.g. `rustfmt path/to/file.rs`, or an
+# editor's format-on-save that shells out directly), and 2015 parses `async`
+# and `dyn` differently. Pinning it here makes every invocation path agree
+# with the `edition = "2021"` in each Cargo.toml.
+#
+# Anything added below this line needs a written justification. "I prefer it"
+# is not one.
+edition = "2021"

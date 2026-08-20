@@ -13,6 +13,86 @@
 #   .      — Tauri commands + companion (what's left)
 members = [".", "macros", "core", "db", "engine"]
 
+# ===========================================================================
+# Workspace lint policy
+# ===========================================================================
+# Inherited by all five members via `[lints] workspace = true` in each
+# manifest. Full derivation, per-crate counts and reproduction commands:
+# docs/plans/rust-refactor/w0-lint-baseline.md (gitignored, local only).
+#
+# READ THIS BEFORE ADDING A LINT HERE. CI runs
+#
+#     cargo clippy --workspace --manifest-path src-tauri/Cargo.toml \
+#         --features desktop -- -D warnings
+#
+# and `-D warnings` promotes EVERY warning to an error. So a lint added here
+# at "warn" is, in practice, a lint added at "deny". There is no such thing as
+# an advisory lint in this workspace as long as that flag is on the CI command.
+#
+# The measured consequence (2026-08-20, clippy 0.1.96, all 13 candidate lints
+# enabled at warn, in CI's exact target shape):
+#
+#     pre-existing default-warn clippy findings ......... 523
+#     rust::unused_qualifications ...................... 314
+#     clippy::clone_on_ref_ptr ......................... 275
+#     clippy::unwrap_used ............................... 94
+#     clippy::expect_used ............................... 78
+#     clippy::inefficient_to_string ..................... 63
+#     clippy::print_stderr .............................. 17
+#     clippy::large_futures ............................. 13
+#     clippy::print_stdout .............................. 12
+#     clippy::rc_buffer .................................. 1
+#     clippy::await_holding_lock ......................... 0
+#     clippy::dbg_macro / todo / unimplemented ........... 0
+#
+# The first line is the important one: 523 findings from clippy's own
+# default-warn lints exist at HEAD with NONE of the lints below enabled, which
+# means the CI clippy step already fails and has been failing independently of
+# this file. Verified directly: `cargo clippy -p personas-db --features desktop
+# -- -D warnings` exits 101 with 3 errors while every lint below is set to
+# "allow". Clearing those 523 is a later wave's job.
+#
+# POLICY, therefore: only lints measured at ZERO in the CI target shape are
+# live. Everything else is listed below, commented, WITH ITS COUNT — that
+# comment block is the ratchet. Uncommenting a line is a deliberate act that
+# says "this category is now at zero and I intend to keep it there". Nothing
+# here can be blamed for a red build today.
+[workspace.lints.clippy]
+# --- LIVE: measured at 0 in the CI target shape -----------------------------
+# Zero occurrences of `dbg!`, `todo!` and `unimplemented!` in 963 .rs files, so
+# these cost nothing today and stop the first one from landing. dbg_macro and
+# todo are "deny" rather than "warn" because a debugging leftover or an
+# unfinished branch reaching the default branch is never a judgement call.
+dbg_macro = "deny"
+todo = "deny"
+unimplemented = "warn"
+
+# The lock-across-await gate. Production count is 0 — see the note in the
+# baseline report: a grep heuristic put this at 23, and the difference is that
+# `await_holding_lock` fires only for std::sync/parking_lot guards, while this
+# workspace's async paths hold `tokio::sync` guards, which are correct by
+# design. The only two hits in the whole tree are inside `#[cfg(test)] mod
+# tests` in src/companion/orchestration/mcp/pending.rs (a TEST_LOCK held across
+# `rx.await` to serialise tests) and CI does not build test targets. Live at
+# warn so the next real one is caught the day it is written.
+await_holding_lock = "warn"
+
+# --- RATCHET: measured non-zero, enable when the count reaches 0 ------------
+# Counts are production / all-targets, from the run described above.
+# clone_on_ref_ptr      = "warn"   # 275 / 280  (271 of them in personas-desktop)
+# unwrap_used           = "warn"   #  94 /  94  (tests already exempt via clippy.toml)
+# expect_used           = "warn"   #  78 /  87
+# inefficient_to_string = "warn"   #  63 / 100
+# print_stderr          = "warn"   #  17 /  17  (logger.rs, mcp_bin.rs, main.rs — mostly pre-tracing startup paths)
+# large_futures         = "warn"   #  13 /  15
+# print_stdout          = "warn"   #  12 /  12  (mcp_server/install.rs + main.rs CLI output)
+# rc_buffer             = "warn"   #   1 /   1  (src/commands/obsidian_brain/graph.rs:112 — one line from live)
+
+[workspace.lints.rust]
+# unused_qualifications = "warn"   # 314 / 393  — largest single category, and a
+# pure-mechanical one: `cargo clippy --fix` offers a machine-applicable
+# suggestion for most of them. A good first target for the ratchet.
+
 [package]
 name = "personas-desktop"
 version = "1.1.0"
@@ -21,6 +101,12 @@ authors = ["Personas"]
 license = "MIT"
 edition = "2021"
 rust-version = "1.80.0"
+# Never published to crates.io — the app ships as a Tauri bundle. This is a
+# statement of fact, but it is also load-bearing for `cargo deny check`: the
+# bans/wildcard rule treats a crate with no `publish` key as publishable, and
+# refuses to apply `allow-wildcard-paths` to a publishable crate, so our own
+# intra-workspace path dependencies were reported as wildcard errors.
+publish = false
 default-run = "personas-desktop"
 
 [lib]
@@ -383,3 +469,6 @@ windows = { version = "0.58", features = [
     "Win32_Security_Cryptography",
     "Win32_Storage_FileSystem",
 ] }
+
+[lints]
+workspace = true
