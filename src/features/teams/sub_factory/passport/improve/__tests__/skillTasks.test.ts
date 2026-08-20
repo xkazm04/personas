@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { DevProject } from '@/lib/bindings/DevProject';
 
-import { shareBranchName, shareTaskPrompt } from '../skillTasks';
+import { adoptTaskPrompt, shareBranchName, shareTaskPrompt } from '../skillTasks';
 
 const project = { name: 'personas', root_path: 'C:/repo' } as unknown as DevProject;
 
@@ -98,6 +98,44 @@ describe('shareTaskPrompt — the usage piggyback', () => {
       expect(p).toContain('Commit ONLY');
       expect(p).not.toContain('usage/');
     }
+  });
+});
+
+describe('adoptTaskPrompt — which library the item comes from', () => {
+  const noSibling = () => null;
+
+  it('reads from the user-global library when none is named', () => {
+    const p = adoptTaskPrompt([{ name: 'perfect', source: null }], noSibling);
+    expect(p).toContain('~/.claude/skills/perfect');
+    expect(p).toContain('user-global');
+  });
+
+  it('reads from the registry lane when one is wired', () => {
+    // The board lists rows from the registry lane; if adopt looked under the
+    // home library instead it would hunt for a name that is not there, and the
+    // affordance would be offering something the task cannot source.
+    const p = adoptTaskPrompt([{ name: 'perfect', source: null }], noSibling, 'C:/reg/skills');
+    expect(p).toContain('C:/reg/skills/perfect');
+    expect(p).toContain('knowledge-registry skills lane');
+    expect(p).not.toContain('~/.claude/skills/perfect');
+  });
+
+  it('treats a blank library root as not given', () => {
+    for (const root of ['', '   ', null, undefined]) {
+      const p = adoptTaskPrompt([{ name: 'perfect', source: null }], noSibling, root);
+      expect(p).toContain('~/.claude/skills/perfect');
+    }
+  });
+
+  it('leaves a sibling-project source alone', () => {
+    const p = adoptTaskPrompt([{ name: 'perfect', source: 'proj-1' }], () => 'C:/other', 'C:/reg/skills');
+    expect(p).toContain('C:/other/.claude/skills/perfect');
+    expect(p).not.toContain('C:/reg/skills/perfect');
+  });
+
+  it('forbids writing back into the library it read from', () => {
+    const p = adoptTaskPrompt([{ name: 'perfect', source: null }], noSibling, 'C:/reg/skills');
+    expect(p).toContain('do not modify the library you read from');
   });
 });
 

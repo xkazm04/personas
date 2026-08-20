@@ -133,7 +133,9 @@ export function useSkillsManagerRows(projectId: string | null): SkillsManagerRow
   // Presets install from the app bundle (system-skill lane) — not via the
   // Dev-runner adopt task, which sources from the user's global library.
   const onAdopt = (name: string) => {
-    if (!isPresetSkill(name)) { void data.wb?.runAdopt(name); return; }
+    // The rows came from `data.library`; the adopt task must read from the SAME
+    // library or it will hunt for a registry skill under the home directory.
+    if (!isPresetSkill(name)) { void data.wb?.runAdopt(name, data.library.libraryRoot); return; }
     if (!projectId) return;
     void (async () => {
       try {

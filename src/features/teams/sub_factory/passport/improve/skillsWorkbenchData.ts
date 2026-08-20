@@ -56,7 +56,9 @@ export interface SkillsWorkbench {
   managing: boolean;
   /** A dispatch spawn is in flight (local optimistic guard). */
   dispatching: boolean;
-  runAdopt: (name: string) => Promise<void>;
+  /** Adopt one library skill into this project. `libraryRoot` names WHICH library
+   *  the item comes from — omit for the user-global one. */
+  runAdopt: (name: string, libraryRoot?: string | null) => Promise<void>;
   /** Publish a project skill into the library. `target` decides WHERE and under
    *  which contract — omit it for the user-global library. */
   runShare: (name: string, target?: ShareTarget) => Promise<void>;
@@ -180,13 +182,13 @@ export function useSkillsWorkbench(slug: string): SkillsWorkbench | null {
       return { name: s.name, description: s.description, sourceLabel: s.sourceKind, usage: u ?? null, category: s.category, memory: s.memory, contextTracked: s.contextTracked };
     }), [installed, raw]);
 
-  const runAdopt = useCallback(async (name: string) => {
+  const runAdopt = useCallback(async (name: string, libraryRoot?: string | null) => {
     if (!engine || !raw) return;
     const src = raw.skillsToAdd?.find((s) => s.name === name);
     if (!src) return;
     const items: AdoptItem[] = [{ name: src.name, source: src.source }];
     try {
-      const taskId = await engine.deployNow(slug, adoptTaskTitle(items), adoptTaskPrompt(items, sourceRootOf), SKILL_TASK_MODEL);
+      const taskId = await engine.deployNow(slug, adoptTaskTitle(items), adoptTaskPrompt(items, sourceRootOf, libraryRoot), SKILL_TASK_MODEL);
       useImproveActivityStore.getState().start(`${slug}:skills`, taskId, 'deploy');
       // The LLM adopt lane writes skill files without the provenance sidecar
       // (unlike skill_files_install), which left such skills `local_only`

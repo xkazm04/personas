@@ -21,7 +21,7 @@ const reflectionStep = (n: number) =>
 
 export interface AdoptItem {
   name: string;
-  /** Source project id, or null = the user-global library (~/.claude/skills). */
+  /** Source project id, or null = THE LIBRARY (see `libraryRoot` on the prompt). */
   source: string | null;
 }
 
@@ -30,13 +30,33 @@ export function adoptTaskTitle(items: AdoptItem[]): string {
   return only ? `Adopt skill "${only.name}"` : `Adopt ${items.length} reusable skills`;
 }
 
-/** Task prompt that installs + customizes the selected skills for the target
- *  repo. Runs with cwd = the ADOPTING project's root; `sourceRootOf` resolves a
- *  sibling source project id to its absolute root path. */
-export function adoptTaskPrompt(items: AdoptItem[], sourceRootOf: (projectId: string) => string | null): string {
+/**
+ * Task prompt that installs + customizes the selected skills for the target repo.
+ * Runs with cwd = the ADOPTING project's root; `sourceRootOf` resolves a sibling
+ * source project id to its absolute root path.
+ *
+ * `libraryRoot` is where a `source: null` item comes FROM. When the project's
+ * workspace holds a knowledge registry, the library is that registry's `skills/`
+ * lane — the same place the board lists rows from and the same place a share
+ * publishes to. Omitting it keeps the user-global library, which is what an
+ * unwired install has.
+ *
+ * Passing it is not cosmetic: without it the board could list a registry skill
+ * and offer to adopt it, and the adopt task would then go looking for that name
+ * under the home library and not find it. The affordance and the source have to
+ * agree about which library they mean.
+ */
+export function adoptTaskPrompt(
+  items: AdoptItem[],
+  sourceRootOf: (projectId: string) => string | null,
+  libraryRoot?: string | null,
+): string {
+  const library = libraryRoot?.trim()
+    ? `${libraryRoot.trim()} (the workspace's knowledge-registry skills lane)`
+    : '~/.claude/skills (the user-global skills library; ~ is the user home directory)';
   const lines = items.map((it) => {
     const src = it.source === null
-      ? `~/.claude/skills/${it.name} (the user-global skills library; ~ is the user home directory)`
+      ? `${library.replace(/ \(/, `/${it.name} (`)}`
       : `${sourceRootOf(it.source) ?? '<unknown source project>'}/.claude/skills/${it.name}`;
     return `- "${it.name}" — source: ${src}`;
   });
@@ -52,7 +72,7 @@ export function adoptTaskPrompt(items: AdoptItem[], sourceRootOf: (projectId: st
     '4. If a step cannot apply to this codebase, adapt it to the nearest real equivalent and note the change in a short "Adapted for this repo" line at the bottom of that SKILL.md.',
     reflectionStep(5),
     '',
-    'Only write inside .claude/skills/ — do not touch application code, and do not invent commands that do not exist here.',
+    'Only write inside .claude/skills/ of THIS repo — do not modify the library you read from, and do not invent commands that do not exist here.',
   ].join('\n');
 }
 
