@@ -1035,3 +1035,38 @@ test in `skill_files.rs` asserts this.
 
 Rejections **degrade, never fail** — a stray link warns (install) or lands in
 `export_warnings` (export) rather than blocking an otherwise valid skill.
+
+## The golden-path census is the repo's real enforcement layer (added 2026-08-20, /research anti-slop run)
+
+**Check this BEFORE proposing any lint rule, gate, or "the codebase doesn't enforce X"
+finding.** `scripts/census/rules.json` holds **201 regex-shaped rules**, each with a
+ratcheting baseline, run by `scripts/census/run-census.mjs`. A Phase 6 evidence pass that
+greps only `eslint.config.js` and `eslint-rules/*.cjs` will conclude a condition is
+unenforced when the census has covered it for months.
+
+Three facts that change how findings should be shaped:
+
+1. **Adding a gate is an entry in `rules.json`, not a new script.** That is the system's
+   explicit design (247 situation leaves × ~2 gates would otherwise be ~460 bespoke
+   checkers). A finding that proposes "write a new ESLint rule" for anything regex-shaped
+   is proposing the more expensive of two available shapes — recommend the census entry.
+2. **The census reads `.rs`, `.md` and `.sql`, where ESLint cannot reach.** Several rules
+   (`defeated-pathspec-commit`, `untyped-command-payload`, `nullable-text-primary-key`)
+   police Rust, SQL and documentation prose. "It's not TypeScript" is not a reason to
+   route a finding away from the census.
+3. **It ratchets in BOTH directions and runs at pre-push only.** A silent DROP fails the
+   push as loudly as a rise (a drop is usually a broken matcher). So proposing a new census
+   rule is a **two-way commitment**, not a free gate — surface that as a risk under the
+   risks-first rule. `lefthook.yml:74` runs it at pre-push, deliberately not pre-commit
+   (the walk takes minutes), so `git commit` never consults it and `git push` always does.
+
+**ESLint's real weight here is small by comparison:** 21 custom rules, of which **3 are
+`error`, 17 `warn`, 1 `off`**. Per `CLAUDE.md:567` a warn-level rule enforces nothing at
+either gate by construction (`npm run check` passes no `--max-warnings`; the pre-commit hook
+runs `--quiet`). **Never score a finding as "enforced" on the strength of a warn-level rule.**
+
+Measured 2026-08-20 at HEAD: 201 rules, 518,843 file-visits, 13,245 surviving violations
+across 6,005 files, all baselined and green. `npm run check` is a ten-link `&&` chain —
+eight project checks including `census:check` run *ahead* of `tsc --noEmit` and `eslint src/`,
+so a green typecheck locally says nothing about the eight gates in front of it.
+Full doctrine now in `.claude/CLAUDE.md` → "The golden-path census".
