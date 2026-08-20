@@ -5,25 +5,26 @@
 // trusts. Composition opens per milestone (ShipMilestoneComposer).
 import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { ArrowUp, Check, PencilRuler, Plus, Rocket, Sparkles, SquareTerminal, Telescope, Zap } from 'lucide-react';
+import { ArrowUp, Check, Plus, Rocket, Sparkles, Telescope } from 'lucide-react';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { useAskAthena } from '@/features/plugins/companion/useAskAthena';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
 
-import {
-  PASSPORT_FLEET_INK, PassportTerminalModal, usePassportFleetSessions,
-} from '../../passport/passportFleet';
 import { INK } from '../../passport/passportInk';
 import type { FactoryL2Data } from '../factoryL2Data';
-import { buildCriterionPrompt, ShipDispatchModal, shipDispatchKey } from './ShipDispatch';
+import { buildShipBriefing } from './shipAthena';
+import { ShipCertifyModal } from './ShipCertifyModal';
+import { ShipControlBar } from './ShipControlBar';
 import { ShipItemAnnotations } from './ShipItemAnnotations';
 import { ShipMilestoneComposer } from './ShipMilestoneComposer';
-import { ShipMilestoneRun } from './ShipMilestoneRun';
+import { ShipRunSummary, useShipMilestoneRun } from './ShipMilestoneRun';
 import { ShipDualitySummary, ShipGoalField } from './ShipMilestoneMeta';
 import {
-  BUCKET_HUE, CRIT_HUE, bucketLabel, shipVerdict,
-  type ExitCriterion, type ScopeBucket, type ShipMilestoneVM,
+  BUCKET_HUE, bucketLabel,
+  type ScopeBucket, type ShipMilestoneVM,
 } from './shipModel';
 import { LedgerEmpty, LedgerHeader, LedgerList, LedgerRow } from './shipRows';
 import { ShipVelocityNote } from './ShipVelocityNote';
@@ -205,16 +206,17 @@ function Workspace({ vm, ship, editable, t, tx }: {
                 : undefined}
             actions={editable && (
               <>
-                <button
-                  type="button"
-                  onClick={() => ship.setItem(vm.id, 'use_case', f.id, 'core')}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring"
-                  style={{ color: INK.teal, borderColor: `${INK.teal}55` }}
-                  title={t.ship.promote_cut_tooltip}
-                >
-                  <ArrowUp className="w-3 h-3" aria-hidden />
-                  {t.ship.promote_cut}
-                </button>
+                <Tooltip content={t.ship.promote_cut_tooltip}>
+                  <button
+                    type="button"
+                    onClick={() => ship.setItem(vm.id, 'use_case', f.id, 'core')}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring"
+                    style={{ color: INK.teal, borderColor: `${INK.teal}55` }}
+                  >
+                    <ArrowUp className="w-3 h-3" aria-hidden />
+                    {t.ship.promote_cut}
+                  </button>
+                </Tooltip>
                 {(['later', 'never'] as const).map((b) => (
                   <BucketBtn key={b} label={bucketLabel(t, b)} on={bucket === b} hue={BUCKET_HUE[b]}
                     onClick={() => ship.setItem(vm.id, 'use_case', f.id, b)} />
@@ -236,19 +238,21 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
   const ship = useShipData(data);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [composing, setComposing] = useState(false);
+  const [certifying, setCertifying] = useState(false);
   const select = (id: string) => { setSelectedId(id); setComposing(false); };
-  // Criterion resolution — Fleet dispatch through the passport wall's machinery.
-  const fleetSessions = usePassportFleetSessions();
-  const [dispatchCrit, setDispatchCrit] = useState<ExitCriterion | null>(null);
-  const [terminalKey, setTerminalKey] = useState<string | null>(null);
+  const askAthena = useAskAthena();
+
+  // Resolved BEFORE the early returns so the run hook below keeps a stable
+  // position in hook order — `ship.roadmap` is simply empty while loading.
+  const vm = ship.roadmap.find((x) => x.id === selectedId)
+    ?? ship.roadmap.find((x) => x.status === 'active')
+    ?? ship.roadmap[0];
+
+  const runner = useShipMilestoneRun(vm?.id ?? '', data.project?.root_path ?? null);
 
   if (ship.loading) {
     return <div className="flex justify-center py-10" data-testid="factory-ship-loading"><LoadingSpinner size="md" /></div>;
   }
-
-  const vm = ship.roadmap.find((x) => x.id === selectedId)
-    ?? ship.roadmap.find((x) => x.status === 'active')
-    ?? ship.roadmap[0];
 
   if (!vm) {
     return (
@@ -261,11 +265,25 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
   }
 
   const editable = vm.status !== 'shipped';
-  const verdict = shipVerdict(vm.criteria);
+
+  // Hand Athena the whole live milestone, tagged as coming from this surface.
+  // The pool she can draw scope FROM is everything not in the core cut — the
+  // same set the "Outside the cut" ledger shows him.
+  const openAthena = () => {
+    if (!data.project) return;
+    const memberIds = new Set(vm.members.map((mm) => mm.feature.id));
+    const outsidePool = [
+      ...vm.members.filter((mm) => mm.bucket !== 'core')
+        .map((mm) => ({ name: mm.feature.name, bucket: mm.bucket as string | null, contexts: mm.feature.contexts })),
+      ...ship.features.filter((f) => !memberIds.has(f.id))
+        .map((f) => ({ name: f.name, bucket: null, contexts: f.contexts })),
+    ];
+    askAthena('Ship', buildShipBriefing(vm, data.project, outsidePool));
+  };
 
   return (
     <div data-testid="factory-ship-planner">
-      {/* full-width content header — goal, criteria tags, lifecycle + compose */}
+      {/* full-width content header — objective, readings, and the control bar */}
       <motion.div
         key={`hdr:${vm.id}`}
         className="flex items-start gap-3 mb-4"
@@ -274,88 +292,36 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
         transition={{ duration: 0.3 }}
         data-testid="ship-content-header"
       >
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <ShipGoalField
             name={vm.name}
             goal={vm.goal}
             editable={editable}
             onSave={(goal) => ship.setGoal(vm.id, goal)}
           />
-          <div className="flex items-center gap-2 flex-wrap mt-2">
-            {vm.criteria.map((c) => {
-              const key = data.project ? shipDispatchKey(c.id, data.project.id) : null;
-              const session = key ? fleetSessions.get(key) : undefined;
-              const dispatchable = c.state !== 'go' && data.project && buildCriterionPrompt(vm, c, data.project) !== null;
-              return (
-                <span key={c.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-caption tabular-nums" style={{ borderColor: `${CRIT_HUE[c.state]}55`, color: CRIT_HUE[c.state] }} title={c.evidence}>
-                  {c.label} {c.done}/{c.total}
-                  {session && key ? (
-                    <button
-                      type="button"
-                      onClick={() => setTerminalKey(key)}
-                      aria-label={tx(t.ship.session_open_aria, { label: c.label })}
-                      title={tx(t.ship.session_open_tooltip, { state: String(session.state).replace('_', ' ') })}
-                      className="p-0.5 -mr-1 rounded-interactive transition-colors hover:bg-foreground/[0.08] focus-ring"
-                    >
-                      <SquareTerminal className="w-3.5 h-3.5" style={{ color: PASSPORT_FLEET_INK[String(session.state)] ?? 'rgba(148,163,184,.6)' }} aria-hidden />
-                    </button>
-                  ) : dispatchable ? (
-                    <button
-                      type="button"
-                      onClick={() => setDispatchCrit(c)}
-                      aria-label={tx(t.ship.dispatch_gap_aria, { label: c.label })}
-                      title={t.ship.dispatch_gap_tooltip}
-                      className="p-0.5 -mr-1 rounded-interactive transition-colors hover:bg-foreground/[0.08] focus-ring"
-                      data-testid={`ship-dispatch-${c.id}`}
-                    >
-                      <Zap className="w-3.5 h-3.5" style={{ color: INK.violet }} aria-hidden />
-                    </button>
-                  ) : null}
-                </span>
-              );
-            })}
-          </div>
           <ShipVelocityNote rows={ship.roadmap.map((ms) => ms.row)} vm={vm} />
-          {/* Reporting only: the ship button above is gated by `verdict`
-              (the criteria registry), never by these counts. */}
+          {/* Reporting only: certification is gated by `verdict` (the criteria
+              registry, now read inside the certify panel), never by these. */}
           <ShipDualitySummary duality={vm.duality} />
-          {/* Execute the cut as a CLI skill, and ingest what it reports. The
-              two sit together on purpose: the ingest is the only visibility
-              the app gets into a run that happens outside it. */}
-          {editable && (
-            <div className="mt-2">
-              <ShipMilestoneRun milestoneId={vm.id} rootPath={data.project?.root_path ?? null} />
-            </div>
-          )}
+
+          <div className="mt-3">
+            <ShipControlBar
+              vm={vm}
+              project={data.project}
+              editable={editable}
+              onCertify={() => setCertifying(true)}
+              onCompose={() => setComposing(true)}
+              onAskAthena={openAthena}
+              onRun={runner.run}
+              onIngest={runner.ingest}
+              running={runner.spawning}
+              ingesting={runner.ingesting}
+            />
+            {runner.summary && (
+              <ShipRunSummary summary={runner.summary} onDismiss={runner.dismissSummary} />
+            )}
+          </div>
         </div>
-        {editable && !composing && (
-          <span className="ml-auto shrink-0 inline-flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => ship.setStatus(vm.id, vm.status === 'planned' ? 'active' : 'shipped')}
-              disabled={vm.status === 'active' && verdict !== 'go'}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption font-medium border transition-colors hover:bg-foreground/[0.05] focus-ring disabled:opacity-40"
-              style={{ color: INK.emerald, borderColor: `${INK.emerald}55` }}
-              title={vm.status === 'planned'
-                ? t.ship.certify_cut_tooltip
-                : verdict === 'go' ? t.ship.certify_ship_tooltip : t.ship.certify_blocked_tooltip}
-              data-testid="ship-lifecycle-action"
-            >
-              <Rocket className="w-3.5 h-3.5" aria-hidden />
-              {vm.status === 'planned' ? t.ship.certify_cut : t.ship.certify_ship}
-            </button>
-            <button
-              type="button"
-              onClick={() => setComposing(true)}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption font-medium border transition-colors hover:bg-foreground/[0.05] focus-ring"
-              style={{ color: INK.teal, borderColor: `${INK.teal}55` }}
-              data-testid="ship-compose-open"
-            >
-              <PencilRuler className="w-3.5 h-3.5" aria-hidden />
-              {t.ship.compose_scope}
-            </button>
-          </span>
-        )}
       </motion.div>
 
       <div className="grid gap-4" style={{ gridTemplateColumns: 'minmax(230px, 270px) minmax(0, 1fr)' }}>
@@ -389,20 +355,12 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
         </AnimatePresence>
       </div>
 
-      {dispatchCrit && data.project && (
-        <ShipDispatchModal
+      {certifying && (
+        <ShipCertifyModal
           vm={vm}
-          criterion={dispatchCrit}
           project={data.project}
-          onDispatched={(key) => { setDispatchCrit(null); setTerminalKey(key); }}
-          onClose={() => setDispatchCrit(null)}
-        />
-      )}
-      {terminalKey && (
-        <PassportTerminalModal
-          sessionId={fleetSessions.get(terminalKey)?.id ?? ''}
-          session={fleetSessions.get(terminalKey) ?? null}
-          onClose={() => setTerminalKey(null)}
+          onCertify={() => ship.setStatus(vm.id, vm.status === 'planned' ? 'active' : 'shipped')}
+          onClose={() => setCertifying(false)}
         />
       )}
     </div>
