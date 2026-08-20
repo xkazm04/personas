@@ -2,6 +2,7 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { DevProject } from "@/lib/bindings/DevProject";
 import type { SkillInstallResult } from "@/lib/bindings/SkillInstallResult";
+import type { RegistrySync } from "@/lib/bindings/RegistrySync";
 import type { DirectoryScanResult } from "@/lib/bindings/DirectoryScanResult";
 import type { DevGoal } from "@/lib/bindings/DevGoal";
 import type { DevGoalSignal } from "@/lib/bindings/DevGoalSignal";
@@ -1773,6 +1774,19 @@ export const listSkillLessons = (skillName?: string | null) =>
  */
 export const writeRegistryUsage = (clonePath: string, contributor: string) =>
   safeInvoke<number>(0, "dev_tools_write_registry_usage", { clonePath, contributor });
+
+/**
+ * Fast-forward a paired registry working copy to its remote — "sync before scan".
+ *
+ * Deliberately NOT `safeInvoke`. Every other reader here degrades to a default
+ * when the backend says no, which is right for a count and wrong for this: the
+ * only reason to call it is to establish that the clone is current, so a
+ * swallowed failure would hand back exactly the false assurance it exists to
+ * prevent. An unreachable remote, a dirty tree or local commits all reject, and
+ * the caller is expected to stop and show the operator why.
+ */
+export const syncRegistryClone = (clonePath: string) =>
+  invoke<RegistrySync>("dev_tools_registry_sync", { clonePath });
 
 export const exportSkillRegistry = (projectId: string, libraryRoot?: string | null) =>
   safeInvoke<number>(0, "dev_tools_export_skill_registry", { projectId, libraryRoot: libraryRoot ?? null });

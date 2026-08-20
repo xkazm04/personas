@@ -314,6 +314,19 @@ writing the home dir, `.personas-skill-meta.json` sidecar with a source *path*. 
   - The registry's `skills/` lane becomes the **org library**; `~/.claude/skills` becomes a
     **working copy of the registry clone** (the app pulls before scan; `global_skills_dir`
     gains a registry-clone tier ahead of the home tier).
+    - ✅ **Sync before scan** — `dev_tools_registry_sync` (`registry_sync.rs`) fast-forwards
+      the paired clone. Error-first by design, because the only reason to call it is to
+      establish the clone is current: an **unreachable remote**, a **dirty tree** or
+      **unpushed local commits** all reject rather than degrading, and the message names
+      which of connectivity / mapping / local state to look at. Fast-forward only — never
+      merge, rebase or stash a working copy other sessions and Ascent share.
+    - Fires on an explicit **Sync** control in the workspace registry section, and
+      automatically **before any share/adopt dispatch** (`syncBeforeDispatch` in
+      `skillsWorkbenchData.ts`), where a rejection aborts the dispatch. Never on a render.
+    - Ordering that is load-bearing: the usage piggyback is written **after** the sync,
+      inside `runShare`. Writing it first (as the call site used to) dirties the tree and
+      the sync would rightly refuse — every registry share would fail on the very check
+      meant to protect it.
   - `publish` becomes **branch + commit + PR** (git CLI; the app proposes, the human
     merges — CODEOWNERS). `adopt`/`sync` stay copy-based from the clone; the provenance
     sidecar gains `source_commit` (SHA) beside `content_hash` — ascent's three-hash
@@ -323,8 +336,12 @@ writing the home dir, `.personas-skill-meta.json` sidecar with a source *path*. 
   - `skill_registry` DB stays a scan cache (it already is); `library_path` in
     `.personas/skill-registry.json` becomes `library_remote` + SHA.
   - Vocabulary: adopt registry categories + semver per §1's table.
-  - ascent's R2/R3 registry slices then land against this same repo — the `catalog.json`
-    skills entries are already its designed contract.
+  - ✅ ascent's R2/R3 registry slices then land against this same repo — the `catalog.json`
+    skills entries are already its designed contract. **Satisfied**: `OrgRegistry`,
+    map/create, the `skills/` indexer, `RegistrySyncStrip`, `origin` (`hosted | registry`)
+    on the mirror rows and the migrate-PR route all exist in ascent today, and this arc
+    pointed its `knowledge/` + `usage/` readers at the same repo. The bullet was about
+    convergence — one registry, two consumers — not about new work here.
 
 **P6 — Persona agents (later stage, per operator).** Generated personas have runtime
 memory but no expert system. Connection design (sketch, to be its own plan):

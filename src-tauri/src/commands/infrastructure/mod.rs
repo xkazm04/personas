@@ -41,6 +41,7 @@ pub mod doc_rot;
 pub mod memory_health;
 pub mod skill_files;
 pub mod skill_lessons;
+pub mod registry_sync;
 pub mod registry_usage;
 pub mod skill_registry_export;
 pub mod skill_usage;

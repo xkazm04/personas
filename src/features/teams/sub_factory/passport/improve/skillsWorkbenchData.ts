@@ -9,7 +9,8 @@
 // same "pick a skill → act" gesture, so the panes stay identical.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { listSkills, stampSkillProvenance, type SkillEntry } from '@/api/devTools/devTools';
+import { listSkills, stampSkillProvenance, syncRegistryClone, writeRegistryUsage, type SkillEntry } from '@/api/devTools/devTools';
+import { usageFileFor } from '@/features/plugins/dev-tools/sub_workspaces/registry/useRegistryLibrary';
 import { spawnExternalConsole, spawnSession, writeDispatchBrief } from '@/api/fleet/fleet';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
@@ -23,6 +24,36 @@ import { adoptTaskPrompt, adoptTaskTitle, shareTaskPrompt, shareTaskTitle, type 
  *  dev-runner default effort). Pinned here so the personalization/generalization
  *  quality is consistent regardless of the app's default task model. */
 const SKILL_TASK_MODEL = 'claude-sonnet-5';
+
+/**
+ * Sync before scan — fast-forward a paired registry clone before dispatching a
+ * task that reads or writes it.
+ *
+ * It lives here, next to `deployNow`, rather than at each call site: the
+ * invariant is "no skill task ever runs against a clone we have not just
+ * confirmed is current", and putting it at the dispatch boundary means a future
+ * caller inherits it instead of having to remember it.
+ *
+ * Rethrows on failure, which ABORTS the dispatch. That is the point — an
+ * unreachable remote, a dirty tree or unpushed local commits are all things the
+ * operator has to look at, and running the task anyway would produce exactly the
+ * confidently-wrong result (a share branched off stale history, an adopt of a
+ * superseded skill) that syncing exists to prevent.
+ *
+ * A null path is the home library, which has no remote and needs no sync.
+ */
+async function syncBeforeDispatch(clonePath: string | null | undefined): Promise<void> {
+  if (!clonePath) return;
+  await syncRegistryClone(clonePath);
+}
+
+/** Surface a sync refusal with the backend's own sentence — it already names
+ *  which of connectivity / mapping / local state the operator should look at,
+ *  and a generic "sync failed" would throw that away. */
+function syncFailureMessage(e: unknown): string {
+  const raw = e instanceof Error ? e.message : String(e);
+  return raw.trim() ? `Registry not synced — ${raw.split('\n')[0]}` : 'Registry not synced';
+}
 
 export type WorkbenchMode = 'manage' | 'dispatch';
 
@@ -58,7 +89,9 @@ export interface SkillsWorkbench {
   dispatching: boolean;
   /** Adopt one library skill into this project. `libraryRoot` names WHICH library
    *  the item comes from — omit for the user-global one. */
-  runAdopt: (name: string, libraryRoot?: string | null) => Promise<void>;
+  /** `libraryRoot` is the lane to read FROM; `clonePath` is the registry working
+   *  copy to fast-forward first (omit for the home library, which has no remote). */
+  runAdopt: (name: string, libraryRoot?: string | null, clonePath?: string | null) => Promise<void>;
   /** Publish a project skill into the library. `target` decides WHERE and under
    *  which contract — omit it for the user-global library. */
   runShare: (name: string, target?: ShareTarget) => Promise<void>;
@@ -182,11 +215,20 @@ export function useSkillsWorkbench(slug: string): SkillsWorkbench | null {
       return { name: s.name, description: s.description, sourceLabel: s.sourceKind, usage: u ?? null, category: s.category, memory: s.memory, contextTracked: s.contextTracked };
     }), [installed, raw]);
 
-  const runAdopt = useCallback(async (name: string, libraryRoot?: string | null) => {
+  const runAdopt = useCallback(async (name: string, libraryRoot?: string | null, clonePath?: string | null) => {
     if (!engine || !raw) return;
     const src = raw.skillsToAdd?.find((s) => s.name === name);
     if (!src) return;
     const items: AdoptItem[] = [{ name: src.name, source: src.source }];
+    // Before the read, not after: adopting from a stale clone personalizes a
+    // version the library has already moved past, and the copy would land
+    // looking `in_sync` against it.
+    try {
+      await syncBeforeDispatch(clonePath);
+    } catch (e) {
+      addToast(syncFailureMessage(e), 'error');
+      throw e;
+    }
     try {
       const taskId = await engine.deployNow(slug, adoptTaskTitle(items), adoptTaskPrompt(items, sourceRootOf, libraryRoot), SKILL_TASK_MODEL);
       useImproveActivityStore.getState().start(`${slug}:skills`, taskId, 'deploy');
@@ -209,8 +251,35 @@ export function useSkillsWorkbench(slug: string): SkillsWorkbench | null {
 
   const runShare = useCallback(async (name: string, target?: ShareTarget) => {
     if (!engine || !raw) return;
+    // A share COMMITS into the clone. Branching off history the remote has
+    // already advanced past is the failure this ordering exists to stop.
     try {
-      const taskId = await engine.deployNow(slug, shareTaskTitle(name), shareTaskPrompt(name, raw.project, target), SKILL_TASK_MODEL);
+      await syncBeforeDispatch(target?.kind === 'registry' ? target.clonePath : null);
+    } catch (e) {
+      addToast(syncFailureMessage(e), 'error');
+      throw e;
+    }
+
+    // The usage piggyback is written AFTER the sync, and this order is load
+    // bearing: the file lands in the clone's working tree, so writing it first
+    // would make the tree dirty and the sync would refuse — every registry
+    // share would fail on the safety check meant to protect it.
+    //
+    // Still best-effort. Failing to contribute counts must never block
+    // publishing a skill; a failure just drops the piggyback.
+    let effective = target;
+    if (target?.kind === 'registry') {
+      const usageFile = await writeRegistryUsage(target.clonePath, target.contributor)
+        .then((n) => (n > 0 ? usageFileFor(target.contributor) : null))
+        .catch((e: unknown) => {
+          silentCatch('skillsWorkbench registry usage')(e);
+          return null;
+        });
+      effective = { ...target, usageFile };
+    }
+
+    try {
+      const taskId = await engine.deployNow(slug, shareTaskTitle(name), shareTaskPrompt(name, raw.project, effective), SKILL_TASK_MODEL);
       useImproveActivityStore.getState().start(`${slug}:skills`, taskId, 'deploy');
       addToast(`Claude is generalizing “${name}” into your library`, 'success');
     } catch (e) {

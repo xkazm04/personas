@@ -14428,7 +14428,12 @@
         "repo_pick_credential_first": "先に認証情報を選択してください",
         "repo_private": "{name}（プライベート）",
         "section_title": "ナレッジレジストリ",
-        "this_workspace": "このワークスペース"
+        "this_workspace": "このワークスペース",
+        "sync": "同期",
+        "sync_current": "レジストリの作業コピーは最新です",
+        "sync_failed": "レジストリを同期できませんでした:",
+        "sync_pulled_one": "レジストリの作業コピーに {count} 件のコミットを取得しました",
+        "sync_pulled_other": "レジストリの作業コピーに {count} 件のコミットを取得しました"
       },
       "skills_library_unwired_body": "作成したスキルは、このワークスペースが保持するナレッジレジストリから取得されます。Dev Tools → Workspaces で、このプロジェクトが属するワークスペースに接続してください。",
       "skills_library_unwired_title": "レジストリが接続されていません",

@@ -102,11 +102,17 @@ export type ShareTarget =
       clonePath: string;
       /** `owner/repo`, for the commit message. */
       registryName: string;
+      /** Installation name the usage counts are filed under. */
+      contributor: string;
       /**
        * Repo-relative usage file the app has ALREADY written (`usage/<id>.json`),
        * to be committed alongside the skill. Absent when there is nothing to
        * contribute. This is the piggyback: counts never earn a commit of their
        * own, they ride one that was happening anyway.
+       *
+       * Filled in by `runShare` AFTER the clone is synced, never by the caller:
+       * writing it first would leave the tree dirty and the sync would rightly
+       * refuse to fast-forward over an edit it cannot attribute.
        */
       usageFile?: string | null;
     };

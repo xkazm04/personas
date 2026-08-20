@@ -14428,7 +14428,12 @@
         "repo_pick_credential_first": "Hãy chọn thông tin xác thực trước",
         "repo_private": "{name} (riêng tư)",
         "section_title": "Registry tri thức",
-        "this_workspace": "không gian làm việc này"
+        "this_workspace": "không gian làm việc này",
+        "sync": "Đồng bộ",
+        "sync_current": "Bản sao làm việc của registry đã là mới nhất",
+        "sync_failed": "Chưa đồng bộ registry:",
+        "sync_pulled_one": "Đã kéo {count} commit vào bản sao làm việc của registry",
+        "sync_pulled_other": "Đã kéo {count} commit vào bản sao làm việc của registry"
       },
       "skills_library_unwired_body": "Các skill tự soạn đến từ registry tri thức mà không gian làm việc này đang giữ. Hãy kết nối một registry trong Dev Tools → Workspaces, ở không gian làm việc chứa dự án này.",
       "skills_library_unwired_title": "Chưa kết nối registry nào",
