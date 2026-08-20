@@ -1,0 +1,83 @@
+# Baseline: #[tauri::command] functions that are DEFINED and never registered in any
+# generate_handler! block. Each is pending a delete-or-register decision by the
+# operator; none is reachable from the frontend today, so nothing is broken at
+# runtime -- they advertise an IPC surface that does not exist.
+#
+# scripts/check-command-registration.mjs fails on any orphan NOT listed here,
+# and ALSO fails when a listed name stops being an orphan (census convention,
+# scripts/census/rules.json:1-20) -- a silent drop is what a broken matcher
+# looks like, so clearing one costs a deleted line here.
+#
+# Baselined 2026-08-21 at 61 entries. It was 73 before Wave 1 lane `guard`
+# stripped the false attribute from 12 functions that had no caller of any kind
+# (6 of them in commands/core/composition_workflows.rs, a file no `mod`
+# declaration references, so it is not even compiled).
+#
+# One bare command name per line. `#` starts a comment.
+
+build_kb_index                          # src-tauri/src/commands/execution/knowledge.rs:244
+cancel_persona_job                      # src-tauri/src/commands/core/persona_jobs.rs:152
+companion_discard_consolidation_run     # src-tauri/src/commands/companion/consolidate.rs:316
+companion_enqueue_curation_run          # src-tauri/src/commands/companion/consolidate.rs:341
+companion_extract_fleet_patterns        # src-tauri/src/commands/companion/fleet_bridge.rs:2419
+companion_prune_low_value_facts         # src-tauri/src/commands/companion/consolidate.rs:236
+companion_review_recent_executions_now  # src-tauri/src/commands/companion/chat.rs:339
+# companion_test_fleet_dispatch is the one entry here with a LIVE CONSUMER:
+# tests/playwright/companion-real-claude-workflow.spec.ts:137 invokes it by name
+# over the test-automation bridge. It is #[cfg(feature = "test-automation")] and
+# was never added to generate_handler!, so that spec cannot pass. This one wants
+# REGISTERING, not deleting -- do not strip its attribute.
+companion_test_fleet_dispatch           # src-tauri/src/commands/companion/mcp_bridge.rs:74
+compile_workflow                        # src-tauri/src/commands/teams/teams.rs:542
+delete_ocr_document                     # src-tauri/src/commands/ocr/mod.rs:673
+dev_checkpoint_stage                    # src-tauri/src/commands/infrastructure/git_checkpoint.rs:24
+dev_fork_from_checkpoint                # src-tauri/src/commands/infrastructure/git_checkpoint.rs:54
+dev_list_run_checkpoints                # src-tauri/src/commands/infrastructure/git_checkpoint.rs:44
+dev_rollback_to_checkpoint              # src-tauri/src/commands/infrastructure/git_checkpoint.rs:68
+dev_tools_advance_pipeline              # src-tauri/src/commands/infrastructure/dev_tools.rs:1566
+dev_tools_compute_scan_delta            # src-tauri/src/commands/infrastructure/incremental_scan.rs:243
+dev_tools_create_goal_signal            # src-tauri/src/commands/infrastructure/dev_tools/goals.rs:168
+dev_tools_create_pipeline               # src-tauri/src/commands/infrastructure/dev_tools.rs:1529
+dev_tools_create_scan                   # src-tauri/src/commands/infrastructure/dev_tools.rs:836
+dev_tools_delete_pipeline               # src-tauri/src/commands/infrastructure/dev_tools.rs:1616
+dev_tools_get_context                   # src-tauri/src/commands/infrastructure/dev_tools/contexts.rs:105
+dev_tools_get_goal                      # src-tauri/src/commands/infrastructure/dev_tools/goals.rs:26
+dev_tools_get_pipeline                  # src-tauri/src/commands/infrastructure/dev_tools.rs:1557
+dev_tools_get_project                   # src-tauri/src/commands/infrastructure/dev_tools.rs:54
+dev_tools_get_task                      # src-tauri/src/commands/infrastructure/dev_tools.rs:891
+dev_tools_list_health_snapshots         # src-tauri/src/commands/infrastructure/dev_tools/contexts.rs:259
+dev_tools_list_pipelines                # src-tauri/src/commands/infrastructure/dev_tools.rs:1547
+dev_tools_move_context_to_group         # src-tauri/src/commands/infrastructure/dev_tools/contexts.rs:195
+dev_tools_portfolio_summary             # src-tauri/src/commands/infrastructure/dev_tools/goals.rs:523
+dev_tools_save_health_snapshot          # src-tauri/src/commands/infrastructure/dev_tools/contexts.rs:269
+dev_tools_update_scan                   # src-tauri/src/commands/infrastructure/dev_tools.rs:852
+dev_tools_workspace_cancel_verify       # src-tauri/src/commands/infrastructure/workspace_verify.rs:357
+enqueue_persona_memory_curation         # src-tauri/src/commands/core/persona_jobs.rs:33
+get_n8n_payload_limits                  # src-tauri/src/commands/design/n8n_limits.rs:65
+get_ocr_document                        # src-tauri/src/commands/ocr/mod.rs:664
+get_persona_job                         # src-tauri/src/commands/core/persona_jobs.rs:139
+get_recipe_catalog_for_persona          # src-tauri/src/commands/recipes/recipe_eligibility.rs:54
+get_recipe_eligibility                  # src-tauri/src/commands/recipes/recipe_eligibility.rs:26
+get_startup_timing                      # src-tauri/src/lib.rs:526
+get_template_manifest_count             # src-tauri/src/commands/design/template_adopt.rs:2173
+get_use_case_recipes                    # src-tauri/src/commands/recipes/crud.rs:363
+get_validation_rules                    # src-tauri/src/commands/core/validation.rs:10
+initialize_event_handlers_for_persona   # src-tauri/src/commands/tools/triggers.rs:1155
+list_healing_knowledge                  # src-tauri/src/commands/execution/healing.rs:96
+list_n8n_sessions                       # src-tauri/src/commands/design/n8n_sessions.rs:129
+list_ocr_documents                      # src-tauri/src/commands/ocr/mod.rs:658
+list_pending_build_questions            # src-tauri/src/commands/design/build_sessions.rs:592
+list_persona_jobs                       # src-tauri/src/commands/core/persona_jobs.rs:123
+list_recipes_by_template                # src-tauri/src/commands/recipes/recipe_derivation.rs:315
+list_run_budgets                        # src-tauri/src/commands/execution/evolution.rs:172
+list_trigger_chains                     # src-tauri/src/commands/tools/triggers.rs:1253
+obsidian_brain_semantic_lint_vault      # src-tauri/src/commands/obsidian_brain/mod.rs:1824
+publish_event                           # src-tauri/src/commands/communication/events.rs:59
+reset_build_session_phase               # src-tauri/src/commands/design/build_sessions.rs:527
+run_memory_lifecycle                    # src-tauri/src/commands/core/memories.rs:262
+seed_linked_message_and_review          # src-tauri/src/commands/design/reviews.rs:1771
+seed_mock_memory                        # src-tauri/src/commands/core/memories.rs:1200
+trigger_ai_healing                      # src-tauri/src/commands/execution/healing.rs:108
+unadopt_recipe_from_persona             # src-tauri/src/commands/recipes/recipe_adoption.rs:200
+validate_persona_contracts              # src-tauri/src/commands/core/validation.rs:19
+verify_template_integrity               # src-tauri/src/commands/design/template_adopt.rs:2134

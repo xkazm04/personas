@@ -32,7 +32,11 @@ pub async fn github_check_permissions(
 /// branch advanced since the last release (a merge landed). Increments the
 /// PATCH number of the latest release tag. `dry_run` reports what it would do
 /// without creating anything. Requires a GitHub PAT with the `repo` scope.
-#[tauri::command]
+// NOT an IPC command: never registered in `generate_handler!`, so the
+// `#[tauri::command]` this used to carry advertised a surface nothing could
+// reach. `#[requires(privileged)]` is kept on purpose: it is what makes the
+// guard correct the moment this IS registered.
+// See scripts/check-command-registration.mjs.
 #[requires(privileged)]
 pub async fn github_create_patch_release(
     state: State<'_, Arc<AppState>>,

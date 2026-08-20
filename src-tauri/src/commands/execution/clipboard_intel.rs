@@ -47,8 +47,11 @@ pub fn search_kb_for_error(
     )
 }
 
-/// Tauri command wrapper for manual KB error search from the frontend.
-#[tauri::command]
+/// Manual KB error search over `search_kb_for_error`.
+///
+/// NOT an IPC command: it was never registered in `generate_handler!`, so the
+/// `#[tauri::command]` it used to carry advertised a surface no frontend could
+/// reach. See scripts/check-command-registration.mjs.
 pub async fn search_kb_for_clipboard_error(
     state: State<'_, Arc<AppState>>,
     query: String,

@@ -637,7 +637,11 @@ fn to_snake_case(s: &str) -> String {
 // ============================================================================
 
 /// Parse an OpenAPI spec from a URL — fetches the spec and parses it.
-#[tauri::command]
+// NOT an IPC command: never registered in `generate_handler!`, so the
+// `#[tauri::command]` this used to carry advertised a surface nothing could
+// reach. `#[requires(privileged)]` is kept on purpose: it is what makes the
+// guard correct the moment this IS registered, and here it is also the only
+// reader of `state`. See scripts/check-command-registration.mjs.
 #[requires(privileged)]
 pub async fn openapi_parse_from_url(
     state: State<'_, Arc<AppState>>,
@@ -686,7 +690,11 @@ pub async fn openapi_parse_from_url(
 }
 
 /// Parse an OpenAPI spec from raw content (JSON or YAML string).
-#[tauri::command]
+// NOT an IPC command: never registered in `generate_handler!`, so the
+// `#[tauri::command]` this used to carry advertised a surface nothing could
+// reach. `#[requires(privileged)]` is kept on purpose: it is what makes the
+// guard correct the moment this IS registered, and here it is also the only
+// reader of `state`. See scripts/check-command-registration.mjs.
 #[requires(privileged)]
 pub fn openapi_parse_from_content(
     state: State<'_, Arc<AppState>>,
@@ -697,7 +705,11 @@ pub fn openapi_parse_from_content(
 
 /// Generate a connector definition + tool definitions from a parsed spec.
 /// Creates the connector in the database and returns the result.
-#[tauri::command]
+// NOT an IPC command: never registered in `generate_handler!`, so the
+// `#[tauri::command]` this used to carry advertised a surface nothing could
+// reach. `#[requires(privileged)]` is kept on purpose: it is what makes the
+// guard correct the moment this IS registered, and here it is also the only
+// reader of `state`. See scripts/check-command-registration.mjs.
 #[requires(privileged)]
 pub fn openapi_generate_connector(
     state: State<'_, Arc<AppState>>,

@@ -1,6 +1,14 @@
-//! Tauri commands for composition workflow CRUD.
+//! Composition workflow CRUD.
 //!
 //! Thin wrappers around the repo layer — business logic lives in the repo.
+//!
+//! NONE of these are IPC commands. This file is not declared as a module
+//! anywhere (`grep -r composition_workflows src-tauri/src` finds only itself),
+//! so it is not compiled, and none of its functions was ever registered in
+//! `generate_handler!`. They carried `#[tauri::command]` regardless, which
+//! advertised an IPC surface that does not exist. The attribute was removed
+//! 2026-08-21; the functions are left intact pending a decision to either
+//! wire the module up or delete it. See scripts/check-command-registration.mjs.
 
 use std::sync::Arc;
 
@@ -15,7 +23,6 @@ use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
 
-#[tauri::command]
 pub fn list_composition_workflows(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<CompositionWorkflow>, AppError> {
@@ -23,7 +30,6 @@ pub fn list_composition_workflows(
     repo::list_all(&state.db)
 }
 
-#[tauri::command]
 pub fn get_composition_workflow(
     state: State<'_, Arc<AppState>>,
     id: String,
@@ -32,7 +38,6 @@ pub fn get_composition_workflow(
     repo::get_by_id(&state.db, &id)
 }
 
-#[tauri::command]
 pub fn create_composition_workflow(
     state: State<'_, Arc<AppState>>,
     input: CreateCompositionWorkflowInput,
@@ -41,7 +46,6 @@ pub fn create_composition_workflow(
     repo::create(&state.db, input)
 }
 
-#[tauri::command]
 pub fn update_composition_workflow(
     state: State<'_, Arc<AppState>>,
     id: String,
@@ -51,7 +55,6 @@ pub fn update_composition_workflow(
     repo::update(&state.db, &id, input)
 }
 
-#[tauri::command]
 pub fn delete_composition_workflow(
     state: State<'_, Arc<AppState>>,
     id: String,
@@ -62,7 +65,6 @@ pub fn delete_composition_workflow(
 
 /// Bulk import workflows from frontend localStorage migration.
 /// Called once during the localStorage → SQLite migration.
-#[tauri::command]
 pub fn import_composition_workflows(
     state: State<'_, Arc<AppState>>,
     workflows: Vec<CompositionWorkflow>,

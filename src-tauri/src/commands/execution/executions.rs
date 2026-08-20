@@ -117,7 +117,11 @@ pub fn get_execution(
     Ok(execution)
 }
 
-#[tauri::command]
+// NOT an IPC command: never registered in `generate_handler!`, so the
+// `#[tauri::command]` this used to carry advertised a surface nothing could
+// reach. `#[requires(privileged)]` is kept on purpose: it is what makes the
+// guard correct the moment this IS registered.
+// See scripts/check-command-registration.mjs.
 #[requires(privileged)]
 pub fn create_execution(
     state: State<'_, Arc<AppState>>,
