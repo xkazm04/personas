@@ -113,7 +113,7 @@ export function MilestoneStatusBar({ islands, focusedSlug, onOpenShip }: {
         <Flag className="w-3.5 h-3.5 shrink-0" style={{ color: hue }} aria-hidden />
         <span className="typo-caption text-foreground/70 shrink-0 truncate max-w-[10rem]">{row.projectName}</span>
         <span className="w-px h-3 bg-foreground/[0.15] shrink-0" aria-hidden />
-        <span className="typo-caption text-foreground font-medium truncate min-w-0">{row.name}</span>
+        <span className="typo-caption text-foreground truncate min-w-0">{row.name}</span>
         <span className="typo-caption tabular-nums shrink-0" style={{ color: hue }}>
           {row.status === 'active' ? t.mastermind.milestone_bar_cut : t.mastermind.milestone_bar_planned}
         </span>

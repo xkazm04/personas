@@ -20230,7 +20230,12 @@
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
     "_comment_lane_none": "Mastermind mid-zoom island: shown in a work lane that currently has nothing running.",
     "_comment_lane_personas": "Mastermind mid-zoom island: label for the persona work lane. Short — it sits under a small icon.",
-    "_comment_lane_runners": "Mastermind mid-zoom island: label for the dev-runner work lane (queued/running engine tasks). Short — it sits under a small icon."
+    "_comment_lane_runners": "Mastermind mid-zoom island: label for the dev-runner work lane (queued/running engine tasks). Short — it sits under a small icon.",
+    "milestone_bar_cut": "確定済み",
+    "milestone_bar_forecast": "予測 {date}",
+    "milestone_bar_planned": "計画中",
+    "milestone_bar_target": "期限 {date}",
+    "milestone_bar_tooltip": "{project} の進行中マイルストーン — Ship タブを開く"
   },
   "ship": {
     "add": "追加",
@@ -20380,6 +20385,14 @@
     "run_milestone": "マイルストーンを実行",
     "run_milestone_tooltip": "/ship-milestone でこのカットを実行する Claude Code セッションを開き、完了後に「ランを取り込む」で結果を反映します。",
     "run_proposed_hint": "ランはこれらを提案するだけで、自動的には何も追加されません。同意する場合はコンポーザーから自分で追加してください。",
-    "run_proposed_title": "{count} 件の追加提案"
+    "run_proposed_title": "{count} 件の追加提案",
+    "ask_athena": "Athena に相談",
+    "ask_athena_tooltip": "このマイルストーン（確定したスコープ、ブロッカー、まだ範囲外のもの）を Athena に見せた状態で開き、対話しながらスコープを組み立てます",
+    "certify_cut_intro": "スコープを確定すると内容が凍結され、以降に加わったものはスコープクリープとして記録されます。下の終了基準は確定したスコープに対して測定されるため、確定を妨げることはありません。",
+    "certify_cut_title": "{name} のスコープを確定",
+    "certify_ship_intro": "このマイルストーンをリリースできるかは、これらの基準だけが決めます。各行はライブシグナルから導出されており、手入力されたものはありません。",
+    "certify_ship_title": "{name} をリリース",
+    "compose_scope_tooltip": "このマイルストーンを構成する機能と目標を選びます",
+    "criteria_badge_aria": "終了基準 {total} 件のうち {unmet} 件が未達成"
   }
 }

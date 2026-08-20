@@ -20230,7 +20230,12 @@
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
     "_comment_lane_none": "Mastermind mid-zoom island: shown in a work lane that currently has nothing running.",
     "_comment_lane_personas": "Mastermind mid-zoom island: label for the persona work lane. Short — it sits under a small icon.",
-    "_comment_lane_runners": "Mastermind mid-zoom island: label for the dev-runner work lane (queued/running engine tasks). Short — it sits under a small icon."
+    "_comment_lane_runners": "Mastermind mid-zoom island: label for the dev-runner work lane (queued/running engine tasks). Short — it sits under a small icon.",
+    "milestone_bar_cut": "已定范围",
+    "milestone_bar_forecast": "预计 {date}",
+    "milestone_bar_planned": "已规划",
+    "milestone_bar_target": "截止 {date}",
+    "milestone_bar_tooltip": "{project} 进行中的里程碑 — 打开其 Ship 标签页"
   },
   "ship": {
     "add": "添加",
@@ -20380,6 +20385,14 @@
     "run_milestone": "运行里程碑",
     "run_milestone_tooltip": "打开一个 Claude Code 会话,通过 /ship-milestone 执行此次筛选,完成后再用“导入运行结果”取回其结果。",
     "run_proposed_hint": "运行会建议这些内容,但不会自动添加任何内容。如果同意,请自行从编辑器中添加。",
-    "run_proposed_title": "{count} 项建议添加内容"
+    "run_proposed_title": "{count} 项建议添加内容",
+    "ask_athena": "询问 Athena",
+    "ask_athena_tooltip": "让 Athena 直接看到这个里程碑——已定范围、阻塞项，以及仍在范围之外的内容——然后通过对话来确定范围",
+    "certify_cut_intro": "定范围会冻结范围：之后加入的任何内容都会被标记为范围蔓延。下方的出口标准是针对已定范围来衡量的，因此不会阻止你定范围。",
+    "certify_cut_title": "确定 {name} 的范围",
+    "certify_ship_intro": "只有这些标准决定该里程碑能否发布。每一行都由实时信号推导得出——这里没有任何手动填写的内容。",
+    "certify_ship_title": "发布 {name}",
+    "compose_scope_tooltip": "选择哪些功能和目标构成这个里程碑",
+    "criteria_badge_aria": "{total} 项出口标准中有 {unmet} 项尚未满足"
   }
 }

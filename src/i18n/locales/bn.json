@@ -20230,7 +20230,12 @@
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
     "_comment_lane_none": "Mastermind mid-zoom island: shown in a work lane that currently has nothing running.",
     "_comment_lane_personas": "Mastermind mid-zoom island: label for the persona work lane. Short — it sits under a small icon.",
-    "_comment_lane_runners": "Mastermind mid-zoom island: label for the dev-runner work lane (queued/running engine tasks). Short — it sits under a small icon."
+    "_comment_lane_runners": "Mastermind mid-zoom island: label for the dev-runner work lane (queued/running engine tasks). Short — it sits under a small icon.",
+    "milestone_bar_cut": "পরিধি নির্ধারিত",
+    "milestone_bar_forecast": "পূর্বাভাস {date}",
+    "milestone_bar_planned": "পরিকল্পিত",
+    "milestone_bar_target": "নির্ধারিত {date}",
+    "milestone_bar_tooltip": "{project}-এর চলমান মাইলস্টোন — এর Ship ট্যাব খুলুন"
   },
   "ship": {
     "add": "যোগ করুন",
@@ -20380,6 +20385,14 @@
     "run_milestone": "মাইলস্টোন রান করুন",
     "run_milestone_tooltip": "একটি Claude Code সেশন খুলুন যা /ship-milestone দিয়ে এই কাট কার্যকর করে, তারপর রান ইনজেস্ট দিয়ে এর ফলাফল ফিরিয়ে আনুন।",
     "run_proposed_hint": "রান এগুলো প্রস্তাব করে; স্বয়ংক্রিয়ভাবে কিছু যোগ করা হয়নি। আপনি একমত হলে কম্পোজার থেকে নিজে এগুলো যোগ করুন।",
-    "run_proposed_title": "{count}টি প্রস্তাবিত সংযোজন"
+    "run_proposed_title": "{count}টি প্রস্তাবিত সংযোজন",
+    "ask_athena": "Athena-কে জিজ্ঞাসা করুন",
+    "ask_athena_tooltip": "এই মাইলস্টোনটি — এর নির্ধারিত পরিধি, প্রতিবন্ধকতা এবং যা এখনও বাইরে রয়ে গেছে — Athena-র সামনে রেখে খোলে, যাতে আলোচনার মাধ্যমে পরিধি ঠিক করা যায়",
+    "certify_cut_intro": "পরিধি নির্ধারণ করলে তা স্থির হয়ে যায়: এরপর যা যুক্ত হবে তা স্কোপ ক্রিপ হিসেবে চিহ্নিত হবে। নিচের প্রস্থান শর্তগুলি নির্ধারিত পরিধির সাপেক্ষে মাপা হয়, তাই সেগুলি পরিধি নির্ধারণে বাধা দেয় না।",
+    "certify_cut_title": "{name}-এর পরিধি নির্ধারণ করুন",
+    "certify_ship_intro": "এই মাইলস্টোন প্রকাশ করা যাবে কি না তা কেবল এই শর্তগুলিই ঠিক করে। প্রতিটি লাইন লাইভ সংকেত থেকে উদ্ভূত — এখানে কিছুই হাতে লেখা হয় না।",
+    "certify_ship_title": "{name} প্রকাশ করুন",
+    "compose_scope_tooltip": "কোন ফিচার ও লক্ষ্য নিয়ে এই মাইলস্টোন গঠিত তা বেছে নিন",
+    "criteria_badge_aria": "{total}-টির মধ্যে {unmet}-টি প্রস্থান শর্ত এখনও অপূর্ণ"
   }
 }

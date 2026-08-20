@@ -149,7 +149,13 @@ pub fn describe_ship_milestone(sys_db: &DbPool, query: &str) -> String {
     // LEFT JOIN is load-bearing: a use case deleted by a rescan leaves an
     // orphan row, and reporting it as a nameless member is more honest than
     // dropping it — an orphan in the cut is a real thing to fix.
+    // `read_all` below is why this is not `.flatten()`. Dropping a failing row
+    // with `filter_map(Result::ok)` would make a member of the cut disappear
+    // from the answer with no trace, and Athena would then reason — confidently
+    // — about a smaller milestone than the real one. A read that cannot be
+    // trusted to be complete is worse than one that says it failed.
     let mut features: Vec<(String, String, Option<i64>, Option<String>, bool, i64, String)> = Vec::new();
+    let mut read_error: Option<String> = None;
     if let Ok(mut stmt) = conn.prepare(
         "SELECT COALESCE(u.name, '(deleted use case ' || i.item_id || ')'),
                 i.bucket, i.rating, i.description, i.added_after_cut,
@@ -177,8 +183,23 @@ pub fn describe_ship_milestone(sys_db: &DbPool, query: &str) -> String {
                 r.get::<_, String>(6)?,
             ))
         }) {
-            features = rows.flatten().collect();
+            for row in rows {
+                match row {
+                    Ok(r) => features.push(r),
+                    Err(e) => {
+                        read_error = Some(format!("{e}"));
+                        break;
+                    }
+                }
+            }
         }
+    }
+    if let Some(e) = &read_error {
+        return format!(
+            "MILESTONE `{}` — {}\n\nCould not read its scope members: {e}\n\nTell the user \
+             the read failed rather than describing a cut you could not see.",
+            m.id, m.name
+        );
     }
 
     for bucket in ["core", "later", "never"] {
@@ -246,7 +267,18 @@ pub fn describe_ship_milestone(sys_db: &DbPool, query: &str) -> String {
                 }
             ))
         }) {
-            goals = rows.flatten().collect();
+            for row in rows {
+                match row {
+                    Ok(line) => goals.push(line),
+                    Err(e) => {
+                        // Same rule as the members read: a bound goal that
+                        // vanished silently is the one fact that would make her
+                        // call the `objective` criterion unmet when it is met.
+                        goals.push(format!("  - (a bound goal could not be read: {e})"));
+                        break;
+                    }
+                }
+            }
         }
     }
     out.push(String::new());

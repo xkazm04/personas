@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ShipMilestoneRow } from '@/api/companion';
 
@@ -41,24 +42,24 @@ export function AthenaShipMilestoneRow({
           <span className="shrink-0 px-1.5 py-0.5 rounded-interactive bg-primary/15 typo-caption text-foreground">
             {kindLabel}
           </span>
-          <span
-            className="typo-caption text-foreground font-mono break-all min-w-0"
-            title={row.itemId}
-          >
-            {row.itemId}
-          </span>
+          <Tooltip content={row.itemId}>
+            <span className="typo-caption text-foreground font-mono break-all min-w-0">
+              {row.itemId}
+            </span>
+          </Tooltip>
         </div>
+        <Tooltip content={c.ship_milestone_remove_row}>
         <button
           type="button"
           onClick={onRemove}
           disabled={disabled}
           aria-label={c.ship_milestone_remove_row}
-          title={c.ship_milestone_remove_row}
           className="shrink-0 p-1 rounded-interactive text-foreground hover:bg-secondary/70 disabled:opacity-40"
           data-testid={`athena-ship-remove-${index}`}
         >
           <X className="w-3.5 h-3.5" />
         </button>
+        </Tooltip>
       </div>
 
       <textarea

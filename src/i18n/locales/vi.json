@@ -20230,7 +20230,12 @@
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
     "_comment_lane_none": "Mastermind mid-zoom island: shown in a work lane that currently has nothing running.",
     "_comment_lane_personas": "Mastermind mid-zoom island: label for the persona work lane. Short — it sits under a small icon.",
-    "_comment_lane_runners": "Mastermind mid-zoom island: label for the dev-runner work lane (queued/running engine tasks). Short — it sits under a small icon."
+    "_comment_lane_runners": "Mastermind mid-zoom island: label for the dev-runner work lane (queued/running engine tasks). Short — it sits under a small icon.",
+    "milestone_bar_cut": "đã chốt phạm vi",
+    "milestone_bar_forecast": "dự báo {date}",
+    "milestone_bar_planned": "đã lên kế hoạch",
+    "milestone_bar_target": "hạn {date}",
+    "milestone_bar_tooltip": "Cột mốc đang mở của {project} — mở tab Ship của nó"
   },
   "ship": {
     "add": "Thêm",
@@ -20380,6 +20385,14 @@
     "run_milestone": "Chạy cột mốc",
     "run_milestone_tooltip": "Mở một phiên Claude Code thực thi phần cắt này bằng /ship-milestone, sau đó đưa kết quả trở lại bằng Nạp lượt chạy.",
     "run_proposed_hint": "Lượt chạy đề xuất những mục này; không có gì được thêm tự động. Tự thêm chúng từ trình soạn nếu bạn đồng ý.",
-    "run_proposed_title": "{count} đề xuất bổ sung"
+    "run_proposed_title": "{count} đề xuất bổ sung",
+    "ask_athena": "Hỏi Athena",
+    "ask_athena_tooltip": "Mở Athena với cột mốc này ngay trước mắt — phạm vi đã chốt, các điểm nghẽn và những gì còn nằm ngoài — rồi định hình phạm vi qua trò chuyện",
+    "certify_cut_intro": "Chốt phạm vi sẽ đóng băng nó: mọi thứ thêm vào sau đó đều bị đánh dấu là phình phạm vi. Các tiêu chí hoàn tất bên dưới được đo so với phạm vi đã chốt, nên chúng không cản trở việc chốt.",
+    "certify_cut_title": "Chốt phạm vi của {name}",
+    "certify_ship_intro": "Chỉ những tiêu chí này quyết định cột mốc có thể phát hành hay không. Mỗi dòng đều được suy ra từ tín hiệu trực tiếp — không có gì ở đây được nhập tay.",
+    "certify_ship_title": "Phát hành {name}",
+    "compose_scope_tooltip": "Chọn những tính năng và mục tiêu tạo nên cột mốc này",
+    "criteria_badge_aria": "{unmet} trên {total} tiêu chí hoàn tất vẫn chưa đạt"
   }
 }

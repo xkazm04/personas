@@ -41,7 +41,7 @@ function BarButton({ hue, icon, label, tip, onClick, testId }: {
       <button
         type="button"
         onClick={onClick}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption font-medium border transition-colors hover:bg-foreground/[0.05] focus-ring"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring"
         style={{ color: hue, borderColor: `${hue}55` }}
         data-testid={testId}
       >
@@ -108,7 +108,7 @@ export function ShipControlBar({
         <button
           type="button"
           onClick={onCertify}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption font-medium border transition-colors hover:bg-foreground/[0.05] focus-ring"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring"
           style={{ color: INK.emerald, borderColor: `${INK.emerald}55` }}
           data-testid="ship-lifecycle-action"
         >

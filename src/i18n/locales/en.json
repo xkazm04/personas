@@ -20230,7 +20230,12 @@
     "athena_revert_title": "Remove the marks Athena added?",
     "athena_revert_body_one": "1 group, link or note composed by Athena will be removed from this board. Everything you made stays, and composed project panels are not affected.",
     "athena_revert_body_other": "{count} groups, links and notes composed by Athena will be removed from this board. Everything you made stays, and composed project panels are not affected.",
-    "athena_revert_cta": "Remove hers"
+    "athena_revert_cta": "Remove hers",
+    "milestone_bar_cut": "cut",
+    "milestone_bar_planned": "planned",
+    "milestone_bar_target": "due {date}",
+    "milestone_bar_forecast": "forecast {date}",
+    "milestone_bar_tooltip": "The open milestone for {project} — open its Ship tab"
   },
   "ship": {
     "tab_ship": "Ship",
@@ -20380,6 +20385,14 @@
     "run_ingest_counts": "{updated} item(s) updated · {ratings} rating(s) · {descriptions} description(s) · {reported} reported unchanged",
     "run_proposed_title": "{count} proposed addition(s)",
     "run_proposed_hint": "The run suggests these; nothing was added. Add them yourself from the composer if you agree.",
-    "run_asked_title": "What the run asked"
+    "run_asked_title": "What the run asked",
+    "ask_athena": "Ask Athena",
+    "ask_athena_tooltip": "Open Athena with this milestone in front of her — its cut, its blockers and what is still outside it — and shape the scope in conversation",
+    "compose_scope_tooltip": "Pick which features and goals make up this milestone",
+    "criteria_badge_aria": "{unmet} of {total} exit criteria still unmet",
+    "certify_cut_title": "Cut the scope of {name}",
+    "certify_ship_title": "Ship {name}",
+    "certify_cut_intro": "Cutting freezes the scope: anything that joins after this is marked as scope creep. The exit criteria below are measured against the cut, so they do not block making one.",
+    "certify_ship_intro": "These criteria, and only these, decide whether this milestone can ship. Every line is derived from live signals — nothing here is typed in."
   }
 }

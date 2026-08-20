@@ -20230,7 +20230,12 @@
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
     "_comment_lane_none": "Mastermind mid-zoom island: shown in a work lane that currently has nothing running.",
     "_comment_lane_personas": "Mastermind mid-zoom island: label for the persona work lane. Short — it sits under a small icon.",
-    "_comment_lane_runners": "Mastermind mid-zoom island: label for the dev-runner work lane (queued/running engine tasks). Short — it sits under a small icon."
+    "_comment_lane_runners": "Mastermind mid-zoom island: label for the dev-runner work lane (queued/running engine tasks). Short — it sits under a small icon.",
+    "milestone_bar_cut": "نطاق مُثبَّت",
+    "milestone_bar_forecast": "توقّع {date}",
+    "milestone_bar_planned": "مُخطَّط",
+    "milestone_bar_target": "الموعد {date}",
+    "milestone_bar_tooltip": "المعلم المفتوح لمشروع {project} — افتح تبويب Ship الخاص به"
   },
   "ship": {
     "add": "إضافة",
@@ -20380,6 +20385,14 @@
     "run_milestone": "تشغيل المعلم",
     "run_milestone_tooltip": "افتح جلسة Claude Code تنفّذ هذه الدفعة عبر /ship-milestone، ثم أعد نتيجتها باستخدام استيعاب التشغيل.",
     "run_proposed_hint": "يقترح التشغيل هذه العناصر؛ لم تتم إضافة أي شيء تلقائياً. أضفها بنفسك من المُحرِّر إذا وافقت.",
-    "run_proposed_title": "{count} إضافة مقترحة"
+    "run_proposed_title": "{count} إضافة مقترحة",
+    "ask_athena": "اسأل Athena",
+    "ask_athena_tooltip": "يفتح Athena وهذا المعلم أمامها — نطاقه المُثبَّت وعوائقه وما لا يزال خارجه — لتحديد النطاق عبر الحوار",
+    "certify_cut_intro": "تثبيت النطاق يجمّده: أي عنصر يُضاف بعد ذلك يُوسَم كتوسّع في النطاق. تُقاس معايير الخروج أدناه مقابل النطاق المُثبَّت، لذا فهي لا تمنع تثبيته.",
+    "certify_cut_title": "تثبيت نطاق {name}",
+    "certify_ship_intro": "هذه المعايير وحدها تقرّر ما إذا كان يمكن إطلاق هذا المعلم. كل سطر مشتق من إشارات حيّة — لا شيء هنا مُدخَل يدويًا.",
+    "certify_ship_title": "إطلاق {name}",
+    "compose_scope_tooltip": "اختر الميزات والأهداف التي يتكوّن منها هذا المعلم",
+    "criteria_badge_aria": "{unmet} من {total} من معايير الخروج لم تتحقق بعد"
   }
 }

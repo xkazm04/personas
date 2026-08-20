@@ -291,21 +291,6 @@ export function Tooltip({
     };
   }, []);
 
-  // WCAG 1.4.13 "dismissable" — Escape closes an open tip without moving focus,
-  // for EVERY tooltip, not only the `triggerFocusable` ones. The trigger's own
-  // onKeyDown could never carry this on the default path: that wrapper is
-  // `display:contents`, so it is not in the focus order and never receives a
-  // key event. A document-level listener, mounted only while a tip is open, is
-  // the only place the key can actually be heard. Capture phase so a dialog or
-  // a popover that also closes on Escape does not swallow it first — the
-  // tooltip is the innermost thing on screen and should be what Escape reaches.
-  useEffect(() => {
-    if (!visible) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') hide(); };
-    document.addEventListener('keydown', onKey, true);
-    return () => document.removeEventListener('keydown', onKey, true);
-  }, [visible, hide]);
-
   if (!content) return <>{children}</>;
 
   return (
@@ -323,7 +308,23 @@ export function Tooltip({
         tabIndex={triggerFocusable ? 0 : undefined}
         aria-disabled={triggerFocusable || undefined}
         aria-describedby={visible ? tooltipId : undefined}
-        onKeyDown={triggerFocusable ? (e) => { if (e.key === 'Escape') hide(); } : undefined}
+        // WCAG 1.4.13 "dismissable" — Escape closes the tip without moving
+        // focus, for EVERY tooltip rather than only the `triggerFocusable`
+        // ones. This works on the default `display:contents` wrapper because
+        // REACT events bubble through the React tree, not the DOM box: a
+        // keydown on the focused child inside reaches this handler even though
+        // the span has no layout box of its own.
+        //
+        // A document-level listener was tried first and rejected. It would also
+        // catch a mouse-hovered tip while focus sits elsewhere — but only by
+        // registering an unordered global key handler, and in the capture phase
+        // it would take Escape from whatever IS focused, up to and including a
+        // live PTY terminal (see `capture-phase-key-preemption`, and
+        // docs/concepts/golden-paths/focus-management.md). The residue is
+        // stated rather than hidden: a tip opened by hover, with focus
+        // elsewhere, is dismissed by moving the pointer rather than by Escape.
+        // The keyboard user — the one who can actually get stuck — is covered.
+        onKeyDown={(e) => { if (e.key === 'Escape') hide(); }}
         className={triggerFocusable ? (triggerClassName ?? 'inline-flex') : 'contents'}
       >
         {children}
