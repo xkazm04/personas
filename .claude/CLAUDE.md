@@ -410,15 +410,18 @@ Doctrine: [`rust-unit-test-harness`](../docs/concepts/golden-paths/rust-unit-tes
 
 #### The gates that actually run
 
-> **Both of these gates are currently RED on `master`, by decision rather than
-> neglect.** `cargo fmt --check` names exactly the 8 files another session has
-> open (they were excluded from the 2026-08-20 workspace format and restored
-> byte-for-byte). `cargo clippy -- -D warnings` reports 215, of which **208 are
-> `dead_code`** — including **60 `#[tauri::command]` handlers that no
-> `generate_handler!` entry ever names**. Silencing `dead_code` would green the
-> gate in one line and hide sixty unreachable IPC commands, so it stays red
-> until the dead-code wave clears it. Run the gates and compare against those
-> numbers; do not add to them.
+> **`cargo fmt --check` is GREEN and enforced** — a dedicated `rust-fmt` CI job
+> plus a staged-files `rustfmt-staged` pre-commit hook. Keep it that way.
+>
+> **`cargo clippy -- -D warnings` is RED at 215, by decision rather than
+> neglect.** **208 of them are `dead_code`** — including **60
+> `#[tauri::command]` handlers that no `generate_handler!` entry ever names**
+> (0 of 60, cross-checked against the macro body). Note the asymmetry that let
+> them accumulate: `lib.rs` has a structural test for a *registration with no
+> command*, and nothing for a *command with no registration*. Silencing
+> `dead_code` would green the gate in one line and hide sixty unreachable IPC
+> commands, so it stays red until the dead-code wave clears it. Run the gate and
+> compare against 215; do not add to it.
 
 ```bash
 cargo fmt --all --check --manifest-path src-tauri/Cargo.toml
