@@ -37,6 +37,9 @@ const LESSONS_FILE: &str = "LESSONS.md";
 /// Per-skill sync-state tokens surfaced in [`SkillEntry::sync_state`]. Kept in
 /// lockstep with the frontend token map in `SkillLibraryRow`.
 const SYNC_IN_SYNC: &str = "in_sync";
+/// The library moved and this copy did NOT — safe to update.
+const SYNC_STALE: &str = "stale";
+/// This copy was edited locally — updating would overwrite the edit.
 const SYNC_DIVERGED: &str = "diverged";
 const SYNC_LOCAL_ONLY: &str = "local_only";
 
@@ -103,6 +106,17 @@ struct SkillProvenance {
     source_path: String,
     /// Content hash of the source skill directory at install time.
     content_hash: String,
+    /// Commit the SOURCE was at when this copy was taken, when the source lives
+    /// in a git working copy — which a registry clone always does and a sibling
+    /// project usually does.
+    ///
+    /// `content_hash` answers "has the source changed?"; this answers "changed
+    /// FROM WHAT?", which is the question you need to read a diff or to decide
+    /// whether an update is one commit or six months of them. Optional and
+    /// `serde(default)` so sidecars written before this field still parse as
+    /// themselves rather than failing the whole read.
+    #[serde(default)]
+    source_commit: Option<String>,
     /// RFC3339 timestamp of the install.
     installed_at: String,
 }
@@ -487,6 +501,27 @@ pub(crate) fn hash_skill_dir(dir: &Path) -> Option<String> {
     Some(hex::encode(hasher.finalize()))
 }
 
+/// The commit a directory's git working copy is at, or `None` when it is not in
+/// one (or git is unavailable, or the repo has no commits yet).
+///
+/// Deliberately best-effort and silent: provenance is a nice-to-have, and a
+/// skill copied out of a plain directory is a legitimate case, not a defect to
+/// report. Reads only — `rev-parse` cannot modify a repository, which matters
+/// because this runs against a working copy other consumers share.
+fn git_head_of(dir: &Path) -> Option<String> {
+    let out = std::process::Command::new("git")
+        .arg("-C")
+        .arg(dir)
+        .args(["rev-parse", "HEAD"])
+        .output()
+        .ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    let sha = String::from_utf8(out.stdout).ok()?.trim().to_string();
+    (!sha.is_empty()).then_some(sha)
+}
+
 /// Write the [`PROVENANCE_FILE`] sidecar into an installed skill directory.
 /// Best-effort — an I/O failure is logged and swallowed (the copy already
 /// succeeded; provenance is a nice-to-have that degrades the skill to
@@ -500,6 +535,7 @@ fn write_provenance(target_dir: &Path, source_dir: &Path, source_kind: &str, sou
         source_project_id: source_project_id.map(str::to_string),
         source_path: source_dir.to_string_lossy().into_owned(),
         content_hash,
+        source_commit: git_head_of(source_dir),
         installed_at: chrono::Utc::now().to_rfc3339(),
     };
     match serde_json::to_string_pretty(&prov) {
@@ -522,6 +558,23 @@ fn read_provenance(skill_dir: &Path) -> Option<SkillProvenance> {
 /// installed from. `local_only` when no provenance; `in_sync` when the installed
 /// copy still hashes equal to its current source; `diverged` otherwise
 /// (installed copy edited, source changed upstream, or source now unreadable).
+/// Classify one installed copy against the library it came from.
+///
+/// THREE hashes, not two. The sidecar already recorded the source's hash at
+/// install time and nothing read it back, so "the library moved ahead" and "I
+/// edited my copy" both came out `diverged` — which tells the operator to be
+/// careful in the one case where updating is completely safe.
+///
+///   installed == source-now                      → in_sync
+///   installed == recorded, source-now != recorded → stale     (library moved)
+///   otherwise                                     → diverged  (copy edited)
+///
+/// The provenance sidecar is excluded from `hash_skill_dir` (see its test), so
+/// `installed == recorded` really does hold immediately after an install.
+///
+/// An unreadable source stays `diverged`: we cannot show that nothing changed,
+/// and claiming `in_sync` against a library we could not read would be the
+/// worse of the two errors.
 fn classify_sync_state(skill_dir: &Path) -> (String, Option<String>) {
     let Some(prov) = read_provenance(skill_dir) else {
         return (SYNC_LOCAL_ONLY.to_string(), None);
@@ -529,8 +582,11 @@ fn classify_sync_state(skill_dir: &Path) -> (String, Option<String>) {
     let source_kind = Some(prov.source_kind.clone());
     let installed_hash = hash_skill_dir(skill_dir);
     let source_hash = hash_skill_dir(Path::new(&prov.source_path));
-    let state = match (installed_hash, source_hash) {
+    let state = match (installed_hash.as_deref(), source_hash.as_deref()) {
         (Some(inst), Some(src)) if inst == src => SYNC_IN_SYNC,
+        (Some(inst), Some(src)) if inst == prov.content_hash && src != prov.content_hash => {
+            SYNC_STALE
+        }
         _ => SYNC_DIVERGED,
     };
     (state.to_string(), source_kind)
@@ -1536,6 +1592,88 @@ mod tests {
         std::fs::write(dir.join("SKILL.md"), body).unwrap();
     }
 
+    /// Install `name` from `source` into `target` the way the app does, so these
+    /// tests exercise the real provenance writer rather than a hand-built sidecar.
+    fn install_from(source_root: &Path, target_root: &Path, name: &str) {
+        let src = source_root.join(name);
+        let dst = target_root.join(name);
+        copy_dir_recursive(&src, &dst).unwrap();
+        write_provenance(&dst, &src, "global", None);
+    }
+
+    #[test]
+    fn sync_state_separates_a_moved_library_from_an_edited_copy() {
+        // The whole point of reading the RECORDED hash back. Before it, both of
+        // these were `diverged`, which warns the operator off the one case where
+        // updating is completely safe.
+        let lib = tempfile::tempdir().unwrap();
+        let proj = tempfile::tempdir().unwrap();
+        write_skill(&lib.path().join("alpha"), "# Alpha\n\noriginal\n");
+        write_skill(&lib.path().join("beta"), "# Beta\n\noriginal\n");
+        install_from(lib.path(), proj.path(), "alpha");
+        install_from(lib.path(), proj.path(), "beta");
+
+        // Untouched on both sides.
+        assert_eq!(classify_sync_state(&proj.path().join("alpha")).0, SYNC_IN_SYNC);
+
+        // The LIBRARY moves; the copy is untouched → stale, and updating is safe.
+        write_skill(&lib.path().join("alpha"), "# Alpha\n\nlibrary moved on\n");
+        assert_eq!(classify_sync_state(&proj.path().join("alpha")).0, SYNC_STALE);
+
+        // The COPY is edited; the library has not moved → diverged.
+        write_skill(&proj.path().join("beta"), "# Beta\n\nedited here\n");
+        assert_eq!(classify_sync_state(&proj.path().join("beta")).0, SYNC_DIVERGED);
+    }
+
+    #[test]
+    fn both_sides_changed_is_diverged_not_stale() {
+        // `stale` promises the local copy is untouched. When both moved, the
+        // update is NOT safe and must not be labelled as though it were.
+        let lib = tempfile::tempdir().unwrap();
+        let proj = tempfile::tempdir().unwrap();
+        write_skill(&lib.path().join("alpha"), "# Alpha\n\noriginal\n");
+        install_from(lib.path(), proj.path(), "alpha");
+
+        write_skill(&lib.path().join("alpha"), "# Alpha\n\nlibrary moved\n");
+        write_skill(&proj.path().join("alpha"), "# Alpha\n\nedited here\n");
+        assert_eq!(classify_sync_state(&proj.path().join("alpha")).0, SYNC_DIVERGED);
+    }
+
+    #[test]
+    fn an_unreadable_source_is_diverged_never_in_sync() {
+        // We cannot show that nothing changed against a library we cannot read.
+        let lib = tempfile::tempdir().unwrap();
+        let proj = tempfile::tempdir().unwrap();
+        write_skill(&lib.path().join("alpha"), "# Alpha\n\noriginal\n");
+        install_from(lib.path(), proj.path(), "alpha");
+        std::fs::remove_dir_all(lib.path().join("alpha")).unwrap();
+        assert_eq!(classify_sync_state(&proj.path().join("alpha")).0, SYNC_DIVERGED);
+    }
+
+    #[test]
+    fn provenance_without_a_source_commit_still_parses() {
+        // Sidecars written before `source_commit` existed must read as
+        // themselves; a serde failure here would silently demote every
+        // previously installed skill to `local_only`.
+        let dir = tempfile::tempdir().unwrap();
+        let skill = dir.path().join("alpha");
+        write_skill(&skill, "# Alpha\n");
+        std::fs::write(
+            skill.join(PROVENANCE_FILE),
+            r#"{"source_kind":"global","source_project_id":null,"source_path":"C:/nowhere","content_hash":"abc","installed_at":"2026-01-01T00:00:00Z"}"#,
+        )
+        .unwrap();
+        let prov = read_provenance(&skill).expect("an older sidecar must still parse");
+        assert_eq!(prov.content_hash, "abc");
+        assert_eq!(prov.source_commit, None);
+    }
+
+    #[test]
+    fn git_head_of_is_none_outside_a_repository() {
+        let dir = tempfile::tempdir().unwrap();
+        assert_eq!(git_head_of(dir.path()), None);
+    }
+
     #[test]
     fn hash_skill_dir_excludes_provenance_and_is_stable() {
         let tmp = tempfile::tempdir().unwrap();
@@ -1627,9 +1765,13 @@ mod tests {
         assert_eq!(state, SYNC_IN_SYNC, "fresh install matches its source");
         assert_eq!(kind.as_deref(), Some("global"));
 
-        // Upstream source changes → diverged.
+        // Upstream source changes while the copy is untouched → STALE.
+        // This assertion said `diverged` until the recorded hash was read back,
+        // and the old comment ("Upstream source changes → diverged") named the
+        // conflation exactly: the library moving and the copy being edited are
+        // different events, and only the second makes an update unsafe.
         write_skill(&source, "---\nname: x\n---\n# X v2\nnew body\n");
-        assert_eq!(classify_sync_state(&target).0, SYNC_DIVERGED);
+        assert_eq!(classify_sync_state(&target).0, SYNC_STALE);
 
         // Bring target in line again, then locally edit the target → diverged.
         std::fs::write(target.join("SKILL.md"), "---\nname: x\n---\n# X v2\nnew body\n").unwrap();

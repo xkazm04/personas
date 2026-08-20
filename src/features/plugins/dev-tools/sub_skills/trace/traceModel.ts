@@ -54,6 +54,12 @@ export function driftOf(
   const c = cmpVersion(installedVersion, libraryVersion);
   if (c < 0) return 'behind';
   if (c > 0) return 'ahead';
+  // Equal versions, but the hashes disagree — so WHICH side moved decides the
+  // verdict. `stale` means the library changed and this copy did not, which is
+  // `behind` even though the version numbers match (a library edited without a
+  // bump; the skill standard forbids it, and rendering it as `customized` would
+  // blame the wrong side). `diverged` means this copy was edited.
+  if (syncState === 'stale') return 'behind';
   return syncState === 'diverged' ? 'customized' : 'in_sync';
 }
 

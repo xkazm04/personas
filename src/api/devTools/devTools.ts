@@ -1558,7 +1558,11 @@ export interface SkillEntry {
   description: string | null;
   referenceFileCount: number;
   referenceFiles: string[];
-  /** Provenance-derived drift state: 'in_sync' | 'diverged' | 'local_only'. */
+  /**
+   * Provenance-derived drift state: 'in_sync' | 'stale' | 'diverged' | 'local_only'.
+   * 'stale' = the library moved and this copy did not (safe to update);
+   * 'diverged' = this copy was edited (updating would overwrite it).
+   */
   syncState: string;
   /** Where the skill was installed from ('global' | 'project'), or null. */
   sourceKind: string | null;
